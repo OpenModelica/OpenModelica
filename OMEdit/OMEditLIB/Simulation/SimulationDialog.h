@@ -167,6 +167,7 @@ private:
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
   QCheckBox *mpProtectedVariablesCheckBox;
+  QCheckBox *mpIgnoreHideResultCheckBox;
   QCheckBox *mpEquidistantTimeGridCheckBox;
   QCheckBox *mpStoreVariablesAtEventsCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;

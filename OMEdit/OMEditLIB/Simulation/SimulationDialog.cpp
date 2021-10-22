@@ -535,6 +535,8 @@ void SimulationDialog::setUpForm()
   mpVariableFilterTextBox = new QLineEdit(".*");
   // Protected Variabels
   mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
+  // ignore hide result
+  mpIgnoreHideResultCheckBox = new QCheckBox(tr("Ignore HideResult"));
   // Equidistant time grid
   mpEquidistantTimeGridCheckBox = new QCheckBox(tr("Equidistant Time Grid"));
   // store variables at events
@@ -554,9 +556,10 @@ void SimulationDialog::setUpForm()
   pOutputTabLayout->addWidget(mpVariableFilterLabel, 4, 0);
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 4, 1);
   pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 6, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 7, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 8, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpIgnoreHideResultCheckBox, 6, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 7, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 8, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 9, 0, 1, 2);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
@@ -822,6 +825,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpSinglePrecisionCheckBox->setChecked(true);
           } else if (simulationFlag.compare("emit_protected") == 0) {
             mpProtectedVariablesCheckBox->setChecked(true);
+          } else if (simulationFlag.compare("ignoreHideResult") == 0) {
+            mpIgnoreHideResultCheckBox->setChecked(true);
           } else if (simulationFlag.compare("f") == 0) {
             mpModelSetupFileTextBox->setText(value);
           } else if (simulationFlag.compare("iif") == 0) {
@@ -1081,6 +1086,8 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpVariableFilterTextBox->setText(simulationOptions.getVariableFilter());
   // Protected Variabels
   mpProtectedVariablesCheckBox->setChecked(simulationOptions.getProtectedVariables());
+  // ignore HideResult
+  mpIgnoreHideResultCheckBox->setChecked(simulationOptions.getIgnoreHideResult());
   // Equidistant time grid
   mpEquidistantTimeGridCheckBox->setChecked(simulationOptions.getEquidistantTimeGrid());
   // store variables at events
@@ -1336,6 +1343,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   }
   simulationOptions.setVariableFilter(mpVariableFilterTextBox->text());
   simulationOptions.setProtectedVariables(mpProtectedVariablesCheckBox->isChecked());
+  simulationOptions.setIgnoreHideResult(mpIgnoreHideResultCheckBox->isChecked());
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
   simulationOptions.setStoreVariablesAtEvents(mpStoreVariablesAtEventsCheckBox->isChecked());
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
@@ -1396,6 +1404,10 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   // emit protected variables
   if (mpProtectedVariablesCheckBox->isChecked()) {
     simulationFlags.append("-emit_protected");
+  }
+  // ignoreHideResult
+  if (mpIgnoreHideResultCheckBox->isChecked()) {
+    simulationFlags.append("-ignoreHideResult");
   }
   // Equidistant time grid
   if (mpEquidistantTimeGridCheckBox->isEnabled() && !mpEquidistantTimeGridCheckBox->isChecked()) {
@@ -1615,6 +1627,9 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   }
   if (mpProtectedVariablesCheckBox->isChecked()) {
     simulationFlags.insert("emit_protected", "()");
+  }
+  if (mpIgnoreHideResultCheckBox->isChecked()) {
+    simulationFlags.insert("ignoreHideResult", "()");
   }
   if (!mpModelSetupFileTextBox->text().isEmpty()) {
     simulationFlags.insert("f", mpModelSetupFileTextBox->text());

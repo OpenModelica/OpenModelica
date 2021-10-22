@@ -578,13 +578,15 @@ QModelIndex VariablesTreeModel::variablesTreeItemIndex(const VariablesTreeItem *
  * \brief VariablesTreeModel::parseInitXml
  * Parses the model_init.xml file and returns the scalar variables information.
  * \param xmlReader
- * \param protectedVariables
+ * \param simulationOptions
  * \param variablesList
  */
-void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, bool protectedVariables, QStringList* variablesList)
+void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList* variablesList)
 {
   // if the variables list is empty then add the xml scalar variables to the list
   bool addVariablesToList = variablesList->isEmpty();
+  bool protectedVariables = simulationOptions.getProtectedVariables();
+  bool ignoreHideResult = simulationOptions.getIgnoreHideResult();
   /* We'll parse the XML until we reach end of it.*/
   while (!xmlReader.atEnd() && !xmlReader.hasError()) {
     /* Read next element.*/
@@ -598,19 +600,17 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, bool protecte
       /* If it's named ScalarVariable, we'll dig the information from there.*/
       if (xmlReader.name() == "ScalarVariable") {
         QHash<QString, QString> scalarVariable = parseScalarVariable(xmlReader);
+        bool hideResultIsTrue = scalarVariable.value("hideResult").compare(QStringLiteral("true")) == 0;
+        // we need the following flag becasuse hideResult value can be empty.
+        bool hideResultIsFalse = scalarVariable.value("hideResult").compare(QStringLiteral("false")) == 0;
         bool isProtected = scalarVariable.value("isProtected").compare(QStringLiteral("true")) == 0;
-        bool hideResult = scalarVariable.value("hideResult").compare(QStringLiteral("true")) == 0;
         /* Skip variables,
-         *   1. Starting with $
-         *   2. Starting with _D_
-         *   3. If hideResult is true
-         *   4. If emit protected flag is false and variable is protected and hideResult is true.
+         *   1. If ignoreHideResult is not set and hideResult is true.
+         *   2. If emit protected flag is false and variable is protected.
          *      If hideResult is false for protected variable then we show it.
          */
-        if (!scalarVariable.value("name").startsWith("$")
-            && !scalarVariable.value("name").startsWith("_D_")
-            && !hideResult
-            && (protectedVariables || (!protectedVariables && (!isProtected || !hideResult)))) {
+        if ((ignoreHideResult || !hideResultIsTrue)
+            && (protectedVariables || (!isProtected || (!ignoreHideResult && hideResultIsFalse)))) {
           mScalarVariablesHash.insert(scalarVariable.value("name"),scalarVariable);
           if (addVariablesToList) {
             variablesList->append(scalarVariable.value("name"));
@@ -719,7 +719,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     if (initFile.open(QIODevice::ReadOnly)) {
       QXmlStreamReader initXmlReader(&initFile);
       readingVariablesFromInitFile = variablesList.isEmpty();
-      parseInitXml(initXmlReader, simulationOptions.getProtectedVariables(), &variablesList);
+      parseInitXml(initXmlReader, simulationOptions, &variablesList);
       initFile.close();
     } else {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
