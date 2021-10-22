@@ -79,6 +79,7 @@ import NFFunction.Slot;
 import Util;
 import Component = NFComponent;
 import InstContext = NFInstContext;
+import NFInstNode.InstNodeType;
 
 public
 type MatchKind = enumeration(
@@ -2650,7 +2651,7 @@ algorithm
 
     case Binding.TYPED_BINDING(bindingExp = exp)
       algorithm
-        (bind_ty, comp_ty) := elaborateBindingType(exp, binding.bindingType, componentType);
+        (bind_ty, comp_ty) := elaborateBindingType(exp, component, binding.bindingType, componentType);
         (exp, ty, ty_match) := matchTypes(bind_ty, comp_ty, exp, true);
 
         if not isValidAssignmentMatch(ty_match) then
@@ -2691,23 +2692,51 @@ function elaborateBindingType
    the binding type and [3] to the component type such that the type mismatch is
    detected."
   input Expression bindingExp;
+  input InstNode component;
   input output Type bindingType;
   input output Type componentType;
 protected
   list<Dimension> dims;
+
+  function isParent
+    input InstNode parent;
+    input InstNode node;
+    output Boolean res;
+  protected
+    InstNode n = InstNode.getDerivedNode(node);
+    InstNode p;
+  algorithm
+    res := match n
+      case InstNode.COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = p))
+        then InstNode.refEqual(parent, n) or isParent(parent, p);
+      case InstNode.COMPONENT_NODE()
+        then InstNode.refEqual(parent, n) or isParent(parent, n.parent);
+      else false;
+    end match;
+  end isParent;
+
 algorithm
   () := match bindingExp
     case Expression.SUBSCRIPTED_EXP()
       algorithm
         bindingType := Expression.typeOf(bindingExp.exp);
 
-        dims := list(
-            match s
-              case Subscript.SPLIT_INDEX() then Type.nthDimension(InstNode.getType(s.node), s.dimIndex);
-              else Dimension.UNKNOWN();
-            end match
-          for s in bindingExp.subscripts);
+        dims := {};
+        for s in bindingExp.subscripts loop
+          dims := match s
+            case Subscript.SPLIT_INDEX()
+              algorithm
+                if isParent(s.node, component) then
+                  dims := Type.nthDimension(InstNode.getType(s.node), s.dimIndex) :: dims;
+                end if;
+              then
+                dims;
 
+            else Dimension.UNKNOWN() :: dims;
+          end match;
+        end for;
+
+        dims := listReverseInPlace(dims);
         componentType := Type.liftArrayLeftList(componentType, dims);
       then
         ();
