@@ -4224,17 +4224,18 @@ algorithm
   (outM, outMT) := adjacencyMatrixDispatchMasked(inSyst.orderedVars, inSyst.removedEqs, inIndxType, inMask, inFunctionTree, isInitial);
 end removedAdjacencyMatrixMasked;
 
-protected function traverseStmts "Author: Frenkel TUD 2012-06
+protected function traverseStmts<ArgT> "Author: Frenkel TUD 2012-06
   traverese DAE.Statement without change possibility."
   input list<DAE.Statement> inStmts;
   input FuncExpType func;
-  input Type_a iextraArg;
-  output Type_a oextraArg;
+  input output ArgT extraArg;
+
   partial function FuncExpType
      input DAE.Exp arg1;
-     input output Type_a arg2;
+     input output ArgT arg2;
   end FuncExpType;
-  replaceable type Type_a subtypeof Any;
+
+protected
   function removeSubscripts
     "kabdelhak: remove left hand side subscripts
      (Modelica Specification v3.5 : 11.1.2)
@@ -4249,152 +4250,130 @@ protected function traverseStmts "Author: Frenkel TUD 2012-06
       else exp;
     end match;
   end removeSubscripts;
+
+  DAE.Exp e,e2;
+  list<DAE.Exp> expl1;
+  DAE.ComponentRef cr;
+  list<DAE.Statement> xs,stmts;
+  DAE.Type tp;
+  DAE.Statement x,ew;
+  Boolean b1;
+  String id1,str;
+  DAE.Else algElse;
 algorithm
-  oextraArg := matchcontinue(inStmts,func,iextraArg)
-    local
-      DAE.Exp e,e2;
-      list<DAE.Exp> expl1;
-      DAE.ComponentRef cr;
-      list<DAE.Statement> xs,stmts;
-      DAE.Type tp;
-      DAE.Statement x,ew;
-      Boolean b1;
-      String id1,str;
-      DAE.Else algElse;
-      Type_a extraArg;
+  for stmt in inStmts loop
+    extraArg := matchcontinue stmt
+      case DAE.STMT_ASSIGN(exp1 = e2,exp = e)
+        equation
+          // kabdelhak: remove left hand side subscripts
+          // (Modelica Specification v3.5 : 11.1.2)
+          // solves ticket #7832
+          extraArg = func(e, extraArg);
+          extraArg = func(removeSubscripts(e2), extraArg);
+        then
+          extraArg;
 
-    case ({},_,extraArg) then extraArg;
+      case DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1, exp = e)
+        equation
+          // kabdelhak: remove left hand side subscripts
+          // (Modelica Specification v3.5 : 11.1.2)
+          // solves ticket #7832
+          extraArg = func(e, extraArg);
+          extraArg = List.fold(list(removeSubscripts(ex) for ex in expl1),func,extraArg);
+        then
+          extraArg;
 
-    case ((DAE.STMT_ASSIGN(exp1 = e2,exp = e)::xs),_,extraArg)
-      equation
-        // kabdelhak: remove left hand side subscripts
-        // (Modelica Specification v3.5 : 11.1.2)
-        // solves ticket #7832
-        extraArg = func(e, extraArg);
-        extraArg = func(removeSubscripts(e2), extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_ASSIGN_ARR(lhs = e2, exp = e)
+        equation
+          // kabdelhak: remove left hand side subscripts
+          // (Modelica Specification v3.5 : 11.1.2)
+          // solves ticket #7832
+          extraArg = func(e, extraArg);
+          extraArg = func(removeSubscripts(e2), extraArg);
+        then
+          extraArg;
 
-    case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1, exp = e)::xs),_,extraArg)
-      equation
-        // kabdelhak: remove left hand side subscripts
-        // (Modelica Specification v3.5 : 11.1.2)
-        // solves ticket #7832
-        extraArg = func(e, extraArg);
-        extraArg = List.fold(list(removeSubscripts(ex) for ex in expl1),func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse)
+        equation
+          extraArg = traverseStmtsElse(algElse,func,extraArg);
+          extraArg = traverseStmts(stmts,func,extraArg);
+          extraArg = func(e, extraArg);
+        then
+          extraArg;
 
-    case ((DAE.STMT_ASSIGN_ARR(lhs = e2, exp = e)::xs),_,extraArg)
-      equation
-        // kabdelhak: remove left hand side subscripts
-        // (Modelica Specification v3.5 : 11.1.2)
-        // solves ticket #7832
-        extraArg = func(e, extraArg);
-        extraArg = func(removeSubscripts(e2), extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_FOR(type_=tp,iter=id1,range=e,statementLst=stmts)
+        equation
+          extraArg = func(e, extraArg);
+          cr = ComponentReference.makeCrefIdent(id1, tp, {});
+          (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
+          extraArg = traverseStmts(stmts,func,extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmtsElse(algElse,func,extraArg);
-        extraArg = traverseStmts(stmts,func,extraArg);
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_PARFOR(type_=tp,iter=id1,range=e,statementLst=stmts)
+        equation
+          extraArg = func(e, extraArg);
+          cr = ComponentReference.makeCrefIdent(id1, tp, {});
+          (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
+          extraArg = traverseStmts(stmts,func,extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_FOR(type_=tp,iter=id1,range=e,statementLst=stmts))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-        cr = ComponentReference.makeCrefIdent(id1, tp, {});
-        (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
-        extraArg = traverseStmts(stmts,func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_WHILE(exp=e,statementLst=stmts)
+        equation
+          extraArg = traverseStmts(stmts,func,extraArg);
+          extraArg = func(e, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_PARFOR(type_=tp,iter=id1,range=e,statementLst=stmts))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-        cr = ComponentReference.makeCrefIdent(id1, tp, {});
-        (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
-        extraArg = traverseStmts(stmts,func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_WHEN(exp=e,statementLst=stmts,elseWhen=NONE())
+        equation
+          extraArg = traverseStmts(stmts,func,extraArg);
+          extraArg = func(e, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_WHILE(exp=e,statementLst=stmts))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts(stmts,func,extraArg);
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_WHEN(exp=e,statementLst=stmts,elseWhen=SOME(ew))
+        equation
+          extraArg = traverseStmts({ew},func,extraArg);
+          extraArg = traverseStmts(stmts,func,extraArg);
+          extraArg = func(e, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_WHEN(exp=e,statementLst=stmts,elseWhen=NONE()))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts(stmts,func,extraArg);
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_ASSERT(cond = e, msg=e2)
+        equation
+          extraArg = func(e, extraArg);
+          extraArg = func(e2, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_WHEN(exp=e,statementLst=stmts,elseWhen=SOME(ew)))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts({ew},func,extraArg);
-        extraArg = traverseStmts(stmts,func,extraArg);
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_TERMINATE(msg = e) then func(e, extraArg);
 
-    case (((DAE.STMT_ASSERT(cond = e, msg=e2))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-        extraArg = func(e2, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_REINIT(var = e,value=e2)
+        equation
+          extraArg = func(e, extraArg);
+          extraArg = func(e2, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_TERMINATE(msg = e))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_NORETCALL(exp = e) then func(e, extraArg);
+      case DAE.STMT_RETURN() then extraArg;
+      case DAE.STMT_BREAK() then extraArg;
+      case DAE.STMT_CONTINUE() then extraArg;
 
-    case (((DAE.STMT_REINIT(var = e,value=e2))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-        extraArg = func(e2, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      // MetaModelica extension. KS
+      case DAE.STMT_FAILURE(body=stmts)
+        then traverseStmts(stmts,func,extraArg);
 
-    case (((DAE.STMT_NORETCALL(exp = e))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case (((DAE.STMT_RETURN())::xs),_,extraArg)
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case (((DAE.STMT_BREAK())::xs),_,extraArg)
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case (((DAE.STMT_CONTINUE())::xs),_,extraArg)
-      then
-        traverseStmts(xs, func, extraArg);
-
-    // MetaModelica extension. KS
-    case (((DAE.STMT_FAILURE(body=stmts))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts(stmts,func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case ((x::_),_,_)
-      equation
-        str = DAEDump.ppStatementStr(x);
-        str = "BackenddAEUtil.traverseStmts not implemented correctly: " + str;
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
-  end matchcontinue;
+      else
+        equation
+          str = DAEDump.ppStatementStr(stmt);
+          str = "BackenddAEUtil.traverseStmts not implemented correctly: " + str;
+          Error.addMessage(Error.INTERNAL_ERROR, {str});
+        then fail();
+    end matchcontinue;
+  end for;
 end traverseStmts;
 
 protected function traverseStmtsElse "
