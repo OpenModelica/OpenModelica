@@ -671,22 +671,6 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 clean-sundials:
 	rm -rf 3rdParty/sundials-5.4.0/build "$(OMBUILDDIR)/include/omc/cpp/sundials" "$(builddir_lib_omc)/libsundials"* "$(builddir_inc)/sundials"
 
-# Build Nox
-nox: 3rdParty/trilinos-nox/CMakeLists.txt $(SUITESPARSE_TARGET)
-	mkdir -p 3rdParty/trilinos-nox/build
-	cd 3rdParty/trilinos-nox/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DOMDEV_DIR="$(OMDEVMSYS)"
-	$(MAKE) -C 3rdParty/trilinos-nox/build install
-	rm -r 3rdParty/trilinos-nox/build/lib/cmake
-	mkdir -p "$(builddir_lib_omc)/cpp"
-	(test `uname` = Darwin || test `uname` = Linux) \
-	  && cp -pf 3rdParty/trilinos-nox/build/lib/* "$(builddir_lib_omc)/cpp" \
-	  || cp -pf 3rdParty/trilinos-nox/build/bin/* "$(builddir_lib_omc)/cpp"
-
-clean-nox:
-	test -d 3rdParty/trilinos-nox/build && cd 3rdParty/trilinos-nox/build && $(MAKE) clean
-	rm -rf $(OMBUILDDIR)/include/omc/cpp/trilinos-nox
-	rm -f $(builddir_lib_omc)/cpp/lib{belos,loca,ml,nox,teuchos}*
-
 # Build libffi
 LIBFFI=3rdParty/libffi
 libffi: $(LIBFFI)

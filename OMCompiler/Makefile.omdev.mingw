@@ -115,7 +115,7 @@ SEMLA_LIB=semla
 SEMLA_CLEAN=semla-clean
 endif
 
-main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall nox getMSVCversion omdev_extra_dlls install-openturns copycppheader copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc suitesparse_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
+main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall getMSVCversion omdev_extra_dlls install-openturns copycppheader copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc suitesparse_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
 
 include Makefile.common
 include Makefile.omsi.common
@@ -496,31 +496,6 @@ $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.
 	(cp -puf 3rdParty/sundials-5.4.0/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
 	mkdir -p $(OMBUILDDIR)/bin/msvc
 	(cp -puf 3rdParty/sundials-5.4.0/build_msvc/lib/*.dll $(OMBUILDDIR)/bin/msvc)
-
-# build trilinos nox
-nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
-	rm -f $(OMBUILDDIR)/lib/omc/msvc/nox*
-	rm -f $(OMBUILDDIR)/bin/nox*
-	#rm -rf 3rdParty/trilinos-nox/build_msvc
-	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
-	# Goto build msvc directory
-	test -d 3rdParty/trilinos-nox
-	mkdir -p 3rdParty/trilinos-nox/build_msvc
-	# Create batch file, that builds with CMake and Visual Studio
-	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
-	echo 'Building trilinos-nox with MSVC'
-	echo @echo on > 3rdParty/trilinos-nox/build_msvc/build.bat
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/trilinos-nox/build_msvc/build.bat
-	echo echo Calling CMake >> 3rdParty/trilinos-nox/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe" -DOMDEV_DIR="$(OMDEVMSYS) ' >> 3rdParty/trilinos-nox/build_msvc/build.bat
-	echo echo Building trilinos-nox >> 3rdParty/trilinos-nox/build_msvc/build.bat
-	echo @echo on >> 3rdParty/trilinos-nox/build_msvc/build.bat
-	echo set MAKE= >> 3rdParty/trilinos-nox/build_msvc/build.bat
-	echo set MAKEFLAGS= >> 3rdParty/trilinos-nox/build_msvc/build.bat
-	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/trilinos-nox/build_msvc/build.bat
-	# Change into directory and run batch file
-	cd ./3rdParty/trilinos-nox/build_msvc; echo "change to 3rdParty/trilinos-nox/build_msvc";\
-	cmd /c build.bat
 
 omcCAPImsvcinstall:
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
