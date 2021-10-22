@@ -88,36 +88,6 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
       }
       /*******************/
     }
-
-#if 0
-    {
-    printf("\nnele_hess = %i, %i",nele_hess,k);
-    FILE *pFile;
-    char buffer[4096];
-    pFile = fopen("hesse_struct.m", "wt");
-    if(pFile == NULL)
-      printf("\n\nError");
-    fprintf(pFile, "%s", "clear H\n");
-    fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
-    fprintf(pFile, "%s", "nz = ");
-    fprintf(pFile, "%i", nele_hess);
-    fprintf(pFile, "%s", "\nnumberVars = ");
-    fprintf(pFile, "%i", optData->dim.NV);
-    fprintf(pFile, "%s", "\nnumberconstraints = ");
-    fprintf(pFile, "%i", m);
-    fprintf(pFile, "%s", "\nNumberOfIntervalls = ");
-    fprintf(pFile, "%i", nsi);
-    fprintf(pFile, "\nH=sparse(%i,%i);", optData->dim.NV,optData->dim.NV);
-    fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
-    for(i=0; i< k; ++i){
-      sprintf(buffer, "H(%i,%i) = 1;\n", iRow[i]+1, iCol[i]+1);
-      fprintf(pFile,"%s", buffer);
-    }
-    fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
-    fprintf(pFile, "%s", "spy(H)\n");
-    }
-    assert(0);
-#endif
   }else if(keepH){
     memcpy(values,optData->oldH,nele_hess*sizeof(double));
   }else{
@@ -127,10 +97,6 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
     const int nJ = optData->dim.nJ;
     modelica_boolean upC;
     modelica_boolean upC2;
-    const int nBoolean = optData->data->modelData->nVariablesBoolean;
-    const int nInteger = optData->data->modelData->nVariablesInteger;
-    const int nReal = optData->dim.nReal;
-    const int nRelations =  optData->data->modelData->nRelations;
     DATA * data = optData->data;
 
     upC = obj_factor != 0;
@@ -145,14 +111,7 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
     optData->dim.iter_updateHessian = 0;
     upC2 = upC && optData->s.mayer;
     upC = upC && optData->s.lagrange;
-
-    memcpy(data->localData[0]->integerVars, optData->i0, nInteger*sizeof(modelica_integer));
-    memcpy(data->localData[0]->booleanVars, optData->b0, nBoolean*sizeof(modelica_boolean));
-    memcpy(data->simulationInfo->integerVarsPre, optData->i0Pre, nInteger*sizeof(modelica_integer));
-    memcpy(data->simulationInfo->booleanVarsPre, optData->b0Pre, nBoolean*sizeof(modelica_boolean));
-    memcpy(data->simulationInfo->realVarsPre, optData->v0Pre, nReal*sizeof(modelica_real));
-    memcpy(data->simulationInfo->relationsPre, optData->rePre, nRelations*sizeof(modelica_boolean));
-    memcpy(data->simulationInfo->relations, optData->re, nRelations*sizeof(modelica_boolean));
+    copy_initial_values(optData, data);
 
     for(ii = 0, k = 0, v = vopt, la = lambda; ii + 1 < nsi; ++ii){
       for(p = 1; p < np1; ++p, v += nv, la += nJ){

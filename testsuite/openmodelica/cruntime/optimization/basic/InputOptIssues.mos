@@ -1,0 +1,61 @@
+// name: InputOptIssues
+// cflags: -d=-newInst
+// status: correct
+
+// task: guard that real discret variables are set
+
+loadModel(Modelica,{"3.2"});
+getErrorString();
+
+loadFile("InputOptIssues.mo");
+getErrorString();
+
+optimize(InputOptIssues.Trapezoid, stopTime=10.0, numberOfIntervals=50, tolerance = 1e-8, simflags="-optimizerNP 1 -s optimization");
+getErrorString();
+
+val(torque, {0,1,2,3,4,5,6,7,8,9,10});
+val(targetPhi, {0,1,2,3,4,5,6,7,8,9,10});
+val(torque2.tau, {0,1,2,3,4,5,6,7,8,9,10});
+val(pow, {0,1,2,3,4,5,6,7,8,9,10});
+val(trapezoid1.y, {0.2,1.2,2.2,3.2,4.2,5.2, 5.4, 5.6, 5.8,6,7.2,8.2,9.2});
+val(angSpeed, {0, 5, 10});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "InputOptIssues.Trapezoid_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'InputOptIssues.Trapezoid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1 -s optimization'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:inertia1.phi(start = 0, nominal = 100, min = -Inf, max = +Inf, init = 0)
+// State[1]:inertia1.w(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// Input[2]:torque(start = 0, nominal = 90, min = -90, max = 90)
+// --------------------------------------------------------
+// number of nonlinear constraints: 1
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit https://github.com/coin-or/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// [Modelica 3.2.3+maint.om/Mechanics/Rotational.mo:2471:7-2471:65:writable] Warning: Parameter inertia1.J has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// {90.0,90.0,55.0241047740795,41.04075758706323,34.60242216404257,-32.98585607543826,-37.96855887785219,-44.74608487310016,-56.17425575296937,-90.0,-90.0}
+// {-0.0,-54.00000053932259,-190.1975011860511,-388.2112789654032,-633.2601751996291,-907.7426818843697,-1159.517183946985,-1374.7678506843,-1552.321893809127,-1674.325496332713,-1710.32549669227}
+// {0.0,0.0,10.0,10.0,0.0,0.0,0.0,10.0,10.0,0.0,0.0}
+// {0.0,8100.000080896142,9000.000089755486,9000.00008955402,9000.000088873398,-9000.00008599359,-9000.000089327559,-9000.000089656573,-9000.000089781792,-8100.000080892903,-0.0}
+// {0.0,2.0,10.0,7.999999999999998,0.0,0.0,0.0,0.0,0.0,0.0,10.0,8.000000000000007,0.0}
+// {0.0,272.8442173945917,0.0}
+// endResult
