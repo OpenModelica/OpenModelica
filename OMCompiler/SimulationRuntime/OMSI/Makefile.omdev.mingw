@@ -89,13 +89,6 @@ else
 	USE_LOGGER_COMMAND=-DUSE_LOGGER:BOOL=OFF
 endif
 
-USE_TRILINOS="false"
-ifeq ($(USE_TRILINOS),"true")
-	USE_TRILINOS_COMMAND=-DUSE_TRILINOS:BOOL=ON
-else
-	USE_TRILINOS_COMMAND=-DUSE_TRILINOS:BOOL=OFF
-endif
-
 USE_KLU="false"
 ifeq ($(USE_KLU),"true")
 	USE_KLU_COMMAND=-DUSE_KLU:BOOL=ON
@@ -145,15 +138,15 @@ endif
 endif
 endif
 
-CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND) 
+CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND)
 
 OMSIBaseMSVC: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Build the OMSI base runtime with MSVC' buildtype: $(BUILDTYPE);
 	#rm -rf Build_MSVC
-	mkdir -p Build_MSVC 
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC/build.bat 
-	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake'  for OMSI base build >> Build_MSVC/build.bat 
+	mkdir -p Build_MSVC
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC/build.bat
+	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake'  for OMSI base build >> Build_MSVC/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp -DLIB_OMC=$(LIB_OMC) -DOMBUILDDIR=$(OMBUILDDIR) -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe" ../' >> Build_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
@@ -161,4 +154,4 @@ OMSIBaseMSVC: getMSVCversion
 	echo echo Running NMake JOM >> Build_MSVC/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC/build.bat
 	cd ./Build_MSVC &&	cmd /c build.bat
-	
+
