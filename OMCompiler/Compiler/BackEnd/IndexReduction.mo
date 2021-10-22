@@ -3534,7 +3534,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> odattr;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       DAE.VariableAttributes dattr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -3682,7 +3682,7 @@ algorithm
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> odattr;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       DAE.VariableAttributes dattr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -3764,7 +3764,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       BackendDAE.Var var;
@@ -3848,7 +3848,7 @@ algorithm
       .DAE.ElementSource source;
       Option<DAE.VariableAttributes> odattr;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       DAE.VariableAttributes dattr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -3945,7 +3945,7 @@ algorithm
       .DAE.ElementSource source,source1;
       Option<DAE.VariableAttributes> odattr;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       DAE.VariableAttributes dattr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -4255,7 +4255,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       BackendDAE.Var var;

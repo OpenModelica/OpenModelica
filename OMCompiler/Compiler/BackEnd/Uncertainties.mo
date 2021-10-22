@@ -3686,7 +3686,7 @@ protected
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
   Option<BackendDAE.TearingSelect> ts;
-  DAE.Exp hideResult;
+  Option<DAE.Exp> hideResult;
   Option<SCode.Comment> cmt;
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
@@ -3712,7 +3712,7 @@ protected
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
   Option<BackendDAE.TearingSelect> ts;
-  DAE.Exp hideResult;
+  Option<DAE.Exp> hideResult;
   Option<SCode.Comment> cmt;
   DAE.ConnectorType ct;
   DAE.VarInnerOuter innerOuter;

@@ -845,7 +845,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       Option<SCode.Comment> comment;
       DAE.Type t;
       DAE.VarVisibility protection;
@@ -871,7 +871,7 @@ algorithm
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
         dae_var_attr = setMinMaxFromEnumeration(t, dae_var_attr);
         ts = BackendDAEUtil.setTearingSelectAttribute(comment);
-        hideResult = BackendDAEUtil.setHideResultAttribute(comment, b, name);
+        hideResult = BackendDAEUtil.setHideResultAttribute(comment, name);
       then
         (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false));
   end match;
@@ -901,7 +901,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       Option<SCode.Comment> comment;
       DAE.Type t;
       DAE.VarVisibility protection;
@@ -936,7 +936,7 @@ algorithm
         eqLst = buildAssertAlgorithms({},source,assrtEqIn);
         // building an algorithm of the assert
         ts = NONE();
-        hideResult = BackendDAEUtil.setHideResultAttribute(comment, b, name);
+        hideResult = BackendDAEUtil.setHideResultAttribute(comment, name);
       then
         (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false), iInlineHT, eqLst);
 
@@ -974,7 +974,7 @@ algorithm
           source                = element.source,
           values                = setMinMaxFromEnumeration(elem.ty, DAEUtil.setProtectedAttr(elem.variableAttributesOption, visibility)),
           tearingSelectOption   = NONE(),
-          hideResult            = BackendDAEUtil.setHideResultAttribute(element.comment, visibility, elem.componentRef),
+          hideResult            = BackendDAEUtil.setHideResultAttribute(element.comment, elem.componentRef),
           comment               = element.comment,
           connectorType         = element.connectorType,
           innerOuter            = DAEUtil.toDAEInnerOuter(element.innerOuter),
@@ -1276,7 +1276,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       Option<SCode.Comment> comment;
       DAE.Type t;
       Absyn.InnerOuter io;
@@ -1296,7 +1296,7 @@ algorithm
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
         ts = NONE();
-        hideResult = DAE.BCONST(false);
+        hideResult = NONE();
       then
         BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false);
   end match;
@@ -1996,7 +1996,7 @@ algorithm
                   varDirection = DAE.BIDIR(), varParallelism = DAE.NON_PARALLEL(),
                   varType = DAE.T_CLOCK_DEFAULT, bindExp = NONE(), tplExp = NONE(),
                   arryDim = {}, source = DAE.emptyElementSource,
-                  values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()), hideResult = DAE.BCONST(false),
+                  values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()), hideResult = NONE(),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
                   innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = true ) :: inVars;
   outEqs := BackendDAE.EQUATION( exp = DAE.CREF(componentRef = cr, ty = DAE.T_CLOCK_DEFAULT),

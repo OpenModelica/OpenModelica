@@ -279,7 +279,7 @@ package SimCodeVar
       list<String> numArrayElement;
       Boolean isValueChangeable;
       Boolean isProtected;
-      Boolean hideResult;
+      Option<Boolean> hideResult;
       Option<String> matrixName;
       Option<Variability> variability "FMI-2.0 variabilty attribute";
       Option<Initial> initial_ "FMI-2.0 initial attribute";
