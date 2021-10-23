@@ -36,6 +36,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
     int refIdx = -1;
     boost::optional<int> refIdxOpt;
     std::regex filterRegex(_globalSettings->getVariableFilter());
+    EmitResults emitResults = _globalSettings->getEmitResults();
     try
     {
       ptree tree;
@@ -70,16 +71,18 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
           bool isAlias = aliasInfo.compare("alias") == 0;
           bool isNegatedAlias = aliasInfo.compare("negatedAlias") == 0;
 
-          bool emitResult = std::regex_match(name, filterRegex);
-          if (_globalSettings->getEmitResults() == EMIT_NONE)
-            emitResult = false;
-          else if (_globalSettings->getEmitResults() != EMIT_ALL)
-          {
-            if (name.substr(0, 3) == "_D_")
-              emitResult = false;
-            std::string hideResultInfo = vars.second.get<std::string>("<xmlattr>.hideResult");
-            if (hideResultInfo.compare("true") == 0)
-              emitResult = false;
+          bool emitResult = false;
+          if (emitResults != EMIT_NONE) {
+            emitResult = std::regex_match(name, filterRegex);
+            if (emitResults != EMIT_ALL) {
+              boost::optional<string> isProtectedOpt = vars.second.get_optional<string>("<xmlattr>.isProtected");
+              bool isProtected = isProtectedOpt && *isProtectedOpt == "true";
+              boost::optional<string> hideResultOpt = vars.second.get_optional<string>("<xmlattr>.hideResult");
+              bool hideResultIsTrue = hideResultOpt && *hideResultOpt == "true";
+              bool hideResultIsFalse = hideResultOpt && *hideResultOpt == "false";
+              emitResult &= emitResults == EMIT_HIDDEN || !hideResultIsTrue;
+              emitResult &= emitResults == EMIT_PROTECTED || (!isProtected || (emitResults != EMIT_HIDDEN && hideResultIsFalse));
+            }
           }
 
           FOREACH(ptree::value_type const& var, vars.second.get_child(""))
