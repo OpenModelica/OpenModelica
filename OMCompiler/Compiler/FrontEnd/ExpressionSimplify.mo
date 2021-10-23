@@ -4783,13 +4783,6 @@ algorithm
       equation
         true = Expression.expEqual(e1,e2);
       then Expression.makePureBuiltinCall("tanh",{e1},ty);
-    // e1/tanh(e2) => e1*cos(e2)/sin(e2)
-    case(_,op2 as DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("tanh"),expLst={e2}),_,_)
-      equation
-        e3 = Expression.makePureBuiltinCall("sinh",{e2},ty);
-        e4 = Expression.makePureBuiltinCall("cosh",{e2},ty);
-        e = DAE.BINARY(e4,op2,e3);
-      then DAE.BINARY(e1,DAE.MUL(ty), e);
     // tanh(e2)/sinh(e2) => 1.0/cosh(e2)
     case(_,op2 as DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("tanh"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("sinh"),expLst={e2}),_,_)
       equation
