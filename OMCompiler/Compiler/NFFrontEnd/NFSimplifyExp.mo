@@ -96,6 +96,7 @@ algorithm
     case Expression.UNBOX() then Expression.UNBOX(simplify(exp.exp), exp.ty);
     case Expression.SUBSCRIPTED_EXP() then simplifySubscriptedExp(exp);
     case Expression.TUPLE_ELEMENT() then simplifyTupleElement(exp);
+    case Expression.RECORD_ELEMENT() then simplifyRecordElement(exp);
     case Expression.BOX() then Expression.BOX(simplify(exp.exp));
     case Expression.MUTABLE() then simplify(Mutable.access(exp.exp));
     else exp;
@@ -919,6 +920,21 @@ algorithm
   e := simplify(e);
   tupleExp := Expression.tupleElement(e, ty, index);
 end simplifyTupleElement;
+
+function simplifyRecordElement
+  input output Expression exp;
+protected
+  Expression e, e2;
+  Integer idx;
+  Type ty;
+algorithm
+  Expression.RECORD_ELEMENT(e, idx, _, ty) := exp;
+  e2 := simplify(e);
+
+  if not referenceEq(e, e2) then
+    exp := Expression.nthRecordElement(idx, e2);
+  end if;
+end simplifyRecordElement;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;

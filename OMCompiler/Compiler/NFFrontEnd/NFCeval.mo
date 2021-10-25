@@ -639,25 +639,21 @@ function makeComponentBinding
   input EvalTarget target;
   output Binding binding;
 protected
-  ClassTree tree;
-  array<InstNode> comps;
-  list<Expression> fields;
-  Type ty, exp_ty;
+  Type ty;
   InstNode rec_node;
   Expression exp;
-  ComponentRef rest_cr;
 algorithm
-  binding := matchcontinue (component, cref)
+  binding := matchcontinue component
     // A record field without an explicit binding, evaluate the parent's binding
     // if it has one and fetch the binding from it instead.
-    case (_, _)
+    case _
       algorithm
         exp := makeRecordFieldBindingFromParent(cref, target);
       then
         Binding.CEVAL_BINDING(exp);
 
     // A record component without an explicit binding, create one from its children.
-    case (Component.TYPED_COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node))), _)
+    case Component.TYPED_COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node)))
       algorithm
         exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
         binding := Binding.CEVAL_BINDING(exp);
@@ -669,11 +665,13 @@ algorithm
         binding;
 
     // A record array component without an explicit binding, create one from its children.
-    case (Component.TYPED_COMPONENT(ty = ty as Type.ARRAY(elementType =
-            Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node)))), _)
+    case Component.TYPED_COMPONENT(ty = Type.ARRAY(elementType = ty as
+        Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node))))
       algorithm
-        exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
-        exp := splitRecordArrayExp(exp);
+        exp := Expression.mapCrefScalars(Expression.fromCref(cref),
+          function makeRecordBindingExp(typeNode = component.classInst,
+            recordNode = rec_node, recordType = ty));
+
         binding := Binding.CEVAL_BINDING(exp);
 
         if not ComponentRef.hasSubscripts(cref) then
@@ -696,7 +694,6 @@ protected
   InstContext.Type exp_context;
   Binding binding;
   Component comp;
-  list<Subscript> subs;
 algorithm
   parent_cr := ComponentRef.rest(cref);
   parent := ComponentRef.node(parent_cr);
@@ -732,7 +729,6 @@ protected
   ClassTree tree;
   array<InstNode> comps;
   list<Expression> args;
-  list<Record.Field> fields;
   Type ty;
   InstNode c;
   ComponentRef cr;
@@ -757,18 +753,6 @@ algorithm
 
   exp := Expression.makeRecord(InstNode.scopePath(recordNode, includeRoot = true), recordType, args);
 end makeRecordBindingExp;
-
-function splitRecordArrayExp
-  input output Expression exp;
-protected
-  Absyn.Path path;
-  Type ty;
-  list<Expression> expl;
-algorithm
-  Expression.RECORD(path, ty, expl) := exp;
-  exp := Expression.makeRecord(path, Type.arrayElementType(ty), expl);
-  exp := Expression.fillType(ty, exp);
-end splitRecordArrayExp;
 
 function evalTypename
   input Type ty;
