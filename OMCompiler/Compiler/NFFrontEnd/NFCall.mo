@@ -72,6 +72,7 @@ import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
 import Util;
 import InstContext = NFInstContext;
+import ComplexType = NFComplexType;
 
 import Call = NFCall;
 
@@ -2049,7 +2050,8 @@ protected
     output list<tuple<InstNode, Expression>> outIters = {};
   protected
     Expression range;
-    InstNode iter;
+    InstNode iter, range_node;
+    Type ty;
   algorithm
     for i in inIters loop
       if isSome(i.range) then
@@ -2060,7 +2062,16 @@ protected
         range := Expression.EMPTY(Type.UNKNOWN());
       end if;
 
-      (outScope, iter) := Inst.addIteratorToScope(i.name, outScope, info);
+      // If the range is a cref, use it as the iterator type to allow lookup in
+      // the iterator.
+      ty := match range
+        case Expression.CREF(cref = ComponentRef.CREF(node = range_node))
+          guard InstNode.isComponent(range_node)
+          then Type.COMPLEX(Component.classInstance(InstNode.component(range_node)), ComplexType.CLASS());
+        else Type.UNKNOWN();
+      end match;
+
+      (outScope, iter) := Inst.addIteratorToScope(i.name, outScope, info, ty);
       outIters := (iter, range) :: outIters;
     end for;
 

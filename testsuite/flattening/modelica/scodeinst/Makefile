@@ -19,6 +19,8 @@ ArrayConnect1.mo \
 ArrayConnect2.mo \
 ArrayConnect3.mo \
 ArrayConstructorComplex1.mo \
+ArrayConstructorRecord1.mo \
+ArrayConstructorRecord2.mo \
 arrfunc.mo \
 Assert1.mo \
 Assert2.mo \

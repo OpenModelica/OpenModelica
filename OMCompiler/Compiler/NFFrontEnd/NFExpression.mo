@@ -1444,6 +1444,7 @@ public
   end makeSubscriptedExp;
 
   function replaceIterator
+    "Replaces the given iterator with the given value in an expression."
     input output Expression exp;
     input InstNode iterator;
     input Expression iteratorValue;
@@ -1452,16 +1453,43 @@ public
   end replaceIterator;
 
   function replaceIterator2
-    input output Expression exp;
+    input Expression exp;
     input InstNode iterator;
     input Expression iteratorValue;
+    output Expression outExp;
   algorithm
-    exp := match exp
+    outExp := match exp
       local
         InstNode node;
+        ComponentRef cref;
+        list<String> fields;
 
+      // Cref is simple identifier, i
       case CREF(cref = ComponentRef.CREF(node = node))
+        guard ComponentRef.isSimple(exp.cref)
         then if InstNode.refEqual(iterator, node) then iteratorValue else exp;
+
+      // Cref is qualified identifier, i.x
+      case CREF(cref = ComponentRef.CREF())
+        algorithm
+          // Only the first (last in stored order) part of a cref can be an iterator.
+          node := ComponentRef.node(ComponentRef.last(exp.cref));
+
+          if InstNode.refEqual(iterator, node) then
+            // Start with the given value.
+            outExp := iteratorValue;
+
+            // Go down into the record fields using the rest of the cref.
+            fields := list(InstNode.name(n) for n in listRest(ComponentRef.nodes(exp.cref)));
+
+            for f in fields loop
+              outExp := recordElement(f, outExp);
+            end for;
+          else
+            outExp := exp;
+          end if;
+        then
+          outExp;
 
       else exp;
     end match;
@@ -4957,6 +4985,54 @@ public
       else containsShallow(exp, function hasNonArrayIteratorSubscript(iterator = iterator));
     end match;
   end hasNonArrayIteratorSubscript;
+
+  function mapCrefScalars
+    "Takes a cref expression and applies a function to each scalar cref,
+     creating a new expression with the same dimensions as the given cref.
+       Ex: mapCrefScalars(/*Real[2, 2]*/ x, ComponentRef.toString) =>
+           {{'x[1, 1]', 'x[1, 2]'}, {'x[2, 1]', 'x[2, 2]'}}"
+    input Expression crefExp;
+    input MapFn mapFn;
+    output Expression outExp;
+
+    partial function MapFn
+      input ComponentRef cref;
+      output Expression exp;
+    end MapFn;
+  algorithm
+    outExp := ExpandExp.expand(crefExp);
+    outExp := mapCrefScalars2(outExp, mapFn);
+  end mapCrefScalars;
+
+  function mapCrefScalars2
+    input Expression exp;
+    input MapFn mapFn;
+    output Expression outExp;
+
+    partial function MapFn
+      input ComponentRef cref;
+      output Expression exp;
+    end MapFn;
+  protected
+    list<Expression> expl;
+    Type ty;
+    Boolean literal;
+    ComponentRef cref;
+  algorithm
+    outExp := match exp
+      case Expression.ARRAY()
+        guard not listEmpty(exp.elements)
+        algorithm
+          expl := list(mapCrefScalars2(e, mapFn) for e in exp.elements);
+          ty := typeOf(listHead(expl));
+          literal := List.all(expl, isLiteral);
+        then
+          makeExpArray(expl, ty, literal);
+
+      case Expression.CREF() then mapFn(exp.cref);
+      else exp;
+    end match;
+  end mapCrefScalars2;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
