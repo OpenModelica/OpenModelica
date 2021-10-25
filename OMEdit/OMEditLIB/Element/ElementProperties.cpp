@@ -371,9 +371,21 @@ void Parameter::createValueWidget()
         constrainedByClassName = className;
       }
 
+      // add choices if there are any
+      if (mpComponent->hasChoices())
+      {
+          QStringList choices = mpComponent->getChoices();
+          for (i = 0; i < choices.size(); i++) {
+            QString choice = choices[i];
+            mpValueComboBox->addItem(choice, choice);
+          }
+      }
+
+      // do replaceable only if not choicesAllMatching=false
+      // if choicesAllMatching is not defined, consider choicesAllMatching=true
       parentClassName = mpComponent->getComponentInfo()->getParentClassName();
       replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, parentClassName);
-      for (i = 0 ; i < replaceableChoices.size(); i++) {
+      for (i = 0; i < replaceableChoices.size(); i++) {
         replaceableChoice = replaceableChoices[i];
         // if replaceableChoices points to a class in this scope, remove scope
         if (replaceableChoice.startsWith(parentClassName + "."))

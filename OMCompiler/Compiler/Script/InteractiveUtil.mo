@@ -61,6 +61,7 @@ import DAEUtil;
 import DoubleEnded;
 import Dump;
 import Error;
+import ErrorExt;
 import ExpressionDump;
 import ExpressionSimplify;
 import FBuiltin;
@@ -1470,29 +1471,36 @@ algorithm
   end match;
 end getAnnotationsFromConstraintClass;
 
-protected function getElementitemsAnnotationsElArgs
+public function getElementitemsAnnotationsElArgs
 "Helper function to getElementitemsAnnotationsFromItems."
   input list<Absyn.ElementArg> inElementArgs;
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
   input GraphicEnvCache inCache;
+  input Boolean addAnnotationName = true;
   output list<String> outStringLst = {};
   output GraphicEnvCache outCache = inCache;
 protected
   String str, ann_name;
-  Absyn.Exp eq_aexp;
-  DAE.Exp eq_dexp;
+  Absyn.Exp eq_aexp, graphic_exp;
+  DAE.Exp eq_dexp, graphic_dexp;
   DAE.Properties prop;
   SourceInfo info;
   FCore.Cache cache;
   FCore.Graph env, env2;
-  list<Absyn.ElementArg> mod;
+  list<Absyn.ElementArg> mod, stripped_mod, graphic_mod;
   SCode.Element c;
   SCode.Mod smod;
   DAE.Mod dmod;
   DAE.DAElist dae;
+  Boolean is_icon, is_diagram;
+  Absyn.Program graphic_prog;
+  SCode.Element placement_cls;
 algorithm
   for e in listReverse(inElementArgs) loop
+
+    e := AbsynUtil.createChoiceArray(e);
+
     str := matchcontinue e
       case Absyn.MODIFICATION(
           path = Absyn.IDENT(ann_name),
@@ -1517,27 +1525,78 @@ algorithm
           modification = SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())),
           info = info)
         algorithm
-          (cache, env, _, outCache) := buildEnvForGraphicProgram(outCache, mod);
+          if not listMember(ann_name, {"Icon", "Diagram", "choices"}) then
+            (cache, env, _, outCache) := buildEnvForGraphicProgram(outCache, mod);
 
-          (cache, c, env2) := Lookup.lookupClassIdent(cache, inEnv, ann_name);
-          smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(mod,
-            Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-          (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(),
-            smod, false, Mod.COMPONENT(ann_name), AbsynUtil.dummyInfo);
+            (cache, c, env2) := Lookup.lookupClassIdent(cache, inEnv, ann_name);
+            smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(mod,
+              Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+            (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(),
+              smod, false, Mod.COMPONENT(ann_name), AbsynUtil.dummyInfo);
 
-          c := SCodeUtil.classSetPartial(c, SCode.NOT_PARTIAL());
-          (_, _, _, _, dae) := Inst.instClass(cache, env2, InnerOuter.emptyInstHierarchy,
-            UnitAbsyn.noStore, dmod, DAE.NOPRE(), c, {}, false,
-            InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+            c := SCodeUtil.classSetPartial(c, SCode.NOT_PARTIAL());
+            (_, _, _, _, dae) := Inst.instClass(cache, env2, InnerOuter.emptyInstHierarchy,
+              UnitAbsyn.noStore, dmod, DAE.NOPRE(), c, {}, false,
+              InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
-          str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+            str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+          else // icon, diagram or choices
+            is_icon := ann_name == "Icon";
+            is_diagram := ann_name == "Diagram" or ann_name == "choices";
+
+            (stripped_mod, graphic_mod) := AbsynUtil.stripGraphicsAndInteractionModification(mod);
+            ErrorExt.setCheckpoint("buildEnvForGraphicProgram");
+            // GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath)
+            try
+            (cache, env, graphic_prog, _) :=
+              buildEnvForGraphicProgram(inCache, mod);
+              ErrorExt.rollBack("buildEnvForGraphicProgram");
+            else
+              ErrorExt.delCheckpoint("buildEnvForGraphicProgram");
+              // Fallback to only the graphical primitives left in the program
+              (cache, env, graphic_prog, _) := buildEnvForGraphicProgram(inCache, {});
+            end try;
+
+            smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
+              SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+            (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy,
+              DAE.NOPRE(), smod, false, Mod.COMPONENT(ann_name), info);
+
+            placement_cls := AbsynToSCode.translateClass(getClassInProgram(ann_name, graphic_prog));
+            (cache, _, _, _, dae) :=
+              Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
+                dmod, DAE.NOPRE(), placement_cls, {}, false, InstTypes.TOP_CALL(),
+                ConnectionGraph.EMPTY, Connect.emptySet);
+            str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+
+            // Icon and Diagram contain graphic primitives which must be handled
+            // specially.
+            if is_icon or is_diagram then
+              try
+                {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod =
+                  Absyn.EQMOD(exp = graphic_exp))))} := graphic_mod;
+                (_, graphic_dexp, prop) := StaticScript.elabGraphicsExp(cache, env,
+                  graphic_exp, false, DAE.NOPRE(), info);
+
+                if is_icon then
+                  ErrorExt.setCheckpoint("getAnnotationString: Icon");
+                  (cache, graphic_dexp) :=
+                    Ceval.cevalIfConstant(cache, env, graphic_dexp, prop, false, info);
+                  graphic_dexp := ExpressionSimplify.simplify1(graphic_dexp);
+                  ErrorExt.rollBack("getAnnotationString: Icon");
+                end if;
+
+                str := str + "," + ExpressionDump.printExpStr(graphic_dexp);
+              else
+              end try;
+            end if;
+
+            Print.clearErrorBuf() "This is to clear the error-msg generated by the annotations.";
+          end if;
         then
-          stringAppendList({ann_name, "(", str, ")"});
-
-      case Absyn.MODIFICATION(
-          path = Absyn.IDENT(ann_name),
-          modification = SOME(Absyn.CLASSMOD(_, Absyn.NOMOD())))
-        then stringAppendList({ann_name, "(error)"});
+          if addAnnotationName
+          then stringAppendList({ann_name, "(", str, ")"})
+          else str;
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(ann_name), modification = NONE())
         algorithm
@@ -1551,7 +1610,18 @@ algorithm
 
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
-          stringAppendList({ann_name, "(", str, ")"});
+          if addAnnotationName
+          then stringAppendList({ann_name, "(", str, ")"})
+          else str;
+
+      case Absyn.MODIFICATION(
+          path = Absyn.IDENT(ann_name),
+          info = info)
+        algorithm
+          str := "error evaluating: annotation(" + Dump.unparseElementArgStr(e) + ")";
+          str := Util.escapeQuotes(str);
+        then
+          stringAppendList({ann_name, "(\"", str, "\")"});
 
     end matchcontinue;
 

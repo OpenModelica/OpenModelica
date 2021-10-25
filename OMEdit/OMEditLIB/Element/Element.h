@@ -220,6 +220,11 @@ public:
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
   void setChoicesAnnotation(QStringList choicesAnnotation) {mChoicesAnnotation = choicesAnnotation;}
   QStringList getChoicesAnnotation() {return mChoicesAnnotation;}
+  void setChoicesAllMatchingAnnotation(QStringList choicesAllMatching) {mChoicesAllMatchingAnnotation = choicesAllMatching;}
+  QStringList getChoicesAllMatchingAnnotation() {return mChoicesAllMatchingAnnotation;}
+  void setChoices(QStringList choices) {mChoices = choices;}
+  QStringList getChoices() {return mChoices;}
+  bool hasChoices() {return (mChoices.size() > 0);}
   CoOrdinateSystem getCoOrdinateSystem() const;
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
@@ -298,6 +303,8 @@ private:
   QString mTransformationString;
   QStringList mDialogAnnotation;
   QStringList mChoicesAnnotation;
+  QStringList mChoicesAllMatchingAnnotation;
+  QStringList mChoices;
   QString mParameterValue;
   LineAnnotation *mpNonExistingElementLine;
   RectangleAnnotation *mpDefaultElementRectangle;

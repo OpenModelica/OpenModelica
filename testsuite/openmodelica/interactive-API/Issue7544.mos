@@ -23,19 +23,19 @@ getIconAnnotation(Issue7544.Radial); getErrorString();
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(Issue7544.Default)
-// {-,-,-,-,-,-,-,, {Rectangle(true, {0.0, 0.0}, 0.0, {28, 108, 200}, {28, 108, 200}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-80.0, 80.0}, {0.0, 0.0}}, 0.0), Ellipse(true, {0.0, 0.0}, 0.0, {238, 46, 47}, {238, 46, 47}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-74.0, 76.0}, {-10.0, 8.0}}, 0.0, 270.0, EllipseClosure.Radial)}}
+// {-,-,-,-,-,-,-,,{Rectangle(true, {0.0, 0.0}, 0.0, {28, 108, 200}, {28, 108, 200}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-80.0, 80.0}, {0.0, 0.0}}, 0.0), Ellipse(true, {0.0, 0.0}, 0.0, {238, 46, 47}, {238, 46, 47}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-74.0, 76.0}, {-10.0, 8.0}}, 0.0, 270.0, EllipseClosure.Radial)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(Issue7544.None)
-// {-,-,-,-,-,-,-,, {Rectangle(true, {0.0, 0.0}, 0.0, {28, 108, 200}, {28, 108, 200}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-80.0, 80.0}, {0.0, 0.0}}, 0.0), Ellipse(true, {0.0, 0.0}, 0.0, {238, 46, 47}, {238, 46, 47}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-74.0, 76.0}, {-10.0, 8.0}}, 0.0, 270.0, EllipseClosure.None)}}
+// {-,-,-,-,-,-,-,,{Rectangle(true, {0.0, 0.0}, 0.0, {28, 108, 200}, {28, 108, 200}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-80.0, 80.0}, {0.0, 0.0}}, 0.0), Ellipse(true, {0.0, 0.0}, 0.0, {238, 46, 47}, {238, 46, 47}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-74.0, 76.0}, {-10.0, 8.0}}, 0.0, 270.0, EllipseClosure.None)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(Issue7544.Chord)
-// {-,-,-,-,-,-,-,, {Rectangle(true, {0.0, 0.0}, 0.0, {28, 108, 200}, {28, 108, 200}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-80.0, 80.0}, {0.0, 0.0}}, 0.0), Ellipse(true, {0.0, 0.0}, 0.0, {238, 46, 47}, {238, 46, 47}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-74.0, 76.0}, {-10.0, 8.0}}, 0.0, 270.0, EllipseClosure.Chord)}}
+// {-,-,-,-,-,-,-,,{Rectangle(true, {0.0, 0.0}, 0.0, {28, 108, 200}, {28, 108, 200}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-80.0, 80.0}, {0.0, 0.0}}, 0.0), Ellipse(true, {0.0, 0.0}, 0.0, {238, 46, 47}, {238, 46, 47}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-74.0, 76.0}, {-10.0, 8.0}}, 0.0, 270.0, EllipseClosure.Chord)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(Issue7544.Radial)
-// {-,-,-,-,-,-,-,, {Rectangle(true, {0.0, 0.0}, 0.0, {28, 108, 200}, {28, 108, 200}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-80.0, 80.0}, {0.0, 0.0}}, 0.0), Ellipse(true, {0.0, 0.0}, 0.0, {238, 46, 47}, {238, 46, 47}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-74.0, 76.0}, {-10.0, 8.0}}, 0.0, 270.0, EllipseClosure.Radial)}}
+// {-,-,-,-,-,-,-,,{Rectangle(true, {0.0, 0.0}, 0.0, {28, 108, 200}, {28, 108, 200}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-80.0, 80.0}, {0.0, 0.0}}, 0.0), Ellipse(true, {0.0, 0.0}, 0.0, {238, 46, 47}, {238, 46, 47}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-74.0, 76.0}, {-10.0, 8.0}}, 0.0, 270.0, EllipseClosure.Radial)}}
 // Evaluating: getErrorString()
 // ""
 // endResult
