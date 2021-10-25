@@ -870,10 +870,7 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
   }
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeItem->getNameStructure());
   if (!checkModelResult.isEmpty()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                tr("Check of %1 completed successfully.").arg(pLibraryTreeItem->getNameStructure()),
-                                                Helper::scriptingKind, Helper::notificationLevel));
-    QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeItem->getNameStructure());
+    QString windowTitle = QString("%1 - %2").arg(Helper::checkModel, pLibraryTreeItem->getNameStructure());
     InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
     pInformationDialog->show();
   }
