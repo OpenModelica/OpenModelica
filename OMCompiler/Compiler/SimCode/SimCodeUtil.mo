@@ -7045,18 +7045,18 @@ algorithm
   nominalValueEquations := matchcontinue (syst, shared, acc)
     local
       BackendDAE.Variables vars, av;
-      list<BackendDAE.Equation> nominalValueEquationsTmp2;
+      list<BackendDAE.Equation> nominalValueEquationsTmp;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
+      BackendDAE.Variables globalKnownVars;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av), (uniqueEqIndex, simeqns)) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av, globalKnownVars=globalKnownVars), (uniqueEqIndex, simeqns)) equation
       // vars
-      ((nominalValueEquationsTmp2, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromNominal, ({}, av));
-      nominalValueEquationsTmp2 = listReverse(nominalValueEquationsTmp2);
+      ((nominalValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromNominal, ({}, av));
+      ((nominalValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(globalKnownVars, createInitialAssignmentsFromNominal, (nominalValueEquationsTmp, av));
+      nominalValueEquationsTmp = listReverse(nominalValueEquationsTmp);
 
-      // kvars -> see createStartValueEquations
-
-      (simeqns1, uniqueEqIndex) = List.mapFold(nominalValueEquationsTmp2, dlowEqToSimEqSystem, uniqueEqIndex);
+      (simeqns1, uniqueEqIndex) = List.mapFold(nominalValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
     else equation
@@ -7074,18 +7074,18 @@ algorithm
   minValueEquations := matchcontinue (syst, shared, acc)
     local
       BackendDAE.Variables vars, av;
-      list<BackendDAE.Equation> minValueEquationsTmp2;
+      list<BackendDAE.Equation> minValueEquationsTmp;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
+      BackendDAE.Variables globalKnownVars;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av), (uniqueEqIndex, simeqns)) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av, globalKnownVars=globalKnownVars), (uniqueEqIndex, simeqns)) equation
       // vars
-      ((minValueEquationsTmp2, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromMin, ({}, av));
-      minValueEquationsTmp2 = listReverse(minValueEquationsTmp2);
+      ((minValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromMin, ({}, av));
+      ((minValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(globalKnownVars, createInitialAssignmentsFromMin, (minValueEquationsTmp, av));
+      minValueEquationsTmp = listReverse(minValueEquationsTmp);
 
-      // kvars -> see createStartValueEquations
-
-      (simeqns1, uniqueEqIndex) = List.mapFold(minValueEquationsTmp2, dlowEqToSimEqSystem, uniqueEqIndex);
+      (simeqns1, uniqueEqIndex) = List.mapFold(minValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
     else equation
@@ -7103,18 +7103,18 @@ algorithm
   maxValueEquations := matchcontinue (syst, shared, acc)
     local
       BackendDAE.Variables vars, av;
-      list<BackendDAE.Equation> maxValueEquationsTmp2;
+      list<BackendDAE.Equation> maxValueEquationsTmp;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
+      BackendDAE.Variables globalKnownVars;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av), (uniqueEqIndex, simeqns)) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av, globalKnownVars=globalKnownVars), (uniqueEqIndex, simeqns)) equation
       // vars
-      ((maxValueEquationsTmp2, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromMax, ({}, av));
-      maxValueEquationsTmp2 = listReverse(maxValueEquationsTmp2);
+      ((maxValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromMax, ({}, av));
+      ((maxValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(globalKnownVars, createInitialAssignmentsFromMax, (maxValueEquationsTmp, av));
+      maxValueEquationsTmp = listReverse(maxValueEquationsTmp);
 
-      // kvars -> see createStartValueEquationseqAttr
-
-      (simeqns1, uniqueEqIndex) = List.mapFold(maxValueEquationsTmp2, dlowEqToSimEqSystem, uniqueEqIndex);
+      (simeqns1, uniqueEqIndex) = List.mapFold(maxValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
     else equation
