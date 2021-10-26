@@ -57,6 +57,8 @@ void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
         dest->dim_size[i] = va_arg(ap, _index_t);
     }
 
+    dest->flexible = 0;
+
     /* uncomment for debugging!
     fprintf(stderr, "created array ndims[%d] (", ndims);
     for(i = 0; i < ndims; ++i) {
@@ -212,6 +214,7 @@ void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data)
     dest->dim_size = size_alloc(1);
     dest->dim_size[0] = n;
     dest->data = data;
+    dest->flexible = 0;
 }
 
 void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data)
@@ -221,6 +224,7 @@ void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data)
     dest->dim_size[0] = r;
     dest->dim_size[1] = c;
     dest->data = data;
+    dest->flexible = 0;
 }
 
 size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
@@ -235,6 +239,8 @@ size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
         dest->dim_size[i] = va_arg(ap, _index_t);
         nr_of_elements *= dest->dim_size[i];
     }
+
+    dest->flexible = 0;
 
     /* uncomment for debugging!
     fprintf(stderr, "alloc array ndims[%d] (", ndims);
@@ -259,6 +265,8 @@ void clone_base_array_spec(const base_array_t *source, base_array_t *dest)
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = source->dim_size[i];
     }
+
+    dest->flexible = source->flexible;
 }
 
 /*
