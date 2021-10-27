@@ -1440,9 +1440,17 @@ void LibraryTreeModel::addModelicaLibraries()
  * \param row
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved,
-                                                         bool isSystemLibrary, bool load, int row, bool activateAccessAnnotations)
+                                                         bool isSystemLibrary, bool load, int row, bool loadingMOL)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
+
+  bool activateAccessAnnotations = false;
+  QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
+  if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Always
+      || (loadingMOL && pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Loading)) {
+    activateAccessAnnotations = true;
+  }
+
   // check if is in non-existing classes.
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
@@ -2521,8 +2529,7 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
         pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
       }
       if (pParentLibraryTreeItem) {
-        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1,
-                                  pParentLibraryTreeItem->isAccessAnnotationsEnabled());
+        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1, pParentLibraryTreeItem->isAccessAnnotationsEnabled());
       }
     }
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
@@ -4188,13 +4195,8 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
           MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
           MainWindow::instance()->showProgressBar();
         }
-        bool activateAccessAnnotations = false;
-        QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
-        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Always) {
-          activateAccessAnnotations = true;
-        }
         foreach (QString model, classesList) {
-          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1, activateAccessAnnotations);
+          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1);
           mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
           if (showProgress) {
             MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
@@ -4275,13 +4277,8 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
           MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
           MainWindow::instance()->showProgressBar();
         }
-        bool activateAccessAnnotations = true;
-        QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
-        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Never) {
-          activateAccessAnnotations = false;
-        }
         foreach (QString model, classesList) {
-          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true, -1, activateAccessAnnotations);
+          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true, -1, true);
           mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
           if (showProgress) {
             MainWindow::instance()->getProgressBar()->setValue(++progressvalue);

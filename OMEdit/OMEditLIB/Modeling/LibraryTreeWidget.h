@@ -290,7 +290,7 @@ public:
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries();
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                         bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
+                                         bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
