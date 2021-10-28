@@ -911,6 +911,8 @@ QStringList StringHandler::getStrings(QString value)
     } else if (str_char) {
       if (c == str_char) {
         str_char = 0;
+      } else if (c == '\\') {
+        escaped = true;
       }
       continue;
     }
