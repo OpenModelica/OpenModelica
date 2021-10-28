@@ -94,6 +94,7 @@ import ArrayConnections = NFArrayConnections;
 import UnorderedMap;
 import UnorderedSet;
 import Inline = NFInline;
+import ExpandExp = NFExpandExp;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -594,7 +595,7 @@ algorithm
       binding_exp := SimplifyExp.simplify(binding_exp);
     end if;
 
-    binding_exp := Expression.splitRecordCref(binding_exp);
+    binding_exp := splitRecordCref(binding_exp);
 
     // TODO: This will probably not work so well if the binding is an array that
     //       contains record non-literals. In that case we should probably
@@ -626,6 +627,44 @@ algorithm
     (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   end if;
 end flattenComplexComponent;
+
+function splitRecordCref
+  input Expression exp;
+  output Expression outExp;
+algorithm
+  outExp := ExpandExp.expand(exp);
+
+  outExp := match outExp
+    local
+      InstNode cls;
+      array<InstNode> comps;
+      ComponentRef cr, field_cr;
+      Type ty;
+      list<Expression> fields;
+
+    case Expression.CREF(ty = Type.COMPLEX(cls = cls), cref = cr)
+      algorithm
+        comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(cls)));
+        fields := {};
+
+        for i in arrayLength(comps):-1:1 loop
+          ty := InstNode.getType(comps[i]);
+          field_cr := ComponentRef.prefixCref(comps[i], ty, {}, cr);
+          field_cr := flattenCref(field_cr, cr);
+          fields := Expression.fromCref(field_cr) :: fields;
+        end for;
+      then
+        Expression.makeRecord(InstNode.scopePath(cls), outExp.ty, fields);
+
+    case Expression.ARRAY()
+      algorithm
+        outExp.elements := list(splitRecordCref(e) for e in outExp.elements);
+      then
+        outExp;
+
+    else exp;
+  end match;
+end splitRecordCref;
 
 function flattenArray
   input Class cls;

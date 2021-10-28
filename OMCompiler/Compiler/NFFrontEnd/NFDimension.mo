@@ -36,6 +36,7 @@ protected
   import Prefixes = NFPrefixes;
   import List;
   import SimplifyExp = NFSimplifyExp;
+  import Ceval = NFCeval;
 
 public
   import Absyn.{Exp, Path, Subscript};
@@ -46,6 +47,7 @@ public
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;
   import Inst = NFInst;
+  import NFCeval.EvalTarget;
 
   record RAW_DIM
     Absyn.Subscript dim;
@@ -480,6 +482,17 @@ public
       arg := foldExp(dim, func, arg);
     end for;
   end foldExpList;
+
+  function eval
+    input Dimension dim;
+    input EvalTarget target = EvalTarget.IGNORE_ERRORS();
+    output Dimension outDim;
+  algorithm
+    outDim := match dim
+      case EXP() then fromExp(Ceval.evalExp(dim.exp, target), dim.var);
+      else dim;
+    end match;
+  end eval;
 
   function simplify
     input output Dimension dim;
