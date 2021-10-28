@@ -43,6 +43,7 @@
 #include "ExtentAnnotation.h"
 #include "RealAnnotation.h"
 #include "PointAnnotation.h"
+#include "StringAnnotation.h"
 
 #include <QGraphicsItem>
 #include <QSettings>
@@ -188,7 +189,7 @@ public:
   void setClosure(StringHandler::EllipseClosure closure) {mClosure = closure;}
   StringHandler::EllipseClosure getClosure() {return mClosure;}
   void setTextString(QString textString);
-  QString getTextString() {return mOriginalTextString;}
+  QString getTextString() {return mTextString;}
   void setFontName(QString fontName) {mFontName = fontName;}
   QString getFontName() {return mFontName;}
   void setFontSize(qreal fontSize) {mFontSize = fontSize;}
@@ -274,8 +275,7 @@ protected:
   RealAnnotation mStartAngle;
   RealAnnotation mEndAngle;
   StringHandler::EllipseClosure mClosure;
-  QString mOriginalTextString;
-  QString mTextString;
+  StringAnnotation mTextString;
   RealAnnotation mFontSize;
   QString mFontName;
   QList<StringHandler::TextStyle> mTextStyles;

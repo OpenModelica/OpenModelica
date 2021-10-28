@@ -18,13 +18,23 @@ class Element;
  * the static or dynamic expression for a certain time point when parse, update
  * or reset is called.
  *
- * parse and reset will call fromExp with the static expression (the expression
- * itself or the first argument if it's a DynamicSelect call), while update
- * calls fromExp with the dynamic expression (second argument if it's a
- * DynamicSelect call) evaluated for a given time point.
+ * parse will call fromExp with the static expression (the expression itself or
+ * the first argument if it's a DynamicSelect call), while update calls fromExp
+ * with the dynamic expression (second argument if it's a DynamicSelect call)
+ * evaluated for a given time point. reset will call fromExp with either the
+ * static or the dynamic expression depending on whether the expression is a
+ * DynamicSelect call and update has been called.
  */
 class DynamicAnnotation
 {
+  public:
+    enum State
+    {
+      None,
+      Static,
+      Dynamic
+    };
+
   public:
     DynamicAnnotation();
     DynamicAnnotation(const QString &str);
@@ -40,7 +50,7 @@ class DynamicAnnotation
 
   protected:
     FlatModelica::Expression mExp;
-    bool mDynamic = false;
+    State mState = State::None;
 };
 
 #endif /* DYNAMICANNOTATION_H */

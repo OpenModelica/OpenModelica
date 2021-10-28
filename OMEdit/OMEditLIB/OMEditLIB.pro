@@ -142,6 +142,7 @@ SOURCES += Util/Helper.cpp \
   Annotations/ExtentAnnotation.cpp \
   Annotations/PointAnnotation.cpp \
   Annotations/RealAnnotation.cpp \
+  Annotations/StringAnnotation.cpp \
   Element/ElementProperties.cpp \
   Element/Transformation.cpp \
   Modeling/DocumentationWidget.cpp \
@@ -242,6 +243,7 @@ HEADERS  += Util/Helper.h \
   Annotations/ExtentAnnotation.h \
   Annotations/PointAnnotation.h \
   Annotations/RealAnnotation.h \
+  Annotations/StringAnnotation.h \
   Element/ElementProperties.h \
   Element/Transformation.h \
   Modeling/DocumentationWidget.h \

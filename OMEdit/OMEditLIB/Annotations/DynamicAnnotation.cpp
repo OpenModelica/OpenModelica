@@ -21,7 +21,7 @@ void DynamicAnnotation::parse(const QString &str)
 {
   try {
     mExp = FlatModelica::Expression::parse(str);
-    mDynamic = mExp.isCall("DynamicSelect");
+    mState = mExp.isCall("DynamicSelect") ? State::Static : State::None;
     reset();
   } catch (const std::exception &e) {
     qDebug() << "Failed to parse annotation: " << str;
@@ -40,7 +40,9 @@ void DynamicAnnotation::parse(const QString &str)
  */
 bool DynamicAnnotation::update(double time, Element *parent)
 {
-  if (mDynamic) {
+  if (mState != State::None) {
+    mState = State::Dynamic;
+
     fromExp(mExp.arg(1).evaluate([&] (std::string name) {
       auto vname = QString::fromStdString(name);
 
@@ -57,12 +59,25 @@ bool DynamicAnnotation::update(double time, Element *parent)
 }
 
 /*!
- * \brief DynamicAnnotation::update
- * Calls the derived class' fromExp method with the static part of the stored
- * expression (either the expression itself, or the first argument if it's a
- * DynamicSelect call).
+ * \brief DynamicAnnotation::reset
+ * Calls the derived class' fromExp method with either the static or the dynamic
+ * part of the stored expression. The static part is used if the expression
+ * isn't using DynamicSelect or update hasn't been called, and the dynamic is
+ * used if update has been called on a DynamicSelect expression.
  */
 void DynamicAnnotation::reset()
 {
-  fromExp(mDynamic ? mExp.arg(0) : mExp);
+  switch (mState) {
+    case State::None:
+      fromExp(mExp);
+      break;
+
+    case State::Static:
+      fromExp(mExp.arg(0));
+      break;
+
+    case State::Dynamic:
+      fromExp(mExp.arg(1));
+      break;
+  }
 }
