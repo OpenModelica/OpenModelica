@@ -278,8 +278,8 @@ else()
   string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
   set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcmemory -llapack -lblas -lm -lpthread -rdynamic")
   set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOptimizationRuntime -lOpenModelicaRuntimeC -lomcmemory -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lOpenModelicaFMIRuntimeC -llapack -lblas -lm -lpthread -rdynamic -Wl,--no-undefined")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lOpenModelicaFMIRuntimeC -lomcgc -lipopt -lcoinmumps -lcminpack -lexpat -lcdaskr -lsundials_cvode -lsundials_kinsol -lsundials_idas -lsundials_sunlinsollapackdense -lsundials_sunlinsolklu -llis -lumfpack -lklu -lamd -lbtf -lcolamd -lsuitesparseconfig -llapack -lblas -Wl,-Bdynamic -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm -lpthread -rdynamic -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
 
 
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)

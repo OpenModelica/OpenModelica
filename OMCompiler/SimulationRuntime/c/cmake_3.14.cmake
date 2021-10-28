@@ -123,67 +123,12 @@ install(TARGETS OptimizationRuntime)
 
 
 # ######################################################################################################################
-# Library: OpenModelicaFMIRuntimeC
-## This library is built as a static library and contains everything needed to run an OpenModelica FMU.
-## Therefore it has to include the functionality from the other libraries.
-## It is not complete yet. I have to see what needs to go in here.
-add_library(OpenModelicaFMIRuntimeC STATIC)
-add_library(omc::simrt::fmiruntime ALIAS OpenModelicaFMIRuntimeC)
+# include the configuration for (source code) FMI runtime and generate RuntimeSources.mo
+# This is separated into another file just for clarity. Once it is cleaned up and organized
+# it can be brought back here.
+include(cmake/source_code_fmu_config.cmake)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo.cmake ${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo)
 
-target_sources(OpenModelicaFMIRuntimeC PRIVATE  ${OMC_SIMRT_FMI_SOURCES}
-                                                ${OMC_SIMRT_GC_SOURCES}
-                                                ${OMC_SIMRT_UTIL_SOURCES}
-                                                ${OMC_SIMRT_META_SOURCES}
-                                                ${OMC_SIMRT_SIMULATION_SOURCES}
-                                                ${OMC_SIMRT_MATH_SUPPORT_SOURCES}
-                                                ${OMC_SIMRT_LINEARIZATION_SOURCES}
-                                                ${OMC_SIMRT_DATA_RECONCILIATION_SOURCES}
-                                                ${OMC_SIMRT_OPTIMIZATION_SOURCES})
-
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::config)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::omcgc)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::FMIL::expat)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::cvode)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::idas)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::kinsol)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::sunlinsolklu)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::sunlinsollapackdense)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::klu)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::amd)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::btf)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::colamd)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::umfpack)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::config)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::cminpack)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::cdaskr)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::lis)
-
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::ipopt)
-
-
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib)
-target_include_directories(OpenModelicaFMIRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
-target_include_directories(OpenModelicaFMIRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-# target_compile_definitions(OpenModelicaFMIRuntimeC PRIVATE "-DOMC_MINIMAL_RUNTIME=1 -DOMC_FMI_RUNTIME=1")
-
-target_link_options(OpenModelicaFMIRuntimeC PRIVATE  -Wl,--no-undefined)
-
-install(TARGETS OpenModelicaFMIRuntimeC)
-
-
-# ######################################################################################################################
-# Library: OpenModelicaSimulation
-## This is a shared library containing everything needed for simulation. This is not intended to be used by the
-## simulation executables. If something is needed for simulation executables add it here.
-# add_library(OpenModelicaSimulation SHARED $<TARGET_OBJECTS:SimulationRuntimeC>
-#                                           $<TARGET_OBJECTS:OpenModelicaRuntimeC>)
-# add_library(omc::simrt::simulation ALIAS OpenModelicaSimulation)
-
-# target_link_libraries(OpenModelicaSimulation PUBLIC
-#                       $<TARGET_PROPERTY:SimulationRuntimeC,INTERFACE_LINK_LIBRARIES>)
-
-# install(TARGETS OpenModelicaSimulation)
 
 
 # ######################################################################################################################
@@ -202,10 +147,3 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         PATTERN "fmi" EXCLUDE
 )
 
-
-
-
-# ######################################################################################################################
-# include the configuration for source code FMUs and generate RuntimeSources.mo
-include(cmake/source_code_fmu_config.cmake)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo.cmake ${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo)

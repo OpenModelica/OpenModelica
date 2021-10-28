@@ -95,7 +95,7 @@ string(REPLACE ";" "," SOURCE_FMU_LS_FILES "${SOURCE_FMU_LS_FILES_LIST_QUOTED}")
 
 ######################################################################################################################
 ## Mixed system files
-set(SOURCE_FMU_MIXED_FILES_LIST simulation/solver/linearSystem.c simulation/solver/linearSolverLapack.c simulation/solver/linearSolverTotalPivot.c)
+set(SOURCE_FMU_MIXED_FILES_LIST simulation/solver/mixedSearchSolver.c simulation/solver/mixedSystem.c)
 
 foreach(source_file ${SOURCE_FMU_MIXED_FILES_LIST})
   list(APPEND SOURCE_FMU_MIXED_FILES_LIST_QUOTED \"${source_file}\")
@@ -116,3 +116,36 @@ foreach(source_file ${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST})
   install(FILES ${source_file} DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR})
 endforeach()
 string(REPLACE ";" "," SOURCE_FMU_CVODE_RUNTIME_FILES "${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED}")
+
+
+
+
+
+
+# ######################################################################################################################
+# Library: SimulationRuntimeFMI
+add_library(SimulationRuntimeFMI STATIC)
+add_library(omc::simrt::simrtfmi ALIAS SimulationRuntimeFMI)
+
+target_sources(SimulationRuntimeFMI PRIVATE ${SOURCE_FMU_COMMON_FILES_LIST}
+                                            ${SOURCE_FMU_LS_FILES_LIST}
+                                            ${SOURCE_FMU_NLS_FILES_LIST}
+                                            ${SOURCE_FMU_MIXED_FILES_LIST}
+                                            ${3RD_CMINPACK_FMU_FILES})
+
+target_compile_definitions(SimulationRuntimeFMI PRIVATE "-DOMC_MINIMAL_RUNTIME=1 -DOMC_FMI_RUNTIME=1")
+
+install(TARGETS SimulationRuntimeFMI)
+
+
+# ######################################################################################################################
+# Library: SimulationRuntimeFMI
+add_library(OpenModelicaFMIRuntimeC STATIC)
+add_library(omc::simrt::fmiruntime ALIAS OpenModelicaFMIRuntimeC)
+
+target_sources(OpenModelicaFMIRuntimeC PRIVATE ${OMC_SIMRT_FMI_SOURCES})
+
+# target_link_libraries(OpenModelicaFMIRuntimeC_base PUBLIC omc::config)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib)
+
+install(TARGETS OpenModelicaFMIRuntimeC)
