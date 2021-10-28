@@ -1,0 +1,51 @@
+loadString("
+model simple_nested_for1
+  Real x[10,10];
+equation
+  for i in 1:10 loop
+    for j in 1:10 loop
+      x[i,j] = i*sin(j*time);
+    end for;
+  end for;
+end simple_nested_for1;
+
+model simple_nested_for2
+  parameter Integer s = 10;
+  Real x[s,s];
+  Real y[s,s];
+equation
+  for i in 1:s loop
+    for j in 1:s loop
+      x[i,j] = i*sin(j*time);
+      y[j,i] = j + cos(time)^i;
+    end for;
+  end for;
+end simple_nested_for2;
+
+
+model simple_nested_for3
+  parameter Integer s = 10;
+  Real x[s,s];
+  Real y[s];
+equation
+  for i in 1:s loop
+    y[i] = i + cos(time);
+    for j in 1:s loop
+      x[i,j] = i*sin(j*time);
+    end for;
+  end for;
+end simple_nested_for3;
+
+
+model simple_nested_for4
+  parameter Integer s = 10;
+  Real x[s,s];
+equation
+  for i in 1:s, j in 1:s loop
+    x[i,j] = i*sin(j*time);
+  end for;
+end simple_nested_for4;
+
+"); getErrorString();
+
+simulate(simple_nested_for1); getErrorString();

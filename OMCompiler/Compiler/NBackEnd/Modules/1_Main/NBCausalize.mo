@@ -42,7 +42,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFFlatten.FunctionTree;
+  import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import InstNode = NFInstNode.InstNode;
   import SBGraphUtil = NFSBGraphUtil;
   import Subscript = NFSubscript;
@@ -84,6 +84,10 @@ protected
   import SBPWLinearMap;
   import SBSet;
   import NBGraphUtil.{SetVertex, SetEdge};
+
+  // ############################################################
+  //                      Main Functions
+  // ############################################################
 
 public
   function main extends Module.wrapper;
@@ -152,7 +156,7 @@ public
      // create scalar adjacency matrix for now
     adj := Adjacency.Matrix.create(vars, eqs, NBAdjacency.MatrixType.SCALAR);
     matching := Matching.regular(adj);
-    comps := Sorting.tarjan(adj, matching, vars, eqs);
+    (comps, _) := Sorting.tarjan(adj, matching, vars, eqs, FunctionTreeImpl.EMPTY());
   end simple;
 
   function getModule
@@ -165,12 +169,17 @@ public
       case "PFPlusExt"  then causalizeScalar;
       case "SBGraph"    then causalizeArray;
       case "linear"     then causalizeLinear;
+      case "pseudo"     then causalizePseudoArray;
       /* ... New causalize modules have to be added here */
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for unknown option: " + flag});
       then fail();
     end match;
   end getModule;
+
+  // ############################################################
+  //                Protected Functions and Types
+  // ############################################################
 
 protected
   function causalizeScalar extends Module.causalizeInterface;
@@ -187,7 +196,7 @@ protected
 
     adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.SCALAR, matrixStrictness);
     (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(adj, variables, equations, funcTree, varData, eqData, false, true);
-    comps := Sorting.tarjan(adj, matching, variables, equations);
+    (comps, funcTree) := Sorting.tarjan(adj, matching, variables, equations, funcTree);
 
     system.unknowns := variables;
     system.equations := equations;
@@ -195,6 +204,24 @@ protected
     system.matching := SOME(matching);
     system.strongComponents := SOME(listArray(comps));
   end causalizeScalar;
+
+  function causalizePseudoArray extends Module.causalizeInterface;
+  protected
+    VariablePointers variables;
+    EquationPointers equations;
+    Adjacency.Matrix adj;
+    Matching matching;
+    list<StrongComponent> comps;
+  algorithm
+    // compress the arrays to remove gaps
+    variables := VariablePointers.compress(system.unknowns);
+    equations := EquationPointers.compress(system.equations);
+
+    // create scalar adjacency matrix for now
+    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, matrixStrictness);
+    matching := Matching.regular(adj);
+    (comps, funcTree) := Sorting.tarjan(adj, matching, variables, equations, funcTree);
+  end causalizePseudoArray;
 
   function causalizeArray extends Module.causalizeInterface;
   protected

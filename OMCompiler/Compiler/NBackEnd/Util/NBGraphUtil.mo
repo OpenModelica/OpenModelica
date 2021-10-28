@@ -214,7 +214,8 @@ public
         then ();
 
         case Equation.FOR_EQUATION() algorithm
-          body := applyIterator(eqn.iter, eqn.range, eqn.body);
+          //body := applyIterator(eqn.iter, eqn.range, eqn.body);
+          body := eqn.body;
           fromEquation(body, graph, vCount, eCount, vertexMap, edgeMap, map, SOME((eqn_mi, eqn_d)));
         then ();
 
@@ -224,6 +225,7 @@ public
       end match;
     end fromEquation;
 
+/*
     function applyIterator
       input InstNode iterator;
       input Expression range;
@@ -231,6 +233,7 @@ public
     algorithm
       body := Equation.map(body, function Expression.replaceIterator(iterator = iterator, iteratorValue = range));
     end applyIterator;
+*/
 
     function fromExpression
       input output Expression exp;

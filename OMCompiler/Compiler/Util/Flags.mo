@@ -684,7 +684,8 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("ABMPExt", Gettext.gettext("Combined BFS and DFS algorithm external c implementation.")),
     ("PRExt", Gettext.gettext("Matching algorithm using push relabel mechanism external c implementation.")),
     ("BB", Gettext.gettext("BBs try.")),
-    ("SBGraph", Gettext.gettext("Set-Based Graph matching algorithm for efficient array handling."))})),
+    ("SBGraph", Gettext.gettext("Set-Based Graph matching algorithm for efficient array handling.")),
+    ("pseudo", Gettext.gettext("Pseudo array matching that uses scalar matching and reconstructs arrays afterwards as much as possible."))})),
     Gettext.gettext("Sets the matching algorithm to use. See --help=optmodules for more info."));
 
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",

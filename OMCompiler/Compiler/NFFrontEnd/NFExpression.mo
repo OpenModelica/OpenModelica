@@ -4320,6 +4320,22 @@ public
     end match;
   end logicNegate;
 
+  function invertRange
+    "inverts the direction of a range"
+    input output Expression range;
+  algorithm
+    range := match range
+      local
+        Expression step;
+      case RANGE()                   then RANGE(range.ty, range.stop, SOME(INTEGER(-1)), range.start);
+      case RANGE(step = SOME(step))  then RANGE(range.ty, range.stop, SOME(negate(step)), range.start);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
+          + toString(range)});
+      then fail();
+    end match;
+  end invertRange;
+
   function arrayElements
     input Expression array;
     output list<Expression> elements;

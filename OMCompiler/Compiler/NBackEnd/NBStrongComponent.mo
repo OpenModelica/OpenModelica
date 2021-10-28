@@ -40,19 +40,23 @@ protected
 
   // NF imports
   import ComponentRef = NFComponentRef;
+  import NFFlatten.FunctionTree;
   import Variable = NFVariable;
 
   // Backend imports
+  import Adjacency = NBAdjacency;
   import BackendDAE = NBackendDAE;
   import Causalize = NBCausalize;
   import BVariable = NBVariable;
   import BEquation = NBEquation;
-  import NBEquation.Equation;
-  import NBEquation.EquationAttributes;
+  import NBEquation.{Equation, EquationPointers, EquationAttributes};
   import Matching = NBMatching;
+  import Sorting = NBSorting;
   import Tearing = NBTearing;
+  import NBVariable.VariablePointers;
 
   // Util imports
+  import BackendUtil = NBBackendUtil;
   import Pointer;
   import StringUtil;
   import UnorderedMap;
@@ -62,6 +66,11 @@ public
     Pointer<Variable> var;
     Pointer<Equation> eqn;
   end SINGLE_EQUATION;
+
+  record SLICED_EQUATION
+    ComponentRef cref;
+    Pointer<Equation> eqn;
+  end SLICED_EQUATION;
 
   record SINGLE_ARRAY
     list<Pointer<Variable>> vars;
@@ -119,6 +128,13 @@ public
         algorithm
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Equation");
           str := str + "### Variable:\n" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
+          str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+      then str;
+
+      case SLICED_EQUATION()
+        algorithm
+          str := StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Equation");
+          str := str + "### Variable:\n\t" + ComponentRef.toString(comp.cref) + "\n";
           str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
@@ -204,21 +220,80 @@ public
   function create
     input list<Integer> comp_indices;
     input Matching matching;
-    input BVariable.VariablePointers vars;
-    input BEquation.EquationPointers eqns;
+    input VariablePointers vars;
+    input EquationPointers eqns;
     output StrongComponent comp;
   algorithm
     comp := match matching
       case Causalize.SCALAR_MATCHING() algorithm
       then createScalar(comp_indices, matching.eqn_to_var, vars, eqns);
+
       case Causalize.ARRAY_MATCHING() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array strong components are not yet supported."});
       then fail();
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
     end match;
   end create;
+
+  function createPseudo
+    input list<Integer> comp_indices;
+    input array<Integer> eqn_to_var;
+    input VariablePointers vars;
+    input EquationPointers eqns;
+    input Adjacency.Mapping mapping;
+    input Adjacency.CausalizeModes modes;
+    input Sorting.PseudoBucket bucket;
+    output Option<StrongComponent> comp;
+    input output FunctionTree funcTree;
+  algorithm
+    comp := match comp_indices
+      local
+        Integer i, mode, first_eqn;
+        Sorting.PseudoBucketValue val;
+        Equation eqn;
+        Pointer<Equation> eqn_ptr;
+        list<Integer> eqn_indices "zero based indices";
+        Boolean trivial;
+
+      case {i} guard(Adjacency.CausalizeModes.contains(mapping.eqn_StA[i], modes)) algorithm
+        if bucket.marks[i] then
+          // has already been created
+          comp := NONE();
+        else
+          // get mode and bucket
+          mode  := Adjacency.CausalizeModes.get(i, eqn_to_var[i], modes);
+          val   := Sorting.PseudoBucket.get(mapping.eqn_StA[i], mode, bucket);
+
+          // get and slice the equation
+          eqn_ptr := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
+          first_eqn := Adjacency.Mapping.getEqnFirst(i, mapping);
+          eqn_indices := list(idx - first_eqn for idx in val.eqn_scal_indices);
+          (eqn, trivial, funcTree) := Equation.slice(Pointer.access(eqn_ptr), eqn_indices, val.cref_to_solve, funcTree);
+          if trivial then
+            Pointer.update(eqn_ptr, eqn);
+          else
+            // this cannot be done jet, remove afterwards because the other parts need to be split
+            //EquationPointers.remove(eqn_ptr, eqns);
+            eqn_ptr := Pointer.create(eqn);
+            EquationPointers.add(eqn_ptr, eqns);
+          end if;
+
+          // mark all scalar indices
+          for scal_idx in val.eqn_scal_indices loop
+            bucket.marks[scal_idx] := true;
+          end for;
+
+          comp := SOME(SLICED_EQUATION(val.cref_to_solve, eqn_ptr));
+        end if;
+      then comp;
+
+      // if it is no array structure just use scalar
+      else SOME(createScalar(comp_indices, eqn_to_var, vars, eqns));
+    end match;
+  end createPseudo;
 
   function makeDAEModeResidualTraverse
     " update later to do both inner and residual equations "
@@ -254,29 +329,37 @@ public
   function getDependentCrefs
     "Collects dependent crefs in current comp and saves them in the
      unordered map. Saves both directions."
-    input StrongComponent comp                    "strong component to be analyzed";
-    input UnorderedMap<ComponentRef, list<ComponentRef>> map "unordered map to save the dependencies";
-    input Boolean jacobian = true                 "true if the analysis is for jacobian sparsity pattern";
+    input StrongComponent comp                                "strong component to be analyzed";
+    input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
+    input Boolean jacobian = true                             "true if the analysis is for jacobian sparsity pattern";
   algorithm
     _ := match comp
       local
         list<ComponentRef> dependencies = {}, loop_vars = {}, tmp;
-        BEquation.EquationAttributes attr;
+        EquationAttributes attr;
         Pointer<Variable> dependentVar;
         Tearing strict;
 
       case SINGLE_EQUATION() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
-        attr := BEquation.Equation.getAttributes(Pointer.access(comp.eqn));
-        dependentVar := if jacobian then BEquation.EquationAttributes.getResidualVar(attr) else comp.var;
+        attr := Equation.getAttributes(Pointer.access(comp.eqn));
+        dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else comp.var;
+        updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
+      then ();
+
+      case SLICED_EQUATION() algorithm
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
+        attr := Equation.getAttributes(Pointer.access(comp.eqn));
+        // assume full dependency
+        dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else BVariable.getVarPointer(comp.cref);
         updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
       then ();
 
       case SINGLE_ARRAY() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
         if jacobian then
-          attr := BEquation.Equation.getAttributes(Pointer.access(comp.eqn));
-          dependentVar := BEquation.EquationAttributes.getResidualVar(attr);
+          attr := Equation.getAttributes(Pointer.access(comp.eqn));
+          dependentVar := EquationAttributes.getResidualVar(attr);
           updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
         else
           for var in comp.vars loop
@@ -343,12 +426,16 @@ public
     end match;
   end addLoopJacobian;
 
+  // ############################################################
+  //                Protected Functions and Types
+  // ############################################################
+
 protected
   function createScalar
     input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;
-    input BVariable.VariablePointers vars;
-    input BEquation.EquationPointers eqns;
+    input VariablePointers vars;
+    input EquationPointers eqns;
     output StrongComponent comp;
   algorithm
     // ToDo: add all other cases!
@@ -359,8 +446,8 @@ protected
         list<Pointer<Equation>> acc_eqns = {};
 
       case {i} then SINGLE_EQUATION(
-                      var = BVariable.VariablePointers.getVarAt(vars, eqn_to_var[i]),
-                      eqn = BEquation.EquationPointers.getEqnAt(eqns, i)
+                      var = VariablePointers.getVarAt(vars, eqn_to_var[i]),
+                      eqn = EquationPointers.getEqnAt(eqns, i)
                     );
 
       case _ algorithm
@@ -381,21 +468,24 @@ protected
   end createScalar;
 
   function getLoopPair
+    "adds the equation and matched variable to accumulated lists.
+    used to collect algebraic loops"
     input Integer idx;
     input array<Integer> eqn_to_var;
-    input BVariable.VariablePointers vars;
-    input BEquation.EquationPointers eqns;
+    input VariablePointers vars;
+    input EquationPointers eqns;
     input output list<Pointer<Variable>> acc_vars;
     input output list<Pointer<Equation>> acc_eqns;
   algorithm
-    acc_vars := BVariable.VariablePointers.getVarAt(vars, eqn_to_var[idx]) :: acc_vars;
-    acc_eqns := BEquation.EquationPointers.getEqnAt(eqns, idx) :: acc_eqns;
+    acc_vars := VariablePointers.getVarAt(vars, eqn_to_var[idx]) :: acc_vars;
+    acc_eqns := EquationPointers.getEqnAt(eqns, idx) :: acc_eqns;
   end getLoopPair;
 
   function getDependentCref
-    input output ComponentRef cref          "the cref to check";
-    input Pointer<list<ComponentRef>> acc   "accumulator for relevant crefs";
-    input UnorderedMap<ComponentRef, list<ComponentRef>> map   "unordered map to check for relevance";
+    "checks if crefs are relevant in the given context and collects them"
+    input output ComponentRef cref                              "the cref to check";
+    input Pointer<list<ComponentRef>> acc                       "accumulator for relevant crefs";
+    input UnorderedMap<ComponentRef, list<ComponentRef>> map    "unordered map to check for relevance";
   protected
     list<ComponentRef> dependencies;
   algorithm
@@ -413,8 +503,8 @@ protected
   end getDependentCref;
 
   function updateDependencyMap
-    input ComponentRef cref                       "cref representing current equation";
-    input list<ComponentRef> dependencies         "the dependency crefs";
+    input ComponentRef cref                                   "cref representing current equation";
+    input list<ComponentRef> dependencies                     "the dependency crefs";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
   algorithm
     try
@@ -425,5 +515,5 @@ protected
     end try;
   end updateDependencyMap;
 
-    annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend");
 end NBStrongComponent;

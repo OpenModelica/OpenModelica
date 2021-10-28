@@ -323,7 +323,7 @@ protected
       (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
       matching := Matching.regular(adj, true, false);
       (_, _, _, residual_lst) := Matching.getMatches(matching, discreteVars, eqns);
-      comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
+      (comps, funcTree) := Sorting.tarjan(adj, matching, discreteVars, eqns, funcTree);
       innerEquations := list(BEquation.InnerEquation.fromStrongComponent(c) for c in comps);
     end if;
 

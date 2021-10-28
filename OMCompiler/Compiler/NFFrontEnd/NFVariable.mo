@@ -90,6 +90,11 @@ public
     variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
 
+  function size
+    input Variable var;
+    output Integer s = Type.sizeOf(var.ty);
+  end size;
+
   function hash
     input Variable var;
     input Integer mod;

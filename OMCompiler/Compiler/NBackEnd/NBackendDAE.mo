@@ -68,6 +68,7 @@ protected
   import NBEquation.EquationPointers;
   import NBEquation.Equation;
   import Initialization = NBInitialization;
+  import NBEquation.Iterator;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
   import RemoveSimpleEquations = NBRemoveSimpleEquations;
@@ -645,7 +646,7 @@ protected
         list<FEquation> body;
         Type ty;
         DAE.ElementSource source;
-        InstNode iterator;
+        ComponentRef iterator;
         list<FEquation.Branch> branches;
         BEquation.EquationAttributes attr;
 
@@ -681,7 +682,7 @@ protected
           // No check for complex. Simple equation is more important than complex. -> alias removal!
       then {Pointer.create(BEquation.SIMPLE_EQUATION(ty, lhs_cref, rhs_cref, source, attr))};
 
-      case FEquation.FOR(iterator = iterator, range = SOME(range), body = body, source = source)
+      case FEquation.FOR(iterator = InstNode.ITERATOR_NODE(exp = Expression.CREF(cref = iterator)), range = SOME(range), body = body, source = source)
         algorithm
         // Treat each body equation individually because they can have different equation attributes
         // E.g.: DISCRETE, EvalStages
@@ -690,7 +691,9 @@ protected
           new_body := lowerEquation(eq, init, new_for_dims);
           for body_elem_ptr in new_body loop
             body_elem := Pointer.access(body_elem_ptr);
-            result := Pointer.create(BEquation.FOR_EQUATION(Equation.getType(body_elem), iterator, range, body_elem, source, Equation.getAttributes(body_elem))) :: result;
+            // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
+            result := Pointer.create(Equation.mergeIterators(
+              BEquation.FOR_EQUATION(Equation.getType(body_elem), Iterator.SINGLE(iterator, range), body_elem, source, Equation.getAttributes(body_elem)))) :: result;
           end for;
         end for;
       then result;

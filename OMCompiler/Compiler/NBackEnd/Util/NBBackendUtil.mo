@@ -84,6 +84,84 @@ public
     end if;
   end compareCombine;
 
+  function frameToIndex
+    "reverse function to indexToFrame()
+    maps a frame location to a scalar index starting from first index (one based!)"
+    input list<tuple<Integer,Integer>> size_val_tpl_lst;
+    input output Integer index;
+  protected
+    Integer size, val, factor = 1;
+  algorithm
+    for tpl in size_val_tpl_lst loop
+      (size, val) := tpl;
+      index := index + (val-1) * factor;
+      factor := factor * size;
+    end for;
+  end frameToIndex;
+
+  function indexToFrame
+    "reverse function to frameToIndex()
+    maps a scalar index to its frame location (zero based!)"
+    input Integer index;
+    input list<Integer> sizes;
+    output list<Integer> vals = {};
+  protected
+    Integer iterator = index;
+    Integer divisor = product(s for s in sizes);
+  algorithm
+    for size in sizes loop
+      divisor   := intDiv(divisor, size);
+      vals      := intDiv(iterator, divisor) :: vals;
+      iterator  := mod(iterator, divisor);
+    end for;
+  end indexToFrame;
+
+  function compareFrames
+    "compares to frames of the same size and returns an array
+    containing the differences"
+    input list<Integer> frame1;
+    input list<Integer> frame2;
+    output list<Integer> diffs= {};
+  protected
+    list<tuple<Integer, Integer>> frame_tpl = List.zip(frame1, frame2);
+    Integer v1, v2;
+  algorithm
+    for tpl in frame_tpl loop
+      (v1, v2) := tpl;
+      diffs := v1 - v2 :: diffs;
+    end for;
+    diffs := listReverse(diffs);
+  end compareFrames;
+
+  function applyFrameInversion
+    input output list<tuple<ComponentRef, Expression>> frames;
+    input list<Integer> diffs;
+  algorithm
+    frames := match (frames, diffs)
+      local
+        list<tuple<ComponentRef, Expression>> rest_frames;
+        ComponentRef name;
+        Expression range;
+        list<Integer> rest_diffs;
+        Integer diff;
+
+      // nothing left to do
+      case ({}, {}) then {};
+
+      // this range has to be inverted
+      case ((name, range) :: rest_frames, diff :: rest_diffs) guard(diff > 0)
+      then (name, Expression.invertRange(range)) :: applyFrameInversion(rest_frames, rest_diffs);
+
+      // this range does not have to be inverted
+      case ((name, range) :: rest_frames, _ :: rest_diffs)
+      then (name, range) :: applyFrameInversion(rest_frames, rest_diffs);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because frame and diff seem to have different length."});
+      then fail();
+    end match;
+  end applyFrameInversion;
+
   function noNameHashEq
     input BEquation.Equation eq;
     input Integer mod;

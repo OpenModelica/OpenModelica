@@ -213,7 +213,7 @@ public
       case Equation.FOR_EQUATION() algorithm
         (res, diffArguments) := differentiateEquation(eq.body, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.FOR_EQUATION(eq.ty, eq.iter, eq.range, res, eq.source, attr), diffArguments);
+      then (Equation.FOR_EQUATION(eq.ty, eq.iter, res, eq.source, attr), diffArguments);
 
       case Equation.WHEN_EQUATION() algorithm
         (whenBody, diffArguments) := differentiateWhenEquationBody(eq.body, diffArguments);

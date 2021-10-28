@@ -1111,7 +1111,7 @@ algorithm
 end unique;
 
 public function uniqueIntN
-  "Takes a list of integes and returns a list with duplicates removed, so that
+  "Takes a list of integers and returns a list with duplicates removed, so that
    each element in the new list is unique. O(listLength(inList))"
   input list<Integer> inList;
   input Integer inN;

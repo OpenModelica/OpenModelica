@@ -500,7 +500,8 @@ public
       list<tuple<Pointer<Equation>, Integer>> loopEqns;
       LinearJacobian linJac;
     algorithm
-      comps := Sorting.tarjan(adj, matching, vars, eqns);
+      //comps := Sorting.tarjan(adj, matching, vars, eqns);
+      comps := {};
       for comp in comps loop
         _ := match comp
           case StrongComponent.ALGEBRAIC_LOOP() algorithm

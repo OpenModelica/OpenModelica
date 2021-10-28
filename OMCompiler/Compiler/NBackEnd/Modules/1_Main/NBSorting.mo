@@ -39,13 +39,132 @@ public
 
 protected
   import BEquation = NBEquation;
-  import NBEquation.EquationPointers;
+  import NBEquation.{Equation, EquationPointers};
   import BVariable = NBVariable;
   import NBVariable.VariablePointers;
   import Adjacency = NBAdjacency;
   import Matching = NBMatching;
 
+  import ComponentRef = NFComponentRef;
+  import NFFlatten.FunctionTree;
+
 public
+  // ############################################################
+  //                Pseudo Bucket Structures
+  // ############################################################
+
+  uniontype PseudoBucketKey
+    record PSEUDO_BUCKET_KEY
+      Integer eqn_arr_idx   "array index of equation";
+      Integer mode          "solve mode index";
+    end PSEUDO_BUCKET_KEY;
+
+    function hash
+      input PseudoBucketKey key   "the key to hash";
+      input Integer modulo        "modulo value";
+      input Integer shift         "has to be statically provided while creating the PseudoBucket.";
+      output Integer val          "the hash value";
+    algorithm
+      val := mod(key.mode*shift + key.eqn_arr_idx, modulo);
+    end hash;
+
+    function equal
+      input PseudoBucketKey key1;
+      input PseudoBucketKey key2;
+      output Boolean b = intEq(key1.eqn_arr_idx, key2.eqn_arr_idx) and intEq(key1.mode, key2.mode);
+    end equal;
+  end PseudoBucketKey;
+
+  uniontype PseudoBucketValue
+    record PSEUDO_BUCKET_VALUE
+      ComponentRef cref_to_solve      "cref to solve for in this mode";
+      list<Integer> eqn_scal_indices  "indices of all scalarized equations that have to be solved that way";
+    end PSEUDO_BUCKET_VALUE;
+  end PseudoBucketValue;
+
+  uniontype PseudoBucket
+    record PSEUDO_BUCKET
+      UnorderedMap<PseudoBucketKey, PseudoBucketValue> bucket;
+      array<Boolean> marks;
+    end PSEUDO_BUCKET;
+
+    function create
+      "recollects subsets of multi-dimensional equations that have to be solved in the same way.
+      currently only for loops!"
+      input list<list<Integer>> comps_indices   "the sorted scalar components";
+      input array<Integer> eqn_to_var           "eqn to var matching";
+      input Adjacency.Mapping mapping           "scalar <-> array index mapping";
+      input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
+      output PseudoBucket bucket                "the bucket containing the equation subsets";
+    protected
+      Integer eqn_scal_idx, eqn_arr_idx, mode;
+    algorithm
+      // 1. create empty buckets
+      bucket := PSEUDO_BUCKET(
+        bucket  = UnorderedMap.new<PseudoBucketValue>(
+          hash    = function PseudoBucketKey.hash(shift=arrayLength(modes.mode_to_cref)),
+          keyEq   = PseudoBucketKey.equal),
+        marks   = arrayCreate(arrayLength(eqn_to_var), false)
+      );
+
+      // 2. sort all subsets in buckets depending on causalization mode and equation
+      for comp in comps_indices loop
+        _ := match comp
+          case {eqn_scal_idx} algorithm
+            // if we have a strong component of only one equation - check if there is a mode for it
+            // (only for-equations have modes)
+            eqn_arr_idx := mapping.eqn_StA[eqn_scal_idx];
+            if Adjacency.CausalizeModes.contains(eqn_arr_idx, modes) then
+              mode := Adjacency.CausalizeModes.get(eqn_scal_idx, eqn_to_var[eqn_scal_idx], modes);
+              PseudoBucket.add(eqn_arr_idx, eqn_scal_idx, mode, modes, bucket);
+            end if;
+          then ();
+
+          // ToDo: what if partial stuff of for-loops ends up in an algebraic loop?
+          else ();
+        end match;
+      end for;
+    end create;
+
+    function add
+      input Integer eqn_arr_idx;
+      input Integer eqn_scal_idx;
+      input Integer mode;
+      input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
+      input PseudoBucket bucket;
+    protected
+      PseudoBucketKey key;
+      PseudoBucketValue val;
+    algorithm
+      key := PSEUDO_BUCKET_KEY(eqn_arr_idx, mode);
+      if UnorderedMap.contains(key, bucket.bucket) then
+        // if the mode already was found, add this equation to the bucket
+        val := UnorderedMap.getSafe(key, bucket.bucket);
+        val.eqn_scal_indices := eqn_scal_idx :: val.eqn_scal_indices;
+        UnorderedMap.add(key, val, bucket.bucket);
+      else
+        // create a new bucket containing this equation
+        val := PSEUDO_BUCKET_VALUE(arrayGet(arrayGet(modes.mode_to_cref, eqn_arr_idx), mode), {eqn_scal_idx});
+        UnorderedMap.addNew(key, val, bucket.bucket);
+      end if;
+    end add;
+
+    function get
+      input Integer eqn_arr_idx;
+      input Integer mode;
+      input PseudoBucket bucket;
+      output PseudoBucketValue val;
+    protected
+      PseudoBucketKey key = PSEUDO_BUCKET_KEY(eqn_arr_idx, mode);
+    algorithm
+      val := UnorderedMap.getSafe(key, bucket.bucket);
+    end get;
+  end PseudoBucket;
+
+  // ############################################################
+  //                      Main Functions
+  // ############################################################
+
   function tarjan
     "author: kabdelhak
     Sorting algorithm for directed graphs by Robert E. Tarjan.
@@ -54,15 +173,31 @@ public
     input Matching matching;
     input VariablePointers vars;
     input EquationPointers eqns;
-    output list<StrongComponent> comps;
+    output list<StrongComponent> comps = {};
+    input output FunctionTree funcTree;
   algorithm
     comps := match (adj, matching)
       local
         list<list<Integer>> comps_indices;
+        PseudoBucket bucket;
+        Option<StrongComponent> comp_opt;
 
       case (Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
         comps := list(StrongComponent.create(idx_lst, matching, vars, eqns) for idx_lst in comps_indices);
+      then comps;
+
+      case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+        comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
+        //recollect
+        bucket := PseudoBucket.create(comps_indices, matching.var_to_eqn, adj.mapping, adj.modes);
+        for idx_lst in comps_indices loop
+          (comp_opt, funcTree) := StrongComponent.createPseudo(idx_lst, matching.eqn_to_var, vars, eqns, adj.mapping, adj.modes, bucket, funcTree);
+          if Util.isSome(comp_opt) then
+            comps := Util.getOption(comp_opt) :: comps;
+          end if;
+        end for;
+        comps := listReverse(comps);
       then comps;
 
       case (Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX(), Matching.ARRAY_MATCHING()) algorithm
@@ -115,7 +250,12 @@ public
     comps := listReverse(comps);
   end tarjanScalar;
 
-  protected function strongConnect
+  // ############################################################
+  //                Protected Functions and Types
+  // ############################################################
+
+protected
+  function strongConnect
     "author: lochel, kabdelhak"
     input array<list<Integer>> m            "normal adjacency matrix";
     input array<Integer> var_to_eqn         "eqn := var_to_eqn[var]";
@@ -176,4 +316,3 @@ public
 
   annotation(__OpenModelica_Interface="backend");
 end NBSorting;
-

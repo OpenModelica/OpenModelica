@@ -71,14 +71,14 @@ public
   // =======================================
   //                MATCHING
   // =======================================
-  record ARRAY_MATCHING
-    // to fill
-  end ARRAY_MATCHING;
-
   record SCALAR_MATCHING
     array<Integer> var_to_eqn;
     array<Integer> eqn_to_var;
   end SCALAR_MATCHING;
+
+  record ARRAY_MATCHING
+    // to fill
+  end ARRAY_MATCHING;
 
   record LINEAR_MATCHING
     array<VertMark> F_marks;
@@ -126,6 +126,15 @@ public
   algorithm
      matching := match adj
       case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
+        // marked equations irrelevant for regular matching
+        if transposed then
+          (matching, _) := scalarMatching(adj.mT, adj.m, transposed, partially);
+        else
+          (matching, _) := scalarMatching(adj.m, adj.mT, transposed, partially);
+        end if;
+      then matching;
+
+      case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
         // marked equations irrelevant for regular matching
         if transposed then
           (matching, _) := scalarMatching(adj.mT, adj.m, transposed, partially);
@@ -854,6 +863,7 @@ protected
     matching := ARRAY_MATCHING();
   end arrayMatching;
 
+/*
   function SBGMatching
     input BipartiteGraph graph                               "full bipartite graph";
     input UnorderedMap<SetVertex, Integer> vertexMap  "maps a vertex to its index";
@@ -1024,7 +1034,7 @@ protected
         + SBSet.toString(path_edge), sourceInfo());
     end try;
   end addMatchedF;
-
+*/
   annotation(__OpenModelica_Interface="backend");
 end NBMatching;
 

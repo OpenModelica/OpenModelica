@@ -48,6 +48,7 @@ public
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
@@ -59,6 +60,7 @@ public
 
   // New Backend imports
   import StrongComponent = NBStrongComponent;
+  import Solve = NBSolve;
   import BVariable = NBVariable;
 
   // Util imports
@@ -67,6 +69,110 @@ public
   import ExpandableArray;
   import StringUtil;
   import UnorderedMap;
+
+  partial function MapFuncExp
+    input output Expression e;
+  end MapFuncExp;
+  partial function MapFuncCref
+    input output ComponentRef c;
+  end MapFuncCref;
+
+  uniontype Iterator
+    record SINGLE
+      ComponentRef name           "the name of the iterator";
+      Expression range            "range as< start, step, stop>";
+    end SINGLE;
+
+    record NESTED
+      array<ComponentRef> names   "sorted iterator names";
+      array<Expression> ranges    "sorted ranges as <start, step, stop>";
+    end NESTED;
+
+    function fromFrames
+      input list<tuple<ComponentRef, Expression>> frames;
+      output Iterator iter;
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      ComponentRef name;
+      Expression range;
+    algorithm
+      (names, ranges) := List.unzip(frames);
+      iter := match (names, ranges)
+        case ({name}, {range})  then SINGLE(name, range);
+                                else NESTED(listArray(names), listArray(ranges));
+      end match;
+    end fromFrames;
+
+    function getFrames
+      input Iterator iter;
+      output list<ComponentRef> names;
+      output list<Expression> ranges;
+    algorithm
+      (names, ranges) := match iter
+        case SINGLE() then ({iter.name}, {iter.range});
+        case NESTED() then (arrayList(iter.names), arrayList(iter.ranges));
+      end match;
+    end getFrames;
+
+    function merge
+      input list<Iterator> iterators;
+      output Iterator result;
+    protected
+      list<ComponentRef> tmp_names, names = {};
+      list<Expression> tmp_ranges, ranges = {};
+    algorithm
+      if listLength(iterators) == 1 then
+        result := List.first(iterators);
+      else
+        for iter in iterators loop
+          (tmp_names, tmp_ranges) := getFrames(iter);
+          names := listAppend(tmp_names, names);
+          ranges := listAppend(tmp_ranges, ranges);
+        end for;
+        result := NESTED(listArray(names), listArray(ranges));
+      end if;
+    end merge;
+
+    function toString
+      input Iterator iter;
+      output String str = "";
+    protected
+      function singleStr
+        input ComponentRef name;
+        input Expression range;
+        output String str = ComponentRef.toString(name) + " in " + Expression.toString(range);
+      end singleStr;
+    algorithm
+      str := match iter
+        case SINGLE() then singleStr(iter.name, iter.range);
+        case NESTED() then "{" + stringDelimitList(list(singleStr(iter.names[i], iter.ranges[i]) for i in 1:arrayLength(iter.names)), ", ") + "}";
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+        then fail();
+      end match;
+    end toString;
+
+    function map
+      "Traverses all expressions of the iterator range and applies a function to it."
+      input output Iterator iter;
+      input MapFuncExp funcExp;
+    algorithm
+      iter := match iter
+        case SINGLE() algorithm
+          iter.range := Expression.map(iter.range, funcExp);
+        then iter;
+        case NESTED() algorithm
+          for i in 1:arrayLength(iter.ranges) loop
+            iter.ranges[i] := Expression.map(iter.ranges[i], funcExp);
+          end for;
+        then iter;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+        then fail();
+      end match;
+    end map;
+  end Iterator;
 
   uniontype Equation
     record SCALAR_EQUATION
@@ -120,8 +226,7 @@ public
 
     record FOR_EQUATION
       Type ty                         "equality type containing dimensions";
-      InstNode iter                   "the iterator variable"; // Should this be a cref?
-      Expression range                "Start - (Step) - Stop";
+      Iterator iter                   "list of all: <iterator, range>";
       Equation body                   "iterated equation";
       DAE.ElementSource source        "origin of equation";
       EquationAttributes attr         "Additional Attributes";
@@ -157,7 +262,7 @@ public
         case RECORD_EQUATION() then str + "[RECD] " + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
         case ALGORITHM()       then str + "[ALGO] size " + intString(eq.size) + " " + EquationAttributes.toString(eq.attr) + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
         case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] ");
-        case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.range, eq.body, "", str + "[----] ", "[FOR-] ");
+        case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] ");
         case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] ");
         case AUX_EQUATION()    then str + "[AUX-] Auxiliary equation for " + Variable.toString(Pointer.access(eq.auxiliary));
         case DUMMY_EQUATION()  then str + "[DUMY] Dummy equation.";
@@ -193,6 +298,27 @@ public
       input Equation eq;
       output SourceInfo info = ElementSource.getInfo(source(eq));
     end info;
+
+    function size
+      input Equation eq;
+      output Integer size;
+    algorithm
+      size := match eq
+        case SCALAR_EQUATION() then 1;
+        case ARRAY_EQUATION()  then Type.sizeOf(eq.ty);
+        case SIMPLE_EQUATION() then Type.sizeOf(eq.ty);
+        case RECORD_EQUATION() then Type.sizeOf(eq.ty);
+        case ALGORITHM()       then eq.size;
+        case IF_EQUATION()     then eq.size;
+        case FOR_EQUATION()    then Type.sizeOf(eq.ty); //probably wrong
+        case WHEN_EQUATION()   then eq.size;
+        case AUX_EQUATION()    then Variable.size(Pointer.access(eq.auxiliary));
+        case DUMMY_EQUATION()  then 0;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eq)});
+        then fail();
+      end match;
+    end size;
 
     function getEqnName
       input Pointer<Equation> eqn;
@@ -239,16 +365,15 @@ public
     end makePreEq;
 
     function forEquationToString
-      input InstNode iter                   "the iterator variable";
-      input Expression range                "Start - (Step) - Stop";
-      input Equation body                   "iterated equation";
+      input Iterator iter             "the iterator variable(s)";
+      input Equation body             "iterated equation";
       input output String str = "";
       input String indent = "";
       input String indicator = "";
     protected
-      WhenEquationBody elseWhen;
+      String iterators;
     algorithm
-      str := str + indicator + "for " + InstNode.name(iter) + " in " + Expression.toString(range) + "\n";
+      str := str + indicator + "for " + Iterator.toString(iter) + "\n";
       str := str + toString(body, indent + "  ") + "\n";
       str := str + indent + "end for;\n";
     end forEquationToString;
@@ -312,18 +437,13 @@ public
       input output Equation eq;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt = NONE();
-      partial function MapFuncExp
-        input output Expression e;
-      end MapFuncExp;
-      partial function MapFuncCref
-        input output ComponentRef c;
-      end MapFuncCref;
     algorithm
       eq := match eq
         local
           Equation body;
           MapFuncCref funcCref;
-          Expression lhs, rhs, range;
+          Expression lhs, rhs;
+          Iterator iter;
           ComponentRef lhs_cref, rhs_cref;
           Algorithm alg;
           IfEquationBody ifEqBody;
@@ -403,10 +523,10 @@ public
 
         case FOR_EQUATION()
           algorithm
-            range := Expression.map(eq.range, funcExp);
+            iter := Iterator.map(eq.iter, funcExp);
             body := map(eq.body, funcExp, funcCrefOpt);
-            if not referenceEq(range, eq.range) then
-              eq.range := range;
+            if not referenceEq(iter, eq.iter) then
+              eq.iter := iter;
             end if;
             if not referenceEq(body, eq.body) then
               eq.body := body;
@@ -864,6 +984,26 @@ public
       end match;
     end getType;
 
+    function getForFrames
+      input Equation eqn;
+      output list<tuple<ComponentRef, Expression>> frames;
+    algorithm
+      frames := match eqn
+        local
+          list<ComponentRef> names;
+          list<Expression> ranges;
+
+        case FOR_EQUATION() algorithm
+          (names, ranges) := Iterator.getFrames(eqn.iter);
+        then List.zip(names, ranges);
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because eqation is not a for-equation: \n"
+            + Equation.toString(eqn)});
+        then fail();
+      end match;
+    end getForFrames;
+
     function isDiscrete
       input Pointer<Equation> eqn;
       output Boolean b;
@@ -893,6 +1033,16 @@ public
         else false;
       end match;
     end isWhenEquation;
+
+    function isForEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.FOR_EQUATION() then true;
+        else false;
+      end match;
+    end isForEquation;
 
     function isParameterEquation
       input Equation eqn;
@@ -953,6 +1103,85 @@ public
       eqn := Equation.fromLHSandRHS(lhs, rhs, idx, "BND", EQ_ATTR_DEFAULT_INITIAL);
     end generateBindingEquation;
 
+    function mergeIterators
+      input output Equation eq;
+      input Boolean top_level = true;
+      output list<Iterator> acc;
+    algorithm
+      (eq, acc) := match eq
+        local
+          Equation body;
+        case FOR_EQUATION() algorithm
+          (body, acc) := mergeIterators(eq.body, false);
+          acc := eq.iter :: acc;
+        then (if top_level then Equation.FOR_EQUATION(eq.ty, Iterator.merge(acc), body, eq.source, eq.attr) else body, acc);
+        else (eq, {});
+      end match;
+    end mergeIterators;
+
+    function slice
+      "performs a single slice based on the given indices and the cref to solve for"
+      input output Equation eqn             "equation to slice";
+      input list<Integer> indices           "zero based indices";
+      input ComponentRef cref               "cref to solve for";
+      output Boolean trivial                "returns true if there was no slicing, only rearranging";
+      input output FunctionTree funcTree    "function tree for solving";
+    protected
+      Integer first_idx     = List.first(indices)                                     "first strong component index";
+      Integer last_idx      = List.last(indices)                                      "last strong component index";
+      list<tuple<ComponentRef, Expression>> frames;
+      list<Dimension> dims;
+      list<Integer> sizes;
+      list<Integer> first_frame_location, last_frame_location, frame_comp;
+      list<Integer> sorted;
+    algorithm
+      (eqn, trivial) := match eqn
+        local
+          Equation body, sliced;
+          Solve.Status status;
+
+        case FOR_EQUATION() algorithm
+          // get the sizes of the 'return value' if the equation
+          dims                  := Type.arrayDims(Equation.getType(eqn));
+          sizes                 := list(Dimension.size(dim) for dim in dims);
+
+          // map first and last index to frame locations
+          first_frame_location  := BackendUtil.indexToFrame(first_idx, sizes);
+          last_frame_location   := BackendUtil.indexToFrame(last_idx, sizes);
+
+          // compare the location to see if any range has to be inverted
+          frame_comp            := BackendUtil.compareFrames(first_frame_location, last_frame_location);
+          frames                := getForFrames(eqn);
+
+          // solve the body equation for the cref
+          // ToDo: act on status not equal to EXPLICIT ?
+          (body, funcTree, status, _) := Solve.solve(eqn.body, cref, funcTree);
+
+          if Equation.size(eqn) == listLength(indices) then
+            // trivial solution! All equations are solved the same way
+            // only invert the necessary frames and keep the rest as is
+            trivial := true;
+            frames := BackendUtil.applyFrameInversion(frames, frame_comp);
+            sliced := FOR_EQUATION(
+              ty      = eqn.ty,
+              iter    = Iterator.fromFrames(frames),
+              body    = body,
+              source  = eqn.source,
+              attr    = eqn.attr
+            );
+          else
+            // nontrivial. try to rebuild the for loop frames and slice the equation
+            trivial := false;
+            sorted := List.sort(indices, intGt);
+          end if;
+        then (eqn, trivial);
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing is not yet supported for: \n"
+            + toString(eqn)});
+        then fail();
+      end match;
+    end slice;
   end Equation;
 
   uniontype IfEquationBody
@@ -992,12 +1221,6 @@ public
       input output IfEquationBody ifBody;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
-      partial function MapFuncExp
-        input output Expression e;
-      end MapFuncExp;
-      partial function MapFuncCref
-        input output ComponentRef c;
-      end MapFuncCref;
     protected
       Expression condition;
     algorithm
@@ -1062,12 +1285,6 @@ public
       input output WhenEquationBody whenBody;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
-      partial function MapFuncExp
-        input output Expression e;
-      end MapFuncExp;
-      partial function MapFuncCref
-        input output ComponentRef c;
-      end MapFuncCref;
     protected
       Expression condition;
     algorithm
@@ -1555,12 +1772,6 @@ public
       input output EquationPointers equations;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt = NONE();
-      partial function MapFuncExp
-        input output Expression e;
-      end MapFuncExp;
-      partial function MapFuncCref
-        input output ComponentRef c;
-      end MapFuncCref;
     protected
       Pointer<Equation> eq_ptr;
       Equation eq, new_eq;
