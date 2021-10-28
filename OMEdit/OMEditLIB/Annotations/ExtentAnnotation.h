@@ -26,6 +26,8 @@ class ExtentAnnotation : public DynamicAnnotation
     auto end()         { return mValue.end(); }
     auto end() const   { return mValue.end(); }
 
+    FlatModelica::Expression toExp() const override;
+
   private:
     void fromExp(const FlatModelica::Expression &exp) override;
 

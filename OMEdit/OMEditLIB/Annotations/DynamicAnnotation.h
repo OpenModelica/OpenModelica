@@ -44,9 +44,11 @@ class DynamicAnnotation
     bool update(double time, Element *parent);
     void reset();
     virtual void clear() = 0;
+    virtual FlatModelica::Expression toExp() const = 0;
 
   protected:
     virtual void fromExp(const FlatModelica::Expression &exp) = 0;
+    void setExp();
 
   protected:
     FlatModelica::Expression mExp;

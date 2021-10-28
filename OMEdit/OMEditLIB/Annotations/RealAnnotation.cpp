@@ -18,7 +18,13 @@ void RealAnnotation::clear()
 RealAnnotation& RealAnnotation::operator= (qreal value)
 {
   mValue = value;
+  setExp();
   return *this;
+}
+
+FlatModelica::Expression RealAnnotation::toExp() const
+{
+  return FlatModelica::Expression(mValue);
 }
 
 void RealAnnotation::fromExp(const FlatModelica::Expression &exp)

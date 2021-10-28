@@ -18,7 +18,13 @@ void BooleanAnnotation::clear()
 BooleanAnnotation& BooleanAnnotation::operator= (bool value)
 {
   mValue = value;
+  setExp();
   return *this;
+}
+
+FlatModelica::Expression BooleanAnnotation::toExp() const
+{
+  return FlatModelica::Expression(mValue);
 }
 
 void BooleanAnnotation::fromExp(const FlatModelica::Expression &exp)

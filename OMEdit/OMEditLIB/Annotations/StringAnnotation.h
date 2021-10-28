@@ -25,6 +25,8 @@ class StringAnnotation : public DynamicAnnotation
     QString toLower() const;
     QString toUpper() const;
 
+    FlatModelica::Expression toExp() const override;
+
   private:
     void fromExp(const FlatModelica::Expression &exp) override;
 

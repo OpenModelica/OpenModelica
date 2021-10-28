@@ -81,3 +81,12 @@ void DynamicAnnotation::reset()
       break;
   }
 }
+
+void DynamicAnnotation::setExp()
+{
+  if (mState == State::None) {
+    mExp = toExp();
+  } else {
+    mExp.setArg(0, toExp());
+  }
+}

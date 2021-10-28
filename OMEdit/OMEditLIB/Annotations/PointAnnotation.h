@@ -23,6 +23,8 @@ class PointAnnotation : public DynamicAnnotation
     bool operator== (const QPointF &c) const;
     bool operator!= (const QPointF &c) const;
 
+    FlatModelica::Expression toExp() const override;
+
   private:
     void fromExp(const FlatModelica::Expression &exp) override;
 

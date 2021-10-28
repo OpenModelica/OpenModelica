@@ -15,16 +15,8 @@ void StringAnnotation::clear()
 StringAnnotation& StringAnnotation::operator= (const QString &value)
 {
   mValue = value;
+  setExp();
   return *this;
-}
-
-void StringAnnotation::fromExp(const FlatModelica::Expression &exp)
-{
-  if (exp.isString()) {
-    mValue = exp.QStringValue();
-  } else {
-    mValue = exp.toQString();
-  }
 }
 
 bool StringAnnotation::contains(const QString &str) const
@@ -75,4 +67,18 @@ QString StringAnnotation::toLower() const
 QString StringAnnotation::toUpper() const
 {
   return mValue.toUpper();
+}
+
+FlatModelica::Expression StringAnnotation::toExp() const
+{
+  return FlatModelica::Expression(mValue);
+}
+
+void StringAnnotation::fromExp(const FlatModelica::Expression &exp)
+{
+  if (exp.isString()) {
+    mValue = exp.QStringValue();
+  } else {
+    mValue = exp.toQString();
+  }
 }
