@@ -171,9 +171,9 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     mTextExpression = FlatModelica::Expression::parse(list.at(9));
 
     if (mTextExpression.isCall("DynamicSelect")) {
-      mOriginalTextString = mTextExpression.arg(0).toQString();
+      mOriginalTextString = StringHandler::removeFirstLastQuotes(mTextExpression.arg(0).toQString());
     } else {
-      mOriginalTextString = mTextExpression.toQString();
+      mOriginalTextString = StringHandler::removeFirstLastQuotes(mTextExpression.toQString());
     }
   } catch (const std::exception &e) {
     qDebug() << "Failed to parse annotation: " << list.at(9);
@@ -459,7 +459,7 @@ QString TextAnnotation::getShapeAnnotation()
     annotationString.append(extentString);
   }
   // get the text string
-  annotationString.append(QString("textString=\"").append(mOriginalTextString).append("\""));
+  annotationString.append(QString("textString=\"%1\"").arg(mOriginalTextString));
   // get the font size
   if (mFontSize != 0) {
     annotationString.append(QString("fontSize=").append(QString::number(mFontSize)));
