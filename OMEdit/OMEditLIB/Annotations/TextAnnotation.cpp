@@ -167,19 +167,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   // 9th item of the list contains the extent points
   mExtents.parse(list.at(8));
   // 10th item of the list contains the textString.
-  try {
-    mTextExpression = FlatModelica::Expression::parse(list.at(9));
-
-    if (mTextExpression.isCall("DynamicSelect")) {
-      mOriginalTextString = mTextExpression.arg(0).toQString();
-    } else {
-      mOriginalTextString = mTextExpression.toQString();
-    }
-  } catch (const std::exception &e) {
-    qDebug() << "Failed to parse annotation: " << list.at(9);
-    qDebug() << e.what();
-  }
-  mTextString = mOriginalTextString;
+  mTextString.parse(list.at(9));
   initUpdateTextString();
 
   // 11th item of the list contains the fontSize.
@@ -250,7 +238,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   Q_UNUSED(widget);
   //! @note We don't show text annotation that contains % for Library Icons or if it is too long.
   if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) {
-    if (mOriginalTextString.contains("%") || mOriginalTextString.length() > maxTextLengthToShowOnLibraryIcon) {
+    if (mTextString.contains("%") || mTextString.length() > maxTextLengthToShowOnLibraryIcon) {
       return;
     }
   } else if (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
@@ -397,7 +385,7 @@ QString TextAnnotation::getOMCShapeAnnotation()
   extentString.append("}");
   annotationString.append(extentString);
   // get the text string
-  annotationString.append(QString("\"").append(mOriginalTextString).append("\""));
+  annotationString.append(QString("\"").append(mTextString).append("\""));
   // get the font size
   annotationString.append(QString::number(mFontSize));
   // get the text color
@@ -459,7 +447,7 @@ QString TextAnnotation::getShapeAnnotation()
     annotationString.append(extentString);
   }
   // get the text string
-  annotationString.append(QString("textString=\"").append(mOriginalTextString).append("\""));
+  annotationString.append(QString("textString=\"").append(mTextString).append("\""));
   // get the font size
   if (mFontSize != 0) {
     annotationString.append(QString("fontSize=").append(QString::number(mFontSize)));
@@ -503,7 +491,7 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void TextAnnotation::initUpdateTextString()
 {
   if (mpComponent) {
-    if (mOriginalTextString.contains("%") || mTextExpression.isCall("DynamicSelect")) {
+    if (mTextString.contains("%")) {
       updateTextString();
       connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
@@ -594,7 +582,7 @@ void TextAnnotation::updateTextString()
    */
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
   if (pLineAnnotation) {
-    if (mOriginalTextString.toLower().contains("%condition")) {
+    if (mTextString.toLower().contains("%condition")) {
       if (!pLineAnnotation->getCondition().isEmpty()) {
         mTextString.replace(QRegExp("%condition"), pLineAnnotation->getCondition());
       }
@@ -603,14 +591,15 @@ void TextAnnotation::updateTextString()
       }
     }
   } else if (mpComponent) {
-    mTextString = mOriginalTextString;
+    mTextString.reset();
+
     if (!mTextString.contains("%")) {
       return;
     }
-    if (mOriginalTextString.toLower().contains("%name")) {
+    if (mTextString.toLower().contains("%name")) {
       mTextString.replace(QRegExp("%name"), mpComponent->getName());
     }
-    if (mOriginalTextString.toLower().contains("%class") && mpComponent->getLibraryTreeItem()) {
+    if (mTextString.toLower().contains("%class") && mpComponent->getLibraryTreeItem()) {
       mTextString.replace(QRegExp("%class"), mpComponent->getLibraryTreeItem()->getNameStructure());
     }
     if (!mTextString.contains("%")) {
@@ -621,7 +610,7 @@ void TextAnnotation::updateTextString()
     /* call again with non-word characters so invalid % can be removed. */
     updateTextStringHelper(QRegExp("(%%|%\\{?\\W+(\\.\\W+)*\\}?)"));
     /* handle %% */
-    if (mOriginalTextString.toLower().contains("%%")) {
+    if (mTextString.toLower().contains("%%")) {
       mTextString.replace(QRegExp("%%"), "%");
     }
   }

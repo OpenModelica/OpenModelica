@@ -24,7 +24,7 @@ namespace FlatModelica
    *
    * Using the default constructor will create an Expression that contains no
    * value, the only methods allowed on such Expressions are the isXXX methods
-   * (like isNull()) and assignment operators.
+   * (like isNull()), toString/toQString, and assignment operators.
    *
    * Since Flat Modelica expression contain no type information and the result
    * files only store double values all variables are evaluated to Real
@@ -87,6 +87,7 @@ namespace FlatModelica
       double realValue() const;
       bool boolValue() const;
       std::string stringValue() const;
+      QString QStringValue() const;
 
       std::string toString() const;
       QString toQString() const;

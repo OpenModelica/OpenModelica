@@ -344,7 +344,6 @@ void ShapeAnnotation::setDefaults()
   mStartAngle = 0;
   mEndAngle = 360;
   mClosure = StringHandler::ClosureChord;
-  mOriginalTextString = "";
   mTextString = "";
   mFontSize = 0;
   mFontName = Helper::systemFontInfo.family();
@@ -380,7 +379,6 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mStartAngle = pShapeAnnotation->mStartAngle;
   mEndAngle = pShapeAnnotation->mEndAngle;
   mClosure = pShapeAnnotation->mClosure;
-  mOriginalTextString = pShapeAnnotation->mOriginalTextString;
   mTextString = pShapeAnnotation->mTextString;
   mFontSize = pShapeAnnotation->mFontSize;
   mFontName = pShapeAnnotation->mFontName;
@@ -799,7 +797,6 @@ void ShapeAnnotation::setOriginItemPos(const QPointF point)
   */
 void ShapeAnnotation::setTextString(QString textString)
 {
-  mOriginalTextString = textString;
   mTextString = textString;
 }
 
@@ -1095,21 +1092,7 @@ void ShapeAnnotation::updateDynamicSelect(double time)
   updated |= mStartAngle.update(time, mpParentComponent);
   updated |= mEndAngle.update(time, mpParentComponent);
   updated |= mFontSize.update(time, mpParentComponent);
-
-  // textString
-  if (mTextExpression.isCall("DynamicSelect")) {
-    mTextString = mTextExpression.arg(1).evaluate([&] (std::string name) {
-      auto vname = QString::fromStdString(name);
-
-      if (mpParentComponent && mpParentComponent->getComponentInfo()) {
-        vname = QString("%1.%2").arg(mpParentComponent->getName(), vname);
-      }
-
-      return MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time);
-    }).toQString();
-
-    updated = true;
-  }
+  updated |= mTextString.update(time, mpParentComponent);
 
   if (updated) {
     update();

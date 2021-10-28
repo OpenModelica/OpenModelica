@@ -1,8 +1,6 @@
 #include <algorithm>
 #include <QDebug>
 
-#include "Element/Element.h"
-#include "Plotting/VariablesWidget.h"
 #include "ExtentAnnotation.h"
 
 ExtentAnnotation::ExtentAnnotation() = default;

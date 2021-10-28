@@ -1749,12 +1749,25 @@ namespace FlatModelica
   }
 
   /*!
+   * \brief Expression::QStringValue
+   * Returns the QString value of the Expression if it's a String, or throws an
+   * error if the Expression is not a String.
+   * \return The QString value of the Expression.
+   */
+  QString Expression::QStringValue() const
+  {
+    return QString::fromStdString(dynamic_cast<const String&>(*_value).value());
+  }
+
+  /*!
    * \brief Expression::toString
    * Unparses the Expression into a string.
    * \return The string representation of the Expression.
    */
   std::string Expression::toString() const
   {
+    if (!_value) return std::string{};
+
     std::ostringstream ss;
     _value->print(ss);
     return ss.str();
