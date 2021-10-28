@@ -18,6 +18,7 @@ void ColorAnnotation::clear()
 ColorAnnotation& ColorAnnotation::operator= (const QColor &value)
 {
   mValue = value;
+  setExp();
   return *this;
 }
 
@@ -29,6 +30,16 @@ bool ColorAnnotation::operator== (const QColor &c) const
 bool ColorAnnotation::operator!= (const QColor &c) const
 {
   return mValue != c;
+}
+
+FlatModelica::Expression ColorAnnotation::toExp() const
+{
+  std::vector<FlatModelica::Expression> elems;
+  elems.reserve(3);
+  elems.emplace_back(FlatModelica::Expression(mValue.red()));
+  elems.emplace_back(FlatModelica::Expression(mValue.green()));
+  elems.emplace_back(FlatModelica::Expression(mValue.blue()));
+  return FlatModelica::Expression(std::move(elems));
 }
 
 void ColorAnnotation::fromExp(const FlatModelica::Expression &exp)

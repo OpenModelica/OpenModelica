@@ -14,6 +14,8 @@ class RealAnnotation : public DynamicAnnotation
     operator qreal() const { return mValue; }
     RealAnnotation& operator= (qreal value);
 
+    FlatModelica::Expression toExp() const override;
+
   private:
     void fromExp(const FlatModelica::Expression &exp) override;
 

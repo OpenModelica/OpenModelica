@@ -22,6 +22,8 @@ class ColorAnnotation : public DynamicAnnotation
     bool operator== (const QColor &c) const;
     bool operator!= (const QColor &c) const;
 
+    FlatModelica::Expression toExp() const override;
+
   private:
     void fromExp(const FlatModelica::Expression &exp) override;
 

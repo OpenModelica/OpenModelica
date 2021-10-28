@@ -18,7 +18,22 @@ void ExtentAnnotation::clear()
 ExtentAnnotation& ExtentAnnotation::operator= (const QList<QPointF> &value)
 {
   mValue = value;
+  setExp();
   return *this;
+}
+
+FlatModelica::Expression ExtentAnnotation::toExp() const
+{
+  std::vector<FlatModelica::Expression> elems;
+
+  for (auto &p: mValue) {
+    std::vector<FlatModelica::Expression> point;
+    point.emplace_back(p.x());
+    point.emplace_back(p.y());
+    elems.emplace_back(std::move(point));
+  }
+
+  return FlatModelica::Expression(std::move(elems));
 }
 
 void ExtentAnnotation::fromExp(const FlatModelica::Expression &exp)

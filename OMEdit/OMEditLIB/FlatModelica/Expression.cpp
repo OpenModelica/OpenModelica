@@ -544,6 +544,7 @@ namespace FlatModelica
       bool isLiteral() const override { return false; }
       bool isNamed(const std::string &name) const { return _name == name; }
       const std::vector<Expression>& args() const { return _args; }
+      void setArg(size_t index, const Expression &e);
 
       void print(std::ostream &os) const override;
 
@@ -1146,6 +1147,13 @@ namespace FlatModelica
     }
 
     return Expression(std::make_unique<Call>(_name, std::move(args)));
+  }
+
+  void Call::setArg(size_t index, const Expression &e)
+  {
+    if (index < _args.size()) {
+      _args[index] = e;
+    }
   }
 
   void Call::print(std::ostream &os) const
@@ -1801,6 +1809,11 @@ namespace FlatModelica
   const std::vector<Expression>& Expression::args() const
   {
     return dynamic_cast<const Call&>(*_value).args();
+  }
+
+  void Expression::setArg(size_t index, const Expression &e)
+  {
+    dynamic_cast<Call&>(*_value).setArg(index, e);
   }
 
   /*!

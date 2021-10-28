@@ -95,6 +95,7 @@ namespace FlatModelica
       const std::vector<Expression>& elements() const;
       const std::vector<Expression>& args() const;
       const Expression& arg(size_t index) const;
+      void setArg(size_t index, const Expression &e);
 
       Expression& operator+= (const Expression &other);
       Expression& operator-= (const Expression &other);

@@ -14,6 +14,8 @@ class BooleanAnnotation : public DynamicAnnotation
     operator bool() const { return mValue; }
     BooleanAnnotation& operator= (bool value);
 
+    FlatModelica::Expression toExp() const override;
+
   private:
     void fromExp(const FlatModelica::Expression &exp) override;
 
