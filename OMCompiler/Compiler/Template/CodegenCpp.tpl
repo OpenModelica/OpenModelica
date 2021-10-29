@@ -4147,7 +4147,7 @@ template extType2(Type type, Boolean isInput, Boolean isArray)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                          then "void*"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
-                         then 'struct <%underscorePath(rname)%>'
+                         then '<%underscorePath(rname)%>Type'
   case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
   else error(sourceInfo(), 'Unknown external C type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
@@ -4164,11 +4164,6 @@ template extTypeF77(Type type, Boolean isInput, Boolean isReference)
   case T_BOOL(__)        then "int"
   case T_ENUMERATION(__) then "int"
   case T_ARRAY(__)       then extTypeF77(ty, isInput, true)
-  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                         then "void*"
-  case T_COMPLEX(complexClassType=RECORD(path=rname))
-                         then '<%underscorePath(rname)%>'
-  case T_METATYPE(__) case T_METABOXED(__) then "void*"
   else error(sourceInfo(), 'Unknown external F77 type <%unparseType(type)%>')
   match type case T_ARRAY(__) case T_STRING(__) then s else if isReference then '<%if isInput then "const "%><%s%>*' else s
 end extTypeF77;
