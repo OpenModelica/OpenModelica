@@ -20,6 +20,11 @@ target_link_libraries(OMCppOMCFactory PUBLIC Boost::filesystem)
 target_link_libraries(OMCppOMCFactory PUBLIC Threads::Threads)
 target_link_libraries(OMCppOMCFactory PUBLIC ${CMAKE_DL_LIBS})
 
+if(WIN32)
+  target_link_libraries(OMCppOMCFactory PUBLIC wsock32)
+  target_link_libraries(OMCppOMCFactory PUBLIC ws2_32)
+endif()
+
 target_link_options(OMCppOMCFactory PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppOMCFactory)
