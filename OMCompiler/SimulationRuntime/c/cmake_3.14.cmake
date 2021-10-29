@@ -95,6 +95,10 @@ target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cminpack)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cdaskr)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
 
+if(WIN32)
+  target_link_libraries(OpenModelicaRuntimeC PUBLIC wsock32)
+endif(WIN32)
+
 # Fix me. Make an interface (header only library) out of 3rdParty/dgesv
 target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
 

@@ -219,7 +219,9 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::Modelica::IO)
 add_executable(omc .cmake/omc_main.c)
 target_link_libraries(omc PRIVATE OpenModelicaCompiler)
 
-target_link_options(omc PRIVATE -rdynamic)
+if(NOT WIN32)
+  target_link_options(omc PRIVATE -rdynamic)
+endif()
 
 # if(MINGW)
 #   target_link_options(omc PRIVATE -Wl,--stack,33554432)
@@ -250,6 +252,10 @@ install(FILES FrontEnd/MetaModelicaBuiltin.mo
 install(FILES FrontEnd/PDEModelicaBuiltin.mo
             DESTINATION lib/omc
             COMPONENT compiler)
+
+# Install the scripts to 'share' dir.
+install(DIRECTORY scripts
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/)
 
 
 # This is a convenience target to install omc. We are used to issuing 'make install' to install
