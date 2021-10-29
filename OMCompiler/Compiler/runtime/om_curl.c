@@ -76,6 +76,8 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result)
 
   curl_easy_setopt(eh, CURLOPT_PRIVATE, p);
   curl_easy_setopt(eh, CURLOPT_WRITEDATA, fout);
+  curl_easy_setopt(eh, CURLOPT_USERAGENT, "OpenModelica/1.0");
+  curl_easy_setopt(eh, CURLOPT_VERBOSE, 0);
   curl_multi_add_handle(cm, eh);
 
   return rest;
