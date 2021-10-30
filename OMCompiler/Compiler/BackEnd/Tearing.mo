@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -109,11 +109,20 @@ algorithm
     return;
   end if;
 
+  // Check if maxSizeLinearTearing maxSizeNonlinearTearing flag is illegal
+  if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) < 0) then
+    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeLinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING))});
+    fail();
+  elseif (Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING) < 0) then
+    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeNonlinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING))});
+    fail();
+  end if;
+
   // get method function and traverse systems
   try
     method := getTearingMethod(methodString);
-    BackendDAE.SHARED(backendDAEType=DAEtype) := inDAE.shared;
     if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      BackendDAE.SHARED(backendDAEType=DAEtype) := inDAE.shared;
       print("\n\n\n\n" + UNDERLINE + UNDERLINE + "\nCalling Tearing for " +
             BackendDump.printBackendDAEType2String(DAEtype) +
             "!\n" + UNDERLINE + UNDERLINE + "\n");
@@ -249,16 +258,6 @@ algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)) := isyst;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of traverseComponents\n\n");
-  end if;
-
-  // Check if maxSizeLinearTearing maxSizeNonlinearTearing flag is illegal
-  // phi: TODO move this to flag handling at the beginning
-  if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) < 0) then
-    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeLinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING))});
-    fail();
-  elseif (Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING) < 0) then
-    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeNonlinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING))});
-    fail();
   end if;
 
   (comps, runMatching, outStrongComponentIndex) := traverseComponents(comps, isyst, inShared, tearingMethod, inStrongComponentIndex);
