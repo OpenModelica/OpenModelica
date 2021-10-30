@@ -16,8 +16,11 @@ OpenModelica:
 
 .. _builtin-dynamic-optimization :
 
-Builtin Dynamic Optimization with OpenModelica and IpOpt
---------------------------------------------------------
+
+.. include:: OM_DOWithAnnotations.rst
+
+Built-in Dynamic Optimization using Optimica language extensions
+----------------------------------------------------------------
 
 *Note: this is a very short preliminary decription which soon will be
 considerably improved.*
@@ -246,7 +249,7 @@ CasADi and solves an optimization problem in windows PowerShell:
 
     E.g. C:\\OpenModelica1.9.2\\share\\casadi\\testmodel
 
-1. Perform compilation and generate the XML file
+2. Perform compilation and generate the XML file
 
    a. Go to your working directory
 
