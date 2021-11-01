@@ -213,7 +213,7 @@ extern struct record_description BackendDAE_BaseClockPartitionKind_UNKNOWN__PART
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef BackendDAE_Shared_SHARED__desc_added
 #define BackendDAE_Shared_SHARED__desc_added
-ADD_METARECORD_DEFINITIONS const char* BackendDAE_Shared_SHARED__desc__fields[19] = {"globalKnownVars","localKnownVars","externalObjects","aliasVars","initialEqs","removedEqs","constraints","classAttrs","cache","graph","functionTree","eventInfo","extObjClasses","backendDAEType","symjacs","info","partitionsInfo","daeModeData","dataReconciliationData"};
+ADD_METARECORD_DEFINITIONS const char* BackendDAE_Shared_SHARED__desc__fields[20] = {"globalKnownVars","localKnownVars","externalObjects","aliasVars","initialEqs","removedEqs","constraints","classAttrs","cache","graph","functionTree","eventInfo","extObjClasses","backendDAEType","symjacs","info","partitionsInfo","daeModeData","dataReconciliationData","timeInterval"};
 ADD_METARECORD_DEFINITIONS struct record_description BackendDAE_Shared_SHARED__desc = {
 "BackendDAE_Shared_SHARED",
 "BackendDAE.Shared.SHARED",
@@ -226,7 +226,7 @@ extern struct record_description BackendDAE_Shared_SHARED__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef BackendDAE_Shared_SHARED__desc_added
 #define BackendDAE_Shared_SHARED__desc_added
-ADD_METARECORD_DEFINITIONS const char* BackendDAE_Shared_SHARED__desc__fields[19] = {"globalKnownVars","localKnownVars","externalObjects","aliasVars","initialEqs","removedEqs","constraints","classAttrs","cache","graph","functionTree","eventInfo","extObjClasses","backendDAEType","symjacs","info","partitionsInfo","daeModeData","dataReconciliationData"};
+ADD_METARECORD_DEFINITIONS const char* BackendDAE_Shared_SHARED__desc__fields[20] = {"globalKnownVars","localKnownVars","externalObjects","aliasVars","initialEqs","removedEqs","constraints","classAttrs","cache","graph","functionTree","eventInfo","extObjClasses","backendDAEType","symjacs","info","partitionsInfo","daeModeData","dataReconciliationData","timeInterval"};
 ADD_METARECORD_DEFINITIONS struct record_description BackendDAE_Shared_SHARED__desc = {
 "BackendDAE_Shared_SHARED",
 "BackendDAE.Shared.SHARED",

@@ -505,7 +505,7 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_addComponentTypeOpt,2,0) {(void
 #define boxptr_DAEUtil_traverseDAEExpListStmt omc_DAEUtil_traverseDAEExpListStmt
 #define boxptr_DAEUtil_traverseDAEStmtsElse omc_DAEUtil_traverseDAEStmtsElse
 DLLExport
-modelica_metatype omc_DAEUtil_traverseDAEStmts(threadData_t *threadData, modelica_metatype _inStmts, modelica_fnptr _func, modelica_metatype _iextraArg, modelica_metatype *out_oextraArg);
+modelica_metatype omc_DAEUtil_traverseDAEStmts(threadData_t *threadData, modelica_metatype _inStmts, modelica_fnptr _func, modelica_metatype _iextraArg, modelica_metatype *out_extraArg);
 #define boxptr_DAEUtil_traverseDAEStmts omc_DAEUtil_traverseDAEStmts
 static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEStmts,2,0) {(void*) boxptr_DAEUtil_traverseDAEStmts,0}};
 #define boxvar_DAEUtil_traverseDAEStmts MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEStmts)
@@ -866,11 +866,11 @@ modelica_metatype boxptr_DAEUtil_isInputVar(threadData_t *threadData, modelica_m
 static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isInputVar,2,0) {(void*) boxptr_DAEUtil_isInputVar,0}};
 #define boxvar_DAEUtil_isInputVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isInputVar)
 DLLExport
-modelica_boolean omc_DAEUtil_isBidirVarDirection(threadData_t *threadData, modelica_metatype _inVarDirection);
+modelica_boolean omc_DAEUtil_isBidirElement(threadData_t *threadData, modelica_metatype _inElement);
 DLLExport
-modelica_metatype boxptr_DAEUtil_isBidirVarDirection(threadData_t *threadData, modelica_metatype _inVarDirection);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isBidirVarDirection,2,0) {(void*) boxptr_DAEUtil_isBidirVarDirection,0}};
-#define boxvar_DAEUtil_isBidirVarDirection MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isBidirVarDirection)
+modelica_metatype boxptr_DAEUtil_isBidirElement(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isBidirElement,2,0) {(void*) boxptr_DAEUtil_isBidirElement,0}};
+#define boxvar_DAEUtil_isBidirElement MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isBidirElement)
 DLLExport
 modelica_boolean omc_DAEUtil_isBidirVar(threadData_t *threadData, modelica_metatype _inElement);
 DLLExport
@@ -894,6 +894,12 @@ void omc_DAEUtil_assertProtectedVar(threadData_t *threadData, modelica_metatype 
 #define boxptr_DAEUtil_assertProtectedVar omc_DAEUtil_assertProtectedVar
 static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_assertProtectedVar,2,0) {(void*) boxptr_DAEUtil_assertProtectedVar,0}};
 #define boxvar_DAEUtil_assertProtectedVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_assertProtectedVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isOutputElement(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isOutputElement(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isOutputElement,2,0) {(void*) boxptr_DAEUtil_isOutputElement,0}};
+#define boxvar_DAEUtil_isOutputElement MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isOutputElement)
 DLLExport
 modelica_boolean omc_DAEUtil_isOutputVar(threadData_t *threadData, modelica_metatype _inElement);
 DLLExport
@@ -928,6 +934,11 @@ modelica_metatype omc_DAEUtil_getInputVars(threadData_t *threadData, modelica_me
 static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getInputVars,2,0) {(void*) boxptr_DAEUtil_getInputVars,0}};
 #define boxvar_DAEUtil_getInputVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getInputVars)
 DLLExport
+modelica_metatype omc_DAEUtil_getBidirElements(threadData_t *threadData, modelica_metatype _vl);
+#define boxptr_DAEUtil_getBidirElements omc_DAEUtil_getBidirElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getBidirElements,2,0) {(void*) boxptr_DAEUtil_getBidirElements,0}};
+#define boxvar_DAEUtil_getBidirElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getBidirElements)
+DLLExport
 modelica_metatype omc_DAEUtil_getBidirVars(threadData_t *threadData, modelica_metatype _vl);
 #define boxptr_DAEUtil_getBidirVars omc_DAEUtil_getBidirVars
 static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getBidirVars,2,0) {(void*) boxptr_DAEUtil_getBidirVars,0}};
@@ -937,6 +948,11 @@ modelica_metatype omc_DAEUtil_getProtectedVars(threadData_t *threadData, modelic
 #define boxptr_DAEUtil_getProtectedVars omc_DAEUtil_getProtectedVars
 static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getProtectedVars,2,0) {(void*) boxptr_DAEUtil_getProtectedVars,0}};
 #define boxvar_DAEUtil_getProtectedVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getProtectedVars)
+DLLExport
+modelica_metatype omc_DAEUtil_getOutputElements(threadData_t *threadData, modelica_metatype _vl);
+#define boxptr_DAEUtil_getOutputElements omc_DAEUtil_getOutputElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getOutputElements,2,0) {(void*) boxptr_DAEUtil_getOutputElements,0}};
+#define boxvar_DAEUtil_getOutputElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getOutputElements)
 DLLExport
 modelica_metatype omc_DAEUtil_getOutputVars(threadData_t *threadData, modelica_metatype _vl);
 #define boxptr_DAEUtil_getOutputVars omc_DAEUtil_getOutputVars

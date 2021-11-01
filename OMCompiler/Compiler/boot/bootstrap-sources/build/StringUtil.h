@@ -9,6 +9,16 @@
 extern "C" {
 #endif
 DLLExport
+modelica_string omc_StringUtil_stripBOM(threadData_t *threadData, modelica_string __omcQ_24in_5Fs, modelica_string *out_bom);
+#define boxptr_StringUtil_stripBOM omc_StringUtil_stripBOM
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_stripBOM,2,0) {(void*) boxptr_StringUtil_stripBOM,0}};
+#define boxvar_StringUtil_stripBOM MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_stripBOM)
+DLLExport
+modelica_string omc_StringUtil_convertCharNonAsciiToHex(threadData_t *threadData, modelica_string __omcQ_24in_5Fs);
+#define boxptr_StringUtil_convertCharNonAsciiToHex omc_StringUtil_convertCharNonAsciiToHex
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StringUtil_convertCharNonAsciiToHex,2,0) {(void*) boxptr_StringUtil_convertCharNonAsciiToHex,0}};
+#define boxvar_StringUtil_convertCharNonAsciiToHex MMC_REFSTRUCTLIT(boxvar_lit_StringUtil_convertCharNonAsciiToHex)
+DLLExport
 modelica_boolean omc_StringUtil_endsWithNewline(threadData_t *threadData, modelica_string _str);
 DLLExport
 modelica_metatype boxptr_StringUtil_endsWithNewline(threadData_t *threadData, modelica_metatype _str);

@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/SimCodeMain.c"
+#define OMC_FILE "SimCodeMain.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "SimCodeMain.h"
@@ -32,7 +32,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeMain.mo",58,3,58,35,0};
+FILE_INFO info = {"SimCodeMain.mo",58,3,58,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }
@@ -67,7 +67,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeMain.mo",38,3,38,35,0};
+FILE_INFO info = {"SimCodeMain.mo",38,3,38,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 }
 }
@@ -99,7 +99,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeMain.mo",19,3,19,35,0};
+FILE_INFO info = {"SimCodeMain.mo",19,3,19,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT2));
 }
 }

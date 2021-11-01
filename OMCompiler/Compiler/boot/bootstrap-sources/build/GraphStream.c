@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/GraphStream.c"
+#define OMC_FILE "GraphStream.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "GraphStream.h"
@@ -181,7 +181,6 @@ modelica_integer omc_GraphStream_startExternalViewer(threadData_t *threadData, m
 {
 modelica_integer _status;
 modelica_integer tmp1 = 0;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -198,15 +197,17 @@ threadData->mmc_jumper = &new_mmc_jumper;
 for (; tmp4 < 2; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-modelica_boolean tmp6;
+modelica_metatype tmpMeta6;
+modelica_metatype tmpMeta7;
+modelica_boolean tmp8;
 _omhome = omc_Settings_getInstallationDirectoryPath(threadData);
-tmpMeta[0] = stringAppend(_OMC_LIT0,_omhome);
-tmpMeta[1] = stringAppend(tmpMeta[0],_OMC_LIT1);
-_commandLinux = tmpMeta[1];
+tmpMeta6 = stringAppend(_OMC_LIT0,_omhome);
+tmpMeta7 = stringAppend(tmpMeta6,_OMC_LIT1);
+_commandLinux = tmpMeta7;
 _command = _commandLinux;
 _status = omc_System_systemCall(threadData, _command, _OMC_LIT2);
-tmp6 = (_status == ((modelica_integer) 0));
-if (1 != tmp6) goto goto_2;
+tmp8 = (_status == ((modelica_integer) 0));
+if (1 != tmp8) goto goto_2;
 tmp1 = _status;
 goto tmp3_done;
 }

@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/RewriteRules.c"
+#define OMC_FILE "RewriteRules.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "RewriteRules.h"
@@ -23,7 +23,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/RewriteRules.mo",24,3,24,35,0};
+FILE_INFO info = {"RewriteRules.mo",24,3,24,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }
@@ -41,7 +41,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/RewriteRules.mo",19,3,19,35,0};
+FILE_INFO info = {"RewriteRules.mo",19,3,19,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 }
 }

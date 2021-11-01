@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/HashTable5.c"
+#define OMC_FILE "HashTable5.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "HashTable5.h"
@@ -18,11 +18,11 @@ DLLExport
 modelica_metatype omc_HashTable5_emptyHashTableSized(threadData_t *threadData, modelica_integer _size)
 {
 modelica_metatype _hashTable = NULL;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = mmc_mk_box4(0, boxvar_HashTable5_hashFunc, boxvar_AbsynUtil_crefEqual, boxvar_Dump_printComponentRefStr, boxvar_intString);
-_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta[0]);
+tmpMeta1 = mmc_mk_box4(0, boxvar_HashTable5_hashFunc, boxvar_AbsynUtil_crefEqual, boxvar_Dump_printComponentRefStr, boxvar_intString);
+_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta1);
 _return: OMC_LABEL_UNUSED
 return _hashTable;
 }

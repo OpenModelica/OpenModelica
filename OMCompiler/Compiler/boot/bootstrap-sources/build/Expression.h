@@ -169,6 +169,11 @@ extern struct record_description SCode_Parallelism_NON__PARALLEL__desc;
 extern struct record_description SCode_Variability_VAR__desc;
 extern struct record_description SCode_Visibility_PUBLIC__desc;
 extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLExport
+modelica_metatype omc_Expression_arrayFirstScalar(threadData_t *threadData, modelica_metatype _exp);
+#define boxptr_Expression_arrayFirstScalar omc_Expression_arrayFirstScalar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Expression_arrayFirstScalar,2,0) {(void*) boxptr_Expression_arrayFirstScalar,0}};
+#define boxvar_Expression_arrayFirstScalar MMC_REFSTRUCTLIT(boxvar_lit_Expression_arrayFirstScalar)
 #define boxptr_Expression_consToListIgnoreSharedLiteralWork omc_Expression_consToListIgnoreSharedLiteralWork
 DLLExport
 modelica_metatype omc_Expression_consToListIgnoreSharedLiteral(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fe);
@@ -736,6 +741,12 @@ modelica_metatype boxptr_Expression_expContains(threadData_t *threadData, modeli
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Expression_expContains,2,0) {(void*) boxptr_Expression_expContains,0}};
 #define boxvar_Expression_expContains MMC_REFSTRUCTLIT(boxvar_lit_Expression_expContains)
 DLLExport
+modelica_boolean omc_Expression_expContainsList(threadData_t *threadData, modelica_metatype _expl, modelica_metatype _exp);
+DLLExport
+modelica_metatype boxptr_Expression_expContainsList(threadData_t *threadData, modelica_metatype _expl, modelica_metatype _exp);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Expression_expContainsList,2,0) {(void*) boxptr_Expression_expContainsList,0}};
+#define boxvar_Expression_expContainsList MMC_REFSTRUCTLIT(boxvar_lit_Expression_expContainsList)
+DLLExport
 modelica_boolean omc_Expression_expStructuralEqualList(threadData_t *threadData, modelica_metatype _inExp1, modelica_metatype _inExp2);
 DLLExport
 modelica_metatype boxptr_Expression_expStructuralEqualList(threadData_t *threadData, modelica_metatype _inExp1, modelica_metatype _inExp2);
@@ -1089,6 +1100,12 @@ DLLExport
 modelica_metatype boxptr_Expression_isConstValue(threadData_t *threadData, modelica_metatype _inExp);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Expression_isConstValue,2,0) {(void*) boxptr_Expression_isConstValue,0}};
 #define boxvar_Expression_isConstValue MMC_REFSTRUCTLIT(boxvar_lit_Expression_isConstValue)
+DLLExport
+modelica_real omc_Expression_getEvaluatedConstReal(threadData_t *threadData, modelica_metatype _inExp);
+DLLExport
+modelica_metatype boxptr_Expression_getEvaluatedConstReal(threadData_t *threadData, modelica_metatype _inExp);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Expression_getEvaluatedConstReal,2,0) {(void*) boxptr_Expression_getEvaluatedConstReal,0}};
+#define boxvar_Expression_getEvaluatedConstReal MMC_REFSTRUCTLIT(boxvar_lit_Expression_getEvaluatedConstReal)
 DLLExport
 modelica_integer omc_Expression_getEvaluatedConstInteger(threadData_t *threadData, modelica_metatype _inExp);
 DLLExport
@@ -2231,10 +2248,10 @@ modelica_metatype omc_Expression_unliftArray(threadData_t *threadData, modelica_
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Expression_unliftArray,2,0) {(void*) boxptr_Expression_unliftArray,0}};
 #define boxvar_Expression_unliftArray MMC_REFSTRUCTLIT(boxvar_lit_Expression_unliftArray)
 DLLExport
-modelica_metatype omc_Expression_subscriptExp(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inSubs);
-#define boxptr_Expression_subscriptExp omc_Expression_subscriptExp
-static const MMC_DEFSTRUCTLIT(boxvar_lit_Expression_subscriptExp,2,0) {(void*) boxptr_Expression_subscriptExp,0}};
-#define boxvar_Expression_subscriptExp MMC_REFSTRUCTLIT(boxvar_lit_Expression_subscriptExp)
+modelica_metatype omc_Expression_applyExpSubscripts2(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inSubs);
+#define boxptr_Expression_applyExpSubscripts2 omc_Expression_applyExpSubscripts2
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Expression_applyExpSubscripts2,2,0) {(void*) boxptr_Expression_applyExpSubscripts2,0}};
+#define boxvar_Expression_applyExpSubscripts2 MMC_REFSTRUCTLIT(boxvar_lit_Expression_applyExpSubscripts2)
 DLLExport
 modelica_metatype omc_Expression_applyExpSubscriptsFoldCheckSimplify(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fexp, modelica_metatype _inSubs, modelica_boolean __omcQ_24in_5FcheckSimplify, modelica_boolean *out_checkSimplify);
 DLLExport

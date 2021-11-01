@@ -44,12 +44,18 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_ClassLoader_checkOnLoadMessage,2,0) {(v
 #define boxptr_ClassLoader_makeClassPart omc_ClassLoader_makeClassPart
 #define boxptr_ClassLoader_getBothPackageAndFilename omc_ClassLoader_getBothPackageAndFilename
 DLLExport
-modelica_metatype omc_ClassLoader_parsePackageFile(threadData_t *threadData, modelica_string _name, modelica_metatype _strategy, modelica_boolean _expectPackage, modelica_metatype _w1, modelica_string _pack);
+modelica_metatype omc_ClassLoader_parsePackageFile(threadData_t *threadData, modelica_string _name, modelica_metatype _strategy, modelica_boolean _expectPackage, modelica_metatype _w1, modelica_string _pack, modelica_boolean _encrypted);
 DLLExport
-modelica_metatype boxptr_ClassLoader_parsePackageFile(threadData_t *threadData, modelica_metatype _name, modelica_metatype _strategy, modelica_metatype _expectPackage, modelica_metatype _w1, modelica_metatype _pack);
+modelica_metatype boxptr_ClassLoader_parsePackageFile(threadData_t *threadData, modelica_metatype _name, modelica_metatype _strategy, modelica_metatype _expectPackage, modelica_metatype _w1, modelica_metatype _pack, modelica_metatype _encrypted);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ClassLoader_parsePackageFile,2,0) {(void*) boxptr_ClassLoader_parsePackageFile,0}};
 #define boxvar_ClassLoader_parsePackageFile MMC_REFSTRUCTLIT(boxvar_lit_ClassLoader_parsePackageFile)
 #define boxptr_ClassLoader_mergeBefore omc_ClassLoader_mergeBefore
+DLLExport
+modelica_metatype omc_ClassLoader_loadClassFromMp(threadData_t *threadData, modelica_string _id, modelica_string _path, modelica_string _name, modelica_boolean _isDir, modelica_metatype _optEncoding, modelica_boolean _encrypted);
+DLLExport
+modelica_metatype boxptr_ClassLoader_loadClassFromMp(threadData_t *threadData, modelica_metatype _id, modelica_metatype _path, modelica_metatype _name, modelica_metatype _isDir, modelica_metatype _optEncoding, modelica_metatype _encrypted);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ClassLoader_loadClassFromMp,2,0) {(void*) boxptr_ClassLoader_loadClassFromMp,0}};
+#define boxvar_ClassLoader_loadClassFromMp MMC_REFSTRUCTLIT(boxvar_lit_ClassLoader_loadClassFromMp)
 DLLExport
 modelica_metatype omc_ClassLoader_loadClass(threadData_t *threadData, modelica_metatype _inPath, modelica_metatype _priorityList, modelica_string _modelicaPath, modelica_metatype _encoding, modelica_boolean _requireExactVersion, modelica_boolean _encrypted);
 DLLExport

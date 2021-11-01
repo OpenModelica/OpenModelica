@@ -10,6 +10,7 @@ extern "C" {
 #endif
 extern struct record_description SemanticVersion_Version_NONSEMVER__desc;
 extern struct record_description SemanticVersion_Version_SEMVER__desc;
+#define boxptr_SemanticVersion_splitPrereleaseAndMeta omc_SemanticVersion_splitPrereleaseAndMeta
 DLLExport
 modelica_boolean omc_SemanticVersion_isSemVer(threadData_t *threadData, modelica_metatype _v);
 DLLExport
@@ -40,8 +41,9 @@ modelica_metatype boxptr_SemanticVersion_compare(threadData_t *threadData, model
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SemanticVersion_compare,2,0) {(void*) boxptr_SemanticVersion_compare,0}};
 #define boxvar_SemanticVersion_compare MMC_REFSTRUCTLIT(boxvar_lit_SemanticVersion_compare)
 DLLExport
-modelica_metatype omc_SemanticVersion_parse(threadData_t *threadData, modelica_string _s);
-#define boxptr_SemanticVersion_parse omc_SemanticVersion_parse
+modelica_metatype omc_SemanticVersion_parse(threadData_t *threadData, modelica_string _s, modelica_boolean _nonsemverAsZeroZeroZero);
+DLLExport
+modelica_metatype boxptr_SemanticVersion_parse(threadData_t *threadData, modelica_metatype _s, modelica_metatype _nonsemverAsZeroZeroZero);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SemanticVersion_parse,2,0) {(void*) boxptr_SemanticVersion_parse,0}};
 #define boxvar_SemanticVersion_parse MMC_REFSTRUCTLIT(boxvar_lit_SemanticVersion_parse)
 #ifdef __cplusplus

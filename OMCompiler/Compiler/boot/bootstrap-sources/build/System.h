@@ -855,12 +855,12 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_System_lookupFunction,2,0) {(void*) box
 #define boxvar_System_lookupFunction MMC_REFSTRUCTLIT(boxvar_lit_System_lookupFunction)
 extern int System_lookupFunction(int /*_inLibHandle*/, const char* /*_inFunc*/);
 DLLExport
-modelica_integer omc_System_loadLibrary(threadData_t *threadData, modelica_string _inLib, modelica_boolean _inPrintDebug);
+modelica_integer omc_System_loadLibrary(threadData_t *threadData, modelica_string _inLib, modelica_boolean _relativePath, modelica_boolean _printDebug);
 DLLExport
-modelica_metatype boxptr_System_loadLibrary(threadData_t *threadData, modelica_metatype _inLib, modelica_metatype _inPrintDebug);
+modelica_metatype boxptr_System_loadLibrary(threadData_t *threadData, modelica_metatype _inLib, modelica_metatype _relativePath, modelica_metatype _printDebug);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_System_loadLibrary,2,0) {(void*) boxptr_System_loadLibrary,0}};
 #define boxvar_System_loadLibrary MMC_REFSTRUCTLIT(boxvar_lit_System_loadLibrary)
-extern int System_loadLibrary(const char* /*_inLib*/, int /*_inPrintDebug*/);
+extern int System_loadLibrary(const char* /*_inLib*/, int /*_relativePath*/, int /*_printDebug*/);
 DLLExport
 modelica_string omc_System_getLDFlags(threadData_t *threadData);
 #define boxptr_System_getLDFlags omc_System_getLDFlags

@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/ParserExt.c"
+#define OMC_FILE "ParserExt.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "ParserExt.h"
@@ -17,12 +17,23 @@ _lveInstance_ext = (modelica_metatype)_lveInstance;
 ParserExt_stopLibraryVendorExecutable(_lveInstance_ext);
 return;
 }
-void omc_ParserExt_checkLVEToolFeature(threadData_t *threadData, modelica_metatype _lveInstance, modelica_string _feature)
+modelica_boolean omc_ParserExt_checkLVEToolFeature(threadData_t *threadData, modelica_metatype _lveInstance, modelica_string _feature)
 {
 modelica_metatype _lveInstance_ext;
+int _status_ext;
+modelica_boolean _status;
 _lveInstance_ext = (modelica_metatype)_lveInstance;
-ParserExt_checkLVEToolFeature(_lveInstance_ext, MMC_STRINGDATA(_feature));
-return;
+_status_ext = ParserExt_checkLVEToolFeature(_lveInstance_ext, MMC_STRINGDATA(_feature));
+_status = (modelica_boolean)_status_ext;
+return _status;
+}
+modelica_metatype boxptr_ParserExt_checkLVEToolFeature(threadData_t *threadData, modelica_metatype _lveInstance, modelica_metatype _feature)
+{
+modelica_boolean _status;
+modelica_metatype out_status;
+_status = omc_ParserExt_checkLVEToolFeature(threadData, _lveInstance, _feature);
+out_status = mmc_mk_icon(_status);
+return out_status;
 }
 modelica_boolean omc_ParserExt_checkLVEToolLicense(threadData_t *threadData, modelica_metatype _lveInstance, modelica_string _packageName)
 {
@@ -61,6 +72,32 @@ modelica_metatype out_success;
 _success = omc_ParserExt_startLibraryVendorExecutable(threadData, _lvePath, out_lveInstance);
 out_success = mmc_mk_icon(_success);
 return out_success;
+}
+modelica_metatype omc_ParserExt_stringMod(threadData_t *threadData, modelica_string _str, modelica_string _infoFilename, modelica_integer _acceptedGram, modelica_integer _languageStandardInt, modelica_boolean _runningTestsuite)
+{
+int _acceptedGram_ext;
+int _languageStandardInt_ext;
+int _runningTestsuite_ext;
+modelica_metatype _cref_ext;
+modelica_metatype _cref = NULL;
+_acceptedGram_ext = (int)_acceptedGram;
+_languageStandardInt_ext = (int)_languageStandardInt;
+_runningTestsuite_ext = (int)_runningTestsuite;
+_cref_ext = ParserExt_stringMod(MMC_STRINGDATA(_str), MMC_STRINGDATA(_infoFilename), _acceptedGram_ext, _languageStandardInt_ext, _runningTestsuite_ext);
+_cref = (modelica_metatype)_cref_ext;
+return _cref;
+}
+modelica_metatype boxptr_ParserExt_stringMod(threadData_t *threadData, modelica_metatype _str, modelica_metatype _infoFilename, modelica_metatype _acceptedGram, modelica_metatype _languageStandardInt, modelica_metatype _runningTestsuite)
+{
+modelica_integer tmp1;
+modelica_integer tmp2;
+modelica_integer tmp3;
+modelica_metatype _cref = NULL;
+tmp1 = mmc_unbox_integer(_acceptedGram);
+tmp2 = mmc_unbox_integer(_languageStandardInt);
+tmp3 = mmc_unbox_integer(_runningTestsuite);
+_cref = omc_ParserExt_stringMod(threadData, _str, _infoFilename, tmp1, tmp2, tmp3);
+return _cref;
 }
 modelica_metatype omc_ParserExt_stringCref(threadData_t *threadData, modelica_string _str, modelica_string _infoFilename, modelica_integer _acceptedGram, modelica_integer _languageStandardInt, modelica_boolean _runningTestsuite)
 {

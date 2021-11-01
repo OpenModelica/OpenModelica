@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Builtin.c"
+#define OMC_FILE "Builtin.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Builtin.h"
@@ -165,112 +165,123 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_Builtin_getSetInitialGraph,2,0) {(void*
 PROTECTED_FUNCTION_STATIC modelica_metatype omc_Builtin_getSetInitialGraph(threadData_t *threadData, modelica_metatype _inEnvOpt)
 {
 modelica_metatype _initialEnv = NULL;
-modelica_metatype tmpMeta[10] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
-volatile modelica_metatype tmp3_1;
-tmp3_1 = _inEnvOpt;
+volatile modelica_metatype tmp4_1;
+tmp4_1 = _inEnvOpt;
 {
 modelica_metatype _assocLst = NULL;
 modelica_metatype _graph = NULL;
 modelica_integer _f;
-volatile mmc_switch_type tmp3;
-int tmp4;
-tmp3 = 0;
+volatile mmc_switch_type tmp4;
+int tmp5;
+tmp4 = 0;
 MMC_TRY_INTERNAL(mmc_jumper)
-tmp2_top:
+tmp3_top:
 threadData->mmc_jumper = &new_mmc_jumper;
-for (; tmp3 < 3; tmp3++) {
-switch (MMC_SWITCH_CAST(tmp3)) {
+for (; tmp4 < 3; tmp4++) {
+switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-modelica_boolean tmp5;
-tmp5 = 0;
+modelica_boolean tmp6;
+modelica_metatype tmpMeta8;
+tmp6 = 0;
 MMC_TRY_INTERNAL(mmc_jumper)
 getGlobalRoot(((modelica_integer) 18));
-tmp5 = 1;
-goto goto_6;
-goto_6:;
+tmp6 = 1;
+goto goto_7;
+goto_7:;
 MMC_CATCH_INTERNAL(mmc_jumper)
-if (tmp5) {goto goto_1;}
-tmpMeta[1] = MMC_REFSTRUCTLIT(mmc_nil);
-setGlobalRoot(((modelica_integer) 18), tmpMeta[1]);
-goto goto_1;
-goto tmp2_done;
+if (tmp6) {goto goto_2;}
+tmpMeta8 = MMC_REFSTRUCTLIT(mmc_nil);
+setGlobalRoot(((modelica_integer) 18), tmpMeta8);
+goto goto_2;
+goto tmp3_done;
 }
 case 1: {
-if (!optionNone(tmp3_1)) goto tmp2_end;
-tmp3 += 1;
+if (!optionNone(tmp4_1)) goto tmp3_end;
+tmp4 += 1;
 _assocLst = getGlobalRoot(((modelica_integer) 18));
-tmpMeta[0] = omc_FGraph_clone(threadData, omc_Util_assoc(threadData, mmc_mk_integer(omc_Flags_getConfigEnum(threadData, _OMC_LIT29)), _assocLst));
-goto tmp2_done;
+tmpMeta1 = omc_FGraph_clone(threadData, omc_Util_assoc(threadData, mmc_mk_integer(omc_Flags_getConfigEnum(threadData, _OMC_LIT29)), _assocLst));
+goto tmp3_done;
 }
 case 2: {
-modelica_boolean tmp7;
-modelica_boolean tmp8;
-modelica_boolean tmp9;
-if (optionNone(tmp3_1)) goto tmp2_end;
-tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 1));
-_graph = tmpMeta[1];
+modelica_metatype tmpMeta9;
+modelica_metatype tmpMeta10;
+modelica_metatype tmpMeta11;
+modelica_metatype tmpMeta12;
+modelica_metatype tmpMeta13;
+modelica_metatype tmpMeta14;
+modelica_metatype tmpMeta15;
+modelica_boolean tmp16;
+modelica_metatype tmpMeta17;
+modelica_boolean tmp18;
+modelica_metatype tmpMeta19;
+modelica_boolean tmp20;
+modelica_metatype tmpMeta21;
+if (optionNone(tmp4_1)) goto tmp3_end;
+tmpMeta9 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 1));
+_graph = tmpMeta9;
 _assocLst = getGlobalRoot(((modelica_integer) 18));
 _f = omc_Flags_getConfigEnum(threadData, _OMC_LIT29);
-tmp9 = (modelica_boolean)(_f == ((modelica_integer) 2));
-if(tmp9)
+tmp20 = (modelica_boolean)(_f == ((modelica_integer) 2));
+if(tmp20)
 {
-tmpMeta[2] = mmc_mk_box2(0, mmc_mk_integer(((modelica_integer) 2)), _graph);
-tmpMeta[1] = mmc_mk_cons(tmpMeta[2], _assocLst);
-tmpMeta[9] = tmpMeta[1];
+tmpMeta11 = mmc_mk_box2(0, mmc_mk_integer(((modelica_integer) 2)), _graph);
+tmpMeta10 = mmc_mk_cons(tmpMeta11, _assocLst);
+tmpMeta21 = tmpMeta10;
 }
 else
 {
-tmp8 = (modelica_boolean)(_f == ((modelica_integer) 3));
-if(tmp8)
+tmp18 = (modelica_boolean)(_f == ((modelica_integer) 3));
+if(tmp18)
 {
-tmpMeta[4] = mmc_mk_box2(0, mmc_mk_integer(((modelica_integer) 3)), _graph);
-tmpMeta[3] = mmc_mk_cons(tmpMeta[4], _assocLst);
-tmpMeta[8] = tmpMeta[3];
+tmpMeta13 = mmc_mk_box2(0, mmc_mk_integer(((modelica_integer) 3)), _graph);
+tmpMeta12 = mmc_mk_cons(tmpMeta13, _assocLst);
+tmpMeta19 = tmpMeta12;
 }
 else
 {
-tmp7 = (modelica_boolean)(_f == ((modelica_integer) 1));
-if(tmp7)
+tmp16 = (modelica_boolean)(_f == ((modelica_integer) 1));
+if(tmp16)
 {
-tmpMeta[6] = mmc_mk_box2(0, mmc_mk_integer(((modelica_integer) 1)), _graph);
-tmpMeta[5] = mmc_mk_cons(tmpMeta[6], _assocLst);
-tmpMeta[7] = tmpMeta[5];
+tmpMeta15 = mmc_mk_box2(0, mmc_mk_integer(((modelica_integer) 1)), _graph);
+tmpMeta14 = mmc_mk_cons(tmpMeta15, _assocLst);
+tmpMeta17 = tmpMeta14;
 }
 else
 {
-tmpMeta[7] = _assocLst;
+tmpMeta17 = _assocLst;
 }
-tmpMeta[8] = tmpMeta[7];
+tmpMeta19 = tmpMeta17;
 }
-tmpMeta[9] = tmpMeta[8];
+tmpMeta21 = tmpMeta19;
 }
-_assocLst = tmpMeta[9];
+_assocLst = tmpMeta21;
 setGlobalRoot(((modelica_integer) 18), _assocLst);
-tmpMeta[0] = _graph;
-goto tmp2_done;
+tmpMeta1 = _graph;
+goto tmp3_done;
 }
 }
-goto tmp2_end;
-tmp2_end: ;
+goto tmp3_end;
+tmp3_end: ;
 }
-goto goto_1;
-tmp2_done:
-(void)tmp3;
+goto goto_2;
+tmp3_done:
+(void)tmp4;
 MMC_RESTORE_INTERNAL(mmc_jumper);
-goto tmp2_done2;
-goto_1:;
+goto tmp3_done2;
+goto_2:;
 MMC_CATCH_INTERNAL(mmc_jumper);
-if (++tmp3 < 3) {
-goto tmp2_top;
+if (++tmp4 < 3) {
+goto tmp3_top;
 }
 MMC_THROW_INTERNAL();
-tmp2_done2:;
+tmp3_done2:;
 }
 }
-_initialEnv = tmpMeta[0];
+_initialEnv = tmpMeta1;
 _return: OMC_LABEL_UNUSED
 return _initialEnv;
 }
@@ -358,7 +369,6 @@ return _outCache;
 DLLExport
 void omc_Builtin_isDer(threadData_t *threadData, modelica_metatype _inPath)
 {
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -372,15 +382,17 @@ tmp3 = 0;
 for (; tmp3 < 2; tmp3++) {
 switch (MMC_SWITCH_CAST(tmp3)) {
 case 0: {
+modelica_metatype tmpMeta5;
 if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,1,1) == 0) goto tmp2_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
-if (3 != MMC_STRLEN(tmpMeta[0]) || strcmp(MMC_STRINGDATA(_OMC_LIT59), MMC_STRINGDATA(tmpMeta[0])) != 0) goto tmp2_end;
+tmpMeta5 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
+if (3 != MMC_STRLEN(tmpMeta5) || strcmp(MMC_STRINGDATA(_OMC_LIT59), MMC_STRINGDATA(tmpMeta5)) != 0) goto tmp2_end;
 goto tmp2_done;
 }
 case 1: {
+modelica_metatype tmpMeta6;
 if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,2,1) == 0) goto tmp2_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
-_path = tmpMeta[0];
+tmpMeta6 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
+_path = tmpMeta6;
 _inPath = _path;
 goto _tailrecursive;
 ;
@@ -474,7 +486,6 @@ modelica_boolean omc_Builtin_variableIsBuiltin(threadData_t *threadData, modelic
 {
 modelica_boolean _b;
 modelica_boolean tmp1 = 0;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -488,9 +499,10 @@ tmp4 = 0;
 for (; tmp4 < 2; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
+modelica_metatype tmpMeta6;
 if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,1,3) == 0) goto tmp3_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 2));
-_id = tmpMeta[0];
+tmpMeta6 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 2));
+_id = tmpMeta6;
 tmp1 = omc_Builtin_variableNameIsBuiltin(threadData, _id);
 goto tmp3_done;
 }

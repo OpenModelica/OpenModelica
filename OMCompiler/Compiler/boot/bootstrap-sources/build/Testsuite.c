@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Testsuite.c"
+#define OMC_FILE "Testsuite.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Testsuite.h"
@@ -45,7 +45,6 @@ modelica_string omc_Testsuite_friendlyPath(threadData_t *threadData, modelica_st
 {
 modelica_string _outPath = NULL;
 modelica_string tmp1 = 0;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -63,17 +62,18 @@ case 0: {
 modelica_boolean tmp6;
 modelica_boolean tmp7;
 modelica_boolean tmp8;
-modelica_boolean tmp9;
+modelica_metatype tmpMeta9;
+modelica_boolean tmp10;
 tmp6 = omc_Testsuite_isRunning(threadData);
 if (1 != tmp6) goto goto_2;
 tmp7 = omc_System_directoryExists(threadData, _inPath);
 if (0 != tmp7) goto goto_2;
 tmp8 = omc_System_regularFileExists(threadData, _inPath);
 if (0 != tmp8) goto goto_2;
-tmpMeta[0] = stringAppend(_OMC_LIT0,_inPath);
-_path = tmpMeta[0];
-tmp9 = (omc_System_directoryExists(threadData, _path) || omc_System_regularFileExists(threadData, _path));
-if (1 != tmp9) goto goto_2;
+tmpMeta9 = stringAppend(_OMC_LIT0,_inPath);
+_path = tmpMeta9;
+tmp10 = (omc_System_directoryExists(threadData, _path) || omc_System_regularFileExists(threadData, _path));
+if (1 != tmp10) goto goto_2;
 tmp1 = _path;
 goto tmp3_done;
 }
@@ -107,7 +107,6 @@ PROTECTED_FUNCTION_STATIC modelica_string omc_Testsuite_friendly2(threadData_t *
 {
 modelica_string _friendly = NULL;
 modelica_string tmp1 = 0;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -123,6 +122,7 @@ tmp4 = 0;
 for (; tmp4 < 2; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
+modelica_metatype tmpMeta6;
 if (1 != tmp4_1) goto tmp3_end;
 _newName = _name;
 _i = omc_System_regex(threadData, _newName, _OMC_LIT1, ((modelica_integer) 7), 1, 0 ,&_strs);
@@ -130,8 +130,8 @@ _friendly = listGet(_strs, _i);
 _i = omc_System_regex(threadData, _friendly, _OMC_LIT2, ((modelica_integer) 4), 1, 0 ,&_strs);
 if((_i == ((modelica_integer) 4)))
 {
-tmpMeta[0] = stringAppend(listGet(_strs, ((modelica_integer) 2)),listGet(_strs, ((modelica_integer) 4)));
-_friendly = tmpMeta[0];
+tmpMeta6 = stringAppend(listGet(_strs, ((modelica_integer) 2)),listGet(_strs, ((modelica_integer) 4)));
+_friendly = tmpMeta6;
 }
 tmp1 = _friendly;
 goto tmp3_done;

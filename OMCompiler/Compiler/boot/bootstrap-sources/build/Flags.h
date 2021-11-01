@@ -53,6 +53,12 @@ modelica_metatype omc_Flags_getConfigValue(threadData_t *threadData, modelica_me
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigValue,2,0) {(void*) boxptr_Flags_getConfigValue,0}};
 #define boxvar_Flags_getConfigValue MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigValue)
 DLLExport
+modelica_boolean omc_Flags_isConfigFlagSet(threadData_t *threadData, modelica_metatype _inFlag, modelica_string _hasMember);
+DLLExport
+modelica_metatype boxptr_Flags_isConfigFlagSet(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype _hasMember);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_isConfigFlagSet,2,0) {(void*) boxptr_Flags_isConfigFlagSet,0}};
+#define boxvar_Flags_isConfigFlagSet MMC_REFSTRUCTLIT(boxvar_lit_Flags_isConfigFlagSet)
+DLLExport
 modelica_boolean omc_Flags_isSet(threadData_t *threadData, modelica_metatype _inFlag);
 DLLExport
 modelica_metatype boxptr_Flags_isSet(threadData_t *threadData, modelica_metatype _inFlag);

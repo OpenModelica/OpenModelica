@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/SimCodeFunction.c"
+#define OMC_FILE "SimCodeFunction.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "SimCodeFunction.h"
@@ -55,163 +55,188 @@ return _outPaths;
 PROTECTED_FUNCTION_STATIC modelica_metatype omc_SimCodeFunction_removeThreadDataFunction(threadData_t *threadData, modelica_metatype _inFuncs, modelica_metatype _inAcc)
 {
 modelica_metatype _outFuncs = NULL;
-modelica_metatype tmpMeta[10] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
-modelica_metatype tmp3_1;
-tmp3_1 = _inFuncs;
+modelica_metatype tmp4_1;
+tmp4_1 = _inFuncs;
 {
 modelica_metatype _rest = NULL;
 modelica_metatype _f = NULL;
-volatile mmc_switch_type tmp3;
-int tmp4;
-tmp3 = 0;
-for (; tmp3 < 3; tmp3++) {
-switch (MMC_SWITCH_CAST(tmp3)) {
+volatile mmc_switch_type tmp4;
+int tmp5;
+tmp4 = 0;
+for (; tmp4 < 3; tmp4++) {
+switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (!listEmpty(tmp3_1)) goto tmp2_end;
-tmpMeta[0] = listReverse(_inAcc);
-goto tmp2_done;
+if (!listEmpty(tmp4_1)) goto tmp3_end;
+tmpMeta1 = listReverse(_inAcc);
+goto tmp3_done;
 }
 case 1: {
-if (listEmpty(tmp3_1)) goto tmp2_end;
-tmpMeta[1] = MMC_CAR(tmp3_1);
-tmpMeta[2] = MMC_CDR(tmp3_1);
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],4,5) == 0) goto tmp2_end;
-tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 2));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[3],2,1) == 0) goto tmp2_end;
-tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[4],0,2) == 0) goto tmp2_end;
-tmpMeta[5] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[4]), 2));
-if (12 != MMC_STRLEN(tmpMeta[5]) || strcmp(MMC_STRINGDATA(_OMC_LIT1), MMC_STRINGDATA(tmpMeta[5])) != 0) goto tmp2_end;
-tmpMeta[6] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[4]), 3));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[6],0,2) == 0) goto tmp2_end;
-tmpMeta[7] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[6]), 2));
-if (10 != MMC_STRLEN(tmpMeta[7]) || strcmp(MMC_STRINGDATA(_OMC_LIT2), MMC_STRINGDATA(tmpMeta[7])) != 0) goto tmp2_end;
-tmpMeta[8] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[6]), 3));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[8],1,1) == 0) goto tmp2_end;
-tmpMeta[9] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[8]), 2));
-if (10 != MMC_STRLEN(tmpMeta[9]) || strcmp(MMC_STRINGDATA(_OMC_LIT3), MMC_STRINGDATA(tmpMeta[9])) != 0) goto tmp2_end;
-_rest = tmpMeta[2];
+modelica_metatype tmpMeta6;
+modelica_metatype tmpMeta7;
+modelica_metatype tmpMeta8;
+modelica_metatype tmpMeta9;
+modelica_metatype tmpMeta10;
+modelica_metatype tmpMeta11;
+modelica_metatype tmpMeta12;
+modelica_metatype tmpMeta13;
+modelica_metatype tmpMeta14;
+if (listEmpty(tmp4_1)) goto tmp3_end;
+tmpMeta6 = MMC_CAR(tmp4_1);
+tmpMeta7 = MMC_CDR(tmp4_1);
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta6,4,5) == 0) goto tmp3_end;
+tmpMeta8 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta6), 2));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta8,2,1) == 0) goto tmp3_end;
+tmpMeta9 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta8), 2));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta9,0,2) == 0) goto tmp3_end;
+tmpMeta10 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta9), 2));
+if (12 != MMC_STRLEN(tmpMeta10) || strcmp(MMC_STRINGDATA(_OMC_LIT1), MMC_STRINGDATA(tmpMeta10)) != 0) goto tmp3_end;
+tmpMeta11 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta9), 3));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta11,0,2) == 0) goto tmp3_end;
+tmpMeta12 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta11), 2));
+if (10 != MMC_STRLEN(tmpMeta12) || strcmp(MMC_STRINGDATA(_OMC_LIT2), MMC_STRINGDATA(tmpMeta12)) != 0) goto tmp3_end;
+tmpMeta13 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta11), 3));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta13,1,1) == 0) goto tmp3_end;
+tmpMeta14 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta13), 2));
+if (10 != MMC_STRLEN(tmpMeta14) || strcmp(MMC_STRINGDATA(_OMC_LIT3), MMC_STRINGDATA(tmpMeta14)) != 0) goto tmp3_end;
+_rest = tmpMeta7;
 _inFuncs = _rest;
 goto _tailrecursive;
-goto tmp2_done;
+goto tmp3_done;
 }
 case 2: {
-if (listEmpty(tmp3_1)) goto tmp2_end;
-tmpMeta[1] = MMC_CAR(tmp3_1);
-tmpMeta[2] = MMC_CDR(tmp3_1);
-_f = tmpMeta[1];
-_rest = tmpMeta[2];
-tmpMeta[1] = mmc_mk_cons(_f, _inAcc);
+modelica_metatype tmpMeta15;
+modelica_metatype tmpMeta16;
+modelica_metatype tmpMeta17;
+if (listEmpty(tmp4_1)) goto tmp3_end;
+tmpMeta15 = MMC_CAR(tmp4_1);
+tmpMeta16 = MMC_CDR(tmp4_1);
+_f = tmpMeta15;
+_rest = tmpMeta16;
+tmpMeta17 = mmc_mk_cons(_f, _inAcc);
 _inFuncs = _rest;
-_inAcc = tmpMeta[1];
+_inAcc = tmpMeta17;
 goto _tailrecursive;
-goto tmp2_done;
+goto tmp3_done;
 }
 }
-goto tmp2_end;
-tmp2_end: ;
+goto tmp3_end;
+tmp3_end: ;
 }
-goto goto_1;
-goto_1:;
+goto goto_2;
+goto_2:;
 MMC_THROW_INTERNAL();
-goto tmp2_done;
-tmp2_done:;
+goto tmp3_done;
+tmp3_done:;
 }
 }
-_outFuncs = tmpMeta[0];
+_outFuncs = tmpMeta1;
 _return: OMC_LABEL_UNUSED
 return _outFuncs;
 }
 PROTECTED_FUNCTION_STATIC modelica_metatype omc_SimCodeFunction_removeThreadDataRecord(threadData_t *threadData, modelica_metatype _inRecs, modelica_metatype _inAcc)
 {
 modelica_metatype _outRecs = NULL;
-modelica_metatype tmpMeta[9] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
-modelica_metatype tmp3_1;
-tmp3_1 = _inRecs;
+modelica_metatype tmp4_1;
+tmp4_1 = _inRecs;
 {
 modelica_metatype _rest = NULL;
 modelica_metatype _r = NULL;
-volatile mmc_switch_type tmp3;
-int tmp4;
-tmp3 = 0;
-for (; tmp3 < 4; tmp3++) {
-switch (MMC_SWITCH_CAST(tmp3)) {
+volatile mmc_switch_type tmp4;
+int tmp5;
+tmp4 = 0;
+for (; tmp4 < 4; tmp4++) {
+switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (!listEmpty(tmp3_1)) goto tmp2_end;
-tmpMeta[0] = listReverse(_inAcc);
-goto tmp2_done;
+if (!listEmpty(tmp4_1)) goto tmp3_end;
+tmpMeta1 = listReverse(_inAcc);
+goto tmp3_done;
 }
 case 1: {
-if (listEmpty(tmp3_1)) goto tmp2_end;
-tmpMeta[1] = MMC_CAR(tmp3_1);
-tmpMeta[2] = MMC_CDR(tmp3_1);
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],0,4) == 0) goto tmp2_end;
-tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 2));
-if (34 != MMC_STRLEN(tmpMeta[3]) || strcmp(MMC_STRINGDATA(_OMC_LIT4), MMC_STRINGDATA(tmpMeta[3])) != 0) goto tmp2_end;
-_rest = tmpMeta[2];
+modelica_metatype tmpMeta6;
+modelica_metatype tmpMeta7;
+modelica_metatype tmpMeta8;
+if (listEmpty(tmp4_1)) goto tmp3_end;
+tmpMeta6 = MMC_CAR(tmp4_1);
+tmpMeta7 = MMC_CDR(tmp4_1);
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta6,0,4) == 0) goto tmp3_end;
+tmpMeta8 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta6), 2));
+if (34 != MMC_STRLEN(tmpMeta8) || strcmp(MMC_STRINGDATA(_OMC_LIT4), MMC_STRINGDATA(tmpMeta8)) != 0) goto tmp3_end;
+_rest = tmpMeta7;
 _inRecs = _rest;
 goto _tailrecursive;
-goto tmp2_done;
+goto tmp3_done;
 }
 case 2: {
-if (listEmpty(tmp3_1)) goto tmp2_end;
-tmpMeta[1] = MMC_CAR(tmp3_1);
-tmpMeta[2] = MMC_CDR(tmp3_1);
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],2,2) == 0) goto tmp2_end;
-tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 2));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[3],0,2) == 0) goto tmp2_end;
-tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
-if (12 != MMC_STRLEN(tmpMeta[4]) || strcmp(MMC_STRINGDATA(_OMC_LIT1), MMC_STRINGDATA(tmpMeta[4])) != 0) goto tmp2_end;
-tmpMeta[5] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 3));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[5],0,2) == 0) goto tmp2_end;
-tmpMeta[6] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[5]), 2));
-if (10 != MMC_STRLEN(tmpMeta[6]) || strcmp(MMC_STRINGDATA(_OMC_LIT2), MMC_STRINGDATA(tmpMeta[6])) != 0) goto tmp2_end;
-tmpMeta[7] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[5]), 3));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[7],1,1) == 0) goto tmp2_end;
-tmpMeta[8] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[7]), 2));
-if (10 != MMC_STRLEN(tmpMeta[8]) || strcmp(MMC_STRINGDATA(_OMC_LIT3), MMC_STRINGDATA(tmpMeta[8])) != 0) goto tmp2_end;
-_rest = tmpMeta[2];
+modelica_metatype tmpMeta9;
+modelica_metatype tmpMeta10;
+modelica_metatype tmpMeta11;
+modelica_metatype tmpMeta12;
+modelica_metatype tmpMeta13;
+modelica_metatype tmpMeta14;
+modelica_metatype tmpMeta15;
+modelica_metatype tmpMeta16;
+if (listEmpty(tmp4_1)) goto tmp3_end;
+tmpMeta9 = MMC_CAR(tmp4_1);
+tmpMeta10 = MMC_CDR(tmp4_1);
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta9,2,2) == 0) goto tmp3_end;
+tmpMeta11 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta9), 2));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta11,0,2) == 0) goto tmp3_end;
+tmpMeta12 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta11), 2));
+if (12 != MMC_STRLEN(tmpMeta12) || strcmp(MMC_STRINGDATA(_OMC_LIT1), MMC_STRINGDATA(tmpMeta12)) != 0) goto tmp3_end;
+tmpMeta13 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta11), 3));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta13,0,2) == 0) goto tmp3_end;
+tmpMeta14 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta13), 2));
+if (10 != MMC_STRLEN(tmpMeta14) || strcmp(MMC_STRINGDATA(_OMC_LIT2), MMC_STRINGDATA(tmpMeta14)) != 0) goto tmp3_end;
+tmpMeta15 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta13), 3));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta15,1,1) == 0) goto tmp3_end;
+tmpMeta16 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta15), 2));
+if (10 != MMC_STRLEN(tmpMeta16) || strcmp(MMC_STRINGDATA(_OMC_LIT3), MMC_STRINGDATA(tmpMeta16)) != 0) goto tmp3_end;
+_rest = tmpMeta10;
 _inRecs = _rest;
 goto _tailrecursive;
-goto tmp2_done;
+goto tmp3_done;
 }
 case 3: {
-if (listEmpty(tmp3_1)) goto tmp2_end;
-tmpMeta[1] = MMC_CAR(tmp3_1);
-tmpMeta[2] = MMC_CDR(tmp3_1);
-_r = tmpMeta[1];
-_rest = tmpMeta[2];
-tmpMeta[1] = mmc_mk_cons(_r, _inAcc);
+modelica_metatype tmpMeta17;
+modelica_metatype tmpMeta18;
+modelica_metatype tmpMeta19;
+if (listEmpty(tmp4_1)) goto tmp3_end;
+tmpMeta17 = MMC_CAR(tmp4_1);
+tmpMeta18 = MMC_CDR(tmp4_1);
+_r = tmpMeta17;
+_rest = tmpMeta18;
+tmpMeta19 = mmc_mk_cons(_r, _inAcc);
 _inRecs = _rest;
-_inAcc = tmpMeta[1];
+_inAcc = tmpMeta19;
 goto _tailrecursive;
-goto tmp2_done;
+goto tmp3_done;
 }
 }
-goto tmp2_end;
-tmp2_end: ;
+goto tmp3_end;
+tmp3_end: ;
 }
-goto goto_1;
-goto_1:;
+goto goto_2;
+goto_2:;
 MMC_THROW_INTERNAL();
-goto tmp2_done;
-tmp2_done:;
+goto tmp3_done;
+tmp3_done:;
 }
 }
-_outRecs = tmpMeta[0];
+_outRecs = tmpMeta1;
 _return: OMC_LABEL_UNUSED
 return _outRecs;
 }
 DLLExport
 void omc_SimCodeFunction_translateFunctions(threadData_t *threadData, modelica_metatype _program, modelica_string _name, modelica_metatype _optMainFunction, modelica_metatype _idaeElements, modelica_metatype _metarecordTypes, modelica_metatype _inIncludes)
 {
-modelica_metatype tmpMeta[8] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 setGlobalRoot(((modelica_integer) 25), mmc_mk_none());
@@ -241,37 +266,51 @@ tmp3 = 0;
 for (; tmp3 < 2; tmp3++) {
 switch (MMC_SWITCH_CAST(tmp3)) {
 case 0: {
+modelica_metatype tmpMeta5;
+modelica_metatype tmpMeta6;
+modelica_metatype tmpMeta7;
+modelica_metatype tmpMeta8;
+modelica_metatype tmpMeta9;
+modelica_metatype tmpMeta10;
+modelica_metatype tmpMeta11;
+modelica_metatype tmpMeta12;
+modelica_metatype tmpMeta13;
+modelica_metatype tmpMeta14;
+modelica_metatype tmpMeta15;
+modelica_metatype tmpMeta16;
+modelica_metatype tmpMeta17;
+modelica_metatype tmpMeta18;
 if (optionNone(tmp3_1)) goto tmp2_end;
-tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 1));
-_daeMainFunction = tmpMeta[0];
+tmpMeta5 = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 1));
+_daeMainFunction = tmpMeta5;
 _daeElements = tmp3_2;
 _includes = tmp3_3;
-tmpMeta[0] = mmc_mk_cons(_daeMainFunction, _daeElements);
-_daeElements = omc_SimCodeFunctionUtil_findLiterals(threadData, tmpMeta[0] ,&_literals);
-tmpMeta[5] = omc_SimCodeFunctionUtil_elaborateFunctions(threadData, _program, _daeElements, _metarecordTypes, _literals, _includes, &tmpMeta[0], &tmpMeta[1], &tmpMeta[2], &tmpMeta[3], &tmpMeta[4]);
-if (listEmpty(tmpMeta[5])) goto goto_1;
-tmpMeta[6] = MMC_CAR(tmpMeta[5]);
-tmpMeta[7] = MMC_CDR(tmpMeta[5]);
-_mainFunction = tmpMeta[6];
-_fns = tmpMeta[7];
-_extraRecordDecls = tmpMeta[0];
-_includes = tmpMeta[1];
-_includeDirs = tmpMeta[2];
-_libs = tmpMeta[3];
-_libPaths = tmpMeta[4];
+tmpMeta6 = mmc_mk_cons(_daeMainFunction, _daeElements);
+_daeElements = omc_SimCodeFunctionUtil_findLiterals(threadData, tmpMeta6 ,&_literals);
+tmpMeta12 = omc_SimCodeFunctionUtil_elaborateFunctions(threadData, _program, _daeElements, _metarecordTypes, _literals, _includes, &tmpMeta7, &tmpMeta8, &tmpMeta9, &tmpMeta10, &tmpMeta11);
+if (listEmpty(tmpMeta12)) goto goto_1;
+tmpMeta13 = MMC_CAR(tmpMeta12);
+tmpMeta14 = MMC_CDR(tmpMeta12);
+_mainFunction = tmpMeta13;
+_fns = tmpMeta14;
+_extraRecordDecls = tmpMeta7;
+_includes = tmpMeta8;
+_includeDirs = tmpMeta9;
+_libs = tmpMeta10;
+_libPaths = tmpMeta11;
 omc_SimCodeFunctionUtil_checkValidMainFunction(threadData, _name, _mainFunction);
 _makefileParams = omc_SimCodeFunctionUtil_createMakefileParams(threadData, _includeDirs, _libs, _libPaths, 1, 0);
-tmpMeta[0] = mmc_mk_box8(3, &SimCodeFunction_FunctionCode_FUNCTIONCODE__desc, _name, mmc_mk_some(_mainFunction), _fns, _literals, _includes, _makefileParams, _extraRecordDecls);
-_fnCode = tmpMeta[0];
+tmpMeta15 = mmc_mk_box8(3, &SimCodeFunction_FunctionCode_FUNCTIONCODE__desc, _name, mmc_mk_some(_mainFunction), _fns, _literals, _includes, _makefileParams, _extraRecordDecls);
+_fnCode = tmpMeta15;
 if((stringEqual(omc_Config_simCodeTarget(threadData), _OMC_LIT7)))
 {
 omc_Tpl_tplString(threadData, boxvar_CodegenCFunctions_translateFunctionHeaderFiles, _fnCode);
-tmpMeta[0] = mmc_mk_cons(_mainFunction, _fns);
-_midfuncs = omc_DAEToMid_DAEFunctionsToMid(threadData, tmpMeta[0]);
-tmpMeta[0] = mmc_mk_box3(3, &MidCode_Program_PROGRAM__desc, _name, _midfuncs);
-_midCode = omc_Tpl_tplCallWithFailError(threadData, boxvar_CodegenMidToC_genProgram, tmpMeta[0], _OMC_LIT5);
-tmpMeta[0] = stringAppend(_name,_OMC_LIT6);
-omc_Tpl_textFileConvertLines(threadData, _midCode, tmpMeta[0]);
+tmpMeta16 = mmc_mk_cons(_mainFunction, _fns);
+_midfuncs = omc_DAEToMid_DAEFunctionsToMid(threadData, tmpMeta16);
+tmpMeta17 = mmc_mk_box3(3, &MidCode_Program_PROGRAM__desc, _name, _midfuncs);
+_midCode = omc_Tpl_tplCallWithFailError(threadData, boxvar_CodegenMidToC_genProgram, tmpMeta17, _OMC_LIT5);
+tmpMeta18 = stringAppend(_name,_OMC_LIT6);
+omc_Tpl_textFileConvertLines(threadData, _midCode, tmpMeta18);
 }
 else
 {
@@ -280,26 +319,31 @@ omc_Tpl_tplString(threadData, boxvar_CodegenCFunctions_translateFunctions, _fnCo
 goto tmp2_done;
 }
 case 1: {
+modelica_metatype tmpMeta19;
+modelica_metatype tmpMeta20;
+modelica_metatype tmpMeta21;
+modelica_metatype tmpMeta22;
+modelica_metatype tmpMeta23;
 if (!optionNone(tmp3_1)) goto tmp2_end;
 _daeElements = tmp3_2;
 _includes = tmp3_3;
 _daeElements = omc_SimCodeFunctionUtil_findLiterals(threadData, _daeElements ,&_literals);
 _fns = omc_SimCodeFunctionUtil_elaborateFunctions(threadData, _program, _daeElements, _metarecordTypes, _literals, _includes ,&_extraRecordDecls ,&_includes ,&_includeDirs ,&_libs ,&_libPaths);
 _makefileParams = omc_SimCodeFunctionUtil_createMakefileParams(threadData, _includeDirs, _libs, _libPaths, 1, 0);
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_fns = omc_SimCodeFunction_removeThreadDataFunction(threadData, _fns, tmpMeta[0]);
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_extraRecordDecls = omc_SimCodeFunction_removeThreadDataRecord(threadData, _extraRecordDecls, tmpMeta[0]);
-tmpMeta[0] = mmc_mk_box8(3, &SimCodeFunction_FunctionCode_FUNCTIONCODE__desc, _name, mmc_mk_none(), _fns, _literals, _includes, _makefileParams, _extraRecordDecls);
-_fnCode = tmpMeta[0];
+tmpMeta19 = MMC_REFSTRUCTLIT(mmc_nil);
+_fns = omc_SimCodeFunction_removeThreadDataFunction(threadData, _fns, tmpMeta19);
+tmpMeta20 = MMC_REFSTRUCTLIT(mmc_nil);
+_extraRecordDecls = omc_SimCodeFunction_removeThreadDataRecord(threadData, _extraRecordDecls, tmpMeta20);
+tmpMeta21 = mmc_mk_box8(3, &SimCodeFunction_FunctionCode_FUNCTIONCODE__desc, _name, mmc_mk_none(), _fns, _literals, _includes, _makefileParams, _extraRecordDecls);
+_fnCode = tmpMeta21;
 if((stringEqual(omc_Config_simCodeTarget(threadData), _OMC_LIT7)))
 {
 omc_Tpl_tplString(threadData, boxvar_CodegenCFunctions_translateFunctionHeaderFiles, _fnCode);
 _midfuncs = omc_DAEToMid_DAEFunctionsToMid(threadData, _fns);
-tmpMeta[0] = mmc_mk_box3(3, &MidCode_Program_PROGRAM__desc, _name, _midfuncs);
-_midCode = omc_Tpl_tplCallWithFailError(threadData, boxvar_CodegenMidToC_genProgram, tmpMeta[0], _OMC_LIT5);
-tmpMeta[0] = stringAppend(_name,_OMC_LIT6);
-omc_Tpl_textFileConvertLines(threadData, _midCode, tmpMeta[0]);
+tmpMeta22 = mmc_mk_box3(3, &MidCode_Program_PROGRAM__desc, _name, _midfuncs);
+_midCode = omc_Tpl_tplCallWithFailError(threadData, boxvar_CodegenMidToC_genProgram, tmpMeta22, _OMC_LIT5);
+tmpMeta23 = stringAppend(_name,_OMC_LIT6);
+omc_Tpl_textFileConvertLines(threadData, _midCode, tmpMeta23);
 }
 else
 {

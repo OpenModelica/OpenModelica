@@ -28,7 +28,11 @@ extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
 extern struct record_description ErrorTypes_Severity_ERROR__desc;
 extern struct record_description ErrorTypes_Severity_NOTIFICATION__desc;
 extern struct record_description ErrorTypes_Severity_WARNING__desc;
+extern struct record_description Flags_ConfigFlag_CONFIG__FLAG__desc;
 extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Flags_FlagData_ENUM__FLAG__desc;
+extern struct record_description Flags_FlagVisibility_EXTERNAL__desc;
+extern struct record_description Flags_ValidOptions_STRING__OPTION__desc;
 extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description Gettext_TranslatableContent_notrans__desc;
 extern struct record_description SCodeDump_SCodeDumpOptions_OPTIONS__desc;
@@ -145,9 +149,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_CevalScript_cevalInteractiveFunctions,2
 #define boxptr_CevalScript_checkValidVersion omc_CevalScript_checkValidVersion
 #define boxptr_CevalScript_loadModel1 omc_CevalScript_loadModel1
 DLLExport
-modelica_metatype omc_CevalScript_loadModel(threadData_t *threadData, modelica_metatype _imodelsToLoad, modelica_string _modelicaPath, modelica_metatype _ip, modelica_boolean _forceLoad, modelica_boolean _notifyLoad, modelica_boolean _checkUses, modelica_boolean _requireExactVersion, modelica_boolean _encrypted, modelica_boolean *out_success);
+modelica_metatype omc_CevalScript_loadModel(threadData_t *threadData, modelica_metatype _imodelsToLoad, modelica_string _modelicaPath, modelica_metatype _ip, modelica_boolean _forceLoad, modelica_boolean _notifyLoad, modelica_boolean _checkUses, modelica_boolean _requireExactVersion, modelica_boolean _encrypted, modelica_string _pathToFile, modelica_boolean *out_success);
 DLLExport
-modelica_metatype boxptr_CevalScript_loadModel(threadData_t *threadData, modelica_metatype _imodelsToLoad, modelica_metatype _modelicaPath, modelica_metatype _ip, modelica_metatype _forceLoad, modelica_metatype _notifyLoad, modelica_metatype _checkUses, modelica_metatype _requireExactVersion, modelica_metatype _encrypted, modelica_metatype *out_success);
+modelica_metatype boxptr_CevalScript_loadModel(threadData_t *threadData, modelica_metatype _imodelsToLoad, modelica_metatype _modelicaPath, modelica_metatype _ip, modelica_metatype _forceLoad, modelica_metatype _notifyLoad, modelica_metatype _checkUses, modelica_metatype _requireExactVersion, modelica_metatype _encrypted, modelica_metatype _pathToFile, modelica_metatype *out_success);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_CevalScript_loadModel,2,0) {(void*) boxptr_CevalScript_loadModel,0}};
 #define boxvar_CevalScript_loadModel MMC_REFSTRUCTLIT(boxvar_lit_CevalScript_loadModel)
 DLLExport

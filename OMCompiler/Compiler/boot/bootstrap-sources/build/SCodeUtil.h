@@ -96,6 +96,12 @@ extern struct record_description SCode_Visibility_PROTECTED__desc;
 extern struct record_description SCode_Visibility_PUBLIC__desc;
 extern struct record_description SourceInfo_SOURCEINFO__desc;
 DLLExport
+modelica_boolean omc_SCodeUtil_classDefHasSections(threadData_t *threadData, modelica_metatype _cdef, modelica_boolean _checkExternal);
+DLLExport
+modelica_metatype boxptr_SCodeUtil_classDefHasSections(threadData_t *threadData, modelica_metatype _cdef, modelica_metatype _checkExternal);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_classDefHasSections,2,0) {(void*) boxptr_SCodeUtil_classDefHasSections,0}};
+#define boxvar_SCodeUtil_classDefHasSections MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_classDefHasSections)
+DLLExport
 modelica_boolean omc_SCodeUtil_hasNamedExternalCall(threadData_t *threadData, modelica_string _name, modelica_metatype _def);
 DLLExport
 modelica_metatype boxptr_SCodeUtil_hasNamedExternalCall(threadData_t *threadData, modelica_metatype _name, modelica_metatype _def);

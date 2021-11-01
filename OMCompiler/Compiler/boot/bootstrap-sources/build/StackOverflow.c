@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/StackOverflow.c"
+#define OMC_FILE "StackOverflow.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "StackOverflow.h"
@@ -114,22 +114,37 @@ DLLExport
 modelica_metatype omc_StackOverflow_readableStacktraceMessages(threadData_t *threadData)
 {
 modelica_metatype _symbols = NULL;
+modelica_metatype tmpMeta1;
 modelica_string _prev = NULL;
 modelica_integer _n;
 modelica_integer _prevN;
-modelica_string tmp1;
-modelica_string tmp2;
-modelica_boolean tmp3;
+modelica_metatype tmpMeta2;
+modelica_metatype tmpMeta3;
 modelica_string tmp4;
-modelica_string tmp7;
-modelica_string tmp8;
-modelica_boolean tmp9;
-modelica_string tmp10;
-modelica_metatype tmpMeta[8] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta5;
+modelica_string tmp6;
+modelica_metatype tmpMeta7;
+modelica_boolean tmp8;
+modelica_string tmp9;
+modelica_metatype tmpMeta10;
+modelica_metatype tmpMeta11;
+modelica_metatype tmpMeta12;
+modelica_metatype tmpMeta13;
+modelica_metatype tmpMeta14;
+modelica_metatype tmpMeta18;
+modelica_string tmp19;
+modelica_metatype tmpMeta20;
+modelica_string tmp21;
+modelica_metatype tmpMeta22;
+modelica_boolean tmp23;
+modelica_string tmp24;
+modelica_metatype tmpMeta25;
+modelica_metatype tmpMeta26;
+modelica_metatype tmpMeta27;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_symbols = tmpMeta[0];
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_symbols = tmpMeta1;
 _prev = _OMC_LIT0;
 _n = ((modelica_integer) 1);
 _prevN = ((modelica_integer) 1);
@@ -140,40 +155,41 @@ goto _return;
 }
 {
 modelica_metatype __omcQ_24tmpVar1;
-modelica_metatype* tmp5;
+modelica_metatype* tmp15;
+modelica_metatype tmpMeta16;
 modelica_string __omcQ_24tmpVar0;
-int tmp6;
+modelica_integer tmp17;
 modelica_metatype _s_loopVar = 0;
 modelica_metatype _s;
 _s_loopVar = omc_StackOverflow_getStacktraceMessages(threadData);
-tmpMeta[4] = MMC_REFSTRUCTLIT(mmc_nil);
-__omcQ_24tmpVar1 = tmpMeta[4];
-tmp5 = &__omcQ_24tmpVar1;
+tmpMeta16 = MMC_REFSTRUCTLIT(mmc_nil);
+__omcQ_24tmpVar1 = tmpMeta16;
+tmp15 = &__omcQ_24tmpVar1;
 while(1) {
-tmp6 = 1;
+tmp17 = 1;
 if (!listEmpty(_s_loopVar)) {
 _s = MMC_CAR(_s_loopVar);
 _s_loopVar = MMC_CDR(_s_loopVar);
-tmp6--;
+tmp17--;
 }
-if (tmp6 == 0) {
+if (tmp17 == 0) {
 __omcQ_24tmpVar0 = omc_StackOverflow_stripAddresses(threadData, _s);
-*tmp5 = mmc_mk_cons(__omcQ_24tmpVar0,0);
-tmp5 = &MMC_CDR(*tmp5);
-} else if (tmp6 == 1) {
+*tmp15 = mmc_mk_cons(__omcQ_24tmpVar0,0);
+tmp15 = &MMC_CDR(*tmp15);
+} else if (tmp17 == 1) {
 break;
 } else {
 MMC_THROW_INTERNAL();
 }
 }
-*tmp5 = mmc_mk_nil();
-tmpMeta[3] = __omcQ_24tmpVar1;
+*tmp15 = mmc_mk_nil();
+tmpMeta14 = __omcQ_24tmpVar1;
 }
 {
 modelica_metatype _symbol;
-for (tmpMeta[1] = tmpMeta[3]; !listEmpty(tmpMeta[1]); tmpMeta[1]=MMC_CDR(tmpMeta[1]))
+for (tmpMeta2 = tmpMeta14; !listEmpty(tmpMeta2); tmpMeta2=MMC_CDR(tmpMeta2))
 {
-_symbol = MMC_CAR(tmpMeta[1]);
+_symbol = MMC_CAR(tmpMeta2);
 if((stringEqual(_prev, _OMC_LIT0)))
 {
 }
@@ -181,24 +197,24 @@ else
 {
 if((!stringEqual(_symbol, _prev)))
 {
-tmp1 = modelica_integer_to_modelica_string(_prevN, ((modelica_integer) 0), 1);
-tmpMeta[3] = stringAppend(_OMC_LIT3,tmp1);
-tmp3 = (modelica_boolean)(_n != _prevN);
-if(tmp3)
+tmp4 = modelica_integer_to_modelica_string(_prevN, ((modelica_integer) 0), 1);
+tmpMeta5 = stringAppend(_OMC_LIT3,tmp4);
+tmp8 = (modelica_boolean)(_n != _prevN);
+if(tmp8)
 {
-tmp2 = modelica_integer_to_modelica_string(_n, ((modelica_integer) 0), 1);
-tmpMeta[4] = stringAppend(_OMC_LIT4,tmp2);
-tmp4 = tmpMeta[4];
+tmp6 = modelica_integer_to_modelica_string(_n, ((modelica_integer) 0), 1);
+tmpMeta7 = stringAppend(_OMC_LIT4,tmp6);
+tmp9 = tmpMeta7;
 }
 else
 {
-tmp4 = _OMC_LIT0;
+tmp9 = _OMC_LIT0;
 }
-tmpMeta[5] = stringAppend(tmpMeta[3],tmp4);
-tmpMeta[6] = stringAppend(tmpMeta[5],_OMC_LIT5);
-tmpMeta[7] = stringAppend(tmpMeta[6],_prev);
-tmpMeta[2] = mmc_mk_cons(tmpMeta[7], _symbols);
-_symbols = tmpMeta[2];
+tmpMeta10 = stringAppend(tmpMeta5,tmp9);
+tmpMeta11 = stringAppend(tmpMeta10,_OMC_LIT5);
+tmpMeta12 = stringAppend(tmpMeta11,_prev);
+tmpMeta3 = mmc_mk_cons(tmpMeta12, _symbols);
+_symbols = tmpMeta3;
 _n = ((modelica_integer) 1) + _n;
 _prevN = _n;
 }
@@ -210,24 +226,24 @@ _n = ((modelica_integer) 1) + _n;
 _prev = _symbol;
 }
 }
-tmp7 = modelica_integer_to_modelica_string(_prevN, ((modelica_integer) 0), 1);
-tmpMeta[2] = stringAppend(_OMC_LIT3,tmp7);
-tmp9 = (modelica_boolean)(_n != _prevN);
-if(tmp9)
+tmp19 = modelica_integer_to_modelica_string(_prevN, ((modelica_integer) 0), 1);
+tmpMeta20 = stringAppend(_OMC_LIT3,tmp19);
+tmp23 = (modelica_boolean)(_n != _prevN);
+if(tmp23)
 {
-tmp8 = modelica_integer_to_modelica_string(_n, ((modelica_integer) 0), 1);
-tmpMeta[3] = stringAppend(_OMC_LIT4,tmp8);
-tmp10 = tmpMeta[3];
+tmp21 = modelica_integer_to_modelica_string(_n, ((modelica_integer) 0), 1);
+tmpMeta22 = stringAppend(_OMC_LIT4,tmp21);
+tmp24 = tmpMeta22;
 }
 else
 {
-tmp10 = _OMC_LIT0;
+tmp24 = _OMC_LIT0;
 }
-tmpMeta[4] = stringAppend(tmpMeta[2],tmp10);
-tmpMeta[5] = stringAppend(tmpMeta[4],_OMC_LIT5);
-tmpMeta[6] = stringAppend(tmpMeta[5],_prev);
-tmpMeta[1] = mmc_mk_cons(tmpMeta[6], _symbols);
-_symbols = tmpMeta[1];
+tmpMeta25 = stringAppend(tmpMeta20,tmp24);
+tmpMeta26 = stringAppend(tmpMeta25,_OMC_LIT5);
+tmpMeta27 = stringAppend(tmpMeta26,_prev);
+tmpMeta18 = mmc_mk_cons(tmpMeta27, _symbols);
+_symbols = tmpMeta18;
 _symbols = listReverse(_symbols);
 _return: OMC_LABEL_UNUSED
 return _symbols;
@@ -275,52 +291,71 @@ modelica_integer _n;
 modelica_metatype _strs = NULL;
 modelica_string _so = NULL;
 modelica_string _fun = NULL;
-modelica_metatype tmpMeta[7] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
+modelica_metatype tmpMeta3;
+modelica_metatype tmpMeta4;
+modelica_metatype tmpMeta5;
+modelica_metatype tmpMeta6;
+modelica_metatype tmpMeta7;
+modelica_metatype tmpMeta8;
+modelica_metatype tmpMeta9;
+modelica_metatype tmpMeta10;
+modelica_metatype tmpMeta11;
+modelica_metatype tmpMeta12;
+modelica_metatype tmpMeta13;
+modelica_metatype tmpMeta14;
+modelica_metatype tmpMeta15;
+modelica_metatype tmpMeta16;
+modelica_metatype tmpMeta17;
+modelica_metatype tmpMeta18;
+modelica_metatype tmpMeta19;
+modelica_metatype tmpMeta20;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _n = omc_System_regex(threadData, _inSymbol, _OMC_LIT7, ((modelica_integer) 3), 1, 0 ,&_strs);
 if((_n == ((modelica_integer) 3)))
 {
-tmpMeta[0] = _strs;
-if (listEmpty(tmpMeta[0])) MMC_THROW_INTERNAL();
-tmpMeta[1] = MMC_CAR(tmpMeta[0]);
-tmpMeta[2] = MMC_CDR(tmpMeta[0]);
-if (listEmpty(tmpMeta[2])) MMC_THROW_INTERNAL();
-tmpMeta[3] = MMC_CAR(tmpMeta[2]);
-tmpMeta[4] = MMC_CDR(tmpMeta[2]);
-if (listEmpty(tmpMeta[4])) MMC_THROW_INTERNAL();
-tmpMeta[5] = MMC_CAR(tmpMeta[4]);
-tmpMeta[6] = MMC_CDR(tmpMeta[4]);
-if (!listEmpty(tmpMeta[6])) MMC_THROW_INTERNAL();
-_so = tmpMeta[3];
-_fun = tmpMeta[5];
-tmpMeta[0] = stringAppend(_so,_OMC_LIT9);
-tmpMeta[1] = stringAppend(tmpMeta[0],omc_StackOverflow_unmangle(threadData, _fun));
-tmpMeta[2] = stringAppend(tmpMeta[1],_OMC_LIT10);
-_outSymbol = tmpMeta[2];
+tmpMeta1 = _strs;
+if (listEmpty(tmpMeta1)) MMC_THROW_INTERNAL();
+tmpMeta2 = MMC_CAR(tmpMeta1);
+tmpMeta3 = MMC_CDR(tmpMeta1);
+if (listEmpty(tmpMeta3)) MMC_THROW_INTERNAL();
+tmpMeta4 = MMC_CAR(tmpMeta3);
+tmpMeta5 = MMC_CDR(tmpMeta3);
+if (listEmpty(tmpMeta5)) MMC_THROW_INTERNAL();
+tmpMeta6 = MMC_CAR(tmpMeta5);
+tmpMeta7 = MMC_CDR(tmpMeta5);
+if (!listEmpty(tmpMeta7)) MMC_THROW_INTERNAL();
+_so = tmpMeta4;
+_fun = tmpMeta6;
+tmpMeta8 = stringAppend(_so,_OMC_LIT9);
+tmpMeta9 = stringAppend(tmpMeta8,omc_StackOverflow_unmangle(threadData, _fun));
+tmpMeta10 = stringAppend(tmpMeta9,_OMC_LIT10);
+_outSymbol = tmpMeta10;
 }
 else
 {
 _n = omc_System_regex(threadData, _inSymbol, _OMC_LIT8, ((modelica_integer) 3), 1, 0 ,&_strs);
 if((_n == ((modelica_integer) 3)))
 {
-tmpMeta[0] = _strs;
-if (listEmpty(tmpMeta[0])) MMC_THROW_INTERNAL();
-tmpMeta[1] = MMC_CAR(tmpMeta[0]);
-tmpMeta[2] = MMC_CDR(tmpMeta[0]);
-if (listEmpty(tmpMeta[2])) MMC_THROW_INTERNAL();
-tmpMeta[3] = MMC_CAR(tmpMeta[2]);
-tmpMeta[4] = MMC_CDR(tmpMeta[2]);
-if (listEmpty(tmpMeta[4])) MMC_THROW_INTERNAL();
-tmpMeta[5] = MMC_CAR(tmpMeta[4]);
-tmpMeta[6] = MMC_CDR(tmpMeta[4]);
-if (!listEmpty(tmpMeta[6])) MMC_THROW_INTERNAL();
-_so = tmpMeta[3];
-_fun = tmpMeta[5];
-tmpMeta[0] = stringAppend(_so,_OMC_LIT9);
-tmpMeta[1] = stringAppend(tmpMeta[0],omc_StackOverflow_unmangle(threadData, _fun));
-tmpMeta[2] = stringAppend(tmpMeta[1],_OMC_LIT10);
-_outSymbol = tmpMeta[2];
+tmpMeta11 = _strs;
+if (listEmpty(tmpMeta11)) MMC_THROW_INTERNAL();
+tmpMeta12 = MMC_CAR(tmpMeta11);
+tmpMeta13 = MMC_CDR(tmpMeta11);
+if (listEmpty(tmpMeta13)) MMC_THROW_INTERNAL();
+tmpMeta14 = MMC_CAR(tmpMeta13);
+tmpMeta15 = MMC_CDR(tmpMeta13);
+if (listEmpty(tmpMeta15)) MMC_THROW_INTERNAL();
+tmpMeta16 = MMC_CAR(tmpMeta15);
+tmpMeta17 = MMC_CDR(tmpMeta15);
+if (!listEmpty(tmpMeta17)) MMC_THROW_INTERNAL();
+_so = tmpMeta14;
+_fun = tmpMeta16;
+tmpMeta18 = stringAppend(_so,_OMC_LIT9);
+tmpMeta19 = stringAppend(tmpMeta18,omc_StackOverflow_unmangle(threadData, _fun));
+tmpMeta20 = stringAppend(tmpMeta19,_OMC_LIT10);
+_outSymbol = tmpMeta20;
 }
 else
 {

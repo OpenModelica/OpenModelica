@@ -9,6 +9,12 @@
 extern "C" {
 #endif
 DLLExport
+modelica_metatype omc_BackendInterface_appendLibrary(threadData_t *threadData, modelica_metatype _modelName, modelica_string _modelicaPath, modelica_boolean *out_success);
+DLLExport
+modelica_metatype boxptr_BackendInterface_appendLibrary(threadData_t *threadData, modelica_metatype _modelName, modelica_metatype _modelicaPath, modelica_metatype *out_success);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BackendInterface_appendLibrary,2,0) {(void*) boxptr_BackendInterface_appendLibrary,0}};
+#define boxvar_BackendInterface_appendLibrary MMC_REFSTRUCTLIT(boxvar_lit_BackendInterface_appendLibrary)
+DLLExport
 modelica_metatype omc_BackendInterface_rewriteFrontEnd(threadData_t *threadData, modelica_metatype _inExp, modelica_boolean *out_isChanged);
 DLLExport
 modelica_metatype boxptr_BackendInterface_rewriteFrontEnd(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype *out_isChanged);

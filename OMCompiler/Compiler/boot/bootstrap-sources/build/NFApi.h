@@ -9,6 +9,11 @@
 extern "C" {
 #endif
 DLLExport
+modelica_metatype omc_NFApi_getInheritedClasses(threadData_t *threadData, modelica_metatype _classPath, modelica_metatype _program);
+#define boxptr_NFApi_getInheritedClasses omc_NFApi_getInheritedClasses
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFApi_getInheritedClasses,2,0) {(void*) boxptr_NFApi_getInheritedClasses,0}};
+#define boxvar_NFApi_getInheritedClasses MMC_REFSTRUCTLIT(boxvar_lit_NFApi_getInheritedClasses)
+DLLExport
 modelica_metatype omc_NFApi_mkFullyQual(threadData_t *threadData, modelica_metatype _absynProgram, modelica_metatype _classPath, modelica_metatype _pathToQualify);
 #define boxptr_NFApi_mkFullyQual omc_NFApi_mkFullyQual
 static const MMC_DEFSTRUCTLIT(boxvar_lit_NFApi_mkFullyQual,2,0) {(void*) boxptr_NFApi_mkFullyQual,0}};

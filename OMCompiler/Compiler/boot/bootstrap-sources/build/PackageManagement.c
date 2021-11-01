@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/PackageManagement.c"
+#define OMC_FILE "PackageManagement.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "PackageManagement.h"
@@ -78,11 +78,11 @@ DLLExport
 modelica_metatype omc_PackageManagement_versionsThatProvideTheWanted(threadData_t *threadData, modelica_string _id, modelica_string _version, modelica_boolean _printError)
 {
 modelica_metatype _result = NULL;
-modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_result = tmpMeta[0];
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_result = tmpMeta1;
 _return: OMC_LABEL_UNUSED
 return _result;
 }

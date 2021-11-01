@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/ModelicaExternalC.c"
+#define OMC_FILE "ModelicaExternalC.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "ModelicaExternalC.h"
@@ -14,7 +14,7 @@ int _ncol_ext;
 int _verboseRead_ext;
 void *_matrix_c89;
 real_array _matrix;
-alloc_real_array(&(_matrix), 2, _nrow, _ncol); // _matrix has no default value.
+alloc_real_array(&(_matrix), 2, (_index_t)_nrow, (_index_t)_ncol); // _matrix has no default value.
 _nrow_ext = (int)_nrow;
 _ncol_ext = (int)_ncol;
 _verboseRead_ext = (int)_verboseRead;
@@ -40,7 +40,7 @@ integer_array omc_ModelicaExternalC_ModelicaIO__readMatrixSizes(threadData_t *th
 {
 void *_dim_c89;
 integer_array _dim;
-alloc_integer_array(&(_dim), 1, 2); // _dim has no default value.
+alloc_integer_array(&(_dim), 1, (_index_t)2); // _dim has no default value.
 _dim_c89 = (void*) data_of_integer_c89_array(_dim);
 ModelicaIO_readMatrixSizes(MMC_STRINGDATA(_fileName), MMC_STRINGDATA(_matrixName), (int*) _dim_c89);
 unpack_integer_array(&_dim);

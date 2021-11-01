@@ -1966,6 +1966,32 @@ DAE_FunctionDefinition_FUNCTION__DER__MAPPER__desc__fields
 extern struct record_description DAE_FunctionDefinition_FUNCTION__DER__MAPPER__desc;
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef DAE_FunctionDefinition_FUNCTION__INVERSE__desc_added
+#define DAE_FunctionDefinition_FUNCTION__INVERSE__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_FunctionDefinition_FUNCTION__INVERSE__desc__fields[2] = {"inputParam","inverseCall"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_FunctionDefinition_FUNCTION__INVERSE__desc = {
+"DAE_FunctionDefinition_FUNCTION__INVERSE",
+"DAE.FunctionDefinition.FUNCTION_INVERSE",
+DAE_FunctionDefinition_FUNCTION__INVERSE__desc__fields
+};
+#endif
+#else
+extern struct record_description DAE_FunctionDefinition_FUNCTION__INVERSE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef DAE_FunctionDefinition_FUNCTION__INVERSE__desc_added
+#define DAE_FunctionDefinition_FUNCTION__INVERSE__desc_added
+ADD_METARECORD_DEFINITIONS const char* DAE_FunctionDefinition_FUNCTION__INVERSE__desc__fields[2] = {"inputParam","inverseCall"};
+ADD_METARECORD_DEFINITIONS struct record_description DAE_FunctionDefinition_FUNCTION__INVERSE__desc = {
+"DAE_FunctionDefinition_FUNCTION__INVERSE",
+"DAE.FunctionDefinition.FUNCTION_INVERSE",
+DAE_FunctionDefinition_FUNCTION__INVERSE__desc__fields
+};
+#endif
+#else
+extern struct record_description DAE_FunctionDefinition_FUNCTION__INVERSE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef DAE_FunctionDefinition_FUNCTION__DER__MAPPER__desc_added
 #define DAE_FunctionDefinition_FUNCTION__DER__MAPPER__desc_added
 ADD_METARECORD_DEFINITIONS const char* DAE_FunctionDefinition_FUNCTION__DER__MAPPER__desc__fields[6] = {"derivedFunction","derivativeFunction","derivativeOrder","conditionRefs","defaultDerivative","lowerOrderDerivatives"};

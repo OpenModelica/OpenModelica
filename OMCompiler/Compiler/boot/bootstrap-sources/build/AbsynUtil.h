@@ -87,6 +87,22 @@ extern struct record_description ErrorTypes_Severity_ERROR__desc;
 extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description SourceInfo_SOURCEINFO__desc;
 DLLExport
+modelica_metatype omc_AbsynUtil_pathReplaceFirst(threadData_t *threadData, modelica_metatype _path, modelica_metatype _prefix);
+#define boxptr_AbsynUtil_pathReplaceFirst omc_AbsynUtil_pathReplaceFirst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceFirst,2,0) {(void*) boxptr_AbsynUtil_pathReplaceFirst,0}};
+#define boxvar_AbsynUtil_pathReplaceFirst MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceFirst)
+DLLExport
+modelica_metatype omc_AbsynUtil_makeCall(threadData_t *threadData, modelica_metatype _name, modelica_metatype _posArgs, modelica_metatype _namedArgs);
+#define boxptr_AbsynUtil_makeCall omc_AbsynUtil_makeCall
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_makeCall,2,0) {(void*) boxptr_AbsynUtil_makeCall,0}};
+#define boxvar_AbsynUtil_makeCall MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_makeCall)
+DLLExport
+modelica_boolean omc_AbsynUtil_crefIsWild(threadData_t *threadData, modelica_metatype _cref);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_crefIsWild(threadData_t *threadData, modelica_metatype _cref);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefIsWild,2,0) {(void*) boxptr_AbsynUtil_crefIsWild,0}};
+#define boxvar_AbsynUtil_crefIsWild MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefIsWild)
+DLLExport
 modelica_boolean omc_AbsynUtil_isNotPartial(threadData_t *threadData, modelica_metatype _inClass);
 DLLExport
 modelica_metatype boxptr_AbsynUtil_isNotPartial(threadData_t *threadData, modelica_metatype _inClass);
@@ -409,11 +425,6 @@ modelica_metatype boxptr_AbsynUtil_expContainsInitial(threadData_t *threadData, 
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_expContainsInitial,2,0) {(void*) boxptr_AbsynUtil_expContainsInitial,0}};
 #define boxvar_AbsynUtil_expContainsInitial MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_expContainsInitial)
 DLLExport
-modelica_metatype omc_AbsynUtil_pathSetLastIdent(threadData_t *threadData, modelica_metatype _inPath, modelica_metatype _inLastIdent);
-#define boxptr_AbsynUtil_pathSetLastIdent omc_AbsynUtil_pathSetLastIdent
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetLastIdent,2,0) {(void*) boxptr_AbsynUtil_pathSetLastIdent,0}};
-#define boxvar_AbsynUtil_pathSetLastIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetLastIdent)
-DLLExport
 modelica_string omc_AbsynUtil_componentName(threadData_t *threadData, modelica_metatype _c);
 #define boxptr_AbsynUtil_componentName omc_AbsynUtil_componentName
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_componentName,2,0) {(void*) boxptr_AbsynUtil_componentName,0}};
@@ -709,11 +720,6 @@ modelica_string omc_AbsynUtil_getFileNameFromInfo(threadData_t *threadData, mode
 #define boxptr_AbsynUtil_getFileNameFromInfo omc_AbsynUtil_getFileNameFromInfo
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_getFileNameFromInfo,2,0) {(void*) boxptr_AbsynUtil_getFileNameFromInfo,0}};
 #define boxvar_AbsynUtil_getFileNameFromInfo MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_getFileNameFromInfo)
-DLLExport
-modelica_metatype omc_AbsynUtil_pathReplaceIdent(threadData_t *threadData, modelica_metatype _path, modelica_string _last);
-#define boxptr_AbsynUtil_pathReplaceIdent omc_AbsynUtil_pathReplaceIdent
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceIdent,2,0) {(void*) boxptr_AbsynUtil_pathReplaceIdent,0}};
-#define boxvar_AbsynUtil_pathReplaceIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceIdent)
 #define boxptr_AbsynUtil_getIteratorIndexedCrefs omc_AbsynUtil_getIteratorIndexedCrefs
 #define boxptr_AbsynUtil_findIteratorIndexedCrefs__traverser omc_AbsynUtil_findIteratorIndexedCrefs__traverser
 DLLExport
@@ -836,6 +842,11 @@ modelica_string omc_AbsynUtil_crefSecondIdent(threadData_t *threadData, modelica
 #define boxptr_AbsynUtil_crefSecondIdent omc_AbsynUtil_crefSecondIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSecondIdent,2,0) {(void*) boxptr_AbsynUtil_crefSecondIdent,0}};
 #define boxvar_AbsynUtil_crefSecondIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSecondIdent)
+DLLExport
+modelica_metatype omc_AbsynUtil_crefSetFirstIdent(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcref, modelica_string _ident);
+#define boxptr_AbsynUtil_crefSetFirstIdent omc_AbsynUtil_crefSetFirstIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSetFirstIdent,2,0) {(void*) boxptr_AbsynUtil_crefSetFirstIdent,0}};
+#define boxvar_AbsynUtil_crefSetFirstIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefSetFirstIdent)
 DLLExport
 modelica_string omc_AbsynUtil_crefFirstIdent(threadData_t *threadData, modelica_metatype _inCref);
 #define boxptr_AbsynUtil_crefFirstIdent omc_AbsynUtil_crefFirstIdent
@@ -1025,11 +1036,11 @@ modelica_metatype boxptr_AbsynUtil_pathContainsString(threadData_t *threadData, 
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContainsString,2,0) {(void*) boxptr_AbsynUtil_pathContainsString,0}};
 #define boxvar_AbsynUtil_pathContainsString MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContainsString)
 DLLExport
-modelica_boolean omc_AbsynUtil_pathContains(threadData_t *threadData, modelica_metatype _fullPath, modelica_metatype _pathId);
+modelica_boolean omc_AbsynUtil_pathContainsIdent(threadData_t *threadData, modelica_metatype _path, modelica_string _ident);
 DLLExport
-modelica_metatype boxptr_AbsynUtil_pathContains(threadData_t *threadData, modelica_metatype _fullPath, modelica_metatype _pathId);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContains,2,0) {(void*) boxptr_AbsynUtil_pathContains,0}};
-#define boxvar_AbsynUtil_pathContains MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContains)
+modelica_metatype boxptr_AbsynUtil_pathContainsIdent(threadData_t *threadData, modelica_metatype _path, modelica_metatype _ident);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContainsIdent,2,0) {(void*) boxptr_AbsynUtil_pathContainsIdent,0}};
+#define boxvar_AbsynUtil_pathContainsIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathContainsIdent)
 DLLExport
 modelica_metatype omc_AbsynUtil_crefRemovePrefix(threadData_t *threadData, modelica_metatype _prefixCr, modelica_metatype _cr);
 #define boxptr_AbsynUtil_crefRemovePrefix omc_AbsynUtil_crefRemovePrefix
@@ -1067,11 +1078,6 @@ modelica_metatype omc_AbsynUtil_addSubscriptsLast(threadData_t *threadData, mode
 #define boxptr_AbsynUtil_addSubscriptsLast omc_AbsynUtil_addSubscriptsLast
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_addSubscriptsLast,2,0) {(void*) boxptr_AbsynUtil_addSubscriptsLast,0}};
 #define boxvar_AbsynUtil_addSubscriptsLast MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_addSubscriptsLast)
-DLLExport
-modelica_metatype omc_AbsynUtil_pathReplaceFirstIdent(threadData_t *threadData, modelica_metatype _path, modelica_metatype _replPath);
-#define boxptr_AbsynUtil_pathReplaceFirstIdent omc_AbsynUtil_pathReplaceFirstIdent
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceFirstIdent,2,0) {(void*) boxptr_AbsynUtil_pathReplaceFirstIdent,0}};
-#define boxvar_AbsynUtil_pathReplaceFirstIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathReplaceFirstIdent)
 #define boxptr_AbsynUtil_pathToStringListWork omc_AbsynUtil_pathToStringListWork
 DLLExport
 modelica_metatype omc_AbsynUtil_pathToStringList(threadData_t *threadData, modelica_metatype _path);
@@ -1096,11 +1102,6 @@ modelica_metatype omc_AbsynUtil_suffixPath(threadData_t *threadData, modelica_me
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_suffixPath,2,0) {(void*) boxptr_AbsynUtil_suffixPath,0}};
 #define boxvar_AbsynUtil_suffixPath MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_suffixPath)
 DLLExport
-modelica_metatype omc_AbsynUtil_prefixOptPath(threadData_t *threadData, modelica_string _prefix, modelica_metatype _optPath);
-#define boxptr_AbsynUtil_prefixOptPath omc_AbsynUtil_prefixOptPath
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_prefixOptPath,2,0) {(void*) boxptr_AbsynUtil_prefixOptPath,0}};
-#define boxvar_AbsynUtil_prefixOptPath MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_prefixOptPath)
-DLLExport
 modelica_metatype omc_AbsynUtil_prefixPath(threadData_t *threadData, modelica_string _prefix, modelica_metatype _path);
 #define boxptr_AbsynUtil_prefixPath omc_AbsynUtil_prefixPath
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_prefixPath,2,0) {(void*) boxptr_AbsynUtil_prefixPath,0}};
@@ -1121,6 +1122,18 @@ modelica_metatype omc_AbsynUtil_pathRest(threadData_t *threadData, modelica_meta
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathRest,2,0) {(void*) boxptr_AbsynUtil_pathRest,0}};
 #define boxvar_AbsynUtil_pathRest MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathRest)
 DLLExport
+modelica_metatype omc_AbsynUtil_pathSetNthIdent(threadData_t *threadData, modelica_metatype _path, modelica_string _ident, modelica_integer _n);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_pathSetNthIdent(threadData_t *threadData, modelica_metatype _path, modelica_metatype _ident, modelica_metatype _n);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetNthIdent,2,0) {(void*) boxptr_AbsynUtil_pathSetNthIdent,0}};
+#define boxvar_AbsynUtil_pathSetNthIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetNthIdent)
+DLLExport
+modelica_string omc_AbsynUtil_pathNthIdent(threadData_t *threadData, modelica_metatype _path, modelica_integer _n);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_pathNthIdent(threadData_t *threadData, modelica_metatype _path, modelica_metatype _n);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathNthIdent,2,0) {(void*) boxptr_AbsynUtil_pathNthIdent,0}};
+#define boxvar_AbsynUtil_pathNthIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathNthIdent)
+DLLExport
 modelica_string omc_AbsynUtil_pathSecondIdent(threadData_t *threadData, modelica_metatype _inPath);
 #define boxptr_AbsynUtil_pathSecondIdent omc_AbsynUtil_pathSecondIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSecondIdent,2,0) {(void*) boxptr_AbsynUtil_pathSecondIdent,0}};
@@ -1130,6 +1143,11 @@ modelica_metatype omc_AbsynUtil_pathFirstPath(threadData_t *threadData, modelica
 #define boxptr_AbsynUtil_pathFirstPath omc_AbsynUtil_pathFirstPath
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathFirstPath,2,0) {(void*) boxptr_AbsynUtil_pathFirstPath,0}};
 #define boxvar_AbsynUtil_pathFirstPath MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathFirstPath)
+DLLExport
+modelica_metatype omc_AbsynUtil_pathSetFirstIdent(threadData_t *threadData, modelica_metatype _path, modelica_string _ident);
+#define boxptr_AbsynUtil_pathSetFirstIdent omc_AbsynUtil_pathSetFirstIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetFirstIdent,2,0) {(void*) boxptr_AbsynUtil_pathSetFirstIdent,0}};
+#define boxvar_AbsynUtil_pathSetFirstIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetFirstIdent)
 DLLExport
 modelica_string omc_AbsynUtil_pathFirstIdent(threadData_t *threadData, modelica_metatype _inPath);
 #define boxptr_AbsynUtil_pathFirstIdent omc_AbsynUtil_pathFirstIdent
@@ -1141,15 +1159,15 @@ modelica_metatype omc_AbsynUtil_pathLast(threadData_t *threadData, modelica_meta
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathLast,2,0) {(void*) boxptr_AbsynUtil_pathLast,0}};
 #define boxvar_AbsynUtil_pathLast MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathLast)
 DLLExport
+modelica_metatype omc_AbsynUtil_pathSetLastIdent(threadData_t *threadData, modelica_metatype _path, modelica_string _ident);
+#define boxptr_AbsynUtil_pathSetLastIdent omc_AbsynUtil_pathSetLastIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetLastIdent,2,0) {(void*) boxptr_AbsynUtil_pathSetLastIdent,0}};
+#define boxvar_AbsynUtil_pathSetLastIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathSetLastIdent)
+DLLExport
 modelica_string omc_AbsynUtil_pathLastIdent(threadData_t *threadData, modelica_metatype _inPath);
 #define boxptr_AbsynUtil_pathLastIdent omc_AbsynUtil_pathLastIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathLastIdent,2,0) {(void*) boxptr_AbsynUtil_pathLastIdent,0}};
 #define boxvar_AbsynUtil_pathLastIdent MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathLastIdent)
-DLLExport
-modelica_metatype omc_AbsynUtil_pathTwoLastIdents(threadData_t *threadData, modelica_metatype _inPath);
-#define boxptr_AbsynUtil_pathTwoLastIdents omc_AbsynUtil_pathTwoLastIdents
-static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_pathTwoLastIdents,2,0) {(void*) boxptr_AbsynUtil_pathTwoLastIdents,0}};
-#define boxvar_AbsynUtil_pathTwoLastIdents MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_pathTwoLastIdents)
 #define boxptr_AbsynUtil_stringListPathReversed2 omc_AbsynUtil_stringListPathReversed2
 DLLExport
 modelica_metatype omc_AbsynUtil_stringListPathReversed(threadData_t *threadData, modelica_metatype _inStrings);

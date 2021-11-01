@@ -8,12 +8,30 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+extern struct record_description Absyn_Path_IDENT__desc;
+extern struct record_description Absyn_Program_PROGRAM__desc;
 extern struct record_description Flags_ConfigFlag_CONFIG__FLAG__desc;
 extern struct record_description Flags_FlagData_ENUM__FLAG__desc;
 extern struct record_description Flags_FlagVisibility_EXTERNAL__desc;
 extern struct record_description Flags_ValidOptions_STRING__OPTION__desc;
 extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description Parser_ParserResult_PARSERRESULT__desc;
+#define boxptr_Parser_expToString omc_Parser_expToString
+#define boxptr_Parser_getFeaturesAnnotationList2 omc_Parser_getFeaturesAnnotationList2
+#define boxptr_Parser_getFeaturesAnnotationList omc_Parser_getFeaturesAnnotationList
+#define boxptr_Parser_getFeaturesAnnotation omc_Parser_getFeaturesAnnotation
+#define boxptr_Parser_getLicenseAnnotationLicenseFile omc_Parser_getLicenseAnnotationLicenseFile
+#define boxptr_Parser_getLicenseAnnotationLibraryKey omc_Parser_getLicenseAnnotationLibraryKey
+#define boxptr_Parser_getLicenseAnnotationTuple omc_Parser_getLicenseAnnotationTuple
+#define boxptr_Parser_getLicenseAnnotationWork2 omc_Parser_getLicenseAnnotationWork2
+#define boxptr_Parser_getLicenseAnnotationWork1 omc_Parser_getLicenseAnnotationWork1
+#define boxptr_Parser_getLicenseAnnotation omc_Parser_getLicenseAnnotation
+DLLExport
+modelica_boolean omc_Parser_checkLicenseAndFeatures(threadData_t *threadData, modelica_metatype _c1, modelica_metatype _lveInstance);
+DLLExport
+modelica_metatype boxptr_Parser_checkLicenseAndFeatures(threadData_t *threadData, modelica_metatype _c1, modelica_metatype _lveInstance);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Parser_checkLicenseAndFeatures,2,0) {(void*) boxptr_Parser_checkLicenseAndFeatures,0}};
+#define boxvar_Parser_checkLicenseAndFeatures MMC_REFSTRUCTLIT(boxvar_lit_Parser_checkLicenseAndFeatures)
 #define boxptr_Parser_loadFileThread omc_Parser_loadFileThread
 DLLExport
 void omc_Parser_stopLibraryVendorExecutable(threadData_t *threadData, modelica_metatype _lveInstance);
@@ -21,8 +39,9 @@ void omc_Parser_stopLibraryVendorExecutable(threadData_t *threadData, modelica_m
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Parser_stopLibraryVendorExecutable,2,0) {(void*) boxptr_Parser_stopLibraryVendorExecutable,0}};
 #define boxvar_Parser_stopLibraryVendorExecutable MMC_REFSTRUCTLIT(boxvar_lit_Parser_stopLibraryVendorExecutable)
 DLLExport
-void omc_Parser_checkLVEToolFeature(threadData_t *threadData, modelica_metatype _lveInstance, modelica_string _feature);
-#define boxptr_Parser_checkLVEToolFeature omc_Parser_checkLVEToolFeature
+modelica_boolean omc_Parser_checkLVEToolFeature(threadData_t *threadData, modelica_metatype _lveInstance, modelica_string _feature);
+DLLExport
+modelica_metatype boxptr_Parser_checkLVEToolFeature(threadData_t *threadData, modelica_metatype _lveInstance, modelica_metatype _feature);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Parser_checkLVEToolFeature,2,0) {(void*) boxptr_Parser_checkLVEToolFeature,0}};
 #define boxvar_Parser_checkLVEToolFeature MMC_REFSTRUCTLIT(boxvar_lit_Parser_checkLVEToolFeature)
 DLLExport
@@ -50,6 +69,11 @@ modelica_metatype boxptr_Parser_parallelParseFiles(threadData_t *threadData, mod
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Parser_parallelParseFiles,2,0) {(void*) boxptr_Parser_parallelParseFiles,0}};
 #define boxvar_Parser_parallelParseFiles MMC_REFSTRUCTLIT(boxvar_lit_Parser_parallelParseFiles)
 DLLExport
+modelica_metatype omc_Parser_stringMod(threadData_t *threadData, modelica_string _str, modelica_string _filename);
+#define boxptr_Parser_stringMod omc_Parser_stringMod
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Parser_stringMod,2,0) {(void*) boxptr_Parser_stringMod,0}};
+#define boxvar_Parser_stringMod MMC_REFSTRUCTLIT(boxvar_lit_Parser_stringMod)
+DLLExport
 modelica_metatype omc_Parser_stringCref(threadData_t *threadData, modelica_string _str);
 #define boxptr_Parser_stringCref omc_Parser_stringCref
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Parser_stringCref,2,0) {(void*) boxptr_Parser_stringCref,0}};
@@ -71,8 +95,9 @@ modelica_metatype boxptr_Parser_parsebuiltin(threadData_t *threadData, modelica_
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Parser_parsebuiltin,2,0) {(void*) boxptr_Parser_parsebuiltin,0}};
 #define boxvar_Parser_parsebuiltin MMC_REFSTRUCTLIT(boxvar_lit_Parser_parsebuiltin)
 DLLExport
-modelica_metatype omc_Parser_parsestring(threadData_t *threadData, modelica_string _str, modelica_string _infoFilename);
-#define boxptr_Parser_parsestring omc_Parser_parsestring
+modelica_metatype omc_Parser_parsestring(threadData_t *threadData, modelica_string _str, modelica_string _infoFilename, modelica_integer _grammar, modelica_integer _languageStd);
+DLLExport
+modelica_metatype boxptr_Parser_parsestring(threadData_t *threadData, modelica_metatype _str, modelica_metatype _infoFilename, modelica_metatype _grammar, modelica_metatype _languageStd);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Parser_parsestring,2,0) {(void*) boxptr_Parser_parsestring,0}};
 #define boxvar_Parser_parsestring MMC_REFSTRUCTLIT(boxvar_lit_Parser_parsestring)
 DLLExport

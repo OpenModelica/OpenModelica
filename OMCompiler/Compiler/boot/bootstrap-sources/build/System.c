@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/System.c"
+#define OMC_FILE "System.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "System.h"
@@ -176,13 +176,14 @@ modelica_string omc_System_dladdr(threadData_t *threadData, modelica_metatype _s
 modelica_string _info = NULL;
 modelica_string _file = NULL;
 modelica_string _name = NULL;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta2;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _file = omc_System_dladdr___dladdr(threadData, _symbol ,&_name);
-tmpMeta[0] = stringAppend(_file,_OMC_LIT0);
-tmpMeta[1] = stringAppend(tmpMeta[0],_name);
-_info = tmpMeta[1];
+tmpMeta1 = stringAppend(_file,_OMC_LIT0);
+tmpMeta2 = stringAppend(tmpMeta1,_name);
+_info = tmpMeta2;
 _return: OMC_LABEL_UNUSED
 if (out_file) { *out_file = _file; }
 if (out_name) { *out_name = _name; }
@@ -1867,23 +1868,27 @@ _outFuncHandle = omc_System_lookupFunction(threadData, tmp1, _inFunc);
 out_outFuncHandle = mmc_mk_icon(_outFuncHandle);
 return out_outFuncHandle;
 }
-modelica_integer omc_System_loadLibrary(threadData_t *threadData, modelica_string _inLib, modelica_boolean _inPrintDebug)
+modelica_integer omc_System_loadLibrary(threadData_t *threadData, modelica_string _inLib, modelica_boolean _relativePath, modelica_boolean _printDebug)
 {
-int _inPrintDebug_ext;
+int _relativePath_ext;
+int _printDebug_ext;
 int _outLibHandle_ext;
 modelica_integer _outLibHandle;
-_inPrintDebug_ext = (int)_inPrintDebug;
-_outLibHandle_ext = System_loadLibrary(MMC_STRINGDATA(_inLib), _inPrintDebug_ext);
+_relativePath_ext = (int)_relativePath;
+_printDebug_ext = (int)_printDebug;
+_outLibHandle_ext = System_loadLibrary(MMC_STRINGDATA(_inLib), _relativePath_ext, _printDebug_ext);
 _outLibHandle = (modelica_integer)_outLibHandle_ext;
 return _outLibHandle;
 }
-modelica_metatype boxptr_System_loadLibrary(threadData_t *threadData, modelica_metatype _inLib, modelica_metatype _inPrintDebug)
+modelica_metatype boxptr_System_loadLibrary(threadData_t *threadData, modelica_metatype _inLib, modelica_metatype _relativePath, modelica_metatype _printDebug)
 {
 modelica_integer tmp1;
+modelica_integer tmp2;
 modelica_integer _outLibHandle;
 modelica_metatype out_outLibHandle;
-tmp1 = mmc_unbox_integer(_inPrintDebug);
-_outLibHandle = omc_System_loadLibrary(threadData, _inLib, tmp1);
+tmp1 = mmc_unbox_integer(_relativePath);
+tmp2 = mmc_unbox_integer(_printDebug);
+_outLibHandle = omc_System_loadLibrary(threadData, _inLib, tmp1, tmp2);
 out_outLibHandle = mmc_mk_icon(_outLibHandle);
 return out_outLibHandle;
 }

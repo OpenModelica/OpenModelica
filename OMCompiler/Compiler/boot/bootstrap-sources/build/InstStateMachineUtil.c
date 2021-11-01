@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/InstStateMachineUtil.c"
+#define OMC_FILE "InstStateMachineUtil.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "InstStateMachineUtil.h"
@@ -50,14 +50,15 @@ DLLExport
 modelica_metatype omc_InstStateMachineUtil_getSMStatesInContext(threadData_t *threadData, modelica_metatype _eqns, modelica_metatype _inPrefix, modelica_metatype *out_initialStates)
 {
 modelica_metatype _states = NULL;
+modelica_metatype tmpMeta1;
 modelica_metatype _initialStates = NULL;
-modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta2;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-_states = tmpMeta[0];
-tmpMeta[1] = MMC_REFSTRUCTLIT(mmc_nil);
-_initialStates = tmpMeta[1];
+tmpMeta1 = MMC_REFSTRUCTLIT(mmc_nil);
+_states = tmpMeta1;
+tmpMeta2 = MMC_REFSTRUCTLIT(mmc_nil);
+_initialStates = tmpMeta2;
 _return: OMC_LABEL_UNUSED
 if (out_initialStates) { *out_initialStates = _initialStates; }
 return _states;
