@@ -65,6 +65,7 @@ RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
 ./simulation/options.h \
 ./simulation/simulation_info_json.h \
 ./simulation/simulation_input_xml.h \
+./simulation/simulation_omc_assert.h \
 ./simulation/simulation_runtime.h \
 ./simulation/omc_simulation_util.h
 

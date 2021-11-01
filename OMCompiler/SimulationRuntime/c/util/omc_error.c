@@ -34,6 +34,12 @@
 /* For MMC_THROW, so we can end this thing */
 #include "../meta/meta_modelica.h"
 
+void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
+void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
+void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
+void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
+
+
 const int firstOMCErrorStream = 1;
 
 const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
