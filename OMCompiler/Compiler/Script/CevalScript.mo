@@ -1262,16 +1262,22 @@ algorithm
 
     case ("parseEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_)
       algorithm
-        vals := {};
-        (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, false);
-        if b then
-          // clear the errors before!
-          Error.clearMessages() "Clear messages";
-          Print.clearErrorBuf() "Clear error buffer";
-          filename := Testsuite.friendlyPath(filename);
-          (paths) := Interactive.parseFile(filename, "UTF-8");
-          vals := List.map(paths,ValuesUtil.makeCodeTypeName);
-        end if;
+        str := System.pwd();
+        try
+          0 := System.cd(System.dirname(filename));
+          vals := {};
+          (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, false);
+          if b then
+            // clear the errors before!
+            Error.clearMessages() "Clear messages";
+            Print.clearErrorBuf() "Clear error buffer";
+            filename := Testsuite.friendlyPath(filename);
+            (paths) := Interactive.parseFile(filename, "UTF-8");
+            vals := List.map(paths,ValuesUtil.makeCodeTypeName);
+          end if;
+        else
+        end try;
+        0 := System.cd(str);
       then
         ValuesUtil.makeArray(vals);
 
@@ -1290,10 +1296,9 @@ algorithm
             SymbolTable.setAbsyn(newp);
           end if;
           outCache := FCore.emptyCache();
-          0 := System.cd(str);
         else
-          0 := System.cd(str);
         end try;
+        0 := System.cd(str);
       then
         Values.BOOL(b);
 
