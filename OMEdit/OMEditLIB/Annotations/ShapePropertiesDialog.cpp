@@ -806,7 +806,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     mpShapeAnnotation->setClosure(StringHandler::getClosureType(mpClosureComboBox->currentText()));
   }
   if (mpTextAnnotation) {
-    mpShapeAnnotation->setTextString(mpTextTextBox->text().trimmed());
+    mpShapeAnnotation->setTextString(StringHandler::escapeString(mpTextTextBox->text().trimmed()));
     if (mpFontNameComboBox->currentText().compare("Default") != 0) {
       mpShapeAnnotation->setFontName(mpFontNameComboBox->currentText());
     }
