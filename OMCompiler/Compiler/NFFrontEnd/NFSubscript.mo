@@ -155,6 +155,10 @@ public
     input InstNode node;
     input Integer dimIndex;
     output Subscript subscript = SPLIT_INDEX(node, dimIndex);
+  algorithm
+    if dimIndex < 1 then
+      Error.assertion(false, getInstanceName() + " got invalid index " + String(dimIndex), sourceInfo());
+    end if;
   end makeSplitIndex;
 
   function isIndex

@@ -4605,43 +4605,6 @@ public
     end match;
   end nthRecordElement;
 
-  function splitRecordCref
-    input Expression exp;
-    output Expression outExp;
-  algorithm
-    outExp := ExpandExp.expand(exp);
-
-    outExp := match outExp
-      local
-        InstNode cls;
-        array<InstNode> comps;
-        ComponentRef cr, field_cr;
-        Type ty;
-        list<Expression> fields;
-
-      case CREF(ty = Type.COMPLEX(cls = cls), cref = cr)
-        algorithm
-          comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(cls)));
-          fields := {};
-
-          for i in arrayLength(comps):-1:1 loop
-            ty := InstNode.getType(comps[i]);
-            field_cr := ComponentRef.prefixCref(comps[i], ty, {}, cr);
-            fields := CREF(ty, field_cr) :: fields;
-          end for;
-        then
-          makeRecord(InstNode.scopePath(cls), outExp.ty, fields);
-
-      case ARRAY()
-        algorithm
-          outExp.elements := list(splitRecordCref(e) for e in outExp.elements);
-        then
-          outExp;
-
-      else exp;
-    end match;
-  end splitRecordCref;
-
   function retype
     input output Expression exp;
   algorithm

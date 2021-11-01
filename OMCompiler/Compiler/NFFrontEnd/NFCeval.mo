@@ -694,6 +694,7 @@ protected
   InstContext.Type exp_context;
   Binding binding;
   Component comp;
+  list<Subscript> subs;
 algorithm
   parent_cr := ComponentRef.rest(cref);
   parent := ComponentRef.node(parent_cr);
@@ -703,18 +704,20 @@ algorithm
   Typing.typeComponentBinding(parent, exp_context, typeChildren = false);
   comp := InstNode.component(parent);
   binding := Component.getBinding(comp);
+  subs := ComponentRef.getSubscripts(parent_cr);
 
   if Binding.hasExp(binding) then
     exp := Binding.getExp(binding);
-    exp := Expression.applySubscripts(ComponentRef.getSubscripts(parent_cr), exp);
+    exp := Expression.applySubscripts(subs, exp);
     exp := Expression.recordElement(ComponentRef.firstName(cref), exp);
     exp := evalExp(exp, target);
+
     exp := Expression.map(exp, function Expression.expandNonListedSplitIndices(
       indicesToKeep = ComponentRef.nodesIncludingSplitSubs(cref)));
   else
     // If the parent didn't have a binding, try the parent's parent.
     exp := makeRecordFieldBindingFromParent(parent_cr, target);
-    exp := Expression.applySubscripts(ComponentRef.getSubscripts(parent_cr), exp);
+    exp := Expression.applySubscripts(subs, exp);
     exp := Expression.recordElement(ComponentRef.firstName(cref), exp);
   end if;
 end makeRecordFieldBindingFromParent;
