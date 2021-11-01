@@ -1228,13 +1228,13 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
         Set the error functions to be used for simulation.
         The default value for them is 'functions' version. Change it here to 'simulation' versions
       */
-      void (*omc_assert)(threadData_t*, FILE_INFO info, const char *msg, ...)  __attribute__ ((noreturn)) = omc_assert_simulation;
-      void (*omc_assert_withEquationIndexes)(threadData_t*, FILE_INFO info, const int *indexes, const char *msg, ...)  __attribute__ ((noreturn)) = omc_assert_simulation_withEquationIndexes;
+      omc_assert = omc_assert_simulation;
+      omc_assert_withEquationIndexes = omc_assert_simulation_withEquationIndexes;
 
-      void (*omc_assert_warning_withEquationIndexes)(FILE_INFO info, const int *indexes, const char *msg, ...) = omc_assert_warning_simulation_withEquationIndexes;
-      void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_warning_simulation;
-      void (*omc_terminate)(FILE_INFO info, const char *msg, ...) = omc_terminate_simulation;
-      void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_simulation;
+      omc_assert_warning_withEquationIndexes = omc_assert_warning_simulation_withEquationIndexes;
+      omc_assert_warning = omc_assert_warning_simulation;
+      omc_terminate = omc_terminate_simulation;
+      omc_throw = omc_throw_simulation;
 
       int res;
       DATA data;
