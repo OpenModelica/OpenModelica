@@ -3343,8 +3343,8 @@ algorithm
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
         // adrpo: TODO! FIXME! add this as an Error not as a print!
         print("Error: The marked virtual expandable component reference in connect([" +
-         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + AbsynUtil.printComponentRefStr(c1) + "], " +
-         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + AbsynUtil.printComponentRefStr(c2) + "); should be qualified, i.e. expandableConnectorName.virtualName!\n");
+         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + "], " +
+         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + "); should be qualified, i.e. expandableConnectorName.virtualName!\n");
       then
         fail();
 

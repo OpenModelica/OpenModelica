@@ -1381,37 +1381,6 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true);
 end crefExp;
 
-public function expComponentRefStr
-  input Absyn.Exp aexp;
-  output String outString;
-algorithm
-  outString := printComponentRefStr(expCref(aexp));
-end expComponentRefStr;
-
-public function printComponentRefStr
-  input Absyn.ComponentRef cr;
-  output String ostring;
-algorithm
-  ostring := match(cr)
-    local
-      String s1,s2;
-      Absyn.ComponentRef child;
-    case(Absyn.CREF_IDENT(s1,_)) then s1;
-    case(Absyn.CREF_QUAL(s1,_,child))
-      equation
-        s2 = printComponentRefStr(child);
-        s1 = s1 + "." + s2;
-      then s1;
-    case(Absyn.CREF_FULLYQUALIFIED(child))
-      equation
-        s2 = printComponentRefStr(child);
-        s1 = "." + s2;
-      then s1;
-    case (Absyn.ALLWILD()) then "__";
-    case (Absyn.WILD()) then "_";
-  end match;
-end printComponentRefStr;
-
 public function pathEqual "Returns true if two paths are equal."
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
