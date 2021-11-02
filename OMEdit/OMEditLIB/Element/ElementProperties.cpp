@@ -412,6 +412,10 @@ void Parameter::createValueWidget()
  */
 void Parameter::enableDisableUnitComboBox(const QString &value)
 {
+  // Do not do anything when the value is empty.
+  if (value.isEmpty()) {
+    return;
+  }
   /* Enable/disable the unit combobox based on the literalConstant
    * Set the display unit as current when value is literalConstant otherwise use unit
    * ticket:5618 Disable the unit drop down when we have a symbolic parameter
@@ -423,7 +427,7 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
    */
   if (!literalConstant) {
     bool state = mpUnitComboBox->blockSignals(true);
-    int index = mpUnitComboBox->findData(literalConstant ? mDisplayUnit : mUnit);
+    int index = mpUnitComboBox->findData(mUnit);
     if (index > -1 && index != mpUnitComboBox->currentIndex()) {
       mpUnitComboBox->setCurrentIndex(index);
       mPreviousUnit = mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString();
