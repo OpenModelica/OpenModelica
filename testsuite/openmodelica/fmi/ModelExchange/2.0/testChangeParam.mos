@@ -21,7 +21,6 @@ equation
   when time>1 then
       terminate(\"Simulation done by \" + s);
   end when;
-  annotation(experiment(StopTime=2));
 end test_ChangeParam;
 ");
 getErrorString();
@@ -42,7 +41,7 @@ val(y, 1);
 getErrorString();
 
 system("./test_ChangeParam_me_FMU -override a=-2,i=-10,b=false,s=\"bar\" -r test_ChangeParam.mat");
-readSimulationResult("test_ChangeParam.mat", {x,a,y}, 7);
+readSimulationResult("test_ChangeParam.mat", {x,a,y});
 getErrorString();
 
 
@@ -58,7 +57,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "test_ChangeParam_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test_ChangeParam_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test_ChangeParam_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -70,6 +69,6 @@ getErrorString();
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // 0
-// {{1.0,1.0,1.0,0.1353363211838032,0.1353363211838032,0.01831624751345867,0.01831624751345867},{-2.0,-2.0,-2.0,-2.0,-2.0,-2.0,-2.0},{-11.0,-11.0,-11.0,-10.1353363211838,-10.1353363211838,-10.01831624751346,-10.01831624751346}}
+// {{1.0,1.0,1.0,0.1353363211838032,0.1353363211838032},{-2.0,-2.0,-2.0,-2.0,-2.0},{-11.0,-11.0,-11.0,-10.1353363211838,-10.1353363211838}}
 // ""
 // endResult
