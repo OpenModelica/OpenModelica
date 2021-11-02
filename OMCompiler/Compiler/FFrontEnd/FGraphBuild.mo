@@ -65,6 +65,7 @@ type Graph = FCore.Graph;
 type Scope = FCore.Scope;
 
 protected
+import Dump;
 import List;
 import AbsynToSCode;
 import SCodeDump;
@@ -770,7 +771,7 @@ algorithm
 
     case (_, _, _, g)
       equation
-        name = AbsynUtil.printComponentRefStr(inCref);
+        name = Dump.printComponentRefStr(inCref);
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CR(inCref));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);

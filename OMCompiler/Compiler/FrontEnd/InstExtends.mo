@@ -1578,7 +1578,7 @@ algorithm
         cref = AbsynUtil.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
-        //fprintln(Flags.DEBUG, "Cref VAR fixed: " + AbsynUtil.printComponentRefStr(cref));
+        //fprintln(Flags.DEBUG, "Cref VAR fixed: " + Dump.printComponentRefStr(cref));
         cref = if AbsynUtil.crefEqual(cref, inCref) then inCref else cref;
       then cref;
 
@@ -1595,7 +1595,7 @@ algorithm
         cref = AbsynUtil.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
-        //print("Cref CLASS fixed: " + AbsynUtil.printComponentRefStr(cref) + "\n");
+        //print("Cref CLASS fixed: " + Dump.printComponentRefStr(cref) + "\n");
         cref = if AbsynUtil.crefEqual(cref, inCref) then inCref else cref;
       then cref;
 

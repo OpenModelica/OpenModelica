@@ -5879,7 +5879,7 @@ algorithm
         cls = getPathedClassInProgram(path, p);
         Absyn.EXTERNAL(Absyn.EXTERNALDECL(funcName, lang, output_, args, ann1), ann2) = AbsynUtil.getExternalDecl(cls);
         strLanguage  = "\"" + Util.getOptionOrDefault(lang, "") + "\"";
-        strOutput  = "\"" + AbsynUtil.printComponentRefStr(
+        strOutput  = "\"" + Dump.printComponentRefStr(
                                 Util.getOptionOrDefault(
                                   output_,
                                   Absyn.CREF_IDENT("", {}))) + "\"";

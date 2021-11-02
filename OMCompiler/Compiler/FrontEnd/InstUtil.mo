@@ -1376,7 +1376,7 @@ algorithm
       then getModsForDep(dep,elems);
     case(dep,((SCode.COMPONENT(name=name1),cmod))::_)
       equation
-        name2 = AbsynUtil.printComponentRefStr(dep);
+        name2 = Dump.printComponentRefStr(dep);
         true = stringEq(name2,name1);
         cmod = DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), AbsynUtil.dummyInfo);
       then
@@ -4215,7 +4215,7 @@ algorithm
     ty_str := Types.unparseTypeNoAttr(inType);
     exp_str := ExpressionDump.printExpStr(inExp);
     name_str := PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +
-      AbsynUtil.printComponentRefStr(inCref);
+      Dump.printComponentRefStr(inCref);
     Error.addSourceMessageAndFail(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,
       {name_str, ad_str, exp_str, ty_str}, inInfo);
   end try;
@@ -4502,7 +4502,7 @@ algorithm
 
     case(SCode.NAMEMOD("noDerivative",(SCode.MOD(binding = SOME(Absyn.CREF(acr)))))::subs,_,_,_,_,_,_)
     equation
-      name = AbsynUtil.printComponentRefStr(acr);
+      name = Dump.printComponentRefStr(acr);
         outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
       varPos = setFunctionInputIndex(elemDecl,name,1);
     then
@@ -4510,7 +4510,7 @@ algorithm
 
     case(SCode.NAMEMOD("zeroDerivative",(SCode.MOD(binding =  SOME(Absyn.CREF(acr)))))::subs,_,_,_,_,_,_)
     equation
-      name = AbsynUtil.printComponentRefStr(acr);
+      name = Dump.printComponentRefStr(acr);
         outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
       varPos = setFunctionInputIndex(elemDecl,name,1);
     then
@@ -6998,7 +6998,7 @@ algorithm
     else
       equation
         /* Doesn't work anyway right away
-        crefStr = AbsynUtil.printComponentRefStr(cref);
+        crefStr = Dump.printComponentRefStr(cref);
         varStr = SCodeDump.variabilityString(variability);
         Error.addMessage(Error.CIRCULAR_PARAM,{crefStr,varStr});*/
       then fail();
