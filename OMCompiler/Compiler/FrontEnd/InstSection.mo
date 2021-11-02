@@ -3390,7 +3390,7 @@ algorithm
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[MULTIPLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // get the virtual component name
-        Absyn.CREF_IDENT(componentName, _) = AbsynUtil.crefGetLastIdent(c1);
+        componentName = AbsynUtil.crefGetLastIdent(c1);
 
         envComponentEmpty = FGraph.removeComponentsFromScope(envComponent);
 
@@ -3477,7 +3477,7 @@ algorithm
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[SINGLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // get the virtual component name
-        Absyn.CREF_IDENT(componentName, _) = AbsynUtil.crefGetLastIdent(c1);
+        componentName = AbsynUtil.crefGetLastIdent(c1);
 
         envComponentEmpty = FGraph.removeComponentsFromScope(envComponent);
 
