@@ -36,6 +36,7 @@ AC_DEFUN([C_FLAG_CHECK_AND_ADD],
 ])
 
 C_FLAG_CHECK_AND_ADD([-fno-delete-null-pointer-checks])
+C_FLAG_CHECK_AND_ADD([-Werror=implicit-function-declaration])
 
 AC_SEARCH_LIBS([floor],[m])
 
