@@ -229,8 +229,14 @@ algorithm
     case Expression.LBINARY()
       algorithm
         exp1 := evalExp(exp.exp1, target);
+
+        if Expression.isSplitSubscriptedExp(exp1) then
+          exp2 := evalExp(exp.exp2, target);
+        else
+          exp2 := exp.exp2;
+        end if;
       then
-        evalLogicBinaryOp(exp1, exp.operator, exp.exp2, target);
+        evalLogicBinaryOp(exp1, exp.operator, exp2, target);
 
     case Expression.LUNARY()
       algorithm
