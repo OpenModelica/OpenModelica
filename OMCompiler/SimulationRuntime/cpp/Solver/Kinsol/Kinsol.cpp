@@ -47,7 +47,6 @@
 #include <sunlinsol/sunlinsol_spbcgs.h>     // Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver
 
 #include <Solver/Kinsol/FactoryExport.h>
-#include <Solver/Kinsol/KinsolLapack.h>
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 

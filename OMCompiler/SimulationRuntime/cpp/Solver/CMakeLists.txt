@@ -77,7 +77,6 @@ install(TARGETS OMCppDgesvSolver_static)
 #####################################################################################################
 # OMCppKinsol
 set(OMC_SIMRT_CPP_SOLVER_KINSOL_SOURCES Kinsol/Kinsol.cpp
-                                        Kinsol/KinsolLapack.cpp
                                         Kinsol/KinsolSettings.cpp
                                         Kinsol/FactoryExport.cpp)
 

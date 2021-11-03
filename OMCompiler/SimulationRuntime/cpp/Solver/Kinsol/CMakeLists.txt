@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.9)
 
 project(${KinsolName})
 
-add_library(${KinsolName} Kinsol.cpp KinsolLapack.cpp KinsolSettings.cpp FactoryExport.cpp)
+add_library(${KinsolName} Kinsol.cpp KinsolSettings.cpp FactoryExport.cpp)
 
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${KinsolName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")

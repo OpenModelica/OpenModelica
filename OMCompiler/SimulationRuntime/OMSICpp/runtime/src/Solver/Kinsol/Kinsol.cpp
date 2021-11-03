@@ -25,7 +25,6 @@
 #include <sunlinsol/sunlinsol_spbcgs.h>     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver */
 
 #include <Core/Utils/extension/logger.hpp>
-#include <Solver/Kinsol/KinsolLapack.h>
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 
@@ -488,43 +487,6 @@ void Kinsol::solve()
 
         return;
     }
-
-    // Try complete pivoting
-    ///////////////////////////////////////
-    //_usedCompletePivoting = true;
-    //
-
-    //KINLapackCompletePivoting(_kinMem, _dimSys);
-    //
-    //for(int i=0;i<_dimSys;i++) // Reset Scaling
-    //    _fScale[i] = 1.0;
-
-    //_iterationStatus = CONTINUE;
-    //solveNLS();
-    //if(_iterationStatus == DONE)
-    //    return;
-    //else  // Try Scaling
-    //{
-    //    _iterationStatus = CONTINUE;
-    //    _algLoop->setReal(_y0);
-    //    _algLoop->evaluate();
-    //    _algLoop->getRHS(_fScale);
-    //    for(int i=0;i<_dimSys;i++)
-    //    {
-    //
-    //        if(abs(_fScale[i]) >1.0)
-    //        _fScale[i] = abs(1/_fScale[i]);
-    //        else
-    //        _fScale[i] = 1;
-
-    //
-    //    }
-    //    _iterationStatus = CONTINUE;
-    //    solveNLS();
-    //}
-    //
-    //if(_iterationStatus == DONE)
-    //    return;
 
     // Try SPGMR solver
     // Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver
