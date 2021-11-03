@@ -259,6 +259,7 @@ SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              omc_simulation_util.h \
              simulation_info_json.h \
              simulation_input_xml.h \
+             simulation_omc_assert.h \
              simulation_runtime.h \
              socket.h \
              options.h

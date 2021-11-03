@@ -72,6 +72,7 @@ bootstrap-from-tarball2:
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory clean OMC="$(BOOTSTRAP_OMC)"
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory runtime-depends OMBUILDDIR=$(OMBUILDDIR) OMC="$(BOOTSTRAP_OMC)"
 	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC="$(BOOTSTRAP_OMC)" OMC_EXTRA_FLAGS= TEMPLATES_TARGET=templates-bootstrap
+	cp bootstrap-sources/build/_main.c build/
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC="$(BOOTSTRAP_OMC)" CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_2"

@@ -118,6 +118,7 @@ end translateModel;
     #include "simulation/simulation_runtime.h"
     #include "util/omc_error.h"
     #include "util/parallel_helper.h"
+    #include "simulation/simulation_omc_assert.h"
     #include "simulation/solver/model_help.h"
     #include "simulation/solver/delay.h"
     #include "simulation/solver/linearSystem.h"
@@ -1223,6 +1224,18 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     /* call the simulation runtime main from our main! */
     int main(int argc, char**argv)
     {
+      /*
+        Set the error functions to be used for simulation.
+        The default value for them is 'functions' version. Change it here to 'simulation' versions
+      */
+      omc_assert = omc_assert_simulation;
+      omc_assert_withEquationIndexes = omc_assert_simulation_withEquationIndexes;
+
+      omc_assert_warning_withEquationIndexes = omc_assert_warning_simulation_withEquationIndexes;
+      omc_assert_warning = omc_assert_warning_simulation;
+      omc_terminate = omc_terminate_simulation;
+      omc_throw = omc_throw_simulation;
+
       int res;
       DATA data;
       MODEL_DATA modelData;
