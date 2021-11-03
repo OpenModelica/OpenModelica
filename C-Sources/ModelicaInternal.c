@@ -132,6 +132,10 @@
                      ModelicaInternal_getFullPath
 */
 
+#if defined(__gnu_linux__) && !defined(NO_FILE_SYSTEM)
+#define _GNU_SOURCE 1
+#endif
+
 #include "ModelicaInternal.h"
 #include "ModelicaUtilities.h"
 

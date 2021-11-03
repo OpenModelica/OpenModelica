@@ -522,7 +522,7 @@ static UINTMAX_T cast(LDOUBLE);
 static UINTMAX_T myround(LDOUBLE);
 static LDOUBLE mypow10(int);
 
-//extern int errno;
+/*extern int errno;*/
 
 int
 rpl_vsnprintf(char *str, size_t size, const char *format, va_list args)

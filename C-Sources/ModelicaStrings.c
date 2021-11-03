@@ -93,9 +93,6 @@
 #include "ModelicaUtilities.h"
 #include "stdint_wrap.h"
 #define HASH_NO_STDINT 1
-#if !defined(HASH_FUNCTION)
-#define HASH_FUNCTION HASH_AP
-#endif
 #include "uthash.h"
 #undef uthash_fatal /* Ensure that nowhere in this file uses uthash_fatal by accident */
 
@@ -202,34 +199,6 @@ static int SkipNonWhiteSpaceSeparator(const char* string, int i, const char* sep
         ++i;
     }
     return i;
-}
-
-static int get_token(const char* string, int startIndex, const char* separators,
-                     int* output_index, int* token_start, int* token_length) {
-    int past_token;
-    int sep_pos;
-
-    *token_start = ModelicaStrings_skipWhiteSpace(string, startIndex);
-    /* Index of first char of token, after ws. */
-
-    past_token = SkipNonWhiteSpaceSeparator(string, *token_start, separators);
-    /* Index of first char after token, ws or separator. */
-
-    sep_pos = ModelicaStrings_skipWhiteSpace(string, past_token);
-    /* Index of first char after ws after token, maybe a separator. */
-
-    *output_index = InSet(string, sep_pos, separators) ? sep_pos + 1 : sep_pos;
-    /* Skip any separator. */
-
-    *token_length = past_token-*token_start;
-
-    if (*token_length == 0 || *token_length > MAX_TOKEN_SIZE) {
-        /* Token missing or too long. */
-        *output_index = startIndex;
-        return 0; /* error */
-    }
-
-    return 1; /* ok */
 }
 
 static int MatchUnsignedInteger(const char* string, int start) {
@@ -547,6 +516,9 @@ do { \
     } \
 } while (0)
 
+#undef HASH_FUNCTION
+#define HASH_FUNCTION HASH_AP
+
 int ModelicaStrings_hashString(_In_z_ const char* str) {
     /* Compute an unsigned int hash code from a character string */
     size_t len = strlen(str);
@@ -559,6 +531,9 @@ int ModelicaStrings_hashString(_In_z_ const char* str) {
 
     return h.is;
 }
+
+#undef HASH_FUNCTION
+#define HASH_FUNCTION HASH_JEN
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

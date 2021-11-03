@@ -56,13 +56,13 @@ extern "C" {
   external Modelica C-code in most compilers, noreturn attributes need to
   be present to avoid warnings or errors.
 
-  The following macros handle noreturn attributes according to the latest
+  The following macros handle noreturn attributes according to the
   C11/C++11 standard with fallback to GNU, Clang or MSVC extensions if using
   an older compiler.
 */
 #undef MODELICA_NORETURN
 #undef MODELICA_NORETURNATTR
-#if __STDC_VERSION__ >= 201112L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #define MODELICA_NORETURN _Noreturn
 #define MODELICA_NORETURNATTR
 #elif defined(__cplusplus) && __cplusplus >= 201103L

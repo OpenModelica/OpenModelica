@@ -101,6 +101,9 @@
 #  ifdef __MVS__
 #    define NO_vsnprintf
 #  endif
+#  ifndef STDC99
+#    define NO_vsnprintf
+#  endif
 #endif
 
 /* unlike snprintf (which is required in C99), _snprintf does not guarantee
