@@ -1821,10 +1821,8 @@ void SimulationDialog::performSimulation()
     SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
     QString targetBuild = pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString();
     if ((targetBuild.compare("vxworks69") == 0) || (targetBuild.compare("debugrt") == 0)) {
-      QString msg = tr("Generated code for the target build <b>%1</b> at %2.").arg(targetBuild)
-                    .arg(simulationOptions.getWorkingDirectory());
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
-                                                            Helper::notificationLevel));
+      QString msg = tr("Generated code for the target build <b>%1</b> at %2.").arg(targetBuild).arg(simulationOptions.getWorkingDirectory());
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
       return;
     }
     QString targetLanguage = pSimulationPage->getTargetLanguageComboBox()->currentText();
@@ -1832,10 +1830,8 @@ void SimulationDialog::performSimulation()
     if ((targetLanguage.compare("C") == 0) || (targetLanguage.compare("Cpp") == 0)) {
       createAndShowSimulationOutputWidget(simulationOptions);
     } else {
-      QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage)
-          .arg(simulationOptions.getWorkingDirectory());
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
-                                                            Helper::notificationLevel));
+      QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage).arg(simulationOptions.getWorkingDirectory());
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
       return;
     }
   }
