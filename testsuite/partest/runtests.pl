@@ -44,6 +44,7 @@ my $nocolour = '';
 my $with_omc = '';
 my $fast = 0;
 my $count_tests = 0;
+my $print_tests = 0;
 my $veryfew = 0;
 my $run_failing = 0;
 my $cppruntime = 0;
@@ -53,6 +54,8 @@ my $slowest:shared = 0;
 my $slowest_name:shared = "";
 my $gitlibs = 0;
 my $parmodexp = 0;
+my $partitionmodulo = 1;
+my $partition = 1;
 
 # Default is two threads.
 my $thread_count = 2;
@@ -82,22 +85,24 @@ for(@ARGV){
   if(/^-h|--help$/) {
     print("Usage: runtests.pl [OPTION]\n");
     print("\nOptions are:\n");
-    print("  -cppruntime   Run ONLY the slow cppruntime tests.\n");
-    print("  -nocpp        Do not run any cppruntime tests.\n");
-    print("  -f            Only run fast tests.\n");
-    print("  -file=file    Reads testcases from the given file instead of from a makefile.\n");
-    print("  -jN           Use N threads.\n");
-    print("  -nodb         Don't store timing data.\n");
-    print("  -nosavedb     Don't overwrite stored timing data.\n");
-    print("  -nocolour     Don't use colours in output.\n");
-    print("  -counttests   Don't run the test; only count them.\n");
-    print("  -with-xml     Output XML log.\n");
-    print("  -with-txt     Output TXT log.\n");
-    print("  -failing      Run failing tests instead of working.\n");
-    print("  -veryfew      Run only a very small number of tests to see if runtests.pl is working.\n");
-    print("  -gitlibs      If you have installed omc using GITLIBRARIES=Yes, you can test some of those libraries.\n");
-    print("  -parmodexp    Run the OpenCL ParModelica tests.\n");
-	print("  -b            Rebase tests in parallel. Use in conjuction with -file=/path/to/file.\n");
+    print("  -cppruntime    Run ONLY the slow cppruntime tests.\n");
+    print("  -nocpp         Do not run any cppruntime tests.\n");
+    print("  -f             Only run fast tests.\n");
+    print("  -file=file     Reads testcases from the given file instead of from a makefile.\n");
+    print("  -jN            Use N threads.\n");
+    print("  -nodb          Don't store timing data.\n");
+    print("  -nosavedb      Don't overwrite stored timing data.\n");
+    print("  -nocolour      Don't use colours in output.\n");
+    print("  -counttests    Don't run the test; only count them.\n");
+    print("  -partition=M/N M=1..N, partition the tests into N equal shares and run only the Mth partition.\n");
+    print("  -printtests    Don't run the test; only print them.\n");
+    print("  -with-xml      Output XML log.\n");
+    print("  -with-txt      Output TXT log.\n");
+    print("  -failing       Run failing tests instead of working.\n");
+    print("  -veryfew       Run only a very small number of tests to see if runtests.pl is working.\n");
+    print("  -gitlibs       If you have installed omc using GITLIBRARIES=Yes, you can test some of those libraries.\n");
+    print("  -parmodexp     Run the OpenCL ParModelica tests.\n");
+	  print("  -b             Rebase tests in parallel. Use in conjuction with -file=/path/to/file.\n");
     exit 1;
   }
   if(/^-f$/) {
@@ -124,6 +129,16 @@ for(@ARGV){
   }
   elsif(/^-counttests$/) {
     $count_tests = 1;
+  }
+  elsif(/^-printtests$/) {
+    $print_tests = 1;
+  }
+  elsif(/^-partition=([0-9]+)\/([0-9]+)$/) {
+    $partition = $1;
+    $partitionmodulo = $2;
+    if ($1 < 1 || $1 > $2) {
+      print STDERR "-partition=$1/$2 but $1 is not 1..$2";
+    }
   }
   elsif(/^--with-omc=(.*)$/) {
     $with_omc = "--with-omc=$1";
@@ -165,7 +180,7 @@ if ($use_db) {
   if(!$@) {
     MLDBM->import();
   } else {
-    print "Could not load MLDBM module, falling back to nodb mode.\n";
+    print STDERR "Could not load MLDBM module, falling back to nodb mode.\n";
     $use_db = 0;
   }
 }
@@ -306,6 +321,27 @@ if (!defined($file)) {
   chdir("..");
 }
 
+my $test_count = @test_list;
+
+if ($count_tests) {
+  print $test_count;
+  exit 0;
+}
+
+@test_list = sort @test_list;
+
+if ($partitionmodulo > 1) {
+  my @partitioned_list;
+  my $i = 0;
+  foreach my $test (@test_list) {
+    if (($partition-1) == ($i % $partitionmodulo)) {
+      push(@partitioned_list,$test);
+    }
+    $i++;
+  }
+  @test_list = @partitioned_list;
+}
+
 if($use_db) {
   # Sort most expensive operations first
   @test_list = reverse @test_list;
@@ -316,6 +352,13 @@ if($use_db) {
     $lb = defined($lb) ? $lb : 20;
     $lb <=> $la
   } @test_list;
+}
+
+if ($print_tests) {
+  foreach my $mytest (@test_list)  {
+    print $mytest . "\n";
+  }
+  exit 0;
 }
 
 # Put all the found tests in the queue.
@@ -346,13 +389,6 @@ if ($check_proc_cpu) {
 system("make --quiet -j$thread_count omc-diff ReferenceFiles > /dev/null 2>&1");
 
 symlink('../Compiler', 'Compiler');
-
-my $test_count = @test_list;
-
-if ($count_tests) {
-  print $test_count;
-  exit 0;
-}
 
 print "$thread_count threads\n";
 
