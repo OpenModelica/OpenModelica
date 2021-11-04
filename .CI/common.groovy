@@ -67,7 +67,7 @@ def numLogicalCPU() {
   return env.JENKINS_NUM_LOGICAL_CPU
 }
 
-void partest(cache=true, extraArgs='') {
+void partest(partition=1,partitionmodulo=1,cache=true, extraArgs='') {
   if (isWindows()) {
 
   bat ("""
@@ -105,7 +105,7 @@ void partest(cache=true, extraArgs='') {
   ulimit -v 6291456 # Max 6GB per process
 
   cd testsuite/partest
-  ./runtests.pl -j${numPhysicalCPU()} -nocolour -with-xml ${extraArgs}
+  ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml ${extraArgs}
   CODE=\$?
   test \$CODE = 0 -o \$CODE = 7 || exit 1
   """
