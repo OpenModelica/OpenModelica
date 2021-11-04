@@ -599,7 +599,7 @@ pipeline {
             script {
               common.standardSetup()
               unstash 'omc-clang'
-              common.partest(false, '-j1 -parmodexp')
+              common.partest(1, 1, false, '-j1 -parmodexp')
             }
           }
         }
