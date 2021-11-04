@@ -35,6 +35,7 @@ protected
   import Error;
   import MetaModelica.Dangerous.listReverseInPlace;
   import Connection = NFConnection;
+  import List;
 
 public
   record CONNECTION
@@ -54,8 +55,9 @@ public
     crs := Connector.split(conn.rhs);
 
     if listLength(cls) <> listLength(crs) then
-      Error.assertion(false, getInstanceName() + " got unbalanced connection " + toString(conn) + " (lhs: " +
-        String(listLength(cls)) + ", rhs: " + String(listLength(crs)) + ")", sourceInfo());
+      Error.assertion(false, getInstanceName() + " got unbalanced connection " + toString(conn) + ":" +
+        List.toString(cls, Connector.toString, "\n  lhs: ", "{", ", ", "}", true) +
+        List.toString(crs, Connector.toString, "\n  rhs: ", "{", ", ", "}", true), sourceInfo());
       fail();
     end if;
 

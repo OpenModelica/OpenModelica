@@ -160,7 +160,7 @@ package ConnectorType
   end setConnector;
 
   function isConnectorType
-    "Returns treu if the connector type has the connector, expandable, or
+    "Returns true if the connector type has the connector, expandable, or
      potentially present bits set, otherwise false."
     input Type cty;
     output Boolean isConnector;
