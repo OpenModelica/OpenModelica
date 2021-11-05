@@ -188,6 +188,8 @@ algorithm
   flatString := if dumpFlat then
     FlatModel.toFlatString(flatModel, FunctionTree.listValues(functions)) else "";
 
+  printStructuralParameters(flatModel);
+
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
     flatModel := Scalarize.scalarize(flatModel);
@@ -3753,6 +3755,23 @@ algorithm
     else ();
   end match;
 end combineSubscripts;
+
+function printStructuralParameters
+  input FlatModel flatModel;
+protected
+  list<Variable> params;
+  list<String> names;
+algorithm
+  if Flags.isSet(Flags.PRINT_STRUCTURAL) then
+    params := list(v for v guard Variable.isStructural(v) in flatModel.variables);
+
+    if not listEmpty(params) then
+      names := list(ComponentRef.toString(v.name) for v in params);
+      Error.addMessage(Error.NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS,
+        {stringDelimitList(names, ", ")});
+    end if;
+  end if;
+end printStructuralParameters;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;
