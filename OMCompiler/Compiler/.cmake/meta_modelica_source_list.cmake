@@ -380,6 +380,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/MMToJuliaKeywords.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFApi.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Conversion.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/Obfuscate.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
