@@ -783,8 +783,8 @@ void setLocalVars(OptData * optData, DATA * data, const double * const vopt,
   const int nx = optData->dim.nx;
   const int nv = optData->dim.nv;
 
-
-  memcpy(optData->v[i][j], data->localData[l]->realVars, optData->dim.nReal*sizeof(modelica_real));
+  /* try to init discrete real variables with pre value */
+  memcpy(optData->v[i][j], data->simulationInfo->realVarsPre, optData->dim.nReal*sizeof(modelica_real));
   for(l = 0; l < 3; ++l){
     data->localData[l]->realVars = optData->v[i][j];
     data->localData[l]->timeValue = (modelica_real) optData->time.t[i][j];
