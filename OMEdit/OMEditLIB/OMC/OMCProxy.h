@@ -80,6 +80,8 @@ private:
   QMap<QString, QList<QString> > mDerivedUnitsMap;
   OMCInterface *mpOMCInterface;
   bool mIsLoggingEnabled;
+  QStringList mLibrariesBrowserAdditionCommandsList;
+  QStringList mLibrariesBrowserDeletionCommandsList;
 public:
   OMCProxy(threadData_t *threadData, QWidget *pParent = 0);
   ~OMCProxy();

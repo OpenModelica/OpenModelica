@@ -35,8 +35,6 @@
 #include "TextAnnotation.h"
 #include "Modeling/Commands.h"
 
-#include "FlatModelica/Expression.h"
-
 /*!
  * \class TextAnnotation
  * \brief Draws the text shapes.

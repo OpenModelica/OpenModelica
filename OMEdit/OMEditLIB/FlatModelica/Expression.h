@@ -88,6 +88,7 @@ namespace FlatModelica
       bool boolValue() const;
       std::string stringValue() const;
       QString QStringValue() const;
+      QString functionName() const;
 
       std::string toString() const;
       QString toQString() const;

@@ -542,6 +542,7 @@ namespace FlatModelica
 
       value_t type() const override { return value_t::call; }
       bool isLiteral() const override { return false; }
+      const std::string& name() const { return _name; }
       bool isNamed(const std::string &name) const { return _name == name; }
       const std::vector<Expression>& args() const { return _args; }
       void setArg(size_t index, const Expression &e);
@@ -1765,6 +1766,20 @@ namespace FlatModelica
   QString Expression::QStringValue() const
   {
     return QString::fromStdString(dynamic_cast<const String&>(*_value).value());
+  }
+
+  /*!
+   * \brief Expression::functionName
+   * Checks if the Expression is a function call and then returns the function name
+   * otherwise return empty string.
+   * \return The QString value of the Expression function name.
+   */
+  QString Expression::functionName() const
+  {
+    if (_value && _value->type() == ExpressionBase::value_t::call) {
+      return QString::fromStdString(dynamic_cast<const Call&>(*_value).name());
+    }
+    return QString("");
   }
 
   /*!

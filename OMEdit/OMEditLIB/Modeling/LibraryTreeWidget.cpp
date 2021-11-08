@@ -1872,9 +1872,10 @@ void LibraryTreeModel::showHideProtectedClasses()
  * Unloads/deletes the Modelica class.
  * \param pLibraryTreeItem
  * \param askQuestion
+ * \param doDeleteClass
  * \return
  */
-bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion, bool doDeleteClass)
 {
   if (askQuestion) {
     QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
@@ -1904,7 +1905,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
   /* Delete the class in OMC.
    * If deleteClass is successful remove the class from Library Browser and delete the corresponding ModelWidget.
    */
-  if (MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
+  if (!doDeleteClass || MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     removeLibraryTreeItem(pLibraryTreeItem);
     if (!pLibraryTreeItem->isTopLevel()) {
       LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
