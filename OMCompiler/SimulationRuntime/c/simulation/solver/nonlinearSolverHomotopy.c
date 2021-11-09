@@ -874,46 +874,35 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
   double delta_hh;
   double xsave;
   int i,j,l;
+  int N;
+  double* f1;
+  int (*f) (struct DATA_HOMOTOPY*, double*, double*);
 
   if (solverData->initHomotopy) {
-    /* Use the homotopy function values hvec and also calculate the lambda column */
-    for(i = 0; i < solverData->n+1; i++) {
-      xsave = x[i];
-      delta_hh = delta_h * (fabs(xsave) + 1.0);
-      if ((xsave + delta_hh >=  solverData->maxValue[i]))
-        delta_hh *= -1;
-      x[i] += delta_hh;
-      /* Calculate scaled difference quotient */
-      delta_hh = 1. / delta_hh * solverData->xScaling[i];
-      solverData->h_function(solverData, x, solverData->f2);
-
-      for(j = 0; j < solverData->n; j++) {
-        l = i * solverData->n + j;
-        fJac[l] = (solverData->f2[j] - solverData->hvec[j]) * delta_hh; /* solverData->hvec must be set outside this function based on x */
-      }
-      x[i] = xsave;
-    }
+    N = solverData->n + 1;  /* also calculate the lambda column */
+    f1 = solverData->hvec;  /* homotopy function values solverData->hvec must be set outside this function based on x */
+    f = solverData->h_function;
   } else {
-    /* Use the normal function values f2 and calculate jacobian without the lambda column */
-    for(i = 0; i < solverData->n; i++) {
-      xsave = x[i];
-      delta_hh = delta_h * (fabs(xsave) + 1.0);
-      if ((xsave + delta_hh >=  solverData->maxValue[i]))
-        delta_hh *= -1;
-      x[i] += delta_hh;
-      /* Calculate scaled difference quotient */
-      delta_hh = 1. / delta_hh * solverData->xScaling[i];
-      if (solverData->casualTearingSet)
-        solverData->f_con(solverData, x, solverData->f2);
-      else
-        solverData->f(solverData, x, solverData->f2);
+    N = solverData->n;      /* calculate jacobian without the lambda column */
+    f1 = solverData->f1;    /* normal function values solverData->f1 must be set outside this function based on x */
+    f = solverData->casualTearingSet ? solverData->f_con : solverData->f;
+  }
 
-      for(j = 0; j < solverData->n; j++) {
-        l = i * solverData->n + j;
-        fJac[l] = (solverData->f2[j] - solverData->f1[j]) * delta_hh; /* solverData->f1 must be set outside this function based on x */
-      }
-      x[i] = xsave;
+  for(i = 0; i < N; i++) {
+    xsave = x[i];
+    delta_hh = delta_h * (fabs(xsave) + 1.0);
+    if ((xsave + delta_hh >= solverData->maxValue[i]))
+      delta_hh *= -1;
+    x[i] += delta_hh;
+    /* Calculate scaled difference quotient */
+    delta_hh = 1. / delta_hh * solverData->xScaling[i];
+    f(solverData, x, solverData->f2);
+
+    for(j = 0; j < solverData->n; j++) {
+      l = i * solverData->n + j;
+      fJac[l] = (solverData->f2[j] - f1[j]) * delta_hh;
     }
+    x[i] = xsave;
   }
   return 0;
 }
