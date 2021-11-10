@@ -297,6 +297,7 @@ const7.mo \
 const8.mo \
 ConstrainingClass1.mo \
 ConstrainingClass2.mo \
+ConstrainingClass3.mo \
 ConstrainingClassFunc1.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
