@@ -5,7 +5,8 @@
 // teardown_command: rm -rf initializationTests.homotopy5* _initializationTests.homotopy5* output.log
 // cflags: -d=-newInst
 //
-//  Check if equation system will get a different solution for each global lambda value.
+// Check if equation system actually goes through all steps in the global homotopy path.
+// To prevent regressions like https://github.com/OpenModelica/OpenModelica/issues/8097
 //
 
 loadString("model TestTornHomotopy2
