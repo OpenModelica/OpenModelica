@@ -1838,11 +1838,14 @@ bool OMCProxy::saveModifiedModel(QString modelText)
  * Save class with all used classes to a file.
  * \param fileName - the file to save in.
  * \param className - the name of the class.
+ * \param stripAnnotations
+ * \param stripComments
+ * \param obfuscate
  * \return true on success.
  */
-bool OMCProxy::saveTotalModel(QString fileName, QString className)
+bool OMCProxy::saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate)
 {
-  bool result = mpOMCInterface->saveTotalModel(fileName, className, false, false);
+  bool result = mpOMCInterface->saveTotalModel(fileName, className, stripAnnotations, stripComments);
   if (!result) {
     printMessagesStringInternal();
   }

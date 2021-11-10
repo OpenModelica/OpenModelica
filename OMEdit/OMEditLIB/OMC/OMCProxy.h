@@ -171,7 +171,7 @@ public:
   bool setSourceFile(QString className, QString path);
   bool save(QString className);
   bool saveModifiedModel(QString modelText);
-  bool saveTotalModel(QString fileName, QString className);
+  bool saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate);
   QString list(QString className);
   QString listFile(QString className, bool nestedClasses = true);
   QString diffModelicaFileListings(const QString &before, const QString &after);

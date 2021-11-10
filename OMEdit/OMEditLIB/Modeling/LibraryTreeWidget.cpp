@@ -4690,14 +4690,13 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+void LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
-  bool result = saveTotalLibraryTreeItemHelper(pLibraryTreeItem);
+  saveTotalLibraryTreeItemHelper(pLibraryTreeItem);
   MainWindow::instance()->getStatusBar()->clearMessage();
   MainWindow::instance()->hideProgressBar();
-  return result;
 }
 
 /*!
@@ -5211,24 +5210,13 @@ bool LibraryWidget::saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryT
  * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
+void LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
 {
-  bool result = false;
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-  if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-    return false;
+  if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+    SaveTotalFileDialog *pSaveTotalFileDialog = new SaveTotalFileDialog(pLibraryTreeItem);
+    pSaveTotalFileDialog->exec();
   }
-  QString fileName;
-  QString name = QString("%1Total").arg(pLibraryTreeItem->getName());
-  fileName = StringHandler::getSaveFileName(this, tr("%1 - Save %2 %3 as Total File").arg(Helper::applicationName)
-                                            .arg(pLibraryTreeItem->mClassInformation.restriction).arg(pLibraryTreeItem->getName()), NULL,
-                                            Helper::omFileTypes, NULL, "mo", &name);
-  if (fileName.isEmpty()) { // if user press ESC
-    return false;
-  }
-  // save the model through OMC
-  result = MainWindow::instance()->getOMCProxy()->saveTotalModel(fileName, pLibraryTreeItem->getNameStructure());
-  return result;
 }
 
 /*!

@@ -491,7 +491,7 @@ public:
   bool saveFile(QString fileName, QString contents);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  void saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void openLibraryTreeItem(QString nameStructure);
 private:
   TreeSearchFilters *mpTreeSearchFilters;
@@ -512,7 +512,7 @@ private:
   bool saveAsCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
-  bool saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
+  void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void scrollToActiveLibraryTreeItem();
   void searchClasses();
