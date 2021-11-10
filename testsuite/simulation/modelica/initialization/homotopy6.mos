@@ -2,7 +2,7 @@
 // keywords: initialization, homotopy
 // status: correct
 // cflags:
-// teardown_command: rm -rf initializationTests.homotopy5* _initializationTests.homotopy5* output.log
+// teardown_command: rm -rf initializationTests.homotopy6* _initializationTests.homotopy6* output.log TestTornHomotopy2*
 // cflags: -d=-newInst
 //
 // Check if equation system actually goes through all steps in the global homotopy path.
