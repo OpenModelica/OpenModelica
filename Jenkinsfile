@@ -86,6 +86,8 @@ pipeline {
               common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)
               common.getVersion()
             }
+            // Resolve symbolic links to make Jenkins happy
+            sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
           }
         }
@@ -788,15 +790,15 @@ pipeline {
             expression { shouldWeRunTests }
           }
           options {
-            skipDefaultCheckout true
+            skipDefaultCheckout true // This seems to cause problems for symbolic links
           }
           steps {
+            echo "${env.NODE_NAME}"
             unstash 'omc-clang'
             unstash 'cross-fmu-extras'
             unstash 'cross-fmu-results-linux-wine'
             unstash 'cross-fmu-results-osx'
             unstash 'cross-fmu-results-armhf'
-            echo "${env.NODE_NAME}"
             sh 'cd testsuite/special/FmuExportCrossCompile && ../../../build/bin/omc check-files.mos'
             sh 'cd testsuite/special/FmuExportCrossCompile && tar -czf ../../../Test_FMUs.tar.gz Test_FMUs'
             archiveArtifacts 'Test_FMUs.tar.gz'
