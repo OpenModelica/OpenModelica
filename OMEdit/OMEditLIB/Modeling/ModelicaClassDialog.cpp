@@ -1325,6 +1325,53 @@ void InformationDialog::keyPressEvent(QKeyEvent *event)
   QWidget::keyPressEvent(event);
 }
 
+ConvertClassDialog::ConvertClassDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
+  : QDialog(pParent), mpLibraryTreeItem(pLibraryTreeItem)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Convert Class")));
+  setMinimumWidth(400);
+  // script file
+  mpScriptTextBox = new QLineEdit;
+  mpScriptBrowseButton = new QPushButton(Helper::browse);
+  connect(mpScriptBrowseButton, SIGNAL(clicked()), SLOT(browseScriptFile()));
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(convertClass()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(new Label(tr("Conversion script:")), 0, 0);
+  pMainLayout->addWidget(mpScriptTextBox, 0, 1);
+  pMainLayout->addWidget(mpScriptBrowseButton, 0, 2);
+  pMainLayout->addWidget(mpButtonBox, 1, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+void ConvertClassDialog::browseScriptFile()
+{
+  mpScriptTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFiles), NULL, Helper::omScriptTypes, NULL));
+}
+
+void ConvertClassDialog::convertClass()
+{
+  if (mpScriptBrowseButton->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_SCRIPT), Helper::ok);
+    mpScriptBrowseButton->setFocus();
+    return;
+  }
+  MainWindow::instance()->getOMCProxy()->convertPackage(mpLibraryTreeItem->getNameStructure(), mpScriptTextBox->text());
+  accept();
+}
+
 /*!
  * \class GraphicsViewProperties
  * \brief Creates a dialog that shows the icon/diagram GraphicsView properties.

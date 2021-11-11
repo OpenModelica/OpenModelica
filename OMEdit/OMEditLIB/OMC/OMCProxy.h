@@ -275,6 +275,7 @@ public:
   bool updatePackageIndex();
   bool upgradeInstalledPackages(bool installNewestVersions);
   QStringList getAvailablePackageVersions(QString pkg, QString version);
+  bool convertPackage(const QString &className, const QString &scriptFile);
 signals:
   void commandFinished();
 public slots:

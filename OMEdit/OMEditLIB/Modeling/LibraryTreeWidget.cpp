@@ -3108,6 +3108,10 @@ void LibraryTreeView::createActions()
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
   connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteTextFile()));
+  // Convert class Action
+  mpConvertClassAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), tr("Convert"), this);
+  mpConvertClassAction->setStatusTip(tr("Converts the class"));
+  connect(mpConvertClassAction, SIGNAL(triggered()), SLOT(convertClass()));
   // Export FMU Action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
@@ -3384,6 +3388,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           exportMenu.addAction(mpExportXMLAction);
           exportMenu.addAction(mpExportFigaroAction);
           menu.addMenu(&exportMenu);
+          menu.addSeparator();
+          menu.addAction(mpConvertClassAction);
           if (pLibraryTreeItem->isSimulationAllowed()) {
             menu.addSeparator();
             menu.addAction(mpUpdateBindingsAction);
@@ -3823,6 +3829,15 @@ void LibraryTreeView::deleteTextFile()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->deleteTextFile(pLibraryTreeItem);
+  }
+}
+
+void LibraryTreeView::convertClass()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    ConvertClassDialog *pConvertClassDialog = new ConvertClassDialog(pLibraryTreeItem);
+    pConvertClassDialog->exec();
   }
 }
 

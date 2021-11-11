@@ -3376,6 +3376,20 @@ QStringList OMCProxy::getAvailablePackageVersions(QString pkg, QString version)
 }
 
 /*!
+ * \brief OMCProxy::convertPackage
+ * Converts the package.
+ * \param className
+ * \param scriptFile
+ * \return
+ */
+bool OMCProxy::convertPackage(const QString &className, const QString &scriptFile)
+{
+  bool result = mpOMCInterface->convertPackage(className, scriptFile);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */

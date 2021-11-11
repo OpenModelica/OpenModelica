@@ -208,11 +208,29 @@ public slots:
 
 class InformationDialog : public QWidget
 {
+  Q_OBJECT
 public:
   InformationDialog(QString windowTitle, QString informationText, bool modelicaTextHighlighter = false, QWidget *pParent = 0);
   void closeEvent(QCloseEvent *event) override;
 protected:
   virtual void keyPressEvent(QKeyEvent *event) override;
+};
+
+class ConvertClassDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  ConvertClassDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
+private:
+  LibraryTreeItem *mpLibraryTreeItem;
+  QLineEdit *mpScriptTextBox;
+  QPushButton *mpScriptBrowseButton;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void browseScriptFile();
+  void convertClass();
 };
 
 class GraphicsView;
