@@ -1705,7 +1705,13 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     const char sep[] = ",";
     if(solverData->initHomotopy && ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
     {
-      sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", solverData->data->modelData->modelFilePrefix, solverData->sysNumber, solverData->data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
+      if (omc_flag[FLAG_OUTPUT_PATH]) { /* Add output path to file name */
+        sprintf(buffer, "%s/%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", omc_flagValue[FLAG_OUTPUT_PATH], solverData->data->modelData->modelFilePrefix, solverData->sysNumber, solverData->data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
+      }
+      else
+      {
+        sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", solverData->data->modelData->modelFilePrefix, solverData->sysNumber, solverData->data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
+      }
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = omc_fopen(buffer, "wt");
       fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
