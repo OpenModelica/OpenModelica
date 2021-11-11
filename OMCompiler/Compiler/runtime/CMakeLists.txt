@@ -74,7 +74,7 @@ target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
-target_link_libraries(omcruntime PUBLIC omc::simrt::memory)
+target_link_libraries(omcruntime PUBLIC omc::simrt::runtime)
 target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
@@ -152,7 +152,7 @@ target_sources(omcbackendruntime PRIVATE ${OMC_BACKENDRUNTIIME_SOURCES})
 
 target_link_libraries(omcbackendruntime PUBLIC omc::config)
 target_link_libraries(omcbackendruntime PUBLIC ${Intl_LIBRARIES})
-target_link_libraries(omcbackendruntime PUBLIC omc::simrt::memory)
+target_link_libraries(omcbackendruntime PUBLIC omc::simrt::runtime)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 
@@ -167,7 +167,7 @@ add_library(omc::compiler::graphstream ALIAS omcgraphstream)
 set(OMC_GRAPH_STREAM_SOURCES GraphStreamExt_omc.cpp)
 target_sources(omcgraphstream PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
 
-target_link_libraries(omcgraphstream PUBLIC omc::simrt::memory)
+target_link_libraries(omcgraphstream PUBLIC omc::simrt::runtime)
 target_link_libraries(omcgraphstream PUBLIC omc::3rd::netstream)
 
 
@@ -276,8 +276,8 @@ else()
   set(MAKE ${CMAKE_MAKE_PROGRAM})
 
   string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcmemory -llapack -lblas -lm -lpthread -rdynamic")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOptimizationRuntime -lOpenModelicaRuntimeC -lomcmemory -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -llapack -lblas -lm -lpthread -rdynamic")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lOptimizationRuntime -lOpenModelicaRuntimeC -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm -lpthread -rdynamic -Wl,--no-undefined")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
 
