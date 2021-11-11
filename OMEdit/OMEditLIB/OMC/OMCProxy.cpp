@@ -1842,7 +1842,7 @@ bool OMCProxy::saveModifiedModel(QString modelText)
  */
 bool OMCProxy::saveTotalModel(QString fileName, QString className)
 {
-  bool result = mpOMCInterface->saveTotalModel(fileName, className, false, false);
+  bool result = mpOMCInterface->saveTotalModel(fileName, className, false, false, false);
   if (!result) {
     printMessagesStringInternal();
   }

@@ -414,6 +414,7 @@ if true then /* Suppress output */
     "../Script/MMToJuliaKeywords.mo",
     "../Script/NFApi.mo",
     "../Script/Conversion.mo",
+    "../Script/Obfuscate.mo",
 
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",
