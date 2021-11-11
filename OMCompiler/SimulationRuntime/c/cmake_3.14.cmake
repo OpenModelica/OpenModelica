@@ -84,6 +84,11 @@ if(WIN32)
   target_link_options(SimulationRuntimeC PRIVATE  -Wl,--export-all-symbols)
 endif(WIN32)
 
+if(WITH_IPOPT)
+  target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
+  target_compile_definitions(SimulationRuntimeC PRIVATE -DWITH_IPOPT)
+  target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
+endif()
 
 # Fix me. Make an interface (header only library) out of 3rdParty/dgesv
 target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
@@ -91,25 +96,6 @@ target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3
 # target_link_options(SimulationRuntimeC PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS SimulationRuntimeC)
-
-
-# ######################################################################################################################
-# Library: OptimizationRuntime
-## This is now separated from SimulationRuntimeC. Just for clarity. It can be put back in there if needed.
-## However having it as a separate lib will allow us to remove it based on an option. This means we can
-## also remove the need for ipopt and mumps if this is disabled.
-add_library(OptimizationRuntime SHARED)
-add_library(omc::simrt::optimize ALIAS OptimizationRuntime)
-
-target_sources(OptimizationRuntime PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
-
-target_link_libraries(OptimizationRuntime PUBLIC omc::config)
-target_link_libraries(OptimizationRuntime PUBLIC omc::simrt::runtime)
-target_link_libraries(OptimizationRuntime PUBLIC omc::simrt::simruntime)
-target_link_libraries(OptimizationRuntime PUBLIC omc::3rd::ipopt)
-
-
-install(TARGETS OptimizationRuntime)
 
 
 # ######################################################################################################################

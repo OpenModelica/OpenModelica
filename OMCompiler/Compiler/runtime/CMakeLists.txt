@@ -277,7 +277,7 @@ else()
 
   string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
   set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -llapack -lblas -lm -lpthread -rdynamic")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lOptimizationRuntime -lOpenModelicaRuntimeC -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm -lpthread -rdynamic -Wl,--no-undefined")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
 
