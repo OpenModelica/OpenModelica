@@ -322,7 +322,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
      echo set -ex
      echo mkdir build_cmake
      echo cmake -S ./ -B ./build_cmake ${cmake_args}
-     echo time cmake --build ./build_cmake --parallel \${MAKETHREADS} --target install
+     echo time cmake --build ./build_cmake --parallel \${MAKETHREADS} --target omsimulator install
      ) > buildOMCWindows.sh
 
      set MSYSTEM=MINGW64
@@ -333,7 +333,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   else {
     sh "mkdir ./build_cmake"
     sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}"
-    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
+    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target omsimulator install"
   }
 }
 
