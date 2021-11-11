@@ -115,6 +115,16 @@ AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
+# Check for platform arch (32 vs 64 bit)
+# sets OMC_TARGET_ARCH_IS_64 to true if 64 bit.
+AC_SUBST(OMC_TARGET_ARCH_IS_64)
+AC_CHECK_SIZEOF([void *])
+if test "x$ac_cv_sizeof_void_p" = "x8" ; then
+   OMC_TARGET_ARCH_IS_64="true"
+else
+   OMC_TARGET_ARCH_IS_64="false"
+fi
+
 build_short=$build_cpu-$build_os
 host_short=$host_cpu-$host_os
 
