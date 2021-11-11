@@ -84,6 +84,9 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
       /* Directory */
       GC_asprintf(&renamedPrefix, "%s%s%s", destPath, filenameStart[pathToExtractLen] == '/' || filenameStart[pathToExtractLen] == '\0' ? "" : "/", filenameStart+pathToExtractLen);
       SystemImpl__createDirectory(renamedPrefix);
+#if defined(_POSIX_C_SOURCE)
+      chmod(renamedPrefix, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH);
+#endif
     } else {
       /* File */
       GC_asprintf(&renamedPrefix, "%s%s%s", destPath, filenameStart[pathToExtractLen] == '/' || filenameStart[pathToExtractLen] == '\0' ? "" : "/", filenameStart+pathToExtractLen);
@@ -125,6 +128,22 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
         }
       } while (error > 0);
 
+#if defined(_POSIX_C_SOURCE)
+      /* Set executable flag, etc if we are on a POSIX system
+       * external_fa is 4 bytes - the upper 2 are POSIX permissions
+       * and the lower of those 2 bytes are the chmod permissions we
+       * are interested in (read/write/executable). We filter out the
+       * highest octet since we do not need stick/setgid/setuid
+       */
+      mode_t mode = ((file_info.external_fa >> 16L) & 0x7F) | S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+      if (fchmod(fileno(fout), mode)) {
+        const char *msgs[2] = {strerror(errno), renamedPrefix};
+        c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "fchmod failed for %s: %s", msgs, 2);
+        unzCloseCurrentFile(zipfile);
+        unzClose(zipfile);
+        return 0;
+      }
+#endif
       fclose(fout);
     }
 

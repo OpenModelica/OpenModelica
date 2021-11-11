@@ -2391,6 +2391,7 @@ function saveTotalModel "Save the className model in a single file, together wit
   input TypeName className;
   input Boolean stripAnnotations = false;
   input Boolean stripComments = false;
+  input Boolean obfuscate = false;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");

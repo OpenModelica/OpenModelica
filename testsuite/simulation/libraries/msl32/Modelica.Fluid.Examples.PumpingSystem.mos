@@ -1,6 +1,6 @@
 // name:     Modelica.Fluid.Examples.PumpingSystem
 // keywords: simulation MSL Examples
-// status: correct
+// status: erroneous
 // cflags: -d=-newInst
 //
 // Simulation Results

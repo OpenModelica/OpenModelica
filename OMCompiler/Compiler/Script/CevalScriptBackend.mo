@@ -109,6 +109,7 @@ import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
+import Obfuscate;
 import OpenTURNS;
 import PackageManagement;
 import Parser;
@@ -2018,11 +2019,11 @@ algorithm
         (cache,Values.BOOL(false));
 
     case (cache,_,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
-                                    Values.BOOL(b1), Values.BOOL(b2)},_)
+                                    Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)},_)
       equation
         Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if (access >= 9) then // i.e., Access.documentation
-          saveTotalModel(filename, classpath, b1, b2);
+          saveTotalModel(filename, classpath, b1, b2, b3);
           b = true;
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
@@ -2032,7 +2033,7 @@ algorithm
         (cache, Values.BOOL(b));
 
     case (cache,_,"saveTotalModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_)),
-                                    Values.BOOL(_), Values.BOOL(_)},_)
+                                    Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)},_)
       then (cache, Values.BOOL(false));
 
     case (cache,_,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
@@ -7368,29 +7369,37 @@ protected function saveTotalModel
   input Absyn.Path classpath;
   input Boolean stripAnnotations;
   input Boolean stripComments;
+  input Boolean obfuscate;
 protected
   SCode.Program scodeP;
   String str,str1,str2,str3;
   NFSCodeEnv.Env env;
   SCode.Comment cmt;
+  String obfuscate_map;
+  Absyn.Path cls_path = classpath;
 algorithm
-  runFrontEndLoadProgram(classpath);
+  runFrontEndLoadProgram(cls_path);
   scodeP := SymbolTable.getSCode();
-  (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
-  (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(classpath, env, AbsynUtil.dummyInfo);
+  (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(cls_path, scodeP);
+  (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(cls_path, env, AbsynUtil.dummyInfo);
   scodeP := SCodeUtil.removeBuiltinsFromTopScope(scodeP);
 
   if stripAnnotations or stripComments then
     scodeP := SCodeUtil.stripCommentsFromProgram(scodeP, stripAnnotations, stripComments);
   end if;
 
+  if obfuscate then
+    (scodeP, cls_path, cmt, obfuscate_map) := Obfuscate.obfuscateProgram(scodeP, cls_path, cmt);
+    System.writeFile(StringUtil.stripFileExtension(filename) + "_mapping.json", obfuscate_map);
+  end if;
+
   str := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
-  str1 := AbsynUtil.pathLastIdent(classpath) + "_total";
+  str1 := AbsynUtil.pathLastIdent(cls_path) + "_total";
   str2 := if stripComments then "" else SCodeDump.printCommentStr(cmt);
   str2 := if stringEq(str2,"") then "" else (" " + str2);
   str3 := if stripAnnotations then "" else SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
   str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
-  str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(classpath) + ";\n" + str3 + "end " + str1 + ";\n";
+  str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
   System.writeFile(filename, str + str1);
 end saveTotalModel;
 

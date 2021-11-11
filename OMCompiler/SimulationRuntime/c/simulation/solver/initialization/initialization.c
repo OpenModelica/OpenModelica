@@ -171,6 +171,77 @@ void dumpInitialSolution(DATA *simData)
   messageClose(LOG_SOTI);
 }
 
+
+/**
+ * @brief Write fileName into buffer.
+ *
+ * If FLAG_OUTPUT_PATH is used add output path to file name.
+ *
+ * @param buffer      FileName on output.
+ * @param fileName    Name for CSV file.
+ * @param mData       Pointer to model data.
+ */
+void homotopy_log_file_path(char* buffer, const char* fileName, MODEL_DATA *mData)
+{
+  if (omc_flag[FLAG_OUTPUT_PATH]) { /* Add output path to file name */
+    sprintf(buffer, "%s/%s_%s", omc_flagValue[FLAG_OUTPUT_PATH], mData->modelFilePrefix, fileName);
+  }
+  else
+  {
+    sprintf(buffer, "%s_%s", mData->modelFilePrefix, fileName);
+  }
+  infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
+  return;
+}
+
+/**
+ * @brief Log lambda and all real variables in homotopy CSV file
+ *
+ * @param data          Pointer to DATA.
+ * @param threadData    Pointer to threadData.
+ * @param fileName      Name of CSV file to write to.
+ * @param sep           CSV Seperator (usually ",").
+ * @param lambda        Value of lambda.
+ * @param firstLine     Boolean specifying if header of CSV should be written.
+ */
+void log_homotopy_lambda_vars(DATA *data, threadData_t *threadData, const char* fileName, const char* sep, double lambda, int firstLine)
+{
+  int i;
+  FILE* pFile;
+
+  /* Open file */
+  if (firstLine) {
+    pFile = omc_fopen(fileName, "wt");
+  }
+  else {
+    pFile = omc_fopen(fileName, "at");
+  }
+  if (pFile == NULL)
+  {
+    throwStreamPrint(threadData, "Could not write to `%s`.", fileName);
+  }
+
+  /* Write to file */
+  if (firstLine) {
+    fprintf(pFile, "\"lambda\"");
+    for(i=0; i<data->modelData->nVariablesReal; ++i)
+    {
+        fprintf(pFile, "%s\"%s\"", sep, data->modelData->realVarsData[i].info.name);
+    }
+    fprintf(pFile, "\n");
+  } else {
+    fprintf(pFile, "%.16g", lambda);
+    for(i=0; i<data->modelData->nVariablesReal; ++i)
+    {
+      fprintf(pFile, "%s%.16g", sep, data->localData[0]->realVars[i]);
+    }
+    fprintf(pFile, "\n");
+  }
+
+  fclose(pFile);
+  return;
+}
+
 /*! \fn static int symbolic_initialization(DATA *data, threadData_t *threadData)
  *
  *  \param [ref] [data]
@@ -184,6 +255,8 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   TRACE_PUSH
   int retVal;
   FILE *pFile = NULL;
+  char fileName[4096];
+  const char* sep = ",";
   long i;
   MODEL_DATA *mData = data->modelData;
   int homotopySupport = 0;
@@ -273,34 +346,16 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   if (data->callback->useHomotopy == 1 && solveWithGlobalHomotopy)
   {
     long step;
-    char buffer[4096];
-    double lambda;
+    double lambda = -1;
     int success = 0;
 
     infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Global homotopy with equidistant step size started.");
 
 #if !defined(OMC_NO_FILESYSTEM)
-    const char sep[] = ",";
     if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
     {
-      if (omc_flag[FLAG_OUTPUT_PATH]) { /* Add output path to file name */
-        sprintf(buffer, "%s/%s_equidistant_global_homotopy.csv", omc_flagValue[FLAG_OUTPUT_PATH], mData->modelFilePrefix);
-      }
-      else
-      {
-        sprintf(buffer, "%s_equidistant_global_homotopy.csv", mData->modelFilePrefix);
-      }
-      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
-      pFile = omc_fopen(buffer, "wt");
-      if (pFile == NULL)
-      {
-        throwStreamPrint(threadData, "Could not write to `%s`.", buffer);
-      }
-      fprintf(pFile, "\"lambda\"");
-      for(i=0; i<mData->nVariablesReal; ++i) {
-        fprintf(pFile, "%s\"%s\"", sep, mData->realVarsData[i].info.name);
-      }
-      fprintf(pFile, "\n");
+      homotopy_log_file_path(fileName, "equidistant_global_homotopy.csv", mData);
+      log_homotopy_lambda_vars(data, threadData, fileName, sep, lambda, 1 /*TRUE*/);
     }
 #endif
 
@@ -343,12 +398,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #if !defined(OMC_NO_FILESYSTEM)
       if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
       {
-        fprintf(pFile, "%.16g", lambda);
-        for(i=0; i<mData->nVariablesReal; ++i)
-        {
-          fprintf(pFile, "%s%.16g", sep, data->localData[0]->realVars[i]);
-        }
-        fprintf(pFile, "\n");
+        log_homotopy_lambda_vars(data, threadData, fileName, sep, lambda, 0 /*FALSE*/);
       }
 #endif
     }
@@ -361,21 +411,12 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     if (!success)
     {
       messageClose(LOG_INIT_HOMOTOPY);
-#if !defined(OMC_NO_FILESYSTEM)
-      if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
-        fclose(pFile);
-#endif
       errorStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem with global homotopy with equidistant step size.");
       throwStreamPrint(threadData, "Unable to solve initialization problem.");
     }
 
     data->simulationInfo->homotopySteps += init_lambda_steps;
     messageClose(LOG_INIT_HOMOTOPY);
-
-#if !defined(OMC_NO_FILESYSTEM)
-    if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
-      fclose(pFile);
-#endif
   }
 
   /* If there is homotopy in the model and the adaptive global homotopy approach is activated
