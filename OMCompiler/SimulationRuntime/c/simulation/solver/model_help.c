@@ -1098,6 +1098,8 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /*  switches used to evaluate the system */
   data->simulationInfo->solveContinuous = 0;
   data->simulationInfo->noThrowDivZero = 0;
+  data->simulationInfo->noThrowAsserts = 0;
+  data->simulationInfo->needToReThrow = 0;
   data->simulationInfo->discreteCall = 0;
 
   /* initialize model error code */

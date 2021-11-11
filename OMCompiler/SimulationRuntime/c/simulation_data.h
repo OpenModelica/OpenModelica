@@ -653,6 +653,8 @@ typedef struct SIMULATION_INFO
   modelica_boolean sampleActivated;    /* true if a sample expresion is going to be actived */
   modelica_boolean solveContinuous;    /* true during continuous integration to avoid zero-crossings jumps */
   modelica_boolean noThrowDivZero;     /* true if solving nonlinear system to avoid THROW for division by zero */
+  modelica_boolean noThrowAsserts;     /* true if asserts can be ignored, e.g. when searching for an event location */
+  modelica_boolean needToReThrow;      /* true if an ignored asserts was found, and may need to be rethrown */
 
   double solverSteps;                  /* Number of integration steps so far for writing to the result file */ // FIXME why is this not an integer?
 
