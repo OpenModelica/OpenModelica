@@ -2523,6 +2523,30 @@ algorithm
   BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=outNumVariables)) := inVariables;
 end varsSize;
 
+public function varCount
+  input BackendDAE.Variables variables;
+  output Integer count = 0;
+protected
+  Boolean scalarize = Flags.isSet(Flags.NF_SCALARIZE);
+  array<Option<BackendDAE.Var>> var_arr = variables.varArr.varOptArr;
+  Integer var_arr_size = variables.varArr.numberOfElements;
+  Option<BackendDAE.Var> opt_var;
+  BackendDAE.Var var;
+algorithm
+  for i in 1:var_arr_size loop
+    opt_var := var_arr[i];
+
+    if isSome(opt_var) then
+      if scalarize then
+        SOME(var) := opt_var;
+        count := count + Types.getDimensionProduct(var.varType);
+      else
+        count := count + 1;
+      end if;
+    end if;
+  end for;
+end varCount;
+
 /*
 public function varDim
   "Returns the dimension of variables in the Variables structure.

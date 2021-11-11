@@ -109,6 +109,9 @@ algorithm
       crefs := ComponentRef.scalarize(name);
 
       if listEmpty(crefs) then
+        binding := NFBinding.EMPTY_BINDING;
+        v := Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, {}, cmt, info);
+        vars := v :: vars;
         return;
       end if;
 

@@ -379,7 +379,10 @@ protected
       // check variability and not type for discrete variables
       // remove all subscripts to handle arrays
       variable.name := ComponentRef.stripSubscriptsAll(variable.name);
-      if Variable.variability(variable) == Variability.DISCRETE and Type.isRealRecursive(variable.ty) and not BaseHashTable.hasKey(variable.name, hashTable) then
+      if Variable.variability(variable) == Variability.DISCRETE and
+         Type.isRealRecursive(variable.ty) and
+         not Type.isEmptyArray(variable.ty) and
+         not BaseHashTable.hasKey(variable.name, hashTable) then
         illegal_discrete_vars := variable :: illegal_discrete_vars;
       end if;
     end for;

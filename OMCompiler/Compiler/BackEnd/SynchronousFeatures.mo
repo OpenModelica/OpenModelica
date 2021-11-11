@@ -3167,7 +3167,7 @@ algorithm
   va := arrayCreate(n, {});
   varPartMap := arrayCreate(n, -1);
   i1 := BackendEquation.equationArraySize(inSyst.orderedEqs);
-  i2 := BackendVariable.varsSize(inSyst.orderedVars);
+  i2 := BackendVariable.varCount(inSyst.orderedVars);
 
   if i1 <> i2 and not throwNoError then
     Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, AbsynUtil.dummyInfo);

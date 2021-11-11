@@ -9960,7 +9960,7 @@ protected
 algorithm
   varsArray := syst.orderedVars;
   eqsArray := syst.orderedEqs;
-  varSize := BackendVariable.varsSize(varsArray);
+  varSize := BackendVariable.varCount(varsArray);
   eqnSize := BackendEquation.equationArraySize(eqsArray);
   if varSize <> eqnSize then
     Error.addMessage(if varSize > eqnSize then Error.UNDERDET_EQN_SYSTEM else Error.OVERDET_EQN_SYSTEM, {String(eqnSize), String(varSize)});
