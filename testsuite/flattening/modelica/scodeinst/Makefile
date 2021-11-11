@@ -468,6 +468,7 @@ ForEquationNonParam.mo \
 ForEquationShadow1.mo \
 ForStatement1.mo \
 ForStatement2.mo \
+ForStatement3.mo \
 ForStatementArray.mo \
 ForStatementNonVector.mo \
 ForStatementPrefix.mo \

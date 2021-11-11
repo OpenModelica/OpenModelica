@@ -483,10 +483,7 @@ algorithm
         // Make a mutable expression with a placeholder value.
         iter_exp := Expression.makeMutable(Expression.EMPTY(InstNode.getType(stmt.iterator)));
         // Replace the iterator with the expression in the body of the for loop.
-        stmt.body := list(
-          Statement.mapExp(s, function Expression.replaceIterator(
-            iterator = stmt.iterator, iteratorValue = iter_exp))
-          for s in stmt.body);
+        stmt.body := Statement.replaceIteratorList(stmt.body, stmt.iterator, iter_exp);
         // Replace the iterator node with the mutable expression too.
         stmt.iterator := InstNode.EXP_NODE(iter_exp);
       then
