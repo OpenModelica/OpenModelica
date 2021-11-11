@@ -191,10 +191,10 @@ omc_add_to_report(OMC_TARGET_SYSTEM_NAME)
 set(OPENMODELICA_SPEC_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
 
 if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-  set(OMC_TARGET_ARCH_IS_64 TRUE)
+  set(OMC_TARGET_ARCH_IS_64 "true")
   set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}64")
 else()
-  set(OMC_TARGET_ARCH_IS_64 FALSE)
+  set(OMC_TARGET_ARCH_IS_64 "false")
   set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
 endif()
 
@@ -248,39 +248,36 @@ configure_file(${OMCompiler_SOURCE_DIR}/omc_config.unix.h.in ${OMCompiler_SOURCE
 
 # Generate Autoconf.mo here since we have some of the variables already defined for omc_config.unix.h above.
 
+
+check_c_compiler_flag("-Wl,-Bstatic  -Wl,-Bdynamic" BSTATIC_INT)
+if(BSTATIC_INT)
+  set(BSTATIC "true")
+else()
+  set(BSTATIC "false")
+endif()
+
+set(MAKE ${CMAKE_MAKE_PROGRAM})
+
+string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
+
 if(WIN32)
+  set(CONFIG_OS "Windows_NT")
 
-  if(OMC_TARGET_ARCH_IS_64)
-    set(ISMINGW64 "true")
-  else()
-    set(ISMINGW64 "false")
-  endif()
+  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lopenblas -lm -lpthread")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lopenblas -lm -lpthread -lgfortran -lstdc++ -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lopenblas -lm -lpthread -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -lopenblas -lm -lpthread -lgfortran -lstdc++ -Wl,--no-undefined")
 
-  if(${CMAKE_CXX_COMPILER_VERSION} STREQUAL "5.3.0")
-    set(IS_NEW_OMDEV "false")
-  else()
-    set(IS_NEW_OMDEV "true")
-  endif()
-
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.omdev.mingw ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
 
 else()
-  check_c_compiler_flag("-Wl,-Bstatic  -Wl,-Bdynamic" BSTATIC_INT)
-  if(BSTATIC_INT)
-    set(BSTATIC "true")
-  else()
-    set(BSTATIC "false")
-  endif()
-
   set(CONFIG_OS ${OMC_TARGET_SYSTEM_NAME})
-  set(MAKE ${CMAKE_MAKE_PROGRAM})
 
-  string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
   set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -llapack -lblas -lm -lpthread -rdynamic")
   set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm -lpthread -rdynamic -Wl,--no-undefined")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
 
 
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
 endif()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
