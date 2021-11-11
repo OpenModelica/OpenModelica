@@ -20,6 +20,7 @@ string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # options
+omc_option(WITH_IPOPT "Should we enable dynamic optimization support with Ipopt." ON)
 omc_option(OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OMC_USE_LPSOLVE "Should we use lpsolve." OFF)
