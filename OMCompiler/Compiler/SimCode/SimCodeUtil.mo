@@ -2246,9 +2246,11 @@ algorithm
       Boolean b;
 
     // array equation that may result from -d=-nfScalarize and is assumed solved
-    case BackendDAE.ARRAY_EQUATION(left = DAE.CREF(componentRef = cr), right = e2, source = source, attr = eqAttr)
+    case BackendDAE.ARRAY_EQUATION(left = DAE.CREF(componentRef = cr), right = e2, source = source, attr = eqAttr) algorithm
+        varexp := Expression.crefExp(cr);
+        simEqSys := SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, varexp, e2, source, eqAttr);
       then
-        ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
+        ({simEqSys}, iuniqueEqIndex + 1, itempvars);
 
     // for equation that may result from -d=-nfScalarize
     case BackendDAE.FOR_EQUATION(iter = varexp, start = start, stop = cond, source = source, attr = eqAttr)
@@ -8177,7 +8179,7 @@ protected
   BackendDAE.Var scalarVar;
 algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
-  if BackendVariable.isParam(dlowVar) and Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
+  if Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
     for cref in scalar_crefs loop
       // extract the sim var
