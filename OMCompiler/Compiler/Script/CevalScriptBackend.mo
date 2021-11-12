@@ -129,6 +129,7 @@ import SymbolicJacobian;
 import SymbolTable;
 import System;
 import TaskGraphResults;
+import TotalModelDebug;
 import Tpl;
 import Types;
 import Uncertainties;
@@ -2034,6 +2035,22 @@ algorithm
 
     case (cache,_,"saveTotalModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_)),
                                     Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)},_)
+      then (cache, Values.BOOL(false));
+
+    case (cache,_,"saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},_)
+      equation
+        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if (access >= 9) then // i.e., Access.documentation
+          saveTotalModelDebug(filename, classpath);
+          b = true;
+        else
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b = false;
+        end if;
+      then
+        (cache, Values.BOOL(b));
+
+    case (cache,_,"saveTotalModelDebug",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_))},_)
       then (cache, Values.BOOL(false));
 
     case (cache,_,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
@@ -7402,6 +7419,25 @@ algorithm
   str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
   System.writeFile(filename, str + str1);
 end saveTotalModel;
+
+protected function saveTotalModelDebug
+  input String filename;
+  input Absyn.Path classPath;
+protected
+  SCode.Program prog;
+  String str, name_str, cls_str;
+algorithm
+  runFrontEndLoadProgram(classPath);
+  prog := SymbolTable.getSCode();
+  prog := TotalModelDebug.getTotalModel(prog, classPath);
+  prog := SCodeUtil.removeBuiltinsFromTopScope(prog);
+  prog := SCodeUtil.stripCommentsFromProgram(prog, stripAnnotations = false, stripComments = true);
+
+  str := SCodeDump.programStr(prog, SCodeDump.defaultOptions);
+  name_str := AbsynUtil.pathLastIdent(classPath) + "_total";
+  cls_str := "\nmodel " + name_str + "\n  extends " + AbsynUtil.pathString(classPath) + ";\nend " + name_str + ";\n";
+  System.writeFile(filename, str + cls_str);
+end saveTotalModelDebug;
 
 protected function getDymolaStateAnnotation
   "Returns the __Dymola_state annotation of a class.

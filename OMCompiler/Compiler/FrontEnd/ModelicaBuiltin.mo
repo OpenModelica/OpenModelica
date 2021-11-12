@@ -2173,6 +2173,18 @@ external "builtin";
 annotation(preferredView="text");
 end saveTotalModel;
 
+function saveTotalModelDebug
+  "Saves the className model in a single file, together with all other classes
+   that it depends on. This function uses a naive heuristic based on which
+   identifiers are used and might save things which are not actually used,
+   and is meant to be used in cases where the normal saveTotalModel fails."
+  input String filename;
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end saveTotalModelDebug;
+
 function save
   input TypeName className;
   output Boolean success;

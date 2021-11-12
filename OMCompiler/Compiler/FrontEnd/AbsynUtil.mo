@@ -5542,5 +5542,18 @@ algorithm
   end match;
 end pathReplaceFirst;
 
+function pathContains
+  input Absyn.Path path;
+  input Absyn.Ident name;
+  output Boolean res;
+algorithm
+  res := match path
+    case Absyn.Path.IDENT() then path.name == name;
+    case Absyn.Path.QUALIFIED()
+      then path.name == name or pathContains(path.path, name);
+    case Absyn.Path.FULLYQUALIFIED() then pathContains(path.path, name);
+  end match;
+end pathContains;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
