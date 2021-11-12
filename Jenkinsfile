@@ -186,7 +186,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-without-cmake'
+              dir '.CI/cache-bionic-cmake-3.17.2'
               label 'linux'
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -203,15 +203,7 @@ pipeline {
           }
           steps {
             script {
-              echo "Download and install CMake 3.17.2"
-              sh '''
-                wget "cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.sh"
-                mkdir -p /tmp/cmake
-                sh cmake-3.17.2-Linux-x86_64.sh --prefix=/tmp/cmake --skip-license
-                /tmp/cmake/bin/cmake --version
-              '''
-              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/tmp/cmake/bin/cmake')
-              sh "build/bin/omc --help"
+              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/opt/cmake-3.17.2/bin/cmake')
               sh "build/bin/omc --version"
             }
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
