@@ -899,6 +899,15 @@ public
     res := false;
   end containsExpList;
 
+  function replaceIteratorList
+    input output list<Equation> eql;
+    input InstNode iterator;
+    input Expression value;
+  algorithm
+    eql := mapExpList(eql,
+      function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
+  end replaceIteratorList;
+
   function isConnect
     input Equation eq;
     output Boolean isConnect;
