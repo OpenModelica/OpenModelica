@@ -4371,16 +4371,28 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let condVar = daeExp(condition, context, &preExpCond, &varDecls, &auxFunction)
   let &preExpMsg = buffer ""
   let msgVar = messages |> message => expToFormatString(message,context,&preExpMsg,&varDecls,&auxFunction) ; separator = ", "
-  let eqnsindx = match context
-            case FUNCTION_CONTEXT(__) then ''
-            else 'equationIndexes, '
   let AddionalFuncName = match context
             case FUNCTION_CONTEXT(__) then ''
             else '_withEquationIndexes'
-  let addInfoTextContext = match context
-            case FUNCTION_CONTEXT(__) then ''
-            else '<%\n%>omc_assert_warning(info, "The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue);'
+  let infoTextContext = '"The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue'
   let omcAssertFunc = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
+  let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
+  let assertCode = match context case FUNCTION_CONTEXT(__) then
+    <<
+    FILE_INFO info = {<%infoArgs(info)%>};
+    <%omcAssertFunc%>info, <%msgVar%>);
+    >>
+    else
+    <<
+    if (data->simulationInfo->noThrowAsserts) {
+      infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, <%infoTextContext%>);
+      infoStreamPrint(LOG_ASSERT, 0, <%msgVar%>);<%rethrow%>
+    } else {
+      FILE_INFO info = {<%infoArgs(info)%>};
+      omc_assert_warning(info, <%infoTextContext%>);
+      <%omcAssertFunc%>info, equationIndexes, <%msgVar%>);
+    }
+    >>
   let warningTriggered = tempDeclZero("static int", &varDecls)
   let TriggerIf = match level case ENUM_LITERAL(index=1) then 'if(!<%warningTriggered%>)<%\n%>' else ''
   let TriggerVarSet = match level case ENUM_LITERAL(index=1) then '<%warningTriggered%> = 1;<%\n%>' else ''
@@ -4392,8 +4404,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     {
       <%preExpMsg%>
       {
-        FILE_INFO info = {<%infoArgs(info)%>};<%addInfoTextContext%>
-        <%omcAssertFunc%>info, <%eqnsindx%><%msgVar%>);
+        <%assertCode%>
       }
       <%TriggerVarSet%>
     }
@@ -4437,9 +4448,14 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
     <<
     if(!(<%condVar%>))
     {
-      FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert_warning(info, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
-      throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
+      if (data->simulationInfo->noThrowAsserts) {
+        infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+        data->simulationInfo->needToReThrow = 1;
+      } else {
+        FILE_INFO info = {<%infoArgs(info)%>};
+        omc_assert_warning(info, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+        throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
+      }
     }
     >>
 end assertCommonVar;

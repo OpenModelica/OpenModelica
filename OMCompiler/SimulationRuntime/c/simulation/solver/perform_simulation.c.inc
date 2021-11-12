@@ -93,6 +93,9 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
 static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int foundEvent = 0;
+  data->simulationInfo->noThrowAsserts = 1 /* true */;
+  data->simulationInfo->needToReThrow = 0 /* false */;
+
   prefixedName_updateContinuousSystem(data, threadData);
 
   if (solverInfo->solverMethod == S_SYM_SOLVER_SSC) {
@@ -160,6 +163,16 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
   if (foundEvent==1) {
     data->callback->function_storeSpatialDistribution(data, threadData);
   }
+
+  /* Check if ignored assert throw was actually a valid throw */
+  data->simulationInfo->noThrowAsserts = 0 /* false */;
+  if (data->simulationInfo->needToReThrow && !foundEvent) {
+    errorStreamPrint(LOG_ASSERT, 0, "No event found, but assert was triggered. Throwing now!");
+    omc_throw(threadData);
+  } else if (data->simulationInfo->needToReThrow) {
+    infoStreamPrint(LOG_ASSERT, 0, "Found event, previous asserts are ignored.");
+  }
+
   return syncRet;
 }
 
