@@ -294,7 +294,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*getIterationVars)(struct DATA*, double*);
   int (*checkConstraints)(struct DATA*, threadData_t *threadData);
 
-  NONLINEAR_SOLVER method;
+  NONLINEAR_SOLVER method;             /* nonlinear solver */
   void *solverData;
 
   modelica_real *nlsx;                 /* x */
