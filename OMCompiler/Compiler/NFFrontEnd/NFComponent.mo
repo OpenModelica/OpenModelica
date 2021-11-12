@@ -463,10 +463,11 @@ public
     output Binding b;
   algorithm
     b := match component
-      case UNTYPED_COMPONENT() then component.binding;
-      case TYPED_COMPONENT() then component.binding;
-      case TYPE_ATTRIBUTE() then Modifier.binding(component.modifier);
-      else NFBinding.EMPTY_BINDING;
+      case UNTYPED_COMPONENT()  then component.binding;
+      case TYPED_COMPONENT()    then component.binding;
+      case TYPE_ATTRIBUTE()     then Modifier.binding(component.modifier);
+      case WILD()               then Binding.WILD();
+                                else NFBinding.EMPTY_BINDING;
     end match;
   end getBinding;
 

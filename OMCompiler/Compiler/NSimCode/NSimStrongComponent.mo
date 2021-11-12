@@ -42,6 +42,7 @@ protected
   // NF imports
   import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
+  import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
   import FunctionTree = NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
@@ -137,14 +138,14 @@ public
       "An algorithm section."
       // ToDo: do we need to keep inputs/outputs here?
       Integer index;
-      list<Statement> statements;
+      list<Statement> stmts;
       EquationAttributes attr;
     end ALGORITHM;
 
     record INVERSE_ALGORITHM
       "An algorithm section that had to be inverted."
       Integer index;
-      list<Statement> statements;
+      list<Statement> stmts;
       list<ComponentRef> knownOutputs "this is a subset of output crefs of the original algorithm, which are already known";
       Boolean insideNonLinearSystem;
       EquationAttributes attr;
@@ -168,17 +169,6 @@ public
       DAE.ElementSource source;
       EquationAttributes attr;
     end WHEN;
-
-    record FOR
-      "A for loop section used for non scalarized models."
-      Integer index;
-      InstNode iter;
-      Expression range;
-      ComponentRef lhs;
-      Expression rhs;
-      DAE.ElementSource source;
-      EquationAttributes attr;
-    end FOR;
 
     record LINEAR
       "Linear algebraic loop."
@@ -212,11 +202,10 @@ public
         case SIMPLE_ASSIGN()      then str + "(" + intString(blck.index) + ") " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case ARRAY_ASSIGN()       then str + "(" + intString(blck.index) + ") " + Expression.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case ALIAS()              then str + "(" + intString(blck.index) + ") Alias of " + intString(blck.aliasOf) + "\n";
-        case ALGORITHM()          then str + "(" + intString(blck.index) + ") Algorithm\n" + Statement.toStringList(blck.statements, str) + "\n";
-        case INVERSE_ALGORITHM()  then str + "(" + intString(blck.index) + ") Inverse Algorithm\n" + Statement.toStringList(blck.statements, str) + "\n";
+        case ALGORITHM()          then str + "(" + intString(blck.index) + ") Algorithm\n" + Statement.toStringList(blck.stmts, str) + "\n";
+        case INVERSE_ALGORITHM()  then str + "(" + intString(blck.index) + ") Inverse Algorithm\n" + Statement.toStringList(blck.stmts, str) + "\n";
         case IF()                 then str + BEquation.IfEquationBody.toString(blck.body, str + "    ", "(" + intString(blck.index) + ") ") + "\n";
         case WHEN()               then str + "(" + intString(blck.index) + ") " + whenString(blck.conditions, blck.when_stmts, blck.else_when);
-        case FOR()                then str + "(" + intString(blck.index) + ") for " + InstNode.name(blck.iter) + " in " + Expression.toString(blck.range) + "\n" + str + "  " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n" + str + "end for;";
         case LINEAR()             then str + "(" + intString(blck.system.index) + ") " + LinearSystem.toString(blck.system, str);
         case NONLINEAR()          then str + "(" + intString(blck.system.index) + ") " + NonlinearSystem.toString(blck.system, str);
         case HYBRID()             then str + "(" + intString(blck.index) + ") Hybrid\n"; // ToDo!
@@ -240,7 +229,6 @@ public
         case INVERSE_ALGORITHM(attr = attr)  then EquationKind.isDiscrete(attr.kind);
         case IF(attr = attr)                 then EquationKind.isDiscrete(attr.kind);
         case WHEN(attr = attr)               then EquationKind.isDiscrete(attr.kind); // should hopefully always be true
-        case FOR(attr = attr)                then EquationKind.isDiscrete(attr.kind);
         else false;
       end match;
     end isDiscrete;
@@ -446,54 +434,71 @@ public
           Variable var;
           SimJacobian tmpJac;
           Option<SimJacobian> jacobian;
+          Equation eqn;
+          Statement stmt;
+          Boolean trivial;
 
-        case StrongComponent.SINGLE_EQUATION()
-          algorithm
-            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), simCodeIndices, funcTree, systemType);
+        case StrongComponent.SINGLE_EQUATION() algorithm
+          (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), simCodeIndices, funcTree, systemType);
         then tmp;
 
-        case StrongComponent.SINGLE_ARRAY(vars = {varPtr})
-          algorithm
-            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(varPtr), Pointer.access(comp.eqn), simCodeIndices, funcTree, systemType);
+        case StrongComponent.SINGLE_ARRAY(vars = {varPtr}) algorithm
+          (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(varPtr), Pointer.access(comp.eqn), simCodeIndices, funcTree, systemType);
         then tmp;
 
-        case StrongComponent.TORN_LOOP(strict = strict)
-          algorithm
-            for i in 1:arrayLength(strict.innerEquations) loop
-              (tmp, simCodeIndices, funcTree) := fromInnerEquation(strict.innerEquations[i], simCodeIndices, funcTree, systemType);
-              eqns := tmp :: eqns;
-            end for;
-            for eqn_ptr in strict.residual_eqns loop
-              (tmp, simCodeIndices) := createResidual(Pointer.access(eqn_ptr), simCodeIndices);
-              eqns := tmp :: eqns;
-            end for;
-            for var_ptr in strict.iteration_vars loop
-              var := Pointer.access(var_ptr);
-              // This does not seem to be correct
-              //var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.LOOP_ITERATION());
-              Pointer.update(var_ptr, var);
-              crefs := var.name :: crefs;
-            end for;
-            // ToDo: correct the following values: size, homotopy, torn
-            if Util.isSome(strict.jac) then
-              (jacobian, simCodeIndices, funcTree) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, funcTree);
-            else
-              (tmpJac, simCodeIndices) := SimJacobian.empty("NLS_DUMMY_" + intString(simCodeIndices.jacobianIndex), simCodeIndices);
-              jacobian := SOME(tmpJac);
-            end if;
-            system := NONLINEAR_SYSTEM(
-              index         = simCodeIndices.equationIndex,
-              blcks         = listReverse(eqns),
-              crefs         = listReverse(crefs),
-              indexSystem   = simCodeIndices.nonlinearSystemIndex,
-              size          = listLength(crefs),
-              jacobian      = jacobian,
-              homotopy      = false,
-              mixed         = comp.mixed,
-              torn          = true
-            );
-            simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
-            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(comp.eqn)) algorithm
+          (eqn, trivial, funcTree) := Equation.slice(Pointer.access(comp.eqn), comp.eqn_indices, comp.var_cref, funcTree);
+          // split the iterators of the equation to make it nested for code generation
+          eqn := Equation.splitIterators(eqn);
+          // handle these as if they were algorithms
+          stmt := Equation.toStatement(eqn);
+          tmp := ALGORITHM(simCodeIndices.equationIndex, {stmt}, Equation.getAttributes(eqn));
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        case StrongComponent.SLICED_EQUATION() algorithm
+          // just a regular equation solved for a sliced variable
+          // use cref instead of var because it has subscripts!
+          eqn := Pointer.access(comp.eqn);
+          (tmp, simCodeIndices, funcTree) := createEquation(Variable.fromCref(comp.var_cref), eqn, simCodeIndices, funcTree, systemType);
+        then tmp;
+
+        case StrongComponent.TORN_LOOP(strict = strict)algorithm
+          for i in 1:arrayLength(strict.innerEquations) loop
+            (tmp, simCodeIndices, funcTree) := fromInnerEquation(strict.innerEquations[i], simCodeIndices, funcTree, systemType);
+            eqns := tmp :: eqns;
+          end for;
+          for eqn_ptr in strict.residual_eqns loop
+            (tmp, simCodeIndices) := createResidual(Pointer.access(eqn_ptr), simCodeIndices);
+            eqns := tmp :: eqns;
+          end for;
+          for var_ptr in strict.iteration_vars loop
+            var := Pointer.access(var_ptr);
+            // This does not seem to be correct
+            //var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.LOOP_ITERATION());
+            Pointer.update(var_ptr, var);
+            crefs := var.name :: crefs;
+          end for;
+          // ToDo: correct the following values: size, homotopy, torn
+          if Util.isSome(strict.jac) then
+            (jacobian, simCodeIndices, funcTree) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, funcTree);
+          else
+            (tmpJac, simCodeIndices) := SimJacobian.empty("NLS_DUMMY_" + intString(simCodeIndices.jacobianIndex), simCodeIndices);
+            jacobian := SOME(tmpJac);
+          end if;
+          system := NONLINEAR_SYSTEM(
+            index         = simCodeIndices.equationIndex,
+            blcks         = listReverse(eqns),
+            crefs         = listReverse(crefs),
+            indexSystem   = simCodeIndices.nonlinearSystemIndex,
+            size          = listLength(crefs),
+            jacobian      = jacobian,
+            homotopy      = false,
+            mixed         = comp.mixed,
+            torn          = true
+          );
+          simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then NONLINEAR(system, NONE());
 
       end match;
@@ -795,6 +800,13 @@ public
       output OldSimCode.SimEqSystem oldBlck;
     algorithm
       oldBlck := match blck
+        local
+          ComponentRef iter;
+          Expression range;
+          DAE.ComponentRef oldIter;
+          DAE.Type oldType;
+          DAE.Statement for_stmt;
+
         case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
@@ -808,8 +820,12 @@ public
           source      = blck.source,
           eqAttr      = EquationAttributes.convert(blck.attr)
         );
-        // ToDo: add all the other cases here!
+
         case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(NBEquation.EQ_ATTR_DEFAULT_UNKNOWN) /* dangerous! */);
+
+        case ALGORITHM()        then OldSimCode.SES_ALGORITHM(blck.index, ConvertDAE.convertStatements(blck.stmts), EquationAttributes.convert(blck.attr));
+
+        // ToDo: add all the other cases here!
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
         then fail();
@@ -913,11 +929,6 @@ public
             (tmp, indices) := fixIndex(Util.getOption(blck.else_when), indices);
             blck.else_when := SOME(tmp);
           end if;
-        then blck;
-
-        case FOR() algorithm
-          blck.index := indices.equationIndex;
-          indices.equationIndex := indices.equationIndex + 1;
         then blck;
 
         case LINEAR() algorithm

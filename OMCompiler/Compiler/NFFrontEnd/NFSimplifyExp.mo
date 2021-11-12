@@ -1216,6 +1216,7 @@ algorithm
       list<Expression> final_stack = {};
       list<Expression> final_inverse_stack = {};
       Expression new_exp;
+      ComponentRef cref;
 
     // #######################################################
     //          Building MULTARY() recursively
@@ -1292,6 +1293,12 @@ algorithm
     // #######################################################
 
     // going deeper on the different expression types
+
+    case (_, Expression.CREF(cref = cref as ComponentRef.CREF())) algorithm
+      cref.subscripts := list(combineBinariesSubscript(sub) for sub in cref.subscripts);
+      exp.cref := cref;
+    then addArgument(result, exp, inverse);
+
     case (_, Expression.ARRAY()) algorithm
       exp.elements := list(combineBinariesExp(element) for element in exp.elements);
     then addArgument(result, exp, inverse);

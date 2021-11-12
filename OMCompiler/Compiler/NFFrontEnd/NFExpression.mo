@@ -4336,6 +4336,32 @@ public
     end match;
   end invertRange;
 
+  function sliceRange
+    "slices the range with a given zero-based start and one-based step"
+    input output Expression range;
+    input tuple<Integer, Integer, Integer> slice  "start step stop";
+  algorithm
+    range := match (range, slice)
+      local
+        Integer start, step, stop;
+        Integer slice_start, slice_step, slice_stop;
+
+      case (RANGE(), (slice_start, slice_step, slice_stop)) algorithm
+        step := if Util.isSome(range.step) then integerValue(Util.getOption(range.step)) else 1;
+        start := integerValue(range.start);
+        // shift start and stop accordingly, multiply step
+        stop  := start + slice_stop * step;
+        start := start + slice_start * step;
+        step  := slice_step * step;
+      then RANGE(range.ty, INTEGER(start), SOME(INTEGER(step)), INTEGER(stop));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
+          + toString(range)});
+      then fail();
+    end match;
+  end sliceRange;
+
   function arrayElements
     input Expression array;
     output list<Expression> elements;

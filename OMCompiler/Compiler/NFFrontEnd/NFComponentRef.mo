@@ -445,6 +445,19 @@ public
     end match;
   end hasSubscripts;
 
+  function hasNonModelSubscripts
+    input ComponentRef cref;
+    output Boolean hasSubscripts;
+  algorithm
+    hasSubscripts := match cref
+      case CREF() guard(InstNode.isModel(cref.node))
+        then hasNonModelSubscripts(cref.restCref);
+      case CREF()
+        then not listEmpty(cref.subscripts) or hasNonModelSubscripts(cref.restCref);
+      else false;
+    end match;
+  end hasNonModelSubscripts;
+
   function hasSplitSubscripts
     input ComponentRef cref;
     output Boolean res;
@@ -522,6 +535,20 @@ public
     input ComponentRef cref;
     output list<Subscript> subscripts = List.flattenReverse(subscriptsAll(cref));
   end subscriptsAllFlat;
+
+  function subscriptsExceptModel
+    "Returns all subscripts of a cref in reverse order leaving out model subs.
+     Ex: a[1, 2].b[4].c[6, 3] => {{6,3}, {4}, {1,2}}"
+    input ComponentRef cref;
+    input list<list<Subscript>> accumSubs = {};
+    output list<list<Subscript>> subscripts;
+  algorithm
+    subscripts := match cref
+      case CREF() guard(InstNode.isModel(cref.node))  then subscriptsExceptModel(cref.restCref, {} :: accumSubs);
+      case CREF()                                     then subscriptsExceptModel(cref.restCref, cref.subscripts :: accumSubs);
+                                                      else accumSubs;
+    end match;
+  end subscriptsExceptModel;
 
   function subscriptsN
     "Returns the subscripts of the N first parts of a cref in reverse order."
@@ -1519,6 +1546,25 @@ public
       else cref;
     end match;
   end mapTypes;
+
+  function getArrayCrefOpt
+    input ComponentRef scal;
+    output Option<ComponentRef> arr;
+  protected
+    list<Subscript> subs;
+  algorithm
+    subs := List.flattenReverse(subscriptsExceptModel(scal));
+    if listEmpty(subs) then
+      // do not do it for scalar variables
+      arr := NONE();
+    elseif List.mapAllValueBool(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1))), true) then
+      // if it is the first element, save the array var
+      arr := SOME(stripSubscriptsExceptModel(scal));
+    else
+      // not first element
+      arr := NONE();
+    end if;
+  end getArrayCrefOpt;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

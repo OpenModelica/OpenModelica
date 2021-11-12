@@ -126,6 +126,13 @@ public
       system.equations := EquationPointers.sort(system.equations);
     end sort;
 
+    function isEmpty
+      "returns true if the system is empty.
+      maybe check more than only equations?"
+      input System system;
+      output Boolean b = EquationPointers.size(system.equations) == 0;
+    end isEmpty;
+
     function isAlgebraic
       input System syst;
       output Boolean b = true;
@@ -230,12 +237,6 @@ public
           then fail();
       end match;
     end partitionKindString;
-
-    function categorizeVariable
-      input DoubleEnded.MutableList<System> alg;
-      input DoubleEnded.MutableList<System> evt;
-    end categorizeVariable;
-
 
   end System;
 

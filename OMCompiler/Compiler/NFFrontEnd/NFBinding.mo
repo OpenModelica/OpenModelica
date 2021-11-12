@@ -122,6 +122,8 @@ public
     list<ErrorTypes.TotalMessage> errors;
   end INVALID_BINDING;
 
+  record WILD end WILD;
+
 public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;

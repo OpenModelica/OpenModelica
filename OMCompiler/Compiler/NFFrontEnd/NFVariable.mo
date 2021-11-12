@@ -40,7 +40,8 @@ encapsulated uniontype NFVariable
   import NFPrefixes.ConnectorType;
   import NFPrefixes.Direction;
   import Type = NFType;
-  import BackendInfo = NFBackendExtension.BackendInfo;
+  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.BackendInfo;
 
 protected
   import ExpandExp = NFExpandExp;
@@ -80,14 +81,19 @@ public
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
     ty := ComponentRef.getSubscriptedType(cref);
-    binding := Component.getImplicitBinding(comp);
     vis := InstNode.visibility(node);
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
     info := InstNode.info(node);
     // kabdelhak: add dummy backend info, will be changed to actual value in
-    // conversion to backend process. NBackendDAE.lower
-    variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
+    // conversion to backend process (except for iterators). NBackendDAE.lower
+    if ComponentRef.isIterator(cref) then
+      binding := NFBinding.EMPTY_BINDING;
+      variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, BackendExtension.BACKEND_INFO(BackendExtension.ITERATOR(), NFBackendExtension.EMPTY_VAR_ATTR_REAL));
+    else
+      binding := Component.getImplicitBinding(comp);
+      variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
+    end if;
   end fromCref;
 
   function size

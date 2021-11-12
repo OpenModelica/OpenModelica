@@ -1,0 +1,947 @@
+// name: simple_for
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model simple_for1
+  parameter Integer p = 10;
+  Real[p] x;
+equation
+  for i in 1:p loop
+    x[i] = sin(i*time);
+  end for;
+end simple_for1;
+
+model simple_for2
+  parameter Integer p = 10;
+  Real[p+1] x;
+equation
+  for i in 1:p loop
+    x[i] = sin(i*time);
+  end for;
+  x[p+1] = cos(time);
+end simple_for2;
+
+model simple_for3
+  parameter Integer p = 10;
+  Real[p+1] x;
+equation
+  for i in 1:p loop
+    x[i] = x[i+1] + sin(i*time);
+  end for;
+  x[1] = cos(time);
+end simple_for3;
+
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=bltdump");
+
+simulate(simple_for1); getErrorString();
+val(x[3],1);
+simulate(simple_for2); getErrorString();
+val(x[3],1);
+simulate(simple_for3); getErrorString();
+val(x[3],1);
+
+// Result:
+// true
+// ""
+// true
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{3}
+// 	(4)	{4}
+// 	(5)	{5}
+// 	(6)	{6}
+// 	(7)	{7}
+// 	(8)	{8}
+// 	(9)	{9}
+// 	(10)	{10}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{3}
+// 	(4)	{4}
+// 	(5)	{5}
+// 	(6)	{6}
+// 	(7)	{7}
+// 	(8)	{8}
+// 	(9)	{9}
+// 	(10)	{10}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 10
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 10
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 3
+// 	var 4 --> eqn 4
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+// 	var 9 --> eqn 9
+// 	var 10 --> eqn 10
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 3
+// 	eqn 4 --> var 4
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+// 	eqn 9 --> var 9
+// 	eqn 10 --> var 10
+//
+//
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{3}
+// 	(4)	{4}
+// 	(5)	{5}
+// 	(6)	{6}
+// 	(7)	{7}
+// 	(8)	{8}
+// 	(9)	{9}
+// 	(10)	{10}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{3}
+// 	(4)	{4}
+// 	(5)	{5}
+// 	(6)	{6}
+// 	(7)	{7}
+// 	(8)	{8}
+// 	(9)	{9}
+// 	(10)	{10}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 10
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 10
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 3
+// 	var 4 --> eqn 4
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+// 	var 9 --> eqn 9
+// 	var 10 --> eqn 10
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 3
+// 	eqn 4 --> var 4
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+// 	eqn 9 --> var 9
+// 	eqn 10 --> var 10
+//
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS INI System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{3}
+// 	(4)	{4}
+// 	(5)	{5}
+// 	(6)	{6}
+// 	(7)	{7}
+// 	(8)	{8}
+// 	(9)	{9}
+// 	(10)	{10}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{3}
+// 	(4)	{4}
+// 	(5)	{5}
+// 	(6)	{6}
+// 	(7)	{7}
+// 	(8)	{8}
+// 	(9)	{9}
+// 	(10)	{10}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 10
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 10
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 3
+// 	var 4 --> eqn 4
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+// 	var 9 --> eqn 9
+// 	var 10 --> eqn 10
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 3
+// 	eqn 4 --> var 4
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+// 	eqn 9 --> var 9
+// 	eqn 10 --> var 10
+//
+//
+// record SimulationResult
+//     resultFile = "simple_for1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_for1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.1411200080598672
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[11]
+// ### Equation:
+// 	[SCAL] ($RES_SIM_0) x[11] = cos(time)
+//     with slices: {}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{11}
+// 	(2)	{1}
+// 	(3)	{2}
+// 	(4)	{3}
+// 	(5)	{4}
+// 	(6)	{5}
+// 	(7)	{6}
+// 	(8)	{7}
+// 	(9)	{8}
+// 	(10)	{9}
+// 	(11)	{10}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2}
+// 	(2)	{3}
+// 	(3)	{4}
+// 	(4)	{5}
+// 	(5)	{6}
+// 	(6)	{7}
+// 	(7)	{8}
+// 	(8)	{9}
+// 	(9)	{10}
+// 	(10)	{11}
+// 	(11)	{1}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 1
+// (2)	2 | 10
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 11
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 3
+// 	var 3 --> eqn 4
+// 	var 4 --> eqn 5
+// 	var 5 --> eqn 6
+// 	var 6 --> eqn 7
+// 	var 7 --> eqn 8
+// 	var 8 --> eqn 9
+// 	var 9 --> eqn 10
+// 	var 10 --> eqn 11
+// 	var 11 --> eqn 1
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 11
+// 	eqn 2 --> var 1
+// 	eqn 3 --> var 2
+// 	eqn 4 --> var 3
+// 	eqn 5 --> var 4
+// 	eqn 6 --> var 5
+// 	eqn 7 --> var 6
+// 	eqn 8 --> var 7
+// 	eqn 9 --> var 8
+// 	eqn 10 --> var 9
+// 	eqn 11 --> var 10
+//
+//
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[11]
+// ### Equation:
+// 	[SCAL] ($RES_SIM_0) x[11] = cos(time)
+//     with slices: {}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{11}
+// 	(2)	{1}
+// 	(3)	{2}
+// 	(4)	{3}
+// 	(5)	{4}
+// 	(6)	{5}
+// 	(7)	{6}
+// 	(8)	{7}
+// 	(9)	{8}
+// 	(10)	{9}
+// 	(11)	{10}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2}
+// 	(2)	{3}
+// 	(3)	{4}
+// 	(4)	{5}
+// 	(5)	{6}
+// 	(6)	{7}
+// 	(7)	{8}
+// 	(8)	{9}
+// 	(9)	{10}
+// 	(10)	{11}
+// 	(11)	{1}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 1
+// (2)	2 | 10
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 11
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 3
+// 	var 3 --> eqn 4
+// 	var 4 --> eqn 5
+// 	var 5 --> eqn 6
+// 	var 6 --> eqn 7
+// 	var 7 --> eqn 8
+// 	var 8 --> eqn 9
+// 	var 9 --> eqn 10
+// 	var 10 --> eqn 11
+// 	var 11 --> eqn 1
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 11
+// 	eqn 2 --> var 1
+// 	eqn 3 --> var 2
+// 	eqn 4 --> var 3
+// 	eqn 5 --> var 4
+// 	eqn 6 --> var 5
+// 	eqn 7 --> var 6
+// 	eqn 8 --> var 7
+// 	eqn 9 --> var 8
+// 	eqn 10 --> var 9
+// 	eqn 11 --> var 10
+//
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS INI System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[11]
+// ### Equation:
+// 	[SCAL] ($RES_SIM_0) x[11] = cos(time)
+//     with slices: {}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{3}
+// 	(4)	{4}
+// 	(5)	{5}
+// 	(6)	{6}
+// 	(7)	{7}
+// 	(8)	{8}
+// 	(9)	{9}
+// 	(10)	{10}
+// 	(11)	{11}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{3}
+// 	(4)	{4}
+// 	(5)	{5}
+// 	(6)	{6}
+// 	(7)	{7}
+// 	(8)	{8}
+// 	(9)	{9}
+// 	(10)	{10}
+// 	(11)	{11}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 10
+// (2)	11 | 1
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 11
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 3
+// 	var 4 --> eqn 4
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+// 	var 9 --> eqn 9
+// 	var 10 --> eqn 10
+// 	var 11 --> eqn 11
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 3
+// 	eqn 4 --> var 4
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+// 	eqn 9 --> var 9
+// 	eqn 10 --> var 10
+// 	eqn 11 --> var 11
+//
+//
+// record SimulationResult
+//     resultFile = "simple_for2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_for2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.1411200080598672
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1]
+// ### Equation:
+// 	[SCAL] ($RES_SIM_0) x[1] = cos(time)
+//     with slices: {}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = x[i + 1] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2, 1}
+// 	(3)	{3, 2}
+// 	(4)	{4, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6, 5}
+// 	(7)	{7, 6}
+// 	(8)	{8, 7}
+// 	(9)	{9, 8}
+// 	(10)	{10, 9}
+// 	(11)	{11, 10}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{3, 2}
+// 	(3)	{4, 3}
+// 	(4)	{5, 4}
+// 	(5)	{6, 5}
+// 	(6)	{7, 6}
+// 	(7)	{8, 7}
+// 	(8)	{9, 8}
+// 	(9)	{10, 9}
+// 	(10)	{11, 10}
+// 	(11)	{11}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 1
+// (2)	2 | 10
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 11
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 3
+// 	var 4 --> eqn 4
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+// 	var 9 --> eqn 9
+// 	var 10 --> eqn 10
+// 	var 11 --> eqn 11
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 3
+// 	eqn 4 --> var 4
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+// 	eqn 9 --> var 9
+// 	eqn 10 --> var 10
+// 	eqn 11 --> var 11
+//
+//
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1]
+// ### Equation:
+// 	[SCAL] ($RES_SIM_0) x[1] = cos(time)
+//     with slices: {}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = x[i + 1] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2, 1}
+// 	(3)	{3, 2}
+// 	(4)	{4, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6, 5}
+// 	(7)	{7, 6}
+// 	(8)	{8, 7}
+// 	(9)	{9, 8}
+// 	(10)	{10, 9}
+// 	(11)	{11, 10}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{3, 2}
+// 	(3)	{4, 3}
+// 	(4)	{5, 4}
+// 	(5)	{6, 5}
+// 	(6)	{7, 6}
+// 	(7)	{8, 7}
+// 	(8)	{9, 8}
+// 	(9)	{10, 9}
+// 	(10)	{11, 10}
+// 	(11)	{11}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 1
+// (2)	2 | 10
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 11
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 3
+// 	var 4 --> eqn 4
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+// 	var 9 --> eqn 9
+// 	var 10 --> eqn 10
+// 	var 11 --> eqn 11
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 3
+// 	eqn 4 --> var 4
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+// 	eqn 9 --> var 9
+// 	eqn 10 --> var 10
+// 	eqn 11 --> var 11
+//
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS INI System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1]
+// ### Equation:
+// 	[SCAL] ($RES_SIM_0) x[1] = cos(time)
+//     with slices: {}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = x[i + 1] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{3, 2}
+// 	(3)	{4, 3}
+// 	(4)	{5, 4}
+// 	(5)	{6, 5}
+// 	(6)	{7, 6}
+// 	(7)	{8, 7}
+// 	(8)	{9, 8}
+// 	(9)	{10, 9}
+// 	(10)	{11, 10}
+// 	(11)	{1}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{11, 1}
+// 	(2)	{2, 1}
+// 	(3)	{3, 2}
+// 	(4)	{4, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6, 5}
+// 	(7)	{7, 6}
+// 	(8)	{8, 7}
+// 	(9)	{9, 8}
+// 	(10)	{10, 9}
+// 	(11)	{10}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 10
+// (2)	11 | 1
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 11
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 11
+// 	var 2 --> eqn 1
+// 	var 3 --> eqn 2
+// 	var 4 --> eqn 3
+// 	var 5 --> eqn 4
+// 	var 6 --> eqn 5
+// 	var 7 --> eqn 6
+// 	var 8 --> eqn 7
+// 	var 9 --> eqn 8
+// 	var 10 --> eqn 9
+// 	var 11 --> eqn 10
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 2
+// 	eqn 2 --> var 3
+// 	eqn 3 --> var 4
+// 	eqn 4 --> var 5
+// 	eqn 5 --> var 6
+// 	eqn 6 --> var 7
+// 	eqn 7 --> var 8
+// 	eqn 8 --> var 9
+// 	eqn 9 --> var 10
+// 	eqn 10 --> var 11
+// 	eqn 11 --> var 1
+//
+//
+// record SimulationResult
+//     resultFile = "simple_for3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_for3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -1.210466105765438
+// endResult

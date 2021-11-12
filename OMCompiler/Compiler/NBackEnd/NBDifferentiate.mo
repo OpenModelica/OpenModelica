@@ -504,12 +504,12 @@ public
       // Types: (SIMPLE)
       //  D(x)/dx => 1
       case (Expression.CREF(), DifferentiationType.SIMPLE, _)
-        guard(ComponentRef.isEqual(exp.cref, diffArguments.diffCref))
+        guard(ComponentRef.isEqual(exp.cref, diffArguments.diffCref)) algorithm
       then (Expression.makeOne(exp.ty), diffArguments);
 
       // Types: (SIMPLE)
       // D(y)/dx => 0
-      case (Expression.CREF(), DifferentiationType.SIMPLE, _)
+      case (Expression.CREF(), DifferentiationType.SIMPLE, _) algorithm
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)

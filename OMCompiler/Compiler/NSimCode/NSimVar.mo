@@ -50,6 +50,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
   import Variable = NFVariable;
+  import NBVariable.VariablePointers;
 
   // Old Backend imports
   import OldBackendDAE = BackendDAE;
@@ -135,7 +136,6 @@ public
     algorithm
       simVar := match var
         local
-          Variable qual;
           BackendExtension.VariableKind varKind;
           String comment, unit, displayUnit;
           Option<Expression> min;
@@ -146,44 +146,43 @@ public
           Causality causality;
           SimVar result;
 
-        case qual as Variable.VARIABLE()
-          algorithm
-            comment := parseComment(qual.comment);
-            (varKind, unit, displayUnit, min, max, start, nominal, isFixed, isDiscrete, isProtected)
-              := parseAttributes(qual.backendinfo);
-            // for parameters the binding supersedes the start value if it exists and is constant
-            // ToDo: also for other cases? (constant, struct param ...)
-            (start, isValueChangeable, causality) := parseBinding(start, var);
-            result := SIMVAR(
-              name                = qual.name,
-              varKind             = varKind,
-              comment             = comment,
-              unit                = unit,
-              displayUnit         = displayUnit,
-              index               = typeIndex,
-              min                 = min,
-              max                 = max,
-              start               = start,
-              nominal             = nominal,
-              isFixed             = isFixed,
-              type_               = qual.ty,
-              isDiscrete          = isDiscrete,
-              arrayCref           = NONE(),
-              aliasvar            = alias,
-              info                = qual.info,
-              causality           = SOME(causality),
-              variable_index      = SOME(uniqueIndex),
-              fmi_index           = SOME(typeIndex),
-              numArrayElement     = {},
-              isValueChangeable   = isValueChangeable,
-              isProtected         = isProtected,
-              hideResult          = false,
-              inputIndex          = NONE(),
-              matrixName          = NONE(),
-              variability         = NONE(),
-              initial_            = NONE(),
-              exportVar           = NONE()
-            );
+        case Variable.VARIABLE() algorithm
+          comment := parseComment(var.comment);
+          (varKind, unit, displayUnit, min, max, start, nominal, isFixed, isDiscrete, isProtected)
+          := parseAttributes(var.backendinfo);
+          // for parameters the binding supersedes the start value if it exists and is constant
+          // ToDo: also for other cases? (constant, struct param ...)
+          (start, isValueChangeable, causality) := parseBinding(start, var);
+          result := SIMVAR(
+            name                = var.name,
+            varKind             = varKind,
+            comment             = comment,
+            unit                = unit,
+            displayUnit         = displayUnit,
+            index               = typeIndex,
+            min                 = min,
+            max                 = max,
+            start               = start,
+            nominal             = nominal,
+            isFixed             = isFixed,
+            type_               = var.ty,
+            isDiscrete          = isDiscrete,
+            arrayCref           = ComponentRef.getArrayCrefOpt(var.name),
+            aliasvar            = alias,
+            info                = var.info,
+            causality           = SOME(causality),
+            variable_index      = SOME(uniqueIndex),
+            fmi_index           = SOME(typeIndex),
+            numArrayElement     = {},
+            isValueChangeable   = isValueChangeable,
+            isProtected         = isProtected,
+            hideResult          = false,
+            inputIndex          = NONE(),
+            matrixName          = NONE(),
+            variability         = NONE(),
+            initial_            = NONE(),
+            exportVar           = NONE()
+          );
         then result;
 
         else algorithm
@@ -856,12 +855,13 @@ public
     function createSimVarLists
       "creates a list of simvar lists. SplitType.NONE always returns a list with only
       one list as its element and SplitType.TYPE returns a list with four lists."
-      input BVariable.VariablePointers vars;
+      input VariablePointers vars;
       output list<list<SimVar>> simVars = {};
       input output SimCode.SimCodeIndices simCodeIndices;
       input SplitType splitType = SplitType.NONE;
       input VarType varType = VarType.SIMULATION;
     protected
+      VariablePointers scalar_vars;
       Pointer<list<SimVar>> acc = Pointer.create({});
       Pointer<list<SimVar>> real_lst = Pointer.create({});
       Pointer<list<SimVar>> int_lst = Pointer.create({});
@@ -869,15 +869,17 @@ public
       Pointer<list<SimVar>> string_lst = Pointer.create({});
       Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
     algorithm
+      // scalarize variables for simcode
+      scalar_vars := VariablePointers.scalarize(vars);
       if splitType == SplitType.NONE then
         // Do not split and return everything as one single list
-        BVariable.VariablePointers.map(vars, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
+        VariablePointers.map(scalar_vars, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
         simVars := {listReverse(Pointer.access(acc))};
         simCodeIndices := Pointer.access(indices_ptr);
       elseif splitType == SplitType.TYPE then
         // Split the variables by basic type (real, integer, boolean, string)
         // and return a list for each type
-        BVariable.VariablePointers.map(vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, indices_ptr = indices_ptr, varType = varType));
+        VariablePointers.map(scalar_vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, indices_ptr = indices_ptr, varType = varType));
         simVars := {listReverse(Pointer.access(real_lst)),
                     listReverse(Pointer.access(int_lst)),
                     listReverse(Pointer.access(bool_lst)),

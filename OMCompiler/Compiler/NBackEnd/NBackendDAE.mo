@@ -208,7 +208,7 @@ public
     Events.EventInfo eventInfo = Events.EventInfo.empty();
   algorithm
     variableData := lowerVariableData(flatModel.variables);
-    equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
+    (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
     bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
   end lower;
 
@@ -436,8 +436,14 @@ protected
     // ToDo! extract tearing select option
     try
       attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
-      (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
-      var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes);
+
+      // only change varKind if unset (Iterators are set before)
+      var.backendinfo := match var.backendinfo
+        case BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY()) algorithm
+          (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
+        then BackendExtension.BACKEND_INFO(varKind, attributes);
+        else BackendExtension.BackendInfo.setAttributes(var.backendinfo, attributes);
+      end match;
 
       // Remove old type attribute information since it has been converted.
       var.typeAttributes := {};
@@ -449,6 +455,11 @@ protected
       fail();
     end try;
   end lowerVariable;
+
+  function lowerIterator
+    input ComponentRef iterator;
+    output Pointer<Variable> var_ptr = lowerVariable(Variable.fromCref(iterator));
+  end lowerIterator;
 
   function lowerVariableKind
     "ToDo: Merge this part from old backend conversion:
@@ -523,9 +534,10 @@ protected
     input list<Algorithm> al_lst;
     input list<FEquation> init_eq_lst;
     input list<Algorithm> init_al_lst;
-    input VariablePointers variables;
     output BEquation.EqData eqData;
+    input output BVariable.VarData varData;
   protected
+    list<ComponentRef> iterators = {};
     list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {}, simulation_lst = {}, removed_lst = {};
     EquationPointers equations;
     Pointer<Equation> eq;
@@ -534,9 +546,12 @@ protected
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
       BEquation.Equation.createName(eqn_ptr, idx, "SIM");
+      iterators := listAppend(Equation.getForIterators(Pointer.access(eqn_ptr)), iterators);
     end for;
+    iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);
+    varData := BVariable.VarData.addTypedList(varData, list(lowerIterator(iter) for iter in iterators), NBVariable.VarData.VarType.ITERATOR);
     equations := EquationPointers.fromList(equation_lst);
-    equations := lowerComponentReferences(equations, variables);
+    equations := lowerComponentReferences(equations, BVariable.VarData.getVariables(varData));
 
     for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
       if ExpandableArray.occupied(i, equations.eqArr) then
@@ -633,14 +648,12 @@ protected
   function lowerEquation
     input FEquation frontend_equation         "Original Frontend equation.";
     input Boolean init                        "True if an initial equation should be created.";
-    input list<Dimension> for_dims = {}       "accumulated list of surrounding for-loop dimensions";
     output list<Pointer<Equation>> backend_equations   "Resulting Backend equations.";
   algorithm
     backend_equations := match frontend_equation
       local
-        list<Pointer<Equation>> result = {}, new_body;
+        list<Pointer<Equation>> result = {}, new_body = {};
         Equation body_elem;
-        list<Dimension> new_for_dims;
         Expression lhs, rhs, range;
         ComponentRef lhs_cref, rhs_cref;
         list<FEquation> body;
@@ -654,7 +667,6 @@ protected
         guard(Type.isArray(ty))
         algorithm
           attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
-          ty := Type.addDimensions(ty, for_dims);
           //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
@@ -663,14 +675,12 @@ protected
         guard(Type.isArray(ty))
         algorithm
           attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
-          ty := Type.addDimensions(ty, for_dims);
           //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         algorithm
           attr := lowerEquationAttributes(ty, init);
-          ty := Type.addDimensions(ty, for_dims);
           result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr))}
                                           else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
       then result;
@@ -678,31 +688,38 @@ protected
       case FEquation.CREF_EQUALITY(lhs = lhs_cref as NFComponentRef.CREF(ty = ty), rhs = rhs_cref, source = source)
         algorithm
           attr := lowerEquationAttributes(ty, init);
-          ty := Type.addDimensions(ty, for_dims);
           // No check for complex. Simple equation is more important than complex. -> alias removal!
       then {Pointer.create(BEquation.SIMPLE_EQUATION(ty, lhs_cref, rhs_cref, source, attr))};
 
-      case FEquation.FOR(iterator = InstNode.ITERATOR_NODE(exp = Expression.CREF(cref = iterator)), range = SOME(range), body = body, source = source)
+      case FEquation.FOR(range = SOME(range))
         algorithm
         // Treat each body equation individually because they can have different equation attributes
         // E.g.: DISCRETE, EvalStages
-        new_for_dims := Dimension.fromRange(range)::for_dims;
-        for eq in body loop
-          new_body := lowerEquation(eq, init, new_for_dims);
-          for body_elem_ptr in new_body loop
-            body_elem := Pointer.access(body_elem_ptr);
-            // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
-            result := Pointer.create(Equation.mergeIterators(
-              BEquation.FOR_EQUATION(Equation.getType(body_elem), Iterator.SINGLE(iterator, range), body_elem, source, Equation.getAttributes(body_elem)))) :: result;
-          end for;
+        iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
+        for eq in frontend_equation.body loop
+          new_body := listAppend(lowerEquation(eq, init), new_body);
+        end for;
+        for body_elem_ptr in new_body loop
+          body_elem := Pointer.access(body_elem_ptr);
+          body_elem := BEquation.FOR_EQUATION(
+            ty      = Type.addDimensions(Equation.getType(body_elem), {Dimension.fromRange(range)}),
+            iter    = Iterator.SINGLE(iterator, range),
+            body    = body_elem,
+            source  = frontend_equation.source,
+            attr    = Equation.getAttributes(body_elem)
+          );
+
+          // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
+          Pointer.update(body_elem_ptr, Equation.mergeIterators(body_elem));
+          result := body_elem_ptr :: result;
         end for;
       then result;
 
       // if equation
-      case FEquation.IF() then {Pointer.create(lowerIfEquation(frontend_equation, init))};
+      case FEquation.IF()     then {Pointer.create(lowerIfEquation(frontend_equation, init))};
 
       // When equation cases
-      case FEquation.WHEN() then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
+      case FEquation.WHEN()   then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
       case FEquation.ASSERT() then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
 
       // These have to be called inside a when equation body since they need

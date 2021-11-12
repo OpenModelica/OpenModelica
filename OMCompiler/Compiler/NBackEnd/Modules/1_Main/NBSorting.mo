@@ -97,7 +97,7 @@ public
       input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
       output PseudoBucket bucket                "the bucket containing the equation subsets";
     protected
-      Integer eqn_scal_idx, eqn_arr_idx, mode;
+      Integer eqn_scal_idx, mode;
     algorithm
       // 1. create empty buckets
       bucket := PSEUDO_BUCKET(
@@ -113,10 +113,9 @@ public
           case {eqn_scal_idx} algorithm
             // if we have a strong component of only one equation - check if there is a mode for it
             // (only for-equations have modes)
-            eqn_arr_idx := mapping.eqn_StA[eqn_scal_idx];
-            if Adjacency.CausalizeModes.contains(eqn_arr_idx, modes) then
+            if Adjacency.CausalizeModes.contains(eqn_scal_idx, modes) then
               mode := Adjacency.CausalizeModes.get(eqn_scal_idx, eqn_to_var[eqn_scal_idx], modes);
-              PseudoBucket.add(eqn_arr_idx, eqn_scal_idx, mode, modes, bucket);
+              PseudoBucket.add(mapping.eqn_StA[eqn_scal_idx], eqn_scal_idx, mode, modes, bucket);
             end if;
           then ();
 
@@ -174,7 +173,6 @@ public
     input VariablePointers vars;
     input EquationPointers eqns;
     output list<StrongComponent> comps = {};
-    input output FunctionTree funcTree;
   algorithm
     comps := match (adj, matching)
       local
@@ -190,9 +188,9 @@ public
       case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
         //recollect
-        bucket := PseudoBucket.create(comps_indices, matching.var_to_eqn, adj.mapping, adj.modes);
+        bucket := PseudoBucket.create(comps_indices, matching.eqn_to_var, adj.mapping, adj.modes);
         for idx_lst in comps_indices loop
-          (comp_opt, funcTree) := StrongComponent.createPseudo(idx_lst, matching.eqn_to_var, vars, eqns, adj.mapping, adj.modes, bucket, funcTree);
+          comp_opt := StrongComponent.createPseudo(idx_lst, matching.eqn_to_var, vars, eqns, adj.mapping, adj.modes, bucket);
           if Util.isSome(comp_opt) then
             comps := Util.getOption(comp_opt) :: comps;
           end if;

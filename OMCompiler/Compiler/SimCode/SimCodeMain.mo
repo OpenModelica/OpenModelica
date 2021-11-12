@@ -407,6 +407,7 @@ algorithm
       SimCodeUtil.dumpSimCodeDebug(oldSimCode);
     end if;
     timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
+
     ExecStat.execStat("SimCode");
 
     if Flags.isSet(Flags.SERIALIZED_SIZE) then

@@ -81,14 +81,14 @@ public
 
       case (System.SystemType.ODE, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(simulation = equations)))
         algorithm
-          bdae.ode := func(systemType, variables, equations);
+          bdae.ode := list(sys for sys guard(not System.System.isEmpty(sys)) in func(systemType, variables, equations));
         then bdae;
 
       case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
         algorithm
           // remove the when equations for initial systems
           equations := EquationPointers.mapRemovePtr(equations, Equation.isWhenEquation);
-          bdae.init := func(systemType, variables, equations);
+          bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in func(systemType, variables, equations));
         then bdae;
 
       else algorithm
@@ -426,8 +426,11 @@ protected
     input UnorderedMap<ComponentRef, ClusterPointer> map;
   algorithm
     _ := match exp
+      local
+        ComponentRef stripped;
       case Expression.CREF() guard(not ComponentRef.isTime(exp.cref)) algorithm
-        _ := collectPartitionsCref(exp.cref, eqCref, systemType, map);
+        stripped := ComponentRef.stripSubscriptsExceptModel(exp.cref);
+        _ := collectPartitionsCref(stripped, eqCref, systemType, map);
       then ();
       else ();
     end match;

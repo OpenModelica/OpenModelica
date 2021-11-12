@@ -52,6 +52,7 @@ public
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
+  import Statement = NFStatement;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -116,6 +117,7 @@ public
     end getFrames;
 
     function merge
+      "merges multiple iterators to one NESTED() iterator"
       input list<Iterator> iterators;
       output Iterator result;
     protected
@@ -125,7 +127,7 @@ public
       if listLength(iterators) == 1 then
         result := List.first(iterators);
       else
-        for iter in iterators loop
+        for iter in listReverse(iterators) loop
           (tmp_names, tmp_ranges) := getFrames(iter);
           names := listAppend(tmp_names, names);
           ranges := listAppend(tmp_ranges, ranges);
@@ -133,6 +135,21 @@ public
         result := NESTED(listArray(names), listArray(ranges));
       end if;
     end merge;
+
+    function split
+      "splits an operator in its SINGLE() subparts. used for converting to old structure and writing code
+      NOTE: returns iterators in reverse order!"
+      input Iterator iterator;
+      output list<Iterator> result = {};
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+    algorithm
+      (names, ranges) := getFrames(iterator);
+      for tpl in List.zip(names, ranges) loop
+        result := Iterator.fromFrames({tpl}) :: result;
+      end for;
+    end split;
 
     function toString
       input Iterator iter;
@@ -373,9 +390,9 @@ public
     protected
       String iterators;
     algorithm
-      str := str + indicator + "for " + Iterator.toString(iter) + "\n";
+      str := str + indicator + "for " + Iterator.toString(iter) + " loop\n";
       str := str + toString(body, indent + "  ") + "\n";
-      str := str + indent + "end for;\n";
+      str := str + indent + "end for;";
     end forEquationToString;
 
     function getAttributes
@@ -599,7 +616,6 @@ public
       cref_lst := Pointer.access(cref_lst_ptr);
     end collectCrefs;
 
-  public
     function getLHS
       "gets the left hand side expression of an equation."
       input Equation eq;
@@ -984,6 +1000,22 @@ public
       end match;
     end getType;
 
+    function getForIterators
+      input Equation eqn;
+      output list<ComponentRef> iterators;
+    algorithm
+      iterators := match eqn
+
+        case FOR_EQUATION() algorithm
+          (iterators, _) := Iterator.getFrames(eqn.iter);
+        then iterators;
+
+        // ToDo: algorithms!
+
+        else {};
+      end match;
+    end getForIterators;
+
     function getForFrames
       input Equation eqn;
       output list<tuple<ComponentRef, Expression>> frames;
@@ -1119,10 +1151,29 @@ public
       end match;
     end mergeIterators;
 
+    function splitIterators
+      input output Equation eq;
+    algorithm
+      eq := match eq
+        local
+          list<Iterator> iterators;
+          Equation body;
+        case FOR_EQUATION() algorithm
+          // split returns innermost first
+          iterators := Iterator.split(eq.iter);
+          body := eq.body;
+          for iter in iterators loop
+            body := Equation.FOR_EQUATION(eq.ty, iter, body, eq.source, eq.attr);
+          end for;
+        then body;
+        else eq;
+      end match;
+    end splitIterators;
+
     function slice
       "performs a single slice based on the given indices and the cref to solve for"
       input output Equation eqn             "equation to slice";
-      input list<Integer> indices           "zero based indices";
+      input list<Integer> indices           "zero based indices of the eqn";
       input ComponentRef cref               "cref to solve for";
       output Boolean trivial                "returns true if there was no slicing, only rearranging";
       input output FunctionTree funcTree    "function tree for solving";
@@ -1133,7 +1184,9 @@ public
       list<Dimension> dims;
       list<Integer> sizes;
       list<Integer> first_frame_location, last_frame_location, frame_comp;
-      list<Integer> sorted;
+      list<list<Integer>> frame_locations;
+      list<array<Integer>> frame_locations_T;
+      list<tuple<Integer, Integer, Integer>> ranges;
     algorithm
       (eqn, trivial) := match eqn
         local
@@ -1145,43 +1198,75 @@ public
           dims                  := Type.arrayDims(Equation.getType(eqn));
           sizes                 := list(Dimension.size(dim) for dim in dims);
 
-          // map first and last index to frame locations
-          first_frame_location  := BackendUtil.indexToFrame(first_idx, sizes);
-          last_frame_location   := BackendUtil.indexToFrame(last_idx, sizes);
+          if Equation.size(eqn) == listLength(indices) then
+            // trivial solution! All equations are solved the same way
+            // only invert the necessary frames and keep the rest as is
+            trivial := true;
 
-          // compare the location to see if any range has to be inverted
-          frame_comp            := BackendUtil.compareFrames(first_frame_location, last_frame_location);
-          frames                := getForFrames(eqn);
+            // map first and last index to frame locations
+            first_frame_location  := BackendUtil.indexToFrame(first_idx, sizes);
+            last_frame_location   := BackendUtil.indexToFrame(last_idx, sizes);
+
+            // compare the location to see if any range has to be inverted
+            frame_comp            := BackendUtil.compareFrames(first_frame_location, last_frame_location);
+            frames                := getForFrames(eqn);
+            frames                := BackendUtil.applyFrameInversion(frames, frame_comp);
+          else
+            // nontrivial. try to rebuild the for loop frames and slice the equation
+            trivial := false;
+            frame_locations       := list(BackendUtil.indexToFrame(idx, sizes) for idx in indices);
+            frame_locations_T     := BackendUtil.transposeFrameLocations(frame_locations, listLength(sizes));
+            ranges                := BackendUtil.recollectRangesHeuristic(frame_locations_T);
+            frames                := getForFrames(eqn);
+            frames                := BackendUtil.applyNewFrameRanges(frames, ranges);
+          end if;
 
           // solve the body equation for the cref
           // ToDo: act on status not equal to EXPLICIT ?
           (body, funcTree, status, _) := Solve.solve(eqn.body, cref, funcTree);
 
-          if Equation.size(eqn) == listLength(indices) then
-            // trivial solution! All equations are solved the same way
-            // only invert the necessary frames and keep the rest as is
-            trivial := true;
-            frames := BackendUtil.applyFrameInversion(frames, frame_comp);
-            sliced := FOR_EQUATION(
-              ty      = eqn.ty,
-              iter    = Iterator.fromFrames(frames),
-              body    = body,
-              source  = eqn.source,
-              attr    = eqn.attr
-            );
-          else
-            // nontrivial. try to rebuild the for loop frames and slice the equation
-            trivial := false;
-            sorted := List.sort(indices, intGt);
-          end if;
-        then (eqn, trivial);
+          sliced := FOR_EQUATION(
+            ty      = eqn.ty,
+            iter    = Iterator.fromFrames(frames),
+            body    = body,
+            source  = eqn.source,
+            attr    = eqn.attr
+          );
+        then (sliced, trivial);
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing is not yet supported for: \n"
-            + toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing is not yet supported for: \n" + toString(eqn)});
         then fail();
       end match;
     end slice;
+
+    function toStatement
+      "expects for loops to be split with splitIterators(eqn)"
+      input Equation eqn;
+      output Statement stmt;
+    algorithm
+      stmt := match eqn
+        local
+          ComponentRef iter;
+          Expression range;
+
+        case Equation.SCALAR_EQUATION() then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+
+        case Equation.FOR_EQUATION() algorithm
+          ({iter},{range}) := Equation.Iterator.getFrames(eqn.iter);
+        then Statement.FOR(
+          iterator  = ComponentRef.node(iter),
+          range     = SOME(range),
+          body      = {toStatement(eqn.body)},
+          source    = eqn.source
+        );
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed it is not yet supported for: \n" + toString(eqn)});
+        then fail();
+      end match;
+    end toStatement;
+
   end Equation;
 
   uniontype IfEquationBody

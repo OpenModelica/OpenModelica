@@ -86,6 +86,12 @@ public
       binfo.varKind := varKind;
     end setVarKind;
 
+    function setAttributes
+      input output BackendInfo binfo;
+      input VariableAttributes attributes;
+    algorithm
+      binfo.attributes := attributes;
+    end setAttributes;
   end BackendInfo;
 
   constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL);
@@ -118,6 +124,7 @@ public
     end PREVIOUS;
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;
+    record ITERATOR end ITERATOR;
     record START
       Pointer<Variable> original            "Pointer to the corresponding original variable.";
     end START;
@@ -165,6 +172,7 @@ public
         case PREVIOUS() then            "[PRE-]";
         case PARAMETER() then           "[PRMT]";
         case CONSTANT() then            "[CNST]";
+        case ITERATOR() then            "[ITER]";
         case START() then               "[STRT]";
         case EXTOBJ() then              "[EXTO]";
         case JAC_VAR() then             "[JACV]";
@@ -194,6 +202,7 @@ public
       b := match varKind
         case PARAMETER()  then false;
         case CONSTANT()   then false;
+        case ITERATOR()   then false;
         case START()      then false;
         else true;
       end match;

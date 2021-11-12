@@ -105,8 +105,11 @@ public
       input Integer scal_idx;
       input Mapping mapping;
       output Integer first_idx;
+    protected
+      Integer arr_idx;
     algorithm
-      (first_idx, _) := mapping.eqn_AtS[mapping.eqn_StA[scal_idx]];
+      arr_idx := mapping.eqn_StA[scal_idx];
+      (first_idx, _) := mapping.eqn_AtS[arr_idx];
     end getEqnFirst;
 
     function getVarFirst
@@ -127,9 +130,9 @@ public
 
     function contains
       "checks if there is a mode for this eqn array index"
-      input Integer eqn_arr_idx;
+      input Integer eqn_scal_idx;
       input CausalizeModes modes;
-      output Boolean b = not arrayEmpty(arrayGet(modes.mode_to_cref, eqn_arr_idx));
+      output Boolean b = not arrayEmpty(arrayGet(modes.mode_to_var, eqn_scal_idx));
     end contains;
 
     function get
@@ -386,8 +389,7 @@ public
     algorithm
       eqn := Pointer.access(eqn_ptr);
       // possibly adapt for algorithms
-      dependencies := BEquation.Equation.collectCrefs(eqn,
-        function getDependentCref(map = vars.map, pseudo = Equation.isForEquation(eqn_ptr)));
+      dependencies := BEquation.Equation.collectCrefs(eqn, function getDependentCref(map = vars.map, pseudo = pseudo));
 
         // INIT
       if (st == MatrixStrictness.INIT) then
@@ -444,6 +446,7 @@ public
       array<list<Integer>> m_part;
       array<array<Integer>> mode_to_var_part;
       Integer eqn_scal_idx, eqn_size;
+      list<ComponentRef> unique_dependencies = List.unique(list(ComponentRef.simplifySubscripts(dep) for dep in dependencies)); // ToDo: maybe bottleneck! test this for efficiency
     algorithm
       _ := match (eqn, mapping_opt)
         local
@@ -454,7 +457,7 @@ public
           // get expanded matrix rows
           (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
           (m_part, mode_to_var_part) := getDependentCrefIndicesPseudoFor(
-            dependencies  = dependencies,
+            dependencies  = unique_dependencies,
             map           = map,
             mapping       = mapping,
             iter          = eqn.iter,
@@ -474,7 +477,7 @@ public
           end for;
 
           // create array mode to cref mapping
-          arrayUpdate(mode_to_cref, eqn_arr_idx, arrayAppend(listArray(dependencies), mode_to_cref[eqn_arr_idx]));
+          arrayUpdate(mode_to_cref, eqn_arr_idx, arrayAppend(listArray(unique_dependencies), mode_to_cref[eqn_arr_idx]));
         then ();
 
         case (Equation.ARRAY_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
@@ -490,10 +493,16 @@ public
 
         case (Equation.ALGORITHM(), SOME(mapping)) guard(pseudo) algorithm
           (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
-          row := getDependentCrefIndices(dependencies, map, negate);
+          row := getDependentCrefIndices(unique_dependencies, map, negate); //prb worng
           for i in eqn_scal_idx:eqn_scal_idx+eqn_size-1 loop
             arrayUpdate(m, i, listAppend(row, m[i]));
           end for;
+        then ();
+
+        case (_, SOME(mapping)) guard(pseudo) algorithm
+          (eqn_scal_idx, _) := mapping.eqn_AtS[eqn_arr_idx];
+          row := getDependentCrefIndicesPseudo(unique_dependencies, map, mapping, negate);
+          arrayUpdate(m, eqn_scal_idx, listAppend(row, m[eqn_scal_idx]));
         then ();
 
         case (_, NONE()) guard(pseudo) algorithm
@@ -507,7 +516,7 @@ public
         then fail();
 
         else algorithm
-          row := getDependentCrefIndices(dependencies, map, negate);
+          row := getDependentCrefIndices(unique_dependencies, map, negate);
           arrayUpdate(m, eqn_arr_idx, listAppend(row, m[eqn_arr_idx]));
         then ();
       end match;
@@ -638,7 +647,7 @@ public
           size := Variable.size(Pointer.access(var_ptr));
           var_AtS[var_idx_arr] := (var_idx_scal, size);
           for i in var_idx_scal:var_idx_scal+size-1 loop
-            var_StA[var_idx_scal] := var_idx_arr;
+            var_StA[i] := var_idx_arr;
           end for;
           var_idx_scal := var_idx_scal + size;
           var_idx_arr := var_idx_arr + 1;
@@ -649,7 +658,7 @@ public
           size := Equation.size(Pointer.access(eqn_ptr));
           eqn_AtS[eqn_idx_arr] := (eqn_idx_scal, size);
           for i in eqn_idx_scal:eqn_idx_scal+size-1 loop
-            eqn_StA[eqn_idx_scal] := eqn_idx_arr;
+            eqn_StA[i] := eqn_idx_arr;
           end for;
           eqn_idx_scal := eqn_idx_scal + size;
           eqn_idx_arr := eqn_idx_arr + 1;
@@ -672,7 +681,7 @@ public
         modes := CAUSALIZE_MODES(mode_to_var, mode_to_cref);
 
         // also sorts the matrix
-        mT := transposeScalar(m, ExpandableArray.getLastUsedIndex(vars.varArr));
+        mT := transposeScalar(m, var_scalar_size);
 
         // after proper sorting fixup the indices for STATE_SELECT and INIT
         if st > MatrixStrictness.LINEAR then
@@ -739,6 +748,32 @@ public
       indices := List.sort(List.unique(indices), intLt);
     end getDependentCrefIndices;
 
+    function getDependentCrefIndicesPseudo
+      input list<ComponentRef> dependencies         "dependent var crefs";
+      input UnorderedMap<ComponentRef, Integer> map "hash table to check for relevance";
+      input Mapping mapping                         "array <-> scalar index mapping";
+      input Boolean negate = false;
+      output list<Integer> indices = {};
+    protected
+      Integer var_arr_idx, var_start, var_scal_idx;
+      list<Integer> sizes, subs;
+    algorithm
+      for cref in dependencies loop
+        var_arr_idx := UnorderedMap.getSafe(ComponentRef.stripSubscriptsExceptModel(cref), map);
+        (var_start, _) := mapping.var_AtS[var_arr_idx];
+        sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ComponentRef.nodeType(cref)));
+        subs := list(Expression.integerValue(Subscript.toExp(sub)) for sub in ComponentRef.getSubscripts(cref));
+        var_scal_idx := BackendUtil.frameToIndex(List.zip(sizes, subs), var_start);
+        if negate then
+          indices := -var_scal_idx :: indices;
+        else
+          indices := var_scal_idx :: indices;
+        end if;
+      end for;
+      // remove duplicates and sort
+      indices := List.sort(List.unique(indices), intLt);
+    end getDependentCrefIndicesPseudo;
+
     function getDependentCrefIndicesPseudoFor
       input list<ComponentRef> dependencies                   "dependent var crefs";
       input UnorderedMap<ComponentRef, Integer> map           "hash table to check for relevance";
@@ -749,27 +784,27 @@ public
       output array<list<Integer>> indices;
       output array<array<Integer>> mode_to_var;
     protected
-      list<ComponentRef> unique_dependencies = List.unique(dependencies); // ToDo: maybe bottleneck! test this for efficiency
       list<ComponentRef> names;
       list<Expression> ranges;
-      Integer eqn_start, eqn_size, var_arr_idx, var_start, var_size, var_scal_idx, mode = 0;
+      Integer eqn_start, eqn_size, var_arr_idx, var_start, var_scal_idx, mode = 1;
       list<Integer> scal_lst;
       Integer idx;
+      array<Integer> mode_to_var_row;
     algorithm
       (eqn_start, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
       indices := arrayCreate(eqn_size, {});
       mode_to_var := arrayCreate(eqn_size, arrayCreate(0,0));
       // create unique array for each equation
       for i in 1:eqn_size loop
-        mode_to_var[i] := arrayCreate(listLength(unique_dependencies),-1);
+        mode_to_var[i] := arrayCreate(listLength(dependencies),-1);
       end for;
       for cref in dependencies loop
-        var_arr_idx := UnorderedMap.getSafe(cref, map);
-        (var_start, var_size) := mapping.var_AtS[var_arr_idx];
+        var_arr_idx := UnorderedMap.getSafe(ComponentRef.stripSubscriptsExceptModel(cref), map);
+        (var_start, _) := mapping.var_AtS[var_arr_idx];
         (names, ranges) := Iterator.getFrames(iter);
         scal_lst := getScalarIndices(
           first   = var_start,
-          dims    = Type.arrayDims(ComponentRef.nodeType(cref)),
+          sizes   = list(Dimension.size(dim) for dim in Type.arrayDims(ComponentRef.nodeType(cref))),
           subs    = list(Subscript.toExp(sub) for sub in ComponentRef.getSubscripts(cref)),
           frames  = List.zip(names, ranges)
         );
@@ -781,16 +816,28 @@ public
         end if;
 
         idx := 1;
-        for var_scal_idx in scal_lst loop
-          arrayUpdate(mode_to_var[idx], mode, var_scal_idx);
+        for var_scal_idx in listReverse(scal_lst) loop
+          mode_to_var_row := mode_to_var[idx];
+          mode_to_var_row[mode] := var_scal_idx;
+          //print("mtv\n");
+          //for mtvr in mode_to_var loop
+            //for md in mtvr loop
+              //print(intString(md));
+            //end for;
+            //print("\n");
+          //end for;
+          arrayUpdate(mode_to_var_row, mode, var_scal_idx);
           if negate then
             var_scal_idx := -var_scal_idx;
           end if;
+          //print("scal: " + intString(var_scal_idx) + "\n");
           indices[idx] := var_scal_idx :: indices[idx];
+          //print(toStringSingle(indices));
           idx := idx + 1;
         end for;
         mode := mode + 1;
       end for;
+
       // sort
       for i in 1:arrayLength(indices) loop
         indices[i] := List.sort(List.unique(indices[i]), intLt);
@@ -798,22 +845,21 @@ public
     end getDependentCrefIndicesPseudoFor;
 
     function getScalarIndices
-      input Integer first;
-      input list<Dimension> dims;
-      input list<Expression> subs;
-      input list<tuple<ComponentRef, Expression>> frames;
-      output list<Integer> indices;
+      input Integer first                                 "index of first variable. start counting from here";
+      input list<Integer> sizes                           "list of variables sizes";
+      input list<Expression> subs                         "list of cref subscripts";
+      input list<tuple<ComponentRef, Expression>> frames  "list of frame tuples containing iterator name and range";
+      output list<Integer> indices                        "list of scalarized indices";
     protected
       UnorderedMap<ComponentRef, Expression> replacements;
     algorithm
       replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-      indices := combineFrames(first, dims, subs, frames, replacements);
-      indices := indices;
+      indices := combineFrames(first, sizes, subs, frames, replacements);
     end getScalarIndices;
 
     function combineFrames
       input Integer first;
-      input list<Dimension> dims;
+      input list<Integer> sizes;
       input list<Expression> subs;
       input list<tuple<ComponentRef, Expression>> frames;
       input UnorderedMap<ComponentRef, Expression> replacements;
@@ -838,11 +884,11 @@ public
             UnorderedMap.add(iterator, Expression.INTEGER(index), replacements);
             if listEmpty(rest) then
               // bottom line, resolve current configuration and create index for it
-              ranges  := resolveDimensionsSubscripts(dims, subs, replacements);
+              ranges  := resolveDimensionsSubscripts(sizes, subs, replacements);
               indices := BackendUtil.frameToIndex(ranges, first) :: indices;
             else
               // not last frame, go deeper
-              indices := combineFrames(first, dims, subs, rest, replacements, indices);
+              indices := combineFrames(first, sizes, subs, rest, replacements, indices);
             end if;
           end for;
         then indices;
@@ -860,14 +906,16 @@ public
     end combineFrames;
 
     function resolveDimensionsSubscripts
-      input list<Dimension> dims;
+      input list<Integer> sizes;
       input list<Expression> subs;
       input UnorderedMap<ComponentRef, Expression> replacements;
       output list<tuple<Integer, Integer>> ranges;
     protected
-      list<Integer> sizes  = list(Dimension.size(dim) for dim in dims);
-      list<Integer> values = list(Expression.integerValue(SimplifyExp.simplify(Replacements.applySimpleExp(sub, replacements))) for sub in subs);
+      list<Expression> replaced;
+      list<Integer> values;
     algorithm
+      replaced := list(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements)) for sub in subs);
+      values := list(Expression.integerValue(SimplifyExp.simplify(rep)) for rep in replaced);
       ranges := List.zip(sizes, values);
     end resolveDimensionsSubscripts;
 

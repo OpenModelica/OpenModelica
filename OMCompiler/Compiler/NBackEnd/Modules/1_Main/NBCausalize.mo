@@ -156,7 +156,7 @@ public
      // create scalar adjacency matrix for now
     adj := Adjacency.Matrix.create(vars, eqs, NBAdjacency.MatrixType.SCALAR);
     matching := Matching.regular(adj);
-    (comps, _) := Sorting.tarjan(adj, matching, vars, eqs, FunctionTreeImpl.EMPTY());
+    comps := Sorting.tarjan(adj, matching, vars, eqs);
   end simple;
 
   function getModule
@@ -166,9 +166,9 @@ public
     String flag = Flags.getConfigString(Flags.MATCHING_ALGORITHM);
   algorithm
     (func) := match flag
-      case "PFPlusExt"  then causalizeScalar;
+      case "PFPlusExt"  then causalizePseudoArray;
       case "SBGraph"    then causalizeArray;
-      case "linear"     then causalizeLinear;
+      case "linear"     then causalizeScalar;
       case "pseudo"     then causalizePseudoArray;
       /* ... New causalize modules have to be added here */
       else algorithm
@@ -196,7 +196,7 @@ protected
 
     adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.SCALAR, matrixStrictness);
     (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(adj, variables, equations, funcTree, varData, eqData, false, true);
-    (comps, funcTree) := Sorting.tarjan(adj, matching, variables, equations, funcTree);
+    comps := Sorting.tarjan(adj, matching, variables, equations);
 
     system.unknowns := variables;
     system.equations := equations;
@@ -220,7 +220,13 @@ protected
     // create scalar adjacency matrix for now
     adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, matrixStrictness);
     matching := Matching.regular(adj);
-    (comps, funcTree) := Sorting.tarjan(adj, matching, variables, equations, funcTree);
+    comps := Sorting.tarjan(adj, matching, variables, equations);
+
+    system.unknowns := variables;
+    system.equations := equations;
+    system.adjacencyMatrix := SOME(adj);
+    system.matching := SOME(matching);
+    system.strongComponents := SOME(listArray(comps));
   end causalizePseudoArray;
 
   function causalizeArray extends Module.causalizeInterface;

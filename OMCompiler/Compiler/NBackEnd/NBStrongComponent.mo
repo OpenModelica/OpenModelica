@@ -40,7 +40,10 @@ protected
 
   // NF imports
   import ComponentRef = NFComponentRef;
-  import NFFlatten.FunctionTree;
+  import Dimension = NFDimension;
+  import Expression = NFExpression;
+  import Subscript = NFSubscript;
+  import Type = NFType;
   import Variable = NFVariable;
 
   // Backend imports
@@ -68,8 +71,10 @@ public
   end SINGLE_EQUATION;
 
   record SLICED_EQUATION
-    ComponentRef cref;
-    Pointer<Equation> eqn;
+    ComponentRef var_cref       "variable slice (cref to solve for)";
+    list<Integer> eqn_indices   "equation slice (zero based equation indices)";
+    Pointer<Variable> var       "full unsliced variable";
+    Pointer<Equation> eqn       "full unsliced equation";
   end SLICED_EQUATION;
 
   record SINGLE_ARRAY
@@ -134,8 +139,9 @@ public
       case SLICED_EQUATION()
         algorithm
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Equation");
-          str := str + "### Variable:\n\t" + ComponentRef.toString(comp.cref) + "\n";
+          str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
           str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+          str := str + "    with slices: " + List.toString(comp.eqn_indices, intString) + "\n";
       then str;
 
       case SINGLE_ARRAY()
@@ -247,7 +253,6 @@ public
     input Adjacency.CausalizeModes modes;
     input Sorting.PseudoBucket bucket;
     output Option<StrongComponent> comp;
-    input output FunctionTree funcTree;
   algorithm
     comp := match comp_indices
       local
@@ -255,10 +260,8 @@ public
         Sorting.PseudoBucketValue val;
         Equation eqn;
         Pointer<Equation> eqn_ptr;
-        list<Integer> eqn_indices "zero based indices";
-        Boolean trivial;
 
-      case {i} guard(Adjacency.CausalizeModes.contains(mapping.eqn_StA[i], modes)) algorithm
+      case {i} guard(Adjacency.CausalizeModes.contains(i, modes)) algorithm
         if bucket.marks[i] then
           // has already been created
           comp := NONE();
@@ -267,31 +270,26 @@ public
           mode  := Adjacency.CausalizeModes.get(i, eqn_to_var[i], modes);
           val   := Sorting.PseudoBucket.get(mapping.eqn_StA[i], mode, bucket);
 
-          // get and slice the equation
+          // get and save sliced equation
           eqn_ptr := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
           first_eqn := Adjacency.Mapping.getEqnFirst(i, mapping);
-          eqn_indices := list(idx - first_eqn for idx in val.eqn_scal_indices);
-          (eqn, trivial, funcTree) := Equation.slice(Pointer.access(eqn_ptr), eqn_indices, val.cref_to_solve, funcTree);
-          if trivial then
-            Pointer.update(eqn_ptr, eqn);
-          else
-            // this cannot be done jet, remove afterwards because the other parts need to be split
-            //EquationPointers.remove(eqn_ptr, eqns);
-            eqn_ptr := Pointer.create(eqn);
-            EquationPointers.add(eqn_ptr, eqns);
-          end if;
+
+          comp := SOME(SLICED_EQUATION(
+            var_cref    = val.cref_to_solve,
+            eqn_indices = list(idx - first_eqn for idx in listReverse(val.eqn_scal_indices)),
+            var         = BVariable.getVarPointer(val.cref_to_solve),
+            eqn         = eqn_ptr
+          ));
 
           // mark all scalar indices
           for scal_idx in val.eqn_scal_indices loop
-            bucket.marks[scal_idx] := true;
+            arrayUpdate(bucket.marks, scal_idx, true);
           end for;
-
-          comp := SOME(SLICED_EQUATION(val.cref_to_solve, eqn_ptr));
         end if;
       then comp;
 
       // if it is no array structure just use scalar
-      else SOME(createScalar(comp_indices, eqn_to_var, vars, eqns));
+      else SOME(createPseudoScalar(comp_indices, eqn_to_var, mapping, vars, eqns));
     end match;
   end createPseudo;
 
@@ -351,7 +349,7 @@ public
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
         attr := Equation.getAttributes(Pointer.access(comp.eqn));
         // assume full dependency
-        dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else BVariable.getVarPointer(comp.cref);
+        dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else BVariable.getVarPointer(comp.var_cref);
         updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
       then ();
 
@@ -466,6 +464,62 @@ protected
       then fail();
     end match;
   end createScalar;
+
+  function createPseudoScalar
+    input list<Integer> comp_indices;
+    input array<Integer> eqn_to_var;
+    input Adjacency.Mapping mapping;
+    input VariablePointers vars;
+    input EquationPointers eqns;
+    output StrongComponent comp;
+  algorithm
+    // ToDo: add all other cases!
+    comp := match comp_indices
+      local
+        Integer i, var_scal_idx, var_arr_idx, var_start_idx, size;
+        list<Integer> sizes, vals;
+        Type ty;
+        ComponentRef cref;
+        Pointer<Variable> var;
+        Pointer<Equation> eqn;
+        list<Pointer<Variable>> acc_vars = {};
+        list<Pointer<Equation>> acc_eqns = {};
+
+      case {i} algorithm
+        var_scal_idx := eqn_to_var[i];
+        var_arr_idx := mapping.var_StA[var_scal_idx];
+        var := VariablePointers.getVarAt(vars, var_arr_idx);
+        eqn := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
+        (var_start_idx, size) := mapping.var_AtS[var_arr_idx];
+        if size > 1 then
+          // create the scalar variable and make sliced equation
+          Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
+          sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
+          vals := BackendUtil.indexToFrame(var_scal_idx-var_start_idx, sizes);
+          cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref);
+          comp := SLICED_EQUATION(cref, {}, var, eqn);
+        else
+          // just create a regular equation
+          comp := SINGLE_EQUATION(var, eqn);
+        end if;
+      then comp;
+
+      case _ algorithm
+        for i in comp_indices loop
+          (acc_vars, acc_eqns) := getLoopPair(i, eqn_to_var, vars, eqns, acc_vars, acc_eqns);
+        end for;
+      then ALGEBRAIC_LOOP(
+          vars    = acc_vars,
+          eqns    = acc_eqns,
+          jac     = NONE(),
+          mixed   = false
+        );
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end createPseudoScalar;
 
   function getLoopPair
     "adds the equation and matched variable to accumulated lists.

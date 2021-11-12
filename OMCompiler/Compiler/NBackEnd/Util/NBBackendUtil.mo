@@ -92,11 +92,13 @@ public
   protected
     Integer size, val, factor = 1;
   algorithm
-    for tpl in size_val_tpl_lst loop
+    for tpl in listReverse(size_val_tpl_lst) loop
       (size, val) := tpl;
+      //print("(" + intString(size) + "," + intString(val) + ")");
       index := index + (val-1) * factor;
       factor := factor * size;
     end for;
+    //print("=>" + intString(index) + "\n");
   end frameToIndex;
 
   function indexToFrame
@@ -106,14 +108,23 @@ public
     input list<Integer> sizes;
     output list<Integer> vals = {};
   protected
-    Integer iterator = index;
+    Integer iterator = index, v, ss;
     Integer divisor = product(s for s in sizes);
   algorithm
+
     for size in sizes loop
       divisor   := intDiv(divisor, size);
       vals      := intDiv(iterator, divisor) :: vals;
       iterator  := mod(iterator, divisor);
     end for;
+    vals := listReverse(vals);
+    /*
+    print("idx : " + intString(index) + " - ");
+    for tpl in List.zip(sizes, vals) loop
+      (ss, v) := tpl;
+      print("(" + intString(ss) + ", " + intString(v) + ")");
+    end for;
+    print("\n");*/
   end indexToFrame;
 
   function compareFrames
@@ -132,6 +143,65 @@ public
     end for;
     diffs := listReverse(diffs);
   end compareFrames;
+
+  function transposeFrameLocations
+    input list<list<Integer>> frame_locations;
+    input Integer out_size;
+    output list<array<Integer>> frame_locations_transposed;
+  protected
+    array<list<Integer>> flT_tmp = arrayCreate(out_size, {});
+    array<array<Integer>> flT_tmp2 = arrayCreate(out_size, arrayCreate(0,0));
+    Integer idx;
+  algorithm
+    for location in frame_locations loop
+      idx := 1;
+      for i in location loop
+        flT_tmp[idx] := i :: flT_tmp[idx];
+        idx := idx + 1;
+      end for;
+    end for;
+    for j in 1:arrayLength(flT_tmp) loop
+      flT_tmp2[j] := listArray(listReverse(flT_tmp[j]));
+    end for;
+    frame_locations_transposed := listReverse(arrayList(flT_tmp2));
+  end transposeFrameLocations;
+
+  function recollectRangesHeuristic
+    input list<array<Integer>> frame_locations_transposed;
+    output list<tuple<Integer, Integer, Integer>> ranges = {};
+  protected
+    Integer pre_shift, shift = 1;
+    Integer start, step, stop, max_size, new_step, new_stop;
+    list<Integer> rest;
+  algorithm
+    for dim in frame_locations_transposed loop
+      pre_shift := shift;
+      max_size := arrayLength(dim);
+      if max_size == 1 then
+        // if there is only one frame, it is a single equation at that exact point
+        ranges := (dim[1], 0, dim[1]) :: ranges;
+      else
+        start := dim[1];
+        stop := dim[1 + shift];
+        step := stop - start;
+        if step == 0 then
+          // if the step size is zero, this range only has a single entry
+          ranges := (start, 1, start) :: ranges;
+        else
+          // go forward until the step changes
+          new_step := step;
+          new_stop := stop;
+          while (new_step == step) and (shift + pre_shift < max_size) loop
+            stop := new_stop;
+            shift := shift + pre_shift;
+            new_stop := dim[1 + shift];
+            new_step := new_stop - stop;
+          end while;
+          ranges := (start, step, stop) :: ranges;
+        end if;
+      end if;
+    end for;
+  end recollectRangesHeuristic;
 
   function applyFrameInversion
     input output list<tuple<ComponentRef, Expression>> frames;
@@ -157,10 +227,35 @@ public
       then (name, range) :: applyFrameInversion(rest_frames, rest_diffs);
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because frame and diff seem to have different length."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because frames and diffs seem to have different length."});
       then fail();
     end match;
   end applyFrameInversion;
+
+  function applyNewFrameRanges
+    input output list<tuple<ComponentRef, Expression>> frames;
+    input list<tuple<Integer, Integer, Integer>> ranges;
+  algorithm
+    frames := match (frames, ranges)
+      local
+        list<tuple<ComponentRef, Expression>> rest_frames;
+        ComponentRef name;
+        Expression range;
+        list<tuple<Integer, Integer, Integer>> rest_ranges;
+        tuple<Integer,Integer,Integer> range_tpl;
+
+      // nothing left to do
+      case ({}, {}) then {};
+
+      // this range has to be updated
+      case ((name, range as Expression.RANGE()) :: rest_frames, range_tpl :: rest_ranges) algorithm
+      then (name, Expression.sliceRange(range, range_tpl)) :: applyNewFrameRanges(rest_frames, rest_ranges);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because frames and ranges seem to have different length."});
+      then fail();
+    end match;
+  end applyNewFrameRanges;
 
   function noNameHashEq
     input BEquation.Equation eq;

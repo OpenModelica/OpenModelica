@@ -151,8 +151,15 @@ public
   function getVarPointer
     input ComponentRef cref;
     output Pointer<Variable> var;
+  protected
+    ComponentRef stripCref;
   algorithm
-    var := match cref
+    if Flags.getConfigString(Flags.MATCHING_ALGORITHM) == "pseudo" then
+      stripCref := ComponentRef.stripSubscriptsExceptModel(cref);
+    else
+      stripCref := cref;
+    end if;
+    var := match stripCref
       local
         Pointer<Variable> varPointer;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
@@ -1372,6 +1379,38 @@ public
       end for;
     end sort;
 
+    function scalarize
+      "author: kabdelhak
+      Expands all variables to their scalar elements."
+      input output VariablePointers variables;
+    protected
+      list<Pointer<Variable>> vars, new_vars = {};
+      list<Variable> scalar_vars;
+      Variable var;
+      Boolean anyArr;
+    algorithm
+      vars := toList(variables);
+      for var_ptr in vars loop
+        var := Pointer.access(var_ptr);
+        if Type.isArray(var.ty) then
+          anyArr := true;
+          scalar_vars := Variable.expand(var);
+          for scalar_var in scalar_vars loop
+            // create new pointers for the scalar variables
+            new_vars := Pointer.create(scalar_var) :: new_vars;
+          end for;
+        else
+          // preserve original variable pointers
+          new_vars := var_ptr :: new_vars;
+        end if;
+      end for;
+
+      // only change variables if any of them was an array
+      if anyArr then
+        variables := fromList(listReverse(new_vars));
+      end if;
+    end scalarize;
+
   protected
     function createSortHashTpl
       "Helper function for sort(). Creates the hash value without considering the name and
@@ -1597,7 +1636,7 @@ public
     end setVariables;
 
     // used to add specific types. Fill up with Jacobian/Hessian types
-    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START);
+    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, ITERATOR);
 
     function addTypedList
       input output VarData varData;
@@ -1634,6 +1673,11 @@ public
         case (VAR_DATA_SIM(), VarType.START) algorithm
           varData.variables := VariablePointers.addList(var_lst, varData.variables);
           varData.initials := VariablePointers.addList(var_lst, varData.initials);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.ITERATOR) algorithm
+          varData.variables := VariablePointers.addList(var_lst, varData.variables);
+          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
         then varData;
 
         // ToDo: other cases
