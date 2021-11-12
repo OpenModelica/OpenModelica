@@ -86,7 +86,9 @@ endif(WIN32)
 
 if(WITH_IPOPT)
   target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
-  target_compile_definitions(SimulationRuntimeC PRIVATE -DWITH_IPOPT)
+  ## disable for now to avoid duplicate definition warnings. The define is hardcoded in
+  ## omc_config.h. Until we remove that this just results in warnings.
+  # target_compile_definitions(SimulationRuntimeC PRIVATE -DWITH_IPOPT)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
 endif()
 

@@ -52,6 +52,14 @@ add_custom_command (
     COMMENT "Copying (NF/Meta/Modelica)Builtin.mo files for the bootstrapped omc.")
 
 
+if(WIN32)
+  add_custom_command (
+    TARGET bomc
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::simrt::runtime> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    COMMENT "Copying OpenModelicaRuntimeC.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
+endif()
+
 # add_custom_command(
 #     TARGET bomc
 #     POST_BUILD
