@@ -2250,7 +2250,7 @@ protected
  BackendDAE.Variables vars;
 algorithm
   vars := daeVars(syst);
-  n := varsSize(vars);
+  n := BackendVariable.varCount(vars);
 end daenumVariables;
 
 /* =======================================================

@@ -321,7 +321,7 @@ protected
   Integer nVars, nEqns;
 algorithm
   nEqns := BackendDAEUtil.systemSize(isyst);
-  nVars := BackendVariable.varsSize(BackendVariable.daeVars(isyst));
+  nVars := BackendVariable.varCount(BackendVariable.daeVars(isyst));
 
   // over-determined system: nEqns > nVars
   if intGt(nEqns, nVars) then
