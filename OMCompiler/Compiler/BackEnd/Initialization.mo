@@ -1622,6 +1622,12 @@ protected
   Boolean isPreCref;
 algorithm
   for var in inVarLst loop
+
+    // Do not create start value equations for 0 size array variables.
+    if Types.getDimensionProduct(var.varType) == 0 then
+      continue;
+    end if;
+
     cref := BackendVariable.varCref(var);
     tp := BackendVariable.varType(var);
     crefExp := DAE.CREF(cref, tp);
