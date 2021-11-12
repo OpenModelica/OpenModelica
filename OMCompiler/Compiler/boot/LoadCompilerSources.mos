@@ -415,6 +415,7 @@ if true then /* Suppress output */
     "../Script/NFApi.mo",
     "../Script/Conversion.mo",
     "../Script/Obfuscate.mo",
+    "../Script/TotalModelDebug.mo",
 
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",
