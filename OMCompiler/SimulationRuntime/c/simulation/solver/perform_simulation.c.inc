@@ -167,10 +167,10 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
   /* Check if ignored assert throw was actually a valid throw */
   data->simulationInfo->noThrowAsserts = 0 /* false */;
   if (data->simulationInfo->needToReThrow && !foundEvent) {
-    throwStreamPrint(threadData, "No event found, but assert was triggered. Throwing now!");
+    errorStreamPrint(LOG_ASSERT, 0, "No event found, but assert was triggered. Throwing now!");
     omc_throw(threadData);
   } else if (data->simulationInfo->needToReThrow) {
-    infoStreamPrint(LOG_STDOUT, 0, "Found event, previous asserts are ignored.");
+    infoStreamPrint(LOG_ASSERT, 0, "Found event, previous asserts are ignored.");
   }
 
   return syncRet;

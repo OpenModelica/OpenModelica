@@ -57,12 +57,12 @@ val(x, 0.9);
 // x : 1.28938
 // Time : 0.5
 // x : 1.22416
-// assert            | warning | The following assertion has been violated at time 0.573517
+// assert            | info    | The following assertion has been violated at time 0.573517
 // |                 | |       | time < 0.5
-// assert            | warning | Assert does trigger.
-// assert            | warning | The following assertion has been violated at time 0.591693
+// assert            | info    | Assert does trigger.
+// assert            | info    | The following assertion has been violated at time 0.591693
 // |                 | |       | time < 0.55
-// assert            | warning | Assert does triggered again .
+// assert            | info    | Assert does triggered again .
 // Time : 0.6
 // x : 1.24662
 // Time : 0.7

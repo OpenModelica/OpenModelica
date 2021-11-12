@@ -4376,6 +4376,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
             else '_withEquationIndexes'
   let infoTextContext = '"The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue'
   let omcAssertFunc = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
+  let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
   let assertCode = match context case FUNCTION_CONTEXT(__) then
     <<
     FILE_INFO info = {<%infoArgs(info)%>};
@@ -4384,8 +4385,8 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     else
     <<
     if (data->simulationInfo->noThrowAsserts) {
-      infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, equationIndexes, <%infoTextContext%>);
-      data->simulationInfo->needToReThrow = 1;
+      infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, <%infoTextContext%>);
+      infoStreamPrint(LOG_ASSERT, 0, <%msgVar%>);<%rethrow%>
     } else {
       FILE_INFO info = {<%infoArgs(info)%>};
       omc_assert_warning(info, <%infoTextContext%>);
@@ -4448,7 +4449,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
     if(!(<%condVar%>))
     {
       if (data->simulationInfo->noThrowAsserts) {
-        infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+        infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
         data->simulationInfo->needToReThrow = 1;
       } else {
         FILE_INFO info = {<%infoArgs(info)%>};
