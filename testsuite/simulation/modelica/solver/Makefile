@@ -14,6 +14,7 @@ problem1-symSolverImp.mos \
 problem1-symSolverExp.mos \
 problem1-symSolverImpSsc.mos \
 problem1-symSolverExpSsc.mos \
+problem2-cvode.mos \
 problem2-dasslsteps.mos \
 problem2-impeuler.mos \
 problem2-trapezoid.mos \
@@ -63,7 +64,6 @@ problem6-symSolverImp.mos \
 problem6-symSolverExp.mos \
 
 FAILINGTESTFILES = \
-problem2-cvode.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
