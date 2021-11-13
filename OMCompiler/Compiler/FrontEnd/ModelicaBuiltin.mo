@@ -4370,6 +4370,7 @@ end generateScriptingAPI;
 function convertPackage
   input TypeName cl;
   input String scriptFile;
+  output Boolean success;
 external "builtin";
 end convertPackage;
 
