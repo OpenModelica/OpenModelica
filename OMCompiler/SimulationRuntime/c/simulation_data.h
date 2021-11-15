@@ -294,8 +294,9 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*getIterationVars)(struct DATA*, double*);
   int (*checkConstraints)(struct DATA*, threadData_t *threadData);
 
-  NONLINEAR_SOLVER method;             /* nonlinear solver */
+  NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   void *solverData;
+  NLS_LS nlsLinearSolver;              /* nls linear solver */
 
   modelica_real *nlsx;                 /* x */
   modelica_real *nlsxOld;              /* previous x */
@@ -632,7 +633,7 @@ typedef struct SIMULATION_INFO
   LINEAR_SPARSE_SOLVER lssMethod;      /* linear sparse solver */
   int mixedMethod;                     /* mixed solver */
 
-  NONLINEAR_SOLVER  nlsMethod;         /* nonlinear solver */
+  NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   NEWTON_STRATEGY newtonStrategy;      /* newton damping strategy solver */
   int nlsCsvInfomation;                /* = 1 csv files with detailed nonlinear solver process are generated */
   NLS_LS nlsLinearSolver;              /* nls linear solver */
