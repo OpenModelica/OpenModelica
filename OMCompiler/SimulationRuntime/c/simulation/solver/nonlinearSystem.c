@@ -354,8 +354,8 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
-  modelica_boolean someSmallDensity = 0;
-  modelica_boolean someBigSize = 0;
+  modelica_boolean someSmallDensity = 0;  /* pretty dumping of flag info */
+  modelica_boolean someBigSize = 0;       /* analogous to someSmallDensity */
 
   infoStreamPrint(LOG_NLS, 1, "initialize non-linear system solvers");
   infoStreamPrint(LOG_NLS, 0, "%ld non-linear systems", data->modelData->nNonLinearSystems);
@@ -438,24 +438,32 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     {
       nnz = nonlinsys[i].sparsePattern->numberOfNoneZeros;
 
-      if(nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity)
-      {
+      if (nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity) {
         nonlinsys[i].nlsMethod = NLS_KINSOL;
         nonlinsys[i].nlsLinearSolver = NLS_LS_KLU;
         someSmallDensity = 1;
-        if(size >= nonlinearSparseSolverMinSize)
-        {
+        if (size > nonlinearSparseSolverMinSize) {
           someBigSize = 1;
-          infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver kinsol for nonlinear system %d (%d),\nbecause density of %.2f remains under threshold of %.2f\nand size of %d exceeds threshold of %d.", i, nonlinsys[i].equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity, size, nonlinearSparseSolverMinSize);
+          infoStreamPrint(LOG_STDOUT, 0,
+                          "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                          "because density of %.2f remains under threshold of %.2f\n"
+                          "and size of %d exceeds threshold of %d.",
+                          i, nonlinsys[i].equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity,
+                          size, nonlinearSparseSolverMinSize);
         } else {
-          infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver kinsol for nonlinear system %d (%d),\nbecause density of %.2f remains under threshold of %.2f.", i, nonlinsys[i].equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity);
+          infoStreamPrint(LOG_STDOUT, 0,
+                          "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                          "because density of %.2f remains under threshold of %.2f.",
+                          i, nonlinsys[i].equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity);
         }
-      } else if(size >= nonlinearSparseSolverMinSize)
-      {
+      } else if (size > nonlinearSparseSolverMinSize) {
         nonlinsys[i].nlsMethod = NLS_KINSOL;
         nonlinsys[i].nlsLinearSolver = NLS_LS_KLU;
         someBigSize = 1;
-        infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver kinsol for nonlinear system %d (%d),\nbecause size of %d exceeds threshold of %d.", i, nonlinsys[i].equationIndex, size, nonlinearSparseSolverMinSize);
+        infoStreamPrint(LOG_STDOUT, 0,
+                        "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                        "because size of %d exceeds threshold of %d.",
+                        i, nonlinsys[i].equationIndex, size, nonlinearSparseSolverMinSize);
       }
     }
 #endif
@@ -521,14 +529,18 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     }
   }
 
-  if(someSmallDensity){
-    if(someBigSize){
-    infoStreamPrint(LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\nspecified using the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.");
+  /* print relevant flag information */
+  if(someSmallDensity) {
+    if(someBigSize) {
+      infoStreamPrint(LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\n"
+                                     "specified using the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.");
     } else {
-      infoStreamPrint(LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\nusing the runtime flag '<-nlsMaxDensity=value>'.");
+      infoStreamPrint(LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\n"
+                                     "using the runtime flag '<-nlsMaxDensity=value>'.");
     }
-  } else if(someBigSize){
-    infoStreamPrint(LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\nusing the runtime flag '<-nlsMinSize=value>'.");
+  } else if(someBigSize) {
+    infoStreamPrint(LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\n"
+                                   "using the runtime flag '<-nlsMinSize=value>'.");
   }
 
   messageClose(LOG_NLS);

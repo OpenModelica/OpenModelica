@@ -11,19 +11,19 @@ equation
 end M;
 "); getErrorString();
 
-simulate(M, simflags="-nlssMinSize=1"); getErrorString();
+simulate(M, simflags="-nlssMinSize=0"); getErrorString();
 
 // Result:
 // true
 // ""
 // record SimulationResult
 //     resultFile = "M_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nlssMinSize=1'",
-//     messages = "stdout            | info    | Minimum system size for using non-linear sparse solver changed to 1
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nlssMinSize=0'",
+//     messages = "stdout            | info    | Minimum system size for using non-linear sparse solver changed to 0
 // stdout            | info    | Using sparse solver kinsol for nonlinear system 0 (5),
-// |                 | |       | because size of 1 exceeds threshold of 1.
+// |                 | |       | because size of 1 exceeds threshold of 0.
 // stdout            | info    | Using sparse solver kinsol for nonlinear system 1 (10),
-// |                 | |       | because size of 1 exceeds threshold of 1.
+// |                 | |       | because size of 1 exceeds threshold of 0.
 // stdout            | info    | The minimal system size for using sparse solvers can be specified
 // |                 | |       | using the runtime flag '<-nlsMinSize=value>'.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
