@@ -6025,7 +6025,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
 ::=
   let body = (whenOps |> whenOp =>
     match whenOp
-    case ASSIGN(left = lhs as DAE.CREF(componentRef=left)) then whenAssign(left, typeof(right), right, context, &varDecls, &auxFunction)
+    case ASSIGN(left = lhs as DAE.CREF(componentRef=left)) then whenAssign(lhs, typeof(right), right, context, &varDecls, &auxFunction)
     case ASSIGN(left = lhs as DAE.TUPLE(PR = expLst as firstexp::_), right = DAE.CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
     let &preExp = buffer ""
     let &postExp = buffer ""
@@ -6076,39 +6076,20 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
   >>
 end whenOperators;
 
-template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text &varDecls, Text &auxFunction)
+template whenAssign(Exp left, Type ty, Exp right, Context context, Text &varDecls, Text &auxFunction)
  "Generates assignment for when."
 ::=
 match ty
   case T_ARRAY(__) then
     let &preExp = buffer ""
     let expPart = daeExp(right, context, &preExp, &varDecls, &auxFunction)
-    match expTypeFromExpShort(right)
-    case "boolean" then
-      <<
-      <%preExp%>
-      copy_boolean_array_data_mem(<%expPart%>, &<%cref(left)%>);
-      >>
-    case "integer" then
-      <<
-      <%preExp%>
-      copy_integer_array_data_mem(<%expPart%>, &<%cref(left)%>);
-      >>
-    case "real" then
-      <<
-      <%preExp%>
-      copy_real_array_data_mem(<%expPart%>, &<%cref(left)%>);
-      >>
-    case "string" then
-      <<
-      <%preExp%>
-      copy_string_array_data_mem(<%expPart%>, &<%cref(left)%>);
-      >>
-    else
-      error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left)%> = <%dumpExp(right,"\"")%>')
-    end match
+    let assign = algStmtAssignArrWithRhsExpStr(left, expPart, context, &preExp, &varDecls, &auxFunction)
+    <<
+    <%preExp%>
+    <%assign%>
+    >>
   case T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)) then
-    error(sourceInfo(), 'No runtime support for this record assignment: <%cref(left)%> = <%dumpExp(right,"\"")%>')
+    error(sourceInfo(), 'No runtime support for this record assignment: <%dumpExp(left,"\"")%> = <%dumpExp(right,"\"")%>')
     // let &preExp = buffer ""
     // let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
     // let tmp = tempDecl(expTypeModelica(ty),&varDecls)
@@ -6127,10 +6108,11 @@ match ty
     // >>
   else
     let &preExp = buffer ""
+    let varPart = daeExp(left, context, &preExp, &varDecls, &auxFunction)
     let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
-    <%cref(left)%> = <%exp%>;
+    <%varPart%> = <%exp%>;
     >>
 end whenAssign;
 
