@@ -311,13 +311,14 @@ algorithm
       algorithm
         dim := Type.nthDimension(Expression.typeOf(e), 1);
 
-        if Dimension.isOne(dim) then
-          // Unroll the loop if the iteration range consists of only one value.
-          e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
-          body := Statement.replaceIteratorList(stmt.body, stmt.iterator, e);
-          body := simplifyStatements(body);
-          statements := listAppend(listReverse(body), statements);
-        elseif not Dimension.isZero(dim) then
+        //if Dimension.isOne(dim) then
+        //  // Unroll the loop if the iteration range consists of only one value.
+        //  e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
+        //  body := Statement.replaceIteratorList(stmt.body, stmt.iterator, e);
+        //  body := simplifyStatements(body);
+        //  statements := listAppend(listReverse(body), statements);
+        //elseif not Dimension.isZero(dim) then
+        if not Dimension.isZero(dim) then
           // Otherwise just simplify if the iteration range is not empty.
           stmt.range := SOME(SimplifyExp.simplify(e));
           stmt.body := simplifyStatements(stmt.body);

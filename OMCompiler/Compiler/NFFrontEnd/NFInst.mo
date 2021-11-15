@@ -197,6 +197,8 @@ algorithm
     flatModel.variables := List.filterOnFalse(flatModel.variables, Variable.isEmptyArray);
   end if;
 
+  flatModel := FlatModel.mapExp(flatModel, replaceEmptyArrays);
+
   VerifyModel.verify(flatModel);
 
   if Flags.isSet(Flags.COMBINE_SUBSCRIPTS) then
@@ -3791,6 +3793,49 @@ algorithm
 
   str := FlatModel.toFlatString(flat_model, FunctionTree.listValues(functions));
 end dumpFlatModel;
+
+function replaceEmptyArrays
+  "Variables with 0-dimensions are not present in the flat model, so replace
+   any cref that refers to such a variable with an empty array expression."
+  input output Expression exp;
+protected
+  function traverser
+    input Expression exp;
+    output Expression outExp;
+  protected
+    ComponentRef cref;
+    list<Subscript> subs;
+    Type ty;
+  algorithm
+    outExp := match exp
+      case Expression.CREF(cref = cref)
+        guard ComponentRef.isEmptyArray(cref)
+        algorithm
+          if ComponentRef.hasSubscripts(cref) then
+            cref := ComponentRef.fillSubscripts(cref);
+            cref := ComponentRef.replaceWholeSubscripts(cref);
+            subs := ComponentRef.subscriptsAllFlat(cref);
+            cref := ComponentRef.stripSubscriptsAll(cref);
+            ty := ComponentRef.getSubscriptedType(cref);
+          else
+            subs := {};
+            ty := exp.ty;
+          end if;
+
+          outExp := Expression.makeDefaultValue(ty);
+
+          if not listEmpty(subs) then
+            outExp := Expression.SUBSCRIPTED_EXP(outExp, subs, exp.ty, false);
+          end if;
+        then
+          outExp;
+
+      else exp;
+    end match;
+  end traverser;
+algorithm
+  exp := Expression.map(exp, traverser);
+end replaceEmptyArrays;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;
