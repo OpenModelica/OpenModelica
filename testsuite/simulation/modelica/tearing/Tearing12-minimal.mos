@@ -28,11 +28,11 @@ simulate(Tearing12); getErrorString();
 //     resultFile = "Tearing12_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "stdout            | info    | Using sparse solver for linear system 0,
-// |                 | |       | because density of 0.004 remains under threshold of 0.200 or size of 908 exceeds threshold of 201.
+// |                 | |       | because density of 0.004 remains under threshold of 0.200 or size of 908 exceeds threshold of 1001.
 // |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
 // |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
 // stdout            | info    | Using sparse solver for linear system 1,
-// |                 | |       | because density of 0.004 remains under threshold of 0.200 or size of 905 exceeds threshold of 201.
+// |                 | |       | because density of 0.004 remains under threshold of 0.200 or size of 905 exceeds threshold of 1001.
 // |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
 // |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
