@@ -1209,6 +1209,12 @@ protected
       end if;
     end for;
 
+    // The array might be empty even if one dimension is larger than 1,
+    // in that case the result will also be an empty array.
+    if Type.isEmptyArray(ty) then
+      vector_dim := Dimension.fromInteger(0);
+    end if;
+
     ty := Type.ARRAY(Type.arrayElementType(ty), {vector_dim});
     {fn} := Function.typeRefCache(fn_ref);
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
