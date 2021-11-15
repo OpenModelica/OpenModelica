@@ -226,6 +226,7 @@ ClassMod6.mo \
 ClockConstructor1.mo \
 CombineSubscripts1.mo \
 CombineSubscripts2.mo \
+CombineSubscripts3.mo \
 Comment1.mo \
 CompAsFunc.mo \
 ComponentAsTypeError.mo \
