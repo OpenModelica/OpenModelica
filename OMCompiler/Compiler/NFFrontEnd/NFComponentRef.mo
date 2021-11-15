@@ -759,8 +759,6 @@ public
       return;
     end if;
 
-    // Remove unnecessary : subscripts from the head of the list.
-    subs := List.trim(subs, Subscript.isWhole);
     // Replace the cref's subscripts.
     cref := setSubscripts(subs, stripSubscriptsAll(cref));
   end combineSubscripts;
