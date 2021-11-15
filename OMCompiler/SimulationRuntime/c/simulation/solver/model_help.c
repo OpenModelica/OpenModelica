@@ -1441,13 +1441,17 @@ modelica_integer _event_mod_integer(modelica_integer x1, modelica_integer x2, mo
  */
 modelica_real _event_mod_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data, threadData_t *threadData)
 {
+  modelica_real value;
+
   if(data->simulationInfo->discreteCall && !data->simulationInfo->solveContinuous)
   {
     data->simulationInfo->mathEventsValuePre[index] = x1;
     data->simulationInfo->mathEventsValuePre[index+1] = x2;
   }
 
-  return x1 - floor(x1 / x2) * x2;
+  value = _event_floor(x1 / x2, index+2, data);
+
+  return x1 - value * x2;
 }
 
 /*! \fn _event_div_integer
