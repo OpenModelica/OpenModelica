@@ -185,8 +185,7 @@ algorithm
   functions := Flatten.collectFunctions(flatModel);
 
   // Dump the flat model to a stream if dumpFlat = true.
-  flatString := if dumpFlat then
-    FlatModel.toFlatString(flatModel, FunctionTree.listValues(functions)) else "";
+  flatString := if dumpFlat then dumpFlatModel(flatModel, functions) else "";
 
   printStructuralParameters(flatModel);
 
@@ -3744,16 +3743,22 @@ end checkPartialClass;
 
 function combineSubscripts
   input output Expression exp;
-algorithm
-  () := match exp
-    case Expression.CREF()
-      algorithm
-        exp.cref := ComponentRef.combineSubscripts(exp.cref);
-      then
-        ();
+protected
+  function traverser
+    input output Expression exp;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        algorithm
+          exp.cref := ComponentRef.combineSubscripts(exp.cref);
+        then
+          ();
 
-    else ();
-  end match;
+      else ();
+    end match;
+  end traverser;
+algorithm
+  exp := Expression.map(exp, traverser);
 end combineSubscripts;
 
 function printStructuralParameters
@@ -3772,6 +3777,20 @@ algorithm
     end if;
   end if;
 end printStructuralParameters;
+
+function dumpFlatModel
+  input FlatModel flatModel;
+  input FunctionTree functions;
+  output String str;
+protected
+  FlatModel flat_model = flatModel;
+algorithm
+  if Flags.isSet(Flags.COMBINE_SUBSCRIPTS) then
+    flat_model := FlatModel.mapExp(flat_model, combineSubscripts);
+  end if;
+
+  str := FlatModel.toFlatString(flat_model, FunctionTree.listValues(functions));
+end dumpFlatModel;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;
