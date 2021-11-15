@@ -440,7 +440,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  The value is a Double with default value 0.2.",
   /* FLAG_LSS_MIN_SIZE */
   "  Value specifies the minimum system size for using a linear sparse solver.\n"
-  "  The value is an Integer with default value 4001.",
+  "  The value is an Integer with default value " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ".",
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
@@ -489,7 +489,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  The value is a Double with default value 0.2.",
   /* FLAG_NLS_MIN_SIZE */
   "  Value specifies the minimum system size for using a non-linear sparse solver.\n"
-  "  The value is an Integer with default value 10001.",
+  "  The value is an Integer with default value " EXPANDSTRING(DEFAULT_FLAG_NLS_MIN_SIZE) ".",
   /* FLAG_NOEMIT */
   "  Do not emit any results to the result file.",
   /* FLAG_NOEQUIDISTANT_GRID */
