@@ -809,6 +809,7 @@ PartialType3.mo \
 Prefix1.mo \
 Prefix2.mo \
 Prefix3.mo \
+PrintRecordTypes1.mo \
 PropagateExtends.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \
