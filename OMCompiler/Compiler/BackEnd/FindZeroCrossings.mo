@@ -1189,6 +1189,9 @@ algorithm
       zc = createZeroCrossing(e_1, {eq_count});
       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
+      // Add additional +1 to numMathFunctions because of internally used _event_floor
+      numMathFunctions = numMathFunctions + 1;
+
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
