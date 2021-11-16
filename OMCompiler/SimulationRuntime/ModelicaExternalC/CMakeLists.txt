@@ -19,6 +19,15 @@ add_library(omc::simrt::Modelica::zlib ALIAS zlib)
 
 target_include_directories(zlib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib)
 
+## Check if we have unistd.h and define accordingly
+## We can not use the omc macro omc_check_header_exists_and_define() because
+## this file is processed for the omc-msvc targets right now. Do it manually.
+include(CheckIncludeFile)
+check_include_file(unistd.h HAVE_UNISTD_H)
+if(HAVE_UNISTD_H)
+  target_compile_definitions(zlib PRIVATE -DHAVE_UNISTD_H=1)
+endif()
+
 install(TARGETS zlib)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/zlib.h
               ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/zconf.h
