@@ -1471,11 +1471,19 @@ end System;
 
 package Flags
   uniontype ConfigFlag end ConfigFlag;
+  uniontype DebugFlag end DebugFlag;
   constant ConfigFlag MODELICA_OUTPUT;
+  constant DebugFlag PRINT_RECORD_TYPES;
+
   function getConfigBool
     input ConfigFlag inFlag;
     output Boolean outValue;
   end getConfigBool;
+
+  function isSet
+    input DebugFlag inFlag;
+    output Boolean outValue;
+  end isSet;
 end Flags;
 
 end DAEDumpTV;

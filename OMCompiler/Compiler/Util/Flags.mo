@@ -545,6 +545,8 @@ constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(186, "zmqDangerousAcceptConnec
   Gettext.gettext("When opening a zmq connection, listen on all interfaces instead of only connections from 127.0.0.1."));
 constant DebugFlag DUMP_CONVERSION_RULES = DEBUG_FLAG(187, "dumpConversionRules", false,
   Gettext.gettext("Dumps the rules when converting a package using a conversion script."));
+constant DebugFlag PRINT_RECORD_TYPES = DEBUG_FLAG(188, "printRecordTypes", false,
+  Gettext.gettext("Prints out record types as part of the flat code."));
 
 public
 // CONFIGURATION FLAGS

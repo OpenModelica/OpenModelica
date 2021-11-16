@@ -1258,15 +1258,21 @@ algorithm
     case DAE.RECORD_CONSTRUCTOR(path = fpath,type_=t)
       equation
         false = Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
-        Print.printBuf("function ");
-        fstr = AbsynUtil.pathStringNoQual(fpath);
-        Print.printBuf(fstr);
-        Print.printBuf(" \"Automatically generated record constructor for "+fstr+"\"\n");
-        Print.printBuf(printRecordConstructorInputsStr(t));
-        Print.printBuf("  output "+AbsynUtil.pathLastIdent(fpath)+ " res;\n");
-        Print.printBuf("end ");
-        Print.printBuf(fstr);
-        Print.printBuf(";\n\n");
+
+        if Flags.isSet(Flags.PRINT_RECORD_TYPES) then
+          Print.printBuf(Types.unparseType(t));
+          Print.printBuf("\n");
+        else
+          Print.printBuf("function ");
+          fstr = AbsynUtil.pathStringNoQual(fpath);
+          Print.printBuf(fstr);
+          Print.printBuf(" \"Automatically generated record constructor for "+fstr+"\"\n");
+          Print.printBuf(printRecordConstructorInputsStr(t));
+          Print.printBuf("  output "+AbsynUtil.pathLastIdent(fpath)+ " res;\n");
+          Print.printBuf("end ");
+          Print.printBuf(fstr);
+          Print.printBuf(";\n\n");
+        end if;
       then
         ();
 
@@ -3633,15 +3639,21 @@ algorithm
     case (DAE.RECORD_CONSTRUCTOR(path = fpath,type_=tp), str)
       equation
         false = Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
-        fstr = AbsynUtil.pathStringNoQual(fpath);
-        str = IOStream.append(str, "function ");
-        str = IOStream.append(str, fstr);
-        str = IOStream.append(str, " \"Automatically generated record constructor for " + fstr + "\"\n");
-        str = IOStream.append(str, printRecordConstructorInputsStr(tp));
-        str = IOStream.append(str, "  output "+AbsynUtil.pathLastIdent(fpath) + " res;\n");
-        str = IOStream.append(str, "end ");
-        str = IOStream.append(str, fstr);
-        str = IOStream.append(str, ";\n\n");
+
+        if Flags.isSet(Flags.PRINT_RECORD_TYPES) then
+          str = IOStream.append(str, Types.unparseType(tp));
+          str = IOStream.append(str, "\n");
+        else
+          fstr = AbsynUtil.pathStringNoQual(fpath);
+          str = IOStream.append(str, "function ");
+          str = IOStream.append(str, fstr);
+          str = IOStream.append(str, " \"Automatically generated record constructor for " + fstr + "\"\n");
+          str = IOStream.append(str, printRecordConstructorInputsStr(tp));
+          str = IOStream.append(str, "  output "+AbsynUtil.pathLastIdent(fpath) + " res;\n");
+          str = IOStream.append(str, "end ");
+          str = IOStream.append(str, fstr);
+          str = IOStream.append(str, ";\n\n");
+        end if;
       then
         str;
 

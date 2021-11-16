@@ -79,6 +79,11 @@ template dumpFunction(DAE.Function function)
       end <%AbsynDumpTpl.dumpPathNoQual(path)%>;
       >>
     case RECORD_CONSTRUCTOR(__) then
+      if (Flags.isSet(Flags.PRINT_RECORD_TYPES)) then
+      <<
+      <%dumpRecordType(type_)%>
+      >>
+      else
       <<
       function <%AbsynDumpTpl.dumpPathNoQual(path)%> "Automatically generated record constructor for <%AbsynDumpTpl.dumpPathNoQual(path)%>"
         <%dumpRecordInputVarStr(type_)%>
@@ -382,6 +387,20 @@ match arg
     let binding_str = match defaultBinding case SOME(bexp) then ' := <%dumpExp(bexp)%>'
     '<%ty_str%> <%c_str%><%p_str%><%name%><%binding_str%>'
 end dumpFuncArg;
+
+template dumpRecordType(Type ty)
+::=
+match ty
+  case T_COMPLEX(__) then
+    let name = AbsynDumpTpl.dumpPath(ClassInf.getStateName(complexClassType))
+    let vars = dumpRecordVars(varLst)
+    <<
+    record <%name%>
+      <%vars%>
+    end <%name%>;
+    >>
+  case T_FUNCTION(__) then dumpRecordType(funcResultType)
+end dumpRecordType;
 
 template dumpConst(Const c)
 ::=
