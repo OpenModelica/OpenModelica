@@ -184,7 +184,6 @@ if true then /* Suppress output */
     "../Util/IOStream.mo",
     "../Util/Lapack.mo",
     "../Util/List.mo",
-    "../Util/ModelicaExternalC.mo",
     "../Util/Mutable.mo",
     "../Util/Pointer.mo",
     "../Util/Print.mo",
