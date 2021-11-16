@@ -1,4 +1,6 @@
 // status: correct
+// depends: NoDisappearingCommentBefore.mo
+// depends: NoDisappearingCommentAfter.mo
 
 echo(false);
 a := readFile("NoDisappearingCommentBefore.mo");
