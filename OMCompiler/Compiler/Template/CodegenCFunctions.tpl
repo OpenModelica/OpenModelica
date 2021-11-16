@@ -4386,7 +4386,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     <<
     if (data->simulationInfo->noThrowAsserts) {
       infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, <%infoTextContext%>);
-      infoStreamPrint(LOG_ASSERT, 0, <%msgVar%>);<%rethrow%>
+      infoStreamPrint(LOG_ASSERT, 0, "%s", <%msgVar%>);<%rethrow%>
     } else {
       FILE_INFO info = {<%infoArgs(info)%>};
       omc_assert_warning(info, <%infoTextContext%>);
