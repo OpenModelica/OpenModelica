@@ -2049,7 +2049,7 @@ algorithm
     // Do nothing; it's a diff... Just not perfect and might be really slow to process...
   elseif nadd==1 and ndel==1 then
     (addedTree, deletedTree, before, middle, after, addedBeforeDeleted) := extractSingleAddDiffBeforeAndAfter(res);
-    if if not listEmpty(middle) then min(parseTreeIsWhitespace(middleItem) for middleItem in middle) else false then
+    if if not listEmpty(middle) then min(parseTreeIsWhitespaceNotComment(middleItem) for middleItem in middle) else false then
       // If we have a change with whitespace in-between the added/deleted
       // items, move it so the added/deleted are next to each other to
       // merge them better.
@@ -2716,7 +2716,7 @@ algorithm
             addCount := addCount + 1;
             if parseTreeIsNewLine(tree) and addCount > 1 and addCount == listLength(lst) then
               acc := {tree}::acc;
-            elseif parseTreeIsWhitespace(tree) then
+            elseif parseTreeIsWhitespaceNotComment(tree) then
               acc := acc;
             elseif parseTreeIsWhitespaceOrPar(tree) then
               acc := {tree}::acc;

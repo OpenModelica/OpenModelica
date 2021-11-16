@@ -13,6 +13,7 @@ ListFile.mos \
 MoveComment.mos \
 MoveComponent.mos \
 MoveConnection.mos \
+NoDisappearingComment.mos \
 removeComponentModifiers.mos \
 SimilarNamesAnnotation.mos \
 SubExpParenthesis.mos \
