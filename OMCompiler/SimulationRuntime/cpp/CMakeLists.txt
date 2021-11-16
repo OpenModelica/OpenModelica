@@ -94,7 +94,7 @@ OPTION(USE_CPP_03 "USE_CPP_03" OFF)
 OPTION(REDUCE_DAE "Use reduce dae method" OFF)
 
 #Set Variables
-SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
+SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../ModelicaExternalC/C-Sources")
 
 IF(NOT FMU_TARGET)
  IF(MSVC)

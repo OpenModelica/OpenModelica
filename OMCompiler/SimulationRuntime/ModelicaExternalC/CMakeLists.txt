@@ -14,6 +14,8 @@ project(OMModelicaExternalC)
 # that we can link it into our static FMUs.
 file(GLOB libzlib_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/*.c)
 add_library(zlib STATIC ${libzlib_SOURCES})
+add_library(omc::simrt::Modelica::zlib ALIAS zlib)
+
 
 target_include_directories(zlib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib)
 
@@ -29,7 +31,9 @@ set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
                                  C-Sources/ModelicaInternal.c
                                  C-Sources/ModelicaRandom.c
                                  C-Sources/ModelicaStrings.c)
+
 add_library(ModelicaExternalC STATIC ${libModelicaExternalC_SOURCES})
+add_library(omc::simrt::Modelica::ExternalC ALIAS ModelicaExternalC)
 
 target_link_libraries(ModelicaExternalC PUBLIC m)
 
@@ -37,9 +41,11 @@ target_link_libraries(ModelicaExternalC PUBLIC m)
 # ModelicaMatIO
 set(libModelicaMatIO_SOURCES C-Sources/ModelicaMatIO.c C-Sources/snprintf.c)
 add_library(ModelicaMatIO STATIC ${libModelicaMatIO_SOURCES})
+add_library(omc::simrt::Modelica::MatIO ALIAS ModelicaMatIO)
 
 target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO PUBLIC zlib)
+target_link_libraries(ModelicaMatIO PUBLIC omc::simrt::runtime)
 
 # find_package(ZLIB)
 # if(ZLIB_FOUND)
@@ -58,6 +64,7 @@ target_link_libraries(ModelicaMatIO PUBLIC zlib)
 # ModelicaIO
 set(libModelicaIO_SOURCES C-Sources/ModelicaIO.c)
 add_library(ModelicaIO STATIC ${libModelicaIO_SOURCES})
+add_library(omc::simrt::Modelica::IO ALIAS ModelicaIO)
 
 target_link_libraries(ModelicaIO PUBLIC ModelicaMatIO)
 
@@ -67,6 +74,7 @@ target_link_libraries(ModelicaIO PUBLIC ModelicaMatIO)
 set(ModelicaStandardTables_SOURCES C-Sources/ModelicaStandardTables.c
                                    C-Sources/ModelicaStandardTablesUsertab.c)
 add_library(ModelicaStandardTables STATIC ${ModelicaStandardTables_SOURCES})
+add_library(omc::simrt::Modelica::StandardTables ALIAS ModelicaStandardTables)
 
 # This seems to be needed. Otherwise we get undefined referenes to function 'usertab'
 target_compile_definitions(ModelicaStandardTables PRIVATE -DDUMMY_FUNCTION_USERTAB)
