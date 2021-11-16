@@ -21,6 +21,8 @@ end ForStatement3;
 //   Real x[4];
 //   Real x[5];
 // algorithm
-//   x[2] := time;
+//   for i in 2:2 loop
+//     x[i] := time;
+//   end for;
 // end ForStatement3;
 // endResult

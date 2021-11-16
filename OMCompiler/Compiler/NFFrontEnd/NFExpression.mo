@@ -1137,6 +1137,11 @@ public
     Boolean literal;
     Expression first_e;
   algorithm
+    if isEmptyArray(exp) then
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      return;
+    end if;
+
     sub := Subscript.expandSlice(subscript);
 
     outExp := match sub

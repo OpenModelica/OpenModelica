@@ -1225,6 +1225,18 @@ public
     end match;
   end depth;
 
+  function isEmptyArray
+    "Returns whether any node in the cref has a dimension that's 0."
+    input ComponentRef cref;
+    output Boolean isEmpty;
+  algorithm
+    isEmpty := match cref
+      case CREF()
+        then Type.isEmptyArray(cref.ty) or isEmptyArray(cref.restCref);
+      else false;
+    end match;
+  end isEmptyArray;
+
   function isComplexArray
     input ComponentRef cref;
     output Boolean complexArray;

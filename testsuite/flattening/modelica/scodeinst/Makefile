@@ -350,6 +350,8 @@ Each4.mo \
 Each5.mo \
 Each6.mo \
 EmptyArray1.mo \
+EmptyArray2.mo \
+EmptyArray3.mo \
 Encapsulated1.mo \
 Encapsulated2.mo \
 EncapsulatingInst1.mo \
