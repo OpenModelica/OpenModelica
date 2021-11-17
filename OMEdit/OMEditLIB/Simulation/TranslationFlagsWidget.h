@@ -74,8 +74,6 @@ private:
   QLineEdit *mpAdditionalTranslationFlagsTextBox;
   QToolButton *mpTranslationFlagsHelpButton;
 private slots:
-  void updateMatchingAlgorithmToolTip(int index);
-  void updateIndexReductionToolTip(int index);
   void showTranslationFlagsHelp();
 };
 

@@ -208,10 +208,7 @@ void SimulationDialog::setUpForm()
   MainWindow::instance()->getOMCProxy()->getSolverMethods(&solverMethods, &solverMethodsDesc);
   mpMethodComboBox = new QComboBox;
   mpMethodComboBox->addItems(solverMethods);
-  for (int i = 0 ; i < solverMethodsDesc.size() ; i++) {
-    mpMethodComboBox->setItemData(i, solverMethodsDesc.at(i), Qt::ToolTipRole);
-  }
-  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateMethodToolTip(int)));
+  Utilities::setToolTip(mpMethodComboBox, "Integration Methods", solverMethodsDesc);
   connect(mpMethodComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableDasslIdaOptions(QString)));
   mpMehtodHelpButton = new QToolButton;
   mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
@@ -226,13 +223,10 @@ void SimulationDialog::setUpForm()
   QStringList jacobianMethods, jacobianMethodsDesc;
   MainWindow::instance()->getOMCProxy()->getJacobianMethods(&jacobianMethods, &jacobianMethodsDesc);
   mpJacobianComboBox = new QComboBox;
-  mpJacobianComboBox->addItem("");
-  mpJacobianComboBox->setItemData(0, "", Qt::ToolTipRole);
+  jacobianMethods.prepend("");
+  jacobianMethodsDesc.prepend("");
   mpJacobianComboBox->addItems(jacobianMethods);
-  for (int i = 0 ; i < jacobianMethodsDesc.size() ; i++) {
-    mpJacobianComboBox->setItemData(i + 1, jacobianMethodsDesc.at(i), Qt::ToolTipRole);
-  }
-  connect(mpJacobianComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateJacobianToolTip(int)));
+  Utilities::setToolTip(mpJacobianComboBox, "Jacobians", jacobianMethodsDesc);
   // dassl/ida options
   mpDasslIdaOptionsGroupBox = new QGroupBox(tr("DASSL/IDA Options"));
   // no root finding
@@ -380,9 +374,7 @@ void SimulationDialog::setUpForm()
   initializationMethodsDesc.prepend("");
   mpInitializationMethodComboBox = new QComboBox;
   mpInitializationMethodComboBox->addItems(initializationMethods);
-  for (int i = 0 ; i < initializationMethodsDesc.size() ; i++) {
-    mpInitializationMethodComboBox->setItemData(i, initializationMethodsDesc.at(i), Qt::ToolTipRole);
-  }
+  Utilities::setToolTip(mpInitializationMethodComboBox, "Initialization Methods", initializationMethodsDesc);
   // Equation System Initialization File
   mpEquationSystemInitializationFileLabel = new Label(tr("Equation System Initialization File (Optional):"));
   mpEquationSystemInitializationFileLabel->setToolTip(tr("Specifies an external file for the initialization of the model."));
@@ -407,9 +399,7 @@ void SimulationDialog::setUpForm()
   linearSolverMethodsDesc.prepend("");
   mpLinearSolverComboBox = new QComboBox;
   mpLinearSolverComboBox->addItems(linearSolverMethods);
-  for (int i = 0 ; i < linearSolverMethodsDesc.size() ; i++) {
-    mpLinearSolverComboBox->setItemData(i, linearSolverMethodsDesc.at(i), Qt::ToolTipRole);
-  }
+  Utilities::setToolTip(mpLinearSolverComboBox, "Linear Solvers", linearSolverMethodsDesc);
   // Non Linear Solvers
   mpNonLinearSolverLabel = new Label(tr("Non Linear Solver (Optional):"));
   // get the non-linear solvers
@@ -419,9 +409,7 @@ void SimulationDialog::setUpForm()
   nonLinearSolverMethodsDesc.prepend("");
   mpNonLinearSolverComboBox = new QComboBox;
   mpNonLinearSolverComboBox->addItems(nonLinearSolverMethods);
-  for (int i = 0 ; i < nonLinearSolverMethodsDesc.size() ; i++) {
-    mpNonLinearSolverComboBox->setItemData(i, nonLinearSolverMethodsDesc.at(i), Qt::ToolTipRole);
-  }
+  Utilities::setToolTip(mpNonLinearSolverComboBox, "Non Linear Solvers", nonLinearSolverMethodsDesc);
   // time where the linearization of the model should be performed
   mpLinearizationTimeLabel = new Label(tr("Linearization Time (Optional):"));
   mpLinearizationTimeTextBox = new QLineEdit;
@@ -435,12 +423,7 @@ void SimulationDialog::setUpForm()
   OMCInterface::getConfigFlagValidOptions_res profiling = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("profiling");
   mpProfilingComboBox->addItems(profiling.validOptions);
   mpProfilingComboBox->setCurrentIndex(0);
-  mpProfilingComboBox->setToolTip(profiling.mainDescription);
-  int i = 0;
-  foreach (QString description, profiling.descriptions) {
-    mpProfilingComboBox->setItemData(i, description, Qt::ToolTipRole);
-    i++;
-  }
+  Utilities::setToolTip(mpProfilingComboBox, profiling.mainDescription, profiling.descriptions);
   // cpu-time checkbox
   mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
   // enable all warnings
@@ -2157,16 +2140,6 @@ void SimulationDialog::intervalRadioToggled(bool toggle)
 }
 
 /*!
- * \brief SimulationDialog::updateMethodToolTip
- * Updates the Method combobox tooltip.
- * \param index
- */
-void SimulationDialog::updateMethodToolTip(int index)
-{
-  mpMethodComboBox->setToolTip(mpMethodComboBox->itemData(index, Qt::ToolTipRole).toString());
-}
-
-/*!
  * \brief SimulationDialog::enableDasslOptions
  * Slot activated when mpMethodComboBox currentIndexChanged signal is raised.\n
  * Enables/disables the Dassl options group box
@@ -2195,16 +2168,6 @@ void SimulationDialog::showIntegrationHelp()
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString()), Helper::ok);
   }
-}
-
-/*!
- * \brief SimulationDialog::updateJacobianToolTip
- * Updates the Jacobian combobox tooltip.
- * \param index
- */
-void SimulationDialog::updateJacobianToolTip(int index)
-{
-  mpJacobianComboBox->setToolTip(mpJacobianComboBox->itemData(index, Qt::ToolTipRole).toString());
 }
 
 /*!

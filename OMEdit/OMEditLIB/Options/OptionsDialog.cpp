@@ -931,6 +931,10 @@ void OptionsDialog::readFMISettings()
       mpFMIPage->getModelDescriptionFiltersComboBox()->setCurrentIndex(currentIndex);
     }
   }
+  // read include resources
+  if (mpSettings->contains("FMIExport/IncludeResources")) {
+    mpFMIPage->getIncludeResourcesCheckBox()->setChecked(mpSettings->value("FMIExport/IncludeResources").toBool());
+  }
   // read include source code
   if (mpSettings->contains("FMIExport/IncludeSourceCode")) {
     mpFMIPage->getIncludeSourceCodeCheckBox()->setChecked(mpSettings->value("FMIExport/IncludeSourceCode").toBool());
@@ -1566,6 +1570,7 @@ void OptionsDialog::saveFMISettings()
   mpSettings->setValue("FMIExport/Platforms", platforms);
   mpSettings->setValue("FMIExport/solver", mpFMIPage->getSolverForCoSimulationComboBox()->itemData(mpFMIPage->getSolverForCoSimulationComboBox()->currentIndex()).toString());
   mpSettings->setValue("FMIExport/ModelDescriptionFilter", mpFMIPage->getModelDescriptionFiltersComboBox()->currentText());
+  mpSettings->setValue("FMIExport/IncludeResources", mpFMIPage->getIncludeResourcesCheckBox()->isChecked());
   mpSettings->setValue("FMIExport/IncludeSourceCode", mpFMIPage->getIncludeSourceCodeCheckBox()->isChecked());
   mpSettings->setValue("FMIExport/GenerateDebugSymbols", mpFMIPage->getGenerateDebugSymbolsCheckBox()->isChecked());
   mpSettings->setValue("FMIImport/DeleteFMUDirectoyAndModel", mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->isChecked());
@@ -1991,16 +1996,15 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // activate access annotation
   mpActivateAccessAnnotationsLabel = new Label(tr("Activate Access Annotations *"));
   mpActivateAccessAnnotationsComboBox = new QComboBox;
+  QStringList activateAccessAnnotationsDescriptions;
+  activateAccessAnnotationsDescriptions << tr("Activates the access annotations even for the non-encrypted libraries.")
+                      << tr("Activates the access annotations even if the .mol contains a non-encrypted library.")
+                      << tr("Deactivates access annotations except for encrypted libraries.");
   mpActivateAccessAnnotationsComboBox->addItem(tr("Always"), GeneralSettingsPage::Always);
   mpActivateAccessAnnotationsComboBox->addItem(tr("When loading .mol file(s)"), GeneralSettingsPage::Loading);
   mpActivateAccessAnnotationsComboBox->addItem(tr("Never"), GeneralSettingsPage::Never);
   mpActivateAccessAnnotationsComboBox->setCurrentIndex(1);
-  mpActivateAccessAnnotationsComboBox->setToolTip(tr("<html><head/><body>"
-                                                     "<p>Options for handling of access annotations:</p>"
-                                                     "<ul><li><i>Always:</i> Activates the access annotations even for the non-encrypted libraries.</li>"
-                                                     "<li><i>When loading .mol file(s):</i> Activates the access annotations even if the .mol contains a non-encrypted library.</li>"
-                                                     "<li><i>Never:</i> Deactivates access annotations except for encrypted libraries.</li></ul>"
-                                                     "</body></html>"));
+  Utilities::setToolTip(mpActivateAccessAnnotationsComboBox, tr("Options for handling of access annotations"), activateAccessAnnotationsDescriptions);
   // create backup file
   mpCreateBackupFileCheckbox = new QCheckBox(tr("Create a model.bak-mo backup file when deleting a model."));
   mpCreateBackupFileCheckbox->setChecked(true);
@@ -2620,16 +2624,15 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   // Byte Order Mark BOM
   mpBOMLabel = new Label(tr("Byte Order Mark (BOM):"));
   mpBOMComboBox = new QComboBox;
-  mpBOMComboBox->setToolTip(tr("<html><head/><body>"
-                               "<p>Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any.</p>"
-                               "<ul><li><i>Always Add:</i> always add a BOM when saving a file.</li>"
-                               "<li><i>Keep If Already Present:</i> save the file with a BOM if it already had one when it was loaded.</li>"
-                               "<li><i>Always Delete:</i> never write a BOM, possibly deleting a pre-existing one.</li></ul>"
-                               "</body></html>"));
+  QStringList bomDescriptions;
+  bomDescriptions << tr("Always add a BOM when saving a file.")
+                  << tr("Save the file with a BOM if it already had one when it was loaded.")
+                  << tr("Never write a BOM, possibly deleting a pre-existing one.");
   mpBOMComboBox->addItem(tr("Always Add"), Utilities::AlwaysAddBom);
   mpBOMComboBox->addItem(tr("Keep If Already Present"), Utilities::KeepBom);
   mpBOMComboBox->addItem(tr("Always Delete"), Utilities::AlwaysDeleteBom);
   mpBOMComboBox->setCurrentIndex(1);
+  Utilities::setToolTip(mpBOMComboBox, tr("Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any"), bomDescriptions);
   // set format groupbox layout
   QGridLayout *pFormatGroupBoxLayout = new QGridLayout;
   pFormatGroupBoxLayout->addWidget(mpLineEndingLabel, 0, 0);
@@ -3842,13 +3845,8 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
   mpTargetLanguageComboBox = new QComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
-  mpTargetLanguageComboBox->setToolTip(simCodeTarget.mainDescription);
-  int i = 0;
-  foreach (QString description, simCodeTarget.descriptions) {
-    mpTargetLanguageComboBox->setItemData(i, description, Qt::ToolTipRole);
-    i++;
-  }
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
+  Utilities::setToolTip(mpTargetLanguageComboBox, simCodeTarget.mainDescription, simCodeTarget.descriptions);
   // Target Build
   mpTargetBuildLabel = new Label(tr("Target Build:"));
   mpTargetBuildComboBox = new QComboBox;
@@ -4969,10 +4967,15 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH matching pattern \"*-*-*-*cc\"."));
   mpLinkingComboBox = new QComboBox;
   mpLinkingComboBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+  QStringList linkingDescriptions;
+  linkingDescriptions << "Do not generate code for any platform i.e., a source only FMU."
+                      << "Generate the FMU with dynamically linked runtime for current platform."
+                      << "Generate the FMU with statically linked runtime for current platform.";
   mpLinkingComboBox->addItem(tr("None"), "none");
   mpLinkingComboBox->addItem(tr("Dynamic"), "dynamic");
   mpLinkingComboBox->addItem(tr("Static"), "static");
   mpLinkingComboBox->setCurrentIndex(2);
+  Utilities::setToolTip(mpLinkingComboBox, "Platforms", linkingDescriptions);
   // set the type groupbox layout
   QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
   pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -4993,14 +4996,11 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");
   mpModelDescriptionFiltersComboBox = new QComboBox;
   mpModelDescriptionFiltersComboBox->addItems(fmiFilters.validOptions);
-  mpModelDescriptionFiltersComboBox->setToolTip(fmiFilters.mainDescription);
-  int i = 0;
-  foreach (QString description, fmiFilters.descriptions) {
-    mpModelDescriptionFiltersComboBox->setItemData(i, description, Qt::ToolTipRole);
-    i++;
-  }
   mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText("internal"));
+  Utilities::setToolTip(mpModelDescriptionFiltersComboBox, fmiFilters.mainDescription, fmiFilters.descriptions);
   connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableIncludeSourcesCheckBox(QString)));
+  // include resources checkbox
+  mpIncludeResourcesCheckBox = new QCheckBox(tr("Include Modelica based resources via loadResource"));
   // include source code checkbox
   mpIncludeSourceCodeCheckBox = new QCheckBox(tr("Include Source Code (model description filter \"blackBox\" will override this, because black box FMUs do never contain their source code.)"));
   mpIncludeSourceCodeCheckBox->setChecked(true);
@@ -5022,8 +5022,9 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pExportLayout->addWidget(mpSolverForCoSimulationComboBox, 5, 1, 1, 2);
   pExportLayout->addWidget(new Label(tr("Model Description Filters:")), 6, 0);
   pExportLayout->addWidget(mpModelDescriptionFiltersComboBox, 6, 1, 1, 2);
-  pExportLayout->addWidget(mpIncludeSourceCodeCheckBox, 7, 0, 1, 3);
-  pExportLayout->addWidget(mpGenerateDebugSymbolsCheckBox, 8, 0, 1, 3);
+  pExportLayout->addWidget(mpIncludeResourcesCheckBox, 7, 0, 1, 3);
+  pExportLayout->addWidget(mpIncludeSourceCodeCheckBox, 8, 0, 1, 3);
+  pExportLayout->addWidget(mpGenerateDebugSymbolsCheckBox, 9, 0, 1, 3);
   mpExportGroupBox->setLayout(pExportLayout);
   // import groupbox
   mpImportGroupBox = new QGroupBox(tr("Import"));

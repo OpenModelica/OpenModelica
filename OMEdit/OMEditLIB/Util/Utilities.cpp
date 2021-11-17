@@ -107,12 +107,14 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpCaseSensitiveCheckBox = new QCheckBox(tr("Case Sensitive"));
   // create the search syntax combobox
   mpSyntaxComboBox = new QComboBox;
+  QStringList syntaxDescriptions;
+  syntaxDescriptions << tr("A rich Perl-like pattern matching syntax.")
+                      << tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\".")
+                      << tr("Fixed string matching.");
   mpSyntaxComboBox->addItem(tr("Regular Expression"), QRegExp::RegExp);
-  mpSyntaxComboBox->setItemData(0, tr("A rich Perl-like pattern matching syntax."), Qt::ToolTipRole);
   mpSyntaxComboBox->addItem(tr("Wildcard"), QRegExp::Wildcard);
-  mpSyntaxComboBox->setItemData(1, tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\"."), Qt::ToolTipRole);
   mpSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
-  mpSyntaxComboBox->setItemData(2, tr("Fixed string matching."), Qt::ToolTipRole);
+  Utilities::setToolTip(mpSyntaxComboBox, "Filters", syntaxDescriptions);
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
   pFiltersWidgetLayout->setContentsMargins(0, 0, 0, 0);
@@ -1297,7 +1299,7 @@ QString Utilities::convertSymbolToUnit(const QString symbol)
 
 /*!
  * \brief Utilities::adjustRectangle
- * Adjusts the
+ * Adjusts the scene rectangle.
  * \param rectangle
  * \param factor
  * \return
@@ -1317,4 +1319,28 @@ QRectF Utilities::adjustSceneRectangle(const QRectF sceneRectangle, const qreal 
   const qreal heightFactor = sceneRectangle.width() * factor;
   rectangle.adjust(-widthFactor, -heightFactor, widthFactor, heightFactor);
   return rectangle;
+}
+
+/*!
+ * \brief Utilities::setToolTip
+ * Sets the tooltip for Combobox and its items.
+ * \param pComboBox
+ * \param description
+ * \param optionsDescriptions
+ */
+void Utilities::setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions)
+{
+  QString itemsToolTip;
+  for (int i = 0; i < pComboBox->count(); ++i) {
+    // skip empty items
+    if (!pComboBox->itemText(i).isEmpty()) {
+      itemsToolTip.append(QString("<li><i>%1</i>").arg(pComboBox->itemText(i)));
+      if (optionsDescriptions.size() > i && !optionsDescriptions.at(i).isEmpty()) {
+        itemsToolTip.append(QString(": %1").arg(optionsDescriptions.at(i)));
+        pComboBox->setItemData(i, optionsDescriptions.at(i), Qt::ToolTipRole);
+      }
+      itemsToolTip.append("</li>");
+    }
+  }
+  pComboBox->setToolTip(QString("<html><head/><body><p>%1</p><ul>%2</ul></body></html>").arg(description, itemsToolTip));
 }
