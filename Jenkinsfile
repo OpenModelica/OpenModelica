@@ -206,7 +206,7 @@ pipeline {
               common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/opt/cmake-3.17.2/bin/cmake')
               sh "build/bin/omc --version"
             }
-            // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
+            stash name: 'omc-cmake-gcc', includes: 'build/**'
           }
         }
         stage('checks') {
@@ -236,6 +236,35 @@ pipeline {
     }
     stage('tests') {
       parallel {
+        stage('testsuite-cmake-gcc') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache-bionic-cmake-3.17.2'
+              label 'linux'
+              args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
+                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-gcc'
+              unstash 'omc-cmake-gcc'
+              common.makeLibsAndCache()
+              common.partest()
+            }
+          }
+        }
         // stage('cross-build-fmu') {
         //   agent {
         //     label 'linux'
