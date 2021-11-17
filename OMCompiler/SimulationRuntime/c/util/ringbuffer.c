@@ -110,7 +110,7 @@ void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
 {
   assertStreamPrint(NULL, rb->nElements > 0, "empty RingBuffer");
   assertStreamPrint(NULL, n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
-  assertStreamPrint(NULL, 0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+  assertStreamPrint(NULL, n > 0, "Can't deque nothing or negative amount.");
 
   rb->firstElement = (rb->firstElement+n)%rb->bufferSize;
   rb->nElements -= n;

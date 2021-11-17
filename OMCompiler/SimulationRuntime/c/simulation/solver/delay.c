@@ -84,7 +84,6 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
     curTime = bufferElem->t;
     /* Check for an event */
     if (fabs(prevTime-curTime)< 1e-12) {
-      // TODO: I'm finding events to early...
       *foundEvent = 1 /* true */;
       infoStreamPrint(LOG_EVENTS, 0, "Found event stored at time %f while searching for %f", curTime, time);
       plotRingBuffer(delayStruct, LOG_UTIL, printDelayBuffer);
@@ -139,9 +138,17 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
     }
   }
 
-  /* Check if (time,value) pair is already saved */
+  /* Check if (time,value) pair is already saved
+   * This should happen after an event was found and the event iteration finished */
   if (length > 0) {
     if (fabs(lastElem->t-time) < 1e-12 && fabs(lastElem->value-exprValue) < DBL_EPSILON) {
+      /* Remove stuff that is not needed any more */
+      row = findTime(time-delayTime+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
+      if(row > 0){
+        dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row);
+        infoStreamPrint(LOG_DELAY, 0, "storeDelayedExpression: dequeueNFirstRingDatas[%d] %g = %g", row, time-delayTime+DBL_EPSILON, delayTime);
+        plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_STDOUT, printDelayBuffer);
+      }
       return;
     }
   }
@@ -154,13 +161,15 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_STDOUT, printDelayBuffer);
 
   /* Dequeue not longer needed values from ring buffer */
+  /* TODO: Only remove when it is clear that no event can happen */
   row = findTime(time-delayTime+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
   if(foundEvent) {
     infoStreamPrint(LOG_EVENTS, 0, "Current time: %f.", data->localData[0]->timeValue);
   }
-  if(row > 0){
-    dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row-1);
-    infoStreamPrint(LOG_DELAY, 0, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", row, time-delayTime+DBL_EPSILON, delayTime);
+  if(row > 0 && !foundEvent){
+    dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row);
+    infoStreamPrint(LOG_DELAY, 0, "storeDelayedExpression: dequeueNFirstRingDatas[%d] %g = %g", row, time-delayTime+DBL_EPSILON, delayTime);
+    plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_STDOUT, printDelayBuffer);
   }
 }
 
