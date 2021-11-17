@@ -6,6 +6,23 @@ extern "C" {
 
 #include <meta/meta_modelica.h>
 #include <stdio.h>
+
+// CMake will define this on the compile command line if we
+// are building a shared library.
+// While dllexport and dllimport usually need more care (like a proper
+// header to use for importing ...), this is
+// enough for us. The library OpenModelicaCompiler is used by us only
+// and mingw does not require corresponding dllimports. We will revisit
+// it for Visual Studio later.
+#if defined(OpenModelicaCompiler_EXPORTS) && defined(WIN32)
+#  define OPENMODELICACOMPILER_EXPORT __declspec(dllexport)
+#else
+#  define OPENMODELICACOMPILER_EXPORT
+#endif
+
+
+
+
 extern void
 #if defined(OMC_GENERATE_RELOCATABLE_CODE)
 (*omc_Main_main)
@@ -28,7 +45,7 @@ static int rml_execution_failed()
   return 1;
 }
 
-int __omc_main(int argc, char **argv)
+OPENMODELICACOMPILER_EXPORT int __omc_main(int argc, char **argv)
 {
   MMC_INIT(0);
   {
