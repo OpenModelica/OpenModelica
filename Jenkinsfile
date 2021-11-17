@@ -236,6 +236,37 @@ pipeline {
     }
     stage('tests') {
       parallel {
+        stage('cross-build-fmu') {
+          agent {
+            label 'linux'
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache')
+              // deps.pull() // Already built...
+              def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
+              deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}'") {
+                common.standardSetup()
+                unstash 'omc-clang'
+                common.makeLibsAndCache()
+                writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
+                sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
+                sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
+                stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu'
+                stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
+                archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
+              }
+            }
+          }
+        }
         stage('testsuite-clang 1/3') {
           agent {
             dockerfile {
@@ -420,42 +451,6 @@ pipeline {
               unstash 'omc-gcc'
               common.makeLibsAndCache()
               common.partest(3,3)
-            }
-          }
-        }
-
-        stage('testsuite-fmu-crosscompile') {
-          stages {
-            stage('cross-build-fmu') {
-              agent {
-                label 'linux'
-              }
-              environment {
-                RUNTESTDB = "/cache/runtest/"
-                LIBRARIES = "/cache/omlibrary"
-              }
-              when {
-                beforeAgent true
-                expression { shouldWeRunTests }
-              }
-              steps {
-                script {
-                  def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache')
-                  // deps.pull() // Already built...
-                  def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
-                  deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}'") {
-                    common.standardSetup()
-                    unstash 'omc-clang'
-                    common.makeLibsAndCache()
-                    writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
-                    sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
-                    sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
-                    stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu'
-                    stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
-                    archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
-                  }
-                }
-              }
             }
           }
         }
@@ -668,23 +663,7 @@ pipeline {
 
       }
     }
-    stage('OMEdit testsuite') {
-      parallel {
-        stage('clang-qt5') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
-              label 'linux'
-              alwaysPull true
-            }
-          }
-          steps {
-            script { common.buildAndRunOMEditTestsuite('omedit-testsuite-clang') }
-          }
-        }
-      }
-    }
-    stage('fmuchecker') {
+    stage('fmuchecker + OMEdit testsuite') {
       parallel {
         stage('linux-wine-fmuchecker') {
           agent {
@@ -763,6 +742,18 @@ pipeline {
             ./single-fmu-run.sh arm-linux-gnueabihf `cat VERSION` /usr/local/bin/fmuCheck.arm-linux-gnueabihf
             '''
             stash name: 'cross-fmu-results-armhf', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
+          }
+        }
+        stage('clang-qt5') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          steps {
+            script { common.buildAndRunOMEditTestsuite('omedit-testsuite-clang') }
           }
         }
       }
