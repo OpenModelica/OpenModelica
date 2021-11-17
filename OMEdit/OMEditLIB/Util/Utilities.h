@@ -545,6 +545,7 @@ namespace Utilities {
   QString convertUnitToSymbol(const QString displayUnit);
   QString convertSymbolToUnit(const QString symbol);
   QRectF adjustSceneRectangle(const QRectF sceneRectangle, const qreal factor);
+  void setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions);
 } // namespace Utilities
 
 #endif // UTILITIES_H
