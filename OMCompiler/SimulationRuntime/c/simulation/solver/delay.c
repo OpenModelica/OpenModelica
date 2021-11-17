@@ -126,15 +126,11 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
 
   /* Check if time is greater equal then last stored time in delay structure */
   if (length > 0) {
-    // data->simulationInfo->discreteCall
     lastElem = getRingData(data->simulationInfo->delayStructure[exprNumber], length-1);
-    //assertStreamPrint(threadData, time >= lastElem->t, "storeDelayedExpression: time is not greater then previous saved value.");
     while (time < lastElem->t) {
-      printf("AHeu: storeDelayedExpression: time is not greater then previous saved value for (%e,%e)\n",time,exprValue);
       removeLastRingData(data->simulationInfo->delayStructure[exprNumber],1);
       length = ringBufferLength(data->simulationInfo->delayStructure[exprNumber]);
       lastElem = getRingData(data->simulationInfo->delayStructure[exprNumber], length-1);
-      //return;
     }
   }
 
@@ -146,8 +142,6 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
       row = findTime(time-delayTime+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
       if(row > 0){
         dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row);
-        infoStreamPrint(LOG_DELAY, 0, "storeDelayedExpression: dequeueNFirstRingDatas[%d] %g = %g", row, time-delayTime+DBL_EPSILON, delayTime);
-        plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_STDOUT, printDelayBuffer);
       }
       return;
     }
@@ -157,20 +151,19 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   tpl.t = time;
   tpl.value = exprValue;
   appendRingData(data->simulationInfo->delayStructure[exprNumber], &tpl);
-  infoStreamPrint(LOG_DELAY, 0, "storeDelayed[%d] (%g,%g) position=%d", exprNumber, time, exprValue, ringBufferLength(data->simulationInfo->delayStructure[exprNumber]));
-  plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_STDOUT, printDelayBuffer);
 
   /* Dequeue not longer needed values from ring buffer */
-  /* TODO: Only remove when it is clear that no event can happen */
   row = findTime(time-delayTime+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
   if(foundEvent) {
     infoStreamPrint(LOG_EVENTS, 0, "Current time: %f.", data->localData[0]->timeValue);
   }
   if(row > 0 && !foundEvent){
     dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row);
-    infoStreamPrint(LOG_DELAY, 0, "storeDelayedExpression: dequeueNFirstRingDatas[%d] %g = %g", row, time-delayTime+DBL_EPSILON, delayTime);
-    plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_STDOUT, printDelayBuffer);
   }
+
+  /* Debug print */
+  infoStreamPrint(LOG_DELAY, 0, "storeDelayed[%d] (%g,%g) position=%d", exprNumber, time, exprValue, ringBufferLength(data->simulationInfo->delayStructure[exprNumber]));
+  plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_DELAY, printDelayBuffer);
 }
 
 
