@@ -1,7 +1,6 @@
 // name: ZeroRange
 // status: correct
 // teardown_command: rm -f ZeroRange_*
-// cflags: -d=newInst
 
 loadFile("ZeroRange.mo");
 
@@ -52,7 +51,7 @@ ZeroRange.testRangeLoop(0,0,1);getErrorString();
 // ""
 // 0
 // ""
-// [:0:0-0:0:writable]Modelica Assert: assertion range step != 0 failed!
 // fail()
-// ""
+// "Error: assertion range step != 0 failed
+// "
 // endResult
