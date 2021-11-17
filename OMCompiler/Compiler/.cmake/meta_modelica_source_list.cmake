@@ -178,7 +178,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/IOStream.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Lapack.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/List.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/ModelicaExternalC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Mutable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Pointer.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Print.mo

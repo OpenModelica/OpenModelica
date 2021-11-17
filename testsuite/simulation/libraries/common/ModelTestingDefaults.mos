@@ -3,7 +3,7 @@ loadFile(getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTesting.mo");
 GC_expand_hp(500*1024*1024); // ~300 MB to load MSL, 200MB more for the smallest models to simulate
 packageName := $TypeName(Modelica);
 packageVersion := "3.2.1";
-setCommandLineOptions("+d=nogen"); // Use and so I don't need to baseline the tests again...
+setCommandLineOptions("-d=nogen"); // Use and so I don't need to baseline the tests again...
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.C;
 diffAlgorithm := OpenModelicaModelTesting.DiffAlgorithm.diffSimulationResults;

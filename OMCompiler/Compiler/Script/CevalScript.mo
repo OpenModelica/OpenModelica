@@ -1314,7 +1314,7 @@ algorithm
       algorithm
         Absyn.CLASS(info=SOURCEINFO(fileName=filename,lastModification=r2)) :=
           Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        (true,_,r1) := System.stat(filename);
+        (true,_,r1,_) := System.stat(filename);
         if not realEq(r1, r2) then
           reloadClass(filename, encoding);
         end if;

@@ -62,6 +62,7 @@ import NFPrefixes.Variability;
 import RangeIterator = NFRangeIterator;
 import SCode;
 import SCodeUtil;
+import Settings;
 import System;
 import Testsuite;
 import UnorderedMap;
@@ -1018,6 +1019,7 @@ protected
   SCode.Annotation ann;
   list<String> libs = {}, dirs = {}, paths = {};
   Boolean found = false;
+  String installLibDir = Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc";
 algorithm
   // Read libraries and library directories from the annotation if it exists.
   if isSome(extAnnotation) then
@@ -1035,7 +1037,7 @@ algorithm
   for lib in libs loop
     // For functions that are linked into the compiler itself we pass an empty
     // string to loadLibrary.
-    if stringEmpty(lib) or lib == "ModelicaExternalC" or lib == "ModelicaIO" then
+    if stringEmpty(lib) then
       paths := "" :: paths;
       continue;
     end if;
@@ -1051,6 +1053,7 @@ algorithm
       paths := (dir + "/" + lib) :: paths;
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
     end for;
+    paths := installLibDir + "/" + lib :: paths;
   end for;
 
   // If no Library annotation was given, append an empty string to search for

@@ -2989,16 +2989,34 @@ static char *omc_strtok_r(char *str, const char *delim, char **saveptr)
 
 #endif /* defined(__MINGW32__) */
 
-int SystemImpl__stat(const char *filename, double *size, double *mtime)
+typedef enum {
+    FileType_NoFile = 1,
+    FileType_RegularFile,
+    FileType_Directory,
+    FileType_SpecialFile
+} OpenModelicaFileType;
+
+int SystemImpl__stat(const char *filename, double *size, double *mtime, int *fileType)
 {
   struct stat stats;
   if (0 != stat(filename, &stats)) {
     *size = 0;
     *mtime = 0;
+    *fileType = FileType_NoFile;
     return 0;
   }
   *size = stats.st_size;
   *mtime = stats.st_mtime;
+  if (S_ISREG(stats.st_mode)) {
+    *fileType = FileType_RegularFile;
+  }
+  else if (S_ISDIR(stats.st_mode)) {
+    *fileType = FileType_Directory;
+  }
+  else {
+    *fileType = FileType_SpecialFile;
+  }
+
   return 1;
 }
 

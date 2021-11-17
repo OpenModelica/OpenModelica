@@ -75,7 +75,6 @@ protected import Flags;
 protected import InstBinding;
 protected import InstUtil;
 protected import List;
-protected import ModelicaExternalC;
 protected import Print;
 protected import SCode;
 import SCodeUtil;
@@ -1281,49 +1280,6 @@ algorithm
       equation
         print(str);
       then Values.NORETCALL();
-    case ("ModelicaStreams_closeFile",{Values.STRING(fileName)},_)
-      equation
-        ModelicaExternalC.Streams_close(fileName);
-      then Values.NORETCALL();
-    case ("ModelicaInternal_print",{Values.STRING(str),Values.STRING(fileName)},_)
-      equation
-        ModelicaExternalC.Streams_print(str,fileName);
-      then Values.NORETCALL();
-    case ("ModelicaInternal_countLines",{Values.STRING(fileName)},_)
-      equation
-        i = ModelicaExternalC.Streams_countLines(fileName);
-      then Values.INTEGER(i);
-    case ("ModelicaInternal_readLine",{Values.STRING(fileName),Values.INTEGER(lineNumber)},_)
-      equation
-        (str,b) = ModelicaExternalC.Streams_readLine(fileName,lineNumber);
-      then Values.TUPLE({Values.STRING(str),Values.BOOL(b)});
-    case ("ModelicaInternal_fullPathName",{Values.STRING(fileName)},_)
-      equation
-        fileName = ModelicaExternalC.File_fullPathName(fileName);
-      then Values.STRING(fileName);
-    case ("ModelicaInternal_stat",{Values.STRING(str)},_)
-      equation
-        i = ModelicaExternalC.File_stat(str);
-        str = listGet({"NoFile", "RegularFile", "Directory", "SpecialFile"}, i);
-        p = AbsynUtil.stringListPath({"OpenModelica","Scripting","Internal","FileType",str});
-        v = Values.ENUM_LITERAL(p,i);
-      then v;
-
-    case ("ModelicaStrings_compare",{Values.STRING(str1),Values.STRING(str2),Values.BOOL(b)},_)
-      equation
-        i = ModelicaExternalC.Strings_compare(str1,str2,b);
-        p = listGet({EnumCompareLess,EnumCompareEqual,EnumCompareGreater},i);
-      then Values.ENUM_LITERAL(p,i);
-
-    case ("ModelicaStrings_scanReal",{Values.STRING(str),Values.INTEGER(i),Values.BOOL(b)},_)
-      equation
-        (i,r) = ModelicaExternalC.Strings_scanReal(str,i,b);
-      then Values.TUPLE({Values.INTEGER(i),Values.REAL(r)});
-
-    case ("ModelicaStrings_skipWhiteSpace",{Values.STRING(str),Values.INTEGER(i)},_)
-      equation
-        i = ModelicaExternalC.Strings_skipWhiteSpace(str,i);
-      then Values.INTEGER(i);
 
     case ("OpenModelica_regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},_)
       equation

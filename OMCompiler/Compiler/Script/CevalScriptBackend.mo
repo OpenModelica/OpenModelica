@@ -1932,6 +1932,7 @@ algorithm
       list<tuple<Diff, list<SimpleModelicaParser.ParseTree>>> treeDiffs;
       SourceInfo info;
       SymbolTable forkedSymbolTable;
+      System.StatFileType statFileType;
 
     case (cache,_,"getAvailableIndexReductionMethods",_,_)
       equation
@@ -2105,6 +2106,21 @@ algorithm
       algorithm
         (b,r1,r2) := System.stat(str);
       then (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(r1),Values.REAL(r2)}));
+
+    case (cache,_,"regularFileExists",{Values.STRING(str)},_)
+      algorithm
+        (_,_,_,statFileType) := System.stat(str);
+      then (cache,Values.BOOL(statFileType==System.StatFileType.RegularFile));
+
+    case (cache,_,"directoryExists",{Values.STRING(str)},_)
+      algorithm
+        (_,_,_,statFileType) := System.stat(str);
+      then (cache,Values.BOOL(statFileType==System.StatFileType.Directory));
+
+    case (cache,_,"OpenModelicaInternal_fullPathName",{Values.STRING(str)},_)
+      algorithm
+        str := System.realpath(str);
+      then (cache,Values.STRING(str));
 
     case (cache,_,"isType",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
