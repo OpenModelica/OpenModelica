@@ -119,6 +119,7 @@ import RewriteRules;
 import SCode;
 import SCodeDump;
 import SCodeUtil;
+import SemanticVersion;
 import Settings;
 import SimCodeMain;
 import SimpleModelicaParser;
@@ -2363,6 +2364,26 @@ algorithm
         v := ValuesUtil.makeArray({});
       then (cache,v);
 
+    case (cache,_,"getAvailablePackageConversionsFrom",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)},_)
+      algorithm
+        v := ValuesUtil.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, true));
+      then (cache,v);
+
+    case (cache,_,"getAvailablePackageConversionsFrom",_,_)
+      algorithm
+        v := ValuesUtil.makeArray({});
+      then (cache,v);
+
+    case (cache,_,"getAvailablePackageConversionsTo",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)},_)
+      algorithm
+        v := ValuesUtil.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, true));
+      then (cache,v);
+
+    case (cache,_,"getAvailablePackageConversionsTo",_,_)
+      algorithm
+        v := ValuesUtil.makeArray({});
+      then (cache,v);
+
     case (cache,_,"getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
         (absynClass as Absyn.CLASS()) = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
@@ -3192,8 +3213,11 @@ algorithm
     case (cache,_,"relocateFunctions",_,_)
       then (cache,Values.BOOL(false));
 
-    case (_, _, "convertPackage", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)}, _)
-      then (inCache, convertPackage(path, str));
+    case (_, _, "runConversionScript", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)}, _)
+      then (inCache, runConversionScript(path, str));
+
+    case (_, _, "convertPackageToLibrary", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)}, _)
+      then (inCache, convertPackageToLibrary(classpath, path, str));
 
  end matchcontinue;
 end cevalInteractiveFunctions4;
@@ -8555,7 +8579,7 @@ algorithm
   result := Values.STRING(str);
 end instantiateModel;
 
-protected function convertPackage
+protected function runConversionScript
   input Absyn.Path clsPath;
   input String scriptFile;
   output Values.Value res;
@@ -8566,7 +8590,7 @@ protected
 algorithm
   try
     p := SymbolTable.getAbsyn();
-    cls := InteractiveUtil.getPathedClassInProgram(clsPath, p);
+    cls := Interactive.getPathedClassInProgram(clsPath, p, showError = true);
     //System.startTimer();
     cls := Conversion.convertPackage(cls, scriptFile);
     //System.stopTimer();
@@ -8578,7 +8602,150 @@ algorithm
   else
     res := Values.BOOL(false);
   end try;
-end convertPackage;
+end runConversionScript;
+
+protected function convertPackageToLibrary
+  input Absyn.Path clsPath;
+  input Absyn.Path libPath;
+  input String libVersion;
+  output Values.Value res;
+protected
+  Absyn.Program p, lib_program;
+  Absyn.Class cls, lib_cls;
+  Absyn.Within wi;
+  list<String> cls_uses, lib_converts_from;
+  Boolean b, has_conversion;
+  Option<String> uses_version;
+  SemanticVersion.Version lib_version, lib_version_used;
+  list<tuple<String, Option<String>, Option<String>>> conversions;
+  list<String> scripts;
+algorithm
+  try
+    // Get the Absyn for the class and check which version of the library it's using.
+    p := SymbolTable.getAbsyn();
+    cls := Interactive.getPathedClassInProgram(clsPath, p, showError = true);
+    uses_version := Interactive.getUsedVersion(cls, libPath);
+
+    if isSome(uses_version) then
+      lib_version_used := SemanticVersion.parse(Util.getOption(uses_version), true);
+    else
+      Error.addMessage(Error.CONVERSION_MISSING_USES,
+        {AbsynUtil.pathString(clsPath), AbsynUtil.pathString(libPath)});
+      fail();
+    end if;
+
+    // Load the library that we want to convert the class to.
+    (lib_program, true) := CevalScript.loadModel(
+      {(libPath, AbsynUtil.pathFirstIdent(libPath), {libVersion}, false)},
+      Settings.getModelicaPath(Testsuite.isRunning()),
+      p, true, true, false, true);
+    SymbolTable.setAbsyn(lib_program);
+
+    // Get the version of the library.
+    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, lib_program));
+
+    // Try to find a sequence of conversion scripts that can be used to convert
+    // the class to the desired library version.
+    lib_cls := Interactive.getPathedClassInProgram(libPath, lib_program, showError = true);
+    conversions := Interactive.getConversionsInClass(lib_cls);
+    scripts := findConversionPaths(conversions, lib_version, lib_version_used);
+
+    if listEmpty(scripts) then
+      Error.addMessage(Error.CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND,
+        {AbsynUtil.pathString(libPath),
+         SemanticVersion.toString(lib_version_used),
+         SemanticVersion.toString(lib_version)});
+      fail();
+    end if;
+
+    // Apply the conversion scripts.
+    for script in scripts loop
+      script := uriToFilename(script);
+      cls := Conversion.convertPackage(cls, script);
+    end for;
+
+    // Update the uses-annotation in the class to refer to the new version of the library.
+    cls := Interactive.updateUsedVersion(cls, libPath, SemanticVersion.toString(lib_version));
+
+    // Finally update the class in the global Absyn.
+    wi := InteractiveUtil.buildWithin(clsPath);
+    lib_program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, wi), lib_program);
+    SymbolTable.setAbsyn(lib_program);
+    res := Values.BOOL(true);
+  else
+    res := Values.BOOL(false);
+  end try;
+end convertPackageToLibrary;
+
+function findConversionPaths
+  "Tries to find the shortest path for converting from one version to another
+   and returns the list of conversion scripts for that path. Usually only one
+   conversion is needed, but sometimes the conversion might need to be done in
+   several steps (e.g. 2.0.0 => 2.3.5 => 2.4.0)."
+  input list<tuple<String, Option<String>, Option<String>>> conversions;
+  input SemanticVersion.Version libVersion;
+  input SemanticVersion.Version libVersionUsed;
+  input Integer depth = 0;
+  output list<String> scripts = {};
+protected
+  String version;
+  list<list<String>> paths = {};
+  Integer path_len, path_min = 100;
+algorithm
+  // Abort if we go too deep to avoid crashing on malicious conversion annotations.
+  if depth > 100 then
+    return;
+  end if;
+
+  // Find the possible path for each conversion to the version we're looking for.
+  for c in conversions loop
+    paths := findConversionPath(c, libVersion, libVersionUsed, conversions, depth) :: paths;
+  end for;
+
+  // Return the shortest non-empty path.
+  for p in paths loop
+    path_len := listLength(p);
+
+    if path_len > 0 and path_len < path_min then
+      scripts := p;
+      path_min := path_len;
+    end if;
+  end for;
+end findConversionPaths;
+
+function findConversionPath
+  input tuple<String, Option<String>, Option<String>> conversion;
+  input SemanticVersion.Version libVersion;
+  input SemanticVersion.Version libVersionUsed;
+  input list<tuple<String, Option<String>, Option<String>>> conversions;
+  input Integer depth;
+  output list<String> scripts = {};
+protected
+  String from;
+  Option<String> to;
+  Option<String> script;
+  SemanticVersion.Version from_version, to_version;
+algorithm
+  (from, to, script) := conversion;
+
+  if isNone(script) then
+    return;
+  end if;
+
+  from_version := SemanticVersion.parse(from, true);
+
+  if SemanticVersion.compare(libVersionUsed, from_version) == 0 then
+    if isSome(to) then
+      to_version := SemanticVersion.parse(Util.getOption(to), true);
+
+      if SemanticVersion.compare(libVersion, to_version) <> 0 then
+        scripts := findConversionPaths(conversions, libVersion, to_version, depth + 1);
+      end if;
+    end if;
+
+    scripts := Util.getOption(script) :: scripts;
+  end if;
+end findConversionPath;
 
 annotation(__OpenModelica_Interface="backend");
 

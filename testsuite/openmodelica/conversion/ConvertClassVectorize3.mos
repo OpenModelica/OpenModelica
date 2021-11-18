@@ -12,7 +12,7 @@ loadString("
   end ConvertClassVectorize3;
 ");
 
-convertPackage(ConvertClassVectorize3, "scripts/ConvertClassVectorize3.mos");
+runConversionScript(ConvertClassVectorize3, "scripts/ConvertClassVectorize3.mos");
 getErrorString();
 
 // Result:

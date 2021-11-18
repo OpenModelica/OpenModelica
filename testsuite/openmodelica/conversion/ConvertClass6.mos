@@ -13,7 +13,7 @@ loadString("
   end ConvertClass6;
 ");
 
-convertPackage(ConvertClass6, "scripts/ConvertClass4.mos");
+runConversionScript(ConvertClass6, "scripts/ConvertClass4.mos");
 getErrorString();
 list(ConvertClass6);
 
