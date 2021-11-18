@@ -53,7 +53,7 @@ getErrorString();
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'symSolver', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "stdout            | info    | Using sparse solver kinsol for nonlinear system 0 (1216),
-// |                 | |       | because density of 0.04 remains under threshold of 0.20.
+// |                 | |       | because density of 0.04 remains under threshold of 0.10.
 // stdout            | info    | The maximum density for using sparse solvers can be specified
 // |                 | |       | using the runtime flag '<-nlsMaxDensity=value>'.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
