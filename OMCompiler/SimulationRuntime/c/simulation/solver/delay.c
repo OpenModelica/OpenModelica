@@ -84,7 +84,6 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
     /* Check for an event */
     if (fabs(prevTime-curTime)< 1e-12) {
       *foundEvent = 1 /* true */;
-      infoStreamPrint(LOG_EVENTS, 0, "Found delayed event stored at time %f while searching for %f", curTime, time);
       plotRingBuffer(delayStruct, LOG_UTIL, printDelayBuffer);
     }
     if (curTime > time) {
@@ -152,9 +151,6 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
 
   /* Dequeue not longer needed values from ring buffer */
   row = findTime(time-delayTime+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
-  if(foundEvent) {
-    infoStreamPrint(LOG_EVENTS, 0, "Current time: %f.", data->localData[0]->timeValue);
-  }
   if(row > 0 && !foundEvent){
     dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row);
   }
