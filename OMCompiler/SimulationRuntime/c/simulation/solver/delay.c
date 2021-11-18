@@ -137,9 +137,9 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   /* Check if (time,value) pair is already saved
    * This should happen after an event was found and the event iteration finished */
   if (length > 0) {
-    if (fabs(lastElem->t-time) < 1e-12 && fabs(lastElem->value-exprValue) < DBL_EPSILON) {
+    if (fabs(lastElem->t-time) < 1e-10 && fabs(lastElem->value-exprValue) < 1e-10) {
       /* Remove stuff that is not needed any more */
-      row = findTime(time-delayTime+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
+      row = findTime(time-delayTime+1e-10, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
       if(row > 0){
         dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row);
       }
