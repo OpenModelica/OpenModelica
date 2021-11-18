@@ -51,6 +51,15 @@ struct RINGBUFFER
 };
 #include "ringbuffer.h"
 
+/**
+ * @brief Allcoate memroy for ring buffer.
+ *
+ * Free memory with `freeRingBuffer`.
+ *
+ * @param bufferSize      Number of elements in buffer.
+ * @param itemSize        Size of single element in bits.
+ * @return RINGBUFFER*    Pointer to allocated ring buffer.
+ */
 RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize)
 {
   RINGBUFFER *rb = (RINGBUFFER*)malloc(sizeof(RINGBUFFER));
@@ -66,12 +75,26 @@ RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize)
   return rb;
 }
 
+/**
+ * @brief Free ring buffer
+ *
+ * @param rb  Pointer to ring buffer
+ */
 void freeRingBuffer(RINGBUFFER *rb)
 {
   free(rb->buffer);
   free(rb);
 }
 
+/**
+ * @brief Get data of i-th ring buffer element.
+ *
+ * Starts at rb->firstElement.
+ *
+ * @param rb        Non-empty ring buffer.
+ * @param i         Index of element to get data of. Must be in range of the buffer.
+ * @return void*    Pointer to data of i-th ring buffer item.
+ */
 void *getRingData(RINGBUFFER *rb, int i)
 {
   assertStreamPrint(NULL, rb->nElements > 0, "empty RingBuffer");
@@ -80,6 +103,14 @@ void *getRingData(RINGBUFFER *rb, int i)
   return ((char*)rb->buffer)+(((rb->firstElement+i)%rb->bufferSize)*rb->itemSize);
 }
 
+/**
+ * @brief Increase maximum number of elements of ring buffer.
+ *
+ * Doubles the size of the original ring buffer
+ * and copies all values into updated buffer.
+ *
+ * @param rb    Pointer to ring buffer.
+ */
 void expandRingBuffer(RINGBUFFER *rb)
 {
   int i;
@@ -97,6 +128,15 @@ void expandRingBuffer(RINGBUFFER *rb)
   rb->firstElement = 0;
 }
 
+/**
+ * @brief Add element to ring buffer.
+ *
+ * Will add to the end of the filled buffer.
+ * If the buffer isn't big enough it will be expanded.
+ *
+ * @param rb      Pointer to ring buffer.
+ * @param value   Data to add to ring buffer.
+ */
 void appendRingData(RINGBUFFER *rb, void *value)
 {
   if(rb->bufferSize < rb->nElements+1)
@@ -106,6 +146,16 @@ void appendRingData(RINGBUFFER *rb, void *value)
   ++rb->nElements;
 }
 
+/**
+ * @brief Deque first n ring data elements.
+ *
+ * Will only update pointer to fist element
+ * to be n elementes further.
+ * Dequeued data is not freed yet.
+ *
+ * @param rb
+ * @param n
+ */
 void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
 {
   assertStreamPrint(NULL, rb->nElements > 0, "empty RingBuffer");
@@ -117,10 +167,10 @@ void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
 }
 
 /**
- * @brief Remove last n elements from ring buffer.
+ * @brief Deque last n elements from ring buffer.
  *
- * We don't really remove the elements, but decrease nElements.
- * So "deleted" values can be overwritten by appendRingData.
+ * Decrease counter nElements.
+ * Dequeued data is not freed yet.
  *
  * @param rb    Pointer to ring buffer.
  * @param n     Number of elements to remove.
@@ -132,11 +182,28 @@ void removeLastRingData(RINGBUFFER *rb, int n)
   rb->nElements -= n;
 }
 
+/**
+ * @brief Returns length of ring buffer.
+ *
+ * @param rb      Pointer to ring buffer.
+ * @return int    Length of ring buffer.
+ */
 int ringBufferLength(RINGBUFFER *rb)
 {
   return rb->nElements;
 }
 
+/**
+ * @brief Rotate start point of ring buffer by n elements.
+ *
+ * Copy all buffer elements into lookup, if provided.
+ *
+ * @param rb        Pointer to ring buffer.
+ * @param n         Number of items to rotate.
+ * @param lookup    Pointer to array of buffer element type and of length buffer->nElements.
+ *                  Ring data will be written into lookup.
+ *                  Can be NULL.
+ */
 void rotateRingBuffer(RINGBUFFER *rb, int n, void **lookup)
 {
   TRACE_PUSH
@@ -149,9 +216,7 @@ void rotateRingBuffer(RINGBUFFER *rb, int n, void **lookup)
 
   if(lookup)
   {
-    long i;
-
-    for(i=0; i<rb->nElements; ++i){
+    for(long i=0; i<rb->nElements; ++i){
       lookup[i] = getRingData(rb, i);
     }
   }
@@ -159,6 +224,11 @@ void rotateRingBuffer(RINGBUFFER *rb, int n, void **lookup)
   TRACE_POP
 }
 
+/**
+ * @brief Dumps information about ring buffer to LOG_UTIL.
+ *
+ * @param rb    Pointer to ring buffer.
+ */
 void infoRingBuffer(RINGBUFFER *rb)
 {
   if (ACTIVE_STREAM(LOG_UTIL)) {

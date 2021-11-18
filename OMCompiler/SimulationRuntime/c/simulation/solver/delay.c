@@ -63,7 +63,6 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
   double curTime, prevTime;
   TIME_AND_VALUE* bufferElem;
 
-  infoStreamPrint(LOG_DELAY, 0, "findTime %e", time);
   *foundEvent = 0 /* false */;
 
   /* Check if ring buffer is valid */
@@ -85,7 +84,7 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
     /* Check for an event */
     if (fabs(prevTime-curTime)< 1e-12) {
       *foundEvent = 1 /* true */;
-      infoStreamPrint(LOG_EVENTS, 0, "Found event stored at time %f while searching for %f", curTime, time);
+      infoStreamPrint(LOG_EVENTS, 0, "Found delayed event stored at time %f while searching for %f", curTime, time);
       plotRingBuffer(delayStruct, LOG_UTIL, printDelayBuffer);
     }
     if (curTime > time) {
@@ -96,7 +95,6 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
   }
   assertStreamPrint(NULL, pos < end, "delay: In function findTime\nCould not find time");
 
-  infoStreamPrint(LOG_DELAY, 0, "return time[%d, %d] = %e", pos, end, curTime);
   return pos;
 }
 
@@ -167,73 +165,69 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
 }
 
 
+/**
+ * @brief Evaluate delay expression.
+ *
+ * @param data          Pointer to data.
+ * @param threadData    Pointer to thread data.
+ * @param exprNumber    Index of delay expression.
+ * @param exprValue     Value of delay expression.
+ * @param time          Current simulation time.
+ * @param delayTime     Amount of time exprValue should be delayed.
+ * @param delayMax      Maximum time to delay exprValue.
+ * @return double       Return delayed value.
+ */
 double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
   RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
-  int length = ringBufferLength(delayStruct);
+  double timeStamp;
+  double time0, time1, value0, value1;
+  double timedif;
+  double dt0;
+  double dt1;
+  double retVal;
+  int i;
   int foundEvent;
+  int length = ringBufferLength(delayStruct);
 
   infoStreamPrint(LOG_DELAY, 0, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
 
   /* Check for errors */
-
   assertStreamPrint(threadData, 0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
   assertStreamPrint(threadData, exprNumber < data->modelData->nDelayExpressions, "invalid exprNumber = %d", exprNumber);
+  assertStreamPrint(threadData, delayTime >=  0, "Negative delay requested: delayTime = %g", delayTime);
 
+  /* Return expression value before simulation start */
   if(time <= data->simulationInfo->startTime)
   {
-    infoStreamPrint(LOG_DELAY, 0, "delayImpl: Entered at time < starting time: %g.", exprValue);
     return (exprValue);
   }
 
-  if(delayTime < 0.0)
-  {
-    throwStreamPrint(threadData, "Negative delay requested %g", delayTime);
-  }
-
+  /*  Empty delay buffer at initialization phase */
   if(length == 0)
   {
-    /*  This occurs in the initialization phase */
     infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Missing initial value, using argument value %g instead.", exprValue);
     return (exprValue);
   }
 
-  /*
-   * Returns: expr(time?delayTime) for time>time.start + delayTime and
-   *          expr(time.start) for time <= time.start + delayTime.
-   * The arguments, i.e., expr, delayTime and delayMax, need to be subtypes of Real.
-   * DelayMax needs to be additionally a parameter expression.
-   * The following relation shall hold: 0 <= delayTime <= delayMax,
-   * otherwise an error occurs. If delayMax is not supplied in the argument list,
-   * delayTime need to be a parameter expression. See also Section 3.7.2.1.
-   * For non-scalar arguments the function is vectorized according to Section 10.6.12.
-   */
+  /* Return oldest element in ring buffer */
   if(time <= data->simulationInfo->startTime + delayTime)
   {
-    double res = ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
-    infoStreamPrint(LOG_DELAY, 0, "findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res);
-    return res;
+    return ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
   }
+  /* return expr(time-delayTime) */
   else
   {
-    /* return expr(time-delayTime) */
-    double timeStamp = time - delayTime;
-    double time0, time1, value0, value1;
-    int i;
-
-    assertStreamPrint(threadData, 0.0 <= delayTime, "Negative delay requested: delayTime = %g", delayTime);
+    timeStamp = time - delayTime;
 
     /* find the row for the lower limit */
     if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t)
     {
-      infoStreamPrint(LOG_DELAY, 0, "delayImpl: find the row  %g = %g", timeStamp, ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t);
       /* delay between the last accepted time step and the current time */
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->value;
       time1 = time;
       value1 = exprValue;
-      infoStreamPrint(LOG_DELAY, 0, "delayImpl: times %g and %g", time0, time1);
-      infoStreamPrint(LOG_DELAY, 0, "delayImpl: values %g and  %g", value0, value1);
     }
     else
     {
@@ -254,23 +248,23 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
       time1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->t;
       value1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->value;
     }
-    /* was it an exact match?*/
-    if(time0 == timeStamp){
-      infoStreamPrint(LOG_DELAY, 0, "delayImpl: Exact match at %g = %g", timeStamp, value0);
-
+    /* Return left value */
+    if(time0 == timeStamp)
+    {
       return value0;
-    } else if(time1 == timeStamp) {
-      infoStreamPrint(LOG_DELAY, 0, "delayImpl: Exact match at %g = %g", timeStamp, value1);
-
+    }
+    /* Return right value */
+    else if(time1 == timeStamp)
+    {
       return value1;
-    } else {
-      /* linear interpolation */
-      double timedif = time1 - time0;
-      double dt0 = time1 - timeStamp;
-      double dt1 = timeStamp - time0;
-      double retVal = (value0 * dt0 + value1 * dt1) / timedif;
-      infoStreamPrint(LOG_DELAY, 0, "delayImpl: Linear interpolation of %g between %g and %g", timeStamp, time0, time1);
-      infoStreamPrint(LOG_DELAY, 0, "delayImpl: Linear interpolation of %g value: %g and %g = %g", timeStamp, value0, value1, retVal);
+    }
+    /* linear interpolation */
+    else
+    {
+      timedif = time1 - time0;
+      dt0 = time1 - timeStamp;
+      dt1 = timeStamp - time0;
+      retVal = (value0 * dt0 + value1 * dt1) / timedif;
       return retVal;
     }
   }
@@ -279,7 +273,6 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
 
 /**
  * @brief Returns value of zero crossing at current simulation time.
- *
  *
  * @param data            Storing all simulation/model data.
  * @param threadData      Used for error handling.
@@ -308,17 +301,16 @@ double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int expr
   /* Find first event on ring buffer */
   findTime(time - delayTime, delayStruct, &foundEvent);
 
-  /* Case 0: No event to output */
+  /* Flip sign of ZC if an event was found */
   if (!foundEvent)
   {
     return zeroCrossingValue;
   }
-  else /* Case 2: There is an event to output */
+  else
   {
     return -zeroCrossingValue;
   }
 }
-
 
 
 /**
