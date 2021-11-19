@@ -228,10 +228,6 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
     else
     {
       i = findTime(timeStamp, delayStruct, &foundEvent);
-      if (foundEvent) {
-        // TODO: Do something if an event was found!
-      }
-
       assertStreamPrint(threadData, i < length, "%d = i < length = %d", i, length);
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->value;
