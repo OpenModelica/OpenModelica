@@ -715,6 +715,7 @@ public
       case SIZE()            then if isSome(exp.dimIndex) then
                                     Type.INTEGER() else Type.sizeType(typeOf(exp.exp));
       case END()             then Type.INTEGER();
+      case MULTARY()         then Operator.typeOf(exp.operator);
       case BINARY()          then Operator.typeOf(exp.operator);
       case UNARY()           then Operator.typeOf(exp.operator);
       case LBINARY()         then Operator.typeOf(exp.operator);

@@ -57,12 +57,7 @@ protected
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.Equation;
-  import NBEquation.EquationAttributes;
-  import NBEquation.EquationKind;
-  import NBEquation.EquationPointers;
-  import NBEquation.WhenEquationBody;
-  import NBEquation.WhenStatement;
+  import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointer, EquationPointers, WhenEquationBody, WhenStatement, SlicingStatus};
   import BVariable = NBVariable;
   import Jacobian = NBJacobian;
   import Solve = NBSolve;
@@ -81,6 +76,7 @@ protected
 
   // Util imports
   import Error;
+  import Slice = NBSlice;
 
 public
   uniontype Block
@@ -434,9 +430,10 @@ public
           Variable var;
           SimJacobian tmpJac;
           Option<SimJacobian> jacobian;
+          EquationPointer eqn_ptr;
           Equation eqn;
           Statement stmt;
-          Boolean trivial;
+          SlicingStatus status;
 
         case StrongComponent.SINGLE_EQUATION() algorithm
           (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), simCodeIndices, funcTree, systemType);
@@ -447,9 +444,9 @@ public
         then tmp;
 
         case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(comp.eqn)) algorithm
-          (eqn, trivial, funcTree) := Equation.slice(Pointer.access(comp.eqn), comp.eqn_indices, comp.var_cref, funcTree);
+          (eqn_ptr, status, funcTree) := Equation.slice(comp.eqn, comp.eqn_indices, SOME(comp.var_cref), funcTree);
           // split the iterators of the equation to make it nested for code generation
-          eqn := Equation.splitIterators(eqn);
+          eqn := Equation.splitIterators(Pointer.access(eqn_ptr));
           // handle these as if they were algorithms
           stmt := Equation.toStatement(eqn);
           tmp := ALGORITHM(simCodeIndices.equationIndex, {stmt}, Equation.getAttributes(eqn));
@@ -468,8 +465,9 @@ public
             (tmp, simCodeIndices, funcTree) := fromInnerEquation(strict.innerEquations[i], simCodeIndices, funcTree, systemType);
             eqns := tmp :: eqns;
           end for;
-          for eqn_ptr in strict.residual_eqns loop
-            (tmp, simCodeIndices) := createResidual(Pointer.access(eqn_ptr), simCodeIndices);
+          for slice in strict.residual_eqns loop
+            // ToDo: Slicing here!
+            (tmp, simCodeIndices) := createResidual(Pointer.access(Slice.getT(slice)), simCodeIndices);
             eqns := tmp :: eqns;
           end for;
           for var_ptr in strict.iteration_vars loop
@@ -533,28 +531,44 @@ public
           Operator operator;
           Expression lhs, rhs;
           Block tmp;
+          Equation forEqn;
 
-        case BEquation.SCALAR_EQUATION()
-          algorithm
-            tmp := RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
-            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        case BEquation.SCALAR_EQUATION() algorithm
+          tmp := RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case BEquation.ARRAY_EQUATION()
-          algorithm
+        case BEquation.ARRAY_EQUATION() algorithm
+          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        case BEquation.SIMPLE_EQUATION() algorithm
+          ty := ComponentRef.getComponentType(eqn.lhs);
+          if Type.isArray(ty) then
             tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
-            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          else
+            tmp := RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
+          end if;
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case BEquation.SIMPLE_EQUATION()
-          algorithm
-            ty := ComponentRef.getComponentType(eqn.lhs);
-            if Type.isArray(ty) then
-              tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
-            else
-              tmp := RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
-            end if;
-            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        /* this needs more thought
+        case BEquation.FOR_EQUATION() algorithm
+          rhs := BEquation.getResidualExp(eqn);
+          lhs := Expression.makeZero(
+          forEqn :=
+          eqn := Equation.splitIterators(eqn);
+          // handle these as if they were algorithms
+          stmt := Equation.toStatement(eqn);
+
+        then tmp;
+        */
+        case BEquation.FOR_EQUATION() algorithm
+          rhs := BEquation.Equation.getResidualExp(eqn);
+          lhs := Expression.makeZero(Expression.typeOf(rhs));
+          tmp := RESIDUAL(simCodeIndices.equationIndex, lhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         // ToDo: add all other cases!

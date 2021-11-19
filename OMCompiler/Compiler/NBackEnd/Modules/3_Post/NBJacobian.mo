@@ -915,7 +915,8 @@ protected
       jacobianHT      = optHT, // seed and temporary cref hashtable
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,
-      diffedFunctions = AvlSetPath.new()
+      diffedFunctions = AvlSetPath.new(),
+      scalarized      = seedCandidates.scalarized
     );
 
     // filter all discrete equations and differentiate the others

@@ -39,7 +39,13 @@ protected
   // NF imports
   import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
+  import Flatten = NFFlatten;
+  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFInstNode.InstNode;
+  import Subscript = NFSubscript;
+  import Type = NFType;
   import Variable = NFVariable;
 
   // Backend imports
@@ -47,7 +53,7 @@ protected
   import BEquation = NBEquation;
   import NBEquation.{Equation,EquationPointers};
   import BVariable = NBVariable;
-  import NBVariable.VariablePointers;
+  import NBVariable.{VariablePointer, VariablePointers};
   import Causalize = NBCausalize;
   import Jacobian = NBJacobian;
   import Module = NBModule;
@@ -58,6 +64,7 @@ protected
   // Util imports
   import ClockIndexes;
   import DoubleEnded;
+  import Slice = NBSlice;
 
 public
   function main extends Module.wrapper;
@@ -148,6 +155,14 @@ public
         Pointer<Variable> start_var;
         Pointer<BEquation.Equation> start_eq;
         Option<Expression> start;
+
+      // if it is an array create for equation
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)))))
+        guard(BVariable.isArray(state)) algorithm
+          createStartEquationSlice(Slice.SLICE(state, {}), ptr_start_vars, ptr_start_eqs, idx);
+      then ();
+
+      // create scalar equation
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)), start = start)))
         algorithm
           name := BVariable.getVarName(state);
@@ -159,6 +174,37 @@ public
       else ();
     end match;
   end createStartEquation;
+
+  function createStartEquationSlice
+    input Slice<VariablePointer> state;
+    input Pointer<list<Pointer<Variable>>> ptr_start_vars;
+    input Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqs;
+    input Pointer<Integer> idx;
+  protected
+    Pointer<Variable> var_ptr, start_var;
+    ComponentRef name, start_name;
+    list<Dimension> dims;
+    list<InstNode> iterators;
+    list<Expression> ranges;
+    list<Subscript> subscripts;
+    list<tuple<ComponentRef, Expression>> frames;
+    Pointer<Equation> start_eq;
+  algorithm
+    var_ptr := Slice.getT(state);
+    name := BVariable.getVarName(var_ptr);
+    dims := Type.arrayDims(ComponentRef.nodeType(name));
+    (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
+    frames := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
+    name := ComponentRef.mergeSubscripts(subscripts, name);
+    (start_name, start_var) := BVariable.makeStartVar(name);
+    start_eq := BEquation.Equation.makeStartEq(name, start_name, idx, frames);
+    if listEmpty(state.indices) then
+      // empty list indicates full array, slice otherwise
+      (start_eq, _, _) := Equation.slice(start_eq, state.indices, NONE(), FunctionTreeImpl.EMPTY());
+    end if;
+    Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+    Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+  end createStartEquationSlice;
 
   function createPreEquations
     "Creates start equations from fixed start values.

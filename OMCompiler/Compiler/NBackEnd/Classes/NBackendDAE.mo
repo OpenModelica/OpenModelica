@@ -335,9 +335,10 @@ protected
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, previous;
     VariablePointers parameters, constants;
+    Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
   algorithm
     // instantiate variable data (with one more space for time variable);
-    variables := VariablePointers.empty(listLength(varList) + 1);
+    variables := VariablePointers.empty(listLength(varList) + 1, scalarized);
 
     // create dummy and time var and add then
     // needed to make function BVariable.getVarPointer() more universally applicable
@@ -402,21 +403,21 @@ protected
     end for;
 
     // create pointer arrays
-    unknowns := VariablePointers.fromList(unknowns_lst);
-    knowns := VariablePointers.fromList(knowns_lst);
-    initials := VariablePointers.fromList(initials_lst);
-    auxiliaries := VariablePointers.fromList(auxiliaries_lst);
-    aliasVars := VariablePointers.fromList(aliasVars_lst);
-    nonTrivialAlias := VariablePointers.fromList(nonTrivialAlias_lst);
+    unknowns        := VariablePointers.fromList(unknowns_lst, scalarized);
+    knowns          := VariablePointers.fromList(knowns_lst, scalarized);
+    initials        := VariablePointers.fromList(initials_lst, scalarized);
+    auxiliaries     := VariablePointers.fromList(auxiliaries_lst, scalarized);
+    aliasVars       := VariablePointers.fromList(aliasVars_lst, scalarized);
+    nonTrivialAlias := VariablePointers.fromList(nonTrivialAlias_lst, scalarized);
 
-    states := VariablePointers.fromList(states_lst);
-    derivatives := VariablePointers.fromList(derivatives_lst);
-    algebraics := VariablePointers.fromList(algebraics_lst);
-    discretes := VariablePointers.fromList(discretes_lst);
-    previous := VariablePointers.fromList(previous_lst);
+    states          := VariablePointers.fromList(states_lst, scalarized);
+    derivatives     := VariablePointers.fromList(derivatives_lst, scalarized);
+    algebraics      := VariablePointers.fromList(algebraics_lst, scalarized);
+    discretes       := VariablePointers.fromList(discretes_lst, scalarized);
+    previous        := VariablePointers.fromList(previous_lst, scalarized);
 
-    parameters := VariablePointers.fromList(parameters_lst);
-    constants := VariablePointers.fromList(constants_lst);
+    parameters      := VariablePointers.fromList(parameters_lst, scalarized);
+    constants       := VariablePointers.fromList(constants_lst, scalarized);
 
     /* lower the variable bindings */
     VariablePointers.map(variables, function lowerVariableBinding(variables = variables));

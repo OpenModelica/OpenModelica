@@ -61,6 +61,7 @@ protected
   // Util imports
   import BackendUtil = NBBackendUtil;
   import Pointer;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
 
@@ -337,6 +338,7 @@ public
         EquationAttributes attr;
         Pointer<Variable> dependentVar;
         Tearing strict;
+        Pointer<Equation> eqn;
 
       case SINGLE_EQUATION() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
@@ -373,8 +375,9 @@ public
         end for;
 
         // traverse residual equations and collect dependencies
-        for eqn in strict.residual_eqns loop
-          tmp := Equation.collectCrefs(Pointer.access(eqn), function getDependentCref(map = map));
+        for slice in strict.residual_eqns loop
+          // ToDo: does this work properly for arrays?
+          tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function getDependentCref(map = map));
           dependencies := listAppend(tmp, dependencies);
         end for;
 

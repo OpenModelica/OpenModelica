@@ -38,6 +38,7 @@ encapsulated uniontype NBTearing
 public
   import BackendDAE = NBackendDAE;
   import Module = NBModule;
+  import Slice = NBSlice;
 
 protected
   // selfimport
@@ -53,9 +54,7 @@ protected
   import BJacobian = NBJacobian;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
-  import NBEquation.Equation;
-  import NBEquation.EquationPointers;
-  import NBEquation.InnerEquation;
+  import NBEquation.{Equation, EquationPointer, EquationPointers, InnerEquation};
   import Jacobian = NBackendDAE.BackendDAE;
   import Matching = NBMatching;
   import Sorting = NBSorting;
@@ -64,14 +63,15 @@ protected
   import NBVariable.VariablePointers;
 
   //Util imports
+  import BackendUtil = NBBackendUtil;
   import StringUtil;
 
 public
   record TEARING_SET
     list<Pointer<Variable>> iteration_vars    "the variables used for iteration";
-    list<Pointer<Equation>> residual_eqns     "implicitely solved residual equations";
-    array<InnerEquation> innerEquations       "list of matched equations and variables";
-    Option<Jacobian> jac                      "optional jacobian";
+    list<Slice<EquationPointer>> residual_eqns      "implicitely solved residual equations";
+    array<InnerEquation> innerEquations                             "array of matched equations and variables";
+    Option<Jacobian> jac                                            "optional jacobian";
   end TEARING_SET;
 
   function toString
@@ -83,10 +83,7 @@ public
     for var in set.iteration_vars loop
       str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
     end for;
-    str := str + "\n### Residual Equations:\n";
-    for eqn in set.residual_eqns loop
-      str := str  + Equation.toString(Pointer.access(eqn), "\t") + "\n";
-    end for;
+    str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, Equation.pointerToString);
     str := str + "\n### Inner Equations:\n";
     for eqn in set.innerEquations loop
       str := str  + InnerEquation.toString(eqn, "\t") + "\n";
@@ -254,7 +251,7 @@ protected
   algorithm
     index := index + 1;
     dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), Pointer.create(NBVariable.DUMMY_VARIABLE));
-    tearingSet := TEARING_SET(variables, equations, arrayCreate(0, dummy), NONE());
+    tearingSet := TEARING_SET(variables, list(Slice.SLICE(eqn, {}) for eqn in equations), arrayCreate(0, dummy), NONE());
     comp := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, mixed);
 
     (jacobian, funcTree) := BJacobian.simple(
@@ -297,7 +294,7 @@ protected
     input output Integer index;
   protected
     list<Pointer<Variable>> cont_lst, disc_lst;
-    list<Pointer<Equation>> residual_lst;
+    list<Slice<EquationPointer>> residual_lst;
     VariablePointers discreteVars;
     EquationPointers eqns;
     Adjacency.Matrix adj;
@@ -312,17 +309,17 @@ protected
 
     (cont_lst, disc_lst) := List.splitOnTrue(variables, BVariable.isContinuous);
     if listEmpty(disc_lst) then
-      cont_lst := variables;
-      residual_lst := equations;
-      innerEquations := {};
+      cont_lst        := variables;
+      residual_lst    := list(Slice.SLICE(eqn, {}) for eqn in equations);
+      innerEquations  := {};
     else
-      discreteVars := VariablePointers.fromList(disc_lst);
-      eqns := EquationPointers.fromList(equations);
+      discreteVars    := VariablePointers.fromList(disc_lst);
+      eqns            := EquationPointers.fromList(equations);
 
       // make ARRAY possible
       (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
       matching := Matching.regular(adj, true, false);
-      (_, _, _, residual_lst) := Matching.getMatches(matching, discreteVars, eqns);
+      (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
       comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
       innerEquations := list(BEquation.InnerEquation.fromStrongComponent(c) for c in comps);
     end if;

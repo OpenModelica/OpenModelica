@@ -74,7 +74,8 @@ public
         jacobianHT      = NONE(),
         diffType        = NBDifferentiate.DifferentiationType.SIMPLE,
         funcTree        = funcTree,
-        diffedFunctions = AvlSetPath.new()
+        diffedFunctions = AvlSetPath.new(),
+        scalarized      = false
       );
       (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
       derivative := SimplifyExp.simplify(derivative);

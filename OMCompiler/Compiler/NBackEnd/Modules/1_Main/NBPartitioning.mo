@@ -357,9 +357,8 @@ protected
     Pointer<array<Boolean>> marked_vars_ptr = Pointer.create(arrayCreate(VariablePointers.size(variables), true));
     list<Pointer<Variable>> single_vars, non_state_single_vars;
   algorithm
-    // get equation and var size
-    map := UnorderedMap.new<ClusterPointer>(ComponentRef.hash, ComponentRef.isEqual);
     // collect partitions in clusters
+    map := UnorderedMap.new<ClusterPointer>(ComponentRef.hash, ComponentRef.isEqual);
     collectPartitions(equations, systemType, map);
     // extract unique clusters from the unordered map
     clusters := Cluster.getClusters(map, size);

@@ -50,6 +50,7 @@ protected
   import Function = NFFunction;
   import InstNode = NFInstNode.InstNode;
   import SimplifyExp = NFSimplifyExp;
+  import Type = NFType;
   import Variable = NFVariable;
 
   // Backend imports
@@ -158,7 +159,7 @@ protected
     Pointer<Integer> uniqueIndex = Pointer.create(0);
     Differentiate.DifferentiationArguments diffArgs = Differentiate.DifferentiationArguments.default();
   algorithm
-    EquationPointers.mapExp(equations, function collectStatesAndDerivatives(acc_states = acc_states, acc_derivatives = acc_derivatives));
+    EquationPointers.mapExp(equations, function collectStatesAndDerivatives(acc_states = acc_states, acc_derivatives = acc_derivatives, scalarized = variables.scalarized));
     EquationPointers.mapExp(equations, function resolveGeneralDer(acc_states = acc_states, acc_derivatives = acc_derivatives, acc_aux_equations = acc_aux_equations, uniqueIndex = uniqueIndex, diffArgs = diffArgs));
     (variables, unknowns, knowns, initials, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
     aux_eqns := Pointer.access(acc_aux_equations);
@@ -176,7 +177,7 @@ protected
     Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
     Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
   algorithm
-    EquationPointers.mapExp(equations, function collectDiscreteStatesAndPrevious(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous));
+    EquationPointers.mapExp(equations, function collectDiscreteStatesAndPrevious(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous, scalarized = variables.scalarized));
     (variables, knowns, initials, discretes, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous));
   end detectDiscreteStatesDefault;
 
@@ -185,6 +186,7 @@ protected
     input output Expression exp;
     input Pointer<list<Pointer<Variable>>> acc_states;
     input Pointer<list<Pointer<Variable>>> acc_derivatives;
+    input Boolean scalarized;
   algorithm
     exp := match exp
       local
@@ -198,8 +200,17 @@ protected
           if BVariable.isState(state_var) then
             // this derivative was already created -> the variable should already have a pointer to its derivative
             der_cref := BVariable.getDerCref(state_cref);
+            if not scalarized then
+              der_cref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(state_cref), der_cref);
+            end if;
           else
-            (der_cref, der_var) := BVariable.makeDerVar(state_cref);
+            if not scalarized then
+              // prevent the variable from having the subscripts, but add it to the der_cref
+              (der_cref, der_var) := BVariable.makeDerVar(ComponentRef.stripSubscriptsExceptModel(state_cref));
+              der_cref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(state_cref), der_cref);
+            else
+              (der_cref, der_var) := BVariable.makeDerVar(state_cref);
+            end if;
             state_var := BVariable.getVarPointer(state_cref);
             state_var := BVariable.makeStateVar(state_var, der_var);
             Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
@@ -316,6 +327,7 @@ protected
     input output Expression exp;
     input Pointer<list<Pointer<Variable>>> acc_discrete_states;
     input Pointer<list<Pointer<Variable>>> acc_previous;
+    input Boolean scalarized;
   algorithm
     exp := match exp
       local
@@ -329,8 +341,17 @@ protected
           if BVariable.isDiscreteState(state_var) then
             // this previous was already created -> the variable should already have a pointer to its previous variable
             pre_cref := BVariable.getPreCref(state_cref);
+            if not scalarized then
+              pre_cref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(state_cref), pre_cref);
+            end if;
           else
-            (pre_cref, pre_var) := BVariable.makePreVar(state_cref);
+            if not scalarized then
+              // prevent the variable from having the subscripts, but add it to the pre_cref
+              (pre_cref, pre_var) := BVariable.makePreVar(ComponentRef.stripSubscriptsExceptModel(state_cref));
+              pre_cref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(state_cref), pre_cref);
+            else
+              (pre_cref, pre_var) := BVariable.makePreVar(state_cref);
+            end if;
             state_var := BVariable.makeDiscreteStateVar(state_var, pre_var);
             Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
             Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
@@ -370,7 +391,6 @@ protected
       end if;
     end if;
   end updateDiscreteStatesAndPrevious;
-
 
   annotation(__OpenModelica_Interface="backend");
 end NBDetectStates;

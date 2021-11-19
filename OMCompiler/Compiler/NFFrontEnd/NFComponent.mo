@@ -284,8 +284,9 @@ public
     output InstNode classInst;
   algorithm
     classInst := match component
-      case UNTYPED_COMPONENT() then component.classInst;
-      case TYPED_COMPONENT() then component.classInst;
+      case UNTYPED_COMPONENT()  then component.classInst;
+      case TYPED_COMPONENT()    then component.classInst;
+      case ITERATOR()           then InstNode.ITERATOR_NODE(Expression.EMPTY(component.ty));
     end match;
   end classInstance;
 

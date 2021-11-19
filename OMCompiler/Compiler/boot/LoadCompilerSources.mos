@@ -285,17 +285,14 @@ if true then /* Suppress output */
     "../BackEnd/XMLDump.mo",
     "../BackEnd/ZeroCrossings.mo",
 
-  // "NBackend"
-    "../NBackEnd/NBackendDAE.mo",
-    "../NBackEnd/NBDifferentiate.mo",
-    "../NBackEnd/NBEquation.mo",
-    "../NBackEnd/NBSolve.mo",
-    "../NBackEnd/NBStrongComponent.mo",
-    "../NBackEnd/NBSystem.mo",
-    "../NBackEnd/NBVariable.mo",
-    "../NBackEnd/NBReplacements.mo",
-    "../NBackEnd/Modules/NBModule.mo",
+  // "NBackend Classes"
+    "../NBackEnd/Classes/NBackendDAE.mo",
+    "../NBackEnd/Classes/NBEquation.mo",
+    "../NBackEnd/Classes/NBStrongComponent.mo",
+    "../NBackEnd/Classes/NBSystem.mo",
+    "../NBackEnd/Classes/NBVariable.mo",
   // "NBackend Modules"
+    "../NBackEnd/Modules/NBModule.mo",
     "../NBackEnd/Modules/1_Main/NBAdjacency.mo",
     "../NBackEnd/Modules/1_Main/NBCausalize.mo",
     "../NBackEnd/Modules/1_Main/NBDAEMode.mo",
@@ -311,7 +308,11 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
   // "NBackend Util"
     "../NBackEnd/Util/NBBackendUtil.mo",
+    "../NBackEnd/Util/NBDifferentiate.mo",
     "../NBackEnd/Util/NBGraphUtil.mo",
+    "../NBackEnd/Util/NBReplacements.mo",
+    "../NBackEnd/Util/NBSlice.mo",
+    "../NBackEnd/Util/NBSolve.mo",
 
   // "NSimCode"
     "../NSimCode/HashTableSimCode.mo",

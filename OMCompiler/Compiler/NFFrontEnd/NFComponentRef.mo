@@ -789,14 +789,14 @@ public
   function isEqual
     input ComponentRef cref1;
     input ComponentRef cref2;
-    output Boolean isEqual;
+    output Boolean b;
   algorithm
     if referenceEq(cref1, cref2) then
-      isEqual := true;
+      b := true;
       return;
     end if;
 
-    isEqual := match (cref1, cref2)
+    b := match (cref1, cref2)
       case (CREF(), CREF()) algorithm
         then InstNode.name(cref1.node) == InstNode.name(cref2.node) and
           Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
@@ -806,6 +806,13 @@ public
       else false;
     end match;
   end isEqual;
+
+  function isEqualStrip
+    "strips the subscripts before comparing. Used for non expandend variables"
+    input ComponentRef cref1;
+    input ComponentRef cref2;
+    output Boolean b = isEqual(stripSubscriptsExceptModel(cref1), stripSubscriptsExceptModel(cref2));
+  end isEqualStrip;
 
   function isLess
     input ComponentRef cref1;
@@ -1010,6 +1017,13 @@ public
     input Integer mod;
     output Integer hash = stringHashDjb2Mod(toString(cref), mod);
   end hash;
+
+  function hashStrip
+    "hashes the cref without subscripts. used for non expanded variables"
+    input ComponentRef cref;
+    input Integer mod;
+    output Integer hash = stringHashDjb2Mod(toString(stripSubscriptsExceptModel(cref)), mod);
+  end hashStrip;
 
   function toPath
     input ComponentRef cref;

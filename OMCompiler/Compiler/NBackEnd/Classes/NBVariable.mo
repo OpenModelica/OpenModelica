@@ -72,6 +72,8 @@ public
   import Util;
 
 public
+  type VariablePointer = Pointer<Variable> "mainly used for mapping purposes";
+
   // ==========================================================================
   //               Single Variable constants and functions
   // ==========================================================================
@@ -109,6 +111,23 @@ public
     input Pointer<Variable> var_ptr;
     output String str = toString(Pointer.access(var_ptr));
   end pointerToString;
+
+  function hash
+    input Pointer<Variable> var_ptr;
+    input Integer mod;
+    output Integer i = Variable.hash(Pointer.access(var_ptr), mod);
+  end hash;
+
+  function equalName
+    input Pointer<Variable> var_ptr1;
+    input Pointer<Variable> var_ptr2;
+    output Boolean b = Variable.equalName(Pointer.access(var_ptr1), Pointer.access(var_ptr2));
+  end equalName;
+
+  function size
+    input Pointer<Variable> var_ptr;
+    output Integer s = Variable.size(Pointer.access(var_ptr));
+  end size;
 
   function fromCref
     input ComponentRef cref;
@@ -151,15 +170,8 @@ public
   function getVarPointer
     input ComponentRef cref;
     output Pointer<Variable> var;
-  protected
-    ComponentRef stripCref;
   algorithm
-    if Flags.getConfigString(Flags.MATCHING_ALGORITHM) == "pseudo" then
-      stripCref := ComponentRef.stripSubscriptsExceptModel(cref);
-    else
-      stripCref := cref;
-    end if;
-    var := match stripCref
+    var := match cref
       local
         Pointer<Variable> varPointer;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
@@ -193,6 +205,15 @@ public
     input Pointer<Variable> var_ptr;
     output Expression exp = Expression.fromCref(getVarName(var_ptr));
   end toExpression;
+
+  function isArray
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    b := Type.isArray(var.ty);
+  end isArray;
 
   function getDimensions
     input Pointer<Variable> var_ptr;
@@ -518,7 +539,7 @@ public
         algorithm
           state := getVarPointer(cref);
           derNode := InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr);
-          der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, ComponentRef.nodeType(cref)));
+          der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, Type.elementType(ComponentRef.nodeType(cref))));
           var := fromCref(der_cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
@@ -681,7 +702,7 @@ public
         algorithm
           disc := BVariable.getVarPointer(cref);
           qual.name := PREVIOUS_STR;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, Type.elementType(ComponentRef.nodeType(cref))));
           var := fromCref(cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.PREVIOUS(disc));
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
@@ -736,7 +757,7 @@ public
           old_var_ptr := BVariable.getVarPointer(cref);
           // prepend the seed str and the matrix name and create the new cref
           qual.name := SEED_STR + "_" + name;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, Type.elementType(ComponentRef.nodeType(cref))));
           var := fromCref(cref);
           // update the variable to be a seed and pass the pointer to the original variable
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.SEED_VAR(old_var_ptr));
@@ -769,7 +790,7 @@ public
           old_var_ptr := BVariable.getVarPointer(cref);
           // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
           qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, Type.elementType(ComponentRef.nodeType(cref))));
           var := fromCref(cref);
           // update the variable to be a jac var and pass the pointer to the original variable
           // ToDo: tmps will get JAC_DIFF_VAR !
@@ -801,7 +822,7 @@ public
           old_var_ptr := BVariable.getVarPointer(cref);
           // prepend the seed str and the matrix name and create the new cref
           qual.name := START_STR;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, Type.elementType(ComponentRef.nodeType(cref))));
           var := fromCref(cref);
           // update the variable to be a seed and pass the pointer to the original variable
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.START(old_var_ptr));
@@ -1075,6 +1096,7 @@ public
     record VARIABLE_POINTERS
       UnorderedMap<ComponentRef, Integer> map   "Map for cref->index";
       ExpandableArray<Pointer<Variable>> varArr "Array of variable pointers";
+      Boolean scalarized                        "true if the variables are scalarized";
     end VARIABLE_POINTERS;
 
     function toString
@@ -1142,13 +1164,20 @@ public
     function empty
       "Creates an empty VariablePointers using given size * 1.4."
       input Integer size = BaseHashTable.bigBucketSize;
+      input Boolean scalarized = false;
       output VariablePointers variables;
     protected
       Integer arr_size, bucketSize;
+      UnorderedMap<ComponentRef, Integer> map;
     algorithm
       arr_size := max(size, BaseHashTable.lowBucketSize);
       bucketSize := Util.nextPrime(arr_size);
-      variables := VARIABLE_POINTERS(UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
+      if scalarized then
+        map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, bucketSize);
+      else
+        map := UnorderedMap.new<Integer>(ComponentRef.hashStrip, ComponentRef.isEqualStrip, bucketSize);
+      end if;
+      variables := VARIABLE_POINTERS(map, ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)), scalarized);
     end empty;
 
     function clone
@@ -1174,9 +1203,10 @@ public
     function fromList
       "Creates VariablePointers from a VariablePointer list."
       input list<Pointer<Variable>> var_lst;
+      input Boolean scalarized = false;
       output VariablePointers variables;
     algorithm
-      variables := empty(listLength(var_lst));
+      variables := empty(listLength(var_lst), scalarized);
       variables := addList(var_lst, variables);
     end fromList;
 
@@ -1372,7 +1402,7 @@ public
       mapPtr(variables, function createSortHashTpl(mod = realInt(size * log(size)), hash_lst_ptr = hash_lst_ptr));
       hash_lst := List.sort(Pointer.access(hash_lst_ptr), BackendUtil.indexTplGt);
       // create new variables and add them one by one in sorted order
-      variables := empty(size);
+      variables := empty(size, variables.scalarized);
       for tpl in hash_lst loop
         (_, var_ptr) := tpl;
         variables := add(var_ptr, variables);
@@ -1407,7 +1437,7 @@ public
 
       // only change variables if any of them was an array
       if anyArr then
-        variables := fromList(listReverse(new_vars));
+        variables := fromList(listReverse(new_vars), true);
       end if;
     end scalarize;
 

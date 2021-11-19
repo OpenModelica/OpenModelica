@@ -77,6 +77,7 @@ public
       DifferentiationType diffType                                "Differentiation use case (time, simple, function, jacobian)";
       FunctionTree funcTree                                       "Function tree containing all functions and their known derivatives";
       AvlSetPath.Tree diffedFunctions                             "current functions, to prevent recursive differentiation";
+      Boolean scalarized                                          "true if the variables are scalarized";
     end DIFFERENTIATION_ARGUMENTS;
 
     function default
@@ -88,7 +89,8 @@ public
         jacobianHT      = NONE(),
         diffType        = ty,
         funcTree        = funcTree,
-        diffedFunctions = AvlSetPath.new()
+        diffedFunctions = AvlSetPath.new(),
+        scalarized      = false
       );
     end default;
 
@@ -466,7 +468,7 @@ public
     input output DifferentiationArguments diffArguments;
   protected
     Pointer<Variable> var_ptr, der_ptr;
-    ComponentRef derCref;
+    ComponentRef derCref, strippedCref;
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
@@ -570,13 +572,31 @@ public
       // Types: (JACOBIAN)
       // cref in jacobianHT => get $SEED or $pDER variable from hash table
       case (Expression.CREF(), DifferentiationType.JACOBIAN, SOME(jacobianHT))
-        guard(UnorderedMap.contains(exp.cref, jacobianHT))
-      then (Expression.fromCref(UnorderedMap.getOrFail(exp.cref, jacobianHT)), diffArguments);
+        guard(diffArguments.scalarized)
+      algorithm
+        if UnorderedMap.contains(exp.cref, jacobianHT) then
+          res := Expression.fromCref(UnorderedMap.getOrFail(exp.cref, jacobianHT));
+        else
+          // Everything that is not in jacobianHT gets differentiated to zero
+          res := Expression.makeZero(exp.ty);
+        end if;
+      then (res, diffArguments);
 
       // Types: (JACOBIAN)
-      // Everything that is not in jacobianHT gets differentiated to zero
-      case (Expression.CREF(), DifferentiationType.JACOBIAN, _)
-      then (Expression.makeZero(exp.ty), diffArguments);
+      // cref in jacobianHT => get $SEED or $pDER variable from hash table
+      case (Expression.CREF(), DifferentiationType.JACOBIAN, SOME(jacobianHT))
+        guard(not diffArguments.scalarized)
+      algorithm
+        strippedCref := ComponentRef.stripSubscriptsExceptModel(exp.cref);
+        if UnorderedMap.contains(strippedCref, jacobianHT) then
+          // get the derivative an reapply subscripts
+          derCref := UnorderedMap.getOrFail(strippedCref, jacobianHT);
+          derCref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(exp.cref), derCref);
+          res     := Expression.fromCref(derCref);
+        else
+          res     := Expression.makeZero(exp.ty);
+        end if;
+      then (res, diffArguments);
 
       else algorithm
         // maybe add failtrace here and allow failing

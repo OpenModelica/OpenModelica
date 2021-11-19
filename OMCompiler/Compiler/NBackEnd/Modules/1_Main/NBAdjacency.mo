@@ -223,6 +223,7 @@ public
 
         case (PSEUDO_ARRAY_ADJACENCY_MATRIX(), _) algorithm
           // ToDo
+          print("NOT IMPLEMENTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         then (adj, funcTree);
 
         case (ARRAY_ADJACENCY_MATRIX(), _) algorithm
@@ -275,6 +276,16 @@ public
         then fail();
       end match;
     end toString;
+
+    function getMappingOpt
+      input Matrix adj;
+      output Option<Mapping> mapping;
+    algorithm
+      mapping := match adj
+        case PSEUDO_ARRAY_ADJACENCY_MATRIX() then SOME(adj.mapping);
+                                             else NONE();
+      end match;
+    end getMappingOpt;
 
   protected
     function toStringSingle
@@ -635,8 +646,8 @@ public
         // prepare the mappings
         eqn_lst := EquationPointers.toList(eqs);
         var_lst := VariablePointers.toList(vars);
-        eqn_scalar_size := sum(array(Equation.size(Pointer.access(eqn)) for eqn in eqn_lst));
-        var_scalar_size := sum(array(Variable.size(Pointer.access(var)) for var in var_lst));
+        eqn_scalar_size := sum(array(Equation.size(eqn) for eqn in eqn_lst));
+        var_scalar_size := sum(array(BVariable.size(var) for var in var_lst));
         eqn_AtS := arrayCreate(EquationPointers.size(eqs), (-1, -1));
         var_AtS := arrayCreate(VariablePointers.size(vars), (-1, -1));
         eqn_StA := arrayCreate(eqn_scalar_size, -1);
@@ -644,7 +655,7 @@ public
 
         // fill variable mapping
         for var_ptr in var_lst loop
-          size := Variable.size(Pointer.access(var_ptr));
+          size := BVariable.size(var_ptr);
           var_AtS[var_idx_arr] := (var_idx_scal, size);
           for i in var_idx_scal:var_idx_scal+size-1 loop
             var_StA[i] := var_idx_arr;
@@ -655,7 +666,7 @@ public
 
         // fill equation mapping
         for eqn_ptr in eqn_lst loop
-          size := Equation.size(Pointer.access(eqn_ptr));
+          size := Equation.size(eqn_ptr);
           eqn_AtS[eqn_idx_arr] := (eqn_idx_scal, size);
           for i in eqn_idx_scal:eqn_idx_scal+size-1 loop
             eqn_StA[i] := eqn_idx_arr;

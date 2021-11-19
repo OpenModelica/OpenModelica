@@ -794,7 +794,7 @@ algorithm
   end match;
 end vectorizeAlgorithm;
 
-function makeIterators
+public function makeIterators
   input ComponentRef prefix;
   input list<Dimension> dimensions;
   output list<InstNode> iterators = {};
@@ -823,6 +823,7 @@ algorithm
   end for;
 end makeIterators;
 
+protected
 function addIterator
   input output Expression exp;
   input ComponentRef prefix;

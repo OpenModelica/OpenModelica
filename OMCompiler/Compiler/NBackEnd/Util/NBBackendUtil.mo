@@ -192,12 +192,17 @@ public
           new_step := step;
           new_stop := stop;
           while (new_step == step) and (shift + pre_shift < max_size) loop
+            //print(intString(max_size) + " > " + intString(shift) + " + " + intString(pre_shift) + "\n");
             stop := new_stop;
             shift := shift + pre_shift;
             new_stop := dim[1 + shift];
             new_step := new_stop - stop;
           end while;
+          if new_step == step then
+            stop := new_stop;
+          end if;
           ranges := (start, step, stop) :: ranges;
+          //print("(" + intString(start) + ", " +intString(step) + ", " + intString(stop) + ")\n");
         end if;
       end if;
     end for;
@@ -386,17 +391,17 @@ public
     b := Expression.fold(exp, isOnlyTimeDependentFold, true);
   end isOnlyTimeDependent;
 
-    function isOnlyTimeDependentFold
-      input Expression exp;
-      input output Boolean b;
-    algorithm
-      if b then
-        b := match exp
-          case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst);
-          else true;
-        end match;
-      end if;
-    end isOnlyTimeDependentFold;
+  function isOnlyTimeDependentFold
+    input Expression exp;
+    input output Boolean b;
+  algorithm
+    if b then
+      b := match exp
+        case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst);
+        else true;
+      end match;
+    end if;
+  end isOnlyTimeDependentFold;
 
   annotation(__OpenModelica_Interface="backend");
 end NBBackendUtil;

@@ -219,7 +219,7 @@ protected
 
     // create scalar adjacency matrix for now
     adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, matrixStrictness);
-    matching := Matching.regular(adj);
+    (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(adj, variables, equations, funcTree, varData, eqData, false, true);
     comps := Sorting.tarjan(adj, matching, variables, equations);
 
     system.unknowns := variables;

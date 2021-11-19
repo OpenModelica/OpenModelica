@@ -71,12 +71,8 @@ public
   import StringUtil;
   import UnorderedMap;
 
-  partial function MapFuncExp
-    input output Expression e;
-  end MapFuncExp;
-  partial function MapFuncCref
-    input output ComponentRef c;
-  end MapFuncCref;
+  type EquationPointer = Pointer<Equation> "mainly used for mapping purposes";
+  type SlicingStatus = enumeration(UNCHANGED, TRIVIAL, NONTRIVIAL);
 
   uniontype Iterator
     record SINGLE
@@ -190,6 +186,13 @@ public
       end match;
     end map;
   end Iterator;
+
+  partial function MapFuncExp
+    input output Expression e;
+  end MapFuncExp;
+  partial function MapFuncCref
+    input output ComponentRef c;
+  end MapFuncCref;
 
   uniontype Equation
     record SCALAR_EQUATION
@@ -317,25 +320,41 @@ public
     end info;
 
     function size
-      input Equation eq;
+      input Pointer<Equation> eqn_ptr;
       output Integer size;
+    protected
+      Equation eqn;
     algorithm
-      size := match eq
+      eqn := Pointer.access(eqn_ptr);
+      size := match eqn
         case SCALAR_EQUATION() then 1;
-        case ARRAY_EQUATION()  then Type.sizeOf(eq.ty);
-        case SIMPLE_EQUATION() then Type.sizeOf(eq.ty);
-        case RECORD_EQUATION() then Type.sizeOf(eq.ty);
-        case ALGORITHM()       then eq.size;
-        case IF_EQUATION()     then eq.size;
-        case FOR_EQUATION()    then Type.sizeOf(eq.ty); //probably wrong
-        case WHEN_EQUATION()   then eq.size;
-        case AUX_EQUATION()    then Variable.size(Pointer.access(eq.auxiliary));
+        case ARRAY_EQUATION()  then Type.sizeOf(eqn.ty);
+        case SIMPLE_EQUATION() then Type.sizeOf(eqn.ty);
+        case RECORD_EQUATION() then Type.sizeOf(eqn.ty);
+        case ALGORITHM()       then eqn.size;
+        case IF_EQUATION()     then eqn.size;
+        case FOR_EQUATION()    then Type.sizeOf(eqn.ty); //probably wrong
+        case WHEN_EQUATION()   then eqn.size;
+        case AUX_EQUATION()    then Variable.size(Pointer.access(eqn.auxiliary));
         case DUMMY_EQUATION()  then 0;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eq)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
         then fail();
       end match;
     end size;
+
+    function hash
+      "only hashes the name"
+      input Pointer<Equation> eqn;
+      input Integer mod;
+      output Integer i = Variable.hash(Pointer.access(getResidualVar(eqn)), mod);
+    end hash;
+
+    function equalName
+      input Pointer<Equation> eqn1;
+      input Pointer<Equation> eqn2;
+      output Boolean b = ComponentRef.isEqual(getEqnName(eqn1), getEqnName(eqn2));
+    end equalName;
 
     function getEqnName
       input Pointer<Equation> eqn;
@@ -364,9 +383,26 @@ public
       input ComponentRef lhs;
       input ComponentRef rhs;
       input Pointer<Integer> idx;
+      input list<tuple<ComponentRef, Expression>> frames = {};
       output Pointer<Equation> eq;
     algorithm
-      eq := Pointer.create(SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
+      if listLength(frames) == 0 then
+        eq := Pointer.create(SIMPLE_EQUATION(
+          ty      = ComponentRef.getSubscriptedType(lhs),
+          lhs     = lhs,
+          rhs     = rhs,
+          source  = DAE.emptyElementSource,
+          attr    = EQ_ATTR_DEFAULT_INITIAL
+        ));
+      else
+        eq := Pointer.create(FOR_EQUATION(
+          ty      = ComponentRef.nodeType(lhs),
+          iter    = Iterator.fromFrames(frames),
+          body    = SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL),
+          source  = DAE.emptyElementSource,
+          attr    = EQ_ATTR_DEFAULT_INITIAL
+        ));
+      end if;
       Equation.createName(eq, idx, "SRT");
     end makeStartEq;
 
@@ -979,6 +1015,9 @@ public
           operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
+        // returns innermost residual!
+        case Equation.FOR_EQUATION() then getResidualExp(eqn.body);
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
         then fail();
@@ -1172,14 +1211,15 @@ public
 
     function slice
       "performs a single slice based on the given indices and the cref to solve for"
-      input output Equation eqn             "equation to slice";
-      input list<Integer> indices           "zero based indices of the eqn";
-      input ComponentRef cref               "cref to solve for";
-      output Boolean trivial                "returns true if there was no slicing, only rearranging";
-      input output FunctionTree funcTree    "function tree for solving";
+      input output Pointer<Equation> eqn_ptr  "equation to slice";
+      input list<Integer> indices             "zero based indices of the eqn";
+      input Option<ComponentRef> cref_opt     "optional cref to solve for, if none is given, the body stays as it is";
+      output SlicingStatus status             "has unchanged, trivial (only rearranged) or nontrivial";
+      input output FunctionTree funcTree      "function tree for solving";
     protected
-      Integer first_idx     = List.first(indices)                                     "first strong component index";
-      Integer last_idx      = List.last(indices)                                      "last strong component index";
+      Equation eqn;
+      Integer first_idx                       "first strong component index";
+      Integer last_idx                        "last strong component index";
       list<tuple<ComponentRef, Expression>> frames;
       list<Dimension> dims;
       list<Integer> sizes;
@@ -1188,22 +1228,27 @@ public
       list<array<Integer>> frame_locations_T;
       list<tuple<Integer, Integer, Integer>> ranges;
     algorithm
-      (eqn, trivial) := match eqn
+      eqn := Pointer.access(eqn_ptr);
+      (eqn_ptr, status) := match eqn
         local
           Equation body, sliced;
-          Solve.Status status;
+
+        // empty index list indicates no slicing and no rearraning
+        case _ guard(listEmpty(indices)) then (eqn_ptr, SlicingStatus.UNCHANGED);
 
         case FOR_EQUATION() algorithm
           // get the sizes of the 'return value' if the equation
-          dims                  := Type.arrayDims(Equation.getType(eqn));
-          sizes                 := list(Dimension.size(dim) for dim in dims);
+          dims      := Type.arrayDims(Equation.getType(eqn));
+          sizes     := list(Dimension.size(dim) for dim in dims);
 
-          if Equation.size(eqn) == listLength(indices) then
+          if Equation.size(eqn_ptr) == listLength(indices) then
             // trivial solution! All equations are solved the same way
             // only invert the necessary frames and keep the rest as is
-            trivial := true;
+            status                := SlicingStatus.TRIVIAL;
 
             // map first and last index to frame locations
+            first_idx             := List.first(indices);
+            last_idx              := List.last(indices);
             first_frame_location  := BackendUtil.indexToFrame(first_idx, sizes);
             last_frame_location   := BackendUtil.indexToFrame(last_idx, sizes);
 
@@ -1213,7 +1258,7 @@ public
             frames                := BackendUtil.applyFrameInversion(frames, frame_comp);
           else
             // nontrivial. try to rebuild the for loop frames and slice the equation
-            trivial := false;
+            status                := SlicingStatus.NONTRIVIAL;
             frame_locations       := list(BackendUtil.indexToFrame(idx, sizes) for idx in indices);
             frame_locations_T     := BackendUtil.transposeFrameLocations(frame_locations, listLength(sizes));
             ranges                := BackendUtil.recollectRangesHeuristic(frame_locations_T);
@@ -1221,9 +1266,16 @@ public
             frames                := BackendUtil.applyNewFrameRanges(frames, ranges);
           end if;
 
-          // solve the body equation for the cref
-          // ToDo: act on status not equal to EXPLICIT ?
-          (body, funcTree, status, _) := Solve.solve(eqn.body, cref, funcTree);
+          // solve the body equation for the cref if needed
+          // ToDo: act on solving status not equal to EXPLICIT ?
+          body := match cref_opt
+            local
+              ComponentRef cref;
+            case SOME(cref) algorithm
+              (body, funcTree, _, _) := Solve.solve(eqn.body, cref, funcTree);
+            then body;
+            else eqn.body;
+          end match;
 
           sliced := FOR_EQUATION(
             ty      = eqn.ty,
@@ -1232,7 +1284,8 @@ public
             source  = eqn.source,
             attr    = eqn.attr
           );
-        then (sliced, trivial);
+          // create a new pointer and do not overwrite the old one!
+        then (Pointer.create(sliced), status);
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing is not yet supported for: \n" + toString(eqn)});
@@ -1250,7 +1303,11 @@ public
           ComponentRef iter;
           Expression range;
 
-        case Equation.SCALAR_EQUATION() then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+        case Equation.SCALAR_EQUATION()
+        then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+
+        case Equation.SIMPLE_EQUATION()
+        then Statement.ASSIGNMENT(Expression.fromCref(eqn.lhs), Expression.fromCref(eqn.rhs), Type.arrayElementType(eqn.ty), eqn.source);
 
         case Equation.FOR_EQUATION() algorithm
           ({iter},{range}) := Equation.Iterator.getFrames(eqn.iter);

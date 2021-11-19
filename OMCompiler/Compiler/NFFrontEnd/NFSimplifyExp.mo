@@ -1217,6 +1217,7 @@ algorithm
       list<Expression> final_inverse_stack = {};
       Expression new_exp;
       ComponentRef cref;
+      Call call;
 
     // #######################################################
     //          Building MULTARY() recursively
@@ -1317,6 +1318,11 @@ algorithm
 
     case (_, Expression.RECORD()) algorithm
       exp.elements := list(combineBinariesExp(element) for element in exp.elements);
+    then addArgument(result, exp, inverse);
+
+    case (_, Expression.CALL(call = call as Call.TYPED_CALL())) algorithm
+      call.arguments := list(combineBinariesExp(arg) for arg in call.arguments);
+      exp.call := call;
     then addArgument(result, exp, inverse);
 
     case (_, Expression.SIZE()) algorithm
