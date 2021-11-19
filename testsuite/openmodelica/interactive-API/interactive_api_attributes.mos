@@ -105,7 +105,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "public", false, false, false, false, "unspecified", "innerouter", "unspecified",{}}}
+// {{Real, x, "", "public", false, false, false, false, "unspecified", "innerouter", "unspecified", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, false, true, true, true}, {""}, {true, true}, {"input"})
@@ -113,7 +113,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "protected", true, false, true, true, "unspecified", "innerouter", "input",{}}}
+// {{Real, x, "", "protected", true, false, true, true, "unspecified", "innerouter", "input", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, true, true, true}, {"parameter"}, {true, true}, {"input"})
@@ -121,7 +121,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "protected", true, true, false, true, "parameter", "innerouter", "input",{}}}
+// {{Real, x, "", "protected", true, true, false, true, "parameter", "innerouter", "input", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, true, false, true}, {"constant"}, {false, true}, {"output"})
@@ -129,7 +129,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "public", true, true, false, true, "constant", "outer", "output",{}}}
+// {{Real, x, "", "public", true, true, false, true, "constant", "outer", "output", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, false, false, false}, {"discrete"}, {true, false}, {""})
@@ -137,7 +137,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// {{Real, x, "", "public", true, false, false, false, "discrete", "inner", "unspecified", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: updateComponent(x, Integer, A)
@@ -145,7 +145,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Integer,x,"", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// {{Integer, x, "", "public", true, false, false, false, "discrete", "inner", "unspecified", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentComment(A, x, "comment for x")
@@ -218,7 +218,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Integer,x,"comment for x", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// {{Integer, x, "comment for x", "public", true, false, false, false, "discrete", "inner", "unspecified", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: addComponent(y, Real, A)
@@ -259,7 +259,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "public", false, false, false, false, "unspecified", "innerouter", "unspecified",{}}}
+// {{Real, x, "", "public", false, false, false, false, "unspecified", "innerouter", "unspecified", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, false, true, true, true}, {""}, {true, true}, {"input"})
@@ -267,7 +267,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "protected", true, false, true, true, "unspecified", "innerouter", "input",{}}}
+// {{Real, x, "", "protected", true, false, true, true, "unspecified", "innerouter", "input", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, true, true, true}, {"parameter"}, {true, true}, {"input"})
@@ -275,7 +275,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "protected", true, true, false, true, "parameter", "innerouter", "input",{}}}
+// {{Real, x, "", "protected", true, true, false, true, "parameter", "innerouter", "input", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, true, false, true}, {"constant"}, {false, true}, {"output"})
@@ -283,7 +283,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "public", true, true, false, true, "constant", "outer", "output",{}}}
+// {{Real, x, "", "public", true, true, false, true, "constant", "outer", "output", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, false, false, false}, {"discrete"}, {true, false}, {""})
@@ -291,7 +291,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Real,x,"", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// {{Real, x, "", "public", true, false, false, false, "discrete", "inner", "unspecified", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: updateComponent(x, Integer, A)
@@ -299,7 +299,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Integer,x,"", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// {{Integer, x, "", "public", true, false, false, false, "discrete", "inner", "unspecified", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentComment(A, x, "comment for x")
@@ -358,7 +358,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
-// {{Integer,x,"comment for x", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// {{Integer, x, "comment for x", "public", true, false, false, false, "discrete", "inner", "unspecified", {}}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: addComponent(y, Real, A)
