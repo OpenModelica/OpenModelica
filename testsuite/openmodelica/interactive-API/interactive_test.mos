@@ -24,11 +24,11 @@ getNthComponent(P.B, 1);         getErrorString();
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getNthComponent(P.A, 1)
-// {Real,t1," some comment "}
+// {Real, t1, " some comment "}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getNthComponent(P.B, 1)
-// {Real,t2,"some other comment"}
+// {Real, t2, "some other comment"}
 // Evaluating: getErrorString()
 // ""
 // endResult

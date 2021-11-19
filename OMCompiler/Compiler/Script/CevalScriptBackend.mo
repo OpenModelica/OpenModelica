@@ -790,7 +790,7 @@ algorithm
 
     case (cache,_,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        Absyn.CLASS(_,_,_,_,_,cdef,_) = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        Absyn.CLASS(_,_,_,_,_,cdef,_) = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = System.unescapedString(getClassComment(cdef));
       then
         (cache,Values.STRING(str));
@@ -1239,12 +1239,12 @@ algorithm
     case (_,_, "rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
         p = SymbolTable.getAbsyn();
-        absynClass = Interactive.getPathedClassInProgram(path, p);
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, p);
         classes = {absynClass};
-        absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        within_ = Interactive.buildWithin(classpath);
+        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, p);
+        within_ = InteractiveUtil.buildWithin(classpath);
         pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_), Absyn.PROGRAM(classes, within_));
-        pnew = Interactive.updateProgram(pnew, p);
+        pnew = InteractiveUtil.updateProgram(pnew, p);
         SymbolTable.setAbsyn(pnew);
       then
         (FCore.emptyCache(),Values.BOOL(true));
@@ -1611,7 +1611,7 @@ algorithm
     case (cache,_,"copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("TopLevel")))},_)
       equation
         p = SymbolTable.getAbsyn();
-        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, p);
         p = copyClass(absynClass, name, Absyn.TOP(), classpath, p);
         SymbolTable.setAbsyn(p);
         ret_val = Values.BOOL(true);
@@ -1621,7 +1621,7 @@ algorithm
     case (cache,_,"copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
         p = SymbolTable.getAbsyn();
-        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, p);
         p = copyClass(absynClass, name, Absyn.WITHIN(path), classpath, p);
         SymbolTable.setAbsyn(p);
         ret_val = Values.BOOL(true);
@@ -1974,7 +1974,7 @@ algorithm
         b := false;
         Values.ENUM_LITERAL(index=access) := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if (access >= 9) then // i.e., The class is not encrypted.
-          absynClass := Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+          absynClass := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
           str := Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP()),true);
           try
             System.writeFile(filename, str);
@@ -2077,9 +2077,9 @@ algorithm
     case (cache,_,"addClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},_)
       algorithm
         p := SymbolTable.getAbsyn();
-        absynClass := Interactive.getPathedClassInProgram(classpath, p);
+        absynClass := InteractiveUtil.getPathedClassInProgram(classpath, p);
         absynClass := Interactive.addClassAnnotationToClass(absynClass, Absyn.ANNOTATION(eltargs));
-        p := Interactive.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
+        p := InteractiveUtil.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
         SymbolTable.setAbsyn(p);
       then
         (cache,Values.BOOL(true));
@@ -2260,7 +2260,7 @@ algorithm
 
     case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         genv = Interactive.getClassEnv(SymbolTable.getAbsyn(), classpath);
         valsLst = list(getComponentInfo(c, genv, isProtected=false) for c in Interactive.getPublicComponentsInClass(absynClass));
         valsLst = listAppend(list(getComponentInfo(c, genv, isProtected=true) for c in Interactive.getProtectedComponentsInClass(absynClass)), valsLst);
@@ -2293,7 +2293,7 @@ algorithm
 
     case (cache,_,"getAnnotationNamedModifiers",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname)},_)
       equation
-          Absyn.CLASS(body=cdef,info=info) =Interactive.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
+          Absyn.CLASS(body=cdef,info=info) =InteractiveUtil.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
           annlst= getAnnotationList(cdef);
           modifiernamelst=getElementArgsModifiers(annlst,annotationname,AbsynUtil.pathString(classpath),info);
           v1 = ValuesUtil.makeArray(List.map(modifiernamelst, ValuesUtil.makeString));
@@ -2302,7 +2302,7 @@ algorithm
 
      case (cache,_,"getAnnotationModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname),Values.STRING(modifiername)},_)
       equation
-          Absyn.CLASS(_,_,_,_,_,cdef,_) =Interactive.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
+          Absyn.CLASS(_,_,_,_,_,cdef,_) =InteractiveUtil.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
           annlst= getAnnotationList(cdef);
           modifiervalue=getElementArgsModifiersValue(annlst,annotationname,modifiername);
       then
@@ -2310,7 +2310,7 @@ algorithm
 
     case (cache,_,"searchClassNames",{Values.STRING(str), Values.BOOL(b)},_)
       equation
-        (_,paths) = Interactive.getClassNamesRecursive(NONE(),SymbolTable.getAbsyn(),false,false,{});
+        (_,paths) = InteractiveUtil.getClassNamesRecursive(NONE(),SymbolTable.getAbsyn(),false,false,{});
         paths = listReverse(paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
         vals = searchClassNames(vals, str, b, SymbolTable.getAbsyn());
@@ -2386,7 +2386,7 @@ algorithm
 
     case (cache,_,"getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
-        (absynClass as Absyn.CLASS()) = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        (absynClass as Absyn.CLASS()) = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         uses = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP()));
         v = ValuesUtil.makeArray(List.map(uses,makeUsesArray));
       then
@@ -2394,7 +2394,7 @@ algorithm
 
     case (cache,_,"getConversionsFromVersions",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
-        (absynClass as Absyn.CLASS()) = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        (absynClass as Absyn.CLASS()) = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         (withoutConversion,withConversion) = Interactive.getConversionAnnotation(absynClass);
         v = Values.TUPLE({ValuesUtil.makeArray(List.map(withoutConversion,ValuesUtil.makeString)), ValuesUtil.makeArray(List.map(withConversion,ValuesUtil.makeString))});
       then
@@ -2402,7 +2402,7 @@ algorithm
 
     case (cache,_,"getDerivedClassModifierNames",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         args = Interactive.getDerivedClassModifierNames(absynClass);
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
@@ -2411,7 +2411,7 @@ algorithm
 
     case (cache,_,"getDerivedClassModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(className))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         str = Interactive.getDerivedClassModifierValue(absynClass, className);
       then
         (cache,Values.STRING(str));
@@ -2855,9 +2855,9 @@ algorithm
                                       Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},_)
       algorithm
         p := SymbolTable.getAbsyn();
-        absynClass := Interactive.getPathedClassInProgram(classpath, p);
+        absynClass := InteractiveUtil.getPathedClassInProgram(classpath, p);
         absynClass := InteractiveUtil.updateConnectionAnnotationInClass(absynClass, str1, str2, Absyn.ANNOTATION(eltargs));
-        p := Interactive.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
+        p := InteractiveUtil.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
         SymbolTable.setAbsyn(p);
       then
         (cache,Values.BOOL(true));
@@ -2871,9 +2871,9 @@ algorithm
         Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(argNames = nargs)) := aexp;
         Absyn.NAMEDARG(argValue = Absyn.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))) := listHead(nargs);
         p := SymbolTable.getAbsyn();
-        absynClass := Interactive.getPathedClassInProgram(classpath, p);
+        absynClass := InteractiveUtil.getPathedClassInProgram(classpath, p);
         absynClass := InteractiveUtil.updateConnectionAnnotationInClass(absynClass, str1, str2, Absyn.ANNOTATION(eltargs));
-        p := Interactive.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
+        p := InteractiveUtil.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
         SymbolTable.setAbsyn(p);
       then
         (cache,Values.BOOL(true));
@@ -2892,7 +2892,7 @@ algorithm
 
     case (cache,_,"getConnectionCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
         if (access >= 4) then // i.e., Access.diagram
           n = listLength(Interactive.getConnections(absynClass));
@@ -2921,7 +2921,7 @@ algorithm
 
     case (cache,_,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = listLength(getAlgorithms(absynClass));
       then
         (cache,Values.INTEGER(n));
@@ -2930,7 +2930,7 @@ algorithm
 
     case (cache,_,"getNthAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = getNthAlgorithm(absynClass, n);
       then
         (cache,Values.STRING(str));
@@ -2939,7 +2939,7 @@ algorithm
 
     case (cache,_,"getInitialAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = listLength(getInitialAlgorithms(absynClass));
       then
         (cache,Values.INTEGER(n));
@@ -2948,7 +2948,7 @@ algorithm
 
     case (cache,_,"getNthInitialAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = getNthInitialAlgorithm(absynClass, n);
       then
         (cache,Values.STRING(str));
@@ -2957,7 +2957,7 @@ algorithm
 
     case (cache,_,"getAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = getAlgorithmItemsCount(absynClass);
       then
         (cache,Values.INTEGER(n));
@@ -2966,7 +2966,7 @@ algorithm
 
     case (cache,_,"getNthAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = getNthAlgorithmItem(absynClass, n);
       then
         (cache,Values.STRING(str));
@@ -2975,7 +2975,7 @@ algorithm
 
     case (cache,_,"getInitialAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = getInitialAlgorithmItemsCount(absynClass);
       then
         (cache,Values.INTEGER(n));
@@ -2984,7 +2984,7 @@ algorithm
 
     case (cache,_,"getNthInitialAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = getNthInitialAlgorithmItem(absynClass, n);
       then
         (cache,Values.STRING(str));
@@ -2993,7 +2993,7 @@ algorithm
 
     case (cache,_,"getEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = listLength(getEquations(absynClass));
       then
         (cache,Values.INTEGER(n));
@@ -3002,7 +3002,7 @@ algorithm
 
     case (cache,_,"getNthEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = getNthEquation(absynClass, n);
       then
         (cache,Values.STRING(str));
@@ -3011,7 +3011,7 @@ algorithm
 
     case (cache,_,"getInitialEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = listLength(getInitialEquations(absynClass));
       then
         (cache,Values.INTEGER(n));
@@ -3020,7 +3020,7 @@ algorithm
 
     case (cache,_,"getNthInitialEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = getNthInitialEquation(absynClass, n);
       then
         (cache,Values.STRING(str));
@@ -3029,7 +3029,7 @@ algorithm
 
     case (cache,_,"getEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = getEquationItemsCount(absynClass);
       then
         (cache,Values.INTEGER(n));
@@ -3038,7 +3038,7 @@ algorithm
 
     case (cache,_,"getNthEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = getNthEquationItem(absynClass, n);
       then
         (cache,Values.STRING(str));
@@ -3047,7 +3047,7 @@ algorithm
 
     case (cache,_,"getInitialEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = getInitialEquationItemsCount(absynClass);
       then
         (cache,Values.INTEGER(n));
@@ -3056,7 +3056,7 @@ algorithm
 
     case (cache,_,"getNthInitialEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = getNthInitialEquationItem(absynClass, n);
       then
         (cache,Values.STRING(str));
@@ -3065,7 +3065,7 @@ algorithm
 
     case (cache,_,"getAnnotationCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = getAnnotationCount(absynClass);
       then
         (cache,Values.INTEGER(n));
@@ -3074,7 +3074,7 @@ algorithm
 
     case (cache,_,"getNthAnnotationString",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         str = getNthAnnotationString(absynClass, n);
       then
         (cache,Values.STRING(str));
@@ -3083,7 +3083,7 @@ algorithm
 
     case (cache,_,"getImportCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         n = getImportCount(absynClass);
       then
         (cache,Values.INTEGER(n));
@@ -3092,7 +3092,7 @@ algorithm
 
     case (cache,_,"getNthImport",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         vals = getNthImport(absynClass, n);
       then
         (cache,ValuesUtil.makeArray(vals));
@@ -3353,7 +3353,7 @@ protected
 algorithm
   p := SymbolTable.getAbsyn();
   try
-    Interactive.getPathedClassInProgram(className, p, true);
+    InteractiveUtil.getPathedClassInProgram(className, p, true);
   else
     str := AbsynUtil.pathFirstIdent(className);
     (p,b) := CevalScript.loadModel({(Absyn.IDENT(str),"the given model name to instantiate",{"default"},false)},Settings.getModelicaPath(Testsuite.isRunning()),p,true,true,true,false);
@@ -3384,7 +3384,7 @@ protected
   Absyn.Program p = SymbolTable.getAbsyn();
 algorithm
   try
-    Absyn.CLASS(restriction = restriction) := Interactive.getPathedClassInProgram(className, p, true);
+    Absyn.CLASS(restriction = restriction) := InteractiveUtil.getPathedClassInProgram(className, p, true);
   else
     Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className),"<TOP>"});
     fail();
@@ -3488,7 +3488,7 @@ algorithm
 
   // add also the graphics annotations if we are using the NF_API
   if Flags.isSet(Flags.NF_API) then
-    placement_p := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
+    placement_p := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
     graphic_p := AbsynToSCode.translateAbsyn2SCode(placement_p);
     scode_p := listAppend(graphic_p, scode_p);
   end if;
@@ -4055,7 +4055,7 @@ protected
   Boolean runCommand;
   String molName, dirPath, rmCommand, cdCommand, mvCommand, dirOrFileName, zipCommand;
 algorithm
-  cls := Interactive.getPathedClassInProgram(className, inProgram);
+  cls := InteractiveUtil.getPathedClassInProgram(className, inProgram);
   fileName := AbsynUtil.classFilename(cls);
   logFile := "buildEncryptedPackage.log";
   runCommand := true;
@@ -4147,10 +4147,10 @@ algorithm
     case (_,_)
       equation
         p = SymbolTable.getAbsyn();
-        cls = Interactive.getPathedClassInProgram(className, p);
+        cls = InteractiveUtil.getPathedClassInProgram(className, p);
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
-        within_ = Interactive.buildWithin(className);
-        SymbolTable.setAbsyn(Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p));
+        within_ = InteractiveUtil.buildWithin(className);
+        SymbolTable.setAbsyn(InteractiveUtil.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p));
         s1 = AbsynUtil.pathString(className);
         retStr=stringAppendList({"Translation of ",s1," successful.\n"});
       then Values.STRING(retStr);
@@ -5011,7 +5011,7 @@ algorithm
     case Absyn.WITHIN()
       algorithm
         Absyn.CLASS(info = SOURCEINFO(fileName = dst_path)) :=
-          Interactive.getPathedClassInProgram(inWithin.path, inProg);
+          InteractiveUtil.getPathedClassInProgram(inWithin.path, inProg);
       then
         dst_path;
 
@@ -5021,7 +5021,7 @@ algorithm
   cls := moveClassInfo(inClass, dst_path);
   // Change the name of the class and put it in as a copy in the program.
   cls := AbsynUtil.setClassName(cls, inName);
-  outProg := Interactive.updateProgram(Absyn.PROGRAM({cls}, inWithin), inProg);
+  outProg := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, inWithin), inProg);
 end copyClass;
 
 protected function moveSourceInfo
@@ -5740,7 +5740,7 @@ algorithm
     case (class_,p)
       equation
         p_class = AbsynUtil.crefToPath(class_) "change to the saved files directory" ;
-        cdef = Interactive.getPathedClassInProgram(p_class, p);
+        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
         filename = AbsynUtil.classFilename(cdef);
         pd = Autoconf.pathDelimiter;
         (pd_1 :: _) = stringListStringChar(pd);
@@ -6113,7 +6113,7 @@ algorithm
       Boolean b;
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),b)
       equation
-        strlist = Interactive.getClassnamesInParts(parts,b,false);
+        strlist = InteractiveUtil.getClassnamesInParts(parts,b,false);
       then
         strlist;
 
@@ -6132,7 +6132,7 @@ algorithm
 
     case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)),b)
       equation
-        strlist = Interactive.getClassnamesInParts(parts,b,false);
+        strlist = InteractiveUtil.getClassnamesInParts(parts,b,false);
       then strlist;
 
     case (_,_,Absyn.CLASS(body = Absyn.PDER(_,_,_)),_)
@@ -6177,7 +6177,7 @@ algorithm
       Boolean b;
     case (_, b, p)
       equation
-        cdef = Interactive.getPathedClassInProgram(inPath, p);
+        cdef = InteractiveUtil.getPathedClassInProgram(inPath, p);
         strlst = getClassnamesInClassList(inPath, p, cdef, b);
         result_path_lst = List.map1(strlst, joinPaths, inPath);
         result = List.flatten(List.map2(result_path_lst, getAllClassPathsRecursive, b, p));
@@ -6286,7 +6286,7 @@ algorithm
 
     case (cache,env,className::rest,msg)
       equation
-        c = Interactive.getPathedClassInProgram(className, p);
+        c = InteractiveUtil.getPathedClassInProgram(className, p);
         // filter out partial classes
         // Absyn.CLASS(partialPrefix = false) = c; // do not filter partial classes
         // filter out packages
@@ -6319,7 +6319,7 @@ algorithm
 
     case (cache,env,className::rest,msg)
       equation
-        c = Interactive.getPathedClassInProgram(className, p);
+        c = InteractiveUtil.getPathedClassInProgram(className, p);
         print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "... \n");
         failed = checkAll(cache, env, rest, msg, failed);
       then
@@ -7323,7 +7323,7 @@ algorithm
       Absyn.Program p;
     case (path,p)
       equation
-        Absyn.CLASS(body = Absyn.DERIVED()) = Interactive.getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.DERIVED()) = InteractiveUtil.getPathedClassInProgram(path, p);
       then
         true;
     else false;
@@ -7375,7 +7375,7 @@ algorithm
       Values.Value val;
     case ((val as Values.CODE(_)) :: xs, str1, true, p)
       equation
-        absynClass = Interactive.getPathedClassInProgram(ValuesUtil.getPath(val), p);
+        absynClass = InteractiveUtil.getPathedClassInProgram(ValuesUtil.getPath(val), p);
         p1 = Absyn.PROGRAM({absynClass},Absyn.TOP());
         /* Don't consider packages for FindInText search */
         false = Interactive.isPackage(ValuesUtil.getPath(val), inProgram);
@@ -7537,7 +7537,7 @@ protected
   Integer sl,sc,el,ec;
   Absyn.Path classPath;
 algorithm
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := Interactive.getPathedClassInProgram(path, p);
+  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
   cmt := getClassComment(cdef);
   file := Testsuite.friendly(file);
@@ -7661,7 +7661,7 @@ algorithm
 
     case (Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = SOME(Absyn.CLASSMOD(mod,_))) :: rest)
       equation
-        lineProgram = Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
+        lineProgram = InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
         fargs = Interactive.createFuncargsFromElementargs(mod);
         p_1 = AbsynToSCode.translateAbsyn2SCode(lineProgram);
         (cache,env) = Inst.makeEnvFromProgram(p_1);
@@ -7689,7 +7689,7 @@ protected
   list<list<String>> transitions;
   Absyn.Class cdef;
 algorithm
-  cdef := Interactive.getPathedClassInProgram(path, p);
+  cdef := InteractiveUtil.getPathedClassInProgram(path, p);
   transitions := listReverse(getTransitionsInClass(cdef));
   res := ValuesUtil.makeArray(List.map(transitions, ValuesUtil.makeStringArray));
 end getTransitions;
@@ -7822,7 +7822,7 @@ protected
   list<list<String>> initialStates;
   Absyn.Class cdef;
 algorithm
-  cdef := Interactive.getPathedClassInProgram(path, p);
+  cdef := InteractiveUtil.getPathedClassInProgram(path, p);
   initialStates := listReverse(getInitialStatesInClass(cdef));
   res := ValuesUtil.makeArray(List.map(initialStates, ValuesUtil.makeStringArray));
 end getInitialStates;
@@ -7951,7 +7951,7 @@ protected function addInitialState
   output Boolean b;
   output Absyn.Program outProgram;
 algorithm
-  (b, outProgram) := addInitialStateWithAnnotation(inPath, state, Interactive.annotationListToAbsyn(inAbsynNamedArgLst), inProgram);
+  (b, outProgram) := addInitialStateWithAnnotation(inPath, state, InteractiveUtil.annotationListToAbsyn(inAbsynNamedArgLst), inProgram);
 end addInitialState;
 
 protected function addInitialStateWithAnnotation
@@ -7974,15 +7974,15 @@ algorithm
 
     case (modelpath, state_, ann,(p as Absyn.PROGRAM()))
       equation
-        cdef = Interactive.getPathedClassInProgram(modelpath, p);
+        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
         newcdef = Interactive.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, AbsynUtil.dummyInfo));
         if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(modelpath)) then
-          newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
+          newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
         else
           package_ = AbsynUtil.stripLast(modelpath);
-          newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
+          newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
         end if;
       then
         (true, newp);
@@ -8008,13 +8008,13 @@ algorithm
 
     case (modelpath, state_, (p as Absyn.PROGRAM()))
       equation
-        cdef = Interactive.getPathedClassInProgram(modelpath, p);
+        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
         newcdef = deleteInitialStateInClass(cdef, state_);
         if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(modelpath)) then
-          newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.TOP()), p);
+          newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.TOP()), p);
         else
           modelwithin = AbsynUtil.stripLast(modelpath);
-          newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.WITHIN(modelwithin)), p);
+          newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.WITHIN(modelwithin)), p);
         end if;
       then
         (true, newp);
@@ -8047,9 +8047,9 @@ algorithm
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),
                       info = file_info), state_)
       equation
-        eqlst = Interactive.getEquationList(parts);
+        eqlst = InteractiveUtil.getEquationList(parts);
         eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
-        parts2 = Interactive.replaceEquationList(parts, eqlst_1);
+        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
     /* an extended class with parts: model extends M end M;  */
@@ -8057,9 +8057,9 @@ algorithm
                       body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)
                       ,info = file_info), state_)
       equation
-        eqlst = Interactive.getEquationList(parts);
+        eqlst = InteractiveUtil.getEquationList(parts);
         eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
-        parts2 = Interactive.replaceEquationList(parts, eqlst_1);
+        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
   end match;
@@ -8590,7 +8590,7 @@ protected
 algorithm
   try
     p := SymbolTable.getAbsyn();
-    cls := Interactive.getPathedClassInProgram(clsPath, p, showError = true);
+    cls := InteractiveUtil.getPathedClassInProgram(clsPath, p, showError = true);
     //System.startTimer();
     cls := Conversion.convertPackage(cls, scriptFile);
     //System.stopTimer();
@@ -8623,7 +8623,7 @@ algorithm
   try
     // Get the Absyn for the class and check which version of the library it's using.
     p := SymbolTable.getAbsyn();
-    cls := Interactive.getPathedClassInProgram(clsPath, p, showError = true);
+    cls := InteractiveUtil.getPathedClassInProgram(clsPath, p, showError = true);
     uses_version := Interactive.getUsedVersion(cls, libPath);
 
     if isSome(uses_version) then
@@ -8646,7 +8646,7 @@ algorithm
 
     // Try to find a sequence of conversion scripts that can be used to convert
     // the class to the desired library version.
-    lib_cls := Interactive.getPathedClassInProgram(libPath, lib_program, showError = true);
+    lib_cls := InteractiveUtil.getPathedClassInProgram(libPath, lib_program, showError = true);
     conversions := Interactive.getConversionsInClass(lib_cls);
     scripts := findConversionPaths(conversions, lib_version, lib_version_used);
 
