@@ -70,7 +70,7 @@ SET(SIMSTER_BUILD OFF)
 SET(Boost_USE_MULTITHREADED ON)
 
 #Set Variables
-SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
+SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../ModelicaExternalC/C-Sources")
 SET(USERTABDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/Data/Tables")
 
 IF(UNIX)
@@ -132,7 +132,7 @@ OPTION(BUILD_BROYDEN ON)
 OPTION(BUILD_PEER ON)
 
 #Set Variables
-SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
+SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../ModelicaExternalC/C-Sources")
 
 IF(NOT FMU_TARGET)
  IF(MSVC)
