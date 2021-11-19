@@ -425,11 +425,8 @@ protected
     input UnorderedMap<ComponentRef, ClusterPointer> map;
   algorithm
     _ := match exp
-      local
-        ComponentRef stripped;
       case Expression.CREF() guard(not ComponentRef.isTime(exp.cref)) algorithm
-        stripped := ComponentRef.stripSubscriptsExceptModel(exp.cref);
-        _ := collectPartitionsCref(stripped, eqCref, systemType, map);
+        _ := collectPartitionsCref(exp.cref, eqCref, systemType, map);
       then ();
       else ();
     end match;
@@ -441,17 +438,20 @@ protected
     input System.SystemType systemType;
     input UnorderedMap<ComponentRef, ClusterPointer> map;
   protected
+    ComponentRef stripped;
     Boolean b;
   algorithm
+    stripped := ComponentRef.stripSubscriptsExceptModel(varCref);
+
     b := match systemType
-      case System.SystemType.ODE then BVariable.checkCref(varCref, BVariable.isParamOrConst);
-      case System.SystemType.INI then BVariable.checkCref(varCref, BVariable.isConst);
+      case System.SystemType.ODE then BVariable.checkCref(stripped, BVariable.isParamOrConst);
+      case System.SystemType.INI then BVariable.checkCref(stripped, BVariable.isConst);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the SystemType " + System.System.systemTypeString(systemType) + " is not yet supported."});
       then fail();
     end match;
     if not b then
-      _ := match (UnorderedMap.get(eqCref, map), UnorderedMap.get(varCref, map))
+      _ := match (UnorderedMap.get(eqCref, map), UnorderedMap.get(stripped, map))
         local
           ClusterPointer cluster1, cluster2;
           Cluster c;
@@ -459,7 +459,7 @@ protected
         // neither equation nor variable already have a cluster
         case (NONE(), NONE()) algorithm
           cluster1 := Pointer.create(CLUSTER({}, {}));
-          addCrefToMap(varCref, cluster1, map);
+          addCrefToMap(stripped, cluster1, map);
           addCrefToMap(eqCref, cluster1, map);
         then ();
 
@@ -470,7 +470,7 @@ protected
 
         // variable does not have a cluster, but equation has one
         case (SOME(cluster1), NONE()) algorithm
-          addCrefToMap(varCref, cluster1, map);
+          addCrefToMap(stripped, cluster1, map);
         then ();
 
         // both already have a different cluster
