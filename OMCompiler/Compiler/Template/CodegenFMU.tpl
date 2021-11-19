@@ -451,6 +451,7 @@ end setStartValues;
 template initializeFunction(list<SimEqSystem> allEquations)
   "Generates initialize function for c file."
 ::=
+  let &sub = buffer ""
   let &varDecls = buffer "" /*BUFD*/
   let eqPart = ""/* (allEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls)
@@ -463,7 +464,7 @@ template initializeFunction(list<SimEqSystem> allEquations)
 
     <%eqPart%>
     <%allEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%escapeModelicaStringToCString(crefStrNoUnderscore(cref))%>", <%cref(cref)%>); }'
+      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%escapeModelicaStringToCString(crefStrNoUnderscore(cref))%>", <%cref(cref, &sub)%>); }'
     ;separator="\n"%>
 
   }
