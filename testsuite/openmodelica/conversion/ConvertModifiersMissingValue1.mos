@@ -11,7 +11,7 @@ loadString("
   end ConvertModifiersMissingValue1;
 ");
 
-convertPackage(ConvertModifiersMissingValue1, "scripts/ConvertModifiers3.mos");
+runConversionScript(ConvertModifiersMissingValue1, "scripts/ConvertModifiers3.mos");
 getErrorString();
 list(ConvertModifiersMissingValue1);
 

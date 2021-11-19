@@ -10,7 +10,7 @@ loadString("
   end ConvertClass8;
 ");
 
-convertPackage(ConvertClass8, "scripts/ConvertClass4.mos");
+runConversionScript(ConvertClass8, "scripts/ConvertClass4.mos");
 getErrorString();
 list(ConvertClass8);
 

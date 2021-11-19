@@ -28,7 +28,7 @@ loadString("
   end ConvertClass7;
 ");
 
-convertPackage(ConvertClass7, "scripts/ConvertClass4.mos");
+runConversionScript(ConvertClass7, "scripts/ConvertClass4.mos");
 getErrorString();
 list(ConvertClass7);
 

@@ -1,0 +1,20 @@
+// name:   ConvertPackageMissingUses
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertPackageMissingUses
+    testlib.Integer0 i;
+  end ConvertPackageMissingUses;
+");
+
+convertPackageToLibrary(ConvertPackageMissingUses, testlib, "2.0.0");
+getErrorString();
+
+// Result:
+// true
+// false
+// "Error: Cannot convert ‘ConvertPackageMissingUses‘ since it has no uses-annotation for ‘testlib‘.
+// "
+// endResult

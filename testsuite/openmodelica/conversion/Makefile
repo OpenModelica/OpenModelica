@@ -19,6 +19,9 @@ ConvertModifiers2.mos \
 ConvertModifiers3.mos \
 ConvertModifiers4.mos \
 ConvertModifiersMissingValue1.mos \
+ConvertPackage1.mos \
+ConvertPackage2.mos \
+ConvertPackageMissingUses.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

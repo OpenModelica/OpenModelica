@@ -5555,5 +5555,203 @@ algorithm
   end match;
 end pathContains;
 
+function getClassAnnotation
+  "Returns the optional annotation for a class. Some classes may have multiple
+   annotations because Modelica 2 allowed it, in that case only the first
+   annotation is returned."
+  input Absyn.Class cls;
+  output Option<Absyn.Annotation> ann;
+algorithm
+  ann := getClassDefAnnotation(cls.body);
+end getClassAnnotation;
+
+function getClassDefAnnotation
+  "Returns the optional annotation for a class definition."
+  input Absyn.ClassDef cdef;
+  output Option<Absyn.Annotation> ann;
+algorithm
+  ann := match cdef
+    case Absyn.ClassDef.PARTS()
+      then if listEmpty(cdef.ann) then NONE() else SOME(listHead(cdef.ann));
+    case Absyn.ClassDef.DERIVED(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
+    case Absyn.ClassDef.ENUMERATION(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
+    case Absyn.ClassDef.OVERLOAD(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      then if listEmpty(cdef.ann) then NONE() else SOME(listHead(cdef.ann));
+    case Absyn.ClassDef.PDER(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
+    else NONE();
+  end match;
+end getClassDefAnnotation;
+
+function setClassAnnotation
+  "Overwrites the annotation for a class with a given annotation. If the class
+   has multiple annotations only the first is overwritten, similarly to how
+   getClassAnnotation ignores other annotations than the first."
+  input output Absyn.Class cls;
+  input Option<Absyn.Annotation> ann;
+algorithm
+  cls.body := setClassDefAnnotation(cls.body, ann);
+end setClassAnnotation;
+
+function setClassDefAnnotation
+  "Overwrites the annotation for a class definition with a given annotation."
+  input output Absyn.ClassDef cdef;
+  input Option<Absyn.Annotation> ann;
+algorithm
+  () := match cdef
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        if not listEmpty(cdef.ann) then
+          cdef.ann := listRest(cdef.ann);
+        end if;
+
+        if isSome(ann) then
+          cdef.ann := Util.getOption(ann) :: cdef.ann;
+        end if;
+      then
+        ();
+
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        cdef.comment := setCommentAnnotation(cdef.comment, ann);
+      then
+        ();
+
+    case Absyn.ClassDef.ENUMERATION()
+      algorithm
+        cdef.comment := setCommentAnnotation(cdef.comment, ann);
+      then
+        ();
+
+    case Absyn.ClassDef.OVERLOAD()
+      algorithm
+        cdef.comment := setCommentAnnotation(cdef.comment, ann);
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        if not listEmpty(cdef.ann) then
+          cdef.ann := listRest(cdef.ann);
+        end if;
+
+        if isSome(ann) then
+          cdef.ann := Util.getOption(ann) :: cdef.ann;
+        end if;
+      then
+        ();
+
+    case Absyn.ClassDef.PDER()
+      algorithm
+        cdef.comment := setCommentAnnotation(cdef.comment, ann);
+      then
+        ();
+
+    else ();
+  end match;
+end setClassDefAnnotation;
+
+function setCommentAnnotation
+  "Overwrites the annotation in an optional comment."
+  input output Option<Absyn.Comment> comment;
+  input Option<Absyn.Annotation> ann;
+protected
+  Option<String> cmt;
+algorithm
+  comment := match (comment, ann)
+    // No comment, no annotation => no comment
+    case (NONE(), NONE()) then comment;
+    // No comment, some annotation => new comment
+    case (NONE(), _) then SOME(Absyn.Comment.COMMENT(ann, NONE()));
+    // Some comment => overwrite annotation in comment
+    case (SOME(Absyn.Comment.COMMENT(_, cmt)), _)
+      then SOME(Absyn.Comment.COMMENT(ann, cmt));
+  end match;
+end setCommentAnnotation;
+
+function mapAnnotationBinding
+  "Updates the binding expression for the element specificed by the given path
+   in an annotation using the given function. found will be true if the element
+   was found and updated, otherwise false."
+  input output Absyn.Annotation ann;
+  input Absyn.Path path;
+  input MapFunc func;
+        output Boolean found;
+
+  partial function MapFunc
+    input output Absyn.Exp exp;
+  end MapFunc;
+protected
+  list<Absyn.ElementArg> args = ann.elementArgs;
+algorithm
+  (args, found) := List.findMap(args, function mapAnnotationBindingInArg(path = path, func = func));
+  ann.elementArgs := args;
+end mapAnnotationBinding;
+
+function mapAnnotationBindingInArg
+  "Helper function to mapAnnotationBinding."
+  input output Absyn.ElementArg arg;
+  input Absyn.Path path;
+  input MapFunc func;
+        output Boolean found = false;
+
+  partial function MapFunc
+    input output Absyn.Exp exp;
+  end MapFunc;
+protected
+  Absyn.Modification mod;
+  list<Absyn.ElementArg> mod_args;
+  Absyn.EqMod mod_eq;
+  Absyn.Path rest_path;
+  Integer arg_path_len;
+algorithm
+  () := match arg
+    case Absyn.ElementArg.MODIFICATION(modification = SOME(mod))
+      algorithm
+        if pathPrefixOf(arg.path, path) then
+          arg_path_len := pathPartCount(arg.path);
+
+          if arg_path_len == pathPartCount(path) then
+            mod_eq := mapAnnotationBindingInEqMod(mod.eqMod, func);
+            mod.eqMod := mod_eq;
+            found := true;
+          else
+            rest_path := Util.foldcallN(arg_path_len, AbsynUtil.pathRest, path);
+            (mod_args, found) := List.findMap(mod.elementArgLst,
+              function mapAnnotationBindingInArg(path = rest_path, func = func));
+            mod.elementArgLst := mod_args;
+          end if;
+
+          if found then
+            arg.modification := SOME(mod);
+          end if;
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end mapAnnotationBindingInArg;
+
+function mapAnnotationBindingInEqMod
+  "Helper function to mapAnnotationBinding."
+  input output Absyn.EqMod eqMod;
+  input MapFunc func;
+
+  partial function MapFunc
+    input output Absyn.Exp exp;
+  end MapFunc;
+algorithm
+  () := match eqMod
+    case Absyn.EqMod.EQMOD()
+      algorithm
+        eqMod.exp := func(eqMod.exp);
+      then
+        ();
+
+    else ();
+  end match;
+end mapAnnotationBindingInEqMod;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

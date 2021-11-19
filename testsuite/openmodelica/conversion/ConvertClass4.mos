@@ -35,7 +35,7 @@ loadString("
   end ConvertClass4;
 ");
 
-convertPackage(ConvertClass4, "scripts/ConvertClass4.mos");
+runConversionScript(ConvertClass4, "scripts/ConvertClass4.mos");
 getErrorString();
 list(ConvertClass4);
 

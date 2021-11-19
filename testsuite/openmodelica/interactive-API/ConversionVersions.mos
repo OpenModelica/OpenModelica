@@ -10,14 +10,15 @@ loadString("package P2
 end P2;");
 getConversionsFromVersions(P2);getErrorString();
 loadString("package P3
-  annotation(conversion(noneFromVersion=\"1.2.3\",from(version=\"1.2.4\"),from(version={\"1.2.5\",\"1.2.6\"}),noneFromVersion=\"1.2.7\"));
+  annotation(conversion(noneFromVersion=\"1.2.3\",from(version=\"1.2.4\", script = \"conversion_1_2_4.mos\"),from(version={\"1.2.5\",\"1.2.6\"}, script = \"conversion_1_2_6.mos\"),noneFromVersion=\"1.2.7\"));
 end P3;");
 getConversionsFromVersions(P3);getErrorString();
 
 // Result:
 // true
 // ({},{})
-// "[<interactive>:2:25-2:46:writable] Warning: Conversion-annotation is missing version for from-conversion: from(version = {x, y, z}).
+// "[<interactive>:2:30-2:45:writable] Warning: Conversion-annotation contains unknown element: version.
+// [<interactive>:2:25-2:46:writable] Warning: Conversion-annotation is missing version for from-conversion: from(version = {x, y, z}).
 // "
 // true
 // ({},{})

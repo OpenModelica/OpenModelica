@@ -365,6 +365,82 @@ algorithm
   end try;
 end versionsThatProvideTheWanted;
 
+function versionsThatConvertFromTheWanted
+  "Returns a list of versions that provide conversion from the given version of a library."
+  input String id;
+  input String version;
+  input Boolean printError;
+  output list<String> result;
+protected
+  JSON obj, libobject, vers;
+  list<String> versions;
+  SemanticVersion.Version wantedVersion, convertVersion;
+  list<JSON> convertFrom;
+  String versionStr;
+algorithm
+  result := {};
+  try
+    obj := getPackageIndex(printError);
+    libobject := JSON.get(JSON.get(obj, "libs"), id);
+    (vers as JSON.OBJECT(orderedKeys=versions)) := JSON.get(libobject, "versions");
+    wantedVersion := SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true);
+
+    for v in versions loop
+      JSON.ARRAY(values = convertFrom) := JSON.getOrDefault(JSON.get(vers, v), "convertFromVersion", JSON.ARRAY({}));
+      for c in convertFrom loop
+        JSON.STRING(versionStr) := c;
+        convertVersion := SemanticVersion.parse(versionStr, nonsemverAsZeroZeroZero=true);
+
+        if SemanticVersion.compare(wantedVersion, convertVersion) == 0 then
+          result := v :: result;
+          continue;
+        end if;
+      end for;
+    end for;
+  else
+    return;
+  end try;
+end versionsThatConvertFromTheWanted;
+
+function versionsThatConvertToTheWanted
+  "Returns a list of versions that can be converted to the given version of a library."
+  input String id;
+  input String version;
+  input Boolean printError;
+  output list<String> result;
+protected
+  JSON obj, libobject, vers;
+  list<String> versions;
+  SemanticVersion.Version wantedVersion, libVersion;
+  list<JSON> convertFrom;
+  String versionStr;
+algorithm
+  result := {};
+  try
+    obj := getPackageIndex(printError);
+    libobject := JSON.get(JSON.get(obj, "libs"), id);
+    vers as JSON.OBJECT(orderedKeys = versions) := JSON.get(libobject, "versions");
+    wantedVersion := SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true);
+
+    for v in versions loop
+      libVersion := SemanticVersion.parse(v, nonsemverAsZeroZeroZero=true);
+
+      if SemanticVersion.compare(wantedVersion, libVersion) == 0 then
+        JSON.ARRAY(values = convertFrom) := JSON.get(JSON.get(vers, v), "convertFromVersion");
+
+        for c in convertFrom loop
+          JSON.STRING(versionStr) := c;
+          result := versionStr :: result;
+        end for;
+
+        return;
+      end if;
+    end for;
+  else
+    return;
+  end try;
+end versionsThatConvertToTheWanted;
+
 function installPackage
   input String pkg;
   input String version;

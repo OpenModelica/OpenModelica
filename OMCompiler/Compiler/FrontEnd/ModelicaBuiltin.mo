@@ -4014,6 +4014,30 @@ annotation(
   preferredView="text");
 end getAvailablePackageVersions;
 
+function getAvailablePackageConversionsTo
+  input TypeName pkg;
+  input String version;
+  output String[:] convertsTo;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the versions that provide conversion to the requested version of the library.
+</html>"),
+  preferredView="text");
+end getAvailablePackageConversionsTo;
+
+function getAvailablePackageConversionsFrom
+  input TypeName pkg;
+  input String version;
+  output String[:] convertsTo;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the versions that provide conversion from the requested version of the library.
+</html>"),
+  preferredView="text");
+end getAvailablePackageConversionsFrom;
+
 function upgradeInstalledPackages
   input Boolean installNewestVersions = true;
   output Boolean result;
@@ -4358,12 +4382,26 @@ annotation(
 </html>"), preferredView="text");
 end generateScriptingAPI;
 
-function convertPackage
-  input TypeName cl;
+function runConversionScript
+  input TypeName packageToConvert;
   input String scriptFile;
   output Boolean success;
 external "builtin";
-end convertPackage;
+annotation(preferredView="text",Documentation(info="<html>
+<p>Runs a conversion script on a selected package.</p>
+</html>"));
+end runConversionScript;
+
+function convertPackageToLibrary
+  input TypeName packageToConvert;
+  input TypeName library;
+  input String libraryVersion;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Runs the conversion script for a library on a selected package.</p>
+</html>"));
+end convertPackageToLibrary;
 
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc);
