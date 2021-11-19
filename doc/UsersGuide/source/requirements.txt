@@ -2,7 +2,7 @@ bibtexparser
 gitpython
 natsort
 sphinx
-sphinxcontrib-bibtex
+sphinxcontrib-bibtex<2.0.0
 sphinxcontrib-inlinesyntaxhighlight
 sphinxcontrib-programoutput
 ompython
