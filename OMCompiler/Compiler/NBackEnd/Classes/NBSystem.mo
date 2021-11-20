@@ -90,7 +90,7 @@ public
                           EquationPointers.toString(system.equations, "Equations") + "\n";
         then str;
       end match;
-
+/*
       if isSome(system.adjacencyMatrix) then
         str := str + Adjacency.Matrix.toString(Util.getOption(system.adjacencyMatrix)) + "\n";
       end if;
@@ -98,7 +98,7 @@ public
       if isSome(system.matching) then
         str := str + Matching.toString(Util.getOption(system.matching)) + "\n";
       end if;
-
+*/
       if isSome(system.jacobian) then
         str := str + Jacobian.toString(Util.getOption(system.jacobian)) + "\n";
       end if;

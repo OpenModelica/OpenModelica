@@ -287,6 +287,23 @@ public
       end match;
     end getMappingOpt;
 
+    function nonZeroCount
+      input Matrix adj;
+      output Integer count;
+    algorithm
+      count := match adj
+        case PSEUDO_ARRAY_ADJACENCY_MATRIX()  then BackendUtil.countElem(adj.m);
+        case SCALAR_ADJACENCY_MATRIX()        then BackendUtil.countElem(adj.m);
+        case EMPTY_ADJACENCY_MATRIX()         then 0;
+        case ARRAY_ADJACENCY_MATRIX() algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array adjacency matrix is not jet supported."});
+        then fail();
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown matrix type."});
+        then fail();
+      end match;
+    end nonZeroCount;
+
   protected
     function toStringSingle
       input array<list<Integer>> m;

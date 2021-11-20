@@ -55,6 +55,15 @@ public
     output list<Integer> indices = list(i for i guard arr[i] in arrayLength(arr):-1:1);
   end findTrueIndices;
 
+  function countElem
+    input array<list<Integer>> m;
+    output Integer count = 0;
+  algorithm
+    for lst in m loop
+      count := count + listLength(lst);
+    end for;
+  end countElem;
+
   function indexTplGt<T>
     "use with List.sort() and a rating function to sort any list"
     input tuple<Integer, T> tpl1;

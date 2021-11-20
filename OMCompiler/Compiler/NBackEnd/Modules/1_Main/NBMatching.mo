@@ -61,11 +61,13 @@ protected
   import NBVariable.{VarData, VariablePointer, VariablePointers};
   import ResolveSingularities = NBResolveSingularities;
 
+  // OB import
+  import BackendDAEEXT;
+
   // Util import
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
   import NBSlice.IntLst;
-
 public
   // =======================================
   //                MATCHING
@@ -200,9 +202,9 @@ public
       // PSEUDO ARRAY
       case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
         if transposed then
-          (matching, marked_eqns) := scalarMatching(adj.mT, adj.m, transposed, partially);
+          (matching, marked_eqns) := PFPlusExternal(adj.mT, adj.m, transposed, partially);
         else
-          (matching, marked_eqns) := scalarMatching(adj.m, adj.mT, transposed, partially);
+          (matching, marked_eqns) := PFPlusExternal(adj.m, adj.mT, transposed, partially);
         end if;
       then (matching, marked_eqns, SOME(adj.mapping), NBAdjacency.MatrixType.PSEUDO, adj.st);
 
@@ -445,6 +447,35 @@ protected
       end if;
     end for;
   end augmentPath;
+
+  function PFPlusExternal
+    input array<list<Integer>> m;
+    input array<list<Integer>> mT;
+    input Boolean transposed = false        "transpose matching if true";
+    input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
+    output Matching matching;
+    // this needs partially = true to get computed. Otherwise it fails on singular systems
+    output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular system";
+  protected
+    Integer nVars = arrayLength(mT), nEqns = arrayLength(m), nonZero = BackendUtil.countElem(m);
+    array<Integer> var_to_eqn;
+    array<Integer> eqn_to_var;
+    array<Boolean> var_marks;
+    array<Boolean> eqn_marks;
+    Boolean pathFound;
+    Integer cheap = 1, clear = 1, algIndx = 5 "PFPlusExternal index";
+  algorithm
+    var_to_eqn := arrayCreate(nVars, -1);
+    eqn_to_var := arrayCreate(nEqns, -1);
+
+    BackendDAEEXT.setAssignment(nVars, nEqns, var_to_eqn, eqn_to_var);
+    BackendDAEEXT.setAdjacencyMatrix(nVars, nEqns, nonZero, m);
+    BackendDAEEXT.matching(nVars, nEqns, algIndx, cheap, 1.0, clear);
+    BackendDAEEXT.getAssignment(var_to_eqn, eqn_to_var);
+
+    // create the matching structure
+    matching := if transposed then SCALAR_MATCHING(var_to_eqn, eqn_to_var) else SCALAR_MATCHING(eqn_to_var, var_to_eqn);
+  end PFPlusExternal;
 
   // ######################################
   //            LINEAR MATCHING

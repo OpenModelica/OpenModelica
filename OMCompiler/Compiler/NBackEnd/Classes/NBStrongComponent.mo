@@ -129,6 +129,7 @@ public
     str := match comp
       local
         Tearing casual;
+        Integer len;
 
       case SINGLE_EQUATION()
         algorithm
@@ -139,10 +140,11 @@ public
 
       case SLICED_EQUATION()
         algorithm
+          len := listLength(comp.eqn_indices);
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Equation");
           str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
           str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
-          str := str + "    with slices: " + List.toString(comp.eqn_indices, intString) + "\n";
+          str := str + "    with slices: " + List.toString(List.firstN(comp.eqn_indices, intMin(len, 10)), intString, "", "{", ", ", if len > 10 then ", ...}" else "}") + "\n";
       then str;
 
       case SINGLE_ARRAY()
