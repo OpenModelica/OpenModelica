@@ -595,6 +595,8 @@ public:
   AboutOMEditDialog(MainWindow *pMainWindow);
 private:
   Label *mpOMContributorsLabel;
+public slots:
+  void showReportIssue();
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
 };

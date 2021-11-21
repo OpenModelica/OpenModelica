@@ -430,6 +430,7 @@ public:
   static QString translationFlags;
   static QString send;
   static QString installLibrary;
+  static QString reportIssue;
 };
 
 class GUIMessages : public QObject

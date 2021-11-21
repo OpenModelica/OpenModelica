@@ -423,6 +423,7 @@ QString Helper::systemSimulationInformation;
 QString Helper::translationFlags;
 QString Helper::send;
 QString Helper::installLibrary;
+QString Helper::reportIssue;
 
 void Helper::initHelperVariables()
 {
@@ -724,6 +725,7 @@ void Helper::initHelperVariables()
   Helper::translationFlags = tr("Translation Flags");
   Helper::send = tr("Send");
   Helper::installLibrary = tr("Install Library");
+  Helper::reportIssue = tr("Report Issue");
 }
 
 QString GUIMessages::getMessage(int type)
