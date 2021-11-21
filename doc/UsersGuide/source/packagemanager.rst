@@ -4,7 +4,7 @@ Package Management
 Overview of Basic Modelica Package Management Concepts
 ------------------------------------------------------
 
-The Modelica language promotes the orderly reuse of component models by means of packages, that contain
+The Modelica language promotes the orderly reuse of component models by means of packages  that contain
 structured libraries of reusable models. The most prominent example is the Modelica Standard Library (MSL),
 that contains basic models covering many fields of engineering. Other libraries, both open-source and
 commercial, are available to cover specific applications domains.
@@ -30,24 +30,29 @@ read-only libraries are placed by default in the MODELICAPATH.
 
 When a new version of certain package comes out, `conversion annotations
 <https://specification.modelica.org/maint/3.5/annotations.html#version-handling>`_ in it declare whether your models using
-a certain older version of it can be used as they are with the new one, which is then 100% backwards compatible, or whether
-they need to be upgraded by running a conversion script, provided with the new version of the package. 
+a certain older version of it can be used as they are with the new one, which is then 100% backwards-compatible, or whether
+they need to be upgraded by running a conversion script, provided with the new version of the package. The former case
+is declared explicitly by a ``conversion(noneFromVersion)`` annotation. For example, a ``conversion(noneFromVersion="3.0.0")``
+annotation in version ``3.1.0`` of a certain package means that all packages using version ``3.0.0`` can use ``3.1.0``
+without any change. Of course it is preferrable to use a newer, backwards-compatible version, as it contains bugfixes
+and possibly new features.
 
-If you install a new version of a library which is 100% backwards compatible with the previous ones, all your models that
-used the old one will automatically use the new one, which may contain bug-fixes, without the need of any further action.
+Hence, if you install a new version of a library which is 100% backwards-compatible with the previous ones, all your models that
+used the old one will automatically load and use the new one, without the need of any further action.
 
-If the new version is not backwards compatible, instead, you will need to create a new version of
+If the new version is not backwards-compatible, instead, you will need to create a new version of
 your library that uses it, by running the provided conversion scripts. 
 
 OpenModelica has a package manager that can be used to install and update libraries on your computer, and is able to run
-conversion scripts. Keep in mind there are three stages in package usage: *available* packages are stored on the OSMC
-servers; *installed* packages are stored in the MODELICAPATH of your computer; *loaded* packages are loaded in memory
+conversion scripts. Keep in mind there are three stages in package usage: *available* packages are indexed on the
+OSMC servers and can be downloaded from public repositories;
+*installed* packages are stored in the MODELICAPATH of your computer; *loaded* packages are loaded in memory
 in an active OMC session, either via the Interactive Environment, or via the OMEdit GUI, where they are shown in the
 Libraries Browser. When you load a package, OpenModelica tries to load the best possible installed versions of all
 the dependencies declared in the uses annotation.
 
 The Package Manager
----------------
+-------------------
 
 The Open Source Modelica Consortium (OSMC) maintains a collection of publicly available, open-source Modelica packages
 on its servers. They are routinely tested with past released versions of OpenModelica, as well as with the current development
@@ -59,7 +64,7 @@ conversion annotations.
 The OpenModelica Package Manager relies on this information to install the best versions of the library dependencies of your 
 own Modelica packages. It can be run both from the OMEdit GUI and from the command-line interactive environment.
 
-Note that the Package Manager may install multiple builds of the same library version on your PC, if they are available on the
+Note that the Package Manager may install multiple builds of the same library version on your PC, if they are indexed on the
 OSMC servers. When this happens, they are distinguished among each other by means of 
 `semver <https://https://semver.org/#semantic-versioning-specification-semver>`_-style pre- or post-release metadata in the
 top directory name on the file system. Post-release builds are denoted by a plus sign (e.g. ``2.0.0+build.02``)
@@ -71,6 +76,9 @@ precedence will always be loaded. For example, if the versions ``2.0.0-beta.01``
 are installed, the latter is loaded by libraries with uses annotation requiring version ``2.0.0``. Unless, of course,
 there are later backwards-compatible versions installed, e.g., ``2.0.1``, in which case the one with the highest release
 number and priority is installed.
+
+In any case, semver version semantics is only used to order the releases, while backwards-compatibility
+is determined exclusively on the basis of ``noneFromVersion`` annotations.
 
 Package Management in OMEdit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -124,9 +132,9 @@ notifications and error messages.
    starting from the most recent one, in descending order of priority. Note that pre-release versions have lower priority
    than all other versions;
 - ``getAvailablePackageVersions(Buildings, "7.0.0")``: lists all available versions of the Buildings library on
-   the OSMC server that are backwards compatible with version ``7.0.0``, in descending order of priority;
+   the OSMC server that are backwards-compatible with version ``7.0.0``, in descending order of priority;
 - ``installPackage(Buildings, "")``:install the most recent version of the Building libraries, *and all its dependencies*;
-- ``installPackage(Buildings, "7.0.0")``: install the most recent version of the Building libraries which is backwards compatible
+- ``installPackage(Buildings, "7.0.0")``: install the most recent version of the Building libraries which is backwards-compatible
     with version ``7.0.0``, *and all its dependencies*;
 - ``installPackage(Buildings, "7.0.0", exactMatch = true)``: install version ``7.0.0`` even if there are more recent
     backwards-compatible versions available, *and all its dependencies*;
