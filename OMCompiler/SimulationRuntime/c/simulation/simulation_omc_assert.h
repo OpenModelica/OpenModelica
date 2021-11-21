@@ -43,9 +43,9 @@ void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_IN
 
 void omc_assert_warning_simulation_withEquationIndexes(FILE_INFO info, const int *indexes, const char *msg, ...);
 
-void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...);
+void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
 void omc_terminate_simulation(FILE_INFO info, const char *msg, ...);
-void omc_throw_simulation(threadData_t* threadData);
+void omc_throw_simulation(threadData_t* threadData) __attribute__ ((noreturn));
 void omc_assert_warning_simulation(FILE_INFO info, const char *msg, ...);
 
 #endif // Header
