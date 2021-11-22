@@ -615,8 +615,8 @@ typedef enum EVAL_CONTEXT
 
 typedef struct SIMULATION_INFO
 {
-  modelica_real startTime;
-  modelica_real stopTime;
+  modelica_real startTime;            /* Start time of the simulation */
+  modelica_real stopTime;             /* Stop time of the simulation */
   int useStopTime;
   modelica_integer numSteps;
   modelica_real stepSize;
@@ -725,8 +725,7 @@ typedef struct SIMULATION_INFO
   INLINE_DATA* inlineData;
 
   /* delay vars */
-  double tStart;
-  RINGBUFFER **delayStructure;
+  RINGBUFFER **delayStructure;        /* Array of ring buffers for delay expressions */
   const char *OPENMODELICAHOME;
 
   CHATTERING_INFO chatteringInfo;

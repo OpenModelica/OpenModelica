@@ -161,6 +161,7 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
 
   /* Add event to spatialDistribution */
   if (foundEvent==1) {
+    data->callback->function_storeDelayed(data, threadData);
     data->callback->function_storeSpatialDistribution(data, threadData);
   }
 

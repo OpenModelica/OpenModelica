@@ -3407,7 +3407,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
       <<
       equationIndexes[1] = <%id%>;
       <%preExp%>
-      storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, data->localData[0]->timeValue, <%delayExp%>, <%delayExpMax%>);<%\n%>
+      storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, <%delayExp%>, <%delayExpMax%>);<%\n%>
       >>
     ))
   <<

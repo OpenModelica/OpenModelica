@@ -476,7 +476,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
  * @param isPositiveVelocity  Unused
  * @return double             Value of zeroCrossing at position posX.
  */
-double spatialDistributionZeroCrossing (DATA* data, threadData_t *threadData, unsigned int index, unsigned int relationIndex, double posX, int isPositiveVelocity) {
+double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, unsigned int index, unsigned int relationIndex, double posX, int isPositiveVelocity) {
   /* Variables */
   SPATIAL_DISTRIBUTION_DATA* spatialDistribution;
   DOUBLE_ENDED_LIST* storedEventsList;
