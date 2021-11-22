@@ -1200,12 +1200,11 @@ algorithm
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
-      DAE.InlineType inlineType;
       Option<SCode.Comment> c;
       DAE.ExternalDecl ext_decl;
       Boolean isImpure;
 
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
+    case DAE.FUNCTION(path = fpath, functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
                       type_ = t,isImpure = isImpure,comment = c)
       equation
         typeStr = Types.printTypeStr(t);
@@ -1217,8 +1216,6 @@ algorithm
         Print.printBuf("function ");
         fstr = AbsynUtil.pathStringNoQual(fpath);
         Print.printBuf(fstr);
-        inlineTypeStr = dumpInlineTypeStr(inlineType);
-        Print.printBuf(inlineTypeStr);
         Print.printBuf(dumpCommentStr(c));
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
@@ -1233,7 +1230,7 @@ algorithm
       then
         ();
 
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
+    case DAE.FUNCTION(path = fpath, functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
                       isImpure = isImpure, comment = c)
       equation
         impureStr = if isImpure then "impure " else "";
@@ -1241,8 +1238,6 @@ algorithm
         Print.printBuf("function ");
         fstr = AbsynUtil.pathStringNoQual(fpath);
         Print.printBuf(fstr);
-        inlineTypeStr = dumpInlineTypeStr(inlineType);
-        Print.printBuf(inlineTypeStr);
         Print.printBuf(dumpCommentStr(c));
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
@@ -3588,13 +3583,12 @@ algorithm
       list<DAE.Element> daeElts;
       DAE.Type t;
       DAE.Type tp;
-      DAE.InlineType inlineType;
       IOStream.IOStream str;
       Option<SCode.Comment> c;
       DAE.ExternalDecl ext_decl;
       Boolean isImpure;
 
-    case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
+    case (DAE.FUNCTION(path = fpath, functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
                        type_ = t, isImpure = isImpure, comment = c), str)
       equation
         str = IOStream.append(str, dumpParallelismStr(t));
@@ -3603,7 +3597,6 @@ algorithm
         str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
-        str = IOStream.append(str, dumpInlineTypeStr(inlineType));
         str = IOStream.append(str, dumpCommentStr(c));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
@@ -3618,7 +3611,7 @@ algorithm
       then
         str;
 
-      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
+      case (DAE.FUNCTION(path = fpath, functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
                          isImpure = isImpure, comment = c), str)
       equation
         fstr = AbsynUtil.pathStringNoQual(fpath);
@@ -3626,7 +3619,6 @@ algorithm
         str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
-        str = IOStream.append(str, dumpInlineTypeStr(inlineType));
         str = IOStream.append(str, dumpCommentStr(c));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
