@@ -777,6 +777,7 @@ pipeline {
           }
           steps {
             echo "${env.NODE_NAME}"
+            sh 'rm -rf build/ testsuite/'
             unstash 'omc-clang'
             unstash 'cross-fmu-extras'
             unstash 'cross-fmu-results-linux-wine'
