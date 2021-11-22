@@ -3483,6 +3483,12 @@ package List
     replaceable type Type_a subtypeof Any;
   end unzipSecond;
 
+  function first
+    replaceable type ElementType subtypeof Any;
+    input list<ElementType> inList;
+    output ElementType val;
+  end first;
+
   function last
     replaceable type ElementType subtypeof Any;
     input list<ElementType> inList;

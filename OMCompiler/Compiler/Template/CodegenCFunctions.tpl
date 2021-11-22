@@ -5405,11 +5405,23 @@ template indexSubs(list<Dimension> dims, list<Subscript> subs, Context context, 
 ::=
   if intNe(listLength(dims),listLength(subs)) then
     error(sourceInfo(),'indexSubs got different number of dimensions and subscripts')
-  else '[calc_base_index_dims_subs(<%listLength(dims)%><%
-    dims |> dim => ', (_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>'%><%
-    subs |> INDEX(__) => ', <%daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)%>'
-    %>)]'
+  else '[<%indexSubRecursive(listReverse(List.restOrEmpty(dims)), listReverse(subs), context, preExp, varDecls, auxFunction)%>]'
 end indexSubs;
+
+template indexSubRecursive(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+" computes the offset for subscripted dimensions to flattened dimensions.
+  needs to have the last dimension stripped and
+  subscripts and dimensions in reverse order"
+::=
+  match subs
+    case {sub} then
+      '<%daeSubscript(sub, context, &preExp, &varDecls, &auxFunction)%> - 1'
+    case sub :: sub_rest then
+      let recurse = indexSubRecursive(List.restOrEmpty(dims), sub_rest, context, preExp, varDecls, auxFunction)
+      let dim1 = dimension(List.first(dims), context, &preExp, &varDecls, &auxFunction)
+      let sub1 = daeSubscript(sub, context, &preExp, &varDecls, &auxFunction)
+      '(<%recurse%>) * <%dim1%> + (<%sub1%>-1)'
+end indexSubRecursive;
 
 template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)
