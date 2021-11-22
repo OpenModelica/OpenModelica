@@ -21554,11 +21554,11 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAcceleration\">
 // <ModelicaImplementation>function(r :: array(Real)[3] * gravityType :: Enumeration * g :: array(Real)[3] * mue :: Real) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAccelerationfunction Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAcceleration
-//   input Real[3] r(quantity = &quot;Length&quot;, unit = &quot;m&quot;) &quot;Position vector from world frame to actual point, resolved in world frame&quot;;
+//   input Real[3] r(quantity = {&quot;Length&quot;, &quot;Length&quot;, &quot;Length&quot;}, unit = {&quot;m&quot;, &quot;m&quot;, &quot;m&quot;}) &quot;Position vector from world frame to actual point, resolved in world frame&quot;;
 //   input enumeration(NoGravity, UniformGravity, PointGravity) gravityType = Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity &quot;Type of gravity field&quot;;
-//   input Real[3] g(quantity = &quot;Acceleration&quot;, unit = &quot;m/s2&quot;) = {0.0, -9.81, 0.0} &quot;Constant gravity acceleration, resolved in world frame, if gravityType=UniformGravity&quot;;
+//   input Real[3] g(quantity = {&quot;Acceleration&quot;, &quot;Acceleration&quot;, &quot;Acceleration&quot;}, unit = {&quot;m/s2&quot;, &quot;m/s2&quot;, &quot;m/s2&quot;}) = {0.0, -9.81, 0.0} &quot;Constant gravity acceleration, resolved in world frame, if gravityType=UniformGravity&quot;;
 //   input Real mue(unit = &quot;m3/s2&quot;) = 398600000000000.0 &quot;Field constant of point gravity field, if gravityType=PointGravity&quot;;
-//   output Real[3] gravity(quantity = &quot;Acceleration&quot;, unit = &quot;m/s2&quot;) &quot;Gravity acceleration at position r, resolved in world frame&quot;;
+//   output Real[3] gravity(quantity = {&quot;Acceleration&quot;, &quot;Acceleration&quot;, &quot;Acceleration&quot;}, unit = {&quot;m/s2&quot;, &quot;m/s2&quot;, &quot;m/s2&quot;}) &quot;Gravity acceleration at position r, resolved in world frame&quot;;
 // algorithm
 //   gravity := if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity then g else if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity then {-mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[1] / Modelica.Math.Vectors.length(r), -mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[2] / Modelica.Math.Vectors.length(r), -mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[3] / Modelica.Math.Vectors.length(r)} else {0.0, 0.0, 0.0};
 // end Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAcceleration;
@@ -21591,7 +21591,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.angularVelocity2\">
 // <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND})) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.angularVelocity2function Modelica.Mechanics.MultiBody.Frames.angularVelocity2 &quot;Return angular velocity resolved in frame 2 from orientation object&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   output Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;Angular velocity of frame 2 with respect to frame 1 resolved in frame 2&quot;;
+//   output Real[3] w(quantity = {&quot;AngularVelocity&quot;, &quot;AngularVelocity&quot;, &quot;AngularVelocity&quot;}, unit = {&quot;rad/s&quot;, &quot;rad/s&quot;, &quot;rad/s&quot;}) &quot;Angular velocity of frame 2 with respect to frame 1 resolved in frame 2&quot;;
 // algorithm
 //   w := R.w;
 // end Modelica.Mechanics.MultiBody.Frames.angularVelocity2;

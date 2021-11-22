@@ -1463,26 +1463,6 @@ protected
 algorithm
   for s in subscripts loop
     outSubscripts := match s
-      // Special handling for functions.
-      case Subscript.SPLIT_PROXY() guard InstContext.inFunction(context)
-        algorithm
-          // Ignore type subscripts in functions, otherwise for e.g.:
-          //   input AngularVelocity[3] w;
-          // we get:
-          //   input Real[3] w(unit = {"rad/s", "rad/s", "rad/s"});
-          // which is correct, but the backend expects it to be:
-          //   input Real[3] w(unit = "rad/s")
-          if InstNode.refEqual(s.origin, s.parent) then
-            dim_count := InstNode.dimensionCount(s.parent);
-
-            for i in 1:dim_count loop
-              outSubscripts := Subscript.makeSplitIndex(s.parent, i) :: outSubscripts;
-            end for;
-          end if;
-        then
-          outSubscripts;
-
-      // Normal case for classes.
       case Subscript.SPLIT_PROXY()
         algorithm
           // Count the number of dimensions on the parent the subscript came
