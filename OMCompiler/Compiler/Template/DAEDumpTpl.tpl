@@ -68,12 +68,11 @@ template dumpFunction(DAE.Function function)
 ::=
   match function
     case FUNCTION(__) then
-      let inline_str = dumpInlineType(inlineType)
       let cmt_str = dumpCommentOpt(comment)
       let ann_str = dumpClassAnnotation(comment)
       let impure_str = if isImpure then 'impure '
       <<
-      <%impure_str%>function <%AbsynDumpTpl.dumpPathNoQual(path)%><%inline_str%><%cmt_str%>
+      <%impure_str%>function <%AbsynDumpTpl.dumpPathNoQual(path)%><%cmt_str%>
       <%dumpFunctionDefinitions(functions)%>
       <%if ann_str then "  "%><%ann_str%>
       end <%AbsynDumpTpl.dumpPathNoQual(path)%>;
@@ -224,13 +223,6 @@ match algorithm_
       <%dumpStatements(statementLst)%>
     >>
 end dumpFunctionAlgorithm;
-
-template dumpInlineType(InlineType it)
-::=
-match it
-  case AFTER_INDEX_RED_INLINE() then ' "Inline after index reduction"'
-  case NORM_INLINE() then ' "Inline before index reduction"'
-end dumpInlineType;
 
 /*****************************************************************************
  *     SECTION: VARIABLE SECTION                                             *

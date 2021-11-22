@@ -16,7 +16,7 @@ checkModel(Transformer.SC1); getErrorString();
 //   output Complex res;
 // end Complex;
 //
-// function Complex.'*'.multiply \"Inline before index reduction\" \"Multiply two complex numbers\"
+// function Complex.'*'.multiply \"Multiply two complex numbers\"
 //   input Complex c1 \"Complex number 1\";
 //   input Complex c2 \"Complex number 2\";
 //   output Complex c3 \"= c1*c2\";
@@ -24,7 +24,7 @@ checkModel(Transformer.SC1); getErrorString();
 //   c3 := Complex(c1.re * c2.re - c1.im * c2.im, c1.re * c2.im + c1.im * c2.re);
 // end Complex.'*'.multiply;
 //
-// function Complex.'*'.scalarProduct \"Inline before index reduction\" \"Scalar product c1*c2 of two complex vectors\"
+// function Complex.'*'.scalarProduct \"Scalar product c1*c2 of two complex vectors\"
 //   input Complex[:] c1 \"Vector of Complex numbers 1\";
 //   input Complex[size(c1, 1)] c2 \"Vector of Complex numbers 2\";
 //   output Complex c3 \"= c1*c2\";
@@ -35,7 +35,7 @@ checkModel(Transformer.SC1); getErrorString();
 //   end for;
 // end Complex.'*'.scalarProduct;
 //
-// function Complex.'+' \"Inline before index reduction\" \"Add two complex numbers\"
+// function Complex.'+' \"Add two complex numbers\"
 //   input Complex c1 \"Complex number 1\";
 //   input Complex c2 \"Complex number 2\";
 //   output Complex c3 \"= c1 + c2\";
@@ -43,14 +43,14 @@ checkModel(Transformer.SC1); getErrorString();
 //   c3 := Complex(c1.re + c2.re, c1.im + c2.im);
 // end Complex.'+';
 //
-// function Complex.'-'.negate \"Inline before index reduction\" \"Unary minus (multiply complex number by -1)\"
+// function Complex.'-'.negate \"Unary minus (multiply complex number by -1)\"
 //   input Complex c1 \"Complex number\";
 //   output Complex c2 \"= -c1\";
 // algorithm
 //   c2 := Complex(-c1.re, -c1.im);
 // end Complex.'-'.negate;
 //
-// function Complex.'-'.subtract \"Inline before index reduction\" \"Subtract two complex numbers\"
+// function Complex.'-'.subtract \"Subtract two complex numbers\"
 //   input Complex c1 \"Complex number 1\";
 //   input Complex c2 \"Complex number 2\";
 //   output Complex c3 \"= c1 - c2\";
@@ -58,7 +58,7 @@ checkModel(Transformer.SC1); getErrorString();
 //   c3 := Complex(c1.re - c2.re, c1.im - c2.im);
 // end Complex.'-'.subtract;
 //
-// function Complex.'constructor'.fromReal \"Inline before index reduction\" \"Construct Complex from Real\"
+// function Complex.'constructor'.fromReal \"Construct Complex from Real\"
 //   input Real re \"Real part of complex number\";
 //   input Real im = 0.0 \"Imaginary part of complex number\";
 //   output Complex result = Complex(re, im) \"Complex number\";
@@ -70,14 +70,14 @@ checkModel(Transformer.SC1); getErrorString();
 //   output ComplexOutput res;
 // end ComplexOutput;
 //
-// function Modelica.ComplexMath.'abs' \"Inline before index reduction\" \"Absolute value of complex number\"
+// function Modelica.ComplexMath.'abs' \"Absolute value of complex number\"
 //   input Complex c \"Complex number\";
 //   output Real result \"= abs(c)\";
 // algorithm
 //   result := (c.re ^ 2.0 + c.im ^ 2.0) ^ 0.5;
 // end Modelica.ComplexMath.'abs';
 //
-// function Modelica.ComplexMath.arg \"Inline before index reduction\" \"Phase angle of complex number\"
+// function Modelica.ComplexMath.arg \"Phase angle of complex number\"
 //   input Complex c \"Complex number\";
 //   input Real phi0(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") = 0.0 \"Phase angle phi shall be in the range: -pi < phi-phi0 < pi\";
 //   output Real phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"= phase angle of c\";
@@ -85,21 +85,21 @@ checkModel(Transformer.SC1); getErrorString();
 //   phi := Modelica.Math.atan3(c.im, c.re, phi0);
 // end Modelica.ComplexMath.arg;
 //
-// function Modelica.ComplexMath.conj \"Inline before index reduction\" \"Conjugate of complex number\"
+// function Modelica.ComplexMath.conj \"Conjugate of complex number\"
 //   input Complex c1 \"Complex number\";
 //   output Complex c2 \"= c1.re - j*c1.im\";
 // algorithm
 //   c2 := Complex(c1.re, -c1.im);
 // end Modelica.ComplexMath.conj;
 //
-// function Modelica.ComplexMath.imag \"Inline before index reduction\" \"Imaginary part of complex number\"
+// function Modelica.ComplexMath.imag \"Imaginary part of complex number\"
 //   input Complex c \"Complex number\";
 //   output Real r \"= c.im\";
 // algorithm
 //   r := c.im;
 // end Modelica.ComplexMath.imag;
 //
-// function Modelica.ComplexMath.real \"Inline before index reduction\" \"Real part of complex number\"
+// function Modelica.ComplexMath.real \"Real part of complex number\"
 //   input Complex c \"Complex number\";
 //   output Real r \"= c.re\";
 // algorithm

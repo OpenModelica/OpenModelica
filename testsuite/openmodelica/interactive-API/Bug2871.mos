@@ -1651,21 +1651,21 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   output FluidConstants$simpleWaterConstants res;
 // end Modelica.Media.Interfaces.Types.Basic.FluidConstants$simpleWaterConstants;
 //
-// function Modelica.SIunits.Conversions.from_degC \"Inline before index reduction\" \"Convert from degCelsius to Kelvin\"
+// function Modelica.SIunits.Conversions.from_degC \"Convert from degCelsius to Kelvin\"
 //   input Real Celsius(quantity = \"ThermodynamicTemperature\", unit = \"degC\") \"Celsius value\";
 //   output Real Kelvin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Kelvin value\";
 // algorithm
 //   Kelvin := 273.15 + Celsius;
 // end Modelica.SIunits.Conversions.from_degC;
 //
-// function Modelica.SIunits.Conversions.to_bar \"Inline before index reduction\" \"Convert from Pascal to bar\"
+// function Modelica.SIunits.Conversions.to_bar \"Convert from Pascal to bar\"
 //   input Real Pa(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") \"Pascal value\";
 //   output Real bar(quantity = \"Pressure\", unit = \"bar\") \"bar value\";
 // algorithm
 //   bar := 1e-05 * Pa;
 // end Modelica.SIunits.Conversions.to_bar;
 //
-// function Modelica.SIunits.Conversions.to_degC \"Inline before index reduction\" \"Convert from Kelvin to degCelsius\"
+// function Modelica.SIunits.Conversions.to_degC \"Convert from Kelvin to degCelsius\"
 //   input Real Kelvin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Kelvin value\";
 //   output Real Celsius(quantity = \"ThermodynamicTemperature\", unit = \"degC\") \"Celsius value\";
 // algorithm

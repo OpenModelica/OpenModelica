@@ -3586,14 +3586,14 @@ end InnerOuterSamePrefix;// Result:
 
 
 // Result:
-// function Modelica.Math.Vectors.length "Inline before index reduction" "Return length of a vector (better as norm(), if further symbolic processing is performed)"
+// function Modelica.Math.Vectors.length "Return length of a vector (better as norm(), if further symbolic processing is performed)"
 //   input Real[:] v "Vector";
 //   output Real result "Length of vector v";
 // algorithm
 //   result := sqrt(v * v);
 // end Modelica.Math.Vectors.length;
 //
-// function Modelica.Math.Vectors.normalize "Inline before index reduction" "Return normalized vector such that length = 1 and prevent zero-division for zero vector"
+// function Modelica.Math.Vectors.normalize "Return normalized vector such that length = 1 and prevent zero-division for zero vector"
 //   input Real[:] v "Vector";
 //   input Real eps(min = 0.0) = 1e-13 "if |v| < eps then result = v/eps";
 //   output Real[size(v, 1)] result "Input vector v normalized to length=1";
@@ -3601,7 +3601,7 @@ end InnerOuterSamePrefix;// Result:
 //   result := smooth(0, if noEvent(Modelica.Math.Vectors.length(v) >= eps) then v / Modelica.Math.Vectors.length(v) else v / eps);
 // end Modelica.Math.Vectors.normalize;
 //
-// function Modelica.Math.Vectors.normalizeWithAssert "Inline before index reduction" "Return normalized vector such that length = 1 (trigger an assert for zero vector)"
+// function Modelica.Math.Vectors.normalizeWithAssert "Return normalized vector such that length = 1 (trigger an assert for zero vector)"
 //   input Real[:] v "Vector";
 //   output Real[size(v, 1)] result "Input vector v normalized to length=1";
 // algorithm
@@ -3610,7 +3610,7 @@ end InnerOuterSamePrefix;// Result:
 //   result := v / Modelica.Math.Vectors.length(v);
 // end Modelica.Math.Vectors.normalizeWithAssert;
 //
-// function Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der "Inline before index reduction" "Derivative of function Frames.resolve1(..)"
+// function Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der "Derivative of function Frames.resolve1(..)"
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
 //   input Real[3] v2 "Vector resolved in frame 2";
 //   input Real[3] v2_der "= der(v2)";
@@ -3619,7 +3619,7 @@ end InnerOuterSamePrefix;// Result:
 //   v1_der := Modelica.Mechanics.MultiBody.Frames.resolve1(R, {v2_der[1] + R.w[2] * v2[3] - R.w[3] * v2[2], v2_der[2] + R.w[3] * v2[1] - R.w[1] * v2[3], v2_der[3] + R.w[1] * v2[2] - R.w[2] * v2[1]});
 // end Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der;
 //
-// function Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der "Inline before index reduction" "Derivative of function Frames.resolve2(..)"
+// function Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der "Derivative of function Frames.resolve2(..)"
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
 //   input Real[3] v1 "Vector resolved in frame 1";
 //   input Real[3] v1_der "= der(v1)";
@@ -3634,7 +3634,7 @@ end InnerOuterSamePrefix;// Result:
 //   output Orientation res;
 // end Modelica.Mechanics.MultiBody.Frames.Orientation;
 //
-// function Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint "Inline before index reduction" "Return the constraint residues to express that two frames have the same orientation"
+// function Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint "Return the constraint residues to express that two frames have the same orientation"
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R1 "Orientation object to rotate frame 0 into frame 1";
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R2 "Orientation object to rotate frame 0 into frame 2";
 //   output Real[3] residue "The rotation angles around x-, y-, and z-axis of frame 1 to rotate frame 1 into frame 2 for a small rotation (should be zero)";
@@ -3642,7 +3642,7 @@ end InnerOuterSamePrefix;// Result:
 //   residue := {atan2((R1.T[1,2] * R1.T[2,3] - R1.T[1,3] * R1.T[2,2]) * R2.T[2,1] + (R1.T[1,3] * R1.T[2,1] - R1.T[1,1] * R1.T[2,3]) * R2.T[2,2] + (R1.T[1,1] * R1.T[2,2] - R1.T[1,2] * R1.T[2,1]) * R2.T[2,3], R1.T[1,1] * R2.T[1,1] + R1.T[1,2] * R2.T[1,2] + R1.T[1,3] * R2.T[1,3]), atan2((R1.T[1,1] * R1.T[2,3] - R1.T[1,3] * R1.T[2,1]) * R2.T[1,2] - (R1.T[1,1] * R1.T[2,2] - R1.T[1,2] * R1.T[2,1]) * R2.T[1,3] - (R1.T[1,2] * R1.T[2,3] - R1.T[1,3] * R1.T[2,2]) * R2.T[1,1], R1.T[2,1] * R2.T[2,1] + R1.T[2,2] * R2.T[2,2] + R1.T[2,3] * R2.T[2,3]), atan2(R1.T[2,1] * R2.T[1,1] + R1.T[2,2] * R2.T[1,2] + R1.T[2,3] * R2.T[1,3], R1.T[3,1] * R2.T[3,1] + R1.T[3,2] * R2.T[3,2] + R1.T[3,3] * R2.T[3,3])};
 // end Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint;
 //
-// function Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2 "Inline before index reduction" "Compute angular velocity resolved in frame 2 from quaternions orientation object and its derivative"
+// function Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2 "Compute angular velocity resolved in frame 2 from quaternions orientation object and its derivative"
 //   input Real[4] Q "Quaternions orientation object to rotate frame 1 into frame 2";
 //   input Real[4] der_Q(unit = "1/s") "Derivative of Q";
 //   output Real[3] w(quantity = "AngularVelocity", unit = "rad/s") "Angular velocity of frame 2 with respect to frame 1 resolved in frame 2";
@@ -3689,20 +3689,20 @@ end InnerOuterSamePrefix;// Result:
 //   end if;
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T;
 //
-// function Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation "Inline before index reduction" "Return quaternion orientation object that does not rotate a frame"
+// function Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation "Return quaternion orientation object that does not rotate a frame"
 //   output Real[4] Q "Quaternions orientation object to rotate frame 1 into frame 2";
 // algorithm
 //   Q := {0.0, 0.0, 0.0, 1.0};
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation;
 //
-// function Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint "Inline before index reduction" "Return residues of orientation constraints (shall be zero)"
+// function Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint "Return residues of orientation constraints (shall be zero)"
 //   input Real[4] Q "Quaternions orientation object to rotate frame 1 into frame 2";
 //   output Real[1] residue "Residue constraint (shall be zero)";
 // algorithm
 //   residue := {-1.0 + Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0};
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint;
 //
-// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation "Inline before index reduction" "Return absolute orientation object from another absolute and a relative orientation object"
+// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation "Return absolute orientation object from another absolute and a relative orientation object"
 //   input Real[3, 3] T1 "Orientation object to rotate frame 0 into frame 1";
 //   input Real[3, 3] T_rel "Orientation object to rotate frame 1 into frame 2";
 //   output Real[3, 3] T2 "Orientation object to rotate frame 0 into frame 2";
@@ -3710,7 +3710,7 @@ end InnerOuterSamePrefix;// Result:
 //   T2 := {{T_rel[1,1] * T1[1,1] + T_rel[1,2] * T1[2,1] + T_rel[1,3] * T1[3,1], T_rel[1,1] * T1[1,2] + T_rel[1,2] * T1[2,2] + T_rel[1,3] * T1[3,2], T_rel[1,1] * T1[1,3] + T_rel[1,2] * T1[2,3] + T_rel[1,3] * T1[3,3]}, {T_rel[2,1] * T1[1,1] + T_rel[2,2] * T1[2,1] + T_rel[2,3] * T1[3,1], T_rel[2,1] * T1[1,2] + T_rel[2,2] * T1[2,2] + T_rel[2,3] * T1[3,2], T_rel[2,1] * T1[1,3] + T_rel[2,2] * T1[2,3] + T_rel[2,3] * T1[3,3]}, {T_rel[3,1] * T1[1,1] + T_rel[3,2] * T1[2,1] + T_rel[3,3] * T1[3,1], T_rel[3,1] * T1[1,2] + T_rel[3,2] * T1[2,2] + T_rel[3,3] * T1[3,2], T_rel[3,1] * T1[1,3] + T_rel[3,2] * T1[2,3] + T_rel[3,3] * T1[3,3]}};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation;
 //
-// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation "Inline before index reduction" "Return rotation object to rotate around one frame axis"
+// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation "Return rotation object to rotate around one frame axis"
 //   input Integer axis(min = 1, max = 3) "Rotate around 'axis' of frame 1";
 //   input Real angle(quantity = "Angle", unit = "rad", displayUnit = "deg") "Rotation angle to rotate frame 1 into frame 2 along 'axis' of frame 1";
 //   output Real[3, 3] T "Orientation object to rotate frame 1 into frame 2";
@@ -3732,7 +3732,7 @@ end InnerOuterSamePrefix;// Result:
 //   T := {{e_x[1], e_x[2], e_x[3]}, {e_z[2] * e_x[3] - e_z[3] * e_x[2], e_z[3] * e_x[1] - e_z[1] * e_x[3], e_z[1] * e_x[2] - e_z[2] * e_x[1]}, {e_z[1], e_z[2], e_z[3]}};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy;
 //
-// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation "Inline before index reduction" "Return orientation object of a planar rotation"
+// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation "Return orientation object of a planar rotation"
 //   input Real[3] e(unit = "1") "Normalized axis of rotation (must have length=1)";
 //   input Real angle(quantity = "Angle", unit = "rad", displayUnit = "deg") "Rotation angle to rotate frame 1 into frame 2 along axis e";
 //   output Real[3, 3] T "Orientation object to rotate frame 1 into frame 2";
@@ -3740,7 +3740,7 @@ end InnerOuterSamePrefix;// Result:
 //   T := {{e[1] ^ 2.0 + (1.0 - e[1] ^ 2.0) * cos(angle), (e[1] - e[1] * cos(angle)) * e[2] + e[3] * sin(angle), (e[1] - e[1] * cos(angle)) * e[3] - e[2] * sin(angle)}, {(e[2] - e[2] * cos(angle)) * e[1] - e[3] * sin(angle), e[2] ^ 2.0 + (1.0 - e[2] ^ 2.0) * cos(angle), (e[2] - e[2] * cos(angle)) * e[3] + e[1] * sin(angle)}, {(e[3] - e[3] * cos(angle)) * e[1] + e[2] * sin(angle), (e[3] - e[3] * cos(angle)) * e[2] - e[1] * sin(angle), e[3] ^ 2.0 + (1.0 - e[3] ^ 2.0) * cos(angle)}};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation;
 //
-// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1 "Inline before index reduction" "Transform vector from frame 2 to frame 1"
+// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1 "Transform vector from frame 2 to frame 1"
 //   input Real[3, 3] T "Orientation object to rotate frame 1 into frame 2";
 //   input Real[3] v2 "Vector in frame 2";
 //   output Real[3] v1 "Vector in frame 1";
@@ -3748,7 +3748,7 @@ end InnerOuterSamePrefix;// Result:
 //   v1 := {T[1,1] * v2[1] + T[2,1] * v2[2] + T[3,1] * v2[3], T[1,2] * v2[1] + T[2,2] * v2[2] + T[3,2] * v2[3], T[1,3] * v2[1] + T[2,3] * v2[2] + T[3,3] * v2[3]};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1;
 //
-// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2 "Inline before index reduction" "Transform vector from frame 1 to frame 2"
+// function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2 "Transform vector from frame 1 to frame 2"
 //   input Real[3, 3] T "Orientation object to rotate frame 1 into frame 2";
 //   input Real[3] v1 "Vector in frame 1";
 //   output Real[3] v2 "Vector in frame 2";
@@ -3756,7 +3756,7 @@ end InnerOuterSamePrefix;// Result:
 //   v2 := {T[1,1] * v1[1] + T[1,2] * v1[2] + T[1,3] * v1[3], T[2,1] * v1[1] + T[2,2] * v1[2] + T[2,3] * v1[3], T[3,1] * v1[1] + T[3,2] * v1[2] + T[3,3] * v1[3]};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2;
 //
-// function Modelica.Mechanics.MultiBody.Frames.absoluteRotation "Inline before index reduction" "Return absolute orientation object from another absolute and a relative orientation object"
+// function Modelica.Mechanics.MultiBody.Frames.absoluteRotation "Return absolute orientation object from another absolute and a relative orientation object"
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R1 "Orientation object to rotate frame 0 into frame 1";
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R_rel "Orientation object to rotate frame 1 into frame 2";
 //   output Modelica.Mechanics.MultiBody.Frames.Orientation R2 "Orientation object to rotate frame 0 into frame 2";
@@ -3764,14 +3764,14 @@ end InnerOuterSamePrefix;// Result:
 //   R2 := Modelica.Mechanics.MultiBody.Frames.Orientation({{R_rel.T[1,1] * R1.T[1,1] + R_rel.T[1,2] * R1.T[2,1] + R_rel.T[1,3] * R1.T[3,1], R_rel.T[1,1] * R1.T[1,2] + R_rel.T[1,2] * R1.T[2,2] + R_rel.T[1,3] * R1.T[3,2], R_rel.T[1,1] * R1.T[1,3] + R_rel.T[1,2] * R1.T[2,3] + R_rel.T[1,3] * R1.T[3,3]}, {R_rel.T[2,1] * R1.T[1,1] + R_rel.T[2,2] * R1.T[2,1] + R_rel.T[2,3] * R1.T[3,1], R_rel.T[2,1] * R1.T[1,2] + R_rel.T[2,2] * R1.T[2,2] + R_rel.T[2,3] * R1.T[3,2], R_rel.T[2,1] * R1.T[1,3] + R_rel.T[2,2] * R1.T[2,3] + R_rel.T[2,3] * R1.T[3,3]}, {R_rel.T[3,1] * R1.T[1,1] + R_rel.T[3,2] * R1.T[2,1] + R_rel.T[3,3] * R1.T[3,1], R_rel.T[3,1] * R1.T[1,2] + R_rel.T[3,2] * R1.T[2,2] + R_rel.T[3,3] * R1.T[3,2], R_rel.T[3,1] * R1.T[1,3] + R_rel.T[3,2] * R1.T[2,3] + R_rel.T[3,3] * R1.T[3,3]}}, Modelica.Mechanics.MultiBody.Frames.resolve2(R_rel, {R1.w[1], R1.w[2], R1.w[3]}) + {R_rel.w[1], R_rel.w[2], R_rel.w[3]});
 // end Modelica.Mechanics.MultiBody.Frames.absoluteRotation;
 //
-// function Modelica.Mechanics.MultiBody.Frames.angularVelocity2 "Inline before index reduction" "Return angular velocity resolved in frame 2 from orientation object"
+// function Modelica.Mechanics.MultiBody.Frames.angularVelocity2 "Return angular velocity resolved in frame 2 from orientation object"
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
 //   output Real[3] w(quantity = "AngularVelocity", unit = "rad/s") "Angular velocity of frame 2 with respect to frame 1 resolved in frame 2";
 // algorithm
 //   w := {R.w[1], R.w[2], R.w[3]};
 // end Modelica.Mechanics.MultiBody.Frames.angularVelocity2;
 //
-// function Modelica.Mechanics.MultiBody.Frames.axesRotations "Inline before index reduction" "Return fixed rotation object to rotate in sequence around fixed angles along 3 axes"
+// function Modelica.Mechanics.MultiBody.Frames.axesRotations "Return fixed rotation object to rotate in sequence around fixed angles along 3 axes"
 //   input Integer[3] sequence = {1, 2, 3} "Sequence of rotations from frame 1 to frame 2 along axis sequence[i]";
 //   input Real[3] angles(quantity = "Angle", unit = "rad", displayUnit = "deg") "Rotation angles around the axes defined in 'sequence'";
 //   input Real[3] der_angles(quantity = "AngularVelocity", unit = "rad/s") "= der(angles)";
@@ -3814,14 +3814,14 @@ end InnerOuterSamePrefix;// Result:
 //   angles[3] := Modelica.Mechanics.MultiBody.Frames.planarRotationAngle({e3_2[1], e3_2[2], e3_2[3]}, {e2_1a[1], e2_1a[2], e2_1a[3]}, Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2({{R.T[1,1], R.T[1,2], R.T[1,3]}, {R.T[2,1], R.T[2,2], R.T[2,3]}, {R.T[3,1], R.T[3,2], R.T[3,3]}}, Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1({{T_1a[1,1], T_1a[1,2], T_1a[1,3]}, {T_1a[2,1], T_1a[2,2], T_1a[2,3]}, {T_1a[3,1], T_1a[3,2], T_1a[3,3]}}, {e2_1a[1], e2_1a[2], e2_1a[3]})));
 // end Modelica.Mechanics.MultiBody.Frames.axesRotationsAngles;
 //
-// function Modelica.Mechanics.MultiBody.Frames.axis "Inline before index reduction" "Return unit vector for x-, y-, or z-axis"
+// function Modelica.Mechanics.MultiBody.Frames.axis "Return unit vector for x-, y-, or z-axis"
 //   input Integer axis(min = 1, max = 3) "Axis vector to be returned";
 //   output Real[3] e(unit = "1") "Unit axis vector";
 // algorithm
 //   e := if axis == 1 then {1.0, 0.0, 0.0} else if axis == 2 then {0.0, 1.0, 0.0} else {0.0, 0.0, 1.0};
 // end Modelica.Mechanics.MultiBody.Frames.axis;
 //
-// function Modelica.Mechanics.MultiBody.Frames.from_Q "Inline before index reduction" "Return orientation object R from quaternion orientation object Q"
+// function Modelica.Mechanics.MultiBody.Frames.from_Q "Return orientation object R from quaternion orientation object Q"
 //   input Real[4] Q "Quaternions orientation object to rotate frame 1 into frame 2";
 //   input Real[3] w(quantity = "AngularVelocity", unit = "rad/s") "Angular velocity from frame 2 with respect to frame 1, resolved in frame 2";
 //   output Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
@@ -3843,13 +3843,13 @@ end InnerOuterSamePrefix;// Result:
 //   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{e_x[1], e_x[2], e_x[3]}, {e_z[2] * e_x[3] - e_z[3] * e_x[2], e_z[3] * e_x[1] - e_z[1] * e_x[3], e_z[1] * e_x[2] - e_z[2] * e_x[1]}, {e_z[1], e_z[2], e_z[3]}}, {0.0, 0.0, 0.0});
 // end Modelica.Mechanics.MultiBody.Frames.from_nxy;
 //
-// function Modelica.Mechanics.MultiBody.Frames.nullRotation "Inline before index reduction" "Return orientation object that does not rotate a frame"
+// function Modelica.Mechanics.MultiBody.Frames.nullRotation "Return orientation object that does not rotate a frame"
 //   output Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object such that frame 1 and frame 2 are identical";
 // algorithm
 //   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {0.0, 0.0, 0.0});
 // end Modelica.Mechanics.MultiBody.Frames.nullRotation;
 //
-// function Modelica.Mechanics.MultiBody.Frames.planarRotation "Inline before index reduction" "Return orientation object of a planar rotation"
+// function Modelica.Mechanics.MultiBody.Frames.planarRotation "Return orientation object of a planar rotation"
 //   input Real[3] e(unit = "1") "Normalized axis of rotation (must have length=1)";
 //   input Real angle(quantity = "Angle", unit = "rad", displayUnit = "deg") "Rotation angle to rotate frame 1 into frame 2 along axis e";
 //   input Real der_angle(quantity = "AngularVelocity", unit = "rad/s") "= der(angle)";
@@ -3858,7 +3858,7 @@ end InnerOuterSamePrefix;// Result:
 //   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{e[1] ^ 2.0 + (1.0 - e[1] ^ 2.0) * cos(angle), (e[1] - e[1] * cos(angle)) * e[2] + e[3] * sin(angle), (e[1] - e[1] * cos(angle)) * e[3] - e[2] * sin(angle)}, {(e[2] - e[2] * cos(angle)) * e[1] - e[3] * sin(angle), e[2] ^ 2.0 + (1.0 - e[2] ^ 2.0) * cos(angle), (e[2] - e[2] * cos(angle)) * e[3] + e[1] * sin(angle)}, {(e[3] - e[3] * cos(angle)) * e[1] + e[2] * sin(angle), (e[3] - e[3] * cos(angle)) * e[2] - e[1] * sin(angle), e[3] ^ 2.0 + (1.0 - e[3] ^ 2.0) * cos(angle)}}, {e[1] * der_angle, e[2] * der_angle, e[3] * der_angle});
 // end Modelica.Mechanics.MultiBody.Frames.planarRotation;
 //
-// function Modelica.Mechanics.MultiBody.Frames.planarRotationAngle "Inline before index reduction" "Return angle of a planar rotation, given the rotation axis and the representations of a vector in frame 1 and frame 2"
+// function Modelica.Mechanics.MultiBody.Frames.planarRotationAngle "Return angle of a planar rotation, given the rotation axis and the representations of a vector in frame 1 and frame 2"
 //   input Real[3] e(unit = "1") "Normalized axis of rotation to rotate frame 1 around e into frame 2 (must have length=1)";
 //   input Real[3] v1 "A vector v resolved in frame 1 (shall not be parallel to e)";
 //   input Real[3] v2 "Vector v resolved in frame 2, i.e., v2 = resolve2(planarRotation(e,angle),v1)";
@@ -3867,7 +3867,7 @@ end InnerOuterSamePrefix;// Result:
 //   angle := atan2((e[1] * v1[3] - e[3] * v1[1]) * v2[2] - (e[1] * v1[2] - e[2] * v1[1]) * v2[3] - (e[2] * v1[3] - e[3] * v1[2]) * v2[1], v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3] + ((-e[2]) * v2[2] - e[3] * v2[3] - e[1] * v2[1]) * (e[1] * v1[1] + e[2] * v1[2] + e[3] * v1[3]));
 // end Modelica.Mechanics.MultiBody.Frames.planarRotationAngle;
 //
-// function Modelica.Mechanics.MultiBody.Frames.resolve1 "Inline after index reduction" "Transform vector from frame 2 to frame 1"
+// function Modelica.Mechanics.MultiBody.Frames.resolve1 "Transform vector from frame 2 to frame 1"
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
 //   input Real[3] v2 "Vector in frame 2";
 //   output Real[3] v1 "Vector in frame 1";
@@ -3875,7 +3875,7 @@ end InnerOuterSamePrefix;// Result:
 //   v1 := {R.T[1,1] * v2[1] + R.T[2,1] * v2[2] + R.T[3,1] * v2[3], R.T[1,2] * v2[1] + R.T[2,2] * v2[2] + R.T[3,2] * v2[3], R.T[1,3] * v2[1] + R.T[2,3] * v2[2] + R.T[3,3] * v2[3]};
 // end Modelica.Mechanics.MultiBody.Frames.resolve1;
 //
-// function Modelica.Mechanics.MultiBody.Frames.resolve2 "Inline after index reduction" "Transform vector from frame 1 to frame 2"
+// function Modelica.Mechanics.MultiBody.Frames.resolve2 "Transform vector from frame 1 to frame 2"
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
 //   input Real[3] v1 "Vector in frame 1";
 //   output Real[3] v2 "Vector in frame 2";
@@ -3883,7 +3883,7 @@ end InnerOuterSamePrefix;// Result:
 //   v2 := {R.T[1,1] * v1[1] + R.T[1,2] * v1[2] + R.T[1,3] * v1[3], R.T[2,1] * v1[1] + R.T[2,2] * v1[2] + R.T[2,3] * v1[3], R.T[3,1] * v1[1] + R.T[3,2] * v1[2] + R.T[3,3] * v1[3]};
 // end Modelica.Mechanics.MultiBody.Frames.resolve2;
 //
-// function Modelica.Mechanics.MultiBody.Frames.resolveDyade1 "Inline before index reduction" "Transform second order tensor from frame 2 to frame 1"
+// function Modelica.Mechanics.MultiBody.Frames.resolveDyade1 "Transform second order tensor from frame 2 to frame 1"
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
 //   input Real[3, 3] D2 "Second order tensor resolved in frame 2";
 //   output Real[3, 3] D1 "Second order tensor resolved in frame 1";
@@ -3891,7 +3891,7 @@ end InnerOuterSamePrefix;// Result:
 //   D1 := {{(R.T[1,1] * D2[1,1] + R.T[2,1] * D2[2,1] + R.T[3,1] * D2[3,1]) * R.T[1,1] + (R.T[1,1] * D2[1,2] + R.T[2,1] * D2[2,2] + R.T[3,1] * D2[3,2]) * R.T[2,1] + (R.T[1,1] * D2[1,3] + R.T[2,1] * D2[2,3] + R.T[3,1] * D2[3,3]) * R.T[3,1], (R.T[1,1] * D2[1,1] + R.T[2,1] * D2[2,1] + R.T[3,1] * D2[3,1]) * R.T[1,2] + (R.T[1,1] * D2[1,2] + R.T[2,1] * D2[2,2] + R.T[3,1] * D2[3,2]) * R.T[2,2] + (R.T[1,1] * D2[1,3] + R.T[2,1] * D2[2,3] + R.T[3,1] * D2[3,3]) * R.T[3,2], (R.T[1,1] * D2[1,1] + R.T[2,1] * D2[2,1] + R.T[3,1] * D2[3,1]) * R.T[1,3] + (R.T[1,1] * D2[1,2] + R.T[2,1] * D2[2,2] + R.T[3,1] * D2[3,2]) * R.T[2,3] + (R.T[1,1] * D2[1,3] + R.T[2,1] * D2[2,3] + R.T[3,1] * D2[3,3]) * R.T[3,3]}, {(R.T[1,2] * D2[1,1] + R.T[2,2] * D2[2,1] + R.T[3,2] * D2[3,1]) * R.T[1,1] + (R.T[1,2] * D2[1,2] + R.T[2,2] * D2[2,2] + R.T[3,2] * D2[3,2]) * R.T[2,1] + (R.T[1,2] * D2[1,3] + R.T[2,2] * D2[2,3] + R.T[3,2] * D2[3,3]) * R.T[3,1], (R.T[1,2] * D2[1,1] + R.T[2,2] * D2[2,1] + R.T[3,2] * D2[3,1]) * R.T[1,2] + (R.T[1,2] * D2[1,2] + R.T[2,2] * D2[2,2] + R.T[3,2] * D2[3,2]) * R.T[2,2] + (R.T[1,2] * D2[1,3] + R.T[2,2] * D2[2,3] + R.T[3,2] * D2[3,3]) * R.T[3,2], (R.T[1,2] * D2[1,1] + R.T[2,2] * D2[2,1] + R.T[3,2] * D2[3,1]) * R.T[1,3] + (R.T[1,2] * D2[1,2] + R.T[2,2] * D2[2,2] + R.T[3,2] * D2[3,2]) * R.T[2,3] + (R.T[1,2] * D2[1,3] + R.T[2,2] * D2[2,3] + R.T[3,2] * D2[3,3]) * R.T[3,3]}, {(R.T[1,3] * D2[1,1] + R.T[2,3] * D2[2,1] + R.T[3,3] * D2[3,1]) * R.T[1,1] + (R.T[1,3] * D2[1,2] + R.T[2,3] * D2[2,2] + R.T[3,3] * D2[3,2]) * R.T[2,1] + (R.T[1,3] * D2[1,3] + R.T[2,3] * D2[2,3] + R.T[3,3] * D2[3,3]) * R.T[3,1], (R.T[1,3] * D2[1,1] + R.T[2,3] * D2[2,1] + R.T[3,3] * D2[3,1]) * R.T[1,2] + (R.T[1,3] * D2[1,2] + R.T[2,3] * D2[2,2] + R.T[3,3] * D2[3,2]) * R.T[2,2] + (R.T[1,3] * D2[1,3] + R.T[2,3] * D2[2,3] + R.T[3,3] * D2[3,3]) * R.T[3,2], (R.T[1,3] * D2[1,1] + R.T[2,3] * D2[2,1] + R.T[3,3] * D2[3,1]) * R.T[1,3] + (R.T[1,3] * D2[1,2] + R.T[2,3] * D2[2,2] + R.T[3,3] * D2[3,2]) * R.T[2,3] + (R.T[1,3] * D2[1,3] + R.T[2,3] * D2[2,3] + R.T[3,3] * D2[3,3]) * R.T[3,3]}};
 // end Modelica.Mechanics.MultiBody.Frames.resolveDyade1;
 //
-// function Modelica.Mechanics.MultiBody.Frames.to_Q "Inline before index reduction" "Return quaternion orientation object Q from orientation object R"
+// function Modelica.Mechanics.MultiBody.Frames.to_Q "Return quaternion orientation object Q from orientation object R"
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R "Orientation object to rotate frame 1 into frame 2";
 //   input Real[4] Q_guess = {0.0, 0.0, 0.0, 1.0} "Guess value for output Q (there are 2 solutions; the one closer to Q_guess is used";
 //   output Real[4] Q "Quaternions orientation object to rotate frame 1 into frame 2";
@@ -3899,7 +3899,7 @@ end InnerOuterSamePrefix;// Result:
 //   Q := Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T({{R.T[1,1], R.T[1,2], R.T[1,3]}, {R.T[2,1], R.T[2,2], R.T[2,3]}, {R.T[3,1], R.T[3,2], R.T[3,3]}}, {Q_guess[1], Q_guess[2], Q_guess[3], Q_guess[4]});
 // end Modelica.Mechanics.MultiBody.Frames.to_Q;
 //
-// function Modelica.Mechanics.MultiBody.World.gravityAcceleration "Inline before index reduction" "Gravity field acceleration depending on field type and position"
+// function Modelica.Mechanics.MultiBody.World.gravityAcceleration "Gravity field acceleration depending on field type and position"
 //   input Real[3] r(quantity = "Length", unit = "m") "Position vector from world frame to actual point, resolved in world frame";
 //   input enumeration(NoGravity, UniformGravity, PointGravity) gravityType = gravityType "Type of gravity field";
 //   input Real[3] g(quantity = "Acceleration", unit = "m/s2") = {0.0, -g, 0.0} "Constant gravity acceleration, resolved in world frame, if gravityType=1";
@@ -3909,7 +3909,7 @@ end InnerOuterSamePrefix;// Result:
 //   gravity := if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity then {g[1], g[2], g[3]} else if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity then {(-r[1]) * mue / (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0) / Modelica.Math.Vectors.length({r[1], r[2], r[3]}), (-r[2]) * mue / (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0) / Modelica.Math.Vectors.length({r[1], r[2], r[3]}), (-r[3]) * mue / (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0) / Modelica.Math.Vectors.length({r[1], r[2], r[3]})} else {0.0, 0.0, 0.0};
 // end Modelica.Mechanics.MultiBody.World.gravityAcceleration;
 //
-// function Modelica.SIunits.Conversions.to_unit1 "Inline before index reduction" "Change the unit of a Real number to unit=\"1\""
+// function Modelica.SIunits.Conversions.to_unit1 "Change the unit of a Real number to unit=\"1\""
 //   input Real r "Real number";
 //   output Real result(unit = "1") "Real number r with unit=\"1\"";
 // algorithm
