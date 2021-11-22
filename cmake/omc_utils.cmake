@@ -12,7 +12,7 @@ endmacro(omc_add_to_report)
 set(CMAKE_MESSAGE_CONTEXT_SHOW ON)
 macro(omc_add_subdirectory var)
   list(APPEND CMAKE_MESSAGE_CONTEXT ${var})
-  add_subdirectory(${var})
+  add_subdirectory(${ARGV0} ${ARGV1} ${ARGV2})
   list(POP_BACK CMAKE_MESSAGE_CONTEXT)
 endmacro(omc_add_subdirectory)
 
