@@ -5,7 +5,7 @@ cff-version: 1.2.0
 title: >-
   The OpenModelica Integrated Environment for
   Modeling, Simulation, and Model-Based Development
-message: "For bibliography see https://github.com/OpenModelica/OpenModelica/tree/master/doc/bibliography"
+message: "For bibliography see
 type: software
 doi: 10.4173/mic.2020.4.1
 authors:
