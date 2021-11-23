@@ -6,7 +6,7 @@ title: >-
   The OpenModelica Integrated Environment for
   Modeling, Simulation, and Model-Based Development
 message: Please cite this software using these metadata. For bibliography see https://github.com/OpenModelica/OpenModelica/tree/master/doc/bibliography
-type: article
+type: software
 doi: 10.4173/mic.2020.4.1
 authors:
   - given-names: Peter
