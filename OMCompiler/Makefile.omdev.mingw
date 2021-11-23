@@ -294,7 +294,6 @@ else # mingw64
 	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll $(builddir_bin)/
 	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll $(builddir_bin)/
 endif
-	(cp -pf $(OMDEVMSYS)/lib/expat-win32-msvc/libexpat.dll $(builddir_bin)/)
 	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/blas_win32_MT.dll $(builddir_bin)/)
 	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/lapack_win32_MT.dll $(builddir_bin)/)
 	mkdir -p $(builddir_lib)/omc/libexec/
