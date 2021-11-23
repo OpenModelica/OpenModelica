@@ -3214,6 +3214,17 @@ algorithm
       then
         str;
 
+    case (DAE.INITIAL_FOR_EQUATION(iter = s2, range = e1, equations = xs1, source = src) :: xs, str)
+      equation
+        _ = getSourceInformationStr(src);
+        s1 = ExpressionDump.printExpStr(e1);
+        str = IOStream.appendList(str, {"  for ", s2, " in ", s1, " loop\n"});
+        str = dumpEquationsStream(xs1, str);
+        str = IOStream.appendList(str, {"  end for;\n"});
+        str = dumpEquationsStream(xs, str);
+      then
+        str;
+
     case ((DAE.INITIAL_IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::trueBranches),equations3 = xs2) :: xs), str)
       equation
         str = IOStream.append(str, "  if ");
