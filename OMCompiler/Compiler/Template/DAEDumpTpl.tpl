@@ -645,6 +645,7 @@ match lst
   case INITIALDEFINE(__) then dumpDefine(componentRef, exp, source)
   case INITIAL_ARRAY_EQUATION(__) then dumpEquation(exp, array, source)
   case INITIAL_COMPLEX_EQUATION(__) then dumpEquation(lhs, rhs, source)
+  case INITIAL_FOR_EQUATION(__) then dumpForEquation(lst)
   case INITIAL_IF_EQUATION(__) then dumpIfEquation(condition1, equations2, equations3, source)
   case INITIALEQUATION(__) then dumpEquation(exp1, exp2, source)
   else 'UNKNOWN EQUATION TYPE'
@@ -748,6 +749,15 @@ template dumpForEquation(DAE.Element lst)
 ::=
 match lst
   case FOR_EQUATION(__) then
+    let range_str = dumpExp(range)
+    let body_str = (equations |> e => dumpEquationElement(e) ;separator="\n")
+    let src_str = dumpSource(source)
+    <<
+    for <%iter%> in <%range_str%> loop
+      <%body_str%>
+    end for<%src_str%>;
+    >>
+  case INITIAL_FOR_EQUATION(__) then
     let range_str = dumpExp(range)
     let body_str = (equations |> e => dumpEquationElement(e) ;separator="\n")
     let src_str = dumpSource(source)
