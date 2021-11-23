@@ -4666,10 +4666,8 @@ void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
 }
 
 /*!
- * \brief AboutOMEditDialog::readOMContributors
- * Slot activated when NetworkAccessManager finished SIGNAL is raised.\n
- * Reads the OpenModelica contributors and makes a list of it.
- * \param pNetworkReply
+ * \brief AboutOMEditDialog::showReportIssue
+ * Opens the CrashReportDialog for sending the issue report manually.
  */
 void AboutOMEditDialog::showReportIssue()
 {
