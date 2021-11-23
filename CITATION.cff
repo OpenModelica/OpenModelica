@@ -1,0 +1,146 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  The OpenModelica Integrated Environment for
+  Modeling, Simulation, and Model-Based Development
+message: Please cite this software using these metadata. For bibliography see https://github.com/OpenModelica/OpenModelica/tree/master/doc/bibliography
+type: article
+doi: 10.4173/mic.2020.4.1
+authors:
+  - given-names: Peter
+    family-names: Fritzson
+    email: Peter.Fritzson@liu.se
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University,SE-581 83 Linköping, Sweden
+  - given-names: Adrian
+    family-names: Pop
+    email: adrian.pop@liu.se
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: Karim
+    family-names: Abdelhak
+    affiliation: 'FH Bielefeld, Bielefeld, Germany'
+  - given-names: Adeel
+    family-names: Ashgar
+    affiliation: '  PELAB – Programming Environment Lab, Dept. of Computer and Information Science Linköping University'
+  - given-names: Bernhard
+    family-names: Bachmann
+    affiliation: 'FH Bielefeld, Bielefeld, Germany'
+  - given-names: Willi
+    family-names: Braun
+    affiliation: 'FH Bielefeld, Bielefeld, Germany'
+  - given-names: Daniel
+    family-names: Bouskela
+    affiliation: >-
+      Electricité de France, (EDF Lab), Chatou,
+      France
+  - given-names: Robert
+    family-names: Braun
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: Lena
+    family-names: Buffoni
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: Francesco
+    family-names: Casella
+    affiliation: >-
+      Dip. Elettronica, Informazione e Bioingegneria,
+      Politecnico di Milano, Milano, Italy
+  - given-names: Rodrigo
+    family-names: Castro
+    affiliation: >-
+      Dept. Computer Science, Universidad de Buenos
+      Aires, Argentina
+  - given-names: Rüdiger
+    family-names: Franke
+    affiliation: 'ABB AG, DE-68309 Mannheim, Germany'
+  - given-names: Dag
+    family-names: Fritzson
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden.
+  - given-names: Mahder
+    family-names: Gebremedhin
+    affiliation: ' PELAB – Programming Environment Lab, Dept. of Computer and Information Science Linköping University, SE-581 83 Linköping, Sweden'
+  - given-names: ' Andreas'
+    family-names: Heuermann
+    affiliation: 'FH Bielefeld, Bielefeld, Germany'
+  - given-names: Bernt
+    family-names: Lie
+    affiliation: >-
+      University of South-Eastern Norway, Porsgrunn,
+      Norway
+  - given-names: Alachew
+    family-names: Mengist
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: Lars
+    family-names: Mikelsons
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: Kannan
+    family-names: Moudgalya
+    affiliation: >-
+      Dept. of Chemical Engineering, IIT Bombay,
+      Mumbai, India
+  - given-names: Lennart
+    family-names: Ochel
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: Arunkumar
+    family-names: Palanisamy
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: Vitalij
+    family-names: Ruge
+    affiliation: 'FH Bielefeld, Bielefeld, Germany'
+  - given-names: Wladimir
+    family-names: Schamai
+    affiliation: >-
+      Danfoss Power Solutions GmbH & Co. OHG,
+      Offenbach, Germany
+  - given-names: Martin
+    family-names: Sjölund
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: Bernhard
+    family-names: Thiele
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: John
+    family-names: Tinnerholm
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - given-names: Per
+    family-names: Östlund
+    affiliation: >-
+      PELAB – Programming Environment Lab, Dept. of
+      Computer and Information Science Linköping
+      University, SE-581 83 Linköping, Sweden
+  - {}
