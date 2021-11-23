@@ -269,7 +269,7 @@ public uniontype Element
     ElementSource source "the origin of the component/equation/algorithm" ;
   end WHEN_EQUATION;
 
-  record INITIAL_FOR_EQUATION " a for-equation"
+  record INITIAL_FOR_EQUATION " an initial for-equation"
     Type type_ "this is the type of the iterator";
     Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
     Ident iter "the iterator variable";
@@ -279,7 +279,7 @@ public uniontype Element
     ElementSource source "the origin of the component/equation/algorithm" ;
   end INITIAL_FOR_EQUATION;
 
-  record FOR_EQUATION " an initial for-equation"
+  record FOR_EQUATION " a for-equation"
     Type type_ "this is the type of the iterator";
     Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
     Ident iter "the iterator variable";
