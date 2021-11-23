@@ -1387,21 +1387,20 @@ void ElementParameters::updateComponentParameters()
 
 /*!
  * \class ElementAttributes
- * \brief A dialog for displaying components attributes like visibility, stream, casuality etc.
+ * \brief A dialog for displaying elements attributes like visibility, stream, casuality etc.
  */
 /*!
  * \brief ElementAttributes::ElementAttributes
- * \param pComponent
+ * \param pElement
  * \param pParent
  */
-ElementAttributes::ElementAttributes(Element *pComponent, QWidget *pParent)
+ElementAttributes::ElementAttributes(Element *pElement, QWidget *pParent)
   : QDialog(pParent)
 {
-  QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Element Attributes")).arg(pComponent->getName())
-                 .arg(className));
+  QString className = pElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName, tr("Element Attributes"), pElement->getName(), className));
   setAttribute(Qt::WA_DeleteOnClose);
-  mpComponent = pComponent;
+  mpElement = pElement;
   setUpDialog();
   initializeDialog();
 }
@@ -1490,13 +1489,13 @@ void ElementAttributes::setUpDialog()
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateComponentAttributes()));
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateElementAttributes()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
-  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpComponent->isInheritedComponent()) {
+  if (mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpElement->isInheritedComponent()) {
     mpOkButton->setDisabled(true);
   }
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
@@ -1521,79 +1520,78 @@ void ElementAttributes::setUpDialog()
 void ElementAttributes::initializeDialog()
 {
   // get Class Name
-  mpNameTextBox->setText(mpComponent->getComponentInfo()->getName());
+  mpNameTextBox->setText(mpElement->getComponentInfo()->getName());
   mpNameTextBox->setCursorPosition(0);
   // get dimensions
-  QString dimensions = mpComponent->getComponentInfo()->getArrayIndex();
+  QString dimensions = mpElement->getComponentInfo()->getArrayIndex();
   mpDimensionsTextBox->setText(QString("[%1]").arg(dimensions));
   // get Comment
-  mpCommentTextBox->setText(mpComponent->getComponentInfo()->getComment());
+  mpCommentTextBox->setText(mpElement->getComponentInfo()->getComment());
   mpCommentTextBox->setCursorPosition(0);
   // get classname
-  mpPathTextBox->setText(mpComponent->getComponentInfo()->getClassName());
+  mpPathTextBox->setText(mpElement->getComponentInfo()->getClassName());
   // get Variability
-  if (mpComponent->getComponentInfo()->getVariablity() == "constant") {
+  if (mpElement->getComponentInfo()->getVariablity() == "constant") {
     mpConstantRadio->setChecked(true);
-  } else if (mpComponent->getComponentInfo()->getVariablity() == "parameter") {
+  } else if (mpElement->getComponentInfo()->getVariablity() == "parameter") {
     mpParameterRadio->setChecked(true);
-  } else if (mpComponent->getComponentInfo()->getVariablity() == "discrete") {
+  } else if (mpElement->getComponentInfo()->getVariablity() == "discrete") {
     mpDiscreteRadio->setChecked(true);
   } else {
     mpDefaultRadio->setChecked(true);
   }
   // get Properties
-  mpFinalCheckBox->setChecked(mpComponent->getComponentInfo()->getFinal());
-  mpProtectedCheckBox->setChecked(mpComponent->getComponentInfo()->getProtected());
-  mpReplaceAbleCheckBox->setChecked(mpComponent->getComponentInfo()->getReplaceable());
-  mIsFlow = mpComponent->getComponentInfo()->getFlow() ? "true" : "false";
+  mpFinalCheckBox->setChecked(mpElement->getComponentInfo()->getFinal());
+  mpProtectedCheckBox->setChecked(mpElement->getComponentInfo()->getProtected());
+  mpReplaceAbleCheckBox->setChecked(mpElement->getComponentInfo()->getReplaceable());
+  mIsFlow = mpElement->getComponentInfo()->getFlow() ? "true" : "false";
   // get Casuality
-  if (mpComponent->getComponentInfo()->getCausality() == "input") {
+  if (mpElement->getComponentInfo()->getCausality() == "input") {
     mpInputRadio->setChecked(true);
-  } else if (mpComponent->getComponentInfo()->getCausality() == "output") {
+  } else if (mpElement->getComponentInfo()->getCausality() == "output") {
     mpOutputRadio->setChecked(true);
   } else {
     mpNoneRadio->setChecked(true);
   }
   // get InnerOuter
-  mpInnerCheckBox->setChecked(mpComponent->getComponentInfo()->getInner());
-  mpOuterCheckBox->setChecked(mpComponent->getComponentInfo()->getOuter());
+  mpInnerCheckBox->setChecked(mpElement->getComponentInfo()->getInner());
+  mpOuterCheckBox->setChecked(mpElement->getComponentInfo()->getOuter());
 }
 
 /*!
- * \brief ElementAttributes::updateComponentAttributes
+ * \brief ElementAttributes::updateElementAttributes
  * Slot activated when mpOkButton clicked signal is raised.\n
- * Updates the component attributes.
+ * Updates the element attributes.
  */
-void ElementAttributes::updateComponentAttributes()
+void ElementAttributes::updateElementAttributes()
 {
-  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
+  ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
   /* Check the same component name problem before setting any attributes. */
-  if (mpComponent->getComponentInfo()->getName().compare(mpNameTextBox->text()) != 0) {
-    if (!mpComponent->getGraphicsView()->checkElementName(mpNameTextBox->text())) {
-      QMessageBox::information(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::information),
+  if (mpElement->getComponentInfo()->getName().compare(mpNameTextBox->text()) != 0) {
+    if (!mpElement->getGraphicsView()->checkElementName(mpNameTextBox->text())) {
+      QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
       return;
     }
   }
   // check for spaces
   if (StringHandler::containsSpace(mpNameTextBox->text())) {
-    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           tr("A component name should not have spaces. Please choose another name."), Helper::ok);
     return;
   }
   // check for comma
   if (mpNameTextBox->text().contains(',')) {
-    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), Helper::ok);
     return;
   }
   // check for invalid names
   MainWindow::instance()->getOMCProxy()->setLoggingEnabled(false);
-  QList<QString> result = MainWindow::instance()->getOMCProxy()->parseString(QString("model M N %1; end M;").arg(mpNameTextBox->text()),
-                                                                             "M", false);
+  QList<QString> result = MainWindow::instance()->getOMCProxy()->parseString(QString("model M N %1; end M;").arg(mpNameTextBox->text()), "M", false);
   MainWindow::instance()->getOMCProxy()->setLoggingEnabled(true);
   if (result.isEmpty()) {
-    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), Helper::ok);
     return;
   }
@@ -1616,16 +1614,16 @@ void ElementAttributes::updateComponentAttributes()
     causality = "";
   }
   // save the old ElementInfo
-  ElementInfo oldComponentInfo(mpComponent->getComponentInfo());
+  ElementInfo oldComponentInfo(mpElement->getComponentInfo());
   // Create a new ElementInfo
   ElementInfo newComponentInfo;
-  newComponentInfo.setClassName(mpComponent->getComponentInfo()->getClassName());
+  newComponentInfo.setClassName(mpElement->getComponentInfo()->getClassName());
   newComponentInfo.setName(mpNameTextBox->text());
   newComponentInfo.setComment(mpCommentTextBox->text());
   newComponentInfo.setProtected(mpProtectedCheckBox->isChecked());
   newComponentInfo.setFinal(mpFinalCheckBox->isChecked());
-  newComponentInfo.setFlow(mpComponent->getComponentInfo()->getFlow());
-  newComponentInfo.setStream(mpComponent->getComponentInfo()->getStream());
+  newComponentInfo.setFlow(mpElement->getComponentInfo()->getFlow());
+  newComponentInfo.setStream(mpElement->getComponentInfo()->getStream());
   newComponentInfo.setReplaceable(mpReplaceAbleCheckBox->isChecked());
   newComponentInfo.setVariablity(variability);
   newComponentInfo.setInner(mpInnerCheckBox->isChecked());
@@ -1636,7 +1634,7 @@ void ElementAttributes::updateComponentAttributes()
   /* If user has really changed the Component's attributes then push that change on the stack.
    */
   if (oldComponentInfo != newComponentInfo) {
-    UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpComponent, oldComponentInfo, newComponentInfo);
+    UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpElement, oldComponentInfo, newComponentInfo);
     pModelWidget->getUndoStack()->push(pUpdateComponentAttributesCommand);
     pModelWidget->updateModelText();
   }

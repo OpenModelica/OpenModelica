@@ -312,8 +312,8 @@ void TextAnnotation::drawTextAnnotation(QPainter *painter)
   // map the existing bounding rect to new transformation but with positive width and height so that font metrics can work
   QRectF absMappedBoundingRect = QRectF(boundingRect().x() * sx, boundingRect().y() * sy, qAbs(boundingRect().width() * sx), qAbs(boundingRect().height() * sy));
   // normalize the text for drawing
-  mTextString = StringHandler::removeFirstLastQuotes(mTextString);
-  mTextString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
+  QString textString = StringHandler::removeFirstLastQuotes(mTextString);
+  textString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
   // Don't create new QFont instead get a font from painter and set the values on it and set it back.
   QFont font = painter->font();
   font.setFamily(mFontName);
@@ -333,7 +333,7 @@ void TextAnnotation::drawTextAnnotation(QPainter *painter)
   // if absolute font size is defined and is greater than 0 then we don't need to calculate the font size.
   if (mFontSize <= 0) {
     QFontMetrics fontMetrics(painter->font());
-    QRect fontBoundRect = fontMetrics.boundingRect(absMappedBoundingRect.toRect(), Qt::TextDontClip, mTextString);
+    QRect fontBoundRect = fontMetrics.boundingRect(absMappedBoundingRect.toRect(), Qt::TextDontClip, textString);
     const qreal xFactor = absMappedBoundingRect.width() / fontBoundRect.width();
     const qreal yFactor = absMappedBoundingRect.height() / fontBoundRect.height();
     /* Ticket:4256
@@ -349,10 +349,10 @@ void TextAnnotation::drawTextAnnotation(QPainter *painter)
   /* Try to get the elided text if calculated font size <= Helper::minimumTextFontSize
    * OR if font size is absolute.
    */
-  QString textToDraw = mTextString;
+  QString textToDraw = textString;
   if (absMappedBoundingRect.width() > 1 && ((mFontSize <= 0 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) || mFontSize > 0)) {
     QFontMetrics fontMetrics(painter->font());
-    textToDraw = fontMetrics.elidedText(mTextString, Qt::ElideRight, absMappedBoundingRect.width());
+    textToDraw = fontMetrics.elidedText(textString, Qt::ElideRight, absMappedBoundingRect.width());
     // if we get "..." i.e., QChar(0x2026) as textToDraw then don't draw anything
     if (textToDraw.compare(QChar(0x2026)) == 0) {
       textToDraw = "";
