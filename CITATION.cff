@@ -1,11 +1,13 @@
 # This CITATION.cff file was generated with cffinit.
 # Visit https://bit.ly/cffinit to generate yours today!
+# For a complete bibliography see:
+# https://github.com/OpenModelica/OpenModelica/blob/master/doc/bibliography/openmodelica.bib
 
 cff-version: 1.2.0
 title: >-
   The OpenModelica Integrated Environment for
   Modeling, Simulation, and Model-Based Development
-message: "For bibliography see"
+message: "If you use OpenModelica in your research, please cite it using these metadata"
 type: software
 doi: 10.4173/mic.2020.4.1
 authors:
