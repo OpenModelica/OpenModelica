@@ -95,6 +95,7 @@ import UnorderedMap;
 import UnorderedSet;
 import Inline = NFInline;
 import ExpandExp = NFExpandExp;
+import InstUtil = NFInstUtil;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -181,12 +182,14 @@ algorithm
   end match;
 
   execStat(getInstanceName());
+  InstUtil.dumpFlatModelDebug("flatten", flatModel);
 
   if settings.arrayConnect then
     flatModel := resolveArrayConnections(flatModel);
   else
     flatModel := resolveConnections(flatModel, deleted_vars);
   end if;
+  InstUtil.dumpFlatModelDebug("connections", flatModel);
 end flatten;
 
 function collectFunctions

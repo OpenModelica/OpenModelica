@@ -44,7 +44,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MMath.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Mod.mo
   # Remember: Only files needed for compiling MetaModelica
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/OperatorOverloading.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Parser.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ParserExt.mo
@@ -333,6 +332,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstContext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstNode.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookup.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookupState.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookupTree.mo

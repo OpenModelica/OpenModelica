@@ -69,7 +69,6 @@ protected import InstDAE;
 protected import InstFunction;
 protected import InstTypes;
 protected import InstUtil;
-protected import NFInstUtil;
 protected import List;
 protected import Lookup;
 protected import Patternm;
@@ -4240,8 +4239,8 @@ algorithm
         crefExp1 = Expression.crefExp(c1_1);
         crefExp2 = Expression.crefExp(c2_1);
         // Evaluate constant crefs away
-        const1 = NFInstUtil.toConst(vt1);
-        const2 = NFInstUtil.toConst(vt2);
+        const1 = Types.variabilityToConst(vt1);
+        const2 = Types.variabilityToConst(vt2);
         (cache, crefExp1) = Ceval.cevalIfConstant(cache, env, crefExp1, DAE.PROP(t1,const1), true, info);
         (cache, crefExp2) = Ceval.cevalIfConstant(cache, env, crefExp2, DAE.PROP(t2,const2), true, info);
 

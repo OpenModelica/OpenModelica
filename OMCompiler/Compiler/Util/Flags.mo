@@ -531,21 +531,19 @@ constant DebugFlag DUMP_ASSC = DEBUG_FLAG(179, "dumpASSC", false,
   Gettext.gettext("Dumps the conversion process of analytical to structural singularities."));
 constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(180, "symJacConstantSplit", false,
   Gettext.gettext("Generates all symbolic Jacobians with splitted constant parts."));
-constant DebugFlag NF_DUMP_FLAT = DEBUG_FLAG(181, "nfDumpFlat", false,
-  Gettext.gettext("Dumps the flat model structure before generating the DAE."));
-constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(182, "force-fmi-attributes", false,
+constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(181, "force-fmi-attributes", false,
   Gettext.gettext("Force to export all fmi attributes to the modelDescription.xml, including those which have default values"));
-constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(183, "dataReconciliation", false,
+constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(182, "dataReconciliation", false,
   Gettext.gettext("Dumps all the dataReconciliation extraction algorithm procedure"));
-constant DebugFlag ARRAY_CONNECT = DEBUG_FLAG(184, "arrayConnect", false,
+constant DebugFlag ARRAY_CONNECT = DEBUG_FLAG(183, "arrayConnect", false,
   Gettext.gettext("Use experimental array connection handler."));
-constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(185, "combineSubscripts", false,
+constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(184, "combineSubscripts", false,
   Gettext.gettext("Move all subscripts to the end of component references."));
-constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(186, "zmqDangerousAcceptConnectionsFromAnywhere", false,
+constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(185, "zmqDangerousAcceptConnectionsFromAnywhere", false,
   Gettext.gettext("When opening a zmq connection, listen on all interfaces instead of only connections from 127.0.0.1."));
-constant DebugFlag DUMP_CONVERSION_RULES = DEBUG_FLAG(187, "dumpConversionRules", false,
+constant DebugFlag DUMP_CONVERSION_RULES = DEBUG_FLAG(186, "dumpConversionRules", false,
   Gettext.gettext("Dumps the rules when converting a package using a conversion script."));
-constant DebugFlag PRINT_RECORD_TYPES = DEBUG_FLAG(188, "printRecordTypes", false,
+constant DebugFlag PRINT_RECORD_TYPES = DEBUG_FLAG(187, "printRecordTypes", false,
   Gettext.gettext("Prints out record types as part of the flat code."));
 
 public
@@ -1387,6 +1385,18 @@ constant ConfigFlag LINK_TYPE = CONFIG_FLAG(147, "linkType",
 constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(148, "tearingAlwaysDer",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Always choose state derivatives as iteration variables in strong components."));
+
+constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(149, "dumpFlatModel",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}),
+  SOME(STRING_DESC_OPTION({
+    ("flatten", Gettext.gettext("After flattening but before connection handling.")),
+    ("connections", Gettext.gettext("After connection handling.")),
+    ("eval", Gettext.gettext("After evaluating constants.")),
+    ("simplify", Gettext.gettext("After model simplification.")),
+    ("scalarize", Gettext.gettext("After scalarizing arrays.")),
+    ("all", Gettext.gettext("Dump after every stage."))
+  })),
+  Gettext.gettext("Dumps the flat model at the given stages of the frontend."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
