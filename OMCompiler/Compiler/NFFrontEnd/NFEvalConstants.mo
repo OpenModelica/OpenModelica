@@ -206,6 +206,20 @@ algorithm
     case Expression.SIZE()
       then Expression.SIZE(exp.exp, evaluateExpOpt(exp.dimIndex, info));
 
+    case Expression.RANGE()
+      algorithm
+        (outExp, outChanged) := Expression.mapFoldShallow(exp,
+          function evaluateExpTraverser(info = info), false);
+
+        // If anything in a range is evaluated its better to just retype it
+        // rather than evaluating the type, since it's usually faster and gives
+        // better results in some cases.
+        if outChanged then
+          outExp := Expression.retype(outExp);
+        end if;
+      then
+        outExp;
+
     else
       algorithm
         (outExp, outChanged) := Expression.mapFoldShallow(exp,
