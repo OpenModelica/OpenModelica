@@ -65,7 +65,6 @@ import ComponentRef = NFComponentRef;
 import Config;
 import Origin = NFComponentRef.Origin;
 import ExecStat.execStat;
-import InstUtil = NFInstUtil;
 import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
 import Call = NFCall;

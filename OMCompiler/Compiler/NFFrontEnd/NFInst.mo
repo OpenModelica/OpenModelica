@@ -169,6 +169,7 @@ algorithm
   // Flatten the model and evaluate constants in it.
   flatModel := Flatten.flatten(inst_cls, name);
   flatModel := EvalConstants.evaluate(flatModel);
+  InstUtil.dumpFlatModelDebug("eval", flatModel);
 
   // Do unit checking
   flatModel := UnitCheck.checkUnits(flatModel);
@@ -184,10 +185,11 @@ algorithm
   // Collect a tree of all functions that are still used in the flat model.
   functions := Flatten.collectFunctions(flatModel);
 
-  // Dump the flat model to a stream if dumpFlat = true.
-  flatString := if dumpFlat then dumpFlatModel(flatModel, functions) else "";
+  // Dump the flat model to a string if dumpFlat = true.
+  flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
 
-  printStructuralParameters(flatModel);
+  InstUtil.dumpFlatModelDebug("simplify", flatModel, functions);
+  InstUtil.printStructuralParameters(flatModel);
 
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
@@ -197,17 +199,11 @@ algorithm
     flatModel.variables := List.filterOnFalse(flatModel.variables, Variable.isEmptyArray);
   end if;
 
-  flatModel := FlatModel.mapExp(flatModel, replaceEmptyArrays);
+  flatModel := InstUtil.replaceEmptyArrays(flatModel);
+  InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
 
   VerifyModel.verify(flatModel);
-
-  if Flags.isSet(Flags.COMBINE_SUBSCRIPTS) then
-    flatModel := FlatModel.mapExp(flatModel, combineSubscripts);
-  end if;
-
-  if Flags.isSet(Flags.NF_DUMP_FLAT) then
-    print("FlatModel:\n" + FlatModel.toString(flatModel) + "\n");
-  end if;
+  flatModel := InstUtil.combineSubscripts(flatModel);
 
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
   //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
@@ -3742,100 +3738,6 @@ algorithm
     fail();
   end if;
 end checkPartialClass;
-
-function combineSubscripts
-  input output Expression exp;
-protected
-  function traverser
-    input output Expression exp;
-  algorithm
-    () := match exp
-      case Expression.CREF()
-        algorithm
-          exp.cref := ComponentRef.combineSubscripts(exp.cref);
-        then
-          ();
-
-      else ();
-    end match;
-  end traverser;
-algorithm
-  exp := Expression.map(exp, traverser);
-end combineSubscripts;
-
-function printStructuralParameters
-  input FlatModel flatModel;
-protected
-  list<Variable> params;
-  list<String> names;
-algorithm
-  if Flags.isSet(Flags.PRINT_STRUCTURAL) then
-    params := list(v for v guard Variable.isStructural(v) in flatModel.variables);
-
-    if not listEmpty(params) then
-      names := list(ComponentRef.toString(v.name) for v in params);
-      Error.addMessage(Error.NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS,
-        {stringDelimitList(names, ", ")});
-    end if;
-  end if;
-end printStructuralParameters;
-
-function dumpFlatModel
-  input FlatModel flatModel;
-  input FunctionTree functions;
-  output String str;
-protected
-  FlatModel flat_model = flatModel;
-algorithm
-  if Flags.isSet(Flags.COMBINE_SUBSCRIPTS) then
-    flat_model := FlatModel.mapExp(flat_model, combineSubscripts);
-  end if;
-
-  str := FlatModel.toFlatString(flat_model, FunctionTree.listValues(functions));
-end dumpFlatModel;
-
-function replaceEmptyArrays
-  "Variables with 0-dimensions are not present in the flat model, so replace
-   any cref that refers to such a variable with an empty array expression."
-  input output Expression exp;
-protected
-  function traverser
-    input Expression exp;
-    output Expression outExp;
-  protected
-    ComponentRef cref;
-    list<Subscript> subs;
-    Type ty;
-  algorithm
-    outExp := match exp
-      case Expression.CREF(cref = cref)
-        guard ComponentRef.isEmptyArray(cref)
-        algorithm
-          if ComponentRef.hasSubscripts(cref) then
-            cref := ComponentRef.fillSubscripts(cref);
-            cref := ComponentRef.replaceWholeSubscripts(cref);
-            subs := ComponentRef.subscriptsAllFlat(cref);
-            cref := ComponentRef.stripSubscriptsAll(cref);
-            ty := ComponentRef.getSubscriptedType(cref);
-          else
-            subs := {};
-            ty := exp.ty;
-          end if;
-
-          outExp := Expression.makeDefaultValue(ty);
-
-          if not listEmpty(subs) then
-            outExp := Expression.SUBSCRIPTED_EXP(outExp, subs, exp.ty, false);
-          end if;
-        then
-          outExp;
-
-      else exp;
-    end match;
-  end traverser;
-algorithm
-  exp := Expression.map(exp, traverser);
-end replaceEmptyArrays;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

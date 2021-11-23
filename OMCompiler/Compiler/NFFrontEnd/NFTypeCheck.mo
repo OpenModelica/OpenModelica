@@ -57,7 +57,6 @@ import Operator = NFOperator;
 import Type = NFType;
 import Class = NFClass;
 import ClassTree = NFClassTree;
-import InstUtil = NFInstUtil;
 import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;

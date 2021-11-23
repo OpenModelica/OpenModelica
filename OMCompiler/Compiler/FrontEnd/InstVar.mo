@@ -70,7 +70,6 @@ protected import Types;
 protected import PrefixUtil;
 protected import List;
 protected import ComponentReference;
-protected import NFInstUtil;
 protected import UnitAbsynBuilder;
 protected import Flags;
 protected import Expression;
@@ -599,7 +598,7 @@ algorithm
 
     source := ElementSource.createElementSource(inInfo, FGraph.getScopePath(inEnv), inPrefix);
     (outCache, outDae) := addArrayVarEquation(outCache, inEnv, outIH, inState,
-      outDae, outType, mod, NFInstUtil.toConst(SCodeUtil.attrVariability(attr)),
+      outDae, outType, mod, Types.variabilityToConst(SCodeUtil.attrVariability(attr)),
       inPrefix, inName, source);
     outCache := InstFunction.addRecordConstructorFunction(outCache, inEnv,
       Types.arrayElementType(outType), SCodeUtil.elementInfo(inClass));
@@ -1163,7 +1162,7 @@ algorithm
         mod = if not listEmpty(inSubscripts) and not SCodeUtil.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
                  then DAE.NOMOD()
                  else inMod;
-        opt_binding = InstBinding.makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName);
+        opt_binding = InstBinding.makeVariableBinding(ty, mod, Types.variabilityToConst(vt), inPrefix, inName);
         start = InstBinding.instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
         // Propagate the final prefix from the modifier.
         //fin = InstUtil.propagateModFinal(mod, fin);

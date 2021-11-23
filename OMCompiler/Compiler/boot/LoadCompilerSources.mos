@@ -50,7 +50,6 @@ if true then /* Suppress output */
     "../FrontEnd/MMath.mo",
     "../FrontEnd/Mod.mo",
   // Remember: Only files needed for compiling MetaModelica
-    "../FrontEnd/NFInstUtil.mo",
     "../FrontEnd/OperatorOverloading.mo",
     "../FrontEnd/Parser.mo",
     "../FrontEnd/ParserExt.mo",
@@ -367,6 +366,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFInstContext.mo",
     "../NFFrontEnd/NFInst.mo",
     "../NFFrontEnd/NFInstNode.mo",
+    "../NFFrontEnd/NFInstUtil.mo",
     "../NFFrontEnd/NFLookup.mo",
     "../NFFrontEnd/NFLookupState.mo",
     "../NFFrontEnd/NFLookupTree.mo",

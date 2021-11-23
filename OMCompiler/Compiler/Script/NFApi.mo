@@ -77,7 +77,6 @@ import FlagsUtil;
 import FlatModel = NFFlatModel;
 import Flatten = NFFlatten;
 import Global;
-import InstUtil = NFInstUtil;
 import Interactive;
 import InteractiveUtil;
 import List;
