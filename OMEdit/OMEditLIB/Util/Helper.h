@@ -349,7 +349,7 @@ public:
   static QString stepReturn;
   static QString attachToRunningProcess;
   static QString attachToRunningProcessTip;
-  static QString crashReport;
+  static QString reportIssue;
   static QString parsingFailedJson;
   static QString expandAll;
   static QString collapseAll;
@@ -430,7 +430,6 @@ public:
   static QString translationFlags;
   static QString send;
   static QString installLibrary;
-  static QString reportIssue;
 };
 
 class GUIMessages : public QObject

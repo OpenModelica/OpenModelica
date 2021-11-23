@@ -4605,12 +4605,18 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   pOMContributorsScrollArea->setFrameShape(QFrame::NoFrame);
   pOMContributorsScrollArea->setWidgetResizable(true);
   pOMContributorsScrollArea->setWidget(mpOMContributorsLabel);
-  // close button
-  QPushButton *pCloseButton = new QPushButton(Helper::close);
-  connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
   // report button
   QPushButton *pReportButton = new QPushButton(Helper::reportIssue);
+  pReportButton->setAutoDefault(false);
   connect(pReportButton, SIGNAL(clicked()), SLOT(showReportIssue()));
+  // close button
+  QPushButton *pCloseButton = new QPushButton(Helper::close);
+  pCloseButton->setAutoDefault(true);
+  connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  pButtonBox->addButton(pReportButton, QDialogButtonBox::ActionRole);
+  pButtonBox->addButton(pCloseButton, QDialogButtonBox::ActionRole);
   // logo label
   Label *pLogoLabel = new Label;
   QPixmap pixmap(":/Resources/icons/omedit.png");
@@ -4623,9 +4629,8 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   // main layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->addWidget(pLogoLabel, 0, 0, Qt::AlignTop | Qt::AlignLeft);
-  pMainLayout->addLayout(pVerticalLayout, 0, 2, Qt::AlignTop | Qt::AlignLeft);
-  pMainLayout->addWidget(pCloseButton, 1, 0, 1, 2, Qt::AlignRight);
-  pMainLayout->addWidget(pReportButton, 2, 0, 1, 2, Qt::AlignRight);
+  pMainLayout->addLayout(pVerticalLayout, 0, 1, Qt::AlignTop | Qt::AlignLeft);
+  pMainLayout->addWidget(pButtonBox, 1, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -4669,7 +4674,7 @@ void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
 void AboutOMEditDialog::showReportIssue()
 {
   // show the CrashReportDialog
-  CrashReportDialog *pCrashReportDialog = new CrashReportDialog(QString("[no crash report]"));
+  CrashReportDialog *pCrashReportDialog = new CrashReportDialog("", true);
   pCrashReportDialog->exec();
 }
 

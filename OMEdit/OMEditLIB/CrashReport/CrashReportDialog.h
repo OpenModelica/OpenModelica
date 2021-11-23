@@ -52,8 +52,9 @@ class CrashReportDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CrashReportDialog(QString stacktrace);
+  CrashReportDialog(QString stacktrace, bool reportIssue = false);
 private:
+  bool mReportIssue;
   QString mStackTrace;
   Label *mpCrashReportHeading;
   QFrame *mpHorizontalLine;

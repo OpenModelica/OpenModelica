@@ -343,7 +343,7 @@ QString Helper::stepInto;
 QString Helper::stepReturn;
 QString Helper::attachToRunningProcess;
 QString Helper::attachToRunningProcessTip;
-QString Helper::crashReport;
+QString Helper::reportIssue;
 QString Helper::parsingFailedJson;
 QString Helper::expandAll;
 QString Helper::collapseAll;
@@ -423,7 +423,6 @@ QString Helper::systemSimulationInformation;
 QString Helper::translationFlags;
 QString Helper::send;
 QString Helper::installLibrary;
-QString Helper::reportIssue;
 
 void Helper::initHelperVariables()
 {
@@ -645,7 +644,7 @@ void Helper::initHelperVariables()
   Helper::stepReturn = tr("Step Return");
   Helper::attachToRunningProcess = tr("Attach to Running Process");
   Helper::attachToRunningProcessTip = tr("Attach the debugger to running process");
-  Helper::crashReport = tr("Crash Report");
+  Helper::reportIssue = tr("Report Issue");
   Helper::parsingFailedJson = tr("Parsing of JSON file failed");
   Helper::expandAll = tr("Expand All");
   Helper::collapseAll = tr("Collapse All");
@@ -725,7 +724,6 @@ void Helper::initHelperVariables()
   Helper::translationFlags = tr("Translation Flags");
   Helper::send = tr("Send");
   Helper::installLibrary = tr("Install Library");
-  Helper::reportIssue = tr("Report Issue");
 }
 
 QString GUIMessages::getMessage(int type)
