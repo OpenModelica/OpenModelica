@@ -1,0 +1,1 @@
+convertClass("testlib.Integer1", "testlib.Integer2");

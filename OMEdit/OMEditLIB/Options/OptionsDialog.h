@@ -941,6 +941,7 @@ public:
   QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
   QComboBox *getModelDescriptionFiltersComboBox() const {return mpModelDescriptionFiltersComboBox;}
   QComboBox *getSolverForCoSimulationComboBox() const {return mpSolverForCoSimulationComboBox;}
+  QCheckBox *getIncludeResourcesCheckBox() const {return mpIncludeResourcesCheckBox;}
   QCheckBox *getIncludeSourceCodeCheckBox() const {return mpIncludeSourceCodeCheckBox;}
   QCheckBox *getGenerateDebugSymbolsCheckBox() const {return mpGenerateDebugSymbolsCheckBox;}
   QCheckBox* getDeleteFMUDirectoryAndModelCheckBox() {return mpDeleteFMUDirectoryAndModelCheckBox;}
@@ -967,6 +968,7 @@ private:
   QComboBox *mpLinkingComboBox;
   QComboBox *mpSolverForCoSimulationComboBox;
   QComboBox *mpModelDescriptionFiltersComboBox;
+  QCheckBox *mpIncludeResourcesCheckBox;
   QCheckBox *mpIncludeSourceCodeCheckBox;
   QCheckBox *mpGenerateDebugSymbolsCheckBox;
   QGroupBox *mpImportGroupBox;

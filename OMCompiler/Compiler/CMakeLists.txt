@@ -206,12 +206,12 @@ target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_D
 
 
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::graphstream)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::Modelica::ExternalC)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::Modelica::IO)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::Modelica::ExternalC)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::Modelica::IO)
 
 
 

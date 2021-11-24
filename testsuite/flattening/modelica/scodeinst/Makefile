@@ -74,6 +74,7 @@ BuiltinAttribute18.mo \
 BuiltinAttribute19.mo \
 BuiltinAttribute20.mo \
 BuiltinAttribute21.mo \
+BuiltinAttribute22.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -226,6 +227,7 @@ ClassMod6.mo \
 ClockConstructor1.mo \
 CombineSubscripts1.mo \
 CombineSubscripts2.mo \
+CombineSubscripts3.mo \
 Comment1.mo \
 CompAsFunc.mo \
 ComponentAsTypeError.mo \
@@ -329,6 +331,7 @@ dim19.mo \
 dim7.mo \
 dim8.mo \
 DerivedRootClass1.mo \
+DumpFlatModel1.mo \
 DuplicateElements1.mo \
 DuplicateElements2.mo \
 DuplicateElements3.mo \
@@ -349,6 +352,8 @@ Each4.mo \
 Each5.mo \
 Each6.mo \
 EmptyArray1.mo \
+EmptyArray2.mo \
+EmptyArray3.mo \
 Encapsulated1.mo \
 Encapsulated2.mo \
 EncapsulatingInst1.mo \
@@ -468,6 +473,7 @@ ForEquationNonParam.mo \
 ForEquationShadow1.mo \
 ForStatement1.mo \
 ForStatement2.mo \
+ForStatement3.mo \
 ForStatementArray.mo \
 ForStatementNonVector.mo \
 ForStatementPrefix.mo \
@@ -748,6 +754,7 @@ NoEvent2.mo \
 NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
+NoScalarize1.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
@@ -808,6 +815,7 @@ PartialType3.mo \
 Prefix1.mo \
 Prefix2.mo \
 Prefix3.mo \
+PrintRecordTypes1.mo \
 PropagateExtends.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \

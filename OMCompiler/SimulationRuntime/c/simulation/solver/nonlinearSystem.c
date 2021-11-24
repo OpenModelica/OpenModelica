@@ -354,12 +354,26 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
-#if !defined(OMC_MINIMAL_RUNTIME)
-  int allPatternsAvailable = 1; // boolean, true if all systems have sparsity pattern, false otherwise
-#endif
+  modelica_boolean someSmallDensity = 0;  /* pretty dumping of flag info */
+  modelica_boolean someBigSize = 0;       /* analogous to someSmallDensity */
 
   infoStreamPrint(LOG_NLS, 1, "initialize non-linear system solvers");
   infoStreamPrint(LOG_NLS, 0, "%ld non-linear systems", data->modelData->nNonLinearSystems);
+
+  /* set the default nls linear solver depending on the default nls method */
+  if (data->simulationInfo->nlsLinearSolver == NLS_LS_DEFAULT) {
+#if !defined(OMC_MINIMAL_RUNTIME)
+    /* kinsol works best with KLU,
+       they are both sparse so it makes sense to use them together */
+    if (data->simulationInfo->nlsMethod == NLS_KINSOL) {
+      data->simulationInfo->nlsLinearSolver = NLS_LS_KLU;
+    } else {
+      data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
+    }
+#else
+    data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
+#endif
+  }
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
@@ -398,11 +412,6 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-    if (!nonlinsys[i].isPatternAvailable)
-      allPatternsAvailable = 0;
-#endif
-
-#if !defined(OMC_MINIMAL_RUNTIME)
     /* csv data call stats*/
     if (data->simulationInfo->nlsCsvInfomation)
     {
@@ -417,42 +426,50 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       }
     }
 #endif
-  }
 
+    /* check if the system is sparse enough to use kinsol
+       it is considered sparse if
+         * the density (nnz/size^2) is less than a threshold or
+         * the size is bigger than a threshold */
+    nonlinsys[i].nlsMethod = data->simulationInfo->nlsMethod;
+    nonlinsys[i].nlsLinearSolver = data->simulationInfo->nlsLinearSolver;
 #if !defined(OMC_MINIMAL_RUNTIME)
-  if (allPatternsAvailable && data->simulationInfo->nlsMethod != NLS_KINSOL)
-  {
-    for(i=0; i<data->modelData->nNonLinearSystems; ++i)
+    if (nonlinsys[i].isPatternAvailable && data->simulationInfo->nlsMethod != NLS_KINSOL)
     {
-      size = nonlinsys[i].size;
       nnz = nonlinsys[i].sparsePattern->numberOfNoneZeros;
 
-      if(nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity || size >= nonlinearSparseSolverMinSize)
-      {
-        data->simulationInfo->nlsMethod = NLS_KINSOL;
-        infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver kinsol for nonlinear system %d,\nbecause density of %.2f remains under threshold of %.2f or size of %d exceeds threshold of %d.\nThe maximum density and the minimal system size for using sparse solvers can be specified\nusing the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.", i, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity, size, nonlinearSparseSolverMinSize);
+      if (nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity) {
+        nonlinsys[i].nlsMethod = NLS_KINSOL;
+        nonlinsys[i].nlsLinearSolver = NLS_LS_KLU;
+        someSmallDensity = 1;
+        if (size > nonlinearSparseSolverMinSize) {
+          someBigSize = 1;
+          infoStreamPrint(LOG_STDOUT, 0,
+                          "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                          "because density of %.2f remains under threshold of %.2f\n"
+                          "and size of %d exceeds threshold of %d.",
+                          i, nonlinsys[i].equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity,
+                          size, nonlinearSparseSolverMinSize);
+        } else {
+          infoStreamPrint(LOG_STDOUT, 0,
+                          "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                          "because density of %.2f remains under threshold of %.2f.",
+                          i, nonlinsys[i].equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity);
+        }
+      } else if (size > nonlinearSparseSolverMinSize) {
+        nonlinsys[i].nlsMethod = NLS_KINSOL;
+        nonlinsys[i].nlsLinearSolver = NLS_LS_KLU;
+        someBigSize = 1;
+        infoStreamPrint(LOG_STDOUT, 0,
+                        "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                        "because size of %d exceeds threshold of %d.",
+                        i, nonlinsys[i].equationIndex, size, nonlinearSparseSolverMinSize);
       }
     }
-  }
 #endif
 
-  if (data->simulationInfo->nlsLinearSolver == NLS_LS_DEFAULT) {
-#if !defined(OMC_MINIMAL_RUNTIME)
-    if (data->simulationInfo->nlsMethod == NLS_KINSOL) {
-      data->simulationInfo->nlsLinearSolver = NLS_LS_KLU;
-    } else {
-      data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
-    }
-#else
-    data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
-#endif
-  }
-
-
-  for(i=0; i<data->modelData->nNonLinearSystems; ++i)
-  {
-    size = nonlinsys[i].size;
-    switch(data->simulationInfo->nlsMethod)
+    /* allocate stuff depending on the chosen method */
+    switch(nonlinsys[i].nlsMethod)
     {
 #if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_HYBRID:
@@ -473,7 +490,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
         // solverData->ordinaryData = nonlinsys[i].solverData;
         allocateHomotopyData(size-1, &(solverData->initHomotopyData));
       } else {
-        nlsKinsolAllocate(size, &nonlinsys[i], data->simulationInfo->nlsLinearSolver);
+        nlsKinsolAllocate(size, &nonlinsys[i], nonlinsys[i].nlsLinearSolver);
         solverData->ordinaryData = nonlinsys[i].solverData;
       }
       nonlinsys[i].solverData = (void*) solverData;
@@ -511,6 +528,21 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       throwStreamPrint(threadData, "unrecognized nonlinear solver");
     }
   }
+
+  /* print relevant flag information */
+  if(someSmallDensity) {
+    if(someBigSize) {
+      infoStreamPrint(LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\n"
+                                     "specified using the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.");
+    } else {
+      infoStreamPrint(LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\n"
+                                     "using the runtime flag '<-nlsMaxDensity=value>'.");
+    }
+  } else if(someBigSize) {
+    infoStreamPrint(LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\n"
+                                   "using the runtime flag '<-nlsMinSize=value>'.");
+  }
+
   messageClose(LOG_NLS);
 
   TRACE_POP
@@ -579,7 +611,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     }
 #endif
     /* free solver data */
-    switch(data->simulationInfo->nlsMethod)
+    switch(nonlinsys[i].nlsMethod)
     {
 #if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_HYBRID:
@@ -829,7 +861,7 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
   struct dataMixedSolver *mixedSolverData;
 
   /* use the selected solver for solving nonlinear system */
-  switch(data->simulationInfo->nlsMethod)
+  switch(nonlinsys->nlsMethod)
   {
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_HYBRID:
@@ -946,7 +978,7 @@ int solveWithInitHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   struct dataMixedSolver *mixedSolverData;
 
   /* use the homotopy solver for solving the initial system */
-  switch(data->simulationInfo->nlsMethod)
+  switch(nonlinsys->nlsMethod)
   {
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_HYBRID:
@@ -1005,7 +1037,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   double originalLambda = data->simulationInfo->lambda;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-  kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
+  kinsol = (nonlinsys->nlsMethod == NLS_KINSOL);
 #endif
 
   data->simulationInfo->currentNonlinearSystemIndex = sysNumber;

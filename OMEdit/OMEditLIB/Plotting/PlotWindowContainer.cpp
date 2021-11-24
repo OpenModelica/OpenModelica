@@ -581,17 +581,19 @@ void PlotWindowContainer::exportVariables()
     // write time data
     data << QString::number(timeVector.at(i));
     foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+      double value;
       if (pPlotCurve && pPlotCurve->mYAxisVector.size() > i) { // parameters have just start and stop points in the dataset
-        OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotCurve->getYDisplayUnit(), pPlotCurve->getYUnit());
-        if (convertUnit.unitsCompatible) {
-          data << StringHandler::number(Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
-        } else {
-          data << StringHandler::number(pPlotCurve->mYAxisVector.at(i));
-        }
+        value = pPlotCurve->mYAxisVector.at(i);
       } else if (pPlotCurve && pPlotCurve->mYAxisVector.size() > 0) { // Set last value to have constant values for parameters
-        data << StringHandler::number(pPlotCurve->mYAxisVector.last());
-      } else { // otherwise set value to 0. But perhaps we should never reach there.
-        data << StringHandler::number(0);
+        value = pPlotCurve->mYAxisVector.last();
+      } else { // otherwise set value to 0.0 but perhaps we should never reach there.
+        value = 0.0;
+      }
+      OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotCurve->getYDisplayUnit(), pPlotCurve->getYUnit());
+      if (convertUnit.unitsCompatible) {
+        data << StringHandler::number(Utilities::convertUnit(value, convertUnit.offset, convertUnit.scaleFactor));
+      } else {
+        data << StringHandler::number(value);
       }
     }
     contents.append(data.join(",")).append("\n");

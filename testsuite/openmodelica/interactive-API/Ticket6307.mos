@@ -38,7 +38,7 @@ getElementAnnotations(Ticket6307); getErrorString();
 // ""
 // true
 // ""
-// {{Real,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
 // {{choicesAllMatching=true},{choicesAllMatching=true}}
 // ""
@@ -48,7 +48,7 @@ getElementAnnotations(Ticket6307); getErrorString();
 // ""
 // true
 // ""
-// {{Real,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
 // {{choicesAllMatching=true},{choicesAllMatching=true}}
 // ""

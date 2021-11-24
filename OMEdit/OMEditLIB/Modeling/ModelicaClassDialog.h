@@ -206,6 +206,23 @@ public slots:
   void renameClass();
 };
 
+class SaveTotalFileDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  SaveTotalFileDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
+private:
+  LibraryTreeItem *mpLibraryTreeItem;
+  QCheckBox *mpObfuscateOutputCheckBox;
+  QCheckBox *mpStripAnnotationsCheckBox;
+  QCheckBox *mpStripCommentsCheckBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void saveTotalModel();
+};
+
 class InformationDialog : public QWidget
 {
   Q_OBJECT

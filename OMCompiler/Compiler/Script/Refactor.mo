@@ -45,6 +45,7 @@ public import AbsynUtil;
 
 protected import List;
 protected import Interactive;
+protected import InteractiveUtil;
 protected import Inst;
 protected import FCore;
 protected import System; // stringReal
@@ -629,7 +630,7 @@ algorithm
       equation
         fullPath = fixPaths(cPath, path);
        // debug_print("getRestrictionFromPath: TryingLookingUp:", AbsynUtil.pathString(fullPath));
-        cdef = Interactive.getPathedClassInProgram(fullPath,p);
+        cdef = InteractiveUtil.getPathedClassInProgram(fullPath,p);
         restriction = getRestrictionInClass(cdef);
       then
         restriction;
@@ -638,7 +639,7 @@ algorithm
       equation
         (_,fullPath) = Interactive.mkFullyQual(env,path);
     //    debug_print("getRestrictionFromPath: LookingUp:", AbsynUtil.pathString(fullPath));
-        cdef = Interactive.getPathedClassInProgram(fullPath,p);
+        cdef = InteractiveUtil.getPathedClassInProgram(fullPath,p);
         restriction = getRestrictionInClass(cdef);
       then
         restriction;
@@ -991,7 +992,7 @@ algorithm
       equation
         fullPath = fixPaths(cPath, path);
 //        debug_print("getCoordsInPath: TryingLookingUp:", AbsynUtil.pathString(fullPath));
-        cdef = Interactive.getPathedClassInProgram(fullPath,p);
+        cdef = InteractiveUtil.getPathedClassInProgram(fullPath,p);
         (x1,y1,x2,y2) = getCoordsInClass(cdef,context);
       then
        (x1,y1,x2,y2);
@@ -1006,7 +1007,7 @@ algorithm
         //print("\npath = ");
         //print(str);
     //    debug_print("getCoordsInPath: LookingUp:", AbsynUtil.pathString(fullPath));
-        cdef = Interactive.getPathedClassInProgram(fullPath,p);
+        cdef = InteractiveUtil.getPathedClassInProgram(fullPath,p);
         (x1,y1,x2,y2) = getCoordsInClass(cdef,context);
       then
         (x1,y1,x2,y2);//(Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0));

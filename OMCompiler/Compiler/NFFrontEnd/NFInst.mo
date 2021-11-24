@@ -169,6 +169,7 @@ algorithm
   // Flatten the model and evaluate constants in it.
   flatModel := Flatten.flatten(inst_cls, name);
   flatModel := EvalConstants.evaluate(flatModel);
+  InstUtil.dumpFlatModelDebug("eval", flatModel);
 
   // Do unit checking
   flatModel := UnitCheck.checkUnits(flatModel);
@@ -184,11 +185,11 @@ algorithm
   // Collect a tree of all functions that are still used in the flat model.
   functions := Flatten.collectFunctions(flatModel);
 
-  // Dump the flat model to a stream if dumpFlat = true.
-  flatString := if dumpFlat then
-    FlatModel.toFlatString(flatModel, FunctionTree.listValues(functions)) else "";
+  // Dump the flat model to a string if dumpFlat = true.
+  flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
 
-  printStructuralParameters(flatModel);
+  InstUtil.dumpFlatModelDebug("simplify", flatModel, functions);
+  InstUtil.printStructuralParameters(flatModel);
 
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
@@ -198,15 +199,11 @@ algorithm
     flatModel.variables := List.filterOnFalse(flatModel.variables, Variable.isEmptyArray);
   end if;
 
+  flatModel := InstUtil.replaceEmptyArrays(flatModel);
+  InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
+
   VerifyModel.verify(flatModel);
-
-  if Flags.isSet(Flags.COMBINE_SUBSCRIPTS) then
-    flatModel := FlatModel.mapExp(flatModel, combineSubscripts);
-  end if;
-
-  if Flags.isSet(Flags.NF_DUMP_FLAT) then
-    print("FlatModel:\n" + FlatModel.toString(flatModel) + "\n");
-  end if;
+  flatModel := InstUtil.combineSubscripts(flatModel);
 
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
   //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
@@ -3741,37 +3738,6 @@ algorithm
     fail();
   end if;
 end checkPartialClass;
-
-function combineSubscripts
-  input output Expression exp;
-algorithm
-  () := match exp
-    case Expression.CREF()
-      algorithm
-        exp.cref := ComponentRef.combineSubscripts(exp.cref);
-      then
-        ();
-
-    else ();
-  end match;
-end combineSubscripts;
-
-function printStructuralParameters
-  input FlatModel flatModel;
-protected
-  list<Variable> params;
-  list<String> names;
-algorithm
-  if Flags.isSet(Flags.PRINT_STRUCTURAL) then
-    params := list(v for v guard Variable.isStructural(v) in flatModel.variables);
-
-    if not listEmpty(params) then
-      names := list(ComponentRef.toString(v.name) for v in params);
-      Error.addMessage(Error.NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS,
-        {stringDelimitList(names, ", ")});
-    end if;
-  end if;
-end printStructuralParameters;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

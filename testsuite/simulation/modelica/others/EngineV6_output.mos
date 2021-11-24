@@ -24,13 +24,11 @@ val(crankshaftSpeed,1.0); getErrorString();
 //     resultFile = "EngineV6_output_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'EngineV6_output', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "stdout            | info    | Using sparse solver for linear system 6,
-// |                 | |       | because density of 0.176 remains under threshold of 0.200 or size of 27 exceeds threshold of 201.
-// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
-// |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
+// |                 | |       | because density of 0.176 remains under threshold of 0.200.
 // stdout            | info    | Using sparse solver for linear system 13,
-// |                 | |       | because density of 0.155 remains under threshold of 0.200 or size of 25 exceeds threshold of 201.
-// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
-// |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
+// |                 | |       | because density of 0.155 remains under threshold of 0.200.
+// stdout            | info    | The maximum density for using sparse solvers can be specified
+// |                 | |       | using the runtime flag '<-lssMaxDensity=value>'.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

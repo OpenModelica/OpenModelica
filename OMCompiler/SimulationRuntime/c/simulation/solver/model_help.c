@@ -58,9 +58,9 @@
 #endif
 
 int maxEventIterations = 20;
-double linearSparseSolverMaxDensity = 0.2;
+double linearSparseSolverMaxDensity = DEFAULT_FLAG_LSS_MAX_DENSITY;
 int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;
-double nonlinearSparseSolverMaxDensity = 0.2;
+double nonlinearSparseSolverMaxDensity = DEFAULT_FLAG_NLS_MAX_DENSITY;
 int nonlinearSparseSolverMinSize = DEFAULT_FLAG_NLS_MIN_SIZE;
 double maxStepFactor = 1e12;
 double newtonXTol = 1e-12;
@@ -1098,6 +1098,8 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /*  switches used to evaluate the system */
   data->simulationInfo->solveContinuous = 0;
   data->simulationInfo->noThrowDivZero = 0;
+  data->simulationInfo->noThrowAsserts = 0;
+  data->simulationInfo->needToReThrow = 0;
   data->simulationInfo->discreteCall = 0;
 
   /* initialize model error code */
@@ -1109,7 +1111,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   assertStreamPrint(threadData, 0 == data->modelData->nDelayExpressions || 0 != data->simulationInfo->delayStructure, "out of memory");
 
   for(i=0; i<data->modelData->nDelayExpressions; i++)
+  {
+    // TODO: Calculate how big ringbuffer should be for each delay expression
     data->simulationInfo->delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
+  }
 #endif
 
 #if !defined(OMC_NO_STATESELECTION)
@@ -1439,13 +1444,17 @@ modelica_integer _event_mod_integer(modelica_integer x1, modelica_integer x2, mo
  */
 modelica_real _event_mod_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data, threadData_t *threadData)
 {
+  modelica_real value;
+
   if(data->simulationInfo->discreteCall && !data->simulationInfo->solveContinuous)
   {
     data->simulationInfo->mathEventsValuePre[index] = x1;
     data->simulationInfo->mathEventsValuePre[index+1] = x2;
   }
 
-  return x1 - floor(x1 / x2) * x2;
+  value = _event_floor(x1 / x2, index+2, data);
+
+  return x1 - value * x2;
 }
 
 /*! \fn _event_div_integer

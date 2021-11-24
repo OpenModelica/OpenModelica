@@ -65,7 +65,6 @@ import ComponentRef = NFComponentRef;
 import Config;
 import Origin = NFComponentRef.Origin;
 import ExecStat.execStat;
-import InstUtil = NFInstUtil;
 import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
 import Call = NFCall;
@@ -1463,26 +1462,6 @@ protected
 algorithm
   for s in subscripts loop
     outSubscripts := match s
-      // Special handling for functions.
-      case Subscript.SPLIT_PROXY() guard InstContext.inFunction(context)
-        algorithm
-          // Ignore type subscripts in functions, otherwise for e.g.:
-          //   input AngularVelocity[3] w;
-          // we get:
-          //   input Real[3] w(unit = {"rad/s", "rad/s", "rad/s"});
-          // which is correct, but the backend expects it to be:
-          //   input Real[3] w(unit = "rad/s")
-          if InstNode.refEqual(s.origin, s.parent) then
-            dim_count := InstNode.dimensionCount(s.parent);
-
-            for i in 1:dim_count loop
-              outSubscripts := Subscript.makeSplitIndex(s.parent, i) :: outSubscripts;
-            end for;
-          end if;
-        then
-          outSubscripts;
-
-      // Normal case for classes.
       case Subscript.SPLIT_PROXY()
         algorithm
           // Count the number of dimensions on the parent the subscript came
@@ -2305,6 +2284,7 @@ protected
   TypingError ty_err;
   Option<Expression> oexp;
   InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
+  list<Expression> expl;
 algorithm
   (sizeExp, sizeType, variability, purity) := match sizeExp
     case Expression.SIZE(exp = exp, dimIndex = SOME(index))
@@ -2365,8 +2345,19 @@ algorithm
             fail();
           end if;
 
-          // Since we don't know which dimension to take the size of, return a size expression.
-          exp := Expression.SIZE(exp, SOME(index));
+          if Type.isEmptyArray(exp_ty) and not InstContext.inFunction(context) then
+            // If the expression has any dimensions that are 0 it might not be safe to generate
+            // a size expression with it, since it might be either a variable that's no longer
+            // present in the flat model or an array expression that doesn't have enough
+            // dimensions (e.g. Real[0, 2] => {}). In that case make an array with the dimension
+            // sizes of the expression and index that instead.
+            expl := list(Dimension.sizeExp(d) for d in Type.arrayDims(exp_ty));
+            exp := Expression.makeExpArray(expl, Type.INTEGER());
+            exp := Expression.makeSubscriptedExp({Subscript.makeIndex(index)}, exp);
+          else
+            // Since we don't know which dimension to take the size of, return a size expression.
+            exp := Expression.SIZE(exp, SOME(index));
+          end if;
         end if;
       then
         (exp, Type.INTEGER(), variability, purity);

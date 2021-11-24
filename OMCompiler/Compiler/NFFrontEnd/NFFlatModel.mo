@@ -113,12 +113,33 @@ public
   function toString
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;
-    output String str;
+    output String str = IOStream.string(toStream(flatModel, printBindingTypes));
+  end toString;
+
+  function printString
+    input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
   protected
     IOStream.IOStream s;
   algorithm
-    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toStream(flatModel, printBindingTypes);
+    IOStream.print(s, IOStream.stdOutput);
+  end printString;
 
+  function toStream
+    input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
+    output IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := appendStream(flatModel, printBindingTypes, s);
+  end toStream;
+
+  function appendStream
+    input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
+    input output IOStream.IOStream s;
+  algorithm
     s := IOStream.append(s, "class " + flatModel.name + "\n");
 
     for v in flatModel.variables loop
@@ -151,10 +172,7 @@ public
     end for;
 
     s := IOStream.append(s, "end " + flatModel.name + ";\n");
-
-    str := IOStream.string(s);
-    IOStream.delete(s);
-  end toString;
+  end appendStream;
 
   function toFlatString
     "Returns a string containing the flat Modelica representation of the given model."
@@ -338,6 +356,8 @@ public
 
       case Equation.FOR()
         algorithm
+          types := Util.applyOptionOrDefault(eq.range,
+            function collectExpFlatTypes(types = types), types);
           types := List.fold(eq.body, collectEquationFlatTypes, types);
         then
           ();

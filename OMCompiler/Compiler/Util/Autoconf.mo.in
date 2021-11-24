@@ -1,21 +1,28 @@
 encapsulated package Autoconf
 
+  constant String configureCommandLine = "Configured @date@ using arguments: @CONFIGURE_ARGS@";
+
+  constant String os = "@CONFIG_OS@";
+
+  constant Boolean is64Bit = @OMC_TARGET_ARCH_IS_64@;
+  constant Boolean isWindows = os == "Windows_NT";
+  constant String platform = if isWindows and is64Bit then "WIN64" elseif isWindows then "WIN32" else "Unix";
+
+  constant String make = "@MAKE@";
+  constant String exeExt = if isWindows then ".exe" else "";
+  constant String dllExt = "@SHREXT@";
+
   constant Boolean haveBStatic = @BSTATIC@;
   constant String bstatic = if haveBStatic then "-Wl,-Bstatic" else "";
   constant String bdynamic = if haveBStatic then "-Wl,-Bdynamic" else "";
-  constant String configureCommandLine = "Configured @date@ using arguments: @CONFIGURE_ARGS@";
-  constant String os = "@CONFIG_OS@";
-  constant String make = "@MAKE@";
-  constant String exeExt = "";
-  constant String dllExt = "@SHREXT@";
+
+  constant String groupDelimiter = if isWindows then ";" else ":";
+  constant String pathDelimiter = "/";
+
   constant String ldflags_runtime = "@RT_LDFLAGS_GENERATED_CODE@";
   constant String ldflags_runtime_sim = "@RT_LDFLAGS_GENERATED_CODE_SIM@";
   constant String ldflags_runtime_fmu = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU@";
   constant String ldflags_runtime_fmu_static = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC@";
-
-  constant String platform = "Unix";
-  constant String pathDelimiter = "/";
-  constant String groupDelimiter = ":";
 
   constant String corbaLibs = "@CORBALIBS@";
   constant String hwloc = if @WITH_HWLOC@ == 1 then "-lhwloc" else "";

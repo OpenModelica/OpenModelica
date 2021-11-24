@@ -294,7 +294,6 @@ else # mingw64
 	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll $(builddir_bin)/
 	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll $(builddir_bin)/
 endif
-	(cp -pf $(OMDEVMSYS)/lib/expat-win32-msvc/libexpat.dll $(builddir_bin)/)
 	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/blas_win32_MT.dll $(builddir_bin)/)
 	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/lapack_win32_MT.dll $(builddir_bin)/)
 	mkdir -p $(builddir_lib)/omc/libexec/
@@ -334,30 +333,30 @@ boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
 zlib_msvc: $(LIBMODELICAZLIB_MSVC)
 $(LIBMODELICAZLIB_MSVC): getMSVCversion
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/zlib.*
-	rm -rf 3rdParty/ModelicaExternalC/build_msvc
-	rm -rf 3rdParty/ModelicaExternalC/install_msvc
+	rm -rf SimulationRuntime/ModelicaExternalC/build_msvc
+	rm -rf SimulationRuntime/ModelicaExternalC/install_msvc
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
 	# Goto build msvc directory
-	test -d 3rdParty/ModelicaExternalC
-	mkdir -p 3rdParty/ModelicaExternalC/build_msvc
+	test -d SimulationRuntime/ModelicaExternalC
+	mkdir -p SimulationRuntime/ModelicaExternalC/build_msvc
 
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """$(VSCOMNTOOLS)/../../VC/vcvarsall.bat"""
 	echo 'Building ModelicaExternalC/zlib with MSVC'
-	echo @echo on > 3rdParty/ModelicaExternalC/build_msvc/build.bat
-	echo call '"$(VSCOMNTOOLS)\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
-	echo echo Calling CMake >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
-	echo 'cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
-	echo echo Building ModelicaExternalC/zlib >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
-	echo @echo on >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
-	echo set MAKE= >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
-	echo set MAKEFLAGS= >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
-	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo @echo on > SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
+	echo call '"$(VSCOMNTOOLS)\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
+	echo echo Calling CMake >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
+	echo 'cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
+	echo echo Building ModelicaExternalC/zlib >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
+	echo @echo on >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
+	echo set MAKE= >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
+	echo set MAKEFLAGS= >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> SimulationRuntime/ModelicaExternalC/build_msvc/build.bat
 	# Change into directory and run batch file
-	cd ./3rdParty/ModelicaExternalC/build_msvc; echo "change to 3rdParty/ModelicaExternalC/build_msvc";\
+	cd ./SimulationRuntime/ModelicaExternalC/build_msvc; echo "change to SimulationRuntime/ModelicaExternalC/build_msvc";\
 	cmd /c build.bat
 	# copy dll to bin folder
-	(cp -puf 3rdParty/ModelicaExternalC/install_msvc/lib/zlib.lib $(OMBUILDDIR)/lib/omc/msvc/)
+	(cp -puf SimulationRuntime/ModelicaExternalC/install_msvc/lib/zlib.lib $(OMBUILDDIR)/lib/omc/msvc/)
 
 fmil_msvc: $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll
 $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion zlib_msvc

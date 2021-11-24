@@ -71,6 +71,7 @@ import GC;
 import Global;
 import GlobalScript;
 import Interactive;
+import InteractiveUtil;
 import List;
 import Parser;
 import Print;
@@ -192,7 +193,7 @@ algorithm
         ast = table.ast;
         vars = table.vars;
         prog2 = Interactive.addScope(prog, vars);
-        prog2 = Interactive.updateProgram(prog2, ast);
+        prog2 = InteractiveUtil.updateProgram(prog2, ast);
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
           Dump.dump(prog2);

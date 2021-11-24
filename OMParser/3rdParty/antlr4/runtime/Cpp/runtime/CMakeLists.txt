@@ -26,6 +26,14 @@ file(GLOB libantlrcpp_SRC
 add_library(antlr4_shared SHARED ${libantlrcpp_SRC})
 add_library(antlr4_static STATIC ${libantlrcpp_SRC})
 
+# This are needed for transitive include dirs. Ideally all include dirs should be specified
+# like this. For now, luckily, this folder provides all the 'public' headers needed when linking to this libs.
+target_include_directories(antlr4_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(antlr4_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# Anything that links to the static lib should use the ANTLR4CPP_STATIC define as well.
+target_compile_definitions(antlr4_static INTERFACE -DANTLR4CPP_STATIC)
+
 set(LIB_OUTPUT_DIR "${CMAKE_HOME_DIRECTORY}/dist") # put generated libraries here.
 message(STATUS "Output libraries to ${LIB_OUTPUT_DIR}")
 

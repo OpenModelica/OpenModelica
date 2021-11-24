@@ -966,10 +966,10 @@ protected function collectZC
   output Boolean cont;
   output ZCArgType outTpl;
 algorithm
-  (outExp,cont,outTpl) := match (inExp, inTpl)
+  (outExp,cont,outTpl) := match (inExp, inTpl, Config.simCodeTarget())
     local
       DAE.Exp e, e1, e2, e_1, e_2, eres, eres1;
-      DAE.Exp index, in0, in1, x, dir, initPnts, initVals;
+      DAE.Exp index, delay, delayMax, in0, in1, x, dir, initPnts, initVals;
       BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.ZeroCrossingSet zeroCrossings, zc_lst, samples;
       DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
@@ -982,13 +982,13 @@ algorithm
       ZCArgType tpl;
       Boolean empty;
 
-    case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), _)
+    case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), _, _)
     then (inExp, false, inTpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _)
+    case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _, _)
     then (inExp, false, inTpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="sample")), ((_, _, samples, _), (eq_count, _, _))) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="sample")), ((_, _, samples, _), (eq_count, _, _)), _) equation
       zc = createZeroCrossing(inExp, {eq_count});
       mergeZeroCrossings(zc, samples);
       //itmp = (listLength(zc_lst)-listLength(zeroCrossings));
@@ -998,8 +998,31 @@ algorithm
       end if;
     then (inExp, true, inTpl);
 
+    // delay() can trigger events which are are handled individually via the function delayZeroCrossing() > 0
+    // But of course the C and C++ runtimes are different and only C supports this...
+    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={index, e, delay, delayMax}, attr = attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)), "C")
+      algorithm
+        // traverse relevant arguments
+        (e, ((_, relations, samples, numMathFunctions), tp1))                     := Expression.traverseExpTopDown(e, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
+        (delay, ((_, relations, samples, numMathFunctions), tp1))                 := Expression.traverseExpTopDown(delay, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
+
+        // create zero crossing function
+        eres1 := DAE.CALL(Absyn.IDENT("delayZeroCrossing"), {index, DAE.ICONST(DoubleEnded.length(relations)), e, delay, delayMax}, attr);
+        e_1 := DAE.RELATION(eres1, DAE.GREATER(DAE.T_REAL_DEFAULT) ,DAE.RCONST(0.0), DoubleEnded.length(relations), NONE());
+        zc := createZeroCrossing(eres1, {eq_count});
+        (eres, relations) := zcIndexRelation(e_1, relations, DoubleEnded.length(relations), zc);
+        zc := createZeroCrossing(eres, {eq_count});
+        (DAE.RELATION(index=itmp), zeroCrossings, _) := zcIndex(eres, zeroCrossings, DoubleEnded.length(relations), zc);
+
+        if Flags.isSet(Flags.RELIDX) then
+          print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + " index: " + intString(itmp) + "\n");
+        end if;
+
+    then (DAE.CALL(Absyn.IDENT(name="delay"), {index, e, delay, delayMax}, attr), true, ((zeroCrossings, relations, samples, numMathFunctions), tp1));
+
     // spatialDistribution() can trigger events which are handled individually via the function spatialDistributionZeroCrossing() > 0
-    case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {index, in0, in1, x, dir, initPnts, initVals}, attr = attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
+    // But of course the C and C++ runtimes are different and only C supports this...
+    case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {index, in0, in1, x, dir, initPnts, initVals}, attr = attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)), "C")
       algorithm
         // traverse relevant arguments
         (in0, ((_, relations, samples, numMathFunctions), tp1))                     := Expression.traverseExpTopDown(in0, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
@@ -1022,7 +1045,7 @@ algorithm
     then (DAE.CALL(Absyn.IDENT(name="spatialDistribution"), {index, in0, in1, x, dir, initPnts, initVals}, attr), true, ((zeroCrossings, relations, samples, numMathFunctions), tp1));
 
     // function with discrete expressions generate no zerocrossing
-    case (DAE.LUNARY(exp=e1), ((_, relations, _, _), (_, vars, globalKnownVars)))
+    case (DAE.LUNARY(exp=e1), ((_, relations, _, _), (_, vars, globalKnownVars)), _)
       guard not BackendDAEUtil.hasExpContinuousParts(e1, vars, globalKnownVars)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1031,7 +1054,7 @@ algorithm
       //fcall(Flags.RELIDX, BackendDump.debugExpStr, (inExp, "\n"));
     then (inExp, true, inTpl);
 
-    case (DAE.LBINARY(exp1=e1, exp2=e2), ((_, relations, _, _), (_, vars, globalKnownVars)))
+    case (DAE.LBINARY(exp1=e1, exp2=e2), ((_, relations, _, _), (_, vars, globalKnownVars)), _)
       guard not (BackendDAEUtil.hasExpContinuousParts(e1, vars, globalKnownVars) or BackendDAEUtil.hasExpContinuousParts(e2, vars, globalKnownVars))
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1041,7 +1064,7 @@ algorithm
     then (inExp, true, inTpl);
 
     // coditions that are zerocrossings.
-    case (DAE.LUNARY(exp=e1, operator=op), ((zeroCrossings, relations, _, _), _)) equation
+    case (DAE.LUNARY(exp=e1, operator=op), ((zeroCrossings, relations, _, _), _), _) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
@@ -1057,7 +1080,7 @@ algorithm
       end if;
     then (e_1, false, if empty then tpl else inTpl);
 
-    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numMathFunctions), tp1)) equation
+    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numMathFunctions), tp1), _) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LBINARY: " + String(DoubleEnded.length(relations)) + "\n");
         BackendDump.debugExpStr(inExp, "\n");
@@ -1083,7 +1106,7 @@ algorithm
     then (if cont then inExp else e_1, cont, if not cont and empty then ((zeroCrossings, relations, samples, numMathFunctions), tp1) else inTpl);
 
     // function with discrete expressions generate no zerocrossing
-    case (DAE.RELATION(exp1=e1, exp2=e2), ((_, relations, _, _), (_, vars, globalKnownVars)))
+    case (DAE.RELATION(exp1=e1, exp2=e2), ((_, relations, _, _), (_, vars, globalKnownVars)), _)
       guard not (BackendDAEUtil.hasExpContinuousParts(e1, vars, globalKnownVars) or BackendDAEUtil.hasExpContinuousParts(e2, vars, globalKnownVars))
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1092,7 +1115,7 @@ algorithm
     then (inExp, true, inTpl);
 
     // All other functions generate zerocrossing.
-    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
+    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)), _)
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1109,7 +1132,7 @@ algorithm
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1));
 
     // math function that triggering events
-    case (DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)), _)
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1126,7 +1149,7 @@ algorithm
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1));
 
-    case (DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)), _)
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1143,7 +1166,7 @@ algorithm
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1));
 
-    case (DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)), _)
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1160,7 +1183,7 @@ algorithm
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1));
 
-    case (DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)), _)
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1177,7 +1200,7 @@ algorithm
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1));
 
-    case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR()), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR()), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)), _)
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1189,13 +1212,16 @@ algorithm
       zc = createZeroCrossing(e_1, {eq_count});
       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
+      // Add additional +1 to numMathFunctions because of internally used _event_floor
+      numMathFunctions = numMathFunctions + 1;
+
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1));
 
     // rem is rewritten to div(x/y)*y - x
-    case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)), _)
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then

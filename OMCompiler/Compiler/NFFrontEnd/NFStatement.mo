@@ -517,6 +517,15 @@ public
     end match;
   end foldExp;
 
+  function replaceIteratorList
+    input output list<Statement> stmtl;
+    input InstNode iterator;
+    input Expression value;
+  algorithm
+    stmtl := mapExpList(stmtl,
+      function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
+  end replaceIteratorList;
+
   function toString
     input Statement stmt;
     input String indent = "";

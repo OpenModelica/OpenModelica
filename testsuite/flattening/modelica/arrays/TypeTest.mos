@@ -30,7 +30,7 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   output Orientation res;
 // end Modelica.Mechanics.MultiBody.Frames.Orientation;
 //
-// function Modelica.Mechanics.MultiBody.Frames.nullRotation \"Inline before index reduction\" \"Return orientation object that does not rotate a frame\"
+// function Modelica.Mechanics.MultiBody.Frames.nullRotation \"Return orientation object that does not rotate a frame\"
 //   output Modelica.Mechanics.MultiBody.Frames.Orientation R \"Orientation object such that frame 1 and frame 2 are identical\";
 // algorithm
 //   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {0.0, 0.0, 0.0});

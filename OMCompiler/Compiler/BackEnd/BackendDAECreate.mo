@@ -471,6 +471,13 @@ algorithm
         then
           ();
 
+      // for equation
+      case DAE.INITIAL_FOR_EQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns, true);
+        then
+          ();
+
       // initial array equations
       case DAE.INITIAL_ARRAY_EQUATION()
         algorithm
@@ -1472,6 +1479,16 @@ algorithm
         (inEquations,inREquations,eqns);
 
     case DAE.FOR_EQUATION(iter = s, range = e1, equations = eqnslst)
+      equation
+        // create one backend for-equation for each equation element in the loop
+        (eqns, reqns, ieqns) = lowerEqns(eqnslst, functionTree, {}, {}, {}, inInitialization);
+        eqns = listAppend(List.map2(eqns, lowerForEquation, s, e1), inEquations);
+        reqns = listAppend(List.map2(reqns, lowerForEquation, s, e1), inREquations);
+        ieqns = listAppend(List.map2(ieqns, lowerForEquation, s, e1), inIEquations);
+      then
+        (eqns, reqns, ieqns);
+
+    case DAE.INITIAL_FOR_EQUATION(iter = s, range = e1, equations = eqnslst)
       equation
         // create one backend for-equation for each equation element in the loop
         (eqns, reqns, ieqns) = lowerEqns(eqnslst, functionTree, {}, {}, {}, inInitialization);

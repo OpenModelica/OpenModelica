@@ -17,7 +17,7 @@ loadString("
   end ConvertModifiers3;
 ");
 
-convertPackage(ConvertModifiers3, "scripts/ConvertModifiers3.mos");
+runConversionScript(ConvertModifiers3, "scripts/ConvertModifiers3.mos");
 getErrorString();
 list(ConvertModifiers3);
 

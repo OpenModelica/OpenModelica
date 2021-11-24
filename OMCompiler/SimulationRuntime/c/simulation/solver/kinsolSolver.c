@@ -165,7 +165,8 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINInit");
 
   /* Create matrix object */
-  if (kinsolData->linearSolverMethod == NLS_LS_DEFAULT || kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
+  if (kinsolData->linearSolverMethod == NLS_LS_DEFAULT ||
+      kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
     kinsolData->J = SUNDenseMatrix(size, size);
   } else if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
     kinsolData->nnz = nlsData->sparsePattern->numberOfNoneZeros;
@@ -1058,13 +1059,16 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
   case KIN_LSOLVE_FAIL:
     warningStreamPrint(LOG_NLS_V, 0,
                        "kinsols matrix need new factorization. Try again.\n");
-    if (nlsData->isPatternAvailable) {
+    if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
+        nlsData->isPatternAvailable) {
       /* Complete symbolic and numeric factorizations */
       flag = SUNLinSol_KLUReInit(kinsolData->linSol, kinsolData->J,
                                  kinsolData->nnz, SUNKLU_REINIT_PARTIAL);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_SUNLS_FLAG, "SUNLinSol_KLUReInit");
+      return 1;
+    } else {
+      retValue = 1;
     }
-    return 1;
     break;
   case KIN_MAXITER_REACHED:
   case KIN_REPTD_SYSFUNC_ERR:

@@ -759,8 +759,6 @@ public
       return;
     end if;
 
-    // Remove unnecessary : subscripts from the head of the list.
-    subs := List.trim(subs, Subscript.isWhole);
     // Replace the cref's subscripts.
     cref := setSubscripts(subs, stripSubscriptsAll(cref));
   end combineSubscripts;
@@ -1226,6 +1224,18 @@ public
       else "EMPTY_CREF" then 0;
     end match;
   end depth;
+
+  function isEmptyArray
+    "Returns whether any node in the cref has a dimension that's 0."
+    input ComponentRef cref;
+    output Boolean isEmpty;
+  algorithm
+    isEmpty := match cref
+      case CREF()
+        then Type.isEmptyArray(cref.ty) or isEmptyArray(cref.restCref);
+      else false;
+    end match;
+  end isEmptyArray;
 
   function isComplexArray
     input ComponentRef cref;

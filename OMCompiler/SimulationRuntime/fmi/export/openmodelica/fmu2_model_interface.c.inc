@@ -741,9 +741,6 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
    * TODO: when stopTime is not defined we use an arbitrary constant 100.0, maybe issue a warning
    */
   initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, comp->stopTimeDefined ? comp->stopTime : 100.0 /* default stopTime */);
-#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
-  initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
-#endif
   /* overwrite old values due to an event */
   overwriteOldSimulationData(comp->fmuData);
 

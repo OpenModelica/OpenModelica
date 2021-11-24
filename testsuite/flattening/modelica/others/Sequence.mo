@@ -64,7 +64,7 @@ end Sequence;
 //   r := /*Real*/(sequence[1]) * angles[3] + /*Real*/(sequence[2]) * angles[2] + /*Real*/(sequence[3]) * angles[1];
 // end axesRot;
 //
-// function axesRotations "Inline before index reduction" "Return fixed rotation object to rotate in sequence around fixed angles along 3 axes"
+// function axesRotations "Return fixed rotation object to rotate in sequence around fixed angles along 3 axes"
 //   input Integer[3] sequence = {1, 2, 3} "Sequence of rotations from frame 1 to frame 2 along axis sequence[i]";
 //   input Real[3] angles "Rotation angles around the axes defined in 'sequence'";
 //   input Real[3] der_angles "= der(angles)";

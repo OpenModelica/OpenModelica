@@ -164,19 +164,24 @@ algorithm
         body := simplifyEquations(eq.body);
 
         if not Equation.containsExpList(body, function Expression.containsIterator(iterator = eq.iterator)) then
+          // Remove the surrounding loop if the equations inside aren't using the iterator.
           equations := List.append_reverse(body, equations);
         else
-          // TODO: This causes issues with the -nfScalarize tests for some reason.
+          // TODO: This causes issues with the -nfScalarize tests for some
+          //       reason, which is the only case this applies to since we
+          //       normally unroll for loops and never get here.
           //dim := Type.nthDimension(Expression.typeOf(e), 1);
 
           //if Dimension.isOne(dim) then
+          //  // Unroll the loop if the iteration range consists of only one value.
           //  e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
-
-          //  body := Equation.mapExpList(body,
-          //    function Expression.replaceIterator(iterator = eq.iterator, iteratorValue = e));
+          //  e := SimplifyExp.simplify(e);
+          //  body := Equation.replaceIteratorList(body, eq.iterator, e);
           //  body := simplifyEquations(body);
           //  equations := List.append_reverse(body, equations);
           //elseif not Dimension.isZero(dim) then
+          //if not Dimension.isZero(dim) then
+            // Otherwise just simplify if the iteration range is not empty.
             eq.range := SimplifyExp.simplifyOpt(eq.range);
             eq.body := body;
             equations := eq :: equations;
@@ -297,7 +302,6 @@ algorithm
   statements := match stmt
     local
       Expression e, lhs, rhs;
-      Type ty;
       Dimension dim;
       list<Statement> body;
 
@@ -305,17 +309,17 @@ algorithm
 
     case Statement.FOR(range = SOME(e))
       algorithm
-        ty := Expression.typeOf(e);
-        dim := Type.nthDimension(ty, 1);
+        dim := Type.nthDimension(Expression.typeOf(e), 1);
 
         //if Dimension.isOne(dim) then
+        //  // Unroll the loop if the iteration range consists of only one value.
         //  e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
-        //  body := Statement.mapExpList(stmt.body,
-        //    function Expression.replaceIterator(iterator = stmt.iterator, iteratorValue = e));
+        //  body := Statement.replaceIteratorList(stmt.body, stmt.iterator, e);
         //  body := simplifyStatements(body);
         //  statements := listAppend(listReverse(body), statements);
         //elseif not Dimension.isZero(dim) then
         if not Dimension.isZero(dim) then
+          // Otherwise just simplify if the iteration range is not empty.
           stmt.range := SOME(SimplifyExp.simplify(e));
           stmt.body := simplifyStatements(stmt.body);
           statements := stmt :: statements;

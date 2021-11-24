@@ -510,6 +510,10 @@ void GraphicsView::addElementToClass(Element *pElement)
         newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(packageName).arg(pPackageLibraryTreeItem->mClassInformation.version));
         QString usesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
         pMainWindow->getOMCProxy()->addClassAnnotation(pTopLevelLibraryTreeItem->getNameStructure(), usesAnnotationString);
+        // if save folder structure then update the parent package
+        if (pTopLevelLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+          pLibraryTreeModel->updateLibraryTreeItemClassText(pTopLevelLibraryTreeItem);
+        }
       }
     }
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
@@ -2991,8 +2995,7 @@ void GraphicsView::addClassAnnotation(bool alwaysAdd)
       mpModelWidget->getLibraryTreeItem()->handleIconUpdated();
     }
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Error in class annotation %1").arg(pMainWindow->getOMCProxy()->getResult()),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }

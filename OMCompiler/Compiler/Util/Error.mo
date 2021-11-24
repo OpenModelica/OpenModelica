@@ -854,6 +854,10 @@ public constant ErrorTypes.Message FUNCTION_INVALID_OUTPUTS_FOR_INVERSE = ErrorT
   Gettext.gettext("Invalid inverse annotation for ‘%s‘, only functions with exactly one output may have an inverse."));
 public constant ErrorTypes.Message NOTIFY_IMPLICIT_LOAD = ErrorTypes.MESSAGE(391, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Automatically loaded package %s %s due to usage."));
+public constant ErrorTypes.Message CONVERSION_MISSING_USES = ErrorTypes.MESSAGE(392, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Cannot convert ‘%s‘ since it has no uses-annotation for ‘%s‘."));
+public constant ErrorTypes.Message CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND = ErrorTypes.MESSAGE(393, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("No compatible conversion script for converting from %s %s to %s could be found."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

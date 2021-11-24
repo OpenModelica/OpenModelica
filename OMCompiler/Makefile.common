@@ -495,7 +495,7 @@ clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPcl
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 	# remove ModelicaExternalC stuff
-	if test -f 3rdParty/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C 3rdParty/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
+	if test -f SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf 3rdParty/sundials-5.4.0/build
 	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
@@ -685,11 +685,11 @@ libffi-clean:
 sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos
 
-MODELICAEXTERNALC=3rdParty/ModelicaExternalC
+MODELICAEXTERNALC=SimulationRuntime/ModelicaExternalC
 ModelicaExternalC: $(LIBMODELICAEXTERNALC) $(LIBMODELICASTANDARDTABLES) $(LIBMODELICAIO) $(LIBMODELICAMATIO) $(LIBMODELICAZLIB)
 $(LIBMODELICAEXTERNALC):
 	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || ./autogen.sh))
-	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || (./configure --prefix="`pwd`" ${MSL_EXTRA_ARGS} --disable-hdf5 --enable-static-zlib "--host=$(host)" --libdir="$(OMBUILDDIR)/$(LIB_OMC)/" CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
+	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || (./configure --prefix="`pwd`" ${MSL_EXTRA_ARGS} --enable-shared --disable-hdf5 --enable-static-zlib "--host=$(host)" --libdir="$(OMBUILDDIR)/$(LIB_OMC)/" CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools"
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools" install
 	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libzlib.la $(OMBUILDDIR)/$(LIB_OMC)/libModelica*.la

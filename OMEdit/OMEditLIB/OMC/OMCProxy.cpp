@@ -1838,14 +1838,15 @@ bool OMCProxy::saveModifiedModel(QString modelText)
  * Save class with all used classes to a file.
  * \param fileName - the file to save in.
  * \param className - the name of the class.
+ * \param stripAnnotations
+ * \param stripComments
+ * \param obfuscate
  * \return true on success.
  */
-bool OMCProxy::saveTotalModel(QString fileName, QString className)
+bool OMCProxy::saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate)
 {
-  bool result = mpOMCInterface->saveTotalModel(fileName, className, false, false, false);
-  if (!result) {
-    printMessagesStringInternal();
-  }
+  bool result = mpOMCInterface->saveTotalModel(fileName, className, stripAnnotations, stripComments, obfuscate);
+  printMessagesStringInternal();
   return result;
 }
 
@@ -2507,6 +2508,7 @@ OMCInterface::getSimulationOptions_res OMCProxy::getSimulationOptions(QString cl
  * \param type - the fmu type
  * \param fileNamePrefix
  * \param platforms
+ * \param includeResources
  * \return
  */
 QString OMCProxy::buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources)

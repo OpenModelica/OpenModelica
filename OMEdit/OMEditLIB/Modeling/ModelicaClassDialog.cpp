@@ -1254,6 +1254,64 @@ void RenameClassDialog::renameClass()
 }
 
 /*!
+ * \class SaveTotalFileDialog
+ * \brief Creates a dialog that shows the options for saveTotalModel.
+ */
+/*!
+ * \brief SaveTotalFileDialog::SaveTotalFileDialog
+ * \param pLibraryTreeItem
+ * \param pParent
+ */
+SaveTotalFileDialog::SaveTotalFileDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
+  : QDialog(pParent)
+{
+  mpLibraryTreeItem = pLibraryTreeItem;
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - Save %2 %3 as Total File").arg(Helper::applicationName, mpLibraryTreeItem->mClassInformation.restriction, mpLibraryTreeItem->getName()));
+  setMinimumWidth(400);
+  // checkboxes
+  mpObfuscateOutputCheckBox = new QCheckBox(tr("Obfuscate output"));
+  mpStripAnnotationsCheckBox = new QCheckBox(tr("Strip annotations"));
+  mpStripCommentsCheckBox = new QCheckBox(tr("Strip comments"));
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(saveTotalModel()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  QGridLayout *pMainGridLayout = new QGridLayout;
+  pMainGridLayout->addWidget(mpObfuscateOutputCheckBox, 0, 0);
+  pMainGridLayout->addWidget(mpStripAnnotationsCheckBox, 1, 0);
+  pMainGridLayout->addWidget(mpStripCommentsCheckBox, 2, 0);
+  pMainGridLayout->addWidget(mpButtonBox, 3, 0, 1, 1, Qt::AlignRight);
+  setLayout(pMainGridLayout);
+}
+
+/*!
+ * \brief SaveTotalFileDialog::saveTotalModel
+ * Saves the model as total file.
+ */
+void SaveTotalFileDialog::saveTotalModel()
+{
+  QString fileName;
+  QString name = QString("%1Total").arg(mpLibraryTreeItem->getName());
+  fileName = StringHandler::getSaveFileName(this, tr("%1 - Save %2 %3 as Total File").arg(Helper::applicationName, mpLibraryTreeItem->mClassInformation.restriction,
+                                                                                          mpLibraryTreeItem->getName()), NULL, Helper::omFileTypes, NULL, "mo", &name);
+  if (fileName.isEmpty()) { // if user press ESC
+    reject();
+  } else {
+  // save the model through OMC
+    MainWindow::instance()->getOMCProxy()->saveTotalModel(fileName, mpLibraryTreeItem->getNameStructure(), mpStripAnnotationsCheckBox->isChecked(),
+                                                          mpStripCommentsCheckBox->isChecked(), mpObfuscateOutputCheckBox->isChecked());
+    accept();
+  }
+}
+
+/*!
  * \class InformationDialog
  * \brief Creates a dialog that shows the users the result of OMCProxy::instantiateModel and OMCProxy::checkModel.
  */

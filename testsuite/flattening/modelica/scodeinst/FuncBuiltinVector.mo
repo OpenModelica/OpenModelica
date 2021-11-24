@@ -10,6 +10,7 @@ model FuncBuiltinVector
   Real x[1] = vector(1);
   Real y[3] = vector({{1}, {2}, {3}});
   Real z[3] = vector({1, 2, 3});
+  Real w[0] = vector(zeros(0, 1));
 end FuncBuiltinVector;
 
 // Result:

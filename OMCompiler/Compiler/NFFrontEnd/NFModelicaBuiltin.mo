@@ -1334,8 +1334,7 @@ type FileType = enumeration(NoFile, RegularFile, Directory, SpecialFile);
 function stat
   input String name;
   output FileType fileType;
-  external "C" fileType = ModelicaInternal_stat(name);
-  annotation(Library="ModelicaExternalC");
+  external "C" fileType = OpenModelicaInternal_stat(name);
 end stat;
 
 end Internal;
@@ -1904,15 +1903,15 @@ end getVersion;
 function regularFileExists
   input String fileName;
   output Boolean exists;
-algorithm
-  exists := Internal.stat(fileName) == Internal.FileType.RegularFile;
+external "builtin";
+annotation(preferredView="text");
 end regularFileExists;
 
 function directoryExists
   input String dirName;
   output Boolean exists;
-algorithm
-  exists := Internal.stat(dirName) == Internal.FileType.Directory;
+external "builtin";
+annotation(preferredView="text");
 end directoryExists;
 
 impure function stat
@@ -2397,6 +2396,18 @@ external "builtin";
 annotation(preferredView="text");
 end saveTotalModel;
 
+function saveTotalModelDebug
+  "Saves the className model in a single file, together with all other classes
+   that it depends on. This function uses a naive heuristic based on which
+   identifiers are used and might save things which are not actually used,
+   and is meant to be used in cases where the normal saveTotalModel fails."
+  input String filename;
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end saveTotalModelDebug;
+
 function save
   input TypeName className;
   output Boolean success;
@@ -2633,7 +2644,7 @@ end rewriteBlockCall;
 function realpath "Get full path name of file or directory name"
   input String name "Absolute or relative file or directory name";
   output String fullName "Full path of 'name'";
-external "C" fullName = ModelicaInternal_fullPathName(name) annotation(Library="ModelicaExternalC");
+external "builtin" fullName = OpenModelicaInternal_fullPathName(name);
   annotation (Documentation(info="<html>
 Return the canonicalized absolute pathname.
 Similar to <a href=\"http://linux.die.net/man/3/realpath\">realpath(3)</a>, but with the safety of Modelica strings.
@@ -4246,6 +4257,30 @@ annotation(
   preferredView="text");
 end getAvailablePackageVersions;
 
+function getAvailablePackageConversionsTo
+  input TypeName pkg;
+  input String version;
+  output String[:] convertsTo;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the versions that provide conversion to the requested version of the library.
+</html>"),
+  preferredView="text");
+end getAvailablePackageConversionsTo;
+
+function getAvailablePackageConversionsFrom
+  input TypeName pkg;
+  input String version;
+  output String[:] convertsTo;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the versions that provide conversion from the requested version of the library.
+</html>"),
+  preferredView="text");
+end getAvailablePackageConversionsFrom;
+
 function getUses
   input TypeName pack;
   output String[:,:] uses;
@@ -4578,11 +4613,26 @@ annotation(
 </html>"), preferredView="text");
 end generateScriptingAPI;
 
-function convertPackage
-  input TypeName cl;
+function runConversionScript
+  input TypeName packageToConvert;
   input String scriptFile;
+  output Boolean success;
 external "builtin";
-end convertPackage;
+annotation(preferredView="text",Documentation(info="<html>
+<p>Runs a conversion script on a selected package.</p>
+</html>"));
+end runConversionScript;
+
+function convertPackageToLibrary
+  input TypeName packageToConvert;
+  input TypeName library;
+  input String libraryVersion;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Runs the conversion script for a library on a selected package.</p>
+</html>"));
+end convertPackageToLibrary;
 
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc);

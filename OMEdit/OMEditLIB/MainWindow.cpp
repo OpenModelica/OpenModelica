@@ -952,7 +952,8 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   if (OptionsDialog::instance()->getFMIPage()->getGenerateDebugSymbolsCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions(QString("-d=gendebugsymbols"));
   }
-  QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms);
+  bool includeResources = OptionsDialog::instance()->getFMIPage()->getIncludeResourcesCheckBox()->isChecked();
+  QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
   if (!fmuFileName.isEmpty()) { // FMU was generated
     if (!newFmuName.isEmpty()) { // FMU should be moved
       QDir newNameAsDir(newFmuName);
