@@ -1143,7 +1143,7 @@ public
       case FOR()
         algorithm
           s := IOStream.append(s, "for ");
-          s := IOStream.append(s, InstNode.name(eq.iterator));
+          s := IOStream.append(s, Util.makeQuotedIdentifier(InstNode.name(eq.iterator)));
 
           if isSome(eq.range) then
             s := IOStream.append(s, " in ");
