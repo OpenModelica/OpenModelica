@@ -2712,6 +2712,10 @@ algorithm
           previousVar = BackendVariable.setBindExp(previousVar, NONE());
           previousVar = BackendVariable.setVarFixed(previousVar, true);
           previousVar = BackendVariable.setVarStartValueOption(previousVar, SOME(DAE.CREF(cr, ty)));
+
+          // HACK hide previous(v) in results because it's not calculated right
+          previousVar = BackendVariable.setHideResult(previousVar, SOME(DAE.BCONST(true)));
+
           previousExp = Expression.crefExp(previousCR);
           vars = BackendVariable.addVar(previousVar, vars);
           eqns = BackendEquation.add(BackendDAE.EQUATION(previousExp, crExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
