@@ -356,6 +356,8 @@ public
 
       case Equation.FOR()
         algorithm
+          types := Util.applyOptionOrDefault(eq.range,
+            function collectExpFlatTypes(types = types), types);
           types := List.fold(eq.body, collectEquationFlatTypes, types);
         then
           ();
