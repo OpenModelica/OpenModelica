@@ -136,6 +136,8 @@ uniontype FlattenSettings
   end SETTINGS;
 end FlattenSettings;
 
+constant ComponentRef EMPTY_PREFIX = ComponentRef.EMPTY();
+
 function flatten
   input InstNode classInst;
   input String name;
@@ -164,7 +166,7 @@ algorithm
 
   deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
-  (vars, sections) := flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(),
+  (vars, sections) := flattenClass(InstNode.getClass(classInst), EMPTY_PREFIX,
     Visibility.PUBLIC, NONE(), {}, sections, deleted_vars, settings);
   vars := listReverseInPlace(vars);
 
@@ -736,10 +738,10 @@ algorithm
     case Sections.SECTIONS()
       algorithm
         for eqn in listReverse(sects.equations) loop
-          sections := Sections.prependEquation(vectorizeEquation(eqn, dimensions, prefix), sections);
+          sections := Sections.prependEquation(vectorizeEquation(eqn, dimensions, prefix, settings), sections);
         end for;
         for eqn in listReverse(sects.initialEquations) loop
-          sections := Sections.prependEquation(vectorizeEquation(eqn, dimensions, prefix), sections, true);
+          sections := Sections.prependEquation(vectorizeEquation(eqn, dimensions, prefix, settings), sections, true);
         end for;
         for alg in listReverse(sects.algorithms) loop
           sections := Sections.prependAlgorithm(vectorizeAlgorithm(alg, dimensions, prefix), sections);
@@ -752,12 +754,15 @@ algorithm
 end vectorizeArray;
 
 function vectorizeEquation
-  input Equation eqn;
+  input output Equation eqn;
   input list<Dimension> dimensions;
   input ComponentRef prefix;
-  output Equation veqn;
+  input FlattenSettings settings;
 algorithm
-  veqn := match eqn
+  // Flatten with an empty prefix to get rid of any split indices.
+  {eqn} := flattenEquation(eqn, EMPTY_PREFIX, {}, settings);
+
+  eqn := match eqn
     local
       InstNode iter;
       list<InstNode> iters;
@@ -775,31 +780,33 @@ algorithm
       algorithm
         (iters, ranges, subs) := makeIterators(prefix, dimensions);
         subs := listReverseInPlace(subs);
-        veqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscripts = subs));
+        eqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscripts = subs));
         src := Equation.source(eqn);
 
         iter :: iters := iters;
         range :: ranges := ranges;
-        veqn := Equation.FOR(iter, SOME(range), {veqn}, src);
+        eqn := Equation.FOR(iter, SOME(range), {eqn}, src);
 
         while not listEmpty(iters) loop
           iter :: iters := iters;
           range :: ranges := ranges;
-          veqn := Equation.FOR(iter, SOME(range), {veqn}, src);
+          eqn := Equation.FOR(iter, SOME(range), {eqn}, src);
         end while;
       then
-        veqn;
+        eqn;
 
   end match;
 end vectorizeEquation;
 
 function vectorizeAlgorithm
-  input Algorithm alg;
+  input output Algorithm alg;
   input list<Dimension> dimensions;
   input ComponentRef prefix;
-  output Algorithm valg;
 algorithm
-  valg := match alg
+  // Flatten with an empty prefix to get rid of any split indices.
+  alg.statements := flattenStatements(alg.statements, EMPTY_PREFIX);
+
+  alg := match alg
     local
       InstNode iter;
       list<InstNode> iters;
@@ -1200,6 +1207,7 @@ algorithm
     case Equation.FOR()
       algorithm
         if settings.arrayConnect then
+          eq.body := flattenEquations(eq.body, EMPTY_PREFIX, settings);
           eql := eq :: equations;
         elseif not settings.scalarize then
           eql := splitForLoop(eq, prefix, equations, settings);
@@ -1422,6 +1430,7 @@ protected
   Equation eq;
 algorithm
   Equation.FOR(iter, range, body, src) := forLoop;
+  body := flattenEquations(body, EMPTY_PREFIX, settings);
   (connects, non_connects) := splitForLoop2(body);
 
   if not listEmpty(connects) then

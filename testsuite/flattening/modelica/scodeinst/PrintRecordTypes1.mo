@@ -45,8 +45,8 @@ end PrintRecordTypes1;
 //   Real[100, 10] b.c.rb.y;
 // equation
 //   for i in 1:100 loop
-//     b[i].c[1].rb = R1(/*Real*/(i), 0.0);
 //     b[i].c[10] = R2(R1(1.0, 0.0), R1(/*Real*/(i), 1.0));
+//     b[i].c[1].rb = R1(/*Real*/(i), 0.0);
 //   end for;
 // end PrintRecordTypes1;
 // endResult
