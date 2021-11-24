@@ -1935,8 +1935,8 @@ algorithm
        DAE.ComponentRef cr,dcr;
        DAE.Exp exp;
     // dummy derivatives from states with higher derivatives and no known derivative variable
-    case BackendDAE.VAR(varName=dcr as DAE.CREF_QUAL(ident="$DER",componentRef=cr),varKind=BackendDAE.STATE(index=1))
-    guard not intEq(System.strncmp(ComponentReference.crefFirstIdent(cr),"$DER",4),0)
+    case BackendDAE.VAR(varName=dcr as DAE.CREF_QUAL(ident=DAE.derivativeNamePrefix,componentRef=cr),varKind=BackendDAE.STATE(index=1))
+    guard not intEq(System.strncmp(ComponentReference.crefFirstIdent(cr),DAE.derivativeNamePrefix,4),0)
       equation
         exp = Expression.crefExp(cr);
         exp = Expression.makePureBuiltinCall("der", {exp}, Expression.typeof(exp));
@@ -3227,7 +3227,7 @@ algorithm
     local
       DAE.ComponentRef cr;
     case(BackendDAE.VAR(varName=cr))
-      guard stringEq( ComponentReference.crefFirstIdent(cr),"$DER")
+      guard stringEq( ComponentReference.crefFirstIdent(cr),DAE.derivativeNamePrefix)
       then -5.0;
     else 0.0;
   end matchcontinue;

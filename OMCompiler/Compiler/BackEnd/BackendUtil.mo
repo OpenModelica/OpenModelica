@@ -39,7 +39,7 @@ protected
 import Flags;
 import List;
 import System;
-import Util;
+import DAE;
 
 uniontype ReplacePattern
   record REPLACEPATTERN
@@ -138,7 +138,7 @@ algorithm
       // of $der$der$x. Changed to the following 2 lines below!
       _::names = (System.strtok(derName,"()"));
       names = List.map1(names, modelicaStringToCStr, false);
-      name = Util.derivativeNamePrefix + stringAppendList(names);
+      name = DAE.derivativeNamePrefix + stringAppendList(names);
     then name;
     case(derName) equation
       0 = System.strncmp(derName,"pre(",4);

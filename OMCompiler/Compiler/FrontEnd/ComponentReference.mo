@@ -546,7 +546,7 @@ algorithm
   outString := match (inComponentRef)
     local
       DAE.ComponentRef cr;
-    case (DAE.CREF_QUAL(ident = "$DER",subscriptLst = {},componentRef=cr))
+    case (DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix, subscriptLst = {}, componentRef = cr))
       then "der(" + printComponentRefStr(cr) + ")";
     else printComponentRefStr(inComponentRef);
   end match;
@@ -1244,8 +1244,8 @@ protected
   String s;
 algorithm
   b := match(cr)
-    case(DAE.CREF_QUAL(ident="$DER")) then false; // allow exception for derivate vars
-    case(DAE.CREF_QUAL(ident="$CLKPRE")) then false; // allow exception for Clk-previous vars
+    case(DAE.CREF_QUAL(ident=DAE.derivativeNamePrefix)) then false; // allow exception for derivate vars
+    case(DAE.CREF_QUAL(ident=DAE.previousNamePrefix)) then false; // allow exception for Clk-previous vars
     case(DAE.CREF_IDENT(ident=s))
      then (substring(s, 1, 1) == "$");
     case(DAE.CREF_QUAL(ident=s))
@@ -1321,7 +1321,7 @@ public function popPreCref
 algorithm
   outCR := match(inCR)
     local DAE.ComponentRef cr;
-    case(DAE.CREF_QUAL(ident = "$PRE", componentRef=cr)) then cr;
+    case(DAE.CREF_QUAL(ident = DAE.preNamePrefix, componentRef=cr)) then cr;
     else inCR;
   end match;
 end popPreCref;
@@ -3962,14 +3962,14 @@ algorithm
           writeSubscripts(file, c.subscriptLst, escape);
           return;
         then fail();
-      case DAE.CREF_QUAL(ident="$DER")
+      case DAE.CREF_QUAL(ident=DAE.derivativeNamePrefix)
         algorithm
           File.write(file, "der(");
           writeCref(file, c.componentRef, escape);
           File.write(file, ")");
           return;
         then fail();
-      case DAE.CREF_QUAL(ident="$CLKPRE")
+      case DAE.CREF_QUAL(ident=DAE.previousNamePrefix)
         algorithm
           File.write(file, "previous(");
           writeCref(file, c.componentRef, escape);
