@@ -349,7 +349,7 @@ public:
   static QString stepReturn;
   static QString attachToRunningProcess;
   static QString attachToRunningProcessTip;
-  static QString crashReport;
+  static QString reportIssue;
   static QString parsingFailedJson;
   static QString expandAll;
   static QString collapseAll;

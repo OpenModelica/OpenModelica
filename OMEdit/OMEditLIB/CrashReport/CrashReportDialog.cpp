@@ -47,26 +47,29 @@
 /*!
  * \brief CrashReportDialog::CrashReportDialog
  */
-CrashReportDialog::CrashReportDialog(QString stacktrace)
+CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   : QDialog(0)
 {
   // flush all streams before making a crash report so we get full logs.
   fflush(NULL);
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::crashReport));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::reportIssue));
   setAttribute(Qt::WA_DeleteOnClose);
+  mReportIssue = reportIssue;
   // brief stack trace
   mStackTrace = stacktrace;
   // create the GDB stack trace
-  createGDBBacktrace();
+  if (!mReportIssue) {
+    createGDBBacktrace();
+  }
   // set heading
-  mpCrashReportHeading = Utilities::getHeadingLabel(Helper::crashReport);
+  mpCrashReportHeading = Utilities::getHeadingLabel(Helper::reportIssue);
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // Email label and textbox
-  mpEmailLabel = new Label(tr("Your Email (in case you want us to contact you regarding this error):"));
+  mpEmailLabel = new Label(tr("Your Email (in case you want us to contact you regarding this issue):"));
   mpEmailTextBox = new QLineEdit;
   // bug description label and textbox
-  mpBugDescriptionLabel = new Label(tr("Describe in a few words what you were doing when the error occurred:"));
+  mpBugDescriptionLabel = new Label(tr("Describe the issue in few words:"));
   mpBugDescriptionTextBox = new QPlainTextEdit(
     QString("Connected to %1%4.\nThe running OS is %2 on %3.\n").arg(Helper::OpenModelicaVersion,
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
@@ -84,7 +87,7 @@ CrashReportDialog::CrashReportDialog(QString stacktrace)
   )
   );
   // files label and checkboxes
-  mpFilesDescriptionLabel = new Label(tr("Following selected files will be sent along with the crash report,"));
+  mpFilesDescriptionLabel = new Label(tr("Following selected files will be sent along with the report,"));
   QString& tmpPath = Utilities::tempDirectory();
   // omeditcommunication.log file checkbox
   QFileInfo OMEditCommunicationLogFileInfo(QString("%1omeditcommunication.log").arg(tmpPath));
@@ -104,11 +107,13 @@ CrashReportDialog::CrashReportDialog(QString stacktrace)
   }
   // openmodelica.stacktrace.OMEdit file checkbox
   QFileInfo OMStackTraceFileInfo(QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName));
-  mpOMStackTraceFileCheckBox = new QCheckBox(OMStackTraceFileInfo.absoluteFilePath());
-  if (OMStackTraceFileInfo.exists()) {
-    mpOMStackTraceFileCheckBox->setChecked(true);
-  } else {
-    mpOMStackTraceFileCheckBox->setChecked(false);
+  if (!mReportIssue) {
+    mpOMStackTraceFileCheckBox = new QCheckBox(OMStackTraceFileInfo.absoluteFilePath());
+    if (OMStackTraceFileInfo.exists()) {
+      mpOMStackTraceFileCheckBox->setChecked(true);
+    } else {
+      mpOMStackTraceFileCheckBox->setChecked(false);
+    }
   }
   // create send report button
   mpSendReportButton = new QPushButton(tr("Send Report"));
@@ -121,7 +126,7 @@ CrashReportDialog::CrashReportDialog(QString stacktrace)
   mpButtonBox->addButton(mpSendReportButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Progress label & bar
-  mpProgressLabel = new Label(tr("Sending crash report"));
+  mpProgressLabel = new Label(tr("Sending issue report"));
   mpProgressLabel->hide();
   mpProgressBar = new QProgressBar;
   mpProgressBar->setRange(0, 0);
@@ -131,30 +136,29 @@ CrashReportDialog::CrashReportDialog(QString stacktrace)
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpCrashReportHeading, 0, 0, 1, 3);
   pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 3);
-  pMainLayout->addWidget(mpEmailLabel, 2, 0, 1, 3);
-  pMainLayout->addWidget(mpEmailTextBox, 3, 0, 1, 3);
-  pMainLayout->addWidget(mpBugDescriptionLabel, 4, 0, 1, 3);
-  pMainLayout->addWidget(mpBugDescriptionTextBox, 5, 0, 1, 3);
-  int index = 6;
+  int index = 2;
+  if (!reportIssue) {
+    pMainLayout->addWidget(new Label(tr("The program crashed unexpectedly. Please report the issue.")), index++, 0, 1, 3);
+  }
+  pMainLayout->addWidget(mpEmailLabel, index++, 0, 1, 3);
+  pMainLayout->addWidget(mpEmailTextBox, index++, 0, 1, 3);
+  pMainLayout->addWidget(mpBugDescriptionLabel, index++, 0, 1, 3);
+  pMainLayout->addWidget(mpBugDescriptionTextBox, index++, 0, 1, 3);
   if (OMEditCommunicationLogFileInfo.exists() || OMEditCommandsMosFileInfo.exists() || OMStackTraceFileInfo.exists()) {
-    pMainLayout->addWidget(mpFilesDescriptionLabel, index, 0, 1, 3);
-    index++;
+    pMainLayout->addWidget(mpFilesDescriptionLabel, index++, 0, 1, 3);
   }
   if (OMEditCommunicationLogFileInfo.exists()) {
-    pMainLayout->addWidget(mpOMEditCommunicationLogFileCheckBox, index, 0, 1, 3);
-    index++;
+    pMainLayout->addWidget(mpOMEditCommunicationLogFileCheckBox, index++, 0, 1, 3);
   }
   if (OMEditCommandsMosFileInfo.exists()) {
-    pMainLayout->addWidget(mpOMEditCommandsMosFileCheckBox, index, 0, 1, 3);
-    index++;
+    pMainLayout->addWidget(mpOMEditCommandsMosFileCheckBox, index++, 0, 1, 3);
   }
-  if (OMStackTraceFileInfo.exists()) {
-    pMainLayout->addWidget(mpOMStackTraceFileCheckBox, index, 0, 1, 3);
-    index++;
+  if (OMStackTraceFileInfo.exists() && !mReportIssue) {
+    pMainLayout->addWidget(mpOMStackTraceFileCheckBox, index++, 0, 1, 3);
   }
   pMainLayout->addWidget(mpProgressLabel, index, 0);
   pMainLayout->addWidget(mpProgressBar, index, 1);
-  pMainLayout->addWidget(mpButtonBox, index, 2, Qt::AlignRight);
+  pMainLayout->addWidget(mpButtonBox, index, 2, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -286,7 +290,7 @@ void CrashReportDialog::sendReport()
     pHttpMultiPart->append(OMEditCommandsMosFileHttpPart);
   }
   // OMStackTraceFile
-  if (mpOMStackTraceFileCheckBox->isChecked()) {
+  if (!mReportIssue && mpOMStackTraceFileCheckBox->isChecked()) {
     QHttpPart OMStackTraceFileCheckBoxHttpPart;
     OMStackTraceFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
     OMStackTraceFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"openmodelica.stacktrace.OMEdit\"; filename=\"openmodelica.stacktrace.OMEdit\""));
@@ -317,8 +321,8 @@ void CrashReportDialog::reportSent(QNetworkReply *pNetworkReply)
   mpProgressLabel->hide();
   mpProgressBar->hide();
   if (pNetworkReply->error() != QNetworkReply::NoError) {
-    QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          QString("Following error has occurred while sending crash report \n\n%1").arg(pNetworkReply->errorString()), Helper::ok);
+    QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          QString("Following error has occurred while sending issue report \n\n%1").arg(pNetworkReply->errorString()), Helper::ok);
   }
   pNetworkReply->deleteLater();
   accept();
