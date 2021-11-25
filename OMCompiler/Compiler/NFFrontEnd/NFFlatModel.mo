@@ -511,6 +511,7 @@ public
   algorithm
     types := match exp
       case Expression.SUBSCRIPTED_EXP()
+        guard Flags.getConfigBool(Flags.MODELICA_OUTPUT)
         algorithm
           types := collectSubscriptedFlatType(exp.exp, exp.subscripts, exp.ty, types);
         then

@@ -1779,28 +1779,32 @@ public
     String name;
     list<Subscript> subs;
   algorithm
-    subs := list(s for s guard not Subscript.isSplitIndex(s) in subscripts);
+    if Flags.getConfigBool(Flags.MODELICA_OUTPUT) then
+      subs := list(s for s guard not Subscript.isSplitIndex(s) in subscripts);
 
-    if listEmpty(subs) then
-      str := toFlatString(exp);
+      if listEmpty(subs) then
+        str := toFlatString(exp);
+      else
+        exp_ty := typeOf(exp);
+        dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
+        sub_tyl := list(Dimension.subscriptType(d) for d in dims);
+        name := Type.subscriptedTypeName(exp_ty, sub_tyl);
+
+        strl := {")"};
+
+        for s in subs loop
+          strl := Subscript.toFlatString(s) :: strl;
+          strl := "," :: strl;
+        end for;
+
+        strl := toFlatString(exp) :: strl;
+        strl := "'(" :: strl;
+        strl := name :: strl;
+        strl := "'" :: strl;
+        str := stringAppendList(strl);
+      end if;
     else
-      exp_ty := typeOf(exp);
-      dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
-      sub_tyl := list(Dimension.subscriptType(d) for d in dims);
-      name := Type.subscriptedTypeName(exp_ty, sub_tyl);
-
-      strl := {")"};
-
-      for s in subs loop
-        strl := Subscript.toFlatString(s) :: strl;
-        strl := "," :: strl;
-      end for;
-
-      strl := toFlatString(exp) :: strl;
-      strl := "'(" :: strl;
-      strl := name :: strl;
-      strl := "'" :: strl;
-      str := stringAppendList(strl);
+      str := toFlatString(exp) + Subscript.toFlatStringList(subscripts);
     end if;
   end toFlatSubscriptedString;
 
