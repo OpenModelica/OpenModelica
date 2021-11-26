@@ -43,6 +43,7 @@ encapsulated uniontype NFVariable
 
 protected
   import ExpandExp = NFExpandExp;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
   import Util;
   import Variable = NFVariable;
@@ -338,6 +339,8 @@ public
 
       s := IOStream.append(s, Binding.toFlatString(var.binding));
     end if;
+
+    s := FlatModelicaUtil.appendComment(var.comment, s);
   end toFlatStream;
 
   annotation(__OpenModelica_Interface="frontend");
