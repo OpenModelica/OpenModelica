@@ -81,6 +81,7 @@ import ComplexType = NFComplexType;
 import InstContext = NFInstContext;
 import UnorderedSet;
 import Graph;
+import FlatModelicaUtil = NFFlatModelicaUtil;
 
 public
 
@@ -718,11 +719,12 @@ uniontype Function
     list<Statement> fn_body;
     SCode.Comment cmt;
     SCode.Mod annMod;
-    String str;
   algorithm
     if isDefaultRecordConstructor(fn) then
       s := IOStream.append(s, InstNode.toFlatString(fn.node));
     else
+      cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
+
       fn_name := AbsynUtil.pathString(fn.path);
       if stringEmpty(overrideName) then
         fn_name := Util.makeQuotedIdentifier(fn_name);
@@ -731,6 +733,7 @@ uniontype Function
       end if;
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
+      s := FlatModelicaUtil.appendCommentString(SOME(cmt), s);
       s := IOStream.append(s, "\n");
 
       for i in fn.inputs loop
@@ -757,7 +760,6 @@ uniontype Function
 
       s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, s);
 
-      cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
       if isSome(cmt.annotation_) then
         SOME(SCode.ANNOTATION(modification=annMod)) := cmt.annotation_;
       else
@@ -776,11 +778,8 @@ uniontype Function
       end for;
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
-        str := SCodeDump.printAnnotationStr(SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)),NONE()));
-        if not stringEmpty(str) then
-          s := IOStream.append(s, str);
-          s := IOStream.append(s, ";\n");
-        end if;
+        cmt := SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)), NONE());
+        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt), "  ", ";\n", s);
       end if;
 
       s := IOStream.append(s, "end ");

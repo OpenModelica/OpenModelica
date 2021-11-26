@@ -317,6 +317,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFExpressionIterator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFExpression.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatModel.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatModelicaUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatten.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionDerivative.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionInverse.mo

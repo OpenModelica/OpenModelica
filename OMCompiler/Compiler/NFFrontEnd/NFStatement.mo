@@ -38,6 +38,7 @@ encapsulated uniontype NFStatement
 protected
   import Statement = NFStatement;
   import ElementSource;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import Util;
   import IOStream;
 
@@ -810,6 +811,7 @@ public
       else IOStream.append(s, "#UNKNOWN STATEMENT#");
     end match;
 
+    s := FlatModelicaUtil.appendElementSourceComment(source(stmt), s);
   end toFlatStream;
 
   function toFlatStreamList

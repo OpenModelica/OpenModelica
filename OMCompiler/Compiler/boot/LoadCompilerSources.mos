@@ -351,6 +351,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFExpressionIterator.mo",
     "../NFFrontEnd/NFExpression.mo",
     "../NFFrontEnd/NFFlatModel.mo",
+    "../NFFrontEnd/NFFlatModelicaUtil.mo",
     "../NFFrontEnd/NFFlatten.mo",
     "../NFFrontEnd/NFFunctionDerivative.mo",
     "../NFFrontEnd/NFFunctionInverse.mo",

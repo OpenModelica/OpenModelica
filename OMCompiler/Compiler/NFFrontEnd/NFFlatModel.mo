@@ -54,6 +54,7 @@ protected
   import Util;
   import Prefixes = NFPrefixes;
   import NFPrefixes.Visibility;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
 
   import FlatModel = NFFlatModel;
 
@@ -217,7 +218,9 @@ public
     FlatModel flat_model = flatModel;
     Visibility visibility = Visibility.PUBLIC;
   algorithm
-    s := IOStream.append(s, "class '" + flat_model.name + "'\n");
+    s := IOStream.append(s, "class '" + flat_model.name + "'");
+    s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
+    s := IOStream.append(s, "\n");
 
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
@@ -268,6 +271,7 @@ public
       end if;
     end for;
 
+    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "  ", ";\n", s);
     s := IOStream.append(s, "end '" + flat_model.name + "';\n");
   end appendFlatStream;
 

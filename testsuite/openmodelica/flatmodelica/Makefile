@@ -10,7 +10,8 @@ endif
 
 TESTFILES = DoublePendulum.mos \
   Tables.mos \
-	SD.mo
+	SD.mo \
+	Comments.mo
 
 
 # test that currently fail. Move up when fixed.
