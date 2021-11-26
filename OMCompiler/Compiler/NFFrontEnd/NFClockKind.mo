@@ -42,22 +42,22 @@ public
   record INFERRED_CLOCK
   end INFERRED_CLOCK;
 
-  record INTEGER_CLOCK
-    Expression intervalCounter;
-    Expression resolution " integer type >= 1 ";
-  end INTEGER_CLOCK;
+  record RATIONAL_CLOCK
+    Expression intervalCounter " integer type >= 0 ";
+    Expression resolution " integer type >= 1, defaults to 1 ";
+  end RATIONAL_CLOCK;
 
   record REAL_CLOCK
-    Expression interval;
+    Expression interval " real type > 0 ";
   end REAL_CLOCK;
 
-  record BOOLEAN_CLOCK
-    Expression condition;
+  record EVENT_CLOCK
+    Expression condition " boolean type ";
     Expression startInterval " real type >= 0.0 ";
-  end BOOLEAN_CLOCK;
+  end EVENT_CLOCK;
 
   record SOLVER_CLOCK
-    Expression c;
+    Expression c "clock type ";
     Expression solverMethod " string type ";
   end SOLVER_CLOCK;
 

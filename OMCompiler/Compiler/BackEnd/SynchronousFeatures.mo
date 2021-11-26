@@ -766,6 +766,7 @@ algorithm
   case(DAE.INTEGER_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.INFERRED_CLOCK())
     algorithm
     then BackendDAE.SUBCLOCK(MMath.RATIONAL(i2,i1), MMath.RAT0,NONE());
+    // TODO AHEU: Why is this i2/i1 and not i1/i2???
   case(DAE.INTEGER_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.INTEGER_CLOCK(DAE.ICONST(i3),DAE.ICONST(i4)))
     algorithm
     then BackendDAE.SUBCLOCK(MMath.divRational(MMath.RATIONAL(i2,i1),MMath.RATIONAL(i4,i3)),MMath.RAT0,NONE());
@@ -887,10 +888,11 @@ algorithm
       MMath.Rational f1,f2;
       MMath.Rational s1,s2;
       Option<String> solver1,solver2;
-    case(BackendDAE.SUBCLOCK(f1,s1,solver1),BackendDAE.SUBCLOCK(f2,s2,solver2))
+    case(BackendDAE.SUBCLOCK(f1,s1,solver1), BackendDAE.SUBCLOCK(f2,s2,solver2))
       algorithm
         solver1 := mergeSolver(solver1,solver2);
       then BackendDAE.SUBCLOCK(MMath.divRational(f1, f2), MMath.addRational(MMath.multRational(s1, f2), s2), solver1);
+      // TODO AHEU: Why division not multiplication?
     case(BackendDAE.SUBCLOCK(_,_,_),BackendDAE.INFERED_SUBCLOCK())
       then subSeqClock;
     else
@@ -1702,187 +1704,6 @@ algorithm
     false;
   end match;
 end isInferedBaseClock;
-
-//unused function from old implementation
-/*
-protected function getSubClkFromVars
-  input Integer partitionIdx;
-  input Integer clkIdx;
-  input BackendDAE.Variables inVars;
-  input array<tuple<BackendDAE.SubClock, Integer>> inSubClocks;
-  input array<list<Integer>> parents;
-  input array<Integer> partitions;
-  output BackendDAE.SubClock osubClk;
-protected
-  String clkName;
-  DAE.ComponentRef cr;
-  Integer varIdx, parent;
-  list<Integer> lstParents;
-algorithm
-  clkName := "$subclk" + intString(partitionIdx) + "_" + intString(clkIdx);
-  cr := DAE.CREF_IDENT(clkName, DAE.T_CLOCK_DEFAULT, {});
-  varIdx := getVarIdx(cr, inVars);
-
-  arrayUpdate(partitions, varIdx, partitionIdx);
-
-  lstParents := parents[partitionIdx];
-  (osubClk, parent) := arrayGet(inSubClocks, varIdx);
-  if parent <> 0 then
-    arrayUpdate(parents, partitionIdx, parent::lstParents);
-  end if;
-end getSubClkFromVars;
-
-protected function getVarIdx
-  input DAE.ComponentRef cr;
-  input BackendDAE.Variables vars;
-  output Integer idx;
-protected
-  list<Integer> ixs;
-algorithm
-  ixs := getVarIxs(cr, vars);
-  if listLength(ixs) <> 1 then
-    Error.addInternalError("SynchronousFeatures.getVarIdx failed for " +
-                           ComponentReference.crefStr(cr) + ".\n", sourceInfo());
-    fail();
-  end if;
-  idx := List.first(ixs);
-end getVarIdx;
-
-protected function collectSubClocks
-  input BackendDAE.Variables inVars;
-  input Integer inPartitionsCnt;
-  input array<Option<Boolean>> contPartitions;
-  input array<Integer> clocksCnt;
-  input array<tuple<BackendDAE.SubClock, Integer>> inSubClocks "idx: var";
-  output array<BackendDAE.SubClock> outSubClocks "idx: partition";
-  output array<Integer> order;
-protected
-  Integer i, j, partClocksCnt;
-  BackendDAE.SubClock subClk, subClk1;
-  Option<Boolean> isCont;
-  MMath.Rational factor, shift;
-  array<list<Integer>> parents;
-  array<Integer> partitions;
-algorithm
-  parents := arrayCreate(inPartitionsCnt, {});
-  partitions := arrayCreate(BackendVariable.varsSize(inVars), 0);
-  outSubClocks := arrayCreate(inPartitionsCnt, BackendDAE.DEFAULT_SUBCLOCK);
-  for i in 1:inPartitionsCnt loop
-    partClocksCnt := arrayGet(clocksCnt, i) - 1;
-    assert(partClocksCnt <> 0, "SynchronousFeatures.collectSubClocks failed");
-    subClk := getSubClkFromVars(i, 1, inVars, inSubClocks, parents, partitions);
-    if partClocksCnt > 1 then
-        for j in 2:partClocksCnt loop
-          subClk1 := getSubClkFromVars(i, j, inVars, inSubClocks, parents, partitions);
-          subClk := setSubClock(SOME(subClk), subClk1);
-        end for;
-      end if;
-    isCont := arrayGet(contPartitions, i);
-    subClk := match (isCont, subClk)
-      case (SOME(true), BackendDAE.SUBCLOCK(factor, shift, NONE()))
-        then BackendDAE.SUBCLOCK(factor, shift, SOME(""));
-      else subClk;
-    end match;
-    arrayUpdate(outSubClocks, i, subClk);
-  end for;
-
-  order := arrayCreate(inPartitionsCnt, 0);
-  i := 1;
-  for j in sortSubPartitions(inPartitionsCnt, parents, partitions) loop
-    arrayUpdate(order, j, i);
-    i := i + 1;
-  end for;
-end collectSubClocks;
-
-protected function sortSubPartitions
-  input Integer partitionsCnt;
-  input array<list<Integer>> parents;
-  input array<Integer> partitions;
-  output list<Integer> order = {};
-protected
-  Integer partIdx;
-  array<list<Integer>> children = arrayCreate(partitionsCnt, {});
-  array<Integer> colors = arrayCreate(partitionsCnt, 0);
-algorithm
-  //Build subpartitions dependenct graph
-  for i in 1:partitionsCnt loop
-    for parent in parents[i] loop
-      partIdx := partitions[parent];
-      if partIdx <> 0 then
-        arrayUpdate(children, partIdx, List.unionElt(i, children[partIdx]));
-      end if;
-    end for;
-  end for;
-  //Toposort with loop detection
-  for i in 1:partitionsCnt loop
-    order := dfs(children, i, colors, order);
-  end for;
-end sortSubPartitions;
-
-protected function dfs
-  input array<list<Integer>> children;
-  input Integer i;
-  input array<Integer> colors;
-  input list<Integer> inOrder;
-  output list<Integer> outOrder = inOrder;
-algorithm
-  if colors[i] == 1 then
-    Error.addCompilerError("Loop detected in subclock partitioning");
-    fail();
-  end if;
-  if colors[i] == 0 then
-    arrayUpdate(colors, i, 1);
-    for child in children[i] loop
-        outOrder := dfs(children, child, colors, outOrder);
-    end for;
-    outOrder := i::outOrder;
-    arrayUpdate(colors, i, 2);
-  end if;
-end dfs;
-
-protected function setSolverMethod
-  input Option<String> oldSolverMethod;
-  input Option<String> newSolverMethod;
-  output Option<String> outSolverMethod;
-algorithm
-  outSolverMethod := match (oldSolverMethod, newSolverMethod)
-    local
-      String oldMethod, newMethod;
-    case (NONE(), _) then newSolverMethod;
-    case (_, NONE()) then oldSolverMethod;
-    case (SOME(oldMethod), SOME(newMethod))
-      guard(oldMethod == newMethod)
-      then oldSolverMethod;
-    else
-      algorithm
-        oldMethod := BackendDump.optionString(oldSolverMethod);
-        newMethod := BackendDump.optionString(newSolverMethod);
-        Error.addMessage(Error.SUBCLOCK_CONFLICT, {"solver", oldMethod, newMethod});
-      then fail();
-  end match;
-
-end setSolverMethod;
-
-protected function setSubClock
-  input Option<BackendDAE.SubClock> oldSubClk;
-  input BackendDAE.SubClock newSubClk;
-  output BackendDAE.SubClock outSubClk;
-algorithm
-  outSubClk := match oldSubClk
-    local
-      MMath.Rational oldFactor, oldShift, newFactor, newShift;
-      Option<String> oldSolverMethod, newSolverMethod;
-    case NONE() then newSubClk;
-    case SOME(BackendDAE.SUBCLOCK(oldFactor, oldShift, oldSolverMethod))
-      algorithm
-        BackendDAE.SUBCLOCK(newFactor, newShift, newSolverMethod) := newSubClk;
-        newFactor := setFactor(oldFactor, newFactor);
-        newShift := setShift(oldShift, newShift);
-        newSolverMethod := setSolverMethod(oldSolverMethod, newSolverMethod);
-      then BackendDAE.SUBCLOCK(newFactor, newShift, newSolverMethod);
-  end match;
-end setSubClock;
-*/
 
 protected function setFactor
   input MMath.Rational oldVal;

@@ -1294,12 +1294,12 @@ uniontype ClockKind
   end INFERRED_CLOCK;
 
   record INTEGER_CLOCK
-    Exp intervalCounter;
-    Exp resolution " integer type >= 1 ";
+    Exp intervalCounter " integer type >= 0 ";
+    Exp resolution " integer type >= 1, defaults to 1 ";
   end INTEGER_CLOCK;
 
   record REAL_CLOCK
-    Exp interval;
+    Exp interval " real type > 0";
   end REAL_CLOCK;
 
   record BOOLEAN_CLOCK
