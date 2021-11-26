@@ -43,17 +43,16 @@ end SD;
 
 // Result:
 // class 'SD'
-//   public parameter Integer 'N' = 3;
-//   public parameter Real[3] 'p' = {1.0, 1.5, 2.0};
-//   public Real[3] 'c.c.f';
-//   public Real[3] 'c.c.e';
-//   public Real[3, {3, 4, 5}] 'c.x';
-//   public parameter Real[3] 'c.p' = 'p'[:];
-//   public parameter Integer[3] 'c.N' = {3, 4, 5};
-//   public parameter Real 's.p' = 3.0;
-//   public Real 's.c.e';
-//   public Real 's.c.f';
-// public
+//   parameter Integer 'N' = 3;
+//   parameter Real[3] 'p' = {1.0, 1.5, 2.0};
+//   Real[3] 'c.c.f';
+//   Real[3] 'c.c.e';
+//   Real[3, {3, 4, 5}] 'c.x';
+//   parameter Real[3] 'c.p' = 'p'[:];
+//   parameter Integer[3] 'c.N' = {3, 4, 5};
+//   parameter Real 's.p' = 3.0;
+//   Real 's.c.e';
+//   Real 's.c.f';
 // equation
 //   'c.x'[:,1] = 'c.c.e'[:];
 //   'c.x'[:,'c.N'[:]] = 'c.c.f'[:];
