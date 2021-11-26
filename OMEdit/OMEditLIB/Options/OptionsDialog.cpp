@@ -5450,7 +5450,6 @@ void DiscardLocalTranslationFlagsDialog::listLocalTranslationFlagsClasses(Librar
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !pChildLibraryTreeItem->isSystemLibrary()) {
       if (pChildLibraryTreeItem->mSimulationOptions.isValid()) {
         QListWidgetItem *pListItem = new QListWidgetItem(mpClassesWithLocalTranslationFlagsListWidget);
-        pListItem->setFlags(pListItem->flags() | Qt::ItemIsUserCheckable);
         pListItem->setCheckState(Qt::Checked);
         pListItem->setText(pChildLibraryTreeItem->getNameStructure());
       }

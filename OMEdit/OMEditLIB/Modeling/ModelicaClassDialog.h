@@ -47,6 +47,7 @@
 #include <QPlainTextEdit>
 #include <QListWidget>
 #include <QToolButton>
+#include <QTreeWidget>
 
 class Label;
 class LibraryWidget;
@@ -233,21 +234,21 @@ protected:
   virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
-class ConvertClassDialog : public QDialog
+class ConvertClassUsesAnnotationDialog : public QDialog
 {
   Q_OBJECT
 public:
-  ConvertClassDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
+  ConvertClassUsesAnnotationDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
 private:
   LibraryTreeItem *mpLibraryTreeItem;
-  QLineEdit *mpScriptTextBox;
-  QPushButton *mpScriptBrowseButton;
+  QTreeWidget *mpUsesLibrariesTreeWidget;
+  Label *mpProgressLabel;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  void saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
 private slots:
-  void browseScriptFile();
-  void convertClass();
+  void convert();
 };
 
 class GraphicsView;

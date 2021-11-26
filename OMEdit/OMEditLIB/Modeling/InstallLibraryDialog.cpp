@@ -113,6 +113,9 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   // exact match checkbox
   mpExactMatchCheckBox = new QCheckBox(tr("Exact Match (Install only the specified version of dependencies)"));
   mpExactMatchCheckBox->setChecked(true);
+  // Progress label & bar
+  mpProgressLabel = new Label(tr("Installing library"));
+  mpProgressLabel->hide();
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -141,7 +144,8 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   pMainGridLayout->addWidget(new Label(Helper::versionLabel), row, 0);
   pMainGridLayout->addWidget(mpVersionComboBox, row++, 1);
   pMainGridLayout->addWidget(mpExactMatchCheckBox, row++, 0, 1, 2);
-  pMainGridLayout->addWidget(mpButtonBox, row++, 0, 1, 2, Qt::AlignRight);
+  pMainGridLayout->addWidget(mpProgressLabel, row, 0);
+  pMainGridLayout->addWidget(mpButtonBox, row++, 1, Qt::AlignRight);
   setLayout(pMainGridLayout);
 }
 
@@ -228,6 +232,8 @@ void InstallLibraryDialog::libraryIndexChanged(const QString &text)
  */
 void InstallLibraryDialog::installLibrary()
 {
+  mpProgressLabel->show();
+  repaint(); // repaint the dialog so progresslabel is updated.
   QString library = mpNameComboBox->currentText();
   QString version = mpVersionComboBox->currentText();
   bool exactMatch = mpExactMatchCheckBox->isChecked();
@@ -239,5 +245,6 @@ void InstallLibraryDialog::installLibrary()
   } else {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           tr("The library <b>%1</b> is not installed. See Messages Browser for any possible messages.").arg(library), Helper::ok);
+    mpProgressLabel->hide();
   }
 }
