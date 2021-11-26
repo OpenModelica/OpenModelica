@@ -162,6 +162,11 @@ public
     output Variability variability = variable.attributes.variability;
   end variability;
 
+  function visibility
+    input Variable variable;
+    output Visibility visibility = variable.visibility;
+  end visibility;
+
   function isEmptyArray
     input Variable variable;
     output Boolean isEmpty = Type.isEmptyArray(variable.ty);
@@ -315,12 +320,6 @@ public
     Integer var_dims, binding_dims;
   algorithm
     s := IOStream.append(s, indent);
-
-    if var.visibility == Visibility.PROTECTED then
-      s := IOStream.append(s, "protected ");
-    else
-      s := IOStream.append(s, "public ");
-    end if;
 
     s := Component.Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
     s := IOStream.append(s, Type.toFlatString(var.ty));

@@ -52,6 +52,8 @@ protected
   import DAE.ElementSource;
   import MetaModelica.Dangerous.listReverseInPlace;
   import Util;
+  import Prefixes = NFPrefixes;
+  import NFPrefixes.Visibility;
 
   import FlatModel = NFFlatModel;
 
@@ -213,6 +215,7 @@ public
     input output IOStream.IOStream s;
   protected
     FlatModel flat_model = flatModel;
+    Visibility visibility = Visibility.PUBLIC;
   algorithm
     s := IOStream.append(s, "class '" + flat_model.name + "'\n");
 
@@ -231,11 +234,15 @@ public
     end for;
 
     for v in flat_model.variables loop
+      if visibility <> Variable.visibility(v) then
+        visibility := Variable.visibility(v);
+        s := IOStream.append(s, Prefixes.visibilityString(visibility));
+        s := IOStream.append(s, "\n");
+      end if;
+
       s := Variable.toFlatStream(v, "  ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
-
-    s := IOStream.append(s, "public\n");
 
     if not listEmpty(flat_model.initialEquations) then
       s := IOStream.append(s, "initial equation\n");
