@@ -126,39 +126,35 @@ CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   mpButtonBox->addButton(mpSendReportButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Progress label & bar
-  mpProgressLabel = new Label(tr("Sending issue report"));
+  mpProgressLabel = new Label(tr("<b>Sending crash report. Please wait.</b>"));
   mpProgressLabel->hide();
-  mpProgressBar = new QProgressBar;
-  mpProgressBar->setRange(0, 0);
-  mpProgressBar->hide();
   // set grid layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pMainLayout->addWidget(mpCrashReportHeading, 0, 0, 1, 3);
-  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 3);
+  pMainLayout->addWidget(mpCrashReportHeading, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
   int index = 2;
   if (!reportIssue) {
-    pMainLayout->addWidget(new Label(tr("The program crashed unexpectedly. Please report the issue.")), index++, 0, 1, 3);
+    pMainLayout->addWidget(new Label(tr("The program crashed unexpectedly. Please report the issue.")), index++, 0, 1, 2);
   }
-  pMainLayout->addWidget(mpEmailLabel, index++, 0, 1, 3);
-  pMainLayout->addWidget(mpEmailTextBox, index++, 0, 1, 3);
-  pMainLayout->addWidget(mpBugDescriptionLabel, index++, 0, 1, 3);
-  pMainLayout->addWidget(mpBugDescriptionTextBox, index++, 0, 1, 3);
+  pMainLayout->addWidget(mpEmailLabel, index++, 0, 1, 2);
+  pMainLayout->addWidget(mpEmailTextBox, index++, 0, 1, 2);
+  pMainLayout->addWidget(mpBugDescriptionLabel, index++, 0, 1, 2);
+  pMainLayout->addWidget(mpBugDescriptionTextBox, index++, 0, 1, 2);
   if (OMEditCommunicationLogFileInfo.exists() || OMEditCommandsMosFileInfo.exists() || OMStackTraceFileInfo.exists()) {
-    pMainLayout->addWidget(mpFilesDescriptionLabel, index++, 0, 1, 3);
+    pMainLayout->addWidget(mpFilesDescriptionLabel, index++, 0, 1, 2);
   }
   if (OMEditCommunicationLogFileInfo.exists()) {
-    pMainLayout->addWidget(mpOMEditCommunicationLogFileCheckBox, index++, 0, 1, 3);
+    pMainLayout->addWidget(mpOMEditCommunicationLogFileCheckBox, index++, 0, 1, 2);
   }
   if (OMEditCommandsMosFileInfo.exists()) {
-    pMainLayout->addWidget(mpOMEditCommandsMosFileCheckBox, index++, 0, 1, 3);
+    pMainLayout->addWidget(mpOMEditCommandsMosFileCheckBox, index++, 0, 1, 2);
   }
   if (OMStackTraceFileInfo.exists() && !mReportIssue) {
-    pMainLayout->addWidget(mpOMStackTraceFileCheckBox, index++, 0, 1, 3);
+    pMainLayout->addWidget(mpOMStackTraceFileCheckBox, index++, 0, 1, 2);
   }
   pMainLayout->addWidget(mpProgressLabel, index, 0);
-  pMainLayout->addWidget(mpProgressBar, index, 1);
-  pMainLayout->addWidget(mpButtonBox, index, 2, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpButtonBox, index, 1, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -254,7 +250,8 @@ void CrashReportDialog::sendReport()
     }
   }
   mpProgressLabel->show();
-  mpProgressBar->show();
+  mpSendReportButton->setEnabled(false);
+  repaint(); // repaint the dialog so progresslabel is updated.
   // create the report.
   QHttpMultiPart *pHttpMultiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
   // email
@@ -319,7 +316,7 @@ void CrashReportDialog::sendReport()
 void CrashReportDialog::reportSent(QNetworkReply *pNetworkReply)
 {
   mpProgressLabel->hide();
-  mpProgressBar->hide();
+  mpSendReportButton->setEnabled(true);
   if (pNetworkReply->error() != QNetworkReply::NoError) {
     QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           QString("Following error has occurred while sending issue report \n\n%1").arg(pNetworkReply->errorString()), Helper::ok);

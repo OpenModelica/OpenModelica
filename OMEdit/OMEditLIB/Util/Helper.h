@@ -78,6 +78,7 @@ public:
   static QString figaroFileTypes;
   static QString visualizationFileTypes;
   static QString subModelFileTypes;
+  static QString omScriptTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;

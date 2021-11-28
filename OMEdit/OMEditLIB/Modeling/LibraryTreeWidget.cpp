@@ -3108,6 +3108,10 @@ void LibraryTreeView::createActions()
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
   connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteTextFile()));
+  // convert class to use newer uses libraries
+  mpConvertClassUsesLibrariesAction = new QAction(tr("Convert to newer versions of used libraries"), this);
+  mpConvertClassUsesLibrariesAction->setStatusTip(tr("Updates the class to use the newer versions of the uses annotation libraries"));
+  connect(mpConvertClassUsesLibrariesAction, SIGNAL(triggered()), SLOT(convertClassUsesLibraries()));
   // Export FMU Action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
@@ -3384,6 +3388,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
           exportMenu.addAction(mpExportXMLAction);
           exportMenu.addAction(mpExportFigaroAction);
           menu.addMenu(&exportMenu);
+          if (pLibraryTreeItem->isTopLevel()) {
+            menu.addSeparator();
+            menu.addAction(mpConvertClassUsesLibrariesAction);
+          }
           if (pLibraryTreeItem->isSimulationAllowed()) {
             menu.addSeparator();
             menu.addAction(mpUpdateBindingsAction);
@@ -3823,6 +3831,19 @@ void LibraryTreeView::deleteTextFile()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->deleteTextFile(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::convertClassUsesLibraries
+ * Opens the dialog to convert the class uses libraries.
+ */
+void LibraryTreeView::convertClassUsesLibraries()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    ConvertClassUsesAnnotationDialog *pConvertClassUsesAnnotationDialog = new ConvertClassUsesAnnotationDialog(pLibraryTreeItem);
+    pConvertClassUsesAnnotationDialog->exec();
   }
 }
 

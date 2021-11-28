@@ -194,7 +194,7 @@ Starting the Interactive Session
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Under Windows, go to the Start Menu and run OpenModelica->OpenModelica Shell
-which responds with an interaction window. 
+which responds with an interaction window.
 
 Under Linux, run ``OMShell-terminal`` to start the interactive session at the prompt.
 

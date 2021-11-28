@@ -1384,6 +1384,153 @@ void InformationDialog::keyPressEvent(QKeyEvent *event)
 }
 
 /*!
+ * \class ConvertClassUsesAnnotationDialog
+ * \brief Creates a dialog that shows list of libraries from the uses annotation that have newer versions available.
+ */
+/*!
+ * \brief ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog
+ * \param pLibraryTreeItem
+ * \param pParent
+ */
+ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
+  : QDialog(pParent), mpLibraryTreeItem(pLibraryTreeItem)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - Convert %2 to newer versions of used libraries").arg(Helper::applicationName, mpLibraryTreeItem->getNameStructure()));
+  setMinimumWidth(400);
+  // get the uses annotation
+  mpUsesLibrariesTreeWidget = new QTreeWidget;
+  mpUsesLibrariesTreeWidget->setItemDelegate(new ItemDelegate(mpUsesLibrariesTreeWidget));
+  mpUsesLibrariesTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpUsesLibrariesTreeWidget->setColumnCount(3);
+  mpUsesLibrariesTreeWidget->setIndentation(0);
+  QStringList headers;
+  headers << Helper::library << tr("From") << tr("To");
+  mpUsesLibrariesTreeWidget->setHeaderLabels(headers);
+  QList<QList<QString > > usesAnnotation = MainWindow::instance()->getOMCProxy()->getUses(mpLibraryTreeItem->getNameStructure());
+  for (int i = 0 ; i < usesAnnotation.size() ; i++) {
+    const QString libraryName = usesAnnotation.at(i).at(0);
+    const QString libraryVersion = usesAnnotation.at(i).at(1);
+    // get the versions to convert to
+    QList<QString> convertsToVersions = MainWindow::instance()->getOMCProxy()->getAvailablePackageConversionsFrom(libraryName, libraryVersion);
+    if (!convertsToVersions.isEmpty()) {
+      // create a tree widget item
+      QTreeWidgetItem *pUsesLibraryTreeWidgetItem = new QTreeWidgetItem;
+      pUsesLibraryTreeWidgetItem->setCheckState(0, Qt::Checked);
+      mpUsesLibrariesTreeWidget->addTopLevelItem(pUsesLibraryTreeWidgetItem);
+      pUsesLibraryTreeWidgetItem->setText(0, libraryName);
+      // get available installed versions of the library
+      QList<QString> availableVersions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(libraryName);
+      QComboBox *pComboBox = new QComboBox;
+      foreach (QString convertsToVersion, convertsToVersions) {
+        bool installed = availableVersions.contains(convertsToVersion);
+        pComboBox->addItem(QString("%1 (%2installed)").arg(convertsToVersion, installed ? "" : "not "), QList<QVariant>() << convertsToVersion << installed);
+      }
+      mpUsesLibrariesTreeWidget->setItemWidget(pUsesLibraryTreeWidgetItem, 1, pComboBox);
+      mpUsesLibrariesTreeWidget->resizeColumnToContents(1);
+      pUsesLibraryTreeWidgetItem->setText(2, libraryVersion);
+    }
+  }
+  // Progress label & bar
+  mpProgressLabel = new Label(tr("<b>Running conversion(s). Please wait.</b>"));
+  mpProgressLabel->hide();
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(convert()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  if (mpUsesLibrariesTreeWidget->topLevelItemCount() == 0) {
+    pMainLayout->addWidget(new Label(tr("No new versions of the used libraries are found or there is no uses annotation.")));
+  } else {
+    pMainLayout->addWidget(new Label(tr("Following libraries from the uses annotation have new versions available.")));
+  }
+  pMainLayout->addWidget(mpUsesLibrariesTreeWidget);
+  pMainLayout->addWidget(new Label(tr("Note: The converted class and used library might be reloaded.")));
+  pMainLayout->addWidget(new Label(tr("If the new used library is not available then it will be installed.")));
+  pMainLayout->addWidget(new Label(tr("This operation can take sometime depending on the conversions.")));
+  pMainLayout->addWidget(new Label(tr("Backup your work before starting the conversion.")));
+  QHBoxLayout *pHBoxLayout = new QHBoxLayout;
+  pHBoxLayout->addWidget(mpProgressLabel);
+  pHBoxLayout->addWidget(mpButtonBox, 0, Qt::AlignRight);
+  pMainLayout->addLayout(pHBoxLayout);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief ConvertClassUsesAnnotationDialog::saveLibraryTreeItem
+ * \param pLibraryTreeItem
+ */
+void ConvertClassUsesAnnotationDialog::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+{
+  MainWindow::instance()->getOMCProxy()->save(pLibraryTreeItem->getNameStructure());
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem) {
+      saveLibraryTreeItem(pChildLibraryTreeItem);
+    }
+  }
+}
+
+/*!
+ * \brief ConvertClassUsesAnnotationDialog::convert
+ * Converts the uses annotation libraries to newer versions.
+ */
+void ConvertClassUsesAnnotationDialog::convert()
+{
+  mpProgressLabel->show();
+  mpOkButton->setEnabled(false);
+  repaint(); // repaint the dialog so progresslabel is updated.
+  bool reloadClass = false;
+  bool updatePackageIndex = false;
+  QTreeWidgetItemIterator usesLibrariesIterator(mpUsesLibrariesTreeWidget);
+  while (*usesLibrariesIterator) {
+    QTreeWidgetItem *pUsesLibraryTreeWidgetItem = dynamic_cast<QTreeWidgetItem*>(*usesLibrariesIterator);
+    QComboBox *pComboBox = qobject_cast<QComboBox*>(mpUsesLibrariesTreeWidget->itemWidget(pUsesLibraryTreeWidgetItem, 1));
+    QList<QVariant> comboBoxItemData = pComboBox->itemData(pComboBox->currentIndex()).toList();
+    const QString libraryName = pUsesLibraryTreeWidgetItem->text(0);
+    const QString libraryVersion = comboBoxItemData.at(0).toString();
+    const bool installed = comboBoxItemData.at(1).toBool();
+    // install the library if needed.
+    if (!installed) {
+      if (MainWindow::instance()->getOMCProxy()->installPackage(libraryName, libraryVersion, true)) {
+        updatePackageIndex |= true;
+      }
+    }
+    if (MainWindow::instance()->getOMCProxy()->convertPackageToLibrary(mpLibraryTreeItem->getNameStructure(), libraryName, libraryVersion)) {
+      LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(libraryName);
+      if (pLibraryTreeItem) {
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+      }
+      reloadClass |= true;
+    }
+    ++usesLibrariesIterator;
+  }
+  // if reloadClass is set then unload the class and it will be reloaded as part of loadDependentLibraries
+  if (reloadClass) {
+    if (mpLibraryTreeItem->isFilePathValid()) {
+      saveLibraryTreeItem(mpLibraryTreeItem);
+    }
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(mpLibraryTreeItem, false, false);
+  }
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
+  // update the package index if needed
+  if (updatePackageIndex) {
+    MainWindow::instance()->getOMCProxy()->updatePackageIndex();
+    MainWindow::instance()->addSystemLibraries();
+  }
+  accept();
+}
+
+/*!
  * \class GraphicsViewProperties
  * \brief Creates a dialog that shows the icon/diagram GraphicsView properties.
  */

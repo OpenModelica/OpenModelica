@@ -406,6 +406,7 @@ private:
   QAction *mpNewFolderEmptyAction;
   QAction *mpRenameAction;
   QAction *mpDeleteAction;
+  QAction *mpConvertClassUsesLibrariesAction;
   QAction *mpExportFMUAction;
   QAction *mpExportReadonlyPackageAction;
   QAction *mpExportEncryptedPackageAction;
@@ -454,6 +455,7 @@ public slots:
   void createNewFolderEmpty();
   void renameLibraryTreeItem();
   void deleteTextFile();
+  void convertClassUsesLibraries();
   void exportModelFMU();
   void exportEncryptedPackage();
   void exportReadonlyPackage();

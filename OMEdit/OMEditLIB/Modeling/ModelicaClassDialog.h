@@ -47,6 +47,7 @@
 #include <QPlainTextEdit>
 #include <QListWidget>
 #include <QToolButton>
+#include <QTreeWidget>
 
 class Label;
 class LibraryWidget;
@@ -225,11 +226,29 @@ private slots:
 
 class InformationDialog : public QWidget
 {
+  Q_OBJECT
 public:
   InformationDialog(QString windowTitle, QString informationText, bool modelicaTextHighlighter = false, QWidget *pParent = 0);
   void closeEvent(QCloseEvent *event) override;
 protected:
   virtual void keyPressEvent(QKeyEvent *event) override;
+};
+
+class ConvertClassUsesAnnotationDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  ConvertClassUsesAnnotationDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
+private:
+  LibraryTreeItem *mpLibraryTreeItem;
+  QTreeWidget *mpUsesLibrariesTreeWidget;
+  Label *mpProgressLabel;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+  void saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+private slots:
+  void convert();
 };
 
 class GraphicsView;

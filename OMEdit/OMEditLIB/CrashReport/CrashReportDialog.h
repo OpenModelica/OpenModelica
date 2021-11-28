@@ -70,7 +70,6 @@ private:
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
   Label *mpProgressLabel;
-  QProgressBar *mpProgressBar;
 
   void createGDBBacktrace();
 public slots:

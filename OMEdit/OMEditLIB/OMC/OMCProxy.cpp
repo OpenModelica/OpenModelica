@@ -3378,6 +3378,35 @@ QStringList OMCProxy::getAvailablePackageVersions(QString pkg, QString version)
 }
 
 /*!
+ * \brief OMCProxy::convertPackageToLibrary
+ * Runs the conversion script for a library on a selected package.
+ * \param packageToConvert
+ * \param library
+ * \param libraryVersion
+ * \return
+ */
+bool OMCProxy::convertPackageToLibrary(const QString &packageToConvert, const QString &library, const QString &libraryVersion)
+{
+  bool result = mpOMCInterface->convertPackageToLibrary(packageToConvert, library, libraryVersion);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getAvailablePackageConversionsFrom
+ * Returns the versions that provide conversion from the requested version of the library.
+ * \param pkg
+ * \param version
+ * \return
+ */
+QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, const QString &version)
+{
+  QList<QString> result = mpOMCInterface->getAvailablePackageConversionsFrom(pkg, version);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */

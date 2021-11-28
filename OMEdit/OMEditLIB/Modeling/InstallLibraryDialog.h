@@ -60,6 +60,7 @@ private:
   QCheckBox *mpNoSupportCheckBox;
   QComboBox *mpVersionComboBox;
   QCheckBox *mpExactMatchCheckBox;
+  Label *mpProgressLabel;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
