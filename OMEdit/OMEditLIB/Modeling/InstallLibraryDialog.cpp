@@ -114,7 +114,7 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   mpExactMatchCheckBox = new QCheckBox(tr("Exact Match (Install only the specified version of dependencies)"));
   mpExactMatchCheckBox->setChecked(true);
   // Progress label & bar
-  mpProgressLabel = new Label(tr("Installing library"));
+  mpProgressLabel = new Label(tr("<b>Installing library. Please wait.</b>"));
   mpProgressLabel->hide();
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -233,6 +233,7 @@ void InstallLibraryDialog::libraryIndexChanged(const QString &text)
 void InstallLibraryDialog::installLibrary()
 {
   mpProgressLabel->show();
+  mpOkButton->setEnabled(false);
   repaint(); // repaint the dialog so progresslabel is updated.
   QString library = mpNameComboBox->currentText();
   QString version = mpVersionComboBox->currentText();
@@ -246,5 +247,6 @@ void InstallLibraryDialog::installLibrary()
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           tr("The library <b>%1</b> is not installed. See Messages Browser for any possible messages.").arg(library), Helper::ok);
     mpProgressLabel->hide();
+    mpOkButton->setEnabled(true);
   }
 }

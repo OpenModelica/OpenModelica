@@ -1432,7 +1432,7 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
     }
   }
   // Progress label & bar
-  mpProgressLabel = new Label(tr("Running conversion(s)"));
+  mpProgressLabel = new Label(tr("<b>Running conversion(s). Please wait.</b>"));
   mpProgressLabel->hide();
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -1487,6 +1487,7 @@ void ConvertClassUsesAnnotationDialog::saveLibraryTreeItem(LibraryTreeItem *pLib
 void ConvertClassUsesAnnotationDialog::convert()
 {
   mpProgressLabel->show();
+  mpOkButton->setEnabled(false);
   repaint(); // repaint the dialog so progresslabel is updated.
   bool reloadClass = false;
   bool updatePackageIndex = false;
@@ -1511,7 +1512,6 @@ void ConvertClassUsesAnnotationDialog::convert()
       }
       reloadClass |= true;
     }
-    // qDebug() << pUsesLibraryTreeWidgetItem->text(0) << comboBoxItemData.at(0).toString() << comboBoxItemData.at(1).toBool() << pUsesLibraryTreeWidgetItem->text(2);
     ++usesLibrariesIterator;
   }
   // if reloadClass is set then unload the class and it will be reloaded as part of loadDependentLibraries
