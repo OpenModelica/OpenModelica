@@ -133,26 +133,25 @@ CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpCrashReportHeading, 0, 0, 1, 2);
   pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
-  pMainLayout->addWidget(mpEmailLabel, 2, 0, 1, 2);
-  pMainLayout->addWidget(mpEmailTextBox, 3, 0, 1, 2);
-  pMainLayout->addWidget(mpBugDescriptionLabel, 4, 0, 1, 2);
-  pMainLayout->addWidget(mpBugDescriptionTextBox, 5, 0, 1, 2);
-  int index = 6;
+  int index = 2;
+  if (!reportIssue) {
+    pMainLayout->addWidget(new Label(tr("The program crashed unexpectedly. Please report the issue.")), index++, 0, 1, 2);
+  }
+  pMainLayout->addWidget(mpEmailLabel, index++, 0, 1, 2);
+  pMainLayout->addWidget(mpEmailTextBox, index++, 0, 1, 2);
+  pMainLayout->addWidget(mpBugDescriptionLabel, index++, 0, 1, 2);
+  pMainLayout->addWidget(mpBugDescriptionTextBox, index++, 0, 1, 2);
   if (OMEditCommunicationLogFileInfo.exists() || OMEditCommandsMosFileInfo.exists() || OMStackTraceFileInfo.exists()) {
-    pMainLayout->addWidget(mpFilesDescriptionLabel, index, 0, 1, 2);
-    index++;
+    pMainLayout->addWidget(mpFilesDescriptionLabel, index++, 0, 1, 2);
   }
   if (OMEditCommunicationLogFileInfo.exists()) {
-    pMainLayout->addWidget(mpOMEditCommunicationLogFileCheckBox, index, 0, 1, 2);
-    index++;
+    pMainLayout->addWidget(mpOMEditCommunicationLogFileCheckBox, index++, 0, 1, 2);
   }
   if (OMEditCommandsMosFileInfo.exists()) {
-    pMainLayout->addWidget(mpOMEditCommandsMosFileCheckBox, index, 0, 1, 2);
-    index++;
+    pMainLayout->addWidget(mpOMEditCommandsMosFileCheckBox, index++, 0, 1, 2);
   }
   if (OMStackTraceFileInfo.exists() && !mReportIssue) {
-    pMainLayout->addWidget(mpOMStackTraceFileCheckBox, index, 0, 1, 2);
-    index++;
+    pMainLayout->addWidget(mpOMStackTraceFileCheckBox, index++, 0, 1, 2);
   }
   pMainLayout->addWidget(mpProgressLabel, index, 0);
   pMainLayout->addWidget(mpButtonBox, index, 1, Qt::AlignRight);
