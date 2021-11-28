@@ -43,6 +43,7 @@ encapsulated uniontype NFVariable
 
 protected
   import ExpandExp = NFExpandExp;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
   import Util;
   import Variable = NFVariable;
@@ -161,6 +162,11 @@ public
     input Variable variable;
     output Variability variability = variable.attributes.variability;
   end variability;
+
+  function visibility
+    input Variable variable;
+    output Visibility visibility = variable.visibility;
+  end visibility;
 
   function isEmptyArray
     input Variable variable;
@@ -316,12 +322,6 @@ public
   algorithm
     s := IOStream.append(s, indent);
 
-    if var.visibility == Visibility.PROTECTED then
-      s := IOStream.append(s, "protected ");
-    else
-      s := IOStream.append(s, "public ");
-    end if;
-
     s := Component.Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
     s := IOStream.append(s, Type.toFlatString(var.ty));
     s := IOStream.append(s, " ");
@@ -339,6 +339,8 @@ public
 
       s := IOStream.append(s, Binding.toFlatString(var.binding));
     end if;
+
+    s := FlatModelicaUtil.appendComment(var.comment, s);
   end toFlatStream;
 
   annotation(__OpenModelica_Interface="frontend");

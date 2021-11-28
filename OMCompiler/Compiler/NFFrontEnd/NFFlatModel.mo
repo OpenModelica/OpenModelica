@@ -52,6 +52,9 @@ protected
   import DAE.ElementSource;
   import MetaModelica.Dangerous.listReverseInPlace;
   import Util;
+  import Prefixes = NFPrefixes;
+  import NFPrefixes.Visibility;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
 
   import FlatModel = NFFlatModel;
 
@@ -213,8 +216,11 @@ public
     input output IOStream.IOStream s;
   protected
     FlatModel flat_model = flatModel;
+    Visibility visibility = Visibility.PUBLIC;
   algorithm
-    s := IOStream.append(s, "class '" + flat_model.name + "'\n");
+    s := IOStream.append(s, "class '" + flat_model.name + "'");
+    s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
+    s := IOStream.append(s, "\n");
 
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
@@ -231,11 +237,15 @@ public
     end for;
 
     for v in flat_model.variables loop
+      if visibility <> Variable.visibility(v) then
+        visibility := Variable.visibility(v);
+        s := IOStream.append(s, Prefixes.visibilityString(visibility));
+        s := IOStream.append(s, "\n");
+      end if;
+
       s := Variable.toFlatStream(v, "  ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
-
-    s := IOStream.append(s, "public\n");
 
     if not listEmpty(flat_model.initialEquations) then
       s := IOStream.append(s, "initial equation\n");
@@ -261,6 +271,7 @@ public
       end if;
     end for;
 
+    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "  ", ";\n", s);
     s := IOStream.append(s, "end '" + flat_model.name + "';\n");
   end appendFlatStream;
 
@@ -511,6 +522,7 @@ public
   algorithm
     types := match exp
       case Expression.SUBSCRIPTED_EXP()
+        guard Flags.getConfigBool(Flags.MODELICA_OUTPUT)
         algorithm
           types := collectSubscriptedFlatType(exp.exp, exp.subscripts, exp.ty, types);
         then

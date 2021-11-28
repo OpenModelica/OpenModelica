@@ -3,7 +3,7 @@
 
 loadModel(ModelicaServices, {"3.2.3+maint.om"});getErrorString();
 loadModel(ModelicaTest, {"3.2.3"});getErrorString();
-setCommandLineOptions("-d=newInst -f");
+setCommandLineOptions("-d=newInst -f -m");
 writeFile("Tables.mo", OpenModelica.Scripting.instantiateModel(ModelicaTest.Tables.CombiTable1D.Test33));getErrorString();
 clear();
 loadFile("Tables.mo");getErrorString();

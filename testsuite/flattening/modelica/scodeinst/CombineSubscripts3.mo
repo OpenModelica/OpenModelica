@@ -21,9 +21,8 @@ end CombineSubscripts3;
 
 // Result:
 // class 'CombineSubscripts3'
-//   public Real[3] 'b.p';
-//   public Real[3, 4] 'b.x';
-// public
+//   Real[3] 'b.p';
+//   Real[3, 4] 'b.x';
 // equation
 //   for 'i' in 1:3 loop
 //     for 'j' in 2:3 loop

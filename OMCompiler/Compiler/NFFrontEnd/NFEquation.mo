@@ -42,6 +42,7 @@ protected
   import ElementSource;
   import Equation = NFEquation;
   import Error;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
   import Util;
 
@@ -1224,6 +1225,8 @@ public
 
       else IOStream.append(s, "#UNKNOWN EQUATION#");
     end match;
+
+    s := FlatModelicaUtil.appendElementSourceComment(source(eq), s);
   end toFlatStream;
 
   function toFlatStreamList

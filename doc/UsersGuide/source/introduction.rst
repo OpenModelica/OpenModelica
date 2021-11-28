@@ -177,7 +177,7 @@ Interactive Session with Examples
 
 The following is an interactive session using the interactive session
 handler in the OpenModelica environment, called OMShell – the
-OpenModelica Shell). Most of these examples are also available in the
+OpenModelica Shell. Most of these examples are also available in the
 :ref:`omnotebook` UsersGuideExamples.onb as well as the testmodels in:
 
 .. omc-mos ::
@@ -193,9 +193,10 @@ The following commands were run using OpenModelica version:
 Starting the Interactive Session
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Windows version which at installation is made available in the start
-menu as OpenModelica->OpenModelica Shell which responds with an
-interaction window:
+Under Windows, go to the Start Menu and run OpenModelica->OpenModelica Shell
+which responds with an interaction window.
+
+Under Linux, run ``OMShell-terminal`` to start the interactive session at the prompt.
 
 We enter an assignment of a vector expression, created by the range
 construction expression 1:12, to be stored in the variable x. The value

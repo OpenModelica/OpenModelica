@@ -344,7 +344,7 @@ QString Helper::stepInto;
 QString Helper::stepReturn;
 QString Helper::attachToRunningProcess;
 QString Helper::attachToRunningProcessTip;
-QString Helper::crashReport;
+QString Helper::reportIssue;
 QString Helper::parsingFailedJson;
 QString Helper::expandAll;
 QString Helper::collapseAll;
@@ -645,7 +645,7 @@ void Helper::initHelperVariables()
   Helper::stepReturn = tr("Step Return");
   Helper::attachToRunningProcess = tr("Attach to Running Process");
   Helper::attachToRunningProcessTip = tr("Attach the debugger to running process");
-  Helper::crashReport = tr("Crash Report");
+  Helper::reportIssue = tr("Report Issue");
   Helper::parsingFailedJson = tr("Parsing of JSON file failed");
   Helper::expandAll = tr("Expand All");
   Helper::collapseAll = tr("Collapse All");
