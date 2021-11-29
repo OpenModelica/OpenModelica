@@ -84,10 +84,7 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   if (list.size() < 3)
     return;
   // if first item of list is true then the shape should be visible.
-  /* Quick and ugly fix for #8172 until #2081 is fixed properly.
-   * Removed the hardcoded "true" value after fixing #2081.
-   */
-  mVisible.parse("true"/*list.at(0)*/);
+  mVisible.parse(list.at(0));
   // 2nd item is the origin
   mOrigin.parse(list.at(1));
   // 3rd item is the rotation
