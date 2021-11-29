@@ -1902,11 +1902,11 @@ protected
                 Error.assertionOrAddSourceMessage(Expression.integerValue(e2) >= 1,
                   Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", Expression.toString(e2), "=> 1"}, info);
               then
-                Expression.CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2));
+                Expression.CLKCONST(ClockKind.RATIONAL_CLOCK(e1, e2));
 
             // Clock(condition, startInterval) - boolean clock.
             case Type.REAL()
-              then Expression.CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2));
+              then Expression.CLKCONST(ClockKind.EVENT_CLOCK(e1, e2));
 
             // Clock(c, solverMethod) - solver clock.
             case Type.STRING()

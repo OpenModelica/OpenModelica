@@ -3335,7 +3335,7 @@ algorithm
         (_, outTpl) := Expression.traverseExpTopDown(e, traversingAdjacencyRowExpFinderBaseClock, inTpl);
       then (inExp, true, outTpl);
 
-    case (DAE.CLKCONST(DAE.BOOLEAN_CLOCK()), _)
+    case (DAE.CLKCONST(DAE.EVENT_CLOCK()), _)
       then (inExp, false, inTpl);
 
     case (DAE.CALL(path=Absyn.IDENT(name="hold")), _)

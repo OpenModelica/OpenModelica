@@ -2994,7 +2994,7 @@ algorithm
       Expression interval, resolution;
 
     case {interval as Expression.INTEGER(), resolution as Expression.INTEGER()}
-      then Expression.CLKCONST(Expression.ClockKind.INTEGER_CLOCK(interval, resolution));
+      then Expression.CLKCONST(Expression.ClockKind.RATIONAL_CLOCK(interval, resolution));
 
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
@@ -3024,7 +3024,7 @@ algorithm
       Expression condition, interval;
 
     case {condition as Expression.BOOLEAN(), interval as Expression.REAL()}
-      then Expression.CLKCONST(Expression.ClockKind.BOOLEAN_CLOCK(condition, interval));
+      then Expression.CLKCONST(Expression.ClockKind.EVENT_CLOCK(condition, interval));
 
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;

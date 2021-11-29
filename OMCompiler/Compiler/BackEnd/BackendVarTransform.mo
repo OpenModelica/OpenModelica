@@ -1121,28 +1121,28 @@ algorithm
         (expl, true) := replaceExpList(expl, repl, cond);
       then
         (DAE.RECORD(path, expl, fields, t), true);
-    // INTEGER_CLOCK
-    case (DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter=e, resolution=resolution)), repl, cond)
+    // RATIONAL_CLOCK
+    case (DAE.CLKCONST(DAE.RATIONAL_CLOCK(intervalCounter=e, resolution=resolution)), repl, cond)
       equation
         (e, c1) = replaceExp(e, repl, cond);
         (resolution, c2) = replaceExp(resolution, repl, cond);
         c3 = c1 or c2;
       then
-        (if c3 then DAE.CLKCONST(DAE.INTEGER_CLOCK(e, resolution)) else inExp, c3);
+        (if c3 then DAE.CLKCONST(DAE.RATIONAL_CLOCK(e, resolution)) else inExp, c3);
     // REAL_CLOCK
     case (DAE.CLKCONST(DAE.REAL_CLOCK(interval=e)), repl, cond)
       equation
         (e, c1) = replaceExp(e, repl, cond);
       then
         (if c1 then DAE.CLKCONST(DAE.REAL_CLOCK(e)) else inExp, c1);
-    // BOOLEAN_CLOCK
-    case (DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition=e, startInterval=startInterval)), repl, cond)
+    // EVENT_CLOCK
+    case (DAE.CLKCONST(DAE.EVENT_CLOCK(condition=e, startInterval=startInterval)), repl, cond)
       equation
         (e, c1) = replaceExp(e, repl, cond);
         (startInterval, c2) = replaceExp(startInterval, repl, cond);
         c3 = c1 or c2;
       then
-        (if c3 then DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e, startInterval)) else inExp, c3);
+        (if c3 then DAE.CLKCONST(DAE.EVENT_CLOCK(e, startInterval)) else inExp, c3);
     // SOLVER_CLOCK
     case (DAE.CLKCONST(DAE.SOLVER_CLOCK(c=e, solverMethod=solverMethod)), repl, cond)
       equation

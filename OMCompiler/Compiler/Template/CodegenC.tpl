@@ -301,7 +301,7 @@ end functionSavePreSynchronous3;
 template isBoolClock(DAE.ClockKind clock)
 ::=
 match clock
-  case BOOLEAN_CLOCK(__) then boolStrC(true)
+  case EVENT_CLOCK(__) then boolStrC(true)
   else boolStrC(false)
 end isBoolClock;
 
@@ -395,7 +395,7 @@ end functionUpdateSynchronous;
 template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Text &auxFunction)
 ::=
 match baseClock
-  case DAE.BOOLEAN_CLOCK(__) then
+  case DAE.EVENT_CLOCK(__) then
     let cond = cref(expCref(condition))
     let &preExp = buffer ""
     let si = daeExp(startInterval, contextOther, &preExp, &varDecls, &auxFunction)
@@ -410,8 +410,8 @@ match baseClock
     let &preExp = buffer ""
     let intvl = match baseClock
       case REAL_CLOCK()
-      case INTEGER_CLOCK()
-      case BOOLEAN_CLOCK() then
+      case RATIONAL_CLOCK()
+      case EVENT_CLOCK() then
         daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
       else "unspecified"
       let interval = match intvl case "unspecified" then '1.0' else intvl

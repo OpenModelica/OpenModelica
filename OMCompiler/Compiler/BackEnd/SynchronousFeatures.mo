@@ -186,7 +186,7 @@ algorithm
         DAE.Exp c, e;
         BackendDAE.WhenEquation whenEq;
         BackendDAE.Equation eq;
-      case DAE.BOOLEAN_CLOCK(c, _)
+      case DAE.EVENT_CLOCK(c, _)
         equation
           e = DAE.CALL(Absyn.IDENT("$_clkfire"), {DAE.ICONST(i)}, DAE.callAttrBuiltinOther);
           whenEq = BackendDAE.WHEN_STMTS(c, {BackendDAE.NORETCALL(e, DAE.emptyElementSource)}, NONE());
@@ -763,11 +763,11 @@ algorithm
     local
       Integer i1,i2,i3,i4;
       Real r1,r2;
-  case(DAE.INTEGER_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.INFERRED_CLOCK())
+  case(DAE.RATIONAL_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.INFERRED_CLOCK())
     algorithm
     then BackendDAE.SUBCLOCK(MMath.RATIONAL(i2,i1), MMath.RAT0,NONE());
     // TODO AHEU: Why is this i2/i1 and not i1/i2???
-  case(DAE.INTEGER_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.INTEGER_CLOCK(DAE.ICONST(i3),DAE.ICONST(i4)))
+  case(DAE.RATIONAL_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.RATIONAL_CLOCK(DAE.ICONST(i3),DAE.ICONST(i4)))
     algorithm
     then BackendDAE.SUBCLOCK(MMath.divRational(MMath.RATIONAL(i2,i1),MMath.RATIONAL(i4,i3)),MMath.RAT0,NONE());
   case(DAE.REAL_CLOCK(DAE.RCONST(r1)), DAE.INFERRED_CLOCK())
@@ -1266,7 +1266,7 @@ algorithm
       algorithm
       then (eqIdx::clockEqsIn, subClockInterfaceEqIdxsIn, subClockInterfaceEqsIn);
 
-   case(BackendDAE.EQUATION(scalar=DAE.CLKCONST(clk=DAE.INTEGER_CLOCK(_))))
+   case(BackendDAE.EQUATION(scalar=DAE.CLKCONST(clk=DAE.RATIONAL_CLOCK(_))))
       algorithm
       then (eqIdx::clockEqsIn, subClockInterfaceEqIdxsIn,subClockInterfaceEqsIn);
 
@@ -1274,7 +1274,7 @@ algorithm
       algorithm
       then (eqIdx::clockEqsIn, subClockInterfaceEqIdxsIn,subClockInterfaceEqsIn);
 
-   case(BackendDAE.EQUATION(scalar=DAE.CLKCONST(clk=DAE.BOOLEAN_CLOCK(_))))
+   case(BackendDAE.EQUATION(scalar=DAE.CLKCONST(clk=DAE.EVENT_CLOCK(_))))
       algorithm
       then (eqIdx::clockEqsIn, subClockInterfaceEqIdxsIn,subClockInterfaceEqsIn);
 
@@ -2267,17 +2267,17 @@ protected
   list<BackendDAE.Var> vars;
 algorithm
   (outClk, outNewEqs, outNewVars, outCnt) := match inClk
-    case DAE.BOOLEAN_CLOCK(e, f) equation
+    case DAE.EVENT_CLOCK(e, f) equation
       ({e}, eqs, vars, cnt) = substExp({e}, inNewEqs, inNewVars, inCnt);
-    then (DAE.BOOLEAN_CLOCK(e, f), eqs, vars, cnt);
+    then (DAE.EVENT_CLOCK(e, f), eqs, vars, cnt);
 
     case DAE.REAL_CLOCK(e) equation
       (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
     then (DAE.REAL_CLOCK(e), eqs, vars, cnt);
 
-    case DAE.INTEGER_CLOCK(e, i) equation
+    case DAE.RATIONAL_CLOCK(e, i) equation
       (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
-    then (DAE.INTEGER_CLOCK(e, i), eqs, vars, cnt);
+    then (DAE.RATIONAL_CLOCK(e, i), eqs, vars, cnt);
 
     else (inClk, inNewEqs, inNewVars, inCnt);
   end match;
@@ -2687,7 +2687,7 @@ algorithm
       list<DAE.Exp> exps;
       DAE.Exp e;
       DAE.ComponentRef cr;
-    case DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e, _))
+    case DAE.CLKCONST(DAE.EVENT_CLOCK(e, _))
       equation
         DAE.CREF(cr, _) = e;
       then (partition, (cr, false)::refs, false);

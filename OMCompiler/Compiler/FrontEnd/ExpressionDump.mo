@@ -1779,13 +1779,13 @@ algorithm
     case DAE.INFERRED_CLOCK()
     then "Clock()";
 
-    case DAE.INTEGER_CLOCK(intervalCounter=intervalCounter, resolution=resolution)
+    case DAE.RATIONAL_CLOCK(intervalCounter=intervalCounter, resolution=resolution)
     then "Clock(" + dumpExpStr(intervalCounter,0) + ", " + dumpExpStr(resolution,0) + ")";
 
     case DAE.REAL_CLOCK(interval=interval)
     then "Clock(" + dumpExpStr(interval,0) + ")";
 
-    case DAE.BOOLEAN_CLOCK(condition=condition, startInterval=startInterval)
+    case DAE.EVENT_CLOCK(condition=condition, startInterval=startInterval)
     then "Clock(" + dumpExpStr(condition,0) + ", " + dumpExpStr(startInterval,0) + ")";
 
     case DAE.SOLVER_CLOCK(c=c, solverMethod=solverMethod)
