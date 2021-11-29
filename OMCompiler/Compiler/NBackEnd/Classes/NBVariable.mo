@@ -101,10 +101,12 @@ public
 
   function toString
     input Variable var;
-    output String str;
+    input output String str = "";
+  protected
+    String attr;
   algorithm
-    str := BackendExtension.VariableAttributes.toString(var.backendinfo.attributes);
-    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var) + (if str == "" then "" else " " + str);
+    attr := BackendExtension.VariableAttributes.toString(var.backendinfo.attributes);
+    str := str + VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var) + (if attr == "" then "" else " " + attr);
   end toString;
 
   function pointerToString
@@ -140,7 +142,7 @@ public
     SourceInfo info;
   algorithm
     node := ComponentRef.node(cref);
-    ty := ComponentRef.getSubscriptedType(cref);
+    ty := ComponentRef.getSubscriptedType(cref, true);
     vis := InstNode.visibility(node);
     info := InstNode.info(node);
     variable := Variable.VARIABLE(cref, ty, binding, vis, NFComponent.DEFAULT_ATTR, {}, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
@@ -539,7 +541,7 @@ public
         algorithm
           state := getVarPointer(cref);
           derNode := InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr);
-          der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, Type.elementType(ComponentRef.nodeType(cref))));
+          der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, ComponentRef.nodeType(cref)));
           var := fromCref(der_cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
@@ -702,7 +704,7 @@ public
         algorithm
           disc := BVariable.getVarPointer(cref);
           qual.name := PREVIOUS_STR;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, Type.elementType(ComponentRef.nodeType(cref))));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
           var := fromCref(cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.PREVIOUS(disc));
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
@@ -757,7 +759,7 @@ public
           old_var_ptr := BVariable.getVarPointer(cref);
           // prepend the seed str and the matrix name and create the new cref
           qual.name := SEED_STR + "_" + name;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, Type.elementType(ComponentRef.nodeType(cref))));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
           var := fromCref(cref);
           // update the variable to be a seed and pass the pointer to the original variable
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.SEED_VAR(old_var_ptr));
@@ -790,7 +792,7 @@ public
           old_var_ptr := BVariable.getVarPointer(cref);
           // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
           qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, Type.elementType(ComponentRef.nodeType(cref))));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
           var := fromCref(cref);
           // update the variable to be a jac var and pass the pointer to the original variable
           // ToDo: tmps will get JAC_DIFF_VAR !
@@ -822,7 +824,7 @@ public
           old_var_ptr := BVariable.getVarPointer(cref);
           // prepend the seed str and the matrix name and create the new cref
           qual.name := START_STR;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, Type.elementType(ComponentRef.nodeType(cref))));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
           var := fromCref(cref);
           // update the variable to be a seed and pass the pointer to the original variable
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.START(old_var_ptr));
@@ -1104,10 +1106,18 @@ public
       input output String str = "";
       input Boolean printEmpty = true;
     protected
-      Pointer<Variable> var;
+      Integer numberOfElements = VariablePointers.size(variables);
+      Integer length = 10;
+      String index;
     algorithm
-      if printEmpty or ExpandableArray.getNumberOfElements(variables.varArr) > 0 then
-        str := ExpandableArray.toString(variables.varArr, str + " Variables", function Pointer.applyFold(func = function BVariable.toString()), false) + "\n";
+      if printEmpty or numberOfElements > 0 then
+        str := StringUtil.headline_4(str + " Variables (" + intString(numberOfElements) + "/" + intString(scalarSize(variables)) + ")");
+        for i in 1:numberOfElements loop
+          index := "(" + intString(i) + ")";
+          index := index + StringUtil.repeat(" ", length - stringLength(index));
+          str := str + BVariable.toString(Pointer.access(ExpandableArray.get(i, variables.varArr)), index) + "\n";
+        end for;
+        str := str + "\n";
       else
         str := "";
       end if;
@@ -1186,11 +1196,20 @@ public
     end clone;
 
     function size
-      "returns the number of elements, not the actual scalarized number of variables!
-      Use compress before this, returns last used index for safety reasons."
+      "returns the number of elements, not the actual scalarized number of variables!"
       input VariablePointers variables;
-      output Integer sz = ExpandableArray.getLastUsedIndex(variables.varArr);
+      output Integer sz = ExpandableArray.getNumberOfElements(variables.varArr);
     end size;
+
+    function scalarSize
+      "returns the scalar size."
+      input VariablePointers variables;
+      output Integer sz = 0;
+    algorithm
+      for var_ptr in toList(variables) loop
+        sz := sz + BVariable.size(var_ptr);
+      end for;
+    end scalarSize;
 
     function toList
       "Creates a VariablePointer list from VariablePointers."
@@ -1583,7 +1602,9 @@ public
         case VAR_DATA_SIM() algorithm
           tmp := StringUtil.headline_2("Variable Data Simulation") + "\n";
           if not full then
-            tmp := tmp + VariablePointers.toString(varData.unknowns, "Unknown", false);
+            tmp := tmp + VariablePointers.toString(varData.unknowns, "Unknown", false) +
+              VariablePointers.toString(varData.states, "Local Known", false) +
+              VariablePointers.toString(varData.knowns, "Global Known", false);
           else
             tmp := tmp + VariablePointers.toString(varData.states, "State", false) +
               VariablePointers.toString(varData.derivatives, "Derivative", false) +
@@ -1593,10 +1614,7 @@ public
               VariablePointers.toString(varData.parameters, "Parameter", false) +
               VariablePointers.toString(varData.constants, "Constant", false);
           end if;
-          tmp := tmp +
-            VariablePointers.toString(varData.states, "Local Known", false) +
-            VariablePointers.toString(varData.knowns, "Global Known", false) +
-            VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
+          tmp := tmp + VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
             VariablePointers.toString(varData.aliasVars, "Alias", false);
         then tmp;
 

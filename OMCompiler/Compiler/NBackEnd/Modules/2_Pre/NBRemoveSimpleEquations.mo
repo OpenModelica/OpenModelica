@@ -123,8 +123,8 @@ public
 protected
   uniontype SimpleSet "gets accumulated to find sets of simple equations and solve them"
     record SIMPLE_SET
-      list<Pointer<Variable>> simple_variables    "list of all variables in this set";
-      list<Pointer<Equation>> simple_equations    "list of all equations in this set"; // should always be one less than simple_variables
+      list<ComponentRef> simple_variables         "list of all variables in this set";
+      list<Pointer<Equation>> simple_equations    "list of all equations in this set";
       Option<Pointer<Equation>> const_opt         "optional constant binding of one variable";
     end SIMPLE_SET;
 
@@ -381,8 +381,10 @@ protected
     eq := Pointer.access(eq_ptr);
     crefTpl := match eq
 
-      case BEquation.SIMPLE_EQUATION()
-      then findCrefsSimple(eq.lhs, eq.rhs, crefTpl);
+      case BEquation.SIMPLE_EQUATION() algorithm
+        crefTpl := findCrefs(Expression.fromCref(eq.rhs), crefTpl);
+        crefTpl := findCrefs(Expression.fromCref(eq.lhs), crefTpl);
+      then crefTpl;
 
       case BEquation.SCALAR_EQUATION() guard(isSimple(eq.lhs) and isSimple(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
@@ -404,7 +406,7 @@ protected
         if not UnorderedMap.contains(cr1, map) then
           // the variable does not belong to a set -> create new one
           set := EMPTY_SIMPLE_SET;
-          set.simple_variables := {BVariable.getVarPointer(cr1)};
+          set.simple_variables := {cr1};
           set.const_opt := SOME(Pointer.create(eq));
           UnorderedMap.add(cr1, Pointer.create(set), map);
         else
@@ -434,8 +436,9 @@ protected
           set := EMPTY_SIMPLE_SET;
 
           if referenceEq(set1_ptr, set2_ptr) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets
-                because they would create a loop. This would create an underdetermined Set!:\n" +
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                "because they would create a loop. This would create an underdetermined Set!:\n\n" +
+                "Trying to merge: " + Equation.toString(eq) + "\n\n" +
                 SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
             fail();
           elseif (isSome(set1.const_opt) and isSome(set2.const_opt)) then
@@ -460,14 +463,14 @@ protected
           if listLength(set1.simple_variables) > listLength(set2.simple_variables) then
             set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
             Pointer.update(set1_ptr, set);
-            for var_ptr in set2.simple_variables loop
-              UnorderedMap.add(BVariable.getVarName(var_ptr), set1_ptr, map);
+            for cr in set2.simple_variables loop
+              UnorderedMap.add(cr, set1_ptr, map);
             end for;
           else
             set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
             Pointer.update(set2_ptr, set);
-            for var_ptr in set1.simple_variables loop
-              UnorderedMap.add(BVariable.getVarName(var_ptr), set2_ptr, map);
+            for cr in set1.simple_variables loop
+              UnorderedMap.add(cr, set2_ptr, map);
             end for;
           end if;
 
@@ -476,7 +479,7 @@ protected
           set_ptr := UnorderedMap.getSafe(cr1, map);
           set := Pointer.access(set_ptr);
           // add cr2 to variables and add new equation pointer
-          set.simple_variables := BVariable.getVarPointer(cr2) :: set.simple_variables;
+          set.simple_variables := cr2 :: set.simple_variables;
           set.simple_equations := Pointer.create(eq) :: set.simple_equations;
           Pointer.update(set_ptr, set);
           // add new hash entry for c2
@@ -486,7 +489,7 @@ protected
           set_ptr := UnorderedMap.getSafe(cr2, map);
           set := Pointer.access(set_ptr);
           // add cr1 to variables and add new equation pointer
-          set.simple_variables := BVariable.getVarPointer(cr1) :: set.simple_variables;
+          set.simple_variables := cr1 :: set.simple_variables;
           set.simple_equations := Pointer.create(eq) :: set.simple_equations;
           Pointer.update(set_ptr, set);
           // add new hash entry for c1
@@ -495,7 +498,7 @@ protected
           // create new set
           set := EMPTY_SIMPLE_SET;
           // add both variables and add new equation pointer
-          set.simple_variables := {BVariable.getVarPointer(cr1), BVariable.getVarPointer(cr2)};
+          set.simple_variables := {cr1, cr2};
           set.simple_equations := {Pointer.create(eq)};
           set_ptr := Pointer.create(set);
           // add new hash entry for both variables
@@ -509,7 +512,7 @@ protected
     end match;
   end findSimpleEquation;
 
-  function findCrefs "BB,
+  function findCrefs "BB, kabdelhak
   looks for variable crefs in Expressions, if more then 2 are found stop searching
   also stop if complex structures appear, e.g. IFEXP
   "
@@ -525,18 +528,17 @@ protected
           guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
         then tpl;
 
-        // variable found (less than two previous variables, not time and not param or const)
+        // variable found
+        // 1. not time and not param or const
+        // 2. less than two previous variables
+        // 3. if it is an array, it has to be the full array. no slice replacement here
         case Expression.CREF()
-          guard((tpl.varCount < 2))
+          guard((tpl.varCount < 2) and not ComponentRef.hasSubscripts(exp.cref))
           algorithm
             // add the variable to the list and bump var count
             tpl.cr_lst := exp.cref :: tpl.cr_lst;
             tpl.varCount := tpl.varCount + 1;
         then tpl;
-
-        // Fail cref if not time or parameter or constant and varCount >= 2
-        case Expression.CREF()
-        then FAILED_CREF_TPL;
 
         // set the continue attribute to false if any fail case is met
         case _ guard(findCrefsFail(exp)) then FAILED_CREF_TPL;
@@ -562,27 +564,6 @@ protected
                                   else false;
     end match;
   end findCrefsFail;
-
-  function findCrefsSimple
-    input ComponentRef lhs;
-    input ComponentRef rhs;
-    input output CrefTpl crefTpl;
-  algorithm
-    // add rhs and lhs only if there are not params/constants
-    if BVariable.isParamOrConst(BVariable.getVarPointer(rhs)) then
-      crefTpl.paramCount := crefTpl.paramCount + 1;
-    else
-      crefTpl.cr_lst := rhs :: crefTpl.cr_lst;
-      crefTpl.varCount := crefTpl.varCount + 1;
-    end if;
-
-    if BVariable.isParamOrConst(BVariable.getVarPointer(lhs)) then
-      crefTpl.paramCount := crefTpl.paramCount + 1;
-    else
-      crefTpl.cr_lst := lhs :: crefTpl.cr_lst;
-      crefTpl.varCount := crefTpl.varCount + 1;
-    end if;
-  end findCrefsSimple;
 
   function isSimple
     "BB start module for detecting simple equation/expressions"
@@ -651,11 +632,11 @@ protected
       if not UnorderedSet.contains(simple_cref, cref_marks) then
         set := Pointer.access(set_ptr);
         sets := set :: sets;
-        for var_ptr in set.simple_variables loop
+        for cr in set.simple_variables loop
           try
-            UnorderedSet.addUnique(BVariable.getVarName(var_ptr), cref_marks);
+            UnorderedSet.addUnique(cr, cref_marks);
           else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the set for " + BVariable.pointerToString(var_ptr) + " was already added."});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the set for " + ComponentRef.toString(cr) + " was already added."});
           end try;
         end for;
       end if;
@@ -679,7 +660,7 @@ protected
 
       case SOME(const_eq) algorithm
         // there is a constant binding -> no variable will be kept and all will be replaced by a constant
-        vars := VariablePointers.fromList(set.simple_variables);
+        vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr) for cr in set.simple_variables), true);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
         // causalize the system
         comps := Causalize.simple(vars, eqs);
@@ -689,7 +670,7 @@ protected
 
       else algorithm
         // there is no constant binding -> all others will be replaced by one variable
-        alias_vars := chooseVariableToKeep(set.simple_variables);
+        alias_vars := chooseVariableToKeep(list(BVariable.getVarPointer(cr) for cr in set.simple_variables));
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
         // causalize the system

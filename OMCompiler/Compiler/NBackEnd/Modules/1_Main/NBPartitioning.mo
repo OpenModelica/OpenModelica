@@ -441,7 +441,7 @@ protected
     ComponentRef stripped;
     Boolean b;
   algorithm
-    stripped := ComponentRef.stripSubscriptsExceptModel(varCref);
+    stripped := ComponentRef.stripSubscriptsAll(varCref);
 
     b := match systemType
       case System.SystemType.ODE then BVariable.checkCref(stripped, BVariable.isParamOrConst);

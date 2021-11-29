@@ -224,6 +224,11 @@ public
     output Boolean potential = ConnectorType.isStream(variable.attributes.connectorType);
   end isStream;
 
+  function isInput
+    input Variable variable;
+    output Boolean b = variable.attributes.direction == Direction.INPUT;
+  end isInput;
+
   function isTopLevelInput
     input Variable variable;
     output Boolean topInput = ComponentRef.isSimple(variable.name) and

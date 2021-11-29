@@ -587,11 +587,11 @@ public
       case (Expression.CREF(), DifferentiationType.JACOBIAN, SOME(jacobianHT))
         guard(not diffArguments.scalarized)
       algorithm
-        strippedCref := ComponentRef.stripSubscriptsExceptModel(exp.cref);
+        strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
         if UnorderedMap.contains(strippedCref, jacobianHT) then
           // get the derivative an reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, jacobianHT);
-          derCref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(exp.cref), derCref);
+          derCref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(exp.cref)), derCref);
           res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);

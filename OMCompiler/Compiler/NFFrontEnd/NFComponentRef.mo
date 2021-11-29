@@ -305,11 +305,12 @@ public
   function getSubscriptedType
     "Returns the type of a cref, with the subscripts taken into account."
     input ComponentRef cref;
+    input Boolean backend = false;
     output Type ty;
   algorithm
     ty := match cref
       case CREF()
-        then getSubscriptedType2(cref.restCref, Type.subscript(cref.ty, cref.subscripts));
+        then getSubscriptedType2(cref.restCref, Type.subscript(cref.ty, cref.subscripts), backend);
       else Type.UNKNOWN();
     end match;
   end getSubscriptedType;
@@ -317,15 +318,16 @@ public
   function getSubscriptedType2
     input ComponentRef restCref;
     input Type accumTy;
+    input Boolean backend = false;
     output Type ty;
   algorithm
     ty := match restCref
-      case CREF(origin = Origin.CREF)
+      case CREF() guard(restCref.origin == Origin.CREF or backend)
         algorithm
           ty := Type.liftArrayLeftList(accumTy,
             Type.arrayDims(Type.subscript(restCref.ty, restCref.subscripts)));
         then
-          getSubscriptedType2(restCref.restCref, ty);
+          getSubscriptedType2(restCref.restCref, ty, backend);
 
       else accumTy;
     end match;
@@ -1251,6 +1253,22 @@ public
       else "EMPTY_CREF" then 0;
     end match;
   end depth;
+
+  function sizes
+    input ComponentRef cref;
+    output list<Integer> s_lst;
+  algorithm
+    s_lst := list(Dimension.size(dim) for dim in Type.arrayDims(getSubscriptedType(cref)));
+    s_lst := if listEmpty(s_lst) then {1} else s_lst;
+  end sizes;
+
+  function subscriptsToInteger
+    input ComponentRef cref;
+    output list<Integer> subs;
+  algorithm
+    subs := list(Expression.integerValue(Subscript.toExp(sub)) for sub in subscriptsAllFlat(cref));
+    subs := if listEmpty(subs) then {1} else subs;
+  end subscriptsToInteger;
 
   function isComplexArray
     input ComponentRef cref;

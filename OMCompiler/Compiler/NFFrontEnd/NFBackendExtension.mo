@@ -161,36 +161,36 @@ public
       output String str;
     algorithm
       str := match varKind
-        case TIME() then                "[TIME]";
-        case ALGEBRAIC() then           "[ALGB]";
-        case STATE() then               "[STAT]";
-        case STATE_DER() then           "[DER-]";
-        case DUMMY_DER() then           "[DDER]";
-        case DUMMY_STATE() then         "[DSTA]";
-        case DISCRETE() then            "[DISC]";
-        case DISCRETE_STATE() then      "[DISS]";
-        case PREVIOUS() then            "[PRE-]";
-        case PARAMETER() then           "[PRMT]";
-        case CONSTANT() then            "[CNST]";
-        case ITERATOR() then            "[ITER]";
-        case START() then               "[STRT]";
-        case EXTOBJ() then              "[EXTO]";
-        case JAC_VAR() then             "[JACV]";
-        case JAC_DIFF_VAR() then        "[JACD]";
-        case SEED_VAR() then            "[SEED]";
-        case OPT_CONSTR() then          "[OPT][CONS]";
-        case OPT_FCONSTR() then         "[OPT][FCON]";
-        case OPT_INPUT_WITH_DER() then  "[OPT][INWD]";
-        case OPT_INPUT_DER() then       "[OPT][INPD]";
-        case OPT_TGRID() then           "[OPT][TGRD]";
-        case OPT_LOOP_INPUT() then      "[OPT][LOOP]";
-        case ALG_STATE() then           "[ASTA]";
-        case DAE_RESIDUAL_VAR() then    "[RES-]";
-        case DAE_AUX_VAR() then         "[AUX-]";
-        case LOOP_ITERATION() then      "[LOOP]";
-        case LOOP_SOLVED() then         "[INNR]";
-        case FRONTEND_DUMMY() then      "[DMMY] Dummy Variable.";
-        else "[FAIL] " + getInstanceName() + " failed.";
+        case TIME()               then "[TIME]";
+        case ALGEBRAIC()          then "[ALGB]";
+        case STATE()              then "[STAT]";
+        case STATE_DER()          then "[DER-]";
+        case DUMMY_DER()          then "[DDER]";
+        case DUMMY_STATE()        then "[DSTA]";
+        case DISCRETE()           then "[DISC]";
+        case DISCRETE_STATE()     then "[DISS]";
+        case PREVIOUS()           then "[PRE-]";
+        case PARAMETER()          then "[PRMT]";
+        case CONSTANT()           then "[CNST]";
+        case ITERATOR()           then "[ITER]";
+        case START()              then "[STRT]";
+        case EXTOBJ()             then "[EXTO]";
+        case JAC_VAR()            then "[JACV]";
+        case JAC_DIFF_VAR()       then "[JACD]";
+        case SEED_VAR()           then "[SEED]";
+        case OPT_CONSTR()         then "[OPT][CONS]";
+        case OPT_FCONSTR()        then "[OPT][FCON]";
+        case OPT_INPUT_WITH_DER() then "[OPT][INWD]";
+        case OPT_INPUT_DER()      then "[OPT][INPD]";
+        case OPT_TGRID()          then "[OPT][TGRD]";
+        case OPT_LOOP_INPUT()     then "[OPT][LOOP]";
+        case ALG_STATE()          then "[ASTA]";
+        case DAE_RESIDUAL_VAR()   then "[RES-]";
+        case DAE_AUX_VAR()        then "[AUX-]";
+        case LOOP_ITERATION()     then "[LOOP]";
+        case LOOP_SOLVED()        then "[INNR]";
+        case FRONTEND_DUMMY()     then "[DMMY] Dummy Variable.";
+                                  else "[FAIL] " + getInstanceName() + " failed.";
       end match;
     end toString;
 
@@ -502,11 +502,11 @@ public
       if isSome(optStateSelect) then
         SOME(stateSelect) := optStateSelect;
         buffer := match stateSelect
-          case StateSelect.NEVER then "StateSelect = never" :: buffer;
-          case StateSelect.AVOID then "StateSelect = avoid" :: buffer;
-          case StateSelect.DEFAULT then "StateSelect = default" :: buffer;
-          case StateSelect.PREFER then "StateSelect = prefer" :: buffer;
-          case StateSelect.ALWAYS then "StateSelect = always" :: buffer;
+          case StateSelect.NEVER    then "StateSelect = never" :: buffer;
+          case StateSelect.AVOID    then "StateSelect = avoid" :: buffer;
+          case StateSelect.DEFAULT  then "StateSelect = default" :: buffer;
+          case StateSelect.PREFER   then "StateSelect = prefer" :: buffer;
+          case StateSelect.ALWAYS   then "StateSelect = always" :: buffer;
         end match;
       end if;
     end stateSelectString;
@@ -520,11 +520,11 @@ public
       if isSome(optTearingSelect) then
         SOME(tearingSelect) := optTearingSelect;
         buffer := match tearingSelect
-          case TearingSelect.NEVER then "TearingSelect = never" :: buffer;
-          case TearingSelect.AVOID then "TearingSelect = avoid" :: buffer;
-          case TearingSelect.DEFAULT then "TearingSelect = default" :: buffer;
-          case TearingSelect.PREFER then "TearingSelect = prefer" :: buffer;
-          case TearingSelect.ALWAYS then "TearingSelect = always" :: buffer;
+          case TearingSelect.NEVER    then "TearingSelect = never" :: buffer;
+          case TearingSelect.AVOID    then "TearingSelect = avoid" :: buffer;
+          case TearingSelect.DEFAULT  then "TearingSelect = default" :: buffer;
+          case TearingSelect.PREFER   then "TearingSelect = prefer" :: buffer;
+          case TearingSelect.ALWAYS   then "TearingSelect = always" :: buffer;
         end match;
       end if;
     end tearingSelectString;

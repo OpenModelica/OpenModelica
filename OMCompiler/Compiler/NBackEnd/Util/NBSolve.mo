@@ -171,7 +171,7 @@ protected
   algorithm
     funcTree := diffArgs.funcTree;
     crefExp := Expression.fromCref(cref);
-    ty := ComponentRef.getSubscriptedType(cref);
+    ty := ComponentRef.getSubscriptedType(cref, true);
     numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
     mulOp := Operator.OPERATOR(ty, NFOperator.Op.MUL);
     uminOp := Operator.OPERATOR(ty, NFOperator.Op.UMINUS);

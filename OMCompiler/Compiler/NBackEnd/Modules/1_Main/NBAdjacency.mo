@@ -474,7 +474,7 @@ public
       array<list<Integer>> m_part;
       array<array<Integer>> mode_to_var_part;
       Integer eqn_scal_idx, eqn_size;
-      list<ComponentRef> unique_dependencies = List.unique(list(ComponentRef.simplifySubscripts(dep) for dep in dependencies)); // ToDo: maybe bottleneck! test this for efficiency
+      list<ComponentRef> unique_dependencies = List.uniqueOnTrue(list(ComponentRef.simplifySubscripts(dep) for dep in dependencies), ComponentRef.isEqual); // ToDo: maybe bottleneck! test this for efficiency
     algorithm
       _ := match (eqn, mapping_opt)
         local
@@ -510,9 +510,29 @@ public
 
         case (Equation.ARRAY_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
           (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array equations are not yet supported:\n"
-            + Equation.toString(eqn)});
-        then fail();
+
+          (m_part, mode_to_var_part) := getDependentCrefIndicesPseudoArray(
+            dependencies  = unique_dependencies,
+            map           = map,
+            mapping       = mapping,
+            eqn_arr_idx   = eqn_arr_idx,
+            negate        = negate
+          );
+          // check for arrayLength(m_part) == eqn_size ?
+
+          // add matrix rows to correct locations
+          for i in 1:arrayLength(m_part) loop
+            arrayUpdate(m, eqn_scal_idx+(i-1), listAppend(m_part[i], m[eqn_scal_idx+(i-1)]));
+          end for;
+
+          // create scalar mode idx to variable mapping
+          for i in 1:arrayLength(mode_to_var_part) loop
+            arrayUpdate(mode_to_var, eqn_scal_idx+(i-1), arrayAppend(mode_to_var_part[i], mode_to_var[eqn_scal_idx+(i-1)]));
+          end for;
+
+          // create array mode to cref mapping
+          arrayUpdate(mode_to_cref, eqn_arr_idx, arrayAppend(listArray(unique_dependencies), mode_to_cref[eqn_arr_idx]));
+        then ();
 
         case (Equation.RECORD_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because record equations are not yet supported:\n"
@@ -529,7 +549,7 @@ public
 
         case (_, SOME(mapping)) guard(pseudo) algorithm
           (eqn_scal_idx, _) := mapping.eqn_AtS[eqn_arr_idx];
-          row := getDependentCrefIndicesPseudo(unique_dependencies, map, mapping, negate);
+          row := getDependentCrefIndicesPseudoScalar(unique_dependencies, map, mapping, negate);
           arrayUpdate(m, eqn_scal_idx, listAppend(row, m[eqn_scal_idx]));
         then ();
 
@@ -747,7 +767,7 @@ public
     algorithm
       // if causalized in pseudo array mode, the variables will only have subscript-free variables
       if pseudo then
-        if UnorderedMap.contains(ComponentRef.stripSubscriptsExceptModel(cref), map) then
+        if UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), map) then
           Pointer.update(acc, cref :: Pointer.access(acc));
         end if;
       else
@@ -776,21 +796,23 @@ public
       indices := List.sort(List.unique(indices), intLt);
     end getDependentCrefIndices;
 
-    function getDependentCrefIndicesPseudo
+    function getDependentCrefIndicesPseudoScalar
       input list<ComponentRef> dependencies         "dependent var crefs";
       input UnorderedMap<ComponentRef, Integer> map "hash table to check for relevance";
       input Mapping mapping                         "array <-> scalar index mapping";
       input Boolean negate = false;
       output list<Integer> indices = {};
     protected
+      ComponentRef stripped;
       Integer var_arr_idx, var_start, var_scal_idx;
       list<Integer> sizes, subs;
     algorithm
       for cref in dependencies loop
-        var_arr_idx := UnorderedMap.getSafe(ComponentRef.stripSubscriptsExceptModel(cref), map);
+        stripped := ComponentRef.stripSubscriptsAll(cref);
+        var_arr_idx := UnorderedMap.getSafe(stripped, map);
         (var_start, _) := mapping.var_AtS[var_arr_idx];
-        sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ComponentRef.nodeType(cref)));
-        subs := list(Expression.integerValue(Subscript.toExp(sub)) for sub in ComponentRef.getSubscripts(cref));
+        sizes := ComponentRef.sizes(stripped);
+        subs := ComponentRef.subscriptsToInteger(cref);
         var_scal_idx := BackendUtil.frameToIndex(List.zip(sizes, subs), var_start);
         if negate then
           indices := -var_scal_idx :: indices;
@@ -800,21 +822,19 @@ public
       end for;
       // remove duplicates and sort
       indices := List.sort(List.unique(indices), intLt);
-    end getDependentCrefIndicesPseudo;
+    end getDependentCrefIndicesPseudoScalar;
 
-    function getDependentCrefIndicesPseudoFor
+    function getDependentCrefIndicesPseudoArray
       input list<ComponentRef> dependencies                   "dependent var crefs";
       input UnorderedMap<ComponentRef, Integer> map           "hash table to check for relevance";
       input Mapping mapping                                   "array <-> scalar index mapping";
-      input Iterator iter                                     "iterator frames";
       input Integer eqn_arr_idx;
       input Boolean negate = false;
       output array<list<Integer>> indices;
       output array<array<Integer>> mode_to_var;
     protected
-      list<ComponentRef> names;
-      list<Expression> ranges;
-      Integer eqn_start, eqn_size, var_arr_idx, var_start, var_scal_idx, mode = 1;
+      ComponentRef stripped;
+      Integer eqn_start, eqn_size, var_arr_idx, var_start, var_length, var_scal_idx, mode = 1;
       list<Integer> scal_lst;
       Integer idx;
       array<Integer> mode_to_var_row;
@@ -827,19 +847,89 @@ public
         mode_to_var[i] := arrayCreate(listLength(dependencies),-1);
       end for;
       for cref in dependencies loop
-        var_arr_idx := UnorderedMap.getSafe(ComponentRef.stripSubscriptsExceptModel(cref), map);
+        stripped := ComponentRef.stripSubscriptsAll(cref);
+        var_arr_idx := UnorderedMap.getSafe(stripped, map);
+        (var_start, var_length) := mapping.var_AtS[var_arr_idx];
+        scal_lst := List.intRange2(var_start - 1,var_start + var_length - 2);
+
+        if listLength(scal_lst) <> eqn_size then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+            + " failed because number of flattened indices " + intString(listLength(scal_lst))
+            + " differ from equation size " + intString(eqn_size) + "."});
+          fail();
+        end if;
+
+        idx := 1;
+        for var_scal_idx in listReverse(scal_lst) loop
+          mode_to_var_row := mode_to_var[idx];
+          mode_to_var_row[mode] := var_scal_idx;
+          //print("mtv\n");
+          //for mtvr in mode_to_var loop
+            //for md in mtvr loop
+              //print(intString(md));
+            //end for;
+            //print("\n");
+          //end for;
+          arrayUpdate(mode_to_var_row, mode, var_scal_idx);
+          if negate then
+            var_scal_idx := -var_scal_idx;
+          end if;
+          //print("scal: " + intString(var_scal_idx) + "\n");
+          indices[idx] := var_scal_idx :: indices[idx];
+          //print(toStringSingle(indices));
+          idx := idx + 1;
+        end for;
+        mode := mode + 1;
+      end for;
+
+      // sort
+      for i in 1:arrayLength(indices) loop
+        indices[i] := List.sort(List.unique(indices[i]), intLt);
+      end for;
+    end getDependentCrefIndicesPseudoArray;
+
+    function getDependentCrefIndicesPseudoFor
+      input list<ComponentRef> dependencies                   "dependent var crefs";
+      input UnorderedMap<ComponentRef, Integer> map           "hash table to check for relevance";
+      input Mapping mapping                                   "array <-> scalar index mapping";
+      input Iterator iter                                     "iterator frames";
+      input Integer eqn_arr_idx;
+      input Boolean negate = false;
+      output array<list<Integer>> indices;
+      output array<array<Integer>> mode_to_var;
+    protected
+      list<ComponentRef> names;
+      ComponentRef stripped;
+      list<Expression> ranges;
+      Integer eqn_start, eqn_size, var_arr_idx, var_start, var_scal_idx, mode = 1;
+      list<Integer> scal_lst, sizes;
+      Integer idx;
+      array<Integer> mode_to_var_row;
+    algorithm
+      (eqn_start, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+      indices := arrayCreate(eqn_size, {});
+      mode_to_var := arrayCreate(eqn_size, arrayCreate(0,0));
+      // create unique array for each equation
+      for i in 1:eqn_size loop
+        mode_to_var[i] := arrayCreate(listLength(dependencies),-1);
+      end for;
+      for cref in dependencies loop
+        stripped := ComponentRef.stripSubscriptsAll(cref);
+        var_arr_idx := UnorderedMap.getSafe(stripped, map);
         (var_start, _) := mapping.var_AtS[var_arr_idx];
         (names, ranges) := Iterator.getFrames(iter);
+        sizes := ComponentRef.sizes(stripped);
         scal_lst := getScalarIndices(
           first   = var_start,
-          sizes   = list(Dimension.size(dim) for dim in Type.arrayDims(ComponentRef.nodeType(cref))),
-          subs    = list(Subscript.toExp(sub) for sub in ComponentRef.getSubscripts(cref)),
+          sizes   = sizes,
+          subs    = list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllFlat(cref)),
           frames  = List.zip(names, ranges)
         );
 
         if listLength(scal_lst) <> eqn_size then
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-            + " failed because number of flattened indices differ from equation size."});
+            + " failed because number of flattened indices " + intString(listLength(scal_lst))
+            + " differ from equation size " + intString(eqn_size) + "."});
           fail();
         end if;
 

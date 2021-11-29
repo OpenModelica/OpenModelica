@@ -354,6 +354,16 @@ protected
       variables := VariablePointers.add(lowVar_ptr, variables);
       _ := match lowVar.backendinfo.varKind
 
+        case BackendExtension.ALGEBRAIC() guard(Variable.isTopLevelInput(var)) algorithm
+          algebraics_lst := lowVar_ptr :: algebraics_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
+        then ();
+
+        case BackendExtension.DISCRETE() guard(Variable.isTopLevelInput(var)) algorithm
+          discretes_lst := lowVar_ptr :: discretes_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
+        then ();
+
         case BackendExtension.ALGEBRAIC() algorithm
           algebraics_lst := lowVar_ptr :: algebraics_lst;
           unknowns_lst := lowVar_ptr :: unknowns_lst;
@@ -667,7 +677,7 @@ protected
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty))
         algorithm
-          attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
+          attr := lowerEquationAttributes(ty, init);
           //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
@@ -675,7 +685,7 @@ protected
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty))
         algorithm
-          attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
+          attr := lowerEquationAttributes(ty, init);
           //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
@@ -1055,13 +1065,11 @@ protected
     input VariablePointers variables;
   protected
     Pointer<Variable> var;
-    list<Subscript> subs;
+    list<list<Subscript>> subs;
   algorithm
     try
       var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
-      subs := ComponentRef.getSubscripts(cref);
-      cref := ComponentRef.setSubscripts(subs, BVariable.getVarName(var));
-      //cref := lowerComponentReferenceInstNode(cref, var);
+      cref := lowerComponentReferenceInstNode(cref, var);
     else
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});

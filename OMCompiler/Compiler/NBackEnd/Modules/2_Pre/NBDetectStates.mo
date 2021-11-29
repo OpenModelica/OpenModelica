@@ -201,13 +201,13 @@ protected
             // this derivative was already created -> the variable should already have a pointer to its derivative
             der_cref := BVariable.getDerCref(state_cref);
             if not scalarized then
-              der_cref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(state_cref), der_cref);
+              der_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), der_cref);
             end if;
           else
             if not scalarized then
               // prevent the variable from having the subscripts, but add it to the der_cref
-              (der_cref, der_var) := BVariable.makeDerVar(ComponentRef.stripSubscriptsExceptModel(state_cref));
-              der_cref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(state_cref), der_cref);
+              (der_cref, der_var) := BVariable.makeDerVar(ComponentRef.stripSubscriptsAll(state_cref));
+              der_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), der_cref);
             else
               (der_cref, der_var) := BVariable.makeDerVar(state_cref);
             end if;
@@ -342,13 +342,13 @@ protected
             // this previous was already created -> the variable should already have a pointer to its previous variable
             pre_cref := BVariable.getPreCref(state_cref);
             if not scalarized then
-              pre_cref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(state_cref), pre_cref);
+              pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), pre_cref);
             end if;
           else
             if not scalarized then
               // prevent the variable from having the subscripts, but add it to the pre_cref
-              (pre_cref, pre_var) := BVariable.makePreVar(ComponentRef.stripSubscriptsExceptModel(state_cref));
-              pre_cref := ComponentRef.mergeSubscripts(ComponentRef.getSubscripts(state_cref), pre_cref);
+              (pre_cref, pre_var) := BVariable.makePreVar(ComponentRef.stripSubscriptsAll(state_cref));
+              pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), pre_cref);
             else
               (pre_cref, pre_var) := BVariable.makePreVar(state_cref);
             end if;

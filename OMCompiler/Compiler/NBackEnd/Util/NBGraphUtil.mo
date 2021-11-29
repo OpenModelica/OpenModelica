@@ -257,7 +257,7 @@ public
             (eqn_mi, eqn_d) := eqn_tpl;
             (var_mi, var_d) := getVariableIntervals(
               var_ptr     = BVariable.getVarPointer(cref),
-              subs        = ComponentRef.getSubscripts(cref),
+              subs        = ComponentRef.subscriptsAllFlat(cref), // mby wrong because of empty subs!
               graph       = graph,
               vCount      = vCount,
               ST          = SetType.U,

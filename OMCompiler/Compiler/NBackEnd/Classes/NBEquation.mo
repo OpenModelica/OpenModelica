@@ -274,19 +274,21 @@ public
     function toString
       input Equation eq;
       input output String str = "";
+    protected
+      String s = "(" + intString(Equation.size(Pointer.create(eq))) + ")";
     algorithm
       str := match eq
-        case SCALAR_EQUATION() then str + "[SCAL] " + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
-        case ARRAY_EQUATION()  then str + "[ARRY] " + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
-        case SIMPLE_EQUATION() then str + "[SIMP] " + EquationAttributes.toString(eq.attr) + ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs);
-        case RECORD_EQUATION() then str + "[RECD] " + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
-        case ALGORITHM()       then str + "[ALGO] size " + intString(eq.size) + " " + EquationAttributes.toString(eq.attr) + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
-        case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] ");
-        case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] ");
-        case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] ");
-        case AUX_EQUATION()    then str + "[AUX-] Auxiliary equation for " + Variable.toString(Pointer.access(eq.auxiliary));
-        case DUMMY_EQUATION()  then str + "[DUMY] Dummy equation.";
-        else                        str + "[FAIL] " + getInstanceName() + " failed!";
+        case SCALAR_EQUATION() then str + "[SCAL] " + s + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+        case ARRAY_EQUATION()  then str + "[ARRY] " + s + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+        case SIMPLE_EQUATION() then str + "[SIMP] " + s + EquationAttributes.toString(eq.attr) + ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs);
+        case RECORD_EQUATION() then str + "[RECD] " + s + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+        case ALGORITHM()       then str + "[ALGO] " + s + EquationAttributes.toString(eq.attr) + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
+        case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s);
+        case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr));
+        case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] " + s);
+        case AUX_EQUATION()    then str + "[AUX-] " + s + "Auxiliary equation for " + Variable.toString(Pointer.access(eq.auxiliary));
+        case DUMMY_EQUATION()  then str + "[DUMY] (0) Dummy equation.";
+        else                        str + "[FAIL] (0) " + getInstanceName() + " failed!";
       end match;
     end toString;
 
@@ -388,7 +390,7 @@ public
     algorithm
       if listLength(frames) == 0 then
         eq := Pointer.create(SIMPLE_EQUATION(
-          ty      = ComponentRef.getSubscriptedType(lhs),
+          ty      = ComponentRef.getSubscriptedType(lhs, true),
           lhs     = lhs,
           rhs     = rhs,
           source  = DAE.emptyElementSource,
@@ -398,7 +400,7 @@ public
         eq := Pointer.create(FOR_EQUATION(
           ty      = ComponentRef.nodeType(lhs),
           iter    = Iterator.fromFrames(frames),
-          body    = SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL),
+          body    = SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs, true), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL),
           source  = DAE.emptyElementSource,
           attr    = EQ_ATTR_DEFAULT_INITIAL
         ));
@@ -413,7 +415,7 @@ public
       input Pointer<Integer> idx;
       output Pointer<Equation> eq;
     algorithm
-      eq := Pointer.create(SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
+      eq := Pointer.create(SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs, true), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
       Equation.createName(eq, idx, "PRE");
     end makePreEq;
 
@@ -426,7 +428,8 @@ public
     protected
       String iterators;
     algorithm
-      str := str + indicator + "for " + Iterator.toString(iter) + " loop\n";
+      str := str + indicator + "\n";
+      str := str + indent + "for " + Iterator.toString(iter) + " loop\n";
       str := str + toString(body, indent + "  ") + "\n";
       str := str + indent + "end for;";
     end forEquationToString;
@@ -1760,12 +1763,16 @@ public
       input output String str = "";
       input Boolean printEmpty = true;
     protected
-      Integer numberOfElements = ExpandableArray.getNumberOfElements(equations.eqArr);
+      Integer numberOfElements = EquationPointers.size(equations);
+      Integer length = 10;
+      String index;
     algorithm
       if printEmpty or numberOfElements > 0 then
-        str := StringUtil.headline_4(str + " EquationPointers (" + intString(numberOfElements) + ")");
+        str := StringUtil.headline_4(str + " Equations (" + intString(numberOfElements) + "/" + intString(scalarSize(equations)) + ")");
         for i in 1:numberOfElements loop
-          str := str + "(" + intString(i) + ")" + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), "\t") + "\n";
+          index := "(" + intString(i) + ")";
+          index := index + StringUtil.repeat(" ", length - stringLength(index));
+          str := str + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), index) + "\n";
         end for;
         str := str + "\n";
       else
@@ -1791,11 +1798,20 @@ public
     end clone;
 
     function size
-      "returns the number of elements, not the actual scalarized number of equations!
-      Use compress before this, returns last used index for safety reasons."
+      "returns the number of elements, not the actual scalarized number of equations!"
       input EquationPointers equations;
-      output Integer sz = ExpandableArray.getLastUsedIndex(equations.eqArr);
+      output Integer sz = ExpandableArray.getNumberOfElements(equations.eqArr);
     end size;
+
+    function scalarSize
+      "returns the scalar size."
+      input EquationPointers equations;
+      output Integer sz = 0;
+    algorithm
+      for eqn_ptr in toList(equations) loop
+        sz := sz + Equation.size(eqn_ptr);
+      end for;
+    end scalarSize;
 
     function toList
       "Creates a EquationPointer list from EquationPointers."
