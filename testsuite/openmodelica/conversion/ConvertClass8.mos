@@ -1,0 +1,24 @@
+// name:   ConvertClass8
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertClass8
+    import SI = Modelica.SIunits;
+    import Modelica.SIunits;
+  end ConvertClass8;
+");
+
+runConversionScript(ConvertClass8, "scripts/ConvertClass4.mos");
+getErrorString();
+list(ConvertClass8);
+
+// Result:
+// true
+// true
+// ""
+// "package ConvertClass8
+//   import Modelica.Units.SI;
+// end ConvertClass8;"
+// endResult

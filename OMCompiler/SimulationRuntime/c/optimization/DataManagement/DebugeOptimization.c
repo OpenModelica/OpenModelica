@@ -110,7 +110,7 @@ void debugeJac(OptData * optData, Number* vopt){
   const int npv = np*nv;
   const int nt = optData->dim.nt;
   const int NRes = optData->dim.NRes;
-  const int nReal = optData->data->modelData->nVariablesReal;
+  const int nReal = optData->dim.nReal;
   const int NV = optData->dim.NV;
   Number vopt_shift[NV];
   long double h[nv][nsi][np];

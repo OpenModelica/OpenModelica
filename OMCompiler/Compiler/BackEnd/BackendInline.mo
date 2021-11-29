@@ -501,7 +501,7 @@ algorithm
       DAE.InstDims arrayDim;
       Option<DAE.VariableAttributes> values,values1;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       DAE.ElementSource source;

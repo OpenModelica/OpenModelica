@@ -1,0 +1,48 @@
+// name:     PowerSystems.Examples.AC1ph_DC.Inverters.Chopper
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC1ph_DC.Inverters.Chopper);
+compareVars :=
+{
+  "meterDCin.p",
+  "meterDCin.v",
+  "meterDCin.i",
+  "meterDCout.p",
+  "meterDCout.v",
+  "meterDCout.i"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC1ph_DC.Inverters.Chopper
+// {"meterDCin.p","meterDCin.v","meterDCin.i","meterDCout.p","meterDCout.v","meterDCout.i"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Inverters.Chopper', options = '', outputFormat = 'mat', variableFilter = 'time|meterDCin.p|meterDCin.v|meterDCin.i|meterDCout.p|meterDCout.v|meterDCout.i', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC1ph_DC.Inverters.Chopper_res.mat
+// Files Equal!
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

@@ -100,7 +100,7 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     list<String> numArrayElement;
     Boolean isValueChangeable;
     Boolean isProtected;
-    Boolean hideResult;
+    Option<Boolean> hideResult;
     Option<array<Integer>> inputIndex;
     Option<String> matrixName "if the varibale is a jacobian var, this is the corresponding matrix";
     Option<Variability> variability "FMI-2.0 variabilty attribute";

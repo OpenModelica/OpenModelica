@@ -48,11 +48,6 @@ extern void
 #endif
 (threadData_t*,modelica_metatype);
 
-void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
-void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
-void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
-void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
-
 #ifdef _OPENMP
 #include<omp.h>
 /* Hack to make gcc-4.8 link in the OpenMP runtime if -fopenmp is given */
@@ -256,7 +251,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   DLLEXT=<%makefileParams.dllext%>
   DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
   CFLAGS= $(DEBUG_FLAGS) <%makefileParams.cflags%>
-  CPPFLAGS= <%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include" <%
+  CPPFLAGS= <%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" <%
     if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"
   %>
   # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
@@ -1429,11 +1424,6 @@ template generateInFunc(Text fname, list<Variable> functionArguments, list<Varia
     fflush(NULL);
     return 1;
   }
-
-  void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
-  void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
-  void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
-  void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
 
   int main(int argc, char **argv) {
     MMC_INIT(0);
@@ -4390,16 +4380,28 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let condVar = daeExp(condition, context, &preExpCond, &varDecls, &auxFunction)
   let &preExpMsg = buffer ""
   let msgVar = messages |> message => expToFormatString(message,context,&preExpMsg,&varDecls,&auxFunction) ; separator = ", "
-  let eqnsindx = match context
-            case FUNCTION_CONTEXT(__) then ''
-            else 'equationIndexes, '
   let AddionalFuncName = match context
             case FUNCTION_CONTEXT(__) then ''
             else '_withEquationIndexes'
-  let addInfoTextContext = match context
-            case FUNCTION_CONTEXT(__) then ''
-            else '<%\n%>omc_assert_warning(info, "The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue);'
+  let infoTextContext = '"The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue'
   let omcAssertFunc = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
+  let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
+  let assertCode = match context case FUNCTION_CONTEXT(__) then
+    <<
+    FILE_INFO info = {<%infoArgs(info)%>};
+    <%omcAssertFunc%>info, <%msgVar%>);
+    >>
+    else
+    <<
+    if (data->simulationInfo->noThrowAsserts) {
+      infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, <%infoTextContext%>);
+      infoStreamPrint(LOG_ASSERT, 0, "%s", <%msgVar%>);<%rethrow%>
+    } else {
+      FILE_INFO info = {<%infoArgs(info)%>};
+      omc_assert_warning(info, <%infoTextContext%>);
+      <%omcAssertFunc%>info, equationIndexes, <%msgVar%>);
+    }
+    >>
   let warningTriggered = tempDeclZero("static int", &varDecls)
   let TriggerIf = match level case ENUM_LITERAL(index=1) then 'if(!<%warningTriggered%>)<%\n%>' else ''
   let TriggerVarSet = match level case ENUM_LITERAL(index=1) then '<%warningTriggered%> = 1;<%\n%>' else ''
@@ -4411,8 +4413,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     {
       <%preExpMsg%>
       {
-        FILE_INFO info = {<%infoArgs(info)%>};<%addInfoTextContext%>
-        <%omcAssertFunc%>info, <%eqnsindx%><%msgVar%>);
+        <%assertCode%>
       }
       <%TriggerVarSet%>
     }
@@ -4456,9 +4457,14 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
     <<
     if(!(<%condVar%>))
     {
-      FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert_warning(info, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
-      throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
+      if (data->simulationInfo->noThrowAsserts) {
+        infoStreamPrintWithEquationIndexes(LOG_ASSERT, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+        data->simulationInfo->needToReThrow = 1;
+      } else {
+        FILE_INFO info = {<%infoArgs(info)%>};
+        omc_assert_warning(info, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+        throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
+      }
     }
     >>
 end assertCommonVar;
@@ -4823,8 +4829,10 @@ template tempDecl(String ty, Text &varDecls)
     match ty /* TODO! FIXME! UGLY! UGLY! hack! */
       case "modelica_metatype"
       case "metamodelica_string"
-      case "metamodelica_string_const"
-        then 'tmpMeta[<%System.tmpTickIndex(1)%>]'
+      case "metamodelica_string_const" then
+        let newVarIx = 'tmpMeta<%System.tmpTick()%>'
+        let &varDecls += 'modelica_metatype <%newVarIx%>;<%\n%>'
+        newVarIx
       else
         let newVarIx = 'tmp<%System.tmpTick()%>'
         let &varDecls += '<%ty%> <%newVarIx%>;<%\n%>'
@@ -4848,8 +4856,10 @@ template tempDeclZero(String ty, Text &varDecls)
     match ty /* TODO! FIXME! UGLY! UGLY! hack! */
       case "modelica_metatype"
       case "metamodelica_string"
-      case "metamodelica_string_const"
-        then 'tmpMeta[<%System.tmpTickIndex(1)%>]'
+      case "metamodelica_string_const" then
+        let newVarIx = 'tmpMeta<%System.tmpTick()%>'
+        let &varDecls += 'modelica_metatype <%newVarIx%>;<%\n%>'
+        newVarIx
       else
         let newVarIx = 'tmp<%System.tmpTick()%>'
         let &varDecls += '<%ty%> <%newVarIx%> = 0;<%\n%>'
@@ -6606,6 +6616,12 @@ let &sub = buffer ""
       else
         'data->simulationInfo->samples[<%intSub(index, 1)%>]'
     end match
+
+  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), e, delay, delayMax}) then
+    let e_T = daeExp(e, context, &preExp, &varDecls, &auxFunction)
+    let delay_T = daeExp(delay, context, &preExp, &varDecls, &auxFunction)
+    let delayMax_T = daeExp(delayMax, context, &preExp, &varDecls, &auxFunction)
+    'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%e_T%>, <%delay_T%>, <%delayMax_T%>)'
 
   case CALL(path=IDENT(name="spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
     let xPos_T = daeExp(xPos, context, &preExp, &varDecls, &auxFunction)

@@ -104,6 +104,7 @@ public:
     setResultFileName("");
     setVariableFilter(".*");
     setProtectedVariables(false);
+    setIgnoreHideResult(false);
     setEquidistantTimeGrid(true);
     setStoreVariablesAtEvents(true);
     setShowGeneratedFiles(false);
@@ -231,6 +232,8 @@ public:
   QString getVariableFilter() {return mVariableFilter.isEmpty() ? ".*" : mVariableFilter;}
   void setProtectedVariables(bool protectedVariables) {mProtectedVariables = protectedVariables;}
   bool getProtectedVariables() {return mProtectedVariables;}
+  void setIgnoreHideResult(bool ignoreHideResult) {mIgnoreHideResult = ignoreHideResult;}
+  bool getIgnoreHideResult() {return mIgnoreHideResult;}
   void setEquidistantTimeGrid(bool equidistantTimeGrid) {mEquidistantTimeGrid = equidistantTimeGrid;}
   bool getEquidistantTimeGrid() {return mEquidistantTimeGrid;}
   void setStoreVariablesAtEvents(bool storeVariablesAtEvents) {mStoreVariablesAtEvents = storeVariablesAtEvents;}
@@ -310,6 +313,7 @@ private:
   QString mResultFileName;
   QString mVariableFilter;
   bool mProtectedVariables;
+  bool mIgnoreHideResult;
   bool mEquidistantTimeGrid;
   bool mStoreVariablesAtEvents;
   bool mShowGeneratedFiles;

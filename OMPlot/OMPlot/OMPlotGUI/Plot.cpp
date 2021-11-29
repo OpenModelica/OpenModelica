@@ -40,7 +40,7 @@
 #endif
 #include "qwt_text_label.h"
 
-using namespace OMPlot;
+namespace OMPlot{
 
 Plot::Plot(PlotWindow *pParent)
   : QwtPlot(pParent)
@@ -279,3 +279,5 @@ void Plot::replot()
 
   QwtPlot::replot();
 }
+
+} // namespace OMPlot

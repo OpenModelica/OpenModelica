@@ -32,7 +32,7 @@ end CombineSubscripts2;
 //     b.a[3,i] = 1.0;
 //   end for;
 //   for i in 1:4 loop
-//     b.a[i] = {1.0, 2.0, 3.0};
+//     b.a[:,i] = {1.0, 2.0, 3.0};
 //   end for;
 //   for i in 1:3 loop
 //     b.a[i,:] = {1.0, 2.0, 3.0, 4.0};

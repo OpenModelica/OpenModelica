@@ -167,6 +167,7 @@ private:
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
   QCheckBox *mpProtectedVariablesCheckBox;
+  QCheckBox *mpIgnoreHideResultCheckBox;
   QCheckBox *mpEquidistantTimeGridCheckBox;
   QCheckBox *mpStoreVariablesAtEventsCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;
@@ -224,10 +225,8 @@ public:
 public slots:
   void numberOfIntervalsRadioToggled(bool toggle);
   void intervalRadioToggled(bool toggle);
-  void updateMethodToolTip(int index);
   void enableDasslIdaOptions(QString method);
   void showIntegrationHelp();
-  void updateJacobianToolTip(int index);
   void buildOnly(bool checked);
   void interactiveSimulation(bool checked);
   void browseModelSetupFile();

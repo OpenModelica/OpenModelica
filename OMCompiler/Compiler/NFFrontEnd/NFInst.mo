@@ -169,6 +169,7 @@ algorithm
   // Flatten the model and evaluate constants in it.
   flatModel := Flatten.flatten(inst_cls, name);
   flatModel := EvalConstants.evaluate(flatModel);
+  InstUtil.dumpFlatModelDebug("eval", flatModel);
 
   // Do unit checking
   flatModel := UnitCheck.checkUnits(flatModel);
@@ -184,9 +185,11 @@ algorithm
   // Collect a tree of all functions that are still used in the flat model.
   functions := Flatten.collectFunctions(flatModel);
 
-  // Dump the flat model to a stream if dumpFlat = true.
-  flatString := if dumpFlat then
-    FlatModel.toFlatString(flatModel, FunctionTree.listValues(functions)) else "";
+  // Dump the flat model to a string if dumpFlat = true.
+  flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
+
+  InstUtil.dumpFlatModelDebug("simplify", flatModel, functions);
+  InstUtil.printStructuralParameters(flatModel);
 
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
@@ -196,11 +199,8 @@ algorithm
     flatModel.variables := List.filterOnFalse(flatModel.variables, Variable.isEmptyArray);
   end if;
 
-  VerifyModel.verify(flatModel);
-
-  if Flags.isSet(Flags.COMBINE_SUBSCRIPTS) then
-    flatModel := FlatModel.mapExp(flatModel, combineSubscripts);
-  end if;
+  flatModel := InstUtil.replaceEmptyArrays(flatModel);
+  InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
 
   // Combine the binaries to multaries. For now only on new backend
   // since the old frontend and backend do not support it
@@ -208,9 +208,8 @@ algorithm
     flatModel := SimplifyModel.combineBinaries(flatModel);
   end if;
 
-  if Flags.isSet(Flags.NF_DUMP_FLAT) then
-    print("FlatModel:\n" + FlatModel.toString(flatModel) + "\n");
-  end if;
+  VerifyModel.verify(flatModel);
+  flatModel := InstUtil.combineSubscripts(flatModel);
 
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
   //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
@@ -3750,20 +3749,6 @@ algorithm
     fail();
   end if;
 end checkPartialClass;
-
-function combineSubscripts
-  input output Expression exp;
-algorithm
-  () := match exp
-    case Expression.CREF()
-      algorithm
-        exp.cref := ComponentRef.combineSubscripts(exp.cref);
-      then
-        ();
-
-    else ();
-  end match;
-end combineSubscripts;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

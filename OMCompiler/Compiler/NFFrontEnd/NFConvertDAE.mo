@@ -586,7 +586,7 @@ algorithm
         DAE.Element.ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
     case Equation.FOR()
-      then convertForEquation(eq) :: elements;
+      then convertForEquation(eq, isInitial = false) :: elements;
 
     case Equation.IF()
       then convertIfEquation(eq.branches, eq.source, isInitial = false) :: elements;
@@ -621,6 +621,7 @@ end convertEquation;
 
 function convertForEquation
   input Equation forEquation;
+  input Boolean isInitial;
   output DAE.Element forDAE;
 protected
   InstNode iterator;
@@ -631,11 +632,22 @@ protected
   DAE.ElementSource source;
 algorithm
   Equation.FOR(iterator = iterator, range = SOME(range), body = body, source = source) := forEquation;
-  dbody := convertEquations(body);
+
+  if isInitial then
+    dbody := convertInitialEquations(body);
+  else
+    dbody := convertEquations(body);
+  end if;
+
   Component.ITERATOR(ty = ty) := InstNode.component(iterator);
 
-  forDAE := DAE.Element.FOR_EQUATION(Type.toDAE(ty), Type.isArray(ty),
-    InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+  if isInitial then
+    forDAE := DAE.Element.INITIAL_FOR_EQUATION(Type.toDAE(ty), Type.isArray(ty),
+      InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+  else
+    forDAE := DAE.Element.FOR_EQUATION(Type.toDAE(ty), Type.isArray(ty),
+      InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+  end if;
 end convertForEquation;
 
 function convertIfEquation
@@ -744,7 +756,7 @@ algorithm
         DAE.Element.INITIAL_ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
     case Equation.FOR()
-      then convertForEquation(eq) :: elements;
+      then convertForEquation(eq, isInitial = true) :: elements;
 
     case Equation.IF()
       then convertIfEquation(eq.branches, eq.source, isInitial = true) :: elements;

@@ -1533,6 +1533,18 @@ algorithm
   end match;
 end isOutputVar;
 
+public function isRealOutputVar "Return true if variable is declared as output and type is Real. Note that the output
+  attribute sticks with a variable even if it is originating from a sub
+  component, which is not the case for Dymola."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varDirection = DAE.OUTPUT(), varType = DAE.T_REAL())) then true;
+    else false;
+  end match;
+end isRealOutputVar;
+
 public function isOutput
   input DAE.ComponentRef inCref;
   input BackendDAE.Variables inVars;
@@ -1704,6 +1716,9 @@ algorithm
   cr := ComponentReference.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, inVar.varName);
   outVar := copyVarNewName(cr,inVar);
   outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
+
+  // HACK hide previous(v) in results because it's not calculated right
+  outVar := setHideResult(outVar, SOME(DAE.BCONST(true)));
 end createClockedState;
 
 public function createAliasDerVar
@@ -1717,7 +1732,7 @@ algorithm
   outVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                           DAE.emptyElementSource,
                           NONE(),
-                          NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+                          NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end createAliasDerVar;
 
 public function createVar
@@ -1758,15 +1773,14 @@ algorithm
       DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
       source = DAE.SOURCE(AbsynUtil.dummyInfo, {}, DAE.NOCOMPPRE(), {}, {path}, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
 
     else equation
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
   end match;
-  outVar := setHideResult(outVar, DAE.BCONST(true));
 end createCSEVar;
 
 public function generateVar
@@ -1778,7 +1792,7 @@ public function generateVar
   input Option<DAE.VariableAttributes> attr;
   output BackendDAE.Var var;
 algorithm
-  var := BackendDAE.VAR(cr,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),subs,DAE.emptyElementSource,attr,NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false);
+  var := BackendDAE.VAR(cr,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),subs,DAE.emptyElementSource,attr,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false);
 end generateVar;
 
 public function generateArrayVar
@@ -1815,7 +1829,7 @@ algorithm
         vars;
     case (_,_,_,_)
       equation
-        var = BackendDAE.VAR(name,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),{},DAE.emptyElementSource,attr,NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
+        var = BackendDAE.VAR(name,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),{},DAE.emptyElementSource,attr,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
       then
         {var};
   end match;
@@ -1839,12 +1853,12 @@ algorithm
       DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
       source = DAE.SOURCE(AbsynUtil.dummyInfo, {}, DAE.NOCOMPPRE(), {}, {path}, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, source, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, source, DAEUtil.setProtectedAttr(NONE(), true), NONE(), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
 
     else equation
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), NONE(), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
   end match;
 end createCSEArrayVar;
@@ -1918,7 +1932,7 @@ end setBindExp;
 public function setHideResult "Sets BackendDAE.VAR.hideResult expression.
 author: vwaurich 10 2016"
   input BackendDAE.Var varIn;
-  input DAE.Exp hideResultB;
+  input Option<DAE.Exp> hideResultB;
   output BackendDAE.Var varOut=varIn;
 algorithm
   varOut.hideResult := hideResultB;
@@ -2175,6 +2189,20 @@ algorithm
   greaterThan := ComponentReference.crefSortFunc(varCref(v1), varCref(v2));
 end varSortFunc;
 
+public function sortInitialVars
+  "author:kabdelhak 2021-9
+   Sorts fixables to be at the end of the array, also prefers variables with start values"
+  input output BackendDAE.Variables vars;
+  input BackendDAE.Variables fixableVars;
+protected
+  list<BackendDAE.Var> var_lst, fixable_start, fixable, non_fixable;
+algorithm
+  var_lst := varList(vars);
+  (fixable, non_fixable) := List.splitOnTrue(var_lst, function containsVar(inVariables = fixableVars));
+  (fixable_start, fixable) := List.splitOnTrue(fixable, varHasStartValue);
+  var_lst := listAppend(listAppend(fixable_start, listReverse(fixable)), listReverse(non_fixable));
+  vars := listVar(var_lst);
+end sortInitialVars;
 
 public function getAlias
 "  author: Frenkel TUD 2012-11
@@ -2910,7 +2938,7 @@ protected
   DAE.Type tp = ComponentReference.crefLastType(cr);
   DAE.Dimensions dims = Expression.arrayDimension(tp);
 algorithm
- v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), dims, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+ v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), dims, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end makeVar;
 
 public function addVarDAE
@@ -3122,6 +3150,12 @@ public function getVarShared
 algorithm
   (outVarLst, outIntegerLst) := getVar(inComponentRef, inShared.globalKnownVars);
 end getVarShared;
+
+public function containsVar
+  input BackendDAE.Var var;
+  input BackendDAE.Variables inVariables;
+  output Boolean outB = containsCref(var.varName, inVariables);
+end containsVar;
 
 public function containsCref
   input DAE.ComponentRef cr;

@@ -172,10 +172,10 @@ public
 
     for tpl in fnDer.conditions loop
       (_, id, condition) := tpl;
-      subMods := SCode.NAMEMOD(conditionToString(condition), SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(Util.makeQuotedIdentifier(id), {}))), info)) :: subMods;
+      subMods := SCode.NAMEMOD(conditionToString(condition), SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(id, {}))), info)) :: subMods;
     end for;
 
-    mod := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), orderMod::subMods, SOME(Absyn.CREF(Absyn.CREF_IDENT(Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(fnDer.derivativeFn))),{}))), info);
+    mod := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), orderMod::subMods, SOME(Absyn.CREF(Absyn.CREF_IDENT(AbsynUtil.pathString(InstNode.scopePath(fnDer.derivativeFn)),{}))), info);
     subMod := SCode.NAMEMOD("derivative", mod);
   end toSubMod;
 

@@ -318,7 +318,8 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
        "csv", CSV MAP_LIST_SEP "mat", MAT MAP_LIST_SEP
        "buffer", BUFFER MAP_LIST_SEP "empty", EMPTY MAP_LIST_END;
      map<string, EmitResults> emitResultsMap = MAP_LIST_OF
-       "all", EMIT_ALL MAP_LIST_SEP "public", EMIT_PUBLIC MAP_LIST_SEP
+       "all", EMIT_ALL MAP_LIST_SEP "hidden", EMIT_HIDDEN MAP_LIST_SEP
+       "protected", EMIT_PROTECTED MAP_LIST_SEP "public", EMIT_PUBLIC MAP_LIST_SEP
        "none", EMIT_NONE MAP_LIST_END;
      po::options_description desc("Allowed options");
 
@@ -349,7 +350,8 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("alarm,A", po::value<unsigned int >()->default_value(360), "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"), "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("output-format,P", po::value< string >()->default_value("mat"), "simulation results output format: csv, mat, buffer, empty")
-          ("emit-results,U", po::value< string >()->default_value("public"), "emit results: all, public, none")
+          ("emit-results,U", po::value< string >()->default_value("public"), "emit results: all, hidden, protected, public, none")
+          ("ignore-hide-result", po::bool_switch()->default_value(false), "ignore HideResult annotations")
           ("variable-filter,B", po::value< string >()->default_value(".*"), "only write variables that match filter")
           ;
 
@@ -502,6 +504,19 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
          throw ModelicaSimulationError(MODEL_FACTORY,
            "Unknown emit-results " + emitResults_str);
      }
+     if (vm.count("ignore-hide-result") && vm["ignore-hide-result"].as<bool>())
+     {
+       switch (emitResults) {
+         case EMIT_NONE:
+         case EMIT_PUBLIC:
+           emitResults = EMIT_HIDDEN;
+           break;
+         case EMIT_PROTECTED:
+           emitResults = EMIT_ALL;
+         default:
+           break;
+       }
+     }
 
      string variableFilter = ".*";
      if (vm.count("variable-filter"))
@@ -592,7 +607,8 @@ void OMCFactory::fillArgumentsToReplace()
   _argumentsToReplace.insert(pair<string,string>("-logFormat", "log-format"));
   _argumentsToReplace.insert(pair<string,string>("-port", "log-port"));
   _argumentsToReplace.insert(pair<string,string>("-alarm", "alarm"));
-  _argumentsToReplace.insert(pair<string,string>("-emit_protected", "emit-results all"));
+  _argumentsToReplace.insert(pair<string,string>("-emit_protected", "emit-results protected"));
+  _argumentsToReplace.insert(pair<string,string>("-ignoreHideResult", "ignore-hide-result"));
   _argumentsToReplace.insert(pair<string,string>("-inputPath", "input-path"));
   _argumentsToReplace.insert(pair<string,string>("-outputPath", "output-path"));
 }

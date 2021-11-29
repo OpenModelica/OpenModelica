@@ -8,15 +8,20 @@ ConvertClass4.mos \
 ConvertClass5.mos \
 ConvertClass6.mos \
 ConvertClass7.mos \
+ConvertClass8.mos \
 ConvertClassVectorize1.mos \
 ConvertClassVectorize2.mos \
 ConvertClassVectorize3.mos \
 ConvertElement1.mos \
+ConvertElement2.mos \
 ConvertModifiers1.mos \
 ConvertModifiers2.mos \
 ConvertModifiers3.mos \
 ConvertModifiers4.mos \
 ConvertModifiersMissingValue1.mos \
+ConvertPackage1.mos \
+ConvertPackage2.mos \
+ConvertPackageMissingUses.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

@@ -1436,6 +1436,12 @@ algorithm
       value = DAE.CREF(cr, DAE.T_BOOL_DEFAULT);
     then (value, inIndex + 1);
 
+    case DAE.T_ENUMERATION() equation
+      str = inPrefix + intString(inIndex);
+      cr = DAE.CREF_IDENT(str, inType, {});
+      value = DAE.CREF(cr, inType);
+    then (value, inIndex + 1);
+
     case DAE.T_CLOCK() equation
       str = inPrefix + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_CLOCK_DEFAULT, {});
@@ -1475,9 +1481,7 @@ algorithm
     then (value, inIndex + 1);
 
     else equation
-      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-        print("  - createReturnExp failed for " + Types.printTypeStr(inType) + "\n");
-      end if;
+      Error.addInternalError("  - createReturnExp failed for " + Types.printTypeStr(inType) + "\n", sourceInfo());
     then fail();
   end match;
 end createReturnExp;

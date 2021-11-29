@@ -155,6 +155,10 @@ public
     input InstNode node;
     input Integer dimIndex;
     output Subscript subscript = SPLIT_INDEX(node, dimIndex);
+  algorithm
+    if dimIndex < 1 then
+      Error.assertion(false, getInstanceName() + " got invalid index " + String(dimIndex), sourceInfo());
+    end if;
   end makeSplitIndex;
 
   function isIndex
@@ -1118,14 +1122,38 @@ public
 
   function expandSplitIndices
     input list<Subscript> subs;
+    input list<InstNode> indicesToKeep = {};
     output list<Subscript> outSubs = {};
+  protected
+    Boolean changed = false;
   algorithm
     for s in subs loop
-      outSubs := (if isSplitIndex(s) then WHOLE() else s) :: outSubs;
+      () := match s
+        case SPLIT_INDEX()
+          algorithm
+            if List.isMemberOnTrue(s.node, indicesToKeep, InstNode.refEqual) then
+              outSubs := s :: outSubs;
+            else
+              outSubs := WHOLE() :: outSubs;
+              changed := true;
+            end if;
+          then
+            ();
+
+        else
+          algorithm
+            outSubs := s :: outSubs;
+          then
+            ();
+      end match;
     end for;
 
-    outSubs := List.trim(outSubs, isWhole);
-    outSubs := listReverseInPlace(outSubs);
+    if changed then
+      outSubs := List.trim(outSubs, isWhole);
+      outSubs := listReverseInPlace(outSubs);
+    else
+      outSubs := subs;
+    end if;
   end expandSplitIndices;
 
   function hash

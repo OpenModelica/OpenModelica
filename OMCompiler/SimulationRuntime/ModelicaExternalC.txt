@@ -1,0 +1,27 @@
+export GUSER=sjoelund
+
+# make an empty git repo
+git init
+git remote add origin git@github.com:${GUSER}/MSL-split
+git remote add MSL git@github.com:modelica/Modelica.git
+git fetch MSL master
+git checkout -f MSL/master
+git subtree split --squash --prefix="Modelica/Resources/C-Sources" -b MSL_sources
+git subtree split --squash --prefix="Modelica/Resources/BuildProjects/autotools" -b MSL_autotools
+
+# if you haven't forked it already fork it in your ${GUSER} from:
+# https://github.com/sjoelund/MSL-split
+# https://github.com/adrpo/MSL-split
+git push -u origin MSL/master:MSL_master
+git push -u origin MSL_sources
+git push -u origin MSL_autotools
+
+# In OMCompiler/3rdParty
+
+# if you haven't added it yet, add it:
+git subtree add --squash --prefix="OMCompiler/SimulationRuntime/ModelicaExternalC/C-Sources" git@github.com:${GUSER}/MSL-split MSL_sources
+git subtree add --squash --prefix="OMCompiler/SimulationRuntime/ModelicaExternalC/BuildProjects/autotools" git@github.com:${GUSER}/MSL-split MSL_autotools
+
+# if is already added, just pull it over:
+git subtree pull --squash --prefix="OMCompiler/SimulationRuntime/ModelicaExternalC/C-Sources" git@github.com:${GUSER}/MSL-split MSL_sources
+git subtree pull --squash --prefix="OMCompiler/SimulationRuntime/ModelicaExternalC/BuildProjects/autotools" git@github.com:${GUSER}/MSL-split MSL_autotools

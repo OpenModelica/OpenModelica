@@ -6686,7 +6686,7 @@ algorithm
       return;
     else
       true := numErrorMessages == Error.getNumErrorMessages();
-      name := AbsynUtil.printComponentRefStr(fn);
+      name := Dump.printComponentRefStr(fn);
       s1 := stringDelimitList(List.map(args, Dump.printExpStr), ", ");
       s2 := stringDelimitList(List.map(nargs, Dump.printNamedArgStr), ", ");
       s := if s2 == "" then s1 else s1 + ", " + s2;
@@ -10270,9 +10270,9 @@ algorithm
         (cache,DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange),
                SOME((cl as SCode.COMPONENT(n, pref, SCode.ATTR(arrayDims = ad), Absyn.TPATH(tpath, _),m,comment,cond,info),cmod)),instStatus,_)
           = Lookup.lookupIdent(cache, env, id);
-        print("Static: cref:" + AbsynUtil.printComponentRefStr(c) + " component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
+        print("Static: cref:" + Dump.printComponentRefStr(c) + " component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
         (cache, cl, env) = Lookup.lookupClass(cache, env, tpath);
-        print("Static: cref:" + AbsynUtil.printComponentRefStr(c) + " class component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
+        print("Static: cref:" + Dump.printComponentRefStr(c) + " class component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
       then
         (cache,NONE());*/
 
@@ -12453,7 +12453,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.elabArrayDim failed on: " +
-          AbsynUtil.printComponentRefStr(inCref) +
+          Dump.printComponentRefStr(inCref) +
           Dump.printArraydimStr({inDimension}));
       then
         fail();

@@ -1,0 +1,27 @@
+// name:   ConvertElement2
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertElement2
+    Modelica.Media.Common.GibbsDerivs g;
+  equation
+    g.R = 0.0;
+  end ConvertElement2;
+");
+
+runConversionScript(ConvertElement2, "scripts/ConvertElement2.mos");
+getErrorString();
+list(ConvertElement2);
+
+// Result:
+// true
+// true
+// ""
+// "model ConvertElement2
+//   Modelica.Media.Common.GibbsDerivs g;
+// equation
+//   g.R_s = 0.0;
+// end ConvertElement2;"
+// endResult

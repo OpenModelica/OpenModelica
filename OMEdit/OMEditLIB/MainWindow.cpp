@@ -77,6 +77,8 @@
 #include "Interfaces/ModelInterface.h"
 #include "omc_config.h"
 #include "Util/NetworkAccessManager.h"
+#include "Modeling/InstallLibraryDialog.h"
+#include "CrashReport/CrashReportDialog.h"
 
 #include <QtSvg/QSvgGenerator>
 
@@ -819,7 +821,7 @@ void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
     }
   }
   // set the status message.
-  mpStatusBar->showMessage(QString(Helper::instantiateModel).append(" ").append(pLibraryTreeItem->getNameStructure()));
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::instantiateModel, pLibraryTreeItem->getNameStructure()));
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
@@ -833,10 +835,7 @@ void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
   }
   QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeItem->getNameStructure());
   if (!instantiateModelResult.isEmpty()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                tr("Instantiation of %1 completed successfully.").arg(pLibraryTreeItem->getNameStructure()),
-                                                Helper::scriptingKind, Helper::notificationLevel));
-    QString windowTitle = QString(Helper::instantiateModel).append(" - ").append(pLibraryTreeItem->getNameStructure());
+    QString windowTitle = QString("%1 - %2").arg(Helper::instantiateModel, pLibraryTreeItem->getNameStructure());
     InformationDialog *pInformationDialog = new InformationDialog(windowTitle, instantiateModelResult, true, this);
     pInformationDialog->show();
   }
@@ -855,7 +854,7 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
     }
   }
   // set the status message.
-  mpStatusBar->showMessage(QString(Helper::checkModel).append(" ").append(pLibraryTreeItem->getNameStructure()));
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::checkModel, pLibraryTreeItem->getNameStructure()));
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
@@ -869,10 +868,7 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
   }
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeItem->getNameStructure());
   if (!checkModelResult.isEmpty()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                tr("Check of %1 completed successfully.").arg(pLibraryTreeItem->getNameStructure()),
-                                                Helper::scriptingKind, Helper::notificationLevel));
-    QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeItem->getNameStructure());
+    QString windowTitle = QString("%1 - %2").arg(Helper::checkModel, pLibraryTreeItem->getNameStructure());
     InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
     pInformationDialog->show();
   }
@@ -891,14 +887,13 @@ void MainWindow::checkAllModels(LibraryTreeItem *pLibraryTreeItem)
     }
   }
   // set the status message.
-  mpStatusBar->showMessage(QString(Helper::checkModel).append(" ").append(pLibraryTreeItem->getNameStructure()));
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::checkModel, pLibraryTreeItem->getNameStructure()));
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   QString checkAllModelsResult = mpOMCProxy->checkAllModelsRecursive(pLibraryTreeItem->getNameStructure());
   if (!checkAllModelsResult.isEmpty()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, checkAllModelsResult, Helper::scriptingKind,
-                                                Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, checkAllModelsResult, Helper::scriptingKind, Helper::notificationLevel));
   }
   // hide progress bar
   hideProgressBar();
@@ -958,7 +953,8 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   if (OptionsDialog::instance()->getFMIPage()->getGenerateDebugSymbolsCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions(QString("-d=gendebugsymbols"));
   }
-  QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms);
+  bool includeResources = OptionsDialog::instance()->getFMIPage()->getIncludeResourcesCheckBox()->isChecked();
+  QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
   if (!fmuFileName.isEmpty()) { // FMU was generated
     if (!newFmuName.isEmpty()) { // FMU should be moved
       QDir newNameAsDir(newFmuName);
@@ -1471,6 +1467,43 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
 }
 
 /*!
+ * \brief MainWindow::addSystemLibraries
+ * Add the system libraries to the menu.
+ */
+void MainWindow::addSystemLibraries()
+{
+  mpLibrariesMenu->clear();
+  // get the available libraries and versions.
+  QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
+  libraries.append("OpenModelica");
+  libraries.sort();
+  foreach (QString library, libraries) {
+    QStringList versions;
+    if (library.compare(QStringLiteral("OpenModelica")) != 0) {
+      versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
+    }
+    if (versions.isEmpty()) {
+      QAction *pAction = new QAction(library, this);
+      pAction->setData(QStringList() << library << "");
+      connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
+      mpLibrariesMenu->addAction(pAction);
+    } else {
+      QMenu *pLibraryMenu = new QMenu(library);
+      foreach (QString version, versions) {
+        QAction *pAction = new QAction(version, this);
+        pAction->setData(QStringList() << library << version);
+        if ((library.compare(QStringLiteral("Modelica")) == 0) && (version.compare(QStringLiteral("4.0.0")) == 0)) {
+          pAction->setShortcut(QKeySequence("Ctrl+m"));
+        }
+        connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
+        pLibraryMenu->addAction(pAction);
+      }
+      mpLibrariesMenu->addMenu(pLibraryMenu);
+    }
+  }
+}
+
+/*!
  * \brief MainWindow::showMessagesBrowser
  * Slot activated when MessagesWidget::MessageAdded signal is raised.\n
  * Shows the Messages Browser.
@@ -1813,34 +1846,50 @@ void MainWindow::loadSystemLibrary()
 {
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
-    /* check if library is already loaded. */
-    QString library = pAction->data().toString();
-    LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-    if (pLibraryTreeModel->findLibraryTreeItemOneLevel(library)) {
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
-      pMessageBox->setIcon(QMessageBox::Information);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(library)));
-      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
-                                      .arg(library).append("\n")
-                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(library)));
-      pMessageBox->setStandardButtons(QMessageBox::Ok);
-      pMessageBox->exec();
-    } else {  /* if library is not loaded then load it. */
-      mpProgressBar->setRange(0, 0);
-      showProgressBar();
-      mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(library));
-
-      if (library.compare("OpenModelica") == 0) {
-        pLibraryTreeModel->createLibraryTreeItem(library, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
-        pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-      } else if (mpOMCProxy->loadModel(library)) {
-        mpLibraryWidget->getLibraryTreeModel()->loadDependentLibraries(mpOMCProxy->getClassNames());
-      }
-      mpStatusBar->clearMessage();
-      hideProgressBar();
+    QStringList actionData = pAction->data().toStringList();
+    if (actionData.size() > 1) {
+      loadSystemLibrary(actionData.at(0), actionData.at(1));
     }
+  }
+}
+
+/*!
+ * \brief MainWindow::loadSystemLibrary
+ * Loads a system library.
+ * \param library
+ * \param version
+ */
+void MainWindow::loadSystemLibrary(const QString &library, QString version)
+{
+  /* check if library is already loaded. */
+  LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
+  if (pLibraryTreeModel->findLibraryTreeItemOneLevel(library)) {
+    QMessageBox *pMessageBox = new QMessageBox(this);
+    pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::information));
+    pMessageBox->setIcon(QMessageBox::Information);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(library)));
+    pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES)).arg(library).append("\n")
+                                    .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(library)));
+    pMessageBox->setStandardButtons(QMessageBox::Ok);
+    pMessageBox->exec();
+  } else {  /* if library is not loaded then load it. */
+    mpProgressBar->setRange(0, 0);
+    showProgressBar();
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(library));
+
+    if (version.isEmpty()) {
+      version = QString("default");
+    }
+
+    if (library.compare("OpenModelica") == 0) {
+      pLibraryTreeModel->createLibraryTreeItem(library, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
+      pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+    } else if (mpOMCProxy->loadModel(library, version)) {
+      mpLibraryWidget->getLibraryTreeModel()->loadDependentLibraries(mpOMCProxy->getClassNames());
+    }
+    mpStatusBar->clearMessage();
+    hideProgressBar();
   }
 }
 
@@ -2436,6 +2485,28 @@ void MainWindow::exportModelToOMNotebook()
                                                           GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                           .arg(tr("exporting to OMNotebook")), Helper::scriptingKind,
                                                           Helper::notificationLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::openInstallLibraryDialog
+ * Opens the install library dialog.
+ */
+void MainWindow::openInstallLibraryDialog()
+{
+  InstallLibraryDialog *pInstallLibraryDialog = new InstallLibraryDialog;
+  pInstallLibraryDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::upgradeInstalledLibraries
+ * Upgrades the installed libraries.
+ */
+void MainWindow::upgradeInstalledLibraries()
+{
+  if (mpOMCProxy->upgradeInstalledPackages(true)) {
+    mpOMCProxy->updatePackageIndex();
+    addSystemLibraries();
   }
 }
 
@@ -3360,6 +3431,14 @@ void MainWindow::createActions()
   mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
   mpExportToOMNotebookAction->setEnabled(false);
   connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
+  // install library action
+  mpInstallLibraryAction = new QAction(tr("Install Library"), this);
+  mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
+  connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
+  // upgrade installed libraries action
+  mpUpgradeInstalledLibrariesAction = new QAction(tr("Upgrade Installed Libraries"), this);
+  mpUpgradeInstalledLibrariesAction->setStatusTip(tr("Upgrades the installed libraries"));
+  connect(mpUpgradeInstalledLibrariesAction, SIGNAL(triggered()), SLOT(upgradeInstalledLibraries()));
   // clear recent files action
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
@@ -3759,29 +3838,29 @@ void MainWindow::createMenus()
   //Create the menubar
   //Create the menus
   // File menu
-  QMenu *pFileMenu = new QMenu(menuBar());
-  pFileMenu->setObjectName("menuFile");
-  pFileMenu->setTitle(tr("&File"));
+  mpFileMenu = new QMenu(menuBar());
+  mpFileMenu->setObjectName("menuFile");
+  mpFileMenu->setTitle(tr("&File"));
   // add actions to File menu
-  pFileMenu->addMenu(mpNewModelMenu);
-  pFileMenu->addAction(mpOpenModelicaFileAction);
-  pFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
-  pFileMenu->addAction(mpLoadModelicaLibraryAction);
-  pFileMenu->addAction(mpLoadEncryptedLibraryAction);
-  pFileMenu->addAction(mpOpenResultFileAction);
-  pFileMenu->addAction(mpOpenTransformationFileAction);
-  pFileMenu->addSeparator();
-  pFileMenu->addAction(mpNewCompositeModelFileAction);
-  pFileMenu->addAction(mpOpenCompositeModelFileAction);
-  pFileMenu->addAction(mpLoadExternModelAction);
-  pFileMenu->addSeparator();
-  pFileMenu->addAction(mpOpenDirectoryAction);
-  pFileMenu->addSeparator();
-  pFileMenu->addAction(mpSaveAction);
-  pFileMenu->addAction(mpSaveAsAction);
+  mpFileMenu->addMenu(mpNewModelMenu);
+  mpFileMenu->addAction(mpOpenModelicaFileAction);
+  mpFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
+  mpFileMenu->addAction(mpLoadModelicaLibraryAction);
+  mpFileMenu->addAction(mpLoadEncryptedLibraryAction);
+  mpFileMenu->addAction(mpOpenResultFileAction);
+  mpFileMenu->addAction(mpOpenTransformationFileAction);
+  mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpNewCompositeModelFileAction);
+  mpFileMenu->addAction(mpOpenCompositeModelFileAction);
+  mpFileMenu->addAction(mpLoadExternModelAction);
+  mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpOpenDirectoryAction);
+  mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpSaveAction);
+  mpFileMenu->addAction(mpSaveAsAction);
   //menuFile->addAction(saveAllAction);
-  pFileMenu->addAction(mpSaveTotalAction);
-  pFileMenu->addSeparator();
+  mpFileMenu->addAction(mpSaveTotalAction);
+  mpFileMenu->addSeparator();
   // Import menu
   QMenu *pImportMenu = new QMenu(menuBar());
   pImportMenu->setTitle(tr("Import"));
@@ -3790,7 +3869,7 @@ void MainWindow::createMenus()
   pImportMenu->addAction(mpImportFMUModelDescriptionAction);
   pImportMenu->addAction(mpImportFromOMNotebookAction);
   pImportMenu->addAction(mpImportNgspiceNetlistAction);
-  pFileMenu->addMenu(pImportMenu);
+  mpFileMenu->addMenu(pImportMenu);
   // Export menu
   QMenu *pExportMenu = new QMenu(menuBar());
   pExportMenu->setTitle(Helper::exportt);
@@ -3803,39 +3882,29 @@ void MainWindow::createMenus()
   pExportMenu->addAction(mpExportXMLAction);
   pExportMenu->addAction(mpExportFigaroAction);
   pExportMenu->addAction(mpExportToOMNotebookAction);
-  pFileMenu->addMenu(pExportMenu);
-  pFileMenu->addSeparator();
+  mpFileMenu->addMenu(pExportMenu);
+  mpFileMenu->addSeparator();
   // System libraries menu
   mpLibrariesMenu = new QMenu(menuBar());
   mpLibrariesMenu->setObjectName("LibrariesMenu");
   mpLibrariesMenu->setTitle(tr("&System Libraries"));
-  // get the available libraries.
-  QStringList libraries = mpOMCProxy->getAvailableLibraries();
-  libraries.append("OpenModelica");
-  libraries.sort();
-  for (int i = 0; i < libraries.size(); ++i) {
-    QAction *pAction = new QAction(libraries[i], this);
-    pAction->setData(libraries[i]);
-    if (libraries[i].compare("Modelica") == 0) {
-      pAction->setShortcut(QKeySequence("Ctrl+m"));
-    }
-    connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
-    mpLibrariesMenu->addAction(pAction);
-  }
-  pFileMenu->addMenu(mpLibrariesMenu);
-  pFileMenu->addSeparator();
+  addSystemLibraries();
+  mpFileMenu->addMenu(mpLibrariesMenu);
+  mpFileMenu->addAction(mpInstallLibraryAction);
+  mpFileMenu->addAction(mpUpgradeInstalledLibrariesAction);
+  mpFileMenu->addSeparator();
   mpRecentFilesMenu = new QMenu(menuBar());
   mpRecentFilesMenu->setObjectName("RecentFilesMenu");
   mpRecentFilesMenu->setTitle(tr("Recent &Files"));
   // we don't create the recent files actions here. It will be done when WelcomePageWidget is created and updateRecentFileActionsAndList() is called.
-  pFileMenu->addMenu(mpRecentFilesMenu);
-  pFileMenu->addAction(mpClearRecentFilesAction);
-  pFileMenu->addSeparator();
-  pFileMenu->addAction(mpPrintModelAction);
-  pFileMenu->addSeparator();
-  pFileMenu->addAction(mpQuitAction);
+  mpFileMenu->addMenu(mpRecentFilesMenu);
+  mpFileMenu->addAction(mpClearRecentFilesAction);
+  mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpPrintModelAction);
+  mpFileMenu->addSeparator();
+  mpFileMenu->addAction(mpQuitAction);
   // add File menu to menu bar
-  menuBar()->addAction(pFileMenu->menuAction());
+  menuBar()->addAction(mpFileMenu->menuAction());
   // Edit menu
   QMenu *pEditMenu = new QMenu(menuBar());
   pEditMenu->setTitle(tr("&Edit"));
@@ -4536,9 +4605,18 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   pOMContributorsScrollArea->setFrameShape(QFrame::NoFrame);
   pOMContributorsScrollArea->setWidgetResizable(true);
   pOMContributorsScrollArea->setWidget(mpOMContributorsLabel);
+  // report button
+  QPushButton *pReportButton = new QPushButton(Helper::reportIssue);
+  pReportButton->setAutoDefault(false);
+  connect(pReportButton, SIGNAL(clicked()), SLOT(showReportIssue()));
   // close button
   QPushButton *pCloseButton = new QPushButton(Helper::close);
+  pCloseButton->setAutoDefault(true);
   connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  pButtonBox->addButton(pReportButton, QDialogButtonBox::ActionRole);
+  pButtonBox->addButton(pCloseButton, QDialogButtonBox::ActionRole);
   // logo label
   Label *pLogoLabel = new Label;
   QPixmap pixmap(":/Resources/icons/omedit.png");
@@ -4552,7 +4630,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->addWidget(pLogoLabel, 0, 0, Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addLayout(pVerticalLayout, 0, 1, Qt::AlignTop | Qt::AlignLeft);
-  pMainLayout->addWidget(pCloseButton, 1, 0, 1, 2, Qt::AlignRight);
+  pMainLayout->addWidget(pButtonBox, 1, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -4585,6 +4663,17 @@ void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
   mpOMContributorsLabel->setToolTip("");
 
   pNetworkReply->deleteLater();
+}
+
+/*!
+ * \brief AboutOMEditDialog::showReportIssue
+ * Opens the CrashReportDialog for sending the issue report manually.
+ */
+void AboutOMEditDialog::showReportIssue()
+{
+  // show the CrashReportDialog
+  CrashReportDialog *pCrashReportDialog = new CrashReportDialog("", true);
+  pCrashReportDialog->exec();
 }
 
 /*!

@@ -911,6 +911,8 @@ QStringList StringHandler::getStrings(QString value)
     } else if (str_char) {
       if (c == str_char) {
         str_char = 0;
+      } else if (c == '\\') {
+        escaped = true;
       }
       continue;
     }
@@ -948,7 +950,11 @@ QStringList StringHandler::getStrings(QString value)
   }
 
   if (n > 0) {
+    // Append the rest of the string if there's anything left.
     res.append(value.mid(start).trimmed());
+  } else if (!value.isEmpty() && value[value.size()-1] == ',') {
+    // Append an empty string if the string ends with ,
+    res.append(QString());
   }
 
   return res;

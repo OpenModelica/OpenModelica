@@ -222,7 +222,7 @@ algorithm
   vals := inVar.values;
   vals := DAEUtil.setProtectedAttr(vals,false);
   outVar := BackendVariable.setVarAttributes(inVar,vals);
-  outVar := BackendVariable.setHideResult(outVar,DAE.BCONST(false));
+  outVar := BackendVariable.setHideResult(outVar,SOME(DAE.BCONST(false)));
 end makeVarPublicHideResultFalse;
 
 protected function setBindingForProtectedVars "searches for protected vars and sets the binding exp with their equation.

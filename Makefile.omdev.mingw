@@ -56,7 +56,7 @@ BUILDTYPE=Debug
 endif
 
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes nox test fast-test testsuite-depends libs-for-testing
+.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
 
 all: omc testsuite-depends omlibrary-core
 
@@ -257,9 +257,6 @@ all-runtimes:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPinstall
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPmsvcinstall
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) simulationruntimecmsvc
-
-nox:
-	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) nox
 
 testlogwindows:
 	$(MAKE) -C testsuite -f Makefile ReferenceFiles > testsuite/testsuite-trace.txt

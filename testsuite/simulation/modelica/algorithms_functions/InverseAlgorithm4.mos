@@ -38,7 +38,7 @@ simulate(InverseAlgorithm4, simflags="-lv=LOG_SOTI"); getErrorString();
 // |                 | |       | | | [3] Real w(start=0, nominal=1) = 0 (pre: 0)
 // |                 | |       | | integer variables
 // |                 | |       | | | [1] Integer y(start=0) = 10 (pre: 10)
-// |                 | |       | | | [2] Integer z(start=0) = 0 (pre: 0)
+// |                 | |       | | | [2] Integer z(start=0) = 10 (pre: 10)
 // |                 | |       | | boolean variables
 // |                 | |       | | | [1] Boolean $whenCondition1(start=true) = false (pre: true)
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.

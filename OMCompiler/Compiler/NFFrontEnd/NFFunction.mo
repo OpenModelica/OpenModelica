@@ -81,6 +81,7 @@ import ComplexType = NFComplexType;
 import InstContext = NFInstContext;
 import UnorderedSet;
 import Graph;
+import FlatModelicaUtil = NFFlatModelicaUtil;
 
 public
 
@@ -719,11 +720,12 @@ uniontype Function
     list<Statement> fn_body;
     SCode.Comment cmt;
     SCode.Mod annMod;
-    String str;
   algorithm
     if isDefaultRecordConstructor(fn) then
       s := IOStream.append(s, InstNode.toFlatString(fn.node));
     else
+      cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
+
       fn_name := AbsynUtil.pathString(fn.path);
       if stringEmpty(overrideName) then
         fn_name := Util.makeQuotedIdentifier(fn_name);
@@ -732,6 +734,7 @@ uniontype Function
       end if;
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
+      s := FlatModelicaUtil.appendCommentString(SOME(cmt), s);
       s := IOStream.append(s, "\n");
 
       for i in fn.inputs loop
@@ -758,7 +761,6 @@ uniontype Function
 
       s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, s);
 
-      cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
       if isSome(cmt.annotation_) then
         SOME(SCode.ANNOTATION(modification=annMod)) := cmt.annotation_;
       else
@@ -777,11 +779,8 @@ uniontype Function
       end for;
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
-        str := SCodeDump.printAnnotationStr(SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)),NONE()));
-        if not stringEmpty(str) then
-          s := IOStream.append(s, str);
-          s := IOStream.append(s, ";\n");
-        end if;
+        cmt := SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)), NONE());
+        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt), "  ", ";\n", s);
       end if;
 
       s := IOStream.append(s, "end ");
@@ -2476,25 +2475,44 @@ protected
     input UnorderedSet<InstNode> locals;
     output list<InstNode> dependencies;
   protected
-    Component comp;
-    Binding binding;
     UnorderedSet<InstNode> deps;
   algorithm
     // Use a set to store the dependencies to avoid duplicates.
     deps := UnorderedSet.new(InstNode.hash, InstNode.refEqual, 1);
+    deps := getLocalDependencies2(node, locals, deps);
 
-    comp := InstNode.component(node);
-    binding := Component.getBinding(comp);
+    // If we have a record instance with fields that have bindings that refer to
+    // other fields we'll get a dependency on the record instance itself here.
+    // But that's actually fine, so remove it to avoid a false cycle being detected.
+    UnorderedSet.remove(node, deps);
 
-    if Binding.hasExp(binding) then
-      deps := getLocalDependenciesExp(Binding.getExp(binding), locals, deps);
-    end if;
-
-    deps := Type.foldDims(Component.getType(comp),
+    deps := Type.foldDims(InstNode.getType(node),
       function getLocalDependenciesDim(locals = locals), deps);
 
     dependencies := UnorderedSet.toList(deps);
   end getLocalDependencies;
+
+  function getLocalDependencies2
+    input InstNode node;
+    input UnorderedSet<InstNode> locals;
+    input output UnorderedSet<InstNode> dependencies;
+  protected
+    Component comp;
+    Binding binding;
+  algorithm
+    comp := InstNode.component(node);
+    binding := Component.getBinding(comp);
+
+    if Binding.hasExp(binding) then
+      dependencies := getLocalDependenciesExp(Binding.getExp(binding), locals, dependencies);
+    elseif Type.isRecord(Component.getType(comp)) then
+      // If the component is a record instance without a binding, check the
+      // bindings on the record fields instead.
+      dependencies := ClassTree.foldComponents(
+        Class.classTree(InstNode.getClass(node)),
+        function getLocalDependencies2(locals = locals), dependencies);
+    end if;
+  end getLocalDependencies2;
 
   function getLocalDependenciesExp
     input Expression exp;

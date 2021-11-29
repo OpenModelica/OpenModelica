@@ -67,7 +67,7 @@ MESSAGE(STATUS "Sundials libs:")
 MESSAGE(STATUS "${SUNDIALS_LIB_DIR}")
 
 # SUNDIALS Header
-FIND_PATH(SUNDIALS_INCLUDE_DIR "sundials/sundials_config.h" ${SUNDIALS_PATH}/include NO_DEFAULT_PATH)
+FIND_PATH(SUNDIALS_INCLUDE_DIR "sundials/sundials_config.h" ${SUNDIALS_PATH}/include/sundials NO_DEFAULT_PATH)
 
 MESSAGE(STATUS "Sundials include:")
 MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")

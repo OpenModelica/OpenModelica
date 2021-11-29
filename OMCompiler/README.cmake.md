@@ -134,12 +134,13 @@ $ <install_dir>/bin/omc --help
 - [x] OMCompiler/Compiler/runtime
 - [x] OMCompiler/Compiler/Template
 - [x] OMCompiler/SimulationRuntime/c/{OpenModelicaRuntime, OpenModelicaFMIRuntime}
-  - More can be added as needed.
-
 - [x] Figure out a way to cleanly handle the `MetaModelica` source files to build `libOpenModelica`.
   - This is the big one. To simplify things, the idea is to aim for no bootstrapping support yet. Just compilation using installed OMC.
-- [ ] Add a header only interface library for all the common include files. e.g. `openmodelica.h`, `revision.h`
-- [ ] Handle all libraries in OMCompiler/SimulationRuntime/c. Some are left for later.
+  [ ] Make sure bootstrapping sources can be updated cleanly.
+- [x] Add a header only interface library for all the common include files. e.g. `openmodelica.h`, `revision.h`
+- [x] Handle all libraries in OMCompiler/SimulationRuntime/c. Some are left for later.
+- [x] Handle all libraries in OMCompiler/SimulationRuntime/cpp. Some are left for later.
+- [x] Handle FMUs. Binary and source code.
 - [ ] No free standing "outside" include directories. All includes should come from dependency targets.
 
 - [ ] ... (Many more if this goes on)

@@ -1,0 +1,49 @@
+// name:     PowerSystems.Examples.AC3ph.Generation.TurboGeneratorLine
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Generation.TurboGeneratorLine);
+compareVars :=
+{
+  "sensor.p[1]",
+  "sensor.p[2]",
+  "sensor.p[3]",
+  "sensor1.p[1]",
+  "sensor1.p[2]",
+  "sensor1.p[3]",
+  "turboGen.generator.powerAngle",
+  "busbar.alpha_v",
+  "busbar1.alpha_v"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Generation.TurboGeneratorLine
+// {"sensor.p[1]","sensor.p[2]","sensor.p[3]","sensor1.p[1]","sensor1.p[2]","sensor1.p[3]","turboGen.generator.powerAngle","busbar.alpha_v","busbar1.alpha_v"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Generation.TurboGeneratorLine', options = '', outputFormat = 'mat', variableFilter = 'time|sensor.p.1.|sensor.p.2.|sensor.p.3.|sensor1.p.1.|sensor1.p.2.|sensor1.p.3.|turboGen.generator.powerAngle|busbar.alpha_v|busbar1.alpha_v', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Generation.TurboGeneratorLine_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -42,6 +42,7 @@ protected
   import ElementSource;
   import Equation = NFEquation;
   import Error;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
   import Util;
 
@@ -899,6 +900,15 @@ public
     res := false;
   end containsExpList;
 
+  function replaceIteratorList
+    input output list<Equation> eql;
+    input InstNode iterator;
+    input Expression value;
+  algorithm
+    eql := mapExpList(eql,
+      function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
+  end replaceIteratorList;
+
   function isConnect
     input Equation eq;
     output Boolean isConnect;
@@ -1134,7 +1144,7 @@ public
       case FOR()
         algorithm
           s := IOStream.append(s, "for ");
-          s := IOStream.append(s, InstNode.name(eq.iterator));
+          s := IOStream.append(s, Util.makeQuotedIdentifier(InstNode.name(eq.iterator)));
 
           if isSome(eq.range) then
             s := IOStream.append(s, " in ");
@@ -1215,6 +1225,8 @@ public
 
       else IOStream.append(s, "#UNKNOWN EQUATION#");
     end match;
+
+    s := FlatModelicaUtil.appendElementSourceComment(source(eq), s);
   end toFlatStream;
 
   function toFlatStreamList

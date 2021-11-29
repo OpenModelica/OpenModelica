@@ -9,7 +9,7 @@ loadString("
   end ConvertClass2;
 ");
 
-convertPackage(ConvertClass2, "scripts/ConvertClass2.mos");
+runConversionScript(ConvertClass2, "scripts/ConvertClass2.mos");
 getErrorString();
 list(ConvertClass2);
 

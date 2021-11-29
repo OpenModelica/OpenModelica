@@ -176,16 +176,12 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible || !mDynamicVisible.isEmpty()) {
-    if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
-                                  || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
-      return;
-    }
-    drawPolygonAnnotaion(painter);
+  if (mVisible) {
+    drawPolygonAnnotation(painter);
   }
 }
 
-void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
+void PolygonAnnotation::drawPolygonAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
   applyFillPattern(painter);

@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -109,11 +109,20 @@ algorithm
     return;
   end if;
 
+  // Check if maxSizeLinearTearing maxSizeNonlinearTearing flag is illegal
+  if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) < 0) then
+    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeLinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING))});
+    fail();
+  elseif (Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING) < 0) then
+    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeNonlinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING))});
+    fail();
+  end if;
+
   // get method function and traverse systems
   try
     method := getTearingMethod(methodString);
-    BackendDAE.SHARED(backendDAEType=DAEtype) := inDAE.shared;
     if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      BackendDAE.SHARED(backendDAEType=DAEtype) := inDAE.shared;
       print("\n\n\n\n" + UNDERLINE + UNDERLINE + "\nCalling Tearing for " +
             BackendDump.printBackendDAEType2String(DAEtype) +
             "!\n" + UNDERLINE + UNDERLINE + "\n");
@@ -249,16 +258,6 @@ algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)) := isyst;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of traverseComponents\n\n");
-  end if;
-
-  // Check if maxSizeLinearTearing maxSizeNonlinearTearing flag is illegal
-  // phi: TODO move this to flag handling at the beginning
-  if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) < 0) then
-    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeLinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING))});
-    fail();
-  elseif (Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING) < 0) then
-    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeNonlinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING))});
-    fail();
   end if;
 
   (comps, runMatching, outStrongComponentIndex) := traverseComponents(comps, isyst, inShared, tearingMethod, inStrongComponentIndex);
@@ -1709,7 +1708,7 @@ protected
   Integer size, qidx, vidx;
   array<Integer> nE, nV;
   array<Boolean> varArray, eqArray;
-  list<Integer> unsolvedDiscreteVars, algSolvedVars;
+  list<Integer> unsolvedDiscreteVars, unsolvedCSEVars, unsolvedCombined, algSolvedVars;
   list<Integer> iterationVars = {}, residualequations = {};
   list<BackendDAE.Var> var_lst;
   list<BackendDAE.Equation> eqn_lst;
@@ -1747,6 +1746,13 @@ try
   unsolvedDiscreteVars := findDiscreteWarnTearingSelect(var_lst);
   // print("All discrete Vars: " + stringDelimitList(List.map(unsolvedDiscreteVars,intString),",") + "\n");
 
+  // also find $cse vars and try to make them inner vars since they have implicit tearingSelect never
+  unsolvedCSEVars := findCSE(var_lst);
+  // print("All CSE Vars: " + stringDelimitList(List.map(unsolvedCSEVars,intString),",") + "\n");
+
+  unsolvedCombined := listReverse(List.uniqueIntN(listAppend(unsolvedDiscreteVars, unsolvedCSEVars),listLength(var_lst)));
+  // print("All discrete+CSE Vars: " + stringDelimitList(List.map(unsolvedCombined,intString),",") + "\n");
+
   // Look for algorithm equations. If there is an algorithm equation
   // remove all discrete variables solved in it. The algorithm is added as
   // inner equation.
@@ -1763,7 +1769,7 @@ try
         if isEntrySolved(entr) then
           (vidx,_,_) := entr;
           algSolvedVars := vidx::algSolvedVars;
-          unsolvedDiscreteVars := List.deleteMember(unsolvedDiscreteVars,vidx);
+          unsolvedCombined := List.deleteMember(unsolvedCombined,vidx);
 
           // mark the var to be ignored for later
           // matching.
@@ -1776,13 +1782,13 @@ try
     end if;
     qidx := qidx + 1;
   end for;
-  // print("Non-algorithm-output discrete Vars: " + stringDelimitList(List.map(unsolvedDiscreteVars,intString),",") + "\n");
+  // print("Non-algorithm-output Vars: " + stringDelimitList(List.map(unsolvedCombined,intString),",") + "\n");
 
   // Match the remaining discrete variables
-  if not listEmpty(unsolvedDiscreteVars) then
-    matchDiscreteVars(unsolvedDiscreteVars, adjEnhT, varArray, eqArray, nE, nV);
+  if not listEmpty(unsolvedCombined) then
+    matchDiscreteVars(unsolvedCombined, adjEnhT, varArray, eqArray, nE, nV);
     // make inner equations for the matched non-algorithm-output discrete vars.
-    (varArray, eqArray, innerEquations) := getTearingSetfromAssign(unsolvedDiscreteVars, nE, varArray, eqArray);
+    (varArray, eqArray, innerEquations) := getTearingSetfromAssign(unsolvedCombined, nE, varArray, eqArray);
 
     for iq in innerEquations loop
       innerEquationsLocalIndex := iq::innerEquationsLocalIndex;
@@ -2362,8 +2368,8 @@ protected function findDiscrete "takes a list of BackendDAE.Var and returns the 
 protected
   Integer index = 1;
 algorithm
-  for head in inVars loop
-    if BackendVariable.isVarDiscrete(head) then
+  for var in inVars loop
+    if BackendVariable.isVarDiscrete(var) then
       discreteVarsOut := index::discreteVarsOut;
     end if;
     index := index + 1;
@@ -2401,6 +2407,20 @@ algorithm
     index := index + 1;
   end for;
 end findDiscreteWarnTearingSelect;
+
+protected function findCSE
+  input list<BackendDAE.Var> inVars;
+  output list<Integer> cseVarsOut = {};
+protected
+  Integer index = 1;
+algorithm
+  for var in inVars loop
+    if BackendVariable.isCSEVar(var) then
+      cseVarsOut := index::cseVarsOut;
+    end if;
+    index := index + 1;
+  end for;
+end findCSE;
 
 
 protected function getEquationNonlinearityPoints

@@ -206,12 +206,12 @@ target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_D
 
 
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::graphstream)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::Modelica::ExternalC)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::Modelica::IO)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::Modelica::ExternalC)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::Modelica::IO)
 
 
 
@@ -219,7 +219,9 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::Modelica::IO)
 add_executable(omc .cmake/omc_main.c)
 target_link_libraries(omc PRIVATE OpenModelicaCompiler)
 
-target_link_options(omc PRIVATE -rdynamic)
+if(NOT WIN32)
+  target_link_options(omc PRIVATE -rdynamic)
+endif()
 
 # if(MINGW)
 #   target_link_options(omc PRIVATE -Wl,--stack,33554432)
@@ -247,6 +249,13 @@ install(FILES FrontEnd/ModelicaBuiltin.mo
 install(FILES FrontEnd/MetaModelicaBuiltin.mo
             DESTINATION lib/omc
             COMPONENT compiler)
+install(FILES FrontEnd/PDEModelicaBuiltin.mo
+            DESTINATION lib/omc
+            COMPONENT compiler)
+
+# Install the scripts to 'share' dir.
+install(DIRECTORY scripts
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/)
 
 
 # This is a convenience target to install omc. We are used to issuing 'make install' to install

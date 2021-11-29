@@ -1,0 +1,32 @@
+// name:   ConvertPackage2
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+// depends: libs
+//
+// Checks if a package can be converted in multiple steps: 1.0.0 => 1.0.1 => 1.0.2 => 2.0.0
+//
+
+loadString("
+  model ConvertPackage2
+    testlib.Integer0 i;
+    annotation(uses(testlib(version = \"1.0.0\")));
+  end ConvertPackage2;
+");
+
+setModelicaPath("libs/");
+convertPackageToLibrary(ConvertPackage2, testlib, "2.0.0");
+getErrorString();
+list(ConvertPackage2);
+
+// Result:
+// true
+// true
+// true
+// ""
+// "model ConvertPackage2
+//   testlib.NotReal i;
+//   annotation(
+//     uses(testlib(version = \"2.0.0\")));
+// end ConvertPackage2;"
+// endResult

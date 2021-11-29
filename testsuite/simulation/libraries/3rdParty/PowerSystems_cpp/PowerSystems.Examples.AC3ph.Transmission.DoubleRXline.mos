@@ -1,0 +1,59 @@
+// name:     PowerSystems.Examples.AC3ph.Transmission.DoubleRXline
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Transmission.DoubleRXline);
+compareVars :=
+{
+  "abc.i_abc[1]",
+  "abc.i_abc[2]",
+  "abc.i_abc[3]",
+  "meterF.p[1]",
+  "meterF.p[2]",
+  "meterF.p[3]",
+  "meterF.v[1]",
+  "meterF.v[2]",
+  "meterF.v[3]",
+  "meterF.i[1]",
+  "meterF.i[2]",
+  "meterF.i[3]",
+  "meterL.p[1]",
+  "meterL.p[2]",
+  "meterL.p[3]",
+  "meterL.v[1]",
+  "meterL.v[2]",
+  "meterL.v[3]",
+  "meterL.i[1]",
+  "meterL.i[2]",
+  "meterL.i[3]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Instantiation
+// PowerSystems.Examples.AC3ph.Transmission.DoubleRXline
+// {"abc.i_abc[1]","abc.i_abc[2]","abc.i_abc[3]","meterF.p[1]","meterF.p[2]","meterF.p[3]","meterF.v[1]","meterF.v[2]","meterF.v[3]","meterF.i[1]","meterF.i[2]","meterF.i[3]","meterL.p[1]","meterL.p[2]","meterL.p[3]","meterL.v[1]","meterL.v[2]","meterL.v[3]","meterL.i[1]","meterL.i[2]","meterL.i[3]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

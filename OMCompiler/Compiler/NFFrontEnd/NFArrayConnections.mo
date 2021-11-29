@@ -273,7 +273,7 @@ protected
         case Equation.FOR(range = SOME(range))
           algorithm
             range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(eq)));
-            body := applyIterator(eq.iterator, range, eq.body);
+            body := Equation.replaceIteratorList(eq.body, eq.iterator, range);
             nmvTable := addConnectionsToGraph(body, graph, vCount, eCount, nmvTable);
           then
             ();
@@ -287,15 +287,6 @@ protected
       end match;
     end for;
   end addConnectionsToGraph;
-
-  function applyIterator
-    input InstNode iterator;
-    input Expression range;
-    input output list<Equation> body;
-  algorithm
-    body := Equation.mapExpList(body,
-      function Expression.replaceIterator(iterator = iterator, iteratorValue = range));
-  end applyIterator;
 
   function createConnection
     input Expression lhs;
@@ -667,8 +658,7 @@ protected
         // Scalar range means the interval had the same lower and upper bound,
         // in which case the iterator can be replaced with the scalar expression
         // instead of creating an unnecessary for loop here.
-        body := Equation.mapExpList(body,
-          function Expression.replaceIterator(iterator = iterators[i], iteratorValue = ranges[i]));
+        body := Equation.replaceIteratorList(body, iterators[i], ranges[i]);
       else
         body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, DAE.emptyElementSource)};
       end if;

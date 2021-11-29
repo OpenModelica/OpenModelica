@@ -542,8 +542,10 @@ namespace FlatModelica
 
       value_t type() const override { return value_t::call; }
       bool isLiteral() const override { return false; }
+      const std::string& name() const { return _name; }
       bool isNamed(const std::string &name) const { return _name == name; }
       const std::vector<Expression>& args() const { return _args; }
+      void setArg(size_t index, const Expression &e);
 
       void print(std::ostream &os) const override;
 
@@ -1148,6 +1150,13 @@ namespace FlatModelica
     return Expression(std::make_unique<Call>(_name, std::move(args)));
   }
 
+  void Call::setArg(size_t index, const Expression &e)
+  {
+    if (index < _args.size()) {
+      _args[index] = e;
+    }
+  }
+
   void Call::print(std::ostream &os) const
   {
     os << _name << '(';
@@ -1280,7 +1289,7 @@ namespace FlatModelica
 
     if (tok.type == Token::SUB) {
       tokenizer.popToken();
-      auto e = parseExp(tokenizer);
+      auto e = parsePrimary(tokenizer);
 
       if (e.isNumber()) {
         return e.isInteger() ? Expression(-e.intValue()) : Expression(-e.realValue());
@@ -1289,7 +1298,7 @@ namespace FlatModelica
       }
     } else if (tok.type == Token::NOT) {
       tokenizer.popToken();
-      auto e = parseExp(tokenizer);
+      auto e = parsePrimary(tokenizer);
 
       if (e.isBoolean()) {
         return Expression(!e.boolValue());
@@ -1658,6 +1667,17 @@ namespace FlatModelica
 
   /*!
    * \brief Expression::size
+   * Returns the number of elements in an array, or 0 if the expression is not
+   * an array.
+   * \return The size of the expression.
+   */
+  size_t Expression::size() const
+  {
+    return size(0);
+  }
+
+  /*!
+   * \brief Expression::size
    * Returns the size of the given dimension, or 0 if the Expression has no such
    * dimension.
    * \param dimension The index of the dimension.
@@ -1738,12 +1758,39 @@ namespace FlatModelica
   }
 
   /*!
+   * \brief Expression::QStringValue
+   * Returns the QString value of the Expression if it's a String, or throws an
+   * error if the Expression is not a String.
+   * \return The QString value of the Expression.
+   */
+  QString Expression::QStringValue() const
+  {
+    return QString::fromStdString(dynamic_cast<const String&>(*_value).value());
+  }
+
+  /*!
+   * \brief Expression::functionName
+   * Checks if the Expression is a function call and then returns the function name
+   * otherwise return empty string.
+   * \return The QString value of the Expression function name.
+   */
+  QString Expression::functionName() const
+  {
+    if (_value && _value->type() == ExpressionBase::value_t::call) {
+      return QString::fromStdString(dynamic_cast<const Call&>(*_value).name());
+    }
+    return QString("");
+  }
+
+  /*!
    * \brief Expression::toString
    * Unparses the Expression into a string.
    * \return The string representation of the Expression.
    */
   std::string Expression::toString() const
   {
+    if (!_value) return std::string{};
+
     std::ostringstream ss;
     _value->print(ss);
     return ss.str();
@@ -1777,6 +1824,11 @@ namespace FlatModelica
   const std::vector<Expression>& Expression::args() const
   {
     return dynamic_cast<const Call&>(*_value).args();
+  }
+
+  void Expression::setArg(size_t index, const Expression &e)
+  {
+    dynamic_cast<Call&>(*_value).setArg(index, e);
   }
 
   /*!

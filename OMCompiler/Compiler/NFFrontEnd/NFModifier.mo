@@ -472,6 +472,12 @@ public
         then
           ();
 
+      case REDECLARE()
+        algorithm
+          mod.innerMod := propagateBinding(mod.innerMod, origin, parent);
+        then
+          ();
+
       else ();
     end match;
   end propagateBinding;
@@ -487,6 +493,12 @@ public
           submod.binding := Binding.propagate(submod.binding, subs);
           submod.subModifiers := ModTable.map(submod.subModifiers,
             function propagateSubMod(subs = subs));
+        then
+          ();
+
+      case REDECLARE(eachPrefix = SCode.NOT_EACH())
+        algorithm
+          submod.innerMod := propagateSubMod(name, submod.innerMod, subs);
         then
           ();
 

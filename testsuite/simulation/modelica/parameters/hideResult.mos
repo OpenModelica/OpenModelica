@@ -98,7 +98,7 @@ val(c.b.a, 0.0); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is set to 'isProtected' (=false) by default.
+// "Warning: The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is removed.
 // "
 // 2.0
 // ""

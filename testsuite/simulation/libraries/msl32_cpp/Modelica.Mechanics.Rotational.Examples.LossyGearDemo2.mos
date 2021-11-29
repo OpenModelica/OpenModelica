@@ -40,7 +40,7 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Mechanics.Rotational.Examples.LossyGearDemo2_res.mat
 // Messages: ERROR  : init  : SimManager: Could not initialize system
 // ERROR  : init  : SimManager: Nonlinear solver 62 stopped at time 0 with error in algloop solver:
-// Can't get sufficient decrease of solution
+// error solving nonlinear system (iteration limit: 50)
 // ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
 // ERROR  : solver: SimController: Recovering with nonlinear solver kinsol
 //

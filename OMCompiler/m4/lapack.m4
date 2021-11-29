@@ -103,6 +103,7 @@ AC_DEFUN([OMC_AC_LAPACK], [
     fi
 
     if test ! -z "$LD_LAPACK"; then
+      LD_LAPACK=`echo $LD_LAPACK | sed -e 's/-lm$//' -e 's/-lm  *//'`
       HAVE_LAPACK="#define HAVE_LAPACK"
 
       # lapack 3.6.0 deprecated dgegv, dgelsx, dgeqpf

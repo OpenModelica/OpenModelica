@@ -114,7 +114,7 @@ algorithm
     case Expression.TUPLE_ELEMENT()     then simplifyTupleElement(exp);
     case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
-    else exp;
+                                        else exp;
   end match;
 end simplify;
 
@@ -1113,6 +1113,21 @@ algorithm
   tupleExp := Expression.tupleElement(e, ty, index);
 end simplifyTupleElement;
 
+function simplifyRecordElement
+  input output Expression exp;
+protected
+  Expression e, e2;
+  Integer idx;
+  Type ty;
+algorithm
+  Expression.RECORD_ELEMENT(e, idx, _, ty) := exp;
+  e2 := simplify(e);
+
+  if not referenceEq(e, e2) then
+    exp := Expression.nthRecordElement(idx, e2);
+  end if;
+end simplifyRecordElement;
+
 public function combineConstantNumbers
   input list<Expression> const      "has to be a list of REAL(), INTEGER() and/or CAST()";
   input list<Expression> inv_const  "has to be a list of REAL(), INTEGER() and/or CAST()";
@@ -1446,6 +1461,7 @@ algorithm
     then fail();
   end match;
 end addArgument;
+
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;

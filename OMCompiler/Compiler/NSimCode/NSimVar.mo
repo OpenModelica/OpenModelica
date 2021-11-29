@@ -271,7 +271,7 @@ public
         numArrayElement     = simVar.numArrayElement,
         isValueChangeable   = simVar.isValueChangeable,
         isProtected         = simVar.isProtected,
-        hideResult          = simVar.hideResult,
+        hideResult          = SOME(simVar.hideResult),
         inputIndex          = simVar.inputIndex,
         matrixName          = simVar.matrixName,
         variability         = NONE(),  //ToDo update this!

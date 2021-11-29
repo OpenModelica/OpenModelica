@@ -35,8 +35,6 @@
 #include "TextAnnotation.h"
 #include "Modeling/Commands.h"
 
-#include "FlatModelica/Expression.h"
-
 /*!
  * \class TextAnnotation
  * \brief Draws the text shapes.
@@ -165,40 +163,16 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item of the list contains the extent points
-  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(8))));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
-    QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
-    if (extentPoints.size() >= 2)
-      mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
-  }
+  mExtents.parse(list.at(8));
   // 10th item of the list contains the textString.
-  try {
-    mTextExpression = FlatModelica::Expression::parse(list.at(9));
-
-    if (mTextExpression.isCall("DynamicSelect")) {
-      mOriginalTextString = mTextExpression.arg(0).toQString();
-    } else {
-      mOriginalTextString = mTextExpression.toQString();
-    }
-  } catch (const std::exception &e) {
-    qDebug() << "Failed to parse annotation: " << list.at(9);
-    qDebug() << e.what();
-  }
-  mTextString = mOriginalTextString;
+  mTextString.parse(list.at(9));
   initUpdateTextString();
 
   // 11th item of the list contains the fontSize.
-  mFontSize = stripDynamicSelect(list.at(10)).toFloat();
+  mFontSize.parse(list.at(10));
   // 12th item of the list contains the optional textColor, {-1, -1, -1} if not set
-  QStringList textColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(11))));
-  if (textColorList.size() >= 3) {
-    int red, green, blue = 0;
-    red = textColorList.at(0).toInt();
-    green = textColorList.at(1).toInt();
-    blue = textColorList.at(2).toInt();
-    if (red >= 0 && green >= 0 && blue >= 0) {
-      mLineColor = QColor (red, green, blue);
-    }
+  if (!list.at(11).contains("-1")) {
+    mLineColor.parse(list.at(11));
   }
   // 13th item of the list contains the font name.
   QString fontName = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(12)));
@@ -262,13 +236,13 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   Q_UNUSED(widget);
   //! @note We don't show text annotation that contains % for Library Icons or if it is too long.
   if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) {
-    if (mOriginalTextString.contains("%") || mOriginalTextString.length() > maxTextLengthToShowOnLibraryIcon) {
+    if (mTextString.contains("%") || mTextString.length() > maxTextLengthToShowOnLibraryIcon) {
       return;
     }
   } else if (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
     return;
   }
-  if (mVisible || !mDynamicVisible.isEmpty()) {
+  if (mVisible) {
     // state machine visualization
     // text annotation on a component
     if (mpComponent && mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isState()
@@ -289,20 +263,16 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         painter->setOpacity(0.2);
       }
     }
-    if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
-                                  || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
-      return;
-    }
-    drawTextAnnotaion(painter);
+    drawTextAnnotation(painter);
   }
 }
 
 /*!
- * \brief TextAnnotation::drawTextAnnotaion
+ * \brief TextAnnotation::drawTextAnnotation
  * Draws the Text annotation
  * \param painter
  */
-void TextAnnotation::drawTextAnnotaion(QPainter *painter)
+void TextAnnotation::drawTextAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
   /* Don't apply the fill patterns on Text shapes. */
@@ -342,8 +312,8 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   // map the existing bounding rect to new transformation but with positive width and height so that font metrics can work
   QRectF absMappedBoundingRect = QRectF(boundingRect().x() * sx, boundingRect().y() * sy, qAbs(boundingRect().width() * sx), qAbs(boundingRect().height() * sy));
   // normalize the text for drawing
-  mTextString = StringHandler::removeFirstLastQuotes(mTextString);
-  mTextString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
+  QString textString = StringHandler::removeFirstLastQuotes(mTextString);
+  textString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
   // Don't create new QFont instead get a font from painter and set the values on it and set it back.
   QFont font = painter->font();
   font.setFamily(mFontName);
@@ -363,7 +333,7 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   // if absolute font size is defined and is greater than 0 then we don't need to calculate the font size.
   if (mFontSize <= 0) {
     QFontMetrics fontMetrics(painter->font());
-    QRect fontBoundRect = fontMetrics.boundingRect(absMappedBoundingRect.toRect(), Qt::TextDontClip, mTextString);
+    QRect fontBoundRect = fontMetrics.boundingRect(absMappedBoundingRect.toRect(), Qt::TextDontClip, textString);
     const qreal xFactor = absMappedBoundingRect.width() / fontBoundRect.width();
     const qreal yFactor = absMappedBoundingRect.height() / fontBoundRect.height();
     /* Ticket:4256
@@ -379,10 +349,10 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   /* Try to get the elided text if calculated font size <= Helper::minimumTextFontSize
    * OR if font size is absolute.
    */
-  QString textToDraw = mTextString;
+  QString textToDraw = textString;
   if (absMappedBoundingRect.width() > 1 && ((mFontSize <= 0 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) || mFontSize > 0)) {
     QFontMetrics fontMetrics(painter->font());
-    textToDraw = fontMetrics.elidedText(mTextString, Qt::ElideRight, absMappedBoundingRect.width());
+    textToDraw = fontMetrics.elidedText(textString, Qt::ElideRight, absMappedBoundingRect.width());
     // if we get "..." i.e., QChar(0x2026) as textToDraw then don't draw anything
     if (textToDraw.compare(QChar(0x2026)) == 0) {
       textToDraw = "";
@@ -413,7 +383,7 @@ QString TextAnnotation::getOMCShapeAnnotation()
   extentString.append("}");
   annotationString.append(extentString);
   // get the text string
-  annotationString.append(QString("\"").append(mOriginalTextString).append("\""));
+  annotationString.append(QString("\"").append(mTextString).append("\""));
   // get the font size
   annotationString.append(QString::number(mFontSize));
   // get the text color
@@ -475,7 +445,7 @@ QString TextAnnotation::getShapeAnnotation()
     annotationString.append(extentString);
   }
   // get the text string
-  annotationString.append(QString("textString=\"").append(mOriginalTextString).append("\""));
+  annotationString.append(QString("textString=\"").append(mTextString).append("\""));
   // get the font size
   if (mFontSize != 0) {
     annotationString.append(QString("fontSize=").append(QString::number(mFontSize)));
@@ -519,7 +489,7 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void TextAnnotation::initUpdateTextString()
 {
   if (mpComponent) {
-    if (mOriginalTextString.contains("%") || mTextExpression.isCall("DynamicSelect")) {
+    if (mTextString.contains("%")) {
       updateTextString();
       connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
@@ -610,7 +580,7 @@ void TextAnnotation::updateTextString()
    */
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
   if (pLineAnnotation) {
-    if (mOriginalTextString.toLower().contains("%condition")) {
+    if (mTextString.toLower().contains("%condition")) {
       if (!pLineAnnotation->getCondition().isEmpty()) {
         mTextString.replace(QRegExp("%condition"), pLineAnnotation->getCondition());
       }
@@ -619,14 +589,15 @@ void TextAnnotation::updateTextString()
       }
     }
   } else if (mpComponent) {
-    mTextString = mOriginalTextString;
+    mTextString.reset();
+
     if (!mTextString.contains("%")) {
       return;
     }
-    if (mOriginalTextString.toLower().contains("%name")) {
+    if (mTextString.toLower().contains("%name")) {
       mTextString.replace(QRegExp("%name"), mpComponent->getName());
     }
-    if (mOriginalTextString.toLower().contains("%class") && mpComponent->getLibraryTreeItem()) {
+    if (mTextString.toLower().contains("%class") && mpComponent->getLibraryTreeItem()) {
       mTextString.replace(QRegExp("%class"), mpComponent->getLibraryTreeItem()->getNameStructure());
     }
     if (!mTextString.contains("%")) {
@@ -637,7 +608,7 @@ void TextAnnotation::updateTextString()
     /* call again with non-word characters so invalid % can be removed. */
     updateTextStringHelper(QRegExp("(%%|%\\{?\\W+(\\.\\W+)*\\}?)"));
     /* handle %% */
-    if (mOriginalTextString.toLower().contains("%%")) {
+    if (mTextString.toLower().contains("%%")) {
       mTextString.replace(QRegExp("%%"), "%");
     }
   }

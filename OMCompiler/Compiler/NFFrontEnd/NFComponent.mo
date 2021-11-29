@@ -286,6 +286,7 @@ public
     classInst := match component
       case UNTYPED_COMPONENT()  then component.classInst;
       case TYPED_COMPONENT()    then component.classInst;
+      case ITERATOR(ty = Type.COMPLEX(cls = classInst)) then classInst;
       case ITERATOR()           then InstNode.ITERATOR_NODE(Expression.EMPTY(component.ty));
     end match;
   end classInstance;

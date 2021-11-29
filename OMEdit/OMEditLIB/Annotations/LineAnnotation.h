@@ -83,7 +83,7 @@ public:
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
-  void drawLineAnnotaion(QPainter *painter);
+  void drawLineAnnotation(QPainter *painter);
   void drawArrow(QPainter *painter, QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
   QPolygonF perpendicularLine(QPointF startPos, QPointF endPos, qreal size) const;
   QString getOMCShapeAnnotation() override;

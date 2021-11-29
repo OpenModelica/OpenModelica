@@ -10,6 +10,7 @@
 *.stamp
 **/*.dylib.dSYM/
 *.tmp
+*.lo
 
 # autoconf
 autom4te.cache/
@@ -112,6 +113,30 @@ SimulationRuntime/OMSI/Build_MSVC/
 SimulationRuntime/OMSI/Build_MSVC_static/
 SimulationRuntime/OMSIC/Build_dynamic/
 SimulationRuntime/OMSIC/Build_static/
+
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/.libs/
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/AUTHORS
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/COPYING
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/ChangeLog
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/INSTALL
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/Makefile
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/Makefile.in
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/NEWS
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/aclocal.m4
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/compile
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/config.guess
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/config.sub
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/configure
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/depcomp
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/install-sh
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/libtool
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/ltmain.sh
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/m4/
+SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/missing
+SimulationRuntime/ModelicaExternalC/C-Sources/.deps/
+SimulationRuntime/ModelicaExternalC/C-Sources/.dirstamp
+SimulationRuntime/ModelicaExternalC/C-Sources/zlib/.deps/
+SimulationRuntime/ModelicaExternalC/C-Sources/zlib/.dirstamp
 
 
 

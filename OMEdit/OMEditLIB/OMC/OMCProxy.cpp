@@ -37,10 +37,6 @@ extern "C" {
 #include "omc_config.h"
 #include "gc.h"
 
-void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
-void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
-void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
-void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
 void* omc_Main_init(void *threadData, void *args);
 void omc_System_initGarbageCollector(void *threadData);
@@ -60,6 +56,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #include "Modeling/MessagesWidget.h"
 #include "simulation_options.h"
 #include "omc_error.h"
+#include "FlatModelica/Expression.h"
 
 #include <QMessageBox>
 
@@ -128,6 +125,18 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mUnitConversionList.clear();
   mDerivedUnitsMap.clear();
   setLoggingEnabled(true);
+  mLibrariesBrowserAdditionCommandsList << "loadFile"
+                                      << "loadFiles"
+                                      << "loadEncryptedPackage"
+                                      << "loadString"
+                                      << "loadFileInteractive"
+                                      << "loadFileInteractiveQualified"
+                                      << "loadModel"
+                                      << "newModel"
+                                      << "createModel";
+  mLibrariesBrowserDeletionCommandsList << "deleteClass"
+                                      << "clear"
+                                      << "clearProgram";
   //start the server
   if(!initializeOMC(threadData)) {  // if we are unable to start OMC. Exit the application.
     MainWindow::instance()->setExitApplicationStatus(true);
@@ -263,6 +272,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   changeDirectory(tmpPath);
   // set the OpenModelicaLibrary variable.
   Helper::OpenModelicaLibrary = getModelicaPath();
+  Helper::userHomeDirectory = getHomeDirectoryPath();
   return true;
 }
 
@@ -311,6 +321,38 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
   mResult = MMC_STRINGDATA(reply_str);
   double elapsed = (double)commandTime.elapsed() / 1000.0;
   logResponse(expression, mResult.trimmed(), elapsed, saveToHistory);
+
+  /* Check if any custom command updates the program.
+   * saveToHistory is true for custom commands.
+   * Fixes issuse #8052
+   */
+  if (saveToHistory) {
+    FlatModelica::Expression exp = FlatModelica::Expression::parse(expression);
+
+    if (mLibrariesBrowserAdditionCommandsList.contains(exp.functionName())) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
+    } else if (mLibrariesBrowserDeletionCommandsList.contains(exp.functionName())) {
+      if (exp.functionName().compare(QStringLiteral("deleteClass")) == 0) {
+        if (exp.args().size() > 0) {
+          LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(exp.arg(0).toQString());
+          if (pLibraryTreeItem) {
+            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+          }
+        }
+      } else {
+        int i = 0;
+        while (i < MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->childrenSize()) {
+          LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->child(i);
+          if (pLibraryTreeItem && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+            i = 0;  //Restart iteration
+          } else {
+            i++;
+          }
+        }
+      }
+    }
+  }
 
   MMC_ELSE()
     mResult = "";
@@ -1161,7 +1203,9 @@ QString OMCProxy::getDiagramAnnotation(QString className)
   */
 int OMCProxy::getConnectionCount(QString className)
 {
-  return mpOMCInterface->getConnectionCount(className);
+  int result = mpOMCInterface->getConnectionCount(className);
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
@@ -1794,14 +1838,15 @@ bool OMCProxy::saveModifiedModel(QString modelText)
  * Save class with all used classes to a file.
  * \param fileName - the file to save in.
  * \param className - the name of the class.
+ * \param stripAnnotations
+ * \param stripComments
+ * \param obfuscate
  * \return true on success.
  */
-bool OMCProxy::saveTotalModel(QString fileName, QString className)
+bool OMCProxy::saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate)
 {
-  bool result = mpOMCInterface->saveTotalModel(fileName, className, false, false);
-  if (!result) {
-    printMessagesStringInternal();
-  }
+  bool result = mpOMCInterface->saveTotalModel(fileName, className, stripAnnotations, stripComments, obfuscate);
+  printMessagesStringInternal();
   return result;
 }
 
@@ -2463,6 +2508,7 @@ OMCInterface::getSimulationOptions_res OMCProxy::getSimulationOptions(QString cl
  * \param type - the fmu type
  * \param fileNamePrefix
  * \param platforms
+ * \param includeResources
  * \return
  */
 QString OMCProxy::buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources)
@@ -2748,6 +2794,18 @@ QString OMCProxy::getModelicaPath()
 }
 
 /*!
+ * \brief OMCProxy::getHomeDirectoryPath
+ * Returns the user HOME directory path.
+ * \return
+ */
+QString OMCProxy::getHomeDirectoryPath()
+{
+  QString result = mpOMCInterface->getHomeDirectoryPath();
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
  * \brief OMCProxy::getAvailableLibraries
  * Gets the available OpenModelica libraries.
  * \return the list of libaries.
@@ -2755,6 +2813,16 @@ QString OMCProxy::getModelicaPath()
 QStringList OMCProxy::getAvailableLibraries()
 {
   return mpOMCInterface->getAvailableLibraries();
+}
+
+/*!
+ * \brief OMCProxy::getAvailableLibraryVersions
+ * Gets the library versions.
+ * \return
+ */
+QStringList OMCProxy::getAvailableLibraryVersions(QString libraryName)
+{
+  return mpOMCInterface->getAvailableLibraryVersions(libraryName);
 }
 
 /*!
@@ -3251,6 +3319,89 @@ QList<QString> OMCProxy::parseEncryptedPackage(QString fileName, QString working
 bool OMCProxy::loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip, bool uses, bool notify, bool requireExactVersion)
 {
   bool result = mpOMCInterface->loadEncryptedPackage(fileName, workingDirectory, skipUnzip, uses, notify, requireExactVersion);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::installPackage
+ * Installs the package.
+ * \param library
+ * \param version
+ * \param exactMatch
+ * \return
+ */
+bool OMCProxy::installPackage(const QString &library, const QString &version, bool exactMatch)
+{
+  bool result = mpOMCInterface->installPackage(library, version, exactMatch);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::updatePackageIndex
+ * Updates the package index.
+ * \return
+ */
+bool OMCProxy::updatePackageIndex()
+{
+  bool result = mpOMCInterface->updatePackageIndex();
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::upgradeInstalledPackages
+ * Upgrades installed packages that have been registered by the package manager.
+ * \param installNewestVersions
+ * \return
+ */
+bool OMCProxy::upgradeInstalledPackages(bool installNewestVersions)
+{
+  bool result = mpOMCInterface->upgradeInstalledPackages(installNewestVersions);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getAvailablePackageVersions
+ * Returns the available package versions in preference order.
+ * \param pkg
+ * \param version
+ * \return
+ */
+QStringList OMCProxy::getAvailablePackageVersions(QString pkg, QString version)
+{
+  QStringList result = mpOMCInterface->getAvailablePackageVersions(pkg, version);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::convertPackageToLibrary
+ * Runs the conversion script for a library on a selected package.
+ * \param packageToConvert
+ * \param library
+ * \param libraryVersion
+ * \return
+ */
+bool OMCProxy::convertPackageToLibrary(const QString &packageToConvert, const QString &library, const QString &libraryVersion)
+{
+  bool result = mpOMCInterface->convertPackageToLibrary(packageToConvert, library, libraryVersion);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getAvailablePackageConversionsFrom
+ * Returns the versions that provide conversion from the requested version of the library.
+ * \param pkg
+ * \param version
+ * \return
+ */
+QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, const QString &version)
+{
+  QList<QString> result = mpOMCInterface->getAvailablePackageConversionsFrom(pkg, version);
   printMessagesStringInternal();
   return result;
 }

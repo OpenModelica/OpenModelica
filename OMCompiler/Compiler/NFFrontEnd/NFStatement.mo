@@ -38,6 +38,7 @@ encapsulated uniontype NFStatement
 protected
   import Statement = NFStatement;
   import ElementSource;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import Util;
   import IOStream;
 
@@ -517,6 +518,15 @@ public
     end match;
   end foldExp;
 
+  function replaceIteratorList
+    input output list<Statement> stmtl;
+    input InstNode iterator;
+    input Expression value;
+  algorithm
+    stmtl := mapExpList(stmtl,
+      function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
+  end replaceIteratorList;
+
   function toString
     input Statement stmt;
     input String indent = "";
@@ -801,6 +811,7 @@ public
       else IOStream.append(s, "#UNKNOWN STATEMENT#");
     end match;
 
+    s := FlatModelicaUtil.appendElementSourceComment(source(stmt), s);
   end toFlatStream;
 
   function toFlatStreamList

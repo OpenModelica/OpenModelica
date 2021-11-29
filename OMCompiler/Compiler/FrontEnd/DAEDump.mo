@@ -1200,12 +1200,11 @@ algorithm
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
-      DAE.InlineType inlineType;
       Option<SCode.Comment> c;
       DAE.ExternalDecl ext_decl;
       Boolean isImpure;
 
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
+    case DAE.FUNCTION(path = fpath, functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
                       type_ = t,isImpure = isImpure,comment = c)
       equation
         typeStr = Types.printTypeStr(t);
@@ -1217,8 +1216,6 @@ algorithm
         Print.printBuf("function ");
         fstr = AbsynUtil.pathStringNoQual(fpath);
         Print.printBuf(fstr);
-        inlineTypeStr = dumpInlineTypeStr(inlineType);
-        Print.printBuf(inlineTypeStr);
         Print.printBuf(dumpCommentStr(c));
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
@@ -1233,7 +1230,7 @@ algorithm
       then
         ();
 
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
+    case DAE.FUNCTION(path = fpath, functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
                       isImpure = isImpure, comment = c)
       equation
         impureStr = if isImpure then "impure " else "";
@@ -1241,8 +1238,6 @@ algorithm
         Print.printBuf("function ");
         fstr = AbsynUtil.pathStringNoQual(fpath);
         Print.printBuf(fstr);
-        inlineTypeStr = dumpInlineTypeStr(inlineType);
-        Print.printBuf(inlineTypeStr);
         Print.printBuf(dumpCommentStr(c));
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
@@ -1258,15 +1253,21 @@ algorithm
     case DAE.RECORD_CONSTRUCTOR(path = fpath,type_=t)
       equation
         false = Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
-        Print.printBuf("function ");
-        fstr = AbsynUtil.pathStringNoQual(fpath);
-        Print.printBuf(fstr);
-        Print.printBuf(" \"Automatically generated record constructor for "+fstr+"\"\n");
-        Print.printBuf(printRecordConstructorInputsStr(t));
-        Print.printBuf("  output "+AbsynUtil.pathLastIdent(fpath)+ " res;\n");
-        Print.printBuf("end ");
-        Print.printBuf(fstr);
-        Print.printBuf(";\n\n");
+
+        if Flags.isSet(Flags.PRINT_RECORD_TYPES) then
+          Print.printBuf(Types.unparseType(t));
+          Print.printBuf("\n");
+        else
+          Print.printBuf("function ");
+          fstr = AbsynUtil.pathStringNoQual(fpath);
+          Print.printBuf(fstr);
+          Print.printBuf(" \"Automatically generated record constructor for "+fstr+"\"\n");
+          Print.printBuf(printRecordConstructorInputsStr(t));
+          Print.printBuf("  output "+AbsynUtil.pathLastIdent(fpath)+ " res;\n");
+          Print.printBuf("end ");
+          Print.printBuf(fstr);
+          Print.printBuf(";\n\n");
+        end if;
       then
         ();
 
@@ -3213,6 +3214,17 @@ algorithm
       then
         str;
 
+    case (DAE.INITIAL_FOR_EQUATION(iter = s2, range = e1, equations = xs1, source = src) :: xs, str)
+      equation
+        _ = getSourceInformationStr(src);
+        s1 = ExpressionDump.printExpStr(e1);
+        str = IOStream.appendList(str, {"  for ", s2, " in ", s1, " loop\n"});
+        str = dumpEquationsStream(xs1, str);
+        str = IOStream.appendList(str, {"  end for;\n"});
+        str = dumpEquationsStream(xs, str);
+      then
+        str;
+
     case ((DAE.INITIAL_IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::trueBranches),equations3 = xs2) :: xs), str)
       equation
         str = IOStream.append(str, "  if ");
@@ -3582,13 +3594,12 @@ algorithm
       list<DAE.Element> daeElts;
       DAE.Type t;
       DAE.Type tp;
-      DAE.InlineType inlineType;
       IOStream.IOStream str;
       Option<SCode.Comment> c;
       DAE.ExternalDecl ext_decl;
       Boolean isImpure;
 
-    case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
+    case (DAE.FUNCTION(path = fpath, functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
                        type_ = t, isImpure = isImpure, comment = c), str)
       equation
         str = IOStream.append(str, dumpParallelismStr(t));
@@ -3597,7 +3608,6 @@ algorithm
         str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
-        str = IOStream.append(str, dumpInlineTypeStr(inlineType));
         str = IOStream.append(str, dumpCommentStr(c));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
@@ -3612,7 +3622,7 @@ algorithm
       then
         str;
 
-      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
+      case (DAE.FUNCTION(path = fpath, functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
                          isImpure = isImpure, comment = c), str)
       equation
         fstr = AbsynUtil.pathStringNoQual(fpath);
@@ -3620,7 +3630,6 @@ algorithm
         str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
-        str = IOStream.append(str, dumpInlineTypeStr(inlineType));
         str = IOStream.append(str, dumpCommentStr(c));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
@@ -3633,15 +3642,21 @@ algorithm
     case (DAE.RECORD_CONSTRUCTOR(path = fpath,type_=tp), str)
       equation
         false = Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
-        fstr = AbsynUtil.pathStringNoQual(fpath);
-        str = IOStream.append(str, "function ");
-        str = IOStream.append(str, fstr);
-        str = IOStream.append(str, " \"Automatically generated record constructor for " + fstr + "\"\n");
-        str = IOStream.append(str, printRecordConstructorInputsStr(tp));
-        str = IOStream.append(str, "  output "+AbsynUtil.pathLastIdent(fpath) + " res;\n");
-        str = IOStream.append(str, "end ");
-        str = IOStream.append(str, fstr);
-        str = IOStream.append(str, ";\n\n");
+
+        if Flags.isSet(Flags.PRINT_RECORD_TYPES) then
+          str = IOStream.append(str, Types.unparseType(tp));
+          str = IOStream.append(str, "\n");
+        else
+          fstr = AbsynUtil.pathStringNoQual(fpath);
+          str = IOStream.append(str, "function ");
+          str = IOStream.append(str, fstr);
+          str = IOStream.append(str, " \"Automatically generated record constructor for " + fstr + "\"\n");
+          str = IOStream.append(str, printRecordConstructorInputsStr(tp));
+          str = IOStream.append(str, "  output "+AbsynUtil.pathLastIdent(fpath) + " res;\n");
+          str = IOStream.append(str, "end ");
+          str = IOStream.append(str, fstr);
+          str = IOStream.append(str, ";\n\n");
+        end if;
       then
         str;
 

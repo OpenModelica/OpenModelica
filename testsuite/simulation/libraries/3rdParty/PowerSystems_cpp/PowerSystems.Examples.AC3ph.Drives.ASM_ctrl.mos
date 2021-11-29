@@ -1,0 +1,47 @@
+// name:     PowerSystems.Examples.AC3ph.Drives.ASM_ctrl
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Drives.ASM_ctrl);
+compareVars :=
+{
+  "asm_ctrl.motor.tau_el",
+  "asm_ctrl.motor.w_el",
+  "asm_ctrl.motor.i_meas[1]",
+  "asm_ctrl.motor.i_meas[2]",
+  "asm_ctrl.motor.slip"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// PowerSystems.Examples.AC3ph.Drives.ASM_ctrl
+// {"asm_ctrl.motor.tau_el","asm_ctrl.motor.w_el","asm_ctrl.motor.i_meas[1]","asm_ctrl.motor.i_meas[2]","asm_ctrl.motor.slip"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Drives.ASM_ctrl', options = '', outputFormat = 'mat', variableFilter = 'time|asm_ctrl.motor.tau_el|asm_ctrl.motor.w_el|asm_ctrl.motor.i_meas.1.|asm_ctrl.motor.i_meas.2.|asm_ctrl.motor.slip', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Drives.ASM_ctrl_res.mat
+// Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,8 @@
+//
+// These commands are common to all PowerSystems Cpp Runtime Tests
+//
+
+packageName := $TypeName(PowerSystems);
+packageVersion := "";
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+referenceFileDir := "PowerSystems"; // directory of reference files

@@ -115,6 +115,16 @@ AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
+# Check for platform arch (32 vs 64 bit)
+# sets OMC_TARGET_ARCH_IS_64 to true if 64 bit.
+AC_SUBST(OMC_TARGET_ARCH_IS_64)
+AC_CHECK_SIZEOF([void *])
+if test "x$ac_cv_sizeof_void_p" = "x8" ; then
+   OMC_TARGET_ARCH_IS_64="true"
+else
+   OMC_TARGET_ARCH_IS_64="false"
+fi
+
 build_short=$build_cpu-$build_os
 host_short=$host_cpu-$host_os
 
@@ -299,14 +309,8 @@ AC_LANG_POP([C++])
 
 fi
 
-m4_include([common/m4/ax_cxx_compile_stdcxx_11.m4])
-HAVE_CXX_STD=0
-for flag in $CXXFLAGS; do
-  (echo $flag | grep -q "^-std=") && HAVE_CXX_STD=1
-done
-if test "$HAVE_CXX_STD" = 0; then
-  AX_CXX_COMPILE_STDCXX_11([noext],[optional])
-fi
+m4_include([common/m4/ax_cxx_compile_stdcxx.m4])
+AX_CXX_COMPILE_STDCXX(14,[noext],[optional])
 
 if test "`getconf LONG_BIT`" = "32"; then
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set

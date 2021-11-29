@@ -447,5 +447,17 @@ algorithm
   end if;
 end stripBOM;
 
+function stripFileExtension
+  input output String filename;
+protected
+  Integer pos;
+algorithm
+  pos := rfindChar(filename, CHAR_DOT);
+
+  if pos <> NO_POS then
+    filename := substring(filename, 1, pos-1);
+  end if;
+end stripFileExtension;
+
 annotation(__OpenModelica_Interface="util");
 end StringUtil;

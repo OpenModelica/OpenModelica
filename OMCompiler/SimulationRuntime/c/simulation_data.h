@@ -294,7 +294,10 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*getIterationVars)(struct DATA*, double*);
   int (*checkConstraints)(struct DATA*, threadData_t *threadData);
 
+  NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   void *solverData;
+  NLS_LS nlsLinearSolver;              /* nls linear solver */
+
   modelica_real *nlsx;                 /* x */
   modelica_real *nlsxOld;              /* previous x */
   modelica_real *nlsxExtrapolation;    /* extrapolated values for x from old and old2 - used as initial guess */
@@ -612,8 +615,8 @@ typedef enum EVAL_CONTEXT
 
 typedef struct SIMULATION_INFO
 {
-  modelica_real startTime;
-  modelica_real stopTime;
+  modelica_real startTime;            /* Start time of the simulation */
+  modelica_real stopTime;             /* Stop time of the simulation */
   int useStopTime;
   modelica_integer numSteps;
   modelica_real stepSize;
@@ -630,7 +633,7 @@ typedef struct SIMULATION_INFO
   LINEAR_SPARSE_SOLVER lssMethod;      /* linear sparse solver */
   int mixedMethod;                     /* mixed solver */
 
-  NONLINEAR_SOLVER  nlsMethod;         /* nonlinear solver */
+  NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   NEWTON_STRATEGY newtonStrategy;      /* newton damping strategy solver */
   int nlsCsvInfomation;                /* = 1 csv files with detailed nonlinear solver process are generated */
   NLS_LS nlsLinearSolver;              /* nls linear solver */
@@ -653,6 +656,8 @@ typedef struct SIMULATION_INFO
   modelica_boolean sampleActivated;    /* true if a sample expresion is going to be actived */
   modelica_boolean solveContinuous;    /* true during continuous integration to avoid zero-crossings jumps */
   modelica_boolean noThrowDivZero;     /* true if solving nonlinear system to avoid THROW for division by zero */
+  modelica_boolean noThrowAsserts;     /* true if asserts can be ignored, e.g. when searching for an event location */
+  modelica_boolean needToReThrow;      /* true if an ignored asserts was found, and may need to be rethrown */
 
   double solverSteps;                  /* Number of integration steps so far for writing to the result file */ // FIXME why is this not an integer?
 
@@ -720,8 +725,7 @@ typedef struct SIMULATION_INFO
   INLINE_DATA* inlineData;
 
   /* delay vars */
-  double tStart;
-  RINGBUFFER **delayStructure;
+  RINGBUFFER **delayStructure;        /* Array of ring buffers for delay expressions */
   const char *OPENMODELICAHOME;
 
   CHATTERING_INFO chatteringInfo;

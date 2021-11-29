@@ -45,6 +45,7 @@ encapsulated uniontype NFVariable
 
 protected
   import ExpandExp = NFExpandExp;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import IOStream;
   import Util;
   import Variable = NFVariable;
@@ -189,6 +190,11 @@ public
     output Variability variability = variable.attributes.variability;
   end variability;
 
+  function visibility
+    input Variable variable;
+    output Visibility visibility = variable.visibility;
+  end visibility;
+
   function isEmptyArray
     input Variable variable;
     output Boolean isEmpty = Type.isEmptyArray(variable.ty);
@@ -258,9 +264,9 @@ public
       input output Expression exp;
     end MapFn;
   algorithm
-    var.binding := Binding.mapExp(var.binding, fn);
+    var.binding := Binding.mapExpShallow(var.binding, fn);
     var.typeAttributes := list(
-      (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
+      (Util.tuple21(a), Binding.mapExpShallow(Util.tuple22(a), fn)) for a in var.typeAttributes);
     var.children := list(mapExp(v, fn) for v in var.children);
   end mapExp;
 
@@ -348,12 +354,6 @@ public
   algorithm
     s := IOStream.append(s, indent);
 
-    if var.visibility == Visibility.PROTECTED then
-      s := IOStream.append(s, "protected ");
-    else
-      s := IOStream.append(s, "public ");
-    end if;
-
     s := Component.Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
     s := IOStream.append(s, Type.toFlatString(var.ty));
     s := IOStream.append(s, " ");
@@ -371,6 +371,8 @@ public
 
       s := IOStream.append(s, Binding.toFlatString(var.binding));
     end if;
+
+    s := FlatModelicaUtil.appendComment(var.comment, s);
   end toFlatStream;
 
   annotation(__OpenModelica_Interface="frontend");

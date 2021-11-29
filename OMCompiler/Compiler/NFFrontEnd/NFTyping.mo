@@ -65,7 +65,6 @@ import ComponentRef = NFComponentRef;
 import Config;
 import Origin = NFComponentRef.Origin;
 import ExecStat.execStat;
-import InstUtil = NFInstUtil;
 import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
 import Call = NFCall;
@@ -570,6 +569,7 @@ algorithm
           end if;
         end if;
 
+        exp := subscriptDimExp(exp, component);
         dim := Dimension.fromExp(exp, var);
         arrayUpdate(dimensions, index, dim);
       then
@@ -657,6 +657,7 @@ algorithm
             algorithm
               Structural.markExp(exp);
               exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+              exp := subscriptDimExp(exp, component);
             then
               Dimension.fromExp(exp, dim.var);
 
@@ -679,6 +680,46 @@ algorithm
 
   verifyDimension(dimension, component, info);
 end typeDimension;
+
+function subscriptDimExp
+  "Tries to fix dimension expressions that are lacking subscripts after having
+   been evaluated."
+  input output Expression dimExp;
+  input InstNode component;
+protected
+  Integer exp_dims, parent_dims;
+  InstNode parent;
+  list<Subscript> subs;
+algorithm
+  exp_dims := Expression.dimensionCount(dimExp);
+
+  if exp_dims == 0 then
+    // If the expression is a scalar like it should we don't need to do anything.
+    return;
+  end if;
+
+  // If the expression has too many dimensions, add split subscripts based on
+  // the component's parent's dimensions until we get a scalar expression.
+  subs := {};
+  parent := InstNode.derivedParent(component);
+
+  while exp_dims > 0 and not InstNode.isEmpty(parent) loop
+    parent_dims := InstNode.dimensionCount(parent);
+
+    for i in parent_dims:-1:1 loop
+      subs := Subscript.makeSplitIndex(parent, i) :: subs;
+      exp_dims := exp_dims - 1;
+
+      if exp_dims == 0 then
+        break;
+      end if;
+    end for;
+
+    parent := InstNode.derivedParent(parent);
+  end while;
+
+  dimExp := Expression.applySubscripts(subs, dimExp);
+end subscriptDimExp;
 
 function simplifyDimExp
   input output Expression dimExp;
@@ -1349,12 +1390,10 @@ function typeSubscriptedExp
         output Variability variability;
         output Purity purity;
 protected
-  Expression e, cr_exp;
+  Expression e;
   list<Subscript> subs, expanded_subs;
   list<Expression> fill_dims;
   Boolean split;
-  Integer dim_count, start_dim, end_dim;
-  list<Dimension> dims;
 algorithm
   Expression.SUBSCRIPTED_EXP(e, subs, ty, split) := exp;
 
@@ -1362,74 +1401,12 @@ algorithm
   // modifier that was propagated down. In this case it should have proxy
   // subscripts that we need to deal with.
   if split then
+    // Expand proxy subscripts into split index subscripts.
+    (expanded_subs, fill_dims) := expandProxySubscripts(subs, context);
+
     // Type the expression that's being subscripted.
-    (exp, ty, variability, purity) := typeExp(e, context, info);
-
-    expanded_subs := {};
-    fill_dims := {};
-
-    // Expand proxy subscripts into split index subscripts. A proxy subscript
-    // generates as many index subscripts as the number of dimensions on the
-    // element it refers to (which might be none if the element is a scalar).
-    for s in subs loop
-      expanded_subs := match s
-        // Special handling for functions.
-        case Subscript.SPLIT_PROXY() guard InstContext.inFunction(context)
-          algorithm
-            // Ignore type subscripts in functions, otherwise for e.g.:
-            //   input AngularVelocity[3] w;
-            // we get:
-            //   input Real[3] w(unit = {"rad/s", "rad/s", "rad/s"});
-            // which is correct, but the backend expects it to be:
-            //   input Real[3] w(unit = "rad/s")
-            if InstNode.refEqual(s.origin, s.parent) then
-              dim_count := InstNode.dimensionCount(s.parent);
-
-              for i in 1:dim_count loop
-                expanded_subs := Subscript.makeSplitIndex(s.parent, i) :: expanded_subs;
-              end for;
-            end if;
-          then
-            expanded_subs;
-
-        // Normal case for classes.
-        case Subscript.SPLIT_PROXY()
-          algorithm
-            // Count the number of dimensions on the parent the subscript came
-            // from, and add that many split index subscripts to the list.
-            dim_count := InstNode.dimensionCount(s.parent);
-
-            for i in 1:dim_count loop
-              expanded_subs := Subscript.makeSplitIndex(s.parent, i) :: expanded_subs;
-            end for;
-
-            // If the origin and parent of the subscript is not the same it
-            // means the expression comes from a class modifier, like
-            //   type T = Real[3](start = {1, 2, 3}).
-            // In this case we might need to add dimensions when applying the
-            // binding expression to a component. For a component like
-            //   T x[1, 2]
-            // we then have origin = T and parent = x and generate
-            //   T x[1, 2](start = fill({1, 2, 3}, size(x, 1), size(x, 2))).
-            if not InstNode.refEqual(s.origin, s.parent) then
-              // The number of fill dimensions is size(parent) - size(origin).
-              dim_count := dim_count - InstNode.dimensionCount(s.origin);
-
-              // Add size expressions to the list of fill dimensions.
-              if dim_count > 0 then
-                cr_exp := Expression.fromCref(ComponentRef.fromNode(s.parent, InstNode.getType(s.parent)));
-
-                for i in 1:dim_count loop
-                  fill_dims := Expression.SIZE(cr_exp, SOME(Expression.INTEGER(i))) :: fill_dims;
-                end for;
-              end if;
-            end if;
-          then
-            expanded_subs;
-
-        else s :: expanded_subs;
-      end match;
-    end for;
+    //(exp, ty, variability, purity) := typeExp(e, context, info);
+    (exp, ty, variability, purity) := typeSubscriptedExp2(e, expanded_subs, context, info);
 
     // If we have fill dimensions, use them to create a fill call.
     if not listEmpty(fill_dims) then
@@ -1442,9 +1419,7 @@ algorithm
     // If we have any subscripts after expanding the proxies we create a new
     // subscripted expression. Otherwise we can just return the typed expression
     // as it is.
-    expanded_subs := List.trim(expanded_subs, Subscript.isWhole);
     if not listEmpty(expanded_subs) then
-      expanded_subs := listReverseInPlace(expanded_subs);
       // Subscripting the expression might not be possible if the type is wrong,
       // but we ignore it here so we can handle it during type checking instead
       // when we can give better error messages.
@@ -1473,6 +1448,97 @@ algorithm
     purity := Expression.purity(exp);
   end if;
 end typeSubscriptedExp;
+
+function expandProxySubscripts
+  "Expand proxy subscripts into split index subscripts. A proxy subscript
+   generates as many index subscripts as the number of dimensions on the
+   element it refers to (which might be none if the element is a scalar)."
+  input list<Subscript> subscripts;
+  input InstContext.Type context;
+  output list<Subscript> outSubscripts = {};
+  output list<Expression> fillDimensions = {};
+protected
+  Integer dim_count;
+  Expression cr_exp;
+algorithm
+  for s in subscripts loop
+    outSubscripts := match s
+      case Subscript.SPLIT_PROXY()
+        algorithm
+          // Count the number of dimensions on the parent the subscript came
+          // from, and add that many split index subscripts to the list.
+          dim_count := InstNode.dimensionCount(s.parent);
+
+          for i in 1:dim_count loop
+            outSubscripts := Subscript.makeSplitIndex(s.parent, i) :: outSubscripts;
+          end for;
+
+          // If the origin and parent of the subscript is not the same it
+          // means the expression comes from a class modifier, like
+          //   type T = Real[3](start = {1, 2, 3}).
+          // In this case we might need to add dimensions when applying the
+          // binding expression to a component. For a component like
+          //   T x[1, 2]
+          // we then have origin = T and parent = x and generate
+          //   T x[1, 2](start = fill({1, 2, 3}, size(x, 1), size(x, 2))).
+          if not InstNode.refEqual(s.origin, s.parent) then
+            // The number of fill dimensions is size(parent) - size(origin).
+            dim_count := dim_count - InstNode.dimensionCount(s.origin);
+
+            // Add size expressions to the list of fill dimensions.
+            if dim_count > 0 then
+              cr_exp := Expression.fromCref(ComponentRef.fromNode(s.parent, InstNode.getType(s.parent)));
+
+              for i in 1:dim_count loop
+                fillDimensions := Expression.SIZE(cr_exp, SOME(Expression.INTEGER(i))) :: fillDimensions;
+              end for;
+            end if;
+          end if;
+        then
+          outSubscripts;
+
+      else s :: outSubscripts;
+    end match;
+  end for;
+
+  outSubscripts := List.trim(outSubscripts, Subscript.isWhole);
+  outSubscripts := listReverseInPlace(outSubscripts);
+end expandProxySubscripts;
+
+function typeSubscriptedExp2
+  input Expression exp;
+  input list<Subscript> splitSubs;
+  input InstContext.Type context;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type ty;
+  output Variability variability;
+  output Purity purity;
+protected
+  list<Expression> expl;
+algorithm
+  (outExp, ty, variability, purity) := match exp
+    case Expression.ARRAY()
+      guard not listEmpty(splitSubs) and not listEmpty(exp.elements)
+      algorithm
+        expl := {};
+        variability := Variability.CONSTANT;
+        purity := Purity.PURE;
+
+        for e in exp.elements loop
+          (e, ty, variability, purity) := typeSubscriptedExp2(e, listRest(splitSubs), context, info);
+          expl := e :: expl;
+        end for;
+
+        expl := listReverseInPlace(expl);
+        ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
+        outExp := Expression.makeArray(ty, expl);
+      then
+        (outExp, ty, variability, purity);
+
+    else typeExp(exp, context, info);
+  end match;
+end typeSubscriptedExp2;
 
 function typeExpDim
   "Returns the requested dimension of the given expression, while doing as
@@ -2219,6 +2285,7 @@ protected
   TypingError ty_err;
   Option<Expression> oexp;
   InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
+  list<Expression> expl;
 algorithm
   (sizeExp, sizeType, variability, purity) := match sizeExp
     case Expression.SIZE(exp = exp, dimIndex = SOME(index))
@@ -2279,8 +2346,19 @@ algorithm
             fail();
           end if;
 
-          // Since we don't know which dimension to take the size of, return a size expression.
-          exp := Expression.SIZE(exp, SOME(index));
+          if Type.isEmptyArray(exp_ty) and not InstContext.inFunction(context) then
+            // If the expression has any dimensions that are 0 it might not be safe to generate
+            // a size expression with it, since it might be either a variable that's no longer
+            // present in the flat model or an array expression that doesn't have enough
+            // dimensions (e.g. Real[0, 2] => {}). In that case make an array with the dimension
+            // sizes of the expression and index that instead.
+            expl := list(Dimension.sizeExp(d) for d in Type.arrayDims(exp_ty));
+            exp := Expression.makeExpArray(expl, Type.INTEGER());
+            exp := Expression.makeSubscriptedExp({Subscript.makeIndex(index)}, exp);
+          else
+            // Since we don't know which dimension to take the size of, return a size expression.
+            exp := Expression.SIZE(exp, SOME(index));
+          end if;
         end if;
       then
         (exp, Type.INTEGER(), variability, purity);
@@ -2770,11 +2848,7 @@ algorithm
     case Equation.ASSERT()
       algorithm
         info := ElementSource.getInfo(eq.source);
-        next_context := InstContext.set(context, NFInstContext.ASSERT);
-        e1 := typeOperatorArg(eq.condition, Type.BOOLEAN(),
-          InstContext.set(next_context, NFInstContext.CONDITION), "assert", "condition", 1, info);
-        e2 := typeOperatorArg(eq.message, Type.STRING(), next_context, "assert", "message", 2, info);
-        e3 := typeOperatorArg(eq.level, NFBuiltin.ASSERTIONLEVEL_TYPE, next_context, "assert", "level", 3, info);
+        (e1, e2, e3) := typeAssert(eq.condition, eq.message, eq.level, context, info);
       then
         Equation.ASSERT(e1, e2, e3, eq.source);
 
@@ -2941,6 +3015,35 @@ algorithm
   end match;
 end checkLhsInWhen;
 
+function typeAssert
+  input output Expression condition;
+  input output Expression message;
+  input output Expression level;
+  input InstContext.Type context;
+  input SourceInfo info;
+protected
+  InstContext.Type next_context;
+  Variability level_var;
+algorithm
+  next_context := InstContext.set(context, NFInstContext.ASSERT);
+
+  condition := typeOperatorArg(condition, Type.BOOLEAN(),
+    InstContext.set(next_context, NFInstContext.CONDITION), "assert", "condition", 1, info);
+  message := typeOperatorArg(message, Type.STRING(),
+    next_context, "assert", "message", 2, info);
+  (level, level_var) := typeOperatorArg(level, NFBuiltin.ASSERTIONLEVEL_TYPE,
+    next_context, "assert", "level", 3, info);
+
+  if level_var > Variability.PARAMETER then
+    Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY,
+        {"level", Expression.toString(level), "assert",
+         Prefixes.variabilityString(level_var), "parameter"}, info);
+    fail();
+  end if;
+
+  Structural.markExp(level);
+end typeAssert;
+
 function typeAlgorithm
   input output Algorithm alg;
   input InstContext.Type context;
@@ -3041,11 +3144,7 @@ algorithm
     case Statement.ASSERT()
       algorithm
         info := ElementSource.getInfo(st.source);
-        next_context := InstContext.set(context, NFInstContext.ASSERT);
-        e1 := typeOperatorArg(st.condition, Type.BOOLEAN(),
-          InstContext.set(next_context, NFInstContext.CONDITION), "assert", "condition", 1, info);
-        e2 := typeOperatorArg(st.message, Type.STRING(), next_context, "assert", "message", 2, info);
-        e3 := typeOperatorArg(st.level, NFBuiltin.ASSERTIONLEVEL_TYPE, next_context, "assert", "level", 3, info);
+        (e1, e2, e3) := typeAssert(st.condition, st.message, st.level, context, info);
       then
         Statement.ASSERT(e1, e2, e3, st.source);
 
@@ -3349,11 +3448,12 @@ function typeOperatorArg
   input String argName;
   input Integer argIndex;
   input SourceInfo info;
+        output Variability var;
 protected
   Type ty;
   MatchKind mk;
 algorithm
-  (arg, ty, _) := typeExp(arg, context, info);
+  (arg, ty, var) := typeExp(arg, context, info);
   (arg, _, mk) := TypeCheck.matchTypes(ty, expectedType, arg);
 
   if TypeCheck.isIncompatibleMatch(mk) then

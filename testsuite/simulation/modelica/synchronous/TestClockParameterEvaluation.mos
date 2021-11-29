@@ -39,7 +39,7 @@ simulate(Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreti
 // end SimulationResult;
 // "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
-// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: PI.y = 0.0 (PI.y_start = 0.0)
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: PI.y = PI.y_start (0.0 = PI.y_start)
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

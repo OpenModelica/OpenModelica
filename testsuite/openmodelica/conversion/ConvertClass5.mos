@@ -14,7 +14,7 @@ loadString("
   end ConvertClass5;
 ");
 
-convertPackage(ConvertClass5, "scripts/ConvertClass4.mos");
+runConversionScript(ConvertClass5, "scripts/ConvertClass4.mos");
 getErrorString();
 list(ConvertClass5);
 
@@ -23,7 +23,7 @@ list(ConvertClass5);
 // true
 // ""
 // "package ConvertClass5
-//   import SI = Modelica.Units.SI;
+//   import Modelica.Units.SI;
 //
 //   model A
 //     SI.Time t;

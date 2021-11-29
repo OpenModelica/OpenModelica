@@ -1577,12 +1577,31 @@ FMI
 
   -  *Move FMU* – Moves the generated FMU to a specified path.
 
-  -  *Platforms* - list of platforms to generate FMU binaries.
+  -  Platforms
 
-  -  *Model Description Filters* - Sets the variable filter for model description file.
+    The list of platforms is created by searching for programs in the PATH matching pattern \"*-*-*-*cc\"."
+    Add the host triple to the PATH to get it listed.
+
+    -  *None* – Do not generate code for any platform i.e., a source only FMU.
+
+    -  *Dynamic* – Generate the FMU with dynamically linked runtime for current platform.
+
+    -  *Static* – Generate the FMU with statically linked runtime for current platform.
+
+  -  Solver for Co-Simulation
+
+    -  *Explicit Euler*
+
+    -  *CVODE*
+
+  -  *Model Description Filters* - Sets the variable filter for model description file see :ref:`omcflag-fmifilter`
+
+  -  *Include Modelica based resources via loadResource*
 
   -  *Include Source Code* - Sets if the exported FMU can contain source code.
      Model Description Filter \"blackBox\" will override this, because black box FMUs do never contain their source code.
+
+  -  *Generate Debug Symbols* - Generates a FMU with debug symbols.
 
 -  Import
 

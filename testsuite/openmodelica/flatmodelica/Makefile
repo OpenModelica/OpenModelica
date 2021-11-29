@@ -9,7 +9,9 @@ else
 endif
 
 TESTFILES = DoublePendulum.mos \
-  Tables.mos
+  Tables.mos \
+	SD.mo \
+	Comments.mo
 
 
 # test that currently fail. Move up when fixed.

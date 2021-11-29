@@ -31,7 +31,7 @@ enum LogFormat {LF_TXT = 0, LF_FMI = 1, LF_FMI2 = 2, LF_XML = 3, LF_XMLTCP = 4};
 enum LogOMEdit {LOG_EVENTS = 0, LOG_INIT, LOG_LS, LOG_NLS, LOG_SOLVER, LOG_STATS};
 enum OutputPointType {OPT_ALL, OPT_STEP, OPT_NONE};
 enum OutputFormat {CSV, MAT, BUFFER, EMPTY};
-enum EmitResults {EMIT_ALL, EMIT_PUBLIC, EMIT_NONE};
+enum EmitResults {EMIT_ALL, EMIT_HIDDEN, EMIT_PROTECTED, EMIT_PUBLIC, EMIT_NONE};
 
 struct LogSettings
 {

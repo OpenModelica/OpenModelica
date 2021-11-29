@@ -988,7 +988,6 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
       mpModelWidget->getDiagramGraphicsView()->removeTransitionsFromView();
       mpModelWidget->getDiagramGraphicsView()->removeInitialStatesFromView();
     }
-    mpModelWidget->getModelConnections();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
     // update the icon in the libraries browser view.
@@ -1441,9 +1440,17 @@ void LibraryTreeModel::addModelicaLibraries()
  * \param row
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved,
-                                                         bool isSystemLibrary, bool load, int row, bool activateAccessAnnotations)
+                                                         bool isSystemLibrary, bool load, int row, bool loadingMOL)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
+
+  bool activateAccessAnnotations = false;
+  QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
+  if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Always
+      || (loadingMOL && pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Loading)) {
+    activateAccessAnnotations = true;
+  }
+
   // check if is in non-existing classes.
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
@@ -1865,9 +1872,10 @@ void LibraryTreeModel::showHideProtectedClasses()
  * Unloads/deletes the Modelica class.
  * \param pLibraryTreeItem
  * \param askQuestion
+ * \param doDeleteClass
  * \return
  */
-bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion, bool doDeleteClass)
 {
   if (askQuestion) {
     QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
@@ -1897,7 +1905,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
   /* Delete the class in OMC.
    * If deleteClass is successful remove the class from Library Browser and delete the corresponding ModelWidget.
    */
-  if (MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
+  if (!doDeleteClass || MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     removeLibraryTreeItem(pLibraryTreeItem);
     if (!pLibraryTreeItem->isTopLevel()) {
       LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
@@ -2522,8 +2530,7 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
         pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
       }
       if (pParentLibraryTreeItem) {
-        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1,
-                                  pParentLibraryTreeItem->isAccessAnnotationsEnabled());
+        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1, pParentLibraryTreeItem->isAccessAnnotationsEnabled());
       }
     }
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
@@ -3101,6 +3108,10 @@ void LibraryTreeView::createActions()
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
   connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteTextFile()));
+  // convert class to use newer uses libraries
+  mpConvertClassUsesLibrariesAction = new QAction(tr("Convert to newer versions of used libraries"), this);
+  mpConvertClassUsesLibrariesAction->setStatusTip(tr("Updates the class to use the newer versions of the uses annotation libraries"));
+  connect(mpConvertClassUsesLibrariesAction, SIGNAL(triggered()), SLOT(convertClassUsesLibraries()));
   // Export FMU Action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
@@ -3377,6 +3388,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
           exportMenu.addAction(mpExportXMLAction);
           exportMenu.addAction(mpExportFigaroAction);
           menu.addMenu(&exportMenu);
+          if (pLibraryTreeItem->isTopLevel()) {
+            menu.addSeparator();
+            menu.addAction(mpConvertClassUsesLibrariesAction);
+          }
           if (pLibraryTreeItem->isSimulationAllowed()) {
             menu.addSeparator();
             menu.addAction(mpUpdateBindingsAction);
@@ -3820,6 +3835,19 @@ void LibraryTreeView::deleteTextFile()
 }
 
 /*!
+ * \brief LibraryTreeView::convertClassUsesLibraries
+ * Opens the dialog to convert the class uses libraries.
+ */
+void LibraryTreeView::convertClassUsesLibraries()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    ConvertClassUsesAnnotationDialog *pConvertClassUsesAnnotationDialog = new ConvertClassUsesAnnotationDialog(pLibraryTreeItem);
+    pConvertClassUsesAnnotationDialog->exec();
+  }
+}
+
+/*!
  * \brief LibraryTreeView::exportModelFMU
  * Exports the selected LibraryTreeItem to FMU.
  */
@@ -4189,13 +4217,8 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
           MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
           MainWindow::instance()->showProgressBar();
         }
-        bool activateAccessAnnotations = false;
-        QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
-        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Always) {
-          activateAccessAnnotations = true;
-        }
         foreach (QString model, classesList) {
-          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1, activateAccessAnnotations);
+          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1);
           mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
           if (showProgress) {
             MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
@@ -4276,13 +4299,8 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
           MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
           MainWindow::instance()->showProgressBar();
         }
-        bool activateAccessAnnotations = true;
-        QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
-        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Never) {
-          activateAccessAnnotations = false;
-        }
         foreach (QString model, classesList) {
-          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true, -1, activateAccessAnnotations);
+          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true, -1, true);
           mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
           if (showProgress) {
             MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
@@ -4693,14 +4711,13 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+void LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
-  bool result = saveTotalLibraryTreeItemHelper(pLibraryTreeItem);
+  saveTotalLibraryTreeItemHelper(pLibraryTreeItem);
   MainWindow::instance()->getStatusBar()->clearMessage();
   MainWindow::instance()->hideProgressBar();
-  return result;
 }
 
 /*!
@@ -5214,24 +5231,13 @@ bool LibraryWidget::saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryT
  * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
+void LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
 {
-  bool result = false;
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-  if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-    return false;
+  if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+    SaveTotalFileDialog *pSaveTotalFileDialog = new SaveTotalFileDialog(pLibraryTreeItem);
+    pSaveTotalFileDialog->exec();
   }
-  QString fileName;
-  QString name = QString("%1Total").arg(pLibraryTreeItem->getName());
-  fileName = StringHandler::getSaveFileName(this, tr("%1 - Save %2 %3 as Total File").arg(Helper::applicationName)
-                                            .arg(pLibraryTreeItem->mClassInformation.restriction).arg(pLibraryTreeItem->getName()), NULL,
-                                            Helper::omFileTypes, NULL, "mo", &name);
-  if (fileName.isEmpty()) { // if user press ESC
-    return false;
-  }
-  // save the model through OMC
-  result = MainWindow::instance()->getOMCProxy()->saveTotalModel(fileName, pLibraryTreeItem->getNameStructure());
-  return result;
 }
 
 /*!

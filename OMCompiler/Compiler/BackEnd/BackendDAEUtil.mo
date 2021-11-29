@@ -400,7 +400,7 @@ protected
 algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
-  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end makeIterVariable;
 
 protected function checkEquationSize"author: Frenkel TUD 2010-12
@@ -1164,13 +1164,12 @@ end setTearingSelectAttribute;
 
 public function setHideResultAttribute
   "Returns the expression of the hideResult annotation.
-   Uses isProtected as default if the annotation is not specified.
    See Modelica Spec 3.3, section 18.3"
   input Option<SCode.Comment> comment;
-  input Boolean isProtected;
   input DAE.ComponentRef inCref;
-  output DAE.Exp hideResult;
+  output Option<DAE.Exp> hideResult;
 protected
+  DAE.Exp hr;
   SCode.Annotation ann;
   Absyn.Exp val;
   DAE.ComponentRef crefRoot;
@@ -1178,19 +1177,19 @@ algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
     val := SCodeUtil.getNamedAnnotation(ann, "HideResult");
-    hideResult := Expression.fromAbsynExp(val);
+    hr := Expression.fromAbsynExp(val);
 
     hideResult := match(inCref)
       case(DAE.CREF_QUAL())
         equation
           (crefRoot,_) = ComponentReference.splitCrefLast(inCref);
-          hideResult = Expression.traverseExpBottomUp(hideResult, ComponentReference.joinCrefsExp, crefRoot);
-       then hideResult;
-      else hideResult;
+          hr = Expression.traverseExpBottomUp(hr, ComponentReference.joinCrefsExp, crefRoot);
+       then SOME(hr);
+      else SOME(hr);
     end match;
 
   else
-    hideResult := DAE.BCONST(isProtected);
+    hideResult := NONE();
   end try;
 end setHideResultAttribute;
 
@@ -1777,6 +1776,43 @@ algorithm
       then clearEqSyst(syst);
   end match;
 end reduceEqSystem;
+
+public function introduceOutputRealDerivatives
+"Find output variables of Real type and replace them with derivative equation
+ (e.g) output Real y;
+  $y_der = der(y)
+ "
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystem currentSystem;
+  DAE.ComponentRef newCref, cref;
+  DAE.Exp lhs, rhs;
+  list<BackendDAE.Equation> newEqnlst;
+  list<BackendDAE.Var> daeVarsLst;
+algorithm
+  {currentSystem} := inDAE.eqs;
+  daeVarsLst := {};
+  newEqnlst := {};
+  for var in BackendVariable.varList(currentSystem.orderedVars) loop
+    if BackendVariable.isOutputVar(var) then
+      newCref := ComponentReference.appendStringLastIdent("_der", var.varName); // append _der
+      newCref := ComponentReference.prependStringCref("$", newCref); // prepend $
+      daeVarsLst := BackendVariable.makeVar(newCref) :: daeVarsLst;
+      lhs := Expression.crefExp(newCref);
+      rhs := IndexReduction.makeder(BackendVariable.varExp(var));
+      newEqnlst := BackendEquation.generateEquation(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING) :: newEqnlst;
+    end if;
+  end for;
+  //BackendDump.dumpEquationList(newEqnlst, "first order derivative equation");
+
+  currentSystem := BackendVariable.addVarsDAE(daeVarsLst, currentSystem);
+  currentSystem.orderedEqs := BackendEquation.merge(currentSystem.orderedEqs, BackendEquation.listEquation(newEqnlst));
+
+  outDAE := BackendDAE.DAE({currentSystem}, inDAE.shared);
+
+  //BackendDump.printBackendDAE(outDAE);
+end introduceOutputRealDerivatives;
 
 public function introduceOutputAliases
 "Find top level output variables and replace them with alias variables."
@@ -3871,11 +3907,27 @@ algorithm
 
     case (_,_,_,_,{},_,_,_,_) then (m,mt,iMapEqnIncRow,iMapIncRowEqn);
 
-    case (_,_,_,_,e::eqns,_,_,_,_)
+    case (_,_,_,_,e::eqns,_,_,_,_) guard(BackendEquation.has(daeeqns, intAbs(e)))
       equation
         abse = intAbs(e);
         eqn = BackendEquation.get(daeeqns, abse);
         (row,_) = adjacencyRow(eqn,vars,inIndxType,functionTree,AvlSetInt.Tree.EMPTY(),isInitial);
+        scalarindxs = iMapEqnIncRow[abse];
+        oldvars = getOldVars(m,listHead(scalarindxs));
+        (_,outvarsTree,invarsTree) = AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.Tree.EMPTY(), oldvars),row);
+        outvars = AvlSetInt.listKeys(outvarsTree);
+        invars = AvlSetInt.listKeys(invarsTree);
+        // do the same for each scalar indxs
+        m_1 = List.fold1r(scalarindxs,arrayUpdate,AvlSetInt.listKeys(row),m);
+        mt_1 = List.fold1(scalarindxs,removeValuefromMatrix,outvars,mt);
+        mt_2 = List.fold1(scalarindxs,addValuetoMatrix,invars,mt_1);
+        (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) = updateAdjacencyMatrixScalar1(vars,daeeqns,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn,inIndxType,functionTree,isInitial);
+      then (m_2,mt_3,mapEqnIncRow,mapIncRowEqn);
+
+    case (_,_,_,_,e::eqns,_,_,_,_) // Backup for non existent equations
+      equation
+        abse = intAbs(e);
+        row = AvlSetInt.Tree.EMPTY();
         scalarindxs = iMapEqnIncRow[abse];
         oldvars = getOldVars(m,listHead(scalarindxs));
         (_,outvarsTree,invarsTree) = AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.Tree.EMPTY(), oldvars),row);
@@ -3923,8 +3975,7 @@ algorithm
       array<Integer> mapIncRowEqn;
 
     case (_,_,_,_,_,_,_,_,_,_,_)
-      guard
-        not intGt(index,n)
+      guard(not intGt(index,n) and BackendEquation.has(daeeqns, intAbs(index)))
       equation
         abse = intAbs(index);
         eqn = BackendEquation.get(daeeqns, abse);
@@ -3943,6 +3994,22 @@ algorithm
     case (_,_,_,_,_,_,_,_,_,_,_)
       then
         (m,mt,iMapEqnIncRow,iMapIncRowEqn);
+
+    else
+      equation
+        abse = intAbs(index);
+        rowsize = 1;
+        row = AvlSetInt.EMPTY();
+        new_size = size+rowsize;
+        scalarindxs = List.intRange2(size+1,new_size);
+        mapEqnIncRow = arrayUpdate(iMapEqnIncRow,abse,scalarindxs);
+        mapIncRowEqn = List.fold1r(scalarindxs,arrayUpdate,abse,iMapIncRowEqn);
+        row_lst = AvlSetInt.listKeys(row);
+        m1= List.fold1r(scalarindxs,arrayUpdate,row_lst,m);
+        mt1 = filladjacencyMatrixT(row_lst,scalarindxs,mt);
+        (m1,mt1,mapEqnIncRow,mapIncRowEqn) = updateAdjacencyMatrixScalar2(index+1,n,new_size,vars,daeeqns,m1,mt1,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree,isInitial);
+      then
+        (m1,mt1,mapEqnIncRow,mapIncRowEqn);
   end matchcontinue;
 end updateAdjacencyMatrixScalar2;
 
@@ -4157,17 +4224,18 @@ algorithm
   (outM, outMT) := adjacencyMatrixDispatchMasked(inSyst.orderedVars, inSyst.removedEqs, inIndxType, inMask, inFunctionTree, isInitial);
 end removedAdjacencyMatrixMasked;
 
-protected function traverseStmts "Author: Frenkel TUD 2012-06
+protected function traverseStmts<ArgT> "Author: Frenkel TUD 2012-06
   traverese DAE.Statement without change possibility."
   input list<DAE.Statement> inStmts;
   input FuncExpType func;
-  input Type_a iextraArg;
-  output Type_a oextraArg;
+  input output ArgT extraArg;
+
   partial function FuncExpType
      input DAE.Exp arg1;
-     input output Type_a arg2;
+     input output ArgT arg2;
   end FuncExpType;
-  replaceable type Type_a subtypeof Any;
+
+protected
   function removeSubscripts
     "kabdelhak: remove left hand side subscripts
      (Modelica Specification v3.5 : 11.1.2)
@@ -4182,152 +4250,130 @@ protected function traverseStmts "Author: Frenkel TUD 2012-06
       else exp;
     end match;
   end removeSubscripts;
+
+  DAE.Exp e,e2;
+  list<DAE.Exp> expl1;
+  DAE.ComponentRef cr;
+  list<DAE.Statement> xs,stmts;
+  DAE.Type tp;
+  DAE.Statement x,ew;
+  Boolean b1;
+  String id1,str;
+  DAE.Else algElse;
 algorithm
-  oextraArg := matchcontinue(inStmts,func,iextraArg)
-    local
-      DAE.Exp e,e2;
-      list<DAE.Exp> expl1;
-      DAE.ComponentRef cr;
-      list<DAE.Statement> xs,stmts;
-      DAE.Type tp;
-      DAE.Statement x,ew;
-      Boolean b1;
-      String id1,str;
-      DAE.Else algElse;
-      Type_a extraArg;
+  for stmt in inStmts loop
+    extraArg := matchcontinue stmt
+      case DAE.STMT_ASSIGN(exp1 = e2,exp = e)
+        equation
+          // kabdelhak: remove left hand side subscripts
+          // (Modelica Specification v3.5 : 11.1.2)
+          // solves ticket #7832
+          extraArg = func(e, extraArg);
+          extraArg = func(removeSubscripts(e2), extraArg);
+        then
+          extraArg;
 
-    case ({},_,extraArg) then extraArg;
+      case DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1, exp = e)
+        equation
+          // kabdelhak: remove left hand side subscripts
+          // (Modelica Specification v3.5 : 11.1.2)
+          // solves ticket #7832
+          extraArg = func(e, extraArg);
+          extraArg = List.fold(list(removeSubscripts(ex) for ex in expl1),func,extraArg);
+        then
+          extraArg;
 
-    case ((DAE.STMT_ASSIGN(exp1 = e2,exp = e)::xs),_,extraArg)
-      equation
-        // kabdelhak: remove left hand side subscripts
-        // (Modelica Specification v3.5 : 11.1.2)
-        // solves ticket #7832
-        extraArg = func(e, extraArg);
-        extraArg = func(removeSubscripts(e2), extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_ASSIGN_ARR(lhs = e2, exp = e)
+        equation
+          // kabdelhak: remove left hand side subscripts
+          // (Modelica Specification v3.5 : 11.1.2)
+          // solves ticket #7832
+          extraArg = func(e, extraArg);
+          extraArg = func(removeSubscripts(e2), extraArg);
+        then
+          extraArg;
 
-    case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1, exp = e)::xs),_,extraArg)
-      equation
-        // kabdelhak: remove left hand side subscripts
-        // (Modelica Specification v3.5 : 11.1.2)
-        // solves ticket #7832
-        extraArg = func(e, extraArg);
-        extraArg = List.fold(list(removeSubscripts(ex) for ex in expl1),func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse)
+        equation
+          extraArg = traverseStmtsElse(algElse,func,extraArg);
+          extraArg = traverseStmts(stmts,func,extraArg);
+          extraArg = func(e, extraArg);
+        then
+          extraArg;
 
-    case ((DAE.STMT_ASSIGN_ARR(lhs = e2, exp = e)::xs),_,extraArg)
-      equation
-        // kabdelhak: remove left hand side subscripts
-        // (Modelica Specification v3.5 : 11.1.2)
-        // solves ticket #7832
-        extraArg = func(e, extraArg);
-        extraArg = func(removeSubscripts(e2), extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_FOR(type_=tp,iter=id1,range=e,statementLst=stmts)
+        equation
+          extraArg = func(e, extraArg);
+          cr = ComponentReference.makeCrefIdent(id1, tp, {});
+          (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
+          extraArg = traverseStmts(stmts,func,extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmtsElse(algElse,func,extraArg);
-        extraArg = traverseStmts(stmts,func,extraArg);
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_PARFOR(type_=tp,iter=id1,range=e,statementLst=stmts)
+        equation
+          extraArg = func(e, extraArg);
+          cr = ComponentReference.makeCrefIdent(id1, tp, {});
+          (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
+          extraArg = traverseStmts(stmts,func,extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_FOR(type_=tp,iter=id1,range=e,statementLst=stmts))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-        cr = ComponentReference.makeCrefIdent(id1, tp, {});
-        (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
-        extraArg = traverseStmts(stmts,func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_WHILE(exp=e,statementLst=stmts)
+        equation
+          extraArg = traverseStmts(stmts,func,extraArg);
+          extraArg = func(e, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_PARFOR(type_=tp,iter=id1,range=e,statementLst=stmts))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-        cr = ComponentReference.makeCrefIdent(id1, tp, {});
-        (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
-        extraArg = traverseStmts(stmts,func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_WHEN(exp=e,statementLst=stmts,elseWhen=NONE())
+        equation
+          extraArg = traverseStmts(stmts,func,extraArg);
+          extraArg = func(e, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_WHILE(exp=e,statementLst=stmts))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts(stmts,func,extraArg);
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_WHEN(exp=e,statementLst=stmts,elseWhen=SOME(ew))
+        equation
+          extraArg = traverseStmts({ew},func,extraArg);
+          extraArg = traverseStmts(stmts,func,extraArg);
+          extraArg = func(e, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_WHEN(exp=e,statementLst=stmts,elseWhen=NONE()))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts(stmts,func,extraArg);
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_ASSERT(cond = e, msg=e2)
+        equation
+          extraArg = func(e, extraArg);
+          extraArg = func(e2, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_WHEN(exp=e,statementLst=stmts,elseWhen=SOME(ew)))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts({ew},func,extraArg);
-        extraArg = traverseStmts(stmts,func,extraArg);
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_TERMINATE(msg = e) then func(e, extraArg);
 
-    case (((DAE.STMT_ASSERT(cond = e, msg=e2))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-        extraArg = func(e2, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_REINIT(var = e,value=e2)
+        equation
+          extraArg = func(e, extraArg);
+          extraArg = func(e2, extraArg);
+        then
+          extraArg;
 
-    case (((DAE.STMT_TERMINATE(msg = e))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      case DAE.STMT_NORETCALL(exp = e) then func(e, extraArg);
+      case DAE.STMT_RETURN() then extraArg;
+      case DAE.STMT_BREAK() then extraArg;
+      case DAE.STMT_CONTINUE() then extraArg;
 
-    case (((DAE.STMT_REINIT(var = e,value=e2))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-        extraArg = func(e2, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
+      // MetaModelica extension. KS
+      case DAE.STMT_FAILURE(body=stmts)
+        then traverseStmts(stmts,func,extraArg);
 
-    case (((DAE.STMT_NORETCALL(exp = e))::xs),_,extraArg)
-      equation
-        extraArg = func(e, extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case (((DAE.STMT_RETURN())::xs),_,extraArg)
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case (((DAE.STMT_BREAK())::xs),_,extraArg)
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case (((DAE.STMT_CONTINUE())::xs),_,extraArg)
-      then
-        traverseStmts(xs, func, extraArg);
-
-    // MetaModelica extension. KS
-    case (((DAE.STMT_FAILURE(body=stmts))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts(stmts,func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case ((x::_),_,_)
-      equation
-        str = DAEDump.ppStatementStr(x);
-        str = "BackenddAEUtil.traverseStmts not implemented correctly: " + str;
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
-  end matchcontinue;
+      else
+        equation
+          str = DAEDump.ppStatementStr(stmt);
+          str = "BackenddAEUtil.traverseStmts not implemented correctly: " + str;
+          Error.addMessage(Error.INTERNAL_ERROR, {str});
+        then fail();
+    end matchcontinue;
+  end for;
 end traverseStmts;
 
 protected function traverseStmtsElse "
@@ -7145,7 +7191,7 @@ algorithm
       list<DAE.Dimension> instdims;
       Option<DAE.VariableAttributes> attr, attr_;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       Type_a ext_arg_1, ext_arg_2;
       BackendDAE.VarKind varKind;
       DAE.VarDirection varDirection;
@@ -8081,6 +8127,7 @@ public function analyticalToStructuralSingularity
   input output array<Integer> ass2;
   input output BackendDAE.EqSystem syst;
   input output Boolean changed;
+  input Boolean init = false;
 protected
   array<list<Integer>> mapArrayToScalar;
   array<Integer> mapScalarToArray;
@@ -8114,20 +8161,20 @@ algorithm
 
         if not SymbolicJacobian.LinearJacobian.emptyOrSingle(linJac) then
           if Flags.isSet(Flags.DUMP_ASSC) then
-            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Original"));
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Original (initial: " + boolString(init) + ")"));
           end if;
 
           /* solve jacobian with gaussian elimination */
           linJac := SymbolicJacobian.LinearJacobian.solve(linJac);
           if Flags.isSet(Flags.DUMP_ASSC) then
-            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Solved"));
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Solved (initial: " + boolString(init) + ")"));
           end if;
 
           /* set changed to true if it was true before, or any row changed in the jacobian */
           changed := changed or SymbolicJacobian.LinearJacobian.anyChanges(linJac);
 
           /* resolve zero rows to new equations and update assignments / adjacency matrix */
-          (ass1, ass2, syst) := SymbolicJacobian.LinearJacobian.resolveASSC(linJac, ass1, ass2, syst);
+          (ass1, ass2, syst) := SymbolicJacobian.LinearJacobian.resolveASSC(linJac, ass1, ass2, syst, init);
         end if;
       else
         /* possibly fails if jacobian is empty --- nothing to do */
@@ -8282,6 +8329,7 @@ end selectMatchingAlgorithm;
 public function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
+    (BackendDAEUtil.introduceOutputRealDerivatives, "introduceOutputRealDerivatives"),
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
     (DataReconciliation.newExtractionAlgorithm, "dataReconciliation"),
     (DataReconciliation.extractBoundaryCondition, "dataReconciliationBoundaryConditions"),

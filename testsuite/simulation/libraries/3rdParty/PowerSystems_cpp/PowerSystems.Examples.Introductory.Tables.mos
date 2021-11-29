@@ -1,0 +1,43 @@
+// name:     PowerSystems.Examples.Introductory.Tables
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.Introductory.Tables);
+compareVars :=
+{
+  "table.u",
+  "table.y[1]",
+  "table.y[2]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation
+// PowerSystems.Examples.Introductory.Tables
+// {"table.u","table.y[1]","table.y[2]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Introductory.Tables', options = '', outputFormat = 'mat', variableFilter = 'time|table.u|table.y.1.|table.y.2.', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.Introductory.Tables_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

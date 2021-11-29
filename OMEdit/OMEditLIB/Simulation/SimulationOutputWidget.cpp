@@ -937,6 +937,14 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
 {
   mIsCompilationProcessRunning = false;
   QString exitCodeStr = tr("Compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
+  /* Issue #7862
+   * Show instructions to select default MinGW compiler if compilation with MSVC compiler fails.
+   */
+  SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
+  QString targetBuild = pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString();
+  if (targetBuild.startsWith("msvc")) {
+    exitCodeStr.append("\nTry compiling with the default MinGW compiler. Select \"MinGW\" in \"Tools->Options->Simulation->Target Build\".");
+  }
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     writeCompilationOutput(tr("Compilation process finished successfully."), Qt::blue);
     compilationProcessFinishedHelper(exitCode, exitStatus);

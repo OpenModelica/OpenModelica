@@ -20,7 +20,11 @@ val(inertia2.w,0.6),val(inertia2.w,0.8),val(inertia2.w,1.0)};
 // true
 // ""
 // true
-// ""
+// "[Modelica 2.2.2+maint.om/package.mo:19:10-19:42:writable] Warning: Conversion-annotation contains unknown element: ModelicaAdditions.
+// [Modelica 2.2.2+maint.om/package.mo:20:10-20:36:writable] Warning: Conversion-annotation contains unknown element: MultiBody.
+// [Modelica 2.2.2+maint.om/package.mo:21:10-21:34:writable] Warning: Conversion-annotation contains unknown element: MultiBody.
+// [Modelica 2.2.2+maint.om/package.mo:22:10-22:33:writable] Warning: Conversion-annotation contains unknown element: Matrices.
+// "
 // record SimulationResult
 //     resultFile = "TestModels.RotationalModels.Gears.IdealGear_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.Gears.IdealGear', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -28,7 +32,11 @@ val(inertia2.w,0.6),val(inertia2.w,0.8),val(inertia2.w,1.0)};
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "[Modelica 2.2.2+maint.om/package.mo:19:10-19:42:writable] Warning: Conversion-annotation contains unknown element: ModelicaAdditions.
+// [Modelica 2.2.2+maint.om/package.mo:20:10-20:36:writable] Warning: Conversion-annotation contains unknown element: MultiBody.
+// [Modelica 2.2.2+maint.om/package.mo:21:10-21:34:writable] Warning: Conversion-annotation contains unknown element: MultiBody.
+// [Modelica 2.2.2+maint.om/package.mo:22:10-22:33:writable] Warning: Conversion-annotation contains unknown element: Matrices.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {0.0,0.04279688095968612,0.1074596014275817,0.09138893629302516,-0.0007455632316082803,-0.06234733663276214}
 // {0.0,0.08634577814130287,0.2144346422022677,0.181929819585287,-0.00136572081985555,-0.1237260236882247}

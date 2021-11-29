@@ -136,9 +136,6 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
 
    if((double)data->simulationInfo->startTime < optData->time.t0){
      double t = data->simulationInfo->startTime;
-     const int nBoolean = data->modelData->nVariablesBoolean;
-     const int nInteger = data->modelData->nVariablesInteger;
-     const int nRelations =  data->modelData->nRelations;
 
      FILE * pFile = optData->pFile;
      fprintf(pFile, "%lf ",(double)t);
@@ -162,15 +159,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
        }
        fprintf(pFile, "%s", "\n");
      }
-     memcpy(optData->v0, data->localData[0]->realVars, nReal*sizeof(modelica_real));
-     memcpy(optData->i0, data->localData[0]->integerVars, nInteger*sizeof(modelica_integer));
-     memcpy(optData->b0, data->localData[0]->booleanVars, nBoolean*sizeof(modelica_boolean));
-     memcpy(optData->i0Pre, data->simulationInfo->integerVarsPre, nInteger*sizeof(modelica_integer));
-     memcpy(optData->b0Pre, data->simulationInfo->booleanVarsPre, nBoolean*sizeof(modelica_boolean));
-     memcpy(optData->v0Pre, data->simulationInfo->realVarsPre, nReal*sizeof(modelica_real));
-     memcpy(optData->rePre, data->simulationInfo->relationsPre, nRelations*sizeof(modelica_boolean));
-     memcpy(optData->re, data->simulationInfo->relations, nRelations*sizeof(modelica_boolean));
-     memcpy(optData->storeR, data->simulationInfo->storedRelations, nRelations*sizeof(modelica_boolean));
+     copy_initial_values(optData, data);
 
      if(1){
        printf("\n--------------------------------------------------------");

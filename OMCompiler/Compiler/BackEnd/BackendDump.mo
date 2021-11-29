@@ -1564,7 +1564,6 @@ end dumpListList;
 // section for all *String functions
 //
 // These are functions, that return their output with a String.
-//   - componentRef_DIVISION_String
 //   - equationString
 //   - strongComponentString
 // =============================================================================
@@ -1824,29 +1823,6 @@ algorithm
   end match;
 end timeEventString;
 
-
-public function componentRef_DIVISION_String
-  input DAE.ComponentRef inCref;
-  input Integer dummy;
-  output String outString;
-algorithm
-  outString := matchcontinue(inCref,dummy)
-    local
-      DAE.ComponentRef c;
-      String sc;
-    case(DAE.CREF_QUAL(ident="$DER",componentRef=c),_)
-      equation
-        sc = ComponentReference.printComponentRefStr(c);
-        sc = "der(" + sc + ")";
-      then
-        sc;
-    case(c,_)
-      equation
-        sc = ComponentReference.printComponentRefStr(c);
-      then
-        sc;
-  end matchcontinue;
-end componentRef_DIVISION_String;
 
 // =============================================================================
 // section for all debug* functions

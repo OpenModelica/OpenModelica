@@ -1,0 +1,53 @@
+// name:     PowerSystems.Examples.Wind.WindTurbine_IG
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(PowerSystems.Examples.Wind.WindTurbine_IG);
+compareVars :=
+{
+  "meter.p[1]",
+  "meter.p[2]",
+  "meter.p[3]",
+  "meter.v[1]",
+  "meter.v[2]",
+  "meter.v[3]",
+  "meter.i[1]",
+  "meter.i[2]",
+  "meter.i[3]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// PowerSystems.Examples.Wind.WindTurbine_IG
+// {"meter.p[1]","meter.p[2]","meter.p[3]","meter.v[1]","meter.v[2]","meter.v[3]","meter.i[1]","meter.i[2]","meter.i[3]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Wind.WindTurbine_IG', options = '', outputFormat = 'mat', variableFilter = 'time|meter.p.1.|meter.p.2.|meter.p.3.|meter.v.1.|meter.v.2.|meter.v.3.|meter.i.1.|meter.i.2.|meter.i.3.', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.Wind.WindTurbine_IG_res.mat
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

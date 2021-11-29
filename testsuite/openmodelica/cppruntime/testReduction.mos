@@ -1,0 +1,72 @@
+// name: testReduction
+// keywords: reduction array record
+// status: correct
+// teardown_command: rm -f *ReductionTest*
+// cflags:
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica, {"3.2.3"});
+loadString("
+model ReductionTest
+  input Real u(start = 1); // prevent presolving during translation
+  parameter Integer n = 2;
+  Real[:] b = f(n, u);
+  Real[:, :] A = g(n, u);
+  Complex[:] C = h(n, u);
+equation
+  annotation(experiment(StopTime = 0));
+end ReductionTest;
+function f
+  input Integer n;
+  input Real u;
+  output Real[n] b = {u * i for i in 1:n};
+end f;
+function g
+  input Integer n;
+  input Real u;
+  output Real[n,n] A = {{10 * i + u * j for j in 1:n} for i in 1:n};
+end g;
+function h
+  input Integer n;
+  input Real u;
+  output Complex[n] C = {Complex(i, 0.1 * i) for i in 1:n};
+end h;
+");
+getErrorString();
+
+simulate(ReductionTest);
+val(b[1], 0);
+val(b[2], 0);
+val(A[1,1], 0);
+val(A[1,2], 0);
+val(A[2,1], 0);
+val(A[2,2], 0);
+val(C[1].re, 0);
+val(C[1].im, 0);
+val(C[2].re, 0);
+val(C[2].im, 0);
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ReductionTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ReductionTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 1.0
+// 2.0
+// 11.0
+// 12.0
+// 21.0
+// 22.0
+// 1.0
+// 0.1
+// 2.0
+// 0.2
+// ""
+// endResult

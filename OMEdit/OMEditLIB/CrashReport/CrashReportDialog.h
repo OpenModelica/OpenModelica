@@ -52,8 +52,9 @@ class CrashReportDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CrashReportDialog(QString stacktrace);
+  CrashReportDialog(QString stacktrace, bool reportIssue = false);
 private:
+  bool mReportIssue;
   QString mStackTrace;
   Label *mpCrashReportHeading;
   QFrame *mpHorizontalLine;
@@ -69,7 +70,6 @@ private:
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
   Label *mpProgressLabel;
-  QProgressBar *mpProgressBar;
 
   void createGDBBacktrace();
 public slots:

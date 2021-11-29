@@ -48,6 +48,8 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
 void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J);
 void debugeJac(OptData * optData,Number* vopt);
 void debugeSteps(OptData * optData, modelica_real*vopt, modelica_real * lambda);
+void copy_initial_values(OptData * optData, DATA* data);
+void setLocalVars(OptData * optData, DATA * data, const double * const vopt, const int i, const int j, const int shift);
 
 /*ipopt*/
 

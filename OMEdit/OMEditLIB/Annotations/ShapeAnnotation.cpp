@@ -57,14 +57,8 @@ QString stripDynamicSelect(const QString &str)
 void GraphicItem::setDefaults()
 {
   mVisible = true;
-  mDynamicVisible = "";
-  mDynamicVisibleValue = true;
   mOrigin = QPointF(0, 0);
-  mDynamicOrigin = "";
-  mDynamicOriginValue = QPointF(0, 0);
   mRotation = 0;
-  mDynamicRotation = "";
-  mDynamicRotationValue = 0;
 }
 
 /*!
@@ -75,14 +69,8 @@ void GraphicItem::setDefaults()
 void GraphicItem::setDefaults(ShapeAnnotation *pShapeAnnotation)
 {
   mVisible = pShapeAnnotation->mVisible;
-  mDynamicVisible = pShapeAnnotation->mDynamicVisible;
-  mDynamicVisibleValue = pShapeAnnotation->mDynamicVisibleValue;
   mOrigin = pShapeAnnotation->mOrigin;
-  mDynamicOrigin = pShapeAnnotation->mDynamicOrigin;
-  mDynamicOriginValue = pShapeAnnotation->mDynamicOriginValue;
   mRotation = pShapeAnnotation->mRotation;
-  mDynamicRotation = pShapeAnnotation->mDynamicRotation;
-  mDynamicRotationValue = pShapeAnnotation->mDynamicRotationValue;
 }
 
 /*!
@@ -96,36 +84,11 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   if (list.size() < 3)
     return;
   // if first item of list is true then the shape should be visible.
-  auto visible_str = stripDynamicSelect(list.at(0));
-  if (visible_str.startsWith("{")) { // DynamicSelect
-    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(visible_str));
-    if (args.count() > 0) {
-      mVisible = args.at(0).contains("true");
-    }
-    if (args.count() > 1) {
-      mDynamicVisible = args.at(1);  // variable name
-    }
-  } else {
-    mVisible = visible_str.contains("true");
-  }
+  mVisible.parse(list.at(0));
   // 2nd item is the origin
-  QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(1))));
-  if (originList.size() >= 2) {
-    setOrigin(QPointF(originList.at(0).toFloat(), originList.at(1).toFloat()));
-  }
+  mOrigin.parse(list.at(1));
   // 3rd item is the rotation
-  auto rotation_str = stripDynamicSelect(list.at(2));
-  if (rotation_str.startsWith("{")) { // DynamicSelect
-    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(rotation_str));
-    if (args.count() > 0) {
-      mRotation = args.at(0).toFloat();
-    }
-    if (args.count() > 1) {
-      mDynamicRotation = args.at(1);  // variable name
-    }
-  } else {
-    mRotation = rotation_str.toFloat();
-  }
+  mRotation.parse(list.at(2));
 }
 
 /*!
@@ -214,29 +177,15 @@ void FilledShape::parseShapeAnnotation(QString annotation)
     return;
   }
   // 4th item of the list is the line color
-  QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(3))));
-  if (colorList.size() >= 3) {
-    int red, green, blue = 0;
-    red = colorList.at(0).toInt();
-    green = colorList.at(1).toInt();
-    blue = colorList.at(2).toInt();
-    mLineColor = QColor (red, green, blue);
-  }
+  mLineColor.parse(list.at(3));
   // 5th item of list contains the fill color.
-  QStringList fillColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(4))));
-  if (fillColorList.size() >= 3) {
-    int red, green, blue = 0;
-    red = fillColorList.at(0).toInt();
-    green = fillColorList.at(1).toInt();
-    blue = fillColorList.at(2).toInt();
-    mFillColor = QColor (red, green, blue);
-  }
+  mFillColor.parse(list.at(4));
   // 6th item of list contains the Line Pattern.
   mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(list.at(5)));
   // 7th item of list contains the Fill Pattern.
   mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(list.at(6)));
   // 8th item of list contains the thickness.
-  mLineThickness = stripDynamicSelect(list.at(7)).toFloat();
+  mLineThickness.parse(list.at(7));
 }
 
 /*!
@@ -395,7 +344,6 @@ void ShapeAnnotation::setDefaults()
   mStartAngle = 0;
   mEndAngle = 360;
   mClosure = StringHandler::ClosureChord;
-  mOriginalTextString = "";
   mTextString = "";
   mFontSize = 0;
   mFontName = Helper::systemFontInfo.family();
@@ -431,7 +379,6 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mStartAngle = pShapeAnnotation->mStartAngle;
   mEndAngle = pShapeAnnotation->mEndAngle;
   mClosure = pShapeAnnotation->mClosure;
-  mOriginalTextString = pShapeAnnotation->mOriginalTextString;
   mTextString = pShapeAnnotation->mTextString;
   mFontSize = pShapeAnnotation->mFontSize;
   mFontName = pShapeAnnotation->mFontName;
@@ -548,7 +495,7 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
     thickness = Utilities::convertMMToPixel(1.0);
   }
 
-  QPen pen(mLineColor, thickness, StringHandler::getLinePatternType(mLinePattern), Qt::SquareCap, Qt::MiterJoin);
+  QPen pen(QBrush(mLineColor), thickness, StringHandler::getLinePatternType(mLinePattern), Qt::SquareCap, Qt::MiterJoin);
   /* The specification doesn't say anything about it.
    * But just to keep this consist with Dymola we use Qt::BevelJoin for Line shapes.
    * All other shapes use Qt::MiterJoin
@@ -618,7 +565,7 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
       break;
     default:
       painter->setBackgroundMode(Qt::OpaqueMode);
-      painter->setBackground(mFillColor);
+      painter->setBackground(QBrush(mFillColor));
       QBrush brush(mLineColor, StringHandler::getFillPatternType(mFillPattern));
       brush.setTransform(QTransform(1, 0, 0, 0, 1, 0, 0, 0, 0));
       painter->setBrush(brush);
@@ -850,7 +797,6 @@ void ShapeAnnotation::setOriginItemPos(const QPointF point)
   */
 void ShapeAnnotation::setTextString(QString textString)
 {
-  mOriginalTextString = textString;
   mTextString = textString;
 }
 
@@ -964,7 +910,7 @@ void ShapeAnnotation::adjustPointsWithOrigin()
 void ShapeAnnotation::adjustExtentsWithOrigin()
 {
   QList<QPointF> extents;
-  foreach (QPointF extent, mExtents) {
+  for (auto &extent: mExtents) {
     extents.append(extent - mOrigin);
   }
   mExtents = extents;
@@ -1132,47 +1078,23 @@ void ShapeAnnotation::setShapeFlags(bool enable)
  */
 void ShapeAnnotation::updateDynamicSelect(double time)
 {
-  // visible
-  if (!mDynamicVisible.isEmpty()) {
-    if (mDynamicVisible.compare("true") == 0) {
-      mDynamicVisibleValue = true;
-    } else if (mDynamicVisible.compare("false") == 0) {
-      mDynamicVisibleValue = false;
-    } else if (mpParentComponent && mpParentComponent->getComponentInfo()) {
-      QString variableName = QString("%1.%2").arg(mpParentComponent->getName(), mDynamicVisible);
-      mDynamicVisibleValue = (bool)MainWindow::instance()->getVariablesWidget()->readVariableValue(variableName, time);
-    } else {
-      mDynamicVisibleValue = (bool)MainWindow::instance()->getVariablesWidget()->readVariableValue(mDynamicVisible, time);
-    }
-  }
-  // rotation
-  if (!mDynamicRotation.isEmpty()) {
-    bool ok = false;
-    float rotation = mDynamicRotation.toFloat(&ok);
-    if (ok) {
-      mDynamicRotationValue = rotation;
-    } else if (mpParentComponent && mpParentComponent->getComponentInfo()) {
-      QString variableName = QString("%1.%2").arg(mpParentComponent->getName(), mDynamicRotation);
-      mDynamicRotationValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(variableName, time);
-    } else {
-      mDynamicRotationValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(mDynamicRotation, time);
-    }
-    setRotation(mDynamicRotationValue);
-    update();
-  }
+  bool updated = false;
 
-  // textString
-  if (mTextExpression.isCall("DynamicSelect")) {
-    mTextString = mTextExpression.arg(1).evaluate([&] (std::string name) {
-      auto vname = QString::fromStdString(name);
+  updated |= mVisible.update(time, mpParentComponent);
+  updated |= mOrigin.update(time, mpParentComponent);
+  updated |= mRotation.update(time, mpParentComponent);
+  updated |= mLineColor.update(time, mpParentComponent);
+  updated |= mFillColor.update(time, mpParentComponent);
+  updated |= mLineThickness.update(time, mpParentComponent);
+  updated |= mArrowSize.update(time, mpParentComponent);
+  updated |= mExtents.update(time, mpParentComponent);
+  updated |= mRadius.update(time, mpParentComponent);
+  updated |= mStartAngle.update(time, mpParentComponent);
+  updated |= mEndAngle.update(time, mpParentComponent);
+  updated |= mFontSize.update(time, mpParentComponent);
+  updated |= mTextString.update(time, mpParentComponent);
 
-      if (mpParentComponent && mpParentComponent->getComponentInfo()) {
-        vname = QString("%1.%2").arg(mpParentComponent->getName(), vname);
-      }
-
-      return MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time);
-    }).toQString();
-
+  if (updated) {
     update();
   }
 }

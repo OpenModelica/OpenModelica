@@ -852,6 +852,12 @@ public constant ErrorTypes.Message UNSUPPORTED_RECORD_REORDERING = ErrorTypes.ME
   Gettext.gettext("The record constructor for ‘%s‘ requires reordering of local fields to initialize them in the correct order, which is not yet supported."));
 public constant ErrorTypes.Message FUNCTION_INVALID_OUTPUTS_FOR_INVERSE = ErrorTypes.MESSAGE(390, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid inverse annotation for ‘%s‘, only functions with exactly one output may have an inverse."));
+public constant ErrorTypes.Message NOTIFY_IMPLICIT_LOAD = ErrorTypes.MESSAGE(391, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Automatically loaded package %s %s due to usage."));
+public constant ErrorTypes.Message CONVERSION_MISSING_USES = ErrorTypes.MESSAGE(392, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Cannot convert ‘%s‘ since it has no uses-annotation for ‘%s‘."));
+public constant ErrorTypes.Message CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND = ErrorTypes.MESSAGE(393, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("No compatible conversion script for converting from %s %s to %s could be found."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
@@ -1223,7 +1229,7 @@ public constant ErrorTypes.Message EXPECTED_ENCRYPTED_PACKAGE = ErrorTypes.MESSA
   Gettext.gettext("Expected encrypted package with .mol extension got: %s."));
 public constant ErrorTypes.Message SAVE_ENCRYPTED_CLASS_ERROR = ErrorTypes.MESSAGE(7022, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Cannot save the encrypted class. Encrypted classes are read-only."));
-public constant ErrorTypes.Message ACCESS_ENCRYPTED_PROTECTED_CONTENTS = ErrorTypes.MESSAGE(7023, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message ACCESS_ENCRYPTED_PROTECTED_CONTENTS = ErrorTypes.MESSAGE(7023, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Cannot access encrypted and protected class contents."));
 public constant ErrorTypes.Message INVALID_NONLINEAR_JACOBIAN_COMPONENT = ErrorTypes.MESSAGE(7024, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Jacobian %s contains non-linear components. This indicates a singular system or internal generation errors."));
