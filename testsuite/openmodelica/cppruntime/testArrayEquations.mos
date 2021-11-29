@@ -100,15 +100,15 @@ val(y4, 1.0);
 //
 // SubPartition Vars:
 // ========================================
-// index: -1: $DER.x4 (no alias)  initial: 	no arrCref index:() [10]
-// index: -1: x1 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
-// index: -1: x2 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
-// index: -1: x3 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
-// index: -1: x4 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
-// index: -1: y1 (no alias)  initial: 	no arrCref index:() []
-// index: -1: y2 (no alias)  initial: 	no arrCref index:() []
-// index: -1: y3 (no alias)  initial: 	no arrCref index:() []
-// index: -1: y4 (no alias)  initial: 	no arrCref index:() []
+// index:-1: $DER.x4 (no alias)  initial: 	no arrCref index:() [10]
+// index:-1: x1 (no alias)  initial: 	no arrCref index:() [10] (PREVIOUS)
+// index:-1: x2 (no alias)  initial: 	no arrCref index:() [10] (PREVIOUS)
+// index:-1: x3 (no alias)  initial: 	no arrCref index:() [10] (PREVIOUS)
+// index:-1: x4 (no alias)  initial: 	no arrCref index:() [10] (PREVIOUS)
+// index:-1: y1 (no alias)  initial: 	no arrCref index:() []
+// index:-1: y2 (no alias)  initial: 	no arrCref index:() []
+// index:-1: y3 (no alias)  initial: 	no arrCref index:() []
+// index:-1: y4 (no alias)  initial: 	no arrCref index:() []
 // partition equations:
 // ========================================
 // 26: $CLKPRE.x1=x1 [Real[10]]
@@ -141,13 +141,13 @@ val(y4, 1.0);
 // initialEquations: (13)
 // ========================================
 // 1: $DER.x4=0.0 [Real]
-// 2: x1=1.0 [Real]
+// 2: x1={1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0} [Real[10]]
 // 3: $CLKPRE.x1=x1 [Real[10]]
-// 4: x2=2.0 [Real]
+// 4: x2={2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0} [Real[10]]
 // 5: $CLKPRE.x2=x2 [Real[10]]
-// 6: x3=3.0 [Real]
+// 6: x3={3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0} [Real[10]]
 // 7: $CLKPRE.x3=x3 [Real[10]]
-// 8: x4=4.0 [Real]
+// 8: x4={4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0} [Real[10]]
 // 9: $CLKPRE.x4=x4 [Real[10]]
 // 10: y1=0.0 [Real]
 // 11: y2=0.0 [Real]
@@ -208,23 +208,23 @@ val(y4, 1.0);
 // ========================================
 // algVars (104)
 // ----------------------
-// index: 0: $CLKPRE.x1 (no alias)  hideResult  initial: x1	no arrCref index:(1) [10]
-// index: 1: $CLKPRE.x2 (no alias)  hideResult  initial: x2	no arrCref index:(11) [10]
-// index: 2: $CLKPRE.x3 (no alias)  hideResult  initial: x3	no arrCref index:(21) [10]
-// index: 3: $CLKPRE.x4 (no alias)  hideResult  initial: x4	no arrCref index:(31) [10]
-// index: 4: $DER.x4 (no alias)  initial: 	no arrCref index:(41) [10]
-// index: 5: u (no alias)  initial: 1.0:10.0	no arrCref index:(51) [10]
-// index: 6: x1 (no alias)  initial: 	no arrCref index:(61) [10]
-// index: 7: x2 (no alias)  initial: 	no arrCref index:(71) [10]
-// index: 8: x3 (no alias)  initial: 	no arrCref index:(81) [10]
-// index: 9: x4 (no alias)  initial: 	no arrCref index:(91) [10]
-// index: 10: y1 (no alias)  initial: 	no arrCref index:(101) []
-// index: 11: y2 (no alias)  initial: 	no arrCref index:(102) []
-// index: 12: y3 (no alias)  initial: 	no arrCref index:(103) []
-// index: 13: y4 (no alias)  initial: 	no arrCref index:(104) []
+// index:0: $CLKPRE.x1 (no alias)  hideResult  initial: x1	no arrCref index:(1) [10]
+// index:1: $CLKPRE.x2 (no alias)  hideResult  initial: x2	no arrCref index:(11) [10]
+// index:2: $CLKPRE.x3 (no alias)  hideResult  initial: x3	no arrCref index:(21) [10]
+// index:3: $CLKPRE.x4 (no alias)  hideResult  initial: x4	no arrCref index:(31) [10]
+// index:4: $DER.x4 (no alias)  initial: 	no arrCref index:(41) [10]
+// index:5: u (no alias)  initial: 1.0:10.0	no arrCref index:(51) [10]
+// index:6: x1 (no alias)  initial: 	no arrCref index:(61) [10]
+// index:7: x2 (no alias)  initial: 	no arrCref index:(71) [10]
+// index:8: x3 (no alias)  initial: 	no arrCref index:(81) [10]
+// index:9: x4 (no alias)  initial: 	no arrCref index:(91) [10]
+// index:10: y1 (no alias)  initial: 	no arrCref index:(101) []
+// index:11: y2 (no alias)  initial: 	no arrCref index:(102) []
+// index:12: y3 (no alias)  initial: 	no arrCref index:(103) []
+// index:13: y4 (no alias)  initial: 	no arrCref index:(104) []
 // intParamVars
 // ----------------------
-// index: 0: n (no alias)  initial: 10	no arrCref index:(105) []
+// index:0: n (no alias)  initial: 10	no arrCref index:(105) []
 // functions:
 // -----------
 //

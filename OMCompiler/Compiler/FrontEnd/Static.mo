@@ -3568,7 +3568,7 @@ algorithm
     local
       list<DAE.Exp> arraylist;
       DAE.Type at;
-      Boolean a;
+      Boolean is_scalar;
       FCore.Graph env;
       DAE.Exp s,exp;
       DAE.Type sty,ty,sty2;
@@ -3588,18 +3588,18 @@ algorithm
         arraylist = List.fill(s, v);
         sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
         at = Types.simplifyType(sty2);
-        a = Types.isArray(sty2);
+        is_scalar = not Types.isArray(sty);
       then
-        (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
+        (cache,DAE.ARRAY(at,is_scalar,arraylist),DAE.PROP(sty2,c1));
 
     case (cache,_,s,sty,{Values.INTEGER(integer = v)},c1,_,_,_)
       equation
         arraylist = List.fill(s, v);
         sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
         at = Types.simplifyType(sty2);
-        a = Types.isArray(sty2);
+        is_scalar = not Types.isArray(sty);
       then
-        (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
+        (cache,DAE.ARRAY(at,is_scalar,arraylist),DAE.PROP(sty2,c1));
 
     case (cache,env,s,sty,(Values.INTEGER(integer = v) :: rest),c1,pre,_,_)
       equation
@@ -3607,9 +3607,8 @@ algorithm
         arraylist = List.fill(exp, v);
         sty2 = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(v)});
         at = Types.simplifyType(sty2);
-        a = Types.isArray(sty2);
       then
-        (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
+        (cache,DAE.ARRAY(at,false,arraylist),DAE.PROP(sty2,c1));
 
     else
       equation

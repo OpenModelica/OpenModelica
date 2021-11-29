@@ -90,8 +90,8 @@ val(y[10], 1.0);
 // 5: periodicClock1.solverMethod:PARAM()  = "ImplicitEuler"  "Integration method used for discretized continuous-time partitions" type: String
 // 6: assignClock1.n:PARAM(min = 1 final = true )  = 10  "Size of input signal vector u (= size of output signal vector y)" type: Integer
 // 7: integrator1.y_start:PARAM()  = 1.0:10.0  "Initial or guess value of output (= state)" type: Real[10] [10]
-// 8: integrator1.initType:PARAM(final = true )  = Modelica.Blocks.Types.Init.InitialState  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10] [10]
-// 9: integrator1.k:PARAM(unit = "1" )  = 1.0  "Integrator gain" type: Real[10] [10]
+// 8: integrator1.initType:PARAM(final = true )  = {Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState}  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10] [10]
+// 9: integrator1.k:PARAM(unit = fill("1", 10) )  = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}  "Integrator gain" type: Real[10] [10]
 //
 //
 // Initial Equations (1, 1)
@@ -167,8 +167,8 @@ val(y[10], 1.0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: integrator1.k:PARAM(unit = "1" )  = 1.0  "Integrator gain" type: Real[10] [10]
-// 2: integrator1.initType:PARAM(final = true )  = Modelica.Blocks.Types.Init.InitialState  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10] [10]
+// 1: integrator1.k:PARAM(unit = {"1", "1", "1", "1", "1", "1", "1", "1", "1", "1"} )  = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}  "Integrator gain" type: Real[10] [10]
+// 2: integrator1.initType:PARAM(final = true )  = {Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState}  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10] [10]
 // 3: integrator1.y_start:PARAM()  = 1.0:10.0  "Initial or guess value of output (= state)" type: Real[10] [10]
 // 4: assignClock1.n:PARAM(min = 1 final = true )  = 10  "Size of input signal vector u (= size of output signal vector y)" type: Integer
 // 5: periodicClock1.solverMethod:PARAM()  = "ImplicitEuler"  "Integration method used for discretized continuous-time partitions" type: String
