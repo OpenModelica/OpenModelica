@@ -6841,6 +6841,11 @@ void ModelWidget::drawModelIconElements()
       if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
         annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
         annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
+      } else {
+        /* Quick and ugly fix for #8172 until #2081 is fixed properly.
+         * Remove this else block once #2081 is fixed.
+         */
+        annotation.replace("Placement(false", "Placement(true");
       }
       mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, false, true, false);
     }
