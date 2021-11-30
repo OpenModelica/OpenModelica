@@ -432,7 +432,7 @@ QString TextAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
-  annotationString.append(FilledShape::getShapeAnnotation());
+  annotationString.append(FilledShape::getTextShapeAnnotation());
   // get the extents
   if (mExtents.size() > 1) {
     QString extentString;
