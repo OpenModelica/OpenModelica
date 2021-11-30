@@ -1383,6 +1383,17 @@ uniontype InstNode
     end match;
   end isRedeclare;
 
+  function isRedeclared
+    input InstNode node;
+    output Boolean redeclared;
+  algorithm
+    redeclared := match nodeType(node)
+      case InstNodeType.REDECLARED_COMP() then true;
+      case InstNodeType.REDECLARED_CLASS() then true;
+      else false;
+    end match;
+  end isRedeclared;
+
   function isProtectedBaseClass
     input InstNode node;
     output Boolean isProtected;
