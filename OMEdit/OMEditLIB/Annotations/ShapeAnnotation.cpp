@@ -265,6 +265,27 @@ QStringList FilledShape::getShapeAnnotation()
 }
 
 /*!
+ * \brief FilledShape::getTextShapeAnnotation
+ * Returns the annotation values for Text shape.
+ * \return the annotation values as a list.
+ */
+QStringList FilledShape::getTextShapeAnnotation()
+{
+  QStringList annotationString;
+  /* get the text color */
+  if (mLineColor != Qt::black) {
+    QString lineColorString;
+    lineColorString.append("textColor={");
+    lineColorString.append(QString::number(mLineColor.red())).append(",");
+    lineColorString.append(QString::number(mLineColor.green())).append(",");
+    lineColorString.append(QString::number(mLineColor.blue()));
+    lineColorString.append("}");
+    annotationString.append(lineColorString);
+  }
+  return annotationString;
+}
+
+/*!
  * \class ShapeAnnotation
  * \brief The base class for all shapes LineAnnotation, PolygonAnnotation, RectangleAnnotation, EllipseAnnotation, TextAnnotation, BitmapAnnotation.
  */

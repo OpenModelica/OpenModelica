@@ -1082,8 +1082,7 @@ QString StringHandler::escapeString(QString value)
   QString res;
   value = value.trimmed();
   for (int i = 0; i < value.length(); i++) {
-    switch (value[i].toAscii())
-	{
+    switch (value[i].toAscii()) {
       case '"':  res.append("\\\"");   break;
       case '\\': res.append("\\\\");   break;
       case '\a': res.append("\\a");    break;
@@ -1104,9 +1103,33 @@ QString StringHandler::escapeStringQuotes(QString value)
   QString res;
   value = value.trimmed();
   for (int i = 0; i < value.length(); i++) {
-    switch (value[i].toAscii())
-    {
+    switch (value[i].toAscii()) {
       case '"':  res.append("\\\"");   break;
+      default:   res.append(value[i]); break;
+    }
+  }
+  return res;
+}
+
+/*!
+ * \brief StringHandler::escapeTextAnnotationString
+ * Escapes the text annotation string without n and r.
+ * \param value
+ * \return
+ */
+QString StringHandler::escapeTextAnnotationString(QString value)
+{
+  QString res;
+  value = value.trimmed();
+  for (int i = 0; i < value.length(); i++) {
+    switch (value[i].toAscii()) {
+      case '"':  res.append("\\\"");   break;
+      case '\\': res.append("\\\\");   break;
+      case '\a': res.append("\\a");    break;
+      case '\b': res.append("\\b");    break;
+      case '\f': res.append("\\f");    break;
+      case '\t': res.append("\\t");    break;
+      case '\v': res.append("\\v");    break;
       default:   res.append(value[i]); break;
     }
   }
