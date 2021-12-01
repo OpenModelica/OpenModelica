@@ -642,8 +642,8 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT257,21,_OMC_LIT257_data);
 #define _OMC_LIT257 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT257)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT258,2,4) {&Tpl_StringToken_ST__STRING__desc,_OMC_LIT257}};
 #define _OMC_LIT258 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT258)
-#define _OMC_LIT259_data "#include <QtCore>\n"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT259,18,_OMC_LIT259_data);
+#define _OMC_LIT259_data "#pragma once\n#include <QtCore>\n"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT259,32,_OMC_LIT259_data);
 #define _OMC_LIT259 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT259)
 #define _OMC_LIT260_data "#include \"OpenModelicaScriptingAPI.h\"\n"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT260,38,_OMC_LIT260_data);

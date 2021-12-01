@@ -104,6 +104,7 @@ endmacro(add_compile_step)
 add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos
             ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
+            ${CMAKE_CURRENT_SOURCE_DIR}/Template/GenerateAPIFunctionsTpl.tpl
 
     # We want to generate OpenModelicaScriptingAPI.mo in scripts folder. Since the script
     # generates it in the current working directory we go there. Later we can fix the script to
