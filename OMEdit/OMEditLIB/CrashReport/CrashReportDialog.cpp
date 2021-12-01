@@ -33,7 +33,7 @@
 
 #include "CrashReportDialog.h"
 #include "Util/Helper.h"
-#include "omc_config.h"
+#include "omedit_config.h"
 #include "GDBBacktrace.h"
 #include "Util/NetworkAccessManager.h"
 

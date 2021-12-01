@@ -34,7 +34,7 @@
 
 extern "C" {
 #include "meta/meta_modelica.h"
-#include "omc_config.h"
+#include "omedit_config.h"
 #include "gc.h"
 
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
