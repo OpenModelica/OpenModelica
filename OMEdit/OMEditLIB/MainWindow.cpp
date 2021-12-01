@@ -930,6 +930,8 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   QList<QString> platforms;
   if (pSettings->contains("FMIExport/Platforms")) {
     platforms = pSettings->value("FMIExport/Platforms").toStringList();
+  } else {
+    platforms.append("static"); // default is static
   }
   if (platforms.empty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
