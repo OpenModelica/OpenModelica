@@ -928,19 +928,11 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   QString newFmuName = pLibraryTreeItem->getWhereToMoveFMU();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QString> platforms;
-  if (!pSettings->contains("FMIExport/Platforms")) {
-    QComboBox *pLinkingComboBox = OptionsDialog::instance()->getFMIPage()->getLinkingComboBox();
-    platforms.append(pLinkingComboBox->itemData(pLinkingComboBox->currentIndex()).toString());
-  } else {
+  if (pSettings->contains("FMIExport/Platforms")) {
     platforms = pSettings->value("FMIExport/Platforms").toStringList();
   }
-  int index = platforms.indexOf("none");
-  if (index > -1) {
-    platforms.removeAt(index);
-  }
   if (platforms.empty()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
                                                           Helper::scriptingKind, Helper::warningLevel));
   }
   QString fmiFlags = OptionsDialog::instance()->getFMIPage()->getFMIFlags();
@@ -968,20 +960,17 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
       if (QFile(fmuFileName).rename(whereToMove)) {
         fmuFileName = whereToMove;
       } else {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                              GUIMessages::getMessage(GUIMessages::FMU_MOVE_FAILED).arg(whereToMove),
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_MOVE_FAILED).arg(whereToMove),
                                                               Helper::scriptingKind, Helper::errorLevel));
       }
     }
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::FMU_GENERATED).arg(fmuFileName),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_GENERATED).arg(fmuFileName),
                                                           Helper::scriptingKind, Helper::notificationLevel));
   }
   //trace export FMU
   if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
     //Push traceability information automaticaly to Daemon
-    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", pLibraryTreeItem->getFileName(),
-                                                                              pLibraryTreeItem->getNameStructure(), fmuFileName);
+    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
   }
   // unset the generate debug symbols flag
   if (OptionsDialog::instance()->getFMIPage()->getGenerateDebugSymbolsCheckBox()->isChecked()) {

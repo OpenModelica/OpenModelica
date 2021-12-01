@@ -1581,12 +1581,7 @@ FMI
 
     The list of platforms is created by searching for programs in the PATH matching pattern \"*-*-*-*cc\"."
     Add the host triple to the PATH to get it listed.
-
-    -  *None* – Do not generate code for any platform i.e., a source only FMU.
-
-    -  *Dynamic* – Generate the FMU with dynamically linked runtime for current platform.
-
-    -  *Static* – Generate the FMU with statically linked runtime for current platform.
+    A source-code only FMU is generated if no platform is selected.
 
   -  Solver for Co-Simulation
 

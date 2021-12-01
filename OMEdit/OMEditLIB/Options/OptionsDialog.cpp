@@ -898,23 +898,23 @@ void OptionsDialog::readFMISettings()
     mpFMIPage->getMoveFMUTextBox()->setText(mpSettings->value("FMIExport/MoveFMU").toString());
   }
   // read platforms
-  QStringList platforms = mpSettings->value("FMIExport/Platforms").toStringList();
-  foreach (QString platform, platforms) {
-    int currentIndex = mpFMIPage->getLinkingComboBox()->findData(platform);
-    if (currentIndex > -1) {
-      mpFMIPage->getLinkingComboBox()->setCurrentIndex(currentIndex);
-    } else {
-      int i = 0;
-      while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
-        if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
-          QCheckBox *pPlatformCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-          if (pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString().compare(platform) == 0) {
-            pPlatformCheckBox->setChecked(true);
-            break;
-          }
+  if (mpSettings->contains("FMIExport/Platforms")) {
+    QStringList platforms = mpSettings->value("FMIExport/Platforms").toStringList();
+    int i = 0;
+    while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
+      if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
+        QCheckBox *pPlatformCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
+        if (platforms.contains(pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString())) {
+          pPlatformCheckBox->setChecked(true);
+          platforms.removeOne(pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString());
+        } else {
+          pPlatformCheckBox->setChecked(false);
         }
-        i++;
+      } else if (dynamic_cast<QLineEdit*>(pLayoutItem->widget())) { // custom platforms
+        QLineEdit *pPlatformTextBox = dynamic_cast<QLineEdit*>(pLayoutItem->widget());
+        pPlatformTextBox->setText(platforms.join(","));
       }
+      i++;
     }
   }
   // read the solver for co-simulation
@@ -1555,14 +1555,17 @@ void OptionsDialog::saveFMISettings()
   mpSettings->setValue("FMIExport/MoveFMU", mpFMIPage->getMoveFMUTextBox()->text());
   // save platforms
   QStringList platforms;
-  QString linking = mpFMIPage->getLinkingComboBox()->itemData(mpFMIPage->getLinkingComboBox()->currentIndex()).toString();
-  platforms.append(linking);
   int i = 0;
   while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
     if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
       QCheckBox *pPlatformCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
       if (pPlatformCheckBox->isChecked()) {
         platforms.append(pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString());
+      }
+    } else if (dynamic_cast<QLineEdit*>(pLayoutItem->widget())) { // custom platforms
+      QLineEdit *pPlatformTextBox = dynamic_cast<QLineEdit*>(pLayoutItem->widget());
+      if (!pPlatformTextBox->text().isEmpty()) {
+        platforms.append(pPlatformTextBox->text().split(","));
       }
     }
     i++;
@@ -4951,6 +4954,30 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
                                FMIPage::FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER + tr(" i.e.,") + " Modelica.Electrical.Analog.Examples.ChuaCircuit\n" +
                                FMIPage::FMU_FULL_CLASS_NAME_UNDERSCORES_PLACEHOLDER + tr(" i.e.,") + " Modelica_Electrical_Analog_Examples_ChuaCircuit\n" +
                                FMIPage::FMU_SHORT_CLASS_NAME_PLACEHOLDER + tr(" i.e.,") + " ChuaCircuit");
+  // platforms
+  mpPlatformsGroupBox = new QGroupBox(tr("Platforms"));
+  Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH matching pattern \"*-*-*-*cc\".\n"
+                                           "In order to run docker platforms add docker to PATH.\n"
+                                           "A source-code only FMU is generated if no platform is selected."));
+  // set the type groupbox layout
+  QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
+  pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pPlatformsLayout->addWidget(pPlatformNoteLabel);
+  QCheckBox *pNativePlatformCheckBox = new QCheckBox("Native");
+  pNativePlatformCheckBox->setChecked(true);
+  pNativePlatformCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, "static");
+  pPlatformsLayout->addWidget(pNativePlatformCheckBox);
+  // docker platforms
+  QStringList dockerPlarforms;
+  dockerPlarforms << "x86_64-linux-gnu docker run docker.openmodelica.org/build-deps:v1.13"
+                  << "i686-linux-gnu docker run docker.openmodelica.org/build-deps:v1.13-i386"
+                  << "x86_64-w64-mingw32 docker run docker.openmodelica.org/msyscross-omsimulator:v2.0"
+                  << "i686-w64-mingw32 docker run docker.openmodelica.org/msyscross-omsimulator:v2.0";
+  foreach (QString dockerPlarform, dockerPlarforms) {
+    QCheckBox *pCheckBox = new QCheckBox(dockerPlarform);
+    pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, dockerPlarform);
+    pPlatformsLayout->addWidget(pCheckBox);
+  }
 #ifdef WIN32
   QStringList paths = QString(getenv("PATH")).split(";");
 #else
@@ -4963,30 +4990,18 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
     QDir dir(path);
     compilers << dir.entryList(nameFilters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
   }
-  mpPlatformsGroupBox = new QGroupBox(tr("Platforms"));
-  Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH matching pattern \"*-*-*-*cc\"."));
-  mpLinkingComboBox = new QComboBox;
-  mpLinkingComboBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-  QStringList linkingDescriptions;
-  linkingDescriptions << "Do not generate code for any platform i.e., a source only FMU."
-                      << "Generate the FMU with dynamically linked runtime for current platform."
-                      << "Generate the FMU with statically linked runtime for current platform.";
-  mpLinkingComboBox->addItem(tr("None"), "none");
-  mpLinkingComboBox->addItem(tr("Dynamic"), "dynamic");
-  mpLinkingComboBox->addItem(tr("Static"), "static");
-  mpLinkingComboBox->setCurrentIndex(2);
-  Utilities::setToolTip(mpLinkingComboBox, "Platforms", linkingDescriptions);
-  // set the type groupbox layout
-  QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
-  pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pPlatformsLayout->addWidget(pPlatformNoteLabel);
-  pPlatformsLayout->addWidget(mpLinkingComboBox);
   foreach (QString compiler, compilers) {
     QString platformName = compiler.left(compiler.lastIndexOf('-'));
-    QCheckBox *pCheckBox = new QCheckBox(platformName);
+    QCheckBox *pCheckBox = new QCheckBox(QString("%1 (auto-detected)").arg(platformName));
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, platformName);
     pPlatformsLayout->addWidget(pCheckBox);
   }
+  // custom platforms
+  QLineEdit *pCustomPlatformsTextBox = new QLineEdit;
+  QString customPlatformTip = tr("Comma separated list of additional platforms");
+  pCustomPlatformsTextBox->setPlaceholderText(customPlatformTip);
+  pCustomPlatformsTextBox->setToolTip(customPlatformTip);
+  pPlatformsLayout->addWidget(pCustomPlatformsTextBox);
   mpPlatformsGroupBox->setLayout(pPlatformsLayout);
   // Solver for co-simulation
   mpSolverForCoSimulationComboBox = new QComboBox;
