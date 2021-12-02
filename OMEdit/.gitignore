@@ -19,7 +19,7 @@
 /bin/
 /build/release/
 .qmake.stash
-omc_config.h
+omedit_config.h
 OMEdit.pro.*
 /OMEditLIB/generatedfiles/
 /OMEditLIB/.qmake.stash

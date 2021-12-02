@@ -39,8 +39,6 @@
 
 extern "C" {
 #include "meta/meta_modelica.h"
-#include "omc_config.h"
-#include "gc.h"
 }
 
 #include <QtGlobal>
