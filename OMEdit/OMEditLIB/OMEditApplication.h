@@ -36,8 +36,6 @@
 
 extern "C" {
 #include "meta/meta_modelica.h"
-#include "omedit_config.h"
-#include "gc.h"
 }
 
 #include <QApplication>

@@ -75,7 +75,6 @@
 #include "Plotting/DiagramWindow.h"
 #include "Interfaces/InformationInterface.h"
 #include "Interfaces/ModelInterface.h"
-#include "omedit_config.h"
 #include "Util/NetworkAccessManager.h"
 #include "Modeling/InstallLibraryDialog.h"
 #include "CrashReport/CrashReportDialog.h"
