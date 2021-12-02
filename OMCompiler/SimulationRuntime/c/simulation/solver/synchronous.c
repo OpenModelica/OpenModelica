@@ -57,11 +57,11 @@ typedef struct SYNC_TIMER {
 
 
 /* Function prototypes */
-void printClocks(CLOCK_INFO* clocksInfo, CLOCK_DATA* clocksData, SUBCLOCK_INFO* subClocksInfo, int nClocks);
+void printClocks(BASECLOCK_DATA* baseClocks, int nBaseCllocks);
 
 
 /**
- * @brief Initialize memory for synchronus functionalities.
+ * @brief Initialize memory for synchronous fonctionnalities.
  *
  * Use freeSynchronous to free data again.
  *
@@ -72,7 +72,7 @@ void printClocks(CLOCK_INFO* clocksInfo, CLOCK_DATA* clocksData, SUBCLOCK_INFO* 
 void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTime)
 {
   TRACE_PUSH
-  long i;
+  long i,j;
 
   /* Free in case initSynchronous is called multiple times */
   freeSynchronous(data);
@@ -82,24 +82,28 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
   data->simulationInfo->intvlTimers = allocList(sizeof(SYNC_TIMER));
 
   /* Error check */
-  for(i=0; i<data->modelData->nSubClocks; i++) {
-    assertStreamPrint(threadData, NULL != data->modelData->subClocksInfo[i].solverMethod, "Continuous clocked systems aren't supported yet");
+  for(i=0; i<data->modelData->nBaseClocks; i++) {
+    for(j=0; j<data->simulationInfo->baseClocks[i].nSubClocks; j++)
+    assertStreamPrint(threadData, NULL != data->simulationInfo->baseClocks[i].subClocks[j].solverMethod, "Continuous clocked systems aren't supported yet");
   }
 
-  for(i=0; i<data->modelData->nClocks; i++)
+  for(i=0; i<data->modelData->nBaseClocks; i++)
   {
+    data->simulationInfo->baseClocks[i].fireList = allocList(sizeof(SYNC_TIMER));
+
     data->callback->function_updateSynchronous(data, threadData, i);
-    if (!data->modelData->clocksInfo[i].isBoolClock) {
-      SYNC_TIMER timer;
-      timer.idx = i;
-      timer.type = SYNC_BASE_CLOCK;
-      timer.activationTime = startTime;
-      listPushFront(data->simulationInfo->intvlTimers, &timer);
+    if (!data->simulationInfo->baseClocks[i].isEventClock) {
+      // TODO: Add first activation to data->simulationInfo->intvlTimers and to data->simulationInfo->baseClocks[i].fireList and
+      //SYNC_TIMER timer;
+      //timer.idx = i;
+      //timer.type = SYNC_BASE_CLOCK;
+      //timer.activationTime = startTime;
+      //listPushFront(data->simulationInfo->intvlTimers, &timer);
     }
   }
 
   /* Debug print */
-  printClocks(data->modelData->clocksInfo , data->simulationInfo->clocksData, data->modelData->subClocksInfo, data->modelData->nClocks);
+  printClocks(data->simulationInfo->baseClocks, data->modelData->nBaseClocks);
 
   TRACE_POP
 }
@@ -114,6 +118,7 @@ void freeSynchronous(DATA* data)
 {
   freeList(data->simulationInfo->intvlTimers);
   data->simulationInfo->intvlTimers = NULL;
+  // TODO: Free more stuff
 }
 
 
@@ -193,10 +198,11 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
  */
 void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
+#if 0
   TRACE_PUSH
-  CLOCK_INFO* clk = &(data->modelData->clocksInfo[idx]);
+  BASECLOCK_DATA* clk = &(data->modelData->clocksInfo[idx]);
   CLOCK_DATA* clkData = &(data->simulationInfo->clocksData[idx]);
-  SUBCLOCK_INFO* subClk;
+  SUBCLOCK_DATA* subClk;
   double nextBaseTime;
   long off;
   long i;
@@ -236,6 +242,7 @@ void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
     }
   }
   TRACE_POP
+#endif
 }
 
 
@@ -252,6 +259,7 @@ void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
  */
 static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double activationTime)
 {
+#if 0
   TRACE_PUSH
   /* Variables */
   CLOCK_DATA* clkData = &(data->simulationInfo->clocksData[idx]);
@@ -270,6 +278,7 @@ static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, doub
   clkData->cnt++;
 
   TRACE_POP
+#endif
 }
 
 
@@ -290,7 +299,7 @@ int handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   TRACE_PUSH
   int ret = 0;
-
+#if 0
   if (listLen(data->simulationInfo->intvlTimers) > 0)
   {
     SYNC_TIMER* nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
@@ -329,6 +338,7 @@ int handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
 
   TRACE_POP
+#endif
   return ret;
 }
 #endif /* #if !defined(OMC_MINIMAL_RUNTIME) */
@@ -338,7 +348,7 @@ int handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
  * @brief Handle timer clocks and return next time a timer will fire
  *
  * Update timers and output when the next timer will fire.
- * Used for Synchronus features in FMUs.
+ * Used for Synchronous features in FMUs.
  *
  * @param data                            data
  * @param threadData                      thread data, for errro handling
@@ -355,6 +365,7 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
   TRACE_PUSH
   int ret = 0;
   int i=0;
+#if 0
 
   *nextTimerDefined = 0;
 
@@ -390,37 +401,44 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
     *nextTimerDefined = 1;
   }
 
+# endif
+
   TRACE_POP
   return ret;
 }
 
-
 /**
- * @brief Print informations about all clocks and sub-clocks.
+ * @brief
  *
- * @param clocksInfo        Pointer to array of size nClocks with base clock static information.
- * @param clocksData        Pointer to array of size nClocks with base clock data.
- * @param subClocksInfo     Pointer to array of all sub-clocks.
- * @param nClocks           Number of base clocks.
+ * @param baseClocks    Pointer to array of size nClocks with base clock data.
+ * @param nBaseClocks  Number of base clocks.
  */
-void printClocks(CLOCK_INFO* clocksInfo, CLOCK_DATA* clocksData, SUBCLOCK_INFO* subClocksInfo, int nClocks) {
+void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks) {
   /* Variables */
   int i,j;
-  int subClockCounter = 0;
+  BASECLOCK_DATA* baseClock;
+  SUBCLOCK_DATA* subClock;
 
   if(useStream[LOG_SYNCHRONOUS]) {
     infoStreamPrint(LOG_SYNCHRONOUS, 1, "Initialized synchronous timers.");
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of base clocks: %i", nClocks);
-    for(i=0; i<nClocks; i++) {
+    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of base clocks: %i", nBaseClocks);
+    for(i=0; i<nBaseClocks; i++) {
+      baseClock = &baseClocks[i];
       infoStreamPrint(LOG_SYNCHRONOUS, 1, "Base clock %i", i+1);
-      infoStreamPrint(LOG_SYNCHRONOUS, 0, "Interval: %e", clocksData[i].interval);
-      infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of sub-clocks: %li", clocksInfo[i].nSubClocks);
-      for(j=0; j<clocksInfo[i].nSubClocks; j++,subClockCounter++) {
+      if (baseClock->isEventClock) {
+      infoStreamPrint(LOG_SYNCHRONOUS, 0, "is event clock");
+      } else {
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "intervalCounter/resolution = : %i/%i", baseClock->intervalCounter, baseClock->resolution);
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "interval: %e", baseClock->interval);
+      }
+      infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of sub-clocks: %li", baseClock->nSubClocks);
+      for(j=0; j<baseClock->nSubClocks; j++) {
+        subClock = &baseClock->subClocks[j];
         infoStreamPrint(LOG_SYNCHRONOUS, 1, "Sub-clock %i of base clock %i", j+1, i+1);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "shift: %li/%li", subClocksInfo[subClockCounter].shift.m, subClocksInfo[subClockCounter].shift.n);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "factor: %li/%li", subClocksInfo[subClockCounter].factor.m, subClocksInfo[subClockCounter].factor.n);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "solverMethod: %s", subClocksInfo[subClockCounter].solverMethod);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "holdEvents: %s", subClocksInfo[subClockCounter].holdEvents?"true":"false");
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "shift: %li/%li", subClock->shift.m, subClock->shift.n);
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "factor: %li/%li", subClock->factor.m, subClock->factor.n);
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "solverMethod: %s", subClock->solverMethod);
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "holdEvents: %s", subClock->holdEvents?"true":"false");
         messageClose(LOG_SYNCHRONOUS);
       }
       messageClose(LOG_SYNCHRONOUS);

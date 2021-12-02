@@ -298,43 +298,78 @@ match var
         '<%cref(name)%> = <%crefPre(name)%>;'
 end functionSavePreSynchronous3;
 
-template isBoolClock(DAE.ClockKind clock)
+template isEventClock(DAE.ClockKind clock)
 ::=
 match clock
   case EVENT_CLOCK(__) then boolStrC(true)
   else boolStrC(false)
-end isBoolClock;
+end isEventClock;
 
 template functionInitSynchronous(list<ClockedPartition> clockedPartitions, String modelNamePrefix)
 "Synchonous features"
 ::=
-  let body = clockedPartitions |> partition =>
+  let body = clockedPartitions |> partition hasindex baseClockIdx =>
+
+    let &varDecls = buffer ""
+    let &auxFunction = buffer ""
     match partition
       case CLOCKED_PARTITION(__) then
-        let boolClock = isBoolClock(baseClock)
-        let subClocksInfo = subPartitions |> subPartition =>
-                            subPartitionStr(subPartition); separator="\n"
+        let baseClockStr = baseClockInit(baseClock, baseClockIdx, subPartitions, varDecls, auxFunction)
         <<
-        data->modelData->clocksInfo[i].nSubClocks = <%listLength(subPartitions)%>;
-        data->modelData->clocksInfo[i].subClocks = data->modelData->subClocksInfo + j;
-        data->modelData->clocksInfo[i].isBoolClock = <%boolClock%>;
-        i++;
-        <%subClocksInfo%>
-
+        <%varDecls%>
+        <%auxFunction%>
+        <%baseClockStr%>
         >>
   <<
   /* Initializes the clocks of model. */
   void <%symbolName(modelNamePrefix,"function_initSynchronous")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    long i=0, j=0;
+    data->simulationInfo->baseClocks = calloc(<%listLength(clockedPartitions)%>, sizeof(BASECLOCK_DATA));
+
     <%body%>
     TRACE_POP
   }
   >>
 end functionInitSynchronous;
 
-template subPartitionStr(SubPartition subPartition)
+template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartition> subPartitions, Text &varDecls, Text &auxFunction)
+::=
+  let &preExp = buffer ""
+  let intervalCounter = match baseClock
+    case RATIONAL_CLOCK() then
+      daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
+    else
+      '-1'
+  let resolution = match baseClock
+    case RATIONAL_CLOCK() then
+      daeExp(resolution, contextOther, &preExp, &varDecls, &auxFunction)
+    else
+      '1'
+  let startInterval = match baseClock
+    case EVENT_CLOCK() then
+      daeExp(startInterval, contextOther, &preExp, &varDecls, &auxFunction)
+    else
+      '-1'
+    let subClocksInfo = subPartitions |> subPartition hasindex subClockIdx =>
+      subPartitionStr(subPartition, baseClockIdx, subClockIdx); separator="\n"
+
+  <<
+  /* Base-Clock <%baseClockIdx%>*/
+  data->simulationInfo->baseClocks[<%baseClockIdx%>] = (BASECLOCK_DATA){
+    .resolution = <%resolution%>,
+    .intervalCounter = <%intervalCounter%>, /* TODO: Is this already initialized? I don't want a whole equationm here*/
+    .previousBaseFireTime = (RATIONAL){-1,1},
+    .nSubClocks = <%listLength(subPartitions)%>,
+    .isEventClock = <%isEventClock(baseClock)%>,
+    .stats = (CLOCK_STATS){<%startInterval%>, 0}};
+  data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks = calloc(<%listLength(subPartitions)%>, sizeof(SUBCLOCK_DATA));
+  <%subClocksInfo%>
+
+  >>
+end baseClockInit;
+
+template subPartitionStr(SubPartition subPartition, Integer baseClockIdx, Integer subClockIdx)
 ::=
 match subPartition
   case SUBPARTITION(subClock = SUBCLOCK(__), holdEvents=holdEvents) then
@@ -342,23 +377,23 @@ match subPartition
       case NONE() then ""
       else "External"
     <<
-    <%rationalStr("data->modelData->subClocksInfo[j].shift", subClock.shift)%>
-    <%rationalStr("data->modelData->subClocksInfo[j].factor", subClock.factor)%>
-    data->modelData->subClocksInfo[j].solverMethod = "<%methodStr%>";
-    data->modelData->subClocksInfo[j].holdEvents = <%boolStrC(holdEvents)%>;
-    j++;
+    data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks[<%subClockIdx%>] = (SUBCLOCK_DATA) {
+      .shift = <%makeCRational(subClock.shift)%>,
+      .factor = <%makeCRational(subClock.factor)%>,
+      .solverMethod = "<%methodStr%>",
+      .holdEvents = <%boolStrC(holdEvents)%>,
+      .stats = (CLOCK_STATS) {-1,0}};
     >>
 end subPartitionStr;
 
-template rationalStr(String prefix, Rational rational)
+template makeCRational(Rational rational)
 ::=
 match rational
   case RATIONAL(__) then
     <<
-    <%prefix%>.m = <%nom%>;
-    <%prefix%>.n = <%denom%>;
+    (RATIONAL){<%nom%>, <%denom%>}
     >>
-end rationalStr;
+end makeCRational;
 
 template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, String modelNamePrefix)
 ::=
@@ -393,35 +428,29 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
 end functionUpdateSynchronous;
 
 template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Text &auxFunction)
+"Update intervalCounter or interval of base-clock"
 ::=
-match baseClock
-  case DAE.EVENT_CLOCK(__) then
-    let cond = cref(expCref(condition))
-    let &preExp = buffer ""
-    let si = daeExp(startInterval, contextOther, &preExp, &varDecls, &auxFunction)
-    <<
-    <%preExp%>
-    if (data->simulationInfo->clocksData[clockIndex].cnt > 0)
-      data->simulationInfo->clocksData[clockIndex].interval = data->localData[0]->timeValue - data->simulationInfo->clocksData[clockIndex].timepoint;
-    else
-      data->simulationInfo->clocksData[clockIndex].interval = <%si%>;
-    >>
-  else
-    let &preExp = buffer ""
-    let intvl = match baseClock
-      case REAL_CLOCK()
-      case RATIONAL_CLOCK()
-      case EVENT_CLOCK() then
-        daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
-      else "unspecified"
-      let interval = match intvl case "unspecified" then '1.0' else intvl
-      let warning = match intvl case "unspecified" then
-        'warningStreamPrint(LOG_STDOUT, 0, "Using default Clock(1.0)!");'
-    <<
-    <%preExp%>
-    data->simulationInfo->clocksData[clockIndex].interval = <%interval%>;
-    <%warning%>
-    >>
+  let &preExp = buffer ""
+
+  match baseClock
+    case RATIONAL_CLOCK() then
+      let intervalCounterStr = daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
+      <<
+      <%preExp%>
+      data->simulationInfo->baseClocks[clockIndex].intervalCounter = <%intervalCounterStr%>;
+      data->simulationInfo->baseClocks[clockIndex].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[clockIndex].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[clockIndex].resolution, "intervalCounter/resolution");
+      >>
+    case REAL_CLOCK() then
+      let interval = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
+      <<
+      <%preExp%>
+      data->simulationInfo->baseClocks[clockIndex].interval = <%interval%>;
+      >>
+    case INFERRED_CLOCK()
+    case SOLVER_CLOCK()
+    case EVENT_CLOCK() then
+      ''
+    else 'ERROR in updatePartition'
 end updatePartition;
 
 template functionSystemsSynchronous(list<SubPartition> subPartitions, String modelNamePrefix)
@@ -1382,7 +1411,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nDelayExpressions = <%match delayed case
      DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
-    data->modelData->nClocks = <%nClocks%>;
+    data->modelData->nBaseClocks = <%nClocks%>;
     data->modelData->nSubClocks = <%nSubClocks%>;
 
     data->modelData->nSpatialDistributions = <%nSpatialDistributions%>;

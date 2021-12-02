@@ -950,9 +950,8 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->nextSampleTimes = (double*) calloc(data->modelData->nSamples, sizeof(double));
   data->simulationInfo->samples = (modelica_boolean*) calloc(data->modelData->nSamples, sizeof(modelica_boolean));
 
-  data->modelData->clocksInfo = (CLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nClocks * sizeof(CLOCK_INFO));
-  data->modelData->subClocksInfo = (SUBCLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSubClocks * sizeof(SUBCLOCK_INFO));
-  data->simulationInfo->clocksData = (CLOCK_DATA*) calloc(data->modelData->nClocks, sizeof(CLOCK_DATA));
+  // TODO: Where does nBaseClocks get set?
+  data->simulationInfo->baseClocks = (BASECLOCK_DATA*) calloc(data->modelData->nBaseClocks, sizeof(BASECLOCK_DATA));
   data->simulationInfo->spatialDistributionData = allocSpatialDistribution(data->modelData->nSpatialDistributions);
   data->simulationInfo->intvlTimers = NULL;
 
@@ -1187,9 +1186,8 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->nextSampleTimes);
   free(data->simulationInfo->samples);
 
-  omc_alloc_interface.free_uncollectable(data->modelData->clocksInfo);
-  omc_alloc_interface.free_uncollectable(data->modelData->subClocksInfo);
-  free(data->simulationInfo->clocksData);
+  free(data->simulationInfo->baseClocks);
+  // TODO: Free data->simulationInfo->intvlTimers?
 
   freeSpatialDistribution(data->simulationInfo->spatialDistributionData, data->modelData->nSpatialDistributions);
   free(data->simulationInfo->spatialDistributionData);
