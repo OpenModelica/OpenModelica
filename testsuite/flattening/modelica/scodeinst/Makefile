@@ -847,6 +847,7 @@ RecursiveInst1.mo \
 RecursiveInst2.mo \
 RecursiveInst3.mo \
 RedeclareClass1.mo \
+RedeclareClass2.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
 RedeclareDim1.mo \

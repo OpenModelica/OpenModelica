@@ -822,7 +822,7 @@ algorithm
         // Redeclare classes with redeclare modifiers. Redeclared components could
         // also be handled here, but since each component is only instantiated once
         // it's more efficient to apply the redeclare when instantiating them instead.
-        redeclareClasses(cls_tree, node);
+        redeclareClasses(cls_tree, par);
 
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
