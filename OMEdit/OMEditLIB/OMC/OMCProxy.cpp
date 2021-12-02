@@ -41,8 +41,8 @@
 #include "Element/Element.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
-#include "simulation_options.h"
-#include "omc_error.h"
+#include "util/simulation_options.h"
+#include "util/omc_error.h"
 #include "FlatModelica/Expression.h"
 
 extern "C" {
