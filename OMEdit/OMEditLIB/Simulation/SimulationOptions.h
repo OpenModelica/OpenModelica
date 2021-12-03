@@ -77,7 +77,6 @@ public:
     setNLSanalyticJacobian(true);
     setParmodauto(false);
     setOldInstantiation(false);
-    setDataReconciliation(false);
     setAdditionalTranslationFlags("");
     // Simulation
     setModelSetupFile("");
@@ -93,8 +92,10 @@ public:
     setCPUTime(false);
     setEnableAllWarnings(true);
     setEnableDataReconciliation(false);
+    setDataReconciliationMeasurementInputFile("");
     setDataReconciliationCorrelationMatrixInputFile("");
     setDataReconciliationEpsilon("");
+    setDataReconciliationSaveSetting(false);
     setLogStreams(QStringList() << "LOG_STATS");
     setAdditionalSimulationFlags("");
     // Output
@@ -111,6 +112,7 @@ public:
 
     setSimulationFlags(QStringList());
     setIsValid(false);
+    setDataReconciliationInitialized(false);
     setReSimulate(false);
     setWorkingDirectory("");
     setFileName("");
@@ -176,8 +178,6 @@ public:
   bool getParmodauto() const {return mParmodauto;}
   void setOldInstantiation(bool oldInstantiation) {mOldInstantiation = oldInstantiation;}
   bool getOldInstantiation() const {return mOldInstantiation;}
-  void setDataReconciliation(bool dataReconciliation) {mDataReconciliation = dataReconciliation;}
-  bool getDataReconciliation() const {return mDataReconciliation;}
   void setAdditionalTranslationFlags(QString additionalTranslationFlags) {mAdditionalTranslationFlags = additionalTranslationFlags;}
   QString getAdditionalTranslationFlags() const {return mAdditionalTranslationFlags;}
 
@@ -207,12 +207,16 @@ public:
   bool getEnableAllWarnings() {return mEnableAllWarnings;}
   void setEnableDataReconciliation(bool dataReconciliation) {mEnableDataReconciliation = dataReconciliation;}
   bool getEnableDataReconciliation() {return mEnableDataReconciliation;}
+  void setDataReconciliationAlgorithm(QString dataReconciliationAlgorithm) {mDataReconciliationAlgorithm = dataReconciliationAlgorithm;}
+  QString getDataReconciliationAlgorithm() {return mDataReconciliationAlgorithm;}
   void setDataReconciliationMeasurementInputFile(QString dataReconciliationMeasurementInputFile) {mDataReconciliationMeasurementInputFile = dataReconciliationMeasurementInputFile;}
   QString getDataReconciliationMeasurementInputFile() {return mDataReconciliationMeasurementInputFile;}
   void setDataReconciliationCorrelationMatrixInputFile(QString dataReconciliationCorrelationMatrixInputFile) {mDataReconciliationCorrelationMatrixInputFile = dataReconciliationCorrelationMatrixInputFile;}
   QString getDataReconciliationCorrelationMatrixInputFile() {return mDataReconciliationCorrelationMatrixInputFile;}
   void setDataReconciliationEpsilon(QString dataReconciliationEpsilon) {mDataReconciliationEpsilon = dataReconciliationEpsilon;}
   QString getDataReconciliationEpsilon() {return mDataReconciliationEpsilon;}
+  void setDataReconciliationSaveSetting(bool dataReconciliationSaveSetting) {mDataReconciliationSaveSetting = dataReconciliationSaveSetting;}
+  bool getDataReconciliationSaveSetting() {return mDataReconciliationSaveSetting;}
   void setLogStreams(QStringList logStreams) {mLogStreams = logStreams;}
   QStringList getLogStreams() {return mLogStreams;}
   void setAdditionalSimulationFlags(QString additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
@@ -245,6 +249,8 @@ public:
   QStringList getSimulationFlags() {return mSimulationFlags;}
   void setIsValid(bool isValid) {mValid = isValid;}
   bool isValid() {return mValid;}
+  void setDataReconciliationInitialized(bool dataReconciliationInitialized) {mDataReconciliationInitialized = dataReconciliationInitialized;}
+  bool isDataReconciliationInitialized() {return mDataReconciliationInitialized;}
   void setReSimulate(bool reSimulate) {mReSimulate = reSimulate;}
   bool isReSimulate() {return mReSimulate;}
   void setWorkingDirectory(QString workingDirectory) {mWorkingDirectory = workingDirectory;}
@@ -284,7 +290,6 @@ private:
   bool mNLSanalyticJacobian;
   bool mParmodauto;
   bool mOldInstantiation;
-  bool mDataReconciliation;
   QString mAdditionalTranslationFlags;
   // simulation flags
   QString mModelSetupFile;
@@ -304,6 +309,7 @@ private:
   QString mDataReconciliationMeasurementInputFile;
   QString mDataReconciliationCorrelationMatrixInputFile;
   QString mDataReconciliationEpsilon;
+  bool mDataReconciliationSaveSetting;
   QStringList mLogStreams;
   QString mAdditionalSimulationFlags;
   // output
@@ -320,6 +326,7 @@ private:
 
   QStringList mSimulationFlags;
   bool mValid;
+  bool mDataReconciliationInitialized;
   bool mReSimulate;
   QString mWorkingDirectory;
   QString mFileName;
