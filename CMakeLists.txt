@@ -123,8 +123,10 @@ omc_add_subdirectory(OMParser EXCLUDE_FROM_ALL)
 omc_add_subdirectory(OMPlot EXCLUDE_FROM_ALL)
 omc_add_subdirectory(OMShell EXCLUDE_FROM_ALL)
 omc_add_subdirectory(OMNotebook EXCLUDE_FROM_ALL)
-# omc_add_subdirectory(libraries)
+
 include(omsimulator.cmake)
+omc_add_subdirectory(OMEdit EXCLUDE_FROM_ALL)
+# omc_add_subdirectory(libraries)
 
 
 ## Report some status info.
