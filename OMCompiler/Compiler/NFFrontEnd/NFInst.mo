@@ -3243,7 +3243,16 @@ algorithm
         next_origin := InstContext.set(context, NFInstContext.FOR);
         stmtl := instStatements(scodeStmt.forBody, for_scope, next_origin);
       then
-        Statement.FOR(iter, oexp, stmtl, makeSource(scodeStmt.comment, info));
+        Statement.FOR(iter, oexp, stmtl, Statement.ForType.NORMAL(), makeSource(scodeStmt.comment, info));
+
+    case SCode.Statement.ALG_PARFOR(info = info)
+      algorithm
+        oexp := instExpOpt(scodeStmt.range, scope, context, info);
+        (for_scope, iter) := addIteratorToScope(scodeStmt.index, scope, info);
+        next_origin := InstContext.set(context, NFInstContext.FOR);
+        stmtl := instStatements(scodeStmt.parforBody, for_scope, next_origin);
+      then
+        Statement.FOR(iter, oexp, stmtl, Statement.ForType.PARALLEL({}), makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_IF(info = info)
       algorithm

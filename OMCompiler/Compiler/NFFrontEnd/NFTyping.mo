@@ -3107,7 +3107,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.FOR);
         body := typeStatements(st.body, next_context);
       then
-        Statement.FOR(st.iterator, SOME(e1), body, st.source);
+        Statement.FOR(st.iterator, SOME(e1), body, st.forType, st.source);
 
     case Statement.IF()
       algorithm

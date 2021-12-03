@@ -77,7 +77,7 @@ import Face = NFConnector.Face;
 import System;
 import ComplexType = NFComplexType;
 import NFInstNode.CachedData;
-import NFPrefixes.{Direction, Variability, Visibility};
+import NFPrefixes.{Direction, Variability, Visibility, Parallelism};
 import Variable = NFVariable;
 import ElementSource;
 import Ceval = NFCeval;
@@ -829,12 +829,12 @@ algorithm
 
         iter :: iters := iters;
         range :: ranges := ranges;
-        stmt := Statement.FOR(iter, SOME(range), body, alg.source);
+        stmt := Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source);
 
         while not listEmpty(iters) loop
           iter :: iters := iters;
           range :: ranges := ranges;
-          stmt := Statement.FOR(iter, SOME(range), body, alg.source);
+          stmt := Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source);
         end while;
       then
         Algorithm.ALGORITHM({stmt}, alg.source);
@@ -1534,6 +1534,7 @@ algorithm
       algorithm
         stmt.range := Util.applyOption(stmt.range, function flattenExp(prefix = prefix));
         stmt.body := flattenStatements(stmt.body, prefix);
+        stmt.forType := updateForType(stmt.forType, stmt.body);
       then
         stmt;
 
@@ -2183,6 +2184,94 @@ algorithm
     else ();
   end match;
 end collectClassFunctions;
+
+function updateForType
+  input output Statement.ForType forType;
+  input list<Statement> forBody;
+protected
+  UnorderedMap<ComponentRef, SourceInfo> vars;
+algorithm
+  () := match forType
+    case Statement.ForType.NORMAL() then ();
+
+    case Statement.ForType.PARALLEL()
+      algorithm
+        // ParModelica needs to know which variables are used in the loop body,
+        // so collect them here and add them to the ForType.
+        vars := UnorderedMap.new<SourceInfo>(ComponentRef.hash, ComponentRef.isEqual);
+
+        for s in forBody loop
+          vars := Statement.fold(s, collectParallelVariables, vars);
+        end for;
+
+        forType.vars := UnorderedMap.toList(vars);
+
+        // Only parglobal variables are allowed to be used in a parfor loop.
+        for v in forType.vars loop
+          checkParGlobalCref(v);
+        end for;
+      then
+        ();
+
+  end match;
+end updateForType;
+
+function collectParallelVariables
+  input Statement stmt;
+  input output UnorderedMap<ComponentRef, SourceInfo> vars;
+protected
+  SourceInfo info;
+algorithm
+  info := Statement.info(stmt);
+  vars := Statement.foldExp(stmt,
+    function Expression.fold(func = function collectParallelVariablesExp(info = info)), vars);
+end collectParallelVariables;
+
+function collectParallelVariablesExp
+  input Expression exp;
+  input SourceInfo info;
+  input output UnorderedMap<ComponentRef, SourceInfo> vars;
+protected
+  InstNode node;
+  ComponentRef cref;
+algorithm
+  () := match exp
+    case Expression.CREF()
+      guard ComponentRef.isCref(exp.cref) and
+            not ComponentRef.isIterator(exp.cref) and
+            InstNode.isComponent(ComponentRef.node(exp.cref))
+      algorithm
+        cref := ComponentRef.stripSubscriptsAll(exp.cref);
+        UnorderedMap.tryAdd(cref, info, vars);
+      then
+        ();
+
+    else ();
+  end match;
+end collectParallelVariablesExp;
+
+function checkParGlobalCref
+  input tuple<ComponentRef, SourceInfo> crefInfo;
+protected
+  ComponentRef cref;
+  SourceInfo info;
+  InstNode node;
+  String errorString;
+algorithm
+  (cref, info) := crefInfo;
+  node := ComponentRef.node(cref);
+
+  if Component.parallelism(InstNode.component(node)) <> Parallelism.GLOBAL then
+    errorString := "\n" +
+    "- Component '" + AbsynUtil.pathString(ComponentRef.toPath(cref)) +
+    "' is used in a parallel for loop." + "\n" +
+    "- Parallel for loops can only contain references to parglobal variables"
+    ;
+    Error.addSourceMessage(Error.PARMODELICA_ERROR,
+      {errorString}, info);
+    fail();
+  end if;
+end checkParGlobalCref;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;
