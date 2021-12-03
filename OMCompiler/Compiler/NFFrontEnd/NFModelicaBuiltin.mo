@@ -43,6 +43,10 @@ type Uncertainty = enumeration(
   refine
 ) annotation(__OpenModelica_builtin = true);
 
+partial class Clock
+  annotation(__OpenModelica_builtin=true);
+end Clock;
+
 partial class ExternalObject
   annotation(__OpenModelica_builtin=true);
 end ExternalObject;

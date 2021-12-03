@@ -309,7 +309,7 @@ protected constant SCode.Element objectiveVarComp =
             SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 protected constant list<SCode.Element> basicTypes = {clockType, rlType, intType, strType, boolType, enumType, ExternalObjectType, realType, integerType, stringType, booleanType, uncertaintyType};
-protected constant list<SCode.Element> basicTypesNF = {clockType, rlType, intType, strType, boolType, enumType, realType, integerType, stringType, booleanType};
+protected constant list<SCode.Element> basicTypesNF = {rlType, intType, strType, boolType, enumType, realType, integerType, stringType, booleanType};
 
 public function getBasicTypes
   output list<SCode.Element> tys;

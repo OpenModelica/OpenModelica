@@ -1749,6 +1749,17 @@ uniontype InstNode
       else 0;
     end match;
   end dimensionCount;
+
+  function isClockType
+    input InstNode node;
+    output Boolean clock;
+  algorithm
+    clock := match node
+      case CLASS_NODE(name = "Clock", nodeType = InstNodeType.BUILTIN_CLASS()) then true;
+      else false;
+    end match;
+  end isClockType;
+
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

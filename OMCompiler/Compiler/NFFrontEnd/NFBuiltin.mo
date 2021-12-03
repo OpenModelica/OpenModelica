@@ -386,7 +386,19 @@ constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
   Pointer.createImmutable(
     Class.PARTIAL_BUILTIN(Type.CLOCK(), CLOCK_CLASS_TREE, Modifier.NOMOD(),
       NFClass.DEFAULT_PREFIXES, Restriction.CLOCK())),
-  EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
+  listArrayLiteral({
+    NFInstNode.CachedData.FUNCTION({
+        NFBuiltinFuncs.CLOCK_INFERED,
+        NFBuiltinFuncs.CLOCK_INT,
+        NFBuiltinFuncs.CLOCK_REAL,
+        NFBuiltinFuncs.CLOCK_BOOL,
+        NFBuiltinFuncs.CLOCK_SOLVER
+        },
+      true, true),
+    NFInstNode.CachedData.NO_CACHE(),
+    NFInstNode.CachedData.NO_CACHE()}
+  ),
+  InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
 
 constant ComponentRef CLOCK_CREF =
   ComponentRef.CREF(CLOCK_NODE, {}, Type.CLOCK(), Origin.CREF, ComponentRef.EMPTY());
