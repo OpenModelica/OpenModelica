@@ -224,6 +224,12 @@ ClassMod3.mo \
 ClassMod4.mo \
 ClassMod5.mo \
 ClassMod6.mo \
+Clock1.mo \
+Clock2.mo \
+Clock3.mo \
+Clock4.mo \
+Clock5.mo \
+Clock6.mo \
 ClockConstructor1.mo \
 CombineSubscripts1.mo \
 CombineSubscripts2.mo \
