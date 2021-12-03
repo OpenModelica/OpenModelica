@@ -79,7 +79,7 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
 
   /* Initialize clocks */
   data->callback->function_initSynchronous(data, threadData);
-  data->simulationInfo->intvlTimers = allocList(sizeof(SYNC_TIMER));
+  data->simulationInfo->intvlTimers = allocList(sizeof(SYNC_TIMER));  // TODO: Free me!
 
   /* Error check */
   for(i=0; i<data->modelData->nBaseClocks; i++) {
@@ -89,7 +89,7 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
 
   for(i=0; i<data->modelData->nBaseClocks; i++)
   {
-    data->simulationInfo->baseClocks[i].fireList = allocList(sizeof(SYNC_TIMER));
+    data->simulationInfo->baseClocks[i].fireList = allocList(sizeof(SYNC_TIMER));  // TODO: Free me!
 
     data->callback->function_updateSynchronous(data, threadData, i);
     if (!data->simulationInfo->baseClocks[i].isEventClock) {

@@ -338,7 +338,10 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
   let &preExp = buffer ""
   let intervalCounter = match baseClock
     case RATIONAL_CLOCK() then
-      daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
+      if isConst(intervalCounter) then
+        daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
+      else
+        '-1 /* Interval set in _updateSynchronous */'
     else
       '-1'
   let resolution = match baseClock
@@ -358,7 +361,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
   /* Base-Clock <%baseClockIdx%>*/
   data->simulationInfo->baseClocks[<%baseClockIdx%>] = (BASECLOCK_DATA){
     .resolution = <%resolution%>,
-    .intervalCounter = <%intervalCounter%>, /* TODO: Is this already initialized? I don't want a whole equationm here*/
+    .intervalCounter = <%intervalCounter%>,
     .previousBaseFireTime = (RATIONAL){-1,1},
     .nSubClocks = <%listLength(subPartitions)%>,
     .isEventClock = <%isEventClock(baseClock)%>,
@@ -410,7 +413,7 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
         >>; separator = "\n"
   <<
   <%auxFunction%>
-  /* Update the base clock. */
+  /* Update base-clock. */
   void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long clockIndex)
   {
     TRACE_PUSH
@@ -434,12 +437,17 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
 
   match baseClock
     case RATIONAL_CLOCK() then
-      let intervalCounterStr = daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
-      <<
-      <%preExp%>
-      data->simulationInfo->baseClocks[clockIndex].intervalCounter = <%intervalCounterStr%>;
-      data->simulationInfo->baseClocks[clockIndex].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[clockIndex].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[clockIndex].resolution, "intervalCounter/resolution");
-      >>
+      if isConst(intervalCounter) then
+        <<
+        /* Nothing to do */
+        >>
+      else
+        let intervalCounterStr = daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
+        <<
+        <%preExp%>
+        data->simulationInfo->baseClocks[clockIndex].intervalCounter = <%intervalCounterStr%>;
+        data->simulationInfo->baseClocks[clockIndex].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[clockIndex].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[clockIndex].resolution, "intervalCounter/resolution");
+        >>
     case REAL_CLOCK() then
       let interval = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
       <<
