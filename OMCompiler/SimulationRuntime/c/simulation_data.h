@@ -513,8 +513,6 @@ typedef struct MODEL_DATA
   SAMPLE_INFO* samplesInfo;            /* array containing each sample-call */
 
   long nBaseClocks;                    /* total number of base-clocks*/
-  // TODO remove nSubClocks?
-  long* nSubClocks;                    /* number of sub-clocks for each base clock*/
 
   fortran_integer nStates;
   long nVariablesReal;                 /* all Real Variables of the model (states, statesderivatives, algebraics, real discretes) */
@@ -557,11 +555,11 @@ typedef struct MODEL_DATA
 } MODEL_DATA;
 
 /**
- * @brief Base clock data.
+ * @brief Statistics for base- and sub-clocks.
  */
 typedef struct CLOCK_STATS {
   modelica_real previousInterval;   /**< Length of previous interval, startInterval at initialization. */
-  long count;                       /**< Number of times clock was fired */
+  int count;                       /**< Number of times clock was fired */
 } CLOCK_STATS;
 
 /**
@@ -589,10 +587,10 @@ typedef struct BASECLOCK_DATA {
   int intervalCounter;
   int resolution;     /* Should be cosntant, defaults to 1 */
 
-  RATIONAL previousBaseFireTime;    // TODO: Remove???
-  double interval;  // TODO: double or rational?
+  double previousBaseFireTime;    // TODO: Remove???
+  double interval;    // is intervalCounter/resolution
 
-  LIST* fireList;
+  LIST* fireList;   // Relative time of sub-clocks to fire.
 
   SUBCLOCK_DATA* subClocks;       /**< Array with sub-clocks */
   int nSubClocks;                /**< Number of sub-clocks */

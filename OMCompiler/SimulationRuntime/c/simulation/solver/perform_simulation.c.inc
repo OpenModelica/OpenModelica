@@ -90,7 +90,7 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   TRACE_POP
 }
 
-static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int foundEvent = 0;
   data->simulationInfo->noThrowAsserts = 1 /* true */;
@@ -108,12 +108,12 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
   /***** Event handling *****/
   if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
 
-  int syncRet = handleTimers(data, threadData, solverInfo);
-  int syncRet1;
+  fire_timer_t syncRet = handleTimers(data, threadData, solverInfo);
+  fire_timer_t syncRet1;
   do
   {
     int eventType = checkEvents(data, threadData, solverInfo->eventLst, !solverInfo->solverRootFinding, /*out*/ &solverInfo->currentTime);
-    if(eventType > 0 || syncRet == 2) /* event */
+    if(eventType > 0 || syncRet == TIMER_FIRED_EVENT) /* event */
     {
       foundEvent = 1;
       threadData->currentErrorStage = ERROR_EVENTHANDLING;
@@ -156,8 +156,8 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
     storeOldValues(data);
 
     syncRet1 = handleTimers(data, threadData, solverInfo);
-    syncRet = syncRet1 == 0 ? syncRet : syncRet1;
-  } while (syncRet1);
+    syncRet = syncRet1 == NO_TIMER_FIRED ? syncRet : syncRet1;
+  } while (syncRet1 != NO_TIMER_FIRED);
 
   /* Add event to spatialDistribution */
   if (foundEvent==1) {
@@ -404,7 +404,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     infoStreamPrint(LOG_STDOUT, 0, "Simulation call terminate() at initialization (time %f)\nMessage : %s", data->localData[0]->timeValue, TermMsg);
     data->simulationInfo->stopTime = solverInfo->currentTime;
   } else {
-    modelica_boolean syncStep = 0;
+    fire_timer_t syncStep = 0;
 
     /***** Start main simulation loop *****/
     while(solverInfo->currentTime < simInfo->stopTime || !simInfo->useStopTime)
@@ -468,7 +468,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         if (!compiledInDAEMode) /* do not use ringbuffer for daeMode */
           rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
 
-        modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep;
+        modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep == TIMER_FIRED || syncStep == TIMER_FIRED_EVENT;
 
         /***** Calculation next step size *****/
         if(syncEventStep) {

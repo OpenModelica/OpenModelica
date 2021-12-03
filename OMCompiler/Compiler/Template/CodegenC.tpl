@@ -342,6 +342,8 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
         daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
       else
         '-1 /* Interval set in _updateSynchronous */'
+    case INFERRED_CLOCK() then
+      '1'
     else
       '-1'
   let resolution = match baseClock
@@ -356,7 +358,10 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
       '-1'
     let subClocksInfo = subPartitions |> subPartition hasindex subClockIdx =>
       subPartitionStr(subPartition, baseClockIdx, subClockIdx); separator="\n"
-
+  let warning = match baseClock
+    case INFERRED_CLOCK() then
+      'warningStreamPrint(LOG_STDOUT, 0, "Infered clock, using default Clock(resolution=1, intervalCounter=1)");'
+    else ''
   <<
   /* Base-Clock <%baseClockIdx%>*/
   data->simulationInfo->baseClocks[<%baseClockIdx%>] = (BASECLOCK_DATA){
@@ -368,6 +373,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
     .stats = (CLOCK_STATS){<%startInterval%>, 0}};
   data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks = calloc(<%listLength(subPartitions)%>, sizeof(SUBCLOCK_DATA));
   <%subClocksInfo%>
+  <%warning%>
 
   >>
 end baseClockInit;
@@ -457,7 +463,9 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
     case INFERRED_CLOCK()
     case SOLVER_CLOCK()
     case EVENT_CLOCK() then
-      ''
+      <<
+      /* Nothing to do */
+      >>
     else 'ERROR in updatePartition'
 end updatePartition;
 
@@ -1420,7 +1428,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
      DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
     data->modelData->nBaseClocks = <%nClocks%>;
-    data->modelData->nSubClocks = <%nSubClocks%>;
 
     data->modelData->nSpatialDistributions = <%nSpatialDistributions%>;
 
