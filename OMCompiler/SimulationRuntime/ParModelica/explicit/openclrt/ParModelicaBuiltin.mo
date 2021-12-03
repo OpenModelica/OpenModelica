@@ -38,91 +38,91 @@
 
 // package ParModelica
 
-parallel function oclGetWorkDim
+impure parallel function oclGetWorkDim
   output Integer dim;
   external "builtin";
 end oclGetWorkDim;
 
-parallel function oclGetGlobalSize
+impure parallel function oclGetGlobalSize
   input Integer dim;
   output Integer size;
   external "builtin";
 end oclGetGlobalSize;
 
-parallel function oclGetGlobalId
+impure parallel function oclGetGlobalId
   input Integer dim;
   output Integer id;
   external "builtin";
 end oclGetGlobalId;
 
-parallel function oclGetLocalSize
+impure parallel function oclGetLocalSize
   input Integer dim;
   output Integer size;
   external "builtin";
 end oclGetLocalSize;
 
-parallel function oclGetLocalId
+impure parallel function oclGetLocalId
   input Integer dim;
   output Integer id;
   external "builtin";
 end oclGetLocalId;
 
-parallel function oclGetNumGroups
+impure parallel function oclGetNumGroups
   input Integer dim;
   output Integer num;
   external "builtin";
 end oclGetNumGroups;
 
-parallel function oclGetGroupId
+impure parallel function oclGetGroupId
   input Integer dim;
   output Integer id;
   external "builtin";
 end oclGetGroupId;
 
-parallel function oclGlobalBarrier
+impure parallel function oclGlobalBarrier
   external "builtin";
 end oclGlobalBarrier;
 
-parallel function oclLocalBarrier
+impure parallel function oclLocalBarrier
   external "builtin";
 end oclLocalBarrier;
 
-function oclSetNumThreadsOnlyGlobal
+impure function oclSetNumThreadsOnlyGlobal
   input Integer num_threads;
   external "builtin";
 end oclSetNumThreadsOnlyGlobal;
 
-function oclSetNumThreadsGlobalLocal
+impure function oclSetNumThreadsGlobalLocal
   input Integer global_num_threads;
   input Integer local_num_threads;
   external "builtin";
 end oclSetNumThreadsGlobalLocal;
 
-function oclSetNumThreadsGlobalLocal1D
+impure function oclSetNumThreadsGlobalLocal1D
   input Integer[1] global_num_threads;
   input Integer[1] local_num_threads;
   external "builtin";
 end oclSetNumThreadsGlobalLocal1D;
 
-function oclSetNumThreadsGlobalLocal2D
+impure function oclSetNumThreadsGlobalLocal2D
   input Integer[2] global_num_threads;
   input Integer[2] local_num_threads;
   external "builtin";
 end oclSetNumThreadsGlobalLocal2D;
 
-function oclSetNumThreadsGlobalLocal3D
+impure function oclSetNumThreadsGlobalLocal3D
   input Integer[3] global_num_threads;
   input Integer[3] local_num_threads;
   external "builtin";
 end oclSetNumThreadsGlobalLocal3D;
 
-function oclSetNumThreadsGlobalLocalError
+impure function oclSetNumThreadsGlobalLocalError
   input Integer[:] global_num_threads;
   input Integer[:] local_num_threads;
   external "builtin";
 end oclSetNumThreadsGlobalLocalError;
 
-function oclSetNumThreads = $overload(
+impure function oclSetNumThreads = $overload(
   oclSetNumThreadsOnlyGlobal,
   oclSetNumThreadsGlobalLocal,
   oclSetNumThreadsGlobalLocal1D,
@@ -135,14 +135,14 @@ function oclSetNumThreads = $overload(
 
 encapsulated package OpenCL
 
-  function matrixMult
+  impure function matrixMult
     parglobal input Integer A[:,:];
     parglobal input Integer B[:,:];
     parglobal output Integer C[:,:];
     external "builtin";
   end matrixMult;
 
-  function matrixTranspose
+  impure function matrixTranspose
     parglobal input Integer A[:,:];
     parglobal output Integer B[:,:];
     external "builtin";
