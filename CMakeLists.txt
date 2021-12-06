@@ -126,6 +126,7 @@ omc_add_subdirectory(OMNotebook EXCLUDE_FROM_ALL)
 
 include(omsimulator.cmake)
 omc_add_subdirectory(OMEdit EXCLUDE_FROM_ALL)
+omc_add_subdirectory(testsuite EXCLUDE_FROM_ALL)
 # omc_add_subdirectory(libraries)
 
 
