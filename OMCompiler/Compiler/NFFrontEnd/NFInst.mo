@@ -251,7 +251,7 @@ algorithm
   topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), node_ty);
 
   // Create a new class from the elements, and update the inst node with it.
-  cls := Class.fromSCode(NFBuiltin.Elements.CLOCK :: topClasses, false, topNode, NFClass.DEFAULT_PREFIXES);
+  cls := Class.fromSCode(topClasses, false, topNode, NFClass.DEFAULT_PREFIXES);
   // The class needs to be expanded to allow lookup in it. The top scope will
   // only contain classes, so we can do this instead of the whole expandClass.
   cls := Class.initExpandedClass(cls);
