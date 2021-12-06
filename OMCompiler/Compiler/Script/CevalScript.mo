@@ -65,6 +65,7 @@ import Values;
 protected
 import Autoconf;
 import BaseHashSet;
+import Builtin;
 import CevalFunction;
 import CevalScriptBackend;
 import ClassInf;
@@ -868,9 +869,14 @@ algorithm
 
     case ("setCommandLineOptions",{Values.STRING(str)})
       algorithm
+        b := Flags.isSet(Flags.SCODE_INST);
         strs := System.strtok(str, " ");
         {} := FlagsUtil.readArgs(strs);
         outCache := FCore.emptyCache();
+
+        if b <> Flags.isSet(Flags.SCODE_INST) then
+          Builtin.clearInitialGraph();
+        end if;
       then
         Values.BOOL(true);
 
@@ -895,7 +901,11 @@ algorithm
 
     case ("enableNewInstantiation",_)
       algorithm
-        FlagsUtil.enableDebug(Flags.SCODE_INST);
+        if not Flags.isSet(Flags.SCODE_INST) then
+          Builtin.clearInitialGraph();
+          FlagsUtil.enableDebug(Flags.SCODE_INST);
+          outCache := FCore.emptyCache();
+        end if;
       then
         Values.BOOL(true);
 
@@ -904,7 +914,11 @@ algorithm
 
     case ("disableNewInstantiation",_)
       algorithm
-        FlagsUtil.disableDebug(Flags.SCODE_INST);
+        if Flags.isSet(Flags.SCODE_INST) then
+          FlagsUtil.disableDebug(Flags.SCODE_INST);
+          outCache := FCore.emptyCache();
+          Builtin.clearInitialGraph();
+        end if;
       then
         Values.BOOL(true);
 
