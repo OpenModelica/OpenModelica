@@ -273,6 +273,6 @@ install(DIRECTORY scripts
 # or 'cmake --build <b_dir> --target install_omc' in the general case.
 add_custom_target(install_omc
                   DEPENDS omc
-                  COMMAND ${CMAKE_COMMAND} cmake -DCOMPONENT=compiler -P cmake_install.cmake
+                  COMMAND ${CMAKE_COMMAND} -DCOMPONENT=compiler -P cmake_install.cmake
                   COMMENT "Installing omc."
                   )
