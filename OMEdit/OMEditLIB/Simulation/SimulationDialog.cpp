@@ -806,8 +806,10 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
               }
               i++;
             }
-          } else if ((simulationFlag.compare("reconcile") == 0) || (simulationFlag.compare("reconcileBoundaryConditions") == 0)) {
-            mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm(simulationFlag);
+          } else if (simulationFlag.compare("reconcile") == 0)  {
+            mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm("dataReconciliation");
+          } else if (simulationFlag.compare("reconcileBoundaryConditions") == 0) {
+            mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm("dataReconciliationBoundaryConditions");
           } else if (simulationFlag.compare("sx") == 0) {
             mpLibraryTreeItem->mSimulationOptions.setDataReconciliationMeasurementInputFile(value);
           } else if (simulationFlag.compare("cx") == 0) {
@@ -2289,7 +2291,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   mpDataReconciliationAlgorithmLabel = new Label(tr("Algorithm:"));
   mpDataReconciliationAlgorithmComboBox = new QComboBox;
   mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation"), QString("dataReconciliation"));
-  mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation with Boundary Conditions"), QString("dataReconciliationBoundaryConditions"));
+  mpDataReconciliationAlgorithmComboBox->addItem(tr("Boundary Conditions"), QString("dataReconciliationBoundaryConditions"));
   mpDataReconciliationMeasurementInputFileLabel = new Label(tr("Measurement Input File:"));
   mpDataReconciliationMeasurementInputFileTextBox = new QLineEdit;
   mpDataReconciliationMeasurementInputFileBrowseButton = new QPushButton(Helper::browse);
@@ -2322,7 +2324,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   }
   mpDataReconciliationMeasurementInputFileTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile());
   mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationCorrelationMatrixInputFile());
-  mpDataReconciliationEpsilonTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationEpsilon());
+  mpDataReconciliationEpsilonTextBox->setText("1.e-10");
   mpSaveSettingsCheckBox->setChecked(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationSaveSetting());
   if (!mpLibraryTreeItem->mSimulationOptions.isDataReconciliationInitialized()) {
     // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
@@ -2395,7 +2397,34 @@ void DataReconciliationDialog::calculateDataReconciliation()
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(true);
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm(mpDataReconciliationAlgorithmComboBox->itemData(mpDataReconciliationAlgorithmComboBox->currentIndex()).toString());
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationMeasurementInputFile(mpDataReconciliationMeasurementInputFileTextBox->text());
+  int currentIndex = mpDataReconciliationAlgorithmComboBox->findData(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm());
+
+  // Validate dataReconciliation Algorithm
+  if (currentIndex == 0){
+    if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile().isEmpty()){
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                               "Measurement Input File not provided, Data Reconciliation cannot be computed!", Helper::ok);
+      mpDataReconciliationMeasurementInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
+      return;
+    }
+  }
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationCorrelationMatrixInputFile(mpDataReconciliationCorrelationMatrixInputFileTextBox->text());
+
+  // Validate Boundary Condition Algorithm
+  if (currentIndex == 1){
+    if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile().isEmpty()){
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             "Measurement Input File not provided, Boundary Conditions cannot be computed!", Helper::ok);
+      mpDataReconciliationMeasurementInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
+      return;
+    }
+    else if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationCorrelationMatrixInputFile().isEmpty()){
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             "Correlation Matrix Input File not provided, Boundary Conditions cannot be computed!", Helper::ok);
+      mpDataReconciliationCorrelationMatrixInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
+      return;
+    }
+  }
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationEpsilon(mpDataReconciliationEpsilonTextBox->text());
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationSaveSetting(mpSaveSettingsCheckBox->isChecked());
   accept();
