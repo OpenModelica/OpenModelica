@@ -116,6 +116,7 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  void setSubModelGeometry(const QString &nameStructure);
 private slots:
   void browseSubModelPath();
   void browseStartScript();
