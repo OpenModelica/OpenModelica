@@ -1720,6 +1720,31 @@ MSL but if you really need to and understand the consequences then follow these 
 -  Add *$OPENMODELICAHOME/lib/omlibrary/Modelica X.X/package.mo* under user libraries.
 -  Restart OMEdit.
 
+Install Library
+---------------
+
+A new library can be installed with the help of the :ref:`package manager <packagemanagement>`.
+Click `File->Install Library` to open the install library dialog. OMEdit lists the libraries
+that are available for installation through the package manager.
+
+.. figure :: media/omedit_install_library.png
+  :name: omedit-install-library
+
+  Install Library.
+
+Upgrade Libraries using Conversion Scripts
+------------------------------------------
+
+In order to upgrade the libraries used in the model/package right-click the model/package in the
+`Libraries Browser` and choose `Convert to newer versions of used libraries`. OMEdit will read the used
+libraries from the uses-annotation and list any new version of the library that provide the conversion
+using the conversion script.
+
+.. figure :: media/omedit_convert_library.png
+  :name: omedit-convert-library
+
+  Converts the model/package to newer version of used libraries.
+
 State Machines
 --------------
 
