@@ -347,6 +347,29 @@ QString AddSubModelDialog::browseSubModelPath(GraphicsView *pGraphicsView, QStri
 }
 
 /*!
+ * \brief AddSubModelDialog::setSubModelGeometry
+ * Sets the submodel geometry.
+ * \param nameStructure
+ */
+void AddSubModelDialog::setSubModelGeometry(const QString &nameStructure)
+{
+  qreal x = mpGraphicsView->mContextMenuStartPosition.x();
+  qreal y = mpGraphicsView->mContextMenuStartPosition.y();
+
+  ssd_element_geometry_t elementGeometry;
+  elementGeometry.x1 = x - 10.0;
+  elementGeometry.y1 = y - 10.0;
+  elementGeometry.x2 = x + 10.0;
+  elementGeometry.y2 = y + 10.0;
+  elementGeometry.rotation = 0.0;
+  elementGeometry.iconSource = NULL;
+  elementGeometry.iconRotation = 0.0;
+  elementGeometry.iconFlip = false;
+  elementGeometry.iconFixedAspectRatio = false;
+  OMSProxy::instance()->setElementGeometry(nameStructure, &elementGeometry);
+}
+
+/*!
  * \brief AddSubModelDialog::browseSubModelPath
  * Slot activated when mpBrowsePathButton clicked signal is raised.
  */
@@ -409,6 +432,7 @@ void AddSubModelDialog::addSubModel()
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpNameTextBox->text());
   if (mpStartScriptTextBox->text().isEmpty()) {
     if (OMSProxy::instance()->addSubModel(nameStructure, fileInfo.absoluteFilePath())) {
+      setSubModelGeometry(nameStructure);
       mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add submodel %1").arg(nameStructure));
       mpGraphicsView->getModelWidget()->updateModelText();
       accept();
@@ -417,6 +441,7 @@ void AddSubModelDialog::addSubModel()
     }
   } else {
     if (OMSProxy::instance()->addExternalTLMModel(nameStructure, mpStartScriptTextBox->text(), fileInfo.absoluteFilePath())) {
+      setSubModelGeometry(nameStructure);
       mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add external tlm model %1").arg(nameStructure));
       mpGraphicsView->getModelWidget()->updateModelText();
       accept();
