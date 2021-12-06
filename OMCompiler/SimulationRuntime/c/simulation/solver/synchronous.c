@@ -86,7 +86,8 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
   /* Error check */
   for(i=0; i<data->modelData->nBaseClocks; i++) {
     for(j=0; j<data->simulationInfo->baseClocks[i].nSubClocks; j++)
-    assertStreamPrint(threadData, NULL != data->simulationInfo->baseClocks[i].subClocks[j].solverMethod, "Continuous clocked systems aren't supported yet");
+    assertStreamPrint(threadData, data->simulationInfo->baseClocks[i].subClocks[j].solverMethod != NULL, "Continuous clocked systems aren't supported yet.");
+    assertStreamPrint(threadData, rat2Real(data->simulationInfo->baseClocks[i].subClocks[j].shift) >= 0, "Shift of sub-clock is negative. Sub-clocks aren't allowed to fire before base-clock.");
   }
 
   for(i=0; i<data->modelData->nBaseClocks; i++)
@@ -214,23 +215,47 @@ void fireBaseClock(DATA* data, threadData_t *threadData, long idx, double curTim
 {
   TRACE_PUSH
   BASECLOCK_DATA* baseClock = &(data->simulationInfo->baseClocks[idx]);
-  double nextBaseTime;
+  SUBCLOCK_DATA* subClock;
+  SYNC_TIMER nextTimer, firstSubTimer;
+  SYNC_TIMER* nextSubTimer;
+  double nextBaseTime, nextSubTime, absoluteSubTime;
+  double subTimer, activationTime;
+  int i, k;
 
   /* Update base clock */
-  data->callback->function_updateSynchronous(data, threadData, idx);
-  nextBaseTime = curTime + baseClock->interval;
   baseClock->stats.count++;
+  baseClock->stats.previousInterval = baseClock->interval;
+  //TODO: Update subClocks previousInterval
+  data->callback->function_updateSynchronous(data, threadData, idx);  /* Update interval */
+  nextBaseTime = curTime + baseClock->interval;
 
-  SYNC_TIMER nextTimer = (SYNC_TIMER){
+  // Next base clock activation
+  nextTimer = (SYNC_TIMER){
     .base_idx = idx,
+    .sub_idx = -1,
     .type = SYNC_BASE_CLOCK,
-    .activationTime = nextBaseTime
-  };
+    .activationTime = nextBaseTime};
   insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
 
-  // TODO: Update baseClock->fireList to make sure at least one item is recorded for each sub-clock
-  if (baseClock->stats.count == 1 ) {
-    // TODO: Init sub-clock list
+  // Add sub-clocks to timer that will fire during this base-clock interval.
+  // k = subClock->stats.count
+  // s = subClock->shift + k*subClock->factor;
+  // timer = base.prevTick + (s-baseClock->stats.count-1) * baserClock->interval
+  for (i=0; i<baseClock->nSubClocks; i++) {
+    subClock = &baseClock->subClocks[i];
+    k = subClock->stats.count;
+    subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
+    while (subTimer < baseClock->stats.count) {
+      activationTime = baseClock->previousBaseFireTime + (subTimer-baseClock->stats.count-1)*baseClock->interval;
+      nextTimer = (SYNC_TIMER){
+        .base_idx = idx,
+        .sub_idx = i,
+        .type = SYNC_SUB_CLOCK,
+        .activationTime = activationTime};
+      insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
+      k++;
+      subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
+    }
   }
 
   TRACE_POP
@@ -242,17 +267,11 @@ void fireSubClock(DATA* data, threadData_t *threadData, int base_idx, int sub_id
   TRACE_PUSH
   BASECLOCK_DATA* baseClock = &(data->simulationInfo->baseClocks[base_idx]);
   SUBCLOCK_DATA* subClock = &(baseClock->subClocks[sub_idx]);
-  double nextBaseTime;
+  SYNC_TIMER nextTimer;
+  double nextSubTime;
 
-  /* Update sub clock */
+  /* Update base-clock fire list */
   subClock->stats.count++;
-
-  SYNC_TIMER nextTimer = (SYNC_TIMER){
-    .idx = sub_idx,
-    .type = SYNC_BASE_CLOCK,
-    .activationTime = nextBaseTime
-  };
-  insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
 
   TRACE_POP
   return;
@@ -447,7 +466,7 @@ void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks) {
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "intervalCounter/resolution = : %i/%i", baseClock->intervalCounter, baseClock->resolution);
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "interval: %e", baseClock->interval);
       }
-      infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of sub-clocks: %li", baseClock->nSubClocks);
+      infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of sub-clocks: %i", baseClock->nSubClocks);
       for(j=0; j<baseClock->nSubClocks; j++) {
         subClock = &baseClock->subClocks[j];
         infoStreamPrint(LOG_SYNCHRONOUS, 1, "Sub-clock %i of base clock %i", j+1, i+1);
