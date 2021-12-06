@@ -8,7 +8,7 @@ set(STAMP 20200610130629.stamp)
 add_custom_target(libs-for-testing
             COMMAND ${CMAKE_COMMAND} -E remove_directory .openmodelica/libraries
             COMMAND ${CMAKE_COMMAND} -E make_directory .openmodelica/libraries
-            COMMAND ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/omc -d=showStatement index.mos
+            COMMAND ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/omc index.mos
 
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
