@@ -202,6 +202,10 @@ void Newton::solve( )
         double scale = 0.0;
         dgetc2_(&_dimSys, _jac, &_dimSys, _iHelp, _jHelp, &info2);
         dgesc2_(&_dimSys, _jac, &_dimSys, _f, _iHelp, _jHelp, &scale);
+        // limit change of y by f to yNominal in case of singular Jacobian
+        for (int i = 0; i < _dimSys; i++) {
+          _f[i] = std::min(_yNominal[i], std::max(-_yNominal[i], _f[i]));
+        }
         LOGGER_WRITE("total pivoting: dgesv/dgetc2 infos: " + to_string(info) + "/" + to_string(info2) +
                      ", dgesc2 scale: " + to_string(scale), _lc, LL_DEBUG);
       }
@@ -281,11 +285,6 @@ void Newton::solve( )
                         0.0, lambdaTest*lambdaTest, lambda*lambda};
           dgesv_(&n, &dimRHS, A, &n, ipiv, bx, &n, &info);
           lambda = std::max(0.1*lambda, -0.5*bx[1]/bx[2]);
-          if (!(lambda >= 1e-10)) {
-            LOGGER_WRITE_END(_lc, LL_DEBUG);
-            throw ModelicaSimulationError(ALGLOOP_SOLVER,
-              "Can't get sufficient decrease of solution");
-          }
           if (lambda >= lambdaTest) {
             // upper bound 0.5*lambda
             lambda = lambdaTest;
@@ -309,6 +308,13 @@ void Newton::solve( )
                        ", phi = " + to_string(phi) +
                        " --> " + to_string(phiHelp),
                        _lc, LL_DEBUG);
+        }
+        // check for stalled step control
+        if (!(lambda >= 1e-10) || !isfinite(phi)) {
+          LOGGER_WRITE_END(_lc, LL_DEBUG);
+          throw ModelicaSimulationError(ALGLOOP_SOLVER,
+            "can't get sufficient decrease of solution"
+            ", lambda = " + to_string(lambda) + ", phi = " + to_string(phi));
         }
         // check for sufficient decrease
         // (also break for very small lambda and try a small step instead
@@ -360,8 +366,11 @@ void Newton::calcJacobian(double *jac, double *fNominal)
       Adata = A.data().begin();
       std::copy(Adata, Adata + _dimSys * _dimSys, jac);
       for (int j = 0, idx = 0; j < _dimSys; j++)
-        for (int i = 0; i < _dimSys; i++, idx++)
+        for (int i = 0; i < _dimSys; i++, idx++) {
+          if (!isfinite(jac[idx]))
+            jac[idx] = 0.0; // remove infinite element in favor of potential singularity
           fNominal[i] = std::max(std::abs(jac[idx]) /** _yNominal[j]*/, fNominal[i]);
+        }
     }
   }
   catch (ModelicaSimulationError& ex) {
@@ -386,6 +395,8 @@ void Newton::calcJacobian(double *jac, double *fNominal)
       // Build Jacobian in Fortran format
       for (int i = 0, idx = j * _dimSys; i < _dimSys; i++, idx++) {
         jac[idx] = (_fHelp[i] - _f[i]) / stepsize;
+        if (!isfinite(jac[idx]))
+          jac[idx] = 0.0; // remove infinite element in favor of potential singularity
         fNominal[i] = std::max(std::abs(jac[idx]) /** _yNominal[j]*/, fNominal[i]);
       }
 

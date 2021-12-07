@@ -19,7 +19,7 @@
 /bin/
 /build/release/
 .qmake.stash
-omc_config.h
+omedit_config.h
 OMEdit.pro.*
 /OMEditLIB/generatedfiles/
 /OMEditLIB/.qmake.stash
@@ -42,6 +42,8 @@ OMEdit.pro.*
 /OMEditLIB/OMC/Parser/OMCOutputParser.cpp
 /OMEditLIB/OMC/Parser/OMCOutputParser.h
 /OMEditLIB/OMEditLIB.pro.*
+/OMEditLIB/release
+/OMEditLIB/debug
 /OMEditGUI/.qmake.stash
 /OMEditGUI/Makefile
 /OMEditGUI/Makefile.Debug
@@ -49,6 +51,8 @@ OMEdit.pro.*
 /OMEditGUI/object_script.*
 /OMEditGUI/OMEditGUI.pro.*
 /OMEditGUI/version.h
+/OMEditGUI/release
+/OMEditGUI/debug
 /qjson-0.8.1/build/
 /qmake.sh
 Makefile.unix

@@ -68,17 +68,21 @@ template dumpFunction(DAE.Function function)
 ::=
   match function
     case FUNCTION(__) then
-      let inline_str = dumpInlineType(inlineType)
       let cmt_str = dumpCommentOpt(comment)
       let ann_str = dumpClassAnnotation(comment)
       let impure_str = if isImpure then 'impure '
       <<
-      <%impure_str%>function <%AbsynDumpTpl.dumpPathNoQual(path)%><%inline_str%><%cmt_str%>
+      <%impure_str%>function <%AbsynDumpTpl.dumpPathNoQual(path)%><%cmt_str%>
       <%dumpFunctionDefinitions(functions)%>
       <%if ann_str then "  "%><%ann_str%>
       end <%AbsynDumpTpl.dumpPathNoQual(path)%>;
       >>
     case RECORD_CONSTRUCTOR(__) then
+      if (Flags.isSet(Flags.PRINT_RECORD_TYPES)) then
+      <<
+      <%dumpRecordType(type_)%>
+      >>
+      else
       <<
       function <%AbsynDumpTpl.dumpPathNoQual(path)%> "Automatically generated record constructor for <%AbsynDumpTpl.dumpPathNoQual(path)%>"
         <%dumpRecordInputVarStr(type_)%>
@@ -219,13 +223,6 @@ match algorithm_
       <%dumpStatements(statementLst)%>
     >>
 end dumpFunctionAlgorithm;
-
-template dumpInlineType(InlineType it)
-::=
-match it
-  case AFTER_INDEX_RED_INLINE() then ' "Inline after index reduction"'
-  case NORM_INLINE() then ' "Inline before index reduction"'
-end dumpInlineType;
 
 /*****************************************************************************
  *     SECTION: VARIABLE SECTION                                             *
@@ -382,6 +379,20 @@ match arg
     let binding_str = match defaultBinding case SOME(bexp) then ' := <%dumpExp(bexp)%>'
     '<%ty_str%> <%c_str%><%p_str%><%name%><%binding_str%>'
 end dumpFuncArg;
+
+template dumpRecordType(Type ty)
+::=
+match ty
+  case T_COMPLEX(__) then
+    let name = AbsynDumpTpl.dumpPath(ClassInf.getStateName(complexClassType))
+    let vars = dumpRecordVars(varLst)
+    <<
+    record <%name%>
+      <%vars%>
+    end <%name%>;
+    >>
+  case T_FUNCTION(__) then dumpRecordType(funcResultType)
+end dumpRecordType;
 
 template dumpConst(Const c)
 ::=
@@ -634,6 +645,7 @@ match lst
   case INITIALDEFINE(__) then dumpDefine(componentRef, exp, source)
   case INITIAL_ARRAY_EQUATION(__) then dumpEquation(exp, array, source)
   case INITIAL_COMPLEX_EQUATION(__) then dumpEquation(lhs, rhs, source)
+  case INITIAL_FOR_EQUATION(__) then dumpForEquation(lst)
   case INITIAL_IF_EQUATION(__) then dumpIfEquation(condition1, equations2, equations3, source)
   case INITIALEQUATION(__) then dumpEquation(exp1, exp2, source)
   else 'UNKNOWN EQUATION TYPE'
@@ -745,6 +757,15 @@ match lst
       <%body_str%>
     end for<%src_str%>;
     >>
+  case INITIAL_FOR_EQUATION(__) then
+    let range_str = dumpExp(range)
+    let body_str = (equations |> e => dumpEquationElement(e) ;separator="\n")
+    let src_str = dumpSource(source)
+    <<
+    for <%iter%> in <%range_str%> loop
+      <%body_str%>
+    end for<%src_str%>;
+    >>
 end dumpForEquation;
 
 template dumpIfEquation(list<DAE.Exp> conds, list<list<DAE.Element>> branches,
@@ -845,6 +866,7 @@ match stmt
   case STMT_ASSIGN_ARR(__)   then dumpArrayAssignStatement(stmt)
   case STMT_IF(__) then dumpIfStatement(stmt)
   case STMT_FOR(__) then dumpForStatement(stmt)
+  case STMT_PARFOR(__) then dumpParForStatement(stmt)
   case STMT_WHILE(__) then dumpWhileStatement(stmt)
   case STMT_WHEN(__) then dumpWhenStatement(stmt)
   case STMT_ASSERT(__) then dumpAssert(cond, msg, level, source)
@@ -942,6 +964,20 @@ match stmt
     end for<%src_str%>;
     >>
 end dumpForStatement;
+
+template dumpParForStatement(DAE.Statement stmt)
+::=
+match stmt
+  case STMT_PARFOR(__) then
+    let range_str = dumpExp(range)
+    let alg_str = (statementLst |> e => dumpStatement(e) ;separator="\n")
+    let src_str = dumpSource(source)
+    <<
+    parfor <%iter%> in <%range_str%> loop
+      <%alg_str%>
+    end for<%src_str%>;
+    >>
+end dumpParForStatement;
 
 template dumpWhileStatement(DAE.Statement stmt)
 ::=

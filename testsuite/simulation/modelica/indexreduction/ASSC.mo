@@ -7,7 +7,7 @@ equation
   der(x) = sin(time);
   der(y) = cos(time) + a;
 
-// anayltically singular algebraic loop
+  // analytically singular algebraic loop
   2*a + 2*b + c + x = 10;
   a + b + y = 5;
   a + b + c = 0;

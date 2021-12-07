@@ -51,7 +51,7 @@ static void checkReturnFlag_SUNLS(int flag, const char *functionName);
 /**
  * @brief Checks given flag and reports potential error.
  *
- * Checky sundialsFlagType type to decide what kind given flag is.
+ * Checks sundialsFlagType type to decide what kind given flag is.
  * Possible kinds are: SUNDIALS_KIN_FLAG, SUNDIALS_KINLS_FLAG,
  * SUNDIALS_SUNLS_FLAG or SUNDIALS_UNKNOWN_FLAG.
  *
@@ -258,7 +258,7 @@ static void checkReturnFlag_CVLS(int flag, const char *functionName) {
  */
 static void checkReturnFlag_KIN(int flag, const char *functionName) {
 
-  const char* flagName = KINGetLinReturnFlagName(flag);
+  const char* flagName = KINGetLinReturnFlagName(flag); /* memory is allocated here so it must be freed at the end, see kinsol_ls.c */
 
   switch (flag) {
   case KIN_SUCCESS:
@@ -351,6 +351,8 @@ static void checkReturnFlag_KIN(int flag, const char *functionName) {
                      "##KINSOL## %s In function %s: Error with flag %i.", flagName,
                      functionName, flag);
   }
+
+  free((char*)flagName);
 }
 
 /**
@@ -690,7 +692,7 @@ static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
     break;
   case SUNLS_GS_FAIL:
     throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Gram-Schmidt failuret.",
+                     "##SUNLS## In function %s: Gram-Schmidt failure.",
                      functionName);
     break;
   case SUNLS_QRSOL_FAIL:

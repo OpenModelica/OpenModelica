@@ -124,6 +124,7 @@ void SimManager::initialize()
     // Reset debug ID
     _dbgId = 0;
 
+    _solver->setStartTime(_tStart);
     try
     {
         // Build up system and update once
@@ -133,10 +134,13 @@ void SimManager::initialize()
     {
         LOGGER_WRITE("SimManager: Could not initialize system", LC_INIT, LL_ERROR);
         LOGGER_WRITE("SimManager: " + string(ex.what()), LC_INIT, LL_ERROR);
-        //ex << error_id(SIMMANAGER);
+        // Write current values as they might help to analyse the error
+        _solver->solve(ISolver::RECORDCALL);
         throw ModelicaSimulationError(SIMMANAGER, "Could not initialize system",
                                       string(ex.what()), LOGGER_IS_SET(LC_INIT, LL_ERROR));
     }
+    // Write initial values
+    _solver->solve(ISolver::RECORDCALL);
 
     if (_timeevent_system)
     {

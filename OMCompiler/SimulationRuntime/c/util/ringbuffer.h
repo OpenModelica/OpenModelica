@@ -51,6 +51,7 @@ extern "C" {
 
   void appendRingData(RINGBUFFER *rb, void *value);
   void dequeueNFirstRingDatas(RINGBUFFER *rb, int n);
+  void removeLastRingData(RINGBUFFER *rb, int n);
 
   int ringBufferLength(RINGBUFFER *rb);
 
@@ -58,6 +59,7 @@ extern "C" {
 
   void infoRingBuffer(RINGBUFFER *rb);
 
+  void plotRingBuffer(RINGBUFFER *rb, int stream, void (*printDataFunc)(void*,int,void*));
 #ifdef __cplusplus
 }
 #endif

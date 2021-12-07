@@ -13,6 +13,7 @@ instantiateModel(FFITest.ErrorChecking.MissingFunction1); getErrorString();
 // ""
 // ""
 // "[flattening/modelica/ffi/FFITest/package.mo:252:5-256:25:writable] Error: External function ‘missingFunction1_ext‘ could not be found in any of the given shared libraries:
+//   bin/../lib/x86_64-linux-gnu/omc/libFFITestLib.so
 //   flattening/modelica/ffi/FFITest/Resources/Library/linux64/libFFITestLib.so
 //   flattening/modelica/ffi/FFITest/Resources/Library/libFFITestLib.so
 // [flattening/modelica/ffi/FFITest/package.mo:259:7-259:43:writable] Error: Failed to evaluate function: FFITest.ErrorChecking.missingFunction1.

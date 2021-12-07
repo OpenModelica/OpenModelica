@@ -886,73 +886,78 @@ QString StringHandler::removeFirstLastSingleQuotes(QString value)
   return value;
 }
 
+/*!
+ * \brief StringHandler::getStrings
+ * Splits a comma-separated string into a list of strings while preserving
+ * Modelica expressions such as strings, arrays and records.
+ * \param value
+ * \return
+ */
 QStringList StringHandler::getStrings(QString value)
 {
-  return getStrings(value, '{', '}');
-}
+  QStringList res;
+  int blocks = 0;
+  bool escaped = false;
+  char str_char = 0;
+  int start = 0;
+  int n = 0;
 
-QStringList StringHandler::getStrings(QString value, char start, char end)
-{
-  QStringList list;
-  bool mask = false;
-  bool inString = false;
-  char StringEnd = '\0';
-  int begin = 0;
-  int ele = 0;
+  for (auto &c: value) {
+    ++n;
 
-  for (int i = 0 ; i < value.length() ; i++)
-  {
-    if (inString)
-    {
-      if (mask)
-      {
-        mask = false;
+    if (escaped) {
+      escaped = false;
+      continue;
+    } else if (str_char) {
+      if (c == str_char) {
+        str_char = 0;
+      } else if (c == '\\') {
+        escaped = true;
       }
-      else
-      {
-        if (value.at(i) == '\\')
-        {
-          mask = true;
-        }
-        else if (value.at(i) == StringEnd)
-        {
-          inString = false;
-        }
-      }
+      continue;
     }
-    else
-    {
-      if (value.at(i) == '"')
-      {
-          StringEnd = '"';
-          inString = true;
-      }
-      else if (value.at(i) == '\'')
-      {
-          StringEnd = '\'';
-          inString = true;
-      }
-      else if (value.at(i) == ',')
-      {
-        if (ele == 0)
-        {
-          list.append(value.mid(begin,i-begin).trimmed());
-          begin = i+1;
+
+    switch (c.unicode()) {
+      case '{':
+      case '(':
+      case '[':
+        ++blocks;
+        break;
+
+      case '}':
+      case ')':
+      case ']':
+        --blocks;
+        break;
+
+      case '\\':
+        escaped = true;
+        break;
+
+      case '"':
+      case '\'':
+        str_char = c.unicode();
+        break;
+
+      case ',':
+        if (blocks == 0) {
+          res.append(value.mid(start, n-1).trimmed());
+          start += n;
+          n = 0;
         }
-      }
-      else if (value.at(i) == start)
-      {
-        ele++;
-      }
-      else if (value.at(i) == end)
-      {
-        ele--;
-      }
+        break;
     }
   }
-  list.append(value.mid(begin,value.length()-begin).trimmed());
 
-  return list;
+  if (n > 0) {
+    // Append the rest of the string if there's anything left.
+    res.append(value.mid(start).trimmed());
+  } else if (!value.isEmpty() && value[value.size()-1] == ',') {
+    // Append an empty string if the string ends with ,
+    res.append(QString());
+  }
+
+  return res;
 }
 
 /*!
@@ -1077,8 +1082,7 @@ QString StringHandler::escapeString(QString value)
   QString res;
   value = value.trimmed();
   for (int i = 0; i < value.length(); i++) {
-    switch (value[i].toAscii())
-	{
+    switch (value[i].toAscii()) {
       case '"':  res.append("\\\"");   break;
       case '\\': res.append("\\\\");   break;
       case '\a': res.append("\\a");    break;
@@ -1099,9 +1103,33 @@ QString StringHandler::escapeStringQuotes(QString value)
   QString res;
   value = value.trimmed();
   for (int i = 0; i < value.length(); i++) {
-    switch (value[i].toAscii())
-    {
+    switch (value[i].toAscii()) {
       case '"':  res.append("\\\"");   break;
+      default:   res.append(value[i]); break;
+    }
+  }
+  return res;
+}
+
+/*!
+ * \brief StringHandler::escapeTextAnnotationString
+ * Escapes the text annotation string without n and r.
+ * \param value
+ * \return
+ */
+QString StringHandler::escapeTextAnnotationString(QString value)
+{
+  QString res;
+  value = value.trimmed();
+  for (int i = 0; i < value.length(); i++) {
+    switch (value[i].toAscii()) {
+      case '"':  res.append("\\\"");   break;
+      case '\\': res.append("\\\\");   break;
+      case '\a': res.append("\\a");    break;
+      case '\b': res.append("\\b");    break;
+      case '\f': res.append("\\f");    break;
+      case '\t': res.append("\\t");    break;
+      case '\v': res.append("\\v");    break;
       default:   res.append(value[i]); break;
     }
   }
@@ -1410,7 +1438,7 @@ QStringList StringHandler::getAnnotation(QString componentAnnotation, QString an
   if (componentAnnotation.isEmpty()) {
     return QStringList();
   }
-  QStringList annotations = StringHandler::getStrings(componentAnnotation, '(', ')');
+  QStringList annotations = StringHandler::getStrings(componentAnnotation);
   foreach (QString annotation, annotations) {
     if (annotation.startsWith(annotationName)) {
       annotation = annotation.mid(QString(annotationName).length());
@@ -1431,7 +1459,7 @@ QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
   if (componentAnnotation.isEmpty()) {
     return "";
   }
-  QStringList annotations = StringHandler::getStrings(componentAnnotation, '(', ')');
+  QStringList annotations = StringHandler::getStrings(componentAnnotation);
   foreach (QString annotation, annotations) {
     if (annotation.startsWith("Placement")) {
       QString placementAnnotation = StringHandler::removeFirstLastParentheses(annotation);

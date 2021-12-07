@@ -34,12 +34,23 @@ encapsulated uniontype NFStatement
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import DAE;
+  import ComponentRef = NFComponentRef;
 
 protected
   import Statement = NFStatement;
   import ElementSource;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import Util;
   import IOStream;
+
+public
+  uniontype ForType
+    record NORMAL end NORMAL;
+
+    record PARALLEL
+      list<tuple<ComponentRef, SourceInfo>> vars;
+    end PARALLEL;
+  end ForType;
 
 public
   record ASSIGNMENT
@@ -59,6 +70,7 @@ public
     InstNode iterator;
     Option<Expression> range;
     list<Statement> body "The body of the for loop.";
+    ForType forType;
     DAE.ElementSource source;
   end FOR;
 
@@ -256,6 +268,59 @@ public
 
     stmt := func(stmt);
   end map;
+
+  function fold<ArgT>
+    input Statement stmt;
+    input MapFn func;
+    input output ArgT arg;
+
+    partial function MapFn
+      input Statement stmt;
+      input output ArgT arg;
+    end MapFn;
+  algorithm
+    () := match stmt
+      case FOR()
+        algorithm
+          for s in stmt.body loop
+            arg := fold(s, func, arg);
+          end for;
+        then
+          ();
+
+      case IF()
+        algorithm
+          for b in stmt.branches loop
+            for s in Util.tuple22(b) loop
+              arg := fold(s, func, arg);
+            end for;
+          end for;
+        then
+          ();
+
+      case WHEN()
+        algorithm
+          for b in stmt.branches loop
+            for s in Util.tuple22(b) loop
+              arg := fold(s, func, arg);
+            end for;
+          end for;
+        then
+          ();
+
+      case WHILE()
+        algorithm
+          for s in stmt.body loop
+            arg := fold(s, func, arg);
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+
+    arg := func(stmt, arg);
+  end fold;
 
   function applyExpList
     input list<Statement> stmt;
@@ -516,6 +581,15 @@ public
       else ();
     end match;
   end foldExp;
+
+  function replaceIteratorList
+    input output list<Statement> stmtl;
+    input InstNode iterator;
+    input Expression value;
+  algorithm
+    stmtl := mapExpList(stmtl,
+      function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
+  end replaceIteratorList;
 
   function toString
     input Statement stmt;
@@ -801,6 +875,7 @@ public
       else IOStream.append(s, "#UNKNOWN STATEMENT#");
     end match;
 
+    s := FlatModelicaUtil.appendElementSourceComment(source(stmt), s);
   end toFlatStream;
 
   function toFlatStreamList

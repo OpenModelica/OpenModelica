@@ -79,19 +79,13 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item is the extent points
-  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
-    QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
-    if (extentPoints.size() >= 2) {
-      mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
-    }
-  }
+  mExtents.parse(list.at(8));
   // 10th item of the list contains the start angle.
-  mStartAngle = list.at(9).toFloat();
+  mStartAngle.parse(list.at(9));
   // 11th item of the list contains the end angle.
-  mEndAngle = list.at(10).toFloat();
+  mEndAngle.parse(list.at(10));
   // 12th item of the list contains the closure
-  mClosure = StringHandler::getClosureType(list.at(11));
+  mClosure = StringHandler::getClosureType(stripDynamicSelect(list.at(11)));
 }
 
 QRectF EllipseAnnotation::boundingRect() const
@@ -114,16 +108,12 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible || !mDynamicVisible.isEmpty()) {
-    if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
-                                  || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
-      return;
-    }
-    drawEllipseAnnotaion(painter);
+  if (mVisible) {
+    drawEllipseAnnotation(painter);
   }
 }
 
-void EllipseAnnotation::drawEllipseAnnotaion(QPainter *painter)
+void EllipseAnnotation::drawEllipseAnnotation(QPainter *painter)
 {
   // first we invert the painter since we have our coordinate system inverted.
   // inversion is required to draw the elliptic curves at correct angles.

@@ -1,1 +1,2 @@
-ADD_SUBDIRECTORY(mofiles)
+
+omc_add_subdirectory(libraries-for-testing)

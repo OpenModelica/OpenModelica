@@ -44,7 +44,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MMath.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Mod.mo
   # Remember: Only files needed for compiling MetaModelica
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/OperatorOverloading.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Parser.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ParserExt.mo
@@ -178,7 +177,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/IOStream.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Lapack.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/List.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/ModelicaExternalC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Mutable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Pointer.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Print.mo
@@ -319,6 +317,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFExpressionIterator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFExpression.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatModel.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatModelicaUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatten.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionDerivative.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionInverse.mo
@@ -334,6 +333,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstContext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstNode.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookup.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookupState.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookupTree.mo
@@ -380,6 +380,8 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/MMToJuliaKeywords.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFApi.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Conversion.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/Obfuscate.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/TotalModelDebug.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo

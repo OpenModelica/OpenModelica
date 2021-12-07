@@ -142,7 +142,7 @@ match class
     let header_str = dumpClassHeader(classDef, name, restriction, cmt_str, options)
     let footer_str = dumpClassFooter(classDef, cdef_str, name, cmt_str, ann_str, cc_str)
     <<
-    <%prefixes_str%> <%header_str%> <%footer_str%>
+    <%prefixes_str%> <%header_str%><%footer_str%>
     >>
 end dumpClass;
 
@@ -152,8 +152,8 @@ match classDef
   case CLASS_EXTENDS(__)
     then
     let mod_str = dumpModifier(modifications, options)
-    'extends <%name%><%mod_str%> <%cmt%>'
-  case PARTS(__) then '<%name%><%dumpRestrictionTypeVars(restr)%> <%cmt%>'
+    'extends <%name%><%mod_str%><%cmt%>'
+  case PARTS(__) then '<%name%><%dumpRestrictionTypeVars(restr)%><%cmt%>'
   else '<%name%>'
 end dumpClassHeader;
 
@@ -187,18 +187,18 @@ match classDef
     let type_str = AbsynDumpTpl.dumpTypeSpec(typeSpec)
     let mod_str = dumpModifier(modifications,options)
     let attr_str = dumpAttributes(attributes)
-    '= <%attr_str%><%type_str%><%mod_str%>'
+    ' = <%attr_str%><%type_str%><%mod_str%>'
   case ENUMERATION(__) then
     let enum_str = if enumLst then
         (enumLst |> enum => dumpEnumLiteral(enum, options) ;separator=", ")
       else
         ':'
-    '= enumeration(<%enum_str%>)'
+    ' = enumeration(<%enum_str%>)'
   case PDER(__) then
     let func_str = AbsynDumpTpl.dumpPath(functionPath)
-    '= der(<%func_str%>, <%derivedVariables ;separator=", "%>)'
+    ' = der(<%func_str%>, <%derivedVariables ;separator=", "%>)'
   case OVERLOAD(__) then
-    '= overload(<%pathLst |> path => AbsynDumpTpl.dumpPath(path); separator=", "%>)'
+    ' = overload(<%pathLst |> path => AbsynDumpTpl.dumpPath(path); separator=", "%>)'
   else errorMsg("SCodeDump.dumpClassDef: Unknown class definition.")
 end dumpClassDef;
 
@@ -209,7 +209,7 @@ match classDef
   case ENUMERATION(__) then '<%cdefStr%><%cmt%><%ann%><%cc_str%>'
   case PDER(__) then cdefStr
   case _ then
-    let annstr = if ann then '<%ann%>; ' else ''
+    let annstr = if ann then '<%ann%>;' else ''
     if cdefStr then
       <<
 
@@ -219,7 +219,7 @@ match classDef
       >>
     else
       <<
-      <%annstr%>end <%name%><%cc_str%>
+      <%annstr%> end <%name%><%cc_str%>
       >>
 end dumpClassFooter;
 

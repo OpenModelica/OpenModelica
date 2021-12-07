@@ -20,7 +20,7 @@ OMEditLIB/Resources/nls/qm.stamp: OMEditLIB/OMEditLIB.pro OMEditLIB/Resources/nl
 	$(LRELEASE) $<
 	@touch $@
 
-$(NAME): parsergen Makefile omc_config.h
+$(NAME): parsergen Makefile omedit_config.h
 	$(MAKE) -f Makefile
 
 build: $(NAME)
@@ -28,7 +28,7 @@ build: $(NAME)
 parsergen:
 	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.unix
 
-Makefile: OMEdit.pro OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri omc_config.h
+Makefile: OMEdit.pro OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri omedit_config.h
 	$(QMAKE) -r
 Makefile.unix: Makefile.unix.in
 	(cd @top_builddir@; ./config.status)
@@ -36,7 +36,7 @@ OMEditLIB/OMEditLIB.unix.config.pri: OMEditLIB/OMEditLIB.unix.config.pri.in
 	(cd @top_builddir@ && ./config.status)
 OMEditGUI/OMEditGUI.unix.config.pri: OMEditGUI/OMEditGUI.unix.config.pri.in
 	(cd @top_builddir@ && ./config.status)
-omc_config.h: omc_config.h.in
+omedit_config.h: omedit_config.h.in
 	(cd @top_builddir@ && ./config.status)
 
 mkbuilddirs:
@@ -47,7 +47,7 @@ clean:
 	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.unix clean
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	rm -f bin/OMEdit$(APP) bin/$(LIB)$(LIBEXE)
-	rm -rf omc_config.h Makefile OMEditLIB/debug OMEditLIB/release OMEditLIB/generatedfiles OMEditLIB/Makefile OMEditLIB/Makefile.Debug OMEditLIB/Makefile.Release OMEditLIB/object_script.* OMEditGUI/debug OMEditGUI/release OMEditGUI/Makefile OMEditGUI/Makefile.Debug OMEditGUI/Makefile.Release
+	rm -rf omedit_config.h Makefile OMEditLIB/debug OMEditLIB/release OMEditLIB/generatedfiles OMEditLIB/Makefile OMEditLIB/Makefile.Debug OMEditLIB/Makefile.Release OMEditLIB/object_script.* OMEditGUI/debug OMEditGUI/release OMEditGUI/Makefile OMEditGUI/Makefile.Debug OMEditGUI/Makefile.Release
 
 distclean: clean
 	rm -rf config.log config.sub config.status install-sh autom4te.cache config.guess configure Makefile.unix OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri

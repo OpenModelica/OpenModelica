@@ -57,10 +57,16 @@ import NFInstNode.CachedData;
 import Component = NFComponent;
 import Subscript = NFSubscript;
 import ComplexType = NFComplexType;
-import Config;
 import Error;
+import ErrorExt;
 import UnorderedMap;
 import Modifier = NFModifier;
+import BackendInterface;
+import Settings;
+import Testsuite;
+import AbsynToSCode;
+import NFClassTree.ClassTree;
+import SCodeUtil;
 
 public
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
@@ -419,6 +425,7 @@ function lookupSimpleName
 protected
   InstNode cur_scope = scope;
   Boolean require_builtin = false;
+  Boolean loaded = false;
 algorithm
   // Look for the name in each enclosing scope, until it's either found or we
   // run out of scopes.
@@ -443,8 +450,15 @@ algorithm
         node := cur_scope;
         return;
       else
-        // Otherwise, continue in the enclosing scope.
-        cur_scope := InstNode.parentScope(cur_scope);
+        if InstNode.isTopScope(cur_scope) and not loaded then
+          // If the name couldn't be found in any scope, try to load a library
+          // with that name and then try the look it up in the top scope again.
+          loaded := true;
+          loadLibrary(name, cur_scope);
+        else
+          // Otherwise, continue in the enclosing scope.
+          cur_scope := InstNode.parentScope(cur_scope);
+        end if;
       end if;
     end try;
   end for;
@@ -682,7 +696,6 @@ algorithm
     case "Integer" then NFBuiltin.INTEGER_NODE;
     case "Boolean" then NFBuiltin.BOOLEAN_NODE;
     case "String" then NFBuiltin.STRING_NODE;
-    case "Clock" then NFBuiltin.CLOCK_NODE;
     case "polymorphic" then NFBuiltin.POLYMORPHIC_NODE;
   end match;
 end lookupSimpleBuiltinName;
@@ -694,7 +707,6 @@ function lookupSimpleBuiltinCref
   output ComponentRef cref;
   output LookupState state;
 algorithm
-
   (node, cref, state) := match name
     case "time"
       then (NFBuiltin.TIME, NFBuiltin.TIME_CREF, LookupState.PREDEF_COMP());
@@ -704,8 +716,6 @@ algorithm
       then (NFBuiltinFuncs.INTEGER_NODE, NFBuiltinFuncs.INTEGER_CREF, LookupState.FUNC());
     case "String"
       then (NFBuiltinFuncs.STRING_NODE, NFBuiltinFuncs.STRING_CREF, LookupState.FUNC());
-    case "Clock" guard Config.synchronousFeaturesAllowed()
-      then (NFBuiltinFuncs.CLOCK_NODE, NFBuiltinFuncs.CLOCK_CREF, LookupState.FUNC());
   end match;
 
   if not listEmpty(subs) then
@@ -724,6 +734,7 @@ function lookupSimpleCref
   output LookupState state;
 protected
   Boolean is_import, require_builtin = false;
+  Boolean loaded = false;
 algorithm
   try
     (node, cref, state) := lookupSimpleBuiltinCref(name, subs);
@@ -767,8 +778,15 @@ algorithm
           foundScope := InstNode.topScope(InstNode.parentScope(foundScope));
           require_builtin := true;
         else
-          // Look in the next enclosing scope.
-          foundScope := InstNode.parentScope(foundScope);
+          if InstNode.isTopScope(foundScope) and not loaded then
+            // If the name couldn't be found in any scope, try to load a library
+            // with that name and then try the look it up in the top scope again.
+            loaded := true;
+            loadLibrary(name, foundScope);
+          else
+            // Look in the next enclosing scope.
+            foundScope := InstNode.parentScope(foundScope);
+          end if;
         end if;
       end try;
     end for;
@@ -1015,6 +1033,68 @@ algorithm
           fail();
   end match;
 end makeInnerNode;
+
+function loadLibrary
+  "Tries to load the default version of a library and add it to the top scope."
+  input String name;
+  input InstNode scope;
+protected
+  String version;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    version := loadLibrary_work(name, scope);
+    Error.addMessage(Error.NOTIFY_IMPLICIT_LOAD, {name, version});
+    ErrorExt.delCheckpoint(getInstanceName());
+  else
+    ErrorExt.rollBack(getInstanceName());
+  end try;
+end loadLibrary;
+
+function loadLibrary_work
+  input String name;
+  input InstNode scope;
+  output String version = "(default)";
+protected
+  String modelica_path, cls_name;
+  Absyn.Program aprog;
+  SCode.Element scls;
+  Class cls;
+  InstNode lib_node;
+  list<InstNode> new_libs = {};
+algorithm
+  // Try to load the library.
+  modelica_path := Settings.getModelicaPath(Testsuite.isRunning());
+  (aprog, true) := BackendInterface.appendLibrary(Absyn.Path.IDENT(name), modelica_path);
+
+  // Multiple libraries might have been loaded due to uses-annotations.
+  // Create nodes for the ones not yet defined in the top scope.
+  for c in aprog.classes loop
+    try
+      lookupLocalSimpleName(AbsynUtil.getClassName(c), scope);
+    else
+      scls := AbsynToSCode.translateClass(c);
+      lib_node := InstNode.new(scls, scope);
+      new_libs := lib_node :: new_libs;
+
+      // If this is the library we were looking for, try to find out which
+      // version it is so we can tell the user.
+      if name == SCodeUtil.getElementName(scls) then
+        try
+          Absyn.Exp.STRING(value = version) :=
+            SCodeUtil.getElementNamedAnnotation(scls, "version");
+        else
+        end try;
+      end if;
+    end try;
+  end for;
+
+  // Append the new libraries to the scope.
+  cls := InstNode.getClass(scope);
+  cls := Class.classTreeApply(cls, function ClassTree.appendClasses(clsNodes = new_libs));
+  InstNode.updateClass(cls, scope);
+end loadLibrary_work;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFLookup;

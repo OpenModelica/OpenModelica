@@ -219,7 +219,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LS */                           "value specifies the linear solver method (default: lapack, totalpivot (fallback))",
   /* FLAG_LS_IPOPT */                     "value specifies the linear solver method for ipopt",
   /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: umfpack)",
-  /* FLAG_LSS_MAX_DENSITY */              "[double (default 0.2)] value specifies the maximum density for using a linear sparse solver",
+  /* FLAG_LSS_MAX_DENSITY */              "[double (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) ")] value specifies the maximum density for using a linear sparse solver",
   /* FLAG_LSS_MIN_SIZE */                 "[int (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ")] value specifies the minimum system size for using a linear sparse solver",
   /* FLAG_LV */                           "[string list] value specifies the logging level",
   /* FLAG_LV_TIME */                      "[double list] specifying time interval to allow loging in",
@@ -235,7 +235,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS */                          "value specifies the nonlinear solver",
   /* FLAG_NLS_INFO */                     "outputs detailed information about solving process of non-linear systems into csv files.",
   /* FLAG_NLS_LS */                       "value specifies the linear solver used by the non-linear solver",
-  /* FLAG_NLS_MAX_DENSITY */              "[double (default 0.2)] value specifies the maximum density for using a non-linear sparse solver",
+  /* FLAG_NLS_MAX_DENSITY */              "[double (default " EXPANDSTRING(DEFAULT_FLAG_NLS_MAX_DENSITY) ")] value specifies the maximum density for using a non-linear sparse solver",
   /* FLAG_NLS_MIN_SIZE */                 "[int (default " EXPANDSTRING(DEFAULT_FLAG_NLS_MIN_SIZE) ")] value specifies the minimum system size for using a non-linear sparse solver",
   /* FLAG_NOEMIT */                       "do not emit any results to the result file",
   /* FLAG_NOEQUIDISTANT_GRID */           "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl or ida integrator.",
@@ -437,10 +437,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the linear sparse solver method",
   /* FLAG_LSS_MAX_DENSITY */
   "  Value specifies the maximum density for using a linear sparse solver.\n"
-  "  The value is a Double with default value 0.2.",
+  "  The value is a Double with default value " EXPANDSTRING(DEFAULT_FLAG_LSS_MAX_DENSITY) ".",
   /* FLAG_LSS_MIN_SIZE */
   "  Value specifies the minimum system size for using a linear sparse solver.\n"
-  "  The value is an Integer with default value 4001.",
+  "  The value is an Integer with default value " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ".",
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
@@ -486,10 +486,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the linear solver used by the non-linear solver:",
   /* FLAG_NLS_MAX_DENSITY */
   "  Value specifies the maximum density for using a non-linear sparse solver.\n"
-  "  The value is a Double with default value 0.2.",
+  "  The value is a Double with default value " EXPANDSTRING(DEFAULT_FLAG_NLS_MAX_DENSITY) ".",
   /* FLAG_NLS_MIN_SIZE */
   "  Value specifies the minimum system size for using a non-linear sparse solver.\n"
-  "  The value is an Integer with default value 10001.",
+  "  The value is an Integer with default value " EXPANDSTRING(DEFAULT_FLAG_NLS_MIN_SIZE) ".",
   /* FLAG_NOEMIT */
   "  Do not emit any results to the result file.",
   /* FLAG_NOEQUIDISTANT_GRID */

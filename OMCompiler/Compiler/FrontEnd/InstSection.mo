@@ -69,7 +69,6 @@ protected import InstDAE;
 protected import InstFunction;
 protected import InstTypes;
 protected import InstUtil;
-protected import NFInstUtil;
 protected import List;
 protected import Lookup;
 protected import Patternm;
@@ -3343,8 +3342,8 @@ algorithm
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
         // adrpo: TODO! FIXME! add this as an Error not as a print!
         print("Error: The marked virtual expandable component reference in connect([" +
-         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + AbsynUtil.printComponentRefStr(c1) + "], " +
-         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + AbsynUtil.printComponentRefStr(c2) + "); should be qualified, i.e. expandableConnectorName.virtualName!\n");
+         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + "], " +
+         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + "); should be qualified, i.e. expandableConnectorName.virtualName!\n");
       then
         fail();
 
@@ -3390,7 +3389,7 @@ algorithm
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[MULTIPLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // get the virtual component name
-        Absyn.CREF_IDENT(componentName, _) = AbsynUtil.crefGetLastIdent(c1);
+        componentName = AbsynUtil.crefGetLastIdent(c1);
 
         envComponentEmpty = FGraph.removeComponentsFromScope(envComponent);
 
@@ -3477,7 +3476,7 @@ algorithm
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[SINGLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // get the virtual component name
-        Absyn.CREF_IDENT(componentName, _) = AbsynUtil.crefGetLastIdent(c1);
+        componentName = AbsynUtil.crefGetLastIdent(c1);
 
         envComponentEmpty = FGraph.removeComponentsFromScope(envComponent);
 
@@ -4240,8 +4239,8 @@ algorithm
         crefExp1 = Expression.crefExp(c1_1);
         crefExp2 = Expression.crefExp(c2_1);
         // Evaluate constant crefs away
-        const1 = NFInstUtil.toConst(vt1);
-        const2 = NFInstUtil.toConst(vt2);
+        const1 = Types.variabilityToConst(vt1);
+        const2 = Types.variabilityToConst(vt2);
         (cache, crefExp1) = Ceval.cevalIfConstant(cache, env, crefExp1, DAE.PROP(t1,const1), true, info);
         (cache, crefExp2) = Ceval.cevalIfConstant(cache, env, crefExp2, DAE.PROP(t2,const2), true, info);
 

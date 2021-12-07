@@ -187,6 +187,40 @@ public
     CREF(node = node) := cref;
   end node;
 
+  function nodes
+    input ComponentRef cref;
+    input list<InstNode> accum = {};
+    output list<InstNode> nodes;
+  algorithm
+    nodes := match cref
+      case CREF() then nodes(cref.restCref, cref.node :: accum);
+      else accum;
+    end match;
+  end nodes;
+
+  function nodesIncludingSplitSubs
+    input ComponentRef cref;
+    input list<InstNode> accum = {};
+    output list<InstNode> nodes = accum;
+  protected
+    InstNode node;
+  algorithm
+    nodes := match cref
+      case CREF()
+        algorithm
+          for s in cref.subscripts loop
+            if Subscript.isSplitIndex(s) then
+              Subscript.SPLIT_INDEX(node = node) := s;
+              nodes := node :: nodes;
+            end if;
+          end for;
+        then
+          nodesIncludingSplitSubs(cref.restCref, cref.node :: nodes);
+
+      else nodes;
+    end match;
+  end nodesIncludingSplitSubs;
+
   function containsNode
     input ComponentRef cref;
     input InstNode node;
@@ -725,8 +759,6 @@ public
       return;
     end if;
 
-    // Remove unnecessary : subscripts from the head of the list.
-    subs := List.trim(subs, Subscript.isWhole);
     // Replace the cref's subscripts.
     cref := setSubscripts(subs, stripSubscriptsAll(cref));
   end combineSubscripts;
@@ -1192,6 +1224,18 @@ public
       else "EMPTY_CREF" then 0;
     end match;
   end depth;
+
+  function isEmptyArray
+    "Returns whether any node in the cref has a dimension that's 0."
+    input ComponentRef cref;
+    output Boolean isEmpty;
+  algorithm
+    isEmpty := match cref
+      case CREF()
+        then Type.isEmptyArray(cref.ty) or isEmptyArray(cref.restCref);
+      else false;
+    end match;
+  end isEmptyArray;
 
   function isComplexArray
     input ComponentRef cref;

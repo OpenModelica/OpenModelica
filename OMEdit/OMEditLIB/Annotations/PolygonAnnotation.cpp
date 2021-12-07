@@ -92,7 +92,7 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
   }
   mPoints.clear();
   // 9th item of list contains the points.
-  QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
+  QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(8))));
   foreach (QString point, pointsList) {
     QStringList polygonPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
     if (polygonPoints.size() >= 2) {
@@ -112,7 +112,7 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
     }
   }
   // 10th item of the list is smooth.
-  mSmooth = StringHandler::getSmoothType(list.at(9));
+  mSmooth = StringHandler::getSmoothType(stripDynamicSelect(list.at(9)));
 }
 
 QPainterPath PolygonAnnotation::getShape() const
@@ -176,16 +176,12 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible || !mDynamicVisible.isEmpty()) {
-    if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
-                                  || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
-      return;
-    }
-    drawPolygonAnnotaion(painter);
+  if (mVisible) {
+    drawPolygonAnnotation(painter);
   }
 }
 
-void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
+void PolygonAnnotation::drawPolygonAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
   applyFillPattern(painter);

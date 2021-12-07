@@ -56,16 +56,6 @@ end ArrayConnect3;
 //   Real[1000, 100] cells.l.f;
 //   Real[1000, 100] cells.l.e;
 // equation
-//   for $i1 in 1:999 loop
-//     for $i2 in 2:100 loop
-//       cells[$i1,$i2].l.e = cells[$i1,$i2 - 1].r.e;
-//     end for;
-//   end for;
-//   for $i1 in 1:999 loop
-//     for $i2 in 1:99 loop
-//       cells[$i1,$i2].r.f + cells[$i1,$i2 + 1].l.f = 0.0;
-//     end for;
-//   end for;
 //   for $i1 in 2:1000 loop
 //     for $i2 in 1:99 loop
 //       cells[$i1,$i2].u.e = cells[$i1 - 1,$i2].d.e;
@@ -76,6 +66,16 @@ end ArrayConnect3;
 //       cells[$i1,$i2].d.f + cells[$i1 + 1,$i2].u.f = 0.0;
 //     end for;
 //   end for;
+//   for $i1 in 1:999 loop
+//     for $i2 in 2:100 loop
+//       cells[$i1,$i2].l.e = cells[$i1,$i2 - 1].r.e;
+//     end for;
+//   end for;
+//   for $i1 in 1:999 loop
+//     for $i2 in 1:99 loop
+//       cells[$i1,$i2].r.f + cells[$i1,$i2 + 1].l.f = 0.0;
+//     end for;
+//   end for;
 //   for $i1 in 1:1000 loop
 //     cells[$i1,1].l.e = cells[$i1,100].r.e;
 //   end for;
@@ -83,13 +83,13 @@ end ArrayConnect3;
 //     cells[$i1,100].r.f + cells[$i1,1].l.f = 0.0;
 //   end for;
 //   for $i2 in 1:100 loop
-//     cells[1,$i2].u.e = S.p.e;
-//   end for;
-//   sum(cells[1,:].u.f) + S.p.f = 0.0;
-//   for $i2 in 1:100 loop
 //     cells[1000,$i2].d.e = S.n.e;
 //   end for;
 //   sum(cells[1000,:].d.f) + S.n.f = 0.0;
+//   for $i2 in 1:100 loop
+//     cells[1,$i2].u.e = S.p.e;
+//   end for;
+//   sum(cells[1,:].u.f) + S.p.f = 0.0;
 //   for $i1 in 1:999 loop
 //     cells[$i1,100].d.f = 0.0;
 //   end for;

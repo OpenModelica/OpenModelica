@@ -578,12 +578,15 @@ QModelIndex VariablesTreeModel::variablesTreeItemIndex(const VariablesTreeItem *
  * \brief VariablesTreeModel::parseInitXml
  * Parses the model_init.xml file and returns the scalar variables information.
  * \param xmlReader
+ * \param simulationOptions
  * \param variablesList
  */
-void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, QStringList* variablesList)
+void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList* variablesList)
 {
   // if the variables list is empty then add the xml scalar variables to the list
   bool addVariablesToList = variablesList->isEmpty();
+  bool protectedVariables = simulationOptions.getProtectedVariables();
+  bool ignoreHideResult = simulationOptions.getIgnoreHideResult();
   /* We'll parse the XML until we reach end of it.*/
   while (!xmlReader.atEnd() && !xmlReader.hasError()) {
     /* Read next element.*/
@@ -597,7 +600,17 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, QStringList* 
       /* If it's named ScalarVariable, we'll dig the information from there.*/
       if (xmlReader.name() == "ScalarVariable") {
         QHash<QString, QString> scalarVariable = parseScalarVariable(xmlReader);
-        if (!scalarVariable.value("name").startsWith("$") && !scalarVariable.value("name").startsWith("_D_")) {
+        bool hideResultIsTrue = scalarVariable.value("hideResult").compare(QStringLiteral("true")) == 0;
+        // we need the following flag becasuse hideResult value can be empty.
+        bool hideResultIsFalse = scalarVariable.value("hideResult").compare(QStringLiteral("false")) == 0;
+        bool isProtected = scalarVariable.value("isProtected").compare(QStringLiteral("true")) == 0;
+        /* Skip variables,
+         *   1. If ignoreHideResult is not set and hideResult is true.
+         *   2. If emit protected flag is false and variable is protected.
+         *      If hideResult is false for protected variable then we show it.
+         */
+        if ((ignoreHideResult || !hideResultIsTrue)
+            && (protectedVariables || (!isProtected || (!ignoreHideResult && hideResultIsFalse)))) {
           mScalarVariablesHash.insert(scalarVariable.value("name"),scalarVariable);
           if (addVariablesToList) {
             variablesList->append(scalarVariable.value("name"));
@@ -706,7 +719,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     if (initFile.open(QIODevice::ReadOnly)) {
       QXmlStreamReader initXmlReader(&initFile);
       readingVariablesFromInitFile = variablesList.isEmpty();
-      parseInitXml(initXmlReader, &variablesList);
+      parseInitXml(initXmlReader, simulationOptions, &variablesList);
       initFile.close();
     } else {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
@@ -947,8 +960,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       variableData << variantDefinedIn;
       variableData << infoFileName;
       bool variableExistsInResultFile = true;
-      QHash<QString, QString> variableHash = mScalarVariablesHash.value(variableToFind);
-      if (readingVariablesFromInitFile && (!variableListFromResultFile.contains(variableToFind) || variableHash.value("hideResult").compare(QStringLiteral("true")) == 0)) {
+      if (readingVariablesFromInitFile && !variableListFromResultFile.contains(variableToFind)) {
         variableExistsInResultFile = false;
       }
       variableData << variableExistsInResultFile;
@@ -1142,6 +1154,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
   scalarVariable["isValueChangeable"] = attributes.value("isValueChangeable").toString();
   scalarVariable["variability"] = attributes.value("variability").toString();
   scalarVariable["hideResult"] = attributes.value("hideResult").toString();
+  scalarVariable["isProtected"] = attributes.value("isProtected").toString();
   /* Read the next element i.e Real, Integer, Boolean etc. */
   xmlReader.readNext();
   while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "ScalarVariable")) {
@@ -1850,10 +1863,14 @@ void VariablesWidget::initializeVisualization(SimulationOptions simulationOption
 double VariablesWidget::readVariableValue(QString variable, double time)
 {
   double value = 0.0;
+  bool found = false;
+
   if (mModelicaMatReader.file) {
     ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toUtf8().constData());
     if (var) {
       omc_matlab4_val(&value, &mModelicaMatReader, var, time);
+      found = true;
+    } else {
     }
   } else if (mpCSVData) {
     double *timeDataSet = read_csv_dataset(mpCSVData, "time");
@@ -1863,6 +1880,7 @@ double VariablesWidget::readVariableValue(QString variable, double time)
           double *varDataSet = read_csv_dataset(mpCSVData, variable.toUtf8().constData());
           if (varDataSet) {
             value = varDataSet[i];
+            found = true;
             break;
           }
         }
@@ -1883,12 +1901,18 @@ double VariablesWidget::readVariableValue(QString variable, double time)
         QStringList values = currentLine.split(",");
         if (QString::number(time).compare(values[0]) == 0) {
           value = values[1].toDouble();
+          found = true;
           break;
         }
       }
     }
     textStream.seek(0);
   }
+
+  if (!found) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "No result for variable " + variable + " in result file.", Helper::simulationKind, Helper::warningLevel));
+  }
+
   return value;
 }
 

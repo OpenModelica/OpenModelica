@@ -31,8 +31,11 @@
 
 encapsulated partial package DisjointSets
 import Array;
-import BaseHashTable;
-import Util;
+import UnorderedMap;
+
+protected
+import MetaModelica.Dangerous.*;
+
 
 public
 replaceable type Entry = Integer;
@@ -54,6 +57,8 @@ replaceable partial function EntryString
   output String str;
 end EntryString;
 
+type IndexTable = UnorderedMap<Entry, Integer>;
+
 uniontype Sets
   "This is a disjoint sets data structure. The nodes are stored in an array of
    Integers. The root elements of a set is given a negative value that
@@ -63,7 +68,7 @@ uniontype Sets
 
   record DISJOINT_SETS
     array<Integer> nodes "An array of nodes";
-    IndexTable elements "A Entry->Integer hashtable, see bottom of file.";
+    IndexTable elements "An Entry->Integer table.";
     Integer nodeCount "The number of nodes stored in the sets.";
   end DISJOINT_SETS;
 end Sets;
@@ -82,7 +87,7 @@ algorithm
   sz := max(setCount, 3);
   // Fill the array with -1, which is the value of a newly added element.
   nodes := arrayCreate(sz, -1);
-  elements := emptyIndexTableSized(Util.nextPrime(sz));
+  elements := UnorderedMap.new<Integer>(EntryHash, EntryEqual);
   sets := Sets.DISJOINT_SETS(nodes, elements, 0);
 end emptySets;
 
@@ -109,7 +114,7 @@ algorithm
   end if;
 
   // Register the node index in the index table.
-  elements := BaseHashTable.addNoUpdCheck((entry, index), elements);
+  UnorderedMap.addNew(entry, index, elements);
   sets := Sets.DISJOINT_SETS(nodes, elements, index);
 end add;
 
@@ -135,7 +140,7 @@ algorithm
   end if;
 
   for e in entries loop
-    elements := BaseHashTable.addNoUpdCheck((e, index), elements);
+    UnorderedMap.addNew(e, index, elements);
     index := index + 1;
   end for;
 
@@ -172,7 +177,7 @@ function findSetArrayIndex
   output Integer set;
 algorithm
   // Look up the index of the given entry.
-  set := BaseHashTable.get(entry, sets.elements);
+  set := UnorderedMap.getOrFail(entry, sets.elements);
 
   // Follow the indices until a negative index is found, which is the set index.
   while set > 0 loop
@@ -207,14 +212,18 @@ function find
   input Entry entry;
   input output Sets sets;
         output Integer index;
+protected
+  Option<Integer> oindex;
 algorithm
-  try
-    // Check if a node already exists in the forest.
-    index := BaseHashTable.get(entry, sets.elements);
+  oindex := UnorderedMap.get(entry, sets.elements);
+
+  if isSome(oindex) then
+    // A node already exists, return its index.
+    SOME(index) := oindex;
   else
     // If a node doesn't already exist, create a new one.
     (sets, index) := add(entry, sets);
-  end try;
+  end if;
 end find;
 
 function findRoot
@@ -291,7 +300,7 @@ function extractSets
 protected
   array<Integer> nodes;
   Integer set_idx = 0, idx;
-  list<tuple<Entry, Integer>> entries;
+  array<tuple<Entry, Integer>> entries;
   Entry e;
 algorithm
   nodes := sets.nodes;
@@ -308,11 +317,11 @@ algorithm
   // Create an array of lists to store the sets in, and fetch the list of
   // entry-index pairs stored in the hashtable.
   setsArray := arrayCreate(set_idx, {});
-  entries := BaseHashTable.hashTableListReversed(sets.elements);
+  entries := UnorderedMap.toArray(sets.elements);
 
   // Go through each entry-index pair.
-  for p in entries loop
-    (e, idx) := p;
+  for i in arrayLength(entries):-1:1 loop
+    (e, idx) := arrayGetNoBoundsChecking(entries, i);
     // Follow the parent indices until we find the root.
     set_idx := nodes[idx];
 
@@ -340,7 +349,7 @@ protected
 algorithm
   print(intString(sets.nodeCount) + " sets:\n");
   nodes := sets.nodes;
-  entries := BaseHashTable.hashTableList(sets.elements);
+  entries := UnorderedMap.toList(sets.elements);
 
   for p in entries loop
     (e, i) := p;
@@ -353,46 +362,6 @@ algorithm
     print("\n");
   end for;
 end printSets;
-
-
-// Hashtable used by the DisjointSets structure.
-type HashValue = Integer;
-type IndexTable = tuple<
-  array<list<tuple<Entry, Integer>>>,
-  tuple<Integer, Integer, array<Option<tuple<Entry, HashValue>>>>,
-  Integer, tuple<FuncHash, FuncEq, FuncKeyString, FuncValString>>;
-
-partial function FuncHash
-  input Entry key;
-  input Integer mod;
-  output Integer hash;
-end FuncHash;
-
-partial function FuncEq
-  input Entry key1;
-  input Entry key2;
-  output Boolean res;
-end FuncEq;
-
-partial function FuncKeyString
-  input Entry key;
-  output String str;
-end FuncKeyString;
-
-partial function FuncValString
-  input HashValue val;
-  output String str;
-end FuncValString;
-
-protected
-function emptyIndexTableSized
-  "Creates an empty index table with the given size."
-  input Integer tableSize;
-  output IndexTable table;
-algorithm
-  table := BaseHashTable.emptyHashTableWork(tableSize,
-    (EntryHash, EntryEqual, EntryString, intString));
-end emptyIndexTableSized;
 
 annotation(__OpenModelica_Interface="util", __OpenModelica_isBaseClass=true);
 end DisjointSets;

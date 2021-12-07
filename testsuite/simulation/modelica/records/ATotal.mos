@@ -1016,7 +1016,7 @@ simulate(A); getErrorString();
 //   ret := false;
 // end Modelica.Electrical.Spice3.Internal.SpiceRoot.useInitialConditions;
 //
-// function Modelica.SIunits.Conversions.from_degC \"Inline before index reduction\" \"Convert from degCelsius to Kelvin\"
+// function Modelica.SIunits.Conversions.from_degC \"Convert from degCelsius to Kelvin\"
 //   input Real Celsius(quantity = \"ThermodynamicTemperature\", unit = \"degC\") \"Celsius value\";
 //   output Real Kelvin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Kelvin value\";
 // algorithm

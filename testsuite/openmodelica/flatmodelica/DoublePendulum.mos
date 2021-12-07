@@ -2,7 +2,7 @@
 // cflags: -d=-newInst
 
 loadModel(Modelica, {"3.2.3"});getErrorString();
-setCommandLineOptions("-d=newInst -f");
+setCommandLineOptions("-d=newInst -f -m");
 writeFile("DoublePendulum.mo", OpenModelica.Scripting.instantiateModel(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum));getErrorString();
 clear();
 loadFile("DoublePendulum.mo");getErrorString();

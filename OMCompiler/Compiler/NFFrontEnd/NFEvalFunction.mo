@@ -62,6 +62,7 @@ import NFPrefixes.Variability;
 import RangeIterator = NFRangeIterator;
 import SCode;
 import SCodeUtil;
+import Settings;
 import System;
 import Testsuite;
 import UnorderedMap;
@@ -483,10 +484,7 @@ algorithm
         // Make a mutable expression with a placeholder value.
         iter_exp := Expression.makeMutable(Expression.EMPTY(InstNode.getType(stmt.iterator)));
         // Replace the iterator with the expression in the body of the for loop.
-        stmt.body := list(
-          Statement.mapExp(s, function Expression.replaceIterator(
-            iterator = stmt.iterator, iteratorValue = iter_exp))
-          for s in stmt.body);
+        stmt.body := Statement.replaceIteratorList(stmt.body, stmt.iterator, iter_exp);
         // Replace the iterator node with the mutable expression too.
         stmt.iterator := InstNode.EXP_NODE(iter_exp);
       then
@@ -1021,6 +1019,7 @@ protected
   SCode.Annotation ann;
   list<String> libs = {}, dirs = {}, paths = {};
   Boolean found = false;
+  String installLibDir = Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc";
 algorithm
   // Read libraries and library directories from the annotation if it exists.
   if isSome(extAnnotation) then
@@ -1038,7 +1037,7 @@ algorithm
   for lib in libs loop
     // For functions that are linked into the compiler itself we pass an empty
     // string to loadLibrary.
-    if stringEmpty(lib) or lib == "ModelicaExternalC" or lib == "ModelicaIO" then
+    if stringEmpty(lib) then
       paths := "" :: paths;
       continue;
     end if;
@@ -1054,6 +1053,7 @@ algorithm
       paths := (dir + "/" + lib) :: paths;
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
     end for;
+    paths := installLibDir + "/" + lib :: paths;
   end for;
 
   // If no Library annotation was given, append an empty string to search for

@@ -290,7 +290,7 @@ public:
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries();
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                         bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
+                                         bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
@@ -313,7 +313,7 @@ public:
   LibraryTreeItem* getLibraryTreeItemFromFile(QString fileName, int lineNumber);
   void showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show = true);
   void showHideProtectedClasses();
-  bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true, bool doDeleteClass = true);
   bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
   void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
@@ -406,6 +406,7 @@ private:
   QAction *mpNewFolderEmptyAction;
   QAction *mpRenameAction;
   QAction *mpDeleteAction;
+  QAction *mpConvertClassUsesLibrariesAction;
   QAction *mpExportFMUAction;
   QAction *mpExportReadonlyPackageAction;
   QAction *mpExportEncryptedPackageAction;
@@ -454,6 +455,7 @@ public slots:
   void createNewFolderEmpty();
   void renameLibraryTreeItem();
   void deleteTextFile();
+  void convertClassUsesLibraries();
   void exportModelFMU();
   void exportEncryptedPackage();
   void exportReadonlyPackage();
@@ -491,7 +493,7 @@ public:
   bool saveFile(QString fileName, QString contents);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  void saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void openLibraryTreeItem(QString nameStructure);
 private:
   TreeSearchFilters *mpTreeSearchFilters;
@@ -512,7 +514,7 @@ private:
   bool saveAsCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
-  bool saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
+  void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void scrollToActiveLibraryTreeItem();
   void searchClasses();

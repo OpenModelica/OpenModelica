@@ -1011,17 +1011,13 @@ void GDBAdapter::processGDBMIResponse(QString response)
     }
     delete pGDBMIResponse;
   } else {
-    list<string> parserErrorsList = getParserErrorsList();
-    list<string>::iterator parserErrorsListIterator;
-    for (parserErrorsListIterator = parserErrorsList.begin(); parserErrorsListIterator != parserErrorsList.end(); ++parserErrorsListIterator) {
-      qCritical() << (*parserErrorsListIterator).c_str();
+    for (auto &e: getParserErrorsList()) {
+      qCritical() << e.c_str();
     }
     clearParserErrorsList();
   }
-  list<string> lexerErrorsList = getLexerErrorsList();
-  list<string>::iterator lexerErrorsListIterator;
-  for (lexerErrorsListIterator = lexerErrorsList.begin(); lexerErrorsListIterator != lexerErrorsList.end(); ++lexerErrorsListIterator) {
-    qCritical() << (*lexerErrorsListIterator).c_str();
+  for (auto &e: getLexerErrorsList()) {
+    qCritical() << e.c_str();
   }
   clearLexerErrorsList();
 }
@@ -1051,7 +1047,7 @@ void GDBAdapter::processGDBMIResultRecord(GDBMIResultRecord *pGDBMIResultRecord)
   if (pGDBMIResultRecord->token == -1) {
     /* handle stopped response */
     if (pGDBMIResultRecord->cls.compare("stopped") == 0) {
-      string reason = "";
+      std::string reason;
       GDBMIResultList::iterator it;
       for (it = pGDBMIResultRecord->miResultsList.begin(); it != pGDBMIResultRecord->miResultsList.end(); ++it) {
         GDBMIResult *pGDBMIResult = *it;
@@ -1205,7 +1201,7 @@ bool GDBAdapter::skipSteppedInFrames(GDBMIResultRecord *pGDBMIResultRecord)
  * \param reason
  * \param pGDBMIResultRecord
  */
-void GDBAdapter::handleStoppedEvent(string reason, GDBMIResultRecord *pGDBMIResultRecord)
+void GDBAdapter::handleStoppedEvent(std::string reason, GDBMIResultRecord *pGDBMIResultRecord)
 {
   // call changeStdStreamBuffer no matter for what reason we have stopped
   if (!isChangeStdStreamBuffer() && !(reason.compare("\"exited-normally\"") == 0 || reason.compare("\"exited\""))) {

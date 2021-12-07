@@ -1,0 +1,60 @@
+// name:   ConvertClass7
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertClass7
+    import SI = Modelica.SIunits;
+
+    model M1
+      SI.Conversions.NonSIunits.Angle_deg angle \"Shadowed by SI class below\";
+    end M1;
+
+    model SI
+      Real x;
+    end SI;
+
+    model M2
+      import SI = Modelica.SIunits;
+      SI.Conversions.NonSIunits.Angle_deg angle \"Not shadowed\";
+
+      model M3
+        Real SI;
+        SI.Conversions.NonSIunits.Angle_deg angle \"Shadowed by component SI\";
+      end M3;
+    end M2;
+
+  end ConvertClass7;
+");
+
+runConversionScript(ConvertClass7, "scripts/ConvertClass4.mos");
+getErrorString();
+list(ConvertClass7);
+
+// Result:
+// true
+// true
+// ""
+// "package ConvertClass7
+//   import Modelica.Units.SI;
+//
+//   model M1
+//     SI.Conversions.NonSIunits.Angle_deg angle \"Shadowed by SI class below\";
+//   end M1;
+//
+//   model SI
+//     Real x;
+//   end SI;
+//
+//   model M2
+//     import Modelica.Units.SI;
+//     Modelica.Units.NonSI.Angle_deg angle \"Not shadowed\";
+//
+//     model M3
+//       Real SI;
+//       SI.Conversions.NonSIunits.Angle_deg angle \"Shadowed by component SI\";
+//     end M3;
+//   end M2;
+// end ConvertClass7;"
+// endResult

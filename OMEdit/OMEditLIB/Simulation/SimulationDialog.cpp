@@ -94,13 +94,14 @@ void SimulationDialog::show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate
 
 /*!
  * \brief SimulationDialog::directSimulate
- * Directly simulates the model without showing the simulation dialog.
+ * * Directly simulates the model without showing the simulation dialog.
  * \param pLibraryTreeItem
  * \param launchTransformationalDebugger
  * \param launchAlgorithmicDebugger
+ * \param launchAnimation
+ * \param enableDataReconciliation
  */
-void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger,
-                                      bool launchAlgorithmicDebugger, bool launchAnimation)
+void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation, bool enableDataReconciliation)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
   initializeFields(false, SimulationOptions());
@@ -116,9 +117,15 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
    * Make sure we always simulate when directSimulate() is called.
    */
   bool simulateCheckBoxState = mpSimulateCheckBox->isChecked();
+  bool simuationFlagsCheckState = mpSaveSimulationFlagsAnnotationCheckBox->isChecked();
   mpSimulateCheckBox->setChecked(true);
+  mpLibraryTreeItem->mSimulationOptions.setEnableDataReconciliation(enableDataReconciliation);
+  if (enableDataReconciliation && mpLibraryTreeItem->mSimulationOptions.getDataReconciliationSaveSetting()) {
+    mpSaveSimulationFlagsAnnotationCheckBox->setChecked(true);
+  }
   simulate();
   mpSimulateCheckBox->setChecked(simulateCheckBoxState);
+  mpSaveSimulationFlagsAnnotationCheckBox->setChecked(simuationFlagsCheckState);
 }
 
 /*!
@@ -208,10 +215,7 @@ void SimulationDialog::setUpForm()
   MainWindow::instance()->getOMCProxy()->getSolverMethods(&solverMethods, &solverMethodsDesc);
   mpMethodComboBox = new QComboBox;
   mpMethodComboBox->addItems(solverMethods);
-  for (int i = 0 ; i < solverMethodsDesc.size() ; i++) {
-    mpMethodComboBox->setItemData(i, solverMethodsDesc.at(i), Qt::ToolTipRole);
-  }
-  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateMethodToolTip(int)));
+  Utilities::setToolTip(mpMethodComboBox, "Integration Methods", solverMethodsDesc);
   connect(mpMethodComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableDasslIdaOptions(QString)));
   mpMehtodHelpButton = new QToolButton;
   mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
@@ -226,13 +230,10 @@ void SimulationDialog::setUpForm()
   QStringList jacobianMethods, jacobianMethodsDesc;
   MainWindow::instance()->getOMCProxy()->getJacobianMethods(&jacobianMethods, &jacobianMethodsDesc);
   mpJacobianComboBox = new QComboBox;
-  mpJacobianComboBox->addItem("");
-  mpJacobianComboBox->setItemData(0, "", Qt::ToolTipRole);
+  jacobianMethods.prepend("");
+  jacobianMethodsDesc.prepend("");
   mpJacobianComboBox->addItems(jacobianMethods);
-  for (int i = 0 ; i < jacobianMethodsDesc.size() ; i++) {
-    mpJacobianComboBox->setItemData(i + 1, jacobianMethodsDesc.at(i), Qt::ToolTipRole);
-  }
-  connect(mpJacobianComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateJacobianToolTip(int)));
+  Utilities::setToolTip(mpJacobianComboBox, "Jacobians", jacobianMethodsDesc);
   // dassl/ida options
   mpDasslIdaOptionsGroupBox = new QGroupBox(tr("DASSL/IDA Options"));
   // no root finding
@@ -379,9 +380,7 @@ void SimulationDialog::setUpForm()
   initializationMethodsDesc.prepend("");
   mpInitializationMethodComboBox = new QComboBox;
   mpInitializationMethodComboBox->addItems(initializationMethods);
-  for (int i = 0 ; i < initializationMethodsDesc.size() ; i++) {
-    mpInitializationMethodComboBox->setItemData(i, initializationMethodsDesc.at(i), Qt::ToolTipRole);
-  }
+  Utilities::setToolTip(mpInitializationMethodComboBox, "Initialization Methods", initializationMethodsDesc);
   // Equation System Initialization File
   mpEquationSystemInitializationFileLabel = new Label(tr("Equation System Initialization File (Optional):"));
   mpEquationSystemInitializationFileLabel->setToolTip(tr("Specifies an external file for the initialization of the model."));
@@ -406,9 +405,7 @@ void SimulationDialog::setUpForm()
   linearSolverMethodsDesc.prepend("");
   mpLinearSolverComboBox = new QComboBox;
   mpLinearSolverComboBox->addItems(linearSolverMethods);
-  for (int i = 0 ; i < linearSolverMethodsDesc.size() ; i++) {
-    mpLinearSolverComboBox->setItemData(i, linearSolverMethodsDesc.at(i), Qt::ToolTipRole);
-  }
+  Utilities::setToolTip(mpLinearSolverComboBox, "Linear Solvers", linearSolverMethodsDesc);
   // Non Linear Solvers
   mpNonLinearSolverLabel = new Label(tr("Non Linear Solver (Optional):"));
   // get the non-linear solvers
@@ -418,9 +415,7 @@ void SimulationDialog::setUpForm()
   nonLinearSolverMethodsDesc.prepend("");
   mpNonLinearSolverComboBox = new QComboBox;
   mpNonLinearSolverComboBox->addItems(nonLinearSolverMethods);
-  for (int i = 0 ; i < nonLinearSolverMethodsDesc.size() ; i++) {
-    mpNonLinearSolverComboBox->setItemData(i, nonLinearSolverMethodsDesc.at(i), Qt::ToolTipRole);
-  }
+  Utilities::setToolTip(mpNonLinearSolverComboBox, "Non Linear Solvers", nonLinearSolverMethodsDesc);
   // time where the linearization of the model should be performed
   mpLinearizationTimeLabel = new Label(tr("Linearization Time (Optional):"));
   mpLinearizationTimeTextBox = new QLineEdit;
@@ -434,12 +429,7 @@ void SimulationDialog::setUpForm()
   OMCInterface::getConfigFlagValidOptions_res profiling = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("profiling");
   mpProfilingComboBox->addItems(profiling.validOptions);
   mpProfilingComboBox->setCurrentIndex(0);
-  mpProfilingComboBox->setToolTip(profiling.mainDescription);
-  int i = 0;
-  foreach (QString description, profiling.descriptions) {
-    mpProfilingComboBox->setItemData(i, description, Qt::ToolTipRole);
-    i++;
-  }
+  Utilities::setToolTip(mpProfilingComboBox, profiling.mainDescription, profiling.descriptions);
   // cpu-time checkbox
   mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
   // enable all warnings
@@ -534,6 +524,8 @@ void SimulationDialog::setUpForm()
   mpVariableFilterTextBox = new QLineEdit(".*");
   // Protected Variabels
   mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
+  // ignore hide result
+  mpIgnoreHideResultCheckBox = new QCheckBox(tr("Ignore HideResult"));
   // Equidistant time grid
   mpEquidistantTimeGridCheckBox = new QCheckBox(tr("Equidistant Time Grid"));
   // store variables at events
@@ -553,54 +545,13 @@ void SimulationDialog::setUpForm()
   pOutputTabLayout->addWidget(mpVariableFilterLabel, 4, 0);
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 4, 1);
   pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 6, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 7, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 8, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpIgnoreHideResultCheckBox, 6, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 7, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 8, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 9, 0, 1, 2);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
-  // Data Reconciliation Tab
-  mpDataReconciliationTab = new QWidget;
-  mpDataReconciliationGroupBox = new QGroupBox(tr("Enable Data Reconciliation"));
-  mpDataReconciliationGroupBox->setCheckable(true);
-  mpDataReconciliationGroupBox->setChecked(false);
-  mpDataReconciliationAlgorithmLabel = new Label(tr("Algorithm:"));
-  mpDataReconciliationAlgorithmComboBox = new QComboBox;
-  mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation"), QString("dataReconciliation"));
-  mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation with Boundary Conditions"), QString("dataReconciliationBoundaryConditions"));
-  mpDataReconciliationMeasurementInputFileLabel = new Label(tr("Measurement Input File:"));
-  mpDataReconciliationMeasurementInputFileTextBox = new QLineEdit;
-  mpDataReconciliationMeasurementInputFileBrowseButton = new QPushButton(Helper::browse);
-  connect(mpDataReconciliationMeasurementInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationMeasurementInputFile()));
-  mpDataReconciliationMeasurementInputFileBrowseButton->setAutoDefault(false);
-  mpDataReconciliationCorrelationMatrixInputFileLabel = new Label(tr("Correlation Matrix Input File:"));
-  mpDataReconciliationCorrelationMatrixInputFileTextBox = new QLineEdit;
-  mpDataReconciliationCorrelationMatrixInputFileBrowseButton = new QPushButton(Helper::browse);
-  connect(mpDataReconciliationCorrelationMatrixInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationCorrelationMatrixInputFile()));
-  mpDataReconciliationCorrelationMatrixInputFileBrowseButton->setAutoDefault(false);
-  mpDataReconciliationEpsilonLabel = new Label(tr("Epsilon:"));
-  mpDataReconciliationEpsilonTextBox = new QLineEdit;
-  // set the data reconciliation groupbox layout
-  QGridLayout *pDataReconciliationGridLayout = new QGridLayout;
-  pDataReconciliationGridLayout->setAlignment(Qt::AlignTop);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationAlgorithmLabel, 0, 0);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationAlgorithmComboBox, 0, 1, 1, 2);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationMeasurementInputFileLabel, 1, 0);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationMeasurementInputFileTextBox, 1, 1);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationMeasurementInputFileBrowseButton, 1, 2);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationCorrelationMatrixInputFileLabel, 2, 0);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationCorrelationMatrixInputFileTextBox, 2, 1);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationCorrelationMatrixInputFileBrowseButton, 2, 2);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationEpsilonLabel, 3, 0);
-  pDataReconciliationGridLayout->addWidget(mpDataReconciliationEpsilonTextBox, 3, 1, 1, 2);
-  mpDataReconciliationGroupBox->setLayout(pDataReconciliationGridLayout);
-  // set Data Reconciliation Tab Layout
-  QGridLayout *pDataReconciliationTabLayout = new QGridLayout;
-  pDataReconciliationTabLayout->setAlignment(Qt::AlignTop);
-  pDataReconciliationTabLayout->addWidget(mpDataReconciliationGroupBox, 0, 0);
-  mpDataReconciliationTab->setLayout(pDataReconciliationTabLayout);
-  // add Data Reconciliation Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpDataReconciliationTab, tr("Data Reconciliation"));
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -768,30 +719,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             if (!additionalDebugFlagsList.isEmpty()) {
               additionalTranslationFlagsList.append(QString("-d=%1").arg(additionalDebugFlagsList.join(",")));
             }
-          } else if (commandLineOptionKeyFiltered.compare("d") == 0) { // check preOptModules i.e., --preOptModules+=dataReconciliation or --preOptModules+=dataReconciliationBoundaryConditions etc.
-            QStringList commandLineOptionValuesList = commandLineOptionValues.split(",");
-            QStringList additionalPreOptModulesList;
-            foreach (QString commandLineOptionValue, commandLineOptionValuesList) {
-              commandLineOptionValue = commandLineOptionValue.trimmed();
-              if (commandLineOptionValue.compare(QStringLiteral("dataReconciliation")) == 0) {
-                mpDataReconciliationGroupBox->setChecked(true);
-                mpDataReconciliationAlgorithmComboBox->setCurrentIndex(0);
-              } else if (commandLineOptionValue.compare(QStringLiteral("dataReconciliationBoundaryConditions")) == 0) {
-                mpDataReconciliationGroupBox->setChecked(true);
-                mpDataReconciliationAlgorithmComboBox->setCurrentIndex(1);
-              } else {
-                additionalPreOptModulesList.append(commandLineOptionValue);
-              }
-            }
-            if (!additionalPreOptModulesList.isEmpty()) {
-              additionalTranslationFlagsList.append(QString("--preOptModules+=%1").arg(additionalPreOptModulesList.join(",")));
-            }
-          } else {
-            if (commandLineOptionValues.isEmpty()) {
-              additionalTranslationFlagsList.append(commandLineOptionKey);
-            } else {
-              additionalTranslationFlagsList.append(QString("%1=%2").arg(commandLineOptionKey, commandLineOptionValues));
-            }
           }
         }
         QString additionalTranslationFlagsText = mpTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->text();
@@ -821,6 +748,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpSinglePrecisionCheckBox->setChecked(true);
           } else if (simulationFlag.compare("emit_protected") == 0) {
             mpProtectedVariablesCheckBox->setChecked(true);
+          } else if (simulationFlag.compare("ignoreHideResult") == 0) {
+            mpIgnoreHideResultCheckBox->setChecked(true);
           } else if (simulationFlag.compare("f") == 0) {
             mpModelSetupFileTextBox->setText(value);
           } else if (simulationFlag.compare("iif") == 0) {
@@ -876,6 +805,16 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
               }
               i++;
             }
+          } else if (simulationFlag.compare("reconcile") == 0)  {
+            mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm("dataReconciliation");
+          } else if (simulationFlag.compare("reconcileBoundaryConditions") == 0) {
+            mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm("dataReconciliationBoundaryConditions");
+          } else if (simulationFlag.compare("sx") == 0) {
+            mpLibraryTreeItem->mSimulationOptions.setDataReconciliationMeasurementInputFile(value);
+          } else if (simulationFlag.compare("cx") == 0) {
+            mpLibraryTreeItem->mSimulationOptions.setDataReconciliationCorrelationMatrixInputFile(value);
+          } else if (simulationFlag.compare("eps") == 0) {
+            mpLibraryTreeItem->mSimulationOptions.setDataReconciliationEpsilon(value);
           } else { // put everything else in the Additional Simulation Flags textbox only if the simulation flag is valid
             bool isValidSimulationFlag = false;
             for (int i = FLAG_UNKNOWN + 1 ; i < FLAG_MAX ; i++) {
@@ -1035,11 +974,6 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpCPUTimeCheckBox->setChecked(simulationOptions.getCPUTime());
   // enable all warnings
   mpEnableAllWarningsCheckBox->setChecked(simulationOptions.getEnableAllWarnings());
-  // enable reconcile
-  mpDataReconciliationGroupBox->setChecked(simulationOptions.getEnableDataReconciliation());
-  mpDataReconciliationMeasurementInputFileTextBox->setText(simulationOptions.getDataReconciliationMeasurementInputFile());
-  mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(simulationOptions.getDataReconciliationCorrelationMatrixInputFile());
-  mpDataReconciliationEpsilonTextBox->setText(simulationOptions.getDataReconciliationEpsilon());
   // Logging
   QStringList logStreams = simulationOptions.getLogStreams();
   int i = 0;
@@ -1080,6 +1014,8 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpVariableFilterTextBox->setText(simulationOptions.getVariableFilter());
   // Protected Variabels
   mpProtectedVariablesCheckBox->setChecked(simulationOptions.getProtectedVariables());
+  // ignore HideResult
+  mpIgnoreHideResultCheckBox->setChecked(simulationOptions.getIgnoreHideResult());
   // Equidistant time grid
   mpEquidistantTimeGridCheckBox->setChecked(simulationOptions.getEquidistantTimeGrid());
   // store variables at events
@@ -1135,8 +1071,8 @@ bool SimulationDialog::translateModel(QString simulationParameters)
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=visxml");
   }
 #endif
-  if (mpDataReconciliationGroupBox->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg(mpDataReconciliationAlgorithmComboBox->itemData(mpDataReconciliationAlgorithmComboBox->currentIndex()).toString()));
+  if (mpLibraryTreeItem->mSimulationOptions.getEnableDataReconciliation()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm()));
   }
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   if (!result) {
@@ -1250,7 +1186,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
  */
 SimulationOptions SimulationDialog::createSimulationOptions()
 {
-  SimulationOptions simulationOptions;
+  SimulationOptions simulationOptions = mpLibraryTreeItem->mSimulationOptions;
   simulationOptions.setClassName(mClassName);
   simulationOptions.setStartTime(mpStartTimeTextBox->text());
   simulationOptions.setStopTime(mpStopTimeTextBox->text());
@@ -1295,10 +1231,6 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setProfiling(mpProfilingComboBox->currentText());
   simulationOptions.setCPUTime(mpCPUTimeCheckBox->isChecked());
   simulationOptions.setEnableAllWarnings(mpEnableAllWarningsCheckBox->isChecked());
-  simulationOptions.setEnableDataReconciliation(mpDataReconciliationGroupBox->isChecked());
-  simulationOptions.setDataReconciliationMeasurementInputFile(mpDataReconciliationMeasurementInputFileTextBox->text());
-  simulationOptions.setDataReconciliationCorrelationMatrixInputFile(mpDataReconciliationCorrelationMatrixInputFileTextBox->text());
-  simulationOptions.setDataReconciliationEpsilon(mpDataReconciliationEpsilonTextBox->text());
   QStringList logStreams;
   int i = 0;
   while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
@@ -1335,6 +1267,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   }
   simulationOptions.setVariableFilter(mpVariableFilterTextBox->text());
   simulationOptions.setProtectedVariables(mpProtectedVariablesCheckBox->isChecked());
+  simulationOptions.setIgnoreHideResult(mpIgnoreHideResultCheckBox->isChecked());
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
   simulationOptions.setStoreVariablesAtEvents(mpStoreVariablesAtEventsCheckBox->isChecked());
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
@@ -1396,6 +1329,10 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (mpProtectedVariablesCheckBox->isChecked()) {
     simulationFlags.append("-emit_protected");
   }
+  // ignoreHideResult
+  if (mpIgnoreHideResultCheckBox->isChecked()) {
+    simulationFlags.append("-ignoreHideResult");
+  }
   // Equidistant time grid
   if (mpEquidistantTimeGridCheckBox->isEnabled() && !mpEquidistantTimeGridCheckBox->isChecked()) {
     simulationFlags.append("-noEquidistantTimeGrid");
@@ -1449,20 +1386,20 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     simulationFlags.append("-w");
   }
   // setup data reconciliation
-  if (mpDataReconciliationGroupBox->isChecked()) {
-    if (mpDataReconciliationAlgorithmComboBox->currentIndex() == 0) {
+  if (simulationOptions.getEnableDataReconciliation()) {
+    if (simulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0) {
       simulationFlags.append("-reconcile");
     } else {
       simulationFlags.append("-reconcileBoundaryConditions");
     }
-    if (!mpDataReconciliationMeasurementInputFileTextBox->text().isEmpty()) {
-      simulationFlags.append(QString("-sx=").append(mpDataReconciliationMeasurementInputFileTextBox->text()));
+    if (!simulationOptions.getDataReconciliationMeasurementInputFile().isEmpty()) {
+      simulationFlags.append(QString("-sx=%1").arg(simulationOptions.getDataReconciliationMeasurementInputFile()));
     }
-    if (!mpDataReconciliationCorrelationMatrixInputFileTextBox->text().isEmpty()) {
-      simulationFlags.append(QString("-cx=").append(mpDataReconciliationCorrelationMatrixInputFileTextBox->text()));
+    if (!simulationOptions.getDataReconciliationCorrelationMatrixInputFile().isEmpty()) {
+      simulationFlags.append(QString("-cx=%1").arg(simulationOptions.getDataReconciliationCorrelationMatrixInputFile()));
     }
-    if (!mpDataReconciliationEpsilonTextBox->text().isEmpty()) {
-      simulationFlags.append(QString("-eps=").append(mpDataReconciliationEpsilonTextBox->text()));
+    if (!simulationOptions.getDataReconciliationEpsilon().isEmpty()) {
+      simulationFlags.append(QString("-eps=%1").arg(simulationOptions.getDataReconciliationEpsilon()));
     }
   }
   // setup Logging flags
@@ -1615,6 +1552,9 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (mpProtectedVariablesCheckBox->isChecked()) {
     simulationFlags.insert("emit_protected", "()");
   }
+  if (mpIgnoreHideResultCheckBox->isChecked()) {
+    simulationFlags.insert("ignoreHideResult", "()");
+  }
   if (!mpModelSetupFileTextBox->text().isEmpty()) {
     simulationFlags.insert("f", mpModelSetupFileTextBox->text());
   }
@@ -1695,6 +1635,20 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     } else {
       simulationFlags.insert(nameValueList.at(0), nameValueList.at(1));
     }
+  }
+  if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0 ) {
+    simulationFlags.insert("reconcile", "()");
+  } else if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliationBoundaryConditions")) == 0 ) {
+    simulationFlags.insert("reconcileBoundaryConditions", "()");
+  }
+  if (!mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile().isEmpty()) {
+    simulationFlags.insert("sx", mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile());
+  }
+  if (!mpLibraryTreeItem->mSimulationOptions.getDataReconciliationCorrelationMatrixInputFile().isEmpty()) {
+    simulationFlags.insert("cx", mpLibraryTreeItem->mSimulationOptions.getDataReconciliationCorrelationMatrixInputFile());
+  }
+  if (!mpLibraryTreeItem->mSimulationOptions.getDataReconciliationEpsilon().isEmpty()) {
+    simulationFlags.insert("eps", mpLibraryTreeItem->mSimulationOptions.getDataReconciliationEpsilon());
   }
   QStringList simulationFlagsList;
   QMapIterator<QString, QString> simulationFlagsIterator(simulationFlags);
@@ -1805,10 +1759,8 @@ void SimulationDialog::performSimulation()
     SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
     QString targetBuild = pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString();
     if ((targetBuild.compare("vxworks69") == 0) || (targetBuild.compare("debugrt") == 0)) {
-      QString msg = tr("Generated code for the target build <b>%1</b> at %2.").arg(targetBuild)
-                    .arg(simulationOptions.getWorkingDirectory());
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
-                                                            Helper::notificationLevel));
+      QString msg = tr("Generated code for the target build <b>%1</b> at %2.").arg(targetBuild).arg(simulationOptions.getWorkingDirectory());
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
       return;
     }
     QString targetLanguage = pSimulationPage->getTargetLanguageComboBox()->currentText();
@@ -1816,10 +1768,8 @@ void SimulationDialog::performSimulation()
     if ((targetLanguage.compare("C") == 0) || (targetLanguage.compare("Cpp") == 0)) {
       createAndShowSimulationOutputWidget(simulationOptions);
     } else {
-      QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage)
-          .arg(simulationOptions.getWorkingDirectory());
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
-                                                            Helper::notificationLevel));
+      QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage).arg(simulationOptions.getWorkingDirectory());
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
       return;
     }
   }
@@ -2090,7 +2040,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
   if (simulationOptions.getEnableDataReconciliation()) {
     QString htmlPath;
     // read the data Reconciliation report file
-    if (mpDataReconciliationAlgorithmComboBox->currentIndex() == 0) {
+    if (simulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0) {
       htmlPath = QString("%1/%2.html").arg(workingDirectory, simulationOptions.getClassName());
     } else { // read the data Reconciliation Boundary Conditions report file
       htmlPath = QString("%1/%2_BoundaryConditions.html").arg(workingDirectory, simulationOptions.getClassName());
@@ -2145,16 +2095,6 @@ void SimulationDialog::intervalRadioToggled(bool toggle)
 }
 
 /*!
- * \brief SimulationDialog::updateMethodToolTip
- * Updates the Method combobox tooltip.
- * \param index
- */
-void SimulationDialog::updateMethodToolTip(int index)
-{
-  mpMethodComboBox->setToolTip(mpMethodComboBox->itemData(index, Qt::ToolTipRole).toString());
-}
-
-/*!
  * \brief SimulationDialog::enableDasslOptions
  * Slot activated when mpMethodComboBox currentIndexChanged signal is raised.\n
  * Enables/disables the Dassl options group box
@@ -2183,16 +2123,6 @@ void SimulationDialog::showIntegrationHelp()
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString()), Helper::ok);
   }
-}
-
-/*!
- * \brief SimulationDialog::updateJacobianToolTip
- * Updates the Jacobian combobox tooltip.
- * \param index
- */
-void SimulationDialog::updateJacobianToolTip(int index)
-{
-  mpJacobianComboBox->setToolTip(mpJacobianComboBox->itemData(index, Qt::ToolTipRole).toString());
 }
 
 /*!
@@ -2339,21 +2269,162 @@ void SimulationDialog::resultFileNameChanged(QString text)
 }
 
 /*!
- * \brief SimulationDialog::browseDataReconciliationMeasurementInputFile
+ * \class DataReconciliationDialog
+ * \brief Interface for running data reconciliation.
+ */
+/*!
+ * \brief DataReconciliationDialog::DataReconciliationDialog
+ * \param pLibraryTreeItem
+ * \param parent
+ */
+DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTreeItem, QDialog *parent)
+  : QDialog(parent)
+{
+  mpLibraryTreeItem = pLibraryTreeItem;
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::dataReconciliation, mpLibraryTreeItem->getNameStructure()));
+  setMinimumWidth(400);
+  Label *pHeadingLabel = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::dataReconciliation, mpLibraryTreeItem->getNameStructure()));
+  pHeadingLabel->setElideMode(Qt::ElideMiddle);
+  QFrame *pHeadingLineFrame = Utilities::getHeadingLine();
+  mpDataReconciliationAlgorithmLabel = new Label(tr("Algorithm:"));
+  mpDataReconciliationAlgorithmComboBox = new QComboBox;
+  mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation"), QString("dataReconciliation"));
+  mpDataReconciliationAlgorithmComboBox->addItem(tr("Boundary Conditions"), QString("dataReconciliationBoundaryConditions"));
+  mpDataReconciliationMeasurementInputFileLabel = new Label(tr("Measurement Input File:"));
+  mpDataReconciliationMeasurementInputFileTextBox = new QLineEdit;
+  mpDataReconciliationMeasurementInputFileBrowseButton = new QPushButton(Helper::browse);
+  connect(mpDataReconciliationMeasurementInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationMeasurementInputFile()));
+  mpDataReconciliationMeasurementInputFileBrowseButton->setAutoDefault(false);
+  mpDataReconciliationCorrelationMatrixInputFileLabel = new Label(tr("Correlation Matrix Input File:"));
+  mpDataReconciliationCorrelationMatrixInputFileTextBox = new QLineEdit;
+  mpDataReconciliationCorrelationMatrixInputFileBrowseButton = new QPushButton(Helper::browse);
+  connect(mpDataReconciliationCorrelationMatrixInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationCorrelationMatrixInputFile()));
+  mpDataReconciliationCorrelationMatrixInputFileBrowseButton->setAutoDefault(false);
+  mpDataReconciliationEpsilonLabel = new Label(tr("Epsilon:"));
+  mpDataReconciliationEpsilonTextBox = new QLineEdit("1.e-10");
+  // save settings
+  mpSaveSettingsCheckBox = new QCheckBox(tr("Save Settings"));
+  // Create the buttons
+  mpCalculateButton = new QPushButton(tr("Calculate"));
+  mpCalculateButton->setAutoDefault(true);
+  connect(mpCalculateButton, SIGNAL(clicked()), SLOT(calculateDataReconciliation()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpCalculateButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // apply simulationOptions
+  int currentIndex = mpDataReconciliationAlgorithmComboBox->findData(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm());
+  if (currentIndex > -1) {
+    mpDataReconciliationAlgorithmComboBox->setCurrentIndex(currentIndex);
+  }
+  mpDataReconciliationMeasurementInputFileTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile());
+  mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationCorrelationMatrixInputFile());
+  mpDataReconciliationEpsilonTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationEpsilon());
+  mpSaveSettingsCheckBox->setChecked(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationSaveSetting());
+  if (!mpLibraryTreeItem->mSimulationOptions.isDataReconciliationInitialized()) {
+    // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
+    if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
+      // if the class has __OpenModelica_simulationFlags annotation then use its values.
+      QList<QString> simulationFlags = MainWindow::instance()->getOMCProxy()->getAnnotationNamedModifiers(mpLibraryTreeItem->getNameStructure(), "__OpenModelica_simulationFlags");
+      foreach (QString simulationFlag, simulationFlags) {
+        QString value = MainWindow::instance()->getOMCProxy()->getAnnotationModifierValue(mpLibraryTreeItem->getNameStructure(), "__OpenModelica_simulationFlags", simulationFlag);
+        if (simulationFlag.compare("reconcile") == 0) {
+          mpDataReconciliationAlgorithmComboBox->setCurrentIndex(0);
+        } else if (simulationFlag.compare("reconcileBoundaryConditions") == 0) {
+          mpDataReconciliationAlgorithmComboBox->setCurrentIndex(1);
+        } else if (simulationFlag.compare("sx") == 0) {
+          mpDataReconciliationMeasurementInputFileTextBox->setText(value);
+        } else if (simulationFlag.compare("cx") == 0) {
+          mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(value);
+        } else if (simulationFlag.compare("eps") == 0) {
+          mpDataReconciliationEpsilonTextBox->setText(value);
+        }
+      }
+    }
+  }
+  // layout
+  QGridLayout *pMainGridLayout = new QGridLayout;
+  pMainGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  int row = 0;
+  pMainGridLayout->addWidget(pHeadingLabel, row++, 0, 1, 3);
+  pMainGridLayout->addWidget(pHeadingLineFrame, row++, 0, 1, 3);
+  pMainGridLayout->addWidget(mpDataReconciliationAlgorithmLabel, row, 0);
+  pMainGridLayout->addWidget(mpDataReconciliationAlgorithmComboBox, row++, 1, 1, 2);
+  pMainGridLayout->addWidget(mpDataReconciliationMeasurementInputFileLabel, row, 0);
+  pMainGridLayout->addWidget(mpDataReconciliationMeasurementInputFileTextBox, row, 1);
+  pMainGridLayout->addWidget(mpDataReconciliationMeasurementInputFileBrowseButton, row++, 2);
+  pMainGridLayout->addWidget(mpDataReconciliationCorrelationMatrixInputFileLabel, row, 0);
+  pMainGridLayout->addWidget(mpDataReconciliationCorrelationMatrixInputFileTextBox, row, 1);
+  pMainGridLayout->addWidget(mpDataReconciliationCorrelationMatrixInputFileBrowseButton, row++, 2);
+  pMainGridLayout->addWidget(mpDataReconciliationEpsilonLabel, row, 0);
+  pMainGridLayout->addWidget(mpDataReconciliationEpsilonTextBox, row++, 1, 1, 2);
+  pMainGridLayout->addWidget(mpSaveSettingsCheckBox, row, 0);
+  pMainGridLayout->addWidget(mpButtonBox, row++, 1, 1, 2, Qt::AlignRight);
+  setLayout(pMainGridLayout);
+}
+
+/*!
+ * \brief DataReconciliationDialog::browseDataReconciliationMeasurementInputFile
  * Slot activated when mpDataReconciliationMeasurementInputFileBrowseButton clicked signal is raised.\n
  * Allows user to select data reconciliation measurement input file.
  */
-void SimulationDialog::browseDataReconciliationMeasurementInputFile()
+void DataReconciliationDialog::browseDataReconciliationMeasurementInputFile()
 {
   mpDataReconciliationMeasurementInputFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL));
 }
 
 /*!
- * \brief SimulationDialog::browseDataReconciliationCorrelationMatrixInputFile
+ * \brief DataReconciliationDialog::browseDataReconciliationCorrelationMatrixInputFile
  * Slot activated when mpDataReconciliationCorrelationMatrixInputFileBrowseButton clicked signal is raised.\n
  * Allows user to select data reconciliation correlation matrix input file.
  */
-void SimulationDialog::browseDataReconciliationCorrelationMatrixInputFile()
+void DataReconciliationDialog::browseDataReconciliationCorrelationMatrixInputFile()
 {
   mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL));
+}
+
+/*!
+ * \brief DataReconciliationDialog::calculateDataReconciliation
+ * Sets the data reconciliation options to be used by simulation.
+ */
+void DataReconciliationDialog::calculateDataReconciliation()
+{
+  mpLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(true);
+  mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm(mpDataReconciliationAlgorithmComboBox->itemData(mpDataReconciliationAlgorithmComboBox->currentIndex()).toString());
+  mpLibraryTreeItem->mSimulationOptions.setDataReconciliationMeasurementInputFile(mpDataReconciliationMeasurementInputFileTextBox->text());
+  int currentIndex = mpDataReconciliationAlgorithmComboBox->findData(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm());
+
+  // Validate dataReconciliation Algorithm
+  if (currentIndex == 0){
+    if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile().isEmpty()){
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                               "Measurement Input File not provided, Data Reconciliation cannot be computed!", Helper::ok);
+      mpDataReconciliationMeasurementInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
+      return;
+    }
+  }
+  mpLibraryTreeItem->mSimulationOptions.setDataReconciliationCorrelationMatrixInputFile(mpDataReconciliationCorrelationMatrixInputFileTextBox->text());
+
+  // Validate Boundary Condition Algorithm
+  if (currentIndex == 1){
+    if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile().isEmpty()){
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             "Measurement Input File not provided, Boundary Conditions cannot be computed!", Helper::ok);
+      mpDataReconciliationMeasurementInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
+      return;
+    }
+    else if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationCorrelationMatrixInputFile().isEmpty()){
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             "Correlation Matrix Input File not provided, Boundary Conditions cannot be computed!", Helper::ok);
+      mpDataReconciliationCorrelationMatrixInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
+      return;
+    }
+  }
+  mpLibraryTreeItem->mSimulationOptions.setDataReconciliationEpsilon(mpDataReconciliationEpsilonTextBox->text());
+  mpLibraryTreeItem->mSimulationOptions.setDataReconciliationSaveSetting(mpSaveSettingsCheckBox->isChecked());
+  accept();
 }

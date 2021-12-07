@@ -186,6 +186,7 @@ install: install-dirs
 	test ! -d "@OMBUILDDIR@"/share/omshell/nls/ || cp -p "@OMBUILDDIR@"/share/omshell/nls/*.qm ${INSTALL_SHAREDIR}/omshell/nls/
 	test ! -d "@OMBUILDDIR@"/share/omedit/nls/ || cp -p "@OMBUILDDIR@"/share/omedit/nls/*.qm ${INSTALL_SHAREDIR}/omedit/nls/
 	test ! -d "@OMBUILDDIR@"/share/omnotebook/nls/ || cp -p "@OMBUILDDIR@"/share/omnotebook/nls/*.qm ${INSTALL_SHAREDIR}/omnotebook/nls/
+	test ! -d "@OMBUILDDIR@"/share/OMSimulator/ || cp -rp "@OMBUILDDIR@"/share/OMSimulator ${INSTALL_SHAREDIR}/
 	# Scripts
 	cp -rp "@OMBUILDDIR@"/share/omc/scripts/*.* "@OMBUILDDIR@"/share/omc/scripts/OpenTurns ${INSTALL_SHAREDIR}/omc/scripts
 	# Java

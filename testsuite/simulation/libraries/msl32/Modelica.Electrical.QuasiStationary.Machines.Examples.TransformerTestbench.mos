@@ -29,7 +29,13 @@ runScript(modelTesting);getErrorString();
 // {"source.plug_p.reference.gamma","source.voltageSource[2].pin_p.reference.gamma","source.voltageSource[3].pin_p.reference.gamma"}
 // Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 100, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench', options = '', outputFormat = 'mat', variableFilter = 'time|source.plug_p.reference.gamma|source.voltageSource.2..pin_p.reference.gamma|source.voltageSource.3..pin_p.reference.gamma', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench_res.mat
-// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// Messages: stdout            | info    | Using sparse solver kinsol for nonlinear system 2 (603),
+// |                 | |       | because density of 0.04 remains under threshold of 0.10.
+// stdout            | info    | Using sparse solver kinsol for nonlinear system 10 (1566),
+// |                 | |       | because density of 0.04 remains under threshold of 0.10.
+// stdout            | info    | The maximum density for using sparse solvers can be specified
+// |                 | |       | using the runtime flag '<-nlsMaxDensity=value>'.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!

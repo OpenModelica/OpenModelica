@@ -1064,35 +1064,12 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       '<%res%> = mmc_mk_cons(<%reductionBodyExpr%>,<%res%>);'
     case IDENT(name="array") then
       match typeof(r.expr)
-        case T_COMPLEX(complexClassType = record_state) then
-          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-          '<%rec_name%>_array_get(<%res%>, 1, <%arrIndex%>++) = <%reductionBodyExpr%>;'
         case T_ARRAY(__) then
-          let tmp_shape = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
-          let tmp_indeces = tempDecl("idx_type", &varDecls /*BUFD*/)
-          /*let idx_str = (dims |> dim =>
-            let tmp_idx = tempDecl("vector<size_t>", &varDecls)
-            let &preExp += '<%tmp_shape%>.push_back(1);<%\n%>
-                       <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
-                       ''
-                       )*/
-          let tmp_idx = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
-          /*let &preExp += '<%tmp_shape%>.push_back(0);<%\n%>
-                        <%tmp_idx%>.push_back(<%arrIndex%>++);<%\n%>
-                        <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
-          let tmp = 'make_pair(<%tmp_shape%>,<%tmp_indeces%>)'
-          */
-
+          let tmp_slice = tempDecl("vector<Slice>", &varDecls)
           <<
-          <%(dims |> dim =>
-            let tmp_idx = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
-                       '<%tmp_shape%>.push_back(1);<%\n%>
-                       <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
-            )%>
-          <%tmp_shape%>.push_back(0);<%\n%>
-          <%tmp_idx%>.push_back(<%arrIndex%>++);<%\n%>
-          <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>
-          fill_array_from_shape(make_pair(<%tmp_shape%>,<%tmp_indeces%>),<%reductionBodyExpr%>,<%res%>);
+          <%tmp_slice%>.clear();
+          <%tmp_slice%>.push_back(Slice(<%arrIndex%>++));
+          ArraySlice<<%expTypeShort(ty)%>>(<%res%>, <%tmp_slice%>).assign(<%reductionBodyExpr%>);
           >>
         else
           '<%res%>(<%arrIndex%>++) = <%reductionBodyExpr%>;'
@@ -1160,9 +1137,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        <<
        <%arrIndex%> = 1;
        <% match typeof(r.expr)
-        case T_COMPLEX(complexClassType = record_state) then
-          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-          'alloc_generic_array(&<%res%>,sizeof(<%rec_name%>),1,<%length%>);'
         case T_ARRAY(__) then
           let dim_vec = tempDecl("std::vector<size_t>",&tmpVarDecls)
           let dimSizes = dims |> dim => match dim

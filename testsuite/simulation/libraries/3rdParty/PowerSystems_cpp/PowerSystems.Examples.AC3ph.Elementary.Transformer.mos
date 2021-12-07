@@ -1,0 +1,60 @@
+// name:     PowerSystems.Examples.AC3ph.Elementary.Transformer
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Elementary.Transformer);
+compareVars :=
+{
+  "meter1.p[1]",
+  "meter1.p[2]",
+  "meter1.p[3]",
+  "meter1.v[1]",
+  "meter1.v[2]",
+  "meter1.v[3]",
+  "meter1.i[1]",
+  "meter1.i[2]",
+  "meter1.i[3]",
+  "meter2.p[1]",
+  "meter2.p[2]",
+  "meter2.p[3]",
+  "meter2.v[1]",
+  "meter2.v[2]",
+  "meter2.v[3]",
+  "meter2.i[1]",
+  "meter2.i[2]",
+  "meter2.i[3]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Elementary.Transformer
+// {"meter1.p[1]","meter1.p[2]","meter1.p[3]","meter1.v[1]","meter1.v[2]","meter1.v[3]","meter1.i[1]","meter1.i[2]","meter1.i[3]","meter2.p[1]","meter2.p[2]","meter2.p[3]","meter2.v[1]","meter2.v[2]","meter2.v[3]","meter2.i[1]","meter2.i[2]","meter2.i[3]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Elementary.Transformer', options = '', outputFormat = 'mat', variableFilter = 'time|meter1.p.1.|meter1.p.2.|meter1.p.3.|meter1.v.1.|meter1.v.2.|meter1.v.3.|meter1.i.1.|meter1.i.2.|meter1.i.3.|meter2.p.1.|meter2.p.2.|meter2.p.3.|meter2.v.1.|meter2.v.2.|meter2.v.3.|meter2.i.1.|meter2.i.2.|meter2.i.3.', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Elementary.Transformer_res.mat
+// Files Equal!
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
+// "true
+// "
+// ""
+// endResult

@@ -72,7 +72,6 @@ protected
 import Flags;
 import Dump;
 import Absyn;
-import AbsynUtil;
 import SCodeUtil;
 import Util;
 
@@ -415,7 +414,7 @@ algorithm
     // component references
     case (FCore.N(_, _, _, _, nd as FCore.CR(r = r)), _)
       equation
-        s = FNode.dataStr(nd) + ":" + AbsynUtil.printComponentRefStr(r);
+        s = FNode.dataStr(nd) + ":" + Dump.printComponentRefStr(r);
       then
         (GraphML.COLOR_PURPLE, GraphML.OCTAGON(), s);
 

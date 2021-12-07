@@ -96,7 +96,8 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
  * \param visualizationView
  */
 GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView)
-  : QGraphicsView(pModelWidget), mViewType(viewType), mVisualizationView(visualizationView), mSkipBackground(false)
+  : QGraphicsView(pModelWidget), mViewType(viewType), mVisualizationView(visualizationView), mSkipBackground(false), mContextMenuStartPosition(QPointF(0, 0)),
+    mContextMenuStartPositionValid(false)
 {
   /* Ticket #3275
    * Set the scroll bars policy to always on to avoid unnecessary resize events.
@@ -510,6 +511,10 @@ void GraphicsView::addElementToClass(Element *pElement)
         newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(packageName).arg(pPackageLibraryTreeItem->mClassInformation.version));
         QString usesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
         pMainWindow->getOMCProxy()->addClassAnnotation(pTopLevelLibraryTreeItem->getNameStructure(), usesAnnotationString);
+        // if save folder structure then update the parent package
+        if (pTopLevelLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+          pLibraryTreeModel->updateLibraryTreeItemClassText(pTopLevelLibraryTreeItem);
+        }
       }
     }
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
@@ -2991,8 +2996,7 @@ void GraphicsView::addClassAnnotation(bool alwaysAdd)
       mpModelWidget->getLibraryTreeItem()->handleIconUpdated();
     }
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Error in class annotation %1").arg(pMainWindow->getOMCProxy()->getResult()),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
@@ -3881,6 +3885,8 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   // if some item is right clicked then don't show graphics view context menu
   if (!itemAt(event->pos())) {
     QMenu menu;
+    mContextMenuStartPosition = mapToScene(mapFromGlobal(QCursor::pos()));
+    mContextMenuStartPositionValid = true;
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       modelicaGraphicsViewContextMenu(&menu);
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
@@ -3889,6 +3895,8 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       omsGraphicsViewContextMenu(&menu);
     }
     menu.exec(event->globalPos());
+    mContextMenuStartPosition = QPointF(0, 0);
+    mContextMenuStartPositionValid = false;
     return; // return from it because at a time we only want one context menu.
   } else {  // if we click on some item.
     bool oneShapeSelected = false;
@@ -4846,7 +4854,7 @@ void ModelWidget::addConnection(QStringList connectionList, QString connectionAn
     return;
   }
   // connection annotation
-  QStringList shapesList = StringHandler::getStrings(connectionAnnotationString, '(', ')');
+  QStringList shapesList = StringHandler::getStrings(connectionAnnotationString);
   // Now parse the shapes available in list
   QString lineShape = "";
   foreach (QString shape, shapesList) {
@@ -5308,6 +5316,7 @@ void ModelWidget::reDrawModelWidget()
     loadElements();
     // invalidate the simulation options
     mpLibraryTreeItem->mSimulationOptions.setIsValid(false);
+    mpLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(false);
     // update the icon
     mpLibraryTreeItem->handleIconUpdated();
     // Draw diagram view
@@ -6700,7 +6709,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
   // read the shapes
   if (list.size() < 9)
     return;
-  QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)), '(', ')');
+  QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
   drawModelIconDiagramShapes(shapesList, pGraphicsView, false);
 }
 
@@ -6838,6 +6847,11 @@ void ModelWidget::drawModelIconElements()
       if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
         annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
         annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
+      } else {
+        /* Quick and ugly fix for #8172 until #2081 is fixed properly.
+         * Remove this else block once #2081 is fixed.
+         */
+        annotation.replace("Placement(false", "Placement(true");
       }
       mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, false, true, false);
     }
@@ -6929,7 +6943,7 @@ void ModelWidget::getModelTransitions()
       continue;
     }
     // get the transition annotations
-    QStringList shapesList = StringHandler::getStrings(transition.at(7), '(', ')');
+    QStringList shapesList = StringHandler::getStrings(transition.at(7));
     // Now parse the shapes available in list
     QString lineShape, textShape = "";
     foreach (QString shape, shapesList) {
@@ -6970,7 +6984,7 @@ void ModelWidget::getModelInitialStates()
       continue;
     }
     // get the transition annotations
-    QStringList shapesList = StringHandler::getStrings(initialState.at(1), '(', ')');
+    QStringList shapesList = StringHandler::getStrings(initialState.at(1));
     // Now parse the shapes available in list
     QString lineShape = "";
     foreach (QString shape, shapesList) {
@@ -7154,7 +7168,7 @@ void ModelWidget::getCompositeModelConnections()
       QDomElement annotationElement = connectionChildren.at(j).toElement();
       if (annotationElement.tagName().compare("Annotation") == 0) {
         annotationFound = true;
-        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(annotationElement.attribute("Points"))), '(', ')');
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(annotationElement.attribute("Points"))));
       }
     }
     if (!annotationFound) {
@@ -7165,7 +7179,7 @@ void ModelWidget::getCompositeModelConnections()
       QPointF endPoint = pEndInterfacePointComponent->mapToScene(pEndInterfacePointComponent->boundingRect().center());
       points.append(point.arg(endPoint.x()).arg(endPoint.y()));
       QString pointsString = QString("{%1}").arg(points.join(","));
-      shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
+      shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)));
     }
     // Now parse the shapes available in list
     QString lineShape = "";
@@ -7402,7 +7416,7 @@ void ModelWidget::drawOMSModelConnections()
         QPointF endPoint = mpDiagramGraphicsView->roundPoint(pEndConnectorComponent->mapToScene(pEndConnectorComponent->boundingRect().center()));
         points.append(point.arg(endPoint.x()).arg(endPoint.y()));
         QString pointsString = QString("{%1}").arg(points.join(","));
-        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)));
         // Now parse the shapes available in list
         QString lineShape = "";
         foreach (QString shape, shapesList) {
@@ -8385,6 +8399,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 #endif
   MainWindow::instance()->getSimulateModelInteractiveAction()->setEnabled(enabled && oms);
   MainWindow::instance()->getSimulationSetupAction()->setEnabled(enabled && ((modelica && pLibraryTreeItem->isSimulationAllowed()) || (oms)));
+  MainWindow::instance()->getCalculateDataReconciliationAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   bool accessAnnotation = false;
   if (pLibraryTreeItem && (pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageText
                            || ((pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageText

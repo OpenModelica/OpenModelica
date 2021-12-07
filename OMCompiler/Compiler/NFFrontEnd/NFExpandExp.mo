@@ -407,7 +407,7 @@ public
   algorithm
     for i in iterators loop
       (node, range) := i;
-      iter := Mutable.create(Expression.INTEGER(0));
+      iter := Mutable.create(Expression.EMPTY(InstNode.getType(node)));
       e := Expression.replaceIterator(e, node, Expression.MUTABLE(iter));
       iters := iter :: iters;
       (range, true) := expand(range);

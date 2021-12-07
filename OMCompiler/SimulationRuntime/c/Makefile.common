@@ -15,7 +15,7 @@ LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
 INCLUDE_NONFMI=-I. -I$(builddir_inc)/c
 
-CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/c/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC
+CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 # CXXFLAGS can include everything as before. For FMI we need to use relative paths since
 # automatic builds might not add the -I., etc
@@ -65,6 +65,7 @@ RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
 ./simulation/options.h \
 ./simulation/simulation_info_json.h \
 ./simulation/simulation_input_xml.h \
+./simulation/simulation_omc_assert.h \
 ./simulation/simulation_runtime.h \
 ./simulation/omc_simulation_util.h
 
@@ -128,11 +129,8 @@ RUNTIMEUTIL_HEADERS = \
 ./util/omc_numbers.h \
 ./util/omc_spinlock.h \
 ./util/parallel_helper.h \
-./util/read_matlab4.c \
 ./util/read_matlab4.h \
-./util/read_csv.c \
 ./util/read_csv.h \
-./util/libcsv.c \
 ./util/libcsv.h \
 ./util/read_write.h \
 ./util/real_array.h \
@@ -362,7 +360,7 @@ RuntimeSources.mo: Makefile.common Makefile.objs RuntimeSources.mo.tpl
 	    -e "s#COMMON_FILES#`cat sources.tmp`#" \
 	    -e "s#DGESV_FILES#`echo $(DGESV_OBJS:%=\\\"./external_solvers/%.c\\\") | tr " " ,`#" \
 	    -e "s#NLS_FILES#`echo $(SOLVER_OBJS_NONLINEAR_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
-	    -e "s#CMINPACK_FILES#$(CMINPACK_OBJS:%=,\\\"./external_solvers/%.c\\\")#" \
+	    -e "s#CMINPACK_FILES#`echo $(CMINPACK_OBJS:%=\\\"./external_solvers/%.c\\\") | tr " " ,`#" \
 	    -e "s#LS_FILES#`echo $(SOLVER_OBJS_LINEAR_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
 	    -e "s#MIXED_FILES#`echo $(SOLVER_OBJS_MIXED_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
 	    RuntimeSources.mo.tpl > $@.tmp

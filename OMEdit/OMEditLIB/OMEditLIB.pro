@@ -33,6 +33,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   QT += printsupport widgets webkitwidgets concurrent
 }
 
+CONFIG += c++14
+
 TARGET = OMEdit
 TEMPLATE = lib
 CONFIG += staticlib
@@ -112,6 +114,7 @@ SOURCES += Util/Helper.cpp \
   Modeling/ModelWidgetContainer.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Modeling/FunctionArgumentDialog.cpp \
+  Modeling/InstallLibraryDialog.cpp \
   Search/SearchWidget.cpp \
   Options/OptionsDialog.cpp \
   Editors/BaseEditor.cpp \
@@ -133,6 +136,13 @@ SOURCES += Util/Helper.cpp \
   Annotations/EllipseAnnotation.cpp \
   Annotations/TextAnnotation.cpp \
   Annotations/BitmapAnnotation.cpp \
+  Annotations/DynamicAnnotation.cpp \
+  Annotations/BooleanAnnotation.cpp \
+  Annotations/ColorAnnotation.cpp \
+  Annotations/ExtentAnnotation.cpp \
+  Annotations/PointAnnotation.cpp \
+  Annotations/RealAnnotation.cpp \
+  Annotations/StringAnnotation.cpp \
   Element/ElementProperties.cpp \
   Element/Transformation.cpp \
   Modeling/DocumentationWidget.cpp \
@@ -186,7 +196,9 @@ SOURCES += Util/Helper.cpp \
   OMS/OMSSimulationOutputWidget.cpp \
   Animation/TimeManager.cpp \
   Util/ResourceCache.cpp \
-  Util/NetworkAccessManager.cpp
+  Util/NetworkAccessManager.cpp \
+  FlatModelica/Expression.cpp \
+  FlatModelica/ExpressionFuncs.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -203,6 +215,7 @@ HEADERS  += Util/Helper.h \
   Modeling/ModelWidgetContainer.h \
   Modeling/ModelicaClassDialog.h \
   Modeling/FunctionArgumentDialog.h \
+  Modeling/InstallLibraryDialog.h \
   Search/SearchWidget.h \
   Options/OptionsDialog.h \
   Editors/BaseEditor.h \
@@ -224,6 +237,13 @@ HEADERS  += Util/Helper.h \
   Annotations/EllipseAnnotation.h \
   Annotations/TextAnnotation.h \
   Annotations/BitmapAnnotation.h \
+  Annotations/DynamicAnnotation.h \
+  Annotations/BooleanAnnotation.h \
+  Annotations/ColorAnnotation.h \
+  Annotations/ExtentAnnotation.h \
+  Annotations/PointAnnotation.h \
+  Annotations/RealAnnotation.h \
+  Annotations/StringAnnotation.h \
   Element/ElementProperties.h \
   Element/Transformation.h \
   Modeling/DocumentationWidget.h \
@@ -281,7 +301,9 @@ HEADERS  += Util/Helper.h \
   Interfaces/InformationInterface.h \
   Interfaces/ModelInterface.h \
   Util/ResourceCache.h \
-  Util/NetworkAccessManager.h
+  Util/NetworkAccessManager.h \
+  FlatModelica/Expression.h \
+  FlatModelica/ExpressionFuncs.h
 
 CONFIG(osg) {
 

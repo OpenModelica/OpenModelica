@@ -180,7 +180,7 @@ suitesparse:
 		$(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" \
 		-DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" \
-		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/" \
 		-DBUILD_SHARED_LIBS:Bool=$(SUITESPARSE_SHARED)
 	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libamd.dylib               "$(builddir_lib_omc)/libamd.dylib"
@@ -367,10 +367,10 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 	mkdir -p $(builddir_inc)/fmil/
 	cp -pPR 3rdParty/FMIL/install/include/* $(builddir_inc)/fmil/
 
-3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt
+3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt $(LIBMODELICAZLIB)
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DCMAKE_INSTALL_INCLUDEDIR=include -DOMC_ZLIB_LIBRARY=$(LIBMODELICAZLIB) -DOMC_ZLIB_INCLUDE_DIR=$(builddir_inc) .. -G $(CMAKE_TARGET))
 
 # Install expat
 expat: fmil
@@ -434,7 +434,7 @@ cppzmq-clean:
 metis: $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
 $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT): 3rdParty/metis-5.1.0/CMakeLists.txt
 	mkdir -p 3rdParty/metis-5.1.0/build
-	(cd 3rdParty/metis-5.1.0/build && $(CMAKE) ../ -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" $(MAKE))
+	(cd 3rdParty/metis-5.1.0/build && $(CMAKE) ../ -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DCMAKE_INSTALL_INCLUDEDIR="include" -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" $(MAKE))
 	cp 3rdParty/metis-5.1.0/build/libmetis/libmetis$(STAEXT) $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
 metis-clean:
 	test ! -f 3rdParty/metis-5.1.0/Makefile || $(MAKE) -C 3rdParty/metis-5.1.0 clean
@@ -495,7 +495,7 @@ clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPcl
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 	# remove ModelicaExternalC stuff
-	if test -f 3rdParty/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C 3rdParty/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
+	if test -f SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf 3rdParty/sundials-5.4.0/build
 	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
@@ -606,21 +606,26 @@ sundials: suitesparse
 $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	mkdir -p 3rdParty/sundials-5.4.0/build
 	(cd 3rdParty/sundials-5.4.0/build && \
-	    $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" \
-	    -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
-	    -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" -DLDFLAGS="$(LDFLAGS)" \
-	    -DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
-	    $(SUITESPARSE_LIBS) \
-	    -DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF -DSUNDIALS_EXAMPLES_INSTALL_PATH=./examples_install \
-	    $(IS_MINGW32) $(IS_MINGW64) \
-	    -DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS))
+		$(CMAKE) .. -G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX="`pwd`" \
+		-DCMAKE_INSTALL_INCLUDEDIR=include \
+		-DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON \
+		-DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
+		-DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" \
+		-DLDFLAGS="$(LDFLAGS)" \
+		-DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
+		$(SUITESPARSE_LIBS) \
+		-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF \
+		$(IS_MINGW32) $(IS_MINGW64) \
+		-DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS))
+
 	$(MAKE) -C 3rdParty/sundials-5.4.0/build install
 	# Test SUNDIALS but allow it to fail
 	#-$(MAKE) -C 3rdParty/sundials-5.4.0/build test test_install || echo "WARNING: SUNDIALS test failing, continuing any way"
-	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
-	# adrpo: do not copy the headers as they are not needed!
-	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
-	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/c/sundials/kinsol/
+	mkdir -p $(builddir_inc)/sundials
+	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(builddir_inc))
+
 	# copy the libs to the build/lib/omc directory
 	find 3rdParty/sundials-5.4.0/build/lib* -not -type d -exec cp -apf {} $(builddir_lib_omc) ";"
 
@@ -664,23 +669,7 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	@touch "$@"
 
 clean-sundials:
-	rm -rf 3rdParty/sundials-5.4.0/build "$(OMBUILDDIR)/include/omc/cpp/sundials" "$(builddir_lib_omc)/libsundials"* "$(builddir_inc)/c/sundials"
-
-# Build Nox
-nox: 3rdParty/trilinos-nox/CMakeLists.txt $(SUITESPARSE_TARGET)
-	mkdir -p 3rdParty/trilinos-nox/build
-	cd 3rdParty/trilinos-nox/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DOMDEV_DIR="$(OMDEVMSYS)"
-	$(MAKE) -C 3rdParty/trilinos-nox/build install
-	rm -r 3rdParty/trilinos-nox/build/lib/cmake
-	mkdir -p "$(builddir_lib_omc)/cpp"
-	(test `uname` = Darwin || test `uname` = Linux) \
-	  && cp -pf 3rdParty/trilinos-nox/build/lib/* "$(builddir_lib_omc)/cpp" \
-	  || cp -pf 3rdParty/trilinos-nox/build/bin/* "$(builddir_lib_omc)/cpp"
-
-clean-nox:
-	test -d 3rdParty/trilinos-nox/build && cd 3rdParty/trilinos-nox/build && $(MAKE) clean
-	rm -rf $(OMBUILDDIR)/include/omc/cpp/trilinos-nox
-	rm -f $(builddir_lib_omc)/cpp/lib{belos,loca,ml,nox,teuchos}*
+	rm -rf 3rdParty/sundials-5.4.0/build "$(OMBUILDDIR)/include/omc/cpp/sundials" "$(builddir_lib_omc)/libsundials"* "$(builddir_inc)/sundials"
 
 # Build libffi
 LIBFFI=3rdParty/libffi
@@ -696,14 +685,16 @@ libffi-clean:
 sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos
 
-MODELICAEXTERNALC=3rdParty/ModelicaExternalC
+MODELICAEXTERNALC=SimulationRuntime/ModelicaExternalC
 ModelicaExternalC: $(LIBMODELICAEXTERNALC) $(LIBMODELICASTANDARDTABLES) $(LIBMODELICAIO) $(LIBMODELICAMATIO) $(LIBMODELICAZLIB)
 $(LIBMODELICAEXTERNALC):
 	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || ./autogen.sh))
-	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || (./configure --prefix="`pwd`" ${MSL_EXTRA_ARGS} --disable-hdf5 --enable-static-zlib "--host=$(host)" --libdir="$(OMBUILDDIR)/$(LIB_OMC)/" CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
+	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || (./configure --prefix="`pwd`" ${MSL_EXTRA_ARGS} --enable-shared --disable-hdf5 --enable-static-zlib "--host=$(host)" --libdir="$(OMBUILDDIR)/$(LIB_OMC)/" CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools"
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools" install
 	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libzlib.la $(OMBUILDDIR)/$(LIB_OMC)/libModelica*.la
+	cp -pPR "$(MODELICAEXTERNALC)/C-Sources/zlib/zlib.h" $(builddir_inc)/
+	cp -pPR "$(MODELICAEXTERNALC)/C-Sources/zlib/zconf.h" $(builddir_inc)/
 	# test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaExternalC.0.dylib "$(LIBMODELICAEXTERNALC)"
 	# test ! `uname` = Darwin || (install_name_tool -id @rpath/libModelicaStandardTables.0.dylib "$(LIBMODELICASTANDARDTABLES)" && install_name_tool -change "$(LIBMODELICAMATIO:%.dylib=%.0.dylib)" @rpath/libModelicaMatIO.0.dylib "$(LIBMODELICASTANDARDTABLES)" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$(LIBMODELICASTANDARDTABLES)")
 	# test ! `uname` = Darwin || (install_name_tool -id @rpath/libzlib.0.dylib "$(LIBMODELICAZLIB)" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$(LIBMODELICAZLIB)")

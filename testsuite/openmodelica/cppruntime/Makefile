@@ -29,6 +29,7 @@ solveTest.mos \
 testArrayEquations.mos \
 testMatrixIO.mos \
 testMatrixState.mos \
+testReduction.mos \
 testVectorizedBlocks.mos \
 testVectorizedPowerSystem.mos \
 testVectorizedSolarSystem.mos \

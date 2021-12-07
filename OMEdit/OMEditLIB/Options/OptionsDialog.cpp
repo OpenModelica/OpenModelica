@@ -898,23 +898,30 @@ void OptionsDialog::readFMISettings()
     mpFMIPage->getMoveFMUTextBox()->setText(mpSettings->value("FMIExport/MoveFMU").toString());
   }
   // read platforms
-  QStringList platforms = mpSettings->value("FMIExport/Platforms").toStringList();
-  foreach (QString platform, platforms) {
-    int currentIndex = mpFMIPage->getLinkingComboBox()->findData(platform);
-    if (currentIndex > -1) {
-      mpFMIPage->getLinkingComboBox()->setCurrentIndex(currentIndex);
-    } else {
-      int i = 0;
-      while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
-        if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
-          QCheckBox *pPlatformCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-          if (pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString().compare(platform) == 0) {
-            pPlatformCheckBox->setChecked(true);
-            break;
-          }
+  if (mpSettings->contains("FMIExport/Platforms")) {
+    QStringList platforms = mpSettings->value("FMIExport/Platforms").toStringList();
+    int i = 0;
+    while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
+      if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
+        QCheckBox *pPlatformCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
+        if (platforms.contains(pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString())) {
+          pPlatformCheckBox->setChecked(true);
+          platforms.removeOne(pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString());
+        } else {
+          pPlatformCheckBox->setChecked(false);
         }
-        i++;
+      } else if (dynamic_cast<QLineEdit*>(pLayoutItem->widget())) { // custom platforms
+        QLineEdit *pPlatformTextBox = dynamic_cast<QLineEdit*>(pLayoutItem->widget());
+        pPlatformTextBox->setText(platforms.join(","));
       }
+      i++;
+    }
+  }
+  // read the solver for co-simulation
+  if (mpSettings->contains("FMIExport/solver")) {
+    int currentIndex = mpFMIPage->getSolverForCoSimulationComboBox()->findData(mpSettings->value("FMIExport/solver").toString());
+    if (currentIndex > -1) {
+      mpFMIPage->getSolverForCoSimulationComboBox()->setCurrentIndex(currentIndex);
     }
   }
   // read model description filter
@@ -923,6 +930,10 @@ void OptionsDialog::readFMISettings()
     if (currentIndex > -1) {
       mpFMIPage->getModelDescriptionFiltersComboBox()->setCurrentIndex(currentIndex);
     }
+  }
+  // read include resources
+  if (mpSettings->contains("FMIExport/IncludeResources")) {
+    mpFMIPage->getIncludeResourcesCheckBox()->setChecked(mpSettings->value("FMIExport/IncludeResources").toBool());
   }
   // read include source code
   if (mpSettings->contains("FMIExport/IncludeSourceCode")) {
@@ -1544,8 +1555,6 @@ void OptionsDialog::saveFMISettings()
   mpSettings->setValue("FMIExport/MoveFMU", mpFMIPage->getMoveFMUTextBox()->text());
   // save platforms
   QStringList platforms;
-  QString linking = mpFMIPage->getLinkingComboBox()->itemData(mpFMIPage->getLinkingComboBox()->currentIndex()).toString();
-  platforms.append(linking);
   int i = 0;
   while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
     if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
@@ -1553,11 +1562,18 @@ void OptionsDialog::saveFMISettings()
       if (pPlatformCheckBox->isChecked()) {
         platforms.append(pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString());
       }
+    } else if (dynamic_cast<QLineEdit*>(pLayoutItem->widget())) { // custom platforms
+      QLineEdit *pPlatformTextBox = dynamic_cast<QLineEdit*>(pLayoutItem->widget());
+      if (!pPlatformTextBox->text().isEmpty()) {
+        platforms.append(pPlatformTextBox->text().split(","));
+      }
     }
     i++;
   }
   mpSettings->setValue("FMIExport/Platforms", platforms);
+  mpSettings->setValue("FMIExport/solver", mpFMIPage->getSolverForCoSimulationComboBox()->itemData(mpFMIPage->getSolverForCoSimulationComboBox()->currentIndex()).toString());
   mpSettings->setValue("FMIExport/ModelDescriptionFilter", mpFMIPage->getModelDescriptionFiltersComboBox()->currentText());
+  mpSettings->setValue("FMIExport/IncludeResources", mpFMIPage->getIncludeResourcesCheckBox()->isChecked());
   mpSettings->setValue("FMIExport/IncludeSourceCode", mpFMIPage->getIncludeSourceCodeCheckBox()->isChecked());
   mpSettings->setValue("FMIExport/GenerateDebugSymbols", mpFMIPage->getGenerateDebugSymbolsCheckBox()->isChecked());
   mpSettings->setValue("FMIImport/DeleteFMUDirectoyAndModel", mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->isChecked());
@@ -1983,16 +1999,15 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // activate access annotation
   mpActivateAccessAnnotationsLabel = new Label(tr("Activate Access Annotations *"));
   mpActivateAccessAnnotationsComboBox = new QComboBox;
+  QStringList activateAccessAnnotationsDescriptions;
+  activateAccessAnnotationsDescriptions << tr("Activates the access annotations even for the non-encrypted libraries.")
+                      << tr("Activates the access annotations even if the .mol contains a non-encrypted library.")
+                      << tr("Deactivates access annotations except for encrypted libraries.");
   mpActivateAccessAnnotationsComboBox->addItem(tr("Always"), GeneralSettingsPage::Always);
   mpActivateAccessAnnotationsComboBox->addItem(tr("When loading .mol file(s)"), GeneralSettingsPage::Loading);
   mpActivateAccessAnnotationsComboBox->addItem(tr("Never"), GeneralSettingsPage::Never);
   mpActivateAccessAnnotationsComboBox->setCurrentIndex(1);
-  mpActivateAccessAnnotationsComboBox->setToolTip(tr("<html><head/><body>"
-                                                     "<p>Options for handling of access annotations:</p>"
-                                                     "<ul><li><i>Always:</i> Activates the access annotations even for the non-encrypted libraries.</li>"
-                                                     "<li><i>When loading .mol file(s):</i> Activates the access annotations even if the .mol contains a non-encrypted library.</li>"
-                                                     "<li><i>Never:</i> Deactivates access annotations except for encrypted libraries.</li></ul>"
-                                                     "</body></html>"));
+  Utilities::setToolTip(mpActivateAccessAnnotationsComboBox, tr("Options for handling of access annotations"), activateAccessAnnotationsDescriptions);
   // create backup file
   mpCreateBackupFileCheckbox = new QCheckBox(tr("Create a model.bak-mo backup file when deleting a model."));
   mpCreateBackupFileCheckbox->setChecked(true);
@@ -2612,16 +2627,15 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   // Byte Order Mark BOM
   mpBOMLabel = new Label(tr("Byte Order Mark (BOM):"));
   mpBOMComboBox = new QComboBox;
-  mpBOMComboBox->setToolTip(tr("<html><head/><body>"
-                               "<p>Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any.</p>"
-                               "<ul><li><i>Always Add:</i> always add a BOM when saving a file.</li>"
-                               "<li><i>Keep If Already Present:</i> save the file with a BOM if it already had one when it was loaded.</li>"
-                               "<li><i>Always Delete:</i> never write a BOM, possibly deleting a pre-existing one.</li></ul>"
-                               "</body></html>"));
+  QStringList bomDescriptions;
+  bomDescriptions << tr("Always add a BOM when saving a file.")
+                  << tr("Save the file with a BOM if it already had one when it was loaded.")
+                  << tr("Never write a BOM, possibly deleting a pre-existing one.");
   mpBOMComboBox->addItem(tr("Always Add"), Utilities::AlwaysAddBom);
   mpBOMComboBox->addItem(tr("Keep If Already Present"), Utilities::KeepBom);
   mpBOMComboBox->addItem(tr("Always Delete"), Utilities::AlwaysDeleteBom);
   mpBOMComboBox->setCurrentIndex(1);
+  Utilities::setToolTip(mpBOMComboBox, tr("Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any"), bomDescriptions);
   // set format groupbox layout
   QGridLayout *pFormatGroupBoxLayout = new QGridLayout;
   pFormatGroupBoxLayout->addWidget(mpLineEndingLabel, 0, 0);
@@ -3834,13 +3848,8 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
   mpTargetLanguageComboBox = new QComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
-  mpTargetLanguageComboBox->setToolTip(simCodeTarget.mainDescription);
-  int i = 0;
-  foreach (QString description, simCodeTarget.descriptions) {
-    mpTargetLanguageComboBox->setItemData(i, description, Qt::ToolTipRole);
-    i++;
-  }
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
+  Utilities::setToolTip(mpTargetLanguageComboBox, simCodeTarget.mainDescription, simCodeTarget.descriptions);
   // Target Build
   mpTargetBuildLabel = new Label(tr("Target Build:"));
   mpTargetBuildComboBox = new QComboBox;
@@ -3851,6 +3860,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpTargetBuildComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
   mpTargetBuildComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
   mpTargetBuildComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
+  mpTargetBuildComboBox->addItem("Visual Studio 2019 (msvc19)", "msvc19");
 #else
   mpTargetBuildComboBox->addItem("GNU Make", "gcc");
 #endif
@@ -4944,6 +4954,32 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
                                FMIPage::FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER + tr(" i.e.,") + " Modelica.Electrical.Analog.Examples.ChuaCircuit\n" +
                                FMIPage::FMU_FULL_CLASS_NAME_UNDERSCORES_PLACEHOLDER + tr(" i.e.,") + " Modelica_Electrical_Analog_Examples_ChuaCircuit\n" +
                                FMIPage::FMU_SHORT_CLASS_NAME_PLACEHOLDER + tr(" i.e.,") + " ChuaCircuit");
+  // platforms
+  mpPlatformsGroupBox = new QGroupBox(tr("Platforms"));
+  Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH matching pattern \"*-*-*-*cc\".\n"
+                                           "In order to run docker platforms add docker to PATH.\n"
+                                           "A source-code only FMU is generated if no platform is selected."));
+  // set the type groupbox layout
+  QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
+  pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pPlatformsLayout->addWidget(pPlatformNoteLabel);
+  QCheckBox *pNativePlatformCheckBox = new QCheckBox("Native");
+  pNativePlatformCheckBox->setChecked(true);
+  pNativePlatformCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, "static");
+  pPlatformsLayout->addWidget(pNativePlatformCheckBox);
+  // docker platforms
+  QStringList dockerPlarforms;
+  dockerPlarforms << "x86_64-linux-gnu docker run --pull=never multiarch/crossbuild"
+                  << "i686-linux-gnu docker run --pull=never multiarch/crossbuild"
+                  << "x86_64-w64-mingw32 docker run --pull=never multiarch/crossbuild"
+                  << "i686-w64-mingw32 docker run --pull=never multiarch/crossbuild"
+                  << "arm-linux-gnueabihf docker run --pull=never multiarch/crossbuild"
+                  << "aarch64-linux-gnu docker run --pull=never multiarch/crossbuild";
+  foreach (QString dockerPlarform, dockerPlarforms) {
+    QCheckBox *pCheckBox = new QCheckBox(dockerPlarform);
+    pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, dockerPlarform);
+    pPlatformsLayout->addWidget(pCheckBox);
+  }
 #ifdef WIN32
   QStringList paths = QString(getenv("PATH")).split(";");
 #else
@@ -4956,38 +4992,32 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
     QDir dir(path);
     compilers << dir.entryList(nameFilters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
   }
-  mpPlatformsGroupBox = new QGroupBox(tr("Platforms"));
-  Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH\n"
-                                           "matching pattern \"*-*-*-*cc\"."));
-  mpLinkingComboBox = new QComboBox;
-  mpLinkingComboBox->addItem(tr("None"), "none");
-  mpLinkingComboBox->addItem(tr("Dynamic"), "dynamic");
-  mpLinkingComboBox->addItem(tr("Static"), "static");
-  mpLinkingComboBox->setCurrentIndex(2);
-  // set the type groupbox layout
-  QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
-  pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pPlatformsLayout->addWidget(pPlatformNoteLabel);
-  pPlatformsLayout->addWidget(mpLinkingComboBox);
   foreach (QString compiler, compilers) {
     QString platformName = compiler.left(compiler.lastIndexOf('-'));
-    QCheckBox *pCheckBox = new QCheckBox(platformName);
+    QCheckBox *pCheckBox = new QCheckBox(QString("%1 (auto-detected)").arg(platformName));
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, platformName);
     pPlatformsLayout->addWidget(pCheckBox);
   }
+  // custom platforms
+  QLineEdit *pCustomPlatformsTextBox = new QLineEdit;
+  QString customPlatformTip = tr("Comma separated list of additional platforms");
+  pCustomPlatformsTextBox->setPlaceholderText(customPlatformTip);
+  pCustomPlatformsTextBox->setToolTip(customPlatformTip);
+  pPlatformsLayout->addWidget(pCustomPlatformsTextBox);
   mpPlatformsGroupBox->setLayout(pPlatformsLayout);
+  // Solver for co-simulation
+  mpSolverForCoSimulationComboBox = new QComboBox;
+  mpSolverForCoSimulationComboBox->addItem(tr("Explicit Euler"), "");
+  mpSolverForCoSimulationComboBox->addItem(tr("CVODE"), "cvode");
   // Model description filters
   OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");
   mpModelDescriptionFiltersComboBox = new QComboBox;
   mpModelDescriptionFiltersComboBox->addItems(fmiFilters.validOptions);
-  mpModelDescriptionFiltersComboBox->setToolTip(fmiFilters.mainDescription);
-  int i = 0;
-  foreach (QString description, fmiFilters.descriptions) {
-    mpModelDescriptionFiltersComboBox->setItemData(i, description, Qt::ToolTipRole);
-    i++;
-  }
   mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText("internal"));
+  Utilities::setToolTip(mpModelDescriptionFiltersComboBox, fmiFilters.mainDescription, fmiFilters.descriptions);
   connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableIncludeSourcesCheckBox(QString)));
+  // include resources checkbox
+  mpIncludeResourcesCheckBox = new QCheckBox(tr("Include Modelica based resources via loadResource"));
   // include source code checkbox
   mpIncludeSourceCodeCheckBox = new QCheckBox(tr("Include Source Code (model description filter \"blackBox\" will override this, because black box FMUs do never contain their source code.)"));
   mpIncludeSourceCodeCheckBox->setChecked(true);
@@ -5005,10 +5035,13 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pExportLayout->addWidget(mpMoveFMUTextBox, 3, 1);
   pExportLayout->addWidget(mpBrowseFMUDirectoryButton, 3, 2);
   pExportLayout->addWidget(mpPlatformsGroupBox, 4, 0, 1, 3);
-  pExportLayout->addWidget(new Label(tr("Model Description Filters:")), 5, 0);
-  pExportLayout->addWidget(mpModelDescriptionFiltersComboBox, 5, 1);
-  pExportLayout->addWidget(mpIncludeSourceCodeCheckBox, 6, 0, 1, 3);
-  pExportLayout->addWidget(mpGenerateDebugSymbolsCheckBox, 7, 0, 1, 3);
+  pExportLayout->addWidget(new Label(tr("Solver for Co-Simulation:")), 5, 0);
+  pExportLayout->addWidget(mpSolverForCoSimulationComboBox, 5, 1, 1, 2);
+  pExportLayout->addWidget(new Label(tr("Model Description Filters:")), 6, 0);
+  pExportLayout->addWidget(mpModelDescriptionFiltersComboBox, 6, 1, 1, 2);
+  pExportLayout->addWidget(mpIncludeResourcesCheckBox, 7, 0, 1, 3);
+  pExportLayout->addWidget(mpIncludeSourceCodeCheckBox, 8, 0, 1, 3);
+  pExportLayout->addWidget(mpGenerateDebugSymbolsCheckBox, 9, 0, 1, 3);
   mpExportGroupBox->setLayout(pExportLayout);
   // import groupbox
   mpImportGroupBox = new QGroupBox(tr("Import"));
@@ -5089,6 +5122,22 @@ QString FMIPage::getFMIExportType()
   } else {
     return "me_cs";
   }
+}
+
+/*!
+ * \brief FMIPage::getFMIFlags
+ * Returns the FMI flags.
+ * \return
+ */
+QString FMIPage::getFMIFlags()
+{
+  QStringList fmiFlags;
+  QString solver = mpSolverForCoSimulationComboBox->itemData(mpSolverForCoSimulationComboBox->currentIndex()).toString();
+  if (!solver.isEmpty()) {
+    fmiFlags.append(QString("s:%1").arg(solver));
+  }
+
+  return fmiFlags.join(",");
 }
 
 /*!
@@ -5418,7 +5467,6 @@ void DiscardLocalTranslationFlagsDialog::listLocalTranslationFlagsClasses(Librar
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !pChildLibraryTreeItem->isSystemLibrary()) {
       if (pChildLibraryTreeItem->mSimulationOptions.isValid()) {
         QListWidgetItem *pListItem = new QListWidgetItem(mpClassesWithLocalTranslationFlagsListWidget);
-        pListItem->setFlags(pListItem->flags() | Qt::ItemIsUserCheckable);
         pListItem->setCheckState(Qt::Checked);
         pListItem->setText(pChildLibraryTreeItem->getNameStructure());
       }
@@ -5458,6 +5506,7 @@ void DiscardLocalTranslationFlagsDialog::discardLocalTranslationFlags()
       LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pClassWithLocalTranslationFlags->text());
       if (pLibraryTreeItem) {
         pLibraryTreeItem->mSimulationOptions.setIsValid(false);
+        pLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(false);
       }
     }
   }

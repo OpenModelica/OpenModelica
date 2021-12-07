@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 2.8.9)
 project(${KinsolName})
 IF(DGESV_FOUND)
  include_directories (${DGESV_INCLUDE_DIR})
- add_library(${KinsolName} Kinsol.cpp KinsolLapack.cpp KinsolSettings.cpp FactoryExport.cpp  ${DGESV_SRCS})
+ add_library(${KinsolName} Kinsol.cpp KinsolSettings.cpp FactoryExport.cpp  ${DGESV_SRCS})
  target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES}  ${ModelicaName} )
 ELSE()
  #use full Lapack
- add_library(${KinsolName} Kinsol.cpp KinsolLapack.cpp KinsolSettings.cpp FactoryExport.cpp)
+ add_library(${KinsolName} Kinsol.cpp KinsolSettings.cpp FactoryExport.cpp)
  target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES}  ${ModelicaName} ${LAPACK_LIBRARIES})
 ENDIF(DGESV_FOUND)
 

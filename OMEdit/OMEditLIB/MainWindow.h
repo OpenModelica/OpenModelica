@@ -39,8 +39,6 @@
 
 extern "C" {
 #include "meta/meta_modelica.h"
-#include "omc_config.h"
-#include "gc.h"
 }
 
 #include <QtGlobal>
@@ -173,6 +171,7 @@ public:
   QAction* getCheckModelAction() {return mpCheckModelAction;}
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
+  QAction* getCalculateDataReconciliationAction() {return mpCalculateDataReconciliationAction;}
   QAction* getExportFMUAction() {return mpExportFMUAction;}
   QAction* getExportEncryptedPackageAction() {return mpExportEncryptedPackageAction;}
   QAction* getExportRealonlyPackageAction() {return mpExportReadonlyPackageAction;}
@@ -251,6 +250,7 @@ public:
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
                                    const char* logY, const char* xLabel, const char* yLabel, const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
                                    const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale, const char* variables);
+  void addSystemLibraries();
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
@@ -333,6 +333,8 @@ private:
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   QAction *mpExportToOMNotebookAction;
+  QAction *mpInstallLibraryAction;
+  QAction *mpUpgradeInstalledLibrariesAction;
   QAction *mpClearRecentFilesAction;
   QAction *mpPrintModelAction;
   QAction *mpQuitAction;
@@ -366,6 +368,8 @@ private:
 #endif
   QAction *mpSimulateModelInteractiveAction;
   QAction *mpArchivedSimulationsAction;
+  // Data reconciliation action
+  QAction *mpCalculateDataReconciliationAction;
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
@@ -440,6 +444,7 @@ private:
   QAction *mpAddSubModelAction;
   QAction *mpOMSSimulateAction;
   // Toolbars
+  QMenu *mpFileMenu;
   QMenu *mpNewModelMenu;
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -480,6 +485,7 @@ public slots:
   void loadExternalModels();
   void openDirectory();
   void loadSystemLibrary();
+  void loadSystemLibrary(const QString &library, QString version = QString("default"));
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
   void openRecentFile();
@@ -520,6 +526,8 @@ public slots:
 #endif
   void runOMSensPlugin();
   void exportModelToOMNotebook();
+  void openInstallLibraryDialog();
+  void upgradeInstalledLibraries();
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
   void exportModelAsImage(bool copyToClipboard = false);
@@ -553,6 +561,7 @@ private slots:
   void documentationDockWidgetVisibilityChanged(bool visible);
   void threeDViewerDockWidgetVisibilityChanged(bool visible);
   void autoSave();
+  void showDataReconciliationDialog();
   void showDebugConfigurationsDialog();
   void showAttachToProcessDialog();
   void createGitRepository();
@@ -589,6 +598,8 @@ public:
   AboutOMEditDialog(MainWindow *pMainWindow);
 private:
   Label *mpOMContributorsLabel;
+public slots:
+  void showReportIssue();
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
 };

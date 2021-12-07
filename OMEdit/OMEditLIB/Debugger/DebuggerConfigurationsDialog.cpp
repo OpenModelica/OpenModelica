@@ -63,7 +63,7 @@ DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debug
   QFrame *pContainerFrame = new QFrame;
   pContainerFrame->setFrameShape(QFrame::StyledPanel);
   // Configuration Name
-  mpNameLabel = new Label(tr("Name:"));
+  mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(mDebuggerConfiguration.name);
   // Program File
   mpProgramLabel = new Label(tr("Program:"));

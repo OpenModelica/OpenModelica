@@ -1,0 +1,47 @@
+// name:     PowerSystems.Examples.AC1ph_DC.Elementary.DoubleLine
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC1ph_DC.Elementary.DoubleLine);
+compareVars :=
+{
+  "meterF.p",
+  "meterF.v",
+  "meterF.i",
+  "meterL.p",
+  "meterL.v",
+  "meterL.i"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// PowerSystems.Examples.AC1ph_DC.Elementary.DoubleLine
+// {"meterF.p","meterF.v","meterF.i","meterL.p","meterL.v","meterL.i"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 0.5, numberOfIntervals = 20000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Elementary.DoubleLine', options = '', outputFormat = 'mat', variableFilter = 'time|meterF.p|meterF.v|meterF.i|meterL.p|meterL.v|meterL.i', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC1ph_DC.Elementary.DoubleLine_res.mat
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

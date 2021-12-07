@@ -19,13 +19,17 @@ ArrayConnect1.mo \
 ArrayConnect2.mo \
 ArrayConnect3.mo \
 ArrayConstructorComplex1.mo \
+ArrayConstructorRecord1.mo \
+ArrayConstructorRecord2.mo \
 arrfunc.mo \
 Assert1.mo \
 Assert2.mo \
 Assert3.mo \
+Assert4.mo \
 AssertInvalid1.mo \
 AssertInvalid2.mo \
 AssertInvalid3.mo \
+AssertInvalid4.mo \
 AssignConstant1.mo \
 AssignInput1.mo \
 AssignParameter1.mo \
@@ -70,6 +74,7 @@ BuiltinAttribute18.mo \
 BuiltinAttribute19.mo \
 BuiltinAttribute20.mo \
 BuiltinAttribute21.mo \
+BuiltinAttribute22.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -171,6 +176,10 @@ CevalRecordArray2.mo \
 CevalRecordArray4.mo \
 CevalRecordArray5.mo \
 CevalRecordArray6.mo \
+CevalRecordArray7.mo \
+CevalRecordArray8.mo \
+CevalRecordArray9.mo \
+CevalRecordArray10.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
@@ -215,9 +224,16 @@ ClassMod3.mo \
 ClassMod4.mo \
 ClassMod5.mo \
 ClassMod6.mo \
+Clock1.mo \
+Clock2.mo \
+Clock3.mo \
+Clock4.mo \
+Clock5.mo \
+Clock6.mo \
 ClockConstructor1.mo \
 CombineSubscripts1.mo \
 CombineSubscripts2.mo \
+CombineSubscripts3.mo \
 Comment1.mo \
 CompAsFunc.mo \
 ComponentAsTypeError.mo \
@@ -287,6 +303,7 @@ const7.mo \
 const8.mo \
 ConstrainingClass1.mo \
 ConstrainingClass2.mo \
+ConstrainingClass3.mo \
 ConstrainingClassFunc1.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
@@ -321,6 +338,7 @@ dim19.mo \
 dim7.mo \
 dim8.mo \
 DerivedRootClass1.mo \
+DumpFlatModel1.mo \
 DuplicateElements1.mo \
 DuplicateElements2.mo \
 DuplicateElements3.mo \
@@ -341,6 +359,8 @@ Each4.mo \
 Each5.mo \
 Each6.mo \
 EmptyArray1.mo \
+EmptyArray2.mo \
+EmptyArray3.mo \
 Encapsulated1.mo \
 Encapsulated2.mo \
 EncapsulatingInst1.mo \
@@ -378,6 +398,9 @@ ExpandableConnector2.mo \
 ExpandableConnector3.mo \
 ExpandableConnector4.mo \
 ExpandableConnector5.mo \
+ExpandableConnector6.mo \
+ExpandableConnector7.mo \
+ExpandableConnector8.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
 ExpandableConnectorNonDecl1.mo \
@@ -457,6 +480,7 @@ ForEquationNonParam.mo \
 ForEquationShadow1.mo \
 ForStatement1.mo \
 ForStatement2.mo \
+ForStatement3.mo \
 ForStatementArray.mo \
 ForStatementNonVector.mo \
 ForStatementPrefix.mo \
@@ -567,6 +591,7 @@ FunctionalArgInvalidType1.mo \
 FunctionCompOrder1.mo \
 FunctionCompOrder2.mo \
 FunctionCompOrder3.mo \
+FunctionCompOrder4.mo \
 FunctionDerivative1.mo \
 FunctionDerivativeInvalidInput1.mo \
 FunctionDerivativeInvalidOrder1.mo \
@@ -622,6 +647,7 @@ IfExpression7.mo \
 IfExpression8.mo \
 IfExpression10.mo \
 IfExpression11.mo \
+IfExpression12.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -708,6 +734,7 @@ lookup1.mo \
 lookup2.mo \
 lookup3.mo \
 lookup4.mo \
+LookupLibrary1.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \
@@ -736,6 +763,7 @@ NoEvent2.mo \
 NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
+NoScalarize1.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
@@ -796,6 +824,7 @@ PartialType3.mo \
 Prefix1.mo \
 Prefix2.mo \
 Prefix3.mo \
+PrintRecordTypes1.mo \
 PropagateExtends.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \
@@ -825,6 +854,7 @@ RecursiveInst1.mo \
 RecursiveInst2.mo \
 RecursiveInst3.mo \
 RedeclareClass1.mo \
+RedeclareClass2.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
 RedeclareDim1.mo \
@@ -856,6 +886,7 @@ RedeclareMod5.mo \
 RedeclareMod6.mo \
 RedeclareMod7.mo \
 RedeclareMod8.mo \
+RedeclareMod9.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \

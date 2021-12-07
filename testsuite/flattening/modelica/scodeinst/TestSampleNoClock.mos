@@ -74,7 +74,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   end for;
 // end Modelica.Math.BooleanVectors.anyTrue;
 //
-// function Modelica.Math.BooleanVectors.countTrue \"Inline before index reduction\" \"Returns the number of true entries in a Boolean vector\"
+// function Modelica.Math.BooleanVectors.countTrue \"Returns the number of true entries in a Boolean vector\"
 //   input Boolean[:] b \"Boolean vector\";
 //   output Integer n \"Number of true entries\";
 // algorithm

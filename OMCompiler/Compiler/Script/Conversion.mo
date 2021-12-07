@@ -42,6 +42,7 @@ protected
   import Parser;
   import System;
   import UnorderedMap;
+  import UnorderedSet;
   import Util;
   import MetaModelica.Dangerous.*;
 
@@ -91,6 +92,7 @@ protected
 
   type RuleList = list<ConversionRule>;
   type RuleTable = UnorderedMap<String, RuleList>;
+  type TypeTable = UnorderedMap<String, Absyn.Path>;
 
   // Used to specify which arguments to the conversion functions can be vectorized.
   type ArgType = enumeration(SCALAR, ARRAY);
@@ -144,6 +146,13 @@ protected
     redeclare function addConflictDefault = addConflictReplace;
   end ImportTreeImpl;
 
+  uniontype Env
+    record ENV
+      TypeTable components;
+      ImportTree imports;
+    end ENV;
+  end Env;
+
 public
   function convertPackage
     "Converts a package using the given conversion script file."
@@ -151,7 +160,7 @@ public
     input String scriptFile;
   protected
     ConversionRules rules;
-    ImportTree imports;
+    Env env;
     list<GlobalScript.Statement> stmts;
   algorithm
     stmts := loadScript(scriptFile);
@@ -162,7 +171,7 @@ public
       dumpRules(rules);
     end if;
 
-    cls := convertClass(cls, rules, ImportTree.new(), {});
+    cls := convertClass(cls, rules, newEnv(), {});
   end convertPackage;
 
 protected
@@ -655,7 +664,7 @@ protected
     "Looks up the conversion rules associated with the given type name."
     input Absyn.Path typePath;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     output Option<ConversionRule> typeRule = NONE();
     output RuleTable localRules = newRuleTable();
     output list<ConversionRule> modifierRules = {};
@@ -695,6 +704,16 @@ protected
   algorithm
     table := UnorderedMap.new<RuleList>(System.stringHashDjb2Mod, stringEq);
   end newRuleTable;
+
+  function newTypeTable
+    output TypeTable table;
+  algorithm
+    table := UnorderedMap.new<Absyn.Path>(System.stringHashDjb2Mod, stringEq);
+  end newTypeTable;
+
+  function newEnv
+    output Env env = ENV(newTypeTable(), ImportTree.new());
+  end newEnv;
 
   function sortLocalRules
     "Sorts a list of local rules, inserting element rules into the given table
@@ -853,26 +872,26 @@ protected
     "Converts an Absyn.Program."
     input output Absyn.Program program;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
   algorithm
-    program.classes := list(convertClass(c, rules, imports, {}) for c in program.classes);
+    program.classes := list(convertClass(c, rules, env, {}) for c in program.classes);
   end convertProgram;
 
   function convertClass
     "Converts an Absyn.Class."
     input output Absyn.Class cls;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input list<ConversionRules> extendsRules;
   algorithm
-    cls.body := convertClassDef(cls.body, rules, imports, extendsRules, cls.info);
+    cls.body := convertClassDef(cls.body, rules, env, extendsRules, cls.info);
   end convertClass;
 
   function convertClassDef
     "Converts an Absyn.ClassDef."
     input output Absyn.ClassDef cdef;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input list<ConversionRules> extendsRules;
     input SourceInfo info;
   algorithm
@@ -887,16 +906,16 @@ protected
 
       case Absyn.ClassDef.PARTS()
         algorithm
-          cdef.classParts := convertClassParts(cdef.classParts, newRuleTable(), rules, imports, info);
+          cdef.classParts := convertClassParts(cdef.classParts, newRuleTable(), rules, env, info);
         then
           ();
 
       case Absyn.ClassDef.DERIVED()
         algorithm
-          (ty, local_rules, mod_rules) := convertTypeSpec(cdef.typeSpec, rules, imports, info);
+          (ty, local_rules, mod_rules) := convertTypeSpec(cdef.typeSpec, rules, env, info);
           cdef.typeSpec := ty;
           cdef.arguments := convertModification2(mod_rules, cdef.arguments);
-          cdef.arguments := convertElementArgs(cdef.arguments, local_rules, rules, imports);
+          cdef.arguments := convertElementArgs(cdef.arguments, local_rules, rules, env);
         then
           ();
 
@@ -904,8 +923,8 @@ protected
         algorithm
           (local_rules, mod_rules) := lookupClassExtendsRules(cdef.baseClassName, extendsRules);
           cdef.modifications := convertModification2(mod_rules, cdef.modifications);
-          cdef.modifications := convertElementArgs(cdef.modifications, local_rules, rules, imports);
-          cdef.parts := convertClassParts(cdef.parts, local_rules, rules, imports, info);
+          cdef.modifications := convertElementArgs(cdef.modifications, local_rules, rules, env);
+          cdef.parts := convertClassParts(cdef.parts, local_rules, rules, env, info);
         then
           ();
 
@@ -918,16 +937,18 @@ protected
     input output list<Absyn.ClassPart> parts;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   protected
     list<ConversionRules> extends_rules;
     ImportTree imps;
+    Env cls_env;
   algorithm
-    imps := addImportNames(getImportsInParts(parts), rules, imports);
-    imps := shadowImportsInParts(parts, imps);
-    extends_rules := getExtendsRules(parts, rules, imps);
-    parts := list(convertClassPart(p, localRules, rules, imps, extends_rules, info) for p in parts);
+    cls_env := addImportNamesToEnv(getImportsInParts(parts), rules, env);
+    addComponentTypesToEnv(parts, env.components);
+    cls_env.imports := shadowImportsInParts(parts, cls_env.imports);
+    extends_rules := getExtendsRules(parts, rules, cls_env);
+    parts := list(convertClassPart(p, localRules, rules, cls_env, extends_rules, info) for p in parts);
   end convertClassParts;
 
   function convertClassPart
@@ -935,50 +956,50 @@ protected
     input output Absyn.ClassPart part;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input list<ConversionRules> extendsRules;
     input SourceInfo info;
   algorithm
     () := match part
       case Absyn.ClassPart.PUBLIC()
         algorithm
-          part.contents := convertElementItems(part.contents, rules, imports, extendsRules);
+          part.contents := convertElementItems(part.contents, rules, env, extendsRules);
         then
           ();
 
       case Absyn.ClassPart.PROTECTED()
         algorithm
-          part.contents := convertElementItems(part.contents, rules, imports, extendsRules);
+          part.contents := convertElementItems(part.contents, rules, env, extendsRules);
         then
           ();
 
       case Absyn.ClassPart.EQUATIONS()
         algorithm
-          part.contents := convertEquationItems(part.contents, localRules, rules, imports);
+          part.contents := convertEquationItems(part.contents, localRules, rules, env);
         then
           ();
 
       case Absyn.ClassPart.INITIALEQUATIONS()
         algorithm
-          part.contents := convertEquationItems(part.contents, localRules, rules, imports);
+          part.contents := convertEquationItems(part.contents, localRules, rules, env);
         then
           ();
 
       case Absyn.ClassPart.ALGORITHMS()
         algorithm
-          part.contents := convertAlgorithmItems(part.contents, localRules, rules, imports);
+          part.contents := convertAlgorithmItems(part.contents, localRules, rules, env);
         then
           ();
 
       case Absyn.ClassPart.INITIALALGORITHMS()
         algorithm
-          part.contents := convertAlgorithmItems(part.contents, localRules, rules, imports);
+          part.contents := convertAlgorithmItems(part.contents, localRules, rules, env);
         then
           ();
 
       case Absyn.ClassPart.EXTERNAL()
         algorithm
-          part.externalDecl := convertExternalDecl(part.externalDecl, localRules, rules, imports, info);
+          part.externalDecl := convertExternalDecl(part.externalDecl, localRules, rules, env, info);
         then
           ();
 
@@ -991,9 +1012,9 @@ protected
     input output list<Absyn.ElementArg> args;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
   algorithm
-    args := list(convertElementArg(a, localRules, rules, imports) for a in args);
+    args := list(convertElementArg(a, localRules, rules, env) for a in args);
   end convertElementArgs;
 
   function convertElementArg
@@ -1001,7 +1022,7 @@ protected
     input output Absyn.ElementArg arg;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
   algorithm
     () := match arg
       local
@@ -1023,14 +1044,14 @@ protected
             end match;
           end for;
 
-          arg.modification := convertModificationExps(arg.modification, localRules, rules, imports, arg.info);
+          arg.modification := convertModificationExps(arg.modification, localRules, rules, env, arg.info);
         then
           ();
 
       case Absyn.ElementArg.REDECLARATION()
         algorithm
-          arg.elementSpec := convertElementSpec(arg.elementSpec, rules, imports, {}, arg.info);
-          arg.constrainClass := convertOption(arg.constrainClass, convertConstrainClass, rules, imports, arg.info);
+          arg.elementSpec := convertElementSpec(arg.elementSpec, rules, env, {}, arg.info);
+          arg.constrainClass := convertOption(arg.constrainClass, convertConstrainClass, rules, env, arg.info);
         then
           ();
 
@@ -1043,21 +1064,21 @@ protected
     input output Option<Absyn.Modification> mod;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    mod := convertOption(mod, function convertModificationExps2(localRules = localRules), rules, imports, info);
+    mod := convertOption(mod, function convertModificationExps2(localRules = localRules), rules, env, info);
   end convertModificationExps;
 
   function convertModificationExps2
     input output Absyn.Modification mod;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    mod.elementArgLst := convertElementArgs(mod.elementArgLst, localRules, rules, imports);
-    mod.eqMod := convertEqMod(mod.eqMod, localRules, rules, imports);
+    mod.elementArgLst := convertElementArgs(mod.elementArgLst, localRules, rules, env);
+    mod.eqMod := convertEqMod(mod.eqMod, localRules, rules, env);
   end convertModificationExps2;
 
   function convertEqMod
@@ -1065,12 +1086,12 @@ protected
     input output Absyn.EqMod mod;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
   algorithm
     () := match mod
       case Absyn.EqMod.EQMOD()
         algorithm
-          mod.exp := convertExp(mod.exp, localRules, rules, imports, mod.info);
+          mod.exp := convertExp(mod.exp, localRules, rules, env, mod.info);
         then
           ();
 
@@ -1290,7 +1311,7 @@ protected
     "Converts an Absyn.TypeSpec."
     input output Absyn.TypeSpec ty;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
           output RuleTable localRules;
           output list<ConversionRule> modifierRules;
@@ -1300,8 +1321,8 @@ protected
     Option<tuple<Absyn.Path, String>> import_path;
   algorithm
     // Apply imports before looking the path up, convertTypePath then strips it if necessary.
-    (ty_path, import_path) := applyImportsToPath(AbsynUtil.typeSpecPath(ty), imports);
-    (ty_rule, localRules, modifierRules) := lookupTypeRules(ty_path, rules, imports);
+    (ty_path, import_path) := applyImportsToPath(AbsynUtil.typeSpecPath(ty), env.imports);
+    (ty_rule, localRules, modifierRules) := lookupTypeRules(ty_path, rules, env);
 
     () := match ty
       case Absyn.TypeSpec.TPATH()
@@ -1311,7 +1332,7 @@ protected
           end if;
 
           ty.arrayDim := convertOption(ty.arrayDim,
-            function convertSubscripts(localRules = localRules), rules, imports, info);
+            function convertSubscripts(localRules = localRules), rules, env, info);
         then
           ();
 
@@ -1321,9 +1342,9 @@ protected
             ty.path := convertTypePath(ty_path, Util.getOption(ty_rule), import_path, info);
           end if;
 
-          ty.typeSpecs := list(convertTypeSpec(t, rules, imports, info) for t in ty.typeSpecs);
+          ty.typeSpecs := list(convertTypeSpec(t, rules, env, info) for t in ty.typeSpecs);
           ty.arrayDim := convertOption(ty.arrayDim,
-            function convertSubscripts(localRules = localRules), rules, imports, info);
+            function convertSubscripts(localRules = localRules), rules, env, info);
         then
           ();
 
@@ -1368,23 +1389,32 @@ protected
     "Converts a list of Absyn.ElementItems."
     input output list<Absyn.ElementItem> elements;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input list<ConversionRules> extendsRules;
   algorithm
-    elements := list(convertElementItem(e, rules, imports, extendsRules) for e in elements);
+    elements := list(convertElementItem(e, rules, env, extendsRules) for e in elements);
+
+    // After converting elements we might end up with duplicate imports, for example:
+    //   import SI = Modelica.SIunits;
+    //   import Modelica.SIunits;
+    // becomes after conversion:
+    //   import Modelica.Units.SI; // After simplification of SI = Modelica.Units.SI
+    //   import Modelica.Units.SI;
+    // To avoid issues we filter out such duplicate imports here.
+    elements := filterDuplicateImports(elements);
   end convertElementItems;
 
   function convertElementItem
     "Converts an Absyn.ElementItem."
     input output Absyn.ElementItem element;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input list<ConversionRules> extendsRules;
   algorithm
     () := match element
       case Absyn.ElementItem.ELEMENTITEM()
         algorithm
-          element.element := convertElement(element.element, rules, imports, extendsRules);
+          element.element := convertElement(element.element, rules, env, extendsRules);
         then
           ();
 
@@ -1396,7 +1426,7 @@ protected
     "Converts an Absyn.Element."
     input output Absyn.Element element;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input list<ConversionRules> extendsRules;
   algorithm
     () := match element
@@ -1406,16 +1436,16 @@ protected
       case Absyn.Element.ELEMENT()
         algorithm
           element.specification := convertElementSpec(element.specification,
-            rules, imports, extendsRules, element.info);
+            rules, env, extendsRules, element.info);
           element.constrainClass := convertOption(element.constrainClass,
-            convertConstrainClass, rules, imports, element.info);
+            convertConstrainClass, rules, env, element.info);
         then
           ();
 
       case Absyn.Element.DEFINEUNIT()
         algorithm
           local_rules := newRuleTable();
-          element.args := list(convertNamedArg(a, local_rules, rules, imports, element.info) for a in element.args);
+          element.args := list(convertNamedArg(a, local_rules, rules, env, element.info) for a in element.args);
         then
           ();
 
@@ -1427,17 +1457,17 @@ protected
     "Converts an Absyn.ConstrainClass."
     input output Absyn.ConstrainClass cc;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    cc.elementSpec := convertElementSpec(cc.elementSpec, rules, imports, {}, info);
+    cc.elementSpec := convertElementSpec(cc.elementSpec, rules, env, {}, info);
   end convertConstrainClass;
 
   function convertElementSpec
     "Converts an Absyn.ElementSpec."
     input output Absyn.ElementSpec spec;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input list<ConversionRules> extendsRules;
     input SourceInfo info;
   algorithm
@@ -1452,18 +1482,18 @@ protected
 
       case Absyn.ElementSpec.CLASSDEF()
         algorithm
-          spec.class_ := convertClass(spec.class_, rules, imports, extendsRules);
+          spec.class_ := convertClass(spec.class_, rules, env, extendsRules);
         then
           ();
 
       case Absyn.ElementSpec.EXTENDS()
         algorithm
-          (ty_path, import_path) := applyImportsToPath(spec.path, imports);
-          (ty_rule, local_rules, mod_rules) := lookupTypeRules(ty_path, rules, imports);
-          ty_path := convertPath(ty_path, rules, imports, info);
+          (ty_path, import_path) := applyImportsToPath(spec.path, env.imports);
+          (ty_rule, local_rules, mod_rules) := lookupTypeRules(ty_path, rules, env);
+          ty_path := convertPath(ty_path, rules, env.imports, info);
           spec.path := stripImportPath(ty_path, import_path);
           spec.elementArg := convertModification2(mod_rules, spec.elementArg);
-          spec.elementArg := convertElementArgs(spec.elementArg, local_rules, rules, imports);
+          spec.elementArg := convertElementArgs(spec.elementArg, local_rules, rules, env);
         then
           ();
 
@@ -1475,9 +1505,9 @@ protected
 
       case Absyn.ElementSpec.COMPONENTS()
         algorithm
-          (ty, local_rules, mod_rules) := convertTypeSpec(spec.typeSpec, rules, imports, info);
+          (ty, local_rules, mod_rules) := convertTypeSpec(spec.typeSpec, rules, env, info);
           spec.typeSpec := ty;
-          spec.components := list(convertComponentItem(c, local_rules, mod_rules, rules, imports, info) for c in spec.components);
+          spec.components := list(convertComponentItem(c, local_rules, mod_rules, rules, env, info) for c in spec.components);
         then
           ();
 
@@ -1518,7 +1548,56 @@ protected
 
       else ();
     end match;
+
+    imp := simplifyImport(imp);
   end convertImport;
+
+  function simplifyImport
+    "Simplifies imports like `import C = A.B.C;` to `import A.B.C`"
+    input output Absyn.Import imp;
+  algorithm
+    imp := match imp
+      case Absyn.Import.NAMED_IMPORT()
+        guard imp.name == AbsynUtil.pathLastIdent(imp.path)
+        then Absyn.Import.QUAL_IMPORT(imp.path);
+
+      else imp;
+    end match;
+  end simplifyImport;
+
+  function filterDuplicateImports
+    "Filters out duplicate imports in a list of elements."
+    input list<Absyn.ElementItem> elements;
+    output list<Absyn.ElementItem> outElements;
+  protected
+    UnorderedSet<Absyn.Path> imports;
+  algorithm
+    imports := UnorderedSet.new(AbsynUtil.pathHashMod, AbsynUtil.pathEqual, 1);
+    outElements := list(e for e guard not importExists(e, imports) in elements);
+  end filterDuplicateImports;
+
+  function importExists
+    input Absyn.ElementItem element;
+    input UnorderedSet<Absyn.Path> imports;
+    output Boolean exists;
+  protected
+    Absyn.Path path;
+  algorithm
+    exists := match element
+      case Absyn.ElementItem.ELEMENTITEM(element = Absyn.Element.ELEMENT(
+          specification = Absyn.ElementSpec.IMPORT(import_ = Absyn.Import.QUAL_IMPORT(path = path))))
+        algorithm
+          exists := UnorderedSet.contains(path, imports);
+
+          if not exists then
+            UnorderedSet.add(path, imports);
+          end if;
+        then
+          exists;
+
+      else false;
+    end match;
+  end importExists;
 
   function convertComponentItem
     "Converts an Absyn.ComponentItem."
@@ -1526,11 +1605,11 @@ protected
     input RuleTable localRules;
     input list<ConversionRule> modifierRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    comp.component := convertComponent(comp.component, localRules, modifierRules, rules, imports, info);
-    comp.condition := convertOptExp(comp.condition, localRules, rules, imports, info);
+    comp.component := convertComponent(comp.component, localRules, modifierRules, rules, env, info);
+    comp.condition := convertOptExp(comp.condition, localRules, rules, env, info);
   end convertComponentItem;
 
   function convertComponent
@@ -1539,16 +1618,16 @@ protected
     input RuleTable localRules;
     input list<ConversionRule> modifierRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    comp.arrayDim := convertSubscripts(comp.arrayDim, localRules, rules, imports, info);
+    comp.arrayDim := convertSubscripts(comp.arrayDim, localRules, rules, env, info);
 
     if not listEmpty(modifierRules) then
       comp.modification := convertModification(comp.modification, modifierRules);
     end if;
 
-    comp.modification := convertModificationExps(comp.modification, localRules, rules, imports, info);
+    comp.modification := convertModificationExps(comp.modification, localRules, rules, env, info);
   end convertComponent;
 
   function convertEquationItems
@@ -1556,9 +1635,9 @@ protected
     input output list<Absyn.EquationItem> eqs;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
   algorithm
-    eqs := list(convertEquationItem(eq, localRules, rules, imports) for eq in eqs);
+    eqs := list(convertEquationItem(eq, localRules, rules, env) for eq in eqs);
   end convertEquationItems;
 
   function convertEquationItem
@@ -1566,12 +1645,12 @@ protected
     input output Absyn.EquationItem eq;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
   algorithm
     () := match eq
       case Absyn.EquationItem.EQUATIONITEM()
         algorithm
-          eq.equation_ := convertEquation(eq.equation_, localRules, rules, imports, eq.info);
+          eq.equation_ := convertEquation(eq.equation_, localRules, rules, env, eq.info);
         then
           ();
 
@@ -1584,67 +1663,67 @@ protected
     input output Absyn.Equation eq;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
     () := match eq
       case Absyn.Equation.EQ_IF()
         algorithm
-          eq.ifExp := convertExp(eq.ifExp, localRules, rules, imports, info);
-          eq.equationTrueItems := convertEquationItems(eq.equationTrueItems, localRules, rules, imports);
+          eq.ifExp := convertExp(eq.ifExp, localRules, rules, env, info);
+          eq.equationTrueItems := convertEquationItems(eq.equationTrueItems, localRules, rules, env);
           eq.elseIfBranches := convertBranches(eq.elseIfBranches,
-            function convertExp(info = info), convertEquationItems, localRules, rules, imports);
-          eq.equationElseItems := convertEquationItems(eq.equationElseItems, localRules, rules, imports);
+            function convertExp(info = info), convertEquationItems, localRules, rules, env);
+          eq.equationElseItems := convertEquationItems(eq.equationElseItems, localRules, rules, env);
         then
           ();
 
       case Absyn.Equation.EQ_EQUALS()
         algorithm
-          eq.leftSide := convertExp(eq.leftSide, localRules, rules, imports, info);
-          eq.rightSide := convertExp(eq.rightSide, localRules, rules, imports, info);
+          eq.leftSide := convertExp(eq.leftSide, localRules, rules, env, info);
+          eq.rightSide := convertExp(eq.rightSide, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Equation.EQ_PDE()
         algorithm
-          eq.leftSide := convertExp(eq.leftSide, localRules, rules, imports, info);
-          eq.rightSide := convertExp(eq.rightSide, localRules, rules, imports, info);
+          eq.leftSide := convertExp(eq.leftSide, localRules, rules, env, info);
+          eq.rightSide := convertExp(eq.rightSide, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Equation.EQ_CONNECT()
         algorithm
-          eq.connector1 := convertCref(eq.connector1, localRules, rules, imports, info);
-          eq.connector2 := convertCref(eq.connector2, localRules, rules, imports, info);
+          eq.connector1 := convertCref(eq.connector1, localRules, rules, env, info);
+          eq.connector2 := convertCref(eq.connector2, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Equation.EQ_FOR()
         algorithm
-          eq.iterators := convertForIterators(eq.iterators, localRules, rules, imports, info);
-          eq.forEquations := convertEquationItems(eq.forEquations, localRules, rules, imports);
+          eq.iterators := convertForIterators(eq.iterators, localRules, rules, env, info);
+          eq.forEquations := convertEquationItems(eq.forEquations, localRules, rules, env);
         then
           ();
 
       case Absyn.Equation.EQ_WHEN_E()
         algorithm
-          eq.whenExp := convertExp(eq.whenExp, localRules, rules, imports, info);
-          eq.whenEquations := convertEquationItems(eq.whenEquations, localRules, rules, imports);
+          eq.whenExp := convertExp(eq.whenExp, localRules, rules, env, info);
+          eq.whenEquations := convertEquationItems(eq.whenEquations, localRules, rules, env);
           eq.elseWhenEquations := convertBranches(eq.elseWhenEquations,
-            function convertExp(info = info), convertEquationItems, localRules, rules, imports);
+            function convertExp(info = info), convertEquationItems, localRules, rules, env);
         then
           ();
 
       case Absyn.Equation.EQ_NORETCALL()
         algorithm
-          eq.functionName := convertCref(eq.functionName, localRules, rules, imports, info);
-          eq.functionArgs := convertFunctionArgs(eq.functionArgs, localRules, rules, imports, info);
+          eq.functionName := convertCref(eq.functionName, localRules, rules, env, info);
+          eq.functionArgs := convertFunctionArgs(eq.functionArgs, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Equation.EQ_FAILURE()
         algorithm
-          eq.equ := convertEquationItem(eq.equ, localRules, rules, imports);
+          eq.equ := convertEquationItem(eq.equ, localRules, rules, env);
         then
           ();
 
@@ -1657,9 +1736,9 @@ protected
     input output list<Absyn.AlgorithmItem> algs;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
   algorithm
-    algs := list(convertAlgorithmItem(alg, localRules, rules, imports) for alg in algs);
+    algs := list(convertAlgorithmItem(alg, localRules, rules, env) for alg in algs);
   end convertAlgorithmItems;
 
   function convertAlgorithmItem
@@ -1667,12 +1746,12 @@ protected
     input output Absyn.AlgorithmItem alg;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
   algorithm
     () := match alg
       case Absyn.AlgorithmItem.ALGORITHMITEM()
         algorithm
-          alg.algorithm_ := convertAlgorithm(alg.algorithm_, localRules, rules, imports, alg.info);
+          alg.algorithm_ := convertAlgorithm(alg.algorithm_, localRules, rules, env, alg.info);
         then
           ();
 
@@ -1685,74 +1764,74 @@ protected
     input output Absyn.Algorithm alg;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
     () := match alg
       case Absyn.Algorithm.ALG_ASSIGN()
         algorithm
-          alg.assignComponent := convertExp(alg.assignComponent, localRules, rules, imports, info);
-          alg.value := convertExp(alg.value, localRules, rules, imports, info);
+          alg.assignComponent := convertExp(alg.assignComponent, localRules, rules, env, info);
+          alg.value := convertExp(alg.value, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Algorithm.ALG_IF()
         algorithm
-          alg.ifExp := convertExp(alg.ifExp, localRules, rules, imports, info);
-          alg.trueBranch := convertAlgorithmItems(alg.trueBranch, localRules, rules, imports);
+          alg.ifExp := convertExp(alg.ifExp, localRules, rules, env, info);
+          alg.trueBranch := convertAlgorithmItems(alg.trueBranch, localRules, rules, env);
           alg.elseIfAlgorithmBranch := convertBranches(alg.elseIfAlgorithmBranch,
-            function convertExp(info = info), convertAlgorithmItems, localRules, rules, imports);
-          alg.elseBranch := convertAlgorithmItems(alg.elseBranch, localRules, rules, imports);
+            function convertExp(info = info), convertAlgorithmItems, localRules, rules, env);
+          alg.elseBranch := convertAlgorithmItems(alg.elseBranch, localRules, rules, env);
         then
           ();
 
       case Absyn.Algorithm.ALG_FOR()
         algorithm
-          alg.iterators := convertForIterators(alg.iterators, localRules, rules, imports, info);
-          alg.forBody := convertAlgorithmItems(alg.forBody, localRules, rules, imports);
+          alg.iterators := convertForIterators(alg.iterators, localRules, rules, env, info);
+          alg.forBody := convertAlgorithmItems(alg.forBody, localRules, rules, env);
         then
           ();
 
       case Absyn.Algorithm.ALG_PARFOR()
         algorithm
-          alg.iterators := convertForIterators(alg.iterators, localRules, rules, imports, info);
-          alg.parforBody := convertAlgorithmItems(alg.parforBody, localRules, rules, imports);
+          alg.iterators := convertForIterators(alg.iterators, localRules, rules, env, info);
+          alg.parforBody := convertAlgorithmItems(alg.parforBody, localRules, rules, env);
         then
           ();
 
       case Absyn.Algorithm.ALG_WHILE()
         algorithm
-          alg.boolExpr := convertExp(alg.boolExpr, localRules, rules, imports, info);
-          alg.whileBody := convertAlgorithmItems(alg.whileBody, localRules, rules, imports);
+          alg.boolExpr := convertExp(alg.boolExpr, localRules, rules, env, info);
+          alg.whileBody := convertAlgorithmItems(alg.whileBody, localRules, rules, env);
         then
           ();
 
       case Absyn.Algorithm.ALG_WHEN_A()
         algorithm
-          alg.boolExpr := convertExp(alg.boolExpr, localRules, rules, imports, info);
-          alg.whenBody := convertAlgorithmItems(alg.whenBody, localRules, rules, imports);
+          alg.boolExpr := convertExp(alg.boolExpr, localRules, rules, env, info);
+          alg.whenBody := convertAlgorithmItems(alg.whenBody, localRules, rules, env);
           alg.elseWhenAlgorithmBranch := convertBranches(alg.elseWhenAlgorithmBranch,
-            function convertExp(info = info), convertAlgorithmItems, localRules, rules, imports);
+            function convertExp(info = info), convertAlgorithmItems, localRules, rules, env);
         then
           ();
 
       case Absyn.Algorithm.ALG_NORETCALL()
         algorithm
-          alg.functionCall := convertCref(alg.functionCall, localRules, rules, imports, info);
-          alg.functionArgs := convertFunctionArgs(alg.functionArgs, localRules, rules, imports, info);
+          alg.functionCall := convertCref(alg.functionCall, localRules, rules, env, info);
+          alg.functionArgs := convertFunctionArgs(alg.functionArgs, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Algorithm.ALG_FAILURE()
         algorithm
-          alg.equ := convertAlgorithmItems(alg.equ, localRules, rules, imports);
+          alg.equ := convertAlgorithmItems(alg.equ, localRules, rules, env);
         then
           ();
 
       case Absyn.Algorithm.ALG_TRY()
         algorithm
-          alg.body := convertAlgorithmItems(alg.body, localRules, rules, imports);
-          alg.elseBody := convertAlgorithmItems(alg.elseBody, localRules, rules, imports);
+          alg.body := convertAlgorithmItems(alg.body, localRules, rules, env);
+          alg.elseBody := convertAlgorithmItems(alg.elseBody, localRules, rules, env);
         then
           ();
 
@@ -1767,25 +1846,25 @@ protected
     input BodyFunc bodyFunc;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
 
     partial function CondFunc
       input output CondT cond;
       input RuleTable localRules;
       input ConversionRules rules;
-      input ImportTree imports;
+      input Env env;
     end CondFunc;
 
     partial function BodyFunc
       input output BodyT body;
       input RuleTable localRules;
       input ConversionRules rules;
-      input ImportTree imports;
+      input Env env;
     end BodyFunc;
   algorithm
     branches := list(
-      (condFunc(Util.tuple21(b), localRules, rules, imports),
-       bodyFunc(Util.tuple22(b), localRules, rules, imports))
+      (condFunc(Util.tuple21(b), localRules, rules, env),
+       bodyFunc(Util.tuple22(b), localRules, rules, env))
       for b in branches
     );
   end convertBranches;
@@ -1795,10 +1874,10 @@ protected
     input output Absyn.ForIterators iters;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    iters := list(convertForIterator(i, localRules, rules, imports, info) for i in iters);
+    iters := list(convertForIterator(i, localRules, rules, env, info) for i in iters);
   end convertForIterators;
 
   function convertForIterator
@@ -1806,11 +1885,11 @@ protected
     input output Absyn.ForIterator iter;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    iter.guardExp := convertOptExp(iter.guardExp, localRules, rules, imports, info);
-    iter.range := convertOptExp(iter.range, localRules, rules, imports, info);
+    iter.guardExp := convertOptExp(iter.guardExp, localRules, rules, env, info);
+    iter.range := convertOptExp(iter.range, localRules, rules, env, info);
   end convertForIterator;
 
   function convertExternalDecl
@@ -1818,10 +1897,10 @@ protected
     input output Absyn.ExternalDecl extDecl;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    extDecl.args := convertExps(extDecl.args, localRules, rules, imports, info);
+    extDecl.args := convertExps(extDecl.args, localRules, rules, env, info);
   end convertExternalDecl;
 
   function convertExps
@@ -1829,10 +1908,10 @@ protected
     input output list<Absyn.Exp> exps;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    exps := list(convertExp(e, localRules, rules, imports, info) for e in exps);
+    exps := list(convertExp(e, localRules, rules, env, info) for e in exps);
   end convertExps;
 
   function convertOptExp
@@ -1840,14 +1919,14 @@ protected
     input output Option<Absyn.Exp> exp;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
     exp := match exp
       local
         Absyn.Exp e;
 
-      case SOME(e) then SOME(convertExp(e, localRules, rules, imports, info));
+      case SOME(e) then SOME(convertExp(e, localRules, rules, env, info));
       else NONE();
     end match;
   end convertOptExp;
@@ -1857,96 +1936,96 @@ protected
     input output Absyn.Exp exp;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
     () := match exp
       case Absyn.Exp.CREF()
         algorithm
-          exp.componentRef := convertCref(exp.componentRef, localRules, rules, imports, info);
+          exp.componentRef := convertCref(exp.componentRef, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.BINARY()
         algorithm
-          exp.exp1 := convertExp(exp.exp1, localRules, rules, imports, info);
-          exp.exp2 := convertExp(exp.exp2, localRules, rules, imports, info);
+          exp.exp1 := convertExp(exp.exp1, localRules, rules, env, info);
+          exp.exp2 := convertExp(exp.exp2, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.UNARY()
         algorithm
-          exp.exp := convertExp(exp.exp, localRules, rules, imports, info);
+          exp.exp := convertExp(exp.exp, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.LBINARY()
         algorithm
-          exp.exp1 := convertExp(exp.exp1, localRules, rules, imports, info);
-          exp.exp2 := convertExp(exp.exp2, localRules, rules, imports, info);
+          exp.exp1 := convertExp(exp.exp1, localRules, rules, env, info);
+          exp.exp2 := convertExp(exp.exp2, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.LUNARY()
         algorithm
-          exp.exp := convertExp(exp.exp, localRules, rules, imports, info);
+          exp.exp := convertExp(exp.exp, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.RELATION()
         algorithm
-          exp.exp1 := convertExp(exp.exp1, localRules, rules, imports, info);
-          exp.exp2 := convertExp(exp.exp2, localRules, rules, imports, info);
+          exp.exp1 := convertExp(exp.exp1, localRules, rules, env, info);
+          exp.exp2 := convertExp(exp.exp2, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.IFEXP()
         algorithm
-          exp.ifExp := convertExp(exp.ifExp, localRules, rules, imports, info);
-          exp.trueBranch := convertExp(exp.trueBranch, localRules, rules, imports, info);
-          exp.elseBranch := convertExp(exp.elseBranch, localRules, rules, imports, info);
+          exp.ifExp := convertExp(exp.ifExp, localRules, rules, env, info);
+          exp.trueBranch := convertExp(exp.trueBranch, localRules, rules, env, info);
+          exp.elseBranch := convertExp(exp.elseBranch, localRules, rules, env, info);
           exp.elseIfBranch := convertBranches(exp.elseIfBranch,
-            function convertExp(info = info), function convertExp(info = info), localRules, rules, imports);
+            function convertExp(info = info), function convertExp(info = info), localRules, rules, env);
         then
           ();
 
       case Absyn.Exp.CALL()
         algorithm
-          exp.function_ := convertCref(exp.function_, localRules, rules, imports, info);
-          exp.functionArgs := convertFunctionArgs(exp.functionArgs, localRules, rules, imports, info);
+          exp.function_ := convertCref(exp.function_, localRules, rules, env, info);
+          exp.functionArgs := convertFunctionArgs(exp.functionArgs, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.PARTEVALFUNCTION()
         algorithm
-          exp.function_ := convertCref(exp.function_, localRules, rules, imports, info);
-          exp.functionArgs := convertFunctionArgs(exp.functionArgs, localRules, rules, imports, info);
+          exp.function_ := convertCref(exp.function_, localRules, rules, env, info);
+          exp.functionArgs := convertFunctionArgs(exp.functionArgs, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.ARRAY()
         algorithm
-          exp.arrayExp := convertExps(exp.arrayExp, localRules, rules, imports, info);
+          exp.arrayExp := convertExps(exp.arrayExp, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.MATRIX()
         algorithm
-          exp.matrix := list(convertExps(e, localRules, rules, imports, info) for e in exp.matrix);
+          exp.matrix := list(convertExps(e, localRules, rules, env, info) for e in exp.matrix);
         then
           ();
 
       case Absyn.Exp.RANGE()
         algorithm
-          exp.start := convertExp(exp.start, localRules, rules, imports, info);
-          exp.step := convertOptExp(exp.step, localRules, rules, imports, info);
-          exp.stop := convertExp(exp.stop, localRules, rules, imports, info);
+          exp.start := convertExp(exp.start, localRules, rules, env, info);
+          exp.step := convertOptExp(exp.step, localRules, rules, env, info);
+          exp.stop := convertExp(exp.stop, localRules, rules, env, info);
         then
           ();
 
       case Absyn.Exp.TUPLE()
         algorithm
-          exp.expressions := convertExps(exp.expressions, localRules, rules, imports, info);
+          exp.expressions := convertExps(exp.expressions, localRules, rules, env, info);
         then
           ();
 
@@ -1959,64 +2038,165 @@ protected
     input output Absyn.ComponentRef cref;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
+    input SourceInfo info;
+  algorithm
+    cref := match cref
+      case Absyn.ComponentRef.WILD() then cref;
+      case Absyn.ComponentRef.ALLWILD() then cref;
+      case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+        then Absyn.ComponentRef.CREF_FULLYQUALIFIED(
+          convertCref2(cref.componentRef, localRules, rules, env, info));
+      else convertCref2(cref, localRules, rules, env, info);
+    end match;
+  end convertCref;
+
+  function convertCref2
+    "Converts an Absyn.ComponentRef."
+    input output Absyn.ComponentRef cref;
+    input RuleTable localRules;
+    input ConversionRules rules;
+    input Env env;
     input SourceInfo info;
   protected
     Absyn.Path path;
     list<ConversionRule> cref_rules;
     ConversionRule rule;
+    Boolean has_subs, converted;
   algorithm
-    if AbsynUtil.crefIsWild(cref) then
+    has_subs := AbsynUtil.crefHasSubscripts(cref);
+
+    // Convert subscripts if the cref has any.
+    if has_subs then
+      cref := convertCrefSubscripts(cref, localRules, rules, env, info);
+    end if;
+
+    // Try to find rules for the cref that applies to the scope the cref is used in.
+    cref_rules := UnorderedMap.getOrDefault(AbsynUtil.crefFirstIdent(cref), localRules, {});
+
+    if not listEmpty(cref_rules) then
+      // Apply local rules if found.
+      rule := listHead(cref_rules);
+
+      cref := match rule
+        case ConversionRule.ELEMENT()
+          then AbsynUtil.crefSetFirstIdent(cref, rule.newName);
+        else cref;
+      end match;
+
+      converted := true;
+    else
+      // Otherwise, try to convert the cref based on its type.
+      (cref, converted) := convertCrefFromType(cref, rules, env);
+    end if;
+
+    // If no rules could be found and the cref has no subscripts, try to convert
+    // it as a path instead in case it's an imported name.
+    if not converted and not has_subs then
+      path := AbsynUtil.crefToPath(cref);
+      path := convertPath(path, rules, env.imports, info);
+      cref := AbsynUtil.pathToCref(path);
+    end if;
+  end convertCref2;
+
+  function convertCrefFromType
+    "Converts an Absyn.ComponentRef based on its type. For a cref such as a.b
+    this means looking up the type of a and then applying any rules for that
+    type that applies to b. So with e.g. the rule:
+
+      convertElement('SomeType', 'b', 'c')
+
+    and a model like this:
+
+      model M
+        SomeType a;
+      equation
+        a.b = 0;
+      end M;
+
+    we convert the cref and get:
+
+      model M
+        SomeType a;
+      equation
+        a.c = 0;
+      end M;
+    "
+    input output Absyn.ComponentRef cref;
+    input ConversionRules rules;
+    input Env env;
+          output Boolean converted = false;
+  protected
+    String id;
+    Absyn.ComponentRef first_cref, rest_cref;
+    Option<Absyn.Path> opt_ty;
+    list<ConversionRule> cref_rules;
+  algorithm
+    // Only qualified crefs can be converted.
+    if not AbsynUtil.crefIsQual(cref) then
       return;
     end if;
 
-    if AbsynUtil.crefHasSubscripts(cref) then
-      cref := convertCrefSubscripts(cref, localRules, rules, imports, info);
+    // Look up the type of the first identifier.
+    id := AbsynUtil.crefFirstIdent(cref);
+    opt_ty := UnorderedMap.get(id, env.components);
+
+    // Look up the rules for the first identifier, if any.
+    if isSome(opt_ty) then
+      cref_rules := listHead(lookupRules(Util.getOption(opt_ty), rules));
     else
-      cref_rules := UnorderedMap.getOrDefault(AbsynUtil.crefFirstIdent(cref), localRules, {});
-
-      if listEmpty(cref_rules) then
-        path := AbsynUtil.crefToPath(cref);
-        path := convertPath(path, rules, imports, info);
-        cref := AbsynUtil.pathToCref(path);
-      else
-        rule := listHead(cref_rules);
-
-        cref := match rule
-          case ConversionRule.ELEMENT()
-            then AbsynUtil.crefSetFirstIdent(cref, rule.newName);
-
-          else cref;
-        end match;
-      end if;
+      cref_rules := {};
     end if;
-  end convertCref;
+
+    // No rules => nothing to do.
+    if listEmpty(cref_rules) then
+      return;
+    end if;
+
+    // Split the cref into the first part and the rest of the cref.
+    first_cref := AbsynUtil.crefFirstCref(cref);
+    rest_cref := AbsynUtil.crefStripFirst(cref);
+    id := AbsynUtil.crefFirstIdent(rest_cref);
+
+    // Try to find a convertElement rule for the second identifier in the cref.
+    for rule in cref_rules loop
+      () := match rule
+        case ConversionRule.ELEMENT()
+          guard rule.oldName == id
+          algorithm
+            // Matching rule found, replace the second identifier with the one
+            // given by the rule and assemble the cref again.
+            rest_cref := AbsynUtil.crefSetFirstIdent(rest_cref, rule.newName);
+            cref := AbsynUtil.joinCrefs(first_cref, rest_cref);
+            converted := true;
+            return;
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+  end convertCrefFromType;
 
   function convertCrefSubscripts
     "Converts an Absyn.ComponentRef."
     input output Absyn.ComponentRef cref;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
     () := match cref
-      case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
-        algorithm
-          cref.componentRef := convertCrefSubscripts(cref.componentRef, localRules, rules, imports, info);
-        then
-          ();
-
       case Absyn.ComponentRef.CREF_QUAL()
         algorithm
-          cref.subscripts := convertSubscripts(cref.subscripts, localRules, rules, imports, info);
-          cref.componentRef := convertCrefSubscripts(cref.componentRef, localRules, rules, imports, info);
+          cref.subscripts := convertSubscripts(cref.subscripts, localRules, rules, env, info);
+          cref.componentRef := convertCrefSubscripts(cref.componentRef, localRules, rules, env, info);
         then
           ();
 
       case Absyn.ComponentRef.CREF_IDENT()
         algorithm
-          cref.subscripts := convertSubscripts(cref.subscripts, localRules, rules, imports, info);
+          cref.subscripts := convertSubscripts(cref.subscripts, localRules, rules, env, info);
         then
           ();
 
@@ -2029,10 +2209,10 @@ protected
     input output list<Absyn.Subscript> subs;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    subs := list(convertSubscript(s, localRules, rules, imports, info) for s in subs);
+    subs := list(convertSubscript(s, localRules, rules, env, info) for s in subs);
   end convertSubscripts;
 
   function convertSubscript
@@ -2040,13 +2220,13 @@ protected
     input output Absyn.Subscript sub;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
     () := match sub
       case Absyn.Subscript.SUBSCRIPT()
         algorithm
-          sub.subscript := convertExp(sub.subscript, localRules, rules, imports, info);
+          sub.subscript := convertExp(sub.subscript, localRules, rules, env, info);
         then
           ();
 
@@ -2128,21 +2308,21 @@ protected
     input output Absyn.FunctionArgs args;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
     () := match args
       case Absyn.FunctionArgs.FUNCTIONARGS()
         algorithm
-          args.args := convertExps(args.args, localRules, rules, imports, info);
-          args.argNames := list(convertNamedArg(a, localRules, rules, imports, info) for a in args.argNames);
+          args.args := convertExps(args.args, localRules, rules, env, info);
+          args.argNames := list(convertNamedArg(a, localRules, rules, env, info) for a in args.argNames);
         then
           ();
 
       case Absyn.FunctionArgs.FOR_ITER_FARG()
         algorithm
-          args.exp := convertExp(args.exp, localRules, rules, imports, info);
-          args.iterators := convertForIterators(args.iterators, localRules, rules, imports, info);
+          args.exp := convertExp(args.exp, localRules, rules, env, info);
+          args.iterators := convertForIterators(args.iterators, localRules, rules, env, info);
         then
           ();
 
@@ -2154,10 +2334,10 @@ protected
     input output Absyn.NamedArg arg;
     input RuleTable localRules;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
   algorithm
-    arg.argValue := convertExp(arg.argValue, localRules, rules, imports, info);
+    arg.argValue := convertExp(arg.argValue, localRules, rules, env, info);
   end convertNamedArg;
 
   function convertOption<T>
@@ -2165,20 +2345,20 @@ protected
     input output Option<T> opt;
     input OptFunc optFunc;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     input SourceInfo info;
 
     partial function OptFunc
       input output T e;
       input ConversionRules rules;
-      input ImportTree imports;
+      input Env env;
       input SourceInfo info;
     end OptFunc;
   protected
     T e;
   algorithm
     opt := match opt
-      case SOME(e) then SOME(optFunc(e, rules, imports, info));
+      case SOME(e) then SOME(optFunc(e, rules, env, info));
       else opt;
     end match;
   end convertOption;
@@ -2187,7 +2367,7 @@ protected
     "Returns the rules for any extends clauses in the given list of class parts."
     input list<Absyn.ClassPart> parts;
     input ConversionRules rules;
-    input ImportTree imports;
+    input Env env;
     output list<ConversionRules> extendsRules = {};
   protected
     Option<ConversionRules> onode;
@@ -2297,20 +2477,29 @@ protected
     end match;
   end getImportsInElementItem;
 
-  function addImportNames
+  function addImportNamesToEnv
     "Adds any imports found in the given elements to the import lookup tree."
     input list<Absyn.ElementSpec> elements;
     input ConversionRules rules;
-    input output ImportTree imports;
+    input output Env env;
   protected
     Absyn.Import imp;
     SourceInfo info;
+    ImportTree imps;
   algorithm
+    if listEmpty(elements) then
+      return;
+    end if;
+
+    imps := env.imports;
+
     for e in elements loop
       Absyn.IMPORT(import_ = imp, info = info) := e;
-      imports := addImportName(imp, rules, info, imports);
+      imps := addImportName(imp, rules, info, imps);
     end for;
-  end addImportNames;
+
+    env.imports := imps;
+  end addImportNamesToEnv;
 
   function addImportName
     "Adds an import to the import lookup tree."
@@ -2558,6 +2747,63 @@ protected
       end if;
     end if;
   end stripImportPath;
+
+  function addComponentTypesToEnv
+    "Adds all components in the given list of class parts to the type table in
+     the environment."
+    input list<Absyn.ClassPart> parts;
+    input TypeTable components;
+  algorithm
+    UnorderedMap.clear(components);
+
+    for part in parts loop
+      () := match part
+        case Absyn.ClassPart.PUBLIC()
+          algorithm
+            for e in part.contents loop
+              addComponentTypesToEnv2(e, components);
+            end for;
+          then
+            ();
+
+        case Absyn.ClassPart.PROTECTED()
+          algorithm
+            for e in part.contents loop
+              addComponentTypesToEnv2(e, components);
+            end for;
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+  end addComponentTypesToEnv;
+
+  function addComponentTypesToEnv2
+    "Adds all components in the given element item to the type table in the
+     environment."
+    input Absyn.ElementItem element;
+    input TypeTable components;
+  algorithm
+    () := match element
+      local
+        Absyn.ElementSpec comps;
+        Absyn.Path ty_path;
+
+      case Absyn.ElementItem.ELEMENTITEM(element =
+          Absyn.Element.ELEMENT(specification = comps as Absyn.ElementSpec.COMPONENTS()))
+        algorithm
+          ty_path := AbsynUtil.typeSpecPath(comps.typeSpec);
+
+          for c in comps.components loop
+            UnorderedMap.add(AbsynUtil.componentName(c), ty_path, components);
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+  end addComponentTypesToEnv2;
 
   annotation(__OpenModelica_Interface="backend");
 end Conversion;

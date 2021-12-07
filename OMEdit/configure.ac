@@ -18,7 +18,7 @@ AC_SUBST(LIB_BOOST_REGEX)
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
 m4_include([common/m4/ombuilddir.m4])
-m4_include([common/m4/ax_cxx_compile_stdcxx_11.m4])
+m4_include([common/m4/ax_cxx_compile_stdcxx.m4])
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -29,8 +29,10 @@ test -z "$CXXFLAGS" && CXXFLAGS="$CFLAGS"
 AC_LANG([C++])
 AC_PROG_CC
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
-
+AX_CXX_COMPILE_STDCXX(17, [noext],[optional])
+if test "$ax_cv_cxx_compile_cxx17__std_cpp17" != "yes"; then
+  AX_CXX_COMPILE_STDCXX(14, [noext],[mandatory])
+fi
 host_short=$host_cpu-$host_os
 
 m4_include([common/m4/qmake.m4])
@@ -170,4 +172,4 @@ fi
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
-AC_OUTPUT(Makefile.unix omc_config.h OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix)
+AC_OUTPUT(Makefile.unix omedit_config.h OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix)

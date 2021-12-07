@@ -1850,7 +1850,7 @@ algorithm
 
     case (Values.CODE(A = Absyn.C_VARIABLENAME(cr)))
       equation
-        Print.printBuf(AbsynUtil.printComponentRefStr(cr));
+        Print.printBuf(Dump.printComponentRefStr(cr));
       then
         ();
 

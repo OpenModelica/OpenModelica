@@ -1,0 +1,50 @@
+// name:     PowerSystems.Examples.AC3ph.Inverters.InverterToGrid
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Inverters.InverterToGrid);
+compareVars :=
+{
+  "meterDC.p",
+  "meterDC.v",
+  "meterDC.i",
+  "meterAC.p[1]",
+  "meterAC.p[2]",
+  "meterAC.p[3]",
+  "meterAC.v[1]",
+  "meterAC.v[2]",
+  "meterAC.v[3]",
+  "meterAC.i[1]",
+  "meterAC.i[2]",
+  "meterAC.i[3]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Instantiation
+// PowerSystems.Examples.AC3ph.Inverters.InverterToGrid
+// {"meterDC.p","meterDC.v","meterDC.i","meterAC.p[1]","meterAC.p[2]","meterAC.p[3]","meterAC.v[1]","meterAC.v[2]","meterAC.v[3]","meterAC.i[1]","meterAC.i[2]","meterAC.i[3]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

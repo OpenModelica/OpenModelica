@@ -251,6 +251,9 @@ void AddSystemDialog::addSystem()
   oms_system_enu_t systemType = (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt();
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpSystemWidget->getNameTextBox()->text());
   if (OMSProxy::instance()->addSystem(nameStructure, systemType)) {
+    if (mpGraphicsView->mContextMenuStartPositionValid) {
+      OMSProxy::instance()->createElementGeometryUsingPosition(nameStructure, mpGraphicsView->mContextMenuStartPosition);
+    }
     mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add system %1").arg(nameStructure));
     mpGraphicsView->getModelWidget()->updateModelText();
     accept();
@@ -409,6 +412,9 @@ void AddSubModelDialog::addSubModel()
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpNameTextBox->text());
   if (mpStartScriptTextBox->text().isEmpty()) {
     if (OMSProxy::instance()->addSubModel(nameStructure, fileInfo.absoluteFilePath())) {
+      if (mpGraphicsView->mContextMenuStartPositionValid) {
+        OMSProxy::instance()->createElementGeometryUsingPosition(nameStructure, mpGraphicsView->mContextMenuStartPosition);
+      }
       mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add submodel %1").arg(nameStructure));
       mpGraphicsView->getModelWidget()->updateModelText();
       accept();
@@ -417,6 +423,9 @@ void AddSubModelDialog::addSubModel()
     }
   } else {
     if (OMSProxy::instance()->addExternalTLMModel(nameStructure, mpStartScriptTextBox->text(), fileInfo.absoluteFilePath())) {
+      if (mpGraphicsView->mContextMenuStartPositionValid) {
+        OMSProxy::instance()->createElementGeometryUsingPosition(nameStructure, mpGraphicsView->mContextMenuStartPosition);
+      }
       mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add external tlm model %1").arg(nameStructure));
       mpGraphicsView->getModelWidget()->updateModelText();
       accept();
@@ -611,6 +620,12 @@ void AddConnectorDialog::addConnector()
   oms_causality_enu_t causality = (oms_causality_enu_t)mpCausalityComboBox->itemData(mpCausalityComboBox->currentIndex()).toInt();
   oms_signal_type_enu_t signalType = (oms_signal_type_enu_t)mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt();
   if (OMSProxy::instance()->addConnector(nameStructure, causality, signalType)) {
+    if (mpGraphicsView->mContextMenuStartPositionValid) {
+      ssd_connector_geometry_t connectorGeometry;
+      connectorGeometry.x = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1);
+      connectorGeometry.y = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1);
+      OMSProxy::instance()->setConnectorGeometry(nameStructure, &connectorGeometry);
+    }
     mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add connector %1").arg(nameStructure));
     mpGraphicsView->getModelWidget()->updateModelText();
     accept();

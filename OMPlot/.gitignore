@@ -33,3 +33,6 @@
 /qwt/src/moc
 /qwt/src/obj
 /qwt/src/object_script.*
+/qwt/qwt.pro.user
+qwt/src/release/
+qwt/src/debug/

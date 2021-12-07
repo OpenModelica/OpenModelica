@@ -1577,12 +1577,26 @@ FMI
 
   -  *Move FMU* – Moves the generated FMU to a specified path.
 
-  -  *Platforms* - list of platforms to generate FMU binaries.
+  -  Platforms
 
-  -  *Model Description Filters* - Sets the variable filter for model description file.
+    The list of platforms is created by searching for programs in the PATH matching pattern \"*-*-*-*cc\"."
+    Add the host triple to the PATH to get it listed.
+    A source-code only FMU is generated if no platform is selected.
+
+  -  Solver for Co-Simulation
+
+    -  *Explicit Euler*
+
+    -  *CVODE*
+
+  -  *Model Description Filters* - Sets the variable filter for model description file see :ref:`omcflag-fmifilter`
+
+  -  *Include Modelica based resources via loadResource*
 
   -  *Include Source Code* - Sets if the exported FMU can contain source code.
      Model Description Filter \"blackBox\" will override this, because black box FMUs do never contain their source code.
+
+  -  *Generate Debug Symbols* - Generates a FMU with debug symbols.
 
 -  Import
 
@@ -1705,6 +1719,31 @@ MSL but if you really need to and understand the consequences then follow these 
 -  Uncheck *force loading of Modelica Standard Library*.
 -  Add *$OPENMODELICAHOME/lib/omlibrary/Modelica X.X/package.mo* under user libraries.
 -  Restart OMEdit.
+
+Install Library
+---------------
+
+A new library can be installed with the help of the :ref:`package manager <packagemanagement>`.
+Click `File->Install Library` to open the install library dialog. OMEdit lists the libraries
+that are available for installation through the package manager.
+
+.. figure :: media/omedit_install_library.png
+  :name: omedit-install-library
+
+  Install Library.
+
+Upgrade Libraries using Conversion Scripts
+------------------------------------------
+
+In order to upgrade the libraries used in the model/package right-click the model/package in the
+`Libraries Browser` and choose `Convert to newer versions of used libraries`. OMEdit will read the used
+libraries from the uses-annotation and list any new version of the library that provide the conversion
+using the conversion script.
+
+.. figure :: media/omedit_convert_library.png
+  :name: omedit-convert-library
+
+  Converts the model/package to newer version of used libraries.
 
 State Machines
 --------------

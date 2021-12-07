@@ -11,7 +11,7 @@ loadString("
   end ConvertElement1;
 ");
 
-convertPackage(ConvertElement1, "scripts/ConvertElement1.mos");
+runConversionScript(ConvertElement1, "scripts/ConvertElement1.mos");
 getErrorString();
 list(ConvertElement1);
 

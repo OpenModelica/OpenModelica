@@ -65,7 +65,7 @@ public:
   SimulationDialog(QWidget *pParent = 0);
   ~SimulationDialog();
   void show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions);
-  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation);
+  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation, bool enableDataReconciliation);
   OpcUaClient* getOpcUaClient(int port);
   void removeSimulationOutputWidget(SimulationOutputWidget* pSimulationOutputWidget);
 private:
@@ -167,22 +167,10 @@ private:
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
   QCheckBox *mpProtectedVariablesCheckBox;
+  QCheckBox *mpIgnoreHideResultCheckBox;
   QCheckBox *mpEquidistantTimeGridCheckBox;
   QCheckBox *mpStoreVariablesAtEventsCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;
-  // Data Reconciliation Tab
-  QWidget *mpDataReconciliationTab;
-  QGroupBox *mpDataReconciliationGroupBox;
-  Label *mpDataReconciliationAlgorithmLabel;
-  QComboBox *mpDataReconciliationAlgorithmComboBox;
-  Label *mpDataReconciliationMeasurementInputFileLabel;
-  QLineEdit *mpDataReconciliationMeasurementInputFileTextBox;
-  QPushButton *mpDataReconciliationMeasurementInputFileBrowseButton;
-  Label *mpDataReconciliationCorrelationMatrixInputFileLabel;
-  QLineEdit *mpDataReconciliationCorrelationMatrixInputFileTextBox;
-  QPushButton *mpDataReconciliationCorrelationMatrixInputFileBrowseButton;
-  Label *mpDataReconciliationEpsilonLabel;
-  QLineEdit *mpDataReconciliationEpsilonTextBox;
   // checkboxes
   QCheckBox *mpSaveExperimentAnnotationCheckBox;
   QCheckBox *mpSaveSimulationFlagsAnnotationCheckBox;
@@ -224,10 +212,8 @@ public:
 public slots:
   void numberOfIntervalsRadioToggled(bool toggle);
   void intervalRadioToggled(bool toggle);
-  void updateMethodToolTip(int index);
   void enableDasslIdaOptions(QString method);
   void showIntegrationHelp();
-  void updateJacobianToolTip(int index);
   void buildOnly(bool checked);
   void interactiveSimulation(bool checked);
   void browseModelSetupFile();
@@ -239,10 +225,35 @@ public slots:
   void updateYAxis(double min, double max);
 private slots:
   void resultFileNameChanged(QString text);
-  void browseDataReconciliationMeasurementInputFile();
-  void browseDataReconciliationCorrelationMatrixInputFile();
   void simulationStarted();
   void simulationPaused();
+};
+
+class DataReconciliationDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  explicit DataReconciliationDialog(LibraryTreeItem *pLibraryTreeItem, QDialog *parent = nullptr);
+private:
+  LibraryTreeItem *mpLibraryTreeItem;
+  Label *mpDataReconciliationAlgorithmLabel;
+  QComboBox *mpDataReconciliationAlgorithmComboBox;
+  Label *mpDataReconciliationMeasurementInputFileLabel;
+  QLineEdit *mpDataReconciliationMeasurementInputFileTextBox;
+  QPushButton *mpDataReconciliationMeasurementInputFileBrowseButton;
+  Label *mpDataReconciliationCorrelationMatrixInputFileLabel;
+  QLineEdit *mpDataReconciliationCorrelationMatrixInputFileTextBox;
+  QPushButton *mpDataReconciliationCorrelationMatrixInputFileBrowseButton;
+  Label *mpDataReconciliationEpsilonLabel;
+  QLineEdit *mpDataReconciliationEpsilonTextBox;
+  QCheckBox *mpSaveSettingsCheckBox;
+  QPushButton *mpCalculateButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void browseDataReconciliationMeasurementInputFile();
+  void browseDataReconciliationCorrelationMatrixInputFile();
+  void calculateDataReconciliation();
 };
 
 #endif // SIMULATIONDIALOG_H

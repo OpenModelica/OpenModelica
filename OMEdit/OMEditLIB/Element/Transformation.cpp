@@ -92,7 +92,7 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
   if (value1.isEmpty()) {
     return;
   }
-  QStringList annotations = StringHandler::getStrings(value1, '(', ')');
+  QStringList annotations = StringHandler::getStrings(value1);
   foreach (QString annotation, annotations) {
     if (annotation.startsWith("Placement")) {
       annotation = annotation.mid(QString("Placement").length());

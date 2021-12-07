@@ -279,7 +279,7 @@ package SimCodeVar
       list<String> numArrayElement;
       Boolean isValueChangeable;
       Boolean isProtected;
-      Boolean hideResult;
+      Option<Boolean> hideResult;
       Option<String> matrixName;
       Option<Variability> variability "FMI-2.0 variabilty attribute";
       Option<Initial> initial_ "FMI-2.0 initial attribute";
@@ -1316,6 +1316,13 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output Integer vr;
   end lookupVR;
+
+  function lookupVRForRealOutputDerivative
+    input DAE.ComponentRef cr;
+    input SimCode.SimCode simCode;
+    input String fmuType;
+    output Integer vr;
+  end lookupVRForRealOutputDerivative;
 
   function unbalancedEqSystemPartition
     input list<SimCode.SimEqSystem> inList;
@@ -3482,6 +3489,12 @@ package List
     output list<Type_b> outTypeALst;
     replaceable type Type_a subtypeof Any;
   end unzipSecond;
+
+  function first
+    replaceable type ElementType subtypeof Any;
+    input list<ElementType> inList;
+    output ElementType val;
+  end first;
 
   function last
     replaceable type ElementType subtypeof Any;

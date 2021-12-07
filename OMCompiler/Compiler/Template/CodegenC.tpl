@@ -118,6 +118,7 @@ end translateModel;
     #include "simulation/simulation_runtime.h"
     #include "util/omc_error.h"
     #include "util/parallel_helper.h"
+    #include "simulation/simulation_omc_assert.h"
     #include "simulation/solver/model_help.h"
     #include "simulation/solver/delay.h"
     #include "simulation/solver/linearSystem.h"
@@ -1223,6 +1224,18 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     /* call the simulation runtime main from our main! */
     int main(int argc, char**argv)
     {
+      /*
+        Set the error functions to be used for simulation.
+        The default value for them is 'functions' version. Change it here to 'simulation' versions
+      */
+      omc_assert = omc_assert_simulation;
+      omc_assert_withEquationIndexes = omc_assert_simulation_withEquationIndexes;
+
+      omc_assert_warning_withEquationIndexes = omc_assert_warning_simulation_withEquationIndexes;
+      omc_assert_warning = omc_assert_warning_simulation;
+      omc_terminate = omc_terminate_simulation;
+      omc_throw = omc_throw_simulation;
+
       int res;
       DATA data;
       MODEL_DATA modelData;
@@ -3394,7 +3407,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
       <<
       equationIndexes[1] = <%id%>;
       <%preExp%>
-      storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, data->localData[0]->timeValue, <%delayExp%>, <%delayExpMax%>);<%\n%>
+      storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, <%delayExp%>, <%delayExpMax%>);<%\n%>
       >>
     ))
   <<
@@ -6012,7 +6025,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
 ::=
   let body = (whenOps |> whenOp =>
     match whenOp
-    case ASSIGN(left = lhs as DAE.CREF(componentRef=left)) then whenAssign(left, typeof(right), right, context, &varDecls, &auxFunction)
+    case ASSIGN(left = lhs as DAE.CREF(componentRef=left)) then whenAssign(lhs, typeof(right), right, context, &varDecls, &auxFunction)
     case ASSIGN(left = lhs as DAE.TUPLE(PR = expLst as firstexp::_), right = DAE.CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
     let &preExp = buffer ""
     let &postExp = buffer ""
@@ -6063,39 +6076,20 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
   >>
 end whenOperators;
 
-template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text &varDecls, Text &auxFunction)
+template whenAssign(Exp left, Type ty, Exp right, Context context, Text &varDecls, Text &auxFunction)
  "Generates assignment for when."
 ::=
 match ty
   case T_ARRAY(__) then
     let &preExp = buffer ""
     let expPart = daeExp(right, context, &preExp, &varDecls, &auxFunction)
-    match expTypeFromExpShort(right)
-    case "boolean" then
-      <<
-      <%preExp%>
-      copy_boolean_array_data_mem(<%expPart%>, &<%cref(left)%>);
-      >>
-    case "integer" then
-      <<
-      <%preExp%>
-      copy_integer_array_data_mem(<%expPart%>, &<%cref(left)%>);
-      >>
-    case "real" then
-      <<
-      <%preExp%>
-      copy_real_array_data_mem(<%expPart%>, &<%cref(left)%>);
-      >>
-    case "string" then
-      <<
-      <%preExp%>
-      copy_string_array_data_mem(<%expPart%>, &<%cref(left)%>);
-      >>
-    else
-      error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left)%> = <%dumpExp(right,"\"")%>')
-    end match
+    let assign = algStmtAssignArrWithRhsExpStr(left, expPart, context, &preExp, &varDecls, &auxFunction)
+    <<
+    <%preExp%>
+    <%assign%>
+    >>
   case T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)) then
-    error(sourceInfo(), 'No runtime support for this record assignment: <%cref(left)%> = <%dumpExp(right,"\"")%>')
+    error(sourceInfo(), 'No runtime support for this record assignment: <%dumpExp(left,"\"")%> = <%dumpExp(right,"\"")%>')
     // let &preExp = buffer ""
     // let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
     // let tmp = tempDecl(expTypeModelica(ty),&varDecls)
@@ -6114,10 +6108,11 @@ match ty
     // >>
   else
     let &preExp = buffer ""
+    let varPart = daeExp(left, context, &preExp, &varDecls, &auxFunction)
     let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
-    <%cref(left)%> = <%exp%>;
+    <%varPart%> = <%exp%>;
     >>
 end whenAssign;
 
@@ -6337,6 +6332,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   let libsPos2 = if dirExtra then libsStr // else ""
   let ParModelicaExpLibs = if acceptParModelicaGrammar() then '-lParModelicaExpl -lOpenCL' // else ""
   let ExtraStack = if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '--stack,16777216,'
+  let linkBinDirWindows = if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '-L"<%makefileParams.omhome%>/bin"'
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     match s.method case "dassljac" then "-D_OMC_JACOBIAN "
 
@@ -6356,13 +6352,13 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc/pre.js<%\n%>'
-  %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
+  %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
   # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
   OMC_LDFLAGS_LINK_TYPE=dynamic
   RUNTIME_LIBS=<%makefileParams.runtimelibs%>
   LDFLAGS=<%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -s TOTAL_MEMORY=805306368 -s OUTLINING_LIMIT=20000 --pre-js $(OMC_EMCC_PRE_JS)>>
-  else <<-L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS) >>
+  else <<-L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" <%linkBinDirWindows%> -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS) >>
   %>
   DIREXTRA=<%stringReplace(dirExtra,"#","\\#") /* make strips everything after # */%>
   MAINFILE=<%fileNamePrefix%>.c

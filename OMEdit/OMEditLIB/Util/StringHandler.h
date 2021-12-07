@@ -116,7 +116,6 @@ public:
   static QString removeFirstLastQuotes(QString value);
   static QString removeFirstLastSingleQuotes(QString value);
   static QStringList getStrings(QString value);
-  static QStringList getStrings(QString value, char start, char end);
   /* Handles quoted identifiers A.B.'C.D' -> A.B, A.B.C.D -> A.B.C */
   static QString getLastWordAfterDot(QString value);
   static QString removeLastWordAfterDot(QString value);
@@ -124,6 +123,7 @@ public:
   static QString removeFirstWordAfterDot(QString value);
   static QString escapeString(QString value);
   static QString escapeStringQuotes(QString value);
+  static QString escapeTextAnnotationString(QString value);
   // Returns "" if the string is not a standard Modelica string. Else it unparses it into normal form.
   static QString unparse(QString value);
   // Returns empty list if the string is not a standard Modelica string-array. Else it unparses it into normal form.

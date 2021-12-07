@@ -579,7 +579,7 @@ algorithm
         DAE.Element.ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
     case Equation.FOR()
-      then convertForEquation(eq) :: elements;
+      then convertForEquation(eq, isInitial = false) :: elements;
 
     case Equation.IF()
       then convertIfEquation(eq.branches, eq.source, isInitial = false) :: elements;
@@ -614,6 +614,7 @@ end convertEquation;
 
 function convertForEquation
   input Equation forEquation;
+  input Boolean isInitial;
   output DAE.Element forDAE;
 protected
   InstNode iterator;
@@ -624,11 +625,22 @@ protected
   DAE.ElementSource source;
 algorithm
   Equation.FOR(iterator = iterator, range = SOME(range), body = body, source = source) := forEquation;
-  dbody := convertEquations(body);
+
+  if isInitial then
+    dbody := convertInitialEquations(body);
+  else
+    dbody := convertEquations(body);
+  end if;
+
   Component.ITERATOR(ty = ty) := InstNode.component(iterator);
 
-  forDAE := DAE.Element.FOR_EQUATION(Type.toDAE(ty), Type.isArray(ty),
-    InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+  if isInitial then
+    forDAE := DAE.Element.INITIAL_FOR_EQUATION(Type.toDAE(ty), Type.isArray(ty),
+      InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+  else
+    forDAE := DAE.Element.FOR_EQUATION(Type.toDAE(ty), Type.isArray(ty),
+      InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+  end if;
 end convertForEquation;
 
 function convertIfEquation
@@ -737,7 +749,7 @@ algorithm
         DAE.Element.INITIAL_ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
     case Equation.FOR()
-      then convertForEquation(eq) :: elements;
+      then convertForEquation(eq, isInitial = true) :: elements;
 
     case Equation.IF()
       then convertIfEquation(eq.branches, eq.source, isInitial = true) :: elements;
@@ -909,14 +921,39 @@ protected
   list<Statement> body;
   list<DAE.Statement> dbody;
   DAE.ElementSource source;
+  Statement.ForType for_type;
+  list<tuple<DAE.ComponentRef, SourceInfo>> loop_vars;
 algorithm
-  Statement.FOR(iterator = iterator, range = SOME(range), body = body, source = source) := forStmt;
+  Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source) := forStmt;
   dbody := convertStatements(body);
   Component.ITERATOR(ty = ty) := InstNode.component(iterator);
 
-  forDAE := DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
-    InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+  forDAE := match for_type
+    case Statement.ForType.NORMAL()
+      then DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
+        InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+
+    case Statement.ForType.PARALLEL()
+      algorithm
+        loop_vars := list(convertForStatementParallelVar(v) for v in for_type.vars);
+      then
+        DAE.Statement.STMT_PARFOR(Type.toDAE(ty), Type.isArray(ty),
+          InstNode.name(iterator), 0, Expression.toDAE(range), dbody, loop_vars, source);
+  end match;
 end convertForStatement;
+
+function convertForStatementParallelVar
+  input tuple<ComponentRef, SourceInfo> var;
+  output tuple<DAE.ComponentRef, SourceInfo> outVar;
+protected
+  ComponentRef cref;
+  DAE.ComponentRef dcref;
+  SourceInfo info;
+algorithm
+  (cref, info) := var;
+  dcref := ComponentRef.toDAE(cref);
+  outVar := (dcref, info);
+end convertForStatementParallelVar;
 
 function convertIfStatement
   input list<tuple<Expression, list<Statement>>> ifBranches;

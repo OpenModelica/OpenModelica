@@ -73,7 +73,6 @@ import Print;
 import System;
 
 public constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
-public constant String derivativeNamePrefix="$DER";
 
 public function isIntGreater "Author: BZ"
   input Integer lhs;

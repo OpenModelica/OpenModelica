@@ -124,17 +124,11 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item of the list contains the border pattern.
-  mBorderPattern = StringHandler::getBorderPatternType(list.at(8));
+  mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(list.at(8)));
   // 10th item is the extent points
-  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
-    QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
-    if (extentPoints.size() >= 2) {
-      mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
-    }
-  }
+  mExtents.parse(list.at(9));
   // 11th item of the list contains the corner radius.
-  mRadius = list.at(10).toFloat();
+  mRadius.parse(list.at(10));
 }
 
 QRectF RectangleAnnotation::boundingRect() const
@@ -156,7 +150,7 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible || !mDynamicVisible.isEmpty()) {
+  if (mVisible) {
     // state machine visualization
     if (mpParentComponent && mpParentComponent->getLibraryTreeItem() && mpParentComponent->getLibraryTreeItem()->isState()
         && mpParentComponent->getGraphicsView()->isVisualizationView()) {
@@ -165,15 +159,12 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
       } else {
         painter->setOpacity(0.2);
       }
-    } else if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
-                                         || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
-      return;
     }
-    drawRectangleAnnotaion(painter);
+    drawRectangleAnnotation(painter);
   }
 }
 
-void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
+void RectangleAnnotation::drawRectangleAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
   applyFillPattern(painter);

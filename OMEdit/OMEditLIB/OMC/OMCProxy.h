@@ -80,6 +80,8 @@ private:
   QMap<QString, QList<QString> > mDerivedUnitsMap;
   OMCInterface *mpOMCInterface;
   bool mIsLoggingEnabled;
+  QStringList mLibrariesBrowserAdditionCommandsList;
+  QStringList mLibrariesBrowserDeletionCommandsList;
 public:
   OMCProxy(threadData_t *threadData, QWidget *pParent = 0);
   ~OMCProxy();
@@ -169,7 +171,7 @@ public:
   bool setSourceFile(QString className, QString path);
   bool save(QString className);
   bool saveModifiedModel(QString modelText);
-  bool saveTotalModel(QString fileName, QString className);
+  bool saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate);
   QString list(QString className);
   QString listFile(QString className, bool nestedClasses = true);
   QString diffModelicaFileListings(const QString &before, const QString &after);
@@ -211,7 +213,7 @@ public:
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
   OMCInterface::getSimulationOptions_res getSimulationOptions(QString className, double defaultTolerance = 1e-6);
-  QString buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources = true);
+  QString buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources);
   QString translateModelXML(QString className);
   QString importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors);
   QString importFMUModelDescription(QString fmuModelDescriptionName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors);
@@ -229,7 +231,9 @@ public:
   QString makeDocumentationUriToFileName(QString documentation);
   QString uriToFilename(QString uri);
   QString getModelicaPath();
+  QString getHomeDirectoryPath();
   QStringList getAvailableLibraries();
+  QStringList getAvailableLibraryVersions(QString libraryName);
   QStringList getDerivedClassModifierNames(QString className);
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
@@ -267,6 +271,12 @@ public:
   bool buildEncryptedPackage(QString className, bool encrypt = true);
   QList<QString> parseEncryptedPackage(QString fileName, QString workingDirectory);
   bool loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip, bool uses = true, bool notify = true, bool requireExactVersion = false);
+  bool installPackage(const QString &library, const QString &version, bool exactMatch);
+  bool updatePackageIndex();
+  bool upgradeInstalledPackages(bool installNewestVersions);
+  QStringList getAvailablePackageVersions(QString pkg, QString version);
+  bool convertPackageToLibrary(const QString &packageToConvert, const QString &library, const QString &libraryVersion);
+  QList<QString> getAvailablePackageConversionsFrom(const QString &pkg, const QString &version);
 signals:
   void commandFinished();
 public slots:

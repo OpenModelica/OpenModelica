@@ -440,8 +440,7 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Element *pCompo
 
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // update component attributes
-  if (pOMCProxy->setComponentProperties(modelName, pComponent->getComponentInfo()->getName(), isFinal, flow, isProtected, isReplaceAble,
-                                        variability, isInner, isOuter, causality)) {
+  if (pOMCProxy->setComponentProperties(modelName, pComponent->getComponentInfo()->getName(), isFinal, flow, isProtected, isReplaceAble, variability, isInner, isOuter, causality)) {
     pComponent->getComponentInfo()->setFinal(componentInfo.getFinal());
     pComponent->getComponentInfo()->setProtected(componentInfo.getProtected());
     pComponent->getComponentInfo()->setReplaceable(componentInfo.getReplaceable());
@@ -471,8 +470,7 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Element *pCompo
       }
     }
   } else {
-    QMessageBox::critical(MainWindow::instance(),
-                          QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
     pOMCProxy->printMessagesStringInternal();
   }
   // update the component comment only if its changed.
@@ -483,22 +481,19 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Element *pCompo
       pComponent->componentCommentHasChanged();
       if (pComponent->getLibraryTreeItem()->isConnector()) {
         if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-          Element *pDiagramComponent = 0;
-          pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
+          Element *pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
           if (pDiagramComponent) {
             pDiagramComponent->componentCommentHasChanged();
           }
         } else {
-          Element *pIconComponent = 0;
-          pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
+          Element *pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
           if (pIconComponent) {
             pIconComponent->componentCommentHasChanged();
           }
         }
       }
     } else {
-      QMessageBox::critical(MainWindow::instance(),
-                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
   }
@@ -511,22 +506,19 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Element *pCompo
       pComponent->componentNameHasChanged();
       if (pComponent->getLibraryTreeItem()->isConnector()) {
         if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-          Element *pDiagramComponent = 0;
-          pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
+          Element *pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
           if (pDiagramComponent) {
             pDiagramComponent->componentNameHasChanged();
           }
         } else {
-          Element *pIconComponent = 0;
-          pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
+          Element *pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
           if (pIconComponent) {
             pIconComponent->componentNameHasChanged();
           }
         }
       }
     } else {
-      QMessageBox::critical(MainWindow::instance(),
-                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
   }
@@ -536,8 +528,7 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Element *pCompo
     if (pOMCProxy->setComponentDimensions(modelName, pComponent->getComponentInfo()->getName(), arrayIndex)) {
       pComponent->getComponentInfo()->setArrayIndex(arrayIndex);
     } else {
-      QMessageBox::critical(MainWindow::instance(),
-                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
   }

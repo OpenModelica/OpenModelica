@@ -1,0 +1,46 @@
+// name:     PowerSystems.Examples.AC1ph_DC.Drives.BLDC
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC1ph_DC.Drives.BLDC);
+compareVars :=
+{
+  "power.p",
+  "loadInertia.w",
+  "loadInertia.flange_a.tau",
+  "efficiency.eta"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting); getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// PowerSystems.Examples.AC1ph_DC.Drives.BLDC
+// {"power.p","loadInertia.w","loadInertia.flange_a.tau","efficiency.eta"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Drives.BLDC', options = '', outputFormat = 'mat', variableFilter = 'time|power.p|loadInertia.w|loadInertia.flange_a.tau|efficiency.eta', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC1ph_DC.Drives.BLDC_res.mat
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: bldcm.rotor.w = bldcm.rotor.w_start (loadInertia.w_start = bldcm.rotor.w_start)
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

@@ -29,10 +29,13 @@
 #     if the logger should be completely disabled or used                          -DUSE_LOGGER=OFF [default: ON]
 #     specify target platform for compilation                                      -DPLATFORM=<dynamic, static or platform triple> [default: "dynamic"]
 #     use Klu sparse liner solver                            -DUSE_KLU [default: OFF]
-#     use NOX non linear solver from trilinos library                              -DUSE_TRILINOS [default: OFF]
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
+
+if(OPENMODELICA_NEW_CMAKE_BUILD)
+  include(cmake_3.14.cmake)
+else(OPENMODELICA_NEW_CMAKE_BUILD)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 
@@ -87,12 +90,11 @@ OPTION(USE_BOOST_REALPATHS "USE_BOOST_REALPATHS" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(FMU_SUNDIALS "FMU_SUNDIALS" OFF)
 OPTION(KLU_ROOT "KLU ROOT" "")
-OPTION(TRILINOS_ROOT "TRILINOS ROOT" "")
 OPTION(USE_CPP_03 "USE_CPP_03" OFF)
 OPTION(REDUCE_DAE "Use reduce dae method" OFF)
 
 #Set Variables
-SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
+SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../ModelicaExternalC/C-Sources")
 
 IF(NOT FMU_TARGET)
  IF(MSVC)
@@ -138,7 +140,6 @@ SET(RTEulerName ${LIBPREFIX}RTEuler${LIBSUFFIX})
 SET(IdaName ${LIBPREFIX}Ida${LIBSUFFIX})
 SET(IdasName ${LIBPREFIX}Idas${LIBSUFFIX})
 SET(KinsolName ${LIBPREFIX}Kinsol${LIBSUFFIX})
-SET(NoxName ${LIBPREFIX}Nox${LIBSUFFIX})
 SET(LinearSolverName ${LIBPREFIX}LinearSolver${LIBSUFFIX})
 SET(DgesvSolverName ${LIBPREFIX}DgesvSolver${LIBSUFFIX})
 SET(ModelicaName ${LIBPREFIX}Modelica${LIBSUFFIX})
@@ -157,7 +158,6 @@ SET(ReduceDAEName ${LIBPREFIX}ReduceDAE) # only static version
 
 SET(USE_MICO OFF)
 SET(USE_KLU CACHE BOOL OFF)
-SET(USE_TRILINOS CACHE BOOL OFF)
 
 IF(NOT FMU_TARGET OR FMU_SUNDIALS)
   SET(USE_SUNDIALS ON)
@@ -520,7 +520,7 @@ MESSAGE(STATUS ${LAPACK_LIBRARIES})
 
 MESSAGE(STATUS "use reduce dae method: ${REDUCE_DAE} - "  )
 IF(REDUCE_DAE)
- MESSAGE(STATUS "using reduce dae method") 
+ MESSAGE(STATUS "using reduce dae method")
  ADD_DEFINITIONS("-DUSE_REDUCE_DAE")
  SET(OMCCAPI_INLCUDE_HOME  omcCAPI/include/)
  SET(OMCCAPI_LIBRARY_RELEASE_HOME   Build_CAPI/)
@@ -544,10 +544,10 @@ ENDIF(REDUCE_DAE)
 IF(USE_SUNDIALS)
   #set sundials solvers include and library directories
   IF(MSVC)
-    SET(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/include/")
+    SET(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/include/sundials")
     SET(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/lib/")
   ELSE(MSVC)
-    SET(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/c/sundials)
+    SET(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/sundials)
     SET(SUNDIALS_LIBRARY_RELEASE_HOME   ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/..)
   ENDIF(MSVC)
 
@@ -685,95 +685,6 @@ IF(USE_KLU)
   ADD_DEFINITIONS(-Dklu)
 ENDIF(USE_KLU)
 
-
-
-# Find Trilinos/Nox solvers
-IF(USE_TRILINOS)
-  IF(MSVC)
-    SET(Trilinos_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/trilinos-nox/build_msvc")
-  ELSE(MSVC)
-    SET(Trilinos_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/trilinos-nox/build")
-  ENDIF(MSVC)
-  SET(TRILINOS_INLCUDE_HOME  ${Trilinos_Path}/include)
-  IF(WIN32)
-    SET(TRILINOS_LIBRARY_RELEASE_HOME  ${Trilinos_Path}/bin)
-  ELSE(WIN32)
-    SET(TRILINOS_LIBRARY_RELEASE_HOME  ${Trilinos_Path}/lib)
-  ENDIF(WIN32)
-  MESSAGE(STATUS "Trilinos include:")
-  MESSAGE(STATUS "${TRILINOS_INLCUDE_HOME}")
-  MESSAGE(STATUS "Trilinos library:")
-  MESSAGE(STATUS "${TRILINOS_LIBRARY_RELEASE_HOME}")
-
-  FIND_PATH(TRILINOS_INCLUDE_DIR NOX.H PATHS ${TRILINOS_INLCUDE_HOME} $ENV{TRILINOS_ROOT}/include)
-  IF (NOT TRILINOS_INCLUDE_DIR)
-    MESSAGE(FATAL_ERROR "Could not find Trilinos, specify environment variable TRILINOS_ROOT")
-  ELSE(NOT TRILINOS_INCLUDE_DIR)
-    INCLUDE_DIRECTORIES(${TRILINOS_INCLUDE_DIR})
-  ENDIF(NOT TRILINOS_INCLUDE_DIR)
-
-  FIND_LIBRARY(NOX_LIB "nox" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT NOX_LIB)
-    MESSAGE(FATAL_ERROR "Could not find nox library!")
-  ENDIF()
-
-  FIND_LIBRARY(NOXLAPACK_LIB "noxlapack" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT NOXLAPACK_LIB)
-    MESSAGE(FATAL_ERROR "Could not find noxlapack library!")
-  ENDIF()
-
-  FIND_LIBRARY(BELOS_LIB "belos" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT BELOS_LIB)
-    MESSAGE(FATAL_ERROR "Could not find belos library!")
-  ENDIF()
-
-  FIND_LIBRARY(LOCA_LIB "loca" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT LOCA_LIB)
-    MESSAGE(FATAL_ERROR "Could not find loca library!")
-  ENDIF()
-
-  FIND_LIBRARY(LOCALAPACK_LIB "localapack" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT LOCALAPACK_LIB)
-    MESSAGE(FATAL_ERROR "Could not find localapack library!")
-  ENDIF()
-
-  FIND_LIBRARY(ML_LIB "ml" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT ML_LIB)
-    MESSAGE(FATAL_ERROR "Could not find ml library!")
-  ENDIF()
-
-  FIND_LIBRARY(TEUCHOSCOMM_LIB "teuchoscomm" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT TEUCHOSCOMM_LIB)
-    MESSAGE(FATAL_ERROR "Could not find teuchoscomm library!")
-  ENDIF()
-
-  FIND_LIBRARY(TEUCHOSCORE_LIB "teuchoscore" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT TEUCHOSCORE_LIB)
-    MESSAGE(FATAL_ERROR "Could not find teuchoscore library!")
-  ENDIF()
-
-  FIND_LIBRARY(TEUCHOSNUMERICS_LIB "teuchosnumerics" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT TEUCHOSNUMERICS_LIB)
-    MESSAGE(FATAL_ERROR "Could not find teuchosnumerics library!")
-  ENDIF()
-
-  FIND_LIBRARY(TEUCHOSPARAMETERLIST_LIB "teuchosparameterlist" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT TEUCHOSPARAMETERLIST_LIB)
-    MESSAGE(FATAL_ERROR "Could not find teuchosparameterlist library!")
-  ENDIF()
-
-  FIND_LIBRARY(TEUCHOSREMAINDER_LIB "teuchosremainder" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${TRILINOS_LIBRARY_RELEASE_HOME} $ENV{TRILINOS_ROOT}/lib)
-  IF(NOT TEUCHOSREMAINDER_LIB)
-    MESSAGE(FATAL_ERROR "Could not find teuchosremainder library!")
-  ENDIF()
-
-  SET(TRILINOS_LIBRARIES ${NOX_LIB} ${NOXLAPACK_LIB} ${BELOS_LIB} ${LOCA_LIB} ${LOCALAPACK_LIB} ${ML_LIB} ${TEUCHOSCOMM_LIB} ${TEUCHOSCORE_LIB} ${TEUCHOSNUMERICS_LIB} ${TEUCHOSPARAMETERLIST_LIB} ${TEUCHOSREMAINDER_LIB} )
-
-  MESSAGE(STATUS "Trilinos Libraries:")
-  MESSAGE(STATUS "${TRILINOS_LIBRARIES}")
-
-  ADD_DEFINITIONS(-Dtrilinos)
-ENDIF(USE_TRILINOS)
 
 
 #Handle umfpack
@@ -933,14 +844,6 @@ IF(USE_SUNDIALS)
   #set(IDA_LIB ${libIdaName})
 ENDIF(USE_SUNDIALS)
 
-IF(USE_TRILINOS)
-  ADD_SUBDIRECTORY(Solver/Nox)
-
-  GET_TARGET_PROPERTY(libNox ${NoxName} LOCATION)
-  GET_FILENAME_COMPONENT(libNoxName ${libNox} NAME)
-
-  SET(NOX_LIB ${libNoxName})
-ENDIF(USE_TRILINOS)
 
 GET_TARGET_PROPERTY(libLinearSolver ${LinearSolverName} LOCATION)
 GET_FILENAME_COMPONENT(libLinearSolverName ${libLinearSolver} NAME)
@@ -1126,3 +1029,6 @@ if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
   # symlink boost includes outside platform specific /usr/include
   install(CODE "execute_process(COMMAND ln -sf /usr/include/boost \"${CMAKE_INSTALL_PREFIX}/include/omc/cpp/\")")
 endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
+
+
+endif(OPENMODELICA_NEW_CMAKE_BUILD)

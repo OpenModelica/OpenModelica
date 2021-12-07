@@ -27,7 +27,11 @@ val(inertia2.w,0.6),val(inertia2.w,0.8),val(inertia2.w,1.0)};
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
-// {0.0,-0.1556041881885503,-0.5374777795443372,-0.6936961637901916,-0.9015842369449714,-1.122492851615603}
-// {0.0,-0.01556041881885503,-0.05374777795443372,-0.06936961637901916,-0.09015842369449714,-0.1122492851615603}
+// "[Modelica 2.2.2+maint.om/package.mo:19:10-19:42:writable] Warning: Conversion-annotation contains unknown element: ModelicaAdditions.
+// [Modelica 2.2.2+maint.om/package.mo:20:10-20:36:writable] Warning: Conversion-annotation contains unknown element: MultiBody.
+// [Modelica 2.2.2+maint.om/package.mo:21:10-21:34:writable] Warning: Conversion-annotation contains unknown element: MultiBody.
+// [Modelica 2.2.2+maint.om/package.mo:22:10-22:33:writable] Warning: Conversion-annotation contains unknown element: Matrices.
+// "
+// {0.0,-0.1556041881885981,-0.5374777795440758,-0.6936961637901844,-0.9015842369449916,-1.122492851634946}
+// {0.0,-0.01556041881885981,-0.05374777795440758,-0.06936961637901844,-0.09015842369449915,-0.1122492851634946}
 // endResult

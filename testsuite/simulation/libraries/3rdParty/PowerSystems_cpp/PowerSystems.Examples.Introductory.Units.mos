@@ -1,0 +1,58 @@
+// name:     PowerSystems.Examples.Introductory.Units
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.Introductory.Units);
+compareVars :=
+{
+  "meter_SI.p[1]",
+  "meter_SI.p[2]",
+  "meter_SI.p[3]",
+  "meter_SI.v[1]",
+  "meter_SI.v[2]",
+  "meter_SI.v[3]",
+  "meter_SI.i[1]",
+  "meter_SI.i[2]",
+  "meter_SI.i[3]",
+  "meter_pu.p[1]",
+  "meter_pu.p[2]",
+  "meter_pu.p[3]",
+  "meter_pu.v[1]",
+  "meter_pu.v[2]",
+  "meter_pu.v[3]",
+  "meter_pu.i[1]",
+  "meter_pu.i[2]",
+  "meter_pu.i[3]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.Introductory.Units
+// {"meter_SI.p[1]","meter_SI.p[2]","meter_SI.p[3]","meter_SI.v[1]","meter_SI.v[2]","meter_SI.v[3]","meter_SI.i[1]","meter_SI.i[2]","meter_SI.i[3]","meter_pu.p[1]","meter_pu.p[2]","meter_pu.p[3]","meter_pu.v[1]","meter_pu.v[2]","meter_pu.v[3]","meter_pu.i[1]","meter_pu.i[2]","meter_pu.i[3]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Introductory.Units', options = '', outputFormat = 'mat', variableFilter = 'time|meter_SI.p.1.|meter_SI.p.2.|meter_SI.p.3.|meter_SI.v.1.|meter_SI.v.2.|meter_SI.v.3.|meter_SI.i.1.|meter_SI.i.2.|meter_SI.i.3.|meter_pu.p.1.|meter_pu.p.2.|meter_pu.p.3.|meter_pu.v.1.|meter_pu.v.2.|meter_pu.v.3.|meter_pu.i.1.|meter_pu.i.2.|meter_pu.i.3.', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.Introductory.Units_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

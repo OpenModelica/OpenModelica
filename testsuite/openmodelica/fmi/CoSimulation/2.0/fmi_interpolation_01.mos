@@ -1,0 +1,93 @@
+// name: fmi_interpolation_01.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_interpolation_01.fmu fmi_interpolation_01.log fmi_interpolation_01.xml fmi_interpolation_01_tmp.xml
+
+loadString("
+model fmi_interpolation_01
+  Real u = sin(time);
+  output Real y;
+  Real x(fixed=true, start=0.0);
+equation
+  der(x) = u;
+  y = u;
+end fmi_interpolation_01;
+"); getErrorString();
+
+translateModelFMU(fmi_interpolation_01, fmuType="cs"); getErrorString();
+
+//unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_interpolation_01.fmu modelDescription.xml > fmi_interpolation_01_tmp.xml"); getErrorString();
+
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_interpolation_01_tmp.xml > fmi_interpolation_01.xml"); getErrorString();
+readFile("fmi_interpolation_01.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_interpolation_01_tmp.xml > fmi_interpolation_01.xml"); getErrorString();
+readFile("fmi_interpolation_01.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi_interpolation_01.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"der(_D_outputAlias_y)\"
+//     valueReference=\"2\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"5\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"5\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

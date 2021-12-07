@@ -21542,7 +21542,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </equations>
 // <functions>
 // <function name=\"Modelica.Math.Vectors.length\">
-// <ModelicaImplementation>function(v :: array(Real)[:]) =&gt; RealModelica.Math.Vectors.lengthfunction Modelica.Math.Vectors.length &quot;Inline before index reduction&quot; &quot;Return length of a vector (better as norm(), if further symbolic processing is performed)&quot;
+// <ModelicaImplementation>function(v :: array(Real)[:]) =&gt; RealModelica.Math.Vectors.lengthfunction Modelica.Math.Vectors.length &quot;Return length of a vector (better as norm(), if further symbolic processing is performed)&quot;
 //   input Real[:] v &quot;Vector&quot;;
 //   output Real result &quot;Length of vector v&quot;;
 // algorithm
@@ -21553,12 +21553,12 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAcceleration\">
-// <ModelicaImplementation>function(r :: array(Real)[3] * gravityType :: Enumeration * g :: array(Real)[3] * mue :: Real) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAccelerationfunction Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAcceleration &quot;Inline before index reduction&quot;
-//   input Real[3] r(quantity = &quot;Length&quot;, unit = &quot;m&quot;) &quot;Position vector from world frame to actual point, resolved in world frame&quot;;
+// <ModelicaImplementation>function(r :: array(Real)[3] * gravityType :: Enumeration * g :: array(Real)[3] * mue :: Real) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAccelerationfunction Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAcceleration
+//   input Real[3] r(quantity = {&quot;Length&quot;, &quot;Length&quot;, &quot;Length&quot;}, unit = {&quot;m&quot;, &quot;m&quot;, &quot;m&quot;}) &quot;Position vector from world frame to actual point, resolved in world frame&quot;;
 //   input enumeration(NoGravity, UniformGravity, PointGravity) gravityType = Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity &quot;Type of gravity field&quot;;
-//   input Real[3] g(quantity = &quot;Acceleration&quot;, unit = &quot;m/s2&quot;) = {0.0, -9.81, 0.0} &quot;Constant gravity acceleration, resolved in world frame, if gravityType=UniformGravity&quot;;
+//   input Real[3] g(quantity = {&quot;Acceleration&quot;, &quot;Acceleration&quot;, &quot;Acceleration&quot;}, unit = {&quot;m/s2&quot;, &quot;m/s2&quot;, &quot;m/s2&quot;}) = {0.0, -9.81, 0.0} &quot;Constant gravity acceleration, resolved in world frame, if gravityType=UniformGravity&quot;;
 //   input Real mue(unit = &quot;m3/s2&quot;) = 398600000000000.0 &quot;Field constant of point gravity field, if gravityType=PointGravity&quot;;
-//   output Real[3] gravity(quantity = &quot;Acceleration&quot;, unit = &quot;m/s2&quot;) &quot;Gravity acceleration at position r, resolved in world frame&quot;;
+//   output Real[3] gravity(quantity = {&quot;Acceleration&quot;, &quot;Acceleration&quot;, &quot;Acceleration&quot;}, unit = {&quot;m/s2&quot;, &quot;m/s2&quot;, &quot;m/s2&quot;}) &quot;Gravity acceleration at position r, resolved in world frame&quot;;
 // algorithm
 //   gravity := if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity then g else if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity then {-mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[1] / Modelica.Math.Vectors.length(r), -mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[2] / Modelica.Math.Vectors.length(r), -mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[3] / Modelica.Math.Vectors.length(r)} else {0.0, 0.0, 0.0};
 // end Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.world.gravityAcceleration;
@@ -21577,7 +21577,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.absoluteRotation\">
-// <ModelicaImplementation>function(R1 :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * R_rel :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND})) =&gt; composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND})Modelica.Mechanics.MultiBody.Frames.absoluteRotationfunction Modelica.Mechanics.MultiBody.Frames.absoluteRotation &quot;Inline before index reduction&quot; &quot;Return absolute orientation object from another absolute and a relative orientation object&quot;
+// <ModelicaImplementation>function(R1 :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * R_rel :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND})) =&gt; composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND})Modelica.Mechanics.MultiBody.Frames.absoluteRotationfunction Modelica.Mechanics.MultiBody.Frames.absoluteRotation &quot;Return absolute orientation object from another absolute and a relative orientation object&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R1 &quot;Orientation object to rotate frame 0 into frame 1&quot;;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R_rel &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   output Modelica.Mechanics.MultiBody.Frames.Orientation R2 &quot;Orientation object to rotate frame 0 into frame 2&quot;;
@@ -21589,9 +21589,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.angularVelocity2\">
-// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND})) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.angularVelocity2function Modelica.Mechanics.MultiBody.Frames.angularVelocity2 &quot;Inline before index reduction&quot; &quot;Return angular velocity resolved in frame 2 from orientation object&quot;
+// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND})) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.angularVelocity2function Modelica.Mechanics.MultiBody.Frames.angularVelocity2 &quot;Return angular velocity resolved in frame 2 from orientation object&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
-//   output Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;Angular velocity of frame 2 with respect to frame 1 resolved in frame 2&quot;;
+//   output Real[3] w(quantity = {&quot;AngularVelocity&quot;, &quot;AngularVelocity&quot;, &quot;AngularVelocity&quot;}, unit = {&quot;rad/s&quot;, &quot;rad/s&quot;, &quot;rad/s&quot;}) &quot;Angular velocity of frame 2 with respect to frame 1 resolved in frame 2&quot;;
 // algorithm
 //   w := R.w;
 // end Modelica.Mechanics.MultiBody.Frames.angularVelocity2;
@@ -21600,7 +21600,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.planarRotation\">
-// <ModelicaImplementation>function(e :: array(Real)[3] * angle :: Real * der_angle :: Real) =&gt; composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND})Modelica.Mechanics.MultiBody.Frames.planarRotationfunction Modelica.Mechanics.MultiBody.Frames.planarRotation &quot;Inline before index reduction&quot; &quot;Return orientation object of a planar rotation&quot;
+// <ModelicaImplementation>function(e :: array(Real)[3] * angle :: Real * der_angle :: Real) =&gt; composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND})Modelica.Mechanics.MultiBody.Frames.planarRotationfunction Modelica.Mechanics.MultiBody.Frames.planarRotation &quot;Return orientation object of a planar rotation&quot;
 //   input Real[3] e(unit = &quot;1&quot;) &quot;Normalized axis of rotation (must have length=1)&quot;;
 //   input Real angle(quantity = &quot;Angle&quot;, unit = &quot;rad&quot;, displayUnit = &quot;deg&quot;) &quot;Rotation angle to rotate frame 1 into frame 2 along axis e&quot;;
 //   input Real der_angle(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;) &quot;= der(angle)&quot;;
@@ -21613,7 +21613,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.resolve1\">
-// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * v2 :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.resolve1function Modelica.Mechanics.MultiBody.Frames.resolve1 &quot;Inline after index reduction&quot; &quot;Transform vector from frame 2 to frame 1&quot;
+// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * v2 :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.resolve1function Modelica.Mechanics.MultiBody.Frames.resolve1 &quot;Transform vector from frame 2 to frame 1&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   input Real[3] v2 &quot;Vector in frame 2&quot;;
 //   output Real[3] v1 &quot;Vector in frame 1&quot;;
@@ -21625,7 +21625,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.resolve2\">
-// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * v1 :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.resolve2function Modelica.Mechanics.MultiBody.Frames.resolve2 &quot;Inline after index reduction&quot; &quot;Transform vector from frame 1 to frame 2&quot;
+// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * v1 :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.resolve2function Modelica.Mechanics.MultiBody.Frames.resolve2 &quot;Transform vector from frame 1 to frame 2&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   input Real[3] v1 &quot;Vector in frame 1&quot;;
 //   output Real[3] v2 &quot;Vector in frame 2&quot;;
@@ -21637,7 +21637,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.to_Q\">
-// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * Q_guess :: array(Real)[4]) =&gt; array(Real)[4]Modelica.Mechanics.MultiBody.Frames.to_Qfunction Modelica.Mechanics.MultiBody.Frames.to_Q &quot;Inline before index reduction&quot; &quot;Return quaternion orientation object Q from orientation object R&quot;
+// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * Q_guess :: array(Real)[4]) =&gt; array(Real)[4]Modelica.Mechanics.MultiBody.Frames.to_Qfunction Modelica.Mechanics.MultiBody.Frames.to_Q &quot;Return quaternion orientation object Q from orientation object R&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   input Real[4] Q_guess = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for output Q (there are 2 solutions; the one closer to Q_guess is used&quot;;
 //   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2&quot;;
@@ -21649,7 +21649,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der\">
-// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * v2 :: array(Real)[3] * v2_der :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_derfunction Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der &quot;Inline before index reduction&quot; &quot;Derivative of function Frames.resolve1(..)&quot;
+// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * v2 :: array(Real)[3] * v2_der :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_derfunction Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der &quot;Derivative of function Frames.resolve1(..)&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   input Real[3] v2 &quot;Vector resolved in frame 2&quot;;
 //   input Real[3] v2_der &quot;= der(v2)&quot;;
@@ -21662,7 +21662,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der\">
-// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * v1 :: array(Real)[3] * v1_der :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_derfunction Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der &quot;Inline before index reduction&quot; &quot;Derivative of function Frames.resolve2(..)&quot;
+// <ModelicaImplementation>function(R :: composite(record{array(Real)[3, 3] T VAR UNBOUND, array(Real)[3] w VAR UNBOUND}) * v1 :: array(Real)[3] * v1_der :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_derfunction Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der &quot;Derivative of function Frames.resolve2(..)&quot;
 //   input Modelica.Mechanics.MultiBody.Frames.Orientation R &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   input Real[3] v1 &quot;Vector resolved in frame 1&quot;;
 //   input Real[3] v1_der &quot;= der(v1)&quot;;
@@ -21675,7 +21675,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T\">
-// <ModelicaImplementation>function(T :: array(Real)[3, 3] * Q_guess :: array(Real)[4]) =&gt; array(Real)[4]Modelica.Mechanics.MultiBody.Frames.Quaternions.from_Tfunction Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T&quot;Inline if necessary&quot; &quot;Return quaternion orientation object Q from transformation matrix T&quot;
+// <ModelicaImplementation>function(T :: array(Real)[3, 3] * Q_guess :: array(Real)[4]) =&gt; array(Real)[4]Modelica.Mechanics.MultiBody.Frames.Quaternions.from_Tfunction Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T &quot;Return quaternion orientation object Q from transformation matrix T&quot;
 //   input Real[3, 3] T &quot;Transformation matrix to transform vector from frame 1 to frame 2 (v2=T*v1)&quot;;
 //   input Real[4] Q_guess = {0.0, 0.0, 0.0, 1.0} &quot;Guess value for Q (there are 2 solutions; the one close to Q_guess is used&quot;;
 //   output Real[4] Q &quot;Quaternions orientation object to rotate frame 1 into frame 2 (Q and -Q have same transformation matrix)&quot;;
@@ -21718,7 +21718,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation\">
-// <ModelicaImplementation>function(T1 :: array(Real)[3, 3] * T_rel :: array(Real)[3, 3]) =&gt; array(Real)[3, 3]Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotationfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation &quot;Inline before index reduction&quot; &quot;Return absolute orientation object from another absolute and a relative orientation object&quot;
+// <ModelicaImplementation>function(T1 :: array(Real)[3, 3] * T_rel :: array(Real)[3, 3]) =&gt; array(Real)[3, 3]Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotationfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation &quot;Return absolute orientation object from another absolute and a relative orientation object&quot;
 //   input Real[3, 3] T1 &quot;Orientation object to rotate frame 0 into frame 1&quot;;
 //   input Real[3, 3] T_rel &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   output Real[3, 3] T2 &quot;Orientation object to rotate frame 0 into frame 2&quot;;
@@ -21730,7 +21730,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy\">
-// <ModelicaImplementation>function(n_x :: array(Real)[3] * n_y :: array(Real)[3]) =&gt; array(Real)[3, 3]Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxyfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy&quot;Inline if necessary&quot; &quot;Return orientation object from n_x and n_y vectors&quot;
+// <ModelicaImplementation>function(n_x :: array(Real)[3] * n_y :: array(Real)[3]) =&gt; array(Real)[3, 3]Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxyfunction Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy &quot;Return orientation object from n_x and n_y vectors&quot;
 //   input Real[3] n_x(unit = &quot;1&quot;) &quot;Vector in direction of x-axis of frame 2, resolved in frame 1&quot;;
 //   input Real[3] n_y(unit = &quot;1&quot;) &quot;Vector in direction of y-axis of frame 2, resolved in frame 1&quot;;
 //   output Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
@@ -21748,7 +21748,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1\">
-// <ModelicaImplementation>function(T :: array(Real)[3, 3] * v2 :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1 &quot;Inline before index reduction&quot; &quot;Transform vector from frame 2 to frame 1&quot;
+// <ModelicaImplementation>function(T :: array(Real)[3, 3] * v2 :: array(Real)[3]) =&gt; array(Real)[3]Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1function Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1 &quot;Transform vector from frame 2 to frame 1&quot;
 //   input Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   input Real[3] v2 &quot;Vector in frame 2&quot;;
 //   output Real[3] v1 &quot;Vector in frame 1&quot;;
@@ -21760,7 +21760,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.SIunits.Conversions.to_unit1\">
-// <ModelicaImplementation>function(r :: Real) =&gt; RealModelica.SIunits.Conversions.to_unit1function Modelica.SIunits.Conversions.to_unit1 &quot;Inline before index reduction&quot; &quot;Change the unit of a Real number to unit=\\&quot;1\\&quot;&quot;
+// <ModelicaImplementation>function(r :: Real) =&gt; RealModelica.SIunits.Conversions.to_unit1function Modelica.SIunits.Conversions.to_unit1 &quot;Change the unit of a Real number to unit=\\&quot;1\\&quot;&quot;
 //   input Real r &quot;Real number&quot;;
 //   output Real result(unit = &quot;1&quot;) &quot;Real number r with unit=\\&quot;1\\&quot;&quot;;
 // algorithm

@@ -53,25 +53,15 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   OMCInterface::getAvailableMatchingAlgorithms_res matchingAlgorithms;
   matchingAlgorithms = MainWindow::instance()->getOMCProxy()->getAvailableMatchingAlgorithms();
   mpMatchingAlgorithmComboBox = new QComboBox;
-  int i = 0;
-  foreach (QString matchingAlgorithmChoice, matchingAlgorithms.allChoices) {
-    mpMatchingAlgorithmComboBox->addItem(matchingAlgorithmChoice);
-    mpMatchingAlgorithmComboBox->setItemData(i, matchingAlgorithms.allComments[i], Qt::ToolTipRole);
-    i++;
-  }
-  connect(mpMatchingAlgorithmComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateMatchingAlgorithmToolTip(int)));
+  mpMatchingAlgorithmComboBox->addItems(matchingAlgorithms.allChoices);
+  Utilities::setToolTip(mpMatchingAlgorithmComboBox, "Matching Algorithms", matchingAlgorithms.allComments);
   // Index Reduction Method
   mpIndexReductionMethodLabel = new Label(tr("Index Reduction Method:"));
   OMCInterface::getAvailableIndexReductionMethods_res indexReductionMethods;
   indexReductionMethods = MainWindow::instance()->getOMCProxy()->getAvailableIndexReductionMethods();
   mpIndexReductionMethodComboBox = new QComboBox;
-  i = 0;
-  foreach (QString indexReductionChoice, indexReductionMethods.allChoices) {
-    mpIndexReductionMethodComboBox->addItem(indexReductionChoice);
-    mpIndexReductionMethodComboBox->setItemData(i, indexReductionMethods.allComments[i], Qt::ToolTipRole);
-    i++;
-  }
-  connect(mpIndexReductionMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateIndexReductionToolTip(int)));
+  mpIndexReductionMethodComboBox->addItems(indexReductionMethods.allChoices);
+  Utilities::setToolTip(mpIndexReductionMethodComboBox, "Index Reduction Methods", indexReductionMethods.allComments);
   mpInitializationCheckBox = new QCheckBox(tr("Show additional information from the initialization process"));
   mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime, does not work with old frontend)"));
   mpNLSanalyticJacobianCheckBox = new QCheckBox(tr("Enable analytical jacobian for non-linear strong components"));
@@ -204,26 +194,6 @@ QString TranslationFlagsWidget::commandLineOptions()
   }
 
   return commandLineOptions.join(" ");
-}
-
-/*!
- * \brief TranslationFlagsWidget::updateMatchingAlgorithmToolTip
- * Updates the matching algorithm combobox tooltip.
- * \param index
- */
-void TranslationFlagsWidget::updateMatchingAlgorithmToolTip(int index)
-{
-  mpMatchingAlgorithmComboBox->setToolTip(mpMatchingAlgorithmComboBox->itemData(index, Qt::ToolTipRole).toString());
-}
-
-/*!
- * \brief TranslationFlagsWidget::updateIndexReductionToolTip
- * Updates the index reduction combobox tooltip.
- * \param index
- */
-void TranslationFlagsWidget::updateIndexReductionToolTip(int index)
-{
-  mpIndexReductionMethodComboBox->setToolTip(mpIndexReductionMethodComboBox->itemData(index, Qt::ToolTipRole).toString());
 }
 
 /*!

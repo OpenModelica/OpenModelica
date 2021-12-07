@@ -73,6 +73,8 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
   int res;
   unsigned int j, maxNumberThreads;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo->linearSystemData;
+  modelica_boolean someSmallDensity = 0;  /* pretty dumping of flag info */
+  modelica_boolean someBigSize = 0;       /* analogous to someSmallDensity */
 
   maxNumberThreads = omc_get_max_threads();
 
@@ -139,10 +141,30 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
 #endif
     }
 
-    if(nnz/(double)(size*size)<=linearSparseSolverMaxDensity || size>=linearSparseSolverMinSize)
-    {
+    if (nnz/(double)(size*size) < linearSparseSolverMaxDensity) {
       linsys[i].useSparseSolver = 1;
-      infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver for linear system %d,\nbecause density of %.3f remains under threshold of %.3f or size of %d exceeds threshold of %d.\nThe maximum density and the minimal system size for using sparse solvers can be specified\nusing the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.", i, nnz/(double)(size*size), linearSparseSolverMaxDensity, size, linearSparseSolverMinSize);
+      someSmallDensity = 1;
+      if (size > linearSparseSolverMinSize) {
+        someBigSize = 1;
+        infoStreamPrint(LOG_STDOUT, 0,
+                        "Using sparse solver for linear system %d,\n"
+                        "because density of %.3f remains under threshold of %.3f\n"
+                        "and size of %d exceeds threshold of %d.",
+                        i, nnz/(double)(size*size), linearSparseSolverMaxDensity,
+                        size, linearSparseSolverMinSize);
+      } else {
+        infoStreamPrint(LOG_STDOUT, 0,
+                        "Using sparse solver for linear system %d,\n"
+                        "because density of %.3f remains under threshold of %.3f.",
+                        i, nnz/(double)(size*size), linearSparseSolverMaxDensity);
+      }
+    } else if (size > linearSparseSolverMinSize) {
+      linsys[i].useSparseSolver = 1;
+      someBigSize = 1;
+        infoStreamPrint(LOG_STDOUT, 0,
+                        "Using sparse solver for linear system %d,\n"
+                        "because size of %d exceeds threshold of %d.",
+                        i, size, linearSparseSolverMinSize);
     }
 
     /* allocate more system data */
@@ -208,9 +230,10 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         throwStreamPrint(threadData, "unrecognized sparse linear solver (%d)", data->simulationInfo->lssMethod);
       }
     }
-    if(linsys[i].useSparseSolver == 0) { /* Not an else-statement because there might not be a sparse linear solver available */
-    switch(data->simulationInfo->lsMethod)
+    if(linsys[i].useSparseSolver == 0) /* Not an else-statement because there might not be a sparse linear solver available */
     {
+      switch(data->simulationInfo->lsMethod)
+      {
       case LS_LAPACK:
         linsys[i].setAElement = setAElement;
         linsys[i].setBElement = setBElement;
@@ -280,6 +303,20 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         throwStreamPrint(threadData, "unrecognized dense linear solver (%d)", data->simulationInfo->lsMethod);
       }
     }
+  }
+
+  /* print relevant flag information */
+  if(someSmallDensity) {
+    if(someBigSize) {
+      infoStreamPrint(LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\n"
+                                     "specified using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.");
+    } else {
+      infoStreamPrint(LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\n"
+                                     "using the runtime flag '<-lssMaxDensity=value>'.");
+    }
+  } else if(someBigSize) {
+    infoStreamPrint(LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\n"
+                                   "using the runtime flag '<-lssMinSize=value>'.");
   }
 
   messageClose(LOG_LS);
@@ -510,7 +547,7 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
         break;
 
       default:
-        throwStreamPrint(threadData, "unrecognized dense linear solver (data->simulationInfo->lsMethod)");
+        throwStreamPrint(threadData, "unrecognized dense linear solver (%d)", data->simulationInfo->lsMethod);
       }
     }
 

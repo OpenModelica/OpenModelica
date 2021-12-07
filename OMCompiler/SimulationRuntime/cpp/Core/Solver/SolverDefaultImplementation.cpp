@@ -42,6 +42,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, I
     , _events               (NULL)
     , _solverStatus         (ISolver::UNDEF_STATUS)
     , _outputCommand        (IWriteOutput::WRITEOUT)
+    , _writeoutput_system   (NULL)
 {
   _state_selection = shared_ptr<SystemStateSelection>(new SystemStateSelection(system));
 
@@ -114,13 +115,9 @@ void SolverDefaultImplementation::initialize()
   IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
   IEvent* event_system =  dynamic_cast<IEvent*>(_system);
   ITime* timeevent_system = dynamic_cast<ITime*>(_system);
-  IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
+
   // Set current start time to the system
   timeevent_system->setTime(_tCurrent);
-
-
-  if(_settings->getGlobalSettings()->getOutputPointType() != OPT_NONE)
-    writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
 
   // Allocate array with values of zero functions
   if (_dimZeroFunc != event_system->getDimZeroFunc())
@@ -202,14 +199,18 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
 
   LOGGER_STATUS("Running", t, h);
 
-  if(_settings->getGlobalSettings()->getOutputPointType()!= OPT_NONE)
+  if (_settings->getGlobalSettings()->getOutputPointType() != OPT_NONE)
   {
-    IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
-
-    if(_outputCommand & IWriteOutput::WRITEOUT)
+    // write header on first call
+    if (_writeoutput_system == NULL)
     {
-      writeoutput_system->writeOutput(_outputCommand);
-
+      _writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
+      _writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
+    }
+    // write values
+    if (_outputCommand & IWriteOutput::WRITEOUT)
+    {
+      _writeoutput_system->writeOutput(_outputCommand);
     }
   }
   checkTimeout();

@@ -66,9 +66,7 @@ private:
   Plot *mpPlot;
   QCheckBox *mpLogXCheckBox;
   QCheckBox *mpLogYCheckBox;
-  QToolButton *mpGridButton;
-  QToolButton *mpDetailedGridButton;
-  QToolButton *mpNoGridButton;
+  QComboBox *mpGridComboBox;
   QToolButton *mpAutoScaleButton;
   QToolButton *mpSetupButton;
   QToolButton *mpStartSimulationToolButton;
@@ -200,9 +198,7 @@ public slots:
   void enablePanMode(bool on);
   void exportDocument();
   void printPlot();
-  void setGrid(bool on);
-  void setDetailedGrid(bool on);
-  void setNoGrid(bool on);
+  void setGrid(int index);
   void fitInView();
   void setLogX(bool on);
   void setLogY(bool on);

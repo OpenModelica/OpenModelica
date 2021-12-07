@@ -199,11 +199,11 @@ class ElementAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  ElementAttributes(Element *pComponent, QWidget *pParent = 0);
+  ElementAttributes(Element *pElement, QWidget *pParent = 0);
   void setUpDialog();
   void initializeDialog();
 private:
-  Element *mpComponent;
+  Element *mpElement;
   Label *mpAttributesHeading;
   QFrame *mHorizontalLine;
   QGroupBox *mpTypeGroupBox;
@@ -238,7 +238,7 @@ private:
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 public slots:
-  void updateComponentAttributes();
+  void updateElementAttributes();
 };
 
 class CompositeModelSubModelAttributes : public QDialog

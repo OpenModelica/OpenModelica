@@ -38,7 +38,6 @@ to configure. The following arguments are available at the moment:
   USE_LOGGER
   BUILDTYPE
   CPP_03
-  USE_TRILINOS
   USE_KLU
 
 e.g.: configure --with-cppruntime --with-cppruntime-args=BUILDTYPE=Debug,RUNTIME_PROFILING,CPP_03
@@ -63,7 +62,6 @@ because not all libraries are available on both systems.
   PARALLEL_OUTPUT="true"
   USE_LOGGER="false"
   BUILDTYPE=[Release,Debug]
-  USE_TRILINOS=["true","false"]
   USE_KLU=["true","false"]
 e.g.: make -f Makefile.omdev.mingw runtimeCPPmsvcinstall BOOST_STATIC_LINKING="true" USE_LOGGER="false"
 

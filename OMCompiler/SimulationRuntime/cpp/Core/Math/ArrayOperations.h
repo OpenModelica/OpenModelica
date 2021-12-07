@@ -18,36 +18,14 @@ Auxillary Array operations for OpenModelica.
 Copyright (c) 2010, OSMC
 *****************************************************************************/
 
-/*index type for multi array, first shape, second indeces*/
-typedef std::vector<std::vector<size_t> > idx_type;
-typedef std::pair<vector<size_t>,idx_type >  spec_type;
-
-
-size_t getNextIndex(const vector<size_t> idx, size_t k);
-
-
 /**
 Concatenates n real arrays along the k:th dimension.
 */
 template <typename T>
 void cat_array(int k, const vector<const BaseArray<T>*>& x, BaseArray<T>& a);
 
-
 template <typename T>
 void transpose_array(const BaseArray<T>& x, BaseArray<T>& a);
-
-/*
-creates an array (d) for passed multi array  shape (sp) and initialized it with elements from passed source array (s)
-s source array
-d destination array
-sp (shape,indices) of source array
-*/
-
-template < typename T >
-void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
-
-template < typename T >
-void fill_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
 
 void BOOST_EXTENSION_EXPORT_DECL identity_alloc(size_t n, DynArrayDim2<int>& I);
 

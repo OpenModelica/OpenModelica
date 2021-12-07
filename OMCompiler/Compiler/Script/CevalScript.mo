@@ -65,6 +65,7 @@ import Values;
 protected
 import Autoconf;
 import BaseHashSet;
+import Builtin;
 import CevalFunction;
 import CevalScriptBackend;
 import ClassInf;
@@ -349,7 +350,7 @@ protected
   list<tuple<Absyn.Path,String,list<String>,Boolean>> modelsToLoad;
 algorithm
   modelsToLoad := if checkUses then Interactive.getUsesAnnotationOrDefault(newp, requireExactVersion) else {};
-  p := Interactive.updateProgram(newp, p);
+  p := InteractiveUtil.updateProgram(newp, p);
   (p, _) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion, false);
 end checkUsesAndUpdateProgram;
 
@@ -420,7 +421,7 @@ algorithm
       msgTokens := {AbsynUtil.pathString(path), version};
       Error.assertionOrAddSourceMessage(b, Error.NOTIFY_NOT_LOADED, msgTokens, AbsynUtil.dummyInfo);
     end if;
-    p := Interactive.updateProgram(pnew, p);
+    p := InteractiveUtil.updateProgram(pnew, p);
 
     b := true;
     if checkUses then
@@ -461,7 +462,7 @@ algorithm
     case (_,_,true,_) then false;
     case ((path,requestOrigin,str1::_,_),_,false,_)
       equation
-        cdef = Interactive.getPathedClassInProgram(path,p);
+        cdef = InteractiveUtil.getPathedClassInProgram(path,p);
         ostr2 = AbsynUtil.getNamedAnnotationInClass(cdef,Absyn.IDENT("version"),Interactive.getAnnotationStringValueOrFail);
         (withoutConversion,withConversion) = Interactive.getConversionAnnotation(cdef);
         checkValidVersion(path,str1,ostr2,requestOrigin=requestOrigin,withConversion=withConversion,withoutConversion=withoutConversion);
@@ -803,6 +804,9 @@ algorithm
     case ("setModelicaPath",_)
       then Values.BOOL(false);
 
+    case ("getHomeDirectoryPath",{})
+      then Values.STRING(Settings.getHomeDir(Testsuite.isRunning()));
+
     case ("getLanguageStandard",{})
       then Values.STRING(Config.languageStandardString(Config.getLanguageStandard()));
 
@@ -865,9 +869,14 @@ algorithm
 
     case ("setCommandLineOptions",{Values.STRING(str)})
       algorithm
+        b := Flags.isSet(Flags.SCODE_INST);
         strs := System.strtok(str, " ");
         {} := FlagsUtil.readArgs(strs);
         outCache := FCore.emptyCache();
+
+        if b <> Flags.isSet(Flags.SCODE_INST) then
+          Builtin.clearInitialGraph();
+        end if;
       then
         Values.BOOL(true);
 
@@ -892,7 +901,11 @@ algorithm
 
     case ("enableNewInstantiation",_)
       algorithm
-        FlagsUtil.enableDebug(Flags.SCODE_INST);
+        if not Flags.isSet(Flags.SCODE_INST) then
+          Builtin.clearInitialGraph();
+          FlagsUtil.enableDebug(Flags.SCODE_INST);
+          outCache := FCore.emptyCache();
+        end if;
       then
         Values.BOOL(true);
 
@@ -901,7 +914,11 @@ algorithm
 
     case ("disableNewInstantiation",_)
       algorithm
-        FlagsUtil.disableDebug(Flags.SCODE_INST);
+        if Flags.isSet(Flags.SCODE_INST) then
+          FlagsUtil.disableDebug(Flags.SCODE_INST);
+          outCache := FCore.emptyCache();
+          Builtin.clearInitialGraph();
+        end if;
       then
         Values.BOOL(true);
 
@@ -1180,7 +1197,7 @@ algorithm
 
     case ("getImportedNames",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        (vals, cvars) := getImportedNames(Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn()));
+        (vals, cvars) := getImportedNames(InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn()));
         v := Values.TUPLE({ValuesUtil.makeArray(vals),ValuesUtil.makeArray(cvars)});
       then
         v;
@@ -1259,16 +1276,22 @@ algorithm
 
     case ("parseEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_)
       algorithm
-        vals := {};
-        (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, false);
-        if b then
-          // clear the errors before!
-          Error.clearMessages() "Clear messages";
-          Print.clearErrorBuf() "Clear error buffer";
-          filename := Testsuite.friendlyPath(filename);
-          (paths) := Interactive.parseFile(filename, "UTF-8");
-          vals := List.map(paths,ValuesUtil.makeCodeTypeName);
-        end if;
+        str := System.pwd();
+        try
+          0 := System.cd(System.dirname(filename));
+          vals := {};
+          (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, false);
+          if b then
+            // clear the errors before!
+            Error.clearMessages() "Clear messages";
+            Print.clearErrorBuf() "Clear error buffer";
+            filename := Testsuite.friendlyPath(filename);
+            (paths) := Interactive.parseFile(filename, "UTF-8");
+            vals := List.map(paths,ValuesUtil.makeCodeTypeName);
+          end if;
+        else
+        end try;
+        0 := System.cd(str);
       then
         ValuesUtil.makeArray(vals);
 
@@ -1287,10 +1310,9 @@ algorithm
             SymbolTable.setAbsyn(newp);
           end if;
           outCache := FCore.emptyCache();
-          0 := System.cd(str);
         else
-          0 := System.cd(str);
         end try;
+        0 := System.cd(str);
       then
         Values.BOOL(b);
 
@@ -1305,8 +1327,8 @@ algorithm
     case ("reloadClass",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(encoding)})
       algorithm
         Absyn.CLASS(info=SOURCEINFO(fileName=filename,lastModification=r2)) :=
-          Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        (true,_,r1) := System.stat(filename);
+          InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        (true,_,r1,_) := System.stat(filename);
         if not realEq(r1, r2) then
           reloadClass(filename, encoding);
         end if;
@@ -1315,7 +1337,7 @@ algorithm
 
     case ("reloadClass",{Values.CODE(Absyn.C_TYPENAME(classpath)),_})
       algorithm
-        failure(_ := Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn()));
+        failure(_ := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn()));
         Error.addMessage(Error.LOAD_MODEL_ERROR, {AbsynUtil.pathString(classpath)});
       then
         Values.BOOL(false);
@@ -1327,7 +1349,7 @@ algorithm
       algorithm
         str := if not (encoding == "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
         newp := Parser.parsestring(str,name);
-        newp := Interactive.updateProgram(newp, SymbolTable.getAbsyn(), mergeAST);
+        newp := InteractiveUtil.updateProgram(newp, SymbolTable.getAbsyn(), mergeAST);
         SymbolTable.setAbsyn(newp);
         outCache := FCore.emptyCache();
       then
@@ -1344,7 +1366,7 @@ algorithm
     case ("getTimeStamp",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         Absyn.CLASS(info=SOURCEINFO(lastModification=r)) :=
-          Interactive.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
+          InteractiveUtil.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
         str := System.ctime(r);
       then
         Values.TUPLE({Values.REAL(r),Values.STRING(str)});
@@ -2214,9 +2236,9 @@ algorithm
 
         System.freeLibrary(libHandle, print_debug);
         // update the build time in the class!
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,info) := Interactive.getPathedClassInProgram(funcpath, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,info) := InteractiveUtil.getPathedClassInProgram(funcpath, p);
 
-        w := Interactive.buildWithin(funcpath);
+        w := InteractiveUtil.buildWithin(funcpath);
 
         if Flags.isSet(Flags.DYN_LOAD) then
           print("[dynload]: Updating build time for function path: " + AbsynUtil.pathString(funcpath) + " within: " + Dump.unparseWithin(w) + "\n");
@@ -2741,7 +2763,7 @@ protected
   Absyn.Program p,newp;
 algorithm
   newp := Parser.parse(filename,encoding); /* Don't use the classloader since that can pull in entire directory structures. We only want to reload one single file. */
-  newp := Interactive.updateProgram(newp, SymbolTable.getAbsyn());
+  newp := InteractiveUtil.updateProgram(newp, SymbolTable.getAbsyn());
   SymbolTable.setAbsyn(newp);
 end reloadClass;
 
@@ -2773,14 +2795,14 @@ algorithm
     case ("modelica://",name,_,_,_)
       equation
         (name::names) = System.strtok(name,".");
-        Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) = Interactive.getPathedClassInProgram(Absyn.IDENT(name),program);
+        Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) = InteractiveUtil.getPathedClassInProgram(Absyn.IDENT(name),program);
         mp = System.dirname(fileName);
         bp = findModelicaPath2(mp,names,"",true);
       then bp;
     case ("modelica://",name,_,mp,_)
       equation
         (name::names) = System.strtok(name,".");
-        failure(_ = Interactive.getPathedClassInProgram(Absyn.IDENT(name),program));
+        failure(_ = InteractiveUtil.getPathedClassInProgram(Absyn.IDENT(name),program));
         gd = Autoconf.groupDelimiter;
         mps = System.strtok(mp, gd);
         (mp,name,isDir) = System.getLoadModelPath(name, {"default"}, mps);
@@ -2970,7 +2992,7 @@ algorithm
         false := valueEq(Absyn.IDENT("AllLoadedClasses"),className);
         p := SymbolTable.getAbsyn();
         scodeP := SymbolTable.getSCode();
-        absynClass := Interactive.getPathedClassInProgram(className, p);
+        absynClass := InteractiveUtil.getPathedClassInProgram(className, p);
         absynClass := if interface_only then AbsynUtil.getFunctionInterface(absynClass) else absynClass;
         absynClass := if short_only then AbsynUtil.getShortClass(absynClass) else absynClass;
         p := Absyn.PROGRAM({absynClass},Absyn.TOP());
@@ -3010,7 +3032,7 @@ algorithm
         end match;
         // handle encryption
         Values.ENUM_LITERAL(index=access) := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
-        (absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str))) := Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn());
+        (absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str))) := InteractiveUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
         absynClass := if nested then absynClass else AbsynUtil.filterNestedClasses(absynClass);
         /* If the class has Access.packageText annotation or higher
          * If the class has Access.nonPackageText annotation or higher and class is not a package
@@ -3051,19 +3073,19 @@ algorithm
   p := SymbolTable.getAbsyn();
 
   if builtin then
-    p := Interactive.updateProgram(p, FBuiltin.getInitialFunctions());
+    p := InteractiveUtil.updateProgram(p, FBuiltin.getInitialFunctions());
   end if;
 
   if AbsynUtil.pathEqual(path, Absyn.IDENT("AllLoadedClasses")) then
     if recursive then
-      (_, paths) := Interactive.getClassNamesRecursive(NONE(), p, protects, constants, {});
+      (_, paths) := InteractiveUtil.getClassNamesRecursive(NONE(), p, protects, constants, {});
       paths := listReverseInPlace(paths);
     else
       paths := Interactive.getTopClassnames(p);
     end if;
   else
     if recursive then
-      (_, paths) := Interactive.getClassNamesRecursive(SOME(path), p, protects, constants, {});
+      (_, paths) := InteractiveUtil.getClassNamesRecursive(SOME(path), p, protects, constants, {});
       paths := listReverseInPlace(paths);
     else
       paths := Interactive.getClassnamesInPath(path, p, protects, constants);
@@ -3383,7 +3405,7 @@ protected
   list<Absyn.Import> pub_imports_list , pro_imports_list;
   String imp_ident;
 algorithm
-  package_class := Interactive.getPathedClassInProgram(Absyn.IDENT(in_package_name), SymbolTable.getAbsyn());
+  package_class := InteractiveUtil.getPathedClassInProgram(Absyn.IDENT(in_package_name), SymbolTable.getAbsyn());
 
   (pub_imports_list , pro_imports_list) := getImportList(package_class);
 

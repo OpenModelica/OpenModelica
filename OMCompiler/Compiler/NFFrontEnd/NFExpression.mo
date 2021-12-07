@@ -1137,6 +1137,11 @@ public
     Boolean literal;
     Expression first_e;
   algorithm
+    if isEmptyArray(exp) then
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      return;
+    end if;
+
     sub := Subscript.expandSlice(subscript);
 
     outExp := match sub
@@ -1444,6 +1449,7 @@ public
   end makeSubscriptedExp;
 
   function replaceIterator
+    "Replaces the given iterator with the given value in an expression."
     input output Expression exp;
     input InstNode iterator;
     input Expression iteratorValue;
@@ -1452,16 +1458,43 @@ public
   end replaceIterator;
 
   function replaceIterator2
-    input output Expression exp;
+    input Expression exp;
     input InstNode iterator;
     input Expression iteratorValue;
+    output Expression outExp;
   algorithm
-    exp := match exp
+    outExp := match exp
       local
         InstNode node;
+        ComponentRef cref;
+        list<String> fields;
 
+      // Cref is simple identifier, i
       case CREF(cref = ComponentRef.CREF(node = node))
+        guard ComponentRef.isSimple(exp.cref)
         then if InstNode.refEqual(iterator, node) then iteratorValue else exp;
+
+      // Cref is qualified identifier, i.x
+      case CREF(cref = ComponentRef.CREF())
+        algorithm
+          // Only the first (last in stored order) part of a cref can be an iterator.
+          node := ComponentRef.node(ComponentRef.last(exp.cref));
+
+          if InstNode.refEqual(iterator, node) then
+            // Start with the given value.
+            outExp := iteratorValue;
+
+            // Go down into the record fields using the rest of the cref.
+            fields := list(InstNode.name(n) for n in listRest(ComponentRef.nodes(exp.cref)));
+
+            for f in fields loop
+              outExp := recordElement(f, outExp);
+            end for;
+          else
+            outExp := exp;
+          end if;
+        then
+          outExp;
 
       else exp;
     end match;
@@ -1585,7 +1618,7 @@ public
     str := match exp
       case INTEGER() then intString(exp.value);
       case REAL() then realString(exp.value);
-      case STRING() then "\"" + exp.value + "\"";
+      case STRING() then "\"" + System.escapedString(exp.value, false) + "\"";
       case BOOLEAN() then boolString(exp.value);
 
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
@@ -1746,28 +1779,32 @@ public
     String name;
     list<Subscript> subs;
   algorithm
-    subs := list(s for s guard not Subscript.isSplitIndex(s) in subscripts);
+    if Flags.getConfigBool(Flags.MODELICA_OUTPUT) then
+      subs := list(s for s guard not Subscript.isSplitIndex(s) in subscripts);
 
-    if listEmpty(subs) then
-      str := toFlatString(exp);
+      if listEmpty(subs) then
+        str := toFlatString(exp);
+      else
+        exp_ty := typeOf(exp);
+        dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
+        sub_tyl := list(Dimension.subscriptType(d) for d in dims);
+        name := Type.subscriptedTypeName(exp_ty, sub_tyl);
+
+        strl := {")"};
+
+        for s in subs loop
+          strl := Subscript.toFlatString(s) :: strl;
+          strl := "," :: strl;
+        end for;
+
+        strl := toFlatString(exp) :: strl;
+        strl := "'(" :: strl;
+        strl := name :: strl;
+        strl := "'" :: strl;
+        str := stringAppendList(strl);
+      end if;
     else
-      exp_ty := typeOf(exp);
-      dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
-      sub_tyl := list(Dimension.subscriptType(d) for d in dims);
-      name := Type.subscriptedTypeName(exp_ty, sub_tyl);
-
-      strl := {")"};
-
-      for s in subs loop
-        strl := Subscript.toFlatString(s) :: strl;
-        strl := "," :: strl;
-      end for;
-
-      strl := toFlatString(exp) :: strl;
-      strl := "'(" :: strl;
-      strl := name :: strl;
-      strl := "'" :: strl;
-      str := stringAppendList(strl);
+      str := toFlatString(exp) + Subscript.toFlatStringList(subscripts);
     end if;
   end toFlatSubscriptedString;
 
@@ -4577,43 +4614,6 @@ public
     end match;
   end nthRecordElement;
 
-  function splitRecordCref
-    input Expression exp;
-    output Expression outExp;
-  algorithm
-    outExp := ExpandExp.expand(exp);
-
-    outExp := match outExp
-      local
-        InstNode cls;
-        array<InstNode> comps;
-        ComponentRef cr, field_cr;
-        Type ty;
-        list<Expression> fields;
-
-      case CREF(ty = Type.COMPLEX(cls = cls), cref = cr)
-        algorithm
-          comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(cls)));
-          fields := {};
-
-          for i in arrayLength(comps):-1:1 loop
-            ty := InstNode.getType(comps[i]);
-            field_cr := ComponentRef.prefixCref(comps[i], ty, {}, cr);
-            fields := CREF(ty, field_cr) :: fields;
-          end for;
-        then
-          makeRecord(InstNode.scopePath(cls), outExp.ty, fields);
-
-      case ARRAY()
-        algorithm
-          outExp.elements := list(splitRecordCref(e) for e in outExp.elements);
-        then
-          outExp;
-
-      else exp;
-    end match;
-  end splitRecordCref;
-
   function retype
     input output Expression exp;
   algorithm
@@ -4781,18 +4781,31 @@ public
   end filterSplitIndices2;
 
   function expandSplitIndices
+    "Replaces split indices in a subscripted expression with : subscripts."
     input Expression exp;
     output Expression outExp;
-  protected
-    list<Subscript> subs;
   algorithm
     outExp := match exp
-      case Expression.SUBSCRIPTED_EXP(subscripts = subs)
-        then Expression.applySubscripts(Subscript.expandSplitIndices(exp.subscripts), exp.exp);
+      case Expression.SUBSCRIPTED_EXP()
+        then Expression.applySubscripts(Subscript.expandSplitIndices(exp.subscripts, {}), exp.exp);
 
       else exp;
     end match;
   end expandSplitIndices;
+
+  function expandNonListedSplitIndices
+    "Replaces split indices in a subscripted expression with : subscripts,
+     except for indices that reference nodes in the given list."
+    input Expression exp;
+    input list<InstNode> indicesToKeep;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      case Expression.SUBSCRIPTED_EXP(split = true)
+        then Expression.applySubscripts(Subscript.expandSplitIndices(exp.subscripts, indicesToKeep), exp.exp);
+      else exp;
+    end match;
+  end expandNonListedSplitIndices;
 
   function isSplitSubscriptedExp
     input Expression exp;
@@ -4944,6 +4957,54 @@ public
       else containsShallow(exp, function hasNonArrayIteratorSubscript(iterator = iterator));
     end match;
   end hasNonArrayIteratorSubscript;
+
+  function mapCrefScalars
+    "Takes a cref expression and applies a function to each scalar cref,
+     creating a new expression with the same dimensions as the given cref.
+       Ex: mapCrefScalars(/*Real[2, 2]*/ x, ComponentRef.toString) =>
+           {{'x[1, 1]', 'x[1, 2]'}, {'x[2, 1]', 'x[2, 2]'}}"
+    input Expression crefExp;
+    input MapFn mapFn;
+    output Expression outExp;
+
+    partial function MapFn
+      input ComponentRef cref;
+      output Expression exp;
+    end MapFn;
+  algorithm
+    outExp := ExpandExp.expand(crefExp);
+    outExp := mapCrefScalars2(outExp, mapFn);
+  end mapCrefScalars;
+
+  function mapCrefScalars2
+    input Expression exp;
+    input MapFn mapFn;
+    output Expression outExp;
+
+    partial function MapFn
+      input ComponentRef cref;
+      output Expression exp;
+    end MapFn;
+  protected
+    list<Expression> expl;
+    Type ty;
+    Boolean literal;
+    ComponentRef cref;
+  algorithm
+    outExp := match exp
+      case Expression.ARRAY()
+        guard not listEmpty(exp.elements)
+        algorithm
+          expl := list(mapCrefScalars2(e, mapFn) for e in exp.elements);
+          ty := typeOf(listHead(expl));
+          literal := List.all(expl, isLiteral);
+        then
+          makeExpArray(expl, ty, literal);
+
+      case Expression.CREF() then mapFn(exp.cref);
+      else exp;
+    end match;
+  end mapCrefScalars2;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

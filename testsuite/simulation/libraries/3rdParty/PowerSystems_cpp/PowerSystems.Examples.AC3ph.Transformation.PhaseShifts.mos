@@ -1,0 +1,58 @@
+// name:     PowerSystems.Examples.AC3ph.Transformation.PhaseShifts
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Transformation.PhaseShifts);
+compareVars :=
+{
+  "meter1.p[1]",
+  "meter1.p[2]",
+  "meter1.p[3]",
+  "meter1.alpha_v",
+  "meter1.v_norm",
+  "meter12.p[1]",
+  "meter12.p[2]",
+  "meter12.p[3]",
+  "meter12.alpha_v",
+  "meter12.v_norm",
+  "meter22.p[1]",
+  "meter22.p[2]",
+  "meter22.p[3]",
+  "meter22.alpha_v",
+  "meter22.v_norm",
+  "meter32.p[1]",
+  "meter32.p[2]",
+  "meter32.p[3]",
+  "meter32.alpha_v",
+  "meter32.v_norm"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Instantiation
+// PowerSystems.Examples.AC3ph.Transformation.PhaseShifts
+// {"meter1.p[1]","meter1.p[2]","meter1.p[3]","meter1.alpha_v","meter1.v_norm","meter12.p[1]","meter12.p[2]","meter12.p[3]","meter12.alpha_v","meter12.v_norm","meter22.p[1]","meter22.p[2]","meter22.p[3]","meter22.alpha_v","meter22.v_norm","meter32.p[1]","meter32.p[2]","meter32.p[3]","meter32.alpha_v","meter32.v_norm"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

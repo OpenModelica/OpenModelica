@@ -37,379 +37,82 @@ protected import Error;
 protected import List;
 protected import System;
 protected import Util;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 public constant Absyn.ClassDef dummyParts = Absyn.PARTS({},{},{},{},NONE());
 public constant Absyn.Info dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 public constant Absyn.Program dummyProgram = Absyn.PROGRAM({},Absyn.TOP());
 
-replaceable type TypeA subtypeof Any;
-replaceable type Type_a subtypeof Any;
-replaceable type Argument subtypeof Any;
-replaceable type Arg subtypeof Any;
-
-// stefan
-public function traverseEquation
-  "Traverses all subequations of an equation.
-   Takes a function and an extra argument passed through the traversal"
-  input Absyn.Equation inEquation;
-  input FuncTplToTpl inFunc;
-  input TypeA inTypeA;
-  output tuple<Absyn.Equation, TypeA> outTpl;
-
-  partial function FuncTplToTpl
-    input tuple<Absyn.Equation, TypeA> inTpl;
-    output tuple<Absyn.Equation, TypeA> outTpl;
-  end FuncTplToTpl;
-
-algorithm
-  outTpl := matchcontinue (inEquation,inFunc,inTypeA)
-    local
-      TypeA arg,arg_1,arg_2,arg_3,arg_4;
-      Absyn.Equation eq,eq_1;
-      FuncTplToTpl rel;
-      Absyn.Exp e,e_1;
-      list<Absyn.EquationItem> eqilst,eqilst1,eqilst2,eqilst_1,eqilst1_1,eqilst2_1;
-      list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eeqitlst,eeqitlst_1;
-      Absyn.ForIterators fis,fis_1;
-      Absyn.EquationItem ei,ei_1;
-    case(eq as Absyn.EQ_IF(e,eqilst1,eeqitlst,eqilst2),rel,arg)
-      equation
-        ((eqilst1_1,arg_1)) = traverseEquationItemList(eqilst1,rel,arg);
-        ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
-        ((eqilst2_1,arg_3)) = traverseEquationItemList(eqilst2,rel,arg_2);
-        ((Absyn.EQ_IF(),arg_4)) = rel((eq,arg_3));
-      then
-        ((Absyn.EQ_IF(e,eqilst1_1,eeqitlst_1,eqilst2_1),arg_4));
-    case(eq as Absyn.EQ_FOR(_,eqilst),rel,arg)
-      equation
-        ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
-        ((Absyn.EQ_FOR(fis_1,_),arg_2)) = rel((eq,arg_1));
-      then
-        ((Absyn.EQ_FOR(fis_1,eqilst_1),arg_2));
-    case(eq as Absyn.EQ_WHEN_E(_,eqilst,eeqitlst),rel,arg)
-      equation
-        ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
-        ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
-        ((Absyn.EQ_WHEN_E(e_1,_,_),arg_3)) = rel((eq,arg_2));
-      then
-        ((Absyn.EQ_WHEN_E(e_1,eqilst_1,eeqitlst_1),arg_3));
-    case(eq as Absyn.EQ_FAILURE(ei),rel,arg)
-      equation
-        ((ei_1,arg_1)) = traverseEquationItem(ei,rel,arg);
-        ((Absyn.EQ_FAILURE(),arg_2)) = rel((eq,arg_1));
-      then
-        ((Absyn.EQ_FAILURE(ei_1),arg_2));
-    case(eq,rel,arg)
-      equation
-        ((eq_1,arg_1)) = rel((eq,arg));
-      then
-        ((eq_1,arg_1));
-  end matchcontinue;
-end traverseEquation;
-
-// stefan
-protected function traverseEquationItem
-"Traverses the equation inside an equationitem"
-  input Absyn.EquationItem inEquationItem;
-  input FuncTplToTpl inFunc;
-  input TypeA inTypeA;
-  output tuple<Absyn.EquationItem, TypeA> outTpl;
-  partial function FuncTplToTpl
-    input tuple<Absyn.Equation, TypeA> inTpl;
-    output tuple<Absyn.Equation, TypeA> outTpl;
-  end FuncTplToTpl;
-algorithm
-  outTpl := matchcontinue (inEquationItem,inFunc,inTypeA)
-    local
-      Absyn.EquationItem ei;
-      FuncTplToTpl rel;
-      TypeA arg,arg_1;
-      Absyn.Equation eq,eq_1;
-      Option<Absyn.Comment> oc;
-      Absyn.Info info;
-    case(Absyn.EQUATIONITEM(eq,oc,info),rel,arg)
-      equation
-        ((eq_1,arg_1)) = traverseEquation(eq,rel,arg);
-      then
-        ((Absyn.EQUATIONITEM(eq_1,oc,info),arg_1));
-    case(ei,_,arg) then ((ei,arg));
-  end matchcontinue;
-end traverseEquationItem;
-
-// stefan
-public function traverseEquationItemList
-"calls traverseEquationItem on every element of the given list"
-  input list<Absyn.EquationItem> inEquationItemList;
-  input FuncTplToTpl inFunc;
-  input TypeA inTypeA;
-  output tuple<list<Absyn.EquationItem>, TypeA> outTpl;
-  partial function FuncTplToTpl
-    input tuple<Absyn.Equation, TypeA> inTpl;
-    output tuple<Absyn.Equation, TypeA> outTpl;
-  end FuncTplToTpl;
-protected
-  TypeA arg2 = inTypeA;
-algorithm
-  outTpl := (list(match el
-      local
-        Absyn.EquationItem ei,ei_1;
-      case (ei) equation
-        ((ei_1,arg2)) = traverseEquationItem(ei,inFunc,arg2);
-      then ei_1;
-    end match for el in inEquationItemList), arg2);
-end traverseEquationItemList;
-
-// stefan
-public function traverseExpEqItemTupleList
-"traverses a list of Absyn.Exp * Absyn.EquationItem list tuples
-  mostly used for else-if blocks"
-  input list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> inList;
-  input FuncTplToTpl inFunc;
-  input TypeA inTypeA;
-  output tuple<list<tuple<Absyn.Exp, list<Absyn.EquationItem>>>, TypeA> outTpl;
-  partial function FuncTplToTpl
-    input tuple<Absyn.Equation, TypeA> inTpl;
-    output tuple<Absyn.Equation, TypeA> outTpl;
-  end FuncTplToTpl;
-protected
-  TypeA arg2 = inTypeA;
-algorithm
-  outTpl := (list(match el
-      local
-        Absyn.Exp e;
-        list<Absyn.EquationItem> eilst,eilst_1;
-      case (e,eilst) equation
-        ((eilst_1,arg2)) = traverseEquationItemList(eilst,inFunc,arg2);
-      then (e,eilst_1);
-    end match for el in inList), arg2);
-end traverseExpEqItemTupleList;
-
-// stefan
-public function traverseAlgorithm
-"Traverses all subalgorithms of an algorithm
-  Takes a function and an extra argument passed through the traversal"
-  input Absyn.Algorithm inAlgorithm;
-  input FuncTplToTpl inFunc;
-  input TypeA inTypeA;
-  output tuple<Absyn.Algorithm, TypeA> outTpl;
-  partial function FuncTplToTpl
-    input tuple<Absyn.Algorithm, TypeA> inTpl;
-    output tuple<Absyn.Algorithm, TypeA> outTpl;
-  end FuncTplToTpl;
-algorithm
-  outTpl := matchcontinue (inAlgorithm,inFunc,inTypeA)
-    local
-      TypeA arg,arg_1,arg1_1,arg2_1,arg3_1;
-      Absyn.Algorithm alg,alg_1,alg1_1,alg2_1,alg3_1;
-      list<Absyn.AlgorithmItem> ailst,ailst1,ailst2,ailst_1,ailst1_1,ailst2_1;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eaitlst,eaitlst_1;
-      FuncTplToTpl rel;
-      Absyn.AlgorithmItem ai,ai_1;
-      Absyn.Exp e,e_1;
-      Absyn.ForIterators fis,fis_1;
-    case(alg as Absyn.ALG_IF(_,ailst1,eaitlst,ailst2),rel,arg)
-      equation
-        ((ailst1_1,arg1_1)) = traverseAlgorithmItemList(ailst1,rel,arg);
-        ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
-        ((ailst2_1,arg3_1)) = traverseAlgorithmItemList(ailst2,rel,arg2_1);
-        ((Absyn.ALG_IF(e_1,_,_,_),arg_1)) = rel((alg,arg3_1));
-      then
-        ((Absyn.ALG_IF(e_1,ailst1_1,eaitlst_1,ailst2_1),arg_1));
-    case(alg as Absyn.ALG_FOR(_,ailst),rel,arg)
-      equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((Absyn.ALG_FOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
-      then
-        ((Absyn.ALG_FOR(fis_1,ailst_1),arg_1));
-    case(alg as Absyn.ALG_PARFOR(_,ailst),rel,arg)
-      equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((Absyn.ALG_PARFOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
-      then
-        ((Absyn.ALG_PARFOR(fis_1,ailst_1),arg_1));
-    case(alg as Absyn.ALG_WHILE(_,ailst),rel,arg)
-      equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((Absyn.ALG_WHILE(e_1,_),arg_1)) = rel((alg,arg1_1));
-      then
-        ((Absyn.ALG_WHILE(e_1,ailst_1),arg_1));
-    case(alg as Absyn.ALG_WHEN_A(_,ailst,eaitlst),rel,arg)
-      equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
-        ((Absyn.ALG_WHEN_A(e_1,_,_),arg_1)) = rel((alg,arg2_1));
-      then
-        ((Absyn.ALG_WHEN_A(e_1,ailst_1,eaitlst_1),arg_1));
-    case(alg,rel,arg)
-      equation
-        ((alg_1,arg_1)) = rel((alg,arg));
-      then
-        ((alg_1,arg_1));
-  end matchcontinue;
-end traverseAlgorithm;
-
-// stefan
-public function traverseAlgorithmItem
-"traverses the Absyn.Algorithm contained in an Absyn.AlgorithmItem, if any
-  see traverseAlgorithm"
-  input Absyn.AlgorithmItem inAlgorithmItem;
-  input FuncTplToTpl inFunc;
-  input TypeA inTypeA;
-  output tuple<Absyn.AlgorithmItem, TypeA> outTpl;
-  partial function FuncTplToTpl
-    input tuple<Absyn.Algorithm, TypeA> inTpl;
-    output tuple<Absyn.Algorithm, TypeA> outTpl;
-  end FuncTplToTpl;
-algorithm
-  outTpl := matchcontinue (inAlgorithmItem,inFunc,inTypeA)
-    local
-      FuncTplToTpl rel;
-      TypeA arg,arg_1;
-      Absyn.Algorithm alg,alg_1;
-      Option<Absyn.Comment> oc;
-      Absyn.AlgorithmItem ai;
-      Absyn.Info info;
-    case(Absyn.ALGORITHMITEM(alg,oc,info),rel,arg)
-      equation
-        ((alg_1,arg_1)) = traverseAlgorithm(alg,rel,arg);
-      then
-        ((Absyn.ALGORITHMITEM(alg_1,oc,info),arg_1));
-    case(ai,_,arg) then ((ai,arg));
-  end matchcontinue;
-end traverseAlgorithmItem;
-
-// stefan
-public function traverseAlgorithmItemList
-"calls traverseAlgorithmItem on each item in a list of AlgorithmItems"
-  input list<Absyn.AlgorithmItem> inAlgorithmItemList;
-  input FuncTplToTpl inFunc;
-  input TypeA inTypeA;
-  output tuple<list<Absyn.AlgorithmItem>, TypeA> outTpl;
-  partial function FuncTplToTpl
-    input tuple<Absyn.Algorithm, TypeA> inTpl;
-    output tuple<Absyn.Algorithm, TypeA> outTpl;
-  end FuncTplToTpl;
-algorithm
-  outTpl := match (inAlgorithmItemList,inFunc,inTypeA)
-    local
-      FuncTplToTpl rel;
-      TypeA arg,arg_1,arg_2;
-      Absyn.AlgorithmItem ai,ai_1;
-      list<Absyn.AlgorithmItem> cdr,cdr_1;
-    case({},_,arg) then (({},arg));
-    case(ai :: cdr,rel,arg)
-      equation
-        ((ai_1,arg_1)) = traverseAlgorithmItem(ai,rel,arg);
-        ((cdr_1,arg_2)) = traverseAlgorithmItemList(cdr,rel,arg_1);
-      then
-        ((ai_1 :: cdr_1,arg_2));
-  end match;
-end traverseAlgorithmItemList;
-
-// stefan
-public function traverseExpAlgItemTupleList
-"traverses a list of Absyn.Exp * Absyn.AlgorithmItem list tuples
-  mostly used for else-if blocks"
-  input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inList;
-  input FuncTplToTpl inFunc;
-  input TypeA inTypeA;
-  output tuple<list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>>, TypeA> outTpl;
-  partial function FuncTplToTpl
-    input tuple<Absyn.Algorithm, TypeA> inTpl;
-    output tuple<Absyn.Algorithm, TypeA> outTpl;
-  end FuncTplToTpl;
-algorithm
-  outTpl := match (inList,inFunc,inTypeA)
-    local
-      FuncTplToTpl rel;
-      TypeA arg,arg_1,arg_2;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> cdr,cdr_1;
-      Absyn.Exp e;
-      list<Absyn.AlgorithmItem> ailst,ailst_1;
-    case({},_,arg) then (({},arg));
-    case((e,ailst) :: cdr,rel,arg)
-      equation
-        ((ailst_1,arg_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((cdr_1,arg_2)) = traverseExpAlgItemTupleList(cdr,rel,arg_1);
-      then
-        (((e,ailst_1) :: cdr_1,arg_2));
-  end match;
-end traverseExpAlgItemTupleList;
-
-public function traverseExp
+public function traverseExp<Arg>
 " Traverses all subexpressions of an Absyn.Exp expression.
   Takes a function and an extra argument passed through the traversal.
   NOTE:This function was copied from Expression.traverseExpression."
   input Absyn.Exp inExp;
   input FuncType inFunc;
-  input Type_a inArg;
+  input Arg inArg;
   output Absyn.Exp outExp;
-  output Type_a outArg;
+  output Arg outArg;
+
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Type_a inArg;
-    output Absyn.Exp outExp;
-    output Type_a outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
 algorithm
   (outExp,outArg) := traverseExpBidir(inExp,dummyTraverseExp,inFunc,inArg);
 end traverseExp;
 
-public function traverseExpTopDown
+public function traverseExpTopDown<Arg>
 " Traverses all subexpressions of an Absyn.Exp expression.
   Takes a function and an extra argument passed through the traversal."
   input Absyn.Exp inExp;
   input FuncType inFunc;
-  input Type_a inArg;
+  input Arg inArg;
   output Absyn.Exp outExp;
-  output Type_a outArg;
+  output Arg outArg;
+
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Type_a inArg;
-    output Absyn.Exp outExp;
-    output Type_a outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
 algorithm
   (outExp,outArg) := traverseExpBidir(inExp,inFunc,dummyTraverseExp,inArg);
 end traverseExpTopDown;
 
-public function traverseExpList
+public function traverseExpList<Arg>
 "calls traverseExp on each element in the given list"
   input list<Absyn.Exp> inExpList;
-  input FuncTplToTpl inFunc;
-  input Type_a inArg;
+  input FuncType inFunc;
+  input Arg inArg;
   output list<Absyn.Exp> outExpList;
-  output Type_a outArg;
-  partial function FuncTplToTpl
-    input Absyn.Exp inExp;
-    input Type_a inArg;
-    output Absyn.Exp outExp;
-    output Type_a outArg;
-  end FuncTplToTpl;
+  output Arg outArg;
+
+  partial function FuncType
+    input output Absyn.Exp exp;
+    input output Arg arg;
+  end FuncType;
 algorithm
   (outExpList,outArg) := traverseExpListBidir(inExpList,dummyTraverseExp,inFunc,inArg);
 end traverseExpList;
 
-public function traverseExpListBidir
+public function traverseExpListBidir<Arg>
   "Traverses a list of expressions, calling traverseExpBidir on each
   expression."
   input list<Absyn.Exp> inExpl;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
+  input Arg inArg;
   output list<Absyn.Exp> outExpl;
-  output Argument outArg;
+  output Arg outArg;
+
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
 algorithm
   (outExpl, outArg) := List.map2FoldCheckReferenceEq(inExpl, traverseExpBidir, enterFunc, exitFunc, inArg);
 end traverseExpListBidir;
 
-public function traverseExpBidir
+public function traverseExpBidir<Arg>
   "This function takes an expression and a tuple with an enter function, an exit
   function, and an extra argument. For each expression it encounters it calls
   the enter function with the expression and the extra argument. It then
@@ -420,48 +123,41 @@ public function traverseExpBidir
   input Absyn.Exp inExp;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
+  input Arg inArg;
   output Absyn.Exp e;
-  output Argument arg;
+  output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
   (e, arg) := enterFunc(inExp, inArg);
   (e, arg) := traverseExpBidirSubExps(e, enterFunc, exitFunc, arg);
   (e, arg) := exitFunc(e, arg);
 end traverseExpBidir;
 
-public function traverseExpOptBidir
+public function traverseExpOptBidir<Arg>
   "Same as traverseExpBidir, but with an optional expression. Calls
   traverseExpBidir if the option is SOME(), or just returns the input if it's
   NONE()"
   input Option<Absyn.Exp> inExp;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
+  input Arg inArg;
   output Option<Absyn.Exp> outExp;
-  output Argument arg;
+  output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outExp, arg) := match(inExp, enterFunc, exitFunc, inArg)
+  (outExp, arg) := match inExp
     local
       Absyn.Exp e1,e2;
-      tuple<FuncType, FuncType, Argument> tup;
 
-    case (SOME(e1), _, _, _)
+    case SOME(e1)
       equation
         (e2, arg) = traverseExpBidir(e1, enterFunc, exitFunc, inArg);
       then
@@ -471,30 +167,23 @@ algorithm
   end match;
 end traverseExpOptBidir;
 
-protected function traverseExpBidirSubExps
+protected function traverseExpBidirSubExps<Arg>
   "Helper function to traverseExpBidir. Traverses the subexpressions of an
   expression and calls traverseExpBidir on them."
-  input Absyn.Exp inExp;
+  input output Absyn.Exp exp;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.Exp e;
-  output Argument arg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (e, arg) := match (inExp, enterFunc, exitFunc, inArg)
+  (exp, arg) := match exp
     local
       Absyn.Exp e1, e1m, e2, e2m, e3, e3m;
       Option<Absyn.Exp> oe1, oe1m;
-      tuple<FuncType, FuncType, Argument> tup;
-      Absyn.Operator op;
       Absyn.ComponentRef cref, crefm;
       list<tuple<Absyn.Exp, Absyn.Exp>> else_ifs1,else_ifs2;
       list<Absyn.Exp> expl1,expl2;
@@ -502,148 +191,143 @@ algorithm
       Absyn.FunctionArgs fargs1,fargs2;
       String error_msg;
       Absyn.Ident id, enterName, exitName;
-      Absyn.MatchType match_ty;
-      list<Absyn.ElementItem> match_decls;
       list<Absyn.Case> match_cases;
-      Option<String> cmt;
 
-    case (Absyn.INTEGER(), _, _, _) then (inExp, inArg);
-    case (Absyn.REAL(), _, _, _) then (inExp, inArg);
-    case (Absyn.STRING(), _, _, _) then (inExp, inArg);
-    case (Absyn.BOOL(), _, _, _) then (inExp, inArg);
+    case Absyn.INTEGER() then (exp, arg);
+    case Absyn.REAL() then (exp, arg);
+    case Absyn.STRING() then (exp, arg);
+    case Absyn.BOOL() then (exp, arg);
 
-    case (Absyn.CREF(componentRef = cref), _, _, arg)
+    case Absyn.CREF(componentRef = cref)
       equation
         (crefm, arg) = traverseExpBidirCref(cref, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(cref,crefm) then inExp else Absyn.CREF(crefm), arg);
+        (if referenceEq(cref,crefm) then exp else Absyn.CREF(crefm), arg);
 
-    case (Absyn.BINARY(exp1 = e1, op = op, exp2 = e2), _, _, arg)
+    case Absyn.BINARY(exp1 = e1, exp2 = e2)
       equation
         (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (e2m, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) then inExp else Absyn.BINARY(e1m, op, e2m), arg);
+        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) then exp else Absyn.BINARY(e1m, exp.op, e2m), arg);
 
-    case (Absyn.UNARY(op = op, exp = e1), _, _, arg)
+    case Absyn.UNARY(exp = e1)
       equation
         (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(e1,e1m) then inExp else Absyn.UNARY(op, e1m), arg);
+        (if referenceEq(e1,e1m) then exp else Absyn.UNARY(exp.op, e1m), arg);
 
-    case (Absyn.LBINARY(exp1 = e1, op = op, exp2 = e2), _, _, arg)
-      equation
-        (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
-        (e2m, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
-      then
-        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) then inExp else Absyn.LBINARY(e1m, op, e2m), arg);
-
-    case (Absyn.LUNARY(op = op, exp = e1), _, _, arg)
-      equation
-        (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
-      then
-        (if referenceEq(e1,e1m) then inExp else Absyn.LUNARY(op, e1m), arg);
-
-    case (Absyn.RELATION(exp1 = e1, op = op, exp2 = e2), _, _, arg)
+    case Absyn.LBINARY(exp1 = e1, exp2 = e2)
       equation
         (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (e2m, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) then inExp else Absyn.RELATION(e1m, op, e2m), arg);
+        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) then exp else Absyn.LBINARY(e1m, exp.op, e2m), arg);
 
-    case (Absyn.IFEXP(ifExp = e1, trueBranch = e2, elseBranch = e3,
-        elseIfBranch = else_ifs1), _, _, arg)
+    case Absyn.LUNARY(exp = e1)
+      equation
+        (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
+      then
+        (if referenceEq(e1,e1m) then exp else Absyn.LUNARY(exp.op, e1m), arg);
+
+    case Absyn.RELATION(exp1 = e1, exp2 = e2)
+      equation
+        (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
+        (e2m, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
+      then
+        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) then exp else Absyn.RELATION(e1m, exp.op, e2m), arg);
+
+    case Absyn.IFEXP(ifExp = e1, trueBranch = e2, elseBranch = e3, elseIfBranch = else_ifs1)
       equation
         (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (e2m, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
         (e3m, arg) = traverseExpBidir(e3, enterFunc, exitFunc, arg);
         (else_ifs2, arg) = List.map2FoldCheckReferenceEq(else_ifs1, traverseExpBidirElseIf, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) and referenceEq(e3,e3m) and referenceEq(else_ifs1,else_ifs2) then inExp else Absyn.IFEXP(e1m, e2m, e3m, else_ifs2), arg);
+        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) and referenceEq(e3,e3m) and referenceEq(else_ifs1,else_ifs2) then exp else Absyn.IFEXP(e1m, e2m, e3m, else_ifs2), arg);
 
-    case (Absyn.CALL(function_ = cref, functionArgs = fargs1), _, _, arg)
+    case Absyn.CALL(function_ = cref, functionArgs = fargs1)
       equation
         (fargs2, arg) = traverseExpBidirFunctionArgs(fargs1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(fargs1,fargs2) then inExp else Absyn.CALL(cref, fargs2, inExp.typeVars), arg);
+        (if referenceEq(fargs1,fargs2) then exp else Absyn.CALL(cref, fargs2, exp.typeVars), arg);
 
-    case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = fargs1), _, _, arg)
+    case Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = fargs1)
       equation
         (fargs2, arg) = traverseExpBidirFunctionArgs(fargs1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(fargs1,fargs2) then inExp else Absyn.PARTEVALFUNCTION(cref, fargs2), arg);
+        (if referenceEq(fargs1,fargs2) then exp else Absyn.PARTEVALFUNCTION(cref, fargs2), arg);
 
-    case (Absyn.ARRAY(arrayExp = expl1), _, _, arg)
+    case Absyn.ARRAY(arrayExp = expl1)
       equation
         (expl2, arg) = traverseExpListBidir(expl1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(expl1,expl2) then inExp else Absyn.ARRAY(expl2), arg);
+        (if referenceEq(expl1,expl2) then exp else Absyn.ARRAY(expl2), arg);
 
-    case (Absyn.MATRIX(matrix = mat_expl), _, _, arg)
+    case Absyn.MATRIX(matrix = mat_expl)
       equation
         (mat_expl, arg) = List.map2FoldCheckReferenceEq(mat_expl, traverseExpListBidir, enterFunc, exitFunc, arg);
       then
         (Absyn.MATRIX(mat_expl), arg);
 
-    case (Absyn.RANGE(start = e1, step = oe1, stop = e2), _, _, arg)
+    case Absyn.RANGE(start = e1, step = oe1, stop = e2)
       equation
         (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (oe1m, arg) = traverseExpOptBidir(oe1, enterFunc, exitFunc, arg);
         (e2m, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) and referenceEq(oe1,oe1m) then inExp else Absyn.RANGE(e1m, oe1m, e2m), arg);
+        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) and referenceEq(oe1,oe1m) then exp else Absyn.RANGE(e1m, oe1m, e2m), arg);
 
-    case (Absyn.END(), _, _, _) then (inExp, inArg);
+    case Absyn.END() then (exp, arg);
 
-    case (Absyn.TUPLE(expressions = expl1), _, _, arg)
+    case Absyn.TUPLE(expressions = expl1)
       equation
         (expl2, arg) = traverseExpListBidir(expl1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(expl1,expl2) then inExp else Absyn.TUPLE(expl2), arg);
+        (if referenceEq(expl1,expl2) then exp else Absyn.TUPLE(expl2), arg);
 
-    case (Absyn.AS(id = id, exp = e1), _, _, arg)
+    case Absyn.AS(id = id, exp = e1)
       equation
         (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(e1,e1m) then inExp else Absyn.AS(id, e1m), arg);
+        (if referenceEq(e1,e1m) then exp else Absyn.AS(id, e1m), arg);
 
-    case (Absyn.CONS(head = e1, rest = e2), _, _, arg)
+    case Absyn.CONS(head = e1, rest = e2)
       equation
         (e1m, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (e2m, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) then inExp else Absyn.CONS(e1m, e2m), arg);
+        (if referenceEq(e1,e1m) and referenceEq(e2,e2m) then exp else Absyn.CONS(e1m, e2m), arg);
 
-    case (Absyn.MATCHEXP(matchTy = match_ty, inputExp = e1, localDecls = match_decls,
-        cases = match_cases, comment = cmt), _, _, arg)
+    case Absyn.MATCHEXP(inputExp = e1, cases = match_cases)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (match_cases, arg) = List.map2FoldCheckReferenceEq(match_cases, traverseMatchCase, enterFunc, exitFunc, arg);
       then
-        (Absyn.MATCHEXP(match_ty, e1, match_decls, match_cases, cmt), arg);
+        (Absyn.MATCHEXP(exp.matchTy, e1, exp.localDecls, match_cases, exp.comment), arg);
 
-    case (Absyn.LIST(exps = expl1), _, _, arg)
+    case Absyn.LIST(exps = expl1)
       equation
         (expl2, arg) = traverseExpListBidir(expl1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(expl1,expl2) then inExp else Absyn.LIST(expl2), arg);
+        (if referenceEq(expl1,expl2) then exp else Absyn.LIST(expl2), arg);
 
-    case (Absyn.CODE(), _, _, _)
-      then (inExp, inArg);
+    case Absyn.CODE()
+      then (exp, arg);
 
-    case (Absyn.DOT(), _, _, arg)
+    case Absyn.DOT()
       equation
-        (e1, arg) = traverseExpBidir(inExp.exp, enterFunc, exitFunc, arg);
-        (e2, arg) = traverseExpBidir(inExp.index, enterFunc, exitFunc, arg);
+        (e1, arg) = traverseExpBidir(exp.exp, enterFunc, exitFunc, arg);
+        (e2, arg) = traverseExpBidir(exp.index, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(inExp.exp,e1) and referenceEq(inExp.index,e2) then inExp else Absyn.DOT(e1, e2), arg);
+        (if referenceEq(exp.exp,e1) and referenceEq(exp.index,e2) then exp else Absyn.DOT(e1, e2), arg);
 
     else
       algorithm
         (,,enterName) := System.dladdr(enterFunc);
         (,,exitName) := System.dladdr(exitFunc);
         error_msg := "in traverseExpBidirSubExps(" + enterName + ", " + exitName + ") - Unknown expression: ";
-        error_msg := error_msg + Dump.printExpStr(inExp);
+        error_msg := error_msg + Dump.printExpStr(exp);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -651,107 +335,92 @@ algorithm
   end match;
 end traverseExpBidirSubExps;
 
-public function traverseExpBidirCref
+public function traverseExpBidirCref<Arg>
   "Helper function to traverseExpBidirSubExps. Traverses any expressions in a
   component reference (i.e. in it's subscripts)."
-  input Absyn.ComponentRef inCref;
+  input output Absyn.ComponentRef cref;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.ComponentRef outCref;
-  output Argument arg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outCref, arg) := match(inCref, enterFunc, exitFunc, inArg)
+  (cref, arg) := match cref
     local
       Absyn.Ident name;
       Absyn.ComponentRef cr1,cr2;
       list<Absyn.Subscript> subs1,subs2;
-      tuple<FuncType, FuncType, Argument> tup;
 
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr1), _, _, arg)
+    case Absyn.CREF_FULLYQUALIFIED(componentRef = cr1)
       equation
         (cr2, arg) = traverseExpBidirCref(cr1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(cr1,cr2) then inCref else crefMakeFullyQualified(cr2), arg);
+        (if referenceEq(cr1,cr2) then cref else crefMakeFullyQualified(cr2), arg);
 
-    case (Absyn.CREF_QUAL(name = name, subscripts = subs1, componentRef = cr1), _, _, arg)
+    case Absyn.CREF_QUAL(name = name, subscripts = subs1, componentRef = cr1)
       equation
         (subs2, arg) = List.map2FoldCheckReferenceEq(subs1, traverseExpBidirSubs, enterFunc, exitFunc, arg);
         (cr2, arg) = traverseExpBidirCref(cr1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(cr1,cr2) and referenceEq(subs1,subs2) then inCref else Absyn.CREF_QUAL(name, subs2, cr2), arg);
+        (if referenceEq(cr1,cr2) and referenceEq(subs1,subs2) then cref else Absyn.CREF_QUAL(name, subs2, cr2), arg);
 
-    case (Absyn.CREF_IDENT(name = name, subscripts = subs1), _, _, arg)
+    case Absyn.CREF_IDENT(name = name, subscripts = subs1)
       equation
         (subs2, arg) = List.map2FoldCheckReferenceEq(subs1, traverseExpBidirSubs, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(subs1,subs2) then inCref else Absyn.CREF_IDENT(name, subs2), arg);
+        (if referenceEq(subs1,subs2) then cref else Absyn.CREF_IDENT(name, subs2), arg);
 
-    case (Absyn.ALLWILD(), _, _, _) then (inCref, inArg);
-    case (Absyn.WILD(), _, _, _) then (inCref, inArg);
+    case Absyn.ALLWILD() then (cref, arg);
+    case Absyn.WILD() then (cref, arg);
   end match;
 end traverseExpBidirCref;
 
-public function traverseExpBidirSubs
+public function traverseExpBidirSubs<Arg>
   "Helper function to traverseExpBidirCref. Traverses expressions in a
   subscript."
-  input Absyn.Subscript inSubscript;
+  input output Absyn.Subscript subscript;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.Subscript outSubscript;
-  output Argument arg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outSubscript, arg) := match(inSubscript, enterFunc, exitFunc, inArg)
+  (subscript, arg) := match subscript
     local
       Absyn.Exp e1,e2;
 
-    case (Absyn.SUBSCRIPT(subscript = e1), _, _, arg)
+    case Absyn.SUBSCRIPT(subscript = e1)
       equation
-        (e2, arg) = traverseExpBidir(e1, enterFunc, exitFunc, inArg);
+        (e2, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(e1,e2) then inSubscript else Absyn.SUBSCRIPT(e2), arg);
+        (if referenceEq(e1,e2) then subscript else Absyn.SUBSCRIPT(e2), arg);
 
-    case (Absyn.NOSUB(), _, _, _) then (inSubscript, inArg);
+    case Absyn.NOSUB() then (subscript, arg);
   end match;
 end traverseExpBidirSubs;
 
-public function traverseExpBidirElseIf
+public function traverseExpBidirElseIf<Arg>
   "Helper function to traverseExpBidirSubExps. Traverses the expressions in an
   elseif branch."
   input tuple<Absyn.Exp, Absyn.Exp> inElseIf;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
+  input Arg inArg;
   output tuple<Absyn.Exp, Absyn.Exp> outElseIf;
-  output Argument arg;
+  output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 protected
   Absyn.Exp e1, e2;
-  tuple<FuncType, FuncType, Argument> tup;
 algorithm
   (e1, e2) := inElseIf;
   (e1, arg) := traverseExpBidir(e1, enterFunc, exitFunc, inArg);
@@ -759,66 +428,57 @@ algorithm
   outElseIf := (e1, e2);
 end traverseExpBidirElseIf;
 
-public function traverseExpBidirFunctionArgs
+public function traverseExpBidirFunctionArgs<Arg>
   "Helper function to traverseExpBidirSubExps. Traverses the expressions in a
   list of function argument."
-  input Absyn.FunctionArgs inArgs;
+  input output Absyn.FunctionArgs args;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.FunctionArgs outArgs;
-  output Argument outArg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outArgs, outArg) := match(inArgs, enterFunc, exitFunc, inArg)
+  (args, arg) := match args
     local
       Absyn.Exp e1,e2;
       list<Absyn.Exp> expl1,expl2;
       list<Absyn.NamedArg> named_args1,named_args2;
       Absyn.ForIterators iters1,iters2;
-      Argument arg;
       Absyn.ReductionIterType iterType;
 
-    case (Absyn.FUNCTIONARGS(args = expl1, argNames = named_args1), _, _, arg)
+    case Absyn.FUNCTIONARGS(args = expl1, argNames = named_args1)
       equation
         (expl2, arg) = traverseExpListBidir(expl1, enterFunc, exitFunc, arg);
         (named_args2, arg) = List.map2FoldCheckReferenceEq(named_args1, traverseExpBidirNamedArg, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(expl1,expl2) and referenceEq(named_args1,named_args2) then inArgs else Absyn.FUNCTIONARGS(expl2, named_args2), arg);
+        (if referenceEq(expl1,expl2) and referenceEq(named_args1,named_args2) then args else Absyn.FUNCTIONARGS(expl2, named_args2), arg);
 
-    case (Absyn.FOR_ITER_FARG(e1, iterType, iters1), _, _, arg)
+    case Absyn.FOR_ITER_FARG(e1, iterType, iters1)
       equation
         (e2, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (iters2, arg) = List.map2FoldCheckReferenceEq(iters1, traverseExpBidirIterator, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(e1,e2) and referenceEq(iters1,iters2) then inArgs else Absyn.FOR_ITER_FARG(e2, iterType, iters2), arg);
+        (if referenceEq(e1,e2) and referenceEq(iters1,iters2) then args else Absyn.FOR_ITER_FARG(e2, iterType, iters2), arg);
   end match;
 end traverseExpBidirFunctionArgs;
 
-public function traverseExpBidirNamedArg
+public function traverseExpBidirNamedArg<Arg>
   "Helper function to traverseExpBidirFunctionArgs. Traverses the expressions in
   a named function argument."
   input Absyn.NamedArg inArg;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inExtra;
+  input Arg inExtra;
   output Absyn.NamedArg outArg;
-  output Argument outExtra;
+  output Arg outExtra;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 protected
   Absyn.Ident name;
   Absyn.Exp value1,value2;
@@ -828,23 +488,20 @@ algorithm
   outArg := if referenceEq(value1,value2) then inArg else Absyn.NAMEDARG(name, value2);
 end traverseExpBidirNamedArg;
 
-public function traverseExpBidirIterator
+public function traverseExpBidirIterator<Arg>
   "Helper function to traverseExpBidirFunctionArgs. Traverses the expressions in
   an iterator."
   input Absyn.ForIterator inIterator;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
+  input Arg inArg;
   output Absyn.ForIterator outIterator;
-  output Argument outArg;
+  output Arg outArg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 protected
   Absyn.Ident name;
   Option<Absyn.Exp> guardExp1,guardExp2,range1,range2;
@@ -855,25 +512,19 @@ algorithm
   outIterator := if referenceEq(guardExp1,guardExp2) and referenceEq(range1,range2) then inIterator else Absyn.ITERATOR(name, guardExp2, range2);
 end traverseExpBidirIterator;
 
-public function traverseMatchCase
-  input Absyn.Case inMatchCase;
+public function traverseMatchCase<Arg>
+  input output Absyn.Case matchCase;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.Case outMatchCase;
-  output Argument outArg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outMatchCase, outArg) := match(inMatchCase, enterFunc, exitFunc, inArg)
+  (matchCase, arg) := match matchCase
     local
-      Argument arg;
       Absyn.Exp pattern, result;
       Absyn.Info info, resultInfo, pinfo;
       list<Absyn.ElementItem> ldecls;
@@ -881,7 +532,7 @@ algorithm
       Option<String> cmt;
       Option<Absyn.Exp> patternGuard;
 
-    case (Absyn.CASE(pattern, patternGuard, pinfo, ldecls, cp, result, resultInfo, cmt, info), _, _, arg)
+    case Absyn.CASE(pattern, patternGuard, pinfo, ldecls, cp, result, resultInfo, cmt, info)
       equation
         (pattern, arg) = traverseExpBidir(pattern, enterFunc, exitFunc, arg);
         (patternGuard, arg) = traverseExpOptBidir(patternGuard, enterFunc, exitFunc, arg);
@@ -890,8 +541,7 @@ algorithm
       then
         (Absyn.CASE(pattern, patternGuard, pinfo, ldecls, cp, result, resultInfo, cmt, info), arg);
 
-    case (Absyn.ELSE(localDecls = ldecls, classPart = cp, result = result, resultInfo = resultInfo,
-        comment = cmt, info = info), _, _, arg)
+    case Absyn.ELSE(ldecls, cp, result, resultInfo, cmt, info)
       equation
         (cp, arg) = traverseClassPartBidir(cp, enterFunc, exitFunc, arg);
         (result, arg) = traverseExpBidir(result, enterFunc, exitFunc, arg);
@@ -901,245 +551,214 @@ algorithm
   end match;
 end traverseMatchCase;
 
-protected function traverseClassPartBidir
-  input Absyn.ClassPart cp;
+protected function traverseClassPartBidir<Arg>
+  input output Absyn.ClassPart cp;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.ClassPart outCp;
-  output Argument outArg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outCp, outArg) := match (cp,enterFunc,exitFunc,inArg)
+  (cp, arg) := match cp
     local
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.EquationItem> eqs;
-      Argument arg;
-    case (Absyn.ALGORITHMS(algs),_,_,arg)
-      equation
-        (algs, arg) = List.map2FoldCheckReferenceEq(algs, traverseAlgorithmItemBidir, enterFunc, exitFunc, arg);
-      then (Absyn.ALGORITHMS(algs),arg);
-    case (Absyn.EQUATIONS(eqs),_,_,arg)
-      equation
-        (eqs, arg) = List.map2FoldCheckReferenceEq(eqs, traverseEquationItemBidir, enterFunc, exitFunc, arg);
-      then (Absyn.EQUATIONS(eqs),arg);
+
+    case Absyn.ALGORITHMS(algs)
+      algorithm
+        (algs, arg) := List.map2FoldCheckReferenceEq(algs, traverseAlgorithmItemBidir, enterFunc, exitFunc, arg);
+      then
+        (Absyn.ALGORITHMS(algs),arg);
+
+    case Absyn.EQUATIONS(eqs)
+      algorithm
+        (eqs, arg) := List.map2FoldCheckReferenceEq(eqs, traverseEquationItemBidir, enterFunc, exitFunc, arg);
+      then
+        (Absyn.EQUATIONS(eqs),arg);
   end match;
 end traverseClassPartBidir;
 
-protected function traverseEquationItemListBidir
+protected function traverseEquationItemListBidir<Arg>
   input list<Absyn.EquationItem> inEquationItems;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
+  input Arg inArg;
   output list<Absyn.EquationItem> outEquationItems;
-  output Argument outArg;
+  output Arg outArg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
   (outEquationItems, outArg) := List.map2FoldCheckReferenceEq(inEquationItems, traverseEquationItemBidir, enterFunc, exitFunc, inArg);
 end traverseEquationItemListBidir;
 
-protected function traverseAlgorithmItemListBidir
+protected function traverseAlgorithmItemListBidir<Arg>
   input list<Absyn.AlgorithmItem> inAlgs;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
+  input Arg inArg;
   output list<Absyn.AlgorithmItem> outAlgs;
-  output Argument outArg;
+  output Arg outArg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
   (outAlgs, outArg) := List.map2FoldCheckReferenceEq(inAlgs, traverseAlgorithmItemBidir, enterFunc, exitFunc, inArg);
 end traverseAlgorithmItemListBidir;
 
-protected function traverseAlgorithmItemBidir
-  input Absyn.AlgorithmItem inAlgorithmItem;
+protected function traverseAlgorithmItemBidir<Arg>
+  input output Absyn.AlgorithmItem algorithmItem;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.AlgorithmItem outAlgorithmItem;
-  output Argument outArg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outAlgorithmItem, outArg) := match(inAlgorithmItem, enterFunc, exitFunc, inArg)
+  () := match algorithmItem
     local
-      Argument arg;
       Absyn.Algorithm alg;
-      Option<Absyn.Comment> cmt;
-      Absyn.Info info;
 
-    case (Absyn.ALGORITHMITEM(algorithm_ = alg, comment = cmt, info = info), _, _, arg)
-      equation
-        (alg, arg) = traverseAlgorithmBidir(alg, enterFunc, exitFunc, arg);
+    case Absyn.ALGORITHMITEM(algorithm_ = alg)
+      algorithm
+        (alg, arg) := traverseAlgorithmBidir(alg, enterFunc, exitFunc, arg);
+        algorithmItem.algorithm_ := alg;
       then
-        (Absyn.ALGORITHMITEM(alg, cmt, info), arg);
+        ();
 
-    case (Absyn.ALGORITHMITEMCOMMENT(), _, _, _) then (inAlgorithmItem,inArg);
+    case Absyn.ALGORITHMITEMCOMMENT() then ();
   end match;
 end traverseAlgorithmItemBidir;
 
-protected function traverseEquationItemBidir
-  input Absyn.EquationItem inEquationItem;
+protected function traverseEquationItemBidir<Arg>
+  input output Absyn.EquationItem equationItem;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.EquationItem outEquationItem;
-  output Argument outArg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outEquationItem, outArg) := match(inEquationItem, enterFunc, exitFunc, inArg)
+  () := match equationItem
     local
-      Argument arg;
       Absyn.Equation eq;
-      Option<Absyn.Comment> cmt;
-      Absyn.Info info;
 
-    case (Absyn.EQUATIONITEM(equation_ = eq, comment = cmt, info = info), _, _, arg)
-      equation
-        (eq, arg) = traverseEquationBidir(eq, enterFunc, exitFunc, arg);
+    case Absyn.EQUATIONITEM(equation_ = eq)
+      algorithm
+        (eq, arg) := traverseEquationBidir(eq, enterFunc, exitFunc, arg);
+        equationItem.equation_ := eq;
       then
-        (Absyn.EQUATIONITEM(eq, cmt, info), arg);
+        ();
 
   end match;
 end traverseEquationItemBidir;
 
-public function traverseEquationBidir
-  input Absyn.Equation inEquation;
+public function traverseEquationBidir<Arg>
+  input output Absyn.Equation eq;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.Equation outEquation;
-  output Argument outArg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outEquation, outArg) := match(inEquation, enterFunc, exitFunc, inArg)
+  eq := match eq
     local
-      Argument arg;
       Absyn.Exp e1, e2;
       list<Absyn.EquationItem> eqil1, eqil2;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> else_branch;
       Absyn.ComponentRef cref1, cref2;
       Absyn.ForIterators iters;
       Absyn.FunctionArgs func_args;
-      Absyn.EquationItem eq;
+      Absyn.EquationItem eq1;
 
-    case (Absyn.EQ_IF(ifExp = e1, equationTrueItems = eqil1,
-        elseIfBranches = else_branch, equationElseItems = eqil2), _, _, arg)
+    case Absyn.EQ_IF(ifExp = e1, equationTrueItems = eqil1, elseIfBranches = else_branch, equationElseItems = eqil2)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (eqil1, arg) = traverseEquationItemListBidir(eqil1, enterFunc, exitFunc, arg);
         (else_branch,arg) = List.map2FoldCheckReferenceEq(else_branch, traverseEquationBidirElse, enterFunc, exitFunc, arg);
         (eqil2,arg) = traverseEquationItemListBidir(eqil2, enterFunc, exitFunc, arg);
       then
-        (Absyn.EQ_IF(e1, eqil1, else_branch, eqil2), arg);
+        Absyn.EQ_IF(e1, eqil1, else_branch, eqil2);
 
-    case (Absyn.EQ_EQUALS(leftSide = e1, rightSide = e2), _, _, arg)
+    case Absyn.EQ_EQUALS(leftSide = e1, rightSide = e2)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (e2, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
       then
-        (Absyn.EQ_EQUALS(e1, e2), arg);
-    case (Absyn.EQ_PDE(leftSide = e1, rightSide = e2, domain = cref1), _, _, arg)
+        Absyn.EQ_EQUALS(e1, e2);
+
+    case Absyn.EQ_PDE(leftSide = e1, rightSide = e2, domain = cref1)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (e2, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
         cref1 = traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
       then
-        (Absyn.EQ_PDE(e1, e2,cref1), arg);
+        Absyn.EQ_PDE(e1, e2,cref1);
 
-    case (Absyn.EQ_CONNECT(connector1 = cref1, connector2 = cref2), _, _, arg)
+    case Absyn.EQ_CONNECT(connector1 = cref1, connector2 = cref2)
       equation
         (cref1, arg) = traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
         (cref2, arg) = traverseExpBidirCref(cref2, enterFunc, exitFunc, arg);
       then
-        (Absyn.EQ_CONNECT(cref1, cref2), arg);
+        Absyn.EQ_CONNECT(cref1, cref2);
 
-    case (Absyn.EQ_FOR(iterators = iters, forEquations = eqil1), _, _, arg)
+    case Absyn.EQ_FOR(iterators = iters, forEquations = eqil1)
       equation
         (iters, arg) = List.map2FoldCheckReferenceEq(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
         (eqil1, arg) = traverseEquationItemListBidir(eqil1, enterFunc, exitFunc, arg);
       then
-        (Absyn.EQ_FOR(iters, eqil1), arg);
+        Absyn.EQ_FOR(iters, eqil1);
 
-    case (Absyn.EQ_WHEN_E(whenExp = e1, whenEquations = eqil1, elseWhenEquations = else_branch), _, _, arg)
+    case Absyn.EQ_WHEN_E(whenExp = e1, whenEquations = eqil1, elseWhenEquations = else_branch)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (eqil1, arg) = traverseEquationItemListBidir(eqil1, enterFunc, exitFunc, arg);
         (else_branch, arg) = List.map2FoldCheckReferenceEq(else_branch, traverseEquationBidirElse, enterFunc, exitFunc, arg);
       then
-        (Absyn.EQ_WHEN_E(e1, eqil1, else_branch), arg);
+        Absyn.EQ_WHEN_E(e1, eqil1, else_branch);
 
-    case (Absyn.EQ_NORETCALL(functionName = cref1, functionArgs = func_args), _, _, arg)
+    case Absyn.EQ_NORETCALL(functionName = cref1, functionArgs = func_args)
       equation
         (cref1, arg) = traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
         (func_args, arg) = traverseExpBidirFunctionArgs(func_args, enterFunc, exitFunc, arg);
       then
-        (Absyn.EQ_NORETCALL(cref1, func_args), arg);
+        Absyn.EQ_NORETCALL(cref1, func_args);
 
-    case (Absyn.EQ_FAILURE(equ = eq), _, _, arg)
+    case Absyn.EQ_FAILURE(equ = eq1)
       equation
-        (eq, arg) = traverseEquationItemBidir(eq, enterFunc, exitFunc, arg);
+        (eq1, arg) = traverseEquationItemBidir(eq1, enterFunc, exitFunc, arg);
       then
-        (Absyn.EQ_FAILURE(eq), arg);
+        Absyn.EQ_FAILURE(eq1);
 
   end match;
 end traverseEquationBidir;
 
-protected function traverseEquationBidirElse
+protected function traverseEquationBidirElse<Arg>
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inElse;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
+  input Arg inArg;
   output tuple<Absyn.Exp, list<Absyn.EquationItem>> outElse;
-  output Argument arg;
+  output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 protected
   Absyn.Exp e;
   list<Absyn.EquationItem> eqil;
@@ -1150,21 +769,18 @@ algorithm
   outElse := (e, eqil);
 end traverseEquationBidirElse;
 
-protected function traverseAlgorithmBidirElse
+protected function traverseAlgorithmBidirElse<Arg>
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inElse;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
+  input Arg inArg;
   output tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> outElse;
-  output Argument arg;
+  output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 protected
   Absyn.Exp e;
   list<Absyn.AlgorithmItem> algs;
@@ -1175,101 +791,94 @@ algorithm
   outElse := (e, algs);
 end traverseAlgorithmBidirElse;
 
-protected function traverseAlgorithmBidir
-  input Absyn.Algorithm inAlg;
+protected function traverseAlgorithmBidir<Arg>
+  input output Absyn.Algorithm alg;
   input FuncType enterFunc;
   input FuncType exitFunc;
-  input Argument inArg;
-  output Absyn.Algorithm outAlg;
-  output Argument outArg;
+  input output Arg arg;
 
   partial function FuncType
-    input Absyn.Exp inExp;
-    input Argument inArg;
-    output Absyn.Exp outExp;
-    output Argument outArg;
+    input output Absyn.Exp exp;
+    input output Arg arg;
   end FuncType;
-
 algorithm
-  (outAlg, outArg) := match(inAlg, enterFunc, exitFunc, inArg)
+  alg := match alg
     local
-      Argument arg;
       Absyn.Exp e1, e2;
       list<Absyn.AlgorithmItem> algs1, algs2;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> else_branch;
       Absyn.ComponentRef cref1, cref2;
       Absyn.ForIterators iters;
       Absyn.FunctionArgs func_args;
-      Absyn.AlgorithmItem alg;
 
-    case (Absyn.ALG_ASSIGN(e1, e2), _, _, arg)
+    case Absyn.ALG_ASSIGN(e1, e2)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (e2, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
       then
-        (Absyn.ALG_ASSIGN(e1, e2), arg);
+        Absyn.ALG_ASSIGN(e1, e2);
 
-    case (Absyn.ALG_IF(e1, algs1, else_branch, algs2), _, _, arg)
+    case Absyn.ALG_IF(e1, algs1, else_branch, algs2)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
         (else_branch, arg) = List.map2FoldCheckReferenceEq(else_branch, traverseAlgorithmBidirElse, enterFunc, exitFunc, arg);
         (algs2, arg) = traverseAlgorithmItemListBidir(algs2, enterFunc, exitFunc, arg);
-      then (Absyn.ALG_IF(e1, algs1, else_branch, algs2), arg);
+      then
+        Absyn.ALG_IF(e1, algs1, else_branch, algs2);
 
-    case (Absyn.ALG_FOR(iters, algs1), _, _, arg)
+    case Absyn.ALG_FOR(iters, algs1)
       equation
         (iters, arg) = List.map2FoldCheckReferenceEq(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
-      then (Absyn.ALG_FOR(iters, algs1), arg);
+      then
+        Absyn.ALG_FOR(iters, algs1);
 
-    case (Absyn.ALG_PARFOR(iters, algs1), _, _, arg)
+    case Absyn.ALG_PARFOR(iters, algs1)
       equation
         (iters, arg) = List.map2FoldCheckReferenceEq(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
-      then (Absyn.ALG_PARFOR(iters, algs1), arg);
+      then
+        Absyn.ALG_PARFOR(iters, algs1);
 
-    case (Absyn.ALG_WHILE(e1, algs1), _, _, arg)
+    case Absyn.ALG_WHILE(e1, algs1)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
-      then (Absyn.ALG_WHILE(e1, algs1), arg);
+      then
+        Absyn.ALG_WHILE(e1, algs1);
 
-    case (Absyn.ALG_WHEN_A(e1, algs1, else_branch), _, _, arg)
+    case Absyn.ALG_WHEN_A(e1, algs1, else_branch)
       equation
         (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
         (else_branch, arg) = List.map2FoldCheckReferenceEq(else_branch, traverseAlgorithmBidirElse, enterFunc, exitFunc, arg);
-      then (Absyn.ALG_WHEN_A(e1, algs1, else_branch), arg);
+      then
+        Absyn.ALG_WHEN_A(e1, algs1, else_branch);
 
-    case (Absyn.ALG_NORETCALL(cref1, func_args), _, _, arg)
+    case Absyn.ALG_NORETCALL(cref1, func_args)
       equation
         (cref1, arg) = traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
         (func_args, arg) = traverseExpBidirFunctionArgs(func_args, enterFunc, exitFunc, arg);
       then
-        (Absyn.ALG_NORETCALL(cref1, func_args), arg);
+        Absyn.ALG_NORETCALL(cref1, func_args);
 
-    case (Absyn.ALG_RETURN(), _, _, arg)
-      then (inAlg, arg);
+    case Absyn.ALG_RETURN() then alg;
+    case Absyn.ALG_BREAK() then alg;
+    case Absyn.ALG_CONTINUE() then alg;
 
-    case (Absyn.ALG_BREAK(), _, _, arg)
-      then (inAlg, arg);
-
-    case (Absyn.ALG_CONTINUE(), _, _, arg)
-      then (inAlg, arg);
-
-    case (Absyn.ALG_FAILURE(algs1), _, _, arg)
+    case Absyn.ALG_FAILURE(algs1)
       equation
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
       then
-        (Absyn.ALG_FAILURE(algs1), arg);
+        Absyn.ALG_FAILURE(algs1);
 
-    case (Absyn.ALG_TRY(algs1, algs2), _, _, arg)
+    case Absyn.ALG_TRY(algs1, algs2)
       equation
         (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
         (algs2, arg) = traverseAlgorithmItemListBidir(algs2, enterFunc, exitFunc, arg);
       then
-        (Absyn.ALG_TRY(algs1, algs2), arg);
+        Absyn.ALG_TRY(algs1, algs2);
 
   end match;
 end traverseAlgorithmBidir;
@@ -1342,20 +951,9 @@ public function printImportString
   output String ostring;
 algorithm
   ostring := match(imp)
-    local
-      Absyn.Path path;
-      String name;
-
-    case(Absyn.NAMED_IMPORT(name,_)) then name;
-    case(Absyn.QUAL_IMPORT(path))
-      equation
-        name = pathString(path);
-      then name;
-
-    case(Absyn.UNQUAL_IMPORT(path))
-      equation
-        name = pathString(path);
-      then name;
+    case Absyn.NAMED_IMPORT() then imp.name;
+    case Absyn.QUAL_IMPORT() then pathString(imp.path);
+    case Absyn.UNQUAL_IMPORT() then pathString(imp.path);
   end match;
 end printImportString;
 
@@ -1381,86 +979,42 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true);
 end crefExp;
 
-public function expComponentRefStr
-  input Absyn.Exp aexp;
-  output String outString;
-algorithm
-  outString := printComponentRefStr(expCref(aexp));
-end expComponentRefStr;
-
-public function printComponentRefStr
-  input Absyn.ComponentRef cr;
-  output String ostring;
-algorithm
-  ostring := match(cr)
-    local
-      String s1,s2;
-      Absyn.ComponentRef child;
-    case(Absyn.CREF_IDENT(s1,_)) then s1;
-    case(Absyn.CREF_QUAL(s1,_,child))
-      equation
-        s2 = printComponentRefStr(child);
-        s1 = s1 + "." + s2;
-      then s1;
-    case(Absyn.CREF_FULLYQUALIFIED(child))
-      equation
-        s2 = printComponentRefStr(child);
-        s1 = "." + s2;
-      then s1;
-    case (Absyn.ALLWILD()) then "__";
-    case (Absyn.WILD()) then "_";
-  end match;
-end printComponentRefStr;
-
 public function pathEqual "Returns true if two paths are equal."
-  input Absyn.Path inPath1;
-  input Absyn.Path inPath2;
-  output Boolean outBoolean;
+  input Absyn.Path path1;
+  input Absyn.Path path2;
+  output Boolean equal;
 algorithm
-  outBoolean := match (inPath1, inPath2)
-    local
-      String id1,id2;
-      Boolean res;
-      Absyn.Path path1,path2;
+  equal := match (path1, path2)
     // fully qual vs. path
-    case (Absyn.FULLYQUALIFIED(path1),path2) then pathEqual(path1,path2);
+    case (Absyn.FULLYQUALIFIED(), _) then pathEqual(path1.path, path2);
     // path vs. fully qual
-    case (path1,Absyn.FULLYQUALIFIED(path2)) then pathEqual(path1,path2);
+    case (_, Absyn.FULLYQUALIFIED()) then pathEqual(path1, path2.path);
     // ident vs. ident
-    case (Absyn.IDENT(id1),Absyn.IDENT(id2))
-      then stringEq(id1, id2);
+    case (Absyn.IDENT(),Absyn.IDENT()) then stringEq(path1.name, path2.name);
     // qual ident vs. qual ident
-    case (Absyn.QUALIFIED(id1, path1),Absyn.QUALIFIED(id2, path2))
-      equation
-        res = if stringEq(id1, id2) then pathEqual(path1, path2) else false;
-      then res;
+    case (Absyn.QUALIFIED(),Absyn.QUALIFIED())
+      then stringEq(path1.name, path2.name) and pathEqual(path1.path, path2.path);
     // other return false
     else false;
   end match;
 end pathEqual;
 
 public function pathEqualCaseInsensitive "Returns true if two paths are equal."
-  input Absyn.Path inPath1;
-  input Absyn.Path inPath2;
-  output Boolean outBoolean;
+  input Absyn.Path path1;
+  input Absyn.Path path2;
+  output Boolean equal;
 algorithm
-  outBoolean := match (inPath1, inPath2)
-    local
-      String id1,id2;
-      Boolean res;
-      Absyn.Path path1,path2;
+  equal := match (path1, path2)
     // fully qual vs. path
-    case (Absyn.FULLYQUALIFIED(path1),path2) then pathEqualCaseInsensitive(path1,path2);
+    case (Absyn.FULLYQUALIFIED(), _) then pathEqualCaseInsensitive(path1.path, path2);
     // path vs. fully qual
-    case (path1,Absyn.FULLYQUALIFIED(path2)) then pathEqualCaseInsensitive(path1,path2);
+    case (_, Absyn.FULLYQUALIFIED()) then pathEqualCaseInsensitive(path1, path2.path);
     // ident vs. ident
-    case (Absyn.IDENT(id1),Absyn.IDENT(id2))
-      then stringEq(System.tolower(id1), System.tolower(id2));
+    case (Absyn.IDENT(),Absyn.IDENT()) then stringEq(System.tolower(path1.name), System.tolower(path2.name));
     // qual ident vs. qual ident
-    case (Absyn.QUALIFIED(id1, path1),Absyn.QUALIFIED(id2, path2))
-      equation
-        res = if stringEq(System.tolower(id1), System.tolower(id2)) then pathEqualCaseInsensitive(path1, path2) else false;
-      then res;
+    case (Absyn.QUALIFIED(),Absyn.QUALIFIED())
+      then stringEq(System.tolower(path1.name), System.tolower(path2.name)) and
+           pathEqualCaseInsensitive(path1.path, path2.path);
     // other return false
     else false;
   end match;
@@ -1472,7 +1026,7 @@ public function typeSpecEqual
   input Absyn.TypeSpec a,b;
   output Boolean ob;
 algorithm
-  ob := matchcontinue(a,b)
+  ob := match(a,b)
     local
       Absyn.Path p1,p2;
       Option<Absyn.ArrayDim> oad1,oad2;
@@ -1480,22 +1034,16 @@ algorithm
       Absyn.Ident i1, i2;
       Integer pos1, pos2;
 
-    // first try full equality
-    case(Absyn.TPATH(p1,oad1), Absyn.TPATH(p2,oad2))
-      equation
-        true = pathEqual(p1,p2);
-        true = optArrayDimEqual(oad1,oad2);
-      then true;
+    case (Absyn.TPATH(), Absyn.TPATH())
+      then pathEqual(a.path, b.path) and optArrayDimEqual(a.arrayDim, b.arrayDim);
 
-    case(Absyn.TCOMPLEX(p1,lst1,oad1),Absyn.TCOMPLEX(p2,lst2,oad2))
-      equation
-        true = pathEqual(p1,p2);
-        true = List.isEqualOnTrue(lst1,lst2,typeSpecEqual);
-        true = optArrayDimEqual(oad1,oad2);
-      then
-        true;
+    case (Absyn.TCOMPLEX(), Absyn.TCOMPLEX())
+      then pathEqual(a.path, b.path) and
+           List.isEqualOnTrue(a.typeSpecs, b.typeSpecs, typeSpecEqual) and
+           optArrayDimEqual(a.arrayDim, b.arrayDim);
+
     else false;
-  end matchcontinue;
+  end match;
 end typeSpecEqual;
 
 public function optArrayDimEqual
@@ -1503,26 +1051,21 @@ public function optArrayDimEqual
    helper function for typeSpecEqual"
   input Option<Absyn.ArrayDim> oad1,oad2;
   output Boolean b;
-algorithm b:= matchcontinue(oad1,oad2)
-  local
-    list<Absyn.Subscript> ad1,ad2;
-  case(SOME(ad1),SOME(ad2))
-    equation
-    true = List.isEqualOnTrue(ad1,ad2,subscriptEqual);
-    then true;
-  case(NONE(),NONE()) then true;
-  else false;
-end matchcontinue;
+algorithm
+  b:= match(oad1,oad2)
+    local
+      list<Absyn.Subscript> ad1,ad2;
+
+    case(SOME(ad1),SOME(ad2))
+      then List.isEqualOnTrue(ad1,ad2,subscriptEqual);
+    case(NONE(),NONE()) then true;
+    else false;
+  end match;
 end optArrayDimEqual;
 
 public function typeSpecPathString "This function simply converts a Absyn.Path to a string."
   input Absyn.TypeSpec tp;
-  output String s;
-algorithm s := match(tp)
-  local Absyn.Path p;
-  case(Absyn.TCOMPLEX(path = p)) then pathString(p);
-  case(Absyn.TPATH(path = p)) then pathString(p);
-end match;
+  output String s = pathString(typeSpecPath(tp));
 end typeSpecPathString;
 
 public function typeSpecPath
@@ -1531,9 +1074,8 @@ public function typeSpecPath
   output Absyn.Path op;
 algorithm
   op := match(tp)
-    local Absyn.Path p;
-    case(Absyn.TCOMPLEX(path = p)) then p;
-    case(Absyn.TPATH(path = p)) then p;
+    case Absyn.TCOMPLEX() then tp.path;
+    case Absyn.TPATH() then tp.path;
   end match;
 end typeSpecPath;
 
@@ -1549,7 +1091,6 @@ algorithm
     case Absyn.TPATH(arrayDim = SOME(dim)) then dim;
     case Absyn.TCOMPLEX(arrayDim = SOME(dim)) then dim;
     else {};
-
   end match;
 end typeSpecDimensions;
 
@@ -1729,14 +1270,9 @@ public function optPathString "Returns a path converted to string or an empty st
 algorithm
   outString := match (inPathOption)
     local
-      Absyn.Ident str;
       Absyn.Path p;
-    case (NONE()) then "";
-    case (SOME(p))
-      equation
-        str = pathString(p);
-      then
-        str;
+    case NONE() then "";
+    case SOME(p) then pathString(p);
   end match;
 end optPathString;
 
@@ -1775,21 +1311,7 @@ end stringPath;
 public function stringListPath
   "Converts a list of strings into a qualified path."
   input list<String> paths;
-  output Absyn.Path qualifiedPath;
-algorithm
-  qualifiedPath := matchcontinue(paths)
-    local
-      String str;
-      list<String> rest_str;
-      Absyn.Path p;
-    case ({}) then fail();
-    case (str :: {}) then Absyn.IDENT(str);
-    case (str :: rest_str)
-      equation
-        p = stringListPath(rest_str);
-      then
-        Absyn.QUALIFIED(str, p);
-  end matchcontinue;
+  output Absyn.Path qualifiedPath = stringListPathReversed(listReverse(paths));
 end stringListPath;
 
 public function stringListPathReversed
@@ -1803,45 +1325,22 @@ protected
   Absyn.Path path;
 algorithm
   id :: rest_str := inStrings;
-  path := Absyn.IDENT(id);
-  outPath := stringListPathReversed2(rest_str, path);
+  outPath := Absyn.IDENT(id);
+
+  for s in rest_str loop
+    outPath := Absyn.QUALIFIED(s, outPath);
+  end for;
 end stringListPathReversed;
-
-protected function stringListPathReversed2
-  input list<String> inStrings;
-  input Absyn.Path inAccumPath;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match(inStrings, inAccumPath)
-    local
-      String id;
-      list<String> rest_str;
-      Absyn.Path path;
-
-    case ({}, _) then inAccumPath;
-
-    case (id :: rest_str, _)
-      equation
-        path = Absyn.QUALIFIED(id, inAccumPath);
-      then
-        stringListPathReversed2(rest_str, path);
-
-  end match;
-end stringListPathReversed2;
 
 public function pathLastIdent
   "Returns the last ident (after last dot) in a path"
-  input Absyn.Path inPath;
+  input Absyn.Path path;
   output String outIdent;
 algorithm
-  outIdent := match(inPath)
-    local
-      Absyn.Ident id;
-      Absyn.Path p;
-
-    case Absyn.QUALIFIED(path = p) then pathLastIdent(p);
-    case Absyn.IDENT(name = id) then id;
-    case Absyn.FULLYQUALIFIED(path = p) then pathLastIdent(p);
+  outIdent := match path
+    case Absyn.QUALIFIED() then pathLastIdent(path.path);
+    case Absyn.IDENT() then path.name;
+    case Absyn.FULLYQUALIFIED() then pathLastIdent(path.path);
   end match;
 end pathLastIdent;
 
@@ -1865,26 +1364,20 @@ public function pathLast
   input output Absyn.Path path;
 algorithm
   path := match path
-    local
-      Absyn.Path p;
-    case Absyn.QUALIFIED(path = p) then pathLast(p);
+    case Absyn.QUALIFIED() then pathLast(path.path);
     case Absyn.IDENT() then path;
-    case Absyn.FULLYQUALIFIED(path = p) then pathLast(p);
+    case Absyn.FULLYQUALIFIED() then pathLast(path.path);
   end match;
 end pathLast;
 
 public function pathFirstIdent "Returns the first ident (before first dot) in a path"
-  input Absyn.Path inPath;
+  input Absyn.Path path;
   output Absyn.Ident outIdent;
 algorithm
-  outIdent := match (inPath)
-    local
-      Absyn.Ident n;
-      Absyn.Path p;
-
-    case (Absyn.FULLYQUALIFIED(path = p)) then pathFirstIdent(p);
-    case (Absyn.QUALIFIED(name = n)) then n;
-    case (Absyn.IDENT(name = n)) then n;
+  outIdent := match path
+    case Absyn.FULLYQUALIFIED() then pathFirstIdent(path.path);
+    case Absyn.QUALIFIED() then path.name;
+    case Absyn.IDENT() then path.name;
   end match;
 end pathFirstIdent;
 
@@ -1903,16 +1396,13 @@ algorithm
 end pathSetFirstIdent;
 
 public function pathFirstPath
-  input Absyn.Path inPath;
+  input Absyn.Path path;
   output Absyn.Path outPath;
 algorithm
-  outPath := match inPath
-    local
-      Absyn.Ident n;
-
-    case Absyn.IDENT() then inPath;
-    case Absyn.QUALIFIED(name = n) then Absyn.IDENT(n);
-    case Absyn.FULLYQUALIFIED(path = outPath) then pathFirstPath(outPath);
+  outPath := match path
+    case Absyn.IDENT() then path;
+    case Absyn.QUALIFIED() then Absyn.IDENT(path.name);
+    case Absyn.FULLYQUALIFIED() then pathFirstPath(path.path);
   end match;
 end pathFirstPath;
 
@@ -1992,8 +1482,8 @@ algorithm
         ident1 = pathFirstIdent(inPath1);
         ident2 = pathFirstIdent(inPath2);
         true = stringEq(ident1, ident2);
-        path1 = stripFirst(inPath1);
-        path2 = stripFirst(inPath2);
+        path1 = pathRest(inPath1);
+        path2 = pathRest(inPath2);
       then
         pathStripSamePrefix(path1, path2);
 
@@ -2006,19 +1496,11 @@ public function pathPrefix
   input Absyn.Path path;
   output Absyn.Path prefix;
 algorithm
-  prefix := matchcontinue(path)
-    local
-      Absyn.Path p;
-      Absyn.Ident n;
-
-    case (Absyn.FULLYQUALIFIED(path = p)) then pathPrefix(p);
-    case (Absyn.QUALIFIED(name = n, path = Absyn.IDENT())) then Absyn.IDENT(n);
-    case (Absyn.QUALIFIED(name = n, path = p))
-      equation
-        p = pathPrefix(p);
-      then
-        Absyn.QUALIFIED(n, p);
-  end matchcontinue;
+  prefix := match path
+    case Absyn.FULLYQUALIFIED() then pathPrefix(path.path);
+    case Absyn.QUALIFIED(path = Absyn.IDENT()) then Absyn.IDENT(path.name);
+    case Absyn.QUALIFIED() then Absyn.QUALIFIED(path.name, pathPrefix(path.path));
+  end match;
 end pathPrefix;
 
 public function prefixPath
@@ -2103,7 +1585,6 @@ algorithm
     local
       String n;
       Absyn.Path p;
-      list<String> strings;
 
     case (Absyn.IDENT(name = n),_) then n::acc;
     case (Absyn.FULLYQUALIFIED(path = p),_) then pathToStringListWork(p,acc);
@@ -2176,7 +1657,7 @@ public function pathPrefixOf
   input Absyn.Path path;
   output Boolean isPrefix;
 algorithm
-  isPrefix := matchcontinue(prefixPath, path)
+  isPrefix := match(prefixPath, path)
     local
       Absyn.Path p, p2;
       String id, id2;
@@ -2185,35 +1666,10 @@ algorithm
     case (Absyn.IDENT(id), Absyn.IDENT(id2)) then stringEq(id, id2);
     case (Absyn.IDENT(id), Absyn.QUALIFIED(name = id2)) then stringEq(id, id2);
     case (Absyn.QUALIFIED(id, p), Absyn.QUALIFIED(id2, p2))
-      equation
-        true = stringEq(id, id2);
-        true = pathPrefixOf(p, p2);
-      then
-        true;
+      then stringEq(id, id2) and pathPrefixOf(p, p2);
     else false;
-  end matchcontinue;
+  end match;
 end pathPrefixOf;
-
-public function crefPrefixOf
-"Alternative names: crefIsPrefixOf, isPrefixOf, prefixOf
-  Author: DH 2010-03
-
-  Returns true if prefixCr is a prefix of cr, i.e., false otherwise.
-  Subscripts are NOT checked."
-  input Absyn.ComponentRef prefixCr;
-  input Absyn.ComponentRef cr;
-  output Boolean out;
-algorithm
-  out := matchcontinue(prefixCr, cr)
-    case(_, _)
-      equation
-        true = crefEqualNoSubs(prefixCr, cr);
-      then true;
-    case(_, _)
-      then crefPrefixOf(prefixCr, crefStripLast(cr));
-    else false;
-  end matchcontinue;
-end crefPrefixOf;
 
 public function removePrefix "removes the prefix_path from path, and returns the rest of path"
   input Absyn.Path prefix_path;
@@ -2248,157 +1704,13 @@ public function removePartialPrefix
   input Absyn.Path inPath;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue(inPrefix, inPath)
-    local
-      Absyn.Path p;
-
-    case (_, _)
-      equation
-        p = removePrefix(inPrefix, inPath);
-      then
-        p;
-
-    case (Absyn.QUALIFIED(path = p), _)
-      equation
-        p = removePrefix(p, inPath);
-      then
-        p;
-
-    case (Absyn.FULLYQUALIFIED(path = p), _)
-      equation
-        p = removePartialPrefix(p, inPath);
-      then
-        p;
-
+  outPath := matchcontinue inPrefix
+    case _ then removePrefix(inPrefix, inPath);
+    case Absyn.QUALIFIED() then removePrefix(inPrefix.path, inPath);
+    case Absyn.FULLYQUALIFIED() then removePartialPrefix(inPrefix.path, inPath);
     else inPath;
   end matchcontinue;
 end removePartialPrefix;
-
-public function crefRemovePrefix
-"
-  function: crefRemovePrefix
-  Alternative names: removePrefix
-  Author: DH 2010-03
-
-  If prefixCr is a prefix of cr, removes prefixCr from cr and returns the remaining reference,
-  otherwise fails. Subscripts are NOT checked.
-"
-  input Absyn.ComponentRef prefixCr;
-  input Absyn.ComponentRef cr;
-  output Absyn.ComponentRef out;
-algorithm
-  out := match(prefixCr, cr)
-    local
-      Absyn.Ident prefixIdent, ident;
-      Absyn.ComponentRef prefixRestCr, restCr;
-    // fqual
-    case(Absyn.CREF_FULLYQUALIFIED(componentRef = prefixRestCr), Absyn.CREF_FULLYQUALIFIED(componentRef = restCr))
-      then
-        crefRemovePrefix(prefixRestCr, restCr);
-    // qual
-    case(Absyn.CREF_QUAL(name = prefixIdent, componentRef = prefixRestCr), Absyn.CREF_QUAL(name = ident, componentRef = restCr))
-      equation
-        true = stringEq(prefixIdent, ident);
-      then
-        crefRemovePrefix(prefixRestCr, restCr);
-    // id vs. qual
-    case(Absyn.CREF_IDENT(name = prefixIdent), Absyn.CREF_QUAL(name = ident, componentRef = restCr))
-      equation
-        true = stringEq(prefixIdent, ident);
-      then restCr;
-    // id vs. id
-    case(Absyn.CREF_IDENT(name = prefixIdent), Absyn.CREF_IDENT(name = ident))
-      equation
-        true = stringEq(prefixIdent, ident);
-      then Absyn.CREF_IDENT("", {});
-  end match;
-end crefRemovePrefix;
-
-public function pathContainsIdent
-  "Returns whether any identifier in the path is equal to the given identifier."
-  input Absyn.Path path;
-  input String ident;
-  output Boolean res;
-algorithm
-  res := match path
-    case Absyn.IDENT() then path.name == ident;
-    case Absyn.QUALIFIED()
-      then path.name == ident or pathContainsIdent(path.path, ident);
-    case Absyn.FULLYQUALIFIED() then pathContainsIdent(path.path, ident);
-  end match;
-end pathContainsIdent;
-
-public function pathContainsString
-  "Author OT,
-   checks if Absyn.Path contains the given string."
-  input Absyn.Path p1;
-  input String str;
-  output Boolean b;
-algorithm
-  b := match(p1,str)
-    local
-      String str1,searchStr;
-      Absyn.Path qp;
-      Boolean b1,b2,b3;
-
-    case(Absyn.IDENT(str1),searchStr)
-      equation
-        b1 = System.stringFind(str1,searchStr) <> -1;
-      then b1;
-
-    case(Absyn.QUALIFIED(str1,qp),searchStr)
-      equation
-        b1 = System.stringFind(str1, searchStr) <> -1;
-        b2 = pathContainsString(qp, searchStr);
-        b3 = boolOr(b1, b2);
-      then
-        b3;
-
-    case(Absyn.FULLYQUALIFIED(qp), searchStr) then pathContainsString(qp, searchStr);
-  end match;
-end pathContainsString;
-
-public function pathContainedIn
-  "This function checks if subPath is contained in path.
-   If it is the complete path is returned. Otherwise the function fails.
-   For example,
-     pathContainedIn( C.D, A.B.C) => A.B.C.D
-     pathContainedIn(C.D, A.B.C.D) => A.B.C.D
-     pathContainedIn(A.B.C.D, A.B.C.D) => A.B.C.D
-     pathContainedIn(B.C,A.B) => A.B.C"
-  input Absyn.Path subPath;
-  input Absyn.Path path;
-  output Absyn.Path completePath;
-algorithm
-  completePath := matchcontinue(subPath,path)
-    local
-      Absyn.Ident ident;
-      Absyn.Path newPath,newSubPath;
-
-    // A suffix, e.g. C.D in A.B.C.D
-    case (_,_)
-      equation
-        true=pathSuffixOf(subPath,path);
-      then path;
-
-    // strip last ident of path and recursively check if suffix.
-    case (_,_)
-      equation
-        ident = pathLastIdent(path);
-        newPath = stripLast(path);
-        newPath=pathContainedIn(subPath,newPath);
-      then joinPaths(newPath,Absyn.IDENT(ident));
-
-    // strip last ident of subpath and recursively check if suffix.
-    else
-      equation
-        ident = pathLastIdent(subPath);
-        newSubPath = stripLast(subPath);
-        newSubPath=pathContainedIn(newSubPath,path);
-      then joinPaths(newSubPath,Absyn.IDENT(ident));
-
-  end matchcontinue;
-end pathContainedIn;
 
 public function getCrefsFromSubs
   "Author BZ 2009-08
@@ -2651,25 +1963,14 @@ end iteratorGuard;
 // stefan
 public function getNamedFuncArgNamesAndValues
 "returns the names from a list of NamedArgs as a string list"
-  input list<Absyn.NamedArg> inNamedArgList;
-  output list<String> outStringList;
-  output list<Absyn.Exp> outExpList;
+  input list<Absyn.NamedArg> namedArgs;
+  output list<String> names = {};
+  output list<Absyn.Exp> values = {};
 algorithm
-  (outStringList,outExpList) := match ( inNamedArgList )
-    local
-      list<Absyn.NamedArg> cdr;
-      String s;
-      Absyn.Exp e;
-      list<String> slst;
-      list<Absyn.Exp> elst;
-
-    case ({})  then ({},{});
-    case (Absyn.NAMEDARG(argName=s,argValue=e) :: cdr)
-      equation
-        (slst,elst) = getNamedFuncArgNamesAndValues(cdr);
-      then
-        (s :: slst, e :: elst);
-  end match;
+  for arg in listReverse(namedArgs) loop
+    names := arg.argName :: names;
+    values := arg.argValue :: values;
+  end for;
 end getNamedFuncArgNamesAndValues;
 
 protected function getCrefFromNarg "Returns the flattened list of all component references
@@ -2679,16 +1980,7 @@ protected function getCrefFromNarg "Returns the flattened list of all component 
   input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<Absyn.ComponentRef> outComponentRefLst;
 algorithm
-  outComponentRefLst := match (inNamedArg,includeSubs,includeFunctions)
-    local
-      list<Absyn.ComponentRef> res;
-      Absyn.ComponentCondition exp;
-    case (Absyn.NAMEDARG(argValue = exp),_,_)
-      equation
-        res = getCrefFromExp(exp,includeSubs,includeFunctions);
-      then
-        res;
-  end match;
+  outComponentRefLst := getCrefFromExp(inNamedArg.argValue, includeSubs, includeFunctions);
 end getCrefFromNarg;
 
 public function joinPaths "This function joins two paths"
@@ -2716,10 +2008,10 @@ public function joinPathsOpt "This function joins two paths when the first one m
   input Absyn.Path inPath2;
   output Absyn.Path outPath;
 algorithm
-  outPath := match (inPath1,inPath2)
+  outPath := match inPath1
     local Absyn.Path p;
-    case (NONE(), _) then inPath2;
-    case (SOME(p), _) then joinPaths(p, inPath2);
+    case NONE() then inPath2;
+    case SOME(p) then joinPaths(p, inPath2);
   end match;
 end joinPathsOpt;
 
@@ -2728,49 +2020,14 @@ public function joinPathsOptSuffix
   input Option<Absyn.Path> inPath2;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inPath1, inPath2)
+  outPath := match inPath2
     local
       Absyn.Path p;
 
-    case (_, SOME(p)) then joinPaths(inPath1, p);
+    case SOME(p) then joinPaths(inPath1, p);
     else inPath1;
-
   end match;
 end joinPathsOptSuffix;
-
-public function selectPathsOpt "This function selects the second path when the first one
-  is NONE() otherwise it will select the first one."
-  input Option<Absyn.Path> inPath1;
-  input Absyn.Path inPath2;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match (inPath1,inPath2)
-    local
-      Absyn.Path p;
-    case (NONE(), p) then p;
-    case (SOME(p),_) then p;
-  end match;
-end selectPathsOpt;
-
-public function pathAppendList "author Lucian
-  This function joins a path list"
-  input list<Absyn.Path> inPathLst;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match (inPathLst)
-    local
-      Absyn.Path path,res_path,first;
-      list<Absyn.Path> rest;
-    case ({}) then Absyn.IDENT("");
-    case ((path :: {})) then path;
-    case ((first :: rest))
-      equation
-        path = pathAppendList(rest);
-        res_path = joinPaths(first, path);
-      then
-        res_path;
-  end match;
-end pathAppendList;
 
 public function stripLast "Returns the path given as argument to
   the function minus the last ident."
@@ -2799,25 +2056,6 @@ algorithm
 
   end match;
 end stripLast;
-
-public function stripLastOpt
-  input Absyn.Path inPath;
-  output Option<Absyn.Path> outPath;
-algorithm
-  outPath := match(inPath)
-    local
-      Absyn.Path p;
-
-    case Absyn.IDENT() then NONE();
-
-    else
-      equation
-        p = stripLast(inPath);
-      then
-        SOME(p);
-
-  end match;
-end stripLastOpt;
 
 public function crefStripLast "Returns the path given as argument to
   the function minus the last ident."
@@ -2875,20 +2113,6 @@ algorithm (outPath1,outPath2) := match(inPath)
   end match;
 end splitQualAndIdentPath;
 
-public function stripFirst "Returns the path given as argument
-  to the function minus the first ident."
-  input Absyn.Path inPath;
-  output Absyn.Path outPath;
-algorithm
-  outPath:=
-  match (inPath)
-    local
-      Absyn.Path p;
-    case (Absyn.QUALIFIED(path = p)) then p;
-    case(Absyn.FULLYQUALIFIED(p)) then stripFirst(p);
-  end match;
-end stripFirst;
-
 public function crefToPath "This function converts a Absyn.ComponentRef to a Absyn.Path, if possible.
   If the component reference contains subscripts, it will silently fail."
   input Absyn.ComponentRef inComponentRef;
@@ -2919,11 +2143,7 @@ public function elementSpecToPath "This function converts a Absyn.ElementSpec to
   input Absyn.ElementSpec inElementSpec;
   output Absyn.Path outPath;
 algorithm
-  outPath:= match (inElementSpec)
-    local
-      Absyn.Path p;
-    case Absyn.EXTENDS(path = p) then p;
-  end match;
+  Absyn.EXTENDS(path = outPath) := inElementSpec;
 end elementSpecToPath;
 
 public function crefToPathIgnoreSubs
@@ -3007,33 +2227,26 @@ end pathToCrefWithSubs;
 
 public function crefLastIdent
   "Returns the last identifier in a component reference."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.ComponentRef cref;
   output Absyn.Ident outIdent;
 algorithm
-  outIdent := match(inComponentRef)
-    local
-      Absyn.ComponentRef cref;
-      Absyn.Ident id;
-
-    case Absyn.CREF_IDENT(name = id) then id;
-    case Absyn.CREF_QUAL(componentRef = cref) then crefLastIdent(cref);
-    case Absyn.CREF_FULLYQUALIFIED(componentRef = cref) then crefLastIdent(cref);
+  outIdent := match cref
+    case Absyn.CREF_IDENT() then cref.name;
+    case Absyn.CREF_QUAL() then crefLastIdent(cref.componentRef);
+    case Absyn.CREF_FULLYQUALIFIED() then crefLastIdent(cref.componentRef);
   end match;
 end crefLastIdent;
 
 public function crefFirstIdentNoSubs
   "Returns the basename of the component reference, but fails if it encounters
   any subscripts."
-  input Absyn.ComponentRef inCref;
+  input Absyn.ComponentRef cref;
   output Absyn.Ident outIdent;
 algorithm
-  outIdent := match(inCref)
-    local
-      Absyn.Ident id;
-      Absyn.ComponentRef cr;
-    case Absyn.CREF_IDENT(name = id, subscripts = {}) then id;
-    case Absyn.CREF_QUAL(name = id, subscripts = {}) then id;
-    case Absyn.CREF_FULLYQUALIFIED(componentRef = cr) then crefFirstIdentNoSubs(cr);
+  outIdent := match cref
+    case Absyn.CREF_IDENT(subscripts = {}) then cref.name;
+    case Absyn.CREF_QUAL(subscripts = {}) then cref.name;
+    case Absyn.CREF_FULLYQUALIFIED() then crefFirstIdentNoSubs(cref.componentRef);
   end match;
 end crefFirstIdentNoSubs;
 
@@ -3061,52 +2274,38 @@ algorithm
 end crefIsQual;
 
 public function crefLastSubs "Return the last subscripts of an Absyn.ComponentRef"
-  input Absyn.ComponentRef inComponentRef;
-  output list<Absyn.Subscript> outSubscriptLst;
+  input Absyn.ComponentRef cref;
+  output list<Absyn.Subscript> subscripts;
 algorithm
-  outSubscriptLst:=
-  match (inComponentRef)
-    local
-      Absyn.Ident id;
-      list<Absyn.Subscript> subs,res;
-      Absyn.ComponentRef cr;
-    case (Absyn.CREF_IDENT(subscripts= subs)) then subs;
-    case (Absyn.CREF_QUAL(componentRef = cr))
-      equation
-        res = crefLastSubs(cr);
-      then
-        res;
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr))
-      equation
-        res = crefLastSubs(cr);
-      then
-        res;
+  subscripts := match (cref)
+    case Absyn.CREF_IDENT() then cref.subscripts;
+    case Absyn.CREF_QUAL() then crefLastSubs(cref.componentRef);
+    case Absyn.CREF_FULLYQUALIFIED() then crefLastSubs(cref.componentRef);
   end match;
 end crefLastSubs;
 
 public function crefSetLastSubs
-  input Absyn.ComponentRef inCref;
+  input output Absyn.ComponentRef cref;
   input list<Absyn.Subscript> inSubscripts;
-  output Absyn.ComponentRef outCref = inCref;
 algorithm
-  outCref := match outCref
+  () := match cref
     case Absyn.CREF_IDENT()
       algorithm
-        outCref.subscripts := inSubscripts;
+        cref.subscripts := inSubscripts;
       then
-        outCref;
+        ();
 
     case Absyn.CREF_QUAL()
       algorithm
-        outCref.componentRef := crefSetLastSubs(outCref.componentRef, inSubscripts);
+        cref.componentRef := crefSetLastSubs(cref.componentRef, inSubscripts);
       then
-        outCref;
+        ();
 
     case Absyn.CREF_FULLYQUALIFIED()
       algorithm
-        outCref.componentRef := crefSetLastSubs(outCref.componentRef, inSubscripts);
+        cref.componentRef := crefSetLastSubs(cref.componentRef, inSubscripts);
       then
-        outCref;
+        ();
 
   end match;
 end crefSetLastSubs;
@@ -3155,52 +2354,39 @@ algorithm
   end match;
 end getSubsFromCref;
 
-// stefan
 public function crefGetLastIdent
-"Gets the last ident in a Absyn.ComponentRef"
-  input Absyn.ComponentRef inComponentRef;
-  output Absyn.ComponentRef outComponentRef;
+  "Gets the last ident in a Absyn.ComponentRef"
+  input Absyn.ComponentRef cref;
+  output Absyn.Ident ident;
 algorithm
-  outComponentRef := match (inComponentRef)
-    local
-      Absyn.ComponentRef cref,cref_1;
-      Absyn.Ident id;
-      list<Absyn.Subscript> subs;
-    case(Absyn.CREF_IDENT(id,subs)) then Absyn.CREF_IDENT(id,subs);
-    case(Absyn.CREF_QUAL(_,_,cref))
-      equation
-        cref_1 = crefGetLastIdent(cref);
-      then
-        cref_1;
-    case(Absyn.CREF_FULLYQUALIFIED(cref))
-      equation
-        cref_1 = crefGetLastIdent(cref);
-      then
-        cref_1;
+  ident := match cref
+    case Absyn.CREF_IDENT() then cref.name;
+    case Absyn.CREF_QUAL() then crefGetLastIdent(cref.componentRef);
+    case Absyn.CREF_FULLYQUALIFIED() then crefGetLastIdent(cref.componentRef);
   end match;
 end crefGetLastIdent;
 
 public function crefStripLastSubs "Strips the last subscripts of a Absyn.ComponentRef"
-  input Absyn.ComponentRef inComponentRef;
-  output Absyn.ComponentRef outComponentRef;
+  input output Absyn.ComponentRef cref;
 algorithm
-  outComponentRef:=
-  match (inComponentRef)
-    local
-      Absyn.Ident id;
-      list<Absyn.Subscript> subs,s;
-      Absyn.ComponentRef cr_1,cr;
-    case (Absyn.CREF_IDENT(name = id)) then Absyn.CREF_IDENT(id,{});
-    case (Absyn.CREF_QUAL(name= id,subscripts= s,componentRef = cr))
-      equation
-        cr_1 = crefStripLastSubs(cr);
+  () := match cref
+    case Absyn.CREF_IDENT()
+      algorithm
+        cref.subscripts := {};
       then
-        Absyn.CREF_QUAL(id,s,cr_1);
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr))
-      equation
-        cr_1 = crefStripLastSubs(cr);
+        ();
+
+    case Absyn.CREF_QUAL()
+      algorithm
+        cref.componentRef := crefStripLastSubs(cref.componentRef);
       then
-        crefMakeFullyQualified(cr_1);
+        ();
+
+    case Absyn.CREF_FULLYQUALIFIED()
+      algorithm
+        cref.componentRef := crefStripLastSubs(cref.componentRef);
+      then
+        ();
   end match;
 end crefStripLastSubs;
 
@@ -3426,37 +2612,25 @@ end setClassBody;
 public function crefEqual " Checks if the name of a Absyn.ComponentRef is
  equal to the name of another Absyn.ComponentRef, including subscripts.
  See also crefEqualNoSubs."
-  input Absyn.ComponentRef iCr1;
-  input Absyn.ComponentRef iCr2;
-  output Boolean outBoolean;
+  input Absyn.ComponentRef cref1;
+  input Absyn.ComponentRef cref2;
+  output Boolean equal;
 algorithm
-  outBoolean := matchcontinue (iCr1,iCr2)
-    local
-      Absyn.Ident id,id2;
-      list<Absyn.Subscript> ss1,ss2;
-      Absyn.ComponentRef cr1,cr2;
+  equal := match (cref1, cref2)
+    case (Absyn.CREF_IDENT(), Absyn.CREF_IDENT())
+      then stringEq(cref1.name, cref2.name) and
+           subscriptsEqual(cref1.subscripts, cref2.subscripts);
 
-    case (Absyn.CREF_IDENT(name = id,subscripts=ss1),Absyn.CREF_IDENT(name = id2,subscripts = ss2))
-      equation
-        true = stringEq(id, id2);
-        true = subscriptsEqual(ss1,ss2);
-      then
-        true;
+    case (Absyn.CREF_QUAL(), Absyn.CREF_QUAL())
+      then stringEq(cref1.name, cref2.name) and
+           subscriptsEqual(cref1.subscripts, cref2.subscripts) and
+           crefEqual(cref1.componentRef, cref2.componentRef);
 
-    case (Absyn.CREF_QUAL(name = id,subscripts = ss1, componentRef = cr1),Absyn.CREF_QUAL(name = id2,subscripts = ss2, componentRef = cr2))
-      equation
-        true = stringEq(id, id2);
-        true = subscriptsEqual(ss1,ss2);
-        true = crefEqual(cr1, cr2);
-      then
-        true;
-
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr1),Absyn.CREF_FULLYQUALIFIED(componentRef = cr2))
-      then
-        crefEqual(cr1, cr2);
+    case (Absyn.CREF_FULLYQUALIFIED(), Absyn.CREF_FULLYQUALIFIED())
+      then crefEqual(cref1.componentRef, cref2.componentRef);
 
     else false;
-  end matchcontinue;
+  end match;
 end crefEqual;
 
 public function crefFirstEqual
@@ -3500,27 +2674,17 @@ public function crefEqualNoSubs
    See also crefEqual."
   input Absyn.ComponentRef cr1;
   input Absyn.ComponentRef cr2;
-  output Boolean outBoolean;
+  output Boolean equal;
 algorithm
-  outBoolean := matchcontinue (cr1,cr2)
-    local
-      Absyn.ComponentRef rest1,rest2;
-      Absyn.Ident id,id2;
-    case (Absyn.CREF_IDENT(name = id),Absyn.CREF_IDENT(name = id2))
-      equation
-        true = stringEq(id, id2);
-      then
-        true;
-    case (Absyn.CREF_QUAL(name = id,componentRef = rest1),Absyn.CREF_QUAL(name = id2,componentRef = rest2))
-      equation
-        true = stringEq(id, id2);
-        true = crefEqualNoSubs(rest1, rest2);
-      then
-        true;
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = rest1),Absyn.CREF_FULLYQUALIFIED(componentRef = rest2))
-      then crefEqualNoSubs(rest1, rest2);
+  equal := match (cr1,cr2)
+    case (Absyn.CREF_IDENT(), Absyn.CREF_IDENT())
+      then stringEq(cr1.name, cr2.name);
+    case (Absyn.CREF_QUAL(), Absyn.CREF_QUAL())
+      then stringEq(cr1.name, cr2.name) and crefEqualNoSubs(cr1.componentRef, cr2.componentRef);
+    case (Absyn.CREF_FULLYQUALIFIED(), Absyn.CREF_FULLYQUALIFIED())
+      then crefEqualNoSubs(cr1.componentRef, cr2.componentRef);
     else false;
-  end matchcontinue;
+  end match;
 end crefEqualNoSubs;
 
 public function isPackageRestriction "checks if the provided parameter is a package or not"
@@ -3548,56 +2712,18 @@ public function expEqual "Returns true if two expressions are equal"
   input Absyn.Exp exp2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(exp1,exp2)
-    local
-      Boolean b;
-      Absyn.Exp x, y;
-      Integer i;
-      String r;
-
+  equal := match (exp1, exp2)
     // real vs. integer
-    case (Absyn.INTEGER(i), Absyn.REAL(r))
-      equation
-        b = realEq(intReal(i), System.stringReal(r));
-      then b;
+    case (Absyn.INTEGER(), Absyn.REAL())
+      then realEq(intReal(exp1.value), System.stringReal(exp2.value));
 
-    case (Absyn.REAL(r), Absyn.INTEGER(i))
-      equation
-        b = realEq(intReal(i), System.stringReal(r));
-      then b;
+    case (Absyn.REAL(), Absyn.INTEGER())
+      then realEq(intReal(exp2.value), System.stringReal(exp1.value));
 
     // anything else, exact match!
-    case (x, y) then valueEq(x,y);
-  end matchcontinue;
+    else valueEq(exp1, exp2);
+  end match;
 end expEqual;
-
-public function eachEqual "Returns true if two each attributes are equal"
-  input Absyn.Each each1;
-  input Absyn.Each each2;
-  output Boolean equal;
-algorithm
-  equal := match(each1, each2)
-    case(Absyn.NON_EACH(), Absyn.NON_EACH()) then true;
-    case(Absyn.EACH(), Absyn.EACH()) then true;
-    else false;
-  end match;
-end eachEqual;
-
-protected function functionArgsEqual "Returns true if two Absyn.FunctionArgs are equal"
-  input Absyn.FunctionArgs args1;
-  input Absyn.FunctionArgs args2;
-  output Boolean equal;
-algorithm
-  equal := match(args1,args2)
-    local
-      list<Absyn.Exp> expl1,expl2;
-
-    case (Absyn.FUNCTIONARGS(args = expl1), Absyn.FUNCTIONARGS(args = expl2))
-      then List.isEqualOnTrue(expl1, expl2, expEqual);
-
-    else false;
-  end match;
-end functionArgsEqual;
 
 public function getClassName "author: adrpo
   gets the name of the class."
@@ -3634,11 +2760,8 @@ protected function findIteratorIndexedCrefs_traverser
   output list<IteratorIndexedCref> outCrefs;
 algorithm
   outCrefs := match inExp
-    local
-      Absyn.ComponentRef cref;
-
-    case Absyn.CREF(componentRef = cref)
-      then getIteratorIndexedCrefs(cref, inIterator, inCrefs);
+    case Absyn.CREF()
+      then getIteratorIndexedCrefs(inExp.componentRef, inIterator, inCrefs);
 
     else inCrefs;
   end match;
@@ -3828,7 +2951,7 @@ public function makeFullyQualified
   input Absyn.Path inPath;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inPath)
+  outPath := match inPath
     case Absyn.FULLYQUALIFIED() then inPath;
     else Absyn.FULLYQUALIFIED(inPath);
   end match;
@@ -3851,28 +2974,18 @@ public function importEqual "Compares two import elements. "
   input Absyn.Import im2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (im1,im2)
-    local
-      Absyn.Ident id,id2;
-      Absyn.Path p1,p2;
-    case (Absyn.NAMED_IMPORT(name = id,path=p1),Absyn.NAMED_IMPORT(name = id2,path=p2))
-      equation
-        true = stringEq(id, id2);
-        true = pathEqual(p1,p2);
-      then
-        true;
-    case (Absyn.QUAL_IMPORT(path=p1),Absyn.QUAL_IMPORT(path=p2))
-      equation
-        true = pathEqual(p1,p2);
-      then
-        true;
-    case (Absyn.UNQUAL_IMPORT(path=p1),Absyn.UNQUAL_IMPORT(path=p2))
-      equation
-        true = pathEqual(p1,p2);
-      then
-        true;
+  outBoolean := match (im1,im2)
+    case (Absyn.NAMED_IMPORT(), Absyn.NAMED_IMPORT())
+      then stringEq(im1.name, im2.name) and pathEqual(im1.path, im2.path);
+
+    case (Absyn.QUAL_IMPORT(), Absyn.QUAL_IMPORT())
+      then pathEqual(im1.path, im2.path);
+
+    case (Absyn.UNQUAL_IMPORT(), Absyn.UNQUAL_IMPORT())
+      then pathEqual(im1.path, im2.path);
+
     else false;
-  end matchcontinue;
+  end match;
 end importEqual;
 
 public function canonIfExp "Transforms an if-expression to canonical form (without else-if branches)"
@@ -3902,37 +3015,24 @@ algorithm
     local
       list<Absyn.ElementArg> dive, rest;
       Absyn.EqMod eqMod;
-      Boolean b1, b2, b3, b;
 
     case ({}) then true;
 
     // skip "interaction" annotation!
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "interaction")) :: rest)
-      equation
-        b = onlyLiteralsInAnnotationMod(rest);
-      then
-        b;
+      then onlyLiteralsInAnnotationMod(rest);
 
 
     // search inside, some(exp)
     case (Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(dive, eqMod))) :: rest)
-      equation
-        b1 = onlyLiteralsInEqMod(eqMod);
-        b2 = onlyLiteralsInAnnotationMod(dive);
-        b3 = onlyLiteralsInAnnotationMod(rest);
-        b = boolAnd(b1, boolAnd(b2, b3));
-      then
-        b;
+      then onlyLiteralsInEqMod(eqMod) and
+           onlyLiteralsInAnnotationMod(dive) and
+           onlyLiteralsInAnnotationMod(rest);
 
-    case (_ :: rest)
-      equation
-        b = onlyLiteralsInAnnotationMod(rest);
-      then
-        b;
+    case (_ :: rest) then onlyLiteralsInAnnotationMod(rest);
 
     // failed above, return false
     else false;
-
   end matchcontinue;
 end onlyLiteralsInAnnotationMod;
 
@@ -3942,21 +3042,18 @@ public function onlyLiteralsInEqMod
   input Absyn.EqMod eqMod;
   output Boolean onlyLiterals;
 algorithm
-  onlyLiterals := match (eqMod)
+  onlyLiterals := match eqMod
     local
-      Absyn.Exp exp;
       list<Absyn.Exp> lst;
-      Boolean b;
 
-    case (Absyn.NOMOD()) then true;
+    case Absyn.NOMOD() then true;
 
     // search inside, some(exp)
-    case (Absyn.EQMOD(exp=exp))
-      equation
-         (_, lst::{}) = traverseExpBidir(exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, {}::{});
-         b = listEmpty(lst);
+    case Absyn.EQMOD()
+      algorithm
+        (_, lst::{}) := traverseExpBidir(eqMod.exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, {}::{});
       then
-        b;
+        listEmpty(lst);
   end match;
 end onlyLiteralsInEqMod;
 
@@ -3973,11 +3070,9 @@ algorithm
     local
       Boolean b;
       Absyn.Exp e;
-      Absyn.ComponentRef cr;
       list<Absyn.Exp> lst;
       list<list<Absyn.Exp>> rest;
       String name;
-      Absyn.FunctionArgs fargs;
 
     // first handle all graphic enumerations!
     // FillPattern.*, Smooth.*, TextAlignment.*, etc!
@@ -4055,11 +3150,8 @@ public function unqualifyCref
   input Absyn.ComponentRef inCref;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := match(inCref)
-    local
-      Absyn.ComponentRef cref;
-
-    case Absyn.CREF_FULLYQUALIFIED(componentRef = cref) then cref;
+  outCref := match inCref
+    case Absyn.CREF_FULLYQUALIFIED() then inCref.componentRef;
     else inCref;
   end match;
 end unqualifyCref;
@@ -4068,7 +3160,7 @@ public function pathIsFullyQualified
   input Absyn.Path inPath;
   output Boolean outIsQualified;
 algorithm
-  outIsQualified := match(inPath)
+  outIsQualified := match inPath
     case Absyn.FULLYQUALIFIED() then true;
     else false;
   end match;
@@ -4078,7 +3170,7 @@ public function pathIsIdent
   input Absyn.Path inPath;
   output Boolean outIsIdent;
 algorithm
-  outIsIdent := match(inPath)
+  outIsIdent := match inPath
     case Absyn.IDENT() then true;
     else false;
   end match;
@@ -4088,7 +3180,7 @@ public function pathIsQual
   input Absyn.Path inPath;
   output Boolean outIsQual;
 algorithm
-  outIsQual := match(inPath)
+  outIsQual := match inPath
     case Absyn.QUALIFIED() then true;
     else false;
   end match;
@@ -4100,10 +3192,8 @@ public function withinEqual
   output Boolean b;
 algorithm
   b := match (within1,within2)
-    local
-      Absyn.Path p1,p2;
     case (Absyn.TOP(),Absyn.TOP()) then true;
-    case (Absyn.WITHIN(p1),Absyn.WITHIN(p2)) then pathEqual(p1,p2);
+    case (Absyn.WITHIN(),Absyn.WITHIN()) then pathEqual(within1.path, within2.path);
     else false;
   end match;
 end withinEqual;
@@ -4114,10 +3204,8 @@ public function withinEqualCaseInsensitive
   output Boolean b;
 algorithm
   b := match (within1,within2)
-    local
-      Absyn.Path p1,p2;
     case (Absyn.TOP(),Absyn.TOP()) then true;
-    case (Absyn.WITHIN(p1),Absyn.WITHIN(p2)) then pathEqualCaseInsensitive(p1,p2);
+    case (Absyn.WITHIN(),Absyn.WITHIN()) then pathEqualCaseInsensitive(within1.path,within2.path);
     else false;
   end match;
 end withinEqualCaseInsensitive;
@@ -4127,10 +3215,8 @@ public function withinString
   output String str;
 algorithm
   str := match (w1)
-    local
-      Absyn.Path p1;
     case (Absyn.TOP()) then "within ;";
-    case (Absyn.WITHIN(p1)) then "within " + pathString(p1) + ";";
+    case (Absyn.WITHIN()) then "within " + pathString(w1.path) + ";";
   end match;
 end withinString;
 
@@ -4139,11 +3225,9 @@ public function joinWithinPath
   input Absyn.Path path;
   output Absyn.Path outPath;
 algorithm
-  outPath := match (within_,path)
-    local
-      Absyn.Path path1;
-    case (Absyn.TOP(),_) then path;
-    case (Absyn.WITHIN(path1),_) then joinPaths(path1,path);
+  outPath := match within_
+    case Absyn.TOP() then path;
+    case Absyn.WITHIN() then joinPaths(within_.path,path);
   end match;
 end joinWithinPath;
 
@@ -4151,11 +3235,11 @@ public function innerOuterStr
   input Absyn.InnerOuter io;
   output String str;
 algorithm
-  str := match(io)
-    case (Absyn.INNER_OUTER()) then "inner outer ";
-    case (Absyn.INNER()) then "inner ";
-    case (Absyn.OUTER()) then "outer ";
-    case (Absyn.NOT_INNER_OUTER()) then "";
+  str := match io
+    case Absyn.INNER_OUTER() then "inner outer ";
+    case Absyn.INNER() then "inner ";
+    case Absyn.OUTER() then "outer ";
+    case Absyn.NOT_INNER_OUTER() then "";
   end match;
 end innerOuterStr;
 
@@ -4164,10 +3248,7 @@ public function subscriptExpOpt
   output Option<Absyn.Exp> outExpOpt;
 algorithm
   outExpOpt := match(inSub)
-    local
-      Absyn.Exp e;
-
-    case Absyn.SUBSCRIPT(subscript = e) then SOME(e);
+    case Absyn.SUBSCRIPT() then SOME(inSub.subscript);
     case Absyn.NOSUB() then NONE();
   end match;
 end subscriptExpOpt;
@@ -4301,17 +3382,11 @@ public function getExpsFromArrayDimOpt
   output Boolean hasUnknownDimensions;
   output list<Absyn.Exp> outExps;
 algorithm
-  (hasUnknownDimensions, outExps) := match(inAdO)
+  (hasUnknownDimensions, outExps) := match inAdO
     local Absyn.ArrayDim ad;
 
-    case (NONE()) then (false, {});
-
-    case (SOME(ad))
-      equation
-        (hasUnknownDimensions, outExps) = getExpsFromArrayDim_tail(ad, {});
-      then
-        (hasUnknownDimensions, outExps);
-
+    case NONE() then (false, {});
+    case SOME(ad) then getExpsFromArrayDim_tail(ad, {});
   end match;
 end getExpsFromArrayDimOpt;
 
@@ -4412,7 +3487,6 @@ algorithm
   end match;
 end isFieldEqual;
 
-
 public function pathLt
   input Absyn.Path path1;
   input Absyn.Path path2;
@@ -4430,73 +3504,47 @@ algorithm
 end pathGe;
 
 public function getShortClass "Strips out long class definitions"
-  input Absyn.Class cl;
-  output Absyn.Class o;
+  input output Absyn.Class cl;
 algorithm
-  o := match cl
-    local
-      Absyn.Ident name;
-      Boolean pa, fi, en;
-      Absyn.Restriction re;
-      Absyn.ClassDef body;
-      Absyn.Info info;
+  () := match cl
     case Absyn.CLASS(body=Absyn.PARTS()) then fail();
     case Absyn.CLASS(body=Absyn.CLASS_EXTENDS()) then fail();
-    case Absyn.CLASS(name,pa,fi,en,re,body,info)
+    case Absyn.CLASS()
       equation
-        body = stripClassDefComment(body);
-      then Absyn.CLASS(name,pa,fi,en,re,body,info);
+        cl.body = stripClassDefComment(cl.body);
+      then
+        ();
   end match;
 end getShortClass;
 
 protected function stripClassDefComment
   "Strips out class definition comments."
-  input Absyn.ClassDef cl;
-  output Absyn.ClassDef o;
+  input output Absyn.ClassDef cl;
 algorithm
-  o := match cl
-    local
-      Absyn.EnumDef enumLiterals;
-      Absyn.TypeSpec typeSpec;
-      Absyn.ElementAttributes attributes;
-      list<Absyn.ElementArg> arguments;
-      list<Absyn.Path> functionNames;
-      Absyn.Path functionName;
-      list<Absyn.Ident> vars;
-      list<String> typeVars;
-      Absyn.Ident baseClassName;
-      list<Absyn.ElementArg> modifications;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-    case Absyn.PARTS(typeVars,classAttrs,parts,ann,_) then Absyn.PARTS(typeVars,classAttrs,parts,ann,NONE());
-    case Absyn.CLASS_EXTENDS(baseClassName,modifications,_,parts,ann) then Absyn.CLASS_EXTENDS(baseClassName,modifications,NONE(),parts,ann);
-    case Absyn.DERIVED(typeSpec,attributes,arguments,_) then Absyn.DERIVED(typeSpec,attributes,arguments,NONE());
-    case Absyn.ENUMERATION(enumLiterals,_) then Absyn.ENUMERATION(enumLiterals,NONE());
-    case Absyn.OVERLOAD(functionNames,_) then Absyn.OVERLOAD(functionNames,NONE());
-    case Absyn.PDER(functionName,vars,_) then Absyn.PDER(functionName,vars,NONE());
-    else cl;
+  () := match cl
+    case Absyn.PARTS()         algorithm cl.comment := NONE(); then ();
+    case Absyn.DERIVED()       algorithm cl.comment := NONE(); then ();
+    case Absyn.ENUMERATION()   algorithm cl.comment := NONE(); then ();
+    case Absyn.OVERLOAD()      algorithm cl.comment := NONE(); then ();
+    case Absyn.CLASS_EXTENDS() algorithm cl.comment := NONE(); then ();
+    case Absyn.PDER()          algorithm cl.comment := NONE(); then ();
+    else ();
   end match;
 end stripClassDefComment;
 
 public function getFunctionInterface "Strips out the parts of a function definition that are not needed for the interface"
-  input Absyn.Class cl;
-  output Absyn.Class o;
+  input output Absyn.Class cl;
+protected
+  Absyn.ClassDef def;
+  list<Absyn.ElementItem> elts;
 algorithm
-  o := match cl
-    local
-      Absyn.Ident name;
-      Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
-      Absyn.Info info;
-      list<String> typeVars;
-      list<Absyn.ClassPart> classParts;
-      list<Absyn.ElementItem> elts;
-      Absyn.FunctionRestriction funcRest;
-      list<Absyn.NamedArg> classAttr;
-    case Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,Absyn.R_FUNCTION(funcRest),Absyn.PARTS(typeVars,classAttr,classParts,_,_),info)
-      equation
-        (elts as _::_) = List.fold(listReverse(classParts),getFunctionInterfaceParts,{});
-      then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,Absyn.R_FUNCTION(funcRest),Absyn.PARTS(typeVars,classAttr,Absyn.PUBLIC(elts)::{},{},NONE()),info);
+  () := match cl
+    case Absyn.CLASS(restriction = Absyn.R_FUNCTION(), body = def as Absyn.PARTS())
+      algorithm
+        elts as _ :: _ := List.fold(listReverse(def.classParts), getFunctionInterfaceParts, {});
+        cl.body := Absyn.PARTS(def.typeVars, def.classAttrs, {Absyn.PUBLIC(elts)}, {}, NONE());
+      then
+        ();
   end match;
 end getFunctionInterface;
 
@@ -4528,25 +3576,19 @@ end filterAnnotationItem;
 
 public function filterNestedClasses
   "Filter outs the nested classes from the class if any."
-  input Absyn.Class cl;
-  output Absyn.Class o;
+  input output Absyn.Class cl;
+protected
+  Absyn.ClassDef def;
 algorithm
-  o := match cl
-    local
-      Absyn.Ident name;
-      Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
-      Absyn.Restriction restriction;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.ClassPart> classParts;
-      list<Absyn.Annotation> annotations;
-      Option<String> comment;
-      Absyn.Info info;
-    case Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.PARTS(typeVars,classAttrs,classParts,annotations,comment),info)
-      equation
-        (classParts as _::_) = List.fold(listReverse(classParts),filterNestedClassesParts,{});
-      then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.PARTS(typeVars,classAttrs,classParts,annotations,comment),info);
-    else cl;
+  () := match cl
+    case Absyn.CLASS(body = def as Absyn.PARTS())
+      algorithm
+        def.classParts := List.fold(listReverse(def.classParts), filterNestedClassesParts, {});
+        cl.body := def;
+      then
+        ();
+
+    else ();
   end match;
 end filterNestedClasses;
 
@@ -4699,15 +3741,10 @@ public function importName
   output Absyn.Ident outName;
 algorithm
   outName := match(inImport)
-    local
-      Absyn.Ident name;
-      Absyn.Path path;
-
     // Named import has a given name, 'import D = A.B.C' => D.
-    case Absyn.NAMED_IMPORT(name = name) then name;
+    case Absyn.NAMED_IMPORT() then inImport.name;
     // Qualified import uses the last identifier, 'import A.B.C' => C.
-    case Absyn.QUAL_IMPORT(path = path) then pathLastIdent(path);
-
+    case Absyn.QUAL_IMPORT() then pathLastIdent(inImport.path);
   end match;
 end importName;
 
@@ -4867,24 +3904,19 @@ public function typeSpecStringNoQualNoDims
 algorithm
   outStr := match (inTs)
     local
-      Absyn.Ident str,s,str1,str2,str3;
+      Absyn.Ident str1,str2;
       Absyn.Path path;
-      Option<list<Absyn.Subscript>> adim;
       list<Absyn.TypeSpec> typeSpecLst;
 
     case (Absyn.TPATH(path = path))
-      equation
-        str = pathString(makeNotFullyQualified(path));
-      then
-        str;
+      then pathString(makeNotFullyQualified(path));
 
     case (Absyn.TCOMPLEX(path = path,typeSpecs = typeSpecLst))
       equation
         str1 = pathString(makeNotFullyQualified(path));
         str2 = typeSpecStringNoQualNoDimsLst(typeSpecLst);
-        str = stringAppendList({str1,"<",str2,">"});
       then
-        str;
+        stringAppendList({str1,"<",str2,">"});
 
   end match;
 end typeSpecStringNoQualNoDims;
@@ -4921,11 +3953,10 @@ public function refString
   input Absyn.Ref inRef;
   output String outStr;
 algorithm
-  outStr := match(inRef)
-    local Absyn.ComponentRef cr; Absyn.TypeSpec ts; Absyn.Import im;
-    case (Absyn.RCR(cr)) then crefString(cr);
-    case (Absyn.RTS(ts)) then typeSpecString(ts);
-    case (Absyn.RIM(im)) then importString(im);
+  outStr := match inRef
+    case Absyn.RCR() then crefString(inRef.cr);
+    case Absyn.RTS() then typeSpecString(inRef.ts);
+    case Absyn.RIM() then importString(inRef.im);
   end match;
 end refString;
 
@@ -4936,11 +3967,10 @@ public function refStringBrief
   input Absyn.Ref inRef;
   output String outStr;
 algorithm
-  outStr := match(inRef)
-    local Absyn.ComponentRef cr; Absyn.TypeSpec ts; Absyn.Import im;
-    case (Absyn.RCR(cr)) then crefStringIgnoreSubs(cr);
-    case (Absyn.RTS(ts)) then typeSpecStringNoQualNoDims(ts);
-    case (Absyn.RIM(im)) then importString(im);
+  outStr := match inRef
+    case Absyn.RCR() then crefStringIgnoreSubs(inRef.cr);
+    case Absyn.RTS() then typeSpecStringNoQualNoDims(inRef.ts);
+    case Absyn.RIM() then importString(inRef.im);
   end match;
 end refStringBrief;
 
@@ -4948,9 +3978,9 @@ public function getArrayDimOptAsList
   input Option<Absyn.ArrayDim> inArrayDim;
   output Absyn.ArrayDim outArrayDim;
 algorithm
-  outArrayDim := match(inArrayDim)
+  outArrayDim := match inArrayDim
     local Absyn.ArrayDim ad;
-    case (SOME(ad)) then ad;
+    case SOME(ad) then ad;
     else {};
   end match;
 end getArrayDimOptAsList;
@@ -4964,7 +3994,7 @@ algorithm
   outAbsynComponentRefLst := matchcontinue (inAbsynComponentRefLst,inComponentRef)
     local
       String n1,n2;
-      list<Absyn.ComponentRef> rest_1,rest;
+      list<Absyn.ComponentRef> rest;
       Absyn.ComponentRef cr1,cr2;
     case ({},_) then {};
     case ((cr1 :: rest),cr2)
@@ -4972,94 +4002,83 @@ algorithm
         Absyn.CREF_IDENT(name = n1,subscripts = {}) = cr1;
         Absyn.CREF_IDENT(name = n2,subscripts = {}) = cr2;
         true = stringEq(n1, n2);
-        rest_1 = removeCrefFromCrefs(rest, cr2);
       then
-        rest_1;
+
+        removeCrefFromCrefs(rest, cr2);
     case ((cr1 :: rest),cr2) // If modifier like on comp like: T t(x=t.y) => t.y must be removed
       equation
         Absyn.CREF_QUAL(name = n1) = cr1;
         Absyn.CREF_IDENT(name = n2) = cr2;
         true = stringEq(n1, n2);
-        rest_1 = removeCrefFromCrefs(rest, cr2);
       then
-        rest_1;
+        removeCrefFromCrefs(rest, cr2);
+
     case ((cr1 :: rest),cr2)
       equation
-        rest_1 = removeCrefFromCrefs(rest, cr2);
+        rest = removeCrefFromCrefs(rest, cr2);
       then
-        (cr1 :: rest_1);
+        (cr1 :: rest);
   end matchcontinue;
 end removeCrefFromCrefs;
 
-public function getNamedAnnotationInClass
+public function getNamedAnnotationInClass<T>
   "Retrieve e.g. the documentation annotation as a string from the class passed as argument."
   input Absyn.Class inClass;
   input Absyn.Path id;
   input ModFunc f;
-  output Option<TypeA> outString;
+  output Option<T> outString;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
-    output TypeA docStr;
+    output T docStr;
   end ModFunc;
 algorithm
-  outString := matchcontinue (inClass,id,f)
+  outString := matchcontinue inClass
     local
-      TypeA str,res;
+      T str,res;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementArg> annlst;
       list<Absyn.Annotation> ann;
 
-    case (Absyn.CLASS(body = Absyn.PARTS(ann = ann)),_,_)
+    case Absyn.CLASS(body = Absyn.PARTS(ann = ann))
       equation
         annlst = List.flatten(List.map(ann,annotationToElementArgs));
-        SOME(str) = getNamedAnnotationStr(annlst,id,f);
       then
-        SOME(str);
+        getNamedAnnotationStr(annlst,id,f);
 
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = ann)),_,_)
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = ann))
       equation
         annlst = List.flatten(List.map(ann,annotationToElementArgs));
-        SOME(str) = getNamedAnnotationStr(annlst,id,f);
       then
-        SOME(str);
+        getNamedAnnotationStr(annlst,id,f);
 
-    case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),_,_)
-      equation
-        SOME(res) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(res);
+    case Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))
+      then getNamedAnnotationStr(annlst,id,f);
 
-    case (Absyn.CLASS(body = Absyn.ENUMERATION(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),_,_)
-      equation
-        SOME(res) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(res);
+    case Absyn.CLASS(body = Absyn.ENUMERATION(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))
+      then getNamedAnnotationStr(annlst,id,f);
 
-    case (Absyn.CLASS(body = Absyn.OVERLOAD(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),_,_)
-      equation
-        SOME(res) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(res);
+    case Absyn.CLASS(body = Absyn.OVERLOAD(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))
+      then getNamedAnnotationStr(annlst,id,f);
 
     else NONE();
 
   end matchcontinue;
 end getNamedAnnotationInClass;
 
-protected function getNamedAnnotationStr
+protected function getNamedAnnotationStr<T>
 "Helper function to getNamedAnnotationInElementitemlist."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Absyn.Path id;
   input ModFunc f;
-  output Option<TypeA> outString;
+  output Option<T> outString;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
-    output TypeA docStr;
+    output T docStr;
   end ModFunc;
 algorithm
   outString := matchcontinue (inAbsynElementArgLst,id,f)
     local
-      TypeA str;
+      T str;
       Absyn.ElementArg ann;
       Option<Absyn.Modification> mod;
       list<Absyn.ElementArg> xs;
@@ -5118,12 +4137,7 @@ algorithm
       then
         Absyn.CREF_FULLYQUALIFIED(cref);
 
-    else
-      equation
-        cref = inMapFunc(inCref);
-      then
-        cref;
-
+    else inMapFunc(inCref);
   end match;
 end mapCrefParts;
 
@@ -5151,7 +4165,7 @@ algorithm
   end match;
 end opIsElementWise;
 
-protected function dummyTraverseExp
+protected function dummyTraverseExp<Arg>
   input Absyn.Exp inExp;
   input Arg inArg;
   output Absyn.Exp outExp;
@@ -5163,20 +4177,16 @@ end dummyTraverseExp;
 
 public function getDefineUnitsInElements "retrives defineunit definitions in elements"
   input list<Absyn.ElementItem> elts;
-  output list<Absyn.Element> outElts;
+  output list<Absyn.Element> outElts = {};
 algorithm
-  outElts := matchcontinue(elts)
-    local
-      Absyn.Element e;
-      list<Absyn.ElementItem> rest;
-    case {} then {};
-    case (Absyn.ELEMENTITEM(e as Absyn.DEFINEUNIT())::rest)
-      equation
-        outElts = getDefineUnitsInElements(rest);
-      then e::outElts;
-    case (_::rest)
-      then getDefineUnitsInElements(rest);
-  end matchcontinue;
+  for i in elts loop
+    outElts := match i
+      case Absyn.ELEMENTITEM(element = Absyn.DEFINEUNIT()) then i.element :: outElts;
+      else outElts;
+    end match;
+  end for;
+
+  outElts := listReverseInPlace(outElts);
 end getDefineUnitsInElements;
 
 public function getElementItemsInClass
@@ -5205,11 +4215,8 @@ public function getElementItemsInClassPart
   output list<Absyn.ElementItem> outElements;
 algorithm
   outElements := match(inClassPart)
-    local
-      list<Absyn.ElementItem> elts;
-
-    case Absyn.PUBLIC(contents = elts) then elts;
-    case Absyn.PROTECTED(contents = elts) then elts;
+    case Absyn.PUBLIC() then inClassPart.contents;
+    case Absyn.PROTECTED() then inClassPart.contents;
     else {};
   end match;
 end getElementItemsInClassPart;
@@ -5222,10 +4229,8 @@ public function traverseClassComponents<ArgT>
   output ArgT outArg;
 
   partial function FuncType
-    input list<Absyn.ComponentItem> inComponents;
-    input ArgT inArg;
-    output list<Absyn.ComponentItem> outComponents;
-    output ArgT outArg;
+    input output list<Absyn.ComponentItem> components;
+    input output ArgT arg;
     output Boolean outContinue;
   end FuncType;
 algorithm
@@ -5833,10 +4838,9 @@ end pathPartCount;
 
 public function getAnnotationsFromConstraintClass
   input Option<Absyn.ConstrainClass> inCC;
-  output list<Absyn.ElementArg> outElArgLst;
+  output list<Absyn.ElementArg> elementArgs;
 algorithm
-  outElArgLst := match(inCC)
-    local list<Absyn.ElementArg> elementArgs;
+  elementArgs := match(inCC)
     case SOME(Absyn.CONSTRAINCLASS(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs))))))
       then elementArgs;
     else {};
@@ -5872,37 +4876,37 @@ public function stripGraphicsAndInteractionModification
   output list<Absyn.ElementArg> outAbsynElementArgLst1;
   output list<Absyn.ElementArg> outAbsynElementArgLst2;
 algorithm
-  (outAbsynElementArgLst1,outAbsynElementArgLst2) := matchcontinue (inAbsynElementArgLst)
+  (outAbsynElementArgLst1,outAbsynElementArgLst2) := matchcontinue inAbsynElementArgLst
     local
       Absyn.ElementArg mod;
       list<Absyn.ElementArg> rest,l1,l2;
 
     // handle empty
-    case ({}) then ({},{});
+    case {} then ({},{});
 
     // adrpo: remove interaction annotations as we don't handle them currently
-    case (((Absyn.MODIFICATION(path = Absyn.IDENT(name = "interaction"))) :: rest))
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "interaction")) :: rest
       equation
          (l1,l2) = stripGraphicsAndInteractionModification(rest);
       then
         (l1,l2);
 
     // adrpo: remove empty annotations, to handle bad Dymola annotations, for example: Diagram(graphics)
-    case (((Absyn.MODIFICATION(modification = NONE(), path = Absyn.IDENT(name = "graphics"))) :: rest))
+    case Absyn.MODIFICATION(modification = NONE(), path = Absyn.IDENT(name = "graphics")) :: rest
       equation
          (l1,l2) = stripGraphicsAndInteractionModification(rest);
       then
         (l1,l2);
 
     // add graphics to the second tuple
-    case (((mod as Absyn.MODIFICATION(modification = SOME(_), path = Absyn.IDENT(name = "graphics"))) :: rest))
+    case (mod as Absyn.MODIFICATION(modification = SOME(_), path = Absyn.IDENT(name = "graphics"))) :: rest
       equation
         (l1,l2) = stripGraphicsAndInteractionModification(rest);
       then
         (l1,mod::l2);
 
     // collect in the first tuple
-    case (((mod as Absyn.MODIFICATION()) :: rest))
+    case (mod as Absyn.MODIFICATION()) :: rest
       equation
         (l1,l2) = stripGraphicsAndInteractionModification(rest);
       then
@@ -5911,7 +4915,7 @@ algorithm
   end matchcontinue;
 end stripGraphicsAndInteractionModification;
 
-public function traverseClasses
+public function traverseClasses<Arg>
 " This function traverses all classes of a program and applies a function
    to each class. The function takes the Absyn.Class, Absyn.Path option
    and an additional argument and returns an updated class and the
@@ -5926,56 +4930,48 @@ public function traverseClasses
   input Absyn.Program inProgram;
   input Option<Absyn.Path> inPath;
   input FuncType inFunc;
-  input Type_a inArg;
+  input Arg inArg;
   input Boolean inVisitProtected;
-  output tuple<Absyn.Program, Option<Absyn.Path>, Type_a> outTpl;
+  output tuple<Absyn.Program, Option<Absyn.Path>, Arg> outTpl;
 
   partial function FuncType
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTpl;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;
+    input output tuple<Absyn.Class, Option<Absyn.Path>, Arg> tpl;
   end FuncType;
-
-  replaceable type Type_a subtypeof Any;
 algorithm
-  outTpl := match (inProgram, inPath, inFunc, inArg, inVisitProtected)
+  outTpl := match inProgram
     local
       list<Absyn.Class> classes;
-      Option<Absyn.Path> pa_1,pa;
-      Type_a args_1,args;
-      Absyn.Within within_;
-      FuncType visitor;
-      Boolean traverse_prot;
+      Option<Absyn.Path> pa;
+      Arg arg;
       Absyn.Program p;
 
-    case (p as Absyn.PROGRAM(),pa,visitor,args,traverse_prot)
+    case p as Absyn.PROGRAM()
       equation
-        ((classes,pa_1,args_1)) = traverseClasses2(p.classes, pa, visitor, args, traverse_prot);
+        ((classes,pa,arg)) = traverseClasses2(p.classes, inPath, inFunc, inArg, inVisitProtected);
         p.classes = classes;
       then
-        (p,pa_1,args_1);
+        (p,pa,arg);
   end match;
 end traverseClasses;
 
-protected function traverseClasses2
+protected function traverseClasses2<Arg>
 " Helperfunction to traverseClasses."
   input list<Absyn.Class> inClasses;
   input Option<Absyn.Path> inPath;
   input FuncType inFunc;
-  input Type_a inArg "extra argument";
+  input Arg inArg "extra argument";
   input Boolean inVisitProtected "visit protected elements";
-  output tuple<list<Absyn.Class>, Option<Absyn.Path>, Type_a> outTpl;
+  output tuple<list<Absyn.Class>, Option<Absyn.Path>, Arg> outTpl;
 
   partial function FuncType
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTpl;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;
+    input output tuple<Absyn.Class, Option<Absyn.Path>, Arg> tpl;
   end FuncType;
-  replaceable type Type_a subtypeof Any;
 algorithm
   outTpl := matchcontinue (inClasses, inPath, inFunc, inArg, inVisitProtected)
     local
       Option<Absyn.Path> pa,pa_1,pa_2,pa_3;
       FuncType visitor;
-      Type_a args,args_1,args_2,args_3;
+      Arg args,args_1,args_2,args_3;
       Absyn.Class class_1,class_2,class_;
       list<Absyn.Class> classes_1,classes;
       Boolean traverse_prot;
@@ -6029,17 +5025,11 @@ algorithm
 
     // A class with parts.
     case (Absyn.CLASS(body= Absyn.PARTS(classParts = parts)))
-      equation
-        res = partsHasLocalClass(parts);
-      then
-        res;
+      then partsHasLocalClass(parts);
 
     // An extended class with parts: model extends M end M;
     case (Absyn.CLASS(body= Absyn.CLASS_EXTENDS(parts = parts)))
-      equation
-        res = partsHasLocalClass(parts);
-      then
-        res;
+      then partsHasLocalClass(parts);
 
   end match;
 end classHasLocalClasses;
@@ -6086,247 +5076,202 @@ algorithm
   end matchcontinue;
 end eltsHasLocalClass;
 
-protected function traverseInnerClass
+protected function traverseInnerClass<Arg>
 " Helperfunction to traverseClasses2. This function traverses all inner classes of a class."
   input Absyn.Class inClass;
-  input Option<Absyn.Path> inPath;
-  input FuncType inFunc;
-  input Type_a inArg "extra value";
-  input Boolean inVisitProtected "if true, traverse protected elts";
-  output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;
+  input Option<Absyn.Path> path;
+  input FuncType visitor;
+  input Arg arg "extra value";
+  input Boolean visitProtected "if true, traverse protected elts";
+  output tuple<Absyn.Class, Option<Absyn.Path>, Arg> outTpl;
 
   partial function FuncType
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTpl;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;
+    input tuple<Absyn.Class, Option<Absyn.Path>, Arg> inTpl;
+    output tuple<Absyn.Class, Option<Absyn.Path>, Arg> outTpl;
   end FuncType;
-
-  replaceable type Type_a subtypeof Any;
+protected
+  Absyn.Class cls = inClass;
+  Absyn.ClassDef cdef = inClass.body;
+  Absyn.Path pa;
+  Option<Absyn.Path> opt_pa;
+  list<Absyn.ClassPart> parts;
+  Arg args;
 algorithm
-  outTpl := matchcontinue(inClass, inPath, inFunc, inArg, inVisitProtected)
-    local
-      Absyn.Path tmp_pa,pa;
-      list<Absyn.ClassPart> parts_1,parts;
-      Option<Absyn.Path> pa_1;
-      Type_a args_1,args;
-      String name,bcname;
-      Boolean p,f,e,visit_prot;
-      Absyn.Restriction r;
-      Option<String> str_opt;
-      SourceInfo file_info;
-      FuncType visitor;
-      Absyn.Class cl;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      Absyn.Comment cmt;
-      list<Absyn.Annotation> ann;
-
+  (cdef, opt_pa, args) := matchcontinue(cdef, path)
     /* a class with parts */
-    case (Absyn.CLASS(name, p, f, e, r, Absyn.PARTS(typeVars, classAttrs, parts, ann, str_opt), file_info),
-          SOME(pa), visitor, args, visit_prot)
-      equation
-        tmp_pa = AbsynUtil.joinPaths(pa, Absyn.IDENT(name));
-        ((parts_1, pa_1, args_1)) = traverseInnerClassParts(parts, SOME(tmp_pa), visitor, args, visit_prot);
+    case (Absyn.PARTS(), SOME(pa))
+      algorithm
+        pa := AbsynUtil.joinPaths(pa, Absyn.IDENT(cls.name));
+        ((parts, opt_pa, args)) := traverseInnerClassParts(cdef.classParts, SOME(pa), visitor, arg, visitProtected);
+        cdef.classParts := parts;
       then
-        ((Absyn.CLASS(name, p, f, e, r, Absyn.PARTS(typeVars, classAttrs, parts_1, ann, str_opt), file_info), pa_1, args_1));
+        (cdef, opt_pa, args);
 
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts, ann = ann, comment = str_opt),info = file_info),
-          NONE(),visitor,args,visit_prot)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(Absyn.IDENT(name)), visitor, args, visit_prot);
+    case (Absyn.PARTS(), NONE())
+      algorithm
+        ((parts, opt_pa, args)) := traverseInnerClassParts(cdef.classParts, SOME(Absyn.IDENT(cls.name)), visitor, arg, visitProtected);
+        cdef.classParts := parts;
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars, classAttrs, parts_1, ann, str_opt),file_info),pa_1,args_1));
+        (cdef, opt_pa, args);
 
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts, ann = ann, comment = str_opt),info = file_info),
-          pa_1,visitor,args,visit_prot)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa_1, visitor, args, visit_prot);
+    case (Absyn.PARTS(), opt_pa)
+      algorithm
+        ((parts, opt_pa, args)) := traverseInnerClassParts(cdef.classParts, opt_pa, visitor, arg, visitProtected);
+        cdef.classParts := parts;
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,str_opt),file_info),pa_1,args_1));
+        (cdef, opt_pa, args);
 
     /* adrpo: handle also an extended class with parts: model extends M end M; */
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,comment = str_opt, modifications=modif,parts = parts,ann = ann),info = file_info),
-          SOME(pa),visitor,args,visit_prot)
-      equation
-        tmp_pa = AbsynUtil.joinPaths(pa, Absyn.IDENT(name));
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(tmp_pa), visitor, args, visit_prot);
+    case (Absyn.CLASS_EXTENDS(), SOME(pa))
+      algorithm
+        pa := AbsynUtil.joinPaths(pa, Absyn.IDENT(cls.name));
+        ((parts, opt_pa, args)) := traverseInnerClassParts(cdef.parts, SOME(pa), visitor, arg, visitProtected);
+        cdef.parts := parts;
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1,ann),file_info),pa_1,args_1));
+        (cdef, opt_pa, args);
 
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,comment = str_opt, modifications=modif,parts = parts,ann = ann),info = file_info),
-          NONE(),visitor,args,visit_prot)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(Absyn.IDENT(name)), visitor, args, visit_prot);
+    case (Absyn.CLASS_EXTENDS(), NONE())
+      algorithm
+        ((parts, opt_pa, args)) := traverseInnerClassParts(cdef.parts, SOME(Absyn.IDENT(cls.name)), visitor, arg, visitProtected);
+        cdef.parts := parts;
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1,ann),file_info),pa_1,args_1));
+        (cdef, opt_pa, args);
 
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,comment = str_opt,modifications=modif,parts = parts,ann = ann),info = file_info),
-          pa_1,visitor,args,visit_prot)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa_1, visitor, args, visit_prot);
+    case (Absyn.CLASS_EXTENDS(), opt_pa)
+      algorithm
+        ((parts, opt_pa, args)) := traverseInnerClassParts(cdef.parts, opt_pa, visitor, arg, visitProtected);
+        cdef.parts := parts;
       then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1,ann),file_info),pa_1,args_1));
+        (cdef, opt_pa, args);
 
     /* otherwise */
-    case (cl,pa_1,_,args,_) then ((cl,pa_1,args));
+    else (cdef, path, arg);
   end matchcontinue;
+
+  cls.body := cdef;
+  outTpl := (cls, opt_pa, args);
 end traverseInnerClass;
 
-protected function traverseInnerClassParts
+protected function traverseInnerClassParts<Arg>
   "Helper function to traverseInnerClass"
   input list<Absyn.ClassPart> inClassParts;
   input Option<Absyn.Path> inPath;
-  input FuncType inFunc;
-  input Type_a inArg "extra argument";
-  input Boolean inVisitProtected "visist protected elts";
-  output tuple<list<Absyn.ClassPart>, Option<Absyn.Path>, Type_a> outTpl;
+  input FuncType visitor;
+  input Arg inArg "extra argument";
+  input Boolean visitProtected "visist protected elts";
+  output tuple<list<Absyn.ClassPart>, Option<Absyn.Path>, Arg> outTpl;
 
   partial function FuncType
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTpl;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;
+    input output tuple<Absyn.Class, Option<Absyn.Path>, Arg> tpl;
   end FuncType;
-  replaceable type Type_a subtypeof Any;
+protected
+  list<Absyn.ClassPart> parts = {};
+  list<Absyn.ElementItem> elts;
+  Arg arg = inArg;
 algorithm
-  outTpl := matchcontinue(inClassParts, inPath, inFunc, inArg, inVisitProtected)
-    local
-      Option<Absyn.Path> pa,pa_1,pa_2;
-      Type_a args,args_1,args_2;
-      list<Absyn.ElementItem> elts_1,elts;
-      list<Absyn.ClassPart> parts_1,parts;
-      FuncType visitor;
-      Boolean visit_prot;
-      Absyn.ClassPart part;
+  parts := list(
+      match p
+        case Absyn.PUBLIC()
+          algorithm
+            ((elts, _, arg)) := traverseInnerClassElements(p.contents, inPath, visitor, arg, visitProtected);
+          then
+            Absyn.PUBLIC(elts);
 
-    case ({},pa,_,args,_) then (({},pa,args));
+        case Absyn.PROTECTED()
+          guard visitProtected
+          algorithm
+            ((elts, _, arg)) := traverseInnerClassElements(p.contents, inPath, visitor, arg, true);
+          then
+            Absyn.PROTECTED(elts);
 
-    case ((Absyn.PUBLIC(contents = elts) :: parts),pa,visitor,args,visit_prot)
-      equation
-        ((elts_1,_,args_1)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
-        ((parts_1,pa_2,args_2)) = traverseInnerClassParts(parts, pa, visitor, args_1, visit_prot);
-      then
-        (((Absyn.PUBLIC(elts_1) :: parts_1),pa_2,args_2));
+        else p;
+      end match
+    for p in inClassParts);
 
-    case ((Absyn.PROTECTED(contents = elts) :: parts),pa,visitor,args,true)
-      equation
-        ((elts_1,_,args_1)) = traverseInnerClassElements(elts, pa, visitor, args, true);
-        ((parts_1,pa_2,args_2)) = traverseInnerClassParts(parts, pa, visitor, args_1, true);
-      then
-        (((Absyn.PROTECTED(elts_1) :: parts_1),pa_2,args_2));
-
-    case ((part :: parts),pa,visitor,args,true)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa, visitor, args, true);
-      then
-        (((part :: parts_1),pa_1,args_1));
-
-  end matchcontinue;
+  outTpl := (parts, inPath, arg);
 end traverseInnerClassParts;
 
-protected function traverseInnerClassElements
+protected function traverseInnerClassElements<Arg>
   "Helper function to traverseInnerClassParts"
   input list<Absyn.ElementItem> inElements;
   input Option<Absyn.Path> inPath;
-  input FuncType inFuncType;
-  input Type_a inArg;
-  input Boolean inVisitProtected "visit protected elts";
-  output tuple<list<Absyn.ElementItem>, Option<Absyn.Path>, Type_a> outTpl;
+  input FuncType visitor;
+  input Arg inArg;
+  input Boolean visitProtected "visit protected elts";
+  output tuple<list<Absyn.ElementItem>, Option<Absyn.Path>, Arg> outTpl;
 
   partial function FuncType
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTpl;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;
+    input output tuple<Absyn.Class, Option<Absyn.Path>, Arg> tpl;
   end FuncType;
-
-  replaceable type Type_a subtypeof Any;
+protected
+  list<Absyn.ElementItem> elts = {};
+  Absyn.Element el;
+  Arg arg = inArg;
+  Absyn.ElementSpec spec;
+  Absyn.Class cl;
 algorithm
-  outTpl := matchcontinue(inElements, inPath, inFuncType, inArg, inVisitProtected)
-    local
-      Option<Absyn.Path> pa,pa_1,pa_2;
-      Type_a args,args_1,args_2;
-      Absyn.ElementSpec elt_spec_1,elt_spec;
-      list<Absyn.ElementItem> elts_1,elts;
-      Boolean f,visit_prot;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter io;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constr;
-      FuncType visitor;
-      Absyn.ElementItem elt;
-      Boolean repl;
-      Absyn.Class cl;
+  for e in inElements loop
+    elts := match e
+      case Absyn.ELEMENTITEM(element = el as Absyn.ELEMENT(specification = spec))
+        algorithm
+          ((spec, _, arg)) := traverseInnerClassElementspec(spec, inPath, visitor, arg, visitProtected);
+          el.specification := spec;
+          e.element := el;
+        then
+          e :: elts;
 
-    case ({},pa,_,args,_) then (({},pa,args));
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = elt_spec,info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
-      equation
-        ((elt_spec_1,_,args_1)) = traverseInnerClassElementspec(elt_spec, pa, visitor, args, visit_prot);
-        ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot);
-      then
-        ((
-          (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,elt_spec_1,info,constr)) :: elts_1),pa_2,args_2));
+      /* Visitor failed in elementspec, but inner classes succeeded, include class */
+      case Absyn.ELEMENTITEM(element = el as Absyn.ELEMENT(specification = spec as Absyn.CLASSDEF()))
+        algorithm
+          ((cl, _, arg)) := traverseInnerClass(spec.class_, inPath, visitor, arg, visitProtected);
+          spec.class_ := cl;
+          el.specification := spec;
+          e.element := el;
+        then
+          e :: elts;
 
-   /* Visitor failed in elementspec, but inner classes succeeded, include class */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.CLASSDEF(repl,cl),info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
-      equation
-         ((cl,_,args_1)) = traverseInnerClass(cl, pa, visitor, args, visit_prot);
-        true  = classHasLocalClasses(cl);
-        ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot);
-      then
-        ((
-          (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,Absyn.CLASSDEF(repl,cl),info,constr))::elts_1),pa_2,args_2));
+      /* Visitor failed in elementspec, remove class */
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT())
+        then elts;
 
-   /* Visitor failed in elementspec, remove class */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT()) :: elts),pa,visitor,args,visit_prot)
-      equation
-        ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
-      then
-        ((
-          elts_1,pa_2,args_2));
+      else e :: elts;
+    end match;
+  end for;
 
-    case ((elt :: elts),pa,visitor,args,visit_prot)
-      equation
-        ((elts_1,pa_1,args_1)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
-      then
-        (((elt :: elts_1),pa_1,args_1));
-  end matchcontinue;
+  elts := listReverseInPlace(elts);
+  outTpl := (elts, inPath, arg);
 end traverseInnerClassElements;
 
 
-protected function traverseInnerClassElementspec
+protected function traverseInnerClassElementspec<Arg>
 " Helperfunction to traverseInnerClassElements"
   input Absyn.ElementSpec inElementSpec;
   input Option<Absyn.Path> inPath;
-  input FuncType inFuncType;
-  input Type_a inArg;
-  input Boolean inVisitProtected "visit protected elts";
-  output tuple<Absyn.ElementSpec, Option<Absyn.Path>, Type_a> outTpl;
+  input FuncType visitor;
+  input Arg inArg;
+  input Boolean visitProtected "visit protected elts";
+  output tuple<Absyn.ElementSpec, Option<Absyn.Path>, Arg> outTpl;
   partial function FuncType
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTpl;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;
+    input output tuple<Absyn.Class, Option<Absyn.Path>, Arg> tpl;
   end FuncType;
 algorithm
-  outTpl := match(inElementSpec, inPath, inFuncType, inArg, inVisitProtected)
+  outTpl := match(inElementSpec, inPath, inArg)
     local
-      Absyn.Class class_1,class_2,class_;
-      Option<Absyn.Path> pa_1,pa_2,pa;
-      Type_a args_1,args_2,args;
-      Boolean repl,visit_prot;
-      FuncType visitor;
-      Absyn.ElementSpec elt_spec;
+      Absyn.Class cl;
+      Option<Absyn.Path> pa;
+      Arg args;
+      Boolean repl;
 
-    case (Absyn.CLASSDEF(replaceable_ = repl,class_ = class_),pa,visitor,args,visit_prot)
+    case (Absyn.CLASSDEF(repl, cl),pa,args)
       equation
-        ((class_1,_,args_1)) = visitor((class_,pa,args));
-        ((class_2,pa_2,args_2)) = traverseInnerClass(class_1, pa, visitor, args_1, visit_prot);
+        ((cl,_,args)) = visitor((cl,pa,args));
+        ((cl,pa,args)) = traverseInnerClass(cl, pa, visitor, args, visitProtected);
       then
-        ((Absyn.CLASSDEF(repl,class_2),pa_2,args_2));
+        ((Absyn.CLASSDEF(repl, cl),pa,args));
 
-    case (elt_spec as Absyn.EXTENDS(),pa,_,args,_) then ((elt_spec,pa,args));
-    case (elt_spec as Absyn.IMPORT(),pa,_,args,_) then ((elt_spec,pa,args));
-    case (elt_spec as Absyn.COMPONENTS(),pa,_,args,_) then ((elt_spec,pa,args));
+    case (Absyn.EXTENDS(),pa,args) then ((inElementSpec,pa,args));
+    case (Absyn.IMPORT(),pa,args) then ((inElementSpec,pa,args));
+    case (Absyn.COMPONENTS(),pa,args) then ((inElementSpec,pa,args));
   end match;
 end traverseInnerClassElementspec;
 
@@ -6336,19 +5281,13 @@ public function getTypeSpecFromElementItemOpt
   input Absyn.ElementItem inElementItem;
   output Option<Absyn.TypeSpec> outTypeSpec;
 algorithm
-  outTypeSpec := matchcontinue inElementItem
+  outTypeSpec := match inElementItem
     local
-      Absyn.TypeSpec typeSpec;
-      Absyn.ElementSpec specification;
-    case Absyn.ELEMENTITEM(__) then
-      match inElementItem.element
-        case Absyn.ELEMENT(specification = specification) then
-        match specification
-          case Absyn.COMPONENTS(typeSpec = typeSpec) then SOME(typeSpec);
-        end match;
-      end match;
-    else then NONE();
-  end matchcontinue;
+      Absyn.TypeSpec ty_spec;
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = ty_spec)))
+      then SOME(ty_spec);
+    else NONE();
+  end match;
 end getTypeSpecFromElementItemOpt;
 
 public function getElementSpecificationFromElementItemOpt
@@ -6357,16 +5296,12 @@ public function getElementSpecificationFromElementItemOpt
   input Absyn.ElementItem inElementItem;
   output Option<Absyn.ElementSpec> outSpec;
 algorithm
-  outSpec := matchcontinue inElementItem
+  outSpec := match inElementItem
     local
-      Absyn.ElementSpec specification;
-      Absyn.Element element;
-    case Absyn.ELEMENTITEM(element = element) then
-      match element
-        case Absyn.ELEMENT(specification = specification) then SOME(specification);
-      end match;
+      Absyn.ElementSpec spec;
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = spec)) then SOME(spec);
     else NONE();
-  end matchcontinue;
+  end match;
 end getElementSpecificationFromElementItemOpt;
 
 public function getComponentItemsFromElementSpec
@@ -6376,8 +5311,7 @@ public function getComponentItemsFromElementSpec
   output list<Absyn.ComponentItem> componentItems;
 algorithm
   componentItems := match elemSpec
-    local list<Absyn.ComponentItem> components;
-    case Absyn.COMPONENTS(components=components) then components;
+    case Absyn.COMPONENTS() then elemSpec.components;
     else {};
   end match;
 end getComponentItemsFromElementSpec;
@@ -6401,20 +5335,15 @@ public function getDirection
   input Absyn.ElementItem elementItem;
   output Absyn.Direction oDirection;
 algorithm
-  oDirection:= matchcontinue elementItem
-    local Absyn.Element element;
-    case Absyn.ELEMENTITEM(element = element) then match element
-      local Absyn.ElementSpec specification;
-      case Absyn.ELEMENT(specification=specification) then match specification
-        local Absyn.ElementAttributes attributes;
-        case Absyn.COMPONENTS(attributes=attributes) then match attributes
-          local Absyn.Direction direction;
-          case Absyn.ATTR(direction=direction) then direction;
-        end match;
-      end match;
-    end match;
+  oDirection := match elementItem
+    case Absyn.ELEMENTITEM(element =
+        Absyn.ELEMENT(specification =
+          Absyn.COMPONENTS(attributes =
+            Absyn.ATTR(direction = oDirection))))
+      then oDirection;
+
     else Absyn.BIDIR();
-  end matchcontinue;
+  end match;
 end getDirection;
 
 function isNamedPathIdent
@@ -6612,6 +5541,217 @@ algorithm
     case Absyn.Path.FULLYQUALIFIED() then Absyn.Path.FULLYQUALIFIED(pathReplaceFirst(path.path, prefix));
   end match;
 end pathReplaceFirst;
+
+function pathContains
+  input Absyn.Path path;
+  input Absyn.Ident name;
+  output Boolean res;
+algorithm
+  res := match path
+    case Absyn.Path.IDENT() then path.name == name;
+    case Absyn.Path.QUALIFIED()
+      then path.name == name or pathContains(path.path, name);
+    case Absyn.Path.FULLYQUALIFIED() then pathContains(path.path, name);
+  end match;
+end pathContains;
+
+function getClassAnnotation
+  "Returns the optional annotation for a class. Some classes may have multiple
+   annotations because Modelica 2 allowed it, in that case only the first
+   annotation is returned."
+  input Absyn.Class cls;
+  output Option<Absyn.Annotation> ann;
+algorithm
+  ann := getClassDefAnnotation(cls.body);
+end getClassAnnotation;
+
+function getClassDefAnnotation
+  "Returns the optional annotation for a class definition."
+  input Absyn.ClassDef cdef;
+  output Option<Absyn.Annotation> ann;
+algorithm
+  ann := match cdef
+    case Absyn.ClassDef.PARTS()
+      then if listEmpty(cdef.ann) then NONE() else SOME(listHead(cdef.ann));
+    case Absyn.ClassDef.DERIVED(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
+    case Absyn.ClassDef.ENUMERATION(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
+    case Absyn.ClassDef.OVERLOAD(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      then if listEmpty(cdef.ann) then NONE() else SOME(listHead(cdef.ann));
+    case Absyn.ClassDef.PDER(comment = SOME(Absyn.Comment.COMMENT(annotation_ = ann))) then ann;
+    else NONE();
+  end match;
+end getClassDefAnnotation;
+
+function setClassAnnotation
+  "Overwrites the annotation for a class with a given annotation. If the class
+   has multiple annotations only the first is overwritten, similarly to how
+   getClassAnnotation ignores other annotations than the first."
+  input output Absyn.Class cls;
+  input Option<Absyn.Annotation> ann;
+algorithm
+  cls.body := setClassDefAnnotation(cls.body, ann);
+end setClassAnnotation;
+
+function setClassDefAnnotation
+  "Overwrites the annotation for a class definition with a given annotation."
+  input output Absyn.ClassDef cdef;
+  input Option<Absyn.Annotation> ann;
+algorithm
+  () := match cdef
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        if not listEmpty(cdef.ann) then
+          cdef.ann := listRest(cdef.ann);
+        end if;
+
+        if isSome(ann) then
+          cdef.ann := Util.getOption(ann) :: cdef.ann;
+        end if;
+      then
+        ();
+
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        cdef.comment := setCommentAnnotation(cdef.comment, ann);
+      then
+        ();
+
+    case Absyn.ClassDef.ENUMERATION()
+      algorithm
+        cdef.comment := setCommentAnnotation(cdef.comment, ann);
+      then
+        ();
+
+    case Absyn.ClassDef.OVERLOAD()
+      algorithm
+        cdef.comment := setCommentAnnotation(cdef.comment, ann);
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        if not listEmpty(cdef.ann) then
+          cdef.ann := listRest(cdef.ann);
+        end if;
+
+        if isSome(ann) then
+          cdef.ann := Util.getOption(ann) :: cdef.ann;
+        end if;
+      then
+        ();
+
+    case Absyn.ClassDef.PDER()
+      algorithm
+        cdef.comment := setCommentAnnotation(cdef.comment, ann);
+      then
+        ();
+
+    else ();
+  end match;
+end setClassDefAnnotation;
+
+function setCommentAnnotation
+  "Overwrites the annotation in an optional comment."
+  input output Option<Absyn.Comment> comment;
+  input Option<Absyn.Annotation> ann;
+protected
+  Option<String> cmt;
+algorithm
+  comment := match (comment, ann)
+    // No comment, no annotation => no comment
+    case (NONE(), NONE()) then comment;
+    // No comment, some annotation => new comment
+    case (NONE(), _) then SOME(Absyn.Comment.COMMENT(ann, NONE()));
+    // Some comment => overwrite annotation in comment
+    case (SOME(Absyn.Comment.COMMENT(_, cmt)), _)
+      then SOME(Absyn.Comment.COMMENT(ann, cmt));
+  end match;
+end setCommentAnnotation;
+
+function mapAnnotationBinding
+  "Updates the binding expression for the element specificed by the given path
+   in an annotation using the given function. found will be true if the element
+   was found and updated, otherwise false."
+  input output Absyn.Annotation ann;
+  input Absyn.Path path;
+  input MapFunc func;
+        output Boolean found;
+
+  partial function MapFunc
+    input output Absyn.Exp exp;
+  end MapFunc;
+protected
+  list<Absyn.ElementArg> args = ann.elementArgs;
+algorithm
+  (args, found) := List.findMap(args, function mapAnnotationBindingInArg(path = path, func = func));
+  ann.elementArgs := args;
+end mapAnnotationBinding;
+
+function mapAnnotationBindingInArg
+  "Helper function to mapAnnotationBinding."
+  input output Absyn.ElementArg arg;
+  input Absyn.Path path;
+  input MapFunc func;
+        output Boolean found = false;
+
+  partial function MapFunc
+    input output Absyn.Exp exp;
+  end MapFunc;
+protected
+  Absyn.Modification mod;
+  list<Absyn.ElementArg> mod_args;
+  Absyn.EqMod mod_eq;
+  Absyn.Path rest_path;
+  Integer arg_path_len;
+algorithm
+  () := match arg
+    case Absyn.ElementArg.MODIFICATION(modification = SOME(mod))
+      algorithm
+        if pathPrefixOf(arg.path, path) then
+          arg_path_len := pathPartCount(arg.path);
+
+          if arg_path_len == pathPartCount(path) then
+            mod_eq := mapAnnotationBindingInEqMod(mod.eqMod, func);
+            mod.eqMod := mod_eq;
+            found := true;
+          else
+            rest_path := Util.foldcallN(arg_path_len, AbsynUtil.pathRest, path);
+            (mod_args, found) := List.findMap(mod.elementArgLst,
+              function mapAnnotationBindingInArg(path = rest_path, func = func));
+            mod.elementArgLst := mod_args;
+          end if;
+
+          if found then
+            arg.modification := SOME(mod);
+          end if;
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end mapAnnotationBindingInArg;
+
+function mapAnnotationBindingInEqMod
+  "Helper function to mapAnnotationBinding."
+  input output Absyn.EqMod eqMod;
+  input MapFunc func;
+
+  partial function MapFunc
+    input output Absyn.Exp exp;
+  end MapFunc;
+algorithm
+  () := match eqMod
+    case Absyn.EqMod.EQMOD()
+      algorithm
+        eqMod.exp := func(eqMod.exp);
+      then
+        ();
+
+    else ();
+  end match;
+end mapAnnotationBindingInEqMod;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

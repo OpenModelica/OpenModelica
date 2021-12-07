@@ -169,6 +169,7 @@ algorithm
   // Flatten the model and evaluate constants in it.
   flatModel := Flatten.flatten(inst_cls, name);
   flatModel := EvalConstants.evaluate(flatModel);
+  InstUtil.dumpFlatModelDebug("eval", flatModel);
 
   // Do unit checking
   flatModel := UnitCheck.checkUnits(flatModel);
@@ -184,9 +185,11 @@ algorithm
   // Collect a tree of all functions that are still used in the flat model.
   functions := Flatten.collectFunctions(flatModel);
 
-  // Dump the flat model to a stream if dumpFlat = true.
-  flatString := if dumpFlat then
-    FlatModel.toFlatString(flatModel, FunctionTree.listValues(functions)) else "";
+  // Dump the flat model to a string if dumpFlat = true.
+  flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
+
+  InstUtil.dumpFlatModelDebug("simplify", flatModel, functions);
+  InstUtil.printStructuralParameters(flatModel);
 
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
@@ -196,15 +199,11 @@ algorithm
     flatModel.variables := List.filterOnFalse(flatModel.variables, Variable.isEmptyArray);
   end if;
 
+  flatModel := InstUtil.replaceEmptyArrays(flatModel);
+  InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
+
   VerifyModel.verify(flatModel);
-
-  if Flags.isSet(Flags.COMBINE_SUBSCRIPTS) then
-    flatModel := FlatModel.mapExp(flatModel, combineSubscripts);
-  end if;
-
-  if Flags.isSet(Flags.NF_DUMP_FLAT) then
-    print("FlatModel:\n" + FlatModel.toString(flatModel) + "\n");
-  end if;
+  flatModel := InstUtil.combineSubscripts(flatModel);
 
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
   //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
@@ -262,8 +261,13 @@ algorithm
   // should have this annotation anyway.
   elems := Class.classTree(cls);
   ClassTree.mapClasses(elems, markBuiltinTypeNodes);
-  cls := Class.setClassTree(elems, cls);
 
+  // ModelicaBuiltin has a dummy declaration of Clock to make sure no one can
+  // declare another Clock class in the top scope, here we replace it with the
+  // actual Clock node (which can't be defined in regular Modelica).
+  ClassTree.replaceClass(NFBuiltin.CLOCK_NODE, elems);
+
+  cls := Class.setClassTree(elems, cls);
   topNode := InstNode.updateClass(cls, topNode);
 end makeTopNode;
 
@@ -823,7 +827,7 @@ algorithm
         // Redeclare classes with redeclare modifiers. Redeclared components could
         // also be handled here, but since each component is only instantiated once
         // it's more efficient to apply the redeclare when instantiating them instead.
-        redeclareClasses(cls_tree);
+        redeclareClasses(cls_tree, par);
 
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
@@ -1198,10 +1202,11 @@ end applyModifier;
 
 function redeclareClasses
   input output ClassTree tree;
+  input InstNode parent;
 protected
   InstNode cls_node, redecl_node;
   Class cls;
-  Modifier mod;
+  Modifier mod, cc_mod;
 algorithm
   () := match tree
     case ClassTree.INSTANTIATED_TREE()
@@ -1212,8 +1217,9 @@ algorithm
           mod := Class.getModifier(cls);
 
           if Modifier.isRedeclare(mod) then
-            Modifier.REDECLARE(element = redecl_node, outerMod = mod) := mod;
-            cls_node := redeclareClass(redecl_node, cls_node, mod);
+            Modifier.REDECLARE(element = redecl_node, outerMod = mod, constrainingMod = cc_mod) := mod;
+            cc_mod := getConstrainingMod(InstNode.definition(cls_node), parent, cc_mod);
+            cls_node := redeclareClass(redecl_node, cls_node, mod, cc_mod);
             Mutable.update(cls_ptr, cls_node);
           end if;
         end for;
@@ -1261,7 +1267,7 @@ protected
 algorithm
   rdcl_node := Mutable.access(redeclareCls);
   repl_node := Mutable.access(replaceableCls);
-  rdcl_node := redeclareClass(rdcl_node, repl_node, Modifier.NOMOD());
+  rdcl_node := redeclareClass(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD());
   outCls := Mutable.create(rdcl_node);
 end redeclareClassElement;
 
@@ -1285,12 +1291,14 @@ function redeclareClass
   input InstNode redeclareNode;
   input InstNode originalNode;
   input Modifier outerMod;
+  input Modifier constrainingMod;
   output InstNode redeclaredNode;
 protected
   InstNode orig_node;
   Class orig_cls, rdcl_cls, new_cls;
   Class.Prefixes prefs;
   InstNodeType node_ty;
+  Modifier mod;
 algorithm
   // Check that the redeclare element is actually a class.
   if not InstNode.isClass(redeclareNode) then
@@ -1304,6 +1312,10 @@ algorithm
   orig_cls := InstNode.getClass(originalNode);
   partialInstClass(redeclareNode);
   rdcl_cls := InstNode.getClass(redeclareNode);
+
+  mod := Class.getModifier(rdcl_cls);
+  mod := Modifier.merge(mod, constrainingMod);
+  mod := Modifier.merge(outerMod, mod);
 
   prefs := mergeRedeclaredClassPrefixes(Class.getPrefixes(orig_cls),
     Class.getPrefixes(rdcl_cls), redeclareNode);
@@ -1333,7 +1345,7 @@ algorithm
           node_ty := InstNodeType.BASE_CLASS(InstNode.parent(orig_node), InstNode.definition(orig_node));
           orig_node := InstNode.setNodeType(node_ty, orig_node);
           rdcl_cls.elements := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
-          rdcl_cls.modifier := Modifier.merge(outerMod, rdcl_cls.modifier);
+          rdcl_cls.modifier := mod;
           rdcl_cls.prefixes := prefs;
         then
           rdcl_cls;
@@ -1347,12 +1359,12 @@ algorithm
   else
     new_cls := match (orig_cls, rdcl_cls)
       case (Class.PARTIAL_BUILTIN(), _)
-        then redeclareEnum(rdcl_cls, orig_cls, prefs, outerMod, redeclareNode, originalNode);
+        then redeclareEnum(rdcl_cls, orig_cls, prefs, mod, redeclareNode, originalNode);
 
       case (_, Class.PARTIAL_CLASS())
         algorithm
           rdcl_cls.prefixes := prefs;
-          rdcl_cls.modifier := Modifier.merge(outerMod, rdcl_cls.modifier);
+          rdcl_cls.modifier := mod;
         then
           rdcl_cls;
 
@@ -1448,13 +1460,7 @@ algorithm
     instComponentDef(def, Modifier.NOMOD(), inner_mod, NFComponent.DEFAULT_ATTR,
       useBinding, comp_node, parent, instLevel, originalAttr, next_context);
 
-    cc_smod := SCodeUtil.getConstrainingMod(def);
-    if not SCodeUtil.isEmptyMod(cc_smod) then
-      name := InstNode.name(node);
-      cc_def_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), parent);
-      cc_mod := Modifier.merge(cc_mod, cc_def_mod);
-    end if;
-
+    cc_mod := getConstrainingMod(def, parent, cc_mod);
     cc_mod := Modifier.merge(cc_mod, innerMod);
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
@@ -1557,10 +1563,14 @@ function instElementModifier
 protected
   Modifier cc_mod;
 algorithm
-  cc_mod := instConstrainingMod(element, parent);
   mod := Modifier.fromElement(element, parent);
-  mod := propagateRedeclaredMod(mod, component);
-  mod := Modifier.merge(mod, cc_mod);
+
+  if InstNode.isRedeclared(component) then
+    mod := propagateRedeclaredMod(mod, component);
+  else
+    cc_mod := instConstrainingMod(element, parent);
+    mod := Modifier.merge(mod, cc_mod);
+  end if;
 end instElementModifier;
 
 function instConstrainingMod
@@ -1583,6 +1593,27 @@ algorithm
     else Modifier.NOMOD();
   end match;
 end instConstrainingMod;
+
+function getConstrainingMod
+  input SCode.Element element;
+  input InstNode parent;
+  input Modifier outerMod;
+  output Modifier ccMod;
+protected
+  String name;
+  SCode.Mod cc_smod;
+  ModifierScope mod_scope;
+algorithm
+  cc_smod := SCodeUtil.getConstrainingMod(element);
+
+  if not SCodeUtil.isEmptyMod(cc_smod) then
+    name := SCodeUtil.elementName(element);
+    ccMod := Modifier.create(cc_smod, name, ModifierScope.fromElement(element), parent);
+    ccMod := Modifier.merge(outerMod, ccMod);
+  else
+    ccMod := outerMod;
+  end if;
+end getConstrainingMod;
 
 function propagateRedeclaredMod
   input Modifier mod;
@@ -3212,7 +3243,16 @@ algorithm
         next_origin := InstContext.set(context, NFInstContext.FOR);
         stmtl := instStatements(scodeStmt.forBody, for_scope, next_origin);
       then
-        Statement.FOR(iter, oexp, stmtl, makeSource(scodeStmt.comment, info));
+        Statement.FOR(iter, oexp, stmtl, Statement.ForType.NORMAL(), makeSource(scodeStmt.comment, info));
+
+    case SCode.Statement.ALG_PARFOR(info = info)
+      algorithm
+        oexp := instExpOpt(scodeStmt.range, scope, context, info);
+        (for_scope, iter) := addIteratorToScope(scodeStmt.index, scope, info);
+        next_origin := InstContext.set(context, NFInstContext.FOR);
+        stmtl := instStatements(scodeStmt.parforBody, for_scope, next_origin);
+      then
+        Statement.FOR(iter, oexp, stmtl, Statement.ForType.PARALLEL({}), makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_IF(info = info)
       algorithm
@@ -3739,20 +3779,6 @@ algorithm
     fail();
   end if;
 end checkPartialClass;
-
-function combineSubscripts
-  input output Expression exp;
-algorithm
-  () := match exp
-    case Expression.CREF()
-      algorithm
-        exp.cref := ComponentRef.combineSubscripts(exp.cref);
-      then
-        ();
-
-    else ();
-  end match;
-end combineSubscripts;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

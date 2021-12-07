@@ -52,6 +52,9 @@ protected
   import DAE.ElementSource;
   import MetaModelica.Dangerous.listReverseInPlace;
   import Util;
+  import Prefixes = NFPrefixes;
+  import NFPrefixes.Visibility;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
 
   import FlatModel = NFFlatModel;
 
@@ -113,12 +116,33 @@ public
   function toString
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;
-    output String str;
+    output String str = IOStream.string(toStream(flatModel, printBindingTypes));
+  end toString;
+
+  function printString
+    input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
   protected
     IOStream.IOStream s;
   algorithm
-    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toStream(flatModel, printBindingTypes);
+    IOStream.print(s, IOStream.stdOutput);
+  end printString;
 
+  function toStream
+    input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
+    output IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := appendStream(flatModel, printBindingTypes, s);
+  end toStream;
+
+  function appendStream
+    input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
+    input output IOStream.IOStream s;
+  algorithm
     s := IOStream.append(s, "class " + flatModel.name + "\n");
 
     for v in flatModel.variables loop
@@ -151,10 +175,7 @@ public
     end for;
 
     s := IOStream.append(s, "end " + flatModel.name + ";\n");
-
-    str := IOStream.string(s);
-    IOStream.delete(s);
-  end toString;
+  end appendStream;
 
   function toFlatString
     "Returns a string containing the flat Modelica representation of the given model."
@@ -195,8 +216,11 @@ public
     input output IOStream.IOStream s;
   protected
     FlatModel flat_model = flatModel;
+    Visibility visibility = Visibility.PUBLIC;
   algorithm
-    s := IOStream.append(s, "class '" + flat_model.name + "'\n");
+    s := IOStream.append(s, "class '" + flat_model.name + "'");
+    s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
+    s := IOStream.append(s, "\n");
 
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
@@ -213,11 +237,15 @@ public
     end for;
 
     for v in flat_model.variables loop
+      if visibility <> Variable.visibility(v) then
+        visibility := Variable.visibility(v);
+        s := IOStream.append(s, Prefixes.visibilityString(visibility));
+        s := IOStream.append(s, "\n");
+      end if;
+
       s := Variable.toFlatStream(v, "  ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
-
-    s := IOStream.append(s, "public\n");
 
     if not listEmpty(flat_model.initialEquations) then
       s := IOStream.append(s, "initial equation\n");
@@ -243,6 +271,7 @@ public
       end if;
     end for;
 
+    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "  ", ";\n", s);
     s := IOStream.append(s, "end '" + flat_model.name + "';\n");
   end appendFlatStream;
 
@@ -338,6 +367,8 @@ public
 
       case Equation.FOR()
         algorithm
+          types := Util.applyOptionOrDefault(eq.range,
+            function collectExpFlatTypes(types = types), types);
           types := List.fold(eq.body, collectEquationFlatTypes, types);
         then
           ();
@@ -491,6 +522,7 @@ public
   algorithm
     types := match exp
       case Expression.SUBSCRIPTED_EXP()
+        guard Flags.getConfigBool(Flags.MODELICA_OUTPUT)
         algorithm
           types := collectSubscriptedFlatType(exp.exp, exp.subscripts, exp.ty, types);
         then

@@ -77,8 +77,8 @@ import FlagsUtil;
 import FlatModel = NFFlatModel;
 import Flatten = NFFlatten;
 import Global;
-import InstUtil = NFInstUtil;
 import Interactive;
+import InteractiveUtil;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous;
@@ -160,6 +160,7 @@ protected
   DAE.DAElist dae;
   Type ty;
   Variability var;
+  InstContext.Type context;
 algorithm
   stringLst := {};
 
@@ -224,13 +225,14 @@ algorithm
           if (stringEq(annName, "Icon") or stringEq(annName, "Diagram")) and not listEmpty(graphics_mod) then
             try
               {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
-              exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
+              context := InstContext.set(NFInstContext.RELAXED, NFInstContext.GRAPHICAL_EXP);
+              exp := NFInst.instExp(absynExp, inst_cls, context, info);
               (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
               save := exp;
               try
                 exp := NFCeval.evalExp(save);
               else
-                exp := save;
+                exp := EvalConstants.evaluateExp(save, info);
               end try;
               exp := SimplifyExp.simplify(exp);
               str := str + ", " + Expression.toString(exp);
@@ -613,7 +615,7 @@ algorithm
     (_, scode_builtin) := FBuiltin.getInitialFunctions();
     program := AbsynToSCode.translateAbsyn2SCode(absynProgram);
     program := listAppend(scode_builtin, program);
-    placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
+    placementProgram := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
     graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
     program := listAppend(graphicProgramSCode, program);
 

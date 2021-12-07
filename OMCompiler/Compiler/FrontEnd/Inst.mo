@@ -3914,7 +3914,7 @@ algorithm
         cmod2 = List.fold2r(cmod::ltmod,Mod.merge,name,true,DAE.NOMOD());
         SCode.PREFIXES(finalPrefix = fprefix) = SCodeUtil.elementPrefixes(comp);
 
-        //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,AbsynUtil.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+ "\n");
+        //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,Dump.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Dump.printComponentRefStr),",")+ "\n");
         //print("REDECL     acquired mods: " + Mod.printModStr(cmod2) + "\n");
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
         (cache,env2,ih) = updateComponentsInEnv(cache, env2, ih, pre,
@@ -3954,7 +3954,7 @@ algorithm
         cmod2 = List.fold2r(ltmod,Mod.merge,name,true,DAE.NOMOD());
         SCode.PREFIXES(finalPrefix = fprefix) = SCodeUtil.elementPrefixes(comp);
 
-        //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,AbsynUtil.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+ "\n");
+        //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,Dump.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Dump.printComponentRefStr),",")+ "\n");
         //print("     acquired mods: " + Mod.printModStr(cmod2) + "\n");
 
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);

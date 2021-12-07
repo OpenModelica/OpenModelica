@@ -1,0 +1,49 @@
+// name:     PowerSystems.Examples.Introductory.SimulationSteadyState
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.Introductory.SimulationSteadyState);
+compareVars :=
+{
+  "meter.p[1]",
+  "meter.p[2]",
+  "meter.p[3]",
+  "meter.v[1]",
+  "meter.v[2]",
+  "meter.v[3]",
+  "meter.i[1]",
+  "meter.i[2]",
+  "meter.i[3]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.Introductory.SimulationSteadyState
+// {"meter.p[1]","meter.p[2]","meter.p[3]","meter.v[1]","meter.v[2]","meter.v[3]","meter.i[1]","meter.i[2]","meter.i[3]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Introductory.SimulationSteadyState', options = '', outputFormat = 'mat', variableFilter = 'time|meter.p.1.|meter.p.2.|meter.p.3.|meter.v.1.|meter.v.2.|meter.v.3.|meter.i.1.|meter.i.2.|meter.i.3.', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.Introductory.SimulationSteadyState_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -3836,9 +3836,7 @@ algorithm
 end getHomotopyArguments;
 
 protected function elabBuiltinDynamicSelect
-  "Elaborates DynamicSelect statements in annotations for OMEdit.
-   Currently only text annotations with one String statement accessing
-   one variable are supported. Otherwise the first argument is returned."
+  "Elaborates DynamicSelect statements in annotations for OMEdit."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input list<Absyn.Exp> inPosArgs;
@@ -3859,37 +3857,15 @@ algorithm
     msg_str := ", expected DynamicSelect(staticExp, dynamicExp)";
     printBuiltinFnArgError("DynamicSelect", msg_str, inPosArgs, inNamedArgs, inPrefix, inInfo);
   end if;
+
   {astatic, adynamic} := inPosArgs;
   (outCache, dstatic, outProperties as DAE.PROP(ty, _)) :=
     elabExpInExpression(inCache, inEnv, astatic, inImplicit, true, inPrefix, inInfo);
+
   try
-    outExp := match (astatic, adynamic)
-    local
-      Absyn.ComponentRef acref;
-      Integer digits;
-      list<Absyn.NamedArg> namedArgs;
-      Boolean bconst;
-    // keep DynamicSelect for String with cref arg (textString)
-    case (Absyn.STRING(), Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "String"), functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = acref)}, argNames = namedArgs))) algorithm
-      (outCache, dstatic, outProperties as DAE.PROP(ty, _)) :=
-        elabExpInExpression(inCache, inEnv, astatic, inImplicit, true, inPrefix, inInfo);
-      ddynamic := Expression.crefToExp(absynCrefToComponentReference(acref));
-      // Note: can't generate Modelica syntax as OMEdit only parses lists
-      //outExp := Expression.makePureBuiltinCall("DynamicSelect", {dstatic,
-      //  Expression.makePureBuiltinCall("String", {ddynamic}, ty)}, ty);
-      outExp := match namedArgs
-        case {Absyn.NAMEDARG(argName = "significantDigits", argValue = Absyn.INTEGER(value = digits))}
-          then Expression.makeArray({dstatic, ddynamic, DAE.ICONST(digits)}, ty, true);
-        case {Absyn.NAMEDARG(), Absyn.NAMEDARG(argName = "significantDigits", argValue = Absyn.INTEGER(value = digits))}
-          then Expression.makeArray({dstatic, ddynamic, DAE.ICONST(digits)}, ty, true);
-          else Expression.makeArray({dstatic, ddynamic}, ty, true);
-      end match;
-      then outExp;
-    // keep DynamicSelect for Boolean with cref arg (visible, primitivesVisible)
-    case (Absyn.BOOL(), Absyn.CREF(componentRef = acref))
-      then Expression.makeArray({dstatic, Expression.crefToExp(absynCrefToComponentReference(acref))}, ty, true);
-    end match;
-  // return first argument of DynamicSelect for model editing per default
+    (outCache, ddynamic, _) :=
+      elabExpInExpression(outCache, inEnv, adynamic, inImplicit, true, inPrefix, inInfo);
+    outExp := Expression.makePureBuiltinCall("DynamicSelect", {dstatic, ddynamic}, ty);
   else
     outExp := dstatic;
   end try;
@@ -6710,7 +6686,7 @@ algorithm
       return;
     else
       true := numErrorMessages == Error.getNumErrorMessages();
-      name := AbsynUtil.printComponentRefStr(fn);
+      name := Dump.printComponentRefStr(fn);
       s1 := stringDelimitList(List.map(args, Dump.printExpStr), ", ");
       s2 := stringDelimitList(List.map(nargs, Dump.printNamedArgStr), ", ");
       s := if s2 == "" then s1 else s1 + ", " + s2;
@@ -10294,9 +10270,9 @@ algorithm
         (cache,DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange),
                SOME((cl as SCode.COMPONENT(n, pref, SCode.ATTR(arrayDims = ad), Absyn.TPATH(tpath, _),m,comment,cond,info),cmod)),instStatus,_)
           = Lookup.lookupIdent(cache, env, id);
-        print("Static: cref:" + AbsynUtil.printComponentRefStr(c) + " component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
+        print("Static: cref:" + Dump.printComponentRefStr(c) + " component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
         (cache, cl, env) = Lookup.lookupClass(cache, env, tpath);
-        print("Static: cref:" + AbsynUtil.printComponentRefStr(c) + " class component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
+        print("Static: cref:" + Dump.printComponentRefStr(c) + " class component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
       then
         (cache,NONE());*/
 
@@ -12477,7 +12453,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.elabArrayDim failed on: " +
-          AbsynUtil.printComponentRefStr(inCref) +
+          Dump.printComponentRefStr(inCref) +
           Dump.printArraydimStr({inDimension}));
       then
         fail();

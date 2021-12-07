@@ -1354,6 +1354,69 @@ public
       end match;
     end isEmptyTree;
 
+    function appendClasses
+      input list<InstNode> clsNodes;
+      input output ClassTree tree;
+    protected
+      array<InstNode> classes;
+      LookupTree.Tree ltree;
+    algorithm
+      () := match tree
+        case PARTIAL_TREE()
+          algorithm
+            (ltree, classes) := appendClasses2(clsNodes, tree.tree, tree.classes);
+            tree.tree := ltree;
+            tree.classes := classes;
+          then
+            ();
+
+        case EXPANDED_TREE()
+          algorithm
+            (ltree, classes) := appendClasses2(clsNodes, tree.tree, tree.classes);
+            tree.tree := ltree;
+            tree.classes := classes;
+          then
+            ();
+
+        case FLAT_TREE()
+          algorithm
+            (ltree, classes) := appendClasses2(clsNodes, tree.tree, tree.classes);
+            tree.tree := ltree;
+            tree.classes := classes;
+          then
+            ();
+      end match;
+    end appendClasses;
+
+    function appendClasses2
+      input list<InstNode> clsNodes;
+      input output LookupTree.Tree tree;
+      input output array<InstNode> classes;
+    protected
+      Integer index;
+    algorithm
+      index := arrayLength(classes);
+      classes := Array.appendList(classes, clsNodes);
+
+      for c in clsNodes loop
+        index := index + 1;
+        tree := LookupTree.add(tree, InstNode.name(c), LookupTree.Entry.CLASS(index));
+      end for;
+    end appendClasses2;
+
+    function replaceClass
+      "Replaces the node for a class with another node. Assumes the class
+       already exists in the tree, and that the tree isn't instantiated."
+      input InstNode node;
+      input output ClassTree tree;
+    protected
+      Integer index;
+    algorithm
+      LookupTree.Entry.CLASS(index = index) :=
+        LookupTree.get(lookupTree(tree), InstNode.name(node));
+      arrayUpdate(getClasses(tree), index, node);
+    end replaceClass;
+
   protected
 
     function instExtendsComps

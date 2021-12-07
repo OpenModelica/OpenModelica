@@ -58,6 +58,7 @@ public:
   static QString OpenModelicaVersion;
   static QString OpenModelicaHome;
   static QString OpenModelicaLibrary;
+  static QString userHomeDirectory;
   static QString OMCServerName;
   static QString omFileTypes;
   static QString omEncryptedFileTypes;
@@ -77,6 +78,7 @@ public:
   static QString figaroFileTypes;
   static QString visualizationFileTypes;
   static QString subModelFileTypes;
+  static QString omScriptTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
@@ -349,10 +351,11 @@ public:
   static QString stepReturn;
   static QString attachToRunningProcess;
   static QString attachToRunningProcessTip;
-  static QString crashReport;
+  static QString reportIssue;
   static QString parsingFailedJson;
   static QString expandAll;
   static QString collapseAll;
+  static QString versionLabel;
   static QString version;
   static QString unlimited;
   static QString simulationOutput;
@@ -429,6 +432,8 @@ public:
   static QString systemSimulationInformation;
   static QString translationFlags;
   static QString send;
+  static QString installLibrary;
+  static QString dataReconciliation;
 };
 
 class GUIMessages : public QObject
