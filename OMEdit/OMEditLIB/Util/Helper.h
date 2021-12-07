@@ -431,6 +431,7 @@ public:
   static QString translationFlags;
   static QString send;
   static QString installLibrary;
+  static QString dataReconciliation;
 };
 
 class GUIMessages : public QObject

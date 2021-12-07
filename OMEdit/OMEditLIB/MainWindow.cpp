@@ -728,7 +728,7 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
         return;
       }
     }
-    mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false);
+    mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, false);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     // get the top level LibraryTreeItem
     LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
@@ -754,7 +754,7 @@ void MainWindow::simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryT
       return;
     }
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeItem, true, false, false);
+  mpSimulationDialog->directSimulate(pLibraryTreeItem, true, false, false, false);
 }
 
 void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem)
@@ -768,7 +768,7 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeIt
       return;
     }
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, true, false);
+  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, true, false, false);
 }
 
 #if !defined(WITHOUT_OSG)
@@ -783,7 +783,7 @@ void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
       return;
     }
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, true);
+  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, true, false);
 }
 #endif
 
@@ -2362,8 +2362,7 @@ void MainWindow::exportModelFMU()
   if (pModelWidget) {
     exportModelFMU(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                           .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -2378,10 +2377,8 @@ void MainWindow::exportEncryptedPackage()
   if (pModelWidget) {
     exportEncryptedPackage(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                          .arg(tr("making encrypted package")), Helper::scriptingKind,
-                                                          Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("making encrypted package")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
 
@@ -2395,10 +2392,8 @@ void MainWindow::exportReadonlyPackage()
   if (pModelWidget) {
     exportReadonlyPackage(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                          .arg(tr("making read-only package")), Helper::scriptingKind,
-                                                          Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("making read-only package")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
 
@@ -2409,8 +2404,7 @@ void MainWindow::exportModelXML()
   if (pModelWidget) {
     exportModelXML(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                           .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -2422,8 +2416,7 @@ void MainWindow::exportModelFigaro()
   if (pModelWidget) {
     exportModelFigaro(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                           .arg(tr("exporting to Figaro")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -2472,10 +2465,8 @@ void MainWindow::exportModelToOMNotebook()
   if (pModelWidget) {
     exportModelToOMNotebook(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                          .arg(tr("exporting to OMNotebook")), Helper::scriptingKind,
-                                                          Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
 
@@ -2505,8 +2496,7 @@ void MainWindow::upgradeInstalledLibraries()
 //! @see exportModelToOMNotebook();
 void MainWindow::importModelfromOMNotebook()
 {
-  QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::importFromOMNotebook),
-                                                    NULL, Helper::omnotebookFileTypes);
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::importFromOMNotebook), NULL, Helper::omnotebookFileTypes);
   if (fileName.isEmpty())
     return;
   // create a progress bar
@@ -2520,7 +2510,7 @@ void MainWindow::importModelfromOMNotebook()
   QFile file(fileName);
   if (!file.open(QIODevice::ReadOnly))
   {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName).arg(file.errorString()), Helper::ok);
     hideProgressBar();
     return;
@@ -2530,8 +2520,7 @@ void MainWindow::importModelfromOMNotebook()
   QDomDocument xmlDocument;
   if (!xmlDocument.setContent(&file))
   {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          tr("Error reading the xml file"), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error reading the xml file"), Helper::ok);
     hideProgressBar();
     return;
   }
@@ -2557,8 +2546,7 @@ void MainWindow::importModelfromOMNotebook()
 // Tool to convert ngspice netlist to modelica code - added by Rakhi
 void MainWindow::importNgspiceNetlist()
 {
-  QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::importNgspiceNetlist),
-                                                    NULL, Helper::ngspiceNetlistFileTypes);
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::importNgspiceNetlist), NULL, Helper::ngspiceNetlistFileTypes);
   if (fileName.isEmpty())
     return;
   // create a progress bar
@@ -2586,7 +2574,7 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
     LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
     QString fileName;
     if (!copyToClipboard) {
-      fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::exportAsImage),
+      fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::exportAsImage),
                                                 NULL, Helper::imageFileTypes, NULL, "svg", &pLibraryTreeItem->getName());
       // if user cancels the operation. or closes the export dialog box.
       if (fileName.isEmpty()) {
@@ -2609,7 +2597,7 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
     QImage modelImage(destinationRect.size(), QImage::Format_ARGB32_Premultiplied);
     // export svg
     if (fileName.endsWith(".svg")) {
-      svgGenerator.setTitle(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
+      svgGenerator.setTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::applicationIntroText));
       svgGenerator.setDescription("Generated by OMEdit - OpenModelica Connection Editor");
       svgGenerator.setSize(destinationRect.size());
       svgGenerator.setViewBox(QRect(0, 0, destinationRect.width(), destinationRect.height()));
@@ -2632,8 +2620,7 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
     pGraphicsView->mSkipBackground = oldSkipDrawBackground;
     if (!fileName.endsWith(".svg") && !copyToClipboard) {
       if (!modelImage.save(fileName)) {
-        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                              tr("Error saving the image file"), Helper::ok);
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error saving the image file"), Helper::ok);
       }
     } else if (copyToClipboard) {
       QClipboard *pClipboard = QApplication::clipboard();
@@ -2691,8 +2678,7 @@ void MainWindow::openTemporaryDirectory()
 {
   QUrl temporaryDirectory (QString("file:///%1").arg(Utilities::tempDirectory()));
   if (!QDesktopServices::openUrl(temporaryDirectory)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(temporaryDirectory.toString()),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(temporaryDirectory.toString()),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
@@ -2705,8 +2691,7 @@ void MainWindow::openWorkingDirectory()
 {
   QUrl workingDirectory (QString("file:///%1").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory()));
   if (!QDesktopServices::openUrl(workingDirectory)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(workingDirectory.toString()),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(workingDirectory.toString()),
                                                 Helper::scriptingKind, Helper::errorLevel));
   }
 }
@@ -3184,6 +3169,30 @@ void MainWindow::autoSave()
 }
 
 /*!
+ * \brief MainWindow::showDataReconciliationDialog
+ * Slot activated when mpCalculateDataReconciliationAction triggered signal is raised.\n
+ * Shows the data reconciliation dialog.
+ */
+void MainWindow::showDataReconciliationDialog()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    DataReconciliationDialog *pDataReconciliationDialog = new DataReconciliationDialog(pLibraryTreeItem);
+    if (pDataReconciliationDialog->exec()) {
+      if (!mpSimulationDialog) {
+        mpSimulationDialog = new SimulationDialog(this);
+      }
+      /* if Modelica text is changed manually by user then validate it before saving. */
+      if (pModelWidget && !pModelWidget->validateText(&pLibraryTreeItem)) {
+        return;
+      }
+      mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, true);
+    }
+  }
+}
+
+/*!
  * \brief MainWindow::showDebugConfigurationsDialog
  * Slot activated when mpDebugConfigurationsAction triggered signal is raised.\n
  * Shows the debugger configurations.
@@ -3568,6 +3577,11 @@ void MainWindow::createActions()
   mpArchivedSimulationsAction = new QAction(Helper::archivedSimulations, this);
   mpArchivedSimulationsAction->setStatusTip(tr("Shows the list of archived simulations"));
   connect(mpArchivedSimulationsAction, SIGNAL(triggered()), SLOT(showArchivedSimulations()));
+  // Data reconciliation menu
+  // calculate data reconciliation
+  mpCalculateDataReconciliationAction = new QAction(tr("Calculate Data Reconciliation"), this);
+  mpCalculateDataReconciliationAction->setStatusTip(tr("Calculates the data reconciliation"));
+  connect(mpCalculateDataReconciliationAction, SIGNAL(triggered()), SLOT(showDataReconciliationDialog()));
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
@@ -3967,6 +3981,22 @@ void MainWindow::createMenus()
   pViewMenu->addAction(mpFitToDiagramAction);
   // add View menu to menu bar
   menuBar()->addAction(pViewMenu->menuAction());
+  // OMSimulator menu
+  QMenu *pSSPMenu = new QMenu(menuBar());
+  pSSPMenu->setTitle(tr("&SSP"));
+  // add actions to SSP menu
+  pSSPMenu->addAction(mpAddSystemAction);
+  pSSPMenu->addSeparator();
+  pSSPMenu->addAction(mpAddOrEditIconAction);
+  pSSPMenu->addAction(mpDeleteIconAction);
+  pSSPMenu->addSeparator();
+  pSSPMenu->addAction(mpAddConnectorAction);
+  pSSPMenu->addAction(mpAddBusAction);
+  pSSPMenu->addAction(mpAddTLMBusAction);
+  pSSPMenu->addSeparator();
+  pSSPMenu->addAction(mpAddSubModelAction);
+  // add OMSimulator menu to menu bar
+  menuBar()->addAction(pSSPMenu->menuAction());
   // Simulation Menu
   QMenu *pSimulationMenu = new QMenu(menuBar());
   pSimulationMenu->setTitle(tr("&Simulation"));
@@ -3986,30 +4016,13 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpArchivedSimulationsAction);
   // add Simulation menu to menu bar
   menuBar()->addAction(pSimulationMenu->menuAction());
-  // Debug menu
-  QMenu *pDebugMenu = new QMenu(menuBar());
-  pDebugMenu->setTitle(tr("&Debug"));
-  // add actions to Debug menu
-  pDebugMenu->addAction(mpDebugConfigurationsAction);
-  pDebugMenu->addAction(mpAttachDebuggerToRunningProcessAction);
-  // add Debug menu to menu bar
-  menuBar()->addAction(pDebugMenu->menuAction());
-  // OMSimulator menu
-  QMenu *pSSPMenu = new QMenu(menuBar());
-  pSSPMenu->setTitle(tr("&SSP"));
-  // add actions to SSP menu
-  pSSPMenu->addAction(mpAddSystemAction);
-  pSSPMenu->addSeparator();
-  pSSPMenu->addAction(mpAddOrEditIconAction);
-  pSSPMenu->addAction(mpDeleteIconAction);
-  pSSPMenu->addSeparator();
-  pSSPMenu->addAction(mpAddConnectorAction);
-  pSSPMenu->addAction(mpAddBusAction);
-  pSSPMenu->addAction(mpAddTLMBusAction);
-  pSSPMenu->addSeparator();
-  pSSPMenu->addAction(mpAddSubModelAction);
-  // add OMSimulator menu to menu bar
-  menuBar()->addAction(pSSPMenu->menuAction());
+  // Data reconciliation Menu
+  QMenu *pDataReconciliationMenu = new QMenu(menuBar());
+  pDataReconciliationMenu->setTitle(tr("&Data Reconciliation"));
+  // add actions to data reconciliation menu
+  pDataReconciliationMenu->addAction(mpCalculateDataReconciliationAction);
+  // add data reconciliation menu to menu bar
+  menuBar()->addAction(pDataReconciliationMenu->menuAction());
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
@@ -4044,6 +4057,14 @@ void MainWindow::createMenus()
    * For now just don't add it to the menu.
    */
   //menuBar()->addAction(pGitMenu->menuAction());
+  // Debug menu
+  QMenu *pDebugMenu = new QMenu(menuBar());
+  pDebugMenu->setTitle(tr("&Debug"));
+  // add actions to Debug menu
+  pDebugMenu->addAction(mpDebugConfigurationsAction);
+  pDebugMenu->addAction(mpAttachDebuggerToRunningProcessAction);
+  // add Debug menu to menu bar
+  menuBar()->addAction(pDebugMenu->menuAction());
   // Tools menu
   QMenu *pToolsMenu = new QMenu(menuBar());
   pToolsMenu->setTitle(tr("&Tools"));

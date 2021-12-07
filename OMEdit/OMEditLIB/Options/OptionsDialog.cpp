@@ -5506,6 +5506,7 @@ void DiscardLocalTranslationFlagsDialog::discardLocalTranslationFlags()
       LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pClassWithLocalTranslationFlags->text());
       if (pLibraryTreeItem) {
         pLibraryTreeItem->mSimulationOptions.setIsValid(false);
+        pLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(false);
       }
     }
   }

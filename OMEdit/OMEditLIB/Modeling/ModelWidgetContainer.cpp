@@ -5316,6 +5316,7 @@ void ModelWidget::reDrawModelWidget()
     loadElements();
     // invalidate the simulation options
     mpLibraryTreeItem->mSimulationOptions.setIsValid(false);
+    mpLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(false);
     // update the icon
     mpLibraryTreeItem->handleIconUpdated();
     // Draw diagram view
@@ -8398,6 +8399,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 #endif
   MainWindow::instance()->getSimulateModelInteractiveAction()->setEnabled(enabled && oms);
   MainWindow::instance()->getSimulationSetupAction()->setEnabled(enabled && ((modelica && pLibraryTreeItem->isSimulationAllowed()) || (oms)));
+  MainWindow::instance()->getCalculateDataReconciliationAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   bool accessAnnotation = false;
   if (pLibraryTreeItem && (pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageText
                            || ((pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageText
