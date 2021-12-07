@@ -109,7 +109,7 @@ public
       case ARRAY_MATCHING() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
       then fail();
-      case EMPTY_MATCHING() then str + StringUtil.headline_2(str + "Empty Matching") + "\n";
+      case EMPTY_MATCHING() then StringUtil.headline_2(str + "Empty Matching") + "\n";
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
@@ -120,41 +120,19 @@ public
     "author: kabdelhak
     Regular matching algorithm for bipartite graphs by Constantinos C. Pantelides.
     First published in doi:10.1137/0909014"
+    input output Matching matching;
     input Adjacency.Matrix adj;
     input Boolean transposed = false        "transpose matching if true";
     input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
-    output Matching matching;
+    input Boolean clear = true              "start from scratch if true";
+  protected
+    list<list<Integer>> marked_eqns;
   algorithm
-     matching := match adj
-      case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
-        // marked equations irrelevant for regular matching
-        if transposed then
-          (matching, _) := scalarMatching(adj.mT, adj.m, transposed, partially);
-        else
-          (matching, _) := scalarMatching(adj.m, adj.mT, transposed, partially);
-        end if;
-      then matching;
-
-      case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
-        // marked equations irrelevant for regular matching
-        if transposed then
-          (matching, _) := scalarMatching(adj.mT, adj.m, transposed, partially);
-        else
-          (matching, _) := scalarMatching(adj.m, adj.mT, transposed, partially);
-        end if;
-      then matching;
-
-      case Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX() algorithm
-        //Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
-        matching := arrayMatching(adj.graph);
-      then matching;
-
-      case Adjacency.Matrix.EMPTY_ADJACENCY_MATRIX() then EMPTY_MATCHING();
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
-      then fail();
-    end match;
+    (matching, marked_eqns, _, _, _) := continue_(matching, adj, transposed, clear);
+    if not partially and not listEmpty(List.flatten(marked_eqns)) then
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the system is strcturally singular."});
+      fail();
+    end if;
   end regular;
 
   function singular
@@ -171,9 +149,8 @@ public
       2. if done and not everything is matched -> index reduction / balance initialization
       3. restart matching if step 2. changed the system
     "
-    output Matching matching;
-    input Adjacency.Matrix adj;
-    output Adjacency.Matrix new_adj = adj;
+    input output Matching matching;
+    input output Adjacency.Matrix adj;
     input output VariablePointers vars;
     input output EquationPointers eqns;
     input output FunctionTree funcTree;
@@ -181,6 +158,7 @@ public
     input output EqData eqData;
     input Boolean transposed = false        "transpose matching if true";
     input Boolean partially = false         "do not resolve singular systems and return partial matching if true";
+    input Boolean clear = true              "start from scratch if true";
   protected
     list<list<Integer>> marked_eqns;
     Option<Adjacency.Mapping> mapping;
@@ -188,44 +166,15 @@ public
     Adjacency.MatrixStrictness matrixStrictness;
     Boolean changed;
   algorithm
-    // 1. Match the system
-    (matching, marked_eqns, mapping, matrixType, matrixStrictness) := match adj
-      // SCALAR
-      case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
-        if transposed then
-          (matching, marked_eqns) := scalarMatching(adj.mT, adj.m, transposed, partially);
-        else
-          (matching, marked_eqns) := scalarMatching(adj.m, adj.mT, transposed, partially);
-        end if;
-      then (matching, marked_eqns, NONE(), NBAdjacency.MatrixType.SCALAR, adj.st);
-
-      // PSEUDO ARRAY
-      case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
-        if transposed then
-          (matching, marked_eqns) := PFPlusExternal(adj.mT, adj.m, transposed, partially);
-        else
-          (matching, marked_eqns) := PFPlusExternal(adj.m, adj.mT, transposed, partially);
-        end if;
-      then (matching, marked_eqns, SOME(adj.mapping), NBAdjacency.MatrixType.PSEUDO, adj.st);
-
-      // ARRAY
-      case Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
-      then fail();
-
-      // EMPTY
-      case Adjacency.Matrix.EMPTY_ADJACENCY_MATRIX() then (EMPTY_MATCHING(), {}, NONE(), NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.FULL);
-
-      // FAIL
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
-      then fail();
-    end match;
+    // 1. match the system
+    (matching, marked_eqns, mapping, matrixType, matrixStrictness) := continue_(matching, adj, transposed, clear);
 
     // 2. Resolve singular systems if necessary
     changed := match matrixStrictness
       case NBAdjacency.MatrixStrictness.INIT algorithm
         // ####### BALANCE INITIALIZATION #######
+        print(Adjacency.Matrix.toString(adj, "a "));
+        print(Matching.toString(matching, "m "));
         (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, mapping, matrixType, matching);
       then changed;
 
@@ -238,10 +187,62 @@ public
     // 3. Recompute adjacency and restart matching if something changed in step 2.
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
-      new_adj := Adjacency.Matrix.create(vars, eqns, matrixType, matrixStrictness);
-      (matching, new_adj, vars, eqns, funcTree, varData, eqData) := Matching.singular(new_adj, vars, eqns, funcTree, varData, eqData, false, true);
+      adj := Adjacency.Matrix.create(vars, eqns, matrixType, matrixStrictness);
+      (matching, adj, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING(), adj, vars, eqns, funcTree, varData, eqData, false, true);
     end if;
   end singular;
+
+  function continue_
+    input output Matching matching;
+    input Adjacency.Matrix adj;
+    input Boolean transposed;
+    input Boolean clear;
+    output list<list<Integer>> marked_eqns;
+    output Option<Adjacency.Mapping> mapping;
+    output Adjacency.MatrixType matrixType;
+    output Adjacency.MatrixStrictness matrixStrictness;
+  protected
+    array<Integer> var_to_eqn, eqn_to_var;
+  algorithm
+    // 1. Match the system
+    (matching, marked_eqns, mapping, matrixType, matrixStrictness) := match adj
+      // SCALAR
+      case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
+        (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
+        if not transposed then
+          (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
+        else
+          (eqn_to_var, var_to_eqn, marked_eqns) := PFPlusExternal(adj.mT, eqn_to_var, var_to_eqn, clear);
+        end if;
+        matching := SCALAR_MATCHING(var_to_eqn, eqn_to_var);
+      then (matching, marked_eqns, NONE(), NBAdjacency.MatrixType.SCALAR, adj.st);
+
+      // PSEUDO ARRAY
+      case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+        (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
+        //if not transposed then
+          (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
+        //else
+          //(eqn_to_var, var_to_eqn, marked_eqns) := PFPlusExternal(adj.mT, eqn_to_var, var_to_eqn, clear);
+        //end if;
+        matching := SCALAR_MATCHING(var_to_eqn, eqn_to_var);
+      then (matching, marked_eqns, SOME(adj.mapping), NBAdjacency.MatrixType.PSEUDO, adj.st);
+
+      // ARRAY
+      case Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
+      then fail();
+
+      // EMPTY
+      case Adjacency.Matrix.EMPTY_ADJACENCY_MATRIX()
+      then (EMPTY_MATCHING(), {}, NONE(), NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.FULL);
+
+      // FAIL
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end continue_;
 
   function linear
     input Adjacency.Matrix adj;
@@ -264,6 +265,30 @@ public
       then fail();
     end match;
   end linear;
+
+  function getAssignments
+    "expands the assignments with -1 if needed"
+    input Matching matching;
+    input array<list<Integer>> m;
+    input array<list<Integer>> mT;
+    output array<Integer> var_to_eqn;
+    output array<Integer> eqn_to_var;
+  protected
+    Integer nVars = arrayLength(mT);
+    Integer nEqns = arrayLength(m);
+  algorithm
+    (var_to_eqn, eqn_to_var) := match matching
+      case EMPTY_MATCHING()
+      then (arrayCreate(nVars, -1), arrayCreate(nEqns, -1));
+
+      case SCALAR_MATCHING(var_to_eqn = var_to_eqn, eqn_to_var = eqn_to_var)
+      then(Array.expandToSize(nVars, var_to_eqn, -1), Array.expandToSize(nEqns, eqn_to_var, -1));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Not implemented for: \n" + toString(matching)});
+      then fail();
+    end match;
+  end getAssignments;
 
   function getMatches
     input Matching matching;
@@ -450,31 +475,19 @@ protected
 
   function PFPlusExternal
     input array<list<Integer>> m;
-    input array<list<Integer>> mT;
-    input Boolean transposed = false        "transpose matching if true";
-    input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
-    output Matching matching;
+    input output array<Integer> ass1;
+    input output array<Integer> ass2;
+    input Boolean clear;
     // this needs partially = true to get computed. Otherwise it fails on singular systems
     output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular system";
   protected
-    Integer nVars = arrayLength(mT), nEqns = arrayLength(m), nonZero = BackendUtil.countElem(m);
-    array<Integer> var_to_eqn;
-    array<Integer> eqn_to_var;
-    array<Boolean> var_marks;
-    array<Boolean> eqn_marks;
-    Boolean pathFound;
-    Integer cheap = 1, clear = 1, algIndx = 5 "PFPlusExternal index";
+    Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = BackendUtil.countElem(m);
+    Integer cheap = 0, algIndx = 5 "PFPlusExternal index";
   algorithm
-    var_to_eqn := arrayCreate(nVars, -1);
-    eqn_to_var := arrayCreate(nEqns, -1);
-
-    BackendDAEEXT.setAssignment(nVars, nEqns, var_to_eqn, eqn_to_var);
-    BackendDAEEXT.setAdjacencyMatrix(nVars, nEqns, nonZero, m);
-    BackendDAEEXT.matching(nVars, nEqns, algIndx, cheap, 1.0, clear);
-    BackendDAEEXT.getAssignment(var_to_eqn, eqn_to_var);
-
-    // create the matching structure
-    matching := if transposed then SCALAR_MATCHING(var_to_eqn, eqn_to_var) else SCALAR_MATCHING(eqn_to_var, var_to_eqn);
+    BackendDAEEXT.setAssignment(n2, n1, ass2, ass1);
+    BackendDAEEXT.setAdjacencyMatrix(n1, n2, nonZero, m);
+    BackendDAEEXT.matching(n1, n2, algIndx, cheap, 1.0, if clear then 1 else 0);
+    BackendDAEEXT.getAssignment(ass2, ass1);
   end PFPlusExternal;
 
   // ######################################

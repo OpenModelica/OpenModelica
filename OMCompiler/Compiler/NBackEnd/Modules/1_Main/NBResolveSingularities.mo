@@ -169,7 +169,7 @@ public
 
       // create adjacency matrix and match with transposed matrix to respect variable priority
       set_adj := Adjacency.Matrix.create(candidate_ptrs, constraint_ptrs, matrixType, NBAdjacency.MatrixStrictness.STATE_SELECT);
-      set_matching := Matching.regular(set_adj, true, true);
+      set_matching := Matching.regular(Matching.EMPTY_MATCHING(), set_adj, true, true);
 
       if debug then
         print(Adjacency.Matrix.toString(set_adj, "Index Reduction"));
@@ -290,7 +290,7 @@ public
       idx := EqData.getUniqueIndex(eqData);
       for var in unmatched_vars loop
         var_ptr := Slice.getT(var);
-        if BVariable.isState(var_ptr) then
+        if BVariable.isFixable(var_ptr) then
           var_ptr := BVariable.setFixed(var_ptr);
           Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
         else
@@ -310,7 +310,7 @@ public
         equations := EquationPointers.addList(start_eqns, equations);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-          + " failed because following non-state variables could not be solved:\n"
+          + " failed because following non-fixable variables could not be solved:\n"
           + List.toString(failed_vars, BVariable.pointerToString, "", "\t", ", ", "\n", true)});
         fail();
       end if;

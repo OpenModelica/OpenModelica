@@ -387,20 +387,33 @@ public
       input Pointer<Integer> idx;
       input list<tuple<ComponentRef, Expression>> frames = {};
       output Pointer<Equation> eq;
+    protected
+      Type ty = ComponentRef.getSubscriptedType(lhs, true);
     algorithm
       if listLength(frames) == 0 then
-        eq := Pointer.create(SIMPLE_EQUATION(
-          ty      = ComponentRef.getSubscriptedType(lhs, true),
-          lhs     = lhs,
-          rhs     = rhs,
-          source  = DAE.emptyElementSource,
-          attr    = EQ_ATTR_DEFAULT_INITIAL
-        ));
+        if Type.isArray(ty) then
+          eq := Pointer.create(ARRAY_EQUATION(
+            ty          = ty,
+            lhs         = Expression.fromCref(lhs),
+            rhs         = Expression.fromCref(rhs),
+            source      = DAE.emptyElementSource,
+            attr        = EQ_ATTR_DEFAULT_INITIAL,
+            recordSize  = NONE()
+          ));
+        else
+          eq := Pointer.create(SIMPLE_EQUATION(
+            ty      = ty,
+            lhs     = lhs,
+            rhs     = rhs,
+            source  = DAE.emptyElementSource,
+            attr    = EQ_ATTR_DEFAULT_INITIAL
+          ));
+        end if;
       else
         eq := Pointer.create(FOR_EQUATION(
           ty      = ComponentRef.nodeType(lhs),
           iter    = Iterator.fromFrames(frames),
-          body    = SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs, true), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL),
+          body    = SIMPLE_EQUATION(ty, lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL), // this can also be an array?
           source  = DAE.emptyElementSource,
           attr    = EQ_ATTR_DEFAULT_INITIAL
         ));

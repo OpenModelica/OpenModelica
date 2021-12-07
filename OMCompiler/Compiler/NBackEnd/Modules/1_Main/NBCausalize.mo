@@ -148,14 +148,15 @@ public
   function simple
     input VariablePointers vars;
     input BEquation.EquationPointers eqs;
+    input Adjacency.MatrixType matrixType = NBAdjacency.MatrixType.PSEUDO;
     output list<StrongComponent> comps;
   protected
     Adjacency.Matrix adj;
     Matching matching;
   algorithm
      // create scalar adjacency matrix for now
-    adj := Adjacency.Matrix.create(vars, eqs, NBAdjacency.MatrixType.SCALAR);
-    matching := Matching.regular(adj);
+    adj := Adjacency.Matrix.create(vars, eqs, matrixType);
+    matching := Matching.regular(Matching.EMPTY_MATCHING(), adj);
     comps := Sorting.tarjan(adj, matching, vars, eqs);
   end simple;
 
@@ -195,7 +196,7 @@ protected
     equations := EquationPointers.compress(system.equations);
 
     adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.SCALAR, matrixStrictness);
-    (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(adj, variables, equations, funcTree, varData, eqData, false, true);
+    (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(Matching.EMPTY_MATCHING(), adj, variables, equations, funcTree, varData, eqData, false, true);
     comps := Sorting.tarjan(adj, matching, variables, equations);
 
     system.unknowns := variables;
@@ -213,14 +214,44 @@ protected
     Matching matching;
     list<StrongComponent> comps;
   algorithm
-    // compress the arrays to remove gaps
-    variables := VariablePointers.compress(system.unknowns);
-    equations := EquationPointers.compress(system.equations);
+    (variables, equations, adj, matching, comps) := match matrixStrictness
+      local
+        list<Pointer<Variable>> fixable, unfixable;
+        list<Pointer<Equation>> initials, simulation;
 
-    // create scalar adjacency matrix for now
-    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, matrixStrictness);
-    (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(adj, variables, equations, funcTree, varData, eqData, false, true);
-    comps := Sorting.tarjan(adj, matching, variables, equations);
+      case NBAdjacency.MatrixStrictness.INIT algorithm
+        (fixable, unfixable)    := List.splitOnTrue(VariablePointers.toList(system.unknowns), BVariable.isFixable);
+        (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(system.equations), Equation.isInitial);
+
+        // #################################################
+        // Phase I: match sim equations <-> unfixable vars
+        // #################################################
+        variables := VariablePointers.fromList(unfixable);
+        equations := EquationPointers.fromList(simulation);
+        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, matrixStrictness);
+        // do not resolve potential singular systems in Phase I! -> regular matching
+        matching := Matching.regular(Matching.EMPTY_MATCHING(), adj, true, true);
+
+        // #################################################
+        // Phase II: match all equations <-> all vars
+        // #################################################
+        (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, fixable, initials);
+        (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj, variables, equations, funcTree, varData, eqData, false, true, false);
+
+        comps := Sorting.tarjan(adj, matching, variables, equations);
+      then (variables, equations, adj, matching, comps);
+
+      else algorithm
+        // compress the arrays to remove gaps
+        variables := VariablePointers.compress(system.unknowns);
+        equations := EquationPointers.compress(system.equations);
+
+        // create scalar adjacency matrix for now
+        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, matrixStrictness);
+        (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(Matching.EMPTY_MATCHING(), adj, variables, equations, funcTree, varData, eqData, false, true);
+        comps := Sorting.tarjan(adj, matching, variables, equations);
+      then (variables, equations, adj, matching, comps);
+    end match;
 
     system.unknowns := variables;
     system.equations := equations;
@@ -243,7 +274,7 @@ protected
 
     // create scalar adjacency matrix for now
     adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.ARRAY, matrixStrictness);
-    matching := Matching.regular(adj);
+    matching := Matching.regular(Matching.EMPTY_MATCHING(), adj);
   end causalizeArray;
 
   function causalizeLinear extends Module.causalizeInterface;
