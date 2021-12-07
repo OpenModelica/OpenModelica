@@ -11,4 +11,4 @@ clean:
 	$(MAKE) clean
 	mkdir -p .openmodelica/libraries
 	ls -l .openmodelica/libraries
-	../../build/bin/omc -d=showStatement index.mos
+	../../build/bin/omc index.mos
