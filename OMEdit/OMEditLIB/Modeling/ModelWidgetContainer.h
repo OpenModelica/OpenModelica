@@ -159,6 +159,7 @@ public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView = false);
   bool mSkipBackground; /* Do not draw the background rectangle */
   QPointF mContextMenuStartPosition;
+  bool mContextMenuStartPositionValid;
   StringHandler::ViewType getViewType() {return mViewType;}
   ModelWidget* getModelWidget() {return mpModelWidget;}
   bool isVisualizationView() {return mVisualizationView;}

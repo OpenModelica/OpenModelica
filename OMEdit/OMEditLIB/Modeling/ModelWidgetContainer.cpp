@@ -96,7 +96,8 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
  * \param visualizationView
  */
 GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView)
-  : QGraphicsView(pModelWidget), mViewType(viewType), mVisualizationView(visualizationView), mSkipBackground(false), mContextMenuStartPosition(QPointF(0, 0))
+  : QGraphicsView(pModelWidget), mViewType(viewType), mVisualizationView(visualizationView), mSkipBackground(false), mContextMenuStartPosition(QPointF(0, 0)),
+    mContextMenuStartPositionValid(false)
 {
   /* Ticket #3275
    * Set the scroll bars policy to always on to avoid unnecessary resize events.
@@ -3885,6 +3886,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   if (!itemAt(event->pos())) {
     QMenu menu;
     mContextMenuStartPosition = mapToScene(mapFromGlobal(QCursor::pos()));
+    mContextMenuStartPositionValid = true;
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       modelicaGraphicsViewContextMenu(&menu);
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
@@ -3894,6 +3896,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     }
     menu.exec(event->globalPos());
     mContextMenuStartPosition = QPointF(0, 0);
+    mContextMenuStartPositionValid = false;
     return; // return from it because at a time we only want one context menu.
   } else {  // if we click on some item.
     bool oneShapeSelected = false;

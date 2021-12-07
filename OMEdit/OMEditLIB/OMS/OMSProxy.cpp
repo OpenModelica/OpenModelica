@@ -437,6 +437,30 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
   return statusToBool(status);
 }
 
+/*!
+ * \brief OMSProxy::createElementGeometryUsingPosition
+ * Creates the element geometry using position.
+ * \param cref
+ * \param position
+ */
+void OMSProxy::createElementGeometryUsingPosition(const QString &cref, QPointF position)
+{
+  qreal x = position.x();
+  qreal y = position.y();
+
+  ssd_element_geometry_t elementGeometry;
+  elementGeometry.x1 = x - 10.0;
+  elementGeometry.y1 = y - 10.0;
+  elementGeometry.x2 = x + 10.0;
+  elementGeometry.y2 = y + 10.0;
+  elementGeometry.rotation = 0.0;
+  elementGeometry.iconSource = NULL;
+  elementGeometry.iconRotation = 0.0;
+  elementGeometry.iconFlip = false;
+  elementGeometry.iconFixedAspectRatio = false;
+  setElementGeometry(cref, &elementGeometry);
+}
+
 bool OMSProxy::addExternalTLMModel(QString cref, QString startScript, QString modelPath)
 {
     QString command = "oms_addExternalModel";
