@@ -2303,7 +2303,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   connect(mpDataReconciliationCorrelationMatrixInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationCorrelationMatrixInputFile()));
   mpDataReconciliationCorrelationMatrixInputFileBrowseButton->setAutoDefault(false);
   mpDataReconciliationEpsilonLabel = new Label(tr("Epsilon:"));
-  mpDataReconciliationEpsilonTextBox = new QLineEdit;
+  mpDataReconciliationEpsilonTextBox = new QLineEdit("1.e-10");
   // save settings
   mpSaveSettingsCheckBox = new QCheckBox(tr("Save Settings"));
   // Create the buttons
@@ -2324,7 +2324,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   }
   mpDataReconciliationMeasurementInputFileTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile());
   mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationCorrelationMatrixInputFile());
-  mpDataReconciliationEpsilonTextBox->setText("1.e-10");
+  mpDataReconciliationEpsilonTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationEpsilon());
   mpSaveSettingsCheckBox->setChecked(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationSaveSetting());
   if (!mpLibraryTreeItem->mSimulationOptions.isDataReconciliationInitialized()) {
     // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
