@@ -261,6 +261,9 @@ algorithm
   intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(setS_Eq))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(setS_Eq))) + ")");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
+  // write relatedBoundaryConditions equations to a file
+  dumpRelatedBoundaryConditionsEquations(setBFailedBoundaryConditionEquations, shared.info.fileNamePrefix);
+
   VerifyDataReconciliation(ebltEqsLst, tempSetS, knowns, boundaryConditionVars, sBltAdjacencyMatrix, solvedEqsAndVarsInfo, exactEquationVars, approximatedEquations, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, outOtherVars, setS_Eq, shared, setC, setS);
 
   if debug then
@@ -311,6 +314,24 @@ algorithm
   outDAE := BackendDAE.DAE({currentSystem}, shared);
 
 end newExtractionAlgorithm;
+
+protected function dumpRelatedBoundaryConditionsEquations
+  input list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
+  input String fileNamePrefix;
+protected
+  BackendDAE.Equation eq;
+  String str;
+  Integer count;
+algorithm
+  count := 1;
+  str :="";
+  for i in setBFailedBoundaryConditionEquations loop
+    (_, eq, _) := i;
+    str := str + intString(count) + ": "  + BackendDump.equationString(eq) + "\n";
+    count := count + 1;
+  end for;
+  System.writeFile(fileNamePrefix + "_relatedBoundaryConditionsEquations.txt", str);
+end dumpRelatedBoundaryConditionsEquations;
 
 public function extractBoundaryCondition
   "runs the new simplified version of the extraction algorithm for D.2
