@@ -211,7 +211,7 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
  * @param idx             Index of timer to handle.
  * @param curTime         Current activation time.
  */
-void fireBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
+void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
   TRACE_PUSH
   BASECLOCK_DATA* baseClock = &(data->simulationInfo->baseClocks[idx]);
@@ -225,6 +225,7 @@ void fireBaseClock(DATA* data, threadData_t *threadData, long idx, double curTim
   /* Update base clock */
   baseClock->stats.count++;
   baseClock->stats.previousInterval = baseClock->interval;
+  baseClock->previousBaseFireTime = curTime;
   //TODO: Update subClocks previousInterval
   data->callback->function_updateSynchronous(data, threadData, idx);  /* Update interval */
   nextBaseTime = curTime + baseClock->interval;
@@ -241,12 +242,15 @@ void fireBaseClock(DATA* data, threadData_t *threadData, long idx, double curTim
   // k = subClock->stats.count
   // s = subClock->shift + k*subClock->factor;
   // timer = base.prevTick + (s-baseClock->stats.count-1) * baserClock->interval
+
+  // TODO: Skipp first subClock, because it is actually the base-clock?
+  // Or remove it during backend?
   for (i=0; i<baseClock->nSubClocks; i++) {
     subClock = &baseClock->subClocks[i];
     k = subClock->stats.count;
     subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
     while (subTimer < baseClock->stats.count) {
-      activationTime = baseClock->previousBaseFireTime + (subTimer-baseClock->stats.count-1)*baseClock->interval;
+      activationTime = curTime + (subTimer-baseClock->stats.count-1)*baseClock->interval;
       nextTimer = (SYNC_TIMER){
         .base_idx = idx,
         .sub_idx = i,
@@ -257,54 +261,6 @@ void fireBaseClock(DATA* data, threadData_t *threadData, long idx, double curTim
       subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
     }
   }
-
-  TRACE_POP
-  return;
-}
-
-void fireSubClock(DATA* data, threadData_t *threadData, int base_idx, int sub_idx,  double curTime)
-{
-  TRACE_PUSH
-  BASECLOCK_DATA* baseClock = &(data->simulationInfo->baseClocks[base_idx]);
-  SUBCLOCK_DATA* subClock = &(baseClock->subClocks[sub_idx]);
-  SYNC_TIMER nextTimer;
-  double nextSubTime;
-
-  /* Update base-clock fire list */
-  subClock->stats.count++;
-
-  TRACE_POP
-  return;
-}
-
-
-/**
- * @brief Handle base clock timer.
- *
- * Fire clock and save next time this timer needs to fire.
- * The timer had to fire at activationTime which should be smaller or equal than the current time.
- *
- * @param data            Pointer to data.
- * @param threadData      Pointer to thread data.
- * @param idx             Index of timer to handle.
- * @param activationTime  Time timer had to fire.
- */
-static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double activationTime)
-{
-  TRACE_PUSH
-  /* Variables */
-  BASECLOCK_DATA* baseClock = &(data->simulationInfo->baseClocks[idx]);
-  SYNC_TIMER timer;
-
-  baseClock->previousBaseFireTime = activationTime;
-  /* Fire timer */
-  fireClock(data, threadData, idx, activationTime);
-
-  /* Save next activation time */
-  timer.base_idx = idx;
-  timer.type = SYNC_BASE_CLOCK;
-  timer.activationTime = activationTime + baseClock->interval;
-  insertTimer(data->simulationInfo->intvlTimers, &timer);
 
   TRACE_POP
   return;
@@ -352,7 +308,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
         break;
       case SYNC_SUB_CLOCK:
         sim_result.emit(&sim_result, data, threadData);
-        data->callback->function_equationsSynchronous(data, threadData, base_idx);
+        data->callback->function_equationsSynchronous(data, threadData, base_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
         if (data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx].holdEvents) {
           ret = TIMER_FIRED_EVENT;
         } else {
@@ -360,7 +316,9 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
         }
         break;
     }
-    if (listLen(data->simulationInfo->intvlTimers) == 0) break;
+    if (listLen(data->simulationInfo->intvlTimers) == 0){
+      break;
+    }
     nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
   }
 
