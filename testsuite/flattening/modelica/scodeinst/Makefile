@@ -6,6 +6,7 @@ ActualStream.mo \
 ActualStreamNonCref1.mo \
 ActualStreamNoStream1.mo \
 ActualStreamVariability1.mo \
+ActualStreamVariability2.mo \
 Algorithm1.mo \
 Algorithm2.mo \
 Algorithm3.mo \
