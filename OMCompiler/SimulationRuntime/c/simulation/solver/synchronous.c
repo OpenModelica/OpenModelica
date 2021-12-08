@@ -59,7 +59,7 @@ typedef struct SYNC_TIMER {
 
 /* Function prototypes */
 void printClocks(BASECLOCK_DATA* baseClocks, int nBaseCllocks);
-
+void printSyncTimer(void* data, int stream, void* elemPointer);
 
 /**
  * @brief Initialize memory for synchronous fonctionnalities.
@@ -85,9 +85,10 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
 
   /* Error check */
   for(i=0; i<data->modelData->nBaseClocks; i++) {
-    for(j=0; j<data->simulationInfo->baseClocks[i].nSubClocks; j++)
-    assertStreamPrint(threadData, data->simulationInfo->baseClocks[i].subClocks[j].solverMethod != NULL, "Continuous clocked systems aren't supported yet.");
-    assertStreamPrint(threadData, rat2Real(data->simulationInfo->baseClocks[i].subClocks[j].shift) >= 0, "Shift of sub-clock is negative. Sub-clocks aren't allowed to fire before base-clock.");
+    for(j=0; j<data->simulationInfo->baseClocks[i].nSubClocks; j++) {
+      assertStreamPrint(threadData, data->simulationInfo->baseClocks[i].subClocks[j].solverMethod != NULL, "Continuous clocked systems aren't supported yet.");
+      assertStreamPrint(threadData, rat2Real(data->simulationInfo->baseClocks[i].subClocks[j].shift) >= 0, "Shift of sub-clock is negative. Sub-clocks aren't allowed to fire before base-clock.");
+    }
   }
 
   for(i=0; i<data->modelData->nBaseClocks; i++)
@@ -250,7 +251,7 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
     k = subClock->stats.count;
     subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
     while (subTimer < baseClock->stats.count) {
-      activationTime = curTime + (subTimer-baseClock->stats.count-1)*baseClock->interval;
+      activationTime = curTime + (subTimer-(baseClock->stats.count-1))*baseClock->interval;
       nextTimer = (SYNC_TIMER){
         .base_idx = idx,
         .sub_idx = i,
@@ -292,9 +293,13 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     return ret;
   }
 
+  /* Debug print */
+  //printf("AHeu1\n");
+  //printList(data->simulationInfo->intvlTimers, LOG_SYNCHRONOUS, printSyncTimer);
+
   /* Fire all timers at current time step */
   SYNC_TIMER* nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
-  while(nextTimer->activationTime <= solverInfo->currentTime + SYNC_EPS)
+  while(nextTimer->activationTime <= data->localData[0]->timeValue + SYNC_EPS)
   {
     base_idx =  nextTimer->base_idx;
     sub_idx = nextTimer->sub_idx;
@@ -308,6 +313,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
         break;
       case SYNC_SUB_CLOCK:
         sim_result.emit(&sim_result, data, threadData);
+        data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx].stats.count++;
         data->callback->function_equationsSynchronous(data, threadData, base_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
         if (data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx].holdEvents) {
           ret = TIMER_FIRED_EVENT;
@@ -437,6 +443,34 @@ void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks) {
       messageClose(LOG_SYNCHRONOUS);
     }
     messageClose(LOG_SYNCHRONOUS);
+  }
+}
+
+/**
+ * @brief Print synchronous timer
+ *
+ * Prints tuple (base_idx, sub_idx, type, activationTime).
+ *
+ * @param data          Void pointer to sync timer element.
+ *                      Will be casted to SYNC_TIMER*.
+ * @param stream        Stream of LOG_STREAM type.
+ * @param elemPointer   Address of element storing this data.
+ */
+void printSyncTimer(void* data, int stream, void* elemPointer)
+{
+  SYNC_TIMER* syncTimerElem = (SYNC_TIMER*) data;
+  switch (syncTimerElem->type)
+  {
+  case SYNC_BASE_CLOCK:
+    infoStreamPrint(stream, 0, "%p: (base_idx :%i, type: %s, activationTime: %e)", elemPointer, syncTimerElem->base_idx, "base-clock", syncTimerElem->activationTime);
+    break;
+  case SYNC_SUB_CLOCK:
+    infoStreamPrint(stream, 0, "%p: (base_idx: %i, sub_idx: %i, type: %s, activationTime: %e)", elemPointer, syncTimerElem->base_idx, syncTimerElem->sub_idx, "sub-clock", syncTimerElem->activationTime);
+    break;
+  
+  default:
+    infoStreamPrint(stream, 0, "%p: ERROR: Unknown type", elemPointer);
+    break;
   }
 }
 
