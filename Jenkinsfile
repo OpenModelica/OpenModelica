@@ -197,10 +197,6 @@ pipeline {
             beforeAgent true
             expression { !shouldWeSkipCMakeBuild_value }
           }
-          environment {
-            CC = "gcc-5"
-            CXX = "g++-5"
-          }
           steps {
             script {
               common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/opt/cmake-3.17.2/bin/cmake')
