@@ -9,7 +9,7 @@ set(CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 
-find_package(Qt5 COMPONENTS Widgets PrintSupport WebKitWidgets Xml XmlPatterns OpenGL Network REQUIRED)
+find_package(Qt5 COMPONENTS Widgets PrintSupport WebKitWidgets Xml XmlPatterns OpenGL Network Svg REQUIRED)
 find_package(OpenSceneGraph COMPONENTS osgViewer osgDB osgGA REQUIRED)
 
 # Configure omedit_config.h. This will be generated in the build directory
