@@ -1860,6 +1860,7 @@ uniontype Function
   function mapExp
     input output Function fn;
     input MapFunc mapFn;
+    input MapFunc mapFnFields = mapFn "Used for expressions in subcomponents, i.e. record fields";
     input Boolean mapParameters = true;
     input Boolean mapBody = true;
 
@@ -1878,7 +1879,8 @@ uniontype Function
 
     if mapParameters then
       ctree := Class.classTree(cls);
-      ClassTree.applyComponents(ctree, function mapExpParameter(mapFn = mapFn));
+      ClassTree.applyComponents(ctree,
+        function mapExpParameter(mapFn = mapFn, mapFnFields = mapFnFields));
       fn.returnType := makeReturnType(fn);
     end if;
 
@@ -1892,6 +1894,7 @@ uniontype Function
   function mapExpParameter
     input InstNode node;
     input MapFunc mapFn;
+    input MapFunc mapFnFields;
 
     partial function MapFunc
       input output Expression exp;
@@ -1924,7 +1927,7 @@ uniontype Function
 
           cls := InstNode.getClass(comp.classInst);
           ClassTree.applyComponents(Class.classTree(cls),
-            function mapExpParameter(mapFn = mapFn));
+            function mapExpParameter(mapFn = mapFnFields, mapFnFields = mapFnFields));
         then
           ();
 
