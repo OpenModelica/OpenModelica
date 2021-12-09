@@ -551,6 +551,8 @@ FuncDefaultArg2.mo \
 FuncDefaultArg3.mo \
 FuncDefaultArg4.mo \
 FuncDefaultArg5.mo \
+FuncDefaultArg6.mo \
+FuncDefaultArg7.mo \
 FuncDuplicateParams1.mo \
 FuncExtends.mo \
 FuncInnerParam.mo \
