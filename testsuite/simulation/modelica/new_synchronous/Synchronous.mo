@@ -2,14 +2,14 @@ package Synchronous
 
   package Constructors
 
-    model inferedClock
+    model inferredClock
       Integer y(start=0);
     equation
       when Clock() then
         y = previous(y) + 1;
       end when;
-    end inferedClock;
+    end inferredClock;
   end Constructors;
 
-  annotation(uses(Modelica(version="4.0.0")));
+  //annotation(uses(Modelica(version="4.0.0")));
 end Synchronous;
