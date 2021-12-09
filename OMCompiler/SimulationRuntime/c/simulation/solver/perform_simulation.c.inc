@@ -506,6 +506,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         * skip that step and go further */
         if (solverInfo->currentStepSize < 1e-15 && syncEventStep){
           __currStepNo++;
+          rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
           continue;
         }
 
