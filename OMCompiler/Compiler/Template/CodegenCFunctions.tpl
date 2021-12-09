@@ -3021,7 +3021,7 @@ template fillArrayFromRange(DAE.Type ty, Exp exp, DAE.ComponentRef cr, Context c
 match exp
 case RANGE(__) then
   let &preExp = buffer ""
-  let cref = contextArrayCref(cr, context)
+  let cref = contextCref(cr, context, &preExp, &varDecls, &auxFunction)
   let ty_str = expTypeArray(ty)
   let start_exp = daeExp(start, context, &preExp, &varDecls, &auxFunction)
   let stop_exp = daeExp(stop, context, &preExp, &varDecls, &auxFunction)
@@ -3042,7 +3042,7 @@ template indexedAssign(DAE.Exp lhs, String exp, Context context,
     let ispec = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
     match context
       case FUNCTION_CONTEXT(__) then
-        let cref = contextArrayCref(cr, context)
+        let cref = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction)
         'indexed_assign_<%arrayType%>(<%exp%>, &<%cref%>, &<%ispec%>);'
       else
         let type = expTypeShort(aty)
@@ -5294,7 +5294,7 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
         case FUNCTION_CONTEXT(__) then
           // The array subscript denotes a slice
           // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
-          let arrName = contextArrayCref(cr, context)
+          let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction)
           let arrayType = expTypeArray(ty)
           let tmp = tempDecl(arrayType, &varDecls)
           let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
