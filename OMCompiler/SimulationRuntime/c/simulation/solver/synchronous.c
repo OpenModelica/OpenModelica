@@ -229,16 +229,20 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
   baseClock->previousBaseFireTime = curTime;
   //TODO: Update subClocks previousInterval
   data->callback->function_equationsSynchronous(data, threadData, idx);
-  data->callback->function_updateSynchronous(data, threadData, idx);  /* Update interval */
-  nextBaseTime = curTime + baseClock->interval;
+  if (!baseClock->isEventClock) {
+    data->callback->function_updateSynchronous(data, threadData, idx);  /* Update interval */
+    nextBaseTime = curTime + baseClock->interval;
 
-  // Next base clock activation
-  nextTimer = (SYNC_TIMER){
-    .base_idx = idx,
-    .sub_idx = -1,
-    .type = SYNC_BASE_CLOCK,
-    .activationTime = nextBaseTime};
-  insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
+    // Next base clock activation
+    nextTimer = (SYNC_TIMER){
+      .base_idx = idx,
+      .sub_idx = -1,
+      .type = SYNC_BASE_CLOCK,
+      .activationTime = nextBaseTime};
+    insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
+  } else {
+    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Fired event timer %li at time %f", idx, curTime);
+  }
 
   // Add sub-clocks to timer that will fire during this base-clock interval.
   // k = subClock->stats.count

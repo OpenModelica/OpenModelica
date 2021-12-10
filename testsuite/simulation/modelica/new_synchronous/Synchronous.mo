@@ -54,14 +54,14 @@ package Synchronous
       Integer y1(start=0), y2(start=0);
       parameter Real startInterval = 0.5;
     equation
-      x = sin(10*time);
+      x = sin(10*Modelica.Constants.pi*time);
       when Clock(x < 0) then
-        y1 = previous(y1) + 1;
+        y1 = previous(y1) + 1;  // ticks: 0.1, 0.3, 0.5, 0.7, 0.9
       end when;
-
       when Clock(x > 0, startInterval) then
-        y2 = previous(y1) + 1;
+        y2 = previous(y2) + 1;  // ticks: 0.0, 0.2, 0.4, 0.6, 0.8, 1.0
       end when;
+      annotation(uses(Modelica(version="4.0.0")));
     end eventClock;
 
     // TODO: Add solver clock

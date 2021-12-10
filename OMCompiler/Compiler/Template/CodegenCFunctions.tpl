@@ -6185,7 +6185,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="firstTick")) then
     '(data->simulationInfo->baseClocks[clockIndex].cnt == 0)'
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
-    'fireClock(data, threadData, <%intSub(arg.integer,1)%>, data->localData[0]->timeValue)'
+    'handleBaseClock(data, threadData, <%intSub(arg.integer,1)%>, data->localData[0]->timeValue)'
 
   // if arg >= 0 then 1 else -1
   case CALL(path=IDENT(name="$_signNoNull"), expLst={e1}) then

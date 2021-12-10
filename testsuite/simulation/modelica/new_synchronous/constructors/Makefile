@@ -6,6 +6,7 @@ inferredConstructor2.mos \
 rationalConstructor1.mos \
 rationalConstructor2.mos \
 
+
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
