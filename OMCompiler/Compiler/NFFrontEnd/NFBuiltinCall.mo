@@ -137,6 +137,7 @@ public
       case "ones" then typeZerosOnesCall("ones", call, next_context, info);
       case "potentialRoot" then typePotentialRootCall(call, next_context, info);
       case "pre" then typePreCall(call, next_context, info);
+      case "previous" then typePreviousCall(call, next_context, info);
       case "product" then typeProductCall(call, next_context, info);
       case "promote" then typePromoteCall(call, next_context, info);
       case "pure" then typePureCall(call, next_context, info);
@@ -2332,6 +2333,40 @@ protected
           fail();
     end match;
   end typePureCall;
+
+  function typePreviousCall
+    input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+    output Purity purity = Purity.PURE;
+  protected
+    Expression arg;
+    Call c;
+  algorithm
+    c as Call.TYPED_CALL(arguments = {arg}, ty = ty, var = var) :=
+      Call.unboxArgs(Call.typeMatchNormalCall(call, context, info, vectorize = false));
+
+    callExp := match arg
+      case Expression.CREF()
+        guard ComponentRef.isCref(arg.cref) and
+              InstNode.isComponent(ComponentRef.node(arg.cref))
+        then Expression.CALL(c);
+
+      else
+        algorithm
+          Error.addSourceMessage(Error.FUNCTION_ARGUMENT_MUST_BE,
+            {"previous", Gettext.translateContent(Error.COMPONENT_EXPRESSION)}, info);
+        then
+          fail();
+    end match;
+
+    if Flags.isSet(Flags.NF_SCALARIZE) then
+      callExp := ExpandExp.expand(callExp);
+    end if;
+  end typePreviousCall;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;

@@ -1649,6 +1649,7 @@ uniontype Function
           // Function should not be used in function context.
           // argument should be a cref?
           case "pre" then true;
+          case "previous" then true;
           // needs unboxing and return type fix.
           case "product" then true;
           case "promote" then true;
