@@ -351,7 +351,7 @@ public
 
     args := {};
     var := Variability.CONSTANT;
-    pur := Purity.PURE;
+    pur := if Function.isImpure(func) or Function.isOMImpure(func) then Purity.IMPURE else Purity.PURE;
 
     for a in typed_args loop
       TypedArg.TYPED_ARG(value = arg_exp, var = arg_var, purity = arg_pur) := a;
@@ -510,7 +510,7 @@ public
   algorithm
     isImpure := match call
       case UNTYPED_CALL() then Function.isImpure(listHead(Function.getRefCache(call.ref)));
-      case TYPED_CALL() then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
+      case TYPED_CALL(purity = Purity.IMPURE) then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
       else false;
     end match;
   end isImpure;
@@ -2679,6 +2679,8 @@ protected
       case Absyn.IDENT("subSample")
         then Expression.typeOf(Expression.unbox(listHead(args)));
       case Absyn.IDENT("DynamicSelect")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("pure")
         then Expression.typeOf(Expression.unbox(listHead(args)));
       else
         algorithm

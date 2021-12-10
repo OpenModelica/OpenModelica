@@ -859,6 +859,10 @@ public constant ErrorTypes.Message CONVERSION_MISSING_USES = ErrorTypes.MESSAGE(
 public constant ErrorTypes.Message CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND = ErrorTypes.MESSAGE(393, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("No compatible conversion script for converting from %s %s to %s could be found."));
 
+public constant Gettext.TranslatableContent FUNCTION_CALL_EXPRESSION = Gettext.gettext("a function call expression");
+public constant ErrorTypes.Message FUNCTION_ARGUMENT_MUST_BE = ErrorTypes.MESSAGE(394, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("The argument to ‘%s‘ must be %s."));
+
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
 public constant ErrorTypes.Message INITIALIZATION_OVER_SPECIFIED = ErrorTypes.MESSAGE(497, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),

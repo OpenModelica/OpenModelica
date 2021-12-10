@@ -1652,6 +1652,7 @@ uniontype Function
           // needs unboxing and return type fix.
           case "product" then true;
           case "promote" then true;
+          case "pure" then true;
           case "root" then true;
           case "rooted" then true;
           case "uniqueRoot" then true;

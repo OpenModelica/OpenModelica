@@ -522,6 +522,8 @@ FuncBuiltinPre.mo \
 FuncBuiltinProduct.mo \
 FuncBuiltinPromote.mo \
 FuncBuiltinPromoteInvalid1.mo \
+FuncBuiltinPure1.mo \
+FuncBuiltinPure2.mo \
 FuncBuiltinReduction.mo \
 FuncBuiltinRem.mo \
 FuncBuiltinSample.mo \
