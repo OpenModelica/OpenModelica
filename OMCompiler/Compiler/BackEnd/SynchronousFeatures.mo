@@ -2276,8 +2276,9 @@ algorithm
     then (DAE.REAL_CLOCK(e), eqs, vars, cnt);
 
     case DAE.RATIONAL_CLOCK(e, i) equation
-      (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
-    then (DAE.RATIONAL_CLOCK(e, i), eqs, vars, cnt);
+      // AHeu: Surpressing substClockExp to get rid of previous in intervalCounter
+      //(e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
+    then (DAE.RATIONAL_CLOCK(e, i), inNewEqs, inNewVars, inCnt);
 
     else (inClk, inNewEqs, inNewVars, inCnt);
   end match;
