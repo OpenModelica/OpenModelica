@@ -334,7 +334,7 @@ algorithm
       then
         Class.fromEnumeration(cdef.enumLst, ty, prefs, scope);
 
-    else Class.PARTIAL_CLASS(NFClassTree.EMPTY, Modifier.NOMOD(), prefs);
+    else Class.PARTIAL_CLASS(NFClassTree.EMPTY, Modifier.NOMOD(), Modifier.NOMOD(), prefs);
   end match;
 end partialInstClass2;
 
@@ -418,7 +418,7 @@ function expandClassParts
 protected
   Class cls;
   ClassTree cls_tree;
-  Modifier mod;
+  Modifier mod, cc_mod;
   InstNode builtin_ext;
   Class.Prefixes prefs;
   Restriction res;
@@ -428,7 +428,7 @@ algorithm
   cls := Class.initExpandedClass(cls);
   node := InstNode.updateClass(cls, node);
 
-  Class.EXPANDED_CLASS(elements = cls_tree, modifier = mod, prefixes = prefs) := cls;
+  Class.EXPANDED_CLASS(elements = cls_tree, modifier = mod, ccMod = cc_mod, prefixes = prefs) := cls;
   builtin_ext := ClassTree.mapFoldExtends(cls_tree, expandExtends, InstNode.EMPTY_NODE());
 
   if InstNode.name(builtin_ext) == "ExternalObject" then
@@ -440,7 +440,7 @@ algorithm
 
     cls_tree := ClassTree.expand(cls_tree);
     res := Restriction.fromSCode(SCodeUtil.getClassRestriction(def));
-    cls := Class.EXPANDED_CLASS(cls_tree, mod, prefs, res);
+    cls := Class.EXPANDED_CLASS(cls_tree, mod, cc_mod, prefs, res);
     node := InstNode.updateClass(cls, node);
   end if;
 end expandClassParts;
@@ -683,7 +683,7 @@ protected
   SCode.Attributes sattrs;
   Component.Attributes attrs;
   list<Dimension> dims;
-  Modifier mod;
+  Modifier mod, cc_mod;
   Restriction res;
 algorithm
   SCode.DERIVED(typeSpec = ty, attributes = sattrs) := definition;
@@ -713,9 +713,10 @@ algorithm
   attrs := instDerivedAttributes(sattrs);
   dims := list(Dimension.RAW_DIM(d, InstNode.parent(node)) for d in AbsynUtil.typeSpecDimensions(ty));
   mod := Class.getModifier(cls);
+  cc_mod := Class.getCCModifier(cls);
 
   res := Restriction.fromSCode(SCodeUtil.getClassRestriction(element));
-  cls := Class.EXPANDED_DERIVED(ext_node, mod, listArray(dims), prefs, attrs, res);
+  cls := Class.EXPANDED_DERIVED(ext_node, mod, cc_mod, listArray(dims), prefs, attrs, res);
   node := InstNode.updateClass(cls, node);
 end expandClassDerived;
 
@@ -809,6 +810,7 @@ algorithm
         // Fetch modification on the class definition (for class extends).
         mod := instElementModifier(InstNode.definition(node), node, par);
         mod := Modifier.propagate(mod, node, par);
+        mod := Modifier.merge(mod, cls.ccMod);
         // Merge with any outer modifications.
         outer_mod := Modifier.propagate(cls.modifier, node, par);
         outer_mod := Modifier.merge(outerMod, outer_mod);
@@ -857,6 +859,7 @@ algorithm
         // Merge outer modifiers and attributes.
         mod := instElementModifier(InstNode.definition(node), node, InstNode.rootParent(node));
         mod := Modifier.propagate(mod, node, par);
+        mod := Modifier.merge(mod, cls.ccMod);
         outer_mod := Modifier.propagate(cls.modifier, node, par);
         outer_mod := Modifier.merge(outerMod, outer_mod);
         mod := Modifier.merge(outer_mod, mod);
@@ -1314,7 +1317,7 @@ algorithm
   rdcl_cls := InstNode.getClass(redeclareNode);
 
   mod := Class.getModifier(rdcl_cls);
-  mod := Modifier.merge(mod, constrainingMod);
+  //mod := Modifier.merge(mod, constrainingMod);
   mod := Modifier.merge(outerMod, mod);
 
   prefs := mergeRedeclaredClassPrefixes(Class.getPrefixes(orig_cls),
@@ -1346,6 +1349,7 @@ algorithm
           orig_node := InstNode.setNodeType(node_ty, orig_node);
           rdcl_cls.elements := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
           rdcl_cls.modifier := mod;
+          rdcl_cls.ccMod := constrainingMod;
           rdcl_cls.prefixes := prefs;
         then
           rdcl_cls;
@@ -1365,6 +1369,7 @@ algorithm
         algorithm
           rdcl_cls.prefixes := prefs;
           rdcl_cls.modifier := mod;
+          rdcl_cls.ccMod := constrainingMod;
         then
           rdcl_cls;
 
