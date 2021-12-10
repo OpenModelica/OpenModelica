@@ -3,11 +3,13 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 inferredConstructor1.mos \
 inferredConstructor2.mos \
+rationalConstructor1.mos \
+rationalConstructor2.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-rationalConstructor.mos \
+
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

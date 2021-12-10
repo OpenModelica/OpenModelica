@@ -2,7 +2,7 @@ package Synchronous
 
   package Constructors
 
-    // Inferred clock with nothing to inferr from
+    // Inferred clock with nothing to infer from
     model inferredClock1
       Integer y(start=0);
     equation
@@ -27,38 +27,27 @@ package Synchronous
       end when;
     end inferredClock2;
 
-    // Inferred clock from rational clock
-    model inferedClock3
-      Integer tempVar(start=0);
-      Integer y(start=0);
+    // Rationla clock with constant interval
+    model rationalClock1
+      Integer y(start = 0);
     equation
-      when Clock(nextInterval, 10) then
-        // interval clock that ticks at 0, 0.3, 0.7, 1.2, ...
-        nextInterval = previous(nextInterval) + 1;
-        tempVar = 1;
+      when Clock(2, 10) then
+        // periodic clock that ticks at 0, 2/10, 4/10, ...
+        y = previous(y) + 1;
       end when;
-      when Clock() then
-        // Ticks together with above clock
-        y = previous(y) + tempVar;
-      end when;
-    end inferedClock3;
+    end rationalClock1;
 
-    // Taken from Modelica Standard Library 3.6-dev Operator 16.2 example.
-    model rationalClock
+    // Rational clock with changing intervalCounter
+    model rationalClock2
       Integer nextInterval(start = 2);
-      //Integer y1(start = 0);
-      Real y2(start = 0);
+      Real y(start = 0);
     equation
-      //when Clock(2, 10) then
-      //  // periodic clock that ticks at 0, 0.2, 0.4, ...
-      //  y1 = previous(y1) + 1;
-      //end when;
       when Clock(nextInterval, 10) then
-        // interval clock that ticks at 0, 0.3, 0.7, 1.2, ...
+        // interval clock that ticks at 0, 3/10, 7/10, ...
         nextInterval = previous(nextInterval) + 1;
-        y2 = previous(y2) + 1;
+        y = previous(y) + 1;
       end when;
-    end rationalClock;
+    end rationalClock2;
 
     model eventClock
       Real x;

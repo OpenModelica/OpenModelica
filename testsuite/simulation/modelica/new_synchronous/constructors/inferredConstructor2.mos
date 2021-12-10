@@ -2,9 +2,8 @@
 // keywords: synchronous features, inferredClock, c
 // status: correct
 //
-// Basic inferred Clock constructor with default values
+// From real clock inferred clock constructor
 // Should tick at 0.0, 0.25, 0.5, ...
-// Get single warning about using default values for clock
 
 loadFile("../Synchronous.mo"); getErrorString();
 

@@ -4576,7 +4576,7 @@ algorithm
         call = DAE.CLKCONST(DAE.INFERRED_CLOCK());
       then (cache, call, DAE.PROP(DAE.T_CLOCK_DEFAULT, DAE.C_VAR()));
 
-    // clock with Integer interval "Clock(intervalCounter)"
+    // clock with rational interval "Clock(intervalCounter)"
     case (cache,env,{aintervalCounter},{},impl,pre,_)
       equation
         (cache, intervalCounter, prop1) = elabExpInExpression(cache,env,aintervalCounter,impl,true,pre,info);
@@ -4585,7 +4585,7 @@ algorithm
         call = DAE.CLKCONST(DAE.RATIONAL_CLOCK(intervalCounter, DAE.ICONST(1)));
       then (cache, call, prop);
 
-    // clock with Integer interval "Clock(intervalCounter, resolution)"
+    // clock with rational interval "Clock(intervalCounter, resolution)"
     case (cache,env,{aintervalCounter, aresolution},{},impl,pre,_)
       equation
         (cache, intervalCounter, prop1) = elabExpInExpression(cache,env,aintervalCounter,impl,true,pre,info);
@@ -4611,7 +4611,7 @@ algorithm
         call = DAE.CLKCONST(DAE.REAL_CLOCK(interval));
       then (cache, call, prop);
 
-    // Boolean Clock (clock triggered by zero-crossing events) "Clock(condition)"
+    // Event Clock (clock triggered by zero-crossing events) "Clock(condition)"
     case (cache,env,{acondition},{},impl,pre,_)
       equation
         (cache, condition, prop1) = elabExpInExpression(cache,env,acondition,impl,true,pre,info);

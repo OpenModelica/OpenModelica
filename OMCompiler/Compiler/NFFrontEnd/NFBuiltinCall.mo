@@ -1896,7 +1896,7 @@ protected
           e2 := Ceval.evalExp(e2);
 
           callExp := match Expression.typeOf(e2)
-            // Clock(intervalCounter, resolution) - integer clock.
+            // Clock(intervalCounter, resolution) - rational clock.
             case Type.INTEGER()
               algorithm
                 Error.assertionOrAddSourceMessage(Expression.integerValue(e2) >= 1,
@@ -1904,7 +1904,7 @@ protected
               then
                 Expression.CLKCONST(ClockKind.RATIONAL_CLOCK(e1, e2));
 
-            // Clock(condition, startInterval) - boolean clock.
+            // Clock(condition, startInterval) - event clock.
             case Type.REAL()
               then Expression.CLKCONST(ClockKind.EVENT_CLOCK(e1, e2));
 

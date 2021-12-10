@@ -228,6 +228,7 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
   baseClock->stats.previousInterval = baseClock->interval;
   baseClock->previousBaseFireTime = curTime;
   //TODO: Update subClocks previousInterval
+  data->callback->function_equationsSynchronous(data, threadData, idx);
   data->callback->function_updateSynchronous(data, threadData, idx);  /* Update interval */
   nextBaseTime = curTime + baseClock->interval;
 
@@ -246,7 +247,7 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
 
   // TODO: Skipp first subClock, because it is actually the base-clock?
   // Or remove it during backend?
-  for (i=0; i<baseClock->nSubClocks; i++) {
+  for (i=1; i<baseClock->nSubClocks; i++) {
     subClock = &baseClock->subClocks[i];
     k = subClock->stats.count;
     subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
@@ -293,10 +294,6 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     return ret;
   }
 
-  /* Debug print */
-  //printf("AHeu1\n");
-  //printList(data->simulationInfo->intvlTimers, LOG_SYNCHRONOUS, printSyncTimer);
-
   /* Fire all timers at current time step */
   SYNC_TIMER* nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
   while(nextTimer->activationTime <= solverInfo->currentTime + SYNC_EPS)
@@ -310,6 +307,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     {
       case SYNC_BASE_CLOCK:
         handleBaseClock(data, threadData, base_idx, activationTime);
+        ret = TIMER_FIRED;
         break;
       case SYNC_SUB_CLOCK:
         sim_result.emit(&sim_result, data, threadData);
