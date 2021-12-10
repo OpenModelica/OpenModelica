@@ -5,6 +5,7 @@ inferredConstructor1.mos \
 inferredConstructor2.mos \
 rationalConstructor1.mos \
 rationalConstructor2.mos \
+eventConstructor.mos \
 
 
 # test that currently fail. Move up when fixed.
