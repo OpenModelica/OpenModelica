@@ -465,8 +465,9 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         printAllVars(data, 0, LOG_SOLVER_V);
 
         clear_rt_step(data);
-        if (!compiledInDAEMode) /* do not use ringbuffer for daeMode */
+        if (!compiledInDAEMode) { /* do not use ringbuffer for daeMode */
           rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
+        }
 
         modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep == TIMER_FIRED || syncStep == TIMER_FIRED_EVENT;
 

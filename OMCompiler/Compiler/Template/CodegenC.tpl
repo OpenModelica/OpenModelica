@@ -374,7 +374,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
   let warning = match baseClock
     case INFERRED_CLOCK() then
       <<
-      warningStreamPrint(LOG_STDOUT, 0, "Infered clock, using default clock \'Clock(resolution=1, intervalCounter=1)\'");
+      warningStreamPrint(LOG_STDOUT, 0, "Inferred clock, using default clock \'Clock(intervalCounter=1, resolution=1)\'");
       >>
     else ''
   <<

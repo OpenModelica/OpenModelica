@@ -196,7 +196,7 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
     if ((nextTimer->activationTime <= nextTimeStep + SYNC_EPS) && (nextTimer->activationTime >= solverInfo->currentTime))
     {
       solverInfo->currentStepSize = nextTimer->activationTime - solverInfo->currentTime;
-      infoStreamPrint( LOG_EVENTS_V, 0, "Adjust step-size to %.15g at time %.15g to get next timer at %.15g",
+      infoStreamPrint( LOG_SYNCHRONOUS, 0, "Adjust step-size to %.15g at time %.15g to get next timer at %.15g",
                        solverInfo->currentStepSize, solverInfo->currentTime, nextTimer->activationTime );
     }
   }
@@ -299,7 +299,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   /* Fire all timers at current time step */
   SYNC_TIMER* nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
-  while(nextTimer->activationTime <= data->localData[0]->timeValue + SYNC_EPS)
+  while(nextTimer->activationTime <= solverInfo->currentTime + SYNC_EPS)
   {
     base_idx =  nextTimer->base_idx;
     sub_idx = nextTimer->sub_idx;
@@ -331,10 +331,10 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   /* Debug log */
   if (ret == TIMER_FIRED)
   {
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Fired timer at time %f", data->localData[0]->timeValue);
+    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Fired timer at time %f", solverInfo->currentTime);
   }
   else if( ret == TIMER_FIRED_EVENT) {
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Fired timer which triggered event at time %f", data->localData[0]->timeValue);
+    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Fired timer which triggered event at time %f", solverInfo->currentTime);
   }
 
   TRACE_POP
@@ -426,6 +426,8 @@ void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks) {
       infoStreamPrint(LOG_SYNCHRONOUS, 1, "Base clock %i", i+1);
       if (baseClock->isEventClock) {
       infoStreamPrint(LOG_SYNCHRONOUS, 0, "is event clock");
+      } else if (baseClock->intervalCounter==-1) {
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "interval: %e", baseClock->interval);
       } else {
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "intervalCounter/resolution = : %i/%i", baseClock->intervalCounter, baseClock->resolution);
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "interval: %e", baseClock->interval);

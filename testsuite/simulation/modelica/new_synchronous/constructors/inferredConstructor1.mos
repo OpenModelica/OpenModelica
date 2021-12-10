@@ -1,26 +1,26 @@
-// name:     inferredConstructor
-// keywords: synchronous features, c
+// name:     inferredConstructor1
+// keywords: synchronous features, inferredClock, c
 // status: correct
 //
-// Basic inferred Clock constructor
-// Should tick at 0.0, 1.0, and 2.0
+// Basic inferred Clock constructor with default values
+// Should tick at 0.0, 1.0 and 2.0
 // Get single warning about using default values for clock
 
 loadFile("../Synchronous.mo"); getErrorString();
 
-simulate(Synchronous.Constructors.inferredClock, stopTime=2.0, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
+simulate(Synchronous.Constructors.inferredClock1, stopTime=2.0, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 
-val(y, 0.0);
-val(y, 1.0);
-val(y, 2.0);
+val(y, 0.0);  // 1
+val(y, 1.0);  // 2
+val(y, 2.0);  // 3
 
 // Result:
 // true
 // ""
 // record SimulationResult
-//     resultFile = "Synchronous.Constructors.inferredClock_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Synchronous.Constructors.inferredClock', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
-//     messages = "stdout            | warning | Inferred clock, using default clock 'Clock(resolution=1, intervalCounter=1)'
+//     resultFile = "Synchronous.Constructors.inferredClock1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Synchronous.Constructors.inferredClock1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
+//     messages = "stdout            | warning | Inferred clock, using default clock 'Clock(intervalCounter=1, resolution=1)'
 // LOG_SYNCHRONOUS   | info    | Initialized synchronous timers.
 // |                 | |       | | Number of base clocks: 1
 // |                 | |       | | Base clock 1
@@ -33,8 +33,11 @@ val(y, 2.0);
 // |                 | |       | | | | solverMethod: 
 // |                 | |       | | | | holdEvents: false
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0 at time 0 to get next timer at 0
 // LOG_SYNCHRONOUS   | info    | Fired timer at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.004 at time 0.996 to get next timer at 1
 // LOG_SYNCHRONOUS   | info    | Fired timer at time 1.000000
+// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.004 at time 1.996 to get next timer at 2
 // LOG_SYNCHRONOUS   | info    | Fired timer at time 2.000000
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
