@@ -139,6 +139,7 @@ public
       case "pre" then typePreCall(call, next_context, info);
       case "product" then typeProductCall(call, next_context, info);
       case "promote" then typePromoteCall(call, next_context, info);
+      case "pure" then typePureCall(call, next_context, info);
       case "rooted" then typeRootedCall(call, next_context, info);
       case "root" then typeRootCall(call, next_context, info);
       case "sample" then typeSampleCall(call, next_context, info);
@@ -2299,6 +2300,38 @@ protected
     Structural.markExp(factor);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
   end typeSuperSampleCall;
+
+  function typePureCall
+    input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+    output Purity purity = Purity.PURE;
+  protected
+    Expression arg;
+    Call c;
+  algorithm
+    Call.TYPED_CALL(arguments = {arg}, ty = ty, var = var) :=
+      Call.typeMatchNormalCall(call, context, info, vectorize = false);
+    callExp := Expression.unbox(arg);
+
+    callExp := match callExp
+      case Expression.CALL(call = c as Call.TYPED_CALL())
+        algorithm
+          c.purity := Expression.purityList(c.arguments);
+        then
+          Expression.CALL(c);
+
+      else
+        algorithm
+          Error.addSourceMessage(Error.FUNCTION_ARGUMENT_MUST_BE,
+            {"pure", Gettext.translateContent(Error.FUNCTION_CALL_EXPRESSION)}, info);
+        then
+          fail();
+    end match;
+  end typePureCall;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;

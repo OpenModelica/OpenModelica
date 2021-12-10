@@ -672,6 +672,12 @@ function inStream
 </html>"));
 end inStream;
 
+function pure<T>
+  input T x;
+  output T y;
+  external "builtin";
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.4");
+end pure;
 
 /* Extension for uncertainty computations */
 record Distribution
