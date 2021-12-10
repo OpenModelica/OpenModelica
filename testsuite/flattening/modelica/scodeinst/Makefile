@@ -306,6 +306,7 @@ ConstrainingClass1.mo \
 ConstrainingClass2.mo \
 ConstrainingClass3.mo \
 ConstrainingClassFunc1.mo \
+ConstrainingClassFunc2.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
 DimCyclic3.mo \
