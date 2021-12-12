@@ -46,6 +46,8 @@ typedef struct {
   UA_Boolean server_running;
   UA_Boolean run;
   UA_Boolean step;
+  UA_Boolean terminate;
+  UA_Boolean oldUseStopTime;
   pthread_mutex_t mutex_pause;
   pthread_cond_t cond_pause;
   double time[2];
@@ -126,6 +128,8 @@ readBoolean(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, co
     val = state->run;
   } else if (nodeid.identifier.numeric == OMC_OPC_NODEID_ENABLE_STOP_TIME) {
     val = state->data->simulationInfo->useStopTime;
+  } else if (nodeid.identifier.numeric == OMC_OPC_NODEID_TERMINATE) {
+    val = state->terminate;
   } else if (nodeid.identifier.numeric >= VARKIND_BOOL*MAX_VARS_KIND && nodeid.identifier.numeric < (1+VARKIND_BOOL)*MAX_VARS_KIND) {
     int index1 = nodeid.identifier.numeric-VARKIND_BOOL*MAX_VARS_KIND;
     int index = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].nameID : index1;
@@ -170,10 +174,27 @@ writeBoolean(void *handle, const UA_NodeId nodeid, const UA_Variant *data, const
       pthread_mutex_unlock(&state->mutex_pause);
       pthread_cond_signal(&state->cond_pause);
     } else if (nodeid.identifier.numeric==OMC_OPC_NODEID_ENABLE_STOP_TIME) {
+      if (!(state->terminate)) {  /* prevent writes to useStopTime if terminate flag is set */
+        pthread_mutex_lock(&state->mutex_pause);
+        state->data->simulationInfo->useStopTime = newVal;
+        pthread_mutex_unlock(&state->mutex_pause);
+      } else {
+        statusCode = UA_STATUSCODE_BADREQUESTNOTALLOWED;
+      }
+    } else if (nodeid.identifier.numeric==OMC_OPC_NODEID_TERMINATE) {
       pthread_mutex_lock(&state->mutex_pause);
-      state->data->simulationInfo->useStopTime = newVal;
+
+      if (newVal) {
+        /* Store prev. useStopTime state in case terminate flag is reset in same step */
+        state->oldUseStopTime = state->data->simulationInfo->useStopTime;
+        state->data->simulationInfo->useStopTime = newVal;  /* enable stop time for termination */
+      }
+      else if (state->terminate)  /* Falling edge of this flag occurred in the same step, restore prev. val of useStopTime */
+        state->data->simulationInfo->useStopTime = state->oldUseStopTime;
+
+      state->terminate = newVal;
+
       pthread_mutex_unlock(&state->mutex_pause);
-      pthread_cond_signal(&state->cond_pause);
     } else if (nodeid.identifier.numeric >= VARKIND_BOOL*MAX_VARS_KIND && nodeid.identifier.numeric < (1+VARKIND_BOOL)*MAX_VARS_KIND) {
       int index1 = nodeid.identifier.numeric-VARKIND_BOOL*MAX_VARS_KIND;
       int index = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].nameID : index1;
@@ -504,10 +525,12 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
 
   state->run = 0;
   state->step = 0;
+  state->terminate = 0;
+  state->oldUseStopTime = data->simulationInfo->useStopTime;
 
   pthread_create(&state->thread, NULL, (void*) &threadWork, state);
 
-  /* add a variable node to the address space */
+  /* add variable for a simulation step */
   UA_NodeId stepNodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_STEP);
   UA_QualifiedName stepName = UA_QUALIFIEDNAME(1, "OpenModelica.step");
   UA_DataSource stepDataSource = (UA_DataSource) {
@@ -523,7 +546,7 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
                                       UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
                                       stepName, UA_NODEID_NULL, attr, stepDataSource, NULL);
 
-  /* Run variable */
+  /* add variable for simulation run */
   UA_NodeId runNodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_RUN);
   UA_QualifiedName runName = UA_QUALIFIEDNAME(1, "OpenModelica.run");
   UA_VariableAttributes runAttr;
@@ -571,7 +594,7 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
                                         name, UA_NODEID_NULL, attr, dataSource, NULL);
   }
 
-  /* add a variable node to the address space */
+  /* add variable for current simulation time */
   UA_NodeId timeNodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_TIME);
   UA_QualifiedName timeName = UA_QUALIFIEDNAME(1, "time");
   UA_DataSource timeDataSource = (UA_DataSource) {
@@ -584,6 +607,24 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
                                       UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
                                       UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
                                       timeName, UA_NODEID_NULL, timeAttr, timeDataSource, NULL);
+
+  {
+    /* add variable for graceful termination of the simulation */
+    UA_NodeId terminateNodeId = UA_NODEID_NUMERIC(0, OMC_OPC_NODEID_TERMINATE);
+    UA_QualifiedName terminateName = UA_QUALIFIEDNAME(1, "OpenModelica.terminate");
+    UA_DataSource dataSource = (UA_DataSource) {
+        .handle = state, .read = readBoolean, .write = writeBoolean};
+    UA_VariableAttributes attr;
+    UA_VariableAttributes_init(&attr);
+    attr.description = UA_LOCALIZEDTEXT("en_US", "When set to true, the simulation is terminated gracefully");
+    attr.displayName = UA_LOCALIZEDTEXT("en_US", "terminate");
+    attr.writeMask = 1;
+    attr.userWriteMask = 1;
+    UA_Server_addDataSourceVariableNode(state->server, terminateNodeId,
+                                        UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
+                                        UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
+                                        terminateName, UA_NODEID_NULL, attr, dataSource, NULL);
+  }
 
   state->gotNewInput = 0;
   state->inputVarsBackup = malloc(modelData->nInputVars * sizeof(double));
@@ -680,6 +721,10 @@ int omc_embedded_server_update(void *state_vp, double t)
       }
     }
   }
+
+  if (state->terminate)
+    omc_terminate((FILE_INFO) omc_dummyFileInfo, "The embedded server received command to terminate.");
+
   pthread_mutex_unlock(&state->write_values);
 
   return res;
