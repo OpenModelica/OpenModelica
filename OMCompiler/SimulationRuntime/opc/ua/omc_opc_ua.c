@@ -710,6 +710,8 @@ int omc_embedded_server_update(void *state_vp, double t)
   if (state->gotNewInput) {
     res = 1; /* Trigger an event in the solver, restarting it */
     memcpy(data->simulationInfo->inputVars, state->inputVarsBackup, modelData->nInputVars * sizeof(double));
+
+    state->gotNewInput = 0;
   }
 
   if (state->reinitStateFlag) {
@@ -720,6 +722,8 @@ int omc_embedded_server_update(void *state_vp, double t)
         (data->localData[0])->realVars[i] = state->updatedStates[i];
       }
     }
+
+    state->reinitStateFlag = 0;
   }
 
   if (state->terminate)
