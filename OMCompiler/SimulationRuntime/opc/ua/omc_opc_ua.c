@@ -689,8 +689,6 @@ int omc_embedded_server_update(void *state_vp, double t)
   MODEL_DATA *modelData = data->modelData;
   int latestValues;
 
-  waitForStep(state);
-
   latestValues = state->latestValues ? 0 : 1;
 
   state->time[latestValues] = t;
@@ -704,6 +702,10 @@ int omc_embedded_server_update(void *state_vp, double t)
   pthread_mutex_lock(&state->mutex_values);
   state->latestValues = latestValues;
   pthread_mutex_unlock(&state->mutex_values);
+
+
+  waitForStep(state);
+
 
   pthread_mutex_lock(&state->write_values);
 
