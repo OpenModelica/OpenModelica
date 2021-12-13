@@ -339,6 +339,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
     sh "${cmake_exe} --build ./build_cmake/OMShell --parallel ${numPhysicalCPU()} --target install"
     sh "${cmake_exe} --build ./build_cmake/OMNotebook --parallel ${numPhysicalCPU()} --target install"
     sh "${cmake_exe} --build ./build_cmake/testsuite --parallel ${numPhysicalCPU()} --target install"
+    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
   }
 }
 
