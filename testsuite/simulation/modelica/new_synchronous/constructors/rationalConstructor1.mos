@@ -11,7 +11,7 @@ simulate(Synchronous.Constructors.rationalClock1, simflags="-lv=LOG_SYNCHRONOUS 
 val(y, 0.0);
 val(y, 0.2);
 val(y, 0.4);
-val(y, 0.600001);   // Stupid rounding error
+val(y, 0.6);
 val(y, 0.8);
 val(y, 1.0);
 
