@@ -373,6 +373,7 @@ public
     var := match cref
       case CREF(node = InstNode.COMPONENT_NODE())
         then Component.variability(InstNode.component(cref.node));
+      case CREF(node = InstNode.CLASS_NODE()) then Variability.CONSTANT;
       else Variability.CONTINUOUS;
     end match;
   end nodeVariability;

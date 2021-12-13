@@ -244,7 +244,7 @@ algorithm
 
     // If the argument is a function partial application, also add the function
     // node to the map so we can replace calls to it with the correct function.
-    if Expression.isFunctionPartialApplication(arg) then
+    if Expression.isFunctionPointer(arg) then
       for fn in Function.getCachedFuncs(i) loop
         UnorderedMap.add(fn.node, arg, map);
       end for;
@@ -488,7 +488,7 @@ function applyReplacementCall
 protected
   InstNode repl_node;
   Option<Expression> repl_oexp;
-  ComponentRef fn_ref;
+  Expression repl_exp;
   list<Expression> args;
   list<String> names;
   Function fn;
@@ -498,20 +498,33 @@ algorithm
       algorithm
         repl_oexp := UnorderedMap.get(call.fn.node, map);
 
-        outExp := match repl_oexp
-          case SOME(Expression.PARTIAL_FUNCTION_APPLICATION(fn = fn_ref, args = args, argNames = names))
-            algorithm
-              // Get the function to call.
-              fn := listHead(Function.getCachedFuncs(ComponentRef.node(fn_ref)));
-              // Merge the arguments from the original call with the ones in the function partial application.
-              call.arguments := mergeFunctionApplicationArgs(call.fn, call.arguments, fn, args, names);
-              // Replace the function with the one in the function partial application.
-              call.fn := fn;
-            then
-              Expression.CALL(call);
+        if isSome(repl_oexp) then
+          SOME(repl_exp) := repl_oexp;
 
-          else exp;
-        end match;
+          outExp := match repl_exp
+            case Expression.CREF(ty = Type.FUNCTION(fn = fn))
+              algorithm
+                // A function pointer is just a function partial application without any extra arguments.
+                call.arguments := mergeFunctionApplicationArgs(call.fn, call.arguments, fn, {}, {});
+                call.fn := fn;
+              then
+                Expression.CALL(call);
+
+            case Expression.PARTIAL_FUNCTION_APPLICATION()
+              algorithm
+                fn := listHead(Function.getCachedFuncs(ComponentRef.node(repl_exp.fn)));
+                // Merge the arguments from the original call with the ones in the function partial application.
+                call.arguments := mergeFunctionApplicationArgs(call.fn, call.arguments, fn, repl_exp.args, repl_exp.argNames);
+                // Replace the function with the one in the function partial application.
+                call.fn := fn;
+              then
+                Expression.CALL(call);
+
+            else exp;
+          end match;
+        else
+          outExp := exp;
+        end if;
       then
         outExp;
 
@@ -532,12 +545,21 @@ protected
 algorithm
   arg_map := UnorderedMap.new<Expression>(stringHashDjb2Mod, stringEq);
 
+  // Add default arguments from the slots.
+  for s in newFn.slots loop
+    if isSome(s.default) then
+      UnorderedMap.add(InstNode.name(s.node), Expression.unbox(Util.getOption(s.default)), arg_map);
+    end if;
+  end for;
+
+  // Add arguments from the function call we're replacing.
   args := oldArgs;
   for i in oldFn.inputs loop
     UnorderedMap.add(InstNode.name(i), Expression.unbox(listHead(args)), arg_map);
     args := listRest(args);
   end for;
 
+  // Add arguments from the function partial application expression.
   args := newArgs;
   for n in argNames loop
     UnorderedMap.add(n, Expression.unbox(listHead(args)), arg_map);

@@ -5006,15 +5006,16 @@ public
     end match;
   end mapCrefScalars2;
 
-  function isFunctionPartialApplication
+  function isFunctionPointer
     input Expression exp;
     output Boolean res;
   algorithm
     res := match exp
+      case Expression.CREF(ty = Type.FUNCTION()) then true;
       case Expression.PARTIAL_FUNCTION_APPLICATION() then true;
       else false;
     end match;
-  end isFunctionPartialApplication;
+  end isFunctionPointer;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
