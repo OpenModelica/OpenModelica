@@ -69,10 +69,20 @@ package Synchronous
 
   package SubClocks
 
+    model subSampleTest
+      Clock u = Clock(1, 10);         // ticks: 0, 1/10, 2/10, 3/10, ...
+      Clock s1 = subSample(u, 4);     // ticks: 0, 4/10, 8/10, ...
+      Integer y(start=0);
+    equation
+      when s1 then
+        y = previous(y) + 1;
+      end when;
+    end subSampleTest;
+
     model subSuperSample1
       Clock u = Clock(1/10);          // ticks: 0, 1/10, 2/10, 3/10, ...
       Clock s1 = subSample(u, 4);     // ticks: 0, 4/10, 8/10, ...
-      Clock s2 = superSample(s1, 2);  // ticks: 0, 2/10, 4/10, 8/10, ...
+      Clock s2 = superSample(s1, 2);  // ticks: 0, 2/10, 4/10, 6/10, 8/10, ...
       Integer y1(start=0), y2(start=0);
     equation
       when s1 then

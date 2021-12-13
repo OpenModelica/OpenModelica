@@ -33,12 +33,9 @@ val(y, 2.0);  // 3
 // |                 | |       | | | | solverMethod: 
 // |                 | |       | | | | holdEvents: false
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0 at time 0 to get next timer at 0
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 0.000000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.004 at time 0.996 to get next timer at 1
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 1.000000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.004 at time 1.996 to get next timer at 2
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 2.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 2.000000
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

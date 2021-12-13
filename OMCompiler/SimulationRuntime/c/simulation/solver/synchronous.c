@@ -196,8 +196,8 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
     if ((nextTimer->activationTime <= nextTimeStep + SYNC_EPS) && (nextTimer->activationTime >= solverInfo->currentTime))
     {
       solverInfo->currentStepSize = nextTimer->activationTime - solverInfo->currentTime;
-      infoStreamPrint( LOG_SYNCHRONOUS, 0, "Adjust step-size to %.15g at time %.15g to get next timer at %.15g",
-                       solverInfo->currentStepSize, solverInfo->currentTime, nextTimer->activationTime );
+      //infoStreamPrint( LOG_SYNCHRONOUS, 0, "Adjust step-size to %.15g at time %.15g to get next timer at %.15g",
+      //                 solverInfo->currentStepSize, solverInfo->currentTime, nextTimer->activationTime );
     }
   }
   TRACE_POP
@@ -222,13 +222,20 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
   double nextBaseTime, nextSubTime, absoluteSubTime;
   double subTimer, activationTime;
   int i, k;
+  modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
+
+  if (baseClock->subClocks[0].shift.m == 0 && baseClock->subClocks[0].factor.m == 1 && baseClock->subClocks[0].factor.n == 1) {
+    frstSubClockIsBaseClock = 1 /* true */;
+  }
 
   /* Update base clock */
   baseClock->stats.count++;
   baseClock->stats.previousInterval = baseClock->interval;
   baseClock->previousBaseFireTime = curTime;
   //TODO: Update subClocks previousInterval
-  data->callback->function_equationsSynchronous(data, threadData, idx);
+  if (frstSubClockIsBaseClock) {
+    data->callback->function_equationsSynchronous(data, threadData, idx);
+  }
   if (!baseClock->isEventClock) {
     data->callback->function_updateSynchronous(data, threadData, idx);  /* Update interval */
     nextBaseTime = curTime + baseClock->interval;
@@ -241,7 +248,7 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
       .activationTime = nextBaseTime};
     insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
   } else {
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Fired event timer %li at time %f", idx, curTime);
+    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated event clock %li at time %f", idx, curTime);
   }
 
   // Add sub-clocks to timer that will fire during this base-clock interval.
@@ -249,9 +256,13 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
   // s = subClock->shift + k*subClock->factor;
   // timer = base.prevTick + (s-baseClock->stats.count-1) * baserClock->interval
 
-  // TODO: Skipp first subClock, because it is actually the base-clock?
-  // Or remove it during backend?
-  for (i=1; i<baseClock->nSubClocks; i++) {
+  // Skipp first subClock if is equivalent to the baseClock
+  if (frstSubClockIsBaseClock) {
+    i=1;
+  } else {
+    i=0;
+  }
+  while (i<baseClock->nSubClocks) {
     subClock = &baseClock->subClocks[i];
     k = subClock->stats.count;
     subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
@@ -266,6 +277,7 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
       k++;
       subTimer = rat2Real(addRat2Rat(subClock->shift, multInt2Rat(k, subClock->factor)));
     }
+    i++;
   }
 
   TRACE_POP
@@ -312,6 +324,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
       case SYNC_BASE_CLOCK:
         handleBaseClock(data, threadData, base_idx, activationTime);
         ret = TIMER_FIRED;
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %li at time %f", base_idx, solverInfo->currentTime);
         break;
       case SYNC_SUB_CLOCK:
         sim_result.emit(&sim_result, data, threadData);
@@ -319,8 +332,12 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
         data->callback->function_equationsSynchronous(data, threadData, base_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
         if (data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx].holdEvents) {
           ret = TIMER_FIRED_EVENT;
+          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%li,%li) which triggered event at time %f",
+                          base_idx, sub_idx, solverInfo->currentTime);
         } else {
           ret = TIMER_FIRED;
+          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%li,%li) at time %f",
+                          base_idx, sub_idx, solverInfo->currentTime);
         }
         break;
     }
@@ -328,15 +345,6 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
       break;
     }
     nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
-  }
-
-  /* Debug log */
-  if (ret == TIMER_FIRED)
-  {
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Fired timer at time %f", solverInfo->currentTime);
-  }
-  else if( ret == TIMER_FIRED_EVENT) {
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Fired timer which triggered event at time %f", solverInfo->currentTime);
   }
 
   TRACE_POP

@@ -14,6 +14,7 @@ val(y, 0.25);   // 2
 val(y, 0.5);    // 3
 val(y, 0.75);   // 4
 val(y, 1.0);    // 5
+
 // Result:
 // true
 // ""
@@ -31,24 +32,15 @@ val(y, 1.0);    // 5
 // |                 | |       | | | | solverMethod: 
 // |                 | |       | | | | holdEvents: false
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0 at time 0 to get next timer at 0
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 0.000000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.002 at time 0.248 to get next timer at 0.25
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 0.250000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.004 at time 0.496 to get next timer at 0.5
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 0.500000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.002 at time 0.748 to get next timer at 0.75
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 0.750000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.004 at time 0.996 to get next timer at 1
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 1.000000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.002 at time 1.248 to get next timer at 1.25
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 1.250000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.004 at time 1.496 to get next timer at 1.5
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 1.500000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.002 at time 1.748 to get next timer at 1.75
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 1.750000
-// LOG_SYNCHRONOUS   | info    | Adjust step-size to 0.004 at time 1.996 to get next timer at 2
-// LOG_SYNCHRONOUS   | info    | Fired timer at time 2.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.250000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.500000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.750000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.250000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.500000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.750000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 2.000000
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
