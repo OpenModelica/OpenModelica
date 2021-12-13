@@ -2136,6 +2136,14 @@ static int regularFileExistsInDirectory(const char *dir1, const char *dir2, cons
   return res;
 }
 
+static int isModelicaFile(const char *name)
+{
+  size_t len = strlen(name);
+  return (len > 3 && 0==strcmp(name+len-3,".mo")) ||
+         (len > 4 && (0 == strcmp(name+len-4,".moc") ||
+                      0 == strcmp(name+len-4,".mol")));
+}
+
 static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, void *mps, int *numMatches)
 {
   int i = 0;
@@ -2150,7 +2158,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     if (!dir) continue;
     while ((ent = readdir(dir))) {
       if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
-        int entlen,mightbedir;
+        int mightbedir;
 #ifdef DT_DIR
         mightbedir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN || ent->d_type==DT_LNK);
 #else
@@ -2161,8 +2169,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
           (*numMatches)++;
           continue;
         }
-        entlen = strlen(ent->d_name);
-        if (((entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo")) || (entlen > 4 && 0==strcmp(ent->d_name+entlen-4,".moc"))) && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+        if (isModelicaFile(ent->d_name) && regularFileExistsInDirectory(mp,"",ent->d_name)) {
           /* fprintf(stderr, "found match %d %s\n", *numMatches, ent->d_name); */
           (*numMatches)++;
         }
@@ -2182,7 +2189,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     if (!dir) continue;
     while ((ent = readdir(dir))) {
       if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
-        int entlen,ok=0,maybeDir;
+        int ok=0,maybeDir;
 #ifdef DT_DIR
         maybeDir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN || ent->d_type==DT_LNK);
 #else
@@ -2193,8 +2200,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
           res[i].fileIsDir=1;
           /* fprintf(stderr, "found dir match: %ld %s - ok=%d\n", i, ent->d_name, ok); */
         }
-        entlen = strlen(ent->d_name);
-        if (!ok && ((entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo")) || (entlen > 4 && 0==strcmp(ent->d_name+entlen-4,".moc"))) && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+        if (!ok && isModelicaFile(ent->d_name) && regularFileExistsInDirectory(mp,"",ent->d_name)) {
           /* fprintf(stderr, "found match file: %ld %s - ok=%d\n", i, ent->d_name, ok); */
           res[i].fileIsDir=0;
           ok=1;

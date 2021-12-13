@@ -826,6 +826,17 @@ algorithm
   outEqual := (0 == System.strncmp(inString1, inString2, stringLength(inString1)));
 end stringStartsWith;
 
+public function stringEndsWith
+  input String str;
+  input String suffix;
+  output Boolean res;
+protected
+  Integer str_len = stringLength(str);
+  Integer suffix_len = stringLength(suffix);
+algorithm
+  res := (0 == System.strcmp_offset(str, str_len-suffix_len+1, str_len, suffix, 1, suffix_len));
+end stringEndsWith;
+
 public function strncmp "Compare two strings up to the nth character
   Returns true if they are equal."
   input String inString1;
