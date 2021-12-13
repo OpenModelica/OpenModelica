@@ -2688,6 +2688,8 @@ protected
         then Expression.typeOf(Expression.unbox(listHead(args)));
       case Absyn.IDENT("subSample")
         then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("noClock")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
       case Absyn.IDENT("DynamicSelect")
         then Expression.typeOf(Expression.unbox(listHead(args)));
       case Absyn.IDENT("pure")
