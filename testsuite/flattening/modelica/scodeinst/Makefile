@@ -498,6 +498,7 @@ FuncBuiltinDerInvalid1.mo \
 FuncBuiltinDiagonal.mo \
 FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \
+FuncBuiltinEdge2.mo \
 FuncBuiltinFill.mo \
 FuncBuiltinFill2.mo \
 FuncBuiltinFill3.mo \

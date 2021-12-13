@@ -305,6 +305,8 @@ public
 
   function unboxArgs
     input output NFCall call;
+  protected
+    Call c;
   algorithm
     () := match call
       case TYPED_CALL()
@@ -312,6 +314,14 @@ public
           call.arguments := list(Expression.unbox(arg) for arg in call.arguments);
         then
           ();
+
+      case TYPED_ARRAY_CONSTRUCTOR(exp = Expression.CALL(call = c))
+        algorithm
+          call.exp := Expression.CALL(unboxArgs(c));
+        then
+          ();
+
+      else ();
     end match;
   end unboxArgs;
 
