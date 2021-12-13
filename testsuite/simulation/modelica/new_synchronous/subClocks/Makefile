@@ -3,6 +3,10 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 subSample.mos \
 subSuperSample1.mos \
+subSuperSample2.mos \
+shiftSample1.mos \
+backSample1.mos \
+noClock.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
