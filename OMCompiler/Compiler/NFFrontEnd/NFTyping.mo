@@ -1868,7 +1868,7 @@ algorithm
         cref.ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTION_REFERENCE);
         cref.restCref := typeCref2(cref.restCref, context, info, false);
       then
-        (cref, Variability.CONTINUOUS);
+        (cref, Variability.CONSTANT);
 
     case ComponentRef.CREF(node = InstNode.CLASS_NODE())
       algorithm

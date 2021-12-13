@@ -597,6 +597,7 @@ FuncWildcard.mo \
 FuncWrongType.mo \
 FunctionalArg1.mo \
 FunctionalArg2.mo \
+FunctionalArg3.mo \
 FunctionalArgBinary1.mo \
 FunctionalArgInvalidType1.mo \
 FunctionCompOrder1.mo \
@@ -822,6 +823,7 @@ PackageConstant3.mo \
 PackageConstant4.mo \
 ParameterBug.mos \
 PartialApplication1.mo \
+PartialApplication2.mo \
 PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \
