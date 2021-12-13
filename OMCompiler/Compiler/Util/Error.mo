@@ -860,6 +860,7 @@ public constant ErrorTypes.Message CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND = Error
   Gettext.gettext("No compatible conversion script for converting from %s %s to %s could be found."));
 
 public constant Gettext.TranslatableContent FUNCTION_CALL_EXPRESSION = Gettext.gettext("a function call expression");
+public constant Gettext.TranslatableContent COMPONENT_EXPRESSION = Gettext.gettext("a component expression");
 public constant ErrorTypes.Message FUNCTION_ARGUMENT_MUST_BE = ErrorTypes.MESSAGE(394, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The argument to ‘%s‘ must be %s."));
 

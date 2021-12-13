@@ -520,6 +520,10 @@ FuncBuiltinNdims.mo \
 FuncBuiltinOnes.mo \
 FuncBuiltinOuterProduct.mo \
 FuncBuiltinPre.mo \
+FuncBuiltinPrevious1.mo \
+FuncBuiltinPrevious2.mo \
+FuncBuiltinPrevious3.mo \
+FuncBuiltinPrevious4.mo \
 FuncBuiltinProduct.mo \
 FuncBuiltinPromote.mo \
 FuncBuiltinPromoteInvalid1.mo \
