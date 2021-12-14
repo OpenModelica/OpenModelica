@@ -1,7 +1,7 @@
 // name: DumpFlatModel1
 // keywords:
 // status: correct
-// cflags: -d=newInst --dumpFlatModel=all
+// cflags: -d=newInst --dumpFlatModel
 //
 
 model A
