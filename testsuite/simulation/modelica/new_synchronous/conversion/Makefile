@@ -9,6 +9,8 @@ inferredSampleVar.mos \
 FAILINGTESTFILES = \
 holdVar.mos \
 firstTick.mos \
+intervalBase.mos \
+
 
 
 # Dependency files that are not .mo .mos or Makefile

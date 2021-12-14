@@ -235,6 +235,34 @@ package Synchronous
       end when;
     end firstTickBool;
 
+    model intervalClock
+      constant Real startInterval = 0.5;
+      Clock clk1 = Clock(x>0, startInterval); // ticks: 0, 0.1, 0.2, ...
+      Clock clk2 = Clock(nextInterval, 10);   // ticks: 0, 3/10, 7/10, ...
+      Integer nextInterval(start = 2);
+      Real intv1 = interval(clk1);
+      Real intv2 = interval(clk2);
+      Real intv3(start=0);
+      Real x = sin(Modelica.Constants.pi*20*time);
+    equation
+      when clk2 then
+        nextInterval = previous(nextInterval) + 1;
+      end when;
+      when Clock(0.25) then
+        intv3 = interval();
+      end when;
+      annotation(uses(Modelica(version="4.0.0")));
+    end intervalClock;
+
+    model intervalSubClock
+
+    end intervalSubClock;
+
+
+
+
+
+
     model manualEuler
       input Real u;
       parameter Real x_start = 1;

@@ -230,13 +230,21 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
 
   /* Update base clock */
   baseClock->stats.count++;
-  baseClock->stats.previousInterval = baseClock->interval;
+  // Event clocks can't use baseClock->interval
+  if (baseClock->isEventClock) {
+    if (baseClock->stats.count > 1) {
+      baseClock->stats.previousInterval = curTime - baseClock->stats.lastActivationTime;
+    }
+  } else {
+    baseClock->stats.previousInterval = baseClock->interval;
+  }
   baseClock->stats.lastActivationTime = curTime;
   if (frstSubClockIsBaseClock) {
     // Save result before clock tick, then evaluate equations
     sim_result.emit(&sim_result, data, threadData);
     baseClock->subClocks[0].stats.count++;
-    baseClock->subClocks[0].stats.previousInterval = baseClock->interval;
+    baseClock->subClocks[0].stats.previousInterval = baseClock->stats.previousInterval;
+    baseClock->subClocks[0].stats.lastActivationTime = baseClock->stats.lastActivationTime;
     data->callback->function_equationsSynchronous(data, threadData, idx, 0);
   }
   if (!baseClock->isEventClock) {
