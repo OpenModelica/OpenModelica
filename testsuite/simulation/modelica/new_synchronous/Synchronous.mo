@@ -203,7 +203,7 @@ package Synchronous
     // inferred sample variable
     model inferredSampleVar
       Clock clk = Clock(0.3);  // ticks: 0, 0.3, 0.6, 0.9, ...
-      Real x(start=1);
+      Real x(start=1, fixed=true);
       Real xc;
     equation 
       der(x) = 2*x;

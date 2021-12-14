@@ -234,6 +234,8 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
   baseClock->previousBaseFireTime = curTime;
   //TODO: Update subClocks previousInterval
   if (frstSubClockIsBaseClock) {
+    // Save result before clock tick, then evaluate equations
+    sim_result.emit(&sim_result, data, threadData);
     data->callback->function_equationsSynchronous(data, threadData, idx, 0);
   }
   if (!baseClock->isEventClock) {
@@ -327,6 +329,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %li at time %f", base_idx, solverInfo->currentTime);
         break;
       case SYNC_SUB_CLOCK:
+        // Save result before clock tick, then evaluate equations
         sim_result.emit(&sim_result, data, threadData);
         data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx].stats.count++;
         data->callback->function_equationsSynchronous(data, threadData, base_idx, sub_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
