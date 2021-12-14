@@ -868,7 +868,6 @@ algorithm
       list<Expression> ranges;
       list<Subscript> subs;
       list<Statement> body;
-      Statement stmt;
 
     // let simple assignment as is
     case Algorithm.ALGORITHM(statements = {Statement.ASSIGNMENT(lhs = Expression.CREF(), rhs = Expression.CREF())})
@@ -881,17 +880,13 @@ algorithm
         subs := listReverseInPlace(subs);
         body := Statement.mapExpList(alg.statements, function addIterator(prefix = prefix, subscripts = subs));
 
-        iter :: iters := iters;
-        range :: ranges := ranges;
-        stmt := Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source);
-
         while not listEmpty(iters) loop
           iter :: iters := iters;
           range :: ranges := ranges;
-          stmt := Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source);
+          body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source)};
         end while;
       then
-        Algorithm.ALGORITHM({stmt}, alg.source);
+        Algorithm.ALGORITHM(body, alg.source);
 
   end match;
 end vectorizeAlgorithm;
