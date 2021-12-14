@@ -7264,6 +7264,50 @@ algorithm
   outResult := true;
 end all;
 
+public function none<T>
+  "Returns true if the given predicate function returns false for all elements in
+   the given list."
+  input list<T> inList;
+  input PredFunc inFunc;
+  output Boolean outResult;
+
+  partial function PredFunc
+    input T inElement;
+    output Boolean outMatch;
+  end PredFunc;
+algorithm
+  for e in inList loop
+    if inFunc(e) then
+      outResult := false;
+      return;
+    end if;
+  end for;
+
+  outResult := true;
+end none;
+
+public function any<T>
+  "Returns true if the given predicate function returns true for any element in
+   the given list."
+  input list<T> inList;
+  input PredFunc inFunc;
+  output Boolean outResult;
+
+  partial function PredFunc
+    input T inElement;
+    output Boolean outMatch;
+  end PredFunc;
+algorithm
+  for e in inList loop
+    if inFunc(e) then
+      outResult := true;
+      return;
+    end if;
+  end for;
+
+  outResult := false;
+end any;
+
 public function separateOnTrue<T>
   "Takes a list of values and a filter function over the values and returns 2
    sub lists of values for which the matching function returns true and false."

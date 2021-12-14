@@ -32,19 +32,6 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-extern "C" {
-#include "meta/meta_modelica.h"
-#include "omc_config.h"
-#include "gc.h"
-
-int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
-void* omc_Main_init(void *threadData, void *args);
-void omc_System_initGarbageCollector(void *threadData);
-#ifdef WIN32
-void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
-#endif
-}
-
 #include <stdlib.h>
 #include <iostream>
 
@@ -54,9 +41,18 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #include "Element/Element.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
-#include "simulation_options.h"
-#include "omc_error.h"
+#include "util/simulation_options.h"
+#include "util/omc_error.h"
 #include "FlatModelica/Expression.h"
+
+extern "C" {
+int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
+void* omc_Main_init(void *threadData, void *args);
+void omc_System_initGarbageCollector(void *threadData);
+#ifdef WIN32
+void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
+#endif
+}
 
 #include <QMessageBox>
 

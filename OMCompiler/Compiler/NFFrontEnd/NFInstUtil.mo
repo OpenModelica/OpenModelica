@@ -50,8 +50,9 @@ public
   protected
     FlatModel flat_model = flatModel;
   algorithm
+    // --dumpFlatModel=stage dumps specific stages, --dumpFlatModel dumps all stages.
     if Flags.isConfigFlagSet(Flags.DUMP_FLAT_MODEL, stage) or
-       Flags.isConfigFlagSet(Flags.DUMP_FLAT_MODEL, "all") then
+       listEmpty(Flags.getConfigStringList(Flags.DUMP_FLAT_MODEL)) then
       flat_model := combineSubscripts(flatModel);
 
       print("########################################\n");

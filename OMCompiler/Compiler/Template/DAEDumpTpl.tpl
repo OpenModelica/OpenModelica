@@ -866,6 +866,7 @@ match stmt
   case STMT_ASSIGN_ARR(__)   then dumpArrayAssignStatement(stmt)
   case STMT_IF(__) then dumpIfStatement(stmt)
   case STMT_FOR(__) then dumpForStatement(stmt)
+  case STMT_PARFOR(__) then dumpParForStatement(stmt)
   case STMT_WHILE(__) then dumpWhileStatement(stmt)
   case STMT_WHEN(__) then dumpWhenStatement(stmt)
   case STMT_ASSERT(__) then dumpAssert(cond, msg, level, source)
@@ -963,6 +964,20 @@ match stmt
     end for<%src_str%>;
     >>
 end dumpForStatement;
+
+template dumpParForStatement(DAE.Statement stmt)
+::=
+match stmt
+  case STMT_PARFOR(__) then
+    let range_str = dumpExp(range)
+    let alg_str = (statementLst |> e => dumpStatement(e) ;separator="\n")
+    let src_str = dumpSource(source)
+    <<
+    parfor <%iter%> in <%range_str%> loop
+      <%alg_str%>
+    end for<%src_str%>;
+    >>
+end dumpParForStatement;
 
 template dumpWhileStatement(DAE.Statement stmt)
 ::=

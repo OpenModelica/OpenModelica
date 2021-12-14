@@ -90,6 +90,7 @@ public:
   void parseShapeAnnotation(QString annotation);
   QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
+  QStringList getTextShapeAnnotation();
   void setLineColor(QColor color) {mLineColor = color;}
   QColor getLineColor() {return mLineColor;}
   void setFillColor(QColor color) {mFillColor = color;}

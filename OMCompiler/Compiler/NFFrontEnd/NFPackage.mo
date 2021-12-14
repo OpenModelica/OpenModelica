@@ -147,7 +147,7 @@ public
     () := match exp
       case Expression.CREF(cref = cref as ComponentRef.CREF())
         algorithm
-          if ComponentRef.isPackageConstant(cref) then
+          if ComponentRef.isPackageConstant(cref) and not Expression.isFunctionPointer(exp) then
             binding := getPackageConstantBinding(cref);
             // Add the constant to the set.
             constants := Constants.add(constants, ComponentRef.stripSubscriptsAll(cref));

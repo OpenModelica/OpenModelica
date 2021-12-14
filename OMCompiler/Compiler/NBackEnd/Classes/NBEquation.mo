@@ -1331,6 +1331,7 @@ public
           iterator  = ComponentRef.node(iter),
           range     = SOME(range),
           body      = {toStatement(eqn.body)},
+          forType   = Statement.ForType.NORMAL(),
           source    = eqn.source
         );
 

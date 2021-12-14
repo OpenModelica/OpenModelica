@@ -46,6 +46,7 @@
 #include <QTableWidget>
 #include <QDialogButtonBox>
 #include <QToolButton>
+#include <QPlainTextEdit>
 
 class ShapeAnnotation;
 class LineAnnotation;
@@ -66,6 +67,7 @@ public:
   void setLineColor(QColor color);
   QColor getLineColor();
   void setLinePickColorButtonIcon();
+  void setTextPickColorButtonIcon();
   void setFillColor(QColor color);
   QColor getFillColor();
   void setFillPickColorButtonIcon();
@@ -109,7 +111,7 @@ private:
   Label *mpClosureLabel;
   QComboBox *mpClosureComboBox;
   QGroupBox *mpTextGroupBox;
-  QLineEdit *mpTextTextBox;
+  QPlainTextEdit *mpTextTextBox;
   QGroupBox *mpFontAndTextStyleGroupBox;
   Label *mpFontNameLabel;
   QFontComboBox *mpFontNameComboBox;
@@ -121,6 +123,8 @@ private:
   QCheckBox *mpTextUnderlineCheckBox;
   Label *mpTextHorizontalAlignmentLabel;
   QComboBox *mpTextHorizontalAlignmentComboBox;
+  QGroupBox *mpTextColorGroupBox;
+  QPushButton *mpTextPickColorButton;
   QGroupBox *mpLineStyleGroupBox;
   Label *mpLineColorLabel;
   QPushButton *mpLinePickColorButton;
@@ -163,6 +167,7 @@ private:
   QPushButton *mpApplyButton;
   QDialogButtonBox *mpButtonBox;
 public slots:
+  void textPickColor();
   void linePickColor();
   void fillPickColor();
   void movePointUp();

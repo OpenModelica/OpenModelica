@@ -576,6 +576,12 @@ void AddBusDialog::addBus()
     accept();
   } else {  // add case
     if (OMSProxy::instance()->addBus(bus)) {
+      if (mpGraphicsView->mContextMenuStartPositionValid) {
+        ssd_connector_geometry_t connectorGeometry;
+        connectorGeometry.x = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1);
+        connectorGeometry.y = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1);
+        OMSProxy::instance()->setBusGeometry(bus, &connectorGeometry);
+      }
       foreach (QString connector, connectors) {
         OMSProxy::instance()->addConnectorToBus(bus, connector);
       }
@@ -869,6 +875,12 @@ void AddTLMBusDialog::addTLMBus()
   } else {  // add case
     if (OMSProxy::instance()->addTLMBus(tlmBus, (oms_tlm_domain_t)mpDomainComboBox->itemData(mpDomainComboBox->currentIndex()).toInt(), mpDimensionSpinBox->value(),
                                         (oms_tlm_interpolation_t)mpInterpolationComboBox->itemData(mpInterpolationComboBox->currentIndex()).toInt())) {
+      if (mpGraphicsView->mContextMenuStartPositionValid) {
+        ssd_connector_geometry_t connectorGeometry;
+        connectorGeometry.x = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1);
+        connectorGeometry.y = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1);
+        OMSProxy::instance()->setTLMBusGeometry(tlmBus, &connectorGeometry);
+      }
       // add connectors to the bus
       QPair<QString, QString> connector;
       foreach (connector, connectors) {

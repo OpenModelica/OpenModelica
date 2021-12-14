@@ -170,7 +170,7 @@ public
     outExp := match call
       case UNTYPED_CALL(ref = cref)
         algorithm
-          if(BuiltinCall.needSpecialHandling(call)) then
+          if BuiltinCall.needSpecialHandling(call) then
             (outExp, ty, var, pur) := BuiltinCall.typeSpecial(call, context, info);
           else
             checkNotPartial(cref, context, info);
@@ -305,6 +305,8 @@ public
 
   function unboxArgs
     input output NFCall call;
+  protected
+    Call c;
   algorithm
     () := match call
       case TYPED_CALL()
@@ -312,6 +314,14 @@ public
           call.arguments := list(Expression.unbox(arg) for arg in call.arguments);
         then
           ();
+
+      case TYPED_ARRAY_CONSTRUCTOR(exp = Expression.CALL(call = c))
+        algorithm
+          call.exp := Expression.CALL(unboxArgs(c));
+        then
+          ();
+
+      else ();
     end match;
   end unboxArgs;
 
@@ -351,7 +361,7 @@ public
 
     args := {};
     var := Variability.CONSTANT;
-    pur := Purity.PURE;
+    pur := if Function.isImpure(func) or Function.isOMImpure(func) then Purity.IMPURE else Purity.PURE;
 
     for a in typed_args loop
       TypedArg.TYPED_ARG(value = arg_exp, var = arg_var, purity = arg_pur) := a;
@@ -510,7 +520,7 @@ public
   algorithm
     isImpure := match call
       case UNTYPED_CALL() then Function.isImpure(listHead(Function.getRefCache(call.ref)));
-      case TYPED_CALL() then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
+      case TYPED_CALL(purity = Purity.IMPURE) then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
       else false;
     end match;
   end isImpure;
@@ -2712,7 +2722,7 @@ protected
       case Absyn.IDENT("product")
         then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
       case Absyn.IDENT("previous")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
+        then Type.arrayElementType(Expression.typeOf(listHead(args)));
       case Absyn.IDENT("shiftSample")
         then Expression.typeOf(Expression.unbox(listHead(args)));
       case Absyn.IDENT("backSample")
@@ -2723,7 +2733,11 @@ protected
         then Expression.typeOf(Expression.unbox(listHead(args)));
       case Absyn.IDENT("subSample")
         then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("noClock")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
       case Absyn.IDENT("DynamicSelect")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("pure")
         then Expression.typeOf(Expression.unbox(listHead(args)));
       else
         algorithm

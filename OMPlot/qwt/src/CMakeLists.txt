@@ -214,7 +214,7 @@ if (QWT_WITH_WIDGETS)
     qwt_wheel.cpp)
 endif ()
 
-add_library(qwt ${QWT_HEADERS} ${QWT_SOURCES})
+add_library(qwt SHARED ${QWT_HEADERS} ${QWT_SOURCES})
 
 target_compile_definitions(qwt
 	PUBLIC

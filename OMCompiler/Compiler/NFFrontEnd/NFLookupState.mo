@@ -154,7 +154,7 @@ uniontype LookupState
   protected
     SCode.Element def = InstNode.definition(node);
   algorithm
-    callable := SCodeUtil.isRecord(def) or SCodeUtil.isOperator(def);
+    callable := SCodeUtil.isRecord(def) or SCodeUtil.isOperator(def) or InstNode.isClockType(node);
   end isCallableType;
 
   function isCallableComponent

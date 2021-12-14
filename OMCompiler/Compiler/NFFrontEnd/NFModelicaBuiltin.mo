@@ -43,6 +43,10 @@ type Uncertainty = enumeration(
   refine
 ) annotation(__OpenModelica_builtin = true);
 
+partial class Clock
+  annotation(__OpenModelica_builtin=true);
+end Clock;
+
 partial class ExternalObject
   annotation(__OpenModelica_builtin=true);
 end ExternalObject;
@@ -668,6 +672,12 @@ function inStream
 </html>"));
 end inStream;
 
+function pure<T>
+  input T x;
+  output T y;
+  external "builtin";
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.4");
+end pure;
 
 /* Extension for uncertainty computations */
 record Distribution
@@ -843,11 +853,11 @@ external "builtin";
 annotation(__OpenModelica_builtin=true, version="Modelica 3.3");
 end spatialDistribution;
 
-function previous<T> "Access previous value of a clocked variable"
-  input T u;
-  output T y;
+function previous<__Scalar> "Access previous value of a clocked variable"
+  input __Scalar u;
+  output __Scalar y;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'previous()'\">previous()</a>
 </html>"));
 end previous;

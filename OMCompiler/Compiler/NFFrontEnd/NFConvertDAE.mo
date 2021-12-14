@@ -921,14 +921,39 @@ protected
   list<Statement> body;
   list<DAE.Statement> dbody;
   DAE.ElementSource source;
+  Statement.ForType for_type;
+  list<tuple<DAE.ComponentRef, SourceInfo>> loop_vars;
 algorithm
-  Statement.FOR(iterator = iterator, range = SOME(range), body = body, source = source) := forStmt;
+  Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source) := forStmt;
   dbody := convertStatements(body);
   Component.ITERATOR(ty = ty) := InstNode.component(iterator);
 
-  forDAE := DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
-    InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+  forDAE := match for_type
+    case Statement.ForType.NORMAL()
+      then DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
+        InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+
+    case Statement.ForType.PARALLEL()
+      algorithm
+        loop_vars := list(convertForStatementParallelVar(v) for v in for_type.vars);
+      then
+        DAE.Statement.STMT_PARFOR(Type.toDAE(ty), Type.isArray(ty),
+          InstNode.name(iterator), 0, Expression.toDAE(range), dbody, loop_vars, source);
+  end match;
 end convertForStatement;
+
+function convertForStatementParallelVar
+  input tuple<ComponentRef, SourceInfo> var;
+  output tuple<DAE.ComponentRef, SourceInfo> outVar;
+protected
+  ComponentRef cref;
+  DAE.ComponentRef dcref;
+  SourceInfo info;
+algorithm
+  (cref, info) := var;
+  dcref := ComponentRef.toDAE(cref);
+  outVar := (dcref, info);
+end convertForStatementParallelVar;
 
 function convertIfStatement
   input list<tuple<Expression, list<Statement>>> ifBranches;

@@ -104,6 +104,7 @@ endmacro(add_compile_step)
 add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos
             ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
+            ${CMAKE_CURRENT_SOURCE_DIR}/Template/GenerateAPIFunctionsTpl.tpl
 
     # We want to generate OpenModelicaScriptingAPI.mo in scripts folder. Since the script
     # generates it in the current working directory we go there. Later we can fix the script to
@@ -114,6 +115,8 @@ add_custom_command(
     COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos
 
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.cpp
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.h
     COMMENT "Generating ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo using ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos"
 )
 
@@ -189,6 +192,16 @@ add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES} .cmake/omc_entry_p
 
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
+# There is a lonely omc_file.h in Util/. It belongs in runtime/. Remove this when it is moved.
+target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Util)
+
+# This should not be needed ideally. However linking libs sometimes need to include the generated headers.
+# Right now this only happens for OMEdit. OMEdit includes Script/OpenModelicaScriptingAPIQt.h
+# which in turn wants to include OpenModelicaScriptingAPI.h. This header is generated from
+# translation of OpenModelicaScriptingAPI.mo. So this interface include dir is needed.
+# We can maybe copy these headers to some specific location after generation and avoid this.
+target_include_directories(OpenModelicaCompiler INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/c_files)
+
 # OMC will overflow the stack (at least on Windows old OMDev) on very deep recursive calls.
 # E.g., try translating the CodegenCpp* tpl files to mo files with
 # an omc not compiled without large stack size. The tpl parser is quite recursive and will
@@ -199,10 +212,6 @@ target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIO
 # endif()
 
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
-
-
-# There is a lonely omc_file.h in Util/. It belongs in runtime/. Remove this when it is moved.
-target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Util)
 
 
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
@@ -264,6 +273,6 @@ install(DIRECTORY scripts
 # or 'cmake --build <b_dir> --target install_omc' in the general case.
 add_custom_target(install_omc
                   DEPENDS omc
-                  COMMAND ${CMAKE_COMMAND} cmake -DCOMPONENT=compiler -P cmake_install.cmake
+                  COMMAND ${CMAKE_COMMAND} -DCOMPONENT=compiler -P cmake_install.cmake
                   COMMENT "Installing omc."
                   )

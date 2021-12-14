@@ -3022,10 +3022,11 @@ template fillArrayFromRange(DAE.Type ty, Exp exp, DAE.ComponentRef cr, Context c
                             Text &varDecls, Text &auxFunction)
  "Generates an array assigment to RANGE expressions. (Fills an array from range expresion)"
 ::=
+let &sub = buffer ""
 match exp
 case RANGE(__) then
   let &preExp = buffer ""
-  let cref = contextArrayCref(cr, context)
+  let cref = contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)
   let ty_str = expTypeArray(ty)
   let start_exp = daeExp(start, context, &preExp, &varDecls, &auxFunction)
   let stop_exp = daeExp(stop, context, &preExp, &varDecls, &auxFunction)
@@ -3040,16 +3041,16 @@ end fillArrayFromRange;
 template indexedAssign(DAE.Exp lhs, String exp, Context context,
                                         Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
+  let &sub = buffer ""
   match lhs
   case ecr as CREF(componentRef=cr, ty=T_ARRAY(ty=aty, dims=dims)) then
     let arrayType = expTypeArray(ty)
     let ispec = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
     match context
       case FUNCTION_CONTEXT(__) then
-        let cref = contextArrayCref(cr, context)
+        let cref = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
         'indexed_assign_<%arrayType%>(<%exp%>, &<%cref%>, &<%ispec%>);'
       else
-        let &sub = buffer ""
         let type = expTypeShort(aty)
         let wrapperArray = tempDecl(arrayType, &varDecls)
         let dimsLenStr = listLength(crefDims(cr))
@@ -5271,16 +5272,15 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)
  "Generates code for a component reference."
 ::=
+  let &sub = buffer ""
   match ecr
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalar(cr, context) then
-      let &sub = buffer ""
       let cast = typeCastContextInt(context, ty)
       '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
     else
       if crefSubIsScalar(cr) then
         // The array subscript results in a scalar
-        let &sub = buffer ""
         let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
         let arrayType = expTypeArray(ty)
         let subsLenStr = listLength(crefSubs(cr))
@@ -5315,7 +5315,7 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
         case FUNCTION_CONTEXT(__) then
           // The array subscript denotes a slice
           // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
-          let arrName = contextArrayCref(cr, context)
+          let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
           let arrayType = expTypeArray(ty)
           let tmp = tempDecl(arrayType, &varDecls)
           let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)

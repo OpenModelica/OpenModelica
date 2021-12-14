@@ -938,7 +938,6 @@ public:
   QLineEdit* getFMUNameTextBox() {return mpFMUNameTextBox;}
   QLineEdit* getMoveFMUTextBox() {return mpMoveFMUTextBox;}
   QGroupBox* getPlatformsGroupBox() {return mpPlatformsGroupBox;}
-  QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
   QComboBox *getModelDescriptionFiltersComboBox() const {return mpModelDescriptionFiltersComboBox;}
   QComboBox *getSolverForCoSimulationComboBox() const {return mpSolverForCoSimulationComboBox;}
   QCheckBox *getIncludeResourcesCheckBox() const {return mpIncludeResourcesCheckBox;}
@@ -965,7 +964,6 @@ private:
   QLineEdit *mpMoveFMUTextBox;
   QPushButton *mpBrowseFMUDirectoryButton;
   QGroupBox *mpPlatformsGroupBox;
-  QComboBox *mpLinkingComboBox;
   QComboBox *mpSolverForCoSimulationComboBox;
   QComboBox *mpModelDescriptionFiltersComboBox;
   QCheckBox *mpIncludeResourcesCheckBox;

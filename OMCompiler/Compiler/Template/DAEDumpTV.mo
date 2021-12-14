@@ -527,6 +527,14 @@ package DAE
       ElementSource source;
     end STMT_FOR;
 
+    record STMT_PARFOR
+      Boolean iterIsArray;
+      Ident iter;
+      Exp range;
+      list<Statement> statementLst;
+      ElementSource source;
+    end STMT_PARFOR;
+
     record STMT_WHILE
       Exp exp;
       list<Statement> statementLst;

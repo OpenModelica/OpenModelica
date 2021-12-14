@@ -108,7 +108,7 @@ type SlotEvalStatus = enumeration(NOT_EVALUATED, EVALUATING, EVALUATED);
 
 uniontype Slot
   record SLOT
-    String name;
+    InstNode node;
     SlotType ty;
     Option<Expression> default;
     Option<TypedArg> arg;
@@ -138,11 +138,16 @@ uniontype Slot
     end match;
   end named;
 
-  function hasName
-    input String name;
+  function name
     input Slot slot;
-    output Boolean hasName = name == slot.name;
-  end hasName;
+    output String name = InstNode.name(slot.node);
+  end name;
+
+  function hasNode
+    input InstNode node;
+    input Slot slot;
+    output Boolean hasNode = InstNode.refEqual(node, slot.node);
+  end hasNode;
 end Slot;
 
 public
@@ -646,7 +651,7 @@ uniontype Function
 
       // Add the name from the slot and not the node, since some builtin
       // functions don't bother using proper names for the nodes.
-      input_str := s.name + input_str;
+      input_str := Slot.name(s) + input_str;
 
       // Add a $ in front of the name if the parameter only takes positional
       // arguments.
@@ -900,7 +905,7 @@ uniontype Function
 
       SOME(arg_name) := arg.name;
 
-      if s.name == arg_name then
+      if Slot.name(s) == arg_name then
         if not Slot.named(s) then
           // Slot doesn't allow named argument (used for some builtin functions).
           matching := false;
@@ -925,7 +930,7 @@ uniontype Function
     // exist, or we removed it when handling positional argument. We need to
     // search through all slots to be sure.
     for s in fn.slots loop
-      if arg_name == s.name then
+      if arg_name == Slot.name(s) then
         // We found a slot, so it must have already been filled.
         Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
           {arg_name, ""}, info);
@@ -950,10 +955,9 @@ uniontype Function
     Expression e;
     Option<TypedArg> arg;
     TypedArg a;
-    String name;
   algorithm
     for s in slots loop
-      SLOT(name = name, default = default, arg = arg) := s;
+      SLOT(default = default, arg = arg) := s;
 
       args := matchcontinue arg
         // Use the argument from the call if one was given.
@@ -990,7 +994,7 @@ uniontype Function
       // Give an error if no argument was given and there's no default argument.
       else
         algorithm
-          Error.addSourceMessage(Error.UNFILLED_SLOT, {slot.name}, info);
+          Error.addSourceMessage(Error.UNFILLED_SLOT, {Slot.name(slot)}, info);
         then
           fail();
 
@@ -1017,7 +1021,7 @@ uniontype Function
       // A slot in the process of being evaluated => cyclic bindings.
       case SlotEvalStatus.EVALUATING
         algorithm
-          Error.addSourceMessage(Error.CYCLIC_DEFAULT_VALUE, {slot.name}, info);
+          Error.addSourceMessage(Error.CYCLIC_DEFAULT_VALUE, {Slot.name(slot)}, info);
         then
           fail();
 
@@ -1070,9 +1074,9 @@ uniontype Function
     ComponentRef cref;
     Type cref_ty;
     list<ComponentRef> cref_parts;
-    String name;
     Option<Slot> slot;
     TypedArg arg;
+    InstNode cref_node;
   algorithm
     Expression.CREF(cref = cref, ty = cref_ty) := crefExp;
 
@@ -1081,8 +1085,8 @@ uniontype Function
     end if;
 
     cref :: cref_parts := ComponentRef.toListReverse(cref);
-    name := ComponentRef.firstName(cref);
-    slot := lookupSlotInArray(name, slots);
+    cref_node := ComponentRef.node(cref);
+    slot := lookupSlotInArray(cref_node, slots);
 
     if isSome(slot) then
       arg := fillDefaultSlot(Util.getOption(slot), slots, info);
@@ -1101,14 +1105,14 @@ uniontype Function
   end evaluateSlotCref;
 
   function lookupSlotInArray
-    input String slotName;
+    input InstNode node;
     input array<Slot> slots;
     output Option<Slot> outSlot;
   protected
     Slot slot;
   algorithm
     try
-      slot := Array.getMemberOnTrue(slotName, slots, Slot.hasName);
+      slot := Array.getMemberOnTrue(node, slots, Slot.hasNode);
       outSlot := SOME(slot);
     else
       outSlot := NONE();
@@ -1551,7 +1555,7 @@ uniontype Function
       i :: rest_inputs := rest_inputs;
       s :: rest_slots := rest_slots;
 
-      if s.name == argName then
+      if InstNode.name(s.node) == argName then
         (argExp, _, mk) := TypeCheck.matchTypes(argType, InstNode.getType(i), argExp, true);
 
         if TypeCheck.isIncompatibleMatch(mk) then
@@ -1646,9 +1650,11 @@ uniontype Function
           // Function should not be used in function context.
           // argument should be a cref?
           case "pre" then true;
+          case "previous" then true;
           // needs unboxing and return type fix.
           case "product" then true;
           case "promote" then true;
+          case "pure" then true;
           case "root" then true;
           case "rooted" then true;
           case "uniqueRoot" then true;
@@ -1861,6 +1867,7 @@ uniontype Function
   function mapExp
     input output Function fn;
     input MapFunc mapFn;
+    input MapFunc mapFnFields = mapFn "Used for expressions in subcomponents, i.e. record fields";
     input Boolean mapParameters = true;
     input Boolean mapBody = true;
 
@@ -1879,7 +1886,8 @@ uniontype Function
 
     if mapParameters then
       ctree := Class.classTree(cls);
-      ClassTree.applyComponents(ctree, function mapExpParameter(mapFn = mapFn));
+      ClassTree.applyComponents(ctree,
+        function mapExpParameter(mapFn = mapFn, mapFnFields = mapFnFields));
       fn.returnType := makeReturnType(fn);
     end if;
 
@@ -1893,6 +1901,7 @@ uniontype Function
   function mapExpParameter
     input InstNode node;
     input MapFunc mapFn;
+    input MapFunc mapFnFields;
 
     partial function MapFunc
       input output Expression exp;
@@ -1925,7 +1934,7 @@ uniontype Function
 
           cls := InstNode.getClass(comp.classInst);
           ClassTree.applyComponents(Class.classTree(cls),
-            function mapExpParameter(mapFn = mapFn));
+            function mapExpParameter(mapFn = mapFnFields, mapFnFields = mapFnFields));
         then
           ();
 
@@ -2160,7 +2169,7 @@ protected
         end if;
       end if;
 
-      slot := SLOT(InstNode.name(component), SlotType.GENERIC, default, NONE(), index, SlotEvalStatus.NOT_EVALUATED);
+      slot := SLOT(component, SlotType.GENERIC, default, NONE(), index, SlotEvalStatus.NOT_EVALUATED);
     else
       Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
     end try;

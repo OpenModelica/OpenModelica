@@ -1869,7 +1869,7 @@ algorithm
         cref.ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTION_REFERENCE);
         cref.restCref := typeCref2(cref.restCref, context, info, false);
       then
-        (cref, Variability.CONTINUOUS);
+        (cref, Variability.CONSTANT);
 
     case ComponentRef.CREF(node = InstNode.CLASS_NODE())
       algorithm
@@ -3108,7 +3108,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.FOR);
         body := typeStatements(st.body, next_context);
       then
-        Statement.FOR(st.iterator, SOME(e1), body, st.source);
+        Statement.FOR(st.iterator, SOME(e1), body, st.forType, st.source);
 
     case Statement.IF()
       algorithm

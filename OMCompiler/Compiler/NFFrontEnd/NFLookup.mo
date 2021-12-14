@@ -57,7 +57,6 @@ import NFInstNode.CachedData;
 import Component = NFComponent;
 import Subscript = NFSubscript;
 import ComplexType = NFComplexType;
-import Config;
 import Error;
 import ErrorExt;
 import UnorderedMap;
@@ -697,8 +696,6 @@ algorithm
     case "Integer" then NFBuiltin.INTEGER_NODE;
     case "Boolean" then NFBuiltin.BOOLEAN_NODE;
     case "String" then NFBuiltin.STRING_NODE;
-    case "Clock" then NFBuiltin.CLOCK_NODE;
-    case "polymorphic" then NFBuiltin.POLYMORPHIC_NODE;
   end match;
 end lookupSimpleBuiltinName;
 
@@ -709,7 +706,6 @@ function lookupSimpleBuiltinCref
   output ComponentRef cref;
   output LookupState state;
 algorithm
-
   (node, cref, state) := match name
     case "time"
       then (NFBuiltin.TIME, NFBuiltin.TIME_CREF, LookupState.PREDEF_COMP());
@@ -719,8 +715,6 @@ algorithm
       then (NFBuiltinFuncs.INTEGER_NODE, NFBuiltinFuncs.INTEGER_CREF, LookupState.FUNC());
     case "String"
       then (NFBuiltinFuncs.STRING_NODE, NFBuiltinFuncs.STRING_CREF, LookupState.FUNC());
-    case "Clock" guard Config.synchronousFeaturesAllowed()
-      then (NFBuiltinFuncs.CLOCK_NODE, NFBuiltinFuncs.CLOCK_CREF, LookupState.FUNC());
   end match;
 
   if not listEmpty(subs) then

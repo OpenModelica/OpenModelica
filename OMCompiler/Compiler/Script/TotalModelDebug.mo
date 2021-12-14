@@ -112,6 +112,10 @@ public
       case SCode.Element.CLASS()
         guard UnorderedSet.contains(element.name, used)
         algorithm
+          if SCodeUtil.isOperatorRecord(element) then
+            analyseOperatorRecord(element, used);
+          end if;
+
           analyseClassDef(element.classDef, used);
           analysePrefixes(element.prefixes, used);
           analyseComment(element.cmt, used);
@@ -186,6 +190,25 @@ public
       analyseAnnotation(Util.getOption(extDecl.annotation_), used);
     end if;
   end analyseExternalDecl;
+
+  function analyseOperatorRecord
+    input SCode.Element element;
+    input UseTable used;
+  algorithm
+    () := match element
+      case SCode.Element.CLASS()
+        algorithm
+          UnorderedSet.add(element.name, used);
+
+          for e in SCodeUtil.getClassElements(element) loop
+            analyseOperatorRecord(e, used);
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+  end analyseOperatorRecord;
 
   function analyseAttributes
     input SCode.Attributes attributes;
@@ -662,6 +685,8 @@ public
           analyseSubscripts(cref.subscripts, used);
         then
           ();
+
+      else ();
     end match;
   end analyseCref;
 
@@ -706,13 +731,8 @@ public
         guard UnorderedSet.contains(elem.name, used)
         algorithm
           elem.classDef := saveClassDef(elem.classDef, used);
-
-          is_empty := match elem.classDef
-            case SCode.ClassDef.PARTS() then SCodeUtil.isEmptyClassDef(elem.classDef);
-            else false;
-          end match;
         then
-          if is_empty then elements else elem :: elements;
+          elem :: elements;
 
       case SCode.Element.CLASS() then elements;
 

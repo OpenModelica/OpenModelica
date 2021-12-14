@@ -6,6 +6,7 @@ ActualStream.mo \
 ActualStreamNonCref1.mo \
 ActualStreamNoStream1.mo \
 ActualStreamVariability1.mo \
+ActualStreamVariability2.mo \
 Algorithm1.mo \
 Algorithm2.mo \
 Algorithm3.mo \
@@ -224,6 +225,12 @@ ClassMod3.mo \
 ClassMod4.mo \
 ClassMod5.mo \
 ClassMod6.mo \
+Clock1.mo \
+Clock2.mo \
+Clock3.mo \
+Clock4.mo \
+Clock5.mo \
+Clock6.mo \
 ClockConstructor1.mo \
 CombineSubscripts1.mo \
 CombineSubscripts2.mo \
@@ -297,7 +304,9 @@ const7.mo \
 const8.mo \
 ConstrainingClass1.mo \
 ConstrainingClass2.mo \
+ConstrainingClass3.mo \
 ConstrainingClassFunc1.mo \
+ConstrainingClassFunc2.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
 DimCyclic3.mo \
@@ -489,6 +498,7 @@ FuncBuiltinDerInvalid1.mo \
 FuncBuiltinDiagonal.mo \
 FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \
+FuncBuiltinEdge2.mo \
 FuncBuiltinFill.mo \
 FuncBuiltinFill2.mo \
 FuncBuiltinFill3.mo \
@@ -510,9 +520,15 @@ FuncBuiltinNdims.mo \
 FuncBuiltinOnes.mo \
 FuncBuiltinOuterProduct.mo \
 FuncBuiltinPre.mo \
+FuncBuiltinPrevious1.mo \
+FuncBuiltinPrevious2.mo \
+FuncBuiltinPrevious3.mo \
+FuncBuiltinPrevious4.mo \
 FuncBuiltinProduct.mo \
 FuncBuiltinPromote.mo \
 FuncBuiltinPromoteInvalid1.mo \
+FuncBuiltinPure1.mo \
+FuncBuiltinPure2.mo \
 FuncBuiltinReduction.mo \
 FuncBuiltinRem.mo \
 FuncBuiltinSample.mo \
@@ -543,6 +559,8 @@ FuncDefaultArg2.mo \
 FuncDefaultArg3.mo \
 FuncDefaultArg4.mo \
 FuncDefaultArg5.mo \
+FuncDefaultArg6.mo \
+FuncDefaultArg7.mo \
 FuncDuplicateParams1.mo \
 FuncExtends.mo \
 FuncInnerParam.mo \
@@ -579,6 +597,7 @@ FuncWildcard.mo \
 FuncWrongType.mo \
 FunctionalArg1.mo \
 FunctionalArg2.mo \
+FunctionalArg3.mo \
 FunctionalArgBinary1.mo \
 FunctionalArgInvalidType1.mo \
 FunctionCompOrder1.mo \
@@ -640,6 +659,7 @@ IfExpression7.mo \
 IfExpression8.mo \
 IfExpression10.mo \
 IfExpression11.mo \
+IfExpression12.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -756,6 +776,7 @@ NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 NoScalarize1.mo \
+NoScalarize2.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
@@ -803,6 +824,7 @@ PackageConstant3.mo \
 PackageConstant4.mo \
 ParameterBug.mos \
 PartialApplication1.mo \
+PartialApplication2.mo \
 PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \
@@ -846,6 +868,7 @@ RecursiveInst1.mo \
 RecursiveInst2.mo \
 RecursiveInst3.mo \
 RedeclareClass1.mo \
+RedeclareClass2.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
 RedeclareDim1.mo \

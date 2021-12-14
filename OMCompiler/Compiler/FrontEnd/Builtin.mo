@@ -218,5 +218,10 @@ algorithm
   end matchcontinue;
 end getSetInitialGraph;
 
+public function clearInitialGraph
+algorithm
+  setGlobalRoot(Global.builtinGraphIndex, {});
+end clearInitialGraph;
+
 annotation(__OpenModelica_Interface="frontend");
 end Builtin;

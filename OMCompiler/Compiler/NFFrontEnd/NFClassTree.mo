@@ -1404,6 +1404,19 @@ public
       end for;
     end appendClasses2;
 
+    function replaceClass
+      "Replaces the node for a class with another node. Assumes the class
+       already exists in the tree, and that the tree isn't instantiated."
+      input InstNode node;
+      input output ClassTree tree;
+    protected
+      Integer index;
+    algorithm
+      LookupTree.Entry.CLASS(index = index) :=
+        LookupTree.get(lookupTree(tree), InstNode.name(node));
+      arrayUpdate(getClasses(tree), index, node);
+    end replaceClass;
+
   protected
 
     function instExtendsComps

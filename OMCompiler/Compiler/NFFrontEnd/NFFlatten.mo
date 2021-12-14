@@ -77,7 +77,7 @@ import Face = NFConnector.Face;
 import System;
 import ComplexType = NFComplexType;
 import NFInstNode.CachedData;
-import NFPrefixes.{Direction, Variability, Visibility};
+import NFPrefixes.{Direction, Variability, Visibility, Purity, Parallelism};
 import Variable = NFVariable;
 import ElementSource;
 import Ceval = NFCeval;
@@ -206,6 +206,25 @@ algorithm
   funcs := List.fold(flatModel.initialAlgorithms, collectAlgorithmFuncs, funcs);
   execStat(getInstanceName());
 end collectFunctions;
+
+function vectorizeVariableBinding
+  input output Variable var;
+protected
+  list<tuple<String, Binding>> ty_attrs = {};
+  String attr_name;
+  Binding attr_binding;
+algorithm
+  var.binding := vectorizeBinding(var.binding, var.ty);
+
+  for ty_attr in var.typeAttributes loop
+    (attr_name, attr_binding) := ty_attr;
+    attr_binding := vectorizeBinding(attr_binding,
+      Type.copyDims(var.ty, Binding.getType(attr_binding)));
+    ty_attrs := (attr_name, attr_binding) :: ty_attrs;
+  end for;
+
+  var.typeAttributes := listReverseInPlace(ty_attrs);
+end vectorizeVariableBinding;
 
 protected
 function flattenClass
@@ -755,6 +774,41 @@ algorithm
   end match;
 end vectorizeArray;
 
+function vectorizeBinding
+  input output Binding binding;
+  input Type varType;
+protected
+  Expression bind_exp;
+  Type bind_ty;
+  Integer dim_diff;
+  list<Dimension> dims;
+  list<Expression> dim_expl;
+algorithm
+  () := match binding
+    case Binding.TYPED_BINDING(bindingExp = bind_exp)
+      algorithm
+        bind_ty := match bind_exp
+          case Expression.CREF()
+            then ComponentRef.getSubscriptedType(bind_exp.cref, includeScope = true);
+          else Expression.typeOf(bind_exp);
+        end match;
+
+        //bind_ty := Expression.typeOf(binding.bindingExp);
+        dim_diff := Type.dimensionDiff(varType, bind_ty);
+
+        if dim_diff > 0 then
+          dim_expl := list(Dimension.sizeExp(d) for d in List.firstN(Type.arrayDims(varType), dim_diff));
+          binding.bindingExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC,
+            binding.bindingExp :: dim_expl, binding.variability, Purity.PURE, varType));
+          binding.bindingType := Expression.typeOf(binding.bindingExp);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end vectorizeBinding;
+
 function vectorizeEquation
   input output Equation eqn;
   input list<Dimension> dimensions;
@@ -831,15 +885,15 @@ algorithm
 
         iter :: iters := iters;
         range :: ranges := ranges;
-        stmt := Statement.FOR(iter, SOME(range), body, alg.source);
+        stmt := Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source);
 
         while not listEmpty(iters) loop
           iter :: iters := iters;
           range :: ranges := ranges;
-          stmt := Statement.FOR(iter, SOME(range), body, alg.source);
+          stmt := Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source);
         end while;
       then
-        Algorithm.ALGORITHM({Statement.FOR(iter, SOME(range), body, alg.source)}, alg.inputs, alg.outputs, alg.source); // ToDo: update inputs, outputs?
+        Algorithm.ALGORITHM({stmt}, alg.inputs, alg.outputs, alg.source); // ToDo: update inputs, outputs?
   end match;
 end vectorizeAlgorithm;
 
@@ -1536,6 +1590,7 @@ algorithm
       algorithm
         stmt.range := Util.applyOption(stmt.range, function flattenExp(prefix = prefix));
         stmt.body := flattenStatements(stmt.body, prefix);
+        stmt.forType := updateForType(stmt.forType, stmt.body);
       then
         stmt;
 
@@ -2185,6 +2240,94 @@ algorithm
     else ();
   end match;
 end collectClassFunctions;
+
+function updateForType
+  input output Statement.ForType forType;
+  input list<Statement> forBody;
+protected
+  UnorderedMap<ComponentRef, SourceInfo> vars;
+algorithm
+  () := match forType
+    case Statement.ForType.NORMAL() then ();
+
+    case Statement.ForType.PARALLEL()
+      algorithm
+        // ParModelica needs to know which variables are used in the loop body,
+        // so collect them here and add them to the ForType.
+        vars := UnorderedMap.new<SourceInfo>(ComponentRef.hash, ComponentRef.isEqual);
+
+        for s in forBody loop
+          vars := Statement.fold(s, collectParallelVariables, vars);
+        end for;
+
+        forType.vars := UnorderedMap.toList(vars);
+
+        // Only parglobal variables are allowed to be used in a parfor loop.
+        for v in forType.vars loop
+          checkParGlobalCref(v);
+        end for;
+      then
+        ();
+
+  end match;
+end updateForType;
+
+function collectParallelVariables
+  input Statement stmt;
+  input output UnorderedMap<ComponentRef, SourceInfo> vars;
+protected
+  SourceInfo info;
+algorithm
+  info := Statement.info(stmt);
+  vars := Statement.foldExp(stmt,
+    function Expression.fold(func = function collectParallelVariablesExp(info = info)), vars);
+end collectParallelVariables;
+
+function collectParallelVariablesExp
+  input Expression exp;
+  input SourceInfo info;
+  input output UnorderedMap<ComponentRef, SourceInfo> vars;
+protected
+  InstNode node;
+  ComponentRef cref;
+algorithm
+  () := match exp
+    case Expression.CREF()
+      guard ComponentRef.isCref(exp.cref) and
+            not ComponentRef.isIterator(exp.cref) and
+            InstNode.isComponent(ComponentRef.node(exp.cref))
+      algorithm
+        cref := ComponentRef.stripSubscriptsAll(exp.cref);
+        UnorderedMap.tryAdd(cref, info, vars);
+      then
+        ();
+
+    else ();
+  end match;
+end collectParallelVariablesExp;
+
+function checkParGlobalCref
+  input tuple<ComponentRef, SourceInfo> crefInfo;
+protected
+  ComponentRef cref;
+  SourceInfo info;
+  InstNode node;
+  String errorString;
+algorithm
+  (cref, info) := crefInfo;
+  node := ComponentRef.node(cref);
+
+  if Component.parallelism(InstNode.component(node)) <> Parallelism.GLOBAL then
+    errorString := "\n" +
+    "- Component '" + AbsynUtil.pathString(ComponentRef.toPath(cref)) +
+    "' is used in a parallel for loop." + "\n" +
+    "- Parallel for loops can only contain references to parglobal variables"
+    ;
+    Error.addSourceMessage(Error.PARMODELICA_ERROR,
+      {errorString}, info);
+    fail();
+  end if;
+end checkParGlobalCref;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

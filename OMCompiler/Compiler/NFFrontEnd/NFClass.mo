@@ -93,6 +93,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   record PARTIAL_CLASS
     ClassTree elements;
     Modifier modifier;
+    Modifier ccMod;
     Prefixes prefixes;
   end PARTIAL_CLASS;
 
@@ -107,6 +108,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   record EXPANDED_CLASS
     ClassTree elements;
     Modifier modifier;
+    Modifier ccMod;
     Prefixes prefixes;
     Restriction restriction;
   end EXPANDED_CLASS;
@@ -114,6 +116,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   record EXPANDED_DERIVED
     InstNode baseClass;
     Modifier modifier;
+    Modifier ccMod;
     array<Dimension> dims;
     Prefixes prefixes;
     Component.Attributes attributes;
@@ -154,7 +157,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     ClassTree tree;
   algorithm
     tree := ClassTree.fromSCode(elements, isClassExtends, scope);
-    cls := PARTIAL_CLASS(tree, Modifier.NOMOD(), prefixes);
+    cls := PARTIAL_CLASS(tree, Modifier.NOMOD(), Modifier.NOMOD(), prefixes);
   end fromSCode;
 
   function fromEnumeration
@@ -187,7 +190,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   algorithm
     cls := match cls
       case PARTIAL_CLASS()
-        then EXPANDED_CLASS(cls.elements, cls.modifier, cls.prefixes, Restriction.UNKNOWN());
+        then EXPANDED_CLASS(cls.elements, cls.modifier, cls.ccMod, cls.prefixes, Restriction.UNKNOWN());
     end match;
   end initExpandedClass;
 
@@ -330,6 +333,18 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       else Modifier.NOMOD();
     end match;
   end getModifier;
+
+  function getCCModifier
+    input Class cls;
+    output Modifier modifier;
+  algorithm
+    modifier := match cls
+      case PARTIAL_CLASS() then cls.ccMod;
+      case EXPANDED_CLASS() then cls.ccMod;
+      case EXPANDED_DERIVED() then cls.ccMod;
+      else Modifier.NOMOD();
+    end match;
+  end getCCModifier;
 
   function setModifier
     input Modifier modifier;
@@ -500,11 +515,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       case PARTIAL_BUILTIN() then cls.ty;
       case EXPANDED_DERIVED() then getType(InstNode.getClass(cls.baseClass), cls.baseClass);
       case INSTANCED_CLASS() then cls.ty;
-      case INSTANCED_BUILTIN()
-        then match cls.ty
-          case Type.POLYMORPHIC("") then Type.POLYMORPHIC(InstNode.name(clsNode));
-          else cls.ty;
-        end match;
+      case INSTANCED_BUILTIN() then cls.ty;
       case TYPED_DERIVED() then cls.ty;
       else Type.UNKNOWN();
     end match;

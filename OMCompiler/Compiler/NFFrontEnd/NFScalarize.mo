@@ -363,7 +363,7 @@ function scalarizeStatement
 algorithm
   statements := match stmt
     case Statement.FOR()
-      then Statement.FOR(stmt.iterator, stmt.range, scalarizeStatements(stmt.body), stmt.source) :: statements;
+      then Statement.FOR(stmt.iterator, stmt.range, scalarizeStatements(stmt.body), stmt.forType, stmt.source) :: statements;
 
     case Statement.IF()
       then scalarizeIfStatement(stmt.branches, stmt.source, statements);
