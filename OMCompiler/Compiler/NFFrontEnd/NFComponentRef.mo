@@ -339,11 +339,12 @@ public
   function getSubscriptedType
     "Returns the type of a cref, with the subscripts taken into account."
     input ComponentRef cref;
+    input Boolean includeScope = false;
     output Type ty;
   algorithm
     ty := match cref
       case CREF()
-        then getSubscriptedType2(cref.restCref, Type.subscript(cref.ty, cref.subscripts));
+        then getSubscriptedType2(cref.restCref, Type.subscript(cref.ty, cref.subscripts), includeScope);
       else Type.UNKNOWN();
     end match;
   end getSubscriptedType;
@@ -351,15 +352,17 @@ public
   function getSubscriptedType2
     input ComponentRef restCref;
     input Type accumTy;
+    input Boolean includeScope;
     output Type ty;
   algorithm
     ty := match restCref
-      case CREF(origin = Origin.CREF)
+      case CREF()
+        guard restCref.origin == Origin.CREF or includeScope
         algorithm
           ty := Type.liftArrayLeftList(accumTy,
             Type.arrayDims(Type.subscript(restCref.ty, restCref.subscripts)));
         then
-          getSubscriptedType2(restCref.restCref, ty);
+          getSubscriptedType2(restCref.restCref, ty, includeScope);
 
       else accumTy;
     end match;
