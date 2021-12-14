@@ -227,11 +227,11 @@ package Synchronous
       Clock clk1 = Clock(0.5);    // ticks: 0, 0.5, 1.0, ...
       Clock clk2 = Clock(hold(clk1_firstTick)); // ticks: 0
       Boolean clk1_firstTick(start=false);
-      Integer y2(start=0);
+      Integer y(start=0);
     equation
       clk1_firstTick = firstTick(clk1);
       when clk2 then
-        y2 = previous(y2) +1;
+        y = previous(y) + 1;
       end when;
     end firstTickBool;
 

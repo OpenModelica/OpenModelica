@@ -3,11 +3,12 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 sampleVar.mos \
 inferredSampleVar.mos \
-holdVar.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+holdVar.mos \
+firstTick.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile

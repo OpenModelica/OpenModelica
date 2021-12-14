@@ -6177,13 +6177,11 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     daeExpCallPre(arg, context, preExp, varDecls, &auxFunction)
   // Clock builtins
   case CALL(path=IDENT(name="interval")) then
-    // TODO AHEU: interval can be used on base- and sub-clocks.
-    // For sub-clocks it needs to access the sub-clock index as well.
-    'data->simulationInfo->baseClocks[clockIndex].stats.previousInterval'
+    'data->simulationInfo->baseClocks[baseClockIndex].subClocks[subClockIndex].stats.previousInterval'
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
     '<%cref(crefPrefixPrevious(arg.componentRef))%>'
   case CALL(path=IDENT(name="firstTick")) then
-    '(data->simulationInfo->baseClocks[clockIndex].cnt == 0)'
+    '(data->simulationInfo->baseClocks[baseClockIndex].subClocks[subClockIndex].stats.count == 1)'
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
     'handleBaseClock(data, threadData, <%intSub(arg.integer,1)%>, data->localData[0]->timeValue)'
 

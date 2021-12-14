@@ -383,11 +383,10 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
   data->simulationInfo->baseClocks[<%baseClockIdx%>] = (BASECLOCK_DATA){
     .resolution = <%resolution%>,
     .intervalCounter = <%intervalCounter%>,
-    .previousBaseFireTime = -1.0,
     .interval = <%interval%>,
     .nSubClocks = <%listLength(subPartitions)%>,
     .isEventClock = <%isEventClock(baseClock)%>,
-    .stats = (CLOCK_STATS){<%startInterval%>, 0}};
+    .stats = (CLOCK_STATS){<%startInterval%>, 0, -1}};
   <%computeInterval%>
   data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks = calloc(<%listLength(subPartitions)%>, sizeof(SUBCLOCK_DATA));
   <%subClocksInfo%>
@@ -408,7 +407,7 @@ match subPartition
       .factor = <%makeCRational(subClock.factor)%>,
       .solverMethod = "<%methodStr%>",
       .holdEvents = <%boolStrC(holdEvents)%>,
-      .stats = (CLOCK_STATS) {0,0}};
+      .stats = (CLOCK_STATS) {0, 0, -1}};
     >>
 end subPartitionStr;
 

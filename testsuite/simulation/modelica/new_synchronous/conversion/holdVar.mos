@@ -1,16 +1,16 @@
 // name:     holdVar.mos
-// keywords: synchronous features, sample, c
+// keywords: synchronous features, hold, c
 // status: correct
 //
-// Check sampled values
-// Base-clock ticks: 0, 3/10, 6/10, 9/10, ...
+// Check hold()
+// Base-clock ticks: 0, 0.3, 0.6, 0.9
 
 loadFile("../Synchronous.mo"); getErrorString();
 
 cd("temp/");
 simulate(Synchronous.Conversion.holdVar, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 
-print("Sampled variable xc");
+print("Hold variable x");
 val(x, 0.0);      // 0.0 or 1.0?
 val(x, 0.00001);  // 1.0
 val(x, 0.2999);   // 1.0
@@ -18,7 +18,6 @@ val(x, 0.3);      // 2.0
 val(x, 0.3001);   // 2.0
 val(x, 0.31);     // 2.0
 val(x, 0.6);      // 3.0
-
 
 // Result:
 // true
@@ -45,7 +44,7 @@ val(x, 0.6);      // 3.0
 // "
 // end SimulationResult;
 // ""
-// Sampled variable xc
+// Hold variable x
 // 1.0
 // 1.0
 // 1.0

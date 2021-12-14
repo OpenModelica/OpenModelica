@@ -559,7 +559,8 @@ typedef struct MODEL_DATA
  */
 typedef struct CLOCK_STATS {
   modelica_real previousInterval;   /**< Length of previous interval, startInterval at initialization. */
-  int count;                       /**< Number of times clock was fired */
+  int count;                        /**< Number of times clock was fired */
+  double lastActivationTime;        /**< Last time clock was activated */
 } CLOCK_STATS;
 
 /**
@@ -587,7 +588,6 @@ typedef struct BASECLOCK_DATA {
   int intervalCounter;
   int resolution;     /* Should be cosntant, defaults to 1 */
 
-  double previousBaseFireTime;    // TODO: Remove???
   double interval;    // is intervalCounter/resolution
 
   LIST* fireList;   // Relative time of sub-clocks to fire.
