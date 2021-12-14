@@ -442,8 +442,8 @@ public
       input output Matrix adj                             "adjancency matrix to be expanded";
       input output VariablePointers vars                  "variable array to be expanded";
       input output EquationPointers eqns                  "equation array to be expanded";
-      input list<Pointer<Variable>> new_vars              "new variables to expand";
-      input list<Pointer<Equation>> new_eqns              "new equations to expand";
+      input list<Pointer<Variable>> new_vars              "new variables to be added";
+      input list<Pointer<Equation>> new_eqns              "new equations to be added";
       input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
     algorithm
       (adj, vars, eqns, funcTree) := match adj
@@ -451,6 +451,9 @@ public
           array<list<Integer>> m, mT;
           Mapping mapping;
           CausalizeModes modes;
+
+        // if nothing is added, do nothing
+        case _ guard(listEmpty(new_vars) and listEmpty(new_eqns)) then (adj, vars, eqns, funcTree);
 
         case SCALAR_ADJACENCY_MATRIX() algorithm
           //(m, mT, vars, eqns) := expandScalar(adj.m, adj.st, vars, eqns, new_vars, new_eqns, funcTree);
@@ -489,8 +492,7 @@ public
       input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
     protected
       Pointer<Differentiate.DifferentiationArguments> diffArgs_ptr;
-      Integer var_cut_off = VariablePointers.size(vars);
-      Integer eqn_cut_off = EquationPointers.size(eqns);
+      Integer new_size, old_size = EquationPointers.size(eqns);
       list<Integer> idx_lst;
       UnorderedMap<ComponentRef, Integer> sub_map         "only representing the new variables with shifted indices";
       Variable var;
@@ -539,9 +541,15 @@ public
       // #############################################
       eqns := EquationPointers.addList(new_eqns, eqns);
 
-      // create index list for all new equations and use updating routine to fill them
-      idx_lst := List.intRange2(eqn_cut_off + 1, EquationPointers.size(eqns));
-      (m, mT, _) := updateScalar(m, st, SOME(mapping), modes, vars, eqns, idx_lst, funcTree); //update causalize modes!
+      new_size := EquationPointers.size(eqns);
+      if new_size > old_size then
+        // create index list for all new equations and use updating routine to fill them
+        idx_lst := List.intRange2(old_size + 1, new_size);
+        (m, mT, _) := updateScalar(m, st, SOME(mapping), modes, vars, eqns, idx_lst, funcTree); //update causalize modes!
+      else
+        // just transpose the matrix, no equations have been added
+        mT := transposeScalar(m, VariablePointers.scalarSize(vars));
+      end if;
     end expandPseudo;
 
     function toString

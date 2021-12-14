@@ -108,6 +108,7 @@ public
         (function Tearing.main(systemType = NBSystem.SystemType.INI),       "Tearing")
       };
       (bdae, clocks) := BackendDAE.applyModules(bdae, modules, ClockIndexes.RT_CLOCK_NEW_BACKEND_INITIALIZATION);
+
       if Flags.isSet(Flags.DUMP_BACKEND_CLOCKS) then
         if not listEmpty(clocks) then
           print(StringUtil.headline_4("Initialization Backend Clocks:"));
