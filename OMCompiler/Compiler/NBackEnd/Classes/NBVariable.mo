@@ -435,6 +435,18 @@ public
     end match;
   end isFixed;
 
+  function isFixable
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE()))       then not isFixed(var);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))    then not isFixed(var);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))   then not isFixed(var);
+      else false;
+    end match;
+  end isFixable;
+
   function isStateSelect
     "checks if a variable has a certain StateSelect attribute"
     input Pointer<Variable> var;

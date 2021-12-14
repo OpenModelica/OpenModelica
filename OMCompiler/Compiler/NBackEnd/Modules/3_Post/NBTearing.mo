@@ -318,7 +318,7 @@ protected
 
       // make ARRAY possible
       (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
-      matching := Matching.regular(adj, true, false);
+      matching := Matching.regular(Matching.EMPTY_MATCHING(), adj, true, false);
       (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
       comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
       innerEquations := list(BEquation.InnerEquation.fromStrongComponent(c) for c in comps);
