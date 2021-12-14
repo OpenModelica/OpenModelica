@@ -249,6 +249,7 @@ uniontype Var "variables"
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
     .DAE.VarInnerOuter innerOuter "inner, outer, inner outer or unspecified";
     Boolean unreplaceable "indicates if it is allowed to replace this variable";
+    Boolean initNonlinear "indicates if the variable is a nonlinear iteration variable during initialization";
   end VAR;
 end Var;
 

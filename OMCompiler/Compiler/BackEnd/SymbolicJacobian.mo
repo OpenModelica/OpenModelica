@@ -2271,7 +2271,7 @@ protected
   DAE.ComponentRef derivedCref;
 algorithm
   derivedCref := Differentiate.createSeedCrefName(indiffVar, inMatrixName);
-  outSeedVar := BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.INPUT(), DAE.NON_PARALLEL(), ComponentReference.crefLastType(derivedCref), NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+  outSeedVar := BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.INPUT(), DAE.NON_PARALLEL(), ComponentReference.crefLastType(derivedCref), NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false);
 end createSeedVars;
 
 protected function createAllDiffedVars "author: wbraun"
@@ -2926,6 +2926,7 @@ algorithm
           end if;
 
           // Get linear variables with start value, but ignore discrete vars
+          // kabdelhak: i don't get this, how are these the linear ones? these are the inner variables
           for var in allDiffedVars loop
             if (BackendVariable.varHasStartValue(var) and not BackendVariable.isVarDiscrete(var) ) then
               lin := var::lin;
@@ -2949,6 +2950,36 @@ algorithm
   // ToDo
   // BackendDAE.FULL_JACOBIAN()
 end printNonLinIterVarsAndEqs;
+
+public function getNonLinearVariables
+  "Returns all nonlinear variables for the jacobian."
+  input BackendDAE.Jacobian jacobian;
+  output list<BackendDAE.Var> nonLin = {};
+algorithm
+    nonLin := match jacobian
+      local
+        list<BackendDAE.Var> diffVars;
+        list<DAE.ComponentRef> dependentVarsCref;
+
+      case BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((_, _,diffVars, _, _, dependentVarsCref)))
+        algorithm
+          // nonlinear variables are those appearing in the jacobian
+          for varCref in dependentVarsCref loop
+            for var in diffVars loop
+              if ComponentReference.crefEqual(varCref, var.varName) then
+                var.initNonlinear := true;
+                nonLin := var::nonLin;
+                break;
+              end if;
+            end for;
+          end for;
+      then nonLin;
+
+      else {};
+    end match;
+  // ToDo
+  // BackendDAE.FULL_JACOBIAN()
+end getNonLinearVariables;
 
 protected function traverserhasEqnNonDiffParts
 "function breaks differentiation for
