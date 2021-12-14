@@ -12,7 +12,7 @@ print("Clock 1: y1");
 val(y1, 0.0);
 val(y1, 0.2);
 val(y1, 0.4);
-val(y1, 0.6);
+val(y1, 0.60000001);
 val(y1, 0.8);
 val(y1, 1.0);
 

@@ -214,13 +214,70 @@ package Synchronous
 
     // Hold clocked variable
     model holdVar
-      Clock clk1 = Clock(0.1);
-      Real x(start = 0), y;
+      Clock clk1 = Clock(0.3);  // ticks: 0, 0.3, 0.6, 0.9, ...
+      Real xc(start = 0), x;
     equation
       when clk1 then
-        x = previous(x) + 1;
+        xc = previous(xc) + 1;
       end when;
-      y = hold(x);
+      x = hold(xc);
     end holdVar;
+
+    model firstTickBool
+      Clock clk1 = Clock(0.5);    // ticks: 0, 0.5, 1.0, ...
+      Clock clk2 = Clock(hold(clk1_firstTick)); // ticks: 0
+      Boolean clk1_firstTick(start=false);
+      Integer y2(start=0);
+    equation
+      clk1_firstTick = firstTick(clk1);
+      when clk2 then
+        y2 = previous(y2) +1;
+      end when;
+    end firstTickBool;
+
+    model manualEuler
+      input Real u;
+      parameter Real x_start = 1;
+      Real x(start = x_start); // previous(x) = x_start at first clock tick
+      Real der_x(start = 0);   // previous(der_x) = 0 at first clock tick
+    protected
+      Boolean first(start = true);
+    equation
+      when Clock() then
+        first = false;
+        if previous(first) then
+          // first clock tick (initialize system)
+          x = previous (x);
+        else
+          // second and further clock tick
+          x = previous(x) + interval() * previous(der_x);
+        end if;
+        der_x = -x + u;
+      end when;
+    end manualEuler;
+
+    block MixedController
+      parameter Real T "Time constant of continuous PI controller";
+      parameter Real k "Gain of continuous PI controller";
+      input Real y_ref, y_meas;
+      Real y;
+      output Real yc;
+      Real z(start = 0);
+      Real xc(start = 1, fixed = true);
+      Clock c = Clock(Clock(0.1), solverMethod="ImplicitEuler");
+    protected
+      Real uc;
+      Real Ts = interval(uc);
+    equation
+      /* Continuous-time, inverse model */
+      uc = sample(y_ref, c);
+      der(xc) = uc;
+      /* PI controller */
+      z = if  firstTick() then 0 else
+      previous(z) + Ts / T * (uc - y_meas);
+      y = xc + k * (xc + uc);
+      yc = hold (y);
+    end MixedController;
   end Conversion;
+
 end Synchronous;

@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 sampleVar.mos \
 inferredSampleVar.mos \
+holdVar.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

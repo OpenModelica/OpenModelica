@@ -335,11 +335,11 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
         data->callback->function_equationsSynchronous(data, threadData, base_idx, sub_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
         if (data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx].holdEvents) {
           ret = TIMER_FIRED_EVENT;
-          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%li,%li) which triggered event at time %f",
+          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) which triggered event at time %f",
                           base_idx, sub_idx, solverInfo->currentTime);
         } else {
           ret = TIMER_FIRED;
-          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%li,%li) at time %f",
+          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) at time %f",
                           base_idx, sub_idx, solverInfo->currentTime);
         }
         break;

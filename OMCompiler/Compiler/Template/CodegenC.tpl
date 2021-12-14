@@ -264,7 +264,7 @@ template functionSavePreSynchronous(list<SimCode.SubPartition> subPartitions, St
   let preVars = subPartitions |> subPartition =>
     functionSavePreSynchronous1(subPartition); separator="\n"
   <<
-  /* pre(%v%) = %v% */
+  /* %v% = pre(%v%)*/
   void <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
@@ -4377,9 +4377,9 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   #endif
     data->simulationInfo->callStatistics.functionAlgebraics++;
 
-    <%fncalls %>
-
     <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
+
+    <%fncalls %>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_ALGEBRAICS);
