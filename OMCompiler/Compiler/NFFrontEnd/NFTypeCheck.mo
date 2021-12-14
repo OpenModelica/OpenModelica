@@ -2372,10 +2372,10 @@ algorithm
 
     case (_, Type.POLYMORPHIC())
       algorithm
-        expression := Expression.box(expression);
-        // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
+        (expression, compatibleType, matchKind) :=
+          matchPolymorphic(expectedType.name, actualType, expression);
       then
-        (Type.METABOXED(actualType), MatchKind.GENERIC);
+        (compatibleType, matchKind);
 
     case (Type.POLYMORPHIC(), _)
       algorithm
@@ -2398,6 +2398,29 @@ algorithm
     else (Type.UNKNOWN(), MatchKind.NOT_COMPATIBLE);
   end match;
 end matchTypes_cast;
+
+function matchPolymorphic
+  input String polymorphicName;
+  input Type actualType;
+  input output Expression exp;
+        output Type compatibleType;
+        output MatchKind matchKind;
+algorithm
+  (compatibleType, matchKind) := match polymorphicName
+    case "__Scalar"
+      algorithm
+        matchKind := if Type.isScalar(actualType) then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
+      then
+        (actualType, matchKind);
+
+    else
+      algorithm
+        exp := Expression.box(exp);
+      then
+        (Type.METABOXED(actualType), MatchKind.GENERIC);
+
+  end match;
+end matchPolymorphic;
 
 function getRangeType
   input Expression startExp;

@@ -515,11 +515,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       case PARTIAL_BUILTIN() then cls.ty;
       case EXPANDED_DERIVED() then getType(InstNode.getClass(cls.baseClass), cls.baseClass);
       case INSTANCED_CLASS() then cls.ty;
-      case INSTANCED_BUILTIN()
-        then match cls.ty
-          case Type.POLYMORPHIC("") then Type.POLYMORPHIC(InstNode.name(clsNode));
-          else cls.ty;
-        end match;
+      case INSTANCED_BUILTIN() then cls.ty;
       case TYPED_DERIVED() then cls.ty;
       else Type.UNKNOWN();
     end match;

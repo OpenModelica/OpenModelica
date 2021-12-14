@@ -696,7 +696,6 @@ algorithm
     case "Integer" then NFBuiltin.INTEGER_NODE;
     case "Boolean" then NFBuiltin.BOOLEAN_NODE;
     case "String" then NFBuiltin.STRING_NODE;
-    case "polymorphic" then NFBuiltin.POLYMORPHIC_NODE;
   end match;
 end lookupSimpleBuiltinName;
 

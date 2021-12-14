@@ -400,7 +400,11 @@ algorithm
     case SCode.PARTS() then expandClassParts(def, node, info);
     case SCode.CLASS_EXTENDS() then expandClassParts(def, node, info);
     // A short class definition, e.g. class A = B.
-    case SCode.DERIVED() then expandClassDerived(def, cdef, node, info);
+    case SCode.DERIVED()
+      then match cdef.typeSpec
+        case Absyn.TypeSpec.TCOMPLEX() then expandClassDerivedComplex(def, cdef, node, info);
+        else expandClassDerived(def, cdef, node, info);
+      end match;
 
     else
       algorithm
@@ -719,6 +723,37 @@ algorithm
   cls := Class.EXPANDED_DERIVED(ext_node, mod, cc_mod, listArray(dims), prefs, attrs, res);
   node := InstNode.updateClass(cls, node);
 end expandClassDerived;
+
+function expandClassDerivedComplex
+  input SCode.Element element;
+  input SCode.ClassDef definition;
+  input output InstNode node;
+  input SourceInfo info;
+protected
+  Absyn.Path ty_path;
+  Class.Prefixes prefs;
+  Type ty;
+  Restriction res;
+  Class cls;
+algorithm
+  SCode.DERIVED(typeSpec = Absyn.TypeSpec.TCOMPLEX(path = ty_path)) := definition;
+
+  ty := match ty_path
+    case Absyn.IDENT("polymorphic") then Type.POLYMORPHIC(InstNode.name(node));
+    else
+      algorithm
+        Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
+          {AbsynUtil.pathString(ty_path), InstNode.scopeName(node)}, info);
+      then
+        fail();
+  end match;
+
+  cls := InstNode.getClass(node);
+  prefs := Class.getPrefixes(cls);
+  res := Restriction.fromSCode(SCodeUtil.getClassRestriction(element));
+  cls := Class.PARTIAL_BUILTIN(ty, NFClassTree.EMPTY, Modifier.NOMOD(), prefs, res);
+  node := InstNode.updateClass(cls, node);
+end expandClassDerivedComplex;
 
 function instDerivedAttributes
   input SCode.Attributes scodeAttr;

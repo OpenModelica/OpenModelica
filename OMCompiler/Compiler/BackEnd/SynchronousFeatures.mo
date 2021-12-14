@@ -476,6 +476,11 @@ algorithm
     eq := BackendEquation.get(inSyst.removedEqs, i);
     (_, (prevVars, _)) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, (prevVars, BackendEquation.getForEquationIterIdent(eq)));
   end for;
+
+  if not Flags.isSet(Flags.NF_SCALARIZE) then
+    prevVars := list(ComponentReference.crefStripLastSubs(cr) for cr in prevVars);
+  end if;
+
   for cr in prevVars loop
     varIxs := getVarIxs(cr, inSyst.orderedVars);
     for idx in varIxs loop
