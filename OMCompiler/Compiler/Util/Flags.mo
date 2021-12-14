@@ -1387,14 +1387,13 @@ constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(148, "tearingAlways
   Gettext.gettext("Always choose state derivatives as iteration variables in strong components."));
 
 constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(149, "dumpFlatModel",
-  NONE(), EXTERNAL(), STRING_LIST_FLAG({}),
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({"all"}),
   SOME(STRING_DESC_OPTION({
     ("flatten", Gettext.gettext("After flattening but before connection handling.")),
     ("connections", Gettext.gettext("After connection handling.")),
     ("eval", Gettext.gettext("After evaluating constants.")),
     ("simplify", Gettext.gettext("After model simplification.")),
-    ("scalarize", Gettext.gettext("After scalarizing arrays.")),
-    ("all", Gettext.gettext("Dump after every stage."))
+    ("scalarize", Gettext.gettext("After scalarizing arrays."))
   })),
   Gettext.gettext("Dumps the flat model at the given stages of the frontend."));
 
