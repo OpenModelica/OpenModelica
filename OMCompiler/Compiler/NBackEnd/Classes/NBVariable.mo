@@ -106,7 +106,7 @@ public
     String attr;
   algorithm
     attr := BackendExtension.VariableAttributes.toString(var.backendinfo.attributes);
-    str := str + VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var) + (if attr == "" then "" else " " + attr);
+    str := str + VariableKind.toString(var.backendinfo.varKind) + " (" + intString(Variable.size(var)) + ") " + Variable.toString(var) + (if attr == "" then "" else " " + attr);
   end toString;
 
   function pointerToString
@@ -1455,7 +1455,7 @@ public
         var := Pointer.access(var_ptr);
         if Type.isArray(var.ty) then
           anyArr := true;
-          scalar_vars := Variable.expand(var);
+          scalar_vars := Variable.expand(var, true);
           for scalar_var in scalar_vars loop
             // create new pointers for the scalar variables
             new_vars := Pointer.create(scalar_var) :: new_vars;

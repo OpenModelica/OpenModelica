@@ -173,8 +173,6 @@ public
     changed := match matrixStrictness
       case NBAdjacency.MatrixStrictness.INIT algorithm
         // ####### BALANCE INITIALIZATION #######
-        print(Adjacency.Matrix.toString(adj, "a "));
-        print(Matching.toString(matching, "m "));
         (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, mapping, matrixType, matching);
       then changed;
 

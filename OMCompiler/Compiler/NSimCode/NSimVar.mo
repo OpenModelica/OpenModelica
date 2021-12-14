@@ -107,7 +107,7 @@ public
       input SimVar var;
       input output String str = "";
     algorithm
-      str := str + "(" + intString(var.index) + ")" + BackendExtension.VariableKind.toString(var.varKind) + " " + ComponentRef.toString(var.name);
+      str := str + "(" + intString(var.index) + ")" + BackendExtension.VariableKind.toString(var.varKind) + " (" + intString(SimVar.size(var)) + ") " + Type.toString(var.type_) + " " + ComponentRef.toString(var.name);
     end toString;
 
     function listToString
@@ -233,6 +233,11 @@ public
       end match;
       Pointer.update(indices_ptr, simCodeIndices);
     end traverseCreate;
+
+    function size
+      input SimVar var;
+      output Integer s = Type.sizeOf(var.type_);
+    end size;
 
     function getName
       input SimVar var;

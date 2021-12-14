@@ -845,7 +845,7 @@ public
     "strips the subscripts before comparing. Used for non expandend variables"
     input ComponentRef cref1;
     input ComponentRef cref2;
-    output Boolean b = isEqual(stripSubscriptsExceptModel(cref1), stripSubscriptsExceptModel(cref2));
+    output Boolean b = isEqual(stripSubscriptsAll(cref1), stripSubscriptsAll(cref2));
   end isEqualStrip;
 
   function isLess
@@ -1056,7 +1056,7 @@ public
     "hashes the cref without subscripts. used for non expanded variables"
     input ComponentRef cref;
     input Integer mod;
-    output Integer hash = stringHashDjb2Mod(toString(stripSubscriptsExceptModel(cref)), mod);
+    output Integer hash = stringHashDjb2Mod(toString(stripSubscriptsAll(cref)), mod);
   end hashStrip;
 
   function toPath
@@ -1629,13 +1629,13 @@ public
   protected
     list<Subscript> subs;
   algorithm
-    subs := List.flattenReverse(subscriptsExceptModel(scal));
+    subs := List.flattenReverse(subscriptsAll(scal));
     if listEmpty(subs) then
       // do not do it for scalar variables
       arr := NONE();
     elseif List.mapAllValueBool(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1))), true) then
       // if it is the first element, save the array var
-      arr := SOME(stripSubscriptsExceptModel(scal));
+      arr := SOME(stripSubscriptsAll(scal));
     else
       // not first element
       arr := NONE();

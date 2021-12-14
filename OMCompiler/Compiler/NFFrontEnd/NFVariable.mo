@@ -117,6 +117,7 @@ public
   function expand
     "Expands an array variable into its scalar elements."
     input Variable var;
+    input Boolean backend = false;
     output list<Variable> vars;
   protected
     list<ComponentRef> crefs;
@@ -130,8 +131,10 @@ public
   algorithm
     if Type.isArray(var.ty) then
       // Expand the name.
-      crefs := list(Expression.toCref(e) for e in
-        Expression.arrayScalarElements(ExpandExp.expandCref(Expression.fromCref(var.name))));
+      exp := Expression.fromCref(var.name);
+      exp := ExpandExp.expandCref(exp, backend);
+      expl := Expression.arrayScalarElements(exp);
+      crefs := list(Expression.toCref(e) for e in expl);
 
       v := var;
       v.ty := Type.arrayElementType(v.ty);
