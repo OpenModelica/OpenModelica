@@ -3673,26 +3673,11 @@ public function setVarCref "author: PA
   Sets the ComponentRef of a variable."
   input BackendDAE.Var inVar;
   input DAE.ComponentRef cr;
-  output BackendDAE.Var outVar;
-protected
-  DAE.ComponentRef name;
-  BackendDAE.VarKind kind;
-  DAE.VarDirection dir;
-  DAE.VarParallelism prl;
-  DAE.Type tp;
-  Option<DAE.Exp> bind;
-  Option<DAE.Exp> tplExp;
-  DAE.InstDims ad;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> attr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<DAE.Exp> hideResult;
-  Option<SCode.Comment> cmt;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
+  output BackendDAE.Var outVar = inVar;
 algorithm
-  BackendDAE.VAR(name,kind,dir,prl,tp,bind,tplExp,ad,source,attr,ts,hideResult,cmt,ct,io,_) := inVar;
-  outVar := BackendDAE.VAR(cr,kind,dir,prl,tp,bind,tplExp,ad,source,attr,ts,hideResult,cmt,ct,io,false);
+  outVar.varName := cr;
+  // kabdelhak: mimicked from old behaviour, not shure why it is done
+  outVar.unreplaceable := false;
 end setVarCref;
 
 public function setVarBindingOpt "author: PA
@@ -3718,7 +3703,7 @@ protected
   DAE.VarInnerOuter innerOuter;
 algorithm
   BackendDAE.VAR(name,kind,dir,prl,tp,bind,tplExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,_) := inVar;
-  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,tplExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,false);
+  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,tplExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,false,false);
 end setVarBindingOpt;
 
 public function moveVariables "
