@@ -170,7 +170,7 @@ public
     outExp := match call
       case UNTYPED_CALL(ref = cref)
         algorithm
-          if(BuiltinCall.needSpecialHandling(call)) then
+          if BuiltinCall.needSpecialHandling(call) then
             (outExp, ty, var, pur) := BuiltinCall.typeSpecial(call, context, info);
           else
             checkNotPartial(cref, context, info);
@@ -2677,7 +2677,7 @@ protected
       case Absyn.IDENT("product")
         then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
       case Absyn.IDENT("previous")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
+        then Type.arrayElementType(Expression.typeOf(listHead(args)));
       case Absyn.IDENT("shiftSample")
         then Expression.typeOf(Expression.unbox(listHead(args)));
       case Absyn.IDENT("backSample")

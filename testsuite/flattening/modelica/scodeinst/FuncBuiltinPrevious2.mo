@@ -18,8 +18,6 @@ end FuncBuiltinPrevious2;
 //   Real x[2];
 //   Real x[3];
 // equation
-//   x[1] = previous(x[1]);
-//   x[2] = previous(x[2]);
-//   x[3] = previous(x[3]);
+//   x = array(previous(x[$i1]) for $i1 in 1:3);
 // end FuncBuiltinPrevious2;
 // endResult

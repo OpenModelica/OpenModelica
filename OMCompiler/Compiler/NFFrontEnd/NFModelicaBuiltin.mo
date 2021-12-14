@@ -853,11 +853,11 @@ external "builtin";
 annotation(__OpenModelica_builtin=true, version="Modelica 3.3");
 end spatialDistribution;
 
-function previous<T> "Access previous value of a clocked variable"
-  input T u;
-  output T y;
+function previous<__Scalar> "Access previous value of a clocked variable"
+  input __Scalar u;
+  output __Scalar y;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'previous()'\">previous()</a>
 </html>"));
 end previous;

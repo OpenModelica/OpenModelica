@@ -854,7 +854,10 @@ public
       case Type.COMPLEX() then AbsynUtil.pathString(InstNode.scopePath(ty.cls));
       case Type.FUNCTION() then Function.typeString(ty.fn);
       case Type.METABOXED() then "#" + toString(ty.ty);
-      case Type.POLYMORPHIC() then "<" + ty.name + ">";
+      case Type.POLYMORPHIC()
+        then if Util.stringStartsWith("__", ty.name) then
+          substring(ty.name, 3, stringLength(ty.name)) else "<" + ty.name + ">";
+
       case Type.ANY() then "$ANY$";
       case Type.CONDITIONAL_ARRAY() then toString(ty.trueType) + "|" + toString(ty.falseType);
       else

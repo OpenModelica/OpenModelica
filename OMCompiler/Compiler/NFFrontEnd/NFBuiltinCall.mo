@@ -2343,30 +2343,50 @@ protected
     output Variability var;
     output Purity purity = Purity.PURE;
   protected
+    list<Expression> args;
     Expression arg;
     Call c;
   algorithm
-    c as Call.TYPED_CALL(arguments = {arg}, ty = ty, var = var) :=
-      Call.unboxArgs(Call.typeMatchNormalCall(call, context, info, vectorize = false));
+    args := Call.arguments(call);
 
-    callExp := match arg
-      case Expression.CREF()
-        guard ComponentRef.isCref(arg.cref) and
-              InstNode.isComponent(ComponentRef.node(arg.cref))
-        then Expression.CALL(c);
+    if listLength(args) == 1 then
+      arg := listHead(args);
 
-      else
-        algorithm
-          Error.addSourceMessage(Error.FUNCTION_ARGUMENT_MUST_BE,
-            {"previous", Gettext.translateContent(Error.COMPONENT_EXPRESSION)}, info);
-        then
-          fail();
-    end match;
+      () := match arg
+        case Expression.CREF()
+          guard ComponentRef.isCref(arg.cref) and
+                InstNode.isComponent(ComponentRef.node(arg.cref))
+          then ();
 
-    if Flags.isSet(Flags.NF_SCALARIZE) then
-      callExp := ExpandExp.expand(callExp);
+        else
+          algorithm
+            Error.addSourceMessage(Error.FUNCTION_ARGUMENT_MUST_BE,
+              {"previous", Gettext.translateContent(Error.COMPONENT_EXPRESSION)}, info);
+          then
+            fail();
+      end match;
     end if;
+
+    (c, ty, var, purity) := typeBuiltinCall(call, context, info);
+    callExp := Expression.CALL(c);
   end typePreviousCall;
+
+  function typeBuiltinCall
+    input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Call outCall;
+    output Type ty;
+    output Variability var;
+    output Purity pur;
+  protected
+    Call c;
+  algorithm
+    outCall := Call.typeMatchNormalCall(call, context, info);
+    ty := Call.typeOf(outCall);
+    var := Call.variability(outCall);
+    pur := Call.purity(outCall);
+  end typeBuiltinCall;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;
