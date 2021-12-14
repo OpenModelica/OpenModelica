@@ -1,4 +1,4 @@
-TEST = ../../../../rtest -v
+TEST = ../../../rtest -v
 
 TESTFILES = \
 inferredConstructor1.mos \
@@ -6,12 +6,21 @@ inferredConstructor2.mos \
 rationalConstructor1.mos \
 rationalConstructor2.mos \
 eventConstructor.mos \
-
+subSample.mos \
+subSuperSample1.mos \
+subSuperSample2.mos \
+shiftSample1.mos \
+backSample1.mos \
+noClock.mos \
+sampleVar.mos \
+inferredSampleVar.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-
+holdVar.mos \
+firstTick.mos \
+intervalBase.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

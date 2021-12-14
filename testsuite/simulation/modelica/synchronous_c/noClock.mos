@@ -4,7 +4,7 @@
 //
 // Differenze betweend noClock and sample(hold())
 
-loadFile("../Synchronous.mo"); getErrorString();
+loadFile("Synchronous.mo"); getErrorString();
 
 simulate(Synchronous.SubClocks.noClock1, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 

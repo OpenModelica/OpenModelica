@@ -4,7 +4,7 @@
 //
 // Rational clock with ticks 0, 3/10, 7/10, 12/10
 
-loadFile("../Synchronous.mo"); getErrorString();
+loadFile("Synchronous.mo"); getErrorString();
 
 simulate(Synchronous.Constructors.rationalClock2, stopTime=1.2, simflags="-lv=LOG_SYNCHRONOUS -override=stepSize=1.0"); getErrorString();
 

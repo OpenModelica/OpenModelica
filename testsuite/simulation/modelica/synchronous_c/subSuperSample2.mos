@@ -8,7 +8,7 @@
 // SuperSample ticks: 0.0, 0.2, 0.4, ...
 
 loadModel(Modelica, {"4.0.0"}); getErrorString();
-loadFile("../Synchronous.mo"); getErrorString();
+loadFile("Synchronous.mo"); getErrorString();
 
 simulate(Synchronous.SubClocks.subSuperSample2, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 

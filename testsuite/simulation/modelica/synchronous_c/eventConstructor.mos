@@ -5,7 +5,7 @@
 // Event clocks with conditions x < 0 and x > 0.
 
 loadModel(Modelica, {"4.0.0"}); getErrorString();
-loadFile("../Synchronous.mo"); getErrorString();
+loadFile("Synchronous.mo"); getErrorString();
 
 simulate(Synchronous.Constructors.eventClock, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 

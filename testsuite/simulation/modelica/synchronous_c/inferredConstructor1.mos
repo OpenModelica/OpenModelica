@@ -6,7 +6,7 @@
 // Should tick at 0.0, 1.0 and 2.0
 // Get single warning about using default values for clock
 
-loadFile("../Synchronous.mo"); getErrorString();
+loadFile("Synchronous.mo"); getErrorString();
 
 simulate(Synchronous.Constructors.inferredClock1, stopTime=2.0, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 

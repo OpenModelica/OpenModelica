@@ -6,7 +6,7 @@
 // Base-clock ticks: 0, 0.3, 0.6, 0.9
 // base-clock ticks: 0
 
-loadFile("../Synchronous.mo"); getErrorString();
+loadFile("Synchronous.mo"); getErrorString();
 
 simulate(Synchronous.Conversion.firstTickBool, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 

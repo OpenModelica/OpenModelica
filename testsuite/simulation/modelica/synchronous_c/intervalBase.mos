@@ -4,7 +4,7 @@
 //
 // Check interval() operator for different base-clocks.
 
-loadFile("../Synchronous.mo"); getErrorString();
+loadFile("Synchronous.mo"); getErrorString();
 
 simulate(Synchronous.Conversion.intervalClock, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 
