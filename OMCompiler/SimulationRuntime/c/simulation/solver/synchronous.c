@@ -240,8 +240,10 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
   }
   baseClock->stats.lastActivationTime = curTime;
   if (frstSubClockIsBaseClock) {
+#if !defined(OMC_MINIMAL_RUNTIME)
     // Save result before clock tick, then evaluate equations
     sim_result.emit(&sim_result, data, threadData);
+#endif /* #if !defined(OMC_MINIMAL_RUNTIME) */
     baseClock->subClocks[0].stats.count++;
     baseClock->subClocks[0].stats.previousInterval = baseClock->stats.previousInterval;
     baseClock->subClocks[0].stats.lastActivationTime = baseClock->stats.lastActivationTime;
@@ -419,8 +421,6 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %i at time %f", base_idx, currentTime);
         break;
       case SYNC_SUB_CLOCK:
-        // Save result before clock tick, then evaluate equations
-        sim_result.emit(&sim_result, data, threadData);
         subClock = &data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx];
         subClock->stats.count++;
         subClock->stats.previousInterval = currentTime - subClock->stats.lastActivationTime;
