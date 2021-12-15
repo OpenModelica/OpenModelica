@@ -372,11 +372,7 @@ public
     args := listReverseInPlace(args);
 
     ty := Function.returnType(func);
-
-    // Hack to fix return type of some builtin functions.
-    if Type.isPolymorphic(ty) then
-      ty := getSpecialReturnType(func, args);
-    end if;
+    ty := resolvePolymorphicReturnType(func, typed_args, ty);
 
     if var == Variability.PARAMETER and Function.isExternal(func) then
       // Mark external functions with parameter expressions as non-structural,
@@ -2662,46 +2658,49 @@ protected
     end match;
   end evaluateCallTypeDimExp;
 
-  function getSpecialReturnType
+  function resolvePolymorphicReturnType
+    "Resolves a polymorphic type to the actual type based on the inputs of a function."
     input Function fn;
-    input list<Expression> args;
-    output Type ty;
+    input list<TypedArg> args;
+    input Type ty;
+    output Type outType;
+  protected
+    String name;
+    Type input_ty;
+    TypedArg arg;
+    list<TypedArg> rest_args = args;
   algorithm
-    ty := match fn.path
-      case Absyn.IDENT("min")
-        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
-      case Absyn.IDENT("max")
-        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
-      case Absyn.IDENT("sum")
-        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
-      case Absyn.IDENT("product")
-        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
-      case Absyn.IDENT("previous")
-        then Type.arrayElementType(Expression.typeOf(listHead(args)));
-      case Absyn.IDENT("shiftSample")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("backSample")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("hold")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("superSample")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("subSample")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("noClock")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("DynamicSelect")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("pure")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      else
+    outType := match ty
+      case Type.POLYMORPHIC(name = name)
         algorithm
-          Error.assertion(false, getInstanceName() + ": unhandled case for " +
-            AbsynUtil.pathString(fn.path), sourceInfo());
+          // Go through the inputs until we find one with the same polymorphic
+          // type as the one we're looking for.
+          for i in fn.inputs loop
+            arg :: rest_args := rest_args;
+            input_ty := InstNode.getType(i);
+
+            if Type.isPolymorphicNamed(Type.arrayElementType(input_ty), name) then
+              // Replace the type with the corresponding argument type, but
+              // remove as many dimensions from it as the input has.
+              //   For example: T[:] and Real[2, 3] gives T = Real[3]
+              outType := Type.unliftArrayN(Type.dimensionCount(input_ty), arg.ty);
+              return;
+            end if;
+          end for;
         then
           fail();
+
+      case Type.ARRAY(elementType = Type.POLYMORPHIC())
+        algorithm
+          // For an array of polymorphic types, only resolve the polymorphic
+          // type itself and keep the dimensions.
+          ty.elementType := resolvePolymorphicReturnType(fn, args, ty.elementType);
+        then
+          ty;
+
+      else ty;
     end match;
-  end getSpecialReturnType;
+  end resolvePolymorphicReturnType;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCall;

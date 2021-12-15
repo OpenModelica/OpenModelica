@@ -218,6 +218,10 @@ public
     input Integer N;
     input output Type ty;
   algorithm
+    if N == 0 then
+      return;
+    end if;
+
     ty := match ty
       local
         list<Dimension> dims;
@@ -596,6 +600,17 @@ public
       else false;
     end match;
   end isPolymorphic;
+
+  function isPolymorphicNamed
+    input Type ty;
+    input String name;
+    output Boolean res;
+  algorithm
+    res := match ty
+      case POLYMORPHIC() then name == ty.name;
+      else false;
+    end match;
+  end isPolymorphicNamed;
 
   function firstTupleType
     input Type ty;

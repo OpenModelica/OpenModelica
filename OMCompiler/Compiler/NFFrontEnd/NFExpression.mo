@@ -5017,5 +5017,39 @@ public
     end match;
   end isFunctionPointer;
 
+  function isConnector
+    "Returns true if the expression is a component reference that refers to a
+     connector, otherwise false."
+    input Expression exp;
+    output Boolean res;
+  protected
+    InstNode node;
+  algorithm
+    res := match exp
+      case Expression.CREF()
+        algorithm
+          node := ComponentRef.node(exp.cref);
+        then
+          InstNode.isComponent(node) and InstNode.isConnector(node);
+
+      else false;
+    end match;
+  end isConnector;
+
+  function isComponentExpression
+    "Returns true if the expression is a component reference that refers to an
+     actual component (and not e.g. a function), otherwise false"
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Expression.CREF()
+        then ComponentRef.isCref(exp.cref) and
+             InstNode.isComponent(ComponentRef.node(exp.cref));
+
+      else false;
+    end match;
+  end isComponentExpression;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

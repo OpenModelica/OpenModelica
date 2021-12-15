@@ -17,7 +17,10 @@ end FuncBuiltinPrevious4;
 
 // Result:
 // Error processing file: FuncBuiltinPrevious4.mo
-// [flattening/modelica/scodeinst/FuncBuiltinPrevious4.mo:15:3-15:18:writable] Error: The argument to ‘previous‘ must be a component expression.
+// [flattening/modelica/scodeinst/FuncBuiltinPrevious4.mo:15:3-15:18:writable] Error: Type mismatch for positional argument 1 in previous(u=f). The argument has type:
+//   f<function>() => ()
+// expected type:
+//   ComponentExpression
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
