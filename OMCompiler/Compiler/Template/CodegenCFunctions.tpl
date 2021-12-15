@@ -5255,13 +5255,13 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
 ::=
   match ecr
   case ecr as CREF(componentRef=cr, ty=ty) then
-    if not isArrayType(typeof(ecr)) then
+    if boolNot(isArrayType(ty)) then
       let cast = typeCastContextInt(context, ty)
       '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction)%>'
     else if crefSubIsScalar(cr) then
-        // The array subscript results in a scalar
-        let cast = typeCastContextInt(context, ty)
-        '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction)%>'
+      // The array subscript results in a scalar
+      let cast = typeCastContextInt(context, ty)
+      '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction)%>'
     else
       match context
       case FUNCTION_CONTEXT(__) then
