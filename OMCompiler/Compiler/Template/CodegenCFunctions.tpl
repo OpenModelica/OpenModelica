@@ -4504,6 +4504,12 @@ match cr
     let newpref = fullname_i + '.'
     functionContextCref(cr.componentRef, context, newpref, &preExp, &varDecls, &auxFunction)
 
+  case cr as CREF_QUAL(identType = T_ARRAY(), subscriptLst = {}) then
+    error(sourceInfo(), 'functionContextCref got a prefix cref with array type and no subs. <%crefStrNoUnderscore(cr)%>')
+    // let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
+    // let newpref = fullname + '.'
+    // functionContextCref(cr.componentRef, context, newpref, &preExp, &varDecls, &auxFunction)
+
   case cr as CREF_QUAL() then
     let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
     let newpref = fullname + '.'
@@ -4523,7 +4529,7 @@ match cr
     fullname
 
   else
-    error(sourceInfo(), 'crefNonSimVar got a cref it does not know how to handle <%crefStrNoUnderscore(cr)%>')
+    error(sourceInfo(), 'functionContextCref got a cref it does not know how to handle <%crefStrNoUnderscore(cr)%>')
 end match
 end functionContextCref;
 
