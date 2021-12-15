@@ -57,7 +57,7 @@ void freeSynchronous(DATA* data);
 void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo);
 void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime);
 fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, int *nextTimerDefined ,double *nextTimerActivationTime);
+int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, int *nextTimerDefined, double *nextTimerActivationTime);
 
 #ifdef __cplusplus
 }

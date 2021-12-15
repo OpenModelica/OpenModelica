@@ -346,7 +346,6 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
         subClock->stats.count++;
         subClock->stats.previousInterval = solverInfo->currentTime - subClock->stats.lastActivationTime;
         subClock->stats.lastActivationTime = solverInfo->currentTime;
-          //TODO: Update subClocks previousInterval
         data->callback->function_equationsSynchronous(data, threadData, base_idx, sub_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
         if (subClock->holdEvents) {
           ret = TIMER_FIRED_EVENT;
@@ -371,8 +370,6 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 #endif /* #if !defined(OMC_MINIMAL_RUNTIME) */
 
 
-#if 0
-
 /**
  * @brief Handle timer clocks and return next time a timer will fire
  *
@@ -389,55 +386,74 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
  *                                               1, if there is a fired timer;
  *                                               2, if there is a fired timer which trigger event;
  */
-int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, int *nextTimerDefined ,double *nextTimerActivationTime)
+int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, int *nextTimerDefined, double *nextTimerActivationTime)
 {
-  TRACE_PUSH
-  int ret = 0;
-  int i=0;
+  int base_idx, sub_idx;
+  double activationTime;
+  SYNC_TIMER_TYPE type;
+  SYNC_TIMER* nextTimer;
+  fire_timer_t ret = NO_TIMER_FIRED;
+  SUBCLOCK_DATA* subClock;
 
   *nextTimerDefined = 0;
 
-  /* Loop over all timers that need to fire and evaluate synchronized equations */
-  if (listLen(data->simulationInfo->intvlTimers) > 0)
-  {
-    SYNC_TIMER* nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
-    while(nextTimer->activationTime <= currentTime + SYNC_EPS)
-    {
-      long idx =  nextTimer->idx;
-      double activationTime = nextTimer->activationTime;
-      SYNC_TIMER_TYPE type = nextTimer->type;
-      listPopFront(data->simulationInfo->intvlTimers);
-      switch(type)
-      {
-        case SYNC_BASE_CLOCK:
-          handleBaseClock(data, threadData, idx, activationTime);
-          break;
-        case SYNC_SUB_CLOCK:
-          data->callback->function_equationsSynchronous(data, threadData, idx);
-          if (data->modelData->subClocksInfo[idx].holdEvents)
-            ret = 2;
-          else
-            ret = ret == 2 ? ret : 1;
-          break;
-      }
-      if (listLen(data->simulationInfo->intvlTimers) == 0) break;
-      nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
-    }
+  if (listLen(data->simulationInfo->intvlTimers) <= 0) {
+    TRACE_POP
+    return (int) ret;
+  }
 
+  /* Fire all timers at current time step */
+  nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
+  while(nextTimer->activationTime <= currentTime + SYNC_EPS)
+  {
+    base_idx =  nextTimer->base_idx;
+    sub_idx = nextTimer->sub_idx;
+    type = nextTimer->type;
+    activationTime = nextTimer->activationTime;
+    listPopFront(data->simulationInfo->intvlTimers);
+    switch(type)
+    {
+      case SYNC_BASE_CLOCK:
+        handleBaseClock(data, threadData, base_idx, activationTime);
+        ret = TIMER_FIRED;
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %i at time %f", base_idx, currentTime);
+        break;
+      case SYNC_SUB_CLOCK:
+        // Save result before clock tick, then evaluate equations
+        sim_result.emit(&sim_result, data, threadData);
+        subClock = &data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx];
+        subClock->stats.count++;
+        subClock->stats.previousInterval = currentTime - subClock->stats.lastActivationTime;
+        subClock->stats.lastActivationTime = currentTime;
+        data->callback->function_equationsSynchronous(data, threadData, base_idx, sub_idx);  /* TODO: Fix indices. Now indices for base and sub-clocks */
+        if (subClock->holdEvents) {
+          ret = TIMER_FIRED_EVENT;
+          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) which triggered event at time %f",
+                          base_idx, sub_idx, currentTime);
+        } else {
+          ret = TIMER_FIRED;
+          infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated sub-clock (%i,%i) at time %f",
+                          base_idx, sub_idx, currentTime);
+        }
+        break;
+    }
+    if (listLen(data->simulationInfo->intvlTimers) == 0){
+      break;
+    }
+    nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
     /* Next time a timer will activate: */
     *nextTimerActivationTime = nextTimer->activationTime;
     *nextTimerDefined = 1;
   }
 
   TRACE_POP
-  return ret;
+  return (int) ret;
 }
-#endif
 
 /**
- * @brief
+ * @brief Print all base-clocks and sub-clocks.
  *
- * @param baseClocks    Pointer to array of size nClocks with base clock data.
+ * @param baseClocks   Pointer to array of size nClocks with base clock data.
  * @param nBaseClocks  Number of base clocks.
  */
 void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks) {
@@ -477,7 +493,7 @@ void printClocks(BASECLOCK_DATA* baseClocks, int nBaseClocks) {
 }
 
 /**
- * @brief Print synchronous timer
+ * @brief Print synchronous timer.
  *
  * Prints tuple (base_idx, sub_idx, type, activationTime).
  *
