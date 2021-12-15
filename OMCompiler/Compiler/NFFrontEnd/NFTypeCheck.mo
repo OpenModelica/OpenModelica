@@ -2407,9 +2407,34 @@ function matchPolymorphic
         output MatchKind matchKind;
 algorithm
   (compatibleType, matchKind) := match polymorphicName
+    // Any type, used when we don't want the expression to be boxed.
+    case "__Any" then (actualType, MatchKind.GENERIC);
+
+    // Any scalar type.
     case "__Scalar"
       algorithm
-        matchKind := if Type.isScalar(actualType) then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
+        matchKind := if Type.isScalar(actualType) then MatchKind.GENERIC else MatchKind.NOT_COMPATIBLE;
+      then
+        (actualType, matchKind);
+
+    // Any array type.
+    case "__Array"
+      algorithm
+        matchKind := if Type.isArray(actualType) then MatchKind.GENERIC else MatchKind.NOT_COMPATIBLE;
+      then
+        (actualType, matchKind);
+
+    case "__Connector"
+      algorithm
+        matchKind := if Type.isScalar(actualType) and Expression.isConnector(exp) then
+          MatchKind.GENERIC else MatchKind.NOT_COMPATIBLE;
+      then
+        (actualType, matchKind);
+
+    case "__ComponentExpression"
+      algorithm
+        matchKind := if Type.isScalar(actualType) and Expression.isComponentExpression(exp) then
+          MatchKind.GENERIC else MatchKind.NOT_COMPATIBLE;
       then
         (actualType, matchKind);
 

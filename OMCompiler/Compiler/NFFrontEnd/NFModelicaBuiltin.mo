@@ -404,7 +404,8 @@ end sum;
 
 function product<ArrayType, ScalarBasicType> "Product of all array elements"
   input ArrayType a;
-  output ScalarBasicType s;  external "builtin";
+  output ScalarBasicType s;
+  external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'product()'\">product()</a>
 </html>"));
@@ -425,8 +426,8 @@ function transpose<T> "Transpose a matrix"
 end transpose;
 
 function symmetric<T> "Returns a symmetric matrix"
-  input T[:,:] a;
-  output T[:,:] b;
+  input T[:, size(a, 1)] a;
+  output T[size(a, 1), size(a, 2)] b;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'symmetric()'\">symmetric()</a>
@@ -443,17 +444,17 @@ function smooth<RealArrayOrRecord> "Indicate smoothness of expression"
 </html>"));
 end smooth;
 
-function diagonal<T> "Returns a diagonal matrix"
-  input T v[:];
-  output T mat[size(v,1),size(v,1)];
+function diagonal<__Scalar> "Returns a diagonal matrix"
+  input __Scalar v[:];
+  output __Scalar mat[size(v,1),size(v,1)];
   external "builtin";
   annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'diagonal()'\">diagonal()</a>
 </html>"));
 end diagonal;
 
-function cardinality "Number of connectors in connection"
-  input Real c;
+function cardinality<__Connector> "Number of connectors in connection"
+  input __Connector c;
   parameter output Integer numOccurances;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
@@ -489,7 +490,9 @@ function fill "Returns an array with all elements equal"
 </html>"));
 end fill;
 
-function noEvent "Turn off event triggering"
+function noEvent<__Any> "Turn off event triggering"
+  input __Any x;
+  output __Any y;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'noEvent()'\">noEvent()</a>
@@ -553,24 +556,24 @@ package OMC_CLOCK
   end sample;
 end OMC_CLOCK;
 
-function shiftSample<T> "First activation of clock is shifted in time"
-  input T u;
+function shiftSample<__Any> "First activation of clock is shifted in time"
+  input __Any u;
   parameter input Integer shiftCounter(min = 0);
   parameter input Integer resolution(min = 1) = 1;
-  output T c;
+  output __Any c;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'shiftSample()'\">shiftSample()</a>
 </html>"));
 end shiftSample;
 
-function backSample<T> "First activation of clock is shifted in time before activation of u"
-  input T u;
+function backSample<__Any> "First activation of clock is shifted in time before activation of u"
+  input __Any u;
   parameter input Integer backCounter(min = 0);
   parameter input Integer resolution(min = 1) = 1;
-  output T c;
+  output __Any c;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'backSample()'\">backSample()</a>
 </html>"));
 end backSample;
@@ -612,12 +615,12 @@ function size "Returns dimensions of an array"
 </html>"));
 end size;
 
-function DynamicSelect<T> "select static or dynamic expressions in the annotations"
-  input T static;
-  input T dynamic;
-  output T selected;
+function DynamicSelect<__Any> "select static or dynamic expressions in the annotations"
+  input __Any static;
+  input __Any dynamic;
+  output __Any selected;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, __OpenModelica_Impure=true, Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Annotations.DynamicSelect\">DynamicSelect</a>
 </html>"));
 end DynamicSelect;
@@ -672,11 +675,11 @@ function inStream
 </html>"));
 end inStream;
 
-function pure<T>
-  input T x;
-  output T y;
+function pure<__Any>
+  input __Any x;
+  output __Any y;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.4");
+  annotation(__OpenModelica_builtin=true, version="Modelica 3.4");
 end pure;
 
 /* Extension for uncertainty computations */
@@ -853,9 +856,9 @@ external "builtin";
 annotation(__OpenModelica_builtin=true, version="Modelica 3.3");
 end spatialDistribution;
 
-function previous<__Scalar> "Access previous value of a clocked variable"
-  input __Scalar u;
-  output __Scalar y;
+function previous<__ComponentExpression> "Access previous value of a clocked variable"
+  input __ComponentExpression u;
+  output __ComponentExpression y;
   external "builtin";
   annotation(__OpenModelica_builtin=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'previous()'\">previous()</a>
@@ -918,30 +921,30 @@ end OMC_ARGS;
 
 function subSample = $overload(OpenModelica.Internal.subSampleExpression, OpenModelica.Internal.subSampleClock)
   "Conversion from faster clock to slower clock"
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'subSample()'\">subSample()</a>
 </html>"));
 
 function superSample = $overload(OpenModelica.Internal.superSampleExpression, OpenModelica.Internal.superSampleClock)
   "Conversion from slower clock to faster clock"
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'superSample()'\">superSample()</a>
 </html>"));
 
-function hold<T> "Conversion from clocked discrete-time to continuous time"
-  input T u;
-  output T y;
+function hold<__Any> "Conversion from clocked discrete-time to continuous time"
+  input __Any u;
+  output __Any y;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'hold()'\">hold()</a>
 </html>"));
 end hold;
 
-function noClock<T> "Clock of y=Clock(u) is always inferred"
-  input T u;
-  output T y;
+function noClock<__Any> "Clock of y=Clock(u) is always inferred"
+  input __Any u;
+  output __Any y;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'noClock()'\">noClock()</a>
 </html>"));
 end noClock;
@@ -1054,12 +1057,11 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     external "builtin";
   end solverClock;
 
-  impure function subSampleExpression<T>
-    input T u;
+  impure function subSampleExpression<__Any>
+    input __Any u;
     parameter input Integer factor(min=0)=0;
-    output T y;
+    output __Any y;
     external "builtin" y=subSample(u,factor);
-    annotation(__OpenModelica_UnboxArguments=true);
   end subSampleExpression;
 
   impure function subSampleClock
@@ -1069,12 +1071,11 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     external "builtin" y=subSample(u,factor);
   end subSampleClock;
 
-  impure function superSampleExpression<T>
-    input T u;
+  impure function superSampleExpression<__Any>
+    input __Any u;
     parameter input Integer factor(min=0)=0;
-    output T y;
+    output __Any y;
     external "builtin" y=superSample(u,factor);
-    annotation(__OpenModelica_UnboxArguments=true);
   end superSampleExpression;
 
   impure function superSampleClock

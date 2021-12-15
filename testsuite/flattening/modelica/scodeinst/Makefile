@@ -489,6 +489,7 @@ ForStatementPrefix.mo \
 func1.mo \
 func2.mo \
 FuncBuiltinAbs.mo \
+FuncBuiltinBackSample1.mo \
 FuncBuiltinCeil.mo \
 FuncBuiltinChange.mo \
 FuncBuiltinCross.mo \
@@ -504,6 +505,7 @@ FuncBuiltinFill2.mo \
 FuncBuiltinFill3.mo \
 FuncBuiltinFloor.mo \
 FuncBuiltinGetInstanceName.mo \
+FuncBuiltinHold1.mo \
 FuncBuiltinHomotopy.mo \
 FuncBuiltinIdentity.mo \
 FuncBuiltinInitial1.mo \
@@ -517,6 +519,7 @@ FuncBuiltinMax.mo \
 FuncBuiltinMin.mo \
 FuncBuiltinMod.mo \
 FuncBuiltinNdims.mo \
+FuncBuiltinNoClock1.mo \
 FuncBuiltinOnes.mo \
 FuncBuiltinOuterProduct.mo \
 FuncBuiltinPre.mo \
@@ -535,6 +538,7 @@ FuncBuiltinSample.mo \
 FuncBuiltinScalar.mo \
 FuncBuiltinScalar2.mo \
 FuncBuiltinSemiLinear.mo \
+FuncBuiltinShiftSample1.mo \
 FuncBuiltinSign.mo \
 FuncBuiltinSize.mo \
 FuncBuiltinSkew.mo \
@@ -545,8 +549,13 @@ FuncBuiltinSmoothWrongType1.mo \
 FuncBuiltinSmoothWrongType2.mo \
 FuncBuiltinSpatialDistribution.mo \
 FuncBuiltinSqrt.mo \
+FuncBuiltinSubSample1.mo \
+FuncBuiltinSubSample2.mo \
 FuncBuiltinSum.mo \
+FuncBuiltinSuperSample1.mo \
+FuncBuiltinSuperSample2.mo \
 FuncBuiltinSymmetric.mo \
+FuncBuiltinSymmetric2.mo \
 FuncBuiltinTerminal1.mo \
 FuncBuiltinTerminal2.mo \
 FuncBuiltinTranspose.mo \
