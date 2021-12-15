@@ -5198,6 +5198,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp,
     '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%cr.ident%>), <%offset%>)))'
   else
     match context
+    case FUNCTION_CONTEXT(is_parallel = true) then daeExpCrefRhsFunContextParallel(exp, context, &preExp, &varDecls, &auxFunction)
     case FUNCTION_CONTEXT(__) then daeExpCrefRhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
     else daeExpCrefRhsSimContext(exp, context, &preExp, &varDecls, &auxFunction)
 end daeExpCrefRhs;
@@ -5259,27 +5260,8 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
       '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction)%>'
     else if crefSubIsScalar(cr) then
         // The array subscript results in a scalar
-        let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction)
-        let arrayType = expTypeArray(ty)
-        let subsLenStr = listLength(crefSubs(cr))
-        let subsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-            daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
-            ;separator=", ")
-        match cr
-          case CREF_IDENT(identType = T_METATYPE(ty = T_METAARRAY()))
-          case CREF_IDENT(identType = T_METAARRAY()) then
-            'arrayGet(<%arrName%>, <%subsValuesStr%>)'
-          else
-            match context
-              case FUNCTION_CONTEXT(is_parallel = false) then
-                let cast = typeCastContextInt(context, ty)
-                '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction)%>'
-              case FUNCTION_CONTEXT(__) then
-                <<
-                (*<%arrayType%>_element_addr_c99_<%subsLenStr%>(&<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>))
-                >>
-              else
-                error(sourceInfo(),'This should have been handled in the new daeExpCrefRhsSimContext function. <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+        let cast = typeCastContextInt(context, ty)
+        '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction)%>'
     else
       match context
       case FUNCTION_CONTEXT(__) then
@@ -5296,6 +5278,39 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
   case ecr then
     error(sourceInfo(),'daeExpCrefRhsFunContext: UNHANDLED EXPRESSION: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsFunContext;
+
+template daeExpCrefRhsFunContextParallel(Exp ecr, Context context, Text &preExp,
+                        Text &varDecls, Text &auxFunction)
+ "Generates code for a component reference."
+::=
+  match ecr
+  case ecr as CREF(componentRef=cr, ty=ty) then
+    if crefIsScalar(cr, context) then
+      let cast = typeCastContextInt(context, ty)
+      '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction)%>'
+    else if crefSubIsScalar(cr) then
+      // The array subscript results in a scalar
+      let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction)
+      let arrayType = expTypeArray(ty)
+      let subsLenStr = listLength(crefSubs(cr))
+      let subsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+          daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
+          ;separator=", ")
+      <<
+      (*<%arrayType%>_element_addr_c99_<%subsLenStr%>(&<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>))
+      >>
+    else
+      // The array subscript denotes a slice
+      // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
+      let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction)
+      let arrayType = expTypeArray(ty)
+      let tmp = tempDecl(arrayType, &varDecls)
+      let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
+      let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
+      tmp
+  case ecr then
+    error(sourceInfo(),'daeExpCrefRhsFunContext: UNHANDLED EXPRESSION: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+end daeExpCrefRhsFunContextParallel;
 
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
