@@ -1994,6 +1994,7 @@ algorithm
       (jacDAE, _, _, _,  _, _) := symbolicJacobian;
       jacDiffedVars := getJacobianResiduals(jacDAE);
       (nonlinearPattern, _) := generateSparsePattern(jacDAE, inDiffVars, jacDiffedVars, true);
+      nonlinearPattern := stripPartialDerNonlinearPattern(nonlinearPattern);
     else
       outJacobian := NONE();
       // no jacobian -> no nonlinear pattern
@@ -4172,6 +4173,60 @@ algorithm
   end for;
 end fixedVarsFromNonlinearCount;
 
+protected function stripPartialDerNonlinearPattern
+  "kabdelhak: this function strips a jacobian residual down to the original
+  residual variable to get the equation mapping right. Used for nonlinear
+  pattern analysis."
+  input output BackendDAE.NonlinearPattern pat;
+protected
+  BackendDAE.NonlinearPatternCrefs pat_cref, pat_crefT;
+  list<DAE.ComponentRef> v1, v2;
+  Integer index;
+algorithm
+  (pat_cref, pat_crefT, (v1, v2), index) := pat;
+  pat_cref := list(stripPartialDer(cref_tpl) for cref_tpl in pat_cref);
+  pat_crefT := list(stripPartialDer(cref_tpl) for cref_tpl in pat_crefT);
+  v1 := list(stripPartialDerWork(v) for v in v1);
+  v2 := list(stripPartialDerWork(v) for v in v2);
+  pat := (pat_cref, pat_crefT, (v1, v2), index);
+end stripPartialDerNonlinearPattern;
+
+protected function stripPartialDer
+  input output BackendDAE.NonlinearPatternCref cref_tpl;
+protected
+  DAE.ComponentRef cref;
+  list<DAE.ComponentRef> dependencies;
+algorithm
+  (cref, dependencies) := cref_tpl;
+  (cref, _) := stripPartialDerWork(cref);
+  dependencies := list(stripPartialDerWork(dep) for dep in dependencies);
+  cref_tpl := (cref, dependencies);
+end stripPartialDer;
+
+protected function stripPartialDerWork
+  input output DAE.ComponentRef cref;
+  output Boolean strip;
+algorithm
+  (cref, strip) := match cref
+    local
+      DAE.ComponentRef cr;
+
+    case DAE.CREF_IDENT() guard(stringLength(cref.ident) > 4 and substring(cref.ident, 1, 5) == "$pDER") then (cref, true);
+
+    case DAE.CREF_QUAL()  guard(stringLength(cref.ident) > 4 and substring(cref.ident, 1, 5) == "$pDER") then (cref, true);
+
+    case DAE.CREF_QUAL() algorithm
+      (cr, strip) := stripPartialDerWork(cref.componentRef);
+      if strip then
+        cr := DAE.CREF_IDENT(cref.ident, cref.identType, cref.subscriptLst);
+      else
+        cr := DAE.CREF_QUAL(cref.ident, cref.identType, cref.subscriptLst, cr);
+      end if;
+    then (cr, false);
+
+    else (cref, false);
+  end match;
+end stripPartialDerWork;
 
 // =============================================================================
 // [ASSC] section for analytical to symbolical singularity transformation

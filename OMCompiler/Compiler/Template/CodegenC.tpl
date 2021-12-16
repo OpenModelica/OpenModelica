@@ -3056,6 +3056,13 @@ template generateStaticNonlinearData(String indexName, String systemType, Nonlin
   This template generates source code for functions that initialize the nonlinear-pattern."
 ::=
   match nonlinearpattern
+  case {} then
+      <<
+      void initializeNonlinearPattern<%indexName%>(<%systemType%>* inSysData)
+      {
+        /* no nonlinear pattern available */
+      }
+      >>
   case _ then
       let number_vars = listLength(nonlinearpatternT)
       let number_eqns = listLength(nonlinearpattern)
@@ -3081,10 +3088,7 @@ template generateStaticNonlinearData(String indexName, String systemType, Nonlin
         inSysData->nonlinearPattern->columns = (unsigned int*) malloc(<%number_nonlinear%>*sizeof(unsigned int));
         inSysData->nonlinearPattern->rows = (unsigned int*) malloc(<%number_nonlinear%>*sizeof(unsigned int));
 
-        /*
-          initialize and accumulate index vectors
-          first index is zero due to indexing and last index is the full size
-        */
+        /* initialize and accumulate index vectors */
         <%index_var%>
         <%index_eqn%>
         memcpy(inSysData->nonlinearPattern->indexVar, index_var, (<%number_vars%>+1)*sizeof(unsigned int));

@@ -3665,7 +3665,7 @@ algorithm
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars, ishared.functionTree);
        eqs = listAppend(simequations, resEqs);
 
-       (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
+       (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars, true);
        if not homotopySupport then
          (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(reqns, BackendDAEUtil.containsHomotopyCall, false);
        end if;
@@ -4573,6 +4573,7 @@ protected function createSymbolicSimulationJacobian "function createSymbolicSimu
   input BackendDAE.Jacobian inJacobian;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
+  input Boolean detectNonlinearPattern = false;
   output Option<SimCode.JacobianMatrix> res;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
@@ -4590,7 +4591,7 @@ algorithm
     BackendDAE.SparseColoring sparseColoring;
     list<list<Integer>> coloring;
     BackendDAE.SparsePatternCrefs sparsepatternComRefs, sparsepatternComRefsT;
-    BackendDAE.NonlinearPattern np_;
+    BackendDAE.NonlinearPattern np_, sp_;
     BackendDAE.NonlinearPatternCrefs nonlinearpatternComRefs, nonlinearpatternComRefsT;
     SimCode.SparsityPattern sparseInts, sparseIntsT;
     SimCode.NonlinearPattern nonlinearPat, nonlinearPatT;
@@ -4644,8 +4645,8 @@ algorithm
         sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
         sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
 
-        nonlinearPat = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefs, false);
-        nonlinearPatT = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefsT, false);
+        nonlinearPat = {};//sortSparsePattern(varsSeedIndex, nonlinearpatternComRefs, false);
+        nonlinearPatT = {};//sortSparsePattern(varsSeedIndex, nonlinearpatternComRefsT, false);
 
         // set sparse pattern
         coloring = sortColoring(seedVars, sparseColoring);
@@ -4658,7 +4659,7 @@ algorithm
       then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, NONE())), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs=systs, shared=shared), name, independentVarsLst, residualVarsLst, dependentVarsLst, _)),
-                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
+                                      sp_ as (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
                                       sparseColoring, np_ as (nonlinearpatternComRefs, nonlinearpatternComRefsT, _, _)), uniqueEqIndex, tempvars)
       equation
         // create SimCodeVar.SimVars from jacobian vars
@@ -4698,11 +4699,18 @@ algorithm
         end if;
         //sort sparse pattern
         varsSeedIndex = listAppend(seedVars, indexVars);
+
         sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
         sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
 
-        nonlinearPat = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefs, false);
-        nonlinearPatT = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefsT, false);
+        // KAB : HERE : LOL : KEKW
+        if detectNonlinearPattern then
+          nonlinearPat = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefs, false);
+          nonlinearPatT = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefsT, false);
+        else
+          nonlinearPat = {};
+          nonlinearPatT = {};
+        end if;
 
         // set sparse pattern
         coloring = sortColoring(varsSeedIndex, sparseColoring);
@@ -5036,8 +5044,8 @@ algorithm
         sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
         sparseInts = sortSparsePattern(seedIndexVars, sparsepattern, false);
 
-        nonlinearPat = sortSparsePattern(seedIndexVars, nonlinearpattern, false);
-        nonlinearPatT = sortSparsePattern(seedIndexVars, nonlinearpatternT, false);
+        nonlinearPat = {};//sortSparsePattern(seedIndexVars, nonlinearpattern, false);
+        nonlinearPatT = {};//sortSparsePattern(seedIndexVars, nonlinearpatternT, false);
 
         maxColor = listLength(colsColors);
         nRows =  listLength(diffedVars);
@@ -5076,7 +5084,7 @@ algorithm
        (linearModelMatrices, uniqueEqIndex);
     else
       equation
-        Error.addInternalError("Generation of symbolic matrix SimCode (SimCode.createSymbolicJacobianssSimCode) failed", sourceInfo());
+        Error.addInternalError("Generation of symbolic matrix SimCode (SimCodeUtil.createSymbolicJacobianssSimCode) failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -5311,11 +5319,11 @@ algorithm
     //translate
     for tpl in inSparsePattern loop
       (cref, crefs) := tpl;
-      i := BaseHashTable.get(stripJacResidual(cref), ht);
+      i := BaseHashTable.get(cref, ht);
       if not useFMIIndex or i > 0 then // 0 means fmi_index = NONE() and represents internal variables that should be eliminated
         intLst := {};
         for cr in crefs loop
-          j := BaseHashTable.get(stripJacResidual(cr), ht);
+          j := BaseHashTable.get(cr, ht);
           if not useFMIIndex or j > 0 then // 0 means fmi_index = NONE() and represents internal variables that should be eliminated
             intLst := j :: intLst;
           end if;
@@ -5329,19 +5337,6 @@ algorithm
     outSparse := List.sort(outSparse, Util.compareTupleIntGt);
   end if;
 end sortSparsePattern;
-
-protected function stripJacResidual
-  "kabdelhak: this function strips a jacobian residual down to the original
-  residual variable to get the equation mapping right. Used for nonlinear
-  pattern analysis."
-  input output DAE.ComponentRef cref;
-algorithm
-  cref := match cref
-    case DAE.CREF_QUAL() guard(substring(cref.ident, 1, 4) == "$res")
-    then DAE.CREF_IDENT(cref.ident, cref.identType, cref.subscriptLst);
-    else cref;
-  end match;
-end stripJacResidual;
 
 protected function sortColoring
   input list<SimCodeVar.SimVar> inSimVars;
