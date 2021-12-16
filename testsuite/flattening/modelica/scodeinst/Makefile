@@ -174,6 +174,7 @@ CevalRecord6.mo \
 CevalRecord7.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
+CevalRecordArray3.mo \
 CevalRecordArray4.mo \
 CevalRecordArray5.mo \
 CevalRecordArray6.mo \
@@ -349,6 +350,7 @@ DuplicateElements5.mo \
 DuplicateElements9.mo \
 DuplicateElements10.mo \
 DuplicateElementsValid1.mo \
+DuplicateElementsValid2.mo \
 DuplicateMod1.mo \
 DuplicateMod2.mo \
 DuplicateMod3.mo \
@@ -872,6 +874,7 @@ RecordExtends2.mo \
 RecordUnknownDim1.mo \
 RecursiveConstants1.mo \
 RecursiveExtends1.mo \
+RecursiveExtends2.mo \
 RecursiveExtends3.mo \
 RecursiveInst1.mo \
 RecursiveInst2.mo \
@@ -1052,6 +1055,7 @@ WhenVariableMismatch2.mo \
 WhenVariableMismatch3.mo \
 Wild1.mo \
 OCGTests.mos \
+sts.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -1061,7 +1065,6 @@ CevalFuncRecord4.mo \
 FinalParameter1.mo \
 FinalParameter2.mo \
 FinalParameter3.mo \
-CevalRecordArray3.mo \
 IfExpression6.mo \
 IfExpression9.mo \
 RedeclareConstant1.mo \
@@ -1071,9 +1074,7 @@ dim2.mo \
 DuplicateElements6.mo \
 DuplicateElements7.mo \
 DuplicateElements8.mo \
-DuplicateElementsValid2.mo \
 DuplicateElementsCond1.mo \
-cond3.mo \
 conn12.mo \
 conn13.mo \
 conn14.mo \
@@ -1110,14 +1111,11 @@ InvalidConnectorType6.mo \
 InvalidExpandableConnector1.mo \
 InvalidVariability1.mo \
 InvalidVariability2.mo \
-loop4.mo \
 PropagateRedeclareMod1.mo \
-RecursiveExtends2.mo \
 redeclare8.mo \
 type4.mo \
 type5.mo \
 PackageConstant2.mo \
-sts.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile
