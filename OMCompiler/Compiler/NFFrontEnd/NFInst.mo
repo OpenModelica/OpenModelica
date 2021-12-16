@@ -477,7 +477,7 @@ algorithm
         // Look up the base class and expand it.
         scope := InstNode.parent(ext);
         base_nodes as (base_node :: _) := Lookup.lookupBaseClassName(base_path, scope, info);
-        checkExtendsLoop(base_node, base_path, info);
+        checkExtendsLoop(base_node, scope, base_path, info);
         checkReplaceableBaseClass(base_nodes, base_path, info);
         base_node := expand(base_node);
 
@@ -501,8 +501,11 @@ function checkExtendsLoop
   "Gives an error if a base node is in the process of being expanded itself,
    since that means we have an extends loop in the model."
   input InstNode node;
+  input InstNode scope;
   input Absyn.Path path;
   input SourceInfo info;
+protected
+  InstNode parent;
 algorithm
   () := match InstNode.getClass(node)
     // expand begins by changing the class to an EXPANDED_CLASS, but keeps the
@@ -515,7 +518,22 @@ algorithm
       then
         fail();
 
-    else ();
+    else
+      algorithm
+        parent := scope;
+
+        while not InstNode.isTopScope(parent) loop
+          if InstNode.refEqual(parent, node) then
+            Error.addSourceMessage(Error.EXTENDS_LOOP,
+              {AbsynUtil.pathString(path)}, info);
+            fail();
+          end if;
+
+          parent := InstNode.parentScope(parent);
+        end while;
+      then
+        ();
+
   end match;
 end checkExtendsLoop;
 
