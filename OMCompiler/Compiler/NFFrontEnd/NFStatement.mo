@@ -490,6 +490,74 @@ public
     end match;
   end mapExp;
 
+  function mapExpShallow
+    input output Statement stmt;
+    input MapFunc func;
+
+    partial function MapFunc
+      input output Expression exp;
+    end MapFunc;
+  algorithm
+    stmt := match stmt
+      local
+        Expression e1, e2, e3;
+
+      case ASSIGNMENT()
+        algorithm
+          e1 := func(stmt.lhs);
+          e2 := func(stmt.rhs);
+        then
+          if referenceEq(e1, stmt.lhs) and referenceEq(e2, stmt.rhs) then
+            stmt else ASSIGNMENT(e1, e2, stmt.ty, stmt.source);
+
+      case FOR()
+        algorithm
+          stmt.range := Util.applyOption(stmt.range, func);
+        then
+          stmt;
+
+      case IF()
+        algorithm
+          stmt.branches := list(
+            (func(Util.tuple21(b)), Util.tuple22(b)) for b in stmt.branches);
+        then
+          stmt;
+
+      case WHEN()
+        algorithm
+          stmt.branches := list(
+            (func(Util.tuple21(b)), Util.tuple22(b)) for b in stmt.branches);
+        then
+          stmt;
+
+      case ASSERT()
+        algorithm
+          e1 := func(stmt.condition);
+          e2 := func(stmt.message);
+          e3 := func(stmt.level);
+        then
+          if referenceEq(e1, stmt.condition) and referenceEq(e2, stmt.message) and
+            referenceEq(e3, stmt.level) then stmt else ASSERT(e1, e2, e3, stmt.source);
+
+      case TERMINATE()
+        algorithm
+          e1 := func(stmt.message);
+        then
+          if referenceEq(e1, stmt.message) then stmt else TERMINATE(e1, stmt.source);
+
+      case NORETCALL()
+        algorithm
+          e1 := func(stmt.exp);
+        then
+          if referenceEq(e1, stmt.exp) then stmt else NORETCALL(e1, stmt.source);
+
+      case WHILE()
+        then WHILE(func(stmt.condition), stmt.body, stmt.source);
+
+      else stmt;
+    end match;
+  end mapExpShallow;
+
   function foldExpList<ArgT>
     input list<Statement> stmt;
     input FoldFunc func;

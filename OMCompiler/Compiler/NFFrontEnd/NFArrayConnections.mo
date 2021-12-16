@@ -719,11 +719,7 @@ protected
 
     iterators := arrayCreate(Vector.size(vCount), InstNode.EMPTY_NODE());
     for i in 1:arrayLength(iterators) loop
-      iterators[i] := InstNode.fromComponent(
-        "$i" + String(i),
-        Component.newIterator(Type.INTEGER(), AbsynUtil.dummyInfo),
-        InstNode.EMPTY_NODE()
-      );
+      iterators[i] := InstNode.newIndexedIterator(i);
     end for;
 
     iter_expl := list(Expression.fromCref(ComponentRef.makeIterator(i, Type.INTEGER())) for i in iterators);
