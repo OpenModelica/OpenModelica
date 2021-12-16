@@ -2822,6 +2822,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
+      let nonlinearDataCasual = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
@@ -2836,6 +2837,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       /* casual tearing set */
       <%residualFunctionCasual%>
       <%sparseDataCasual%>
+      <%nonlinearDataCasual%>
       <%bodyStaticDataCasual%>
       <%updateIterationVarsCasual%>
       /* end residuals for dynamic tearing sets */

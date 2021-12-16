@@ -1412,6 +1412,21 @@ algorithm
   end match;
 end isCSEVar;
 
+public function isRESVar
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar.varName)
+    local
+      String s;
+    case(DAE.CREF_IDENT(ident=s))
+     then (stringLength(s) > 3 and substring(s, 1, 4) == "$res");
+    case(DAE.CREF_QUAL(ident=s))
+     then (stringLength(s) > 3 and substring(s, 1, 4) == "$res");
+    else false;
+  end match;
+end isRESVar;
+
 public function hasMayerTermAnno
 "author: Vitalij Ruge
  Return true if variable has isMayer=true annotation"

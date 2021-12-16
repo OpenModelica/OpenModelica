@@ -4591,7 +4591,6 @@ algorithm
     BackendDAE.SparseColoring sparseColoring;
     list<list<Integer>> coloring;
     BackendDAE.SparsePatternCrefs sparsepatternComRefs, sparsepatternComRefsT;
-    BackendDAE.NonlinearPattern np_, sp_;
     BackendDAE.NonlinearPatternCrefs nonlinearpatternComRefs, nonlinearpatternComRefsT;
     SimCode.SparsityPattern sparseInts, sparseIntsT;
     SimCode.NonlinearPattern nonlinearPat, nonlinearPatT;
@@ -4659,8 +4658,8 @@ algorithm
       then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, NONE())), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs=systs, shared=shared), name, independentVarsLst, residualVarsLst, dependentVarsLst, _)),
-                                      sp_ as (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
-                                      sparseColoring, np_ as (nonlinearpatternComRefs, nonlinearpatternComRefsT, _, _)), uniqueEqIndex, tempvars)
+                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
+                                      sparseColoring, (nonlinearpatternComRefs, nonlinearpatternComRefsT, _, _)), uniqueEqIndex, tempvars)
       equation
         // create SimCodeVar.SimVars from jacobian vars
         dummyVar = ("dummyVar" + name);
@@ -4703,7 +4702,6 @@ algorithm
         sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
         sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
 
-        // KAB : HERE : LOL : KEKW
         if detectNonlinearPattern then
           nonlinearPat = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefs, false);
           nonlinearPatT = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefsT, false);

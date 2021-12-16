@@ -1157,11 +1157,12 @@ public function generateSparsePattern "author: wbraun
   input BackendDAE.BackendDAE inBackendDAE;
   input list<BackendDAE.Var> inIndependentVars "vars";
   input list<BackendDAE.Var> inDependentVars "eqns";
-  input Boolean noColoring = false;
+  input Boolean nonlinearPattern = false;
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outColoredCols;
 protected
   constant Boolean debug = false;
+  String patternName = if nonlinearPattern then "Nonlinear" else "Sparsity";
 algorithm
   (outSparsePattern,outColoredCols) := matchcontinue(inBackendDAE,inIndependentVars,inDependentVars)
     local
@@ -1201,7 +1202,7 @@ algorithm
     case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}),independentVars,dependentVars)
       algorithm
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
-          print(" start getting sparsity pattern for variables : " + intString(listLength(dependentVars))  + " and the independent vars: " + intString(listLength(independentVars)) +"\n");
+          print(" start getting " + patternName + " pattern for variables : " + intString(listLength(dependentVars))  + " and the independent vars: " + intString(listLength(independentVars)) +"\n");
         end if;
         if debug then execStat("generateSparsePattern -> do start "); end if;
         // prepare crefs
@@ -1238,7 +1239,7 @@ algorithm
           print("nodesEqnsIndexs: ");
           BackendDump.dumpAdjacencyRow(nodesEqnsIndex);
           print("\n");
-          print("analytical Jacobians[SPARSE] -> build sparse graph: " + realString(clock()) + "\n");
+          print("analytical Jacobians[" + patternName + "] -> build sparse graph: " + realString(clock()) + "\n");
         end if;
 
         // prepare data for getSparsePattern
@@ -1259,7 +1260,7 @@ algorithm
         // debug dump
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           BackendDump.dumpSparsePatternArray(eqnSparse);
-          print("analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " + realString(clock()) + "\n");
+          print("analytical Jacobians[" + patternName + "] -> prepared arrayList for transpose list: " + realString(clock()) + "\n");
         end if;
 
         // select nodesEqnsIndex and map index to incoming vars
@@ -1298,7 +1299,7 @@ algorithm
         end if;
 
         if debug then execStat("generateSparsePattern -> coloring start "); end if;
-        if noColoring or Flags.isSet(Flags.DISABLE_COLORING) then
+        if nonlinearPattern or Flags.isSet(Flags.DISABLE_COLORING) then
           //without coloring
           coloring := list({arrayGet(inDepCompRefs, i)} for i in 1:sizeN);
         else
@@ -1309,13 +1310,13 @@ algorithm
         if debug then execStat("generateSparsePattern -> coloring done "); end if;
 
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
-          print("analytical Jacobians[SPARSE] -> ready! " + realString(clock()) + "\n");
+          print("analytical Jacobians[" + patternName + "] -> ready! " + realString(clock()) + "\n");
         end if;
 
         outSparsePattern := (sparsetupleT, sparsetuple, (inDepCompRefsLst, depCompRefsLst), nonZeroElements);
         if Flags.isSet(Flags.DUMP_SPARSE) then
-          BackendDump.dumpSparsityPattern(outSparsePattern, " --- SparsityPattern ---");
-          BackendDump.dumpSparseColoring(coloring, " --- Sparsity Coloring ---");
+          BackendDump.dumpSparsityPattern(outSparsePattern, " --- " + patternName + " Pattern ---");
+          BackendDump.dumpSparseColoring(coloring, " --- " + patternName + " Coloring ---");
         end if;
         if debug then execStat("generateSparsePattern -> final end "); end if;
       then (outSparsePattern, coloring);
@@ -1993,7 +1994,8 @@ algorithm
       // nonlinear pattern is the same as the sparse pattern of the jacobian
       (jacDAE, _, _, _,  _, _) := symbolicJacobian;
       jacDiffedVars := getJacobianResiduals(jacDAE);
-      (nonlinearPattern, _) := generateSparsePattern(jacDAE, inDiffVars, jacDiffedVars, true);
+      // copy the jacobian DAE to avoid wrong variables being added
+      (nonlinearPattern, _) := generateSparsePattern(BackendDAEUtil.copyBackendDAE(jacDAE), inDiffVars, jacDiffedVars, true);
       nonlinearPattern := stripPartialDerNonlinearPattern(nonlinearPattern);
     else
       outJacobian := NONE();
@@ -3999,7 +4001,7 @@ protected
   BackendDAE.EqSystem syst;
 algorithm
   syst :: _ := jacDAE.eqs;
-  diffedRes := BackendVariable.varList(syst.orderedVars);
+  diffedRes := list(var for var guard(BackendVariable.isRESVar(var)) in BackendVariable.varList(syst.orderedVars));
 end getJacobianResiduals;
 
 // =============================================================================
