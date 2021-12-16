@@ -109,20 +109,20 @@ public
     next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
     (callExp, ty, variability, purity) := match ComponentRef.firstName(cref)
-      //case "activeState" guard Config.synchronousFeaturesAllowed() then typeActiveStateCall(call, next_context, info);
+      //case "activeState" then typeActiveStateCall(call, next_context, info);
       case "actualStream" then typeActualInStreamCall("actualStream", call, next_context, info);
-      case "backSample" guard Config.synchronousFeaturesAllowed() then typeBackSampleCall(call, next_context, info);
+      case "backSample" then typeBackSampleCall(call, next_context, info);
       case "branch" then typeBranchCall(call, next_context, info);
       case "cardinality" then typeCardinalityCall(call, next_context, info);
       case "cat" then typeCatCall(call, next_context, info);
       case "change" then typeChangeCall(call, next_context, info);
-      case "Clock" guard Config.synchronousFeaturesAllowed() then typeClockCall(call, next_context, info);
+      case "Clock" then typeClockCall(call, next_context, info);
       case "der" then typeDerCall(call, next_context, info);
       case "DynamicSelect" then typeDynamicSelectCall("DynamicSelect", call, next_context, info);
       case "edge" then typeEdgeCall(call, next_context, info);
       case "fill" then typeFillCall(call, next_context, info);
       case "getInstanceName" then typeGetInstanceName(call);
-      //case "initialState" guard Config.synchronousFeaturesAllowed() then typeInitialStateCall(call, next_context, info);
+      //case "initialState" then typeInitialStateCall(call, next_context, info);
       case "initial" then typeDiscreteCall(call, next_context, info);
       case "inStream" then typeActualInStreamCall("inStream", call, next_context, info);
       case "isRoot" then typeIsRootCall(call, next_context, info);
@@ -141,17 +141,17 @@ public
       case "root" then typeRootCall(call, next_context, info);
       case "sample" then typeSampleCall(call, next_context, info);
       case "scalar" then typeScalarCall(call, next_context, info);
-      case "shiftSample" guard Config.synchronousFeaturesAllowed() then typeShiftSampleCall(call, next_context, info);
+      case "shiftSample" then typeShiftSampleCall(call, next_context, info);
       case "smooth" then typeSmoothCall(call, next_context, info);
       case "String" then typeStringCall(call, next_context, info);
-      case "subSample" guard Config.synchronousFeaturesAllowed() then typeSubSampleCall(call, next_context, info);
+      case "subSample" then typeSubSampleCall(call, next_context, info);
       case "sum" then typeSumCall(call, next_context, info);
-      case "superSample" guard Config.synchronousFeaturesAllowed() then typeSuperSampleCall(call, next_context, info);
+      case "superSample" then typeSuperSampleCall(call, next_context, info);
       case "symmetric" then typeSymmetricCall(call, next_context, info);
       case "terminal" then typeDiscreteCall(call, next_context, info);
-      //case "ticksInState" guard Config.synchronousFeaturesAllowed() then typeTicksInStateCall(call, next_context, info);
-      //case "timeInState" guard Config.synchronousFeaturesAllowed() then typeTimeInStateCall(call, next_context, info);
-      //case "transition" guard Config.synchronousFeaturesAllowed() then typeTransitionCall(call, next_context, info);
+      //case "ticksInState" then typeTicksInStateCall(call, next_context, info);
+      //case "timeInState" then typeTimeInStateCall(call, next_context, info);
+      //case "transition" then typeTransitionCall(call, next_context, info);
       case "transpose" then typeTransposeCall(call, next_context, info);
       case "uniqueRootIndices" then typeUniqueRootIndicesCall(call, next_context, info);
       case "uniqueRoot" then typeUniqueRootCall(call, next_context, info);
@@ -1983,7 +1983,6 @@ protected
 
       // sample(u) - inferred clock
       case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1)}, {})
-        guard Config.synchronousFeaturesAllowed()
         algorithm
           ty_call := Call.makeTypedCall(clockedSample,
             {e1, Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK())}, v1, purity, t1);
@@ -1993,7 +1992,6 @@ protected
       // sample(u, c) - specified clock
       case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1),
              TypedArg.TYPED_ARG(value = e2, ty = Type.CLOCK())}, {})
-        guard Config.synchronousFeaturesAllowed()
         algorithm
           ty_call := Call.makeTypedCall(clockedSample, {e1, e2}, v1, purity, t1);
         then
@@ -2002,7 +2000,6 @@ protected
       // sample(u, Clock c = c) - specified clock
       case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1)},
             {TypedArg.TYPED_ARG(name = SOME("c"), value = e2, ty = Type.CLOCK())})
-        guard Config.synchronousFeaturesAllowed()
         algorithm
           ty_call := Call.makeTypedCall(clockedSample, {e1, e2}, v1, purity, t1);
         then
