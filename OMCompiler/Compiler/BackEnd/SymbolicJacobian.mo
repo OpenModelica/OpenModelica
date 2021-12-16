@@ -269,12 +269,13 @@ protected
   Option<BackendDAE.SymbolicJacobian> symJacA;
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparseColoring sparseColoring;
+  BackendDAE.NonlinearPattern nonlinearPattern;
   DAE.FunctionTree funcs, functionTree;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
-  (symJacA, funcs, sparsePattern, sparseColoring) := createSymbolicJacobianforStates(inBackendDAE);
-  shared := addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
+  (symJacA, funcs, sparsePattern, sparseColoring, nonlinearPattern) := createSymbolicJacobianforStates(inBackendDAE);
+  shared := addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, nonlinearPattern, shared);
   functionTree := BackendDAEUtil.getFunctions(shared);
   functionTree := DAE.AvlTreePathFunction.join(functionTree, funcs);
   shared := BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
@@ -289,6 +290,7 @@ protected function createSymbolicJacobianforStates "author: wbraun
   output DAE.FunctionTree outFunctionTree;
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outSparseColoring;
+  output BackendDAE.NonlinearPattern outNonlinearPattern;
 protected
   BackendDAE.BackendDAE backendDAE2;
   list<BackendDAE.Var>  varlst, knvarlst, states, inputvars, paramvars;
@@ -315,7 +317,7 @@ algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
     BackendDump.bltdump("System to create symbolic jacobian of: ",backendDAE2);
   end if;
-  (outJacobian, outFunctionTree, outSparsePattern, outSparseColoring) := generateGenericJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,"A",false);
+  (outJacobian, outFunctionTree, outSparsePattern, outSparseColoring, outNonlinearPattern) := generateGenericJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,"A",false);
 end createSymbolicJacobianforStates;
 
 // =============================================================================
@@ -334,12 +336,13 @@ protected
   Option<BackendDAE.SymbolicJacobian> symJacS;
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparseColoring sparseColoring;
+  BackendDAE.NonlinearPattern nonlinearPattern;
   DAE.FunctionTree funcs, functionTree;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
-  (symJacS, funcs, sparsePattern, sparseColoring) := createSymbolicJacobianforParameters(inBackendDAE);
-  shared := addBackendDAESharedJacobian(symJacS, sparsePattern, sparseColoring, shared);
+  (symJacS, funcs, sparsePattern, sparseColoring, nonlinearPattern) := createSymbolicJacobianforParameters(inBackendDAE);
+  shared := addBackendDAESharedJacobian(symJacS, sparsePattern, sparseColoring, nonlinearPattern, shared);
   functionTree := BackendDAEUtil.getFunctions(shared);
   functionTree := DAE.AvlTreePathFunction.join(functionTree, funcs);
   shared := BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
@@ -355,6 +358,7 @@ protected function createSymbolicJacobianforParameters
   output DAE.FunctionTree outFunctionTree;
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outSparseColoring;
+  output BackendDAE.NonlinearPattern outNonlinearPattern;
 protected
   BackendDAE.BackendDAE backendDAE2;
   list<BackendDAE.Var>  varlst, knvarlst, states, inputvars, paramvars;
@@ -382,7 +386,7 @@ algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
     BackendDump.bltdump("System to create symbolic jacobian of: ",backendDAE2);
   end if;
-  (outJacobian, outFunctionTree, outSparsePattern, outSparseColoring) := generateGenericJacobian(backendDAE2,paramvars,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(states),BackendVariable.listVar1(states),varlst,"S",false);
+  (outJacobian, outFunctionTree, outSparsePattern, outSparseColoring, outNonlinearPattern) := generateGenericJacobian(backendDAE2,paramvars,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(states),BackendVariable.listVar1(states),varlst,"S",false);
 end createSymbolicJacobianforParameters;
 
 // =============================================================================
@@ -1153,6 +1157,7 @@ public function generateSparsePattern "author: wbraun
   input BackendDAE.BackendDAE inBackendDAE;
   input list<BackendDAE.Var> inIndependentVars "vars";
   input list<BackendDAE.Var> inDependentVars "eqns";
+  input Boolean noColoring = false;
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outColoredCols;
 protected
@@ -1282,19 +1287,24 @@ algorithm
         end if;
 
         // translated to DAE.ComRefs
-        translated := list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in sparsepattern);
-        sparsetuple := list((cr,t) threaded for cr in depCompRefs, t in translated);
-        translated := list(list(arrayGet(depCompRefs, i) for i in lst) for lst in sparsepatternT);
-        sparsetupleT := list((cr,t) threaded for cr in inDepCompRefs, t in translated);
+        if listEmpty(sparsepattern) then
+          sparsetuple := {};
+          sparsetupleT := {};
+        else
+          translated := list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in sparsepattern);
+          sparsetuple := list((cr,t) threaded for cr in depCompRefs, t in translated);
+          translated := list(list(arrayGet(depCompRefs, i) for i in lst) for lst in sparsepatternT);
+          sparsetupleT := list((cr,t) threaded for cr in inDepCompRefs, t in translated);
+        end if;
 
         if debug then execStat("generateSparsePattern -> coloring start "); end if;
-        if not Flags.isSet(Flags.DISABLE_COLORING) then
+        if noColoring or Flags.isSet(Flags.DISABLE_COLORING) then
+          //without coloring
+          coloring := list({arrayGet(inDepCompRefs, i)} for i in 1:sizeN);
+        else
           // get coloring based on sparse pattern
           coloredArray := createColoring(sparseArray, sparseArrayT, sizeN, sizeM);
           coloring := list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in coloredArray);
-        else
-          //without coloring
-          coloring := list({arrayGet(inDepCompRefs, i)} for i in 1:sizeN);
         end if;
         if debug then execStat("generateSparsePattern -> coloring done "); end if;
 
@@ -1696,6 +1706,7 @@ protected
 
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparseColoring sparseColoring;
+  BackendDAE.NonlinearPattern nonlinearPattern;
 
   DAE.FunctionTree funcs, functionTree;
 
@@ -1745,7 +1756,7 @@ try
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
     end if;
-    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDER",{},{},{}, {})), sparsePattern, sparseColoring)::outJacobianMatrixes;
+    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDER",{},{},{}, {})), sparsePattern, sparseColoring, BackendDAE.emptyNonlinearPattern)::outJacobianMatrixes;
     outFunctionTree := inBackendDAE.shared.functionTree;
   else
     // prepare more needed variables
@@ -1755,11 +1766,11 @@ try
     paramvarsarr := BackendVariable.listVar1(paramvars);
     depVarsArr := BackendVariable.listVar1(depVars);
 
-    (outJacobian, outFunctionTree, sparsePattern, sparseColoring) := generateGenericJacobian(backendDAE,indepVars,statesarr,inputvarsarr,paramvarsarr,depVarsArr,varlst,"FMIDER", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+    (outJacobian, outFunctionTree, sparsePattern, sparseColoring, nonlinearPattern) := generateGenericJacobian(backendDAE,indepVars,statesarr,inputvarsarr,paramvarsarr,depVarsArr,varlst,"FMIDER", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
     end if;
-    outJacobianMatrixes := (outJacobian, sparsePattern, sparseColoring)::outJacobianMatrixes;
+    outJacobianMatrixes := (outJacobian, sparsePattern, sparseColoring, nonlinearPattern)::outJacobianMatrixes;
     outFunctionTree := DAE.AvlTreePathFunction.join(inBackendDAE.shared.functionTree, outFunctionTree);
   end if;
 else
@@ -1794,6 +1805,7 @@ algorithm
 
       BackendDAE.SparsePattern sparsePattern;
       BackendDAE.SparseColoring sparseColoring;
+      BackendDAE.NonlinearPattern nonlinearPattern;
 
       DAE.FunctionTree funcs, functionTree;
       list<DAE.Function> funcLst;
@@ -1824,35 +1836,35 @@ algorithm
         outputvarsarr = BackendVariable.listVar1(outputvars);
 
         // Differentiate the System w.r.t states for matrices A
-        (linearModelMatrix, functionTree, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A",false);
+        (linearModelMatrix, functionTree, sparsePattern, sparseColoring, nonlinearPattern) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A",false);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = {(linearModelMatrix,sparsePattern,sparseColoring)};
+        linearModelMatrices = {(linearModelMatrix,sparsePattern,sparseColoring, nonlinearPattern)};
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix A time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t inputs for matrices B
-        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B",false);
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring, nonlinearPattern) = generateGenericJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring, nonlinearPattern) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t states for matrices C
-        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C",false);
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring, nonlinearPattern) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring, nonlinearPattern) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t inputs for matrices D
-        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"D",false);
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring, nonlinearPattern) = generateGenericJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"D",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
-        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring, nonlinearPattern) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix D time: " + realString(clock()) + "\n");
         end if;
@@ -1896,10 +1908,10 @@ algorithm
         //object = BackendVariable.listVar1(object);
 
         // Differentiate the System w.r.t states for matrices A
-        (linearModelMatrix, functionTree, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A",false);
+        (linearModelMatrix, functionTree, sparsePattern, sparseColoring, nonlinearPattern) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A",false);
 
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = {(linearModelMatrix,sparsePattern,sparseColoring)};
+        linearModelMatrices = {(linearModelMatrix,sparsePattern,sparseColoring, nonlinearPattern)};
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix A time: " + realString(clock()) + "\n");
         end if;
@@ -1910,10 +1922,10 @@ algorithm
         object = DynamicOptimization.checkObjectIsSet(outputvarsarr, BackendDAE.optimizationLagrangeTermName);
         optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
-        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B",false);
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring, nonlinearPattern) = generateGenericJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring, nonlinearPattern) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
         end if;
@@ -1922,10 +1934,10 @@ algorithm
         object = DynamicOptimization.checkObjectIsSet(outputvarsarr, BackendDAE.optimizationMayerTermName);
         optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
-        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C",false);
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring, nonlinearPattern) = generateGenericJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring, nonlinearPattern) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
         end if;
@@ -1934,9 +1946,9 @@ algorithm
         optimizer_vars = BackendVariable.emptyVars();
         optimizer_vars = BackendVariable.listVar1(fconVarsList);
 
-        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2, states_inputs, statesarr, inputvarsarr, paramvarsarr, optimizer_vars, varlst, "D", false);
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring, nonlinearPattern) = generateGenericJacobian(backendDAE2, states_inputs, statesarr, inputvarsarr, paramvarsarr, optimizer_vars, varlst, "D", false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
-        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring, nonlinearPattern) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix D time: " + realString(clock()) + "\n");
         end if;
@@ -1965,9 +1977,12 @@ protected function generateGenericJacobian "author: wbraun"
   output DAE.FunctionTree outFunctionTree;
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outSparseColoring;
+  output BackendDAE.NonlinearPattern nonlinearPattern;
 protected
   BackendDAE.SymbolicJacobian symbolicJacobian;
   BackendDAE.Shared shared = inBackendDAE.shared;
+  BackendDAE.BackendDAE jacDAE;
+  list<BackendDAE.Var> jacDiffedVars;
 algorithm
   try
     outFunctionTree := shared.functionTree;
@@ -1975,8 +1990,14 @@ algorithm
       (symbolicJacobian, outFunctionTree) := createJacobian(inBackendDAE,inDiffVars, inStateVars, inInputVars, inParameterVars, inDifferentiatedVars, inVars, inName);
       true := checkForNonLinearStrongComponents(symbolicJacobian);
       outJacobian := SOME(symbolicJacobian);
+      // nonlinear pattern is the same as the sparse pattern of the jacobian
+      (jacDAE, _, _, _,  _, _) := symbolicJacobian;
+      jacDiffedVars := getJacobianResiduals(jacDAE);
+      (nonlinearPattern, _) := generateSparsePattern(jacDAE, inDiffVars, jacDiffedVars, true);
     else
       outJacobian := NONE();
+      // no jacobian -> no nonlinear pattern
+      nonlinearPattern := BackendDAE.emptyNonlinearPattern;
     end if;
     // generate sparse pattern
     (outSparsePattern,outSparseColoring) := generateSparsePattern(inBackendDAE, inDiffVars, BackendVariable.varList(inDifferentiatedVars));
@@ -2391,15 +2412,15 @@ end deriveAll;
 public function getJacobianMatrixbyName
   input BackendDAE.SymbolicJacobians injacobianMatrixes;
   input String inJacobianName;
-  output Option<tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring>> outMatrix;
+  output Option<tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring, BackendDAE.NonlinearPattern>> outMatrix;
 algorithm
   outMatrix := match(injacobianMatrixes)
     local
-      tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> matrix;
+      tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring, BackendDAE.NonlinearPattern> matrix;
       BackendDAE.SymbolicJacobians rest;
       String name;
 
-    case (matrix as (SOME((_,name,_,_,_,_)), _, _))::_ guard
+    case (matrix as (SOME((_,name,_,_,_,_)), _, _, _))::_ guard
       stringEq(name, inJacobianName)
     then SOME(matrix);
 
@@ -3044,6 +3065,7 @@ protected
   BackendDAE.Shared shared;
   BackendDAE.SparseColoring sparseColoring;
   BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.NonlinearPattern nonlinearPattern;
   BackendDAE.Variables dependentVars, globalKnownVars;
   DAE.FunctionTree funcs;
   FCore.Cache cache;
@@ -3123,7 +3145,7 @@ algorithm
     // create dependent variables
     dependentVarsLst := BackendVariable.varList(dependentVars);
 
-    (symJacBDAE, funcs, sparsePattern, sparseColoring) := generateGenericJacobian(backendDAE,
+    (symJacBDAE, funcs, sparsePattern, sparseColoring, nonlinearPattern) := generateGenericJacobian(backendDAE,
       independentVarsLst,
       BackendVariable.emptyVars(),
       BackendVariable.emptyVars(),
@@ -3133,7 +3155,7 @@ algorithm
       inName,
       inOnlySparsePattern);
 
-    outJacobian := BackendDAE.GENERIC_JACOBIAN(symJacBDAE, sparsePattern, sparseColoring);
+    outJacobian := BackendDAE.GENERIC_JACOBIAN(symJacBDAE, sparsePattern, sparseColoring, nonlinearPattern);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
   else
 
@@ -3641,6 +3663,7 @@ protected function addBackendDAESharedJacobian
   input Option<BackendDAE.SymbolicJacobian> inSymJac;
   input BackendDAE.SparsePattern inSparsePattern;
   input BackendDAE.SparseColoring inSparseColoring;
+  input BackendDAE.NonlinearPattern inNonlinearPattern;
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 protected
@@ -3657,11 +3680,12 @@ protected
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.ExtraInfo ei;
 algorithm
-  symjacs := { (inSymJac, inSparsePattern, inSparseColoring), (NONE(), ({}, {}, ({}, {}), -1), {}),
-               (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}) };
+  symjacs := { (inSymJac, inSparsePattern, inSparseColoring, inNonlinearPattern),
+               (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
+               (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
+               (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1))};
   outShared := BackendDAEUtil.setSharedSymJacs(inShared, symjacs);
 end addBackendDAESharedJacobian;
-
 
 protected function addBackendDAESharedJacobianSparsePattern
   input BackendDAE.SparsePattern inSparsePattern;
@@ -3683,10 +3707,11 @@ protected
   BackendDAE.SymbolicJacobians symjacs;
   Option<BackendDAE.SymbolicJacobian> symJac;
   BackendDAE.ExtraInfo ei;
+  BackendDAE.NonlinearPattern nonlinearPattern = BackendDAE.emptyNonlinearPattern;
 algorithm
   BackendDAE.SHARED(symjacs=symjacs) := inShared;
-  ((symJac, _, _)) := listGet(symjacs, inIndex);
-  symjacs := List.set(symjacs, inIndex, ((symJac, inSparsePattern, inSparseColoring)));
+  ((symJac, _, _, _)) := listGet(symjacs, inIndex);
+  symjacs := List.set(symjacs, inIndex, ((symJac, inSparsePattern, inSparseColoring, nonlinearPattern)));
   outShared := BackendDAEUtil.setSharedSymJacs(inShared, symjacs);
 end addBackendDAESharedJacobianSparsePattern;
 
@@ -3965,6 +3990,16 @@ algorithm
     case (eqn,(vars,_,repl)) then (eqn,false,(vars,false,repl));
   end matchcontinue;
 end rhsConstant2;
+
+function getJacobianResiduals
+  input BackendDAE.BackendDAE jacDAE;
+  output list<BackendDAE.Var> diffedRes;
+protected
+  BackendDAE.EqSystem syst;
+algorithm
+  syst :: _ := jacDAE.eqs;
+  diffedRes := BackendVariable.varList(syst.orderedVars);
+end getJacobianResiduals;
 
 // =============================================================================
 // Function detects non-linear strong component in symbolic jacobians

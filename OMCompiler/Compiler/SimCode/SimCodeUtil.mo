@@ -4590,7 +4590,10 @@ algorithm
     BackendDAE.SparseColoring sparseColoring;
     list<list<Integer>> coloring;
     BackendDAE.SparsePatternCrefs sparsepatternComRefs, sparsepatternComRefsT;
+    BackendDAE.NonlinearPattern np_;
+    BackendDAE.NonlinearPatternCrefs nonlinearpatternComRefs, nonlinearpatternComRefsT;
     SimCode.SparsityPattern sparseInts, sparseIntsT;
+    SimCode.NonlinearPattern nonlinearPat, nonlinearPatT;
 
     list<BackendDAE.EqSystem> systs;
     BackendDAE.EqSystem syst;
@@ -4618,7 +4621,7 @@ algorithm
 
     case (BackendDAE.GENERIC_JACOBIAN(NONE(),pattern as (sparsepatternComRefs, sparsepatternComRefsT,
                                              (independentComRefs, dependentVarsComRefs), _),
-                                             sparseColoring), _, _)
+                                             sparseColoring, (nonlinearpatternComRefs, nonlinearpatternComRefsT, _, _)), _, _)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("create sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
@@ -4641,6 +4644,9 @@ algorithm
         sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
         sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
 
+        nonlinearPat = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefs, false);
+        nonlinearPatT = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefsT, false);
+
         // set sparse pattern
         coloring = sortColoring(seedVars, sparseColoring);
         maxColor = listLength(sparseColoring);
@@ -4649,11 +4655,11 @@ algorithm
           print("created sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
         end if;
 
-      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, coloring, maxColor, -1, 0, NONE())), iuniqueEqIndex, itempvars);
+      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, NONE())), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs=systs, shared=shared), name, independentVarsLst, residualVarsLst, dependentVarsLst, _)),
                                       (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
-                                      sparseColoring), uniqueEqIndex, tempvars)
+                                      sparseColoring, np_ as (nonlinearpatternComRefs, nonlinearpatternComRefsT, _, _)), uniqueEqIndex, tempvars)
       equation
         // create SimCodeVar.SimVars from jacobian vars
         dummyVar = ("dummyVar" + name);
@@ -4695,6 +4701,9 @@ algorithm
         sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
         sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
 
+        nonlinearPat = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefs, false);
+        nonlinearPatT = sortSparsePattern(varsSeedIndex, nonlinearpatternComRefsT, false);
+
         // set sparse pattern
         coloring = sortColoring(varsSeedIndex, sparseColoring);
         maxColor = listLength(sparseColoring);
@@ -4715,7 +4724,7 @@ algorithm
 
         (allEquations, constantEqns, uniqueEqIndex, tempvars) = getSimEqSystemForJacobians(systs, shared, uniqueEqIndex, tempvars);
 
-      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, 0, SOME(crefToSimVarHTJacobian))), uniqueEqIndex, tempvars);
+      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, SOME(crefToSimVarHTJacobian))), uniqueEqIndex, tempvars);
 
     else
       equation
@@ -4861,12 +4870,14 @@ algorithm
       list<SimCodeVar.SimVar> seedVars, indexVars, seedIndexVars;
 
       BackendDAE.SparsePatternCrefs sparsepattern, sparsepatternT;
+      BackendDAE.NonlinearPatternCrefs nonlinearpattern, nonlinearpatternT;
       list<list<DAE.ComponentRef>> colsColors;
-      Integer maxColor;
+      Integer maxColor, nonlinear_count;
 
       BackendDAE.SymbolicJacobians rest;
       list<SimCode.JacobianMatrix> linearModelMatrices;
       SimCode.SparsityPattern sparseInts, sparseIntsT;
+      SimCode.NonlinearPattern nonlinearPat, nonlinearPatT;
       list<list<Integer>> coloring;
       Option<BackendDAE.SymbolicJacobian> optionBDAE;
 
@@ -4886,7 +4897,7 @@ algorithm
         (linearModelMatrices, uniqueEqIndex);
 
     // if nothing is generated
-    case (((NONE(), ({}, {}, ({}, {}), _), {}))::rest, _, _, name::restnames)
+    case (((NONE(), ({}, {}, ({}, {}), _), {}, _))::rest, _, _, name::restnames)
       equation
         tmpJac = SimCode.emptyJacobian;
         tmpJac.matrixName = name;
@@ -4896,7 +4907,7 @@ algorithm
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated
-    case (((optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors))::rest, _, _, name::restnames)
+    case (((optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors, _))::rest, _, _, name::restnames)
       guard  checkForEmptyBDAE(optionBDAE)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -4931,6 +4942,9 @@ algorithm
         sparseInts = sortSparsePattern(seedIndexVars, sparsepattern, false);
         sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
 
+        nonlinearPat = {};
+        nonlinearPatT = {};
+
         maxColor = listLength(colsColors);
         nRows = listLength(diffedCompRefs);
         coloring = sortColoring(seedVars, colsColors);
@@ -4948,7 +4962,7 @@ algorithm
         seedVars = List.map1(seedVars, setSimVarKind, BackendDAE.SEED_VAR());
         seedVars = List.map1(seedVars, setSimVarMatrixName, SOME(name));
 
-        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, 0, NONE());
+        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, NONE());
         linearModelMatrices = tmpJac::inJacobianMatrixes;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
 
@@ -4956,7 +4970,8 @@ algorithm
         (linearModelMatrices, uniqueEqIndex);
 
     case (((SOME((BackendDAE.DAE(eqs=systs, shared=shared), name, _, diffedVars, alldiffedVars, _)),
-           (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors))::rest,
+           (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors,
+           (nonlinearpattern, nonlinearpatternT, (_, _), nonlinear_count)))::rest,
                   _, uniqueEqIndex, _::restnames)
       equation
         // create SimCodeVar.SimVars from jacobian vars
@@ -5021,6 +5036,9 @@ algorithm
         sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
         sparseInts = sortSparsePattern(seedIndexVars, sparsepattern, false);
 
+        nonlinearPat = sortSparsePattern(seedIndexVars, nonlinearpattern, false);
+        nonlinearPatT = sortSparsePattern(seedIndexVars, nonlinearpatternT, false);
+
         maxColor = listLength(colsColors);
         nRows =  listLength(diffedVars);
         coloring = sortColoring(seedVars, colsColors);
@@ -5051,7 +5069,7 @@ algorithm
           print("analytical Jacobians -> created all SimCode equations for Matrix " + name +  " time: " + realString(clock()) + "\n");
         end if;
 
-        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, 0, SOME(crefToSimVarHTJacobian));
+        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, SOME(crefToSimVarHTJacobian));
         linearModelMatrices = tmpJac::inJacobianMatrixes;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames, linearModelMatrices);
      then
@@ -5293,11 +5311,11 @@ algorithm
     //translate
     for tpl in inSparsePattern loop
       (cref, crefs) := tpl;
-      i := BaseHashTable.get(cref, ht);
+      i := BaseHashTable.get(stripJacResidual(cref), ht);
       if not useFMIIndex or i > 0 then // 0 means fmi_index = NONE() and represents internal variables that should be eliminated
         intLst := {};
         for cr in crefs loop
-          j := BaseHashTable.get(cr, ht);
+          j := BaseHashTable.get(stripJacResidual(cr), ht);
           if not useFMIIndex or j > 0 then // 0 means fmi_index = NONE() and represents internal variables that should be eliminated
             intLst := j :: intLst;
           end if;
@@ -5311,6 +5329,19 @@ algorithm
     outSparse := List.sort(outSparse, Util.compareTupleIntGt);
   end if;
 end sortSparsePattern;
+
+protected function stripJacResidual
+  "kabdelhak: this function strips a jacobian residual down to the original
+  residual variable to get the equation mapping right. Used for nonlinear
+  pattern analysis."
+  input output DAE.ComponentRef cref;
+algorithm
+  cref := match cref
+    case DAE.CREF_QUAL() guard(substring(cref.ident, 1, 4) == "$res")
+    then DAE.CREF_IDENT(cref.ident, cref.identType, cref.subscriptLst);
+    else cref;
+  end match;
+end stripJacResidual;
 
 protected function sortColoring
   input list<SimCodeVar.SimVar> inSimVars;
@@ -13487,6 +13518,7 @@ protected
    Option<BackendDAE.SymbolicJacobian> optcontPartDer;
    BackendDAE.SparsePattern spPattern;
    BackendDAE.SparseColoring spColors;
+   BackendDAE.NonlinearPattern nlPattern;
    BackendDAE.SymbolicJacobians contPartDer;
    SimCode.JacobianMatrix contSimJac;
    Option<SimCode.JacobianMatrix> contPartSimDer;
@@ -13499,7 +13531,7 @@ algorithm
     //print("Start creating createFMIModelStructure\n");
     // combine the transposed sparse pattern of matrix A and B
     // to obtain dependencies for the derivativesq
-    SOME((optcontPartDer, spPattern as (_, spTA, (diffCrefsA, diffedCrefsA),_), spColors)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "FMIDER");
+    SOME((optcontPartDer, spPattern as (_, spTA, (diffCrefsA, diffedCrefsA),_), spColors, nlPattern)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "FMIDER");
 
     crefSimVarHT := createCrefToSimVarHT(inModelInfo);
     //print("-- Got matrixes\n");
@@ -13537,7 +13569,7 @@ algorithm
 
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
-      contPartDer := {(optcontPartDer,spPattern,spColors)};
+      contPartDer := {(optcontPartDer,spPattern,spColors, nlPattern)};
       ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDer"}, {});
       // collect algebraic loops and symjacs for FMIDer
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);

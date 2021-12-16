@@ -150,7 +150,10 @@ algorithm
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
   einfo := BackendDAE.EVENT_INFO(timeEvents, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
-  symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {})};
+  symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
+              (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
+              (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
+              (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1))};
   syst := BackendDAEUtil.createEqSystem(vars_1, eqnarr, {}, BackendDAE.UNKNOWN_PARTITION(), reqnarr);
   outBackendDAE := BackendDAE.DAE(syst::{},
                                   BackendDAE.SHARED(globalKnownVars,

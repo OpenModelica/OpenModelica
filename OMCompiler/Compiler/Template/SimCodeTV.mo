@@ -370,6 +370,7 @@ package SimCode
   type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 
   type SparsityPattern = list<tuple<Integer, list<Integer>>>;
+  type NonlinearPattern = SparsityPattern;
 
   uniontype JacobianColumn
     record JAC_COLUMN
@@ -387,6 +388,8 @@ package SimCode
       String matrixName;
       SparsityPattern sparsity;
       SparsityPattern sparsityT;
+      NonlinearPattern nonlinear;
+      NonlinearPattern nonlinearT;
       list<list<Integer>> coloredCols;
       Integer maxColorCols;
       Integer jacobianIndex;

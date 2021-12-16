@@ -775,13 +775,14 @@ uniontype Jacobian
     Option<SymbolicJacobian> jacobian;
     SparsePattern sparsePattern;
     SparseColoring coloring;
+    NonlinearPattern nonlinearPattern;
   end GENERIC_JACOBIAN;
 
   record EMPTY_JACOBIAN end EMPTY_JACOBIAN;
 end Jacobian;
 
 public
-type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
+type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring, NonlinearPattern>>;
 
 public
 type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation system
@@ -794,6 +795,8 @@ type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation sys
 
 type SparsePatternCref = tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>;
 type SparsePatternCrefs = list<SparsePatternCref>;
+type NonlinearPatternCref = SparsePatternCref;
+type NonlinearPatternCrefs = SparsePatternCrefs;
 
 public
 type SparsePattern = tuple<SparsePatternCrefs,              // column-wise sparse pattern
@@ -802,8 +805,11 @@ type SparsePattern = tuple<SparsePatternCrefs,              // column-wise spars
                                  list< .DAE.ComponentRef>>, // diffed vars (residual vars) of associated jacobian
                            Integer>;                        // nonZeroElements
 
+type NonlinearPattern = SparsePattern;
+
 public
 constant SparsePattern emptySparsePattern = ({},{},({},{}),0);
+constant NonlinearPattern emptyNonlinearPattern = ({},{},({},{}),0);
 
 public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // colouring

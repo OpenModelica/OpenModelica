@@ -48,3 +48,12 @@ void freeSparsePattern(SPARSE_PATTERN *spp) {
     free(spp->leadindex); spp->leadindex = NULL;
   }
 }
+
+void freeNonlinearPattern(NONLINEAR_PATTERN *nlp) {
+  if (nlp != NULL) {
+    free(nlp->indexVar); nlp->indexVar = NULL;
+    free(nlp->indexEqn); nlp->indexEqn = NULL;
+    free(nlp->columns);  nlp->columns = NULL;
+    free(nlp->rows);     nlp->rows = NULL;
+  }
+}

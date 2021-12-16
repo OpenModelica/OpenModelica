@@ -831,21 +831,22 @@ algorithm
         BackendDAE.SymbolicJacobian symJacobian;
         BackendDAE.SparsePattern sparsePattern;
         BackendDAE.SparseColoring coloring;
+        BackendDAE.NonlinearPattern nonlinearPattern;
         BackendDAE.TearingSet tearingSet;
       case comp as BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN(jacobian=fullJacobian))
         equation
           fullJacobian = replaceZCExpinFullJacobian(fullJacobian, zeroCrossingLst, relationsLst, samplesLst, allVariables, globalKnownVars);
           comp.jac = BackendDAE.FULL_JACOBIAN(jacobian=fullJacobian);
         then comp;
-      case comp as BackendDAE.EQUATIONSYSTEM(jac=jacobian as BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern, coloring=coloring))
+      case comp as BackendDAE.EQUATIONSYSTEM(jac=jacobian as BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern, coloring=coloring, nonlinearPattern=nonlinearPattern))
         equation
           symJacobian = replaceZCExpinSymJacobian(symJacobian, zeroCrossingLst, relationsLst, samplesLst, allVariables, globalKnownVars);
-          comp.jac = BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern,coloring=coloring);
+          comp.jac = BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern,coloring=coloring,nonlinearPattern=nonlinearPattern);
         then comp;
-      case comp as BackendDAE.TORNSYSTEM(strictTearingSet=tearingSet as BackendDAE.TEARINGSET(jac=jacobian as BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern, coloring=coloring)))
+      case comp as BackendDAE.TORNSYSTEM(strictTearingSet=tearingSet as BackendDAE.TEARINGSET(jac=jacobian as BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern, coloring=coloring, nonlinearPattern=nonlinearPattern)))
         equation
           symJacobian = replaceZCExpinSymJacobian(symJacobian, zeroCrossingLst, relationsLst, samplesLst, allVariables, globalKnownVars);
-          tearingSet.jac = BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern,coloring=coloring);
+          tearingSet.jac = BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern,coloring=coloring,nonlinearPattern=nonlinearPattern);
           comp.strictTearingSet = tearingSet;
         then comp;
       else then component;
