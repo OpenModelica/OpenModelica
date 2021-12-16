@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+AbsoluteClock.mos \
 inferredConstructor1.mos \
 inferredConstructor2.mos \
 rationalConstructor1.mos \
