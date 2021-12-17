@@ -1539,7 +1539,7 @@ public
     end is_sliced_impl;
   algorithm
     sliced := match cref
-      case CREF() then is_sliced_impl(cref.restCref);
+      case CREF() then List.any(cref.subscripts, Subscript.isSliced) or is_sliced_impl(cref.restCref);
       else false;
     end match;
   end isSliced;
@@ -1615,10 +1615,10 @@ public
     iterators := match cref
       case CREF()
         algorithm
-          (rest_cref, iterators) := iterate_impl(cref.restCref);
+          (cref, iterators) := iterate_impl(cref);
 
           if not listEmpty(iterators) then
-            cref.restCref := rest_cref;
+            // cref.restCref := rest_cref;
             iterators := listReverseInPlace(iterators);
           end if;
         then

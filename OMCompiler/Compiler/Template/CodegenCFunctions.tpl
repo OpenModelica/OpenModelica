@@ -5269,18 +5269,7 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
       let cast = typeCastContextInt(context, ty)
       '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction)%>'
     else
-      match context
-      case FUNCTION_CONTEXT(__) then
-        // The array subscript denotes a slice
-        // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
-        let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction)
-        let arrayType = expTypeArray(ty)
-        let tmp = tempDecl(arrayType, &varDecls)
-        let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
-        let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
-        tmp
-      else
-        error(sourceInfo(),'daeExpCrefRhsFunContext: Slice in simulation context: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+      error(sourceInfo(),'daeExpCrefRhsFunContext: Slice detected: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
   case ecr then
     error(sourceInfo(),'daeExpCrefRhsFunContext: UNHANDLED EXPRESSION: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsFunContext;
