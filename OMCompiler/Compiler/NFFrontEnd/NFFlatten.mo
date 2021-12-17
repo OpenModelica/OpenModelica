@@ -907,8 +907,7 @@ algorithm
   prefix_node := ComponentRef.node(prefix);
 
   for dim in dimensions loop
-    iter_comp := Component.newIterator(Type.INTEGER(), InstNode.info(prefix_node));
-    iter := InstNode.fromComponent("$i" + String(index), iter_comp, InstNode.parent(prefix_node));
+    iter := InstNode.newIndexedIterator(index, Type.INTEGER(), InstNode.info(prefix_node));
     iterators := iter :: iterators;
     index := index + 1;
 

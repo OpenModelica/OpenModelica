@@ -113,6 +113,30 @@ public
     flatModel.initialAlgorithms := Algorithm.mapExpList(flatModel.initialAlgorithms, fn);
   end mapExp;
 
+  function mapEquations
+    input output FlatModel flatModel;
+    input MapFn fn;
+
+    partial function MapFn
+      input output Equation eq;
+    end MapFn;
+  algorithm
+    flatModel.equations := list(Equation.map(eq, fn) for eq in flatModel.equations);
+    flatModel.initialEquations := list(Equation.map(eq, fn) for eq in flatModel.initialEquations);
+  end mapEquations;
+
+  function mapAlgorithms
+    input output FlatModel flatModel;
+    input MapFn fn;
+
+    partial function MapFn
+      input output Algorithm alg;
+    end MapFn;
+  algorithm
+    flatModel.algorithms := list(fn(alg) for alg in flatModel.algorithms);
+    flatModel.initialAlgorithms := list(fn(alg) for alg in flatModel.initialAlgorithms);
+  end mapAlgorithms;
+
   function toString
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;

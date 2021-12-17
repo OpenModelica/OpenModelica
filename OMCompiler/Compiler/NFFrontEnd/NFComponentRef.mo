@@ -1518,5 +1518,115 @@ public
     end match;
   end mapTypes;
 
+  function isSliced
+    input ComponentRef cref;
+    output Boolean sliced;
+  protected
+    function is_sliced_impl
+      input ComponentRef cref;
+      output Boolean sliced;
+    algorithm
+      sliced := match cref
+        case CREF(origin = Origin.CREF)
+          algorithm
+            sliced := Type.dimensionCount(cref.ty) > listLength(cref.subscripts) or
+                      List.any(cref.subscripts, Subscript.isSliced);
+          then
+            sliced or is_sliced_impl(cref.restCref);
+
+        else false;
+      end match;
+    end is_sliced_impl;
+  algorithm
+    sliced := match cref
+      case CREF() then is_sliced_impl(cref.restCref);
+      else false;
+    end match;
+  end isSliced;
+
+  function iterate
+    input output ComponentRef cref;
+          output list<tuple<InstNode, Expression>> iterators;
+  protected
+    ComponentRef rest_cref;
+
+    function iterate_impl
+      "Replaces any slice subscripts (including implicit :) with an iterator,
+       and returns a list of all iterators with the corresponding ranges."
+      input output ComponentRef cref;
+      input output list<tuple<InstNode, Expression>> iterators = {};
+      input Integer index = 1;
+    protected
+      ComponentRef rest_cref;
+      Dimension dim;
+      list<Dimension> dims;
+      Integer dim_count, sub_count;
+      list<Subscript> subs, isubs;
+      Integer dim_index, iter_index;
+      InstNode iterator;
+      Expression range;
+    algorithm
+      () := match cref
+        case CREF(origin = Origin.CREF)
+          algorithm
+            dims := listReverse(Type.arrayDims(cref.ty));
+            dim_count := listLength(dims);
+            sub_count := listLength(cref.subscripts);
+            subs := List.consN(dim_count - sub_count, Subscript.WHOLE(), cref.subscripts);
+            isubs := {};
+            iter_index := index;
+            dim_index := dim_count;
+
+            for s in listReverse(subs) loop
+              dim :: dims := dims;
+
+              if not Subscript.isIndex(s) then
+                range := match s
+                  // Slices like 1:3 are used directly.
+                  case Subscript.SLICE() then s.slice;
+                  // : are turned into 1:size(x, dim).
+                  case Subscript.WHOLE()
+                    then Expression.makeRange(Dimension.lowerBoundExp(dim),
+                                              NONE(),
+                                              Dimension.endExp(dim, cref, dim_index));
+                end match;
+
+                iterator := InstNode.newIndexedIterator(iter_index);
+                iterators := (iterator, range) :: iterators;
+                dim_index := dim_index - 1;
+                iter_index := iter_index + 1;
+
+                s := Subscript.INDEX(Expression.fromCref(makeIterator(iterator, Type.INTEGER())));
+              end if;
+
+              isubs := s :: isubs;
+            end for;
+
+            cref.subscripts := isubs;
+            (rest_cref, iterators) := iterate_impl(cref.restCref, iterators, iter_index);
+            cref.restCref := rest_cref;
+          then
+            ();
+
+        else ();
+      end match;
+    end iterate_impl;
+  algorithm
+    iterators := match cref
+      case CREF()
+        algorithm
+          (rest_cref, iterators) := iterate_impl(cref.restCref);
+
+          if not listEmpty(iterators) then
+            cref.restCref := rest_cref;
+            iterators := listReverseInPlace(iterators);
+          end if;
+        then
+          iterators;
+
+      else {};
+    end match;
+  end iterate;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

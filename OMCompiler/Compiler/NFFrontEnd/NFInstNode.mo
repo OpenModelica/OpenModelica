@@ -290,6 +290,24 @@ uniontype InstNode
       InstNodeType.BASE_CLASS(parent, definition));
   end newExtends;
 
+  function newIterator
+    input String name;
+    input Type ty;
+    input SourceInfo info;
+    output InstNode iterator;
+  algorithm
+    iterator := fromComponent(name, Component.newIterator(ty, info), EMPTY_NODE());
+  end newIterator;
+
+  function newIndexedIterator
+    input Integer index;
+    input Type ty = Type.INTEGER();
+    input SourceInfo info = AbsynUtil.dummyInfo;
+    output InstNode iterator;
+  algorithm
+    iterator := newIterator("$i" + String(index), ty, info);
+  end newIndexedIterator;
+
   function fromComponent
     input String name;
     input Component component;

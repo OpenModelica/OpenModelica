@@ -953,6 +953,9 @@ SizeInvalidIndex4.mo \
 SizeInvalidType1.mo \
 SizeInvalidType2.mo \
 SizeInvalidType3.mo \
+SlicedCref1.mo \
+SlicedCref2.mo \
+SlicedCref3.mo \
 StatementInvalidType1.mo \
 StateSelectVariability1.mo \
 StateSelect1.mo \

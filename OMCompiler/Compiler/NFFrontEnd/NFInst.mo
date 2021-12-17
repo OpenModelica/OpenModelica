@@ -206,6 +206,7 @@ algorithm
   InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
 
   VerifyModel.verify(flatModel);
+  (flatModel, functions) := InstUtil.expandSlicedCrefs(flatModel, functions);
   flatModel := InstUtil.combineSubscripts(flatModel);
 
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
