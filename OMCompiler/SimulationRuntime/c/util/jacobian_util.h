@@ -54,6 +54,13 @@ void freeAnalyticJacobian(ANALYTIC_JACOBIAN* jac);
  */
 void freeSparsePattern(SPARSE_PATTERN *spp);
 
+/**
+ * \brief Free struct NONLINEAR_PATTERN
+ *
+ * Frees dynamically allocated memory and sets pointers to NULL.
+ */
+void freeNonlinearPattern(NONLINEAR_PATTERN *nlp);
+
 #ifdef __cplusplus
 }
 #endif

@@ -34,6 +34,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "../../util/jacobian_util.h"
 #include "../../util/simulation_options.h"
 #include "../../util/omc_error.h"
 #include "../../util/omc_file.h"
@@ -600,7 +601,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     free(nonlinsys[i].min);
     free(nonlinsys[i].max);
     freeValueList(nonlinsys[i].oldValueList, 1);
-
+    freeNonlinearPattern(nonlinsys[i].nonlinearPattern);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     if (data->simulationInfo->nlsCsvInfomation)
