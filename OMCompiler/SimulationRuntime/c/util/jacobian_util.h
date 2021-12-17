@@ -61,6 +61,9 @@ void freeSparsePattern(SPARSE_PATTERN *spp);
  */
 void freeNonlinearPattern(NONLINEAR_PATTERN *nlp);
 
+unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx);
+unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx);
+
 #ifdef __cplusplus
 }
 #endif
