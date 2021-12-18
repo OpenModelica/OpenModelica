@@ -13,3 +13,4 @@ Makefile* text eol=native
 *.tpl eol=lf
 *.po eol=lf
 *.g text eol=lf
+*.mo linguist-language=Modelica
