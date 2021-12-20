@@ -106,8 +106,14 @@ public
     function toString
       input SimVar var;
       input output String str = "";
+    protected
+      Expression start;
     algorithm
       str := str + "(" + intString(var.index) + ")" + BackendExtension.VariableKind.toString(var.varKind) + " (" + intString(SimVar.size(var)) + ") " + Type.toString(var.type_) + " " + ComponentRef.toString(var.name);
+      if Util.isSome(var.start) then
+        start := Util.getOption(var.start);
+        str := str + " = " + Expression.toString(start);
+      end if;
     end toString;
 
     function listToString
@@ -412,16 +418,21 @@ public
         local
           Expression bindingExp;
 
-        // parameter with constant binding -> start value is updated to the binding value. Value can be changed after sim
+        // 1. parameter with constant binding -> start value is updated to the binding value. Value can be changed after sim
         case Variable.VARIABLE(binding = Binding.TYPED_BINDING(variability = NFPrefixes.Variability.CONSTANT, bindingExp = bindingExp),
           backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
         then (SOME(bindingExp), true, Causality.PARAMETER);
 
-        // parameter with non constant binding -> normal start value. Value cannot be changed after simulation
+        // 2. just like 1. - FLAT_BINDING gets introduced by expanding/scalarizing
+        case Variable.VARIABLE(binding = Binding.FLAT_BINDING(variability = NFPrefixes.Variability.CONSTANT, bindingExp = bindingExp),
+          backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
+        then (SOME(bindingExp), true, Causality.PARAMETER);
+
+        // 3. parameter with non constant binding -> normal start value. Value cannot be changed after simulation
         case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
         then (start, false, Causality.CALCULATED_PARAMETER);
 
-        // other variables -> regular start value and it can be changed after simulation
+        // 0. other variables -> regular start value and it can be changed after simulation
         else (start, false, Causality.LOCAL);
 
         // ToDo: more cases!

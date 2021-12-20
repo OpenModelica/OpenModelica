@@ -142,6 +142,10 @@ public
     variables := BVariable.VariablePointers.addList(start_vars, variables);
     equations := BEquation.EquationPointers.addList(start_eqs, equations);
     initialEqs := BEquation.EquationPointers.addList(start_eqs, initialEqs);
+
+    if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
+      print(List.toString(start_eqs, Equation.pointerToString, StringUtil.headline_4("Created Start Equations:"), "\t", "\n\t", "", false) + "\n\n");
+    end if;
   end createStartEquations;
 
   function createStartEquation
@@ -223,6 +227,9 @@ public
     pre_eqs := Pointer.access(ptr_pre_eqs);
     equations := BEquation.EquationPointers.addList(pre_eqs, equations);
     initialEqs := BEquation.EquationPointers.addList(pre_eqs, initialEqs);
+    if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(pre_eqs) then
+      print(List.toString(pre_eqs, Equation.pointerToString, StringUtil.headline_4("Created Unfixed Discrete Equations:"), "\t", "\n\t", "", false) + "\n\n");
+    end if;
   end createPreEquations;
 
   function createPreEquation
@@ -267,6 +274,9 @@ public
     equations := BEquation.EquationPointers.addList(parameter_eqs, equations);
     initialEqs := BEquation.EquationPointers.addList(parameter_eqs, initialEqs);
     initialVars := BVariable.VariablePointers.addList(initial_param_vars, initialVars);
+    if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(parameter_eqs) then
+      print(List.toString(parameter_eqs, Equation.pointerToString, StringUtil.headline_4("Created Parameter Binding Equations:"), "\t", "\n\t", "", false) + "\n\n");
+    end if;
   end createParameterEquations;
 
   function sortInitEqns
