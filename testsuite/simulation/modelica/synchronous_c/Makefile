@@ -15,11 +15,11 @@ backSample1.mos \
 noClock.mos \
 sampleVar.mos \
 inferredSampleVar.mos \
+holdVar.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-holdVar.mos \
 firstTick.mos \
 intervalBase.mos \
 

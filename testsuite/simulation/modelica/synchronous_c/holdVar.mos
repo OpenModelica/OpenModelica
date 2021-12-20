@@ -7,7 +7,6 @@
 
 loadFile("Synchronous.mo"); getErrorString();
 
-cd("temp/");
 simulate(Synchronous.Conversion.holdVar, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 
 print("Hold variable x");
