@@ -311,8 +311,11 @@ static void checkSimulationTerminated(DATA* data, SOLVER_INFO* solverInfo)
 {
   if(terminationTerminate)
   {
-    printInfo(stdout, TermInfo);
-    fputc('\n', stdout);
+    if (TermInfo.filename != NULL && TermInfo.filename[0] != '\0') {
+      printInfo(stdout, TermInfo);
+      fputc('\n', stdout);
+    }
+
     infoStreamPrint(LOG_STDOUT, 0, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
     data->simulationInfo->stopTime = solverInfo->currentTime;
   }
