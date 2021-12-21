@@ -1,5 +1,5 @@
 .PHONY: generated_pdfs/dyOptInitialGuess.pdf generated_pdfs/cruntimedraft.pdf usersguide cppruntime-doc clean
-all: generated_pdfs/dyOptInitialGuess.pdf
+all: docs
 
 generated_pdfs/cruntimedraft.pdf:
 	latexmk -outdir=generated_pdfs -pdf SimulationRuntime/c/src/cruntimedraft.tex
@@ -14,7 +14,7 @@ usersguide:
 BUILDDIR=openmodelica-doc_$(BUILDDIR_VER)
 
 omsiruntime-doc:
-	mkdir -p SimulationRuntime/omsi/Images
+	mkdir -p SimulationRuntime/OMSI/Images
 	cp images/logo.svg SimulationRuntime/OMSI/Images/OMLogo.svg
 	cd SimulationRuntime/OMSI && cmake -G "Unix Makefiles" -DSOURCE_ROOT=../../../OMCompiler/SimulationRuntime/OMSI && make Docs
 
@@ -44,7 +44,7 @@ docs-internal: generated_pdfs/dyOptInitialGuess.pdf generated_pdfs/cruntimedraft
 
 docs:
 	test -f ../common/semver.sh
-	$(MAKE) docs-internal BUILDDIR_VER="`cd ../ && ./common/semver.sh | sed -e 's/-dev[.]/~dev-/' -e 's/^v//'`"
+	$(MAKE) docs-internal BUILDDIR_VER="`cd ../ && ./common/semver.sh | tr - "~" | sed -e 's/^v//'`"
 
 clean:
 

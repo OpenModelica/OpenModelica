@@ -205,3 +205,15 @@ config.status: configure
 	./config.status -recheck
 configure: configure.ac
 	autoconf
+
+SOURCE_DIR=openmodelica_@SOURCE_REVISION_NO_PKG@
+source-dist:
+	rm -rf "$(SOURCE_DIR)"
+	mkdir -p "$(SOURCE_DIR)"
+	git ls-files --recurse-submodules | tar caf - -T- | tar xC "$(SOURCE_DIR)"
+	echo "@SOURCE_REVISION_NO_PKG@" > "$(SOURCE_DIR)/REVISION"
+	echo "OMEdit @SOURCE_REVISION_NO_PKG@" > "$(SOURCE_DIR)/OMEdit/REVISION"
+	rm -rf "$(SOURCE_DIR)/testsuite" "$(SOURCE_DIR)/libraries" "$(SOURCE_DIR)/doc" "$(SOURCE_DIR)/OMOptim" "$(SOURCE_DIR)/OMSimulator/OMTLMSimulator/CompositeModels" "$(SOURCE_DIR)/OMSimulator/testsuite"
+	mkdir -p "$(SOURCE_DIR)/doc"
+	tar xCJf "$(SOURCE_DIR)/doc" doc/openmodelica-doc_@SOURCE_REVISION_NO_PKG@.orig.tar.xz
+	tar cJf "$(SOURCE_DIR).orig.tar.xz" "$(SOURCE_DIR)"

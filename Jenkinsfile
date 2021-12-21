@@ -530,6 +530,9 @@ pipeline {
             sh "mv doc/UsersGuide/build/epub/OpenModelicaUsersGuide.epub OpenModelicaUsersGuide-${common.tagName()}.epub"
             archiveArtifacts "OpenModelicaUsersGuide-${common.tagName()}*.*"
             stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${common.tagName()}*.*"
+
+            sh "make -C doc"
+            stash name: 'doc-tarball', includes: "doc/openmodelica-doc_*.orig.tar.xz"
           }
         }
 
@@ -793,6 +796,21 @@ pipeline {
             sh "tar xJf OpenModelicaUsersGuide-${common.tagName()}.html.tar.xz"
             sh "mv OpenModelicaUsersGuide ${common.tagName()}"
             sshPublisher(publishers: [sshPublisherDesc(configName: 'OpenModelicaUsersGuide', transfers: [sshTransfer(sourceFiles: "OpenModelicaUsersGuide-${common.tagName()}*,${common.tagName()}/**")])])
+          }
+        }
+        stage('make-source-tarball') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.16.3'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          steps {
+            echo "${env.NODE_NAME}"
+            unstash 'doc-tarball'
+            sh "make source-dist"
+            stash name: 'source-dist', includes: "openmodelica_*.orig.tar.xz"
           }
         }
       }
