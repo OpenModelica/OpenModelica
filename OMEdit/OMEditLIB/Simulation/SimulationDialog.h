@@ -244,16 +244,28 @@ private:
   Label *mpDataReconciliationCorrelationMatrixInputFileLabel;
   QLineEdit *mpDataReconciliationCorrelationMatrixInputFileTextBox;
   QPushButton *mpDataReconciliationCorrelationMatrixInputFileBrowseButton;
+
+  Label *mpBoundaryConditionMeasurementInputFileLabel;
+  QLineEdit *mpBoundaryConditionMeasurementInputFileTextBox;
+  QPushButton *mpBoundaryConditionMeasurementInputFileBrowseButton;
+  Label *mpBoundaryConditionCorrelationMatrixInputFileLabel;
+  QLineEdit *mpBoundaryConditionCorrelationMatrixInputFileTextBox;
+  QPushButton *mpBoundaryConditionCorrelationMatrixInputFileBrowseButton;
+
   Label *mpDataReconciliationEpsilonLabel;
   QLineEdit *mpDataReconciliationEpsilonTextBox;
   QCheckBox *mpSaveSettingsCheckBox;
   QPushButton *mpCalculateButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  QStackedWidget  *mpDataReconciliationStackedWidget;
 private slots:
   void browseDataReconciliationMeasurementInputFile();
   void browseDataReconciliationCorrelationMatrixInputFile();
+  void browseBoundaryConditionMeasurementInputFile();
+  void browseBoundaryConditionCorrelationMatrixInputFile();
   void calculateDataReconciliation();
+  void switchAlgorithmPage(int index);
 };
 
 #endif // SIMULATIONDIALOG_H
