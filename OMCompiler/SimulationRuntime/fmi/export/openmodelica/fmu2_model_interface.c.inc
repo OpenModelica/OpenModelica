@@ -1478,8 +1478,35 @@ Functions for FMI2 for Co-Simulation
 ****************************************************/
 fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], const fmi2Real value[])
 {
-  // TODO Write code here
-  return unsupportedFunction(c, "fmi2SetRealInputDerivatives", ~0);
+  /* Variables */
+  int i;
+  ModelInstance *comp = (ModelInstance*)c;
+
+  /* Check for valid call sequence */
+  if (invalidState(comp, "fmi2SetRealInputDerivatives", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
+    return fmi2Error;
+  if (nvr > 0 && nullPointer(comp, "fmi2SetRealInputDerivatives", "vr[]", vr))
+    return fmi2Error;
+  if (nvr > 0 && nullPointer(comp, "fmi2SetRealInputDerivatives", "value[]", value))
+    return fmi2Error;
+
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: nvr = %d", nvr)
+
+  for (i = 0; i < nvr; i++) {
+    if (order[i] > 1) // currently first order derivative is supported
+      return fmi2Error;
+    if (vrOutOfRange(comp, "fmi2SetRealInputDerivatives", vr[i], NUMBER_OF_REALS))
+      return fmi2Error;
+    // TODO check valueReference is a valid Real input
+
+    comp->input_real_derivative[i]= value[i]; // store the values in an external array
+
+    // should we use setReal here to set the values to inputs directly ?
+    // if (setReal(comp, vr[i], value[i]) != fmi2OK) // to be implemented by the includer of this file
+    //   return fmi2Error;
+  }
+  comp->_need_update = 1;
+  return fmi2OK;
 }
 
 fmi2Status fmi2GetRealOutputDerivatives(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], fmi2Real value[])
