@@ -64,6 +64,7 @@ import Algorithm = NFAlgorithm;
 import InstContext = NFInstContext;
 
 protected
+import Config;
 import Array;
 import Error;
 import FlagsUtil;
@@ -206,7 +207,11 @@ algorithm
   InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
 
   VerifyModel.verify(flatModel);
-  (flatModel, functions) := InstUtil.expandSlicedCrefs(flatModel, functions);
+
+  if not Config.simCodeTarget() == "Cpp" and not Config.simCodeTarget() == "omsicpp" then
+    (flatModel, functions) := InstUtil.expandSlicedCrefs(flatModel, functions);
+  end if;
+
   flatModel := InstUtil.combineSubscripts(flatModel);
 
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
