@@ -10,9 +10,16 @@ loadFile("Synchronous.mo"); getErrorString();
 
 simulate(Synchronous.Conversion.firstTickBool, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 
+print("Clock 2 y:");
 val(y, 0.0);      // 1.0
 val(y, 0.00001);  // 1.0
 val(y, 0.002);    // 1.0
+
+print("Bool firstTick():");
+val(clk1_firstTick, 0.0);     // 1 true
+val(clk1_firstTick, 0.49999); // 1 true
+val(clk1_firstTick, 0.5);     // 0 false
+val(clk1_firstTick, 1.0);     // 0 false
 
 // Result:
 // true
@@ -47,7 +54,13 @@ val(y, 0.002);    // 1.0
 // "
 // end SimulationResult;
 // ""
+// Clock 2 y:
 // 1.0
 // 1.0
 // 1.0
+// Bool firstTick():
+// 1.0
+// 1.0
+// 0.0
+// 0.0
 // endResult

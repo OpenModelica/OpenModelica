@@ -235,7 +235,7 @@ package Synchronous
       end when;
     end firstTickBool;
 
-    model intervalClock
+    model intervalBaseClock
       constant Real startInterval = 0.5;
       Clock clk1 = Clock(x>0, startInterval); // ticks: 0, 0.1, 0.2, ...
       Clock clk2 = Clock(nextInterval, 10);   // ticks: 0, 3/10, 7/10, ...
@@ -252,7 +252,7 @@ package Synchronous
         intv3 = interval();
       end when;
       annotation(uses(Modelica(version="4.0.0")));
-    end intervalClock;
+    end intervalBaseClock;
 
     model intervalSubClock
 
