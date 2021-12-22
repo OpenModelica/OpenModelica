@@ -1,0 +1,11 @@
+// name:     boolEventClock.mos
+// keywords: synchronous features, sample, hold, event clock, noEvent, c
+// status: correct
+//
+// Simulate Modelica.Clocked.ClockSignals.Clocks.Rotational.RotationalClock and compare to reference results
+
+loadFile("boolEventClock.mo"); getErrorString();
+
+cd("temp/"); getErrorString();
+simulate(boolEventClock, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
+

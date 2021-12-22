@@ -1,4 +1,4 @@
-// name:     AbsoluteClocks.mos
+// name:     absoluteClocks.mos
 // keywords: synchronous features, c
 // status: correct
 // teardown_command: rm Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks_res.csv
