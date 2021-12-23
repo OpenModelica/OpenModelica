@@ -582,6 +582,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->states_der = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
   comp->event_indicators = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
   comp->event_indicators_prev = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
+  comp->input_real_derivative = (fmi2Real*)functions->allocateMemory(NUMBER_OF_REAL_INPUTS, sizeof(fmi2Real));
 
   comp->_need_update = 1;
 
@@ -647,6 +648,7 @@ void fmi2FreeInstance(fmi2Component c)
   freeMemory(comp->states_der); comp->states_der = NULL;
   freeMemory(comp->event_indicators); comp->event_indicators = NULL;
   freeMemory(comp->event_indicators_prev); comp->event_indicators_prev = NULL;
+  freeMemory(comp->input_real_derivative); comp->input_real_derivative = NULL;
 
   freeMemory(comp->fmuData->modelData->resourcesDir);
   if (comp->solverInfo) {
@@ -1493,13 +1495,15 @@ fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: nvr = %d", nvr)
 
 #if NUMBER_OF_REAL_INPUTS > 0
-  for (i = 0; i < nvr; i++) {
+  for (i = 0; i < nvr; i++)
+  {
     if (order[i] > 1) // currently first order derivative is supported
       return fmi2Error;
     if (vrOutOfRange(comp, "fmi2SetRealInputDerivatives", vr[i], NUMBER_OF_REALS))
       return fmi2Error;
-    // TODO check valueReference is a valid Real input
-
+    // check valueReference is an input of type Real
+    if (mapInputReference2InputNumber(vr[i]) == -1)
+      return fmi2Error;
     comp->input_real_derivative[i]= value[i]; // store the values in an external array
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: #r%u# = %.16g", vr[i], value[i])
   }
