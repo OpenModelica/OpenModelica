@@ -39,7 +39,7 @@ val(intv3, 1.0);    // 0.25
 // |                 | |       | | | Sub-clock 1 of base clock 1
 // |                 | |       | | | | shift: 0/1
 // |                 | |       | | | | factor: 1/1
-// |                 | |       | | | | solverMethod:
+// |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // |                 | |       | | Base clock 2
 // |                 | |       | | | is event clock
@@ -47,7 +47,7 @@ val(intv3, 1.0);    // 0.25
 // |                 | |       | | | Sub-clock 1 of base clock 2
 // |                 | |       | | | | shift: 0/1
 // |                 | |       | | | | factor: 1/1
-// |                 | |       | | | | solverMethod:
+// |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // |                 | |       | | Base clock 3
 // |                 | |       | | | intervalCounter/resolution = : 2/10
@@ -56,26 +56,26 @@ val(intv3, 1.0);    // 0.25
 // |                 | |       | | | Sub-clock 1 of base clock 3
 // |                 | |       | | | | shift: 0/1
 // |                 | |       | | | | factor: 1/1
-// |                 | |       | | | | solverMethod:
+// |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 2 at time 0.000000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.000000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.100000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.200000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.100000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.200000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.250000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 2 at time 0.300000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.300000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.400000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.300000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.400000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.500000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.500000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.600000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.500000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.600000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 2 at time 0.700000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.700000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.700000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.750000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.800000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.900000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.800000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.900000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.000000
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

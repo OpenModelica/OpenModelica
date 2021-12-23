@@ -40,7 +40,7 @@ val(y2, 1.0);
 // |                 | |       | | | Sub-clock 1 of base clock 1
 // |                 | |       | | | | shift: 0/1
 // |                 | |       | | | | factor: 1/1
-// |                 | |       | | | | solverMethod:
+// |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // |                 | |       | | Base clock 2
 // |                 | |       | | | is event clock
@@ -48,19 +48,19 @@ val(y2, 1.0);
 // |                 | |       | | | Sub-clock 1 of base clock 2
 // |                 | |       | | | | shift: 0/1
 // |                 | |       | | | | factor: 1/1
-// |                 | |       | | | | solverMethod:
+// |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.000000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.100000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.200000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.300000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.400000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.500000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.600000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.700000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 1 at time 0.800000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.900000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.100000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.200000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.300000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.400000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.500000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.600000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.700000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.800000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.900000
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

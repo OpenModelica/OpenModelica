@@ -22,22 +22,22 @@ simulate(boolEventClock, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 // |                 | |       | | | Sub-clock 1 of base clock 1
 // |                 | |       | | | | shift: 0/1
 // |                 | |       | | | | factor: 1/1
-// |                 | |       | | | | solverMethod:
+// |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: true
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.000000
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.126592
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.184505
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.234058
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.282047
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.333333
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.397584
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.666667
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.717953
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.765942
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.815495
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 0.873408
-// LOG_SYNCHRONOUS   | info    | Activated event clock 0 at time 1.000000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.126592
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.184505
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.234058
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.282047
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.333333
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.397584
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.666667
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.717953
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.765942
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.815495
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.873408
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 1.000000
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

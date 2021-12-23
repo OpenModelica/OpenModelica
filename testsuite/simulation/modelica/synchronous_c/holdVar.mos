@@ -32,7 +32,7 @@ val(x, 0.6);      // 3.0
 // |                 | |       | | | Sub-clock 1 of base clock 1
 // |                 | |       | | | | shift: 0/1
 // |                 | |       | | | | factor: 1/1
-// |                 | |       | | | | solverMethod:
+// |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: true
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
