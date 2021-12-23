@@ -36,27 +36,6 @@
 extern "C" {
 #endif
 
-/* Private type definitions */
-/**
- * @brief Type of synchronous timer.
- */
-typedef enum SYNC_TIMER_TYPE {
-  SYNC_BASE_CLOCK,    /**< Base clock */
-  SYNC_SUB_CLOCK      /**< Sub-clock */
-} SYNC_TIMER_TYPE;
-
-/**
- * @brief Data elements of list data->simulationInfo->intvlTimers.
- * Stores next activation time of synchronous clock idx.
- */
-typedef struct SYNC_TIMER {
-  int base_idx;               /**< Index of base clock */
-  int sub_idx;                /**< Index of sub clock */
-  SYNC_TIMER_TYPE type;       /**< Type of clock */
-  double activationTime;      /**< Next activation time of clock */
-} SYNC_TIMER;
-
-
 /* Function prototypes */
 void printClocks(BASECLOCK_DATA* baseClocks, int nBaseCllocks);
 void printSyncTimer(void* data, int stream, void* elemPointer);
@@ -81,7 +60,6 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
 
   /* Initialize clocks */
   data->callback->function_initSynchronous(data, threadData);
-  data->simulationInfo->intvlTimers = allocList(sizeof(SYNC_TIMER));  // TODO: Free me!
 
   /* Error check */
   for(i=0; i<data->modelData->nBaseClocks; i++) {
@@ -94,7 +72,6 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
   for(i=0; i<data->modelData->nBaseClocks; i++)
   {
     baseClock = &data->simulationInfo->baseClocks[i];
-    baseClock->fireList = allocList(sizeof(SYNC_TIMER));  // TODO: Free me!
 
     data->callback->function_updateSynchronous(data, threadData, i);
     if (!baseClock->isEventClock) {
@@ -126,13 +103,8 @@ void freeSynchronous(DATA* data)
   int i;
   BASECLOCK_DATA* baseClock;
 
-  freeList(data->simulationInfo->intvlTimers);
-  data->simulationInfo->intvlTimers = NULL;
-
   for(i=0; i<data->modelData->nBaseClocks; i++) {
     baseClock = &data->simulationInfo->baseClocks[i];
-    freeList(baseClock->fireList);
-    baseClock->fireList = NULL;
   }
 }
 
@@ -215,6 +187,18 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
 void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
   TRACE_PUSH
+
+  /* Special case for event-clocks activated at initialization */
+  if (data->simulationInfo->initial) {
+    SYNC_TIMER nextTimer = (SYNC_TIMER){
+      .base_idx =  idx,
+      .sub_idx = -1,
+      .type = SYNC_BASE_CLOCK,
+      .activationTime = 0.0};
+    insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
+    return;
+  }
+
   BASECLOCK_DATA* baseClock = &(data->simulationInfo->baseClocks[idx]);
   SUBCLOCK_DATA* subClock;
   SYNC_TIMER nextTimer, firstSubTimer;
@@ -260,8 +244,9 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
       .type = SYNC_BASE_CLOCK,
       .activationTime = nextBaseTime};
     insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
+    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %li at time %f", idx, curTime);
   } else {
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated event clock %li at time %f", idx, curTime);
+    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated event-clock %li at time %f", idx, curTime);
   }
 
   // Add sub-clocks to timer that will fire during this base-clock interval.
@@ -339,7 +324,6 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
       case SYNC_BASE_CLOCK:
         handleBaseClock(data, threadData, base_idx, activationTime);
         ret = TIMER_FIRED;
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %i at time %f", base_idx, solverInfo->currentTime);
         break;
       case SYNC_SUB_CLOCK:
         // Save result before clock tick, then evaluate equations

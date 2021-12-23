@@ -952,8 +952,13 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   // TODO: Where does nBaseClocks get set?
   data->simulationInfo->baseClocks = (BASECLOCK_DATA*) calloc(data->modelData->nBaseClocks, sizeof(BASECLOCK_DATA));
+  if (data->modelData->nBaseClocks > 0) {
+    data->simulationInfo->intvlTimers = allocList(sizeof(SYNC_TIMER));
+  } else {
+    data->simulationInfo->intvlTimers = NULL;
+  }
+
   data->simulationInfo->spatialDistributionData = allocSpatialDistribution(data->modelData->nSpatialDistributions);
-  data->simulationInfo->intvlTimers = NULL;
 
   /* set default solvers for algebraic loops */
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -1187,7 +1192,8 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->samples);
 
   free(data->simulationInfo->baseClocks);
-  // TODO: Free data->simulationInfo->intvlTimers?
+  freeList(data->simulationInfo->intvlTimers);
+  data->simulationInfo->intvlTimers = NULL;
 
   freeSpatialDistribution(data->simulationInfo->spatialDistributionData, data->modelData->nSpatialDistributions);
   free(data->simulationInfo->spatialDistributionData);

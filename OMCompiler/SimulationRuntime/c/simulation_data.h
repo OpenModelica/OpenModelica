@@ -555,6 +555,25 @@ typedef struct MODEL_DATA
 } MODEL_DATA;
 
 /**
+ * @brief Type of synchronous timer.
+ */
+typedef enum SYNC_TIMER_TYPE {
+  SYNC_BASE_CLOCK,    /**< Base clock */
+  SYNC_SUB_CLOCK      /**< Sub-clock */
+} SYNC_TIMER_TYPE;
+
+/**
+ * @brief Data elements of list data->simulationInfo->intvlTimers.
+ * Stores next activation time of synchronous clock idx.
+ */
+typedef struct SYNC_TIMER {
+  int base_idx;               /**< Index of base clock */
+  int sub_idx;                /**< Index of sub clock */
+  SYNC_TIMER_TYPE type;       /**< Type of clock */
+  double activationTime;      /**< Next activation time of clock */
+} SYNC_TIMER;
+
+/**
  * @brief Statistics for base- and sub-clocks.
  */
 typedef struct CLOCK_STATS {
@@ -589,8 +608,6 @@ typedef struct BASECLOCK_DATA {
   int resolution;     /* Should be cosntant, defaults to 1 */
 
   double interval;    // is intervalCounter/resolution
-
-  LIST* fireList;   // Relative time of sub-clocks to fire.
 
   SUBCLOCK_DATA* subClocks;       /**< Array with sub-clocks */
   int nSubClocks;                /**< Number of sub-clocks */
