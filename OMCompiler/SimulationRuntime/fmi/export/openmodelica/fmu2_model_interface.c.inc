@@ -1492,6 +1492,7 @@ fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: nvr = %d", nvr)
 
+#if NUMBER_OF_REAL_INPUTS > 0
   for (i = 0; i < nvr; i++) {
     if (order[i] > 1) // currently first order derivative is supported
       return fmi2Error;
@@ -1500,11 +1501,10 @@ fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference
     // TODO check valueReference is a valid Real input
 
     comp->input_real_derivative[i]= value[i]; // store the values in an external array
-
-    // should we use setReal here to set the values to inputs directly ?
-    // if (setReal(comp, vr[i], value[i]) != fmi2OK) // to be implemented by the includer of this file
-    //   return fmi2Error;
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: #r%u# = %.16g", vr[i], value[i])
   }
+#endif
+
   comp->_need_update = 1;
   return fmi2OK;
 }
