@@ -3,6 +3,7 @@ TEST = ../../../rtest -v
 TESTFILES = \
 absoluteClocks.mos \
 backSample1.mos \
+boolEventClock.mos \
 eventConstructor.mos \
 holdVar.mos \
 inferredConstructor1.mos \
@@ -22,7 +23,6 @@ firstTick.mos \
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-boolEventClock.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

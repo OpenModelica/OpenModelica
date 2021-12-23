@@ -246,7 +246,7 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
     insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
     infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %li at time %f", idx, curTime);
   } else {
-    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated event-clock %li at time %f", idx, curTime);
+    infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated event clock %li at time %f", idx, curTime);
   }
 
   // Add sub-clocks to timer that will fire during this base-clock interval.

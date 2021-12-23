@@ -197,6 +197,33 @@ algorithm
   end for;
 end createBoolClockWhenClauses;
 
+public function getBoolClockWhenClauses
+  "Collect event-clock when equations"
+  input output BackendDAE.Equation eq;
+  input output list<BackendDAE.Equation> eqLst;
+algorithm
+  if hasBoolClockWhenClause(eq) then
+    eqLst := eq::eqLst;
+  end if;
+end getBoolClockWhenClauses;
+
+protected function hasBoolClockWhenClause
+  "Returns true if equation is a event-clock when equation with a $_clkfire call."
+  input BackendDAE.Equation eqn;
+  output Boolean hasBool=false;
+algorithm
+  _ := match eqn
+    case BackendDAE.WHEN_EQUATION(
+      size         = 0,
+      whenEquation = BackendDAE.WHEN_STMTS(
+        whenStmtLst={BackendDAE.NORETCALL(
+          exp=DAE.CALL(path=Absyn.IDENT("$_clkfire")))}))
+    algorithm
+      hasBool := true;
+    then();
+  end match;
+end hasBoolClockWhenClause;
+
 protected function treatClockedStates
 "Convert continuous equations in clocked partitions to clocked equations
  and call markClockedStates. author: rfranke"
