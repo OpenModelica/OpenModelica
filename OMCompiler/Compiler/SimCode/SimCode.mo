@@ -324,6 +324,7 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numSensitivityParameters;
     Integer numSetcVars;
     Integer numDataReconVars;
+    Integer numRealInputVars "for fmi cs to interpolate inputs";
   end VARINFO;
 end VarInfo;
 

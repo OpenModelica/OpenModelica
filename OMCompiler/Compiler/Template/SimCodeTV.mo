@@ -797,7 +797,8 @@ package SimCode
       Integer numSensitivityParameters;
       Integer numSetcVars;
       Integer numDataReconVars;
-      end VARINFO;
+      Integer numRealInputVars "for fmi cs to interpolate inputs";
+    end VARINFO;
   end VarInfo;
 
   uniontype DaeModeConfig

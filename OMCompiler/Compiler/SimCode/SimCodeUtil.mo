@@ -7402,7 +7402,7 @@ protected
   String description, directory;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
-  Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints;
+  Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
   Integer na_bool, ny_string, np_string, na_string;
   list<SimCodeVar.SimVar> states1, states_lst, states_lst2, der_states_lst;
   list<SimCodeVar.SimVar> states_2, derivatives_2;
@@ -7436,10 +7436,11 @@ algorithm
     next := getNumScalars(vars.extObjVars);
     numOptimizeConstraints := getNumScalars(vars.realOptimizeConstraintsVars);
     numOptimizeFinalConstraints := getNumScalars(vars.realOptimizeFinalConstraintsVars);
+    numRealInputVars := getNumberOfRealInputs(vars.inputVars);
     if debug then execStat("simCode: get lengths"); end if;
     varInfo := createVarInfo(dlow, nx, ny, ndy, np, na, next, numOutVars, numInVars,
                              ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,
-                             numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints);
+                             numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars);
     if debug then execStat("simCode: createVarInfo"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
@@ -7479,6 +7480,7 @@ protected function createVarInfo
   input Integer numStateSets;
   input Integer numOptimizeConstraints;
   input Integer numOptimizeFinalConstraints;
+  input Integer numRealInputVars;
   output SimCode.VarInfo varInfo;
 protected
   Integer numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions;
@@ -7488,8 +7490,30 @@ algorithm
   numTimeEvents := numTimeEvents;
   numRelations := numRelations;
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0,0,0);
+          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0, 0, 0, numRealInputVars);
 end createVarInfo;
+
+protected function getNumberOfRealInputs
+  "Get number of real inputs which will be used for Fmi cs to initialize size of real input"
+  input list<SimCodeVar.SimVar> inputVars;
+  output Integer numRealInputs = 0;
+algorithm
+  //numScalars := List.applyAndFold(vars, intAdd, getNumElems, 0);
+  for var in inputVars loop
+    if isRealInput(var) then
+      numRealInputs := numRealInputs + 1;
+    end if;
+  end for;
+end getNumberOfRealInputs;
+
+protected function isRealInput
+  input SimCodeVar.SimVar var;
+  output Boolean isReal;
+algorithm
+  isReal := match var
+    case SimCodeVar.SIMVAR(type_ = DAE.T_REAL()) then true; else false;
+  end match;
+end isRealInput;
 
 protected function evaluateStartValues"evaluates functions in the start values in the variableAttributes"
   input BackendDAE.Var inVar;
