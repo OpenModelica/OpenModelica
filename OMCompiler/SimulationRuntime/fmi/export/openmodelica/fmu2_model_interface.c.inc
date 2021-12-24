@@ -1482,6 +1482,7 @@ fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference
 {
   /* Variables */
   int i;
+  int mappedIndex;
   ModelInstance *comp = (ModelInstance*)c;
 
   /* Check for valid call sequence */
@@ -1502,9 +1503,10 @@ fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference
     if (vrOutOfRange(comp, "fmi2SetRealInputDerivatives", vr[i], NUMBER_OF_REALS))
       return fmi2Error;
     // check valueReference is an input of type Real
-    if (mapInputReference2InputNumber(vr[i]) == -1)
+    mappedIndex = mapInputReference2InputNumber(vr[i]);
+    if (mappedIndex == -1)
       return fmi2Error;
-    comp->input_real_derivative[i]= value[i]; // store the values in an external array
+    comp->input_real_derivative[mappedIndex] = value[i]; // store the values in an external array
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: #r%u# = %.16g", vr[i], value[i])
   }
 #endif
