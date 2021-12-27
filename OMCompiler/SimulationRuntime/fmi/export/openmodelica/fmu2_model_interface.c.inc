@@ -1606,23 +1606,24 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
     /* fprintf(stderr, "DoStep %g -> %g State: %s\n", comp->fmuData->localData[0]->timeValue, tNext, stateToString(comp)); */
 
-    if (NUMBER_OF_STATES > 0)
+    // set the real Inputs with output_derivative values
+    if (NUMBER_OF_REAL_INPUTS > 0)
     {
-      // set the real Inputs with output_derivative values
-      if (NUMBER_OF_REAL_INPUTS > 0)
+      for (int i = 0; i < NUMBER_OF_REALS; ++i)
       {
-        for (int i = 0; i < NUMBER_OF_REALS; ++i)
+        int mappedIndex = mapInputReference2InputNumber(i);
+        if (mapInputReference2InputNumber(i) != -1)
         {
-          int mappedIndex = mapInputReference2InputNumber(i);
-          if (mapInputReference2InputNumber(i) != -1)
-          {
-            double dt = comp->fmuData->localData[0]->timeValue - t;
-            double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
-            if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
-              return fmi2Error;
-          }
+          double dt = comp->fmuData->localData[0]->timeValue - t;
+          double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
+          if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
+            return fmi2Error;
         }
       }
+    }
+
+    if (NUMBER_OF_STATES > 0)
+    {
       status = fmi2GetDerivatives(c, states_der, NUMBER_OF_STATES);
       if (status != fmi2OK) {status=fmi2Error; break;}
 
@@ -1642,10 +1643,6 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       tNext = tEnd;
     else
       tNext = tCommunication;
-
-    /* hack for debugging: use small internal steps */
-    if (tNext > comp->fmuData->localData[0]->timeValue + 0.05)
-      tNext = comp->fmuData->localData[0]->timeValue + 0.05;
 
     /* adjust for time events */
     if (eventInfo.nextEventTimeDefined && (eventInfo.nextEventTime <= tNext))
@@ -1676,6 +1673,22 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         return fmi2Fatal;
     }
     fmi2SetTime(c, tNext);
+
+    // set the real Inputs with output_derivative values
+    if (NUMBER_OF_REAL_INPUTS > 0)
+    {
+      for (int i = 0; i < NUMBER_OF_REALS; ++i)
+      {
+        int mappedIndex = mapInputReference2InputNumber(i);
+        if (mapInputReference2InputNumber(i) != -1)
+        {
+          double dt = comp->fmuData->localData[0]->timeValue - t;
+          double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
+          if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
+            return fmi2Error;
+        }
+      }
+    }
 
     /* set the continuous states */
     if (NUMBER_OF_STATES > 0)
