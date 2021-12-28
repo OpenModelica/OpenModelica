@@ -181,9 +181,10 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
  * @param idx             Index of timer to handle.
  * @param curTime         Current activation time.
  */
-void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
+modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
   TRACE_PUSH
+   modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
 
   /* Special case for event-clocks activated at initialization */
   if (data->simulationInfo->initial) {
@@ -193,7 +194,7 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
       .type = SYNC_BASE_CLOCK,
       .activationTime = 0.0};
     insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
-    return;
+    return frstSubClockIsBaseClock;
   }
 
   BASECLOCK_DATA* baseClock = &(data->simulationInfo->baseClocks[idx]);
@@ -203,7 +204,6 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
   double nextBaseTime, nextSubTime, absoluteSubTime;
   double subTimer, activationTime;
   int i, k;
-  modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
 
   if (baseClock->subClocks[0].shift.m == 0 && baseClock->subClocks[0].factor.m == 1 && baseClock->subClocks[0].factor.n == 1) {
     frstSubClockIsBaseClock = 1 /* true */;
@@ -276,7 +276,7 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
   }
 
   TRACE_POP
-  return;
+  return frstSubClockIsBaseClock;
 }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -298,6 +298,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   TRACE_PUSH
   int base_idx, sub_idx;
   double activationTime;
+  modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
   SYNC_TIMER_TYPE type;
   SYNC_TIMER* nextTimer;
   fire_timer_t ret = NO_TIMER_FIRED;
@@ -320,8 +321,12 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     switch(type)
     {
       case SYNC_BASE_CLOCK:
-        handleBaseClock(data, threadData, base_idx, activationTime);
-        ret = TIMER_FIRED;
+        frstSubClockIsBaseClock = handleBaseClock(data, threadData, base_idx, activationTime);
+        if (frstSubClockIsBaseClock && data->simulationInfo->baseClocks[base_idx].subClocks[0].holdEvents) {
+          ret = TIMER_FIRED_EVENT;
+        } else {
+          ret = TIMER_FIRED;
+        }
         break;
       case SYNC_SUB_CLOCK:
         // Save result before clock tick, then evaluate equations
@@ -374,6 +379,7 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
 {
   int base_idx, sub_idx;
   double activationTime;
+  modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
   SYNC_TIMER_TYPE type;
   SYNC_TIMER* nextTimer;
   fire_timer_t ret = NO_TIMER_FIRED;
@@ -398,7 +404,12 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
     switch(type)
     {
       case SYNC_BASE_CLOCK:
-        handleBaseClock(data, threadData, base_idx, activationTime);
+        frstSubClockIsBaseClock = handleBaseClock(data, threadData, base_idx, activationTime);
+        if (frstSubClockIsBaseClock && data->simulationInfo->baseClocks[base_idx].subClocks[0].holdEvents) {
+          ret = TIMER_FIRED_EVENT;
+        } else {
+          ret = TIMER_FIRED;
+        }
         ret = TIMER_FIRED;
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %i at time %f", base_idx, currentTime);
         break;
