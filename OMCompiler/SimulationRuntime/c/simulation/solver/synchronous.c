@@ -381,7 +381,7 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
 
   *nextTimerDefined = 0;
 
-  if (listLen(data->simulationInfo->intvlTimers) <= 0) {
+  if (data->simulationInfo->intvlTimers == NULL ||listLen(data->simulationInfo->intvlTimers) <= 0) {
     TRACE_POP
     return (int) ret;
   }
