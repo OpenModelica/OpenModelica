@@ -159,17 +159,14 @@ static void insertTimer(LIST* list, SYNC_TIMER* timer)
 void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
 {
   TRACE_PUSH
-  if (listLen(data->simulationInfo->intvlTimers) > 0)
+  if (data->simulationInfo->intvlTimers != NULL && listLen(data->simulationInfo->intvlTimers) > 0)
   {
     SYNC_TIMER* nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
     double nextTimeStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
-    // TODO: Check list of sub-clocks as well
     if ((nextTimer->activationTime <= nextTimeStep + SYNC_EPS) && (nextTimer->activationTime >= solverInfo->currentTime))
     {
       solverInfo->currentStepSize = nextTimer->activationTime - solverInfo->currentTime;
-      //infoStreamPrint( LOG_SYNCHRONOUS, 0, "Adjust step-size to %.15g at time %.15g to get next timer at %.15g",
-      //                 solverInfo->currentStepSize, solverInfo->currentTime, nextTimer->activationTime );
     }
   }
   TRACE_POP
@@ -287,6 +284,7 @@ void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curT
  * @brief Handle timer clocks.
  *
  * Loop over all timers and check if a timer fired.
+ * If there are no timers return NO_TIMER_FIRED.
  *
  * @param data            Pointer to data.
  * @param threadData      Pointer to thread data.
@@ -305,7 +303,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   fire_timer_t ret = NO_TIMER_FIRED;
   SUBCLOCK_DATA* subClock;
 
-  if (listLen(data->simulationInfo->intvlTimers) <= 0) {
+  if (data->simulationInfo->intvlTimers == NULL || listLen(data->simulationInfo->intvlTimers) <= 0) {
     TRACE_POP
     return ret;
   }
