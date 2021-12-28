@@ -1193,7 +1193,11 @@ bool SimulationDialog::translateModel(QString simulationParameters)
  */
 SimulationOptions SimulationDialog::createSimulationOptions()
 {
-  SimulationOptions simulationOptions = mpLibraryTreeItem->mSimulationOptions;
+  SimulationOptions simulationOptions;
+  if (mpLibraryTreeItem != NULL) {
+    // this can be NULL when we resimulate from the Plotting view and it would crash!
+    simulationOptions = mpLibraryTreeItem->mSimulationOptions;
+  }
   simulationOptions.setClassName(mClassName);
   simulationOptions.setStartTime(mpStartTimeTextBox->text());
   simulationOptions.setStopTime(mpStopTimeTextBox->text());
