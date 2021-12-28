@@ -220,7 +220,8 @@ algorithm
           exp=DAE.CALL(path=Absyn.IDENT("$_clkfire")))}))
     algorithm
       hasBool := true;
-    then();
+    then ();
+    else ();
   end match;
 end hasBoolClockWhenClause;
 
