@@ -2325,6 +2325,9 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   mpDataReconciliationCorrelationMatrixInputFileBrowseButton->setAutoDefault(false);
   mpDataReconciliationEpsilonLabel = new Label(tr("Epsilon:"));
   mpDataReconciliationEpsilonTextBox = new QLineEdit("1.e-10");
+  // validate epsilon
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  mpDataReconciliationEpsilonTextBox->setValidator(pDoubleValidator);
 
   // Boundary Condition algorithm items
   mpBoundaryConditionMeasurementInputFileLabel = new Label(tr("Reconciled Measurement File:"));
@@ -2459,7 +2462,10 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
  */
 void DataReconciliationDialog::browseDataReconciliationMeasurementInputFile()
 {
-  mpDataReconciliationMeasurementInputFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL));
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL);
+  if (!fileName.isEmpty()) {
+    mpDataReconciliationMeasurementInputFileTextBox->setText(fileName);
+  }
 }
 
 /*!
@@ -2469,7 +2475,10 @@ void DataReconciliationDialog::browseDataReconciliationMeasurementInputFile()
  */
 void DataReconciliationDialog::browseDataReconciliationCorrelationMatrixInputFile()
 {
-  mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL));
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL);
+  if (!fileName.isEmpty()) {
+    mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(fileName);
+  }
 }
 
 /*!
@@ -2479,7 +2488,10 @@ void DataReconciliationDialog::browseDataReconciliationCorrelationMatrixInputFil
  */
 void DataReconciliationDialog::browseBoundaryConditionMeasurementInputFile()
 {
-  mpBoundaryConditionMeasurementInputFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL));
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL);
+  if (!fileName.isEmpty()) {
+    mpBoundaryConditionMeasurementInputFileTextBox->setText(fileName);
+  }
 }
 
 /*!
@@ -2489,7 +2501,10 @@ void DataReconciliationDialog::browseBoundaryConditionMeasurementInputFile()
  */
 void DataReconciliationDialog::browseBoundaryConditionCorrelationMatrixInputFile()
 {
-  mpBoundaryConditionCorrelationMatrixInputFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL));
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL);
+  if (!fileName.isEmpty()) {
+    mpBoundaryConditionCorrelationMatrixInputFileTextBox->setText(fileName);
+  }
 }
 
 /*!
@@ -2501,6 +2516,7 @@ void DataReconciliationDialog::calculateDataReconciliation()
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(true);
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationAlgorithm(mpDataReconciliationAlgorithmComboBox->itemData(mpDataReconciliationAlgorithmComboBox->currentIndex()).toString());
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationMeasurementInputFile(mpDataReconciliationMeasurementInputFileTextBox->text());
+  mpLibraryTreeItem->mSimulationOptions.setDataReconciliationEpsilon(mpDataReconciliationEpsilonTextBox->text());
   mpLibraryTreeItem->mSimulationOptions.setBoundaryConditionMeasurementInputFile(mpBoundaryConditionMeasurementInputFileTextBox->text());
   mpLibraryTreeItem->mSimulationOptions.setBoundaryConditionCorrelationMatrixInputFile(mpBoundaryConditionCorrelationMatrixInputFileTextBox->text());
   int currentIndex = mpDataReconciliationAlgorithmComboBox->currentIndex();
@@ -2511,6 +2527,12 @@ void DataReconciliationDialog::calculateDataReconciliation()
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                "Measurement Input File not provided, Data Reconciliation cannot be computed!", Helper::ok);
       mpDataReconciliationMeasurementInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
+      return;
+    }
+    if (mpDataReconciliationEpsilonTextBox->text().toDouble() == 0 && !mpDataReconciliationEpsilonTextBox->text().isEmpty()) {
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          "Epsilon value must be greater than 0", Helper::ok);
+      mpDataReconciliationEpsilonTextBox->setFocus(Qt::ActiveWindowFocusReason);
       return;
     }
   }
@@ -2531,7 +2553,6 @@ void DataReconciliationDialog::calculateDataReconciliation()
       return;
     }
   }
-  mpLibraryTreeItem->mSimulationOptions.setDataReconciliationEpsilon(mpDataReconciliationEpsilonTextBox->text());
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationSaveSetting(mpSaveSettingsCheckBox->isChecked());
   accept();
 }
