@@ -2533,7 +2533,7 @@ void DataReconciliationDialog::calculateDataReconciliation()
       mpDataReconciliationMeasurementInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
       return;
     }
-    if (mpDataReconciliationEpsilonTextBox->text().toDouble() == 0 && !mpDataReconciliationEpsilonTextBox->text().isEmpty()) {
+    if (mpDataReconciliationEpsilonTextBox->text().toDouble() <= 0 && !mpDataReconciliationEpsilonTextBox->text().isEmpty()) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           "Epsilon value must be greater than 0", Helper::ok);
       mpDataReconciliationEpsilonTextBox->setFocus(Qt::ActiveWindowFocusReason);
