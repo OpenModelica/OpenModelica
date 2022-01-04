@@ -658,9 +658,6 @@ void fmi2FreeInstance(fmi2Component c)
     FMI2CS_deInitializeSolverData(comp);
   }
 
-  /* Free synchronus data */
-  freeSynchronous(comp->fmuData);
-
   /* free simuation data */
   freeMemory(comp->fmuData->modelData);
   freeMemory(comp->fmuData->simulationInfo);
