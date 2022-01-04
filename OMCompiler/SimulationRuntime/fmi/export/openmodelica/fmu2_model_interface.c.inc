@@ -305,7 +305,9 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       eventInfo->nextEventTime = fmin(nextSampleEvent,nextTimerActivationTime);
     }
     else {
-      eventInfo->nextEventTimeDefined = fmi2False;
+      if (eventInfo->nextEventTime <= comp->fmuData->localData[0]->timeValue) {
+        eventInfo->nextEventTimeDefined = fmi2False;
+      }
     }
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime)
 
