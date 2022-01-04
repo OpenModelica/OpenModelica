@@ -2,7 +2,7 @@
 // keywords: synchronous features, noClock, sample, hold, c
 // status: correct
 //
-// Differenze betweend noClock and sample(hold())
+// Difference between noClock() and sample(hold()).
 
 loadFile("Synchronous.mo"); getErrorString();
 

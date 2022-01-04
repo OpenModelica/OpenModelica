@@ -41,9 +41,7 @@ void printClocks(BASECLOCK_DATA* baseClocks, int nBaseCllocks);
 void printSyncTimer(void* data, int stream, void* elemPointer);
 
 /**
- * @brief Initialize memory for synchronous fonctionnalities.
- *
- * Use freeSynchronous to free data again.
+ * @brief Initialize memory for synchronous functionalities.
  *
  * @param data            Pointer to data.
  * @param threadData      Pointer to thread data.
@@ -54,9 +52,6 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
   TRACE_PUSH
   int i,j;
   BASECLOCK_DATA* baseClock;
-
-  /* Free in case initSynchronous is called multiple times */
-  freeSynchronous(data);
 
   /* Initialize clocks */
   data->callback->function_initSynchronous(data, threadData);
@@ -91,23 +86,6 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
 
   TRACE_POP
 }
-
-
-/**
- * @brief Frees memories allocated with initSynchronous.
- *
- * @param data            Pointer to data.
- */
-void freeSynchronous(DATA* data)
-{
-  int i;
-  BASECLOCK_DATA* baseClock;
-
-  for(i=0; i<data->modelData->nBaseClocks; i++) {
-    baseClock = &data->simulationInfo->baseClocks[i];
-  }
-}
-
 
 /**
  * @brief Insert given timer into ordered list of timers.
@@ -192,7 +170,7 @@ modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx,
       .base_idx =  idx,
       .sub_idx = -1,
       .type = SYNC_BASE_CLOCK,
-      .activationTime = 0.0};
+      .activationTime = data->simulationInfo->startTime};
     insertTimer(data->simulationInfo->intvlTimers, &nextTimer);
     return frstSubClockIsBaseClock;
   }
@@ -410,8 +388,6 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
         } else {
           ret = TIMER_FIRED;
         }
-        ret = TIMER_FIRED;
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "Activated base-clock %i at time %f", base_idx, currentTime);
         break;
       case SYNC_SUB_CLOCK:
         subClock = &data->simulationInfo->baseClocks[base_idx].subClocks[sub_idx];

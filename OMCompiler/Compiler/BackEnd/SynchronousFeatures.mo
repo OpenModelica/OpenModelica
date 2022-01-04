@@ -794,7 +794,6 @@ algorithm
   case(DAE.RATIONAL_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.INFERRED_CLOCK())
     algorithm
     then BackendDAE.SUBCLOCK(MMath.RATIONAL(i2,i1), MMath.RAT0,NONE());
-    // TODO AHEU: Why is this i2/i1 and not i1/i2???
   case(DAE.RATIONAL_CLOCK(DAE.ICONST(i1),DAE.ICONST(i2)), DAE.RATIONAL_CLOCK(DAE.ICONST(i3),DAE.ICONST(i4)))
     algorithm
     then BackendDAE.SUBCLOCK(MMath.divRational(MMath.RATIONAL(i2,i1),MMath.RATIONAL(i4,i3)),MMath.RAT0,NONE());
@@ -920,7 +919,6 @@ algorithm
       algorithm
         solver1 := mergeSolver(solver1,solver2);
       then BackendDAE.SUBCLOCK(MMath.divRational(f1, f2), MMath.addRational(MMath.multRational(s1, f2), s2), solver1);
-      // TODO AHEU: Why division not multiplication?
     case(BackendDAE.SUBCLOCK(_,_,_),BackendDAE.INFERED_SUBCLOCK())
       then subSeqClock;
     else
@@ -2223,7 +2221,7 @@ protected function substitutePartitionOpExps
 "Each non-trivial expression (non-literal, non-constant, non-parameter, non-variable), expr_i, appearing
  as first argument of any clock conversion operator or in base clock constructor is recursively replaced by a unique variable, $var_i,
  and the equation $var_i = expr_i is added to the equation set.
- Also when clauses are created for boolean clocks."
+ Also when clauses are created for event clocks."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
   output BackendDAE.EqSystem outSyst = inSyst;

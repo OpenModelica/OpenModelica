@@ -5307,7 +5307,6 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
 ::=
   let constantEqns2 = generateConstantEqns(constantEqns, matrixName, modelNamePrefix)
   <<
-  // TODO AHeu: Check what base_idx and sub_idx need to be for equation_impl
   /* constant equations */
   <%(constantEqns |> eq hasindex sub_idx =>
     equation_impl(base_idx, sub_idx, eq, createJacContext(jacHT), modelNamePrefix, false); separator="\n")%>
