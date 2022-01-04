@@ -12,12 +12,14 @@ ExternalProject_Add(OMSimulator_external
     CONFIGURE_COMMAND COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator
                                                 -j${NUM_PROCESSPRS}
                                                 config-3rdParty
+                                                BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                                 CERES=OFF
                                                 host_short=${CMAKE_LIBRARY_ARCHITECTURE}
                                                 CMAKE=${CMAKE_COMMAND}
                       COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator
                                                 -j${NUM_PROCESSPRS}
                                                 config-OMSimulator
+                                                BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                                 OMSYSIDENT=OFF
                                                 OMBUILDDIR=${CMAKE_CURRENT_BINARY_DIR}/OMSimulator
                                                 host_short=${CMAKE_LIBRARY_ARCHITECTURE}
@@ -26,6 +28,7 @@ ExternalProject_Add(OMSimulator_external
     BUILD_COMMAND COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator
                                                 -j${NUM_PROCESSPRS}
                                                 OMSimulator
+                                                BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                                 OMBUILDDIR=${CMAKE_CURRENT_BINARY_DIR}/OMSimulator
                                                 host_short=${CMAKE_LIBRARY_ARCHITECTURE}
                                                 CMAKE=${CMAKE_COMMAND}
