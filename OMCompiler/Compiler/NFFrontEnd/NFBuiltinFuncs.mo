@@ -360,7 +360,7 @@ constant Function CLOCK_REAL = Function.FUNCTION(Path.IDENT("Clock"),
   }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),
   Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-// Clock(condition, startInterval = 0.0) - Boolean clock, triggered by zero-crossing events
+// Clock(condition, startInterval = 0.0) - Event clock, triggered by zero-crossing events
 constant Function CLOCK_BOOL = Function.FUNCTION(Path.IDENT("Clock"),
   CLOCK_DUMMY_NODE, {BOOL_PARAM, REAL_PARAM}, {CLOCK_PARAM}, {}, {
     Slot.SLOT(CONDITION_PARAM, SlotType.GENERIC, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),

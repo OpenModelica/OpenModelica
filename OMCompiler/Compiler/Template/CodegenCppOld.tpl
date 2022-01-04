@@ -9393,14 +9393,14 @@ case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
       let intvl = match fmims case SOME(FmiModelStructure) then spec else
         match baseClock
         case REAL_CLOCK()
-        case INTEGER_CLOCK()
-        case BOOLEAN_CLOCK() then
+        case RATIONAL_CLOCK()
+        case EVENT_CLOCK() then
           spec
         else "unspecified"
       let interval = match intvl case "unspecified" then '1.0' else intvl
       let warning = match intvl case "unspecified" then
         'LOGGER_WRITE("Using default Clock(1.0)!", LC_MODEL, LL_WARNING);'
-      let isEventBased = match baseClock case BOOLEAN_CLOCK() then "true"
+      let isEventBased = match baseClock case EVENT_CLOCK() then "true"
       let subClocks = (subPartitions |> subPartition =>
         match subPartition
         case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
@@ -12455,7 +12455,7 @@ end createTimeConditionTreatments;
 template booleanSubClockActivation1(Integer absBaseClockIdx, ClockedPartition baseClock, String numberOfTimeEvents)
 ::=
 match baseClock
-case CLOCKED_PARTITION(baseClock = BOOLEAN_CLOCK(__)) then
+case CLOCKED_PARTITION(baseClock = EVENT_CLOCK(__)) then
   let subClocks = (subPartitions |> subClock  hasindex i0  =>
                     booleanSubClockActivation2(absBaseClockIdx, i0, subClock, numberOfTimeEvents)
                     ;separator="\n")

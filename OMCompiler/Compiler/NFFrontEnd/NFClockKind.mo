@@ -42,22 +42,22 @@ public
   record INFERRED_CLOCK
   end INFERRED_CLOCK;
 
-  record INTEGER_CLOCK
-    Expression intervalCounter;
-    Expression resolution " integer type >= 1 ";
-  end INTEGER_CLOCK;
+  record RATIONAL_CLOCK
+    Expression intervalCounter " integer type >= 0 ";
+    Expression resolution " integer type >= 1, defaults to 1 ";
+  end RATIONAL_CLOCK;
 
   record REAL_CLOCK
-    Expression interval;
+    Expression interval " real type > 0 ";
   end REAL_CLOCK;
 
-  record BOOLEAN_CLOCK
-    Expression condition;
+  record EVENT_CLOCK
+    Expression condition " boolean type ";
     Expression startInterval " real type >= 0.0 ";
-  end BOOLEAN_CLOCK;
+  end EVENT_CLOCK;
 
   record SOLVER_CLOCK
-    Expression c;
+    Expression c "clock type ";
     Expression solverMethod " string type ";
   end SOLVER_CLOCK;
 
@@ -70,7 +70,7 @@ public
       local
         Expression i1, ic1, r1, c1, si1, sm1, i2, ic2, r2, c2, si2, sm2;
       case (INFERRED_CLOCK(), INFERRED_CLOCK()) then 0;
-      case (INTEGER_CLOCK(i1, r1),INTEGER_CLOCK(i2, r2))
+      case (RATIONAL_CLOCK(i1, r1),RATIONAL_CLOCK(i2, r2))
         algorithm
           comp := Expression.compare(i1, i2);
           if (comp == 0) then
@@ -78,7 +78,7 @@ public
           end if;
         then comp;
       case (REAL_CLOCK(i1), REAL_CLOCK(i2)) then Expression.compare(i1, i2);
-      case (BOOLEAN_CLOCK(c1, si1), BOOLEAN_CLOCK(c2, si2))
+      case (EVENT_CLOCK(c1, si1), EVENT_CLOCK(c2, si2))
         algorithm
           comp := Expression.compare(c1, c2);
           if (comp == 0) then
@@ -106,10 +106,10 @@ public
     end ContainsPred;
   algorithm
     res := match ck
-      case INTEGER_CLOCK() then Expression.contains(ck.intervalCounter, func) or
+      case RATIONAL_CLOCK() then Expression.contains(ck.intervalCounter, func) or
                                 Expression.contains(ck.resolution, func);
       case REAL_CLOCK()    then Expression.contains(ck.interval, func);
-      case BOOLEAN_CLOCK() then Expression.contains(ck.condition, func) or
+      case EVENT_CLOCK() then Expression.contains(ck.condition, func) or
                                 Expression.contains(ck.startInterval, func);
       case SOLVER_CLOCK()  then Expression.contains(ck.c, func) or
                                 Expression.contains(ck.solverMethod, func);
@@ -128,9 +128,9 @@ public
     end ContainsPred;
   algorithm
     res := match ck
-      case INTEGER_CLOCK() then func(ck.intervalCounter) or func(ck.resolution);
+      case RATIONAL_CLOCK() then func(ck.intervalCounter) or func(ck.resolution);
       case REAL_CLOCK()    then func(ck.interval);
-      case BOOLEAN_CLOCK() then func(ck.condition) or func(ck.startInterval);
+      case EVENT_CLOCK() then func(ck.condition) or func(ck.startInterval);
       case SOLVER_CLOCK()  then func(ck.c) or func(ck.solverMethod);
       else false;
     end match;
@@ -145,7 +145,7 @@ public
     end ApplyFunc;
   algorithm
     () := match ck
-      case INTEGER_CLOCK()
+      case RATIONAL_CLOCK()
         algorithm
           Expression.apply(ck.intervalCounter, func);
           Expression.apply(ck.resolution, func);
@@ -158,7 +158,7 @@ public
         then
           ();
 
-      case BOOLEAN_CLOCK()
+      case EVENT_CLOCK()
         algorithm
           Expression.apply(ck.condition, func);
           Expression.apply(ck.startInterval, func);
@@ -185,7 +185,7 @@ public
     end ApplyFunc;
   algorithm
     () := match ck
-      case INTEGER_CLOCK()
+      case RATIONAL_CLOCK()
         algorithm
           func(ck.intervalCounter);
           func(ck.resolution);
@@ -198,7 +198,7 @@ public
         then
           ();
 
-      case BOOLEAN_CLOCK()
+      case EVENT_CLOCK()
         algorithm
           func(ck.condition);
           func(ck.startInterval);
@@ -228,7 +228,7 @@ public
     end FoldFunc;
   algorithm
     result := match ck
-      case INTEGER_CLOCK()
+      case RATIONAL_CLOCK()
         algorithm
           result := Expression.fold(ck.intervalCounter, func, arg);
         then
@@ -237,7 +237,7 @@ public
       case REAL_CLOCK()
         then Expression.fold(ck.interval, func, arg);
 
-      case BOOLEAN_CLOCK()
+      case EVENT_CLOCK()
         algorithm
           result := Expression.fold(ck.condition, func, arg);
         then
@@ -265,12 +265,12 @@ public
     Expression e1, e2, e3, e4;
   algorithm
     outCk := match ck
-      case INTEGER_CLOCK(e1, e2)
+      case RATIONAL_CLOCK(e1, e2)
         algorithm
           e3 := Expression.map(e1, func);
           e4 := Expression.map(e2, func);
         then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else INTEGER_CLOCK(e3, e4);
+          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else RATIONAL_CLOCK(e3, e4);
 
       case REAL_CLOCK(e1)
         algorithm
@@ -278,12 +278,12 @@ public
         then
           if referenceEq(e1, e3) then ck else REAL_CLOCK(e3);
 
-      case BOOLEAN_CLOCK(e1, e2)
+      case EVENT_CLOCK(e1, e2)
         algorithm
           e3 := Expression.map(e1, func);
           e4 := Expression.map(e2, func);
         then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else BOOLEAN_CLOCK(e3, e4);
+          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else EVENT_CLOCK(e3, e4);
 
       case SOLVER_CLOCK(e1, e2)
         algorithm
@@ -308,12 +308,12 @@ public
     Expression e1, e2, e3, e4;
   algorithm
     outCk := match ck
-      case INTEGER_CLOCK(e1, e2)
+      case RATIONAL_CLOCK(e1, e2)
         algorithm
           e3 := func(e1);
           e4 := func(e2);
         then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else INTEGER_CLOCK(e3, e4);
+          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else RATIONAL_CLOCK(e3, e4);
 
       case REAL_CLOCK(e1)
         algorithm
@@ -321,12 +321,12 @@ public
         then
           if referenceEq(e1, e3) then ck else REAL_CLOCK(e3);
 
-      case BOOLEAN_CLOCK(e1, e2)
+      case EVENT_CLOCK(e1, e2)
         algorithm
           e3 := func(e1);
           e4 := func(e2);
         then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else BOOLEAN_CLOCK(e3, e4);
+          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else EVENT_CLOCK(e3, e4);
 
       case SOLVER_CLOCK(e1, e2)
         algorithm
@@ -353,12 +353,12 @@ public
     Expression e1, e2, e3, e4;
   algorithm
     outCk := match ck
-      case INTEGER_CLOCK(e1, e2)
+      case RATIONAL_CLOCK(e1, e2)
         algorithm
           (e3, arg) := Expression.mapFold(e1, func, arg);
           (e4, arg) := Expression.mapFold(e2, func, arg);
         then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else INTEGER_CLOCK(e3, e4);
+          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else RATIONAL_CLOCK(e3, e4);
 
       case REAL_CLOCK(e1)
         algorithm
@@ -366,12 +366,12 @@ public
         then
           if referenceEq(e1, e3) then ck else REAL_CLOCK(e3);
 
-      case BOOLEAN_CLOCK(e1, e2)
+      case EVENT_CLOCK(e1, e2)
         algorithm
           (e3, arg) := Expression.mapFold(e1, func, arg);
           (e4, arg) := Expression.mapFold(e2, func, arg);
         then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else BOOLEAN_CLOCK(e3, e4);
+          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else EVENT_CLOCK(e3, e4);
 
       case SOLVER_CLOCK(e1, e2)
         algorithm
@@ -398,12 +398,12 @@ public
     Expression e1, e2, e3, e4;
   algorithm
     outCk := match ck
-      case INTEGER_CLOCK(e1, e2)
+      case RATIONAL_CLOCK(e1, e2)
         algorithm
           (e3, arg) := Expression.mapFoldShallow(e1, func, arg);
           (e4, arg) := Expression.mapFoldShallow(e2, func, arg);
         then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else INTEGER_CLOCK(e3, e4);
+          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else RATIONAL_CLOCK(e3, e4);
 
       case REAL_CLOCK(e1)
         algorithm
@@ -411,12 +411,12 @@ public
         then
           if referenceEq(e1, e3) then ck else REAL_CLOCK(e3);
 
-      case BOOLEAN_CLOCK(e1, e2)
+      case EVENT_CLOCK(e1, e2)
         algorithm
           (e3, arg) := Expression.mapFoldShallow(e1, func, arg);
           (e4, arg) := Expression.mapFoldShallow(e2, func, arg);
         then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else BOOLEAN_CLOCK(e3, e4);
+          if referenceEq(e1, e3) and referenceEq(e2, e4) then ck else EVENT_CLOCK(e3, e4);
 
       case SOLVER_CLOCK(e1, e2)
         algorithm
@@ -437,11 +437,11 @@ public
   algorithm
     args := match clk
       case INFERRED_CLOCK() then {};
-      case INTEGER_CLOCK()
+      case RATIONAL_CLOCK()
         then {Expression.toAbsyn(clk.intervalCounter), Expression.toAbsyn(clk.resolution)};
       case REAL_CLOCK()
         then {Expression.toAbsyn(clk.interval)};
-      case BOOLEAN_CLOCK()
+      case EVENT_CLOCK()
         then {Expression.toAbsyn(clk.condition), Expression.toAbsyn(clk.startInterval)};
       case SOLVER_CLOCK()
         then {Expression.toAbsyn(clk.c), Expression.toAbsyn(clk.solverMethod)};
@@ -458,9 +458,9 @@ public
       local
         Expression i, ic, r, c, si, sm;
       case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
-      case INTEGER_CLOCK(i, r)  then DAE.INTEGER_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
+      case RATIONAL_CLOCK(i, r)  then DAE.RATIONAL_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
       case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
-      case BOOLEAN_CLOCK(c, si) then DAE.BOOLEAN_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
+      case EVENT_CLOCK(c, si) then DAE.EVENT_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
       case SOLVER_CLOCK(c, sm)  then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
     end match;
   end toDAE;
@@ -473,9 +473,9 @@ public
       local
         Expression i, ic, r, c, si, sm;
       case INFERRED_CLOCK()     then "INFERRED_CLOCK()";
-      case INTEGER_CLOCK(i, r)  then "INTEGER_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
+      case RATIONAL_CLOCK(i, r)  then "RATIONAL_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
       case REAL_CLOCK(i)        then "REAL_CLOCK(" + Expression.toString(i) + ")";
-      case BOOLEAN_CLOCK(c, si) then "BOOLEAN_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
+      case EVENT_CLOCK(c, si) then "EVENT_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
       case SOLVER_CLOCK(c, sm)  then "SOLVER_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(sm) + ")";
     end match;
   end toDebugString;
@@ -489,9 +489,9 @@ public
         Expression e1, e2;
 
       case INFERRED_CLOCK()      then "";
-      case INTEGER_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
+      case RATIONAL_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
       case REAL_CLOCK(e1)        then Expression.toString(e1);
-      case BOOLEAN_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
+      case EVENT_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
       case SOLVER_CLOCK(e1, e2)  then Expression.toString(e1) + ", " + Expression.toString(e2);
     end match;
 
@@ -507,9 +507,9 @@ public
         Expression e1, e2;
 
       case INFERRED_CLOCK()      then "";
-      case INTEGER_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
+      case RATIONAL_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
       case REAL_CLOCK(e1)        then Expression.toFlatString(e1);
-      case BOOLEAN_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
+      case EVENT_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
       case SOLVER_CLOCK(e1, e2)  then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
     end match;
 

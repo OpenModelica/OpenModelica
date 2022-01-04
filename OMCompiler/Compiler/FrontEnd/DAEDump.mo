@@ -3825,12 +3825,12 @@ algorithm
       DAE.Exp e1,e2;
   case(DAE.INFERRED_CLOCK())
     then "Inferred Clock";
-  case(DAE.INTEGER_CLOCK(intervalCounter=e1, resolution=e2))
-    then "Integer Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
+  case(DAE.RATIONAL_CLOCK(intervalCounter=e1, resolution=e2))
+    then "Rational Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
   case(DAE.REAL_CLOCK(interval=e1))
     then "Real Clock("+ExpressionDump.printExpStr(e1)+")";
-  case(DAE.BOOLEAN_CLOCK(condition=e1, startInterval=e2))
-    then "Boolean Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
+  case(DAE.EVENT_CLOCK(condition=e1, startInterval=e2))
+    then "Event Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
   case(DAE.SOLVER_CLOCK(c=e1, solverMethod=e2))
     then "Solver Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
   end match;

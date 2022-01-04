@@ -264,3 +264,30 @@ void updatelistLength(LIST* list, unsigned int newLength)
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
   list->length = newLength;
 }
+
+/**
+ * @brief Print list
+ *
+ * @param list            Pointer to list.
+ * @param stream          Stream to print to.
+ * @param printDataFunc   Function to print address of buffer element and its data to stream.
+ */
+void printList(LIST* list, int stream, void (*printDataFunc)(void*,int,void*))
+{
+  LIST_NODE* listElem;
+
+  if (useStream[stream]) {
+    infoStreamPrint(stream, 1, "Printing list:");
+    infoStreamPrint(stream, 0, "itemSize: %d [size of one item in bytes]", list->itemSize);
+    infoStreamPrint(stream, 0, "length: %d", list->length);
+
+    listElem = list->first;
+    for (int i=0; i<list->length; i++) {
+      assertStreamPrint(NULL, listElem != NULL, "list element is NULL");
+      printDataFunc(listElem->data, stream, (void*) listElem->data);
+      listElem = listElem->next;
+    }
+
+    messageClose(stream);
+  }
+}

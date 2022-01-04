@@ -30,6 +30,7 @@
 
 #include "rational.h"
 #include "omc_msvc.h"
+#include "omc_error.h"
 #include <assert.h>
 #include <stdlib.h>
 
@@ -205,18 +206,8 @@ RATIONAL divRat2Rat(RATIONAL a, RATIONAL b) {
  * @return double   Real approximation.
  */
 double rat2Real(RATIONAL a) {
+  assertStreamPrint(NULL, a.n != 0, "Invalid rational number %li/%li", a.m, a.n);
   return (double)a.m / a.n;
-}
-
-
-/**
- * @brief Signum function for long.
- *
- * @param n       Long integer number.
- * @return int    Signum of n.
- */
-static OMC_INLINE int sign(long n) {
-  return n > 0 ? 1 : -1;
 }
 
 

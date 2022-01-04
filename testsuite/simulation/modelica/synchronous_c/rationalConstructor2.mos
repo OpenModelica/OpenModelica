@@ -1,0 +1,46 @@
+// name:     rationalConstructor2
+// keywords: synchronous features, rationalClock, c
+// status: correct
+//
+// Rational clock with ticks 0, 3/10, 7/10, 12/10
+
+loadFile("Synchronous.mo"); getErrorString();
+
+simulate(Synchronous.Constructors.rationalClock2, stopTime=1.2, simflags="-lv=LOG_SYNCHRONOUS -override=stepSize=1.0"); getErrorString();
+
+val(y, 0.0);   // 1.0
+val(y, 0.3);   // 2.0
+val(y, 0.7);   // 3.0
+val(y, 1.2);   // 4.0
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Synchronous.Constructors.rationalClock2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.2, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Synchronous.Constructors.rationalClock2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS -override=stepSize=1.0'",
+//     messages = "LOG_SYNCHRONOUS   | info    | Initialized synchronous timers.
+// |                 | |       | | Number of base clocks: 1
+// |                 | |       | | Base clock 1
+// |                 | |       | | | intervalCounter/resolution = : 2/10
+// |                 | |       | | | interval: 2.000000e-01
+// |                 | |       | | | Number of sub-clocks: 1
+// |                 | |       | | | Sub-clock 1 of base clock 1
+// |                 | |       | | | | shift: 0/1
+// |                 | |       | | | | factor: 1/1
+// |                 | |       | | | | solverMethod: none
+// |                 | |       | | | | holdEvents: false
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.300000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.700000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.200000
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// endResult

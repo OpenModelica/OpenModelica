@@ -1,0 +1,52 @@
+// name:     inferredSampleVar.mos
+// keywords: synchronous features, sample, c
+// status: correct
+//
+// Check sampled values
+// Base-clock ticks: 0, 3/10, 6/10, 9/10, ...
+
+loadFile("Synchronous.mo"); getErrorString();
+
+simulate(Synchronous.Conversion.inferredSampleVar, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
+
+print("Sampled variable xc");
+val(xc, 0.0);
+val(xc, 0.2999);
+val(xc, 0.3);
+val(xc, 0.31);
+val(xc, 0.5999);
+val(xc, 0.6);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Synchronous.Conversion.inferredSampleVar_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Synchronous.Conversion.inferredSampleVar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
+//     messages = "LOG_SYNCHRONOUS   | info    | Initialized synchronous timers.
+// |                 | |       | | Number of base clocks: 1
+// |                 | |       | | Base clock 1
+// |                 | |       | | | interval: 3.000000e-01
+// |                 | |       | | | Number of sub-clocks: 1
+// |                 | |       | | | Sub-clock 1 of base clock 1
+// |                 | |       | | | | shift: 0/1
+// |                 | |       | | | | factor: 1/1
+// |                 | |       | | | | solverMethod: none
+// |                 | |       | | | | holdEvents: false
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.300000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.600000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.900000
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Sampled variable xc
+// 1.0
+// 1.0
+// 1.822123825639844
+// 1.822123825639844
+// 1.822123825639844
+// 3.320127960029464
+// endResult

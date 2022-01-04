@@ -1293,19 +1293,19 @@ uniontype ClockKind
   record INFERRED_CLOCK
   end INFERRED_CLOCK;
 
-  record INTEGER_CLOCK
-    Exp intervalCounter;
-    Exp resolution " integer type >= 1 ";
-  end INTEGER_CLOCK;
+  record RATIONAL_CLOCK
+    Exp intervalCounter " integer type >= 0 ";
+    Exp resolution " integer type >= 1, defaults to 1 ";
+  end RATIONAL_CLOCK;
 
   record REAL_CLOCK
-    Exp interval;
+    Exp interval " real type > 0";
   end REAL_CLOCK;
 
-  record BOOLEAN_CLOCK
+  record EVENT_CLOCK
     Exp condition;
     Exp startInterval " real type >= 0.0 ";
-  end BOOLEAN_CLOCK;
+  end EVENT_CLOCK;
 
   record SOLVER_CLOCK
     Exp c;

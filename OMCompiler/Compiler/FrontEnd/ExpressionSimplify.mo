@@ -1530,10 +1530,10 @@ algorithm
       then DAE.CLKCONST(DAE.REAL_CLOCK(e1));
 
     case (DAE.CALL(path=Absyn.IDENT("booleanClock"),expLst={e1,e2}))
-      then DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e1,e2));
+      then DAE.CLKCONST(DAE.EVENT_CLOCK(e1,e2));
 
     case (DAE.CALL(path=Absyn.IDENT("rationalClock"),expLst={e1,e2}))
-      then DAE.CLKCONST(DAE.INTEGER_CLOCK(e1, e2));
+      then DAE.CLKCONST(DAE.RATIONAL_CLOCK(e1, e2));
 
     case (DAE.CALL(path=Absyn.IDENT("solverClock"),expLst={e1,e2}))
       then DAE.CLKCONST(DAE.SOLVER_CLOCK(e1, e2));
