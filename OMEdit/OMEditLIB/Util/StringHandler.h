@@ -171,6 +171,7 @@ public:
   static QString removeLine(QString text, QString lineToRemove);
   static QString insertClassAtPosition(QString parentClassText, QString childClassText, int linePosition, int nestedLevel);
   static QString number(double value, char format = 'g', int precision = 16);
+  static QString getModelicaComment(QString element);
 protected:
   static QString mLastOpenDir;
 };

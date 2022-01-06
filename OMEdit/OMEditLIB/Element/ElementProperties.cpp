@@ -377,7 +377,8 @@ void Parameter::createValueWidget()
           QStringList choices = mpComponent->getChoices();
           for (i = 0; i < choices.size(); i++) {
             QString choice = choices[i];
-            mpValueComboBox->addItem(choice, choice);
+            QString comment = StringHandler::getModelicaComment(choice);
+            mpValueComboBox->addItem(comment, choice);
           }
       }
 

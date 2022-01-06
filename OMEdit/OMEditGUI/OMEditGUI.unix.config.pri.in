@@ -7,7 +7,7 @@ QMAKE_LINK = @CXX@
 OPENMODELICAHOME = @OPENMODELICAHOME@
 host_short = @host_short@
 
-LIBS += -L@OPENMODELICAHOME@/lib/$$host_short/omc -lOMPlot -lomqwt -lfmilib_shared -L$$OMEDIT_ROOT/OMEditLIB/Debugger/Parser -lGDBMIParser -lomcparserantlr4 -lomantlr3 @RPATH_QMAKE@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lomcruntime -lomcgc -L@OMBUILDDIR@/lib/$$host_short/omc @LIBOSG@ -lomopcua -lzmq -L@OMBUILDDIR@/lib -lOMSimulator @LIB_BOOST_REGEX@
+LIBS += -L@OPENMODELICAHOME@/lib/$$host_short/omc -lOMPlot -lomqwt -lfmilib_shared -L$$OMEDIT_ROOT/OMEditLIB/Debugger/Parser -lGDBMIParser -L@OMBUILDDIR@/../OMParser/install/lib -Wl,-Bstatic -lOMParser -lantlr4-runtime -Wl,-Bdynamic -lomantlr3 @RPATH_QMAKE@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lomcruntime  -lomcgc -L@OMBUILDDIR@/lib/$$host_short/omc @LIBOSG@ -lomopcua -lzmq -L@OMBUILDDIR@/lib -lOMSimulator @LIB_BOOST_REGEX@
 
 QMAKE_CXXFLAGS_RELEASE -= -O1
 QMAKE_CXXFLAGS_RELEASE -= -O2

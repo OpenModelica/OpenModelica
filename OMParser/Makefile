@@ -20,9 +20,9 @@ CPP_FILES=modelicaBaseListener.cpp  modelicaBaseVisitor.cpp  modelicaLexer.cpp  
 H_FILES=$(patsubst %.cpp,%.h,$(CPP_FILES))
 OBJS=$(patsubst %.cpp,%.o,$(CPP_FILES))
 
-all: libomcparserantlr4.a
+all: libOMParser.a
 
-libomcparserantlr4.a: $(OBJS)
+libOMParser.a: $(OBJS)
 	$(AR) -s -r $@ $(OBJS)
 	mkdir -p $(OMBUILDDIR)/lib/$(host_short)/omc/ $(OMBUILDDIR)/include/omc/
 	cp -pR $@ $(OMBUILDDIR)/lib/$(host_short)/omc/
@@ -43,11 +43,11 @@ $(CPP_FILES): runtool
 runtool: modelica.g4
 	java -cp 3rdParty/antlr4/tool/antlr-4.8-complete.jar org.antlr.v4.Tool -Dlanguage=Cpp -package openmodelica -listener -visitor  modelica.g4
 
-test: libomcparserantlr4.a
+test: libOMParser.a
 	$(MAKE) -C test
 
 clean-local:
-	rm -rf libomcparserantlr4.a $(OBJS) $(CPP_FILES) $(H_FILES) *.interp *.tokens
+	rm -rf libOMParser.a $(OBJS) $(CPP_FILES) $(H_FILES) *.interp *.tokens
 	$(MAKE) -C test clean
 
 clean-runtime:
