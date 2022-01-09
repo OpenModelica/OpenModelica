@@ -258,6 +258,7 @@ target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(OMEditLib PUBLIC omedit::config)
 target_link_libraries(OMEditLib PUBLIC libOMSimulator)
+target_link_libraries(OMEditLib PUBLIC OMParser)
 target_link_libraries(OMEditLib PUBLIC omedit::debugger::parser)
 target_link_libraries(OMEditLib PUBLIC Qt5::Xml)
 target_link_libraries(OMEditLib PUBLIC Qt5::Widgets)
@@ -284,7 +285,10 @@ target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
 set_target_properties(OMEditLib PROPERTIES
         NO_SYSTEM_FROM_IMPORTED ON)
 
-target_include_directories(OMEditLib PRIVATE ${OMCompiler_SOURCE_DIR}/Compiler/Script)
+target_include_directories(OMEditLib PRIVATE
+  ${OMCompiler_SOURCE_DIR}/Compiler/Script
+  ${OMParser_BINARY_DIR}/
+  ${OMParser_SOURCE_DIR}/3rdParty/antlr4/runtime/Cpp/runtime/src/)
 
 target_link_options(OMEditLib PRIVATE -Wl,--no-undefined)
 

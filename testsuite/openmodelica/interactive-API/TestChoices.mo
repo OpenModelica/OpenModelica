@@ -15,7 +15,7 @@ model TestChoices "..."
     Real z;
   end MyModel3;
 
-  replaceable MyModel m
+  replaceable MyModel c
    annotation(
      choices(
        choice(redeclare MyModel1 m "MyModel1"),
