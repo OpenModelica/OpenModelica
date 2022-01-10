@@ -94,7 +94,7 @@ import Flags;
 import FlagsUtil;
 import FMI;
 import FMIExt;
-import GC;
+import GCExt;
 import Graph;
 import HashSetString;
 import InnerOuter;
@@ -3319,12 +3319,12 @@ algorithm
     b := runFrontEndLoadProgram(className);
     true := b;
     if Flags.isSet(Flags.GC_PROF) then
-      print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
+      print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats before front-end:") + "\n");
     end if;
     ExecStat.execStat("FrontEnd - loaded program");
     (cache,env,dae,flatString) := runFrontEndWork(cache,env,className,relaxedFrontEnd,dumpFlat);
     if Flags.isSet(Flags.GC_PROF) then
-      print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
+      print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats after front-end:") + "\n");
     end if;
     ExecStat.execStat("FrontEnd - DAE generated");
 

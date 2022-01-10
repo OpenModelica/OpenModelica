@@ -67,7 +67,7 @@ import FGraph;
 import FGraphStream;
 import Flags;
 import FlagsUtil;
-import GC;
+import GCExt;
 import Global;
 import GlobalScript;
 import Interactive;
@@ -783,9 +783,9 @@ algorithm
   // 150M for Windows, 300M for others makes the GC try to unmap less and so it crashes less.
   // Disabling unmap is another alternative that seems to work well (but could cause the memory consumption to not be released, and requires manually calling collect and unmap
   if true then
-    GC.setForceUnmapOnGcollect(Autoconf.os == "Windows_NT");
+    GCExt.setForceUnmapOnGcollect(Autoconf.os == "Windows_NT");
   else
-    GC.expandHeap(if Autoconf.os == "Windows_NT"
+    GCExt.expandHeap(if Autoconf.os == "Windows_NT"
                       then 1024*1024*150
                       else 1024*1024*300);
   end if;
@@ -805,7 +805,7 @@ public function main
   input list<String> args;
 protected
   list<String> args_1;
-  GC.ProfStats stats;
+  GCExt.ProfStats stats;
   Integer seconds;
 algorithm
   execStatReset();
@@ -813,7 +813,7 @@ algorithm
     try
       args_1 := init(args);
       if Flags.isSet(Flags.GC_PROF) then
-        print(GC.profStatsStr(GC.getProfStats(), head="GC stats after initialization:") + "\n");
+        print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats after initialization:") + "\n");
       end if;
       seconds := Flags.getConfigInt(Flags.ALARM);
       if seconds > 0 then
@@ -827,7 +827,7 @@ algorithm
       fail();
     end try;
     if Flags.isSet(Flags.GC_PROF) then
-      print(GC.profStatsStr(GC.getProfStats(), head="GC stats at end of program:") + "\n");
+      print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats at end of program:") + "\n");
     end if;
   else
     print("Stack overflow detected and was not caught.\n" +

@@ -56,7 +56,7 @@ import Expression;
 import ExpressionDump;
 import ExpressionSolve;
 import ExpressionSimplify;
-import GC;
+import GCExt;
 import Global;
 import HashSet;
 import HashTableExpToExp;
@@ -2015,8 +2015,8 @@ algorithm
       cseLst := commonSubExpressionFind(m, mT, vars, eqs, isInitial);
           //if not listEmpty(cseLst) then print("update "+stringDelimitList(List.map(cseLst, printCSE), "\n")+"\n");end if;
       syst := commonSubExpressionUpdate(cseLst, m, mT, sysIn);
-      GC.free(m);
-      GC.free(mT);
+      GCExt.free(m);
+      GCExt.free(mT);
       syst.orderedEqs := eqs;
           //print("done this eqSystem\n");
           //BackendDump.dumpEqSystem(syst, "eqSystem");
@@ -2171,8 +2171,8 @@ algorithm
            cses := SHORTCUT_CSE(adjEqs,varIdx)::cses;
          end if;
        end for; //end the variables
-       GC.free(m);
-       GC.free(mT);
+       GCExt.free(m);
+       GCExt.free(mT);
      end for;  //end all partitions
       //print("the SHORTPATH cses : \n"+stringDelimitList(List.map(cses, printCSE), "\n")+"\n");
     end if;
@@ -2300,8 +2300,8 @@ algorithm
             varIdcs2 := listAppend(varIdcs1, varIdcs2);
             varIdcs2 := list(arrayGet(varMapArr, i) for i in varIdcs2);
             eqIdcs := list(arrayGet(eqMapArr,i) for i in loop1);
-            GC.free(eqMapArr);
-            GC.free(varMapArr);
+            GCExt.free(eqMapArr);
+            GCExt.free(varMapArr);
             cseLst := ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs2)::cseLst;
           end if;
       end for;

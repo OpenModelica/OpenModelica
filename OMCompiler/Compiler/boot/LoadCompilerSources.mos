@@ -157,7 +157,7 @@ if true then /* Suppress output */
     "../Util/ExecStat.mo",
     "../Util/Flags.mo",
     "../Util/FlagsUtil.mo",
-    "../Util/GC.mo",
+    "../Util/GCExt.mo",
     "../Util/Gettext.mo",
     "../Util/Graph.mo",
     "../Util/GraphStream.mo",

@@ -88,7 +88,7 @@ import FGraph;
 import Flags;
 import FlagsUtil;
 import FNode;
-import GC;
+import GCExt;
 import GenerateAPIFunctionsTpl;
 import Global;
 import Graph;
@@ -600,7 +600,7 @@ algorithm
       list<SCode.Element> elts;
       list<ErrorTypes.TotalMessage> messages;
       list<tuple<String,list<String>>> interfaceTypeAssoc;
-      GC.ProfStats gcStats;
+      GCExt.ProfStats gcStats;
 
     case ("parseString",{Values.STRING(str1),Values.STRING(str2)})
       algorithm
@@ -678,22 +678,22 @@ algorithm
 
     case ("GC_gcollect_and_unmap",{})
       algorithm
-        GC.gcollectAndUnmap();
+        GCExt.gcollectAndUnmap();
       then
         Values.BOOL(true);
 
     case ("GC_expand_hp",{Values.INTEGER(i)})
-      then Values.BOOL(GC.expandHeap(i));
+      then Values.BOOL(GCExt.expandHeap(i));
 
     case ("GC_set_max_heap_size",{Values.INTEGER(i)})
       algorithm
-        GC.setMaxHeapSize(i);
+        GCExt.setMaxHeapSize(i);
       then
         Values.BOOL(true);
 
     case ("GC_get_prof_stats",{})
       algorithm
-        gcStats := GC.getProfStats();
+        gcStats := GCExt.getProfStats();
       then
         Values.RECORD(Absyn.IDENT("GC_PROFSTATS"),
          {

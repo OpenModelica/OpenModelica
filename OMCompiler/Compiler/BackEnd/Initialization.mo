@@ -64,7 +64,7 @@ import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
-import GC;
+import GCExt;
 import IndexReduction;
 import List;
 import Matching;
@@ -864,7 +864,7 @@ algorithm
       end match;
     end for;
 
-    GC.free(secondary);
+    GCExt.free(secondary);
     outAllPrimaryParameters := listReverse(outAllPrimaryParameters);
     dae := BackendDAEUtil.setDAEGlobalKnownVars(dae, otherVariables);
 
@@ -2227,7 +2227,7 @@ algorithm
           if Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
             (vars, eqns) := collectInitialStateSets(eq.stateSets, stateSetFixCounts, vars, eqns);
           end if;
-          GC.free(stateSetFixCounts);
+          GCExt.free(stateSetFixCounts);
         then
           ();
     end match;

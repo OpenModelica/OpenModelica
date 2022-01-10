@@ -91,7 +91,7 @@ import ExpressionSolve;
 import Flags;
 import FlagsUtil;
 import FMI;
-import GC;
+import GCExt;
 import Global;
 import Graph;
 import HashSet;
@@ -877,8 +877,8 @@ algorithm
                                  sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, true);
     sccOffset := listLength(comps) + sccOffset;
     //otempvars := listAppend(clockedVars, otempvars);
-    GC.free(stateeqnsmark);
-    GC.free(zceqnsmarks);
+    GCExt.free(stateeqnsmark);
+    GCExt.free(zceqnsmarks);
 
     (ouniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(syst.removedEqs, traversedlowEqToSimEqSystem, (ouniqueEqIndex, {}));
 
@@ -905,7 +905,7 @@ algorithm
         ouniqueEqIndex := ouniqueEqIndex + 1;
       end if;
     end for;
-    GC.free(isPrevVar);
+    GCExt.free(isPrevVar);
 
     //otempvars := listAppend(clockedVars, otempvars);
     simSubPartition := SimCode.SUBPARTITION(prevClockedVars,  equations, removedEquations, subPartition.clock, subPartition.holdEvents);
@@ -915,7 +915,7 @@ algorithm
 
   end for;
   outPartitions := createClockedSimPartitions(inShared.partitionsInfo.basePartitions, simSubPartitions);
-  GC.free(simSubPartitions);
+  GCExt.free(simSubPartitions);
 end translateClockedEquations;
 
 protected function createClockedSimPartitions
@@ -1544,8 +1544,8 @@ algorithm
             createEquationsForSystem(
                 stateeqnsmark, zceqnsmarks, syst, shared, comps, uniqueEqIndex, tempvars,
                 sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping, createAlgebraicEquations);
-        GC.free(stateeqnsmark);
-        GC.free(zceqnsmarks);
+        GCExt.free(stateeqnsmark);
+        GCExt.free(zceqnsmarks);
 
         odeEquations = List.consOnTrue(not listEmpty(odeEquations1), odeEquations1, odeEquations);
         algebraicEquations = List.consOnTrue(not listEmpty(algebraicEquations1), algebraicEquations1, algebraicEquations);
@@ -8110,7 +8110,7 @@ algorithm
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.setcvars)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.datareconinputvars))
   );
-  GC.free(simVars);
+  GCExt.free(simVars);
 end createVars;
 
 protected function extractVarsFromList
@@ -14341,8 +14341,8 @@ algorithm
     getHighestDerivationVisit(i, ders, depth);
   end for;
   highestDerivation := max(i for i in depth);
-  GC.free(ders);
-  GC.free(depth);
+  GCExt.free(ders);
+  GCExt.free(depth);
 end getHighestDerivation;
 
 protected function getHighestDerivationVisit "Uses stack depth of at most max depth"

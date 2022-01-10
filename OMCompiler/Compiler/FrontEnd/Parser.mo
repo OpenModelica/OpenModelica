@@ -239,9 +239,9 @@ algorithm
   if Testsuite.isRunning() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 or isSome(lveInstance) then
     partialResults := list(loadFileThread(t) for t in workList);
   else
-    // GC.disable(); // Seems to sometimes break building nightly omc
+    // GCExt.disable(); // Seems to sometimes break building nightly omc
     partialResults := System.launchParallelTasks(min(8, numThreads) /* Boehm GC does not scale to infinity */, workList, loadFileThread);
-    // GC.enable();
+    // GCExt.enable();
   end if;
 end parallelParseFilesWork;
 

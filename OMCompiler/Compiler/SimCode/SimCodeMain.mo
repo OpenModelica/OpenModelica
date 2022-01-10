@@ -80,7 +80,7 @@ import ErrorExt;
 import ExecStat;
 import Flags;
 import FMI;
-import GC;
+import GCExt;
 import HashTable;
 import HashTableCrefSimVar;
 import HashTableCrIListArray;
@@ -1004,8 +1004,8 @@ algorithm
         serializeNotify((dae,dae1), "FrontEnd DAE before+after transformations");
         ExecStat.execStat("Serialize DAE (2)");
       end if;
-      GC.free(dae1);
-      GC.free(odae);
+      GCExt.free(dae1);
+      GCExt.free(odae);
       odae := NONE();
       dae1 := DAE.emptyDae;
 
@@ -1019,7 +1019,7 @@ algorithm
       description := DAEUtil.daeDescription(dae);
       dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
-      GC.free(dae);
+      GCExt.free(dae);
       dae := DAE.emptyDae;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
@@ -1190,7 +1190,7 @@ algorithm
       description := DAEUtil.daeDescription(dae);
       dlow := BackendDAECreate.lower(dae, outCache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
-      GC.free(dae);
+      GCExt.free(dae);
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dlow, "dlow");
