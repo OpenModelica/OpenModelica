@@ -676,8 +676,6 @@ algorithm
     // Other kinds of dimensions are already typed.
     else dimension;
   end match;
-
-  verifyDimension(dimension, component, info);
 end typeDimension;
 
 function subscriptDimExp
@@ -737,27 +735,6 @@ algorithm
     else dimExp;
   end match;
 end simplifyDimExp;
-
-function verifyDimension
-  input Dimension dimension;
-  input InstNode component;
-  input SourceInfo info;
-algorithm
-  () := match dimension
-    case Dimension.INTEGER()
-      algorithm
-        // Check that integer dimensions are not negative.
-        if dimension.size < 0 then
-          Error.addSourceMessage(Error.NEGATIVE_DIMENSION_INDEX,
-            {String(dimension.size), InstNode.name(component)}, info);
-          fail();
-        end if;
-      then
-        ();
-
-    else ();
-  end match;
-end verifyDimension;
 
 function makeDimension
   input Expression dimExp;
