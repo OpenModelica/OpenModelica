@@ -672,6 +672,7 @@ IfExpression8.mo \
 IfExpression10.mo \
 IfExpression11.mo \
 IfExpression12.mo \
+IfExpression13.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \

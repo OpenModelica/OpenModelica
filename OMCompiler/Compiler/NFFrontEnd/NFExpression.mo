@@ -1406,11 +1406,25 @@ public
     Type ty;
   algorithm
     IF(ty, cond, tb, fb) := exp;
-    tb := applySubscript(subscript, tb, restSubscripts);
-    fb := applySubscript(subscript, fb, restSubscripts);
-    ty := if Type.isConditionalArray(ty) then
-      Type.setConditionalArrayTypes(ty, typeOf(tb), typeOf(fb)) else typeOf(tb);
-    outExp := IF(ty, cond, tb, fb);
+
+    if Type.isConditionalArray(ty) then
+      // Subscripting both branches of a conditional array might not be possible
+      // since they have different dimensions. If it fails just subscript the
+      // whole if-expression instead.
+      try
+        tb := applySubscript(subscript, tb, restSubscripts);
+        fb := applySubscript(subscript, fb, restSubscripts);
+        ty := Type.setConditionalArrayTypes(ty, typeOf(tb), typeOf(fb));
+        outExp := IF(ty, cond, tb, fb);
+      else
+        outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      end try;
+    else
+      tb := applySubscript(subscript, tb, restSubscripts);
+      fb := applySubscript(subscript, fb, restSubscripts);
+      ty := typeOf(tb);
+      outExp := IF(ty, cond, tb, fb);
+    end if;
   end applySubscriptIf;
 
   function makeSubscriptedExp
