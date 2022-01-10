@@ -78,7 +78,7 @@ import ExpressionSimplify;
 import FGraph;
 import Flags;
 import FlagsUtil;
-import GC;
+import GCExt;
 import GlobalScriptDump;
 import InnerOuter;
 import Inst;
@@ -358,7 +358,7 @@ algorithm
   else
     str := "";
     str_1 := "";
-    GC.gcollect();
+    GCExt.gcollect();
     str := StackOverflow.getReadableMessage();
     if Testsuite.isRunning() then
       /* It's useful to print the name of the component we failed on.

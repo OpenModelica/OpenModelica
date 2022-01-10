@@ -151,7 +151,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ExecStat.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Flags.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FlagsUtil.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/GC.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/GCExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Gettext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Graph.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphStream.mo

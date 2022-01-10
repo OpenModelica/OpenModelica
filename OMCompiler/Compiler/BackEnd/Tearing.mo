@@ -60,7 +60,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
-import GC;
+import GCExt;
 import Global;
 import List;
 import Matching;
@@ -4165,7 +4165,7 @@ algorithm
       end if;
     end for;
   end for;
-  GC.free(eqn_size_arr);
+  GCExt.free(eqn_size_arr);
 end getVarsOfEqnsWithMostVars;
 
 

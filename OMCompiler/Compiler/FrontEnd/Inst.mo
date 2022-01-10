@@ -130,7 +130,7 @@ import Flags;
 import FGraph;
 import FGraphBuildEnv;
 import FNode;
-import GC;
+import GCExt;
 import Global;
 import HashTable;
 import HashTable5;
@@ -206,7 +206,7 @@ algorithm
         source = ElementSource.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
 
         if Flags.isSet(Flags.GC_PROF) then
-          print(GC.profStatsStr(GC.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
+          print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
         end if;
         ExecStat.execStat("FrontEnd - mkProgramGraph");
 
@@ -252,7 +252,7 @@ algorithm
         //System.startTimer();
         //print("\nInstClass");
         if Flags.isSet(Flags.GC_PROF) then
-          print(GC.profStatsStr(GC.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
+          print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats after pre-frontend work (building graphs):") + "\n");
         end if;
         ExecStat.execStat("FrontEnd - mkProgramGraph");
 
@@ -3177,8 +3177,8 @@ algorithm
 
     outVars := listAppend(lst for lst in var_arr);
     outDae := DAE.DAE(listAppend(lst for lst in dae_arr));
-    GC.free(var_arr);
-    GC.free(dae_arr);
+    GCExt.free(var_arr);
+    GCExt.free(dae_arr);
   else
     // For functions, use the sorted elements instead, otherwise things break.
     for e in el loop

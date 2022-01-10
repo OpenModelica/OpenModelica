@@ -67,7 +67,7 @@ import ExpressionSimplify;
 import Error;
 import Flags;
 import FlagsUtil;
-import GC;
+import GCExt;
 import Global;
 import Graph;
 import HashSet;
@@ -624,8 +624,8 @@ algorithm
 
   (bVarsOut,bEqsOut) := createBVecVars(sysIdxIn,compIdxIn,n,DAE.T_REAL_DEFAULT,beqs);
   sysEqsOut := createSysEquations(A,b,n,order,var_lst,bVarsOut);
-  GC.free(A);
-  GC.free(b);
+  GCExt.free(A);
+  GCExt.free(b);
   sysIdxOut := sysIdxIn+1;
   orderOut := order;
 end solveConstJacLinearSystem;
@@ -1358,15 +1358,15 @@ algorithm
       Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
     end if;
     if debug then execStat("generateSparsePattern -> coloring end "); end if;
-    GC.free(forbiddenColor);
-    GC.free(arraysparseGraph);
+    GCExt.free(forbiddenColor);
+    GCExt.free(arraysparseGraph);
     // get max color used
     maxColor := Array.fold(colored, intMax, 0);
 
     // map index of that array into colors
     coloredArray := arrayCreate(maxColor, {});
     mapIndexColors(colored, sizeVars, coloredArray);
-    GC.free(colored);
+    GCExt.free(colored);
 
     if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
       print("Print Coloring Cols: \n");

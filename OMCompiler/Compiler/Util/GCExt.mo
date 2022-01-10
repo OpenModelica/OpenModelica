@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package GC
+encapsulated package GCExt
 
 function gcollect
 external "C" GC_gcollect() annotation(Library = {"omcgc"});
@@ -60,7 +60,7 @@ void omc_GC_free_ext(void *data)
 <p>GC_free requires \"a pointer to the base of an object\".</p>
 <p>So the object passed to free must not be allocated by any of the list
 routines that allocate multiple elements with a single malloc call.</p>
-<p>Calling GC.free is very dangerous. You might be better off trying to
+<p>Calling GCExt.free is very dangerous. You might be better off trying to
 set variables to a constant value if you want to GC them. Use this if
 you are concerned about temporary variables, etc remaining on the stack
 and not cleared for a long time.</p>
@@ -95,7 +95,7 @@ function setMaxHeapSize
 external "C" GC_set_max_heap_size_dbl(sz) annotation(Include="#define GC_set_max_heap_size_dbl(sz) omc_GC_set_max_heap_size((size_t)sz)",Library = {"omcgc"});
 end setMaxHeapSize;
 
-uniontype ProfStats "TODO: Support regular records in the bootstrapped compiler to avoid allocation to return the stats in the GC..."
+uniontype ProfStats "TODO: Support regular records in the bootstrapped compiler to avoid allocation to return the stats in the GCExt..."
   record PROFSTATS
     Integer heapsize_full, free_bytes_full, unmapped_bytes, bytes_allocd_since_gc, allocd_bytes_before_gc, non_gc_bytes, gc_no, markers_m1, bytes_reclaimed_since_gc, reclaimed_bytes_before_gc;
   end PROFSTATS;
@@ -177,4 +177,4 @@ annotation(Documentation(info="<html>
 end getProfStats;
 
 annotation(__OpenModelica_Interface="util");
-end GC;
+end GCExt;
