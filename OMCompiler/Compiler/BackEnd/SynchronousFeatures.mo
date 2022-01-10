@@ -2302,9 +2302,8 @@ algorithm
     then (DAE.REAL_CLOCK(e), eqs, vars, cnt);
 
     case DAE.RATIONAL_CLOCK(e, i) equation
-      // AHeu: Surpressing substClockExp to get rid of previous in intervalCounter
-      //(e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
-    then (DAE.RATIONAL_CLOCK(e, i), inNewEqs, inNewVars, inCnt);
+      (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
+    then (DAE.RATIONAL_CLOCK(e, i), eqs, vars, cnt);
 
     else (inClk, inNewEqs, inNewVars, inCnt);
   end match;
@@ -2362,10 +2361,6 @@ algorithm
     outCnt := inCnt;
   else
     ({outExp}, outNewEqs, outNewVars, outCnt) := substExp({inExp}, inNewEqs, inNewVars, inCnt);
-    outExp := match outExp
-      case DAE.CREF(_, ty) then Expression.makePureBuiltinCall("previous", {outExp}, ty);
-      else outExp;
-    end match;
   end if;
 end substClockExp;
 

@@ -357,6 +357,11 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
     else
       '0'
   let interval = match baseClock
+    case REAL_CLOCK() then
+      if isConst(interval) then
+        daeExp(interval, contextOther, &preExp, &varDecls, &auxFunction)
+      else
+        '-1 /* Interval set in _updateSynchronous */'
     case INFERRED_CLOCK() then
       '1'
     else
@@ -471,11 +476,16 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
         data->simulationInfo->baseClocks[base_idx].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[base_idx].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[base_idx].resolution, "intervalCounter/resolution");
         >>
     case REAL_CLOCK() then
-      let interval = daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
-      <<
-      <%preExp%>
-      data->simulationInfo->baseClocks[base_idx].interval = <%interval%>;
-      >>
+      if isConst(interval) then
+        <<
+        /* Nothing to do */
+        >>
+      else
+        let interval_ = daeExp(interval, contextOther, &preExp, &varDecls, &auxFunction)
+        <<
+        <%preExp%>
+        data->simulationInfo->baseClocks[base_idx].interval = <%interval_%>;
+        >>
     case INFERRED_CLOCK()
     case SOLVER_CLOCK()
     case EVENT_CLOCK() then
