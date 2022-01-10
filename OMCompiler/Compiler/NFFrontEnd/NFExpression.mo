@@ -3826,6 +3826,27 @@ public
     end for;
   end fillType;
 
+  function fillArgs
+    "Creates an array from the given fill expression and list of dimensions,
+     similar to fill(fillExp, dims...). Fails if not all dimensions can be
+     converted to Integer values."
+    input Expression fillExp;
+    input list<Expression> dims;
+    output Expression result = fillExp;
+  protected
+    Integer dim_size;
+    list<Expression> arr;
+    Type arr_ty = typeOf(result);
+    Boolean is_literal = isLiteral(fillExp);
+  algorithm
+    for d in listReverse(dims) loop
+      dim_size := toInteger(d);
+      arr := list(result for e in 1:dim_size);
+      arr_ty := Type.liftArrayLeft(arr_ty, Dimension.fromInteger(dim_size));
+      result := Expression.makeArray(arr_ty, arr, is_literal);
+    end for;
+  end fillArgs;
+
   function liftArray
     "Creates an array with the given dimension, where each element is the given
      expression. Example: liftArray([3], 1) => {1, 1, 1}"

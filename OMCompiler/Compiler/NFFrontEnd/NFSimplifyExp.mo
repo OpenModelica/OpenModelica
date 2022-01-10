@@ -355,7 +355,7 @@ function simplifyFill
   output Expression exp;
 algorithm
   if List.all(dimArgs, Expression.isLiteral) then
-    exp := Ceval.evalBuiltinFill2(fillArg, dimArgs);
+    exp := Expression.fillArgs(fillArg, dimArgs);
   else
     exp := Expression.CALL(call);
   end if;

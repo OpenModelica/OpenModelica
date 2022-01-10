@@ -280,12 +280,13 @@ public
     Absyn.Path fn_path = Function.nameConsiderBuiltin(fn);
   algorithm
     (outExp, expanded) := match AbsynUtil.pathFirstIdent(fn_path)
-      case "cat" then expandBuiltinCat(args, call);
-      case "der" then expandBuiltinGeneric(call);
-      case "diagonal" then expandBuiltinDiagonal(listHead(args));
-      case "pre" then expandBuiltinGeneric(call);
-      case "previous" then expandBuiltinGeneric(call);
-      case "promote" then expandBuiltinPromote(args);
+      case "cat"       then expandBuiltinCat(args, call);
+      case "der"       then expandBuiltinGeneric(call);
+      case "diagonal"  then expandBuiltinDiagonal(listHead(args));
+      case "fill"      then expandBuiltinFill(args);
+      case "pre"       then expandBuiltinGeneric(call);
+      case "previous"  then expandBuiltinGeneric(call);
+      case "promote"   then expandBuiltinPromote(args);
       case "transpose" then expandBuiltinTranspose(listHead(args));
     end match;
   end expandBuiltinCall;
@@ -335,6 +336,14 @@ public
       outExp := Ceval.evalBuiltinDiagonal(outExp);
     end if;
   end expandBuiltinDiagonal;
+
+  function expandBuiltinFill
+    input list<Expression> args;
+    output Expression outExp;
+    output Boolean expanded = true;
+  algorithm
+    outExp := Expression.fillArgs(listHead(args), listRest(args));
+  end expandBuiltinFill;
 
   function expandBuiltinTranspose
     input Expression arg;

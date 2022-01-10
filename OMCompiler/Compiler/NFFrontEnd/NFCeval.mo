@@ -2199,30 +2199,18 @@ public
 function evalBuiltinFill
   input list<Expression> args;
   output Expression result;
-algorithm
-  result := evalBuiltinFill2(listHead(args), listRest(args));
-end evalBuiltinFill;
-
-function evalBuiltinFill2
-  input Expression fillValue;
-  input list<Expression> dims;
-  output Expression result = fillValue;
 protected
-  Integer dim_size;
-  list<Expression> arr;
-  Type arr_ty = Expression.typeOf(result);
+  Expression fill_exp;
+  list<Expression> dims;
 algorithm
-  for d in listReverse(dims) loop
-    () := match d
-      case Expression.INTEGER(value = dim_size) then ();
-      else algorithm printWrongArgsError(getInstanceName(), {d}, sourceInfo()); then fail();
-    end match;
-
-    arr := list(result for e in 1:dim_size);
-    arr_ty := Type.liftArrayLeft(arr_ty, Dimension.fromInteger(dim_size));
-    result := Expression.makeArray(arr_ty, arr, Expression.isLiteral(fillValue));
-  end for;
-end evalBuiltinFill2;
+  try
+    fill_exp :: dims := args;
+    result := Expression.fillArgs(fill_exp, dims);
+  else
+    printWrongArgsError(getInstanceName(), args, sourceInfo());
+    fail();
+  end try;
+end evalBuiltinFill;
 
 protected
 function evalBuiltinFloor
@@ -2514,7 +2502,7 @@ function evalBuiltinOnes
   input list<Expression> args;
   output Expression result;
 algorithm
-  result := evalBuiltinFill2(Expression.INTEGER(1), args);
+  result := evalBuiltinFill(Expression.INTEGER(1) :: args);
 end evalBuiltinOnes;
 
 function evalBuiltinProduct
@@ -2874,7 +2862,7 @@ function evalBuiltinZeros
   input list<Expression> args;
   output Expression result;
 algorithm
-  result := evalBuiltinFill2(Expression.INTEGER(0), args);
+  result := evalBuiltinFill(Expression.INTEGER(0) :: args);
 end evalBuiltinZeros;
 
 function evalUriToFilename
