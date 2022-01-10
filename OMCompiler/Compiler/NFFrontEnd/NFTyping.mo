@@ -698,7 +698,7 @@ algorithm
   // If the expression has too many dimensions, add split subscripts based on
   // the component's parent's dimensions until we get a scalar expression.
   subs := {};
-  parent := InstNode.derivedParent(component);
+  parent := InstNode.instanceParent(component);
 
   while exp_dims > 0 and not InstNode.isEmpty(parent) loop
     parent_dims := InstNode.dimensionCount(parent);
@@ -712,7 +712,7 @@ algorithm
       end if;
     end for;
 
-    parent := InstNode.derivedParent(parent);
+    parent := InstNode.instanceParent(parent);
   end while;
 
   dimExp := Expression.applySubscripts(subs, dimExp);
@@ -767,7 +767,7 @@ protected
   Expression exp;
   Binding parent_binding;
 algorithm
-  parent := InstNode.derivedParent(component);
+  parent := InstNode.instanceParent(component);
 
   if InstNode.isComponent(parent) then
     // Get the binding of the component's parent.
@@ -1038,7 +1038,7 @@ protected
   InstNode parent;
 algorithm
   if Binding.isEach(binding) then
-    parent := InstNode.derivedParent(component);
+    parent := InstNode.instanceParent(component);
 
     if not Type.isArray(InstNode.getType(parent)) then
       Error.addStrictMessage(Error.EACH_ON_NON_ARRAY,

@@ -566,17 +566,20 @@ uniontype InstNode
     CLASS_NODE(parentScope = parent) := node;
   end classParent;
 
-  function derivedParent
+  function instanceParent
+    "Returns the parent of the node in the instance tree."
     input InstNode node;
     output InstNode parent;
   algorithm
     parent := match node
       case CLASS_NODE() then getDerivedNode(node.parentScope);
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
+        then getDerivedNode(parent);
       case COMPONENT_NODE() then getDerivedNode(node.parent);
       case IMPLICIT_SCOPE() then getDerivedNode(node.parentScope);
       else EMPTY_NODE();
     end match;
-  end derivedParent;
+  end instanceParent;
 
   function rootParent
     input InstNode node;
@@ -1728,7 +1731,7 @@ uniontype InstNode
   algorithm
     hasBinding := match node
       case COMPONENT_NODE()
-        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(derivedParent(node));
+        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(instanceParent(node));
       else false;
     end match;
   end hasBinding;
