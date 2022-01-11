@@ -192,6 +192,11 @@ add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES} .cmake/omc_entry_p
 
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
+# Silence warnings about extra parenthesized equality checks. if((a==b))
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_compile_options(OpenModelicaCompiler PRIVATE -Wno-parentheses-equality)
+endif()
+
 # There is a lonely omc_file.h in Util/. It belongs in runtime/. Remove this when it is moved.
 target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Util)
 
