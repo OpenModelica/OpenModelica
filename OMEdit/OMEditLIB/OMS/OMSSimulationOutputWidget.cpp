@@ -300,7 +300,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     }
     // start the executable
     QString process;
-#ifdef WIN32
+#if defined(_WIN32)
     process = QString("python");
     QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
     QString OMHOME = QString(Helper::OpenModelicaHome);

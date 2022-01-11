@@ -4791,7 +4791,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   // GDB Path
   mpGDBPathLabel = new Label(tr("GDB Path:"));
   mpGDBPathTextBox = new QLineEdit;
-#ifdef WIN32
+#if defined(_WIN32)
   mpGDBPathTextBox->setPlaceholderText(Utilities::getGDBPath());
 #else
   mpGDBPathTextBox->setPlaceholderText("gdb");
@@ -4980,7 +4980,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, dockerPlarform);
     pPlatformsLayout->addWidget(pCheckBox);
   }
-#ifdef WIN32
+#if defined(_WIN32)
   QStringList paths = QString(getenv("PATH")).split(";");
 #else
   QStringList paths = QString(getenv("PATH")).split(":");
@@ -5266,14 +5266,14 @@ void TLMPage::browseTLMPluginPath()
   path = path.replace('\\', '/');
   mpTLMPluginPathTextBox->setText(path);
   if (mpTLMManagerProcessTextBox->text().isEmpty()) {
-#ifdef WIN32
+#if defined(_WIN32)
     mpTLMManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager.exe");
 #else
     mpTLMManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager");
 #endif
   }
   if (mpTLMMonitorProcessTextBox->text().isEmpty()) {
-#ifdef WIN32
+#if defined(_WIN32)
     mpTLMMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor.exe");
 #else
     mpTLMMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor");

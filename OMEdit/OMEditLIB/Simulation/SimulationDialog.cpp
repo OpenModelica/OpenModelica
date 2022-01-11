@@ -1823,7 +1823,7 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
     fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(fileName);
     fileName = fileName.replace("//", "/");
     // run the simulation executable to create the result file
-#ifdef WIN32
+#if defined(_WIN32)
     fileName = fileName.append(".exe");
 #endif
     // start the debugger

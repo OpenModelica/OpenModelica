@@ -1355,7 +1355,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
   }
 
   QString fileName = "";
-#ifdef WIN32
+#if defined(_WIN32)
   fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
 #else
   Q_UNUSED(selectedFilter)
@@ -1388,7 +1388,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   }
 
   QStringList fileNames;
-#ifdef WIN32
+#if defined(_WIN32)
   fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
 #else
   Q_UNUSED(selectedFilter);
@@ -1672,7 +1672,7 @@ bool StringHandler::naturalSortForResultVariables(const QString &s1, const QStri
   return StringHandler::naturalSort(s3, s4);
 }
 
-#ifdef WIN32
+#if defined(_WIN32)
 /*!
  * \brief StringHandler::simulationProcessEnvironment
  * Returns the environment for simulation process.
