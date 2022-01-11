@@ -222,7 +222,12 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::Modelica::External
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::Modelica::IO)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
 
-
+# On Windows we need explicitly tell the dll to export all symbols. It is not so good
+# that we have to export all symbols. However, OMEdit uses some of the functions in the
+# lib directly and we have no way of marking specific MetaModelica functions for exporting.
+if(MINGW)
+  target_link_options(OpenModelicaCompiler PRIVATE  -Wl,--export-all-symbols)
+endif()
 
 # OMC Executable.
 add_executable(omc .cmake/omc_main.c)
