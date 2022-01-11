@@ -737,6 +737,8 @@ InnerOuterMissing6.mo \
 InnerOuterMissing7.mo \
 InnerOuterMissing8.mo \
 InnerOuterNotInner1.mo \
+InnerOuterPartialOuter1.mo \
+InnerOuterPartialOuter2.mo \
 InnerOuterReplaceable1.mo \
 InStreamArray.mo \
 InStreamFlowThreshold.mo \
