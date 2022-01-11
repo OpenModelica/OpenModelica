@@ -366,6 +366,10 @@ protected
   Expression cond;
   Boolean is_deleted;
 algorithm
+  if InstNode.isOnlyOuter(component) then
+    return;
+  end if;
+
   ty := match c
     // An untyped component, type it.
     case Component.UNTYPED_COMPONENT()
@@ -860,6 +864,10 @@ protected
   Type ty;
 algorithm
   c := InstNode.component(node);
+
+  if InstNode.isOnlyOuter(component) then
+    return;
+  end if;
 
   () := match c
     case Component.TYPED_COMPONENT()
@@ -2763,7 +2771,7 @@ protected
 algorithm
   comp := InstNode.component(component);
 
-  if Component.isDeleted(comp) then
+  if Component.isDeleted(comp) or InstNode.isOnlyOuter(component) then
     return;
   end if;
 
