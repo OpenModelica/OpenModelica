@@ -393,18 +393,18 @@ function max
 </html>"));
 end max;
 
-function sum<ArrayType, ScalarBasicType> "Sum of all array elements"
-  input ArrayType a;
-  output ScalarBasicType s;
+function sum<__Array, __Scalar> "Sum of all array elements"
+  input __Array a;
+  output __Scalar s;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sum()'\">sum()</a>
 </html>"));
 end sum;
 
-function product<ArrayType, ScalarBasicType> "Product of all array elements"
-  input ArrayType a;
-  output ScalarBasicType s;
+function product<__Array, __Scalar> "Product of all array elements"
+  input __Array a;
+  output __Scalar s;
   external "builtin";
   annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'product()'\">product()</a>
