@@ -99,7 +99,7 @@ void TLMCoSimulationThread::runManager()
   args << tlmCoSimulationOptions.getManagerArgs() << fileInfo.absoluteFilePath();
   QString fileName = tlmCoSimulationOptions.getManagerProcess();
   QProcessEnvironment environment;
-#ifdef WIN32
+#if defined(_WIN32)
   environment = StringHandler::simulationProcessEnvironment();
   environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
 #else
@@ -130,7 +130,7 @@ void TLMCoSimulationThread::runMonitor()
   QString fileName = tlmCoSimulationOptions.getMonitorProcess();
   // run the simulation executable to create the result file
   QProcessEnvironment environment;
-#ifdef WIN32
+#if defined(_WIN32)
   environment = StringHandler::simulationProcessEnvironment();
   environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
 #else
@@ -189,7 +189,7 @@ void TLMCoSimulationThread::managerProcessFinished(int exitCode, QProcess::ExitS
     emit sendManagerOutput(mpManagerProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error);
   }
   emit sendManagerFinished(exitCode, exitStatus);
-#ifdef WIN32
+#if defined(_WIN32)
   Utilities::killProcessTreeWindows(mManagerProcessId);
 #else
   /*! @todo do similar stuff for Linux! */

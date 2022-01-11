@@ -49,7 +49,7 @@ extern "C" {
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
 void* omc_Main_init(void *threadData, void *args);
 void omc_System_initGarbageCollector(void *threadData);
-#ifdef WIN32
+#if defined(_WIN32)
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
 }
@@ -259,7 +259,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   Helper::OpenModelicaVersion = getVersion();
   // set OpenModelicaHome variable
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath().replace("\\", "/");
-#ifdef WIN32
+#if defined(_WIN32)
   MMC_TRY_TOP_INTERNAL()
   omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toUtf8().constData()));
   MMC_CATCH_TOP()
@@ -801,7 +801,7 @@ OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString clas
   QString comment = classInformation.comment.replace("\\\"", "\"");
   comment = makeDocumentationUriToFileName(comment);
   // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
-#ifdef WIN32
+#if defined(_WIN32)
   comment.replace("src=\"file:///", "src=\"");
 #else
   comment.replace("src=\"file://", "src=\"");
@@ -2742,7 +2742,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
     // ticket:4923 Modelica specification allows both modelica:// and Modelica://
     if (attribute.startsWith("modelica://") || attribute.startsWith("Modelica://")) {
       QString fileName = uriToFilename(attribute);
-#ifdef WIN32
+#if defined(_WIN32)
       documentation = documentation.replace(attribute, "file:///" + fileName);
 #else
       documentation = documentation.replace(attribute, "file://" + fileName);

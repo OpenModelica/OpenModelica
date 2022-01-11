@@ -11,7 +11,7 @@
 /* adrpo commented this out as this is a C file compiled with gcc so it NEVER get QT_NO_DEBUG
  * #ifdef QT_NO_DEBUG
  */
-#ifdef WIN32
+#if defined(_WIN32)
 #include "backtrace.h"
 
 void
@@ -273,7 +273,7 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
     }
   }
 }
-#endif //#ifdef WIN32
+#endif //#if defined(_WIN32)
 
 /*
  * #endif // #ifdef QT_NO_DEBUG

@@ -2527,7 +2527,7 @@ void Element::updateToolTip()
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     comment = pOMCProxy->makeDocumentationUriToFileName(comment);
     // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
-  #ifdef WIN32
+  #if defined(_WIN32)
     comment.replace("src=\"file:///", "src=\"");
   #else
     comment.replace("src=\"file://", "src=\"");
