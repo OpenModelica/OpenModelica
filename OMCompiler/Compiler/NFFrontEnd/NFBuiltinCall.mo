@@ -134,7 +134,6 @@ public
       case "ones" then typeZerosOnesCall("ones", call, next_context, info);
       case "potentialRoot" then typePotentialRootCall(call, next_context, info);
       case "pre" then typePreCall(call, next_context, info);
-      case "product" then typeProductCall(call, next_context, info);
       case "promote" then typePromoteCall(call, next_context, info);
       case "pure" then typePureCall(call, next_context, info);
       case "rooted" then typeRootedCall(call, next_context, info);
@@ -145,7 +144,6 @@ public
       case "smooth" then typeSmoothCall(call, next_context, info);
       case "String" then typeStringCall(call, next_context, info);
       case "subSample" then typeSubSampleCall(call, next_context, info);
-      case "sum" then typeSumCall(call, next_context, info);
       case "superSample" then typeSuperSampleCall(call, next_context, info);
       case "symmetric" then typeSymmetricCall(call, next_context, info);
       case "terminal" then typeDiscreteCall(call, next_context, info);
@@ -748,70 +746,6 @@ protected
     fn := listHead(Function.typeRefCache(fn_ref));
     callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, purity, ty));
   end typeMinMaxCall;
-
-  function typeSumCall
-    input Call call;
-    input InstContext.Type context;
-    input SourceInfo info;
-    output Expression callExp;
-    output Type ty;
-    output Variability variability;
-    output Purity purity;
-  protected
-    ComponentRef fn_ref;
-    list<Expression> args;
-    list<NamedArg> named_args;
-    Expression arg;
-    Function fn;
-    Boolean expanded;
-    Operator op;
-  algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
-    assertNoNamedParams("sum", named_args, info);
-
-    if listLength(args) <> 1 then
-      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "sum(Any[:, ...]) => Any"}, info);
-    end if;
-
-    (arg, ty, variability, purity) := Typing.typeExp(listHead(args), context, info);
-    ty := Type.arrayElementType(ty);
-
-    {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
-  end typeSumCall;
-
-  function typeProductCall
-    input Call call;
-    input InstContext.Type context;
-    input SourceInfo info;
-    output Expression callExp;
-    output Type ty;
-    output Variability variability;
-    output Purity purity;
-  protected
-    ComponentRef fn_ref;
-    list<Expression> args;
-    list<NamedArg> named_args;
-    Expression arg;
-    Function fn;
-    Boolean expanded;
-    Operator op;
-  algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
-    assertNoNamedParams("product", named_args, info);
-
-    if listLength(args) <> 1 then
-      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "product(Any[:, ...]) => Any"}, info);
-    end if;
-
-    (arg, ty, variability, purity) := Typing.typeExp(listHead(args), context, info);
-    ty := Type.arrayElementType(ty);
-
-    {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
-  end typeProductCall;
 
   function typePromoteCall
     input Call call;

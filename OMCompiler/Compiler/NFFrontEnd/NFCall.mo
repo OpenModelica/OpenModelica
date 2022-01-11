@@ -2687,6 +2687,15 @@ protected
               return;
             end if;
           end for;
+
+          // If no input with the same type could be found and the result type
+          // is __Scalar, try to find some input with the type __Array and
+          // assume they have the same element type.
+          if name == "__Scalar" then
+            outType := resolvePolymorphicReturnType(fn, args, Type.POLYMORPHIC("__Array"));
+            outType := Type.arrayElementType(outType);
+            return;
+          end if;
         then
           fail();
 

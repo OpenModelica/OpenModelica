@@ -1649,7 +1649,6 @@ uniontype Function
           // argument should be a cref?
           case "pre" then true;
           // needs unboxing and return type fix.
-          case "product" then true;
           case "promote" then true;
           case "pure" then true;
           case "root" then true;
@@ -1666,7 +1665,6 @@ uniontype Function
           case "smooth" then true;
           case "subSample" then true;
           // needs unboxing and return type fix.
-          case "sum" then true;
           case "superSample" then true;
           // unbox args and set return type.
           case "symmetric" then true;
