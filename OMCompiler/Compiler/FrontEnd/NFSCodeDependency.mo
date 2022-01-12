@@ -1464,6 +1464,12 @@ algorithm
       then
         ();
 
+    case (SCode.NAMEMOD(ident = "inverse", mod = mods), _, _)
+      equation
+        analyseModifier(mods, inEnv, NFSCodeEnv.emptyEnv, inInfo);
+      then
+        ();
+
     // Otherwise, try to analyse the modifier name, and if that succeeds also
     // try and analyse the rest of the modification. This is needed for example
     // for the graphical annotations such as Icon.
