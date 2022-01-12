@@ -286,9 +286,7 @@ set_target_properties(OMEditLib PROPERTIES
         NO_SYSTEM_FROM_IMPORTED ON)
 
 target_include_directories(OMEditLib PRIVATE
-  ${OMCompiler_SOURCE_DIR}/Compiler/Script
-  ${OMParser_BINARY_DIR}/
-  ${OMParser_SOURCE_DIR}/3rdParty/antlr4/runtime/Cpp/runtime/src/)
+  ${OMCompiler_SOURCE_DIR}/Compiler/Script)
 
 target_link_options(OMEditLib PRIVATE -Wl,--no-undefined)
 

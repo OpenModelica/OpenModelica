@@ -40,12 +40,28 @@ set_target_properties(OMSimulator_external PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 
 add_library(libOMSimulator SHARED IMPORTED)
+add_dependencies(libOMSimulator OMSimulator_external)
+
+# The location where the lib is located and whether it comes with an import lib, depends on the OS/Env.
+if(MINGW)
+  set_target_properties(libOMSimulator PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/bin/libOMSimulator.dll
+    # The dll.a import lib. It is located in the same dir as the dll right now.
+    IMPORTED_IMPLIB ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/bin/libOMSimulator.dll.a
+  )
+elseif(MSVC)
+  # For now print error and bail out. It should be the same as Mingw except we need to check where the .lib file is located.
+  message(FATAL_ERROR "Importing of OMSimulator is not implemented correctly for MSVC. Adjust the MINGW implementation to where the dll and lib files are expected.")
+else()
+  set_target_properties(libOMSimulator PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/x86_64-linux-gnu/omc/libOMSimulator.so
+  )
+endif()
+
 set_target_properties(libOMSimulator PROPERTIES
-  IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/x86_64-linux-gnu/omc/libOMSimulator.so
   INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator/src/OMSimulatorLib
 )
 
-add_dependencies(libOMSimulator OMSimulator_external)
 
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/
