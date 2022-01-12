@@ -318,11 +318,11 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
      echo cd \${MSYS_WORKSPACE}
-     echo export MAKETHREADS=16
      echo set -ex
      echo mkdir build_cmake
-     echo cmake -S ./ -B ./build_cmake ${cmake_args}
-     echo time cmake --build ./build_cmake --parallel \${MAKETHREADS} --target install
+     echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}
+     echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install
+     echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends
      ) > buildOMCWindows.sh
 
      set MSYSTEM=MINGW64

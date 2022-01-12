@@ -204,6 +204,25 @@ pipeline {
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
           }
         }
+        stage('cmake-Win/MinGW') {
+          agent {
+            node {
+              label 'windows'
+            }
+          }
+          environment {
+            RUNTESTDB = '/c/dev/'
+            LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
+          }
+          steps {
+            script {
+              withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+                bat "echo PATH: %PATH%"
+                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOM_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build -G "MSYS Makefiles"')
+              }
+            }
+          }
+        }
         stage('checks') {
           agent {
             docker {
