@@ -256,6 +256,12 @@ add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS})
 
 target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+# qmake adds -DUNICODE by defult (As far as I can gather).
+# So add it for CMake as well to avoid having to modify the code.
+if(WIN32)
+  target_compile_definitions(OMEditLib PRIVATE -DUNICODE)
+endif()
+
 target_link_libraries(OMEditLib PUBLIC omedit::config)
 target_link_libraries(OMEditLib PUBLIC libOMSimulator)
 target_link_libraries(OMEditLib PUBLIC OMParser)
