@@ -449,7 +449,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToCrEqLst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSimCodeEqCache.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSM1.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMSimulator.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMSimulatorExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/PriorityQueue.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBAtomicSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBFunctions.mo

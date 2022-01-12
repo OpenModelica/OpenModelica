@@ -273,18 +273,6 @@ target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
 
-
-# OMEditLib needs OpenModelicaScriptingAPI.h which is generated in the build dir.
-# So we have the build dir as include through linking libOpenModelicaCompiler
-# There is also an OMSimulator.h generated in that dir from OMSimulator.mo
-# We also have an OMSimulator.h from OMSimulatorLib which we actually want to use.
-# Except we are using libOMSimulator as an imported lib now.
-# Headers from imported libs are treated as system libs and are added at the end of the include command line.
-# Which means the OMSimulator.h from OMSimulator.mo will be picked up first regardless of the order we specify for linking.
-# So for now we disable SYSTEM marking of imported libs for OMEditLib here.
-set_target_properties(OMEditLib PROPERTIES
-        NO_SYSTEM_FROM_IMPORTED ON)
-
 target_include_directories(OMEditLib PRIVATE
   ${OMCompiler_SOURCE_DIR}/Compiler/Script)
 
