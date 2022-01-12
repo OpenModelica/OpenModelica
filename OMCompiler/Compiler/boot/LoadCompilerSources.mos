@@ -483,7 +483,7 @@ if true then /* Suppress output */
     "../Util/HashTableCrToCrEqLst.mo",
     "../Util/HashTableSimCodeEqCache.mo",
     "../Util/HashTableSM1.mo",
-    "../Util/OMSimulator.mo",
+    "../Util/OMSimulatorExt.mo",
     "../Util/PriorityQueue.mo",
     "../Util/SBAtomicSet.mo",
     "../Util/SBFunctions.mo",
