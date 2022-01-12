@@ -3084,8 +3084,11 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, _, true, _))
       algorithm
-        (_, _, tpl) := traversingadjacencyRowExpSolvableFinder(e2, inTpl);
-    then traversingadjacencyRowExpSolvableFinder(e1, tpl);
+        (_, b, tpl) := traversingadjacencyRowExpSolvableFinder(e1, inTpl);
+        if b then
+          (_, b, tpl) := traversingadjacencyRowExpSolvableFinder(e2, tpl);
+        end if;
+    then (inExp, b, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -3478,8 +3481,11 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true))
       algorithm
-        (_, _, tpl) := traversingadjacencyRowExpFinder(e2, inTpl);
-    then traversingadjacencyRowExpFinder(e1, tpl);
+        (_, b, tpl) := traversingadjacencyRowExpFinder(e1, inTpl);
+        if b then
+          (_, b, tpl) := traversingadjacencyRowExpFinder(e2, tpl);
+        end if;
+    then (inExp, b, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -3585,7 +3591,7 @@ algorithm
       DAE.Exp e, e1, e2;
       list<BackendDAE.Var> varslst;
       tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
-      Boolean isInitial;
+      Boolean b, isInitial;
 
     // inner variable
     case (DAE.CREF(componentRef = cr),(vars,pa,isInitial))
@@ -3642,8 +3648,11 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true))
       algorithm
-        (_, _, tpl) := traversingadjacencyRowExpFinderwithInput(e2, inTpl);
-    then traversingadjacencyRowExpFinderwithInput(e1, tpl);
+        (_, b, tpl) := traversingadjacencyRowExpFinderwithInput(e1, inTpl);
+        if b then
+          (_, b, tpl) := traversingadjacencyRowExpFinderwithInput(e2, tpl);
+        end if;
+    then (inExp, b, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -6008,8 +6017,11 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true, _, _, _))
       algorithm
-        (_, _, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, inTpl);
-    then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, tpl);
+        (_, b, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
+        if b then
+          (_, b, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, tpl);
+        end if;
+    then (inExp, b, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -6156,6 +6168,7 @@ algorithm
       then (e,not b,bt);
 
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), _) equation
+    // phi: what about e2?
     then getIfExpBranchVarOccurency(e1, inBt);
 
     else (inExp,true,inBt);
