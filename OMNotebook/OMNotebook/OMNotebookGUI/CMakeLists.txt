@@ -88,7 +88,7 @@ set(OMNOTEBOOKLIB_HEADERS application.h
                           indent.h)
 
 
-add_executable(OMNotebook ${OMNOTEBOOKLIB_SOURCES} ${OMNOTEBOOKLIB_HEADERS})
+add_executable(OMNotebook ${OMNOTEBOOKLIB_SOURCES} ${OMNOTEBOOKLIB_HEADERS} rc_omnotebook.rc)
 target_compile_definitions(OMNotebook PRIVATE OMNOTEBOOKLIB_MOC_INCLUDE)
 
 target_include_directories(OMNotebook PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
