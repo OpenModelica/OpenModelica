@@ -1795,6 +1795,7 @@ algorithm
       Variability subs_var, rest_var;
       InstContext.Type node_context;
       Function fn;
+      Restriction parent_res;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
       algorithm
@@ -1813,7 +1814,8 @@ algorithm
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
-        node_context := if InstNode.isFunction(InstNode.explicitParent(cref.node)) then
+        parent_res := InstNode.restriction(InstNode.explicitParent(cref.node));
+        node_context := if Restriction.isFunction(parent_res) or Restriction.isRecord(parent_res) then
           NFInstContext.FUNCTION else NFInstContext.CLASS;
         node_ty := typeComponent(cref.node, node_context);
 
