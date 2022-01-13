@@ -1630,6 +1630,16 @@ algorithm
 
     case (_, _, "copyClass", _, _) then (inCache, Values.BOOL(false));
 
+    // see if the model exists before linearization!
+    case (cache,_,"linearize",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,_)
+      equation
+        crefCName = AbsynUtil.pathToCref(className);
+        false = Interactive.existClass(crefCName, SymbolTable.getAbsyn());
+        errMsg = "Linearization Failed. Model: " + AbsynUtil.pathString(className) + " does not exist! Please load it first before linearization.";
+        simValue = createSimulationResultFailure(errMsg, simOptionsAsString(vals));
+      then
+        (cache,simValue);
+
     case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),_)
       equation
 
@@ -3384,7 +3394,7 @@ protected
   Absyn.Program p = SymbolTable.getAbsyn();
 algorithm
   try
-    Absyn.CLASS(restriction = restriction) := InteractiveUtil.getPathedClassInProgram(className, p, true);
+    Absyn.CLASS(restriction = restriction) := InteractiveUtil.getPathedClassInProgram(className, p, false);
   else
     Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className),"<TOP>"});
     fail();
