@@ -1623,6 +1623,13 @@ algorithm
       then
         compatibleType;
 
+    case Type.CONDITIONAL_ARRAY()
+      algorithm
+        (expression, compatibleType, matchKind) :=
+          matchConditionalArrayTypes(actualType, expectedType, expression, allowUnknown);
+      then
+        compatibleType;
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
@@ -2240,6 +2247,48 @@ algorithm
 end matchConditionalArrayExp;
 
 function matchConditionalArrayTypes
+  input Type actualType;
+  input Type expectedType;
+  input output Expression exp;
+  input Boolean allowUnknown;
+        output Type compatibleType;
+        output MatchKind matchKind;
+protected
+  Type actual_true_ty, actual_false_ty;
+  Type expected_true_ty, expected_false_ty;
+  Type true_ty, false_ty;
+  Expression true_exp, false_exp;
+algorithm
+  Type.CONDITIONAL_ARRAY(trueType = actual_true_ty, falseType = actual_false_ty) := actualType;
+  Type.CONDITIONAL_ARRAY(trueType = expected_true_ty, falseType = expected_false_ty) := expectedType;
+
+  () := match exp
+    case Expression.IF()
+      algorithm
+        (true_exp, true_ty, matchKind) :=
+          matchTypes(actual_true_ty, expected_true_ty, exp.trueBranch, allowUnknown);
+
+        if not isCompatibleMatch(matchKind) then
+          compatibleType := actualType;
+          return;
+        end if;
+
+        (false_exp, false_ty, matchKind) :=
+          matchTypes(actual_false_ty, expected_false_ty, exp.falseBranch, allowUnknown);
+
+        if not isCompatibleMatch(matchKind) then
+          compatibleType := actualType;
+          return;
+        end if;
+
+        compatibleType := Type.CONDITIONAL_ARRAY(true_ty, false_ty, NFType.Branch.NONE);
+        exp := Expression.IF(compatibleType, exp.condition, true_exp, false_exp);
+      then
+        ();
+  end match;
+end matchConditionalArrayTypes;
+
+function matchConditionalArrayTypes_cast
   input Type condType;
   input Type expectedType;
   input output Expression exp;
@@ -2300,7 +2349,7 @@ algorithm
       exp := Expression.typeCast(exp, cond_ty);
     end if;
   end if;
-end matchConditionalArrayTypes;
+end matchConditionalArrayTypes_cast;
 
 function matchTypes_cast
   input Type actualType;
@@ -2390,7 +2439,7 @@ algorithm
     case (Type.CONDITIONAL_ARRAY(), _)
       algorithm
         (expression, compatibleType, matchKind) :=
-          matchConditionalArrayTypes(actualType, expectedType, expression, allowUnknown);
+          matchConditionalArrayTypes_cast(actualType, expectedType, expression, allowUnknown);
       then
         (compatibleType, matchKind);
 
