@@ -695,6 +695,7 @@ public
       case ARRAY() then ty.dimensions;
       case FUNCTION() then arrayDims(Function.returnType(ty.fn));
       case METABOXED() then arrayDims(ty.ty);
+      case CONDITIONAL_ARRAY() then List.fill(Dimension.UNKNOWN(), dimensionCount(ty.trueType));
       else {};
     end match;
   end arrayDims;
