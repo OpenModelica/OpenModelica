@@ -1781,6 +1781,17 @@ uniontype InstNode
     end match;
   end isClockType;
 
+  function restriction
+    input InstNode node;
+    output Restriction res;
+  algorithm
+    res := match node
+      case CLASS_NODE() then Class.restriction(Pointer.access(node.cls));
+      case COMPONENT_NODE() then restriction(Component.classInstance(Pointer.access(node.component)));
+      case INNER_OUTER_NODE() then restriction(node.innerNode);
+      else Restriction.UNKNOWN();
+    end match;
+  end restriction;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");
