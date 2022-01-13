@@ -40,7 +40,7 @@ target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
 target_link_options(OMPlotLib PRIVATE -Wl,--no-undefined)
 
 
-add_executable(OMPlot main.cpp)
+add_executable(OMPlot main.cpp rc_omplot.rc)
 target_link_libraries(OMPlot PRIVATE OMPlotLib)
 
 install(TARGETS OMPlotLib)
