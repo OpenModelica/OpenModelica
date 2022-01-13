@@ -881,7 +881,6 @@ algorithm
 
         ErrorExt.setCheckpoint(getInstanceName());
         try
-          checkBindingEach(c.binding, component);
           binding := typeBinding(binding, InstContext.set(context, NFInstContext.BINDING));
 
           if not (Config.getGraphicsExpMode() and stringEq(name, "graphics")) then
@@ -917,8 +916,6 @@ algorithm
     // A component without a binding, or with a binding that's already been typed.
     case Component.TYPED_COMPONENT()
       algorithm
-        checkBindingEach(c.binding, component);
-
         if Binding.isTyped(c.binding) then
           c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node);
           checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
@@ -936,7 +933,6 @@ algorithm
     case Component.UNTYPED_COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
       algorithm
         name := InstNode.name(component);
-        checkBindingEach(c.binding, component);
         binding := typeBinding(c.binding, InstContext.set(context, NFInstContext.BINDING));
         comp_var := checkComponentBindingVariability(name, c, binding, context);
 
@@ -1039,22 +1035,6 @@ algorithm
   end match;
 end typeBinding;
 
-function checkBindingEach
-  input Binding binding;
-  input InstNode component;
-protected
-  InstNode parent;
-algorithm
-  if Binding.isEach(binding) then
-    parent := InstNode.instanceParent(component);
-
-    if not Type.isArray(InstNode.getType(parent)) then
-      Error.addStrictMessage(Error.EACH_ON_NON_ARRAY,
-        {InstNode.name(parent)}, Binding.getInfo(binding));
-    end if;
-  end if;
-end checkBindingEach;
-
 function typeComponentCondition
   input output Binding condition;
   input InstContext.Type context;
@@ -1132,10 +1112,9 @@ algorithm
         fail();
 
     // Modifier with no binding, e.g. Real x(final start).
+    // Remove it so we don't have to deal with it in later.
     case Modifier.MODIFIER()
       guard Binding.isUnbound(attribute.binding)
-      algorithm
-        checkBindingEach(attribute.binding, component);
       then
         NFModifier.NOMOD();
 
@@ -1143,8 +1122,6 @@ algorithm
     case Modifier.MODIFIER(name = name, binding = binding)
       algorithm
         // Type and type check the attribute.
-        checkBindingEach(binding, component);
-
         if Binding.isBound(binding) then
           binding := typeBinding(binding, context);
           parent := InstNode.parent(component);
