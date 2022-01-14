@@ -873,6 +873,8 @@ RecordBinding5.mo \
 RecordBinding6.mo \
 RecordBinding7.mo \
 RecordBinding8.mo \
+RecordBinding9.mo \
+RecordBinding10.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordExtends1.mo \
@@ -1069,7 +1071,6 @@ sts.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-RecordBinding9.mo \
 CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \
 FinalParameter1.mo \
