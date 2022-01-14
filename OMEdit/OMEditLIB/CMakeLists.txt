@@ -290,6 +290,7 @@ target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
 
 if(MINGW)
   target_link_libraries(OMEditLib PUBLIC binutils::bfd)
+  target_link_libraries(OMEditLib PUBLIC zlib)
 endif()
 
 target_include_directories(OMEditLib PRIVATE
