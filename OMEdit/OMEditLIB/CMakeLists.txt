@@ -3,6 +3,15 @@
 # file(GLOB_RECURSE OMEDITLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 # set(OMEDITLIB_SOURCES resource_omedit.qrc ${OMEDITLIB_SOURCES})
 
+
+# This small module (OpenModelica/cmake/modules/Findbinutils.cmake) finds and sets up
+# libbfd which is need for providing bactrace support for OMEdit.
+# It is required always on MinGW for now. Can be made optional with some changes.
+if(MINGW)
+  find_package(binutils REQUIRED)
+endif()
+
+
 omc_add_subdirectory(Debugger/Parser)
 
 set(CMAKE_AUTOMOC ON)
@@ -278,6 +287,10 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
+
+if(MINGW)
+  target_link_libraries(OMEditLib PUBLIC binutils::bfd)
+endif()
 
 target_include_directories(OMEditLib PRIVATE
   ${OMCompiler_SOURCE_DIR}/Compiler/Script)
