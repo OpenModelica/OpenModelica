@@ -1815,7 +1815,7 @@ algorithm
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
         parent_res := InstNode.restriction(InstNode.explicitParent(cref.node));
-        node_context := if Restriction.isFunction(parent_res) or Restriction.isRecord(parent_res) then
+        node_context := if Restriction.isFunction(parent_res) /*or Restriction.isRecord(parent_res)*/ then
           NFInstContext.FUNCTION else NFInstContext.CLASS;
         node_ty := typeComponent(cref.node, node_context);
 
