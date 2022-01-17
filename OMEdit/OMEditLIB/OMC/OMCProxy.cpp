@@ -323,30 +323,34 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
    * Fixes issuse #8052
    */
   if (saveToHistory) {
-    FlatModelica::Expression exp = FlatModelica::Expression::parse(expression);
+    try {
+      FlatModelica::Expression exp = FlatModelica::Expression::parse(expression);
 
-    if (mLibrariesBrowserAdditionCommandsList.contains(exp.functionName())) {
-      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
-    } else if (mLibrariesBrowserDeletionCommandsList.contains(exp.functionName())) {
-      if (exp.functionName().compare(QStringLiteral("deleteClass")) == 0) {
-        if (exp.args().size() > 0) {
-          LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(exp.arg(0).toQString());
-          if (pLibraryTreeItem) {
-            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+      if (mLibrariesBrowserAdditionCommandsList.contains(exp.functionName())) {
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
+      } else if (mLibrariesBrowserDeletionCommandsList.contains(exp.functionName())) {
+        if (exp.functionName().compare(QStringLiteral("deleteClass")) == 0) {
+          if (exp.args().size() > 0) {
+            LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(exp.arg(0).toQString());
+            if (pLibraryTreeItem) {
+              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+            }
           }
-        }
-      } else {
-        int i = 0;
-        while (i < MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->childrenSize()) {
-          LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->child(i);
-          if (pLibraryTreeItem && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
-            i = 0;  //Restart iteration
-          } else {
-            i++;
+        } else {
+          int i = 0;
+          while (i < MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->childrenSize()) {
+            LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->child(i);
+            if (pLibraryTreeItem && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+              i = 0;  //Restart iteration
+            } else {
+              i++;
+            }
           }
         }
       }
+    } catch (const std::exception &e) {
+      showException(QString("Error parsing expression: %1.").arg(e.what()));
     }
   }
 
