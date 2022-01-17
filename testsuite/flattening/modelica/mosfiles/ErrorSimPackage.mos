@@ -8,6 +8,7 @@ translateModel(P);getErrorString();
 // Result:
 // true
 // false
-// "Error: Cannot instantiate P due to class specialization PACKAGE.
+// "[<interactive>:1:1-1:15:writable] Error: Cannot instantiate P due to class specialization package.
+// Error: Error occurred while flattening model P
 // "
 // endResult

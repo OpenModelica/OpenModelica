@@ -3393,21 +3393,6 @@ protected
   Absyn.Restriction restriction;
   Absyn.Program p = SymbolTable.getAbsyn();
 algorithm
-  try
-    Absyn.CLASS(restriction = restriction) := InteractiveUtil.getPathedClassInProgram(className, p, false);
-  else
-    Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className),"<TOP>"});
-    fail();
-  end try;
-
-  if not relaxedFrontEnd and (AbsynUtil.isFunctionRestriction(restriction) or
-                              AbsynUtil.isPackageRestriction(restriction)) then
-    Error.addSourceMessage(Error.INST_INVALID_RESTRICTION,
-      {AbsynUtil.pathString(className), AbsynUtil.restrString(restriction)},
-      AbsynUtil.dummyInfo);
-    fail();
-  end if;
-
   (cache,env,dae) := matchcontinue (inCache,inEnv,className)
     local
       Absyn.Class absynClass;
@@ -3458,7 +3443,7 @@ algorithm
 
         //System.startTimer();
         //print("\nInst.instantiateClass");
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className);
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className,true,relaxedFrontEnd);
 
         dae = DAEUtil.mergeAlgorithmSections(dae);
 
@@ -8550,7 +8535,7 @@ algorithm
     case ()
       algorithm
         ExecStat.execStatReset();
-        (cache, _, odae, str) := runFrontEnd(cache, env, path, relaxedFrontEnd = true,
+        (cache, _, odae, str) := runFrontEnd(cache, env, path, relaxedFrontEnd = false,
           dumpFlat = Config.flatModelica() and not Config.silent());
         ExecStat.execStat("runFrontEnd");
 
