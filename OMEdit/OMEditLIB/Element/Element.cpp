@@ -2987,10 +2987,12 @@ void Element::deleteMe()
  */
 void Element::duplicate()
 {
-  QString name;
+  QString name = getName();
+  QString defaultPrefix = "";
   if (mpLibraryTreeItem) {
-    QString defaultName;
-    name = mpGraphicsView->getUniqueElementName(mpLibraryTreeItem->getNameStructure(), mpLibraryTreeItem->getName(), &defaultName);
+    if (!mpGraphicsView->performElementCreationChecks(mpLibraryTreeItem, &name, &defaultPrefix)) {
+      return;
+    }
   } else {
     name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(getName()));
   }
@@ -2999,6 +3001,7 @@ void Element::duplicate()
   mpElementInfo->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), this);
   ElementInfo *pElementInfo = new ElementInfo(mpElementInfo);
   pElementInfo->setName(name);
+  pElementInfo->applyDefaultPrefixes(defaultPrefix);
   mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, getOMCPlacementAnnotation(gridStep), QPointF(0, 0), pElementInfo, true, true, true);
   Element *pDiagramElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementsList().last();
   setSelected(false);
