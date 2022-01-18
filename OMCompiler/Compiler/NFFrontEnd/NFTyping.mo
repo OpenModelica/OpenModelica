@@ -1793,9 +1793,7 @@ algorithm
       Type node_ty;
       list<Subscript> subs;
       Variability subs_var, rest_var;
-      InstContext.Type node_context;
       Function fn;
-      Restriction parent_res;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
       algorithm
@@ -1814,11 +1812,7 @@ algorithm
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
-        parent_res := InstNode.restriction(InstNode.explicitParent(cref.node));
-        node_context := if Restriction.isFunction(parent_res) or
-          (Restriction.isRecord(parent_res) and InstContext.inFunction(context)) then
-            NFInstContext.FUNCTION else NFInstContext.CLASS;
-        node_ty := typeComponent(cref.node, node_context);
+        node_ty := typeComponent(cref.node, crefContext(cref.node));
 
         (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, cref, context, info);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
@@ -1844,6 +1838,27 @@ algorithm
     else (cref, Variability.CONSTANT);
   end match;
 end typeCref2;
+
+function crefContext
+  input InstNode crefNode;
+  output InstContext.Type context;
+protected
+  InstNode parent;
+  Restriction parent_res;
+algorithm
+  parent := InstNode.explicitParent(crefNode);
+
+  // Records might actually be record constructors that should count as
+  // functions here, such record constructors are always root classes.
+  if not InstNode.isRootClass(parent) then
+    context := NFInstContext.CLASS;
+    return;
+  end if;
+
+  parent_res := InstNode.restriction(parent);
+  context := if Restriction.isFunction(parent_res) or Restriction.isRecord(parent_res) then
+    NFInstContext.FUNCTION else NFInstContext.CLASS;
+end crefContext;
 
 function typeSubscripts
   input list<Subscript> subscripts;

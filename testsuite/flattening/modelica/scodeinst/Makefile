@@ -877,6 +877,7 @@ RecordBinding7.mo \
 RecordBinding8.mo \
 RecordBinding9.mo \
 RecordBinding10.mo \
+RecordBinding11.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordExtends1.mo \
