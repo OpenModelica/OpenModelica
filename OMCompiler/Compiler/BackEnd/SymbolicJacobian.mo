@@ -4327,13 +4327,16 @@ uniontype LinearJacobian
           jump over all manipulations, nothing to do
         */
         (col_index, piv_value) := getPivot(linJac.rows[i]);
-        updatePivotRow(linJac.rows[i], piv_value);
+
+        //updatePivotRow(linJac.rows[i], piv_value);
+        // ToDo: updating the pivot row would also need an update for the rhs!
+
         for j in i+1:arrayLength(linJac.rows) loop
           row_value := getElementValue(linJac.rows[j], col_index);
           if not realEq(row_value, 0.0) then
             // set row to processed and perform pivot step
             linJac.eq_marks[j] := true;
-            solveRow(linJac.rows[i], linJac.rows[j], 1.0, row_value);
+            solveRow(linJac.rows[i], linJac.rows[j], piv_value, row_value);
             //perform multiplication inside? use simplification of multiplication afterwards?
             linJac.rhs[j] := DAE.BINARY(
                                   DAE.BINARY(linJac.rhs[j], DAE.MUL(DAE.T_REAL_DEFAULT), DAE.RCONST(piv_value)),       // row_rhs * piv_elem
@@ -4359,6 +4362,7 @@ uniontype LinearJacobian
     Integer idx;
     Real val, diag_val;
   algorithm
+    // update all elements that are in the pivot row
     for idx in UnorderedMap.keyList(pivot_row) loop
       _ := match (UnorderedMap.get(idx, row), UnorderedMap.get(idx, pivot_row))
 
@@ -4383,11 +4387,22 @@ uniontype LinearJacobian
         then ();
        end match;
     end for;
+
+    // update all row elements that are not in pivot row
+    for idx in UnorderedMap.keyList(row) loop
+      _ := match (UnorderedMap.get(idx, row), UnorderedMap.get(idx, pivot_row))
+        case (SOME(val), NONE()) algorithm
+          val := val * piv_value;
+          UnorderedMap.add(idx, val, row);
+        then ();
+        else ();
+      end match;
+    end for;
   end solveRow;
 
   public function updatePivotRow
   "author: kabdelhak FHB 03-2021
-   updates the pivot row by deviding everything by its pivot value"
+   updates the pivot row by dividing everything by its pivot value"
     input LinearJacobianRow pivot_row;
     input Real piv_value;
   protected
