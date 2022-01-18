@@ -4362,6 +4362,7 @@ uniontype LinearJacobian
     Integer idx;
     Real val, diag_val;
   algorithm
+    // update all elements that are in the pivot row
     for idx in UnorderedMap.keyList(pivot_row) loop
       _ := match (UnorderedMap.get(idx, row), UnorderedMap.get(idx, pivot_row))
 
@@ -4385,6 +4386,17 @@ uniontype LinearJacobian
           Error.assertion(false, getInstanceName() + " key does not have an element in pivot row.", sourceInfo());
         then ();
        end match;
+    end for;
+
+    // update all row elements that are not in pivot row
+    for idx in UnorderedMap.keyList(row) loop
+      _ := match (UnorderedMap.get(idx, row), UnorderedMap.get(idx, pivot_row))
+        case (SOME(val), NONE()) algorithm
+          val := val * piv_value;
+          UnorderedMap.add(idx, val, row);
+        then ();
+        else ();
+      end match;
     end for;
   end solveRow;
 
