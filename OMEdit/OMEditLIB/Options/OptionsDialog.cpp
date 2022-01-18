@@ -4198,7 +4198,7 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   mpSaveModelForBitmapInsertionCheckBox = new QCheckBox(tr("Show save model for bitmap insertion message"));
   mpSaveModelForBitmapInsertionCheckBox->setChecked(true);
   // create the save model for bitmap insertion checkbox
-  mpAlwaysAskForDraggedComponentName = new QCheckBox(tr("Always ask for the dragged component name"));
+  mpAlwaysAskForDraggedComponentName = new QCheckBox(tr("Always ask for the dragged/duplicated component name"));
   mpAlwaysAskForDraggedComponentName->setChecked(true);
   // create the always ask for text editor error
   mpAlwaysAskForTextEditorErrorCheckBox = new QCheckBox(tr("Always ask for what to do with the text editor error"));
