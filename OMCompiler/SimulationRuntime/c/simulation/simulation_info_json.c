@@ -38,7 +38,7 @@
 #include "../util/omc_mmap.h"
 #include "../util/omc_numbers.h"
 #include "solver/model_help.h"
-#include <sys/stat.h>
+#include "../util/omc_file.h"
 
 static inline const char* skipSpace(const char* str)
 {
