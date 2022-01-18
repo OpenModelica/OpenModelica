@@ -4568,6 +4568,11 @@ author: Waurich TUD 2014-09"
   output Boolean isRec = ComponentReference.traverseCref(inVar.varName, ComponentReference.crefIsRec, false);
 end isRecordVar;
 
+public function isArrayVar
+  input BackendDAE.Var v;
+  output Boolean isArr = ComponentReference.isArrayElement(v.varName);
+end isArrayVar;
+
 public function varExp
   input BackendDAE.Var inVar;
   output DAE.Exp outExp;

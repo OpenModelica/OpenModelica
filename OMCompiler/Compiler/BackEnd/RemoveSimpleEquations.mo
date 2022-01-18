@@ -374,8 +374,7 @@ algorithm
   //BackendDump.dumpVarList(knownVarList, "knownVarList in");
   for var in BackendVariable.varList(knownVars2) loop
     cref := BackendVariable.varCref(var);
-    if not BackendVariable.existsVar(cref, knownVars1, false) and
-       not (BackendVariable.isInput(var) or BackendVariable.isAlgebraicOldState(var)) then
+    if not (BackendVariable.existsVar(cref, knownVars1, false) or BackendVariable.isInput(var) or BackendVariable.isAlgebraicOldState(var)) then
       // put var back to the correct partition
       outDAE := fixKnownVarsCausal2(var, outDAE);
     else
@@ -509,6 +508,7 @@ algorithm
   unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
+  unReplaceable := addUnreplaceableFromArrays(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then
     BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
   end if;
@@ -698,6 +698,7 @@ algorithm
   unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
+  unReplaceable := addUnreplaceableFromArrays(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then
     BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
   end if;
@@ -774,6 +775,7 @@ algorithm
   unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
+  unReplaceable := addUnreplaceableFromArrays(inDAE, unReplaceable);
   // do not replace state sets
   unReplaceable := addUnreplaceableFromStateSets(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then
@@ -4219,6 +4221,29 @@ end replaceOptExprTraverser;
 //   - lhs of array assign statement, because there is a cref used and this is not replaceable_ with array of crefs
 // =============================================================================
 
+protected function addUnreplaceableFromArrays
+  input BackendDAE.BackendDAE inDAE;
+  input output HashSet.HashSet unreplaceable;
+protected
+  BackendDAE.EqSystems systs;
+algorithm
+  BackendDAE.DAE(eqs=systs) := inDAE;
+  unreplaceable := List.fold(systs, addUnreplaceableFromArray, unreplaceable);
+end addUnreplaceableFromArrays;
+
+protected function addUnreplaceableFromArray
+  input BackendDAE.EqSystem isyst;
+  input output HashSet.HashSet unreplaceable;
+protected
+  BackendDAE.Variables vars;
+  list<DAE.ComponentRef> crlst;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars) := isyst;
+  crlst := list(ComponentReference.crefStripLastSubs(BackendVariable.varCref(v))
+    for v guard(BackendVariable.isArrayVar(v)) in BackendVariable.varList(vars));
+  unreplaceable := List.fold(crlst, BaseHashSet.add, unreplaceable);
+end addUnreplaceableFromArray;
+
 protected function addUnreplaceableFromStateSets "author: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
   input HashSet.HashSet inUnreplaceable;
@@ -4236,7 +4261,7 @@ protected function addUnreplaceableFromStateSetSystem "author: Frenkel TUD 2012-
   input HashSet.HashSet inUnreplaceable;
   output HashSet.HashSet outUnreplaceable;
 algorithm
-  outUnreplaceable:= match (isyst, inUnreplaceable)
+  outUnreplaceable := match (isyst, inUnreplaceable)
     local
       BackendDAE.StateSets stateSets;
       HashSet.HashSet unReplaceable;

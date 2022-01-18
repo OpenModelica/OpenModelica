@@ -4,7 +4,7 @@
 // teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot* _Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot* output.log
 // cflags: -d=-newInst
 //
-// initialization results 
+// initialization results
 // Modelica Standard Library
 //
 
