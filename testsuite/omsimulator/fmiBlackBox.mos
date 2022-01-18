@@ -1,0 +1,61 @@
+// keywords: fmu export
+// status: correct
+// teardown_command: rm -rf fmiblackbox.lua fmiblackbox_res.mat fmi_attributes_11.fmu fmiblackbox_fmi_attributes_11.log fmi_attributes_11_info.json fmiblackbox_systemCall.log temp-fmiblackbox/
+
+loadString("
+model fmi_attributes_11
+  input Real u;
+  Real x;
+  output Real y;
+  Real a, b;
+  parameter Real z=30;
+initial equation
+  x = 0.0;
+equation
+  a = 2.0*u;
+  b = 0.5*a;
+  der(x) = b+z;
+  y = x;
+end fmi_attributes_11;
+"); getErrorString();
+
+setCommandLineOptions("--fmiFilter=blackBox"); getErrorString();
+buildModelFMU(fmi_attributes_11, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
+
+writeFile("fmiblackbox.lua", "
+oms_setTempDirectory(\"./temp-fmiblackbox/\")
+
+oms_newModel(\"fmiblackbox\")
+oms_addSystem(\"fmiblackbox.root\", oms_system_sc)
+oms_addSubModel(\"fmiblackbox.root.fmi_attributes_11\", \"fmi_attributes_11.fmu\")
+
+oms_instantiate(\"fmiblackbox\")
+
+oms_initialize(\"fmiblackbox\")
+
+oms_simulate(\"fmiblackbox\")
+
+oms_terminate(\"fmiblackbox\")
+oms_delete(\"fmiblackbox\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator fmiblackbox.lua", "fmiblackbox_systemCall.log");
+readFile("fmiblackbox_systemCall.log");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_11.fmu"
+// ""
+// true
+// ""
+// 0
+// "info:    maximum step size for 'fmiblackbox.root': 0.001000
+// info:    Result file: fmiblackbox_res.mat (bufferSize=10)
+// info:    Final Statistics for 'fmiblackbox.root':
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// endResult
