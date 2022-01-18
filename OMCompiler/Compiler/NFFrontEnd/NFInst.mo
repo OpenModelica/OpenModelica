@@ -2309,7 +2309,6 @@ protected
   Class cls = InstNode.getClass(node), inst_cls;
   array<InstNode> local_comps, exts;
   ClassTree cls_tree;
-  Restriction res;
   array<Dimension> dims;
   SourceInfo info;
   Type ty;

@@ -365,6 +365,16 @@ uniontype InstNode
     end match;
   end isDerivedClass;
 
+  function isRootClass
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match node
+      case CLASS_NODE(nodeType = InstNodeType.ROOT_CLASS()) then true;
+      else false;
+    end match;
+  end isRootClass;
+
   function isFunction
     input InstNode node;
     output Boolean isFunc;
