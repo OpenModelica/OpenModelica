@@ -480,7 +480,9 @@ algorithm
       equation
         cls = InstUtil.lookupTopLevelClass(name, inProgram, true);
 
-        checkInstanceRestriction(cls, inPath, relaxedFrontEnd);
+        // Disable this check since we have some test cases that instantiate
+        // TOP level functions and pacakges.
+        // checkInstanceRestriction(cls, inPath, relaxedFrontEnd);
 
         (cache, env, ih, _, dae, _, _, _, _, _) = instClass(inCache, inEnv,
           inIH, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), makeTopComponentPrefix(inEnv, name),
