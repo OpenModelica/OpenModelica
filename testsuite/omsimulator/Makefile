@@ -8,6 +8,8 @@ enumeration.mos \
 enumeration2.mos \
 enumeration3.mos \
 fmi_interpolate_cs.mos \
+fmiBlackBox.mos \
+fmiProtected.mos \
 initialization_omc.mos \
 initialization.mos \
 initialization2_omc.mos \

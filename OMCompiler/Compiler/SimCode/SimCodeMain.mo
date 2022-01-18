@@ -747,8 +747,8 @@ algorithm
             fail();
           end if;
         else
-          // check for _info.json file in resource directory  when --fmiFilter=blackBox is not set
-          if Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX then
+          // check for _info.json file in resource directory  when --fmiFilter=blackBox and --fmiFilter=protected is not set
+          if Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX and Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_PROTECTED then
             if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_info.json"+"' '" + fmutmp+"/resources/" + "'") then
               Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_info.json file", sourceInfo());
             end if;
