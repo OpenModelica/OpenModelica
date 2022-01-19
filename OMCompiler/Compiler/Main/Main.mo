@@ -535,7 +535,7 @@ algorithm
   // program. Otherwise, instantiate the given class name.
   cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
   (cache, env, SOME(dae), flatString) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(),
-    FGraph.empty(), cname, relaxedFrontEnd = true,
+    FGraph.empty(), cname, relaxedFrontEnd = false,
     dumpFlat = Config.flatModelica() and not Config.silent());
 end instantiate;
 

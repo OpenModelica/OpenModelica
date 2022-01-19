@@ -171,6 +171,7 @@ protected function instantiateClass_dispatch
   input SCode.Program inProgram;
   input SCode.Path inPath;
   input Boolean doSCodeDep "Do SCode dependency (if the debug flag is also enabled)";
+  input Boolean relaxedFrontEnd=true "Do not check for illegal simulation models, so we allow instantation of packages, etc";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -210,7 +211,7 @@ algorithm
         end if;
         ExecStat.execStat("FrontEnd - mkProgramGraph");
 
-        (cache,env,ih,dae2) = instClassInProgram(cache, env, ih, cdecls, path, source);
+        (cache,env,ih,dae2) = instClassInProgram(cache, env, ih, cdecls, path, source, relaxedFrontEnd);
         // check the models for balancing
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae1);
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae2);
@@ -245,6 +246,9 @@ algorithm
         //System.startTimer();
         //print("\nLookupClass");
         (cache,(cdef as SCode.CLASS(name = n)),env) = Lookup.lookupClass(cache, env, path, SOME(AbsynUtil.dummyInfo));
+
+        // Check if we are trying to instantiate a function or pacakage when we should not.
+        checkInstanceRestriction(cdef, path, relaxedFrontEnd);
 
         //System.stopTimer();
         //print("\nLookupClass: " + realString(System.getTimerIntervalTime()));
@@ -303,6 +307,7 @@ public function instantiateClass
   input SCode.Program inProgram;
   input SCode.Path inPath;
   input Boolean doSCodeDep=true "Do SCode dependency (if the debug flag is also enabled)";
+  input Boolean relaxedFrontEnd=true "Do not check for illegal simulation models, so we allow instantation of packages, etc";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -326,7 +331,7 @@ algorithm
     // instantiate a class
     case (cache,ih,cdecls as _::_,path)
       algorithm
-        (outCache,outEnv,outIH,outDAElist) := instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep);
+        (outCache,outEnv,outIH,outDAElist) := instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep,relaxedFrontEnd);
         outDAElist := UnitCheck.checkUnits(outDAElist,FCore.getFunctionTree(outCache));
       then
         (outCache,outEnv,outIH,outDAElist);
@@ -447,6 +452,7 @@ protected function instClassInProgram
   input SCode.Program inProgram;
   input SCode.Path inPath;
   input DAE.ElementSource inSource;
+  input Boolean relaxedFrontEnd = true "Do not check for illegal simulation models, so we allow instantation of packages, etc";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -473,6 +479,10 @@ algorithm
     case (_, _, _, _, Absyn.IDENT(name = name), _)
       equation
         cls = InstUtil.lookupTopLevelClass(name, inProgram, true);
+
+        // Disable this check since we have some test cases that instantiate
+        // TOP level functions and pacakges.
+        // checkInstanceRestriction(cls, inPath, relaxedFrontEnd);
 
         (cache, env, ih, _, dae, _, _, _, _, _) = instClass(inCache, inEnv,
           inIH, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), makeTopComponentPrefix(inEnv, name),
@@ -5613,6 +5623,22 @@ algorithm
     UnitAbsyn.noStore, DAE.NOMOD(), DAE.NOPRE(), classElem, {}, true,
     InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 end instClassType;
+
+
+protected function checkInstanceRestriction
+  input SCode.Element cdef;
+  input Absyn.Path path;
+  input Boolean relaxedFrontEnd;
+algorithm
+  // Do not allow instantiation of functions and packages.
+  if not relaxedFrontEnd and (SCodeUtil.isFunction(cdef) or
+                              SCodeUtil.isPackage(cdef)) then
+    Error.addSourceMessage(Error.INST_INVALID_RESTRICTION,
+      {AbsynUtil.pathString(path), SCodeDump.restrString(SCodeUtil.getClassRestriction(cdef))},
+      SCodeUtil.elementInfo(cdef));
+    fail();
+  end if;
+end checkInstanceRestriction;
 
 annotation(__OpenModelica_Interface="frontend");
 end Inst;
