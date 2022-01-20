@@ -53,6 +53,7 @@ public
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
+  import Scalarize = NFScalarize;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
@@ -1455,7 +1456,7 @@ public
         var := Pointer.access(var_ptr);
         if Type.isArray(var.ty) then
           anyArr := true;
-          scalar_vars := Variable.expand(var, true);
+          scalar_vars := Scalarize.scalarizeVariable(var);
           for scalar_var in scalar_vars loop
             // create new pointers for the scalar variables
             new_vars := Pointer.create(scalar_var) :: new_vars;

@@ -175,7 +175,6 @@ public
           vars := v :: vars;
         end for;
       end if;
-
       vars := listReverseInPlace(vars);
     else
       vars := {var};

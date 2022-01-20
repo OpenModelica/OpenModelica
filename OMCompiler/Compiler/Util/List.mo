@@ -130,6 +130,21 @@ algorithm
   end while;
 end fill;
 
+public function repeat<T>
+  "Returns a list of n replications of input lst.
+     Example: fill({2, 1}, 3) => {2, 1, 2, 1, 2, 1}"
+  input list<T> inElement;
+  input Integer inCount;
+  output list<T> outList = {};
+protected
+  Integer i = 0;
+algorithm
+  while i < inCount loop
+    outList := listAppend(inElement, outList);
+    i := i + 1;
+  end while;
+end repeat;
+
 public function intRange
   "Returns a list of n integers from 1 to inStop.
      Example: listIntRange(3) => {1,2,3}"

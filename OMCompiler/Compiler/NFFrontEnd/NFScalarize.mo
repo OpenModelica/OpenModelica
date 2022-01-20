@@ -80,11 +80,10 @@ algorithm
   execStat(getInstanceName());
 end scalarize;
 
-protected
 function scalarizeVariable
   input Variable var;
-  input output list<Variable> vars;
-  input output list<Equation> eqns;
+  input output list<Variable> vars = {};
+  input output list<Equation> eqns = {};
 protected
   ComponentRef name;
   Binding binding;
@@ -99,6 +98,7 @@ protected
   Expression exp;
   list<String> ty_attr_names;
   array<ExpressionIterator> ty_attr_iters;
+  list<BackendInfo> backend_attributes;
   Variability bind_var;
   BackendInfo binfo;
   Binding.Source bind_src;
@@ -138,19 +138,23 @@ algorithm
           bind_src := Binding.source(binding);
           elem_ty := Type.arrayElementType(ty);
           (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+          backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
             binding := Binding.makeFlat(exp, bind_var, bind_src);
             ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-            vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
+            binfo :: backend_attributes := backend_attributes;
+            vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
           end for;
         end if;
       else
         elem_ty := Type.arrayElementType(ty);
         (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+        backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
         for cr in crefs loop
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
+          binfo :: backend_attributes := backend_attributes;
+          vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
         end for;
       end if;
     else
@@ -163,6 +167,7 @@ algorithm
   end if;
 end scalarizeVariable;
 
+protected
 function scalarizeTypeAttributes
   input list<tuple<String, Binding>> attrs;
   output list<String> names = {};
