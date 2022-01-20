@@ -1192,7 +1192,7 @@ public
         scal_lst := getScalarIndices(
           first   = var_start,
           sizes   = sizes,
-          subs    = list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllFlat(cref)),
+          subs    = list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(cref)),
           frames  = List.zip(names, ranges)
         );
 

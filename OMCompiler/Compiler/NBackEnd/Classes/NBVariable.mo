@@ -553,7 +553,7 @@ public
         algorithm
           state := getVarPointer(cref);
           derNode := InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr);
-          der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, ComponentRef.nodeType(cref)));
+          der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, ComponentRef.scalarType(cref)));
           var := fromCref(der_cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
@@ -716,7 +716,7 @@ public
         algorithm
           disc := BVariable.getVarPointer(cref);
           qual.name := PREVIOUS_STR;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.PREVIOUS(disc));
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
@@ -771,7 +771,7 @@ public
           old_var_ptr := BVariable.getVarPointer(cref);
           // prepend the seed str and the matrix name and create the new cref
           qual.name := SEED_STR + "_" + name;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(cref);
           // update the variable to be a seed and pass the pointer to the original variable
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.SEED_VAR(old_var_ptr));
@@ -804,7 +804,7 @@ public
           old_var_ptr := BVariable.getVarPointer(cref);
           // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
           qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(cref);
           // update the variable to be a jac var and pass the pointer to the original variable
           // ToDo: tmps will get JAC_DIFF_VAR !
@@ -836,7 +836,7 @@ public
           old_var_ptr := BVariable.getVarPointer(cref);
           // prepend the seed str and the matrix name and create the new cref
           qual.name := START_STR;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(cref);
           // update the variable to be a seed and pass the pointer to the original variable
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.START(old_var_ptr));
