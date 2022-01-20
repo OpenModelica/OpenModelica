@@ -64,6 +64,7 @@ import Algorithm = NFAlgorithm;
 import InstContext = NFInstContext;
 
 protected
+import Config;
 import Array;
 import Error;
 import FlagsUtil;
@@ -144,6 +145,7 @@ algorithm
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED,
            AbsynUtil.dummyInfo, checkAccessViolations = false);
+  checkInstanceRestriction(cls, classPath, context);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
   // Instantiate the class.
@@ -212,6 +214,11 @@ algorithm
   end if;
 
   VerifyModel.verify(flatModel);
+
+  if not Config.simCodeTarget() == "Cpp" and not Config.simCodeTarget() == "omsicpp" then
+    (flatModel, functions) := InstUtil.expandSlicedCrefs(flatModel, functions);
+  end if;
+
   flatModel := InstUtil.combineSubscripts(flatModel);
 
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
@@ -483,7 +490,7 @@ algorithm
         // Look up the base class and expand it.
         scope := InstNode.parent(ext);
         base_nodes as (base_node :: _) := Lookup.lookupBaseClassName(base_path, scope, info);
-        checkExtendsLoop(base_node, base_path, info);
+        checkExtendsLoop(base_node, scope, base_path, info);
         checkReplaceableBaseClass(base_nodes, base_path, info);
         base_node := expand(base_node);
 
@@ -507,8 +514,11 @@ function checkExtendsLoop
   "Gives an error if a base node is in the process of being expanded itself,
    since that means we have an extends loop in the model."
   input InstNode node;
+  input InstNode scope;
   input Absyn.Path path;
   input SourceInfo info;
+protected
+  InstNode parent;
 algorithm
   () := match InstNode.getClass(node)
     // expand begins by changing the class to an EXPANDED_CLASS, but keeps the
@@ -521,7 +531,22 @@ algorithm
       then
         fail();
 
-    else ();
+    else
+      algorithm
+        parent := scope;
+
+        while not InstNode.isTopScope(parent) loop
+          if InstNode.refEqual(parent, node) then
+            Error.addSourceMessage(Error.EXTENDS_LOOP,
+              {AbsynUtil.pathString(path)}, info);
+            fail();
+          end if;
+
+          parent := InstNode.parentScope(parent);
+        end while;
+      then
+        ();
+
   end match;
 end checkExtendsLoop;
 
@@ -2290,7 +2315,6 @@ protected
   Class cls = InstNode.getClass(node), inst_cls;
   array<InstNode> local_comps, exts;
   ClassTree cls_tree;
-  Restriction res;
   array<Dimension> dims;
   SourceInfo info;
   Type ty;
@@ -3833,6 +3857,28 @@ algorithm
     fail();
   end if;
 end checkPartialClass;
+
+function checkInstanceRestriction
+  input InstNode node;
+  input Absyn.Path path;
+  input InstContext.Type context;
+protected
+  SCode.Element elem;
+algorithm
+  if InstContext.inRelaxed(context) then
+    return;
+  end if;
+
+  elem := InstNode.definition(node);
+
+  if SCodeUtil.isFunction(elem) or SCodeUtil.isPackage(elem) then
+    Error.addSourceMessage(Error.INST_INVALID_RESTRICTION,
+      {AbsynUtil.pathString(path),
+       SCodeDump.restrString(SCodeUtil.getClassRestriction(elem))},
+      InstNode.info(node));
+    fail();
+  end if;
+end checkInstanceRestriction;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

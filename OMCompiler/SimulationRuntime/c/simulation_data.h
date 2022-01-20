@@ -477,29 +477,6 @@ typedef struct MODEL_DATA_XML
   EQUATION_INFO *equationInfo;         /* lazy loading; read from file if it is NULL when accessed */
 } MODEL_DATA_XML;
 
-/**
- * @brief Information about one sub-clock.
- */
-typedef struct SUBCLOCK_INFO {
-  RATIONAL shift;                 /**< Shift of clock compared to base-clock.
-                                   *  For shiftSample(u, shiftCounter, resolution) this is shiftCounter/resolution,
-                                   *  for backSample((u, backCounter, resolution)) this is backCounter/resolution. */
-  RATIONAL factor;                /**< Factor on how much slower/faster the sub-clock is compared to base-clock.
-                                   *   For subSample(u,factor) this is factor/1,
-                                   *   for superSample(u,factor) this is 1/factor. */
-  const char* solverMethod;       /**< Integration method to solve differential equations in clocked discretized continuous-time partition */
-  modelica_boolean holdEvents;    /**< Trigger event at activation time of clock if true. */
-} SUBCLOCK_INFO;
-
-/**
- * @brief Informations about one base-clock and its sub-clocks.
- */
-typedef struct CLOCK_INFO {
-  long nSubClocks;                /**< Number of sub-clocks */
-  SUBCLOCK_INFO* subClocks;       /**< Array with information of each sub-clock */
-  modelica_boolean isBoolClock;   /**< true if base-clock is a boolean clock */
-} CLOCK_INFO;
-
 typedef struct MODEL_DATA
 {
   STATIC_REAL_DATA* realVarsData;      /* states + derived states + algs + (constrainsVars+FinalconstrainsVars) + discrete */
@@ -535,10 +512,7 @@ typedef struct MODEL_DATA
   long nSamples;                       /* number of different sample-calls */
   SAMPLE_INFO* samplesInfo;            /* array containing each sample-call */
 
-  long nClocks;
-  CLOCK_INFO* clocksInfo;
-  long nSubClocks;
-  SUBCLOCK_INFO* subClocksInfo;
+  long nBaseClocks;                    /* total number of base-clocks*/
 
   fortran_integer nStates;
   long nVariablesReal;                 /* all Real Variables of the model (states, statesderivatives, algebraics, real discretes) */
@@ -581,13 +555,67 @@ typedef struct MODEL_DATA
 } MODEL_DATA;
 
 /**
- * @brief Base clock data.
+ * @brief Type of synchronous timer.
  */
-typedef struct CLOCK_DATA {
-  modelica_real interval;     /**< Period in which timer needs to fire */
-  modelica_real timepoint;    /**< Next activation time */
-  long cnt;                   /**< Number of times clock was fired */
-} CLOCK_DATA;
+typedef enum SYNC_TIMER_TYPE {
+  SYNC_BASE_CLOCK,    /**< Base clock */
+  SYNC_SUB_CLOCK      /**< Sub-clock */
+} SYNC_TIMER_TYPE;
+
+/**
+ * @brief Data elements of list data->simulationInfo->intvlTimers.
+ * Stores next activation time of synchronous clock idx.
+ */
+typedef struct SYNC_TIMER {
+  int base_idx;               /**< Index of base clock */
+  int sub_idx;                /**< Index of sub clock */
+  SYNC_TIMER_TYPE type;       /**< Type of clock */
+  double activationTime;      /**< Next activation time of clock */
+} SYNC_TIMER;
+
+/**
+ * @brief Statistics for base- and sub-clocks.
+ */
+typedef struct CLOCK_STATS {
+  modelica_real previousInterval;   /**< Length of previous interval, startInterval at initialization. */
+  int count;                        /**< Number of times clock was fired */
+  double lastActivationTime;        /**< Last time clock was activated */
+} CLOCK_STATS;
+
+/**
+ * @brief Information about one sub-clock.
+ */
+typedef struct SUBCLOCK_DATA {
+  RATIONAL shift;                 /**< Shift of clock compared to base-clock.
+                                   *  For shiftSample(u, shiftCounter, resolution) this is shiftCounter/resolution,
+                                   *  for backSample((u, backCounter, resolution)) this is backCounter/resolution. */
+  RATIONAL factor;                /**< Factor on how much slower/faster the sub-clock is compared to base-clock.
+                                   *   For subSample(u,factor) this is factor/1,
+                                   *   for superSample(u,factor) this is 1/factor. */
+  const char* solverMethod;       /**< Integration method to solve differential equations in clocked discretized continuous-time partition */
+  modelica_boolean holdEvents;    /**< Trigger event at activation time of clock if true. */
+
+  CLOCK_STATS stats;
+} SUBCLOCK_DATA;
+
+/**
+ * @brief Base-clock data.
+ *
+ * Containing its sub-clocks.
+ */
+typedef struct BASECLOCK_DATA {
+  int intervalCounter;
+  int resolution;     /* Should be cosntant, defaults to 1 */
+
+  double interval;    // is intervalCounter/resolution
+
+  SUBCLOCK_DATA* subClocks;       /**< Array with sub-clocks */
+  int nSubClocks;                /**< Number of sub-clocks */
+  modelica_boolean isEventClock;  /**< true if base-clock is a event clock */
+
+  CLOCK_STATS stats;
+  //SolverMethod solverMethod;
+} BASECLOCK_DATA;
 
 typedef struct SPATIAL_DISTRIBUTION_DATA {
   unsigned int index;
@@ -667,8 +695,8 @@ typedef struct SIMULATION_INFO
   double *nextSampleTimes;             /* array of next sample time */ // TODO ringbuffer
   modelica_boolean *samples;           /* array of the current value for all sample-calls */
 
-  LIST* intvlTimers;                   /* Sorted list with time points for next clocks that need to fire */
-  CLOCK_DATA *clocksData;              /* Containing simulation data for clocks. E.g interval and next evaluation time */
+  BASECLOCK_DATA *baseClocks;          /* Containing simulation data for clocks. E.g interval and next evaluation time */
+  LIST* intvlTimers;                   /* Sorted list with next actiavtion time for each base-clock partition. */
 
   SPATIAL_DISTRIBUTION_DATA* spatialDistributionData;     /* Array of spatialDistribution data */
 

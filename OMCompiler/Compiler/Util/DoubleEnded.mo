@@ -42,7 +42,7 @@ uniontype MutableList<T>
 end MutableList;
 
 protected
-import GC;
+import GCExt;
 import MetaModelica.Dangerous;
 
 public impure function new<T>
@@ -249,7 +249,7 @@ algorithm
   Mutable.update(delst.front, {});
   Mutable.update(delst.length, 0);
   for l in lst loop
-    GC.free(l);
+    GCExt.free(l);
   end for;
 end clear;
 

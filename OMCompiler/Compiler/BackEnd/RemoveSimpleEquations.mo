@@ -70,7 +70,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
-import GC;
+import GCExt;
 import HashSet;
 import HashTableCrToCrEqLst;
 import HashTableCrToExp;
@@ -581,7 +581,7 @@ algorithm
 
     outSystem := updateSystem(globalFoundSimple, eqnslst, vars, repl, outSystem);
     outTpl := ((repl, globalFoundSimple, unReplaceable, maxTraversals, warnAliasConflicts));
-    GC.free(mT);
+    GCExt.free(mT);
   else
     //Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
     outSystem := inSystem;

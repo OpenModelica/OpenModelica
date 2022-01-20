@@ -19,4 +19,7 @@ modelicaVisitor.cpp
 modelicaVisitor.h
 *.o
 *.a
-test/
+test/mp
+test/mp.exe
+test/*.o
+

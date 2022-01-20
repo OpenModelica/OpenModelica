@@ -153,7 +153,7 @@ public:
   static bool naturalSort(const QString &s1, const QString &s2);
   static QString cleanResultVariable(const QString &variable);
   static bool naturalSortForResultVariables(const QString &s1, const QString &s2);
-#ifdef WIN32
+#if defined(_WIN32)
   static QProcessEnvironment simulationProcessEnvironment();
 #endif
   static StringHandler::SimulationMessageType getSimulationMessageType(QString type);
@@ -171,6 +171,7 @@ public:
   static QString removeLine(QString text, QString lineToRemove);
   static QString insertClassAtPosition(QString parentClassText, QString childClassText, int linePosition, int nestedLevel);
   static QString number(double value, char format = 'g', int precision = 16);
+  static QString getModelicaComment(QString element);
 protected:
   static QString mLastOpenDir;
 };

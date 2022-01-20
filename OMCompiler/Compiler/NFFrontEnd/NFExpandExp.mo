@@ -285,11 +285,11 @@ public
       case "cat"        then expandBuiltinCat(args, call);
       case "der"        then expandBuiltinGeneric(call);
       case "diagonal"   then expandBuiltinDiagonal(listHead(args));
+      case "fill"       then expandBuiltinFill(args);
       case "pre"        then expandBuiltinGeneric(call);
       case "previous"   then expandBuiltinGeneric(call);
       case "promote"    then expandBuiltinPromote(args);
       case "transpose"  then expandBuiltinTranspose(listHead(args));
-      case "fill"       then expandBuiltinFill(args);
     end match;
   end expandBuiltinCall;
 
@@ -339,6 +339,14 @@ public
     end if;
   end expandBuiltinDiagonal;
 
+  function expandBuiltinFill
+    input list<Expression> args;
+    output Expression outExp;
+    output Boolean expanded = true;
+  algorithm
+    outExp := Expression.fillArgs(listHead(args), listRest(args));
+  end expandBuiltinFill;
+
   function expandBuiltinTranspose
     input Expression arg;
     output Expression outExp;
@@ -350,22 +358,6 @@ public
       outExp := Expression.transposeArray(outExp);
     end if;
   end expandBuiltinTranspose;
-
-  function expandBuiltinFill
-    input list<Expression> args;
-    output Expression outExp;
-    output Boolean expanded = true;
-  protected
-    Expression content;
-    Integer size;
-  algorithm
-    {content, Expression.INTEGER(value = size)} := args;
-    outExp := Expression.ARRAY(
-      ty        = Type.liftArrayLeft(Expression.typeOf(content), Dimension.INTEGER(size, NFPrefixes.Variability.CONSTANT)),
-      elements  = List.fill(content, size),
-      literal   = true
-    );
-  end expandBuiltinFill;
 
   function expandBuiltinGeneric
     input Call call;

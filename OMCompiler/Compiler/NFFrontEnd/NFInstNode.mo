@@ -299,6 +299,24 @@ uniontype InstNode
       InstNodeType.BASE_CLASS(parent, definition));
   end newExtends;
 
+  function newIterator
+    input String name;
+    input Type ty;
+    input SourceInfo info;
+    output InstNode iterator;
+  algorithm
+    iterator := fromComponent(name, Component.newIterator(ty, info), EMPTY_NODE());
+  end newIterator;
+
+  function newIndexedIterator
+    input Integer index;
+    input Type ty = Type.INTEGER();
+    input SourceInfo info = AbsynUtil.dummyInfo;
+    output InstNode iterator;
+  algorithm
+    iterator := newIterator("$i" + String(index), ty, info);
+  end newIndexedIterator;
+
   function fromComponent
     input String name;
     input Component component;
@@ -355,6 +373,16 @@ uniontype InstNode
       else false;
     end match;
   end isDerivedClass;
+
+  function isRootClass
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match node
+      case CLASS_NODE(nodeType = InstNodeType.ROOT_CLASS()) then true;
+      else false;
+    end match;
+  end isRootClass;
 
   function isFunction
     input InstNode node;
@@ -559,17 +587,20 @@ uniontype InstNode
     CLASS_NODE(parentScope = parent) := node;
   end classParent;
 
-  function derivedParent
+  function instanceParent
+    "Returns the parent of the node in the instance tree."
     input InstNode node;
     output InstNode parent;
   algorithm
     parent := match node
       case CLASS_NODE() then getDerivedNode(node.parentScope);
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
+        then getDerivedNode(parent);
       case COMPONENT_NODE() then getDerivedNode(node.parent);
       case IMPLICIT_SCOPE() then getDerivedNode(node.parentScope);
       else EMPTY_NODE();
     end match;
-  end derivedParent;
+  end instanceParent;
 
   function rootParent
     input InstNode node;
@@ -1723,7 +1754,7 @@ uniontype InstNode
   algorithm
     hasBinding := match node
       case COMPONENT_NODE()
-        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(derivedParent(node));
+        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(instanceParent(node));
       else false;
     end match;
   end hasBinding;
@@ -1773,6 +1804,17 @@ uniontype InstNode
     end match;
   end isClockType;
 
+  function restriction
+    input InstNode node;
+    output Restriction res;
+  algorithm
+    res := match node
+      case CLASS_NODE() then Class.restriction(Pointer.access(node.cls));
+      case COMPONENT_NODE() then restriction(Component.classInstance(Pointer.access(node.component)));
+      case INNER_OUTER_NODE() then restriction(node.innerNode);
+      else Restriction.UNKNOWN();
+    end match;
+  end restriction;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

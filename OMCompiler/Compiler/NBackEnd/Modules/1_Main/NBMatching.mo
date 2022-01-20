@@ -35,7 +35,7 @@ encapsulated uniontype NBMatching
 "
   // self import
   import Matching = NBMatching;
-  import GC;
+  import GCExt;
 
   // SetBased Graph imports
   import NBAdjacency.BipartiteGraph;
@@ -429,8 +429,8 @@ protected
 
     // free auxiliary arrays
     if nEqns > 0 then
-      GC.free(var_marks);
-      GC.free(eqn_marks);
+      GCExt.free(var_marks);
+      GCExt.free(eqn_marks);
     end if;
 
     // create the matching structure

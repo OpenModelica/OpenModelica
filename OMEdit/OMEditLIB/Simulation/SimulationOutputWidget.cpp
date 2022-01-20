@@ -547,7 +547,7 @@ void SimulationOutputWidget::compileModel()
     numProcs = QString::number(mSimulationOptions.getNumberOfProcessors());
   }
   QStringList args;
-#ifdef WIN32
+#if defined(_WIN32)
   if (OptionsDialog::instance()->getSimulationPage()->getUseStaticLinkingCheckBox()->isChecked()) {
     linkType = "static";
   }
@@ -601,7 +601,7 @@ void SimulationOutputWidget::runSimulationExecutable()
   QString fileName = QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getOutputFileName());
   fileName = fileName.replace("//", "/");
   // run the simulation executable to create the result file
-#ifdef WIN32
+#if defined(_WIN32)
   fileName = fileName.append(".exe");
   QFileInfo fileInfo(mSimulationOptions.getFileName());
   QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
@@ -1058,7 +1058,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
   if (url.scheme().compare("omedittransformationsbrowser") == 0) {
     /* read the file name */
     QString fileName = url.path();
-#ifdef WIN32
+#if defined(_WIN32)
     if (fileName.startsWith("/")) fileName.remove(0, 1);
 #endif
     /* open the model_info.json file */

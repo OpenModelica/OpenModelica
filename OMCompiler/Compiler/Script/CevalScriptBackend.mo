@@ -96,7 +96,7 @@ import FlatModel = NFFlatModel;
 import FMI;
 import FMIExt;
 import FunctionTree = NFFlatten.FunctionTree;
-import GC;
+import GCExt;
 import Graph;
 import HashSetString;
 import InnerOuter;
@@ -1631,6 +1631,16 @@ algorithm
         (cache,ret_val);
 
     case (_, _, "copyClass", _, _) then (inCache, Values.BOOL(false));
+
+    // see if the model exists before linearization!
+    case (cache,_,"linearize",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,_)
+      equation
+        crefCName = AbsynUtil.pathToCref(className);
+        false = Interactive.existClass(crefCName, SymbolTable.getAbsyn());
+        errMsg = "Linearization Failed. Model: " + AbsynUtil.pathString(className) + " does not exist! Please load it first before linearization.";
+        simValue = createSimulationResultFailure(errMsg, simOptionsAsString(vals));
+      then
+        (cache,simValue);
 
     case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),_)
       equation
@@ -3324,12 +3334,12 @@ algorithm
     b := runFrontEndLoadProgram(className);
     true := b;
     if Flags.isSet(Flags.GC_PROF) then
-      print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
+      print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats before front-end:") + "\n");
     end if;
     ExecStat.execStat("FrontEnd - loaded program");
     (cache,env,dae,flatString) := runFrontEndWork(cache,env,className,relaxedFrontEnd,dumpFlat);
     if Flags.isSet(Flags.GC_PROF) then
-      print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
+      print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats after front-end:") + "\n");
     end if;
     ExecStat.execStat("FrontEnd - DAE generated");
 
@@ -3388,21 +3398,6 @@ protected
   Absyn.Restriction restriction;
   Absyn.Program p = SymbolTable.getAbsyn();
 algorithm
-  try
-    Absyn.CLASS(restriction = restriction) := InteractiveUtil.getPathedClassInProgram(className, p, true);
-  else
-    Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className),"<TOP>"});
-    fail();
-  end try;
-
-  if not relaxedFrontEnd and (AbsynUtil.isFunctionRestriction(restriction) or
-                              AbsynUtil.isPackageRestriction(restriction)) then
-    Error.addSourceMessage(Error.INST_INVALID_RESTRICTION,
-      {AbsynUtil.pathString(className), AbsynUtil.restrString(restriction)},
-      AbsynUtil.dummyInfo);
-    fail();
-  end if;
-
   (cache,env,dae) := matchcontinue (inCache,inEnv,className)
     local
       Absyn.Class absynClass;
@@ -3453,7 +3448,7 @@ algorithm
 
         //System.startTimer();
         //print("\nInst.instantiateClass");
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className);
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className,true,relaxedFrontEnd);
 
         dae = DAEUtil.mergeAlgorithmSections(dae);
 
@@ -4020,7 +4015,7 @@ algorithm
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
     configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
-    if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+    if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
@@ -8545,7 +8540,7 @@ algorithm
     case ()
       algorithm
         ExecStat.execStatReset();
-        (cache, _, odae, str) := runFrontEnd(cache, env, path, relaxedFrontEnd = true,
+        (cache, _, odae, str) := runFrontEnd(cache, env, path, relaxedFrontEnd = false,
           dumpFlat = Config.flatModelica() and not Config.silent());
         ExecStat.execStat("runFrontEnd");
 

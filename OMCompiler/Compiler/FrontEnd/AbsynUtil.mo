@@ -4905,6 +4905,13 @@ algorithm
       then
         (l1,mod::l2);
 
+    // add choice to the second tuple
+    case (mod as Absyn.MODIFICATION(modification = SOME(_), path = Absyn.IDENT(name = "choice"))) :: rest
+      equation
+        (l1,l2) = stripGraphicsAndInteractionModification(rest);
+      then
+        (l1,mod::l2);
+
     // collect in the first tuple
     case (mod as Absyn.MODIFICATION()) :: rest
       equation
@@ -5752,6 +5759,66 @@ algorithm
     else ();
   end match;
 end mapAnnotationBindingInEqMod;
+
+public function createChoiceArray
+"translates
+  choices(choice(mod1),choice(mod2),choice(mod3)) -> choices(choice={\"mod1\", \"mod2\", \"mod3\"})
+  choices(choice = mod1, choice = mod2, choice = mod3) -> choices(choice={\"mod1\", \"mod2\", \"mod3\"})"
+  input Absyn.ElementArg inChoices;
+  output Absyn.ElementArg outChoices = inChoices;
+protected
+   Absyn.ElementArg choices;
+   list<Absyn.ElementArg> choice, acc_choice = {}, acc = {}, args;
+   Absyn.ElementArg c, el;
+   Absyn.Info info1, info2;
+   Option<String> cmt1, cmt2;
+   Boolean fp1, fp2;
+   Absyn.Each ep1, ep2;
+   list<String> choiceArray = {};
+   String s;
+   Absyn.Exp e;
+algorithm
+  outChoices := match(inChoices)
+    case Absyn.MODIFICATION(
+          finalPrefix = fp1,
+          eachPrefix = ep1,
+          path = Absyn.IDENT("choices"),
+          modification = SOME(Absyn.CLASSMOD(choice, Absyn.NOMOD())),
+          comment = cmt1,
+          info = info1)
+      algorithm
+        for m in choice loop
+          (choiceArray, acc) := match m
+          // if is a choice, remember it and put it in an array of strings
+          case Absyn.MODIFICATION(fp2, ep2, Absyn.IDENT("choice"), SOME(Absyn.CLASSMOD({el}, Absyn.NOMOD())), cmt2, info2)
+            algorithm
+              s := Dump.unparseElementArgStr(el);
+            then
+              (s::choiceArray, acc);
+          // if is a choice, remember it and put it in an array of strings
+          case Absyn.MODIFICATION(fp2, ep2, Absyn.IDENT("choice"), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(exp = e))), cmt2, info2)
+            algorithm
+              s := Dump.printExpStr(e);
+            then
+              (s::choiceArray, acc);
+          // otherwise put it in any other arguments except choice
+          else
+             (choiceArray, m::acc);
+          end match;
+        end for;
+        if not listEmpty(choiceArray) then
+          e := Absyn.ARRAY(list(Absyn.STRING(s) for s in listReverse(choiceArray)));
+          c := Absyn.MODIFICATION(fp2, ep2, Absyn.IDENT("choice"), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(e, info2))), cmt2, info2);
+          args := listReverse(c::acc);
+        else
+          args := listReverse(acc);
+        end if;
+        choices := Absyn.MODIFICATION(fp1, ep1, Absyn.IDENT("choices"), SOME(Absyn.CLASSMOD(args, Absyn.NOMOD())), cmt1, info1);
+      then
+        choices;
+    else then inChoices;
+  end match;
+end createChoiceArray;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

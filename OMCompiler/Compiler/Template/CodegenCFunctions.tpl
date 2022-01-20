@@ -4515,6 +4515,12 @@ match cr
     let newpref = fullname_i + '.'
     functionContextCref(cr.componentRef, context, newpref, &preExp, &varDecls, &auxFunction)
 
+  case cr as CREF_QUAL(identType = T_ARRAY(), subscriptLst = {}) then
+    error(sourceInfo(), 'functionContextCref got a prefix cref with array type and no subs. <%crefStrNoUnderscore(cr)%>')
+    // let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
+    // let newpref = fullname + '.'
+    // functionContextCref(cr.componentRef, context, newpref, &preExp, &varDecls, &auxFunction)
+
   case cr as CREF_QUAL() then
     let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
     let newpref = fullname + '.'
@@ -4534,7 +4540,7 @@ match cr
     fullname
 
   else
-    error(sourceInfo(), 'crefNonSimVar got a cref it does not know how to handle <%crefStrNoUnderscore(cr)%>')
+    error(sourceInfo(), 'functionContextCref got a cref it does not know how to handle <%crefStrNoUnderscore(cr)%>')
 end match
 end functionContextCref;
 
@@ -5213,6 +5219,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp,
     '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%cr.ident%>), <%offset%>)))'
   else
     match context
+    case FUNCTION_CONTEXT(is_parallel = true) then daeExpCrefRhsFunContextParallel(exp, context, &preExp, &varDecls, &auxFunction)
     case FUNCTION_CONTEXT(__) then daeExpCrefRhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
     else daeExpCrefRhsSimContext(exp, context, &preExp, &varDecls, &auxFunction)
 end daeExpCrefRhs;
@@ -5275,57 +5282,63 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
   let &sub = buffer ""
   match ecr
   case ecr as CREF(componentRef=cr, ty=ty) then
-    if crefIsScalar(cr, context) then
+    if boolNot(isArrayType(ty)) then
+      let cast = typeCastContextInt(context, ty)
+      '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
+    else if crefSubIsScalar(cr) then
+      // The array subscript results in a scalar
       let cast = typeCastContextInt(context, ty)
       '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
     else
-      if crefSubIsScalar(cr) then
-        // The array subscript results in a scalar
-        let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+      match context
+      case FUNCTION_CONTEXT(__) then
+        // The array subscript denotes a slice
+        // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
+        let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
         let arrayType = expTypeArray(ty)
-        let subsLenStr = listLength(crefSubs(cr))
-        let subsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-            daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
-            ;separator=", ")
-        match cr
-          case CREF_IDENT(identType = T_METATYPE(ty = T_METAARRAY()))
-          case CREF_IDENT(identType = T_METAARRAY()) then
-            'arrayGet(<%arrName%>, <%subsValuesStr%>)'
-          else
-            match context
-              case FUNCTION_CONTEXT(is_parallel = false) then
-                match ty
-                  case (T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))
-                  case (T_COMPLEX(complexClassType = record_state)) then
-                    <<
-                     <%arrayType%>_get(<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>)
-                    >>
-                  else
-                    <<
-                    <%arrayType%>_get<%match listLength(crefSubs(cr)) case 1 case 2 then subsLenStr%>(<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>)
-                    >>
-              case FUNCTION_CONTEXT(__) then
-                <<
-                (*<%arrayType%>_element_addr_c99_<%subsLenStr%>(&<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>))
-                >>
-              else
-                error(sourceInfo(),'This should have been handled in the new daeExpCrefRhsSimContext function. <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+        let tmp = tempDecl(arrayType, &varDecls)
+        let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
+        let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
+        tmp
       else
-        match context
-        case FUNCTION_CONTEXT(__) then
-          // The array subscript denotes a slice
-          // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
-          let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-          let arrayType = expTypeArray(ty)
-          let tmp = tempDecl(arrayType, &varDecls)
-          let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
-          let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
-          tmp
-        else
-          error(sourceInfo(),'daeExpCrefRhsFunContext: Slice in simulation context: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+        error(sourceInfo(),'daeExpCrefRhsFunContext: Slice in simulation context: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
   case ecr then
     error(sourceInfo(),'daeExpCrefRhsFunContext: UNHANDLED EXPRESSION: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsFunContext;
+
+template daeExpCrefRhsFunContextParallel(Exp ecr, Context context, Text &preExp,
+                        Text &varDecls, Text &auxFunction)
+ "Generates code for a component reference."
+::=
+  let &sub = buffer ""
+  match ecr
+  case ecr as CREF(componentRef=cr, ty=ty) then
+    if crefIsScalar(cr, context) then
+      let cast = typeCastContextInt(context, ty)
+      '<%cast%><%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
+    else if crefSubIsScalar(cr) then
+      // The array subscript results in a scalar
+      let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+      let arrayType = expTypeArray(ty)
+      let subsLenStr = listLength(crefSubs(cr))
+      let subsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+          daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
+          ;separator=", ")
+      <<
+      (*<%arrayType%>_element_addr_c99_<%subsLenStr%>(&<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>))
+      >>
+    else
+      // The array subscript denotes a slice
+      // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDumpTpl.dumpExp(ecr,"\"")%>) preExp  */<%\n%>'
+      let arrName = contextCref(crefStripLastSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+      let arrayType = expTypeArray(ty)
+      let tmp = tempDecl(arrayType, &varDecls)
+      let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
+      let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
+      tmp
+  case ecr then
+    error(sourceInfo(),'daeExpCrefRhsFunContext: UNHANDLED EXPRESSION: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+end daeExpCrefRhsFunContextParallel;
 
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
@@ -6188,14 +6201,16 @@ let &sub = buffer ""
     error(sourceInfo(), 'Code generation does not support der(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls, &auxFunction)
+  // Clock builtins
   case CALL(path=IDENT(name="interval")) then
-    'data->simulationInfo->clocksData[clockIndex].interval'
+    'data->simulationInfo->baseClocks[baseClockIndex].subClocks[subClockIndex].stats.previousInterval'
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
     '<%cref(crefPrefixPrevious(arg.componentRef), &sub)%>'
   case CALL(path=IDENT(name="firstTick")) then
-    '(data->simulationInfo->clocksData[clockIndex].cnt == 0)'
+    '(data->simulationInfo->baseClocks[baseClockIndex].subClocks[subClockIndex].stats.count == 1)'
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
-    'fireClock(data, threadData, <%intSub(arg.integer,1)%>, data->localData[0]->timeValue)'
+    'handleBaseClock(data, threadData, <%intSub(arg.integer,1)%>, data->localData[0]->timeValue)'
+
   // if arg >= 0 then 1 else -1
   case CALL(path=IDENT(name="$_signNoNull"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

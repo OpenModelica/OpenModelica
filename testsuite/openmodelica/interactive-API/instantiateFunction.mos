@@ -1,0 +1,19 @@
+// name:     instantiateFunction.mos
+// keywords: instantiate API function
+// status:   correct
+// cflags: -d=-newInst
+//
+// Checks that functions can not be instantiated.
+//
+
+loadFile("instantiateFunction.mo"); getErrorString();
+instantiateModel(Derived.Foo); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "[openmodelica/interactive-API/instantiateFunction.mo:2:3-4:10:writable] Error: Cannot instantiate Derived.Foo due to class specialization pure function.
+// Error: Error occurred while flattening model Derived.Foo
+// "
+// endResult

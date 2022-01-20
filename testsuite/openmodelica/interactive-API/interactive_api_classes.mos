@@ -120,8 +120,7 @@ getClassNames(B, includeConstants=true);
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(A.test)
-// {annotation(
-//   Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})})) }
+// {Icon("error evaluating: annotation(Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})}))")}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: addClassAnnotation(A.test, annotate = Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))
@@ -200,8 +199,7 @@ getClassNames(B, includeConstants=true);
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(A.test)
-// {annotation(
-//   Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})})) }
+// {Icon("error evaluating: annotation(Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})}))")}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: addClassAnnotation(A.test, annotate = Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))

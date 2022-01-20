@@ -46,7 +46,7 @@ protected
   import Error;
 
 public
-  constant Binding EMPTY_BINDING = UNBOUND(false, AbsynUtil.dummyInfo);
+  constant Binding EMPTY_BINDING = UNBOUND();
 
   type EachType = enumeration(
     NOT_EACH,
@@ -67,12 +67,6 @@ public
   );
 
   record UNBOUND
-    // NOTE: Use the EMPTY_BINDING constant above when a default unbound binding
-    //       is needed, to save memory. UNBOUND contains this information to be
-    //       able to check that 'each' is used correctly, so info is only needed
-    //       when isEach is true.
-    Boolean isEach;
-    SourceInfo info;
   end UNBOUND;
 
   record RAW_BINDING
@@ -146,7 +140,7 @@ public
         then
           RAW_BINDING(exp, scope, {}, each_ty, source, info);
 
-      else if eachPrefix then UNBOUND(true, info) else EMPTY_BINDING;
+      else EMPTY_BINDING;
     end match;
   end fromAbsyn;
 
@@ -383,7 +377,6 @@ public
     output SourceInfo info;
   algorithm
     info := match binding
-      case UNBOUND() then binding.info;
       case RAW_BINDING() then binding.info;
       case UNTYPED_BINDING() then binding.info;
       case TYPED_BINDING() then binding.info;
@@ -411,7 +404,6 @@ public
     output Boolean isEach;
   algorithm
     isEach := match binding
-      case UNBOUND() then binding.isEach;
       case RAW_BINDING() then binding.eachType == EachType.EACH;
       case UNTYPED_BINDING() then binding.eachType == EachType.EACH;
       case TYPED_BINDING() then binding.eachType == EachType.EACH;
@@ -700,7 +692,7 @@ public
                         else Mutable.create(EvalState.NOT_EVALUATED),
           isFlattened = true,
           source      = Source.BINDING,
-          info        = binding.info
+          info        = sourceInfo()
         );
 
       case UNTYPED_BINDING() algorithm

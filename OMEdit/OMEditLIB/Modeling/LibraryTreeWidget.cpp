@@ -68,6 +68,7 @@ LibraryTreeItem::LibraryTreeItem()
   setName("");
   setNameStructure("");
   OMCInterface::getClassInformation_res classInformation;
+  setAccessAnnotations(false);
   setClassInformation(classInformation);
   setFileName("");
   mVersionDate = "";
@@ -83,7 +84,6 @@ LibraryTreeItem::LibraryTreeItem()
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(true);
-  setAccessAnnotations(false);
   setOMSElement(0);
   setSystemType(oms_system_none);
   setComponentType(oms_component_none);
@@ -115,6 +115,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setDragPixmap(QPixmap());
   setName(text);
   setNameStructure(nameStructure);
+  setAccessAnnotations(false);
   if (type == LibraryTreeItem::Modelica) {
     setSaveContentsType(LibraryTreeItem::SaveInOneFile);
     setClassInformation(classInformation);
@@ -129,7 +130,6 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(false);
-  setAccessAnnotations(false);
   setOMSElement(0);
   setSystemType(oms_system_none);
   setComponentType(oms_component_none);

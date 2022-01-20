@@ -36,12 +36,16 @@ add_custom_command(
   )
 
 
-add_library(omcparserantlr4 STATIC)
-target_sources(omcparserantlr4 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/modelicaBaseListener.cpp
-                                       ${CMAKE_CURRENT_BINARY_DIR}/modelicaBaseVisitor.cpp
-                                       ${CMAKE_CURRENT_BINARY_DIR}/modelicaLexer.cpp
-                                       ${CMAKE_CURRENT_BINARY_DIR}/modelicaListener.cpp
-                                       ${CMAKE_CURRENT_BINARY_DIR}/modelicaParser.cpp
-                                       ${CMAKE_CURRENT_BINARY_DIR}/modelicaVisitor.cpp)
+add_library(OMParser STATIC)
+target_sources(OMParser PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/modelicaBaseListener.cpp
+                                ${CMAKE_CURRENT_BINARY_DIR}/modelicaBaseVisitor.cpp
+                                ${CMAKE_CURRENT_BINARY_DIR}/modelicaLexer.cpp
+                                ${CMAKE_CURRENT_BINARY_DIR}/modelicaListener.cpp
+                                ${CMAKE_CURRENT_BINARY_DIR}/modelicaParser.cpp
+                                ${CMAKE_CURRENT_BINARY_DIR}/modelicaVisitor.cpp)
 
-target_link_libraries(omcparserantlr4 PUBLIC antlr4_static)
+target_link_libraries(OMParser PUBLIC antlr4_static)
+# The generated parser header files (e.g modelicaLexer.h) are put in the binary dir of OMParser.
+# So add it as a PUBLIC (can be INTERFACE as well) include directory so that they are made available
+# to libraries that link to OMParser.
+target_include_directories(OMParser PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

@@ -137,6 +137,7 @@ function evaluateAnnotation_dispatch
   input Absyn.Program absynProgram;
   input Absyn.Path classPath;
   input Absyn.Annotation inAnnotation;
+  input Boolean addAnnotationName = false;
   output String outString = "";
 protected
   InstNode top, cls, inst_cls, anncls, inst_anncls;
@@ -167,6 +168,9 @@ algorithm
   Absyn.ANNOTATION(el) := inAnnotation;
 
   for e in listReverse(el) loop
+
+    e := AbsynUtil.createChoiceArray(e);
+
     str := matchcontinue e
       case Absyn.MODIFICATION(
           path = Absyn.IDENT(annName),
@@ -219,10 +223,10 @@ algorithm
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
 
-          dae := frontEndBack(inst_anncls, annName);
+          dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
-          if (stringEq(annName, "Icon") or stringEq(annName, "Diagram")) and not listEmpty(graphics_mod) then
+          if (listMember(annName, {"Icon", "Diagram", "choices"})) and not listEmpty(graphics_mod) then
             try
               {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
               context := InstContext.set(NFInstContext.RELAXED, NFInstContext.GRAPHICAL_EXP);
@@ -235,18 +239,15 @@ algorithm
                 exp := EvalConstants.evaluateExp(save, info);
               end try;
               exp := SimplifyExp.simplify(exp);
-              str := str + ", " + Expression.toString(exp);
+              str := str + "," + Expression.toString(exp);
             else
               // just don't fail!
             end try;
           end if;
         then
-          str;
-
-      case Absyn.MODIFICATION(
-          path = Absyn.IDENT(annName),
-          modification = SOME(Absyn.CLASSMOD(_, _)))
-        then stringAppendList({annName, "(error)"});
+          if addAnnotationName
+          then stringAppendList({annName, "(", str, ")"})
+          else str;
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
         algorithm
@@ -265,13 +266,19 @@ algorithm
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
 
-          dae := frontEndBack(inst_anncls, annName);
+          dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
-          str;
+          if addAnnotationName
+          then stringAppendList({annName, "(", str, ")"})
+          else str;
 
-      case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
-        then stringAppendList({annName, "(error)"});
+      case Absyn.MODIFICATION(path = Absyn.IDENT(annName), info = info)
+        algorithm
+          str := "error evaluating: annotation(" + Dump.unparseElementArgStr(e) + ")";
+          str := Util.escapeQuotes(str);
+        then
+          stringAppendList({annName, "(\"", str, "\")"});
 
     end matchcontinue;
 
@@ -380,6 +387,13 @@ algorithm
   stringLst := {};
 
   for e in listReverse(l) loop
+
+    str := evaluateAnnotation_dispatch(absynProgram, classPath, Absyn.ANNOTATION({e}), true);
+
+/* try to use evaluateAnnotation_dispatch instead
+
+    e := AbsynUtil.createChoiceArray(e);
+
     str := matchcontinue e
       case Absyn.MODIFICATION(
           path = Absyn.IDENT(annName),
@@ -430,7 +444,7 @@ algorithm
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
 
-          dae := frontEndBack(inst_anncls, annName);
+          dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
           stringAppendList({annName, "(", str, ")"});
@@ -457,7 +471,7 @@ algorithm
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
 
-          dae := frontEndBack(inst_anncls, annName);
+          dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
           stringAppendList({annName, "(", str, ")"});
@@ -467,6 +481,8 @@ algorithm
 
     end matchcontinue;
 
+*/
+
     stringLst := str :: stringLst;
   end for;
 
@@ -474,6 +490,7 @@ algorithm
   outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
 
   end for;
+
 
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.evaluateAnnotations_dispatch("+ AbsynUtil.pathString(classPath) + " annotation(" + stringDelimitList(List.map(List.flatten(elArgs), Dump.unparseElementArgStr), ", ") + ")");
@@ -685,6 +702,7 @@ protected
 function frontEndBack
   input InstNode inst_cls;
   input String name;
+  input Boolean scalarize = true;
   output DAE.DAElist dae;
 protected
   InstNode top;
@@ -719,7 +737,7 @@ algorithm
   funcs := Flatten.collectFunctions(flat_model);
 
   // Scalarize array components in the flat model.
-  if Flags.isSet(Flags.NF_SCALARIZE) then
+  if Flags.isSet(Flags.NF_SCALARIZE) /* and scalarize */ then
     flat_model := Scalarize.scalarize(flat_model);
   else
     // Remove empty arrays from variables
@@ -732,7 +750,7 @@ algorithm
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs);
 
   if Flags.isSet(Flags.EXEC_STAT) then
-    execStat("NFApi.frontEndBack(" + name + ")");
+    execStat("NFApi.frontEndBack(" + AbsynUtil.pathString(InstNode.enclosingScopePath(inst_cls)) + ", name: " + name + ", scalarize: " + boolString(scalarize) + ")");
   end if;
 
 end frontEndBack;

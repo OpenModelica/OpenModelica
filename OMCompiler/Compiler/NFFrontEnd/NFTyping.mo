@@ -367,6 +367,10 @@ protected
   Expression cond;
   Boolean is_deleted;
 algorithm
+  if InstNode.isOnlyOuter(component) then
+    return;
+  end if;
+
   ty := match c
     // An untyped component, type it.
     case Component.UNTYPED_COMPONENT()
@@ -677,8 +681,6 @@ algorithm
     // Other kinds of dimensions are already typed.
     else dimension;
   end match;
-
-  verifyDimension(dimension, component, info);
 end typeDimension;
 
 function subscriptDimExp
@@ -701,7 +703,7 @@ algorithm
   // If the expression has too many dimensions, add split subscripts based on
   // the component's parent's dimensions until we get a scalar expression.
   subs := {};
-  parent := InstNode.derivedParent(component);
+  parent := InstNode.instanceParent(component);
 
   while exp_dims > 0 and not InstNode.isEmpty(parent) loop
     parent_dims := InstNode.dimensionCount(parent);
@@ -715,7 +717,7 @@ algorithm
       end if;
     end for;
 
-    parent := InstNode.derivedParent(parent);
+    parent := InstNode.instanceParent(parent);
   end while;
 
   dimExp := Expression.applySubscripts(subs, dimExp);
@@ -738,27 +740,6 @@ algorithm
     else dimExp;
   end match;
 end simplifyDimExp;
-
-function verifyDimension
-  input Dimension dimension;
-  input InstNode component;
-  input SourceInfo info;
-algorithm
-  () := match dimension
-    case Dimension.INTEGER()
-      algorithm
-        // Check that integer dimensions are not negative.
-        if dimension.size < 0 then
-          Error.addSourceMessage(Error.NEGATIVE_DIMENSION_INDEX,
-            {String(dimension.size), InstNode.name(component)}, info);
-          fail();
-        end if;
-      then
-        ();
-
-    else ();
-  end match;
-end verifyDimension;
 
 function makeDimension
   input Expression dimExp;
@@ -791,7 +772,7 @@ protected
   Expression exp;
   Binding parent_binding;
 algorithm
-  parent := InstNode.derivedParent(component);
+  parent := InstNode.instanceParent(component);
 
   if InstNode.isComponent(parent) then
     // Get the binding of the component's parent.
@@ -885,6 +866,10 @@ protected
 algorithm
   c := InstNode.component(node);
 
+  if InstNode.isOnlyOuter(component) then
+    return;
+  end if;
+
   () := match c
     case Component.TYPED_COMPONENT()
       guard Component.isDeleted(c)
@@ -897,7 +882,6 @@ algorithm
 
         ErrorExt.setCheckpoint(getInstanceName());
         try
-          checkBindingEach(c.binding, component);
           binding := typeBinding(binding, InstContext.set(context, NFInstContext.BINDING));
 
           if not (Config.getGraphicsExpMode() and stringEq(name, "graphics")) then
@@ -933,8 +917,6 @@ algorithm
     // A component without a binding, or with a binding that's already been typed.
     case Component.TYPED_COMPONENT()
       algorithm
-        checkBindingEach(c.binding, component);
-
         if Binding.isTyped(c.binding) then
           c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node);
           checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
@@ -952,7 +934,6 @@ algorithm
     case Component.UNTYPED_COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
       algorithm
         name := InstNode.name(component);
-        checkBindingEach(c.binding, component);
         binding := typeBinding(c.binding, InstContext.set(context, NFInstContext.BINDING));
         comp_var := checkComponentBindingVariability(name, c, binding, context);
 
@@ -1055,22 +1036,6 @@ algorithm
   end match;
 end typeBinding;
 
-function checkBindingEach
-  input Binding binding;
-  input InstNode component;
-protected
-  InstNode parent;
-algorithm
-  if Binding.isEach(binding) then
-    parent := InstNode.derivedParent(component);
-
-    if not Type.isArray(InstNode.getType(parent)) then
-      Error.addStrictMessage(Error.EACH_ON_NON_ARRAY,
-        {InstNode.name(parent)}, Binding.getInfo(binding));
-    end if;
-  end if;
-end checkBindingEach;
-
 function typeComponentCondition
   input output Binding condition;
   input InstContext.Type context;
@@ -1148,10 +1113,9 @@ algorithm
         fail();
 
     // Modifier with no binding, e.g. Real x(final start).
+    // Remove it so we don't have to deal with it in later.
     case Modifier.MODIFIER()
       guard Binding.isUnbound(attribute.binding)
-      algorithm
-        checkBindingEach(attribute.binding, component);
       then
         NFModifier.NOMOD();
 
@@ -1159,8 +1123,6 @@ algorithm
     case Modifier.MODIFIER(name = name, binding = binding)
       algorithm
         // Type and type check the attribute.
-        checkBindingEach(binding, component);
-
         if Binding.isBound(binding) then
           binding := typeBinding(binding, context);
           parent := InstNode.parent(component);
@@ -1832,7 +1794,6 @@ algorithm
       Type node_ty;
       list<Subscript> subs;
       Variability subs_var, rest_var;
-      InstContext.Type node_context;
       Function fn;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
@@ -1852,9 +1813,7 @@ algorithm
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
-        node_context := if InstNode.isFunction(InstNode.explicitParent(cref.node)) then
-          NFInstContext.FUNCTION else NFInstContext.CLASS;
-        node_ty := typeComponent(cref.node, node_context);
+        node_ty := typeComponent(cref.node, crefContext(cref.node));
 
         (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, cref, context, info);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
@@ -1880,6 +1839,27 @@ algorithm
     else (cref, Variability.CONSTANT);
   end match;
 end typeCref2;
+
+function crefContext
+  input InstNode crefNode;
+  output InstContext.Type context;
+protected
+  InstNode parent;
+  Restriction parent_res;
+algorithm
+  parent := InstNode.explicitParent(crefNode);
+
+  // Records might actually be record constructors that should count as
+  // functions here, such record constructors are always root classes.
+  if not InstNode.isRootClass(parent) then
+    context := NFInstContext.CLASS;
+    return;
+  end if;
+
+  parent_res := InstNode.restriction(parent);
+  context := if Restriction.isFunction(parent_res) or Restriction.isRecord(parent_res) then
+    NFInstContext.FUNCTION else NFInstContext.CLASS;
+end crefContext;
 
 function typeSubscripts
   input list<Subscript> subscripts;
@@ -2787,7 +2767,7 @@ protected
 algorithm
   comp := InstNode.component(component);
 
-  if Component.isDeleted(comp) then
+  if Component.isDeleted(comp) or InstNode.isOnlyOuter(component) then
     return;
   end if;
 

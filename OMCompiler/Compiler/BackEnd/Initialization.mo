@@ -64,13 +64,14 @@ import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
-import GC;
+import GCExt;
 import IndexReduction;
 import List;
 import Matching;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Sorting;
 import SymbolicJacobian;
+import SynchronousFeatures;
 
 // =============================================================================
 // section for all public functions
@@ -357,10 +358,14 @@ protected function inlineWhenForInitialization "author: lochel
   output BackendDAE.BackendDAE outDAE = inDAE;
 protected
   list<BackendDAE.Equation> eqnlst;
+  list<BackendDAE.Equation> clockEqnsLst;
   HashSet.HashSet leftCrs = HashSet.emptyHashSet() "dummy hash set - should always be empty";
 algorithm
   outDAE.eqs := List.map(inDAE.eqs, inlineWhenForInitializationSystem);
   (eqnlst, _) := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, inlineWhenForInitializationEquation, ({}, leftCrs));
+  // TODO AHEU: Add simCodeTarget C around this?
+  clockEqnsLst := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, SynchronousFeatures.getBoolClockWhenClauses, {});
+  eqnlst := listAppend(clockEqnsLst, eqnlst);
   outDAE.shared := BackendDAEUtil.setSharedRemovedEqns(outDAE.shared, BackendEquation.listEquation(eqnlst));
 end inlineWhenForInitialization;
 
@@ -859,7 +864,7 @@ algorithm
       end match;
     end for;
 
-    GC.free(secondary);
+    GCExt.free(secondary);
     outAllPrimaryParameters := listReverse(outAllPrimaryParameters);
     dae := BackendDAEUtil.setDAEGlobalKnownVars(dae, otherVariables);
 
@@ -2222,7 +2227,7 @@ algorithm
           if Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
             (vars, eqns) := collectInitialStateSets(eq.stateSets, stateSetFixCounts, vars, eqns);
           end if;
-          GC.free(stateSetFixCounts);
+          GCExt.free(stateSetFixCounts);
         then
           ();
     end match;

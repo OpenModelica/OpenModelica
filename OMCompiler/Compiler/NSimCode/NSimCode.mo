@@ -617,6 +617,7 @@ public
       Integer numSensitivityParameters;
       Integer numSetcVars;
       Integer numDataReconVars;
+      Integer numRealIntputVars;
     end VAR_INFO;
 
     function create
@@ -657,7 +658,8 @@ public
         numOptimizeFinalConstraints = 0,
         numSensitivityParameters    = 0,
         numSetcVars                 = 0,
-        numDataReconVars            = 0);
+        numDataReconVars            = 0,
+        numRealIntputVars           = 0);
     end create;
 
     function convert
@@ -696,7 +698,8 @@ public
         numOptimizeFinalConstraints = varInfo.numOptimizeFinalConstraints,
         numSensitivityParameters    = varInfo.numSensitivityParameters,
         numSetcVars                 = varInfo.numSetcVars,
-        numDataReconVars            = varInfo.numDataReconVars);
+        numDataReconVars            = varInfo.numDataReconVars,
+        numRealInputVars            = varInfo.numRealIntputVars);
     end convert;
   end VarInfo;
 

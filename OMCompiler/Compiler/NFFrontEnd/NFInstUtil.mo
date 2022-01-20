@@ -31,13 +31,18 @@
 
 encapsulated package NFInstUtil
   import ComponentRef = NFComponentRef;
+  import Call = NFCall;
   import Expression = NFExpression;
   import FlatModel = NFFlatModel;
+  import NFInstNode.InstNode;
   import NFFlatten.FunctionTree;
   import NFFunction.Function;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
+  import Algorithm = NFAlgorithm;
+  import Statement = NFStatement;
+  import Equation = NFEquation;
 
 protected
   import Flags;
@@ -173,6 +178,117 @@ public
   algorithm
     exp := Expression.map(exp, traverser);
   end replaceEmptyArraysExp;
+
+  function expandSlicedCrefs
+    input output FlatModel flatModel;
+    input output FunctionTree functions;
+  algorithm
+    if Flags.isSet(Flags.COMBINE_SUBSCRIPTS) or not Flags.isSet(Flags.NF_SCALARIZE) then
+      return;
+    end if;
+
+    flatModel.variables := list(Variable.mapExp(v, expandSlicedCrefsExp) for v in flatModel.variables);
+    flatModel := FlatModel.mapEquations(flatModel, expandSlicedCrefsEq);
+    flatModel := FlatModel.mapAlgorithms(flatModel, expandSlicedCrefsAlg);
+    functions := FunctionTree.map(functions, expandSlicedCrefsFunction);
+  end expandSlicedCrefs;
+
+  function expandSlicedCrefsExp
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF()
+        guard ComponentRef.isSliced(exp.cref)
+        then expandSlicedCrefsExp2(exp.cref, exp.ty);
+
+      else exp;
+    end match;
+  end expandSlicedCrefsExp;
+
+  function expandSlicedCrefsExp2
+    input ComponentRef cref;
+    input Type ty;
+    output Expression outExp;
+  protected
+    ComponentRef cr;
+    list<tuple<InstNode, Expression>> iterators;
+  algorithm
+    (cr, iterators) := ComponentRef.iterate(cref);
+    outExp := Expression.CALL(
+      Call.TYPED_ARRAY_CONSTRUCTOR(
+        ty,
+        ComponentRef.variability(cref),
+        ComponentRef.purity(cref),
+        Expression.fromCref(cr),
+        iterators
+      )
+    );
+  end expandSlicedCrefsExp2;
+
+  function expandSlicedCrefsEq
+    input output Equation eq;
+  protected
+    Expression e1, e2;
+  algorithm
+    eq := match eq
+      case Equation.EQUALITY(rhs = e1)
+        algorithm
+          e2 := Expression.map(e1, expandSlicedCrefsExp);
+
+          if not referenceEq(e1, e2) then
+            eq.rhs := e2;
+          end if;
+        then
+          eq;
+
+      case Equation.ARRAY_EQUALITY(rhs = e1)
+        algorithm
+          e2 := Expression.map(e1, expandSlicedCrefsExp);
+
+          if not referenceEq(e1, e2) then
+            eq.rhs := e2;
+          end if;
+        then
+          eq;
+
+      else Equation.mapExpShallow(eq, function Expression.map(func = expandSlicedCrefsExp));
+    end match;
+  end expandSlicedCrefsEq;
+
+  function expandSlicedCrefsAlg
+    input output Algorithm alg;
+  algorithm
+    alg.statements := list(Statement.map(s, expandSlicedCrefsStmt) for s in alg.statements);
+  end expandSlicedCrefsAlg;
+
+  function expandSlicedCrefsStmt
+    input output Statement stmt;
+  protected
+    Expression e1, e2;
+  algorithm
+    stmt := match stmt
+      case Statement.ASSIGNMENT(rhs = e1)
+        algorithm
+          e2 := Expression.map(e1, expandSlicedCrefsExp);
+
+          if not referenceEq(e1, e2) then
+            stmt.rhs := e2;
+          end if;
+        then
+          stmt;
+
+      else Statement.mapExpShallow(stmt, function Expression.map(func = expandSlicedCrefsExp));
+    end match;
+  end expandSlicedCrefsStmt;
+
+  function expandSlicedCrefsFunction
+    input Absyn.Path fnPath;
+    input output Function fn;
+  algorithm
+    fn := Function.mapExp(fn,
+      function Expression.map(func = expandSlicedCrefsExp), mapBody = false);
+    fn := Function.mapBody(fn, expandSlicedCrefsAlg);
+  end expandSlicedCrefsFunction;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInstUtil;

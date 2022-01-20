@@ -151,7 +151,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ExecStat.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Flags.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FlagsUtil.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/GC.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/GCExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Gettext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Graph.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphStream.mo
@@ -449,7 +449,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToCrEqLst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSimCodeEqCache.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSM1.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMSimulator.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMSimulatorExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/PriorityQueue.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBAtomicSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBFunctions.mo

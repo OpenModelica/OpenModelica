@@ -305,7 +305,9 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       eventInfo->nextEventTime = fmin(nextSampleEvent,nextTimerActivationTime);
     }
     else {
-      eventInfo->nextEventTimeDefined = fmi2False;
+      if (eventInfo->nextEventTime <= comp->fmuData->localData[0]->timeValue) {
+        eventInfo->nextEventTimeDefined = fmi2False;
+      }
     }
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime)
 
@@ -582,6 +584,10 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->states_der = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
   comp->event_indicators = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
   comp->event_indicators_prev = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
+  if (NUMBER_OF_REAL_INPUTS == 0)
+    comp->input_real_derivative = NULL; // initialize to 0
+  else
+    comp->input_real_derivative = (fmi2Real*)functions->allocateMemory(NUMBER_OF_REAL_INPUTS, sizeof(fmi2Real));
 
   comp->_need_update = 1;
 
@@ -647,14 +653,12 @@ void fmi2FreeInstance(fmi2Component c)
   freeMemory(comp->states_der); comp->states_der = NULL;
   freeMemory(comp->event_indicators); comp->event_indicators = NULL;
   freeMemory(comp->event_indicators_prev); comp->event_indicators_prev = NULL;
+  freeMemory(comp->input_real_derivative); comp->input_real_derivative = NULL;
 
   freeMemory(comp->fmuData->modelData->resourcesDir);
   if (comp->solverInfo) {
     FMI2CS_deInitializeSolverData(comp);
   }
-
-  /* Free synchronus data */
-  freeSynchronous(comp->fmuData);
 
   /* free simuation data */
   freeMemory(comp->fmuData->modelData);
@@ -1478,8 +1482,39 @@ Functions for FMI2 for Co-Simulation
 ****************************************************/
 fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], const fmi2Real value[])
 {
-  // TODO Write code here
-  return unsupportedFunction(c, "fmi2SetRealInputDerivatives", ~0);
+  /* Variables */
+  int i;
+  int mappedIndex;
+  ModelInstance *comp = (ModelInstance*)c;
+
+  /* Check for valid call sequence */
+  if (invalidState(comp, "fmi2SetRealInputDerivatives", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
+    return fmi2Error;
+  if (nvr > 0 && nullPointer(comp, "fmi2SetRealInputDerivatives", "vr[]", vr))
+    return fmi2Error;
+  if (nvr > 0 && nullPointer(comp, "fmi2SetRealInputDerivatives", "value[]", value))
+    return fmi2Error;
+
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: nvr = %d", nvr)
+
+#if NUMBER_OF_REAL_INPUTS > 0
+  for (i = 0; i < nvr; i++)
+  {
+    if (order[i] > 1) // currently first order derivative is supported
+      return fmi2Error;
+    if (vrOutOfRange(comp, "fmi2SetRealInputDerivatives", vr[i], NUMBER_OF_REALS))
+      return fmi2Error;
+    // check valueReference is an input of type Real
+    mappedIndex = mapInputReference2InputNumber(vr[i]);
+    if (mappedIndex == -1)
+      return fmi2Error;
+    comp->input_real_derivative[mappedIndex] = value[i]; // store the values in an external array
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: #r%u# = %.16g", vr[i], value[i])
+  }
+#endif
+
+  comp->_need_update = 1;
+  return fmi2OK;
 }
 
 fmi2Status fmi2GetRealOutputDerivatives(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], fmi2Real value[])
@@ -1545,6 +1580,18 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
   tCommunication = currentCommunicationPoint;
 
+  // copy the input values
+  fmi2Real realInputDerivatives[NUMBER_OF_REAL_INPUTS];
+  if (NUMBER_OF_REAL_INPUTS > 0)
+  {
+    for (int i = 0; i < NUMBER_OF_REALS; ++i)
+    {
+      int mappedIndex = mapInputReference2InputNumber(i);
+      if (mappedIndex != -1)
+        realInputDerivatives[mappedIndex] = getReal(comp, i);
+    }
+  }
+
   fmi2EnterEventMode(c);
   fmi2EventIteration(c, &eventInfo);
   fmi2EnterContinuousTimeMode(c);
@@ -1557,6 +1604,22 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     }
 
     /* fprintf(stderr, "DoStep %g -> %g State: %s\n", comp->fmuData->localData[0]->timeValue, tNext, stateToString(comp)); */
+
+    // set the real Inputs with output_derivative values
+    if (NUMBER_OF_REAL_INPUTS > 0)
+    {
+      for (int i = 0; i < NUMBER_OF_REALS; ++i)
+      {
+        int mappedIndex = mapInputReference2InputNumber(i);
+        if (mapInputReference2InputNumber(i) != -1)
+        {
+          double dt = comp->fmuData->localData[0]->timeValue - t;
+          double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
+          if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
+            return fmi2Error;
+        }
+      }
+    }
 
     if (NUMBER_OF_STATES > 0)
     {
@@ -1609,6 +1672,22 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         return fmi2Fatal;
     }
     fmi2SetTime(c, tNext);
+
+    // set the real Inputs with output_derivative values
+    if (NUMBER_OF_REAL_INPUTS > 0)
+    {
+      for (int i = 0; i < NUMBER_OF_REALS; ++i)
+      {
+        int mappedIndex = mapInputReference2InputNumber(i);
+        if (mapInputReference2InputNumber(i) != -1)
+        {
+          double dt = comp->fmuData->localData[0]->timeValue - t;
+          double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
+          if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
+            return fmi2Error;
+        }
+      }
+    }
 
     /* set the continuous states */
     if (NUMBER_OF_STATES > 0)

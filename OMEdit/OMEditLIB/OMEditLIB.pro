@@ -91,7 +91,9 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/include/omc/scripting-API \
   $$OPENMODELICAHOME/include/omc/c \
   $$OPENMODELICAHOME/include/omc/c/util \
-  $$OPENMODELICAHOME/include/omc/fmil
+  $$OPENMODELICAHOME/include/omc/fmil \
+  $$OPENMODELICAHOME/../OMParser/ \
+  $$OPENMODELICAHOME/../OMParser/install/include/antlr4-runtime/
 
 # Don't show the warnings from included headers.
 # Don't add a space between for and open parenthesis below. Qt4 complains about it.

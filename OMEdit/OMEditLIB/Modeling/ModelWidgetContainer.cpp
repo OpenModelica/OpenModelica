@@ -326,6 +326,59 @@ void GraphicsView::updateUndoRedoActions(bool enable)
   }
 }
 
+/*!
+ * \brief GraphicsView::performElementCreationChecks
+ * Performs the checks like partial model, default name, inner component etc.
+ * \param pLibraryTreeItem
+ * \param defaultPrefix
+ * \return
+ */
+bool GraphicsView::performElementCreationChecks(LibraryTreeItem *pLibraryTreeItem, QString *name, QString *defaultPrefix)
+{
+  MainWindow *pMainWindow = MainWindow::instance();
+  OptionsDialog *pOptionsDialog = OptionsDialog::instance();
+  // check if the model is partial
+  if (pLibraryTreeItem->isPartial()) {
+    if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
+      NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial, NotificationsDialog::InformationIcon, MainWindow::instance());
+      pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
+                                                       .arg(StringHandler::getModelicaClassType(pLibraryTreeItem->getRestriction()).toLower()).arg(pLibraryTreeItem->getName()));
+      if (!pNotificationsDialog->exec()) {
+        return false;
+      }
+    }
+  }
+  // get the model defaultComponentPrefixes
+  *defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(pLibraryTreeItem->getNameStructure());
+  QString defaultName;
+  *name = getUniqueElementName(pLibraryTreeItem->getNameStructure(), *name, &defaultName);
+  // Allow user to change the component name if always ask for component name settings is true.
+  if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
+    ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(*name, this, pMainWindow);
+    if (pComponentNameDialog->exec()) {
+      *name = pComponentNameDialog->getComponentName();
+      pComponentNameDialog->deleteLater();
+    } else {
+      pComponentNameDialog->deleteLater();
+      return false;
+    }
+  }
+  // if we or user has changed the default name
+  if (!defaultName.isEmpty() && name->compare(defaultName) != 0) {
+    // show the information to the user if we have changed the name of some inner component.
+    if (defaultPrefix->contains("inner")) {
+      if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
+        NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged, NotificationsDialog::InformationIcon, MainWindow::instance());
+        pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED).arg(defaultName).arg(*name));
+        if (!pNotificationsDialog->exec()) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 bool GraphicsView::addComponent(QString className, QPointF position)
 {
   MainWindow *pMainWindow = MainWindow::instance();
@@ -374,57 +427,23 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       return false;
     }
     StringHandler::ModelicaClasses type = pLibraryTreeItem->getRestriction();
-    OptionsDialog *pOptionsDialog = OptionsDialog::instance();
     // item not to be dropped on itself; if dropping an item on itself
     if (isClassDroppedOnItself(pLibraryTreeItem)) {
       return false;
-    } else { // check if the model is partial
-      if (pLibraryTreeItem->isPartial()) {
-        if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
-          NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial, NotificationsDialog::InformationIcon, MainWindow::instance());
-          pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
-                                                           .arg(StringHandler::getModelicaClassType(type).toLower()).arg(pLibraryTreeItem->getName()));
-          if (!pNotificationsDialog->exec()) {
-            return false;
-          }
-        }
+    } else {
+      QString name = pLibraryTreeItem->getName();
+      QString defaultPrefix = "";
+      if (!performElementCreationChecks(pLibraryTreeItem, &name, &defaultPrefix)) {
+        return false;
       }
-      // get the model defaultComponentPrefixes
-      QString defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(pLibraryTreeItem->getNameStructure());
-      QString defaultName;
-      QString name = getUniqueElementName(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getName(), &defaultName);
-      // Allow user to change the component name if always ask for component name settings is true.
-      if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
-        ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(name, this, pMainWindow);
-        if (pComponentNameDialog->exec()) {
-          name = pComponentNameDialog->getComponentName();
-          pComponentNameDialog->deleteLater();
-        } else {
-          pComponentNameDialog->deleteLater();
-          return false;
-        }
-      }
-      // if we or user has changed the default name
-      if (!defaultName.isEmpty() && name.compare(defaultName) != 0) {
-        // show the information to the user if we have changed the name of some inner component.
-        if (defaultPrefix.contains("inner")) {
-          if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
-            NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged, NotificationsDialog::InformationIcon, MainWindow::instance());
-            pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED).arg(defaultName).arg(name));
-            if (!pNotificationsDialog->exec()) {
-              return false;
-            }
-          }
-        }
-      }
-      ElementInfo *pComponentInfo = new ElementInfo;
-      pComponentInfo->applyDefaultPrefixes(defaultPrefix);
+      ElementInfo *pElementInfo = new ElementInfo;
+      pElementInfo->applyDefaultPrefixes(defaultPrefix);
       // if dropping an item on the diagram layer
       if (mViewType == StringHandler::Diagram) {
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
         if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
             (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)) {
-          addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo, true, false, true);
+          addComponentToView(name, pLibraryTreeItem, "", position, pElementInfo, true, false, true);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -435,7 +454,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
         // if item is a connector. then we can drop it to the graphicsview
         if (type == StringHandler::Connector || type == StringHandler::ExpandableConnector) {
-          addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo, true, false, true);
+          addComponentToView(name, pLibraryTreeItem, "", position, pElementInfo, true, false, true);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),

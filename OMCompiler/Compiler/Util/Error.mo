@@ -595,11 +595,11 @@ public constant ErrorTypes.Message BACKENDDAEINFO_STATISTICS = ErrorTypes.MESSAG
 public constant ErrorTypes.Message BACKENDDAEINFO_MIXED = ErrorTypes.MESSAGE(260, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Mixed equation statistics:\n * Mixed systems with single equation: %s\n * Mixed systems with array equation: %s\n * Mixed systems with algorithm: %s\n * Mixed systems with complex equation: %s\n * Mixed systems with constant Jacobian: %s\n * Mixed systems with linear Jacobian: %s\n * Mixed systems with non-linear Jacobian: %s\n * Mixed systems with analytic Jacobian: %s\n * Mixed systems with linear tearing system: %s\n * Mixed systems with nonlinear tearing system: %s"));
 public constant ErrorTypes.Message BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS = ErrorTypes.MESSAGE(261, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Strong component statistics for %s (%s):\n * Single equations (assignments): %s\n * Array equations: %s\n * Algorithm blocks: %s\n * Record equations: %s\n * When equations: %s\n * If-equations: %s\n * Equation systems (linear and non-linear blocks): %s\n * Torn equation systems: %s\n * Mixed (continuous/discrete) equation systems: %s"));
+  Gettext.gettext("Strong component statistics for %s (%s):\n * Single equations (assignments): %s\n * Array equations: %s\n * Algorithm blocks: %s\n * Record equations: %s\n * When equations: %s\n * If-equations: %s\n * Equation systems (not torn): %s\n * Torn equation systems: %s\n * Mixed (continuous/discrete) equation systems: %s"));
 public constant ErrorTypes.Message BACKENDDAEINFO_SYSTEMS = ErrorTypes.MESSAGE(262, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Equation system details:\n * Constant Jacobian: %s\n * Linear Jacobian (size,density): %s\n * Non-linear Jacobian: %s\n * Without analytic Jacobian: %s"));
+  Gettext.gettext("Equation system details (not torn):\n * Constant Jacobian (size): %s\n * Linear Jacobian (size,density): %s\n * Non-linear Jacobian (size): %s\n * Without analytic Jacobian (size): %s"));
 public constant ErrorTypes.Message BACKENDDAEINFO_TORN = ErrorTypes.MESSAGE(263, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Torn system details for %s tearing set:\n * Linear torn systems: %s\n * Non-linear torn systems: %s"));
+  Gettext.gettext("Torn system details for %s tearing set:\n * Linear torn systems (#iteration vars, #inner vars, density): %s\n * Non-linear torn systems (#iteration vars, #inner vars): %s"));
 public constant ErrorTypes.Message BACKEND_DAE_TO_MODELICA = ErrorTypes.MESSAGE(264, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("The following Modelica-like model represents the back-end DAE for the '%s' stage:\n%s"));
 public constant ErrorTypes.Message NEGATIVE_DIMENSION_INDEX = ErrorTypes.MESSAGE(265, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -860,7 +860,6 @@ public constant ErrorTypes.Message CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND = Error
   Gettext.gettext("No compatible conversion script for converting from %s %s to %s could be found."));
 
 public constant Gettext.TranslatableContent FUNCTION_CALL_EXPRESSION = Gettext.gettext("a function call expression");
-public constant Gettext.TranslatableContent COMPONENT_EXPRESSION = Gettext.gettext("a component expression");
 public constant ErrorTypes.Message FUNCTION_ARGUMENT_MUST_BE = ErrorTypes.MESSAGE(394, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The argument to ‘%s‘ must be %s."));
 

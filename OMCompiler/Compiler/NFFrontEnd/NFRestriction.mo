@@ -147,6 +147,16 @@ public
     end match;
   end isFunction;
 
+  function isRecordConstructor
+    input Restriction res;
+    output Boolean isConstructor;
+  algorithm
+    isConstructor := match res
+      case RECORD_CONSTRUCTOR() then true;
+      else false;
+    end match;
+  end isRecordConstructor;
+
   function isRecord
     input Restriction res;
     output Boolean isRecord;

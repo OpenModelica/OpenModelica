@@ -657,6 +657,18 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   setTransform(mTransformation.getTransformationMatrix());
   setDialogAnnotation(StringHandler::getAnnotation(annotation, "Dialog"));
   setChoicesAnnotation(StringHandler::getAnnotation(annotation, "choices"));
+  setChoicesAllMatchingAnnotation(StringHandler::getAnnotation(annotation, "choicesAllMatching"));
+  // add choices if there are any
+  if (getChoicesAnnotation().size() > 2)
+  {
+      QString array = getChoicesAnnotation()[2];
+      QStringList choices = StringHandler::unparseStrings(array);
+      setChoices(choices);
+  }
+  else
+  {
+      setChoices(QStringList());
+  }
   // create actions
   createActions();
   mpOriginItem = new OriginItem(this);
@@ -707,6 +719,8 @@ Element::Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement)
   drawInheritedElementsAndShapes();
   setDialogAnnotation(QStringList());
   setChoicesAnnotation(QStringList());
+  setChoicesAllMatchingAnnotation(QStringList());
+  setChoices(QStringList());
   mpOriginItem = 0;
   mpBottomLeftResizerItem = 0;
   mpTopLeftResizerItem = 0;
@@ -731,6 +745,8 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
   mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
+  mChoicesAllMatchingAnnotation = mpReferenceComponent->getChoicesAllMatchingAnnotation();
+  mChoices = mpReferenceComponent->getChoices();
   createNonExistingElement();
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
@@ -773,6 +789,8 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
   mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
+  mChoicesAllMatchingAnnotation = mpReferenceComponent->getChoicesAllMatchingAnnotation();
+  mChoices = mpReferenceComponent->getChoices();
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
   setElementFlags(true);
@@ -821,6 +839,8 @@ Element::Element(ElementInfo *pElementInfo, Element *pParentElement)
   mTransformationString = "";
   mDialogAnnotation.clear();
   mChoicesAnnotation.clear();
+  mChoicesAllMatchingAnnotation.clear();
+  mChoices.clear();
   createNonExistingElement();
   createDefaultElement();
   mpStateElementRectangle = 0;
@@ -2507,7 +2527,7 @@ void Element::updateToolTip()
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     comment = pOMCProxy->makeDocumentationUriToFileName(comment);
     // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
-  #ifdef WIN32
+  #if defined(_WIN32)
     comment.replace("src=\"file:///", "src=\"");
   #else
     comment.replace("src=\"file://", "src=\"");
@@ -2967,10 +2987,12 @@ void Element::deleteMe()
  */
 void Element::duplicate()
 {
-  QString name;
+  QString name = getName();
+  QString defaultPrefix = "";
   if (mpLibraryTreeItem) {
-    QString defaultName;
-    name = mpGraphicsView->getUniqueElementName(mpLibraryTreeItem->getNameStructure(), mpLibraryTreeItem->getName(), &defaultName);
+    if (!mpGraphicsView->performElementCreationChecks(mpLibraryTreeItem, &name, &defaultPrefix)) {
+      return;
+    }
   } else {
     name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(getName()));
   }
@@ -2979,6 +3001,7 @@ void Element::duplicate()
   mpElementInfo->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), this);
   ElementInfo *pElementInfo = new ElementInfo(mpElementInfo);
   pElementInfo->setName(name);
+  pElementInfo->applyDefaultPrefixes(defaultPrefix);
   mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, getOMCPlacementAnnotation(gridStep), QPointF(0, 0), pElementInfo, true, true, true);
   Element *pDiagramElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementsList().last();
   setSelected(false);

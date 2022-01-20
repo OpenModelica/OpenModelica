@@ -1443,11 +1443,25 @@ public
     Type ty;
   algorithm
     IF(ty, cond, tb, fb) := exp;
-    tb := applySubscript(subscript, tb, restSubscripts);
-    fb := applySubscript(subscript, fb, restSubscripts);
-    ty := if Type.isConditionalArray(ty) then
-      Type.setConditionalArrayTypes(ty, typeOf(tb), typeOf(fb)) else typeOf(tb);
-    outExp := IF(ty, cond, tb, fb);
+
+    if Type.isConditionalArray(ty) then
+      // Subscripting both branches of a conditional array might not be possible
+      // since they have different dimensions. If it fails just subscript the
+      // whole if-expression instead.
+      try
+        tb := applySubscript(subscript, tb, restSubscripts);
+        fb := applySubscript(subscript, fb, restSubscripts);
+        ty := Type.setConditionalArrayTypes(ty, typeOf(tb), typeOf(fb));
+        outExp := IF(ty, cond, tb, fb);
+      else
+        outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      end try;
+    else
+      tb := applySubscript(subscript, tb, restSubscripts);
+      fb := applySubscript(subscript, fb, restSubscripts);
+      ty := typeOf(tb);
+      outExp := IF(ty, cond, tb, fb);
+    end if;
   end applySubscriptIf;
 
   function makeSubscriptedExp
@@ -4139,6 +4153,27 @@ public
     end for;
   end fillType;
 
+  function fillArgs
+    "Creates an array from the given fill expression and list of dimensions,
+     similar to fill(fillExp, dims...). Fails if not all dimensions can be
+     converted to Integer values."
+    input Expression fillExp;
+    input list<Expression> dims;
+    output Expression result = fillExp;
+  protected
+    Integer dim_size;
+    list<Expression> arr;
+    Type arr_ty = typeOf(result);
+    Boolean is_literal = isLiteral(fillExp);
+  algorithm
+    for d in listReverse(dims) loop
+      dim_size := toInteger(d);
+      arr := list(result for e in 1:dim_size);
+      arr_ty := Type.liftArrayLeft(arr_ty, Dimension.fromInteger(dim_size));
+      result := Expression.makeArray(arr_ty, arr, is_literal);
+    end for;
+  end fillArgs;
+
   function liftArray
     "Creates an array with the given dimension, where each element is the given
      expression. Example: liftArray([3], 1) => {1, 1, 1}"
@@ -5417,6 +5452,40 @@ public
       else false;
     end match;
   end isFunctionPointer;
+
+  function isConnector
+    "Returns true if the expression is a component reference that refers to a
+     connector, otherwise false."
+    input Expression exp;
+    output Boolean res;
+  protected
+    InstNode node;
+  algorithm
+    res := match exp
+      case Expression.CREF()
+        algorithm
+          node := ComponentRef.node(exp.cref);
+        then
+          InstNode.isComponent(node) and InstNode.isConnector(node);
+
+      else false;
+    end match;
+  end isConnector;
+
+  function isComponentExpression
+    "Returns true if the expression is a component reference that refers to an
+     actual component (and not e.g. a function), otherwise false"
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Expression.CREF()
+        then ComponentRef.isCref(exp.cref) and
+             InstNode.isComponent(ComponentRef.node(exp.cref));
+
+      else false;
+    end match;
+  end isComponentExpression;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

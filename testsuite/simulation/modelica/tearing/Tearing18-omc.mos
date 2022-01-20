@@ -48,12 +48,13 @@ val(x8,0.0); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {1 5}
+//  * Linear torn systems (#iteration vars, #inner vars, density): 0 systems
+//  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
+//    {(1,5)}
 // Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // 

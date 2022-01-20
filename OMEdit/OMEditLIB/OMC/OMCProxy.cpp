@@ -49,7 +49,7 @@ extern "C" {
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
 void* omc_Main_init(void *threadData, void *args);
 void omc_System_initGarbageCollector(void *threadData);
-#ifdef WIN32
+#if defined(_WIN32)
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
 }
@@ -259,7 +259,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   Helper::OpenModelicaVersion = getVersion();
   // set OpenModelicaHome variable
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath().replace("\\", "/");
-#ifdef WIN32
+#if defined(_WIN32)
   MMC_TRY_TOP_INTERNAL()
   omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toUtf8().constData()));
   MMC_CATCH_TOP()
@@ -323,30 +323,34 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
    * Fixes issuse #8052
    */
   if (saveToHistory) {
-    FlatModelica::Expression exp = FlatModelica::Expression::parse(expression);
+    try {
+      FlatModelica::Expression exp = FlatModelica::Expression::parse(expression);
 
-    if (mLibrariesBrowserAdditionCommandsList.contains(exp.functionName())) {
-      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
-    } else if (mLibrariesBrowserDeletionCommandsList.contains(exp.functionName())) {
-      if (exp.functionName().compare(QStringLiteral("deleteClass")) == 0) {
-        if (exp.args().size() > 0) {
-          LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(exp.arg(0).toQString());
-          if (pLibraryTreeItem) {
-            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+      if (mLibrariesBrowserAdditionCommandsList.contains(exp.functionName())) {
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
+      } else if (mLibrariesBrowserDeletionCommandsList.contains(exp.functionName())) {
+        if (exp.functionName().compare(QStringLiteral("deleteClass")) == 0) {
+          if (exp.args().size() > 0) {
+            LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(exp.arg(0).toQString());
+            if (pLibraryTreeItem) {
+              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+            }
           }
-        }
-      } else {
-        int i = 0;
-        while (i < MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->childrenSize()) {
-          LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->child(i);
-          if (pLibraryTreeItem && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
-            i = 0;  //Restart iteration
-          } else {
-            i++;
+        } else {
+          int i = 0;
+          while (i < MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->childrenSize()) {
+            LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()->child(i);
+            if (pLibraryTreeItem && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+              i = 0;  //Restart iteration
+            } else {
+              i++;
+            }
           }
         }
       }
+    } catch (const std::exception &e) {
+      showException(QString("Error parsing expression: %1.").arg(e.what()));
     }
   }
 
@@ -801,7 +805,7 @@ OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString clas
   QString comment = classInformation.comment.replace("\\\"", "\"");
   comment = makeDocumentationUriToFileName(comment);
   // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
-#ifdef WIN32
+#if defined(_WIN32)
   comment.replace("src=\"file:///", "src=\"");
 #else
   comment.replace("src=\"file://", "src=\"");
@@ -2742,7 +2746,7 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
     // ticket:4923 Modelica specification allows both modelica:// and Modelica://
     if (attribute.startsWith("modelica://") || attribute.startsWith("Modelica://")) {
       QString fileName = uriToFilename(attribute);
-#ifdef WIN32
+#if defined(_WIN32)
       documentation = documentation.replace(attribute, "file:///" + fileName);
 #else
       documentation = documentation.replace(attribute, "file://" + fileName);

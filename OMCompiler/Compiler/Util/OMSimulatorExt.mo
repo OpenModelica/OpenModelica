@@ -29,10 +29,10 @@
  *
  */
 
-encapsulated package OMSimulator
-" file:         OMSimulator.mo
-  package:     OMSimulator
-  description: This file contains OMSimulator wrapper functions which are implemented in  C and Linked through DLL.
+encapsulated package OMSimulatorExt
+" file:         OMSimulatorExt.mo
+  package:     OMSimulatorExt
+  description: This file contains OMSimulatorExt wrapper functions which are implemented in  C and Linked through DLL.
   "
 public function statusToString
   input Integer status;
@@ -606,4 +606,4 @@ function oms_terminate
 end oms_terminate;
 
 annotation(__OpenModelica_Interface="util");
-end OMSimulator;
+end OMSimulatorExt;

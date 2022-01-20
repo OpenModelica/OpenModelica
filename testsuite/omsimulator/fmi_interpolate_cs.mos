@@ -1,0 +1,64 @@
+// keywords: fmu export
+// status: correct
+// teardown_command: rm -rf fmi_interpolate_cs.lua fmi_interpolate_cs_res.mat fmu1.fmu fmu2.fmu fmi_interpolate_cs_fmu1.log fmi_interpolate_cs_fmu2.log fmi_interpolate_cs_systemCall.log temp-fmi_interpolate_cs/
+
+loadString("
+model fmu1
+  output Real y = sin(time);
+end fmu1;
+
+model fmu2
+  input Real u;
+  Real x(start=0.0, fixed=true);
+equation
+  der(x) = u;
+end fmu2;
+"); getErrorString();
+
+
+buildModelFMU(fmu1, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
+buildModelFMU(fmu2, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
+
+writeFile("fmi_interpolate_cs.lua", "
+oms_setCommandLineOption(\"--suppressPath=true --inputExtrapolation=true\")
+oms_setTempDirectory(\"./temp-fmi_interpolate_cs/\")
+
+oms_newModel(\"fmi_interpolate_cs\")
+oms_addSystem(\"fmi_interpolate_cs.root\", oms_system_wc)
+oms_addSubModel(\"fmi_interpolate_cs.root.fmu1\", \"fmu1.fmu\")
+oms_addSubModel(\"fmi_interpolate_cs.root.fmu2\", \"fmu2.fmu\")
+
+oms_addConnection(\"fmi_interpolate_cs.root.fmu1.y\", \"fmi_interpolate_cs.root.fmu2.u\")
+
+oms_setStopTime(\"fmi_interpolate_cs\", 5)
+oms_setFixedStepSize(\"fmi_interpolate_cs.root\", 0.1)
+
+oms_instantiate(\"fmi_interpolate_cs\")
+
+oms_initialize(\"fmi_interpolate_cs\")
+
+oms_simulate(\"fmi_interpolate_cs\")
+
+oms_terminate(\"fmi_interpolate_cs\")
+oms_delete(\"fmi_interpolate_cs\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator fmi_interpolate_cs.lua", "fmi_interpolate_cs_systemCall.log");
+readFile("fmi_interpolate_cs_systemCall.log");
+
+// Result:
+// true
+// ""
+// "fmu1.fmu"
+// ""
+// "fmu2.fmu"
+// ""
+// true
+// ""
+// 0
+// "warning: Not all components support \"canGetAndSetState\"; an explicit master algorithm will be used
+// info:    Result file: fmi_interpolate_cs_res.mat (bufferSize=10)
+// info:    1 warnings
+// info:    0 errors
+// "
+// endResult

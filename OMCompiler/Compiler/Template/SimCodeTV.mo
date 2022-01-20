@@ -797,7 +797,8 @@ package SimCode
       Integer numSensitivityParameters;
       Integer numSetcVars;
       Integer numDataReconVars;
-      end VARINFO;
+      Integer numRealInputVars "for fmi cs to interpolate inputs";
+    end VARINFO;
   end VarInfo;
 
   uniontype DaeModeConfig
@@ -1897,19 +1898,19 @@ package DAE
     record INFERRED_CLOCK
     end INFERRED_CLOCK;
 
-    record INTEGER_CLOCK
+    record RATIONAL_CLOCK
       Exp intervalCounter;
       Exp resolution;
-    end INTEGER_CLOCK;
+    end RATIONAL_CLOCK;
 
     record REAL_CLOCK
       Exp interval;
     end REAL_CLOCK;
 
-    record BOOLEAN_CLOCK
+    record EVENT_CLOCK
       Exp condition;
       Exp startInterval;
-    end BOOLEAN_CLOCK;
+    end EVENT_CLOCK;
 
     record SOLVER_CLOCK
       Exp c;

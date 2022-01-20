@@ -2,6 +2,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(OpenModelica C CXX Fortran)
 
+# Any custom Find* modules should be placed here.
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
+
 #########################################################################################################
 ## Enable verbose Makefiles if you want to debug. (you can also instead use 'make VERBOSE=1')
 # set(CMAKE_VERBOSE_MAKEFILE ON)

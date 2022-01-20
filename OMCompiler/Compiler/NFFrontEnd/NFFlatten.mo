@@ -484,6 +484,7 @@ algorithm
   end if;
 
   ty := flattenType(ty, prefix);
+  verifyDimensions(Type.arrayDims(ty), comp_node);
   name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
   ty_attrs := list(flattenTypeAttribute(m, name) for m in typeAttrs);
 
@@ -648,6 +649,7 @@ algorithm
     (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections, deletedVars, settings);
   elseif settings.scalarize then
     dims := list(flattenDimension(d, name) for d in dims);
+    verifyDimensions(dims, node);
     (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   else
     (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
@@ -870,7 +872,6 @@ algorithm
       list<Expression> ranges;
       list<Subscript> subs;
       list<Statement> body;
-      Statement stmt;
 
     // let simple assignment as is
     case Algorithm.ALGORITHM(statements = {Statement.ASSIGNMENT(lhs = Expression.CREF(), rhs = Expression.CREF())})
@@ -883,17 +884,13 @@ algorithm
         subs := listReverseInPlace(subs);
         body := Statement.mapExpList(alg.statements, function addIterator(prefix = prefix, subscripts = subs));
 
-        iter :: iters := iters;
-        range :: ranges := ranges;
-        stmt := Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source);
-
         while not listEmpty(iters) loop
           iter :: iters := iters;
           range :: ranges := ranges;
-          stmt := Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source);
+          body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source)};
         end while;
       then
-        Algorithm.ALGORITHM({stmt}, alg.inputs, alg.outputs, alg.source); // ToDo: update inputs, outputs?
+        Algorithm.ALGORITHM(body, alg.inputs, alg.outputs, alg.source); // ToDo: update inputs, outputs?
   end match;
 end vectorizeAlgorithm;
 
@@ -913,8 +910,7 @@ algorithm
   prefix_node := ComponentRef.node(prefix);
 
   for dim in dimensions loop
-    iter_comp := Component.newIterator(Type.INTEGER(), InstNode.info(prefix_node));
-    iter := InstNode.fromComponent("$i" + String(index), iter_comp, InstNode.parent(prefix_node));
+    iter := InstNode.newIndexedIterator(index, Type.INTEGER(), InstNode.info(prefix_node));
     iterators := iter :: iterators;
     index := index + 1;
 
@@ -2328,6 +2324,35 @@ algorithm
     fail();
   end if;
 end checkParGlobalCref;
+
+function verifyDimensions
+  input list<Dimension> dimensions;
+  input InstNode component;
+algorithm
+  for d in dimensions loop
+    verifyDimension(d, component);
+  end for;
+end verifyDimensions;
+
+function verifyDimension
+  input Dimension dimension;
+  input InstNode component;
+algorithm
+  () := match dimension
+    case Dimension.INTEGER()
+      algorithm
+        // Check that integer dimensions are not negative.
+        if dimension.size < 0 then
+          Error.addSourceMessage(Error.NEGATIVE_DIMENSION_INDEX,
+            {String(dimension.size), InstNode.name(component)}, InstNode.info(component));
+          fail();
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end verifyDimension;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

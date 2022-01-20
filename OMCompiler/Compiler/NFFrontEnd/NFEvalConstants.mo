@@ -633,7 +633,7 @@ algorithm
   if ComponentRef.isPackageConstant(cref) then
     res := false;
   elseif ComponentRef.nodeVariability(cref) <= Variability.PARAMETER and ComponentRef.isCref(cref) then
-    node := InstNode.derivedParent(ComponentRef.node(ComponentRef.last(cref)));
+    node := InstNode.instanceParent(ComponentRef.node(ComponentRef.last(cref)));
 
     if InstNode.isClass(node) then
       fnl := Function.getCachedFuncs(node);

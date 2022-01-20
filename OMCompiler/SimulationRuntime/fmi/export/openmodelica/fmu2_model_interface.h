@@ -97,6 +97,7 @@ typedef struct {
   fmi2Real* states_der;
   fmi2Real* event_indicators;
   fmi2Real* event_indicators_prev;
+  fmi2Real* input_real_derivative;
 } ModelInstance;
 
 /* reset alignment policy to the one set before reading this file */

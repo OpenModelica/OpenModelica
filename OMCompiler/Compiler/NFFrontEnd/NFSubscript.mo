@@ -181,6 +181,17 @@ public
     end match;
   end isWhole;
 
+  function isSliced
+    input Subscript sub;
+    output Boolean sliced;
+  algorithm
+    sliced := match sub
+      case SLICE() then true;
+      case WHOLE() then true;
+      else false;
+    end match;
+  end isSliced;
+
   function isScalar
     input Subscript sub;
     output Boolean isScalar;

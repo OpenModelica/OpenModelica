@@ -75,7 +75,7 @@ import ExpressionSolve;
 import ExpressionSimplify;
 import Error;
 import Flags;
-import GC;
+import GCExt;
 import HashTableExpToIndex;
 import HpcOmTaskGraph;
 import List;
@@ -1700,9 +1700,9 @@ algorithm
         systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, eqPartMap, rixs, mT, rmT, throwNoError, funcs, isInitial) else {syst};
         // print("Number of partitioned systems: " + intString(listLength(systs)) + "\n");
         // List.map1_0(systs, BackendDump.dumpEqSystem, "System");
-        GC.free(eqPartMap);
-        GC.free(varPartMap);
-        GC.free(rixs);
+        GCExt.free(eqPartMap);
+        GCExt.free(varPartMap);
+        GCExt.free(rixs);
       then (systs,shared);
     else
       equation
@@ -4244,8 +4244,8 @@ algorithm
             BackendDump.dumpAdjacencyMatrixT(mT);
           end if;
 
-          GC.free(w_vars);
-          GC.free(w_eqns);
+          GCExt.free(w_vars);
+          GCExt.free(w_eqns);
         then BackendDAEUtil.clearEqSyst(syst1);
     end match;
     new_systlst := syst :: new_systlst;

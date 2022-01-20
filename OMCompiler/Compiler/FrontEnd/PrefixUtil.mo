@@ -1371,11 +1371,11 @@ algorithm
     case (cache, _, _, DAE.INFERRED_CLOCK(), _)
       then (cache, inClkKind);
 
-    case (cache, env, ih, DAE.INTEGER_CLOCK(e, resolution), p)
+    case (cache, env, ih, DAE.RATIONAL_CLOCK(e, resolution), p)
       equation
         (cache, e) = prefixExpWork(cache, env, ih, e, p);
         (cache, resolution) = prefixExpWork(cache, env, ih, resolution, p);
-        clkKind = DAE.INTEGER_CLOCK(e, resolution);
+        clkKind = DAE.RATIONAL_CLOCK(e, resolution);
       then
         (cache, clkKind);
 
@@ -1386,11 +1386,11 @@ algorithm
       then
         (cache, clkKind);
 
-    case (cache, env, ih, DAE.BOOLEAN_CLOCK(e, interval), p)
+    case (cache, env, ih, DAE.EVENT_CLOCK(e, interval), p)
       equation
         (cache, e) = prefixExpWork(cache, env, ih, e, p);
         (cache, interval) = prefixExpWork(cache, env, ih, interval, p);
-        clkKind = DAE.BOOLEAN_CLOCK(e, interval);
+        clkKind = DAE.EVENT_CLOCK(e, interval);
       then
         (cache, clkKind);
 

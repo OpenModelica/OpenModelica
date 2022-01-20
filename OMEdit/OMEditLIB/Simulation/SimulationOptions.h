@@ -92,8 +92,11 @@ public:
     setCPUTime(false);
     setEnableAllWarnings(true);
     setEnableDataReconciliation(false);
+    setDataReconciliationAlgorithm("");
     setDataReconciliationMeasurementInputFile("");
+    setBoundaryConditionMeasurementInputFile("");
     setDataReconciliationCorrelationMatrixInputFile("");
+    setBoundaryConditionCorrelationMatrixInputFile("");
     setDataReconciliationEpsilon("");
     setDataReconciliationSaveSetting(false);
     setLogStreams(QStringList() << "LOG_STATS");
@@ -211,8 +214,12 @@ public:
   QString getDataReconciliationAlgorithm() {return mDataReconciliationAlgorithm;}
   void setDataReconciliationMeasurementInputFile(QString dataReconciliationMeasurementInputFile) {mDataReconciliationMeasurementInputFile = dataReconciliationMeasurementInputFile;}
   QString getDataReconciliationMeasurementInputFile() {return mDataReconciliationMeasurementInputFile;}
+  void setBoundaryConditionMeasurementInputFile(QString boundaryConditionMeasurementInputFile) {mBoundaryConditionMeasurementInputFile = boundaryConditionMeasurementInputFile;}
+  QString getBoundaryConditionMeasurementInputFile() {return mBoundaryConditionMeasurementInputFile;}
   void setDataReconciliationCorrelationMatrixInputFile(QString dataReconciliationCorrelationMatrixInputFile) {mDataReconciliationCorrelationMatrixInputFile = dataReconciliationCorrelationMatrixInputFile;}
   QString getDataReconciliationCorrelationMatrixInputFile() {return mDataReconciliationCorrelationMatrixInputFile;}
+  void setBoundaryConditionCorrelationMatrixInputFile(QString boundaryConditionCorrelationMatrixInputFile) {mBoundaryConditionCorrelationMatrixInputFile = boundaryConditionCorrelationMatrixInputFile;}
+  QString getBoundaryConditionCorrelationMatrixInputFile() {return mBoundaryConditionCorrelationMatrixInputFile;}
   void setDataReconciliationEpsilon(QString dataReconciliationEpsilon) {mDataReconciliationEpsilon = dataReconciliationEpsilon;}
   QString getDataReconciliationEpsilon() {return mDataReconciliationEpsilon;}
   void setDataReconciliationSaveSetting(bool dataReconciliationSaveSetting) {mDataReconciliationSaveSetting = dataReconciliationSaveSetting;}
@@ -308,6 +315,8 @@ private:
   QString mDataReconciliationAlgorithm;
   QString mDataReconciliationMeasurementInputFile;
   QString mDataReconciliationCorrelationMatrixInputFile;
+  QString mBoundaryConditionMeasurementInputFile;
+  QString mBoundaryConditionCorrelationMatrixInputFile;
   QString mDataReconciliationEpsilon;
   bool mDataReconciliationSaveSetting;
   QStringList mLogStreams;

@@ -52,17 +52,19 @@ val(k,0.0); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 1
+//  * Equation systems (not torn): 1
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Equation system details:
-//  * Constant Jacobian: 0
-//  * Linear Jacobian (size,density): 0
-//  * Non-linear Jacobian: 1 {1}
-//  * Without analytic Jacobian: 0
+// Notification: Equation system details (not torn):
+//  * Constant Jacobian (size): 0 systems
+//  * Linear Jacobian (size,density): 0 systems
+//  * Non-linear Jacobian (size): 1 system
+//    {1}
+//  * Without analytic Jacobian (size): 0 systems
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(1,100.0%) 2}
-//  * Non-linear torn systems: 0
+//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//    {(1,2,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 2 ('-d=stateselection' for list of states)
@@ -77,17 +79,20 @@ val(k,0.0); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 2
+//  * Equation systems (not torn): 2
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Equation system details:
-//  * Constant Jacobian: 0
-//  * Linear Jacobian (size,density): 1 {(2,100.0%)}
-//  * Non-linear Jacobian: 1 {2}
-//  * Without analytic Jacobian: 0
+// Notification: Equation system details (not torn):
+//  * Constant Jacobian (size): 0 systems
+//  * Linear Jacobian (size,density): 1 system
+//    {(2,100.0%)}
+//  * Non-linear Jacobian (size): 1 system
+//    {2}
+//  * Without analytic Jacobian (size): 0 systems
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(1,100.0%) 2}
-//  * Non-linear torn systems: 0
+//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//    {(1,2,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // "
 // 1.0
 // ""

@@ -240,9 +240,9 @@ public
     end for;
 
     // free auxiliary arrays
-    GC.free(number);
-    GC.free(lowlink);
-    GC.free(onStack);
+    GCExt.free(number);
+    GCExt.free(lowlink);
+    GCExt.free(onStack);
 
     // reverse for correct ordering
     comps := listReverse(comps);

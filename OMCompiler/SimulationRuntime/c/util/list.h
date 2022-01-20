@@ -73,6 +73,7 @@ extern "C" {
   LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext);
   void updatelistFirst(LIST* list, LIST_NODE *node);
   void updatelistLength(LIST* list, unsigned int newLength);
+  void printList(LIST* list, int stream, void (*printDataFunc)(void*,int,void*));
 
 #ifdef __cplusplus
 }

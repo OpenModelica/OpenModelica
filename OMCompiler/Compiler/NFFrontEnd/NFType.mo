@@ -219,6 +219,10 @@ public
     input Integer N;
     input output Type ty;
   algorithm
+    if N == 0 then
+      return;
+    end if;
+
     ty := match ty
       local
         list<Dimension> dims;
@@ -598,6 +602,17 @@ public
     end match;
   end isPolymorphic;
 
+  function isPolymorphicNamed
+    input Type ty;
+    input String name;
+    output Boolean res;
+  algorithm
+    res := match ty
+      case POLYMORPHIC() then name == ty.name;
+      else false;
+    end match;
+  end isPolymorphicNamed;
+
   function firstTupleType
     input Type ty;
     output Type outTy;
@@ -681,6 +696,7 @@ public
       case ARRAY() then ty.dimensions;
       case FUNCTION() then arrayDims(Function.returnType(ty.fn));
       case METABOXED() then arrayDims(ty.ty);
+      case CONDITIONAL_ARRAY() then List.fill(Dimension.UNKNOWN(), dimensionCount(ty.trueType));
       else {};
     end match;
   end arrayDims;

@@ -140,7 +140,7 @@ case SIMCODE(__) then
     modelIdentifier="<%Util.escapeModelicaStringToXmlString(modelIdentifier)%>"
     needsExecutionTool="false"
     canHandleVariableCommunicationStepSize="true"
-    canInterpolateInputs="false"
+    canInterpolateInputs="true"
     maxOutputDerivativeOrder="1"
     canRunAsynchronuously = "false"
     canBeInstantiatedOnlyOncePerProcess="false"

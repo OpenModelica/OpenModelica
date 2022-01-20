@@ -2200,30 +2200,18 @@ public
 function evalBuiltinFill
   input list<Expression> args;
   output Expression result;
-algorithm
-  result := evalBuiltinFill2(listHead(args), listRest(args));
-end evalBuiltinFill;
-
-function evalBuiltinFill2
-  input Expression fillValue;
-  input list<Expression> dims;
-  output Expression result = fillValue;
 protected
-  Integer dim_size;
-  list<Expression> arr;
-  Type arr_ty = Expression.typeOf(result);
+  Expression fill_exp;
+  list<Expression> dims;
 algorithm
-  for d in listReverse(dims) loop
-    () := match d
-      case Expression.INTEGER(value = dim_size) then ();
-      else algorithm printWrongArgsError(getInstanceName(), {d}, sourceInfo()); then fail();
-    end match;
-
-    arr := list(result for e in 1:dim_size);
-    arr_ty := Type.liftArrayLeft(arr_ty, Dimension.fromInteger(dim_size));
-    result := Expression.makeArray(arr_ty, arr, Expression.isLiteral(fillValue));
-  end for;
-end evalBuiltinFill2;
+  try
+    fill_exp :: dims := args;
+    result := Expression.fillArgs(fill_exp, dims);
+  else
+    printWrongArgsError(getInstanceName(), args, sourceInfo());
+    fail();
+  end try;
+end evalBuiltinFill;
 
 protected
 function evalBuiltinFloor
@@ -2515,7 +2503,7 @@ function evalBuiltinOnes
   input list<Expression> args;
   output Expression result;
 algorithm
-  result := evalBuiltinFill2(Expression.INTEGER(1), args);
+  result := evalBuiltinFill(Expression.INTEGER(1) :: args);
 end evalBuiltinOnes;
 
 function evalBuiltinProduct
@@ -2875,7 +2863,7 @@ function evalBuiltinZeros
   input list<Expression> args;
   output Expression result;
 algorithm
-  result := evalBuiltinFill2(Expression.INTEGER(0), args);
+  result := evalBuiltinFill(Expression.INTEGER(0) :: args);
 end evalBuiltinZeros;
 
 function evalUriToFilename
@@ -2995,7 +2983,7 @@ algorithm
       Expression interval, resolution;
 
     case {interval as Expression.INTEGER(), resolution as Expression.INTEGER()}
-      then Expression.CLKCONST(Expression.ClockKind.INTEGER_CLOCK(interval, resolution));
+      then Expression.CLKCONST(Expression.ClockKind.RATIONAL_CLOCK(interval, resolution));
 
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
@@ -3025,7 +3013,7 @@ algorithm
       Expression condition, interval;
 
     case {condition as Expression.BOOLEAN(), interval as Expression.REAL()}
-      then Expression.CLKCONST(Expression.ClockKind.BOOLEAN_CLOCK(condition, interval));
+      then Expression.CLKCONST(Expression.ClockKind.EVENT_CLOCK(condition, interval));
 
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;

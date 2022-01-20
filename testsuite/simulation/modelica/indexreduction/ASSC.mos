@@ -27,7 +27,7 @@ simulate(ASSC); getErrorString();
 //  LinearJacobian sparsity pattern: Solved (initial: false)
 // ######################################################
 // (scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION
-// (3|3|false):    [2|1.0] [3|1.0]     || RHS: 10.0 - (x + c)
+// (3|3|false):    [2|2.0] [3|2.0]     || RHS: 10.0 - (x + c)
 // (5|5|true):    EMPTY ROW         || RHS: -10.0 + x + c - 2.0 * c
 //
 // [ASSC] The equation: a + b + c = 0.0

@@ -1,0 +1,79 @@
+// name:     noClock.mos
+// keywords: synchronous features, noClock, sample, hold, c
+// status: correct
+//
+// Difference between noClock() and sample(hold()).
+
+loadFile("Synchronous.mo"); getErrorString();
+
+simulate(Synchronous.SubClocks.noClock1, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
+
+print("Clock 1: y1");
+val(y1, 0.0);
+val(y1, 0.2);
+val(y1, 0.4);
+val(y1, 0.60000001);
+val(y1, 0.8);
+val(y1, 1.0);
+
+print("Clock 2: y2");
+val(y2, 0.0);
+val(y2, 0.4);
+val(y2, 0.8);
+
+print("Clock 2: z");
+val(z, 0.0);
+val(z, 0.4);
+val(z, 0.8);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Synchronous.SubClocks.noClock1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Synchronous.SubClocks.noClock1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
+//     messages = "LOG_SYNCHRONOUS   | info    | Initialized synchronous timers.
+// |                 | |       | | Number of base clocks: 1
+// |                 | |       | | Base clock 1
+// |                 | |       | | | interval: 2.000000e-01
+// |                 | |       | | | Number of sub-clocks: 2
+// |                 | |       | | | Sub-clock 1 of base clock 1
+// |                 | |       | | | | shift: 0/1
+// |                 | |       | | | | factor: 1/1
+// |                 | |       | | | | solverMethod: none
+// |                 | |       | | | | holdEvents: true
+// |                 | |       | | | Sub-clock 2 of base clock 1
+// |                 | |       | | | | shift: 0/1
+// |                 | |       | | | | factor: 2/1
+// |                 | |       | | | | solverMethod: none
+// |                 | |       | | | | holdEvents: false
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.200000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.400000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.400000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.600000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.800000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.800000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.000000
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Clock 1: y1
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 5.0
+// 6.0
+// Clock 2: y2
+// 1.0
+// 3.0
+// 5.0
+// Clock 2: z
+// 0.0
+// 2.0
+// 4.0
+// endResult

@@ -1,0 +1,22 @@
+// name: TestChoices.mos
+// status: correct
+
+setCommandLineOptions({"-d=-newInst"}); getErrorString();
+loadFile("TestChoices.mo"); getErrorString();
+getElementAnnotations(TestChoices); getErrorString();
+
+setCommandLineOptions({"-d=nfAPI,newInst"}); getErrorString();
+getElementAnnotations(TestChoices); getErrorString();
+
+// Result:
+// {true}
+// ""
+// true
+// ""
+// {{choices(false,false,{"redeclare MyModel1 m \"MyModel1\"", "redeclare MyModel2 m \"MyModel2\"", "redeclare MyModel3 m \"MyModel3\""})},{choices(false,false,{"redeclare model MyModel = MyModel1 \"MyModel1\"", "redeclare model MyModel = MyModel2 \"MyModel2\"", "redeclare model MyModel = MyModel3 \"MyModel3\""})},{choices(false,false,{"\"blah1\"", "\"blah2\"", "\"blah3\""})},{choices(false,false,{"1.0", "2.0", "3.0"})},{choices(false,false,{"1", "2", "3"})},{choices(false,false,{"MyEnum.S1", "MyEnum.S2", "MyEnum.S3"})},{}}
+// ""
+// {true}
+// ""
+// {{choices(false,false,{"redeclare MyModel1 m \"MyModel1\"", "redeclare MyModel2 m \"MyModel2\"", "redeclare MyModel3 m \"MyModel3\""})},{choices(false,false,{"redeclare model MyModel = MyModel1 \"MyModel1\"", "redeclare model MyModel = MyModel2 \"MyModel2\"", "redeclare model MyModel = MyModel3 \"MyModel3\""})},{choices(false,false,{"\"blah1\"", "\"blah2\"", "\"blah3\""})},{choices(false,false,{"1.0", "2.0", "3.0"})},{choices(false,false,{"1", "2", "3"})},{choices(false,false,{"MyEnum.S1", "MyEnum.S2", "MyEnum.S3"})},{}}
+// ""
+// endResult

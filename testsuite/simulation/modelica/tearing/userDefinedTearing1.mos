@@ -38,12 +38,13 @@ simulate(Tearing11); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(2,100.0%) 8}
-//  * Non-linear torn systems: 0
+//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//    {(2,8,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
 //   i5:VARIABLE(start = 0.0 )  type: Real
 // Notification: Model statistics after passing the back-end for simulation:
@@ -60,11 +61,12 @@ simulate(Tearing11); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(1,100.0%) 9}
-//  * Non-linear torn systems: 0
+//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//    {(1,9,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // "
 // endResult
