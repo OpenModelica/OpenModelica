@@ -261,7 +261,7 @@ public constant ErrorTypes.Message RECURSIVE_DEFINITION = ErrorTypes.MESSAGE(92,
 public constant ErrorTypes.Message NOT_ARRAY_TYPE_IN_FOR_STATEMENT = ErrorTypes.MESSAGE(93, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Expression %s in for-statement must be an array type."));
 public constant ErrorTypes.Message NON_CLASS_IN_COMP_FUNC_NAME = ErrorTypes.MESSAGE(94, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Found non-class %s while looking for function via component. The only valid form is c.C1..CN.f where c is a scalar component and C1..CN are classes."));
+  Gettext.gettext("Found non-class %s while looking for function via component. The only valid form is c1..cN.C1..CN.f where c1..cN are scalar components and C1..CN are classes."));
 public constant ErrorTypes.Message DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN = ErrorTypes.MESSAGE(95, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
   Gettext.gettext("The same variables must be solved in elsewhen clause as in the when clause."));
 public constant ErrorTypes.Message CLASS_IN_COMPOSITE_COMP_NAME = ErrorTypes.MESSAGE(96, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -862,6 +862,8 @@ public constant ErrorTypes.Message CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND = Error
 public constant Gettext.TranslatableContent FUNCTION_CALL_EXPRESSION = Gettext.gettext("a function call expression");
 public constant ErrorTypes.Message FUNCTION_ARGUMENT_MUST_BE = ErrorTypes.MESSAGE(394, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The argument to ‘%s‘ must be %s."));
+public constant ErrorTypes.Message UNEXPECTED_COMPONENT_IN_COMPOSITE_NAME = ErrorTypes.MESSAGE(395, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Found component ‘%s‘ in composite name ‘%s‘, expected class."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
