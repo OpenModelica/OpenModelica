@@ -25,7 +25,7 @@ end M;
 
 // Result:
 // Error processing file: lookup4.mo
-// [flattening/modelica/scodeinst/lookup4.mo:23:3-23:21:writable] Error: Found class C during lookup of composite component name 'a.b.C.d.x', expected component.
+// [flattening/modelica/scodeinst/lookup4.mo:23:3-23:21:writable] Error: Found component ‘d‘ in composite name ‘a.b.C.d.x‘, expected class.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

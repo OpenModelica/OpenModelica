@@ -596,6 +596,7 @@ FuncUnknownDim3.mo \
 FuncVariability.mo \
 FuncViaComp.mo \
 FuncViaComp2.mo \
+FuncViaComp3.mo \
 FuncVectorization1.mo \
 FuncVectorization2.mo \
 FuncVectorization3.mo \
