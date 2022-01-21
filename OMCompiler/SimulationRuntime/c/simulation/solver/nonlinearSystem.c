@@ -533,14 +533,14 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   if(someSmallDensity) {
     if(someBigSize) {
       infoStreamPrint(LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\n"
-                                     "specified using the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.");
+                                     "specified using the runtime flags '<-nlssMaxDensity=value>' and '<-nlssMinSize=value>'.");
     } else {
       infoStreamPrint(LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\n"
-                                     "using the runtime flag '<-nlsMaxDensity=value>'.");
+                                     "using the runtime flag '<-nlssMaxDensity=value>'.");
     }
   } else if(someBigSize) {
     infoStreamPrint(LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\n"
-                                   "using the runtime flag '<-nlsMinSize=value>'.");
+                                   "using the runtime flag '<-nlssMinSize=value>'.");
   }
 
   messageClose(LOG_NLS);
