@@ -133,13 +133,17 @@ target_sources(SimulationRuntimeFMI PRIVATE ${SOURCE_FMU_COMMON_FILES_LIST}
                                             ${SOURCE_FMU_MIXED_FILES_LIST}
                                             ${3RD_CMINPACK_FMU_FILES})
 
-target_compile_definitions(SimulationRuntimeFMI PRIVATE "-DOMC_MINIMAL_RUNTIME=1 -DOMC_FMI_RUNTIME=1")
+target_compile_definitions(SimulationRuntimeFMI PRIVATE -DOMC_MINIMAL_RUNTIME=1 -DOMC_FMI_RUNTIME=1 -DCMINPACK_NO_DLL)
 
 install(TARGETS SimulationRuntimeFMI)
 
 
 # ######################################################################################################################
-# Library: SimulationRuntimeFMI
+# Library: OpenModelicaFMIRuntimeC
+
+file(GLOB OMC_SIMRT_FMI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.c)
+file(GLOB OMC_SIMRT_FMI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.h)
+
 add_library(OpenModelicaFMIRuntimeC STATIC)
 add_library(omc::simrt::fmiruntime ALIAS OpenModelicaFMIRuntimeC)
 
