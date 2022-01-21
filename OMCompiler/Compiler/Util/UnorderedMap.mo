@@ -83,6 +83,36 @@ public
     );
   end new;
 
+  function fromLists<V>
+    "Creates a new map from a list of keys and a corresponding list of values.
+     Fails if the two lists do not have the same size."
+    input list<K> keys;
+    input list<V> values;
+    input Hash hash;
+    input KeyEq keyEq;
+    output UnorderedMap<K, V> map;
+  protected
+    Integer key_count, bucket_count;
+    V v;
+    list<V> rest_v = values;
+  algorithm
+    key_count := listLength(keys);
+    bucket_count := Util.nextPrime(key_count);
+
+    map := UNORDERED_MAP(
+      Vector.newFill(bucket_count, {}),
+      Vector.new<K>(key_count),
+      Vector.new<V>(key_count),
+      hash,
+      keyEq
+    );
+
+    for k in keys loop
+      v :: rest_v := rest_v;
+      add(k, v, map);
+    end for;
+  end fromLists;
+
   function copy
     "Returns a copy of the map."
     input UnorderedMap<K, V> map;

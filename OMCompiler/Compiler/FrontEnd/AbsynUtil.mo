@@ -1621,6 +1621,21 @@ algorithm
   end match;
 end addSubscriptsLast;
 
+public function crefReplaceFirst
+  "Replaces the first part of a cref with another cref."
+  input Absyn.ComponentRef cref;
+  input Absyn.ComponentRef replacement;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := match cref
+    case Absyn.ComponentRef.CREF_IDENT() then replacement;
+    case Absyn.ComponentRef.CREF_QUAL()
+      then joinCrefs(replacement, crefStripFirst(cref));
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      then Absyn.ComponentRef.CREF_FULLYQUALIFIED(crefReplaceFirst(cref.componentRef, replacement));
+  end match;
+end crefReplaceFirst;
+
 public function crefReplaceFirstIdent "
   Replaces the first part of a cref with a replacement path:
   (a[4].b.c[3], d.e) => d.e[4].b.c[3]
@@ -2273,6 +2288,18 @@ algorithm
   end match;
 end crefIsQual;
 
+public function crefFirstSubs
+  "Returns the subscripts on the first part of an Absyn.ComponentRef."
+  input Absyn.ComponentRef cref;
+  output list<Absyn.Subscript> subscripts;
+algorithm
+  subscripts := match cref
+    case Absyn.ComponentRef.CREF_IDENT() then cref.subscripts;
+    case Absyn.ComponentRef.CREF_QUAL() then cref.subscripts;
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED() then crefFirstSubs(cref.componentRef);
+  end match;
+end crefFirstSubs;
+
 public function crefLastSubs "Return the last subscripts of an Absyn.ComponentRef"
   input Absyn.ComponentRef cref;
   output list<Absyn.Subscript> subscripts;
@@ -2283,6 +2310,32 @@ algorithm
     case Absyn.CREF_FULLYQUALIFIED() then crefLastSubs(cref.componentRef);
   end match;
 end crefLastSubs;
+
+public function crefSetFirstSubs
+  "Sets the subscripts of the first part of an Absyn.ComponentRef."
+  input output Absyn.ComponentRef cref;
+  input list<Absyn.Subscript> subscripts;
+algorithm
+  () := match cref
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        cref.subscripts := subscripts;
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        cref.subscripts := subscripts;
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      algorithm
+        cref.componentRef := crefSetFirstSubs(cref.componentRef, subscripts);
+      then
+        ();
+  end match;
+end crefSetFirstSubs;
 
 public function crefSetLastSubs
   input output Absyn.ComponentRef cref;
@@ -4536,6 +4589,13 @@ algorithm
   outSubscript := Absyn.SUBSCRIPT(inExp);
 end makeSubscript;
 
+public function makeIntegerSubscript
+  input Integer n;
+  output Absyn.Subscript sub;
+algorithm
+  sub := Absyn.SUBSCRIPT(Absyn.INTEGER(n));
+end makeIntegerSubscript;
+
 public function crefExplode
   "Splits a cref into parts."
   input Absyn.ComponentRef inCref;
@@ -5819,6 +5879,57 @@ algorithm
     else then inChoices;
   end match;
 end createChoiceArray;
+
+function mapCrefExps
+  "Applies a function to the expressions in an Absyn.ComponentRef, i.e. in its subscripts."
+  input output Absyn.ComponentRef cref;
+  input Func func;
+
+  partial function Func
+    input output Absyn.Exp exp;
+  end Func;
+algorithm
+  () := match cref
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        cref.subscripts := list(mapSubscriptExp(s, func) for s in cref.subscripts);
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        cref.subscripts := list(mapSubscriptExp(s, func) for s in cref.subscripts);
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      algorithm
+        cref.componentRef := mapCrefExps(cref.componentRef, func);
+      then
+        ();
+
+    else ();
+  end match;
+end mapCrefExps;
+
+function mapSubscriptExp
+  input output Absyn.Subscript sub;
+  input Func func;
+
+  partial function Func
+    input output Absyn.Exp exp;
+  end Func;
+algorithm
+  () := match sub
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        sub.subscript := func(sub.subscript);
+      then
+        ();
+
+    else ();
+  end match;
+end mapSubscriptExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
