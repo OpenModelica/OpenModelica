@@ -100,12 +100,19 @@ public
             then fail();
           end match;
 
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
+          end if;
+
           for syst in listReverse(oldSystems) loop
             (jacobian, funcTree) := match syst
               case System.SYSTEM() then func(name, syst.unknowns, syst.daeUnknowns, syst.equations, knowns, syst.strongComponents, funcTree);
             end match;
             syst.jacobian := jacobian;
             newSystems := syst::newSystems;
+            if Flags.isSet(Flags.JAC_DUMP) then
+              print(System.System.toString(syst, 2));
+            end if;
           end for;
 
           for syst in listReverse(oldEvents) loop
@@ -114,6 +121,9 @@ public
             end match;
             syst.jacobian := jacobian;
             newEvents := syst::newEvents;
+            if Flags.isSet(Flags.JAC_DUMP) then
+              print(System.System.toString(syst, 2));
+            end if;
           end for;
 
           _ := match systemType
@@ -286,14 +296,15 @@ public
   function toString
     input BackendDAE jacobian;
     input output String str = "";
-    input Boolean compact = false;
+    input Boolean compact = true;
   algorithm
     if not compact then
       str := BackendDAE.toString(jacobian, str);
     else
       str := match jacobian
-        case BackendDAE.JACOBIAN() then StringUtil.headline_3("Jacobian " + jacobian.name + ": " + str)
-                                        + BEquation.EqData.toString(jacobian.eqData, 1);
+        case BackendDAE.JACOBIAN() then StringUtil.headline_2("Jacobian " + jacobian.name + ": " + str)
+                                        + "\n" + BEquation.EqData.toString(jacobian.eqData, 1)
+                                        + "\n" + SparsityPattern.toString(jacobian.sparsityPattern, jacobian.sparsityColoring);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
         then fail();
@@ -380,7 +391,7 @@ public
 
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
-            StrongComponent.getDependentCrefs(comps[i], map);
+            StrongComponent.getDependentCrefs(comps[i], map, not residualVars.scalarized);
           end for;
 
           // create row-wise sparsity pattern

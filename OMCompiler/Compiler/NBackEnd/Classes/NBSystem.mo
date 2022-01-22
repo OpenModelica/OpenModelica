@@ -44,6 +44,7 @@ protected
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
+  import BJacobian = NBJacobian;
   import NBEquation.EquationPointers;
   import Jacobian = NBackendDAE.BackendDAE;
   import BVariable = NBVariable;
@@ -70,6 +71,7 @@ public
 
     function toString
       input System system;
+      input Integer level = 0;
       output String str;
     algorithm
       str := StringUtil.headline_2(partitionKindString(system.partitionKind) + " " + systemTypeString(system.systemType) + " System") + "\n";
@@ -90,17 +92,23 @@ public
                           EquationPointers.toString(system.equations, "Equations") + "\n";
         then str;
       end match;
-/*
-      if isSome(system.adjacencyMatrix) then
-        str := str + Adjacency.Matrix.toString(Util.getOption(system.adjacencyMatrix)) + "\n";
+
+      if level == 1 or level == 3 then
+        if isSome(system.adjacencyMatrix) then
+          str := str + Adjacency.Matrix.toString(Util.getOption(system.adjacencyMatrix)) + "\n";
+        end if;
+
+        if isSome(system.matching) then
+          str := str + Matching.toString(Util.getOption(system.matching)) + "\n";
+        end if;
       end if;
 
-      if isSome(system.matching) then
-        str := str + Matching.toString(Util.getOption(system.matching)) + "\n";
-      end if;
-*/
-      if isSome(system.jacobian) then
-        str := str + Jacobian.toString(Util.getOption(system.jacobian)) + "\n";
+      if level == 2 then
+        if isSome(system.jacobian) then
+          str := str + BJacobian.toString(Util.getOption(system.jacobian)) + "\n";
+        else
+          str := str + StringUtil.headline_2("NO JACOBIAN") + "\n";
+        end if;
       end if;
     end toString;
 

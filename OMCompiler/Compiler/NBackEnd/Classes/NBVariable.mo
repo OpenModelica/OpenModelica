@@ -864,12 +864,11 @@ public
     InstNode node;
     Variable var;
     list<Dimension> dims = Type.arrayDims(ty);
-    list<Subscript> subs = list(Subscript.fromDimension(dim) for dim in dims);
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
     // Type for residuals is always REAL() !
-    cref := ComponentRef.CREF(node, subs, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
@@ -1457,7 +1456,7 @@ public
         if Type.isArray(var.ty) then
           anyArr := true;
           scalar_vars := Scalarize.scalarizeVariable(var);
-          for scalar_var in scalar_vars loop
+          for scalar_var in listReverse(scalar_vars) loop
             // create new pointers for the scalar variables
             new_vars := Pointer.create(scalar_var) :: new_vars;
           end for;

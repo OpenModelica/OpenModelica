@@ -332,6 +332,7 @@ public
      unordered map. Saves both directions."
     input StrongComponent comp                                "strong component to be analyzed";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
+    input Boolean pseudo                                      "true if arrays are unscalarized";
     input Boolean jacobian = true                             "true if the analysis is for jacobian sparsity pattern";
   algorithm
     _ := match comp
@@ -343,14 +344,14 @@ public
         Pointer<Equation> eqn;
 
       case SINGLE_EQUATION() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
         attr := Equation.getAttributes(Pointer.access(comp.eqn));
         dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else comp.var;
         updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
       then ();
 
       case SLICED_EQUATION() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
         attr := Equation.getAttributes(Pointer.access(comp.eqn));
         // assume full dependency
         dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else BVariable.getVarPointer(comp.var_cref);
@@ -358,7 +359,7 @@ public
       then ();
 
       case SINGLE_ARRAY() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
         if jacobian then
           attr := Equation.getAttributes(Pointer.access(comp.eqn));
           dependentVar := EquationAttributes.getResidualVar(attr);
@@ -379,14 +380,14 @@ public
         // traverse residual equations and collect dependencies
         for slice in strict.residual_eqns loop
           // ToDo: does this work properly for arrays?
-          tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function getDependentCref(map = map));
+          tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function getDependentCref(map = map, pseudo = pseudo));
           dependencies := listAppend(tmp, dependencies);
         end for;
 
         // traverse inner equations and collect loop vars and dependencies
         for i in 1:arrayLength(strict.innerEquations) loop
           // collect inner equation dependencies
-          tmp := Equation.collectCrefs(Pointer.access(strict.innerEquations[i].eqn), function getDependentCref(map = map));
+          tmp := Equation.collectCrefs(Pointer.access(strict.innerEquations[i].eqn), function getDependentCref(map = map, pseudo = pseudo));
           dependencies := listAppend(tmp, dependencies);
 
           // collect inner loop variables
@@ -545,14 +546,17 @@ protected
     input output ComponentRef cref                              "the cref to check";
     input Pointer<list<ComponentRef>> acc                       "accumulator for relevant crefs";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map    "unordered map to check for relevance";
+    input Boolean pseudo;
   protected
+    ComponentRef checkCref;
     list<ComponentRef> dependencies;
   algorithm
-    if UnorderedMap.contains(cref, map) then
-      dependencies := UnorderedMap.getSafe(cref, map);
+    checkCref := if pseudo then ComponentRef.stripSubscriptsAll(cref) else cref;
+    if UnorderedMap.contains(checkCref, map) then
+      dependencies := UnorderedMap.getSafe(checkCref, map);
       if listEmpty(dependencies) then
         // if no previous dependencies are found, it is an independent variable
-        Pointer.update(acc, cref :: Pointer.access(acc));
+        Pointer.update(acc, checkCref :: Pointer.access(acc));
       else
         // if previous dependencies are found, it is a temporary inner variable
         // recursively add all their dependencies

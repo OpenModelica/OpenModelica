@@ -1034,16 +1034,13 @@ public
       input Pointer<list<ComponentRef>> acc         "accumulator for relevant crefs";
       input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
       input Boolean pseudo;
+    protected
+      ComponentRef checkCref;
     algorithm
       // if causalized in pseudo array mode, the variables will only have subscript-free variables
-      if pseudo then
-        if UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), map) then
-          Pointer.update(acc, cref :: Pointer.access(acc));
-        end if;
-      else
-        if UnorderedMap.contains(cref, map) then
-          Pointer.update(acc, cref :: Pointer.access(acc));
-        end if;
+      checkCref := if pseudo then ComponentRef.stripSubscriptsAll(cref) else cref;
+      if UnorderedMap.contains(checkCref, map) then
+        Pointer.update(acc, cref :: Pointer.access(acc));
       end if;
     end getDependentCref;
 
