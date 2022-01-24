@@ -25,7 +25,7 @@ simulate(M, simflags="-nlssMinSize=0"); getErrorString();
 // stdout            | info    | Using sparse solver kinsol for nonlinear system 1 (10),
 // |                 | |       | because size of 1 exceeds threshold of 0.
 // stdout            | info    | The minimal system size for using sparse solvers can be specified
-// |                 | |       | using the runtime flag '<-nlsMinSize=value>'.
+// |                 | |       | using the runtime flag '<-nlssMinSize=value>'.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

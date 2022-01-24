@@ -56,7 +56,7 @@ simulate(Test3, stopTime = 2, simflags="-noEquidistantTimeGrid");getErrorString(
 //     messages = "stdout            | info    | Using sparse solver kinsol for nonlinear system 0 (500),
 // |                 | |       | because density of 0.01 remains under threshold of 0.10.
 // stdout            | info    | The maximum density for using sparse solvers can be specified
-// |                 | |       | using the runtime flag '<-nlsMaxDensity=value>'.
+// |                 | |       | using the runtime flag '<-nlssMaxDensity=value>'.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

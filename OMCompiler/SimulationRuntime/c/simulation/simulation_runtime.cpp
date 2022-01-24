@@ -1011,12 +1011,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     linearSparseSolverMinSize = atoi(omc_flagValue[FLAG_LSS_MIN_SIZE]);
     infoStreamPrint(LOG_STDOUT, 0, "Minimum system size for using linear sparse solver changed to %d", linearSparseSolverMinSize);
   }
-  if(omc_flag[FLAG_NLS_MAX_DENSITY]) {
-    nonlinearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_NLS_MAX_DENSITY]);
+  if(omc_flag[FLAG_NLSS_MAX_DENSITY]) {
+    nonlinearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_NLSS_MAX_DENSITY]);
     infoStreamPrint(LOG_STDOUT, 0, "Maximum density for using non-linear sparse solver changed to %f", nonlinearSparseSolverMaxDensity);
   }
-  if(omc_flag[FLAG_NLS_MIN_SIZE]) {
-    nonlinearSparseSolverMinSize = atoi(omc_flagValue[FLAG_NLS_MIN_SIZE]);
+  if(omc_flag[FLAG_NLSS_MIN_SIZE]) {
+    nonlinearSparseSolverMinSize = atoi(omc_flagValue[FLAG_NLSS_MIN_SIZE]);
     infoStreamPrint(LOG_STDOUT, 0, "Minimum system size for using non-linear sparse solver changed to %d", nonlinearSparseSolverMinSize);
   }
   if(omc_flag[FLAG_NEWTON_XTOL]) {
