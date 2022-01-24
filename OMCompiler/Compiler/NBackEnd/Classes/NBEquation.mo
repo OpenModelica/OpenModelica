@@ -73,6 +73,8 @@ public
 
   type EquationPointer = Pointer<Equation> "mainly used for mapping purposes";
   type SlicingStatus = enumeration(UNCHANGED, TRIVIAL, NONTRIVIAL);
+  type Frame = tuple<ComponentRef, Expression>;
+  type FrameLocation = tuple<array<Integer>, Frame>;
 
   uniontype Iterator
     record SINGLE
@@ -86,7 +88,7 @@ public
     end NESTED;
 
     function fromFrames
-      input list<tuple<ComponentRef, Expression>> frames;
+      input list<Frame> frames;
       output Iterator iter;
     protected
       list<ComponentRef> names;
@@ -385,7 +387,7 @@ public
       input ComponentRef lhs;
       input ComponentRef rhs;
       input Pointer<Integer> idx;
-      input list<tuple<ComponentRef, Expression>> frames = {};
+      input list<Frame> frames = {};
       output Pointer<Equation> eq;
     protected
       Type ty = ComponentRef.getSubscriptedType(lhs, true);
@@ -1073,7 +1075,7 @@ public
 
     function getForFrames
       input Equation eqn;
-      output list<tuple<ComponentRef, Expression>> frames;
+      output list<Frame> frames;
     algorithm
       frames := match eqn
         local
@@ -1236,12 +1238,13 @@ public
       Equation eqn;
       Integer first_idx                       "first strong component index";
       Integer last_idx                        "last strong component index";
-      list<tuple<ComponentRef, Expression>> frames;
+      list<Frame> frames;
       list<Dimension> dims;
       list<Integer> sizes;
-      list<Integer> first_frame_location, last_frame_location, frame_comp;
-      list<list<Integer>> frame_locations;
-      list<array<Integer>> frame_locations_T;
+      list<Integer> first_location, last_location, frame_comp;
+      list<list<Integer>> locations;
+      list<array<Integer>> locations_T;
+      list<FrameLocation> frame_locations;
       list<tuple<Integer, Integer, Integer>> ranges;
     algorithm
       eqn := Pointer.access(eqn_ptr);
@@ -1265,21 +1268,23 @@ public
             // map first and last index to frame locations
             first_idx             := List.first(indices);
             last_idx              := List.last(indices);
-            first_frame_location  := BackendUtil.indexToFrame(first_idx, sizes);
-            last_frame_location   := BackendUtil.indexToFrame(last_idx, sizes);
+            first_location        := BackendUtil.indexToLocation(first_idx, sizes);
+            last_location         := BackendUtil.indexToLocation(last_idx, sizes);
 
             // compare the location to see if any range has to be inverted
-            frame_comp            := BackendUtil.compareFrames(first_frame_location, last_frame_location);
+            frame_comp            := BackendUtil.compareLocations(first_location, last_location);
             frames                := getForFrames(eqn);
+            // do we maybe need to consider reordering here as well? is there even a trivial case?
             frames                := BackendUtil.applyFrameInversion(frames, frame_comp);
           else
             // nontrivial. try to rebuild the for loop frames and slice the equation
             status                := SlicingStatus.NONTRIVIAL;
-            frame_locations       := list(BackendUtil.indexToFrame(idx, sizes) for idx in indices);
-            frame_locations_T     := BackendUtil.transposeFrameLocations(frame_locations, listLength(sizes));
-            ranges                := BackendUtil.recollectRangesHeuristic(frame_locations_T);
-            frames                := getForFrames(eqn);
-            frames                := BackendUtil.applyNewFrameRanges(frames, ranges);
+            locations             := list(BackendUtil.indexToLocation(idx, sizes) for idx in indices);
+            locations_T           := BackendUtil.transposeLocations(locations, listLength(sizes));
+            frames                := listReverse(getForFrames(eqn));
+            frame_locations       := List.zip(locations_T, frames);
+            frame_locations       := BackendUtil.orderTransposedFrameLocations(frame_locations);
+            frames                := BackendUtil.recollectRangesHeuristic(frame_locations);
           end if;
 
           // solve the body equation for the cref if needed

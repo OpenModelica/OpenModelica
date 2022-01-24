@@ -501,7 +501,7 @@ protected
           // create the scalar variable and make sliced equation
           Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
           sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
-          vals := BackendUtil.indexToFrame(var_scal_idx-var_start_idx, sizes);
+          vals := BackendUtil.indexToLocation(var_scal_idx-var_start_idx, sizes);
           cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref);
           comp := SLICED_EQUATION(cref, {}, var, eqn);
         else

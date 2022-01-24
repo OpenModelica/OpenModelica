@@ -1080,7 +1080,7 @@ public
         (var_start, _) := mapping.var_AtS[var_arr_idx];
         sizes := ComponentRef.sizes(stripped);
         subs := ComponentRef.subscriptsToInteger(cref);
-        var_scal_idx := BackendUtil.frameToIndex(List.zip(sizes, subs), var_start);
+        var_scal_idx := BackendUtil.locationToIndex(List.zip(sizes, subs), var_start);
         if negate then
           indices := -var_scal_idx :: indices;
         else
@@ -1270,7 +1270,7 @@ public
             if listEmpty(rest) then
               // bottom line, resolve current configuration and create index for it
               ranges  := resolveDimensionsSubscripts(sizes, subs, replacements);
-              indices := BackendUtil.frameToIndex(ranges, first) :: indices;
+              indices := BackendUtil.locationToIndex(ranges, first) :: indices;
             else
               // not last frame, go deeper
               indices := combineFrames(first, sizes, subs, rest, replacements, indices);
