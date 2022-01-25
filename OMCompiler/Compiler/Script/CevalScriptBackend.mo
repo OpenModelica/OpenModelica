@@ -3708,6 +3708,7 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
+        makefileStr := System.stringReplace(makefileStr, "@NEED_CMINPACK@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_SUNDIALS@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
         makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", CPPFLAGS + " -DOMC_SIM_SETTINGS_CMDLINE");
@@ -3730,6 +3731,7 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
+        makefileStr := System.stringReplace(makefileStr, "@NEED_CMINPACK@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_SUNDIALS@", SUNDIALS);
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
         makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", CPPFLAGS + " -DCMINPACK_NO_DLL=1");
