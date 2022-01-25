@@ -69,6 +69,7 @@ simulationinlineFunction.log \
 simulationjacobian.log \
 simulationjapaneselanguage.log \
 simualtionlinear_system.log \
+simualtionnewtonDiagnostics.log \
 simulationnonlinear_system.log \
 simulationothers.log \
 simulationpackages.log \
@@ -361,6 +362,9 @@ simulationjapaneselanguage.log: omc-diff
 	@echo $@ done
 simualtionlinear_system.log: omc-diff
 	$(MAKE) -C simulation/modelica/linear_system -f Makefile test > $@
+	@echo $@ done
+simualtionnewtonDiagnostics.log: omc-diff
+	$(MAKE) -C simulation/modelica/newtonDiagnostics -f Makefile test > $@
 	@echo $@ done
 simulationnonlinear_system.log: omc-diff
 	$(MAKE) -C simulation/modelica/nonlinear_system -f Makefile test > $@
