@@ -162,7 +162,7 @@ class TransformationsWidget : public QWidget
 {
   Q_OBJECT
 public:
-  TransformationsWidget(QString infoJSONFullFileName, QWidget *pParent = 0);
+  TransformationsWidget(QString infoJSONFullFileName, bool profiling, QWidget *pParent = 0);
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
   QTreeWidget* getEquationsTreeWidget() {return mpEquationsTreeWidget;}
   InfoBar* getTSourceEditorInfoBar() {return mpTSourceEditorInfoBar;}
