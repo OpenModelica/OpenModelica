@@ -688,7 +688,7 @@ algorithm
       String fileprefix;
       String install_include_omc_dir, install_include_omc_c_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       list<String> sourceFiles, model_desc_src_files;
-      list<String> dgesv_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
+      list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"C")
@@ -777,6 +777,15 @@ algorithm
           dgesv_sources := {};
         end if;
 
+        // Add CMinpack sources to FMU
+        if varInfo.numNonLinearSystems > 0 then
+          copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          cminpack_sources := RuntimeSources.cminpack_sources;
+        else
+          cminpack_sources := {};
+        end if;
+
         // Check if the sundials files are needed. Shouldn't this actually check what the flags are
         // instead of just checking if flags are set only?
         if isSome(simCode.fmiSimulationFlags) then
@@ -827,7 +836,7 @@ algorithm
 
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
 
-        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/omc_simulation_settings.h")));
