@@ -163,6 +163,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               linearSolverKlu$(OBJ_EXT) \
               linearSolverLis$(OBJ_EXT) \
               linearSolverUmfpack$(OBJ_EXT) \
+              newton_diagnostics$(OBJ_EXT) \
               newtonIteration$(OBJ_EXT) \
               nonlinearSolverNewton$(OBJ_EXT) \
               radau$(OBJ_EXT) \
