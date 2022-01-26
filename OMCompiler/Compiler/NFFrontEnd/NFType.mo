@@ -1323,7 +1323,8 @@ public
 
     function fold_comp_size
       input InstNode comp;
-      input output Integer sz = sz + sizeOf(InstNode.getType(comp));
+      input Integer sz;
+      output Integer outSize = sz + sizeOf(InstNode.getType(comp));
     end fold_comp_size;
   algorithm
     sz := match ty
@@ -1334,6 +1335,7 @@ public
       case CLOCK() then 1;
       case ENUMERATION() then 1;
       case ARRAY() then sizeOf(ty.elementType) * product(Dimension.size(d) for d in ty.dimensions);
+      case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
       case COMPLEX()
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
       else 0;
