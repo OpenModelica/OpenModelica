@@ -277,6 +277,7 @@ author: waurich TUD 2016-10"
   output tuple<list<BackendDAE.Var>,BackendVarTransform.VariableReplacements> tplOut;
 protected
   BackendDAE.Equation eq;
+  DAE.ComponentRef cr1, cr2;
   BackendDAE.Var v1,v2,simVar,aliasVar;
   list<DAE.ComponentRef> crefs;
   list<BackendDAE.Var> extAliasVars;
@@ -286,7 +287,16 @@ algorithm
   ({eq},_) := BackendVarTransform.replaceEquations({eqIn},repl,NONE());
   try
     //get alias and sim var
-    crefs := BackendEquation.equationCrefs(eq);
+    crefs := match eqIn
+      // kabdelhak: if it is an array equality the left side has to be indexed with [1]
+      // (not pretty, array handling should be updated in general)
+      // fixes ticket #8469
+      case BackendDAE.ARRAY_EQUATION(left = DAE.CREF(componentRef=cr1, ty = DAE.Type.T_ARRAY()), right = DAE.ARRAY(array = {DAE.CREF(componentRef=cr2)}))
+      algorithm
+        cr1 := ComponentReference.crefApplySubs(cr1, {DAE.INDEX(DAE.ICONST(1))});
+      then {cr1, cr2};
+      else BackendEquation.equationCrefs(eq);
+    end match;
     ({v1,v2},_) := BackendVariable.getVarLst(crefs,extVars);
     (simVar,aliasVar) := chooseExternalAlias(v1,v2);
     extAliasVars := aliasVar::extAliasVars;
@@ -334,11 +344,23 @@ author: waurich TUD 2016-10"
 algorithm
   eqTplOut := matchcontinue(eqIn,extCrefs,eqTplIn)
     local
+      list<DAE.ComponentRef> extCrefs_stripped;
       list<BackendDAE.Equation> noAliasEqs, aliasEqs;
       DAE.ComponentRef cr1,cr2;
   case(BackendDAE.COMPLEX_EQUATION(left = DAE.CREF(componentRef=cr1), right = DAE.CREF(componentRef=cr2)),_,(noAliasEqs,aliasEqs))
     algorithm
       true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
+     then (noAliasEqs,eqIn::aliasEqs);
+
+  // kabdelhak: add array equality with one element
+  // fixes ticket #8469
+  // ToDo: what if it is a bigger array and rhs contains multiple single external objects?
+  case(BackendDAE.ARRAY_EQUATION(left = DAE.CREF(componentRef=cr1, ty = DAE.Type.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))),
+                                 right = DAE.ARRAY(array = {DAE.CREF(componentRef=cr2, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))})),_,(noAliasEqs,aliasEqs))
+    algorithm
+      // remove the subscripts because LHS will be indexed with [1]
+      extCrefs_stripped := list(ComponentReference.crefStripSubs(cr) for cr in extCrefs);
+      true := List.exist1(extCrefs_stripped,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs_stripped,ComponentReference.crefEqual,cr2);
      then (noAliasEqs,eqIn::aliasEqs);
 
   case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef= cr1, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())),
@@ -1306,7 +1328,10 @@ algorithm
         hideResult = NONE();
       then
         BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false);
-  end match;
+      else algorithm
+        Error.assertion(false, getInstanceName() + " could not parse element: " + DAEDump.dumpDebugElementStr(inElement), sourceInfo());
+      then fail();
+ end match;
 end lowerExtObjVar;
 
 protected function lowerExtObjVarkind
