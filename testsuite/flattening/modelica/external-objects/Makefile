@@ -2,7 +2,8 @@
 TEST = ../../../rtest -v
 
 # Tests to run.
-TESTFILES = testExternalObject.mo
+TESTFILES = testExternalObject.mo \
+ ExternalObjectSize1.mos
 
 # test that currently fail. Move up when fixed.
 FAILINGTESTFILES= \
