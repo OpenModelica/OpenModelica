@@ -854,6 +854,7 @@ package SimCode
       FmiOutputs fmiOutputs;
       FmiDerivatives fmiDerivatives;
       Option<JacobianMatrix> continuousPartialDerivatives;
+      Option<JacobianMatrix> initialPartialDerivatives;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
     end FMIMODELSTRUCTURE;

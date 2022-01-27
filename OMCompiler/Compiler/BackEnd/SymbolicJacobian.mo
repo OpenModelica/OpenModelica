@@ -1769,6 +1769,83 @@ else
 end try;
 end createFMIModelDerivatives;
 
+public function createFMIModelDerivativesForInitialization
+"This function genererate the stucture output and the
+ partial derivatives for FMI, which are basically the jacobian matrices.
+ author: wbraun"
+  input BackendDAE.BackendDAE initDAE;
+  input BackendDAE.BackendDAE simDAE;
+  input list<BackendDAE.Var> depVars;
+  input list<BackendDAE.Var> indepVars;
+  input BackendDAE.Variables orderedVars;
+  output BackendDAE.SymbolicJacobians outJacobianMatrixes = {};
+  output DAE.FunctionTree outFunctionTree;
+protected
+  BackendDAE.BackendDAE backendDAE,emptyBDAE;
+  BackendDAE.EqSystem eqSyst;
+  Option<BackendDAE.SymbolicJacobian> outJacobian;
+  list<BackendDAE.Var> varlst, knvarlst, states, inputvars, outputvars, paramvars;
+  BackendDAE.Variables v, globalKnownVars, statesarr, inputvarsarr, paramvarsarr, outputvarsarr, depVarsArr;
+  BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.SparseColoring sparseColoring;
+  DAE.FunctionTree funcs, functionTree;
+  BackendDAE.ExtraInfo ei;
+  FCore.Cache cache;
+  FCore.Graph graph;
+algorithm
+try
+  {eqSyst} := simDAE.eqs;
+  v := eqSyst.orderedVars;
+
+  // prepare all needed variables
+  varlst := BackendVariable.varList(orderedVars);
+  knvarlst := BackendVariable.varList(initDAE.shared.globalKnownVars);
+
+  states := if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+    BackendVariable.getAllClockedStatesFromVariables(v) else {};
+
+  states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
+  inputvars := List.select(knvarlst, BackendVariable.isVarOnTopLevelAndInput);
+
+  // Generate sparse pattern for matrices states
+  if Flags.isSet(Flags.DIS_SYMJAC_FMI20) then
+    // empty BackendDAE in case derivates should not calclulated
+    cache := initDAE.shared.cache;
+    graph := initDAE.shared.graph;
+    ei := initDAE.shared.info;
+    emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
+    (sparsePattern, sparseColoring) := generateSparsePattern(initDAE, indepVars, depVars);
+
+    if Flags.isSet(Flags.JAC_DUMP2) then
+      BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
+    end if;
+
+    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), sparsePattern, sparseColoring)::outJacobianMatrixes;
+    outFunctionTree := initDAE.shared.functionTree;
+  else
+    // prepare more needed variables
+    paramvars := List.select(varlst, BackendVariable.isParam);
+    statesarr := BackendVariable.listVar1(states);
+    inputvarsarr := BackendVariable.listVar1(inputvars);
+    paramvarsarr := BackendVariable.listVar1(paramvars);
+    depVarsArr := BackendVariable.listVar1(depVars);
+
+    (outJacobian, outFunctionTree, sparsePattern, sparseColoring) := generateGenericJacobian(initDAE, indepVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr, varlst, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+
+    if Flags.isSet(Flags.JAC_DUMP2) then
+      BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
+    end if;
+
+    outJacobianMatrixes := (outJacobian, sparsePattern, sparseColoring)::outJacobianMatrixes;
+    //outFunctionTree := DAE.AvlTreePathFunction.join(initDAE.shared.functionTree, outFunctionTree);
+  end if;
+else
+  Error.addInternalError("function createFMIModelDerivativesForInitialization failed", sourceInfo());
+  outJacobianMatrixes := {};
+  outFunctionTree := initDAE.shared.functionTree;
+end try;
+end createFMIModelDerivativesForInitialization;
+
 protected function createLinearModelMatrixes "This function creates the linear model matrices column-wise
   author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;

@@ -246,7 +246,7 @@ protected
   list<DAE.Constraint> constraints;
   list<DAE.Exp> lits;
   list<SimCode.ClockedPartition> clockedPartitions;
-  list<SimCode.JacobianMatrix> LinearMatrices, SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, SymbolicJacsNLS, SymbolicJacsFMI={},SymbolicJacsdatarecon={};
+  list<SimCode.JacobianMatrix> LinearMatrices, SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, SymbolicJacsNLS, SymbolicJacsFMI={}, SymbolicJacsFMIINIT={}, SymbolicJacsdatarecon={};
   list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
   list<SimCode.SimEqSystem> localKnownVars;
   list<SimCode.SimEqSystem> allEquations;
@@ -13511,24 +13511,26 @@ public function createFMIModelStructure
   output list<SimCode.JacobianMatrix> symJacs = {};
   output Integer uniqueEqIndex = inUniqueEqIndex;
 protected
-   BackendDAE.SparsePatternCrefs spTA, spTB;
+   BackendDAE.SparsePatternCrefs spTA, spTB, spTA1, spTB1;
    SimCode.SparsityPattern sparseInts;
    list<SimCode.FmiUnknown> allUnknowns, derivatives, outputs, discreteStates, allInitialUnknowns;
    list<SimCodeVar.SimVar> varsA, varsB, varsC, varsD, clockedStates, allOutputVars, allParamVars, tmpInitialUnknowns;
-   list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
+   list<DAE.ComponentRef> diffCrefsA, diffCrefsA1, diffedCrefsA, diffedCrefsA1, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
    DoubleEnded.MutableList<SimCodeVar.SimVar> delst;
    SimCode.VarInfo varInfo;
-   Option<BackendDAE.SymbolicJacobian> optcontPartDer;
-   BackendDAE.SparsePattern spPattern;
-   BackendDAE.SparseColoring spColors;
-   BackendDAE.SymbolicJacobians contPartDer;
-   SimCode.JacobianMatrix contSimJac;
-   Option<SimCode.JacobianMatrix> contPartSimDer;
+   Option<BackendDAE.SymbolicJacobian> optcontPartDer, optinitialPartDer;
+   BackendDAE.SparsePattern spPattern, spPattern1;
+   BackendDAE.SparseColoring spColors, spColors1;
+   BackendDAE.SymbolicJacobians contPartDer, initPartDer;
+   SimCode.JacobianMatrix contSimJac, initSimJac;
+   Option<SimCode.JacobianMatrix> contPartSimDer, initPartSimDer = NONE();
    list<SimCodeVar.SimVar> tempvars;
    SimCodeVar.SimVars vars;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
    list<Integer> intLst;
+   BackendDAE.SymbolicJacobians fmiDerInit = {};
+   list<SimCode.JacobianMatrix> symJacsInit={}, symJacFMIINIT={};
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
@@ -13605,10 +13607,31 @@ algorithm
 
     // get FMI initialUnknowns list with dependencies
     if not listEmpty(tmpInitialUnknowns) then
-      allInitialUnknowns := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
+      (allInitialUnknowns, fmiDerInit) := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
     else
       allInitialUnknowns := {};
     end if;
+
+    // get jacobian matrix FMIDERINT
+    SOME((optinitialPartDer, spPattern1 as (_, spTA1, (diffCrefsA1, diffedCrefsA1),_), spColors1)) := SymbolicJacobian.getJacobianMatrixbyName(fmiDerInit, "FMIDERINIT");
+
+    // partial derivatives for fmu's during enter_initialization_mode and exit_initialization_mode
+    if not checkForEmptyBDAE(optinitialPartDer) then
+      initPartDer := {(optinitialPartDer,spPattern1,spColors1)};
+      ({initSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(initPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDer"}, {});
+      // collect algebraic loops and symjacs for FMIDer
+      ({initSimJac}, _, symJacsInit) := addAlgebraicLoopsModelInfoSymJacs({initSimJac}, inModelInfo);
+      initPartSimDer := SOME(initSimJac);
+      // set partition index to number of clocks (max index) for now
+      // TODO: use actual clock indices to support multirate systems
+      symJacFMIINIT := {rewriteJacPartIdx(initSimJac, inModelInfo.nSubClocks)};
+    else
+      initPartSimDer := NONE();
+    end if;
+
+    // append the jacobian matrix of initDAE with simDAE
+    symJacFMI := listAppend(symJacFMIINIT, symJacFMI);
+    symJacs   := listAppend(symJacsInit, symJacs);
 
     outFmiModelStructure :=
       SOME(
@@ -13616,6 +13639,7 @@ algorithm
           SimCode.FMIOUTPUTS(outputs),
           SimCode.FMIDERIVATIVES(derivatives),
           contPartSimDer,
+          initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns)));
 else
@@ -13636,13 +13660,14 @@ else
                            for v in getScalarVars(clockedStates));
 
     contPartSimDer := NONE();
-
+    initPartSimDer := NONE();
     outFmiModelStructure :=
       SOME(
         SimCode.FMIMODELSTRUCTURE(
           SimCode.FMIOUTPUTS(outputs),
           SimCode.FMIDERIVATIVES(derivatives),
           contPartSimDer,
+          initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS({})));
   else
@@ -13724,6 +13749,7 @@ protected function getFmiInitialUnknowns
   input SimCode.HashTableCrefToSimVar crefSimVarHT;
   input list<SimCodeVar.SimVar> initialUnknownList;
   output list<SimCode.FmiUnknown> outFmiUnknownlist;
+  output BackendDAE.SymbolicJacobians fmiDerInit "partial derivative of initDAE";
 protected
   list<DAE.ComponentRef> initialUnknownCrefs, indepCrefs, depCrefs;
   BackendDAE.BackendDAE tmpBDAE;
@@ -13804,6 +13830,9 @@ algorithm
     BackendDump.dumpVarList(depVars, "depVars");
     BackendDump.dumpVarList(indepVars, "indepVars");
   end if;
+
+  // generate Partial derivative for initDAE here, as we have the list of all depVars and inDepVars
+  (fmiDerInit, _) := SymbolicJacobian.createFMIModelDerivativesForInitialization(tmpBDAE, inSimDAE, depVars, indepVars, currentSystem.orderedVars);
 
   // Calculate the dependecies of initialUnknowns
   (sparsePattern, _) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
