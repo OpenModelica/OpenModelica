@@ -2,7 +2,7 @@ find_package(CURL REQUIRED)
 find_package(Intl REQUIRED)
 find_package(Iconv REQUIRED)
 
-if(OMC_USE_LAPACK)
+if(OM_OMC_USE_LAPACK)
   message(STATUS "Looking for LAPACK. This can be slow sometimes. Hang tight!")
   find_package(LAPACK REQUIRED)
 
@@ -79,13 +79,13 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::simrt::Modelica::zlib)
 
-if(OMC_USE_LPSOLVE)
+if(OM_OMC_USE_LPSOLVE)
   target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
 else()
   target_compile_definitions(omcruntime PRIVATE NO_LPLIB)
 endif()
 
-if(OMC_USE_LAPACK)
+if(OM_OMC_USE_LAPACK)
   target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
 endif()
 
@@ -99,7 +99,7 @@ if(NOT WIN32)
 endif()
 
 # Corba support
-if(OMC_USE_CORBA)
+if(OM_OMC_USE_CORBA)
   if(MINGW)
     # setup omniORB for MinGW OMDev
     include(.cmake/omdev_omniorb_setup.cmake)
@@ -126,7 +126,7 @@ if(OMC_USE_CORBA)
   endif()
 else() # No corba support requested. Use the stub file.
   target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
-endif(OMC_USE_CORBA)
+endif(OM_OMC_USE_CORBA)
 
 # Install omcruntime. It is needed by bootstrapping tests.
 install(TARGETS omcruntime)
