@@ -342,19 +342,7 @@ protected
   algorithm
     // collect all lhs crefs that are discrete and real from equations
     for eqn in flatModel.equations loop
-      hashTable := match eqn
-        local
-          list<Equation.Branch> branches;
-
-        case Equation.WHEN(branches = branches)
-          algorithm
-            for branch in branches loop
-              hashTable := checkDiscreteRealBranch(branch, hashTable);
-            end for;
-        then hashTable;
-
-        else hashTable;
-      end match;
+      hashTable := checkDiscreteRealEquation(eqn, hashTable, false);
     end for;
 
     // collect all lhs crefs that are discrete and real from algorithms
@@ -366,7 +354,7 @@ protected
         case Algorithm.ALGORITHM(statements = statements)
           algorithm
             for statement in statements loop
-              hashTable := checkDiscreteRealStatement(statement, hashTable);
+              hashTable := checkDiscreteRealStatement(statement, hashTable, false);
             end for;
         then hashTable;
 
@@ -400,15 +388,16 @@ protected
     when (or nested if inside when) branch."
     input Equation.Branch branch;
     input output HashTable hashTable;
+    input Boolean when_found;
   algorithm
     hashTable := match branch
       local
         list<Equation> body;
 
-      case Equation.BRANCH(body = body)
+      case Equation.BRANCH(body = body) guard(when_found)
         algorithm
           for eqn in body loop
-            hashTable := checkDiscreteRealBranchBodyEqn(eqn, hashTable);
+            hashTable := checkDiscreteRealEquation(eqn, hashTable, when_found);
           end for;
       then hashTable;
 
@@ -416,12 +405,13 @@ protected
     end match;
   end checkDiscreteRealBranch;
 
-  function checkDiscreteRealBranchBodyEqn
+  function checkDiscreteRealEquation
     "author: kabdelhak 2020-06
     collects all single discrete real crefs on the LHS of a branch which is
     part of a when eqn body. Only use to analyze when equation bodys!"
     input Equation body_eqn;
     input output HashTable hashTable;
+    input Boolean when_found;
   algorithm
     hashTable := match body_eqn
       local
@@ -432,23 +422,31 @@ protected
         list<Equation> body;
         list<Equation.Branch> branches;
 
-      case Equation.EQUALITY(lhs = lhs)       then checkDiscreteRealExp(lhs, hashTable);
-      case Equation.ARRAY_EQUALITY(lhs = lhs) then checkDiscreteRealExp(lhs, hashTable);
+      case Equation.EQUALITY(lhs = lhs)       guard(when_found) then checkDiscreteRealExp(lhs, hashTable);
+      case Equation.ARRAY_EQUALITY(lhs = lhs) guard(when_found) then checkDiscreteRealExp(lhs, hashTable);
 
-      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty)) guard(Type.isRealRecursive(ty))
+      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty)) guard(Type.isRealRecursive(ty) and when_found)
         algorithm
           // remove all subscripts to handle arrays
           hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
       then hashTable;
 
-      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty as Type.COMPLEX(cls = cls))) guard(Type.isRecord(ty))
+      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty as Type.COMPLEX(cls = cls))) guard(Type.isRecord(ty) and when_found)
       then checkDiscreteRealRecord(cref, cls, hashTable);
 
       // traverse nested if equations. It suffices if the variable is defined in ANY branch.
       case Equation.IF(branches = branches)
         algorithm
           for branch in branches loop
-            hashTable := checkDiscreteRealBranch(branch, hashTable);
+            hashTable := checkDiscreteRealBranch(branch, hashTable, when_found);
+          end for;
+      then hashTable;
+
+      // traverse when body
+      case Equation.WHEN(branches = branches)
+        algorithm
+          for branch in branches loop
+            hashTable := checkDiscreteRealBranch(branch, hashTable, true);
           end for;
       then hashTable;
 
@@ -456,46 +454,21 @@ protected
       case Equation.FOR(body = body)
         algorithm
           for eqn in body loop
-            hashTable := checkDiscreteRealBranchBodyEqn(eqn, hashTable);
+            hashTable := checkDiscreteRealEquation(eqn, hashTable, when_found);
           end for;
       then hashTable;
 
       else hashTable;
     end match;
-  end checkDiscreteRealBranchBodyEqn;
+  end checkDiscreteRealEquation;
 
   function checkDiscreteRealStatement
     "author: kabdelhak 2020-06
-    collects all single discrete real crefs on the LHS of the body statements of
-    a when algorithm."
-    input Statement statement;
-    input output HashTable hashTable;
-  algorithm
-    hashTable := match statement
-      local
-        list<tuple<Expression, list<Statement>>> branches;
-        list<Statement> body_statements;
-
-      case Statement.WHEN(branches = branches)
-        algorithm
-          for branch in branches loop
-            (_, body_statements) := branch;
-            for statement in body_statements loop
-              hashTable := checkDiscreteRealBodyStatement(statement, hashTable);
-            end for;
-          end for;
-      then hashTable;
-
-      else hashTable;
-    end match;
-  end checkDiscreteRealStatement;
-
-  function checkDiscreteRealBodyStatement
-    "author: kabdelhak 2020-06
     collects all single discrete real crefs on the LHS of a statement which is
-    part of a when algorithm body. Only use to analyze when algorithm bodys!"
+    part of a when algorithm body."
     input Statement statement;
     input output HashTable hashTable;
+    input Boolean when_found;
   algorithm
     hashTable := match statement
       local
@@ -503,7 +476,17 @@ protected
         list<tuple<Expression, list<Statement>>> branches;
         list<Statement> body;
 
-      case Statement.ASSIGNMENT(lhs = lhs) then checkDiscreteRealExp(lhs, hashTable);
+      case Statement.WHEN(branches = branches)
+        algorithm
+          for branch in branches loop
+            (_, body) := branch;
+            for statement in body loop
+              hashTable := checkDiscreteRealStatement(statement, hashTable, true);
+            end for;
+          end for;
+      then hashTable;
+
+      case Statement.ASSIGNMENT(lhs = lhs) guard(when_found) then checkDiscreteRealExp(lhs, hashTable);
 
       // traverse nested if Algorithms. It suffices if the variable is defined in ANY branch.
       case Statement.IF(branches = branches)
@@ -511,7 +494,7 @@ protected
           for branch in branches loop
             (_, body) := branch;
             for stmt in body loop
-              hashTable := checkDiscreteRealBodyStatement(stmt, hashTable);
+              hashTable := checkDiscreteRealStatement(stmt, hashTable, when_found);
             end for;
           end for;
       then hashTable;
@@ -520,13 +503,13 @@ protected
       case Statement.FOR(body = body)
         algorithm
           for statement in body loop
-            hashTable := checkDiscreteRealBodyStatement(statement, hashTable);
+            hashTable := checkDiscreteRealStatement(statement, hashTable, when_found);
           end for;
       then hashTable;
 
       else hashTable;
     end match;
-  end checkDiscreteRealBodyStatement;
+  end checkDiscreteRealStatement;
 
   function checkDiscreteRealExp
     "author: kabdelhak 2020-06
