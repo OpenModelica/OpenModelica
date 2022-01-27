@@ -6498,11 +6498,11 @@ public function toString<T>
   "
   input list<T> inList;
   input FuncType inPrintFunc;
-  input String inListNameStr "The name of the list.";
-  input String inBeginStr "The start of the list";
-  input String inDelimitStr "The delimiter between list elements.";
-  input String inEndStr "The end of the list.";
-  input Boolean inPrintEmpty "If false, don't output begin and end if the list is empty.";
+  input String inListNameStr = "" "The name of the list." ;
+  input String inBeginStr = "{" "The start of the list";
+  input String inDelimitStr = ", " "The delimiter between list elements.";
+  input String inEndStr = "}" "The end of the list.";
+  input Boolean inPrintEmpty = true "If false, don't output begin and end if the list is empty.";
   output String outString;
 
   partial function FuncType
