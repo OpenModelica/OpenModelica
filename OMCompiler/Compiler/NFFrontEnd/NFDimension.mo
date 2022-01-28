@@ -136,7 +136,7 @@ public
       then fail();
     end match;
 
-    dim := INTEGER(realInt((stop-start+1)/step), NFPrefixes.Variability.CONSTANT);
+    dim := INTEGER(realInt((stop-start)/step + 1), NFPrefixes.Variability.CONSTANT);
   end fromRange;
 
   function fromInteger

@@ -735,6 +735,8 @@ public
           variability = Expression.variability(innerExp),
           purity      = NFPrefixes.Purity.PURE
          ));
+      case ("integer") then Expression.makeZero(Type.INTEGER());
+
       // TODO Add all builtin functions with one argument here
     else algorithm
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
