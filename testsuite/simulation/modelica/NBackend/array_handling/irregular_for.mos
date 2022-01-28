@@ -1,0 +1,20 @@
+// name: simple_for
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model irregular_for1
+  parameter Integer p = 10;
+  Real[p] x;
+equation
+  for i in 2:2:(p-1)*2 loop
+    x[integer(i/2)] = x[integer(i/2)+1] + sin(i/2*time);
+  end for;
+  x[4] = cos(time);
+end irregular_for1;
+"); getErrorString();
+
+setCommandLineOptions("-d=bltdump,dumpSimCode");
+
+simulate(irregular_for1); getErrorString();
+val(x[3],1);

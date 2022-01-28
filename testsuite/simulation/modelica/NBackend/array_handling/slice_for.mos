@@ -23,7 +23,6 @@ equation
     x[2,i] = i*cos(time);
   end for;
 end slice_nested_for1;
-
 "); getErrorString();
 
 setCommandLineOptions("--newBackend -d=bltdump,dumpSimCode");

@@ -706,6 +706,7 @@ protected
         algorithm
         // Treat each body equation individually because they can have different equation attributes
         // E.g.: DISCRETE, EvalStages
+
         iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
         for eq in frontend_equation.body loop
           new_body := listAppend(lowerEquation(eq, init), new_body);
