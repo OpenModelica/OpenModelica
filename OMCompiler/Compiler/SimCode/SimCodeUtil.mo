@@ -5261,6 +5261,31 @@ algorithm
   end if;
 end makeTmpRealSimCodeVar;
 
+protected function sortInitialUnknowsSimVars
+ "Sorts the crefs, according to FMI-INDEX"
+  input list<SimCodeVar.SimVar> inSimVars;
+  output list<tuple<Integer, DAE.ComponentRef>> sortedCrefs = {};
+protected
+  DAE.ComponentRef cref;
+  list<tuple<Integer, String>> test;
+  list<tuple<Integer, DAE.ComponentRef>> unsortedCrefs={};
+  Integer index;
+algorithm
+  // get the FMIINDEX of the vars
+  for var in inSimVars loop
+    unsortedCrefs := (getVariableFMIIndex(var), var.name) :: unsortedCrefs;
+  end for;
+
+  // sort the crefs and set the index which will be used by fmi2GetDirectionalDerivative() to get the partial derivatives
+  index := 0;
+  for i in List.sort(unsortedCrefs, Util.compareTupleIntGt) loop
+    (_, cref) := i;
+    sortedCrefs := (index, cref) :: sortedCrefs;
+    index := index + 1;
+  end for;
+  sortedCrefs := listReverse(sortedCrefs);
+end sortInitialUnknowsSimVars;
+
 protected function sortSparsePattern
  "Sorts the indices and dependencies for the modelStructure section in modeldescription.xml."
   input list<SimCodeVar.SimVar> inSimVars;
@@ -13531,6 +13556,7 @@ protected
    list<Integer> intLst;
    BackendDAE.SymbolicJacobians fmiDerInit = {};
    list<SimCode.JacobianMatrix> symJacsInit={}, symJacFMIINIT={};
+   list<tuple<Integer, DAE.ComponentRef>> sortedUnknownCrefs = {}, sortedknownCrefs = {};
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
@@ -13607,7 +13633,7 @@ algorithm
 
     // get FMI initialUnknowns list with dependencies
     if not listEmpty(tmpInitialUnknowns) then
-      (allInitialUnknowns, fmiDerInit) := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
+      (allInitialUnknowns, fmiDerInit, sortedUnknownCrefs, sortedknownCrefs) := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
     else
       allInitialUnknowns := {};
     end if;
@@ -13641,7 +13667,7 @@ algorithm
           contPartSimDer,
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns)));
+          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs)));
 else
   // create empty model structure
   try
@@ -13669,7 +13695,7 @@ else
           contPartSimDer,
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS({})));
+          SimCode.FMIINITIALUNKNOWNS({}, {}, {})));
   else
     Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
     fail();
@@ -13750,6 +13776,8 @@ protected function getFmiInitialUnknowns
   input list<SimCodeVar.SimVar> initialUnknownList;
   output list<SimCode.FmiUnknown> outFmiUnknownlist;
   output BackendDAE.SymbolicJacobians fmiDerInit "partial derivative of initDAE";
+  output list<tuple<Integer, DAE.ComponentRef>> sortedUnknownCrefs = {} "sorted crefs of unknowns";
+  output list<tuple<Integer, DAE.ComponentRef>> sortedknownCrefs = {} "sorted crefs of knowns";
 protected
   list<DAE.ComponentRef> initialUnknownCrefs, indepCrefs, depCrefs;
   BackendDAE.BackendDAE tmpBDAE;
@@ -13844,6 +13872,11 @@ algorithm
   (_, rowspt, (indepCrefs, depCrefs), _) := sparsePattern;
   vars1 := getSimVars2Crefs(indepCrefs, crefSimVarHT);
   vars2 := getSimVars2Crefs(depCrefs, crefSimVarHT);
+
+  // sort the dependent and independent crefs according to FMIINDEX
+  sortedknownCrefs := sortInitialUnknowsSimVars(vars1);
+  sortedUnknownCrefs := sortInitialUnknowsSimVars(vars2);
+
   vars2 := listAppend(vars1, vars2);
 
   // sort the vars with FMI Index

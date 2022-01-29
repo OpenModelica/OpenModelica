@@ -1219,15 +1219,10 @@ fmi2Status fmi2GetDirectionalDerivativeForInitialization(ModelInstance *comp, MO
 
   for (i = 0; i < nKnown; i++)
   {
-    int idx = vKnown_ref[i];
-    if (idx >= modelData->nStates)
-    {
-      idx = mapInputReference2InputNumber(vKnown_ref[i]);
-      //idx = modelData->nStates + idx;
-    }
-    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index", idx, independent))
+    // map the known ValueReferences to an internal index
+    int idx = mapInitialUnknownsIndependentIndex(vKnown_ref[i]);
+    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index during initialization", idx, independent))
       return fmi2Error;
-
     /* Put the supplied value in the seeds */
     comp->fmiDerJacInitialization->seedVars[idx] = dvKnown[i];
   }
@@ -1240,14 +1235,11 @@ fmi2Status fmi2GetDirectionalDerivativeForInitialization(ModelInstance *comp, MO
   resetThreadData(comp);
 
   /* Write the results to dvUnknown array */
-  for (i=0;i<nUnknown; i++) {
-    /* derivatives are behind the states */
-    int idx = vUnknown_ref[i];
-    if (idx > modelData->nStates){
-      idx = mapOutputReference2OutputNumber(vUnknown_ref[i]);
-      idx = modelData->nStates + idx;
-    }
-    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative output index", idx, dependent))
+  for (i=0;i<nUnknown; i++)
+  {
+    // map the Unknown ValueReferences to an internal index
+    int idx = mapInitialUnknownsdependentIndex(vUnknown_ref[i]);
+    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative output index during initialization", idx, dependent))
       return fmi2Error;
     dvUnknown[i] = comp->fmiDerJacInitialization->resultVars[idx];
   }
