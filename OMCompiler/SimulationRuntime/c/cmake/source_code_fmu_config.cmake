@@ -60,7 +60,9 @@ string(REPLACE ";" "," SOURCE_FMU_NLS_FILES "${SOURCE_FMU_NLS_FILES_LIST_QUOTED}
 
 
 # CMinPack files for NLS
-set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
+set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
+                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h
+                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/hybrj_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dpmpar_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qrfac_.c
@@ -69,7 +71,11 @@ set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1updt_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1mpyq_.c)
 
-install(FILES ${3RD_CMINPACK_FMU_FILES}
+set(3RD_CMINPACK_HEADERS  ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
+                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h)
+
+install(FILES ${3RD_CMINPACK_HEADERS}
+              ${3RD_CMINPACK_FMU_FILES}
         DESTINATION ${SOURCE_FMU_SOURCES_DIR}/external_solvers
 )
 
