@@ -770,6 +770,12 @@ LookupLibrary1.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \
+MergeComponents1.mo \
+MergeComponents2.mo \
+MergeComponents3.mo \
+MergeComponents4.mo \
+MergeComponents5.mo \
+MergeComponents6.mo \
 MissingRedeclare1.mo \
 mod1.mo \
 mod10.mo \

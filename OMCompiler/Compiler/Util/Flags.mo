@@ -545,6 +545,8 @@ constant DebugFlag DUMP_CONVERSION_RULES = DEBUG_FLAG(186, "dumpConversionRules"
   Gettext.gettext("Dumps the rules when converting a package using a conversion script."));
 constant DebugFlag PRINT_RECORD_TYPES = DEBUG_FLAG(187, "printRecordTypes", false,
   Gettext.gettext("Prints out record types as part of the flat code."));
+constant DebugFlag MERGE_COMPONENTS = DEBUG_FLAG(188, "mergeComponents", false,
+  Gettext.gettext("Enables automatic merging of components into arrays."));
 
 public
 // CONFIGURATION FLAGS

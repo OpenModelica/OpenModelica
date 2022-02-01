@@ -5721,5 +5721,433 @@ algorithm
   end match;
 end classDefHasSections;
 
+function mapElements
+  "Applies a function to all elements in a list of elements, and recursively to
+   all elements in those elements."
+  input output list<SCode.Element> elements;
+  input Func func;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+algorithm
+  elements := list(mapElement(e, func) for e in elements);
+end mapElements;
+
+function mapElement
+  input output SCode.Element element;
+  input Func func;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+protected
+  SCode.ClassDef def;
+algorithm
+  () := match element
+    case SCode.Element.CLASS()
+      algorithm
+        def := mapElementsClassDef(element.classDef, func);
+
+        if not referenceEq(def, element.classDef) then
+          element.classDef := def;
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+
+  element := func(element);
+end mapElement;
+
+function mapElementsClassDef
+  input output SCode.ClassDef classDef;
+  input Func func;
+
+  partial function Func
+    input output SCode.Element element;
+  end Func;
+protected
+  SCode.ClassDef def;
+algorithm
+  () := match classDef
+    case SCode.ClassDef.PARTS()
+      algorithm
+        classDef.elementLst := list(mapElement(e, func) for e in classDef.elementLst);
+      then
+        ();
+
+    case SCode.ClassDef.CLASS_EXTENDS()
+      algorithm
+        def := mapElementsClassDef(classDef.composition, func);
+
+        if not referenceEq(def, classDef.composition) then
+          classDef.composition := def;
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end mapElementsClassDef;
+
+function mapEquationsList
+  "Applies a function to all equations in a list of equations, and recursively
+   to all equations in those equations."
+  input output list<SCode.Equation> eql;
+  input Func func;
+
+  partial function Func
+    input output SCode.EEquation eq;
+  end Func;
+algorithm
+  eql := list(mapEquations(e, func) for e in eql);
+end mapEquationsList;
+
+function mapEquations
+  input output SCode.Equation eq;
+  input Func func;
+
+  partial function Func
+    input output SCode.EEquation eq;
+  end Func;
+algorithm
+  eq.eEquation := mapEEquations(eq.eEquation, func);
+end mapEquations;
+
+function mapEEquationsList
+  input output list<SCode.EEquation> eql;
+  input Func func;
+
+  partial function Func
+    input output SCode.EEquation eq;
+  end Func;
+algorithm
+  eql := list(mapEEquations(e, func) for e in eql);
+end mapEEquationsList;
+
+function mapEEquations
+  input output SCode.EEquation eq;
+  input Func func;
+
+  partial function Func
+    input output SCode.EEquation eq;
+  end Func;
+algorithm
+  () := match eq
+    case SCode.EEquation.EQ_IF()
+      algorithm
+        eq.thenBranch := list(mapEEquationsList(b, func) for b in eq.thenBranch);
+        eq.elseBranch := mapEEquationsList(eq.elseBranch, func);
+      then
+        ();
+
+    case SCode.EEquation.EQ_FOR()
+      algorithm
+        eq.eEquationLst := mapEEquationsList(eq.eEquationLst, func);
+      then
+        ();
+
+    case SCode.EEquation.EQ_WHEN()
+      algorithm
+        eq.eEquationLst := mapEEquationsList(eq.eEquationLst, func);
+        eq.elseBranches := list(
+          (Util.tuple21(b), mapEEquationsList(Util.tuple22(b), func)) for b in eq.elseBranches);
+      then
+        ();
+
+    else ();
+  end match;
+
+  eq := func(eq);
+end mapEEquations;
+
+function mapEquationExps
+  "Applies a function to all expressions in an equation."
+  input output SCode.Equation eq;
+  input Func func;
+
+  partial function Func
+    input output Absyn.Exp exp;
+  end Func;
+algorithm
+  eq.eEquation := mapEEquationExps(eq.eEquation, func);
+end mapEquationExps;
+
+function mapEEquationExps
+  input output SCode.EEquation eq;
+  input Func func;
+
+  partial function Func
+    input output Absyn.Exp exp;
+  end Func;
+algorithm
+  () := match eq
+    case SCode.EEquation.EQ_IF()
+      algorithm
+        eq.condition := list(func(e) for e in eq.condition);
+      then
+        ();
+
+    case SCode.EEquation.EQ_EQUALS()
+      algorithm
+        eq.expLeft := func(eq.expLeft);
+        eq.expRight := func(eq.expRight);
+      then
+        ();
+
+    case SCode.EEquation.EQ_PDE()
+      algorithm
+        eq.expLeft := func(eq.expLeft);
+        eq.expRight := func(eq.expRight);
+        eq.domain := AbsynUtil.mapCrefExps(eq.domain, func);
+      then
+        ();
+
+    case SCode.EEquation.EQ_CONNECT()
+      algorithm
+        eq.crefLeft := AbsynUtil.mapCrefExps(eq.crefLeft, func);
+        eq.crefRight := AbsynUtil.mapCrefExps(eq.crefRight, func);
+      then
+        ();
+
+    case SCode.EEquation.EQ_FOR()
+      algorithm
+        if isSome(eq.range) then
+          eq.range := SOME(func(Util.getOption(eq.range)));
+        end if;
+      then
+        ();
+
+    case SCode.EEquation.EQ_WHEN()
+      algorithm
+        eq.condition := func(eq.condition);
+        eq.elseBranches := list(Util.applyTuple21(b, func) for b in eq.elseBranches);
+      then
+        ();
+
+    case SCode.EEquation.EQ_ASSERT()
+      algorithm
+        eq.condition := func(eq.condition);
+        eq.message := func(eq.message);
+        eq.level := func(eq.level);
+      then
+        ();
+
+    case SCode.EEquation.EQ_TERMINATE()
+      algorithm
+        eq.message := func(eq.message);
+      then
+        ();
+
+    case SCode.EEquation.EQ_REINIT()
+      algorithm
+        eq.cref := func(eq.cref);
+        eq.expReinit := func(eq.expReinit);
+      then
+        ();
+
+    case SCode.EEquation.EQ_NORETCALL()
+      algorithm
+        eq.exp := func(eq.exp);
+      then
+        ();
+
+  end match;
+end mapEEquationExps;
+
+function mapAlgorithmStatements
+  "Applies a function to all statements in algorithm section, and recursively
+   to all statements in those statements."
+  input output SCode.AlgorithmSection alg;
+  input Func func;
+
+  partial function Func
+    input output SCode.Statement stmt;
+  end Func;
+algorithm
+  alg.statements := mapStatementsList(alg.statements, func);
+end mapAlgorithmStatements;
+
+function mapStatementsList
+  input output list<SCode.Statement> statements;
+  input Func func;
+
+  partial function Func
+    input output SCode.Statement stmt;
+  end Func;
+algorithm
+  statements := list(mapStatements(s, func) for s in statements);
+end mapStatementsList;
+
+function mapStatements
+  input output SCode.Statement stmt;
+  input Func func;
+
+  partial function Func
+    input output SCode.Statement stmt;
+  end Func;
+algorithm
+  () := match stmt
+    case SCode.Statement.ALG_IF()
+      algorithm
+        stmt.trueBranch := mapStatementsList(stmt.trueBranch, func);
+        stmt.elseIfBranch :=
+          list((Util.tuple21(b), mapStatementsList(Util.tuple22(b), func)) for b in stmt.elseIfBranch);
+        stmt.elseBranch := mapStatementsList(stmt.elseBranch, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_FOR()
+      algorithm
+        stmt.forBody := mapStatementsList(stmt.forBody, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_PARFOR()
+      algorithm
+        stmt.parforBody := mapStatementsList(stmt.parforBody, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_WHILE()
+      algorithm
+        stmt.whileBody := mapStatementsList(stmt.whileBody, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_WHEN_A()
+      algorithm
+        stmt.branches :=
+          list((Util.tuple21(b), mapStatementsList(Util.tuple22(b), func)) for b in stmt.branches);
+      then
+        ();
+
+    case SCode.Statement.ALG_FAILURE()
+      algorithm
+        stmt.stmts := mapStatementsList(stmt.stmts, func);
+      then
+        ();
+
+    case SCode.Statement.ALG_TRY()
+      algorithm
+        stmt.body := mapStatementsList(stmt.body, func);
+        stmt.elseBody := mapStatementsList(stmt.body, func);
+      then
+        ();
+
+    else ();
+  end match;
+
+  stmt := func(stmt);
+end mapStatements;
+
+function mapStatementExps
+  "Applies a function to all expressions in a statement."
+  input output SCode.Statement stmt;
+  input Func func;
+
+  partial function Func
+    input output Absyn.Exp exp;
+  end Func;
+algorithm
+  () := match stmt
+    case SCode.Statement.ALG_ASSIGN()
+      algorithm
+        stmt.assignComponent := func(stmt.assignComponent);
+        stmt.value := func(stmt.value);
+      then
+        ();
+
+    case SCode.Statement.ALG_IF()
+      algorithm
+        stmt.boolExpr := func(stmt.boolExpr);
+        stmt.elseIfBranch := list((func(Util.tuple21(b)), Util.tuple22(b)) for b in stmt.elseIfBranch);
+      then
+        ();
+
+    case SCode.Statement.ALG_FOR()
+      algorithm
+        if isSome(stmt.range) then
+          stmt.range := SOME(func(Util.getOption(stmt.range)));
+        end if;
+      then
+        ();
+
+    case SCode.Statement.ALG_PARFOR()
+      algorithm
+        if isSome(stmt.range) then
+          stmt.range := SOME(func(Util.getOption(stmt.range)));
+        end if;
+      then
+        ();
+
+    case SCode.Statement.ALG_WHILE()
+      algorithm
+        stmt.boolExpr := func(stmt.boolExpr);
+      then
+        ();
+
+    case SCode.Statement.ALG_WHEN_A()
+      algorithm
+        stmt.branches := list((func(Util.tuple21(b)), Util.tuple22(b)) for b in stmt.branches);
+      then
+        ();
+
+    case SCode.Statement.ALG_ASSERT()
+      algorithm
+        stmt.condition := func(stmt.condition);
+        stmt.message := func(stmt.message);
+        stmt.level := func(stmt.level);
+      then
+        ();
+
+    case SCode.Statement.ALG_TERMINATE()
+      algorithm
+        stmt.message := func(stmt.message);
+      then
+        ();
+
+    case SCode.Statement.ALG_REINIT()
+      algorithm
+        stmt.cref := func(stmt.cref);
+        stmt.newValue := func(stmt.newValue);
+      then
+        ();
+
+    case SCode.Statement.ALG_NORETCALL()
+      algorithm
+        stmt.exp := func(stmt.exp);
+      then
+        ();
+
+    else ();
+  end match;
+end mapStatementExps;
+
+function lookupModInMod
+  "Looks up a modifier with the given name in the given modifier, or returns
+   NOMOD() if no modifier is found."
+  input String name;
+  input SCode.Mod mod;
+  output SCode.Mod outMod;
+algorithm
+  outMod := match mod
+    case SCode.Mod.MOD()
+      algorithm
+        for m in mod.subModLst loop
+          if m.ident == name then
+            outMod := m.mod;
+            return;
+          end if;
+        end for;
+      then
+        SCode.Mod.NOMOD();
+
+    else SCode.Mod.NOMOD();
+  end match;
+end lookupModInMod;
+
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;
