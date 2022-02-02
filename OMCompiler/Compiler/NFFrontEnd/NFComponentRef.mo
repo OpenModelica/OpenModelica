@@ -432,6 +432,21 @@ public
     end match;
   end purity;
 
+  function rename
+    input String name;
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      case CREF() algorithm
+        cref.node := InstNode.rename(name, cref.node);
+      then cref;
+      case STRING() algorithm
+        cref.name := name;
+      then cref;
+      else cref;
+    end match;
+  end rename;
+
   function addSubscript
     input Subscript subscript;
     input output ComponentRef cref;

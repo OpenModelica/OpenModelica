@@ -716,7 +716,7 @@ protected
           body_elem := BEquation.FOR_EQUATION(
             ty      = Type.addDimensions(Equation.getType(body_elem), {Dimension.fromRange(range)}),
             iter    = Iterator.SINGLE(iterator, range),
-            body    = body_elem,
+            body    = {body_elem},
             source  = frontend_equation.source,
             attr    = Equation.getAttributes(body_elem)
           );

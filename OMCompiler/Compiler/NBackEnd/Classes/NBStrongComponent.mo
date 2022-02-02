@@ -78,6 +78,10 @@ public
     Pointer<Equation> eqn       "full unsliced equation";
   end SLICED_EQUATION;
 
+  record ENTWINED_EQUATION
+    list<StrongComponent> entwined_slices   "has to be SLICED_EQUATION()";
+  end ENTWINED_EQUATION;
+
   record SINGLE_ARRAY
     list<Pointer<Variable>> vars;
     Pointer<Equation> eqn;
@@ -131,93 +135,89 @@ public
         Tearing casual;
         Integer len;
 
-      case SINGLE_EQUATION()
-        algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Equation");
-          str := str + "### Variable:\n" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
-          str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+      case SINGLE_EQUATION() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Equation");
+        str := str + "### Variable:\n" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
+        str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case SLICED_EQUATION()
-        algorithm
-          len := listLength(comp.eqn_indices);
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Equation");
-          str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
-          str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
-          str := str + "    with slices: " + List.toString(List.firstN(comp.eqn_indices, intMin(len, 10)), intString, "", "{", ", ", if len > 10 then ", ...}" else "}") + "\n";
+      case SLICED_EQUATION() algorithm
+        len := listLength(comp.eqn_indices);
+        str := if index == -1 then "" else StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Equation");
+        str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
+        str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+        str := str + "    with slices: " + List.toString(List.firstN(comp.eqn_indices, intMin(len, 10)), intString, "", "{", ", ", if len > 10 then ", ...}" else "}") + "\n";
       then str;
 
-      case SINGLE_ARRAY()
-        algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Array");
-          str := str + "### Variables:\n";
-          for var in comp.vars loop
-            str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
-          end for;
-          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+      case ENTWINED_EQUATION() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Equation");
+        str := str + List.toString(comp.entwined_slices, function toString(index = -1), "", "", "", "");
       then str;
 
-      case SINGLE_ALGORITHM()
-        algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Algorithm");
-          str := str + "### Variables:\n";
-          for var in comp.vars loop
-            str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
-          end for;
-          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+      case SINGLE_ARRAY() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Array");
+        str := str + "### Variables:\n";
+        for var in comp.vars loop
+          str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
+        end for;
+        str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case SINGLE_RECORD_EQUATION()
-        algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Record Equation");
-          str := str + "### Variables:\n";
-          for var in comp.vars loop
-            str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
-          end for;
-          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+      case SINGLE_ALGORITHM() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Algorithm");
+        str := str + "### Variables:\n";
+        for var in comp.vars loop
+          str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
+        end for;
+        str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case SINGLE_WHEN_EQUATION()
-        algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Single When-Equation");
-          str := str + "### Variables:\n";
-          for var in comp.vars loop
-            str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
-          end for;
-          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+      case SINGLE_RECORD_EQUATION() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Record Equation");
+        str := str + "### Variables:\n";
+        for var in comp.vars loop
+          str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
+        end for;
+        str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case SINGLE_IF_EQUATION()
-        algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Single If-Equation");
-          str := str + "### Variables:\n";
-          for var in comp.vars loop
-            str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
-          end for;
-          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+      case SINGLE_WHEN_EQUATION() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single When-Equation");
+        str := str + "### Variables:\n";
+        for var in comp.vars loop
+          str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
+        end for;
+        str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case ALGEBRAIC_LOOP()
-        algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Mixed = " + boolString(comp.mixed) + ")");
-          str := str + "### Variables:\n";
-          for var in comp.vars loop
-            str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
-          end for;
-          str := str + "\n### Equations:\n";
-          for eqn in comp.eqns loop
-            str := str  + Equation.toString(Pointer.access(eqn), "\t") + "\n";
-          end for;
+      case SINGLE_IF_EQUATION() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single If-Equation");
+        str := str + "### Variables:\n";
+        for var in comp.vars loop
+          str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
+        end for;
+        str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case TORN_LOOP()
-        algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Torn Algebraic Loop (Linear = " + boolString(comp.linear) + ", Mixed = " + boolString(comp.mixed) + ")");
-          str := str + Tearing.toString(comp.strict, "Strict Tearing Set");
-          if isSome(comp.casual) then
-            SOME(casual) := comp.casual;
-            str := str + Tearing.toString(casual, "Casual Tearing Set");
-          end if;
+      case ALGEBRAIC_LOOP() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Mixed = " + boolString(comp.mixed) + ")");
+        str := str + "### Variables:\n";
+        for var in comp.vars loop
+          str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
+        end for;
+        str := str + "\n### Equations:\n";
+        for eqn in comp.eqns loop
+          str := str  + Equation.toString(Pointer.access(eqn), "\t") + "\n";
+        end for;
+      then str;
+
+      case TORN_LOOP() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Torn Algebraic Loop (Linear = " + boolString(comp.linear) + ", Mixed = " + boolString(comp.mixed) + ")");
+        str := str + Tearing.toString(comp.strict, "Strict Tearing Set");
+        if isSome(comp.casual) then
+          SOME(casual) := comp.casual;
+          str := str + Tearing.toString(casual, "Casual Tearing Set");
+        end if;
       then str;
 
       else algorithm
@@ -259,10 +259,12 @@ public
   algorithm
     comp := match comp_indices
       local
-        Integer i, mode, first_eqn;
+        Integer i, mode;
         Sorting.PseudoBucketValue val;
-        Equation eqn;
-        Pointer<Equation> eqn_ptr;
+        Sorting.PseudoBucketKey key;
+        ComponentRef cref_to_solve;
+        list<Integer> eqn_scal_indices;
+        list<StrongComponent> entwined = {};
 
       case {i} guard(Adjacency.CausalizeModes.contains(i, modes)) algorithm
         if bucket.marks[i] then
@@ -273,21 +275,18 @@ public
           mode  := Adjacency.CausalizeModes.get(i, eqn_to_var[i], modes);
           val   := Sorting.PseudoBucket.get(mapping.eqn_StA[i], mode, bucket);
 
-          // get and save sliced equation
-          eqn_ptr := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
-          first_eqn := Adjacency.Mapping.getEqnFirst(i, mapping);
+          comp := match val
+            case Sorting.PSEUDO_BUCKET_SINGLE()
+            then SOME(createPseudoSlice(mapping.eqn_StA[i], val.cref_to_solve, val.eqn_scal_indices, eqns, mapping, bucket));
 
-          comp := SOME(SLICED_EQUATION(
-            var_cref    = val.cref_to_solve,
-            eqn_indices = list(idx - first_eqn for idx in listReverse(val.eqn_scal_indices)),
-            var         = BVariable.getVarPointer(val.cref_to_solve),
-            eqn         = eqn_ptr
-          ));
-
-          // mark all scalar indices
-          for scal_idx in val.eqn_scal_indices loop
-            arrayUpdate(bucket.marks, scal_idx, true);
-          end for;
+            case Sorting.PSEUDO_BUCKET_ENTWINED() algorithm
+              for tpl in val.entwined_lst loop
+                // has to be single, nested entwining not allowed (already flattened)
+                (key, Sorting.PSEUDO_BUCKET_SINGLE(cref_to_solve, eqn_scal_indices)) := tpl;
+                entwined := createPseudoSlice(key.eqn_arr_idx, cref_to_solve, eqn_scal_indices, eqns, mapping, bucket) :: entwined;
+              end for;
+            then SOME(ENTWINED_EQUATION(entwined));
+          end match;
         end if;
       then comp;
 
@@ -295,6 +294,35 @@ public
       else SOME(createPseudoScalar(comp_indices, eqn_to_var, mapping, vars, eqns));
     end match;
   end createPseudo;
+
+  function createPseudoSlice
+    input Integer eqn_arr_idx;
+    input ComponentRef cref_to_solve;
+    input list<Integer> eqn_scal_indices;
+    input EquationPointers eqns;
+    input Adjacency.Mapping mapping;
+    input Sorting.PseudoBucket bucket;
+    output StrongComponent slice;
+  protected
+    Pointer<Equation> eqn_ptr;
+    Integer first_eqn;
+  algorithm
+    // get and save sliced equation
+    eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
+    (first_eqn, _) := mapping.eqn_AtS[eqn_arr_idx];
+
+    // mark all scalar indices
+    for scal_idx in eqn_scal_indices loop
+      arrayUpdate(bucket.marks, scal_idx, true);
+    end for;
+
+    slice := SLICED_EQUATION(
+      var_cref    = cref_to_solve,
+      eqn_indices = list(idx - first_eqn for idx in listReverse(eqn_scal_indices)),
+      var         = BVariable.getVarPointer(cref_to_solve),
+      eqn         = eqn_ptr
+    );
+  end createPseudoSlice;
 
   function makeDAEModeResidualTraverse
     " update later to do both inner and residual equations "

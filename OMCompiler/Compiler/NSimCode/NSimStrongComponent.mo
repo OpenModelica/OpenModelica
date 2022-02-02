@@ -434,6 +434,9 @@ public
           Equation eqn;
           Statement stmt;
           SlicingStatus status;
+          ComponentRef var_cref;
+          list<Integer> eqn_indices;
+          list<Equation> entwined_eqns = {};
 
         case StrongComponent.SINGLE_EQUATION() algorithm
           (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), simCodeIndices, funcTree, systemType);
@@ -458,6 +461,29 @@ public
           // use cref instead of var because it has subscripts!
           eqn := Pointer.access(comp.eqn);
           (tmp, simCodeIndices, funcTree) := createEquation(Variable.fromCref(comp.var_cref), eqn, simCodeIndices, funcTree, systemType);
+        then tmp;
+
+        case StrongComponent.ENTWINED_EQUATION() algorithm
+          for slice in comp.entwined_slices loop
+            StrongComponent.SLICED_EQUATION(var_cref = var_cref, eqn_indices = eqn_indices, eqn = eqn_ptr) := slice;
+            (eqn_ptr, status, funcTree) := Equation.slice(eqn_ptr, eqn_indices, SOME(var_cref), funcTree);
+            eqn := Equation.renameIterators(Pointer.access(eqn_ptr), "$k");
+            entwined_eqns := Equation.splitIterators(eqn) :: entwined_eqns;
+          end for;
+          entwined_eqns := Equation.entwine(listReverse(entwined_eqns));
+          if listLength(entwined_eqns) == 1 then
+            {eqn} := entwined_eqns;
+          else
+            // instead scalarize here?
+            Error.assertion(false, getInstanceName() + " failed. Following equations could not be fully entwined:\n"
+              + List.toString(entwined_eqns, function Equation.toString(str=""), "", "", "\n", "") , sourceInfo());
+            fail();
+          end if;
+
+          // handle these as if they were algorithms
+          stmt := Equation.toStatement(eqn);
+          tmp := ALGORITHM(simCodeIndices.equationIndex, {stmt}, Equation.getAttributes(eqn));
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case StrongComponent.TORN_LOOP(strict = strict)algorithm
@@ -499,6 +525,9 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then NONLINEAR(system, NONE());
 
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + StrongComponent.toString(comp)});
+        then fail();
       end match;
     end fromStrongComponent;
 

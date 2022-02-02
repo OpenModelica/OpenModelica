@@ -158,25 +158,6 @@ public
       mapping := MAPPING(eqn_StA, var_StA, eqn_AtS, var_AtS);
     end expand;
 
-    function getEqnFirst
-      input Integer scal_idx;
-      input Mapping mapping;
-      output Integer first_idx;
-    protected
-      Integer arr_idx;
-    algorithm
-      arr_idx := mapping.eqn_StA[scal_idx];
-      (first_idx, _) := mapping.eqn_AtS[arr_idx];
-    end getEqnFirst;
-
-    function getVarFirst
-      input Integer scal_idx;
-      input Mapping mapping;
-      output Integer first_idx;
-    algorithm
-      (first_idx, _) := mapping.var_AtS[mapping.var_StA[scal_idx]];
-    end getVarFirst;
-
     function getEqnScalIndices
       input Integer arr_idx;
       input Mapping mapping;

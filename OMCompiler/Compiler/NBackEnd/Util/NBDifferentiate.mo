@@ -167,6 +167,7 @@ public
         Equation res;
         Expression lhs, rhs;
         ComponentRef lhs_cref, rhs_cref;
+        list<Equation> forBody = {};
         IfEquationBody ifBody;
         WhenEquationBody whenBody;
         Pointer<DifferentiationArguments> diffArguments_ptr;
@@ -213,9 +214,12 @@ public
       then (Equation.IF_EQUATION(eq.size, ifBody, eq.source, attr), Pointer.access(diffArguments_ptr));
 
       case Equation.FOR_EQUATION() algorithm
-        (res, diffArguments) := differentiateEquation(eq.body, diffArguments);
+        for body_eqn in eq.body loop
+          (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
+          forBody := body_eqn :: forBody;
+        end for;
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.FOR_EQUATION(eq.ty, eq.iter, res, eq.source, attr), diffArguments);
+      then (Equation.FOR_EQUATION(eq.ty, eq.iter, listReverse(forBody), eq.source, attr), diffArguments);
 
       case Equation.WHEN_EQUATION() algorithm
         (whenBody, diffArguments) := differentiateWhenEquationBody(eq.body, diffArguments);

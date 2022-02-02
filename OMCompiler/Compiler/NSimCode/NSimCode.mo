@@ -287,7 +287,7 @@ public
               (ode, allSim, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(bdae.ode, allSim, simCodeIndices, funcTree);
               (algebraic, allSim, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(bdae.algebraic, allSim, simCodeIndices, funcTree);
               (ode, allSim, event_blocks, simCodeIndices, funcTree) := SimStrongComponent.Block.createDiscreteBlocks(bdae.ode_event, ode, allSim, event_blocks,  simCodeIndices, funcTree);
-              (algebraic, allSim, event_blocks,  simCodeIndices, funcTree) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks,  simCodeIndices, funcTree);
+              (algebraic, allSim, event_blocks, simCodeIndices, funcTree) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks,  simCodeIndices, funcTree);
               if not listEmpty(no_ret) then
                 algebraic := no_ret :: algebraic;
                 allSim := listAppend(no_ret, allSim);

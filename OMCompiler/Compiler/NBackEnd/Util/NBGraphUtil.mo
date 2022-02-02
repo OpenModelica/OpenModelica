@@ -215,8 +215,9 @@ public
 
         case Equation.FOR_EQUATION() algorithm
           //body := applyIterator(eqn.iter, eqn.range, eqn.body);
-          body := eqn.body;
-          fromEquation(body, graph, vCount, eCount, vertexMap, edgeMap, map, SOME((eqn_mi, eqn_d)));
+          for body in eqn.body loop
+            fromEquation(body, graph, vCount, eCount, vertexMap, edgeMap, map, SOME((eqn_mi, eqn_d)));
+          end for;
         then ();
 
         else algorithm

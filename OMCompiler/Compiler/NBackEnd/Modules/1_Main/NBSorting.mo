@@ -76,10 +76,33 @@ public
   end PseudoBucketKey;
 
   uniontype PseudoBucketValue
-    record PSEUDO_BUCKET_VALUE
+    record PSEUDO_BUCKET_SINGLE
       ComponentRef cref_to_solve      "cref to solve for in this mode";
       list<Integer> eqn_scal_indices  "indices of all scalarized equations that have to be solved that way";
-    end PSEUDO_BUCKET_VALUE;
+      Integer first_comp;
+      Integer last_comp;
+    end PSEUDO_BUCKET_SINGLE;
+
+    record PSEUDO_BUCKET_ENTWINED
+      // reverse order, will be iterated and reversed anyway
+      list<tuple<PseudoBucketKey, PseudoBucketValue>> entwined_lst;
+    end PSEUDO_BUCKET_ENTWINED;
+
+    function addIndices
+      input output PseudoBucketValue val;
+      input Integer eqn_scal_idx;
+      input Integer comp_idx;
+    algorithm
+      val := match val
+        case PSEUDO_BUCKET_SINGLE() algorithm
+          val.eqn_scal_indices := eqn_scal_idx :: val.eqn_scal_indices;
+          val.last_comp := comp_idx;
+        then val;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cannot add single index to entwined pseudo bucket."});
+        then fail();
+      end match;
+    end addIndices;
   end PseudoBucketValue;
 
   uniontype PseudoBucket
@@ -97,7 +120,13 @@ public
       input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
       output PseudoBucket bucket                "the bucket containing the equation subsets";
     protected
-      Integer eqn_scal_idx, mode;
+      array<list<Integer>> comps_arr = listArray(comps_indices);
+      Integer eqn_scal_idx, mode, comps_length = listLength(comps_indices);
+      list<tuple<PseudoBucketKey, PseudoBucketValue>> bucket_lst, acc = {};
+      array<tuple<PseudoBucketKey, PseudoBucketValue>> bucket_arr;
+      PseudoBucketKey key;
+      PseudoBucketValue val;
+      Integer last = 0;
     algorithm
       // 1. create empty buckets
       bucket := PSEUDO_BUCKET(
@@ -108,14 +137,14 @@ public
       );
 
       // 2. sort all subsets in buckets depending on causalization mode and equation
-      for comp in comps_indices loop
-        _ := match comp
+      for i in 1:comps_length loop
+        _ := match comps_arr[i]
           case {eqn_scal_idx} algorithm
             // if we have a strong component of only one equation - check if there is a mode for it
             // (only for-equations have modes)
             if Adjacency.CausalizeModes.contains(eqn_scal_idx, modes) then
               mode := Adjacency.CausalizeModes.get(eqn_scal_idx, eqn_to_var[eqn_scal_idx], modes);
-              PseudoBucket.add(mapping.eqn_StA[eqn_scal_idx], eqn_scal_idx, mode, modes, bucket);
+              PseudoBucket.add(mapping.eqn_StA[eqn_scal_idx], eqn_scal_idx, i, mode, modes, bucket);
             end if;
           then ();
 
@@ -123,11 +152,28 @@ public
           else ();
         end match;
       end for;
+
+      // 3. entwine for loops
+      // ToDo: mit schneiden
+      bucket_lst := UnorderedMap.toList(bucket.bucket);
+      bucket_arr := listArray(List.sort(bucket_lst, tplSortGt));
+      last := tplGetLastComp(bucket_arr[1]);
+      for i in 1:arrayLength(bucket_arr) loop
+        if tplGetFirstComp(bucket_arr[i]) > last then
+          updateEntwined(acc, bucket);
+          acc := {bucket_arr[i]};
+        else
+          acc := bucket_arr[i] :: acc;
+        end if;
+        last := intMax(tplGetLastComp(bucket_arr[i]), last);
+      end for;
+      updateEntwined(acc, bucket);
     end create;
 
     function add
       input Integer eqn_arr_idx;
       input Integer eqn_scal_idx;
+      input Integer comp_idx;
       input Integer mode;
       input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
       input PseudoBucket bucket;
@@ -138,15 +184,28 @@ public
       key := PSEUDO_BUCKET_KEY(eqn_arr_idx, mode);
       if UnorderedMap.contains(key, bucket.bucket) then
         // if the mode already was found, add this equation to the bucket
-        val := UnorderedMap.getSafe(key, bucket.bucket);
-        val.eqn_scal_indices := eqn_scal_idx :: val.eqn_scal_indices;
+        val := PseudoBucketValue.addIndices(UnorderedMap.getSafe(key, bucket.bucket), eqn_scal_idx, comp_idx);
         UnorderedMap.add(key, val, bucket.bucket);
       else
         // create a new bucket containing this equation
-        val := PSEUDO_BUCKET_VALUE(arrayGet(arrayGet(modes.mode_to_cref, eqn_arr_idx), mode), {eqn_scal_idx});
+        val := PSEUDO_BUCKET_SINGLE(arrayGet(arrayGet(modes.mode_to_cref, eqn_arr_idx), mode), {eqn_scal_idx}, comp_idx, comp_idx);
         UnorderedMap.addNew(key, val, bucket.bucket);
       end if;
     end add;
+
+    function updateEntwined
+      input list<tuple<PseudoBucketKey, PseudoBucketValue>> acc;
+      input PseudoBucket bucket;
+    protected
+      PseudoBucketKey key;
+      PseudoBucketValue entwined;
+    algorithm
+      entwined := PSEUDO_BUCKET_ENTWINED(acc);
+      for tpl in acc loop
+        (key, _) := tpl;
+        UnorderedMap.add(key, entwined, bucket.bucket);
+      end for;
+    end updateEntwined;
 
     function get
       input Integer eqn_arr_idx;
@@ -158,6 +217,45 @@ public
     algorithm
       val := UnorderedMap.getSafe(key, bucket.bucket);
     end get;
+
+    function tplSortGt
+      input tuple<PseudoBucketKey, PseudoBucketValue> tpl1;
+      input tuple<PseudoBucketKey, PseudoBucketValue> tpl2;
+      output Boolean less;
+    algorithm
+      less := match (tpl1, tpl2)
+        local
+          Integer c1, c2;
+        case ((_, PSEUDO_BUCKET_SINGLE(first_comp = c1)), (_, PSEUDO_BUCKET_SINGLE(first_comp = c2))) then c1 > c2;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cannot compare entwined pseudo bucket."});
+        then fail();
+      end match;
+    end tplSortGt;
+
+    function tplGetLastComp
+      input tuple<PseudoBucketKey, PseudoBucketValue> tpl;
+      output Integer last_comp;
+    algorithm
+      last_comp := match tpl
+        case (_, PSEUDO_BUCKET_SINGLE(last_comp = last_comp)) then last_comp;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cannot get last component for entwined pseudo bucket."});
+        then fail();
+      end match;
+    end tplGetLastComp;
+
+    function tplGetFirstComp
+      input tuple<PseudoBucketKey, PseudoBucketValue> tpl;
+      output Integer first_comp;
+    algorithm
+      first_comp := match tpl
+        case (_, PSEUDO_BUCKET_SINGLE(first_comp = first_comp)) then first_comp;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cannot get first component for entwined pseudo bucket."});
+        then fail();
+      end match;
+    end tplGetFirstComp;
   end PseudoBucket;
 
   // ############################################################
@@ -187,7 +285,7 @@ public
 
       case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
-        //recollect
+        // recollect array information
         bucket := PseudoBucket.create(comps_indices, matching.eqn_to_var, adj.mapping, adj.modes);
         for idx_lst in comps_indices loop
           comp_opt := StrongComponent.createPseudo(idx_lst, matching.eqn_to_var, vars, eqns, adj.mapping, adj.modes, bucket);

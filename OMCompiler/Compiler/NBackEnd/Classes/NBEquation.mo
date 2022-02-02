@@ -60,6 +60,7 @@ public
   import OldBackendDAE = BackendDAE;
 
   // New Backend imports
+  import Replacements = NBReplacements;
   import StrongComponent = NBStrongComponent;
   import Solve = NBSolve;
   import BVariable = NBVariable;
@@ -148,6 +149,32 @@ public
         result := Iterator.fromFrames({tpl}) :: result;
       end for;
     end split;
+
+    function rename
+      input output Iterator iter;
+      input String newBaseName;
+      input UnorderedMap<ComponentRef, Expression> replacements;
+    algorithm
+      iter := match iter
+        local
+          ComponentRef replacor;
+
+        case SINGLE() algorithm
+          replacor := ComponentRef.rename(newBaseName + intString(1), iter.name);
+          UnorderedMap.add(iter.name, Expression.fromCref(replacor), replacements);
+          iter.name := replacor;
+        then iter;
+
+        case NESTED() algorithm
+          for i in 1:arrayLength(iter.names) loop
+            replacor := ComponentRef.rename(newBaseName + intString(i), iter.names[i]);
+            UnorderedMap.add(iter.names[i], Expression.fromCref(replacor), replacements);
+            iter.names[i] := replacor;
+          end for;
+        then iter;
+
+      end match;
+    end rename;
 
     function toString
       input Iterator iter;
@@ -249,7 +276,7 @@ public
     record FOR_EQUATION
       Type ty                         "equality type containing dimensions";
       Iterator iter                   "list of all: <iterator, range>";
-      Equation body                   "iterated equation";
+      list<Equation> body             "iterated equations (only multiples if entwined)";
       DAE.ElementSource source        "origin of equation";
       EquationAttributes attr         "Additional Attributes";
     end FOR_EQUATION;
@@ -415,7 +442,7 @@ public
         eq := Pointer.create(FOR_EQUATION(
           ty      = ComponentRef.nodeType(lhs),
           iter    = Iterator.fromFrames(frames),
-          body    = SIMPLE_EQUATION(ty, lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL), // this can also be an array?
+          body    = {SIMPLE_EQUATION(ty, lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL)}, // this can also be an array?
           source  = DAE.emptyElementSource,
           attr    = EQ_ATTR_DEFAULT_INITIAL
         ));
@@ -436,7 +463,7 @@ public
 
     function forEquationToString
       input Iterator iter             "the iterator variable(s)";
-      input Equation body             "iterated equation";
+      input list<Equation> body       "iterated equations";
       input output String str = "";
       input String indent = "";
       input String indicator = "";
@@ -445,7 +472,9 @@ public
     algorithm
       str := str + indicator + "\n";
       str := str + indent + "for " + Iterator.toString(iter) + " loop\n";
-      str := str + toString(body, indent + "  ") + "\n";
+      for eqn in body loop
+        str := str + toString(eqn, indent + "  ") + "\n";
+      end for;
       str := str + indent + "end for;";
     end forEquationToString;
 
@@ -595,13 +624,10 @@ public
         case FOR_EQUATION()
           algorithm
             iter := Iterator.map(eq.iter, funcExp);
-            body := map(eq.body, funcExp, funcCrefOpt);
             if not referenceEq(iter, eq.iter) then
               eq.iter := iter;
             end if;
-            if not referenceEq(body, eq.body) then
-              eq.body := body;
-            end if;
+            eq.body := list(map(body_eqn, funcExp, funcCrefOpt) for body_eqn in eq.body);
         then eq;
 
         case WHEN_EQUATION()
@@ -1034,7 +1060,8 @@ public
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         // returns innermost residual!
-        case Equation.FOR_EQUATION() then getResidualExp(eqn.body);
+        // Ambiguous for entwined for loops!
+        case Equation.FOR_EQUATION() then getResidualExp(List.first(eqn.body));
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
@@ -1193,6 +1220,7 @@ public
     end generateBindingEquation;
 
     function mergeIterators
+      "do not use on entwined for loops!"
       input output Equation eq;
       input Boolean top_level = true;
       output list<Iterator> acc;
@@ -1201,34 +1229,75 @@ public
         local
           Equation body;
         case FOR_EQUATION() algorithm
-          (body, acc) := mergeIterators(eq.body, false);
+          (body, acc) := mergeIterators(List.first(eq.body), false);
           acc := eq.iter :: acc;
-        then (if top_level then Equation.FOR_EQUATION(eq.ty, Iterator.merge(acc), body, eq.source, eq.attr) else body, acc);
+        then (if top_level then Equation.FOR_EQUATION(eq.ty, Iterator.merge(acc), {body}, eq.source, eq.attr) else body, acc);
         else (eq, {});
       end match;
     end mergeIterators;
 
     function splitIterators
-      input output Equation eq;
+      "do not use on entwined for-loops!"
+      input output Equation eqn;
     algorithm
-      eq := match eq
+      eqn := match eqn
         local
           list<Iterator> iterators;
           Equation body;
         case FOR_EQUATION() algorithm
           // split returns innermost first
-          iterators := Iterator.split(eq.iter);
-          body := eq.body;
+          iterators := Iterator.split(eqn.iter);
+          body := List.first(eqn.body);
           for iter in iterators loop
-            body := Equation.FOR_EQUATION(eq.ty, iter, body, eq.source, eq.attr);
+            body := Equation.FOR_EQUATION(eqn.ty, iter, {body}, eqn.source, eqn.attr);
           end for;
         then body;
-        else eq;
+        else eqn;
       end match;
     end splitIterators;
 
+    function renameIterators
+      input output Equation eqn;
+      input String newBaseName;
+    algorithm
+      eqn := match eqn
+        local
+          UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+
+        case FOR_EQUATION() algorithm
+          eqn.iter := Iterator.rename(eqn.iter, newBaseName, replacements);
+          eqn.body := list(map(body_eqn, function Replacements.applySimpleExp(replacements = replacements)) for body_eqn in eqn.body);
+        then eqn;
+
+        else eqn;
+      end match;
+    end renameIterators;
+
+    function entwine
+      input list<Equation> eqn_lst        "has to be for-loops with combinable ranges";
+      output list<Equation> entwined = {} "returns a single for-loop on top level if it is possible";
+    protected
+      Equation eqn, eqn_entwine;
+      list<Equation> rest;
+    algorithm
+      eqn :: rest := eqn_lst;
+      while not listEmpty(rest) loop
+        eqn_entwine :: rest := rest;
+        eqn := match (eqn, eqn_entwine)
+          case (FOR_EQUATION(), FOR_EQUATION()) algorithm
+            eqn.body := entwine(listAppend(eqn.body, eqn_entwine.body));
+          then eqn;
+          else algorithm
+            entwined := eqn :: entwined;
+          then eqn_entwine;
+        end match;
+      end while;
+      entwined := listReverse(eqn :: entwined);
+    end entwine;
+
     function slice
-      "performs a single slice based on the given indices and the cref to solve for"
+      "performs a single slice based on the given indices and the cref to solve for
+      does not work for entwined for loops!"
       input output Pointer<Equation> eqn_ptr  "equation to slice";
       input list<Integer> indices             "zero based indices of the eqn";
       input Option<ComponentRef> cref_opt     "optional cref to solve for, if none is given, the body stays as it is";
@@ -1250,6 +1319,7 @@ public
       eqn := Pointer.access(eqn_ptr);
       (eqn_ptr, status) := match eqn
         local
+          list<Equation> body_lst;
           Equation body, sliced;
 
         // empty index list indicates no slicing and no rearraning
@@ -1260,48 +1330,31 @@ public
           dims      := Type.arrayDims(Equation.getType(eqn));
           sizes     := list(Dimension.size(dim) for dim in dims);
 
-          if Equation.size(eqn_ptr) == listLength(indices) then
-            // trivial solution! All equations are solved the same way
-            // only invert the necessary frames and keep the rest as is
-            status                := SlicingStatus.TRIVIAL;
+          // trivial slices replace the original equation entirely
+          status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
 
-            // map first and last index to frame locations
-            first_idx             := List.first(indices);
-            last_idx              := List.last(indices);
-            first_location        := BackendUtil.indexToLocation(first_idx, sizes);
-            last_location         := BackendUtil.indexToLocation(last_idx, sizes);
-
-            // compare the location to see if any range has to be inverted
-            frame_comp            := BackendUtil.compareLocations(first_location, last_location);
-            frames                := getForFrames(eqn);
-            // do we maybe need to consider reordering here as well? is there even a trivial case?
-            frames                := BackendUtil.applyFrameInversion(frames, frame_comp);
-          else
-            // nontrivial. try to rebuild the for loop frames and slice the equation
-            status                := SlicingStatus.NONTRIVIAL;
-            locations             := list(BackendUtil.indexToLocation(idx, sizes) for idx in indices);
-            locations_T           := BackendUtil.transposeLocations(locations, listLength(sizes));
-            frames                := listReverse(getForFrames(eqn));
-            frame_locations       := List.zip(locations_T, frames);
-            frame_locations       := BackendUtil.orderTransposedFrameLocations(frame_locations);
-            frames                := BackendUtil.recollectRangesHeuristic(frame_locations);
-          end if;
+          locations             := list(BackendUtil.indexToLocation(idx, sizes) for idx in indices);
+          locations_T           := BackendUtil.transposeLocations(locations, listLength(sizes));
+          frames                := listReverse(getForFrames(eqn));
+          frame_locations       := List.zip(locations_T, frames);
+          frame_locations       := BackendUtil.orderTransposedFrameLocations(frame_locations);
+          frames                := BackendUtil.recollectRangesHeuristic(frame_locations);
 
           // solve the body equation for the cref if needed
           // ToDo: act on solving status not equal to EXPLICIT ?
-          body := match cref_opt
+          body_lst := match cref_opt
             local
               ComponentRef cref;
             case SOME(cref) algorithm
-              (body, funcTree, _, _) := Solve.solve(eqn.body, cref, funcTree);
-            then body;
+              (body, funcTree, _, _) := Solve.solve(List.first(eqn.body), cref, funcTree);
+            then {body};
             else eqn.body;
           end match;
 
           sliced := FOR_EQUATION(
             ty      = eqn.ty,
             iter    = Iterator.fromFrames(frames),
-            body    = body,
+            body    = body_lst,
             source  = eqn.source,
             attr    = eqn.attr
           );
@@ -1335,7 +1388,7 @@ public
         then Statement.FOR(
           iterator  = ComponentRef.node(iter),
           range     = SOME(range),
-          body      = {toStatement(eqn.body)},
+          body      = list(toStatement(body_eqn) for body_eqn in eqn.body),
           forType   = Statement.ForType.NORMAL(),
           source    = eqn.source
         );
