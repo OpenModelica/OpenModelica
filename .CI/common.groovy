@@ -333,12 +333,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   else {
     sh "mkdir ./build_cmake"
     sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}"
-    sh "${cmake_exe} --build ./build_cmake/OMCompiler --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/OMParser --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/OMEdit --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/OMShell --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/OMNotebook --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake/testsuite --parallel ${numPhysicalCPU()} --target install"
+    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
   }
 }
