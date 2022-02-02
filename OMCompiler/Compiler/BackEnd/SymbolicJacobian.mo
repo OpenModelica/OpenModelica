@@ -1781,7 +1781,7 @@ public function createFMIModelDerivativesForInitialization
   output BackendDAE.SymbolicJacobians outJacobianMatrixes = {};
   output DAE.FunctionTree outFunctionTree;
 protected
-  BackendDAE.BackendDAE backendDAE,emptyBDAE;
+  BackendDAE.BackendDAE backendDAE, emptyBDAE;
   BackendDAE.EqSystem eqSyst;
   Option<BackendDAE.SymbolicJacobian> outJacobian;
   list<BackendDAE.Var> varlst, knvarlst, states, inputvars, outputvars, paramvars;
@@ -1794,17 +1794,20 @@ protected
   FCore.Graph graph;
 algorithm
 try
-  {eqSyst} := simDAE.eqs;
+  //prepare simulation DAE
+  backendDAE := BackendDAEUtil.copyBackendDAE(simDAE);
+  backendDAE := BackendDAEOptimize.collapseIndependentBlocks(backendDAE);
+
+  eqSyst::{} := backendDAE.eqs;
   v := eqSyst.orderedVars;
-
-  // prepare all needed variables
-  varlst := BackendVariable.varList(orderedVars);
-  knvarlst := BackendVariable.varList(initDAE.shared.globalKnownVars);
-
+  // get state var from simulation DAE
   states := if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
     BackendVariable.getAllClockedStatesFromVariables(v) else {};
-
   states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
+
+  // prepare all needed variables from initialization DAE
+  varlst := BackendVariable.varList(orderedVars);
+  knvarlst := BackendVariable.varList(initDAE.shared.globalKnownVars);
   inputvars := List.select(knvarlst, BackendVariable.isVarOnTopLevelAndInput);
 
   // Generate sparse pattern for matrices states
