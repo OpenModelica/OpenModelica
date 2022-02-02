@@ -172,9 +172,30 @@ public
             iter.names[i] := replacor;
           end for;
         then iter;
-
       end match;
     end rename;
+
+    function isEqual
+      "compares two iterators not considering their name!"
+      input Iterator iter1;
+      input Iterator iter2;
+      output Boolean b = true;
+    algorithm
+      b := match (iter1, iter2)
+        case (SINGLE(), SINGLE()) then Expression.isEqual(iter1.range, iter2.range);
+        case (NESTED(), NESTED()) algorithm
+          if arrayLength(iter1.ranges) == arrayLength(iter2.ranges) then
+            for i in 1:arrayLength(iter1.ranges) loop
+              b := Expression.isEqual(iter1.ranges[i], iter2.ranges[i]);
+              if not b then break; end if;
+            end for;
+          else
+            b := false;
+          end if;
+        then b;
+        else false;
+      end match;
+    end isEqual;
 
     function toString
       input Iterator iter;
@@ -1284,9 +1305,12 @@ public
       while not listEmpty(rest) loop
         eqn_entwine :: rest := rest;
         eqn := match (eqn, eqn_entwine)
-          case (FOR_EQUATION(), FOR_EQUATION()) algorithm
+          // entwine body if possible
+          case (FOR_EQUATION(), FOR_EQUATION()) guard(Iterator.isEqual(eqn.iter, eqn_entwine.iter)) algorithm
             eqn.body := entwine(listAppend(eqn.body, eqn_entwine.body));
           then eqn;
+
+          // just add the equation
           else algorithm
             entwined := eqn :: entwined;
           then eqn_entwine;
