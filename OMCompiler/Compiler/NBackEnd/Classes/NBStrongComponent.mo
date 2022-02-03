@@ -273,7 +273,7 @@ public
         else
           // get mode and bucket
           mode  := Adjacency.CausalizeModes.get(i, eqn_to_var[i], modes);
-          val   := Sorting.PseudoBucket.get(mapping.eqn_StA[i], mode, bucket);
+          val   := Sorting.PseudoBucket.get(i, mapping.eqn_StA[i], mode, bucket);
 
           comp := match val
             case Sorting.PSEUDO_BUCKET_SINGLE()

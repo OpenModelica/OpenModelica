@@ -55,6 +55,7 @@ public
 
   uniontype PseudoBucketKey
     record PSEUDO_BUCKET_KEY
+      Integer eqn_start_idx "first scalar equation appearing in the strong components";
       Integer eqn_arr_idx   "array index of equation";
       Integer mode          "solve mode index";
     end PSEUDO_BUCKET_KEY;
@@ -65,13 +66,13 @@ public
       input Integer shift         "has to be statically provided while creating the PseudoBucket.";
       output Integer val          "the hash value";
     algorithm
-      val := mod(key.mode*shift + key.eqn_arr_idx, modulo);
+      val := mod(key.mode*shift*shift + key.eqn_arr_idx*shift + key.eqn_start_idx, modulo);
     end hash;
 
     function equal
       input PseudoBucketKey key1;
       input PseudoBucketKey key2;
-      output Boolean b = intEq(key1.eqn_arr_idx, key2.eqn_arr_idx) and intEq(key1.mode, key2.mode);
+      output Boolean b = intEq(key1.eqn_start_idx, key2.eqn_start_idx) and intEq(key1.eqn_arr_idx, key2.eqn_arr_idx) and intEq(key1.mode, key2.mode);
     end equal;
   end PseudoBucketKey;
 
@@ -120,6 +121,7 @@ public
       input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
       output PseudoBucket bucket                "the bucket containing the equation subsets";
     protected
+      array<Integer> current_start_indices = arrayCreate(arrayLength(mapping.eqn_AtS), 0);
       array<list<Integer>> comps_arr = listArray(comps_indices);
       Integer eqn_scal_idx, mode, comps_length = listLength(comps_indices);
       list<tuple<PseudoBucketKey, PseudoBucketValue>> bucket_lst, acc = {};
@@ -139,22 +141,21 @@ public
       // 2. sort all subsets in buckets depending on causalization mode and equation
       for i in 1:comps_length loop
         _ := match comps_arr[i]
-          case {eqn_scal_idx} algorithm
+          case {eqn_scal_idx} guard(Adjacency.CausalizeModes.contains(eqn_scal_idx, modes)) algorithm
             // if we have a strong component of only one equation - check if there is a mode for it
             // (only for-equations have modes)
-            if Adjacency.CausalizeModes.contains(eqn_scal_idx, modes) then
-              mode := Adjacency.CausalizeModes.get(eqn_scal_idx, eqn_to_var[eqn_scal_idx], modes);
-              PseudoBucket.add(mapping.eqn_StA[eqn_scal_idx], eqn_scal_idx, i, mode, modes, bucket);
-            end if;
+            mode := Adjacency.CausalizeModes.get(eqn_scal_idx, eqn_to_var[eqn_scal_idx], modes);
+            PseudoBucket.add(mapping.eqn_StA[eqn_scal_idx], eqn_scal_idx, i, mode, current_start_indices, modes, bucket);
           then ();
 
           // ToDo: what if partial stuff of for-loops ends up in an algebraic loop?
-          else ();
+          else algorithm
+            current_start_indices := arrayCreate(arrayLength(mapping.eqn_AtS), 0);
+          then();
         end match;
       end for;
 
       // 3. entwine for loops
-      // ToDo: mit schneiden
       bucket_lst := UnorderedMap.toList(bucket.bucket);
       bucket_arr := listArray(List.sort(bucket_lst, tplSortGt));
       last := tplGetLastComp(bucket_arr[1]);
@@ -175,13 +176,21 @@ public
       input Integer eqn_scal_idx;
       input Integer comp_idx;
       input Integer mode;
+      input array<Integer> current_start_indices;
       input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
       input PseudoBucket bucket;
     protected
       PseudoBucketKey key;
       PseudoBucketValue val;
     algorithm
-      key := PSEUDO_BUCKET_KEY(eqn_arr_idx, mode);
+      // get or set current start index
+      if current_start_indices[eqn_arr_idx] == 0 then
+        arrayUpdate(current_start_indices, eqn_arr_idx, eqn_scal_idx);
+        key := PSEUDO_BUCKET_KEY(eqn_scal_idx, eqn_arr_idx, mode);
+      else
+        key := PSEUDO_BUCKET_KEY(current_start_indices[eqn_arr_idx], eqn_arr_idx, mode);
+      end if;
+
       if UnorderedMap.contains(key, bucket.bucket) then
         // if the mode already was found, add this equation to the bucket
         val := PseudoBucketValue.addIndices(UnorderedMap.getSafe(key, bucket.bucket), eqn_scal_idx, comp_idx);
@@ -208,12 +217,13 @@ public
     end updateEntwined;
 
     function get
+      input Integer eqn_start_idx;
       input Integer eqn_arr_idx;
       input Integer mode;
       input PseudoBucket bucket;
       output PseudoBucketValue val;
     protected
-      PseudoBucketKey key = PSEUDO_BUCKET_KEY(eqn_arr_idx, mode);
+      PseudoBucketKey key = PSEUDO_BUCKET_KEY(eqn_start_idx, eqn_arr_idx, mode);
     algorithm
       val := UnorderedMap.getSafe(key, bucket.bucket);
     end get;

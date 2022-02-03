@@ -433,6 +433,7 @@ public
           EquationPointer eqn_ptr;
           Equation eqn;
           Statement stmt;
+          list<Statement> stmts;
           SlicingStatus status;
           ComponentRef var_cref;
           list<Integer> eqn_indices;
@@ -471,18 +472,10 @@ public
             entwined_eqns := Equation.splitIterators(eqn) :: entwined_eqns;
           end for;
           entwined_eqns := Equation.entwine(listReverse(entwined_eqns));
-          if listLength(entwined_eqns) == 1 then
-            {eqn} := entwined_eqns;
-          else
-            // instead scalarize here?
-            Error.assertion(false, getInstanceName() + " failed. Following equations could not be fully entwined:\n"
-              + List.toString(entwined_eqns, function Equation.toString(str=""), "", "", "\n", "") , sourceInfo());
-            fail();
-          end if;
 
           // handle these as if they were algorithms
-          stmt := Equation.toStatement(eqn);
-          tmp := ALGORITHM(simCodeIndices.equationIndex, {stmt}, Equation.getAttributes(eqn));
+          stmts := list(Equation.toStatement(eqn) for eqn in entwined_eqns);
+          tmp := ALGORITHM(simCodeIndices.equationIndex, stmts, Equation.getAttributes(eqn));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 

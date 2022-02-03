@@ -88,6 +88,9 @@ public
       array<Expression> ranges    "sorted ranges as <start, step, stop>";
     end NESTED;
 
+    record EMPTY
+    end EMPTY;
+
     function fromFrames
       input list<Frame> frames;
       output Iterator iter;
@@ -197,6 +200,100 @@ public
       end match;
     end isEqual;
 
+    function isEmpty
+      input Iterator iter;
+      output Boolean b;
+    algorithm
+      b := match iter case EMPTY() then true; else false; end match;
+    end isEmpty;
+
+    function intersect
+      input Iterator iter1;
+      input Iterator iter2;
+      output Iterator intersection;
+      output tuple<Iterator, Iterator> rest1;
+      output tuple<Iterator, Iterator> rest2;
+    algorithm
+      (intersection, rest1, rest2) := match (iter1, iter2)
+        local
+          Integer start1, step1, stop1, start2, step2, stop2;
+          Integer start_min, start_max, stop_min, stop_max;
+
+        case (SINGLE(range = Expression.RANGE(start=Expression.INTEGER(start1), step=SOME(Expression.INTEGER(step1)), stop=Expression.INTEGER(stop1))),
+              SINGLE(range = Expression.RANGE(start=Expression.INTEGER(start2), step=SOME(Expression.INTEGER(step2)), stop=Expression.INTEGER(stop2))))
+              guard(step1 == step2)
+          algorithm
+            start_min := intMin(start1, start2);
+            start_max := intMax(start1, start2);
+            stop_min := intMin(stop1, stop2);
+            stop_max := intMax(stop1, stop2);
+
+            // create intersection
+            if start_max >= stop_min then
+              intersection := EMPTY();
+            else
+              intersection := SINGLE(
+                name  = iter1.name,
+                range = Expression.RANGE(
+                  ty    = Expression.typeOf(iter1.range),
+                  start = Expression.INTEGER(start_max),
+                  step  = SOME(Expression.INTEGER(step1)),
+                  stop  = Expression.INTEGER(stop_min)
+                )
+              );
+            end if;
+
+            // create rest
+            rest1 := intersectRest(iter1.name, start1, step1, stop1, start_max-step1, stop_min+step1);
+            rest2 := intersectRest(iter2.name, start2, step2, stop2, start_max-step2, stop_min+step2);
+        then (intersection, rest1, rest2);
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because only single iterators with equal step can be intersected:\n"
+            + Iterator.toString(iter1) + "\n" + Iterator.toString(iter2) + "\n"});
+        then fail();
+      end match;
+    end intersect;
+
+    function intersectRest
+      input ComponentRef name;
+      input Integer start;
+      input Integer step;
+      input Integer stop;
+      input Integer start_max;
+      input Integer stop_min;
+      output tuple<Iterator, Iterator> rest;
+    protected
+      Iterator rest_left, rest_right;
+    algorithm
+      if start > start_max  then
+        rest_left := EMPTY();
+      else
+        rest_left := Iterator.SINGLE(
+          name  = name,
+          range = Expression.makeRange(
+            start = Expression.INTEGER(start),
+            step  = SOME(Expression.INTEGER(step)),
+            stop  = Expression.INTEGER(start_max)
+          )
+        );
+      end if;
+
+      if stop_min > stop  then
+        rest_right := EMPTY();
+      else
+        rest_right := Iterator.SINGLE(
+          name  = name,
+          range = Expression.makeRange(
+            start = Expression.INTEGER(stop_min),
+            step  = SOME(Expression.INTEGER(step)),
+            stop  = Expression.INTEGER(stop)
+          )
+        );
+      end if;
+      rest := (rest_left, rest_right);
+    end intersectRest;
+
     function toString
       input Iterator iter;
       output String str = "";
@@ -210,6 +307,7 @@ public
       str := match iter
         case SINGLE() then singleStr(iter.name, iter.range);
         case NESTED() then "{" + stringDelimitList(list(singleStr(iter.names[i], iter.ranges[i]) for i in 1:arrayLength(iter.names)), ", ") + "}";
+        case EMPTY()  then "<EMPTY ITERATOR>";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
         then fail();
@@ -1298,25 +1396,55 @@ public
       input list<Equation> eqn_lst        "has to be for-loops with combinable ranges";
       output list<Equation> entwined = {} "returns a single for-loop on top level if it is possible";
     protected
-      Equation eqn, eqn_entwine;
-      list<Equation> rest;
+      Equation eqn1, eqn2, next;
+      list<Equation> rest, tmp;
+      Iterator intersection, rest1_left, rest1_right, rest2_left, rest2_right;
     algorithm
-      eqn :: rest := eqn_lst;
+      eqn1 :: rest := eqn_lst;
       while not listEmpty(rest) loop
-        eqn_entwine :: rest := rest;
-        eqn := match (eqn, eqn_entwine)
+        eqn2 :: rest := rest;
+        eqn1 := match (eqn1, eqn2)
           // entwine body if possible
-          case (FOR_EQUATION(), FOR_EQUATION()) guard(Iterator.isEqual(eqn.iter, eqn_entwine.iter)) algorithm
-            eqn.body := entwine(listAppend(eqn.body, eqn_entwine.body));
-          then eqn;
+          case (FOR_EQUATION(), FOR_EQUATION()) guard(Iterator.isEqual(eqn1.iter, eqn2.iter)) algorithm
+            eqn1.body := entwine(listAppend(eqn1.body, eqn2.body));
+          then eqn1;
+
+          case (FOR_EQUATION(), FOR_EQUATION()) algorithm
+            (intersection, (rest1_left, rest1_right), (rest2_left, rest2_right)) := Iterator.intersect(eqn1.iter, eqn2.iter);
+            tmp := {};
+            if not Iterator.isEmpty(rest1_left) then
+              tmp := FOR_EQUATION(eqn1.ty, rest1_left, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
+            end if;
+            if not Iterator.isEmpty(rest2_left) then
+              tmp := FOR_EQUATION(eqn2.ty, rest2_left, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
+            end if;
+            if not Iterator.isEmpty(intersection) then
+              tmp := FOR_EQUATION(
+                ty      = eqn1.ty,
+                iter    = intersection,
+                body    = entwine(listAppend(eqn1.body, eqn2.body)),
+                source  = eqn1.source,
+                attr    = eqn1.attr
+              ) :: tmp;
+            end if;
+            if not Iterator.isEmpty(rest1_right) then
+              tmp := FOR_EQUATION(eqn1.ty, rest1_right, eqn1.body, eqn1.source, eqn1.attr) :: tmp;
+            end if;
+            if not Iterator.isEmpty(rest2_right) then
+              tmp := FOR_EQUATION(eqn2.ty, rest2_right, eqn2.body, eqn2.source, eqn2.attr) :: tmp;
+            end if;
+            // there has to be at least one equation
+            next :: tmp := tmp;
+            entwined := listAppend(tmp, entwined);
+          then next;
 
           // just add the equation
           else algorithm
-            entwined := eqn :: entwined;
-          then eqn_entwine;
+            entwined := eqn1 :: entwined;
+          then eqn2;
         end match;
       end while;
-      entwined := listReverse(eqn :: entwined);
+      entwined := listReverse(eqn1 :: entwined);
     end entwine;
 
     function slice
