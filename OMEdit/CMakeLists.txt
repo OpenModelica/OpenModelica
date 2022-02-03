@@ -2,7 +2,9 @@ cmake_minimum_required (VERSION 3.14)
 
 project(OMEdit)
 
-## Set the C++ standard to use.
+omc_option(OM_OMEDIT_INSTALL_RUNTIME_DLLS "Install the required runtime dll dependency DLLs to the binary directory. Valid only for Windows builds." ON)
+
+## Set the C++ standard to use. OMEdit uses C++14
 set(CMAKE_CXX_STANDARD 14)
 set(CXX_STANDARD_REQUIRED ON)
 ## Make sure we do not start relying on extensions down the road.
