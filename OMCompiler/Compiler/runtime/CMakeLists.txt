@@ -44,7 +44,7 @@ set(OMC_RUNTIIME_SOURCES
     Dynload_omc.cpp
     Print_omc.c
     ErrorMessage.cpp
-    System_omc
+    System_omc.c
     Lapack_omc.cpp
     Settings_omc.cpp
     UnitParserExt_omc.cpp

@@ -53,8 +53,17 @@ elseif(MSVC)
   # For now print error and bail out. It should be the same as Mingw except we need to check where the .lib file is located.
   message(FATAL_ERROR "Importing of OMSimulator is not implemented correctly for MSVC. Adjust the MINGW implementation to where the dll and lib files are expected.")
 else()
+
+  # if host_short (= CMAKE_LIBRARY_ARCHITECTURE) is empty, OMSimulator does not
+  # add the omc/ part to the library location. (See OMSimulator/Makefile:88-93)
+  if(CMAKE_LIBRARY_ARCHITECTURE)
+    set(OMSIMULATORLIB_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc/)
+  else()
+    set(OMSIMULATORLIB_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/)
+  endif()
+
   set_target_properties(libOMSimulator PROPERTIES
-    IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/x86_64-linux-gnu/omc/libOMSimulator.so
+    IMPORTED_LOCATION ${OMSIMULATORLIB_LOCATION}/libOMSimulator.so
   )
 endif()
 
