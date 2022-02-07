@@ -41,6 +41,7 @@ protected
   import List;
   import MetaModelica.Dangerous.*;
   import Util;
+  import IOStream;
 
 public
   partial function Hash
@@ -636,6 +637,50 @@ public
 
     str := stringDelimitList(strl, delimiter);
   end toString;
+
+  function toJSON
+    input UnorderedMap<K, V> map;
+    input KeyStringFn keyStringFn;
+    input ValueStringFn valueStringFn;
+    output String str;
+
+    partial function KeyStringFn
+      input K key;
+      output String str;
+    end KeyStringFn;
+
+    partial function ValueStringFn
+      input V value;
+      output String str;
+    end ValueStringFn;
+  protected
+    IOStream.IOStream io;
+    Vector<K> keys = map.keys;
+    Vector<V> values = map.values;
+    Integer sz = Vector.size(keys);
+  algorithm
+    io := IOStream.create("UnorderedMap.toJSON", IOStream.IOStreamType.LIST());
+    io := IOStream.append(io, "{\n");
+
+    if sz > 0 then
+      io := IOStream.append(io, "  \"");
+      io := IOStream.append(io, keyStringFn(Vector.getNoBounds(keys, 1)));
+      io := IOStream.append(io, "\": \"");
+      io := IOStream.append(io, valueStringFn(Vector.getNoBounds(values, 1)));
+      io := IOStream.append(io, "\"");
+
+      for i in 2:sz loop
+        io := IOStream.append(io, ",\n  \"");
+        io := IOStream.append(io, keyStringFn(Vector.getNoBounds(keys, i)));
+        io := IOStream.append(io, "\": \"");
+        io := IOStream.append(io, valueStringFn(Vector.getNoBounds(values, i)));
+        io := IOStream.append(io, "\"");
+      end for;
+    end if;
+
+    io := IOStream.append(io, "\n}");
+    str := IOStream.string(io);
+  end toJSON;
 
 protected
   function find

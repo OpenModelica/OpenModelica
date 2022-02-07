@@ -145,7 +145,7 @@ algorithm
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED,
            AbsynUtil.dummyInfo, checkAccessViolations = false);
-  cls := InstUtil.mergeScalars(cls);
+  cls := InstUtil.mergeScalars(cls, classPath);
   checkInstanceRestriction(cls, classPath, context);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
