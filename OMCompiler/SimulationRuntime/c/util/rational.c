@@ -235,19 +235,6 @@ RATIONAL divRat(RATIONAL r1, RATIONAL r2) {
 
 
 /**
- * @brief Compare rational with integer.
- *
- * @param r         Rational number.
- * @param n         Natural number.
- * @return bool     true if r is less than n, else false.
- */
-modelica_boolean lessRatInt(RATIONAL r, rat_int_t n) {
-  assert(r.den > 0);
-  return r.num < r.den*n;
-}
-
-
-/**
  * @brief Get real approximation of rational number.
  *
  * @param a         Rational number.

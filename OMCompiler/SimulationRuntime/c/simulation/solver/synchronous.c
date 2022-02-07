@@ -60,7 +60,7 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
   for(i=0; i<data->modelData->nBaseClocks; i++) {
     for(j=0; j<data->simulationInfo->baseClocks[i].nSubClocks; j++) {
       assertStreamPrint(threadData, data->simulationInfo->baseClocks[i].subClocks[j].solverMethod != NULL, "Continuous clocked systems aren't supported yet.");
-      assertStreamPrint(threadData, !lessRatInt(data->simulationInfo->baseClocks[i].subClocks[j].shift, 0), "Shift of sub-clock is negative. Sub-clocks aren't allowed to fire before base-clock.");
+      assertStreamPrint(threadData, floorRat(data->simulationInfo->baseClocks[i].subClocks[j].shift) >= 0, "Shift of sub-clock is negative. Sub-clocks aren't allowed to fire before base-clock.");
     }
   }
 
@@ -232,7 +232,7 @@ modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx,
   for (/* init above */; i < baseClock->nSubClocks; ++i) {
     subClock = &baseClock->subClocks[i];
     subTimer = addRat(subRat(subClock->shift, int2Rat(baseClock->stats.count-1)), mulRat(int2Rat(subClock->stats.count), subClock->factor));
-    while (lessRatInt(subTimer, 1)) {
+    while (floorRat(subTimer) == 0) {
       activationTime = curTime + rat2Real(subTimer)*baseClock->interval;
       nextTimer = (SYNC_TIMER){
         .base_idx = idx,
