@@ -56,7 +56,7 @@
 #endif
 #endif
 
-#if !(defined RAT_INT_ADD) /* no overfolw checks available */
+#if !(defined RAT_INT_ADD) /* no overflow checks available */
 #define RAT_INT_ADD(a, b, c, op) (c) = (a) + (b)
 #define RAT_INT_MUL(a, b, c, op) (c) = (a) * (b)
 #endif
@@ -210,7 +210,7 @@ RATIONAL invRat(RATIONAL r)
 {
   assertStreamPrint(NULL, r.num != 0, "RATIONAL division by zero.");
   if(r.num < 0) {
-    assertStreamPrint(NULL, r.den != RAT_INT_MIN,
+    assertStreamPrint(NULL, r.num != RAT_INT_MIN,
       "RATIONAL overflow. Unable to store result of ("RAT_FMT"/"RAT_FMT")^(-1)",
       r.num, r.den);
     return (RATIONAL){-r.den, -r.num};
@@ -231,6 +231,19 @@ RATIONAL invRat(RATIONAL r)
  */
 RATIONAL divRat(RATIONAL r1, RATIONAL r2) {
   return mulRat(r1, invRat(r2));
+}
+
+
+/**
+ * @brief Compare rational with integer.
+ *
+ * @param r         Rational number.
+ * @param n         Natural number.
+ * @return bool     true if r is less than n, else false.
+ */
+modelica_boolean lessRatInt(RATIONAL r, rat_int_t n) {
+  assert(r.den > 0);
+  return r.num < r.den*n;
 }
 
 
