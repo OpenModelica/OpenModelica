@@ -1126,10 +1126,17 @@ function loadLibraryFunction
   output Integer fnHandle;
 protected
   SCode.Annotation ann;
-  list<String> libs = {}, dirs = {}, paths = {};
+  list<String> libs = {}, dirs = {}, paths = {}, libs2 = {};
   Boolean found = false;
-  String installLibDir = Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc";
+  String installLibDir;
 algorithm
+
+  if Autoconf.os == "Windows_NT" then
+    installLibDir := Settings.getInstallationDirectoryPath() + "/bin";
+  else
+    installLibDir := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc";
+  end if;
+
   // Read libraries and library directories from the annotation if it exists.
   if isSome(extAnnotation) then
     SOME(ann) := extAnnotation;
@@ -1142,6 +1149,23 @@ algorithm
   libs := List.unique(libs);
   dirs := List.unique(dirs);
 
+  // look for the lib names prefixed with 'lib' as well
+  for lib in libs loop
+    if not stringEmpty(lib) then
+      libs2 := lib :: libs2;
+      libs2 := "lib" + lib :: libs2;
+    end if;
+  end for;
+  libs := libs2;
+
+  // Add the special "ffi" directory inside the lib dir as the last search path.
+  // This is where we put the ModelicaExternal libs right now. So that their shared
+  // versions are not in the lib/omc dir complicating normal linking.
+  // ( remembering we append to the front of the list as we process things )
+  for lib in libs loop
+    paths := (installLibDir + "/ffi/" + lib + Autoconf.dllExt) :: paths;
+  end for;
+
   // Create paths for any combination of library and library directory.
   for lib in libs loop
     // For functions that are linked into the compiler itself we pass an empty
@@ -1149,10 +1173,6 @@ algorithm
     if stringEmpty(lib) then
       paths := "" :: paths;
       continue;
-    end if;
-
-    if Autoconf.os == "linux" then
-      lib := "lib" + lib;
     end if;
 
     lib := lib + Autoconf.dllExt;
