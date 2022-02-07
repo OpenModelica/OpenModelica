@@ -304,6 +304,7 @@ public
      can be merged if they have e.g. the same type, same prefixes, same
      modifiers, etc."
     input output InstNode node;
+    input Absyn.Path classPath;
   protected
     SCode.Element elem;
   algorithm
@@ -312,7 +313,7 @@ public
     end if;
 
     elem := InstNode.definition(node);
-    elem := mergeScalars2(elem);
+    elem := mergeScalars2(elem, classPath);
     node := InstNode.setDefinition(elem, node);
     execStat(getInstanceName());
   end mergeScalars;
@@ -320,6 +321,7 @@ public
   function mergeScalars2
     "Helper function to mergeScalars, does the actual merging."
     input output SCode.Element cls;
+    input Absyn.Path classPath;
   protected
     SCode.ClassDef cdef;
     list<SCode.Element> elems;
@@ -337,6 +339,9 @@ public
           cdef.normalAlgorithmLst := mergeScalarsAlgs(cdef.normalAlgorithmLst, name_map);
           cdef.initialAlgorithmLst := mergeScalarsAlgs(cdef.initialAlgorithmLst, name_map);
           cls.classDef := cdef;
+
+          System.writeFile(AbsynUtil.pathString(classPath) + "_merged_table.json",
+            UnorderedMap.toJSON(name_map, Util.id, Dump.printComponentRefStr));
         then
           ();
 
