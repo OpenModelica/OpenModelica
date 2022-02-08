@@ -889,8 +889,12 @@ algorithm
         // Apply the modifiers of extends nodes.
         ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par));
 
+        // Propagate the visibility of extends to their elements.
+        ClassTree.mapExtends(cls_tree,
+          function applyExtendsVisibility(visibility = ExtendsVisibility.PUBLIC));
+
         // Apply the modifiers of this scope.
-        applyModifier(mod, cls_tree, InstNode.name(node));
+        applyModifier(mod, cls_tree, node);
 
         // Apply element redeclares.
         ClassTree.mapRedeclareChains(cls_tree,
@@ -904,7 +908,6 @@ algorithm
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
           function instExtends(attributes = attributes, useBinding = useBinding,
-                               visibility = ExtendsVisibility.PUBLIC,
                                instLevel = instLevel + 1, context = context));
 
         // Instantiate local components.
@@ -966,7 +969,7 @@ algorithm
         mod := instElementModifier(InstNode.definition(node), node, InstNode.parent(node));
         outer_mod := Modifier.merge(outerMod, cls.modifier);
         mod := Modifier.merge(outer_mod, mod);
-        applyModifier(mod, cls_tree, InstNode.name(node));
+        applyModifier(mod, cls_tree, node);
 
         inst_cls := Class.INSTANCED_BUILTIN(ty, cls_tree, res);
         node := InstNode.updateClass(inst_cls, node);
@@ -1125,20 +1128,16 @@ algorithm
     end match;
   end if;
 
-  applyModifier(ext_mod, cls_tree, InstNode.name(extendsNode));
+  applyModifier(ext_mod, cls_tree, extendsNode);
 end modifyExtends;
 
 type ExtendsVisibility = enumeration(PUBLIC, DERIVED_PROTECTED, PROTECTED);
 
-function instExtends
+function applyExtendsVisibility
   input output InstNode node;
-  input Component.Attributes attributes;
-  input Boolean useBinding;
   input ExtendsVisibility visibility;
-  input Integer instLevel;
-  input InstContext.Type context;
 protected
-  Class cls, inst_cls;
+  Class cls;
   ClassTree cls_tree;
   ExtendsVisibility vis = visibility;
 algorithm
@@ -1164,13 +1163,7 @@ algorithm
           end for;
         end if;
 
-        ClassTree.mapExtends(cls_tree,
-          function instExtends(attributes = attributes, useBinding = useBinding,
-                               visibility = vis, instLevel = instLevel, context = context));
-
-        ClassTree.applyLocalComponents(cls_tree,
-          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
-            originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel, context = context));
+        ClassTree.mapExtends(cls_tree, function applyExtendsVisibility(visibility = vis));
       then
         ();
 
@@ -1180,7 +1173,43 @@ algorithm
           vis := ExtendsVisibility.DERIVED_PROTECTED;
         end if;
 
-        cls.baseClass := instExtends(cls.baseClass, attributes, useBinding, vis, instLevel, context);
+        cls.baseClass := applyExtendsVisibility(cls.baseClass, vis);
+        node := InstNode.updateClass(cls, node);
+      then
+        ();
+
+    else ();
+  end match;
+end applyExtendsVisibility;
+
+function instExtends
+  input output InstNode node;
+  input Component.Attributes attributes;
+  input Boolean useBinding;
+  input Integer instLevel;
+  input InstContext.Type context;
+protected
+  Class cls, inst_cls;
+  ClassTree cls_tree;
+algorithm
+  cls := InstNode.getClass(node);
+
+  () := match cls
+    case Class.EXPANDED_CLASS(elements = cls_tree as ClassTree.INSTANTIATED_TREE())
+      algorithm
+        ClassTree.mapExtends(cls_tree,
+          function instExtends(attributes = attributes, useBinding = useBinding,
+                               instLevel = instLevel, context = context));
+
+        ClassTree.applyLocalComponents(cls_tree,
+          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
+            originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel, context = context));
+      then
+        ();
+
+    case Class.EXPANDED_DERIVED()
+      algorithm
+        cls.baseClass := instExtends(cls.baseClass, attributes, useBinding, instLevel, context);
         node := InstNode.updateClass(cls, node);
       then
         ();
@@ -1201,7 +1230,7 @@ function applyModifier
    each part with the relevant element in the scope."
   input Modifier modifier;
   input output ClassTree cls;
-  input String clsName;
+  input InstNode parent;
 protected
   list<Modifier> mods;
   list<Mutable<InstNode>> node_ptrs;
@@ -1223,7 +1252,7 @@ algorithm
             node := ClassTree.lookupElement(Modifier.name(mod), cls);
           else
             Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-              {Modifier.name(mod), clsName}, Modifier.info(mod));
+              {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
             fail();
           end try;
 
@@ -1240,13 +1269,19 @@ algorithm
             node_ptrs := ClassTree.lookupElementsPtr(Modifier.name(mod), cls);
           else
             Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-              {Modifier.name(mod), clsName}, Modifier.info(mod));
+              {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
             fail();
           end try;
 
           // Apply the modifier to each found node.
           for node_ptr in node_ptrs loop
             node := InstNode.resolveOuter(Mutable.access(node_ptr));
+
+            if InstNode.isProtected(node) and not InstNode.isExtends(parent) then
+              Error.addSourceMessage(Error.NF_MODIFY_PROTECTED,
+                {InstNode.name(node), Modifier.toString(mod)}, InstNode.info(node));
+              fail();
+            end if;
 
             if InstNode.isComponent(node) then
               InstNode.componentApply(node, Component.mergeModifier, mod);

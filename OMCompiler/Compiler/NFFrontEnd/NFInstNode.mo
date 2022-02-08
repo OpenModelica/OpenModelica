@@ -1443,9 +1443,6 @@ uniontype InstNode
     output Boolean isProtected;
   algorithm
     isProtected := match node
-      local
-        SCode.Element def;
-
       case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition =
           SCode.Element.EXTENDS(visibility = SCode.Visibility.PROTECTED())))
         then true;
@@ -1815,6 +1812,17 @@ uniontype InstNode
       else Restriction.UNKNOWN();
     end match;
   end restriction;
+
+  function isExtends
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match node
+      case CLASS_NODE(definition = SCode.Element.EXTENDS()) then true;
+      case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition = SCode.Element.EXTENDS())) then true;
+      else false;
+    end match;
+  end isExtends;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");
