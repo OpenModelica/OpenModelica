@@ -87,6 +87,7 @@ public
     record PSEUDO_BUCKET_ENTWINED
       // reverse order, will be iterated and reversed anyway
       list<tuple<PseudoBucketKey, PseudoBucketValue>> entwined_lst;
+      array<list<Integer>> entwined_arr;
     end PSEUDO_BUCKET_ENTWINED;
 
     function addIndices
@@ -121,15 +122,20 @@ public
       input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
       output PseudoBucket bucket                "the bucket containing the equation subsets";
     protected
-      array<Integer> current_start_indices = arrayCreate(arrayLength(mapping.eqn_AtS), 0);
-      array<list<Integer>> comps_arr = listArray(comps_indices);
+      array<array<Integer>> current_start_indices = arrayCreate(arrayLength(mapping.eqn_AtS), arrayCreate(0,0));
+      array<list<Integer>> entwined_arr, comps_arr = listArray(comps_indices);
       Integer eqn_scal_idx, mode, comps_length = listLength(comps_indices);
       list<tuple<PseudoBucketKey, PseudoBucketValue>> bucket_lst, acc = {};
       array<tuple<PseudoBucketKey, PseudoBucketValue>> bucket_arr;
       PseudoBucketKey key;
       PseudoBucketValue val;
-      Integer last = 0;
+      Integer first, last;
     algorithm
+      // 0. initialize start indices
+      for i in Pointer.access(modes.mode_eqns) loop
+        current_start_indices[i] := arrayCreate(arrayLength(arrayGet(modes.mode_to_cref, i)), 0);
+      end for;
+
       // 1. create empty buckets
       bucket := PSEUDO_BUCKET(
         bucket  = UnorderedMap.new<PseudoBucketValue>(
@@ -150,7 +156,9 @@ public
 
           // ToDo: what if partial stuff of for-loops ends up in an algebraic loop?
           else algorithm
-            current_start_indices := arrayCreate(arrayLength(mapping.eqn_AtS), 0);
+            for i in Pointer.access(modes.mode_eqns) loop
+              current_start_indices[i] := arrayCreate(arrayLength(arrayGet(current_start_indices, i)), 0);
+            end for;
           then();
         end match;
       end for;
@@ -158,17 +166,21 @@ public
       // 3. entwine for loops
       bucket_lst := UnorderedMap.toList(bucket.bucket);
       bucket_arr := listArray(List.sort(bucket_lst, tplSortGt));
+      first := tplGetFirstComp(bucket_arr[1]);
       last := tplGetLastComp(bucket_arr[1]);
       for i in 1:arrayLength(bucket_arr) loop
         if tplGetFirstComp(bucket_arr[i]) > last then
-          updateEntwined(acc, bucket);
+          entwined_arr := comps_arr[first:last];
+          updateEntwined(acc, entwined_arr, bucket);
+          first := tplGetFirstComp(bucket_arr[i]);
           acc := {bucket_arr[i]};
         else
           acc := bucket_arr[i] :: acc;
         end if;
         last := intMax(tplGetLastComp(bucket_arr[i]), last);
       end for;
-      updateEntwined(acc, bucket);
+      entwined_arr := comps_arr[first:last];
+      updateEntwined(acc, entwined_arr, bucket);
     end create;
 
     function add
@@ -176,7 +188,7 @@ public
       input Integer eqn_scal_idx;
       input Integer comp_idx;
       input Integer mode;
-      input array<Integer> current_start_indices;
+      input array<array<Integer>> current_start_indices;
       input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
       input PseudoBucket bucket;
     protected
@@ -184,11 +196,11 @@ public
       PseudoBucketValue val;
     algorithm
       // get or set current start index
-      if current_start_indices[eqn_arr_idx] == 0 then
-        arrayUpdate(current_start_indices, eqn_arr_idx, eqn_scal_idx);
+      if arrayGet(current_start_indices[eqn_arr_idx], mode) == 0 then
+        arrayUpdate(current_start_indices[eqn_arr_idx], mode, eqn_scal_idx);
         key := PSEUDO_BUCKET_KEY(eqn_scal_idx, eqn_arr_idx, mode);
       else
-        key := PSEUDO_BUCKET_KEY(current_start_indices[eqn_arr_idx], eqn_arr_idx, mode);
+        key := PSEUDO_BUCKET_KEY(arrayGet(current_start_indices[eqn_arr_idx], mode), eqn_arr_idx, mode);
       end if;
 
       if UnorderedMap.contains(key, bucket.bucket) then
@@ -204,16 +216,19 @@ public
 
     function updateEntwined
       input list<tuple<PseudoBucketKey, PseudoBucketValue>> acc;
+      input array<list<Integer>> entwined_arr;
       input PseudoBucket bucket;
     protected
       PseudoBucketKey key;
       PseudoBucketValue entwined;
     algorithm
-      entwined := PSEUDO_BUCKET_ENTWINED(acc);
-      for tpl in acc loop
-        (key, _) := tpl;
-        UnorderedMap.add(key, entwined, bucket.bucket);
-      end for;
+      if listLength(acc) > 1 then
+        entwined := PSEUDO_BUCKET_ENTWINED(acc, entwined_arr);
+        for tpl in acc loop
+          (key, _) := tpl;
+          UnorderedMap.add(key, entwined, bucket.bucket);
+        end for;
+      end if;
     end updateEntwined;
 
     function get
@@ -295,6 +310,7 @@ public
 
       case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
+
         // recollect array information
         bucket := PseudoBucket.create(comps_indices, matching.eqn_to_var, adj.mapping, adj.modes);
         for idx_lst in comps_indices loop

@@ -58,6 +58,32 @@ public
     input output FunctionTree funcTree;
     output Status status;
     output Boolean invertRelation     "If the equation represents a relation, this tells if the sign should be inverted";
+  algorithm
+    (eqn, funcTree, status, invertRelation) := match eqn
+      local
+        Equation body;
+
+      case Equation.FOR_EQUATION(body = {body}) algorithm
+        (body, funcTree, status, invertRelation) := solveBody(body, cref, funcTree);
+        eqn.body := {body};
+      then (eqn, funcTree, status, invertRelation);
+
+      case Equation.FOR_EQUATION() algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+            + " failed to solve a for-equation with multiple body eqns for a single cref. Please iterate over body elements individually.\n"
+            + "cref: " + ComponentRef.toString(cref) + " in equation:\n" + Equation.toString(eqn)});
+      then fail();
+
+      else solveBody(eqn, cref, funcTree);
+    end match;
+  end solve;
+
+  function solveBody
+    input output Equation eqn;
+    input ComponentRef cref;
+    input output FunctionTree funcTree;
+    output Status status;
+    output Boolean invertRelation     "If the equation represents a relation, this tells if the sign should be inverted";
   protected
     Expression residual, derivative;
     Differentiate.DifferentiationArguments diffArgs;
@@ -100,7 +126,7 @@ public
       end if;
     end if;
     eqn := Equation.simplify(eqn, getInstanceName());
-  end solve;
+  end solveBody;
 
 protected
   function solveSimple

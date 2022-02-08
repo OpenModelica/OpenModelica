@@ -1024,6 +1024,28 @@ public
     rangeExp := makeRange(start_exp, step_exp, stop_exp);
   end makeIntegerRange;
 
+  function getIntegerRange
+    input Expression range  "has to be RANGE()!";
+    output Integer start;
+    output Integer step;
+    output Integer stop;
+  algorithm
+    (start, step, stop) := match range
+      local
+        Option<Expression> step_opt;
+      case RANGE(start = INTEGER(start), step = step_opt, stop = INTEGER(stop)) algorithm
+        if Util.isSome(step_opt) then
+          SOME(INTEGER(step)) := step_opt;
+        else
+          step := if start > stop then -1 else 1;
+        end if;
+      then (start, step, stop);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " expression not RANGE(): " + toString(range), sourceInfo());
+      then fail();
+    end match;
+  end getIntegerRange;
+
   function makeTuple
     input list<Expression> expl;
     output Expression tupleExp;
@@ -1037,6 +1059,16 @@ public
       tupleExp := TUPLE(Type.TUPLE(tyl, NONE()), expl);
     end if;
   end makeTuple;
+
+  function rangeSize
+    input Expression range  "has to be RANGE()!";
+    output Integer size;
+  protected
+    Integer start, step, stop;
+  algorithm
+    (start, step, stop) := getIntegerRange(range);
+    size := realInt((stop - start) / step);
+  end rangeSize;
 
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
@@ -2227,6 +2259,12 @@ public
   algorithm
     if listEmpty(inv_arguments) then
       daeExp := toDAEMultaryArgs(arguments, operator);
+    elseif Type.isBoolean(operator.ty) then
+      daeExp := DAE.LBINARY(
+        exp1      = toDAEMultaryArgs(arguments, operator),
+        operator  = Operator.toDAE(Operator.invert(operator)),
+        exp2      = toDAEMultaryArgs(inv_arguments, operator)
+       );
     else
       daeExp := DAE.BINARY(
         exp1      = toDAEMultaryArgs(arguments, operator),

@@ -233,6 +233,7 @@ public
       "for-loop reconstruction information"
       array<array<Integer>> mode_to_var       "scal_eqn:  mode idx -> var";
       array<array<ComponentRef>> mode_to_cref "arr_eqn:   mode idx -> cref to solve for";
+      Pointer<list<Integer>> mode_eqns        "array indices of relevant eqns";
     end CAUSALIZE_MODES;
 
     function empty
@@ -240,7 +241,8 @@ public
       input Integer eqn_array_size;
       output CausalizeModes modes = CAUSALIZE_MODES(
                                 mode_to_var  = arrayCreate(eqn_scalar_size, arrayCreate(0,0)),
-                                mode_to_cref = arrayCreate(eqn_array_size, arrayCreate(0,ComponentRef.EMPTY()))
+                                mode_to_cref = arrayCreate(eqn_array_size, arrayCreate(0,ComponentRef.EMPTY())),
+                                mode_eqns    = Pointer.create({})
                               );
     end empty;
 
@@ -277,7 +279,7 @@ public
     algorithm
       Array.copy(modes.mode_to_var, mode_to_var);
       Array.copy(modes.mode_to_cref, mode_to_cref);
-      modes := CAUSALIZE_MODES(mode_to_var, mode_to_cref);
+      modes := CAUSALIZE_MODES(mode_to_var, mode_to_cref, modes.mode_eqns);
     end expand;
 
     function update
@@ -291,10 +293,16 @@ public
       array<array<Integer>> mode_to_var = modes.mode_to_var;
       array<array<ComponentRef>> mode_to_cref = modes.mode_to_cref;
     algorithm
+      // if there is no mode yet this equation index has not been added
+      if arrayLength(mode_to_cref[eqn_arr_idx]) == 0 then
+        Pointer.update(modes.mode_eqns, eqn_arr_idx :: Pointer.access(modes.mode_eqns));
+      end if;
+
       // create scalar mode idx to variable mapping
       for i in 1:arrayLength(mode_to_var_part) loop
         arrayUpdate(mode_to_var, eqn_scal_idx+(i-1), arrayAppend(mode_to_var_part[i], mode_to_var[eqn_scal_idx+(i-1)]));
       end for;
+
       // create array mode to cref mapping
       arrayUpdate(mode_to_cref, eqn_arr_idx, arrayAppend(listArray(unique_dependencies), mode_to_cref[eqn_arr_idx]));
     end update;
@@ -1235,18 +1243,18 @@ public
         local
           list<tuple<ComponentRef, Expression>> rest;
           ComponentRef iterator;
-          Expression start, step, stop, range;
-          Option<Expression> step_opt;
+          Expression range;
+          Integer start, step, stop;
           list<tuple<Integer, Integer>> ranges;
 
         // only occurs for scalar variables
         case {} then {first};
 
         // extract numeric information about the range
-        case (iterator, Expression.RANGE(start=start, step=step_opt, stop=stop)) :: rest algorithm
-          step := if Util.isSome(step_opt) then Util.getOption(step_opt) else Expression.INTEGER(1);
+        case (iterator, range) :: rest algorithm
+          (start, step, stop) := Expression.getIntegerRange(range);
           // traverse every index in the range
-          for index in Expression.integerValue(start):Expression.integerValue(step):Expression.integerValue(stop) loop
+          for index in start:step:stop loop
             UnorderedMap.add(iterator, Expression.INTEGER(index), replacements);
             if listEmpty(rest) then
               // bottom line, resolve current configuration and create index for it

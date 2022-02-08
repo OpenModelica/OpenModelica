@@ -432,12 +432,13 @@ public
           Option<SimJacobian> jacobian;
           EquationPointer eqn_ptr;
           Equation eqn;
-          Statement stmt;
-          list<Statement> stmts;
+          list<Statement> stmts = {};
           SlicingStatus status;
           ComponentRef var_cref;
-          list<Integer> eqn_indices;
+          Integer index;
+          list<Integer> eqn_indices, sizes;
           list<Equation> entwined_eqns = {};
+          UnorderedMap<ComponentRef, Expression> replacements;
 
         case StrongComponent.SINGLE_EQUATION() algorithm
           (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), simCodeIndices, funcTree, systemType);
@@ -449,11 +450,23 @@ public
 
         case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(comp.eqn)) algorithm
           (eqn_ptr, status, funcTree) := Equation.slice(comp.eqn, comp.eqn_indices, SOME(comp.var_cref), funcTree);
-          // split the iterators of the equation to make it nested for code generation
-          eqn := Equation.splitIterators(Pointer.access(eqn_ptr));
-          // handle these as if they were algorithms
-          stmt := Equation.toStatement(eqn);
-          tmp := ALGORITHM(simCodeIndices.equationIndex, {stmt}, Equation.getAttributes(eqn));
+          if status == NBEquation.SlicingStatus.FAILURE then
+            // if slicing failed -> scalarize;
+            (eqn, funcTree, _, _) := Solve.solve(Pointer.access(comp.eqn), comp.var_cref, funcTree);
+            Pointer.update(eqn_ptr, eqn);
+            sizes := Equation.sizes(comp.eqn);
+            replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+            for index in listReverse(comp.eqn_indices) loop
+              (eqn, funcTree) := Equation.singleSlice(comp.eqn, index, sizes, ComponentRef.EMPTY(), replacements, funcTree);
+              stmts := Equation.toStatement(eqn) :: stmts;
+            end for;
+          else
+            // split the iterators of the equation to make it nested for code generation
+            eqn := Equation.splitIterators(Pointer.access(eqn_ptr));
+            // handle these as if they were algorithms
+            stmts := {Equation.toStatement(eqn)};
+          end if;
+          tmp := ALGORITHM(simCodeIndices.equationIndex, stmts, Equation.getAttributes(eqn));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
@@ -465,16 +478,37 @@ public
         then tmp;
 
         case StrongComponent.ENTWINED_EQUATION() algorithm
+          // slice each entwined equation individually
           for slice in comp.entwined_slices loop
             StrongComponent.SLICED_EQUATION(var_cref = var_cref, eqn_indices = eqn_indices, eqn = eqn_ptr) := slice;
             (eqn_ptr, status, funcTree) := Equation.slice(eqn_ptr, eqn_indices, SOME(var_cref), funcTree);
+            if status == NBEquation.SlicingStatus.FAILURE then break; end if;
             eqn := Equation.renameIterators(Pointer.access(eqn_ptr), "$k");
             entwined_eqns := Equation.splitIterators(eqn) :: entwined_eqns;
           end for;
-          entwined_eqns := Equation.entwine(listReverse(entwined_eqns));
 
-          // handle these as if they were algorithms
-          stmts := list(Equation.toStatement(eqn) for eqn in entwined_eqns);
+          // if slicing failed -> scalarize;
+          if status == NBEquation.SlicingStatus.FAILURE then
+            // first solve all equation bodies accordingly
+            for slice in comp.entwined_slices loop
+              StrongComponent.SLICED_EQUATION(var_cref = var_cref, eqn = eqn_ptr) := slice;
+              (eqn, funcTree, _, _) := Solve.solve(Pointer.access(eqn_ptr), var_cref, funcTree);
+              Pointer.update(eqn_ptr, eqn);
+            end for;
+            replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+            for tpl in comp.entwined_tpl_lst loop
+              (eqn_ptr, index) := tpl;
+              // do this more efficiently!
+              sizes := Equation.sizes(eqn_ptr);
+              (eqn, funcTree) := Equation.singleSlice(eqn_ptr, index, sizes, ComponentRef.EMPTY(), replacements, funcTree);
+              stmts := Equation.toStatement(eqn) :: stmts;
+            end for;
+          else
+            // entwine the equations as far as possible
+            entwined_eqns := Equation.entwine(listReverse(entwined_eqns));
+            // handle these as if they were algorithms
+            stmts := list(Equation.toStatement(entwined) for entwined in entwined_eqns);
+          end if;
           tmp := ALGORITHM(simCodeIndices.equationIndex, stmts, Equation.getAttributes(eqn));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;

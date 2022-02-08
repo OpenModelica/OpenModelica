@@ -310,9 +310,9 @@ protected
 
       system := System.SYSTEM(
         systemType        = systemType,
-        unknowns          = if isInit then Initialization.sortInitVars(systVariables) else systVariables,
+        unknowns          = systVariables,
         daeUnknowns       = NONE(),
-        equations         = if isInit then Initialization.sortInitEqns(systEquations) else systEquations,
+        equations         = systEquations,
         adjacencyMatrix   = NONE(),
         matching          = NONE(),
         strongComponents  = NONE(),

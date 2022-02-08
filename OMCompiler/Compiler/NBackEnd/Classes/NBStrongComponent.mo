@@ -79,7 +79,8 @@ public
   end SLICED_EQUATION;
 
   record ENTWINED_EQUATION
-    list<StrongComponent> entwined_slices   "has to be SLICED_EQUATION()";
+    list<StrongComponent> entwined_slices                     "has to be SLICED_EQUATION()";
+    list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst  "equation with scalar idx (0 based) - fallback scalarization";
   end ENTWINED_EQUATION;
 
   record SINGLE_ARRAY
@@ -264,6 +265,7 @@ public
         Sorting.PseudoBucketKey key;
         ComponentRef cref_to_solve;
         list<Integer> eqn_scal_indices;
+        list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
         list<StrongComponent> entwined = {};
 
       case {i} guard(Adjacency.CausalizeModes.contains(i, modes)) algorithm
@@ -281,11 +283,16 @@ public
 
             case Sorting.PSEUDO_BUCKET_ENTWINED() algorithm
               for tpl in val.entwined_lst loop
-                // has to be single, nested entwining not allowed (already flattened)
-                (key, Sorting.PSEUDO_BUCKET_SINGLE(cref_to_solve, eqn_scal_indices)) := tpl;
+                // has to be single because nested entwining not allowed (already flattened)
+                (key, Sorting.PSEUDO_BUCKET_SINGLE(cref_to_solve, eqn_scal_indices, _, _)) := tpl;
                 entwined := createPseudoSlice(key.eqn_arr_idx, cref_to_solve, eqn_scal_indices, eqns, mapping, bucket) :: entwined;
               end for;
-            then SOME(ENTWINED_EQUATION(entwined));
+              entwined_tpl_lst := createPseudoEntwinedIndices(val.entwined_arr, eqns, mapping);
+            then SOME(ENTWINED_EQUATION(entwined, entwined_tpl_lst));
+
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+            then fail();
           end match;
         end if;
       then comp;
@@ -323,6 +330,24 @@ public
       eqn         = eqn_ptr
     );
   end createPseudoSlice;
+
+  function createPseudoEntwinedIndices
+    input array<list<Integer>> entwined_indices;
+    input EquationPointers eqns;
+    input Adjacency.Mapping mapping;
+    output list<tuple<Pointer<Equation>, Integer>> flat_tpl_indices = {};
+  protected
+    Integer arr_idx, first_idx;
+  algorithm
+    for tmp in entwined_indices loop
+      for scal_idx in tmp loop
+        arr_idx := mapping.eqn_StA[scal_idx];
+        (first_idx, _) := mapping.eqn_AtS[arr_idx];
+        flat_tpl_indices := (EquationPointers.getEqnAt(eqns, arr_idx), scal_idx-first_idx) :: flat_tpl_indices;
+      end for;
+    end for;
+    flat_tpl_indices := listReverse(flat_tpl_indices);
+  end createPseudoEntwinedIndices;
 
   function makeDAEModeResidualTraverse
     " update later to do both inner and residual equations "

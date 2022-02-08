@@ -52,12 +52,12 @@ equation
 end simple_nested_for4;
 
 model simple_nested_for5
-  Real x[4,2];
+  Real x[4,3];
 equation
-  for i in 1:3, j in 1:2 loop
+  for i in 1:3, j in 1:3 loop
     x[i,j] = x[i+1,j] + i*sin(j*time);
   end for;
-  for i in 1:2 loop
+  for i in 1:3 loop
     x[4,i] = i*cos(time);
   end for;
 end simple_nested_for5;
