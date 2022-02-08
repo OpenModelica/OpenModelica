@@ -36,25 +36,36 @@ extern "C" {
 #endif
 
 /**
- * @brief Rational number m/n
+ * @brief Underlying integer type
+ */
+typedef long rat_int_t;
+#define RAT_INT_ABS labs
+#define RAT_INT_MIN LONG_MIN
+#define RAT_FMT "%ld"
+
+/**
+ * @brief Rational number num/den
  */
 typedef struct RATIONAL {
-  long m;       /**< numerator */
-  long n;       /**< denominator */
+  rat_int_t num;  /**< numerator */
+  rat_int_t den;  /**< denominator */
 } RATIONAL;
 
-RATIONAL makeRATIONAL(long a, long b);
-RATIONAL addInt2Rat(long integer, RATIONAL rational);
-RATIONAL subInt2Rat(long integer, RATIONAL rational);
-RATIONAL multInt2Rat(long integer, RATIONAL rational);
-RATIONAL addRat2Rat(RATIONAL a, RATIONAL b);
-RATIONAL multRat2Rat(RATIONAL a, RATIONAL b);
-RATIONAL divRat2Rat(RATIONAL a, RATIONAL b);
-double rat2Real(RATIONAL a);
-long ceilRat(RATIONAL a);
-long ceilRatStrict(RATIONAL a);
-long floorRat(RATIONAL a);
-long floorRatStrict(RATIONAL a);
+RATIONAL makeRATIONAL(rat_int_t num, rat_int_t den);
+
+RATIONAL addRat(RATIONAL r1, RATIONAL r2);
+RATIONAL negRat(RATIONAL r);
+RATIONAL subRat(RATIONAL r1, RATIONAL r2);
+RATIONAL mulRat(RATIONAL r1, RATIONAL r2);
+RATIONAL invRat(RATIONAL r);
+RATIONAL divRat(RATIONAL r1, RATIONAL r2);
+
+double rat2Real(RATIONAL r);
+RATIONAL int2Rat(rat_int_t n);
+rat_int_t ceilRat(RATIONAL r);
+rat_int_t ceilRatStrict(RATIONAL r);
+rat_int_t floorRat(RATIONAL r);
+rat_int_t floorRatStrict(RATIONAL r);
 
 #ifdef __cplusplus
 }
