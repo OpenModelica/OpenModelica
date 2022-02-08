@@ -1,0 +1,28 @@
+// name: UnitCheck20
+// keywords: initialization
+// status: correct
+// cflags: -d=-newInst
+
+loadString("
+package unitCheckTests
+  model UnitCheck20
+    Real A(unit = \"m^2\");
+  end UnitCheck20;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("--unitChecking -d=newInst"); getErrorString();
+instantiateModel(unitCheckTests.UnitCheck20); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "class unitCheckTests.UnitCheck20
+//   Real A(unit = \"m^2\");
+// end unitCheckTests.UnitCheck20;
+// "
+// "[<interactive>:4:5-4:25:writable] Notification: Invalid unit expression ‘m^2‘.
+// "
+// endResult

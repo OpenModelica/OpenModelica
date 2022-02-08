@@ -39,6 +39,8 @@ encapsulated package NFUnit
 
 public
 import ComponentRef = NFComponentRef;
+import Absyn;
+import AbsynUtil;
 
 protected
 import Debug;
@@ -576,6 +578,7 @@ public function parseUnitString "author: lochel
   The second argument is optional."
   input String inUnitString;
   input HashTableStringToUnit.HashTable inKnownUnits = getKnownUnits();
+  input SourceInfo info = AbsynUtil.dummyInfo;
   output Unit outUnit;
 protected
   list<String> charList;
@@ -585,7 +588,14 @@ algorithm
   if listEmpty(charList) then
     fail();
   end if;
-  tokenList := lexer(charList);
+
+  try
+    tokenList := lexer(charList);
+  else
+    Error.addSourceMessage(Error.INVALID_UNIT, {inUnitString}, info);
+    fail();
+  end try;
+
   outUnit := parser3({true, true}, tokenList, UNIT(1e0, 0, 0, 0, 0, 0, 0, 0), inKnownUnits);
   if not isUnit(outUnit) then
     if Flags.isSet(Flags.FAILTRACE) then
@@ -879,9 +889,6 @@ algorithm
       tokenList = lexer(charList);
     then T_UNIT(unit)::tokenList;
 
-    else equation
-      Error.addInternalError("function lexer failed", sourceInfo());
-    then fail();
   end matchcontinue;
 end lexer;
 

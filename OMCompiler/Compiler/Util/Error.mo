@@ -897,6 +897,9 @@ public constant ErrorTypes.Message CONSISTENT_UNITS = ErrorTypes.MESSAGE(518, Er
   Gettext.gettext("The system of units is consistent."));
 public constant ErrorTypes.Message INCOMPLETE_UNITS = ErrorTypes.MESSAGE(519, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("The system of units is incomplete. Please provide unit information to the model by e.g. using types from the SIunits package."));
+public constant ErrorTypes.Message INVALID_UNIT = ErrorTypes.MESSAGE(520, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Invalid unit expression ‘%s‘."));
+
 public constant ErrorTypes.Message ASSIGN_RHS_ELABORATION = ErrorTypes.MESSAGE(521, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to elaborate rhs of %s."));
 public constant ErrorTypes.Message FAILED_TO_EVALUATE_EXPRESSION = ErrorTypes.MESSAGE(522, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
