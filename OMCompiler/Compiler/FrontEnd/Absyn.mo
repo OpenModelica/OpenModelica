@@ -968,6 +968,7 @@ uniontype ComponentRef "A component reference is the fully or partially qualifie
   record CREF_FULLYQUALIFIED
     ComponentRef componentRef;
   end CREF_FULLYQUALIFIED;
+
   record CREF_QUAL
     Ident name "name" ;
     list<Subscript> subscripts "subscripts" ;

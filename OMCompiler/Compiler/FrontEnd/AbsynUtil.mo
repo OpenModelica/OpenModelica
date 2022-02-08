@@ -2366,6 +2366,18 @@ algorithm
   end match;
 end crefGetLastIdent;
 
+public function crefGetLastSubs
+  "Gets the last subscripts in a Absyn.ComponentRef"
+  input Absyn.ComponentRef cref;
+  output list<Absyn.Subscript> subscripts;
+algorithm
+  subscripts := match cref
+    case Absyn.CREF_IDENT() then cref.subscripts;
+    case Absyn.CREF_QUAL() then crefGetLastSubs(cref.componentRef);
+    case Absyn.CREF_FULLYQUALIFIED() then crefGetLastSubs(cref.componentRef);
+  end match;
+end crefGetLastSubs;
+
 public function crefStripLastSubs "Strips the last subscripts of a Absyn.ComponentRef"
   input output Absyn.ComponentRef cref;
 algorithm
