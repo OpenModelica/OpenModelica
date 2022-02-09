@@ -62,6 +62,6 @@ CONFIG(release, debug|release) { # release
 }
 LIBS += -L$$(OMBUILDDIR)/../OMEdit/OMEditLIB/Debugger/Parser -lGDBMIParser \
   -L$$(OMBUILDDIR)/lib/omc -L$$(OMBUILDDIR)/../OMParser/install/lib -Wl,-Bstatic -lOMParser -lantlr4-runtime -Wl,-Bdynamic -lomantlr3 -lOMPlot -lomqwt -lomopcua -lzmq \
-  -lOpenModelicaCompiler -lomcruntime -lOpenModelicaRuntimeC -lfmilib -lzlib -lModelicaExternalC -lomcgc -lpthread -lshlwapi \
+  -lOpenModelicaCompiler -lomcruntime -lOpenModelicaRuntimeC -lfmilib -lzlib -lomcgc -lpthread -lshlwapi \
   -lws2_32 \
   -L$$(OMBUILDDIR)/bin -lOMSimulator
