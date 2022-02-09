@@ -1,0 +1,38 @@
+// name: examplary
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model exemplary
+  Real x[5,2];
+  Real y[2];
+equation
+  for i in 1:4, j in 1:2 loop
+    x[i+1,j] = x[i,j] - y[j];
+  end for;
+  for j in 1:2 loop
+	y[j] = j*sin(time);
+    x[3,j] = j*cos(time);
+  end for;
+end exemplary;
+
+model exemplaryS
+  parameter Integer s = 2000;
+  Real x[5+s,2+s];
+  Real y[2+s];
+equation
+  for i in 1:4+s, j in 1:2+s loop
+    x[i+1,j] = x[i,j] - y[j];
+  end for;
+  for j in 1:2+s loop
+	y[j] = j*sin(time);
+    x[3,j] = j*cos(time);
+  end for;
+end exemplaryS;
+
+"); getErrorString();
+
+
+simulate(exemplaryS); getErrorString();
+val(x[2,1],1);
+val(x[4,2],1);
