@@ -429,7 +429,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlTreeString.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlSetInt.mo
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/AdjacencyList.mo
     # ${CMAKE_CURRENT_SOURCE_DIR}/Util/BasePVector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Curl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DiffAlgorithm.mo

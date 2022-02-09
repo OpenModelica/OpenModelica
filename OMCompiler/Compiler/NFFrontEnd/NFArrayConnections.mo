@@ -42,7 +42,6 @@ encapsulated package NFArrayConnections
   import SBPWLinearMap;
 
 protected
-  import AbsynUtil;
   import SBGraph.IncidenceList;
   import SBGraph.VertexDescriptor;
   import Array;
