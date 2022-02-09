@@ -1176,7 +1176,7 @@ algorithm
 
   end match;
 
-  res := if anyReal then REAL(result) else INTEGER(realInt(result));
+  res := if anyReal then Expression.REAL(result) else Expression.INTEGER(realInt(result));
 end combineConstantNumbers;
 
 protected function getConstantValue

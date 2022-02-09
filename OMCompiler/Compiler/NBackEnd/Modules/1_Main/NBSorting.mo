@@ -170,7 +170,8 @@ public
       last := tplGetLastComp(bucket_arr[1]);
       for i in 1:arrayLength(bucket_arr) loop
         if tplGetFirstComp(bucket_arr[i]) > last then
-          entwined_arr := comps_arr[first:last];
+          entwined_arr := arrayCreate(last-first+1, {});
+          Array.copyRange(comps_arr, entwined_arr, first, last, 1);
           updateEntwined(acc, entwined_arr, bucket);
           first := tplGetFirstComp(bucket_arr[i]);
           acc := {bucket_arr[i]};
@@ -179,7 +180,8 @@ public
         end if;
         last := intMax(tplGetLastComp(bucket_arr[i]), last);
       end for;
-      entwined_arr := comps_arr[first:last];
+      entwined_arr := arrayCreate(last-first+1, {});
+      Array.copyRange(comps_arr, entwined_arr, first, last, 1);
       updateEntwined(acc, entwined_arr, bucket);
     end create;
 
