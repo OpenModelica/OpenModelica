@@ -551,6 +551,8 @@ constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(189, "dumpBackendClocks", fa
   Gettext.gettext("Dumps times for each backend module (only new backend)."));
 constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(190, "dumpSetBasedGraphs", false,
   Gettext.gettext("Dumps information about set based graphs for efficient array handling (only new frontend and new backend)."));
+constant DebugFlag MERGE_COMPONENTS = DEBUG_FLAG(191, "mergeComponents", false,
+  Gettext.gettext("Enables automatic merging of components into arrays."));
 
 public
 // CONFIGURATION FLAGS

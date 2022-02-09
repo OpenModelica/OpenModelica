@@ -1,0 +1,52 @@
+// name : recompileFMU.mos
+// status: correct
+// teardown_command: rm -rf simpleLoop* model_res.mat build_simpleLoop.log
+//
+// Create a ME FMU, unzip and compile it again.
+// Simulate the resulting FMU with OMSimulator to make sure it still works.
+
+loadString("model simpleLoop
+  Real r(min = 0);
+  Real s(min = -sqrt(2), max = sqrt(2));
+  Real x(start=1.0), y(start=0.5);
+  Real x_ref, y_ref;
+equation
+  r = 1+time;
+  s = sqrt((2-time)*0.9);
+
+  r^2 = x^2 + y^2;
+  r*s = x + y;
+
+  x_ref = r * (s/2 + sqrt(1/2-s^2/4));
+  y_ref = r*s - x_ref;
+end simpleLoop;
+"); getErrorString();
+
+// Build FMU
+setCommandLineOptions("-d=newInst"); getErrorString();
+buildModelFMU(simpleLoop, version="2.0", fmuType="me"); getErrorString();
+
+// Re-build FMU
+system("unzip -o -qq simpleLoop.fmu -d simpleLoop_FMU/");
+remove("simpleLoop.fmu");
+system("cd simpleLoop_FMU/sources && ./configure CPPFLAGS=\"-I" + getInstallationDirectoryPath() + "/include/omc/c/fmi\" NEED_CMINPACK=1 && make -s", "build_simpleLoop.log"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu", "simpleLoop_me_systemCall.log");
+readFile("simpleLoop_me_systemCall.log");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "simpleLoop.fmu"
+// ""
+// 0
+// true
+// 0
+// ""
+// 0
+// "info:    model doesn't contain any continuous state
+// info:    Result file: model_res.mat (bufferSize=10)
+// "
+// endResult

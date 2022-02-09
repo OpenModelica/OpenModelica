@@ -422,7 +422,7 @@ template makeCRational(Rational rational)
 match rational
   case RATIONAL(__) then
     <<
-    (RATIONAL){<%nom%>, <%denom%>}
+    makeRATIONAL(<%nom%>, <%denom%>)
     >>
 end makeCRational;
 

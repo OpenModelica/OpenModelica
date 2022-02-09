@@ -2140,6 +2140,9 @@ algorithm
       then
         nr;
 
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())
+      then 0;
+
     // count the variables in record
     case DAE.T_COMPLEX(varLst = varLst)
       equation

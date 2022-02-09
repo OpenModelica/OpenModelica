@@ -1260,7 +1260,7 @@ template settingsfile(SimCode simCode)
  >>
 end settingsfile;
 
-template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<String> sourceFiles, list<String> runtimeObjectFiles, list<String> dgesvObjectFiles, list <String> sundialsObjectFiles)
+template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<String> sourceFiles, list<String> runtimeObjectFiles, list<String> dgesvObjectFiles, list<String> cminpackObjectFiles, list <String> sundialsObjectFiles)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
   let common =
@@ -1274,8 +1274,11 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
     ifneq ($(NEED_DGESV),)
     DGESV_OBJS = <%dgesvObjectFiles ; separator = " "%>
     endif
+    ifneq ($(NEED_CMINPACK),)
+    CMINPACK_OBJS=<%cminpackObjectFiles ; separator = " "%>
+    endif
     ifneq ($(NEED_RUNTIME),)
-    RUNTIMEFILES=<%runtimeObjectFiles ; separator = " "%> $(DGESV_OBJS)
+    RUNTIMEFILES=<%runtimeObjectFiles ; separator = " "%> $(DGESV_OBJS) $(CMINPACK_OBJS)
     endif
     ifneq ($(NEED_SUNDIALS),)
     FMISUNDIALSFILES=<%sundialsObjectFiles ; separator = " "%>
@@ -1381,6 +1384,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       DLLEXT=@DLLEXT@
       NEED_RUNTIME=@NEED_RUNTIME@
       NEED_DGESV=@NEED_DGESV@
+      NEED_CMINPACK=@NEED_CMINPACK@
       NEED_SUNDIALS=@NEED_SUNDIALS@
       FMIPLATFORM=@FMIPLATFORM@
       # Note: Simulation of the fmu with dymola does not work with -finline-small-functions (enabled by most optimization levels)

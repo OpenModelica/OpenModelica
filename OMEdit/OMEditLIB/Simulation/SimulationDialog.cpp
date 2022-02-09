@@ -2055,9 +2055,10 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     }
     pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
   }
+  bool profiling = simulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
   if (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
-      simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
-    MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
+      simulationOptions.getLaunchTransformationalDebugger() || profiling) {
+    MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json", profiling);
   }
   // Show the data reconciliation report
   if (simulationOptions.getEnableDataReconciliation()) {

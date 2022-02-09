@@ -1291,11 +1291,11 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
  * \param fileName
  * \return
  */
-TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName)
+TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling)
 {
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
-    pTransformationsWidget = new TransformationsWidget(fileName);
+    pTransformationsWidget = new TransformationsWidget(fileName, profiling);
     mTransformationsWidgetHash.insert(fileName, pTransformationsWidget);
   } else {
     pTransformationsWidget->reloadTransformations();
@@ -1719,7 +1719,7 @@ void MainWindow::showOpenTransformationFileDialog()
   }
   mpProgressBar->setRange(0, 0);
   mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
-  showTransformationsWidget(fileName);
+  showTransformationsWidget(fileName, false);
   mpStatusBar->clearMessage();
   hideProgressBar();
 }

@@ -34,8 +34,6 @@ encapsulated package Obfuscate
   import AbsynUtil;
   import Dump;
   import FBuiltin;
-  import IOStream;
-  import List;
   import SCode;
   import SCodeUtil;
   import System;
@@ -94,7 +92,7 @@ encapsulated package Obfuscate
 
     // Convert the mapping table to a JSON structure that can be used to look up
     // which name is mapped to what.
-    mapStr := mappingToString(env.mapping);
+    mapStr := UnorderedMap.toJSON(env.mapping, Util.id, Util.id);
   end obfuscateProgram;
 
   function makeBuiltins
@@ -1015,54 +1013,6 @@ encapsulated package Obfuscate
     ety := UnorderedMap.getOrDefault(name, env.builtins, ElementType.OTHER);
     res := ety == ElementType.FUNCTION or ety == ElementType.TYPE_AND_FUNCTION;
   end isBuiltinCall;
-
-  function mappingToString
-    "Converts a mapping to a string in JSON format."
-    input Mapping mapping;
-    output String str;
-  protected
-    list<tuple<String, String>> map;
-    String key, value;
-    IOStream.IOStream io;
-
-    function key_value_comp
-      input tuple<String, String> p1;
-      input tuple<String, String> p2;
-      output Boolean res;
-    protected
-      String key1, key2;
-    algorithm
-      (key1, _) := p1;
-      (key2, _) := p2;
-      res := key1 > key2;
-    end key_value_comp;
-  algorithm
-    map := UnorderedMap.toList(mapping);
-    map := List.sort(map, key_value_comp);
-    io := IOStream.create("ObfuscateMapping", IOStream.IOStreamType.LIST());
-    io := IOStream.append(io, "{\n");
-
-    if not listEmpty(map) then
-      (key, value) :: map := map;
-      io := IOStream.append(io, "  \"");
-      io := IOStream.append(io, key);
-      io := IOStream.append(io, "\": \"");
-      io := IOStream.append(io, value);
-      io := IOStream.append(io, "\"");
-
-      for p in map loop
-        (key, value) := p;
-        io := IOStream.append(io, ",\n  \"");
-        io := IOStream.append(io, key);
-        io := IOStream.append(io, "\": \"");
-        io := IOStream.append(io, value);
-        io := IOStream.append(io, "\"");
-      end for;
-    end if;
-
-    io := IOStream.append(io, "\n}");
-    str := IOStream.string(io);
-  end mappingToString;
 
   annotation(__OpenModelica_Interface="backend");
 end Obfuscate;

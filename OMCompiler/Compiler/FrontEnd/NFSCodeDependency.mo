@@ -1657,42 +1657,40 @@ protected
   SCode.EEquation equ;
 algorithm
   SCode.EQUATION(equ) := inEquation;
-  (_, _) := SCodeUtil.traverseEEquations(equ, (analyseEEquationTraverser, inEnv));
+  (_, _) := SCodeUtil.mapFoldEEquations(equ, analyseEEquationTraverser, inEnv);
 end analyseEquation;
 
 protected function analyseEEquationTraverser
   "Traversal function for use in analyseEquation."
-  input tuple<SCode.EEquation, Env> inTuple;
-  output tuple<SCode.EEquation, Env> outTuple;
+  input output SCode.EEquation eq;
+  input output Env env;
 algorithm
-  outTuple := match(inTuple)
+  (eq, env) := match eq
     local
-      SCode.EEquation equ;
       SCode.Ident iter_name;
-      Env env;
       SourceInfo info;
       Absyn.ComponentRef cref1;
 
-    case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
-      equation
-        env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
+    case SCode.EQ_FOR(index = iter_name, info = info)
+      algorithm
+        env := NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
       then
-        ((equ, env));
+        (eq, env);
 
-    case ((equ as SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1), info = info), env))
-      equation
+    case SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1), info = info)
+      algorithm
         analyseCref(cref1, env, info);
-        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
+        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
       then
-        ((equ, env));
+        (eq, env);
 
-    case ((equ, env))
-      equation
-        info = SCodeUtil.getEEquationInfo(equ);
-        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
+    else
+      algorithm
+        info := SCodeUtil.getEEquationInfo(eq);
+        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
       then
-        ((equ, env));
+        (eq, env);
 
   end match;
 end analyseEEquationTraverser;
@@ -1724,43 +1722,40 @@ protected function analyseStatement
   input SCode.Statement inStatement;
   input Env inEnv;
 algorithm
-  (_, _) := SCodeUtil.traverseStatements(inStatement,
-    (analyseStatementTraverser, inEnv));
+  (_, _) := SCodeUtil.mapFoldStatements(inStatement, analyseStatementTraverser, inEnv);
 end analyseStatement;
 
 protected function analyseStatementTraverser
   "Traversal function used by analyseStatement."
-  input tuple<SCode.Statement, Env> inTuple;
-  output tuple<SCode.Statement, Env> outTuple;
+  input output SCode.Statement stmt;
+  input output Env env;
 algorithm
-  outTuple := match(inTuple)
+  (stmt, env) := match stmt
     local
-      Env env;
-      SCode.Statement stmt;
       SourceInfo info;
       list<SCode.Statement> parforBody;
       String iter_name;
 
-    case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
+    case SCode.ALG_FOR(index = iter_name, info = info)
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (_, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
+        (_, _) = SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
       then
-        ((stmt, env));
+        (stmt, env);
 
-     case ((stmt as SCode.ALG_PARFOR(index = iter_name,  info = info), env))
+     case SCode.ALG_PARFOR(index = iter_name,  info = info)
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (_, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
+        (_, _) = SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
       then
-        ((stmt, env));
+        (stmt, env);
 
-    case ((stmt, env))
+    else
       equation
         info = SCodeUtil.getStatementInfo(stmt);
-        (_, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
+        (_, _) = SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
       then
-        ((stmt, env));
+        (stmt, env);
 
   end match;
 end analyseStatementTraverser;

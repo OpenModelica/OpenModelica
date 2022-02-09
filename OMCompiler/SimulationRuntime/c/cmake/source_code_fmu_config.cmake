@@ -31,11 +31,14 @@ set(SOURCE_FMU_COMMON_HEADERS \"./omc_inline.h\",\"./openmodelica_func.h\",\"./o
 
 ######################################################################################################################
 # Lapack files
-file(GLOB_RECURSE 3RD_DGESV_FILES   ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/include/*.h
-                                    ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/blas/*.c
+file(GLOB_RECURSE 3RD_DGESV_FILES   ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/blas/*.c
                                     ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/lapack/*.c
                                     ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/libf2c/*.c)
-install(FILES ${3RD_DGESV_FILES}
+
+file(GLOB_RECURSE 3RD_DGESV_HEADERS ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/include/*.h)
+
+install(FILES ${3RD_DGESV_HEADERS}
+              ${3RD_DGESV_FILES}
         DESTINATION ${SOURCE_FMU_SOURCES_DIR}/external_solvers
 )
 
@@ -60,7 +63,9 @@ string(REPLACE ";" "," SOURCE_FMU_NLS_FILES "${SOURCE_FMU_NLS_FILES_LIST_QUOTED}
 
 
 # CMinPack files for NLS
-set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
+set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
+                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h
+                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/hybrj_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dpmpar_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qrfac_.c
@@ -69,7 +74,11 @@ set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1updt_.c
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1mpyq_.c)
 
-install(FILES ${3RD_CMINPACK_FMU_FILES}
+set(3RD_CMINPACK_HEADERS  ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
+                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h)
+
+install(FILES ${3RD_CMINPACK_HEADERS}
+              ${3RD_CMINPACK_FMU_FILES}
         DESTINATION ${SOURCE_FMU_SOURCES_DIR}/external_solvers
 )
 
@@ -133,13 +142,17 @@ target_sources(SimulationRuntimeFMI PRIVATE ${SOURCE_FMU_COMMON_FILES_LIST}
                                             ${SOURCE_FMU_MIXED_FILES_LIST}
                                             ${3RD_CMINPACK_FMU_FILES})
 
-target_compile_definitions(SimulationRuntimeFMI PRIVATE "-DOMC_MINIMAL_RUNTIME=1 -DOMC_FMI_RUNTIME=1")
+target_compile_definitions(SimulationRuntimeFMI PRIVATE -DOMC_MINIMAL_RUNTIME=1 -DOMC_FMI_RUNTIME=1 -DCMINPACK_NO_DLL)
 
 install(TARGETS SimulationRuntimeFMI)
 
 
 # ######################################################################################################################
-# Library: SimulationRuntimeFMI
+# Library: OpenModelicaFMIRuntimeC
+
+file(GLOB OMC_SIMRT_FMI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.c)
+file(GLOB OMC_SIMRT_FMI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.h)
+
 add_library(OpenModelicaFMIRuntimeC STATIC)
 add_library(omc::simrt::fmiruntime ALIAS OpenModelicaFMIRuntimeC)
 

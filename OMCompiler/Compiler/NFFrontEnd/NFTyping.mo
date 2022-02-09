@@ -1799,6 +1799,7 @@ algorithm
     case ComponentRef.CREF(origin = Origin.SCOPE)
       algorithm
         cref.ty := InstNode.getType(cref.node);
+        cref.restCref := typeCref2(cref.restCref, context, info, false);
       then
         (cref, Variability.CONSTANT);
 
