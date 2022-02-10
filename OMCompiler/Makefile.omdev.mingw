@@ -120,8 +120,6 @@ main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSIC
 include Makefile.common
 include Makefile.omsi.common
 
-# For Windows build static FMI lib!
-FMILIB_SHARED = ON
 # For Windows build static CMinpack lib!
 CMINPACKLIB_SHARED = OFF
 
