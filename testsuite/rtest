@@ -144,6 +144,12 @@ sub setbaselineone
     print RES "// Result:\n";
     while(<LOG>) {
       my $x = $_;
+
+      if ($x =~ /\s+\r?\n$/) {
+        print "Warning: trailing whitespace:\n  $x";
+        print " " x length($x) . "^\n";
+      }
+
       if ($x ne "\n") {
         print RES "// $x";
       } else {
