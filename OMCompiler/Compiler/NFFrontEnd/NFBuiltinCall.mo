@@ -1330,6 +1330,36 @@ protected
     System.setUsesCardinality(true);
   end typeCardinalityCall;
 
+  function typeConnectionsArgs
+    input list<Expression> args;
+    input InstContext.Type context;
+    input SourceInfo info;
+    input ComponentRef fnRef;
+    output list<Expression> outArgs = {};
+  protected
+    Integer index = 1;
+  algorithm
+    for arg in args loop
+      outArgs := typeConnectionsArg(arg, context, info, fnRef, index) :: outArgs;
+      index := index + 1;
+    end for;
+
+    outArgs := listReverseInPlace(outArgs);
+  end typeConnectionsArgs;
+
+  function typeConnectionsArg
+    input Expression arg;
+    input InstContext.Type context;
+    input SourceInfo info;
+    input ComponentRef fnRef;
+    input Integer index;
+    output Expression outArg;
+    output Type outType;
+  algorithm
+    (outArg, outType) := Typing.typeExp(arg, context, info);
+    checkConnectionsArgument(outArg, outType, fnRef, index, info);
+  end typeConnectionsArg;
+
   function typeBranchCall
     input Call call;
     input InstContext.Type context;
@@ -1342,7 +1372,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg1, arg2;
     Function fn;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1358,16 +1387,10 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    {arg1, arg2} := args;
-
-    (arg1, ty) := Typing.typeExp(arg1, context, info);
-    checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
-    (arg2, ty) := Typing.typeExp(arg2, context, info);
-    checkConnectionsArgument(arg2, ty, fn_ref, 2, info);
-
+    args := typeConnectionsArgs(args, context, info, fn_ref);
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, purity, ty));
   end typeBranchCall;
 
   function typeIsRootCall
@@ -1382,7 +1405,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg;
     Function fn;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1398,12 +1420,10 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), context, info);
-    checkConnectionsArgument(arg, ty, fn_ref, 1, info);
-
+    args := typeConnectionsArgs(args, context, info, fn_ref);
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.BOOLEAN();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, purity, ty));
   end typeIsRootCall;
 
   function typePotentialRootCall
@@ -1449,8 +1469,7 @@ protected
 
     arg1 :: args := args;
 
-    (arg1, ty) := Typing.typeExp(arg1, context, info);
-    checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
+    arg1 := typeConnectionsArg(arg1, context, info, fn_ref, 1);
 
     if args_len == 2 then
       arg2 := listHead(args);
@@ -1482,7 +1501,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg;
     Function fn;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1498,12 +1516,10 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), context, info);
-    checkConnectionsArgument(arg, ty, fn_ref, 1, info);
-
+    args := typeConnectionsArgs(args, context, info, fn_ref);
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, purity, ty));
   end typeRootCall;
 
   function typeRootedCall
@@ -1518,7 +1534,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg;
     Function fn;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1534,8 +1549,7 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), context, info);
-    checkConnectionsArgument(arg, ty, fn_ref, 1, info);
+    args := typeConnectionsArgs(args, context, info, fn_ref);
 
     if ComponentRef.isSimple(fn_ref) then
       Error.addSourceMessage(Error.DEPRECATED_API_CALL, {"rooted", "Connections.rooted"}, info);
@@ -1543,7 +1557,7 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.BOOLEAN();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, purity, ty));
   end typeRootedCall;
 
   function typeUniqueRootCall
@@ -1592,8 +1606,7 @@ protected
 
     arg1 :: args := args;
 
-    (arg1, ty) := Typing.typeExp(arg1, context, info);
-    checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
+    arg1 := typeConnectionsArg(arg1, context, info, fn_ref, 1);
 
     if args_len == 2 then
       arg2 := listHead(args);
@@ -1666,10 +1679,8 @@ protected
 
     arg1 :: arg2 :: args := args;
 
-    (arg1, ty1) := Typing.typeExp(arg1, context, info);
-    checkConnectionsArgument(arg1, ty1, fn_ref, 1, info);
-    (arg2, ty2) := Typing.typeExp(arg2, context, info);
-    checkConnectionsArgument(arg2, ty2, fn_ref, 1, info);
+    (arg1, ty1) := typeConnectionsArg(arg1, context, info, fn_ref, 1);
+    (arg2, ty2) := typeConnectionsArg(arg2, context, info, fn_ref, 2);
 
     if args_len == 3 then
       arg3 := listHead(args);
