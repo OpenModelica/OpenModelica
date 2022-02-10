@@ -721,8 +721,8 @@ protected
     KeyEq eqfn = map.eqFn;
     list<Integer> bucket;
   algorithm
+    hash := hashfn(key, Vector.size(map.buckets));
     if Vector.size(map.buckets) > 0 then
-      hash := hashfn(key, Vector.size(map.buckets));
       bucket := Vector.get(map.buckets, hash + 1);
       for i in bucket loop
         if eqfn(key, Vector.getNoBounds(map.keys, i)) then

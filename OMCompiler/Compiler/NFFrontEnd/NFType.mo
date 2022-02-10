@@ -1319,19 +1319,6 @@ public
     str := stringAppendList(strl);
   end subscriptedTypeName;
 
-  function addDimensions
-    input output Type ty;
-    input list<Dimension> dims;
-  algorithm
-    // flatten arrays here if ty already is ARRAY?
-    ty := match ty
-      case ARRAY() algorithm
-        ty.dimensions := listAppend(dims, ty.dimensions);
-      then ty;
-      else if not listEmpty(dims) then ARRAY(ty, dims) else ty;
-    end match;
-  end addDimensions;
-
   function simplify
     input output Type ty;
   algorithm

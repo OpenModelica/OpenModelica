@@ -149,14 +149,6 @@ public
   record END
   end END;
 
-  record MULTARY
-    "Multary expressions with the same operator, e.g. a+b+c
-    An empty list has to be interpreted as the neutral element of the operator space"
-    list<Expression> arguments      "arguments that are chained with the operator (+, *)";
-    list<Expression> inv_arguments  "arguments that are chained with the inverse operator (-, :)";
-    Operator operator               "Can only be + or * (commutative)";
-  end MULTARY;
-
   record BINARY "Binary operations, e.g. a+4"
     Expression exp1;
     Operator operator;
@@ -240,6 +232,14 @@ public
     list<String> argNames;
     Type ty;
   end PARTIAL_FUNCTION_APPLICATION;
+
+  record MULTARY
+    "Multary expressions with the same operator, e.g. a+b+c
+    An empty list has to be interpreted as the neutral element of the operator space"
+    list<Expression> arguments      "arguments that are chained with the operator (+, *)";
+    list<Expression> inv_arguments  "arguments that are chained with the inverse operator (-, :)";
+    Operator operator               "Can only be + or * (commutative)";
+  end MULTARY;
 
   function isArray
     input Expression exp;

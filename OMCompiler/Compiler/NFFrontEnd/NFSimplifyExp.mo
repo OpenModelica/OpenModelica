@@ -112,6 +112,7 @@ algorithm
     case Expression.UNBOX()             then Expression.UNBOX(simplify(exp.exp), exp.ty);
     case Expression.SUBSCRIPTED_EXP()   then simplifySubscriptedExp(exp);
     case Expression.TUPLE_ELEMENT()     then simplifyTupleElement(exp);
+    case Expression.RECORD_ELEMENT()    then simplifyRecordElement(exp);
     case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
                                         else exp;

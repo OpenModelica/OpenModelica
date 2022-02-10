@@ -714,7 +714,7 @@ protected
         for body_elem_ptr in new_body loop
           body_elem := Pointer.access(body_elem_ptr);
           body_elem := BEquation.FOR_EQUATION(
-            ty      = Type.addDimensions(Equation.getType(body_elem), {Dimension.fromRange(range)}),
+            ty      = Type.liftArrayLeftList(Equation.getType(body_elem), {Dimension.fromRange(range)}),
             iter    = Iterator.SINGLE(iterator, range),
             body    = {body_elem},
             source  = frontend_equation.source,
