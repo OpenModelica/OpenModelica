@@ -91,11 +91,11 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
     for(i=0; i<n;i++)
     {
       if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF ", buffer);
+        sprintf(buffer, "%s -INF", buffer);
       else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF ", buffer);
+        sprintf(buffer, "%s +INF", buffer);
       else
-        sprintf(buffer, "%s%16.8g ", buffer, vector[i]);
+        sprintf(buffer, "%s%16.8g", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     free(buffer);

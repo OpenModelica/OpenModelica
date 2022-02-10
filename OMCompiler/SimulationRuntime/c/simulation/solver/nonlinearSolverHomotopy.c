@@ -484,11 +484,11 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
     for(i=0; i<n;i++)
     {
       if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF ", buffer);
+        sprintf(buffer, "%s -INF", buffer);
       else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF ", buffer);
+        sprintf(buffer, "%s +INF", buffer);
       else
-        sprintf(buffer, "%s%16.8g ", buffer, vector[i]);
+        sprintf(buffer, "%s%16.8g", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -532,11 +532,11 @@ void debugVectorInt(int logName, char* vectorName, int* vector, int n)
     for(i=0; i<n;i++)
     {
       if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF ", buffer);
+        sprintf(buffer, "%s -INF", buffer);
       else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF ", buffer);
+        sprintf(buffer, "%s +INF", buffer);
       else
-        sprintf(buffer, "%s%d ", buffer, vector[i]);
+        sprintf(buffer, "%s%d", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -1820,10 +1820,10 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       }
       /* Scaling back to original variables */
       vecMultScaling(solverData->m, solverData->dy0, solverData->xScaling, solverData->dy0);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "tangent vector with original scaling: ", solverData->dy0, solverData->m);
+      debugVectorDouble(LOG_NLS_HOMOTOPY, "tangent vector with original scaling:", solverData->dy0, solverData->m);
       debugDouble(LOG_NLS_HOMOTOPY,"length of tangent vector with original scaling: ", vec2Norm(solverData->m, solverData->dy0));
       // vecNormalize(solverData->m, solverData->dy0, solverData->dy0);
-      // debugVectorDouble(LOG_NLS_HOMOTOPY, "normalized tangent vector: ", solverData->dy0, solverData->m);
+      // debugVectorDouble(LOG_NLS_HOMOTOPY, "normalized tangent vector:", solverData->dy0, solverData->m);
       // debugDouble(LOG_NLS_HOMOTOPY,"length of normalized tangent vector: ", vec2Norm(solverData->m, solverData->dy0));
 
       /* Correct search direction, depending on the last direction (angle < 90 degree) */
@@ -1952,7 +1952,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       if (correctorStrategy==1) // fix one coordinate
       {
         /* copy vector h to column "pos" of the jacobian */
-        debugVectorDouble(LOG_NLS_HOMOTOPY, "copy vector hvec to column 'pos' of the jacobian: ", solverData->hvec, solverData->n);
+        debugVectorDouble(LOG_NLS_HOMOTOPY, "copy vector hvec to column 'pos' of the jacobian:", solverData->hvec, solverData->n);
         vecCopy(solverData->n, solverData->hvec, solverData->hJac + pos*solverData->n);
         scaleMatrixRows(solverData->n, solverData->m, solverData->hJac);
         if (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy1, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
@@ -1977,11 +1977,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
       /* Scaling back to original variables */
       vecMultScaling(solverData->m, solverData->dy1, solverData->xScaling, solverData->dy1);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "solution (original scaling): ", solverData->dy1, solverData->m);
+      debugVectorDouble(LOG_NLS_HOMOTOPY, "solution (original scaling):", solverData->dy1, solverData->m);
 
       vecAdd(solverData->m, solverData->y1, solverData->dy1, solverData->y2);
       vecCopy(solverData->m, solverData->y2, solverData->y1);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "new y in newton: ", solverData->y1, solverData->m);
+      debugVectorDouble(LOG_NLS_HOMOTOPY, "new y in newton:", solverData->y1, solverData->m);
       assert = 1;
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
