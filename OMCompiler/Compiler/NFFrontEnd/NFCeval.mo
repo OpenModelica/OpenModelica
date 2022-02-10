@@ -523,10 +523,11 @@ algorithm
           // Create a map that maps each part of the cref to the subscripts on that part.
           sub_map := UnorderedMap.new<SubscriptList>(InstNode.hash, InstNode.refEqual);
 
-          for cr in ComponentRef.toListReverse(cref) loop
-            if ComponentRef.hasSubscripts(cr) then
-              UnorderedMap.addUnique(ComponentRef.node(cr), ComponentRef.getSubscripts(cr), sub_map);
-            end if;
+          // If the cref hasn't been flattened then subscripts that reference
+          // the scope parts of the cref should be kept as they are, so the
+          // scope isn't added to the map in that case.
+          for cr in ComponentRef.toListReverse(cref, includeScope = isFlatCref(cref)) loop
+            UnorderedMap.addUnique(ComponentRef.node(cr), ComponentRef.getSubscripts(cr), sub_map);
           end for;
 
           subMap := SOME(sub_map);
@@ -545,6 +546,24 @@ algorithm
     else exp;
   end match;
 end subscriptBinding2;
+
+function isFlatCref
+  input ComponentRef cref;
+  output Boolean flat;
+algorithm
+  flat := match cref
+    // A cref is considered to be flat if the first part that comes from the
+    // scope and has an array type also has subscripts. A cref with only scalars
+    // in the scope part may technically be flat, but it doesn't matter since
+    // there won't be any subscripts referencing them anyway.
+    case ComponentRef.CREF(origin = NFComponentRef.Origin.SCOPE)
+      guard Type.isArray(cref.ty)
+      then not listEmpty(cref.subscripts);
+
+    case ComponentRef.CREF() then isFlatCref(cref.restCref);
+    else false;
+  end match;
+end isFlatCref;
 
 function subscriptBinding3
   input Subscript subscript;
