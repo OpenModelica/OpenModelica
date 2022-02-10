@@ -429,7 +429,7 @@ void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, in
         }
         else
         {
-          sprintf(buffer, "%s%16.8g ", buffer, matrix[indRow[i] + indCol[j]*(m-1)]);
+          sprintf(buffer, "%s %16.8g", buffer, matrix[indRow[i] + indCol[j]*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -462,7 +462,7 @@ void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int
         }
         else
         {
-          sprintf(buffer, "%s%16.8g ", buffer, matrix[i + j*(m-1)]);
+          sprintf(buffer, "%s %16.8g", buffer, matrix[i + j*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -481,14 +481,20 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
     buffer[0] = 0;
-    for(i=0; i<n;i++)
+    if (vector[0]<-1e+300)
+      sprintf(buffer, "%s-INF", buffer);
+    else if (vector[0]>1e+300)
+      sprintf(buffer, "%s+INF", buffer);
+    else
+      sprintf(buffer, "%s%16.8g", buffer, vector[0]);
+    for(i=1; i<n;i++)
     {
       if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF ", buffer);
+        sprintf(buffer, "%s -INF", buffer);
       else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF ", buffer);
+        sprintf(buffer, "%s +INF", buffer);
       else
-        sprintf(buffer, "%s%16.8g ", buffer, vector[i]);
+        sprintf(buffer, "%s %16.8g", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -505,14 +511,20 @@ void debugVectorBool(int logName, char* vectorName, modelica_boolean* vector, in
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
     buffer[0] = 0;
-    for(i=0; i<n;i++)
+    if (vector[0]<-1e+300)
+      sprintf(buffer, "%s-INF", buffer);
+    else if (vector[0]>1e+300)
+      sprintf(buffer, "%s+INF", buffer);
+    else
+      sprintf(buffer, "%s%d", buffer, vector[0]);
+    for(i=1; i<n;i++)
     {
       if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF ", buffer);
+        sprintf(buffer, "%s -INF", buffer);
       else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF ", buffer);
+        sprintf(buffer, "%s +INF", buffer);
       else
-        sprintf(buffer, "%s   %d", buffer, vector[i]);
+        sprintf(buffer, "%s %d", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -529,14 +541,20 @@ void debugVectorInt(int logName, char* vectorName, int* vector, int n)
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
     buffer[0] = 0;
-    for(i=0; i<n;i++)
+    if (vector[0]<-1e+300)
+      sprintf(buffer, "%s-INF", buffer);
+    else if (vector[0]>1e+300)
+      sprintf(buffer, "%s+INF", buffer);
+    else
+      sprintf(buffer, "%s%d", buffer, vector[0]);
+    for(i=1; i<n;i++)
     {
       if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF ", buffer);
+        sprintf(buffer, "%s -INF", buffer);
       else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF ", buffer);
+        sprintf(buffer, "%s +INF", buffer);
       else
-        sprintf(buffer, "%s%d ", buffer, vector[i]);
+        sprintf(buffer, "%s %d", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -1820,10 +1838,10 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       }
       /* Scaling back to original variables */
       vecMultScaling(solverData->m, solverData->dy0, solverData->xScaling, solverData->dy0);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "tangent vector with original scaling: ", solverData->dy0, solverData->m);
+      debugVectorDouble(LOG_NLS_HOMOTOPY, "tangent vector with original scaling:", solverData->dy0, solverData->m);
       debugDouble(LOG_NLS_HOMOTOPY,"length of tangent vector with original scaling: ", vec2Norm(solverData->m, solverData->dy0));
       // vecNormalize(solverData->m, solverData->dy0, solverData->dy0);
-      // debugVectorDouble(LOG_NLS_HOMOTOPY, "normalized tangent vector: ", solverData->dy0, solverData->m);
+      // debugVectorDouble(LOG_NLS_HOMOTOPY, "normalized tangent vector:", solverData->dy0, solverData->m);
       // debugDouble(LOG_NLS_HOMOTOPY,"length of normalized tangent vector: ", vec2Norm(solverData->m, solverData->dy0));
 
       /* Correct search direction, depending on the last direction (angle < 90 degree) */
@@ -1952,7 +1970,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       if (correctorStrategy==1) // fix one coordinate
       {
         /* copy vector h to column "pos" of the jacobian */
-        debugVectorDouble(LOG_NLS_HOMOTOPY, "copy vector hvec to column 'pos' of the jacobian: ", solverData->hvec, solverData->n);
+        debugVectorDouble(LOG_NLS_HOMOTOPY, "copy vector hvec to column 'pos' of the jacobian:", solverData->hvec, solverData->n);
         vecCopy(solverData->n, solverData->hvec, solverData->hJac + pos*solverData->n);
         scaleMatrixRows(solverData->n, solverData->m, solverData->hJac);
         if (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy1, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
@@ -1977,11 +1995,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
       /* Scaling back to original variables */
       vecMultScaling(solverData->m, solverData->dy1, solverData->xScaling, solverData->dy1);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "solution (original scaling): ", solverData->dy1, solverData->m);
+      debugVectorDouble(LOG_NLS_HOMOTOPY, "solution (original scaling):", solverData->dy1, solverData->m);
 
       vecAdd(solverData->m, solverData->y1, solverData->dy1, solverData->y2);
       vecCopy(solverData->m, solverData->y2, solverData->y1);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "new y in newton: ", solverData->y1, solverData->m);
+      debugVectorDouble(LOG_NLS_HOMOTOPY, "new y in newton:", solverData->y1, solverData->m);
       assert = 1;
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -2324,8 +2342,8 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       /* This case may be switched off, because of event chattering!!!*/
       if(mixedSystem && data->simulationInfo->discreteCall && (alreadyTested<1))
       {
-        debugVectorBool(LOG_NLS_V,"Relations Pre vector ", ((DATA*)data)->simulationInfo->relationsPre, ((DATA*)data)->modelData->nRelations);
-        debugVectorBool(LOG_NLS_V,"Relations Backup vector ", relationsPreBackup, ((DATA*)data)->modelData->nRelations);
+        debugVectorBool(LOG_NLS_V,"Relations Pre vector", ((DATA*)data)->simulationInfo->relationsPre, ((DATA*)data)->modelData->nRelations);
+        debugVectorBool(LOG_NLS_V,"Relations Backup vector", relationsPreBackup, ((DATA*)data)->modelData->nRelations);
         ((DATA*)data)->simulationInfo->solveContinuous = 0;
 
         if (solverData->casualTearingSet){
@@ -2338,7 +2356,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
         else
           solverData->f(solverData, solverData->x, solverData->f1);
 
-        debugVectorBool(LOG_NLS_V,"Relations vector ", ((DATA*)data)->simulationInfo->relations, ((DATA*)data)->modelData->nRelations);
+        debugVectorBool(LOG_NLS_V,"Relations vector", ((DATA*)data)->simulationInfo->relations, ((DATA*)data)->modelData->nRelations);
         if (isNotEqualVectorInt(((DATA*)data)->modelData->nRelations, ((DATA*)data)->simulationInfo->relations, relationsPreBackup)>0)
         {
           /* re-run the solution process, since relations in the system have changed */

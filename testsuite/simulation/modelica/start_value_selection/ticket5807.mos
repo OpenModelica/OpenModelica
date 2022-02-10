@@ -35,19 +35,19 @@ simulate(TestInitStart); getErrorString();
 // LOG_NLS_V         | info    | TIME:   0.0000000000e+00
 // LOG_NLS_V         | info    | number of function calls (so far!):  0
 // LOG_NLS_V         | info    | System values [1-dim]
-// |                 | |       | |               -2 
+// |                 | |       | |               -2
 // LOG_NLS_V         | info    | Nominal values [1-dim]
-// |                 | |       | |                1 
+// |                 | |       | |                1
 // LOG_NLS_V         | info    | Scaling values [2-dim]
-// |                 | |       | |                2                1 
+// |                 | |       | |                2                1
 // LOG_NLS_V         | info    | x0 [1-dim]
-// |                 | |       | |               -2 
+// |                 | |       | |               -2
 // LOG_NLS_V         | info    | indRow: [1-dim]
-// |                 | |       | | 0 
+// |                 | |       | | 0
 // LOG_NLS_V         | info    | indCol: [2-dim]
-// |                 | |       | | 0 1 
+// |                 | |       | | 0 1
 // LOG_NLS_V         | info    | vector x (solution): [2-dim]
-// |                 | |       | |               -0                1 
+// |                 | |       | |               -0                1
 // LOG_NLS_V         | info    | regular initial point!!!
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  2
@@ -65,9 +65,9 @@ simulate(TestInitStart); getErrorString();
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    0.0000000000e+00
 // LOG_NLS_V         | info    | Need to damp, forced error =    0.0000000000e+00
 // LOG_NLS_V         | info    | function values: [1-dim]
-// |                 | |       | |                0 
+// |                 | |       | |                0
 // LOG_NLS_V         | info    | scaled function values: [1-dim]
-// |                 | |       | |                0 
+// |                 | |       | |                0
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   0.0000000000e+00
 // LOG_NLS_V         | info    | delta_x_scaled =   0.0000000000e+00
@@ -89,7 +89,7 @@ simulate(TestInitStart); getErrorString();
 // |                 | |       | | [ 1]                              p  =               -2		 nom =                2		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [1-dim]
-// |                 | |       | |               -2 
+// |                 | |       | |               -2
 // LOG_NLS           | info    | | Solution status: SOLVED
 // |                 | |       | | |  number of iterations           : 1
 // |                 | |       | | |  number of function evaluations : 3
