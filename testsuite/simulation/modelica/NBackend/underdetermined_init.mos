@@ -19,30 +19,42 @@ simulate(underdetermined_init); getErrorString();
 // true
 // ""
 // true
+// Created Start Equations:
+// ****************************************
+// 	[SIMP] (1) x = $START.x ($RES_SRT_2)
+//
 // ################################################################################
 //
 // 	Balance Initialization
 //
 // ################################################################################
 //
-// Not overdetermined.
 // Not underdetermined.
-//
-// (0) Unmatched equations:
-// ****************************************
-//
+// Not overdetermined.
 // (0) Unmatched variables:
 // ****************************************
 //
-// Not overdetermined.
-// Stage 1 underdetermined.
 //
 // (0) Unmatched equations:
 // ****************************************
 //
+// Stage 1 underdetermined.
+// Not overdetermined.
 // (1) Unmatched variables:
 // ****************************************
-// 	[STAT] Real y (start = 2.0);
+// 	[STAT] (1) Real y (start = 2.0);
+//
+// (0) Unmatched equations:
+// ****************************************
+//
+// Not underdetermined.
+// Not overdetermined.
+// (0) Unmatched variables:
+// ****************************************
+//
+//
+// (0) Unmatched equations:
+// ****************************************
 //
 // record SimulationResult
 //     resultFile = "underdetermined_init_res.mat",

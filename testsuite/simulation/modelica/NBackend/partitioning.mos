@@ -40,44 +40,14 @@ simulate(partitioning); getErrorString();
 // ### Variable:
 // 	Real $DER.x
 // ### Equation:
-// 	[SCAL] ($RES_SIM_0) $DER.x = sin(time)
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real y
 // ### Equation:
-// 	[SCAL] ($RES_SIM_1) y = x ^ 2.0 + a
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{2}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{2}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 1
-// 	var 2 --> eqn 2
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 1
-// 	eqn 2 --> var 2
-//
+// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 //
 // ========================================
 // CONTINUOUS ODE System
@@ -88,44 +58,14 @@ simulate(partitioning); getErrorString();
 // ### Variable:
 // 	Real k
 // ### Equation:
-// 	[SCAL] ($RES_SIM_3) k = cos(time)
+// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real z
 // ### Equation:
-// 	[SCAL] ($RES_SIM_2) z = a ^ 2.0 * k
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 1
-// 	var 2 --> eqn 2
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 1
-// 	eqn 2 --> var 2
-//
+// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
 //
 // ################################################################################
 //
@@ -142,44 +82,14 @@ simulate(partitioning); getErrorString();
 // ### Variable:
 // 	Real $DER.x
 // ### Equation:
-// 	[SCAL] ($RES_SIM_0) $DER.x = sin(time)
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real y
 // ### Equation:
-// 	[SCAL] ($RES_SIM_1) y = x ^ 2.0 + a
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{2}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{2}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 1
-// 	var 2 --> eqn 2
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 1
-// 	eqn 2 --> var 2
-//
+// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 //
 // ========================================
 // CONTINUOUS ODE System
@@ -190,44 +100,14 @@ simulate(partitioning); getErrorString();
 // ### Variable:
 // 	Real k
 // ### Equation:
-// 	[SCAL] ($RES_SIM_3) k = cos(time)
+// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real z
 // ### Equation:
-// 	[SCAL] ($RES_SIM_2) z = a ^ 2.0 * k
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 1
-// 	var 2 --> eqn 2
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 1
-// 	eqn 2 --> var 2
-//
+// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
 //
 // ################################################################################
 //
@@ -239,99 +119,40 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS INI System
 // ========================================
 //
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Empty Adjacency Matrix
-// ****************************************
-//
-//
-// ========================================
-// Empty Matching
-// ========================================
-//
-//
-// ========================================
-// CONTINUOUS INI System
-// ========================================
-//
 // BLOCK 1: Single Equation
-// ----------------------------------------
-// ### Variable:
-// 	Real $DER.x
-// ### Equation:
-// 	[SCAL] ($RES_SIM_0) $DER.x = sin(time)
-//
-// BLOCK 2: Single Equation
-// ----------------------------------------
-// ### Variable:
-// 	Real x
-// ### Equation:
-// 	[SIMP] ($RES_SIM_5) x = $START.x
-//
-// BLOCK 3: Single Equation
-// ----------------------------------------
-// ### Variable:
-// 	Real y
-// ### Equation:
-// 	[SCAL] ($RES_SIM_1) y = x ^ 2.0 + a
-//
-// BLOCK 4: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real k
 // ### Equation:
-// 	[SCAL] ($RES_SIM_3) k = cos(time)
+// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
 //
-// BLOCK 5: Single Equation
+// BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real z
 // ### Equation:
-// 	[SCAL] ($RES_SIM_2) z = a ^ 2.0 * k
+// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
 //
-// ========================================
-// AdjacencyMatrix
-// ========================================
+// BLOCK 3: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real x
+// ### Equation:
+// 	[SIMP] (1) x = $START.x ($RES_SIM_5)
 //
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{4}
-// 	(2)	{4, 3}
-// 	(3)	{2, 5}
-// 	(4)	{1}
-// 	(5)	{5}
+// BLOCK 4: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real y
+// ### Equation:
+// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 //
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{4}
-// 	(2)	{3}
-// 	(3)	{2}
-// 	(4)	{2, 1}
-// 	(5)	{3, 5}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 4
-// 	var 2 --> eqn 3
-// 	var 3 --> eqn 2
-// 	var 4 --> eqn 1
-// 	var 5 --> eqn 5
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 4
-// 	eqn 2 --> var 3
-// 	eqn 3 --> var 2
-// 	eqn 4 --> var 1
-// 	eqn 5 --> var 5
-//
+// BLOCK 5: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
 // record SimulationResult
 //     resultFile = "partitioning_res.mat",

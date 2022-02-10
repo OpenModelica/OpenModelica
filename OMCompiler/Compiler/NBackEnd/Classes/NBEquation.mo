@@ -466,13 +466,13 @@ public
       input Equation eq;
       input output String str = "";
     protected
-      String s = "(" + intString(Equation.size(Pointer.create(eq))) + ")";
+      String s = "(" + intString(Equation.size(Pointer.create(eq))) + ") ";
     algorithm
       str := match eq
-        case SCALAR_EQUATION() then str + "[SCAL] " + s + EquationAttributes.toString(eq.attr) + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
-        case ARRAY_EQUATION()  then str + "[ARRY] " + s + EquationAttributes.toString(eq.attr) + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
-        case SIMPLE_EQUATION() then str + "[SIMP] " + s + EquationAttributes.toString(eq.attr) + " " + ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs);
-        case RECORD_EQUATION() then str + "[RECD] " + s + EquationAttributes.toString(eq.attr) + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+        case SCALAR_EQUATION() then str + "[SCAL] " + s + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
+        case ARRAY_EQUATION()  then str + "[ARRY] " + s + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
+        case SIMPLE_EQUATION() then str + "[SIMP] " + s + ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
+        case RECORD_EQUATION() then str + "[RECD] " + s + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + " " + EquationAttributes.toString(eq.attr);
         case ALGORITHM()       then str + "[ALGO] " + s + EquationAttributes.toString(eq.attr) + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
         case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s);
         case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr));
@@ -1797,6 +1797,12 @@ public
       end if;
     end toString;
 
+    function size
+      "returns the size only considering first when branch."
+      input WhenEquationBody body;
+      output Integer s = sum(WhenStatement.size(stmt) for stmt in body.when_stmts);
+    end size;
+
     function getBodyAttributes
       "gets all conditions crefs as a list (has to be applied AFTER Event module)"
       input WhenEquationBody body;
@@ -1903,6 +1909,16 @@ public
                                                                               else str + getInstanceName() + " failed.";
       end match;
     end toString;
+
+    function size
+      input WhenStatement stmt;
+      output Integer s;
+    algorithm
+      s := match stmt
+        case ASSIGN() then Type.sizeOf(Expression.typeOf(stmt.lhs));
+                      else 0;
+      end match;
+    end size;
 
     function map
       input output WhenStatement stmt;

@@ -35,7 +35,7 @@ loadString("
   end expandDerOperator3;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=stateselection,dummyselection");
+setCommandLineOptions("--newBackend -d=stateselection");
 simulate(expandDerOperator1); getErrorString();
 simulate(expandDerOperator2); getErrorString();
 simulate(expandDerOperator3); getErrorString();

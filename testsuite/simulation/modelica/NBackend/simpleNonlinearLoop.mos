@@ -35,38 +35,8 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	Real x
 //
 // ### Equations:
-// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
-// 	[SCAL] ($RES_SIM_0) y = sin(x)
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2, 1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 2
-// 	var 2 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 2
-// 	eqn 2 --> var 1
-//
+// 	[SCAL] (1) x = y ^ 2.0 + sin(time) ($RES_SIM_1)
+// 	[SCAL] (1) y = sin(x) ($RES_SIM_0)
 //
 // ################################################################################
 //
@@ -85,38 +55,8 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	Real x
 //
 // ### Equations:
-// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
-// 	[SCAL] ($RES_SIM_0) y = sin(x)
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2, 1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 2
-// 	var 2 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 2
-// 	eqn 2 --> var 1
-//
+// 	[SCAL] (1) x = y ^ 2.0 + sin(time) ($RES_SIM_1)
+// 	[SCAL] (1) y = sin(x) ($RES_SIM_0)
 //
 // ################################################################################
 //
@@ -128,62 +68,15 @@ simulate(simpleNonlinearLoop); getErrorString();
 // CONTINUOUS INI System
 // ========================================
 //
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Empty Adjacency Matrix
-// ****************************************
-//
-//
-// ========================================
-// Empty Matching
-// ========================================
-//
-//
-// ========================================
-// CONTINUOUS INI System
-// ========================================
-//
 // BLOCK 1: Algebraic Loop (Mixed = false)
 // ----------------------------------------
 // ### Variables:
-// 	Real y
 // 	Real x
+// 	Real y
 //
 // ### Equations:
-// 	[SCAL] ($RES_SIM_0) y = sin(x)
-// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2, 1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 2
-// 	var 2 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 2
-// 	eqn 2 --> var 1
-//
+// 	[SCAL] (1) y = sin(x) ($RES_SIM_0)
+// 	[SCAL] (1) x = y ^ 2.0 + sin(time) ($RES_SIM_1)
 //
 // record SimulationResult
 //     resultFile = "simpleNonlinearLoop_res.mat",

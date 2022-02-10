@@ -36,17 +36,28 @@ simulate(minimalTearing); getErrorString();
 // 	Real y
 //
 // ### Residual Equations:
-// 	[SCAL] ($RES_SIM_0) y = cos(time + 1.0) * CAST(Real, i)
-//
+// 	[SCAL] (1) y = cos(1.0 + time) * CAST(Real, i) ($RES_SIM_0) ;
 // ### Inner Equations:
-// 	([DISC] Integer i) [SCAL] ($RES_SIM_1) i = if y > 0.0 then 1 else 2
+// 	([DISC] (1) Integer i) [SCAL] (1) i = if y > 0.0 then 1 else 2 ($RES_SIM_1)
 //
+// ========================================
 // Jacobian INI_NLS_JAC_1: NLS
-// ----------------------------------------
-// Result EquationPointers (1)
-// ****************************************
-// (1)	[SCAL] ($RES_INI_NLS_JAC_1_0) $SEED_INI_NLS_JAC_1.y = 0.0
+// ========================================
 //
+// Result Equations (1/1)
+// ****************************************
+// (1)       [SCAL] (1) $SEED_INI_NLS_JAC_1.y = 0.0 ($RES_INI_NLS_JAC_1_0)
+//
+//
+// Sparsity Pattern (nnz: 4)
+// ----------------------------------------
+// (i)	{y,i}
+// (y)	{y,i}
+//
+// Sparsity Coloring Groups
+// ----------------------------------------
+// {y}
+// {i}
 //
 // ################################################################################
 //
@@ -62,17 +73,28 @@ simulate(minimalTearing); getErrorString();
 // 	Real y
 //
 // ### Residual Equations:
-// 	[SCAL] ($RES_SIM_0) y = cos(time + 1.0) * CAST(Real, i)
-//
+// 	[SCAL] (1) y = cos(1.0 + time) * CAST(Real, i) ($RES_SIM_0) ;
 // ### Inner Equations:
-// 	([DISC] Integer i) [SCAL] ($RES_SIM_1) i = if y > 0.0 then 1 else 2
+// 	([DISC] (1) Integer i) [SCAL] (1) i = if y > 0.0 then 1 else 2 ($RES_SIM_1)
 //
+// ========================================
 // Jacobian ODE_NLS_JAC_1: NLS
-// ----------------------------------------
-// Result EquationPointers (1)
-// ****************************************
-// (1)	[SCAL] ($RES_ODE_NLS_JAC_1_0) $SEED_ODE_NLS_JAC_1.y = 0.0
+// ========================================
 //
+// Result Equations (1/1)
+// ****************************************
+// (1)       [SCAL] (1) $SEED_ODE_NLS_JAC_1.y = 0.0 ($RES_ODE_NLS_JAC_1_0)
+//
+//
+// Sparsity Pattern (nnz: 4)
+// ----------------------------------------
+// (i)	{y,i}
+// (y)	{y,i}
+//
+// Sparsity Coloring Groups
+// ----------------------------------------
+// {y}
+// {i}
 //
 // record SimulationResult
 //     resultFile = "minimalTearing_res.mat",

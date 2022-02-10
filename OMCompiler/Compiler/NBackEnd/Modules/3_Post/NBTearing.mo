@@ -317,7 +317,7 @@ protected
       eqns            := EquationPointers.fromList(equations);
 
       // make ARRAY possible
-      (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
+      (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
       matching := Matching.regular(Matching.EMPTY_MATCHING(), adj, true, false);
       (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
       comps := Sorting.tarjan(adj, matching, discreteVars, eqns);

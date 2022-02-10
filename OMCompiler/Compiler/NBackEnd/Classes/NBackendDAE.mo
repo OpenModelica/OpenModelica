@@ -883,8 +883,7 @@ protected
           // When equation inside initial actually not allowed. Throw error?
           attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
-          // ToDo: compute correct size
-      then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
+      then BEquation.WHEN_EQUATION(BEquation.WhenEquationBody.size(whenEqBody), whenEqBody, source, attr);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm

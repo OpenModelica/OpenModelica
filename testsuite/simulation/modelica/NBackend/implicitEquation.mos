@@ -26,7 +26,7 @@ simulate(implicitEquation); getErrorString();
 // ========================================
 // Algebraic Variables (1)
 // ****************************************
-//   (0)[ALGB] x
+//   (0)[ALGB] (1) Real x
 //
 // INIT
 // ----------------------------------------
@@ -177,7 +177,7 @@ simulate(implicitEquation); getErrorString();
 // ========================================
 // algVars (1)
 // ----------------------
-// index: 0: x (no alias)  initial: 	no arrCref index:(1) []
+// index:0: x (no alias)  initial: 	no arrCref index:(1) []
 // functions:
 // -----------
 //

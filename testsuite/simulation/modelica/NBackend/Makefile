@@ -7,13 +7,11 @@ multary_simplification.mos \
 parameterSystem.mos \
 RSE.mos \
 RSE2.mos \
-StaticIR.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \
 eventSystem.mos \
 minimalTearing.mos \
 underdetermined_init.mos \
-detectStates.mos \
 partitioning.mos \
 
 # test that currently fail. Move up when fixed.
@@ -21,6 +19,8 @@ partitioning.mos \
 FAILINGTESTFILES = \
 simpleForLoop.mos \
 solveSingleEquation.mos \
+StaticIR.mos \
+detectStates.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

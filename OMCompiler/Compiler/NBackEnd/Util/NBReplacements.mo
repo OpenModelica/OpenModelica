@@ -137,6 +137,9 @@ public
     Pointer<Variable> var_ptr;
     Variable var;
   algorithm
+    // do nothing if replacements are empty
+    if UnorderedMap.isEmpty(replacements) then return; end if;
+
     eqData := match eqData
       case EqData.EQ_DATA_SIM() algorithm
         // we do not want to traverse removed equations, otherwise we could break them
@@ -187,7 +190,7 @@ public
 
   function applySimpleExp
     "Needs to be mapped with Expression.map()"
-    input output Expression exp                   "Replacement happens inside this expression";
+    input output Expression exp                               "Replacement happens inside this expression";
     input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
   algorithm
     exp := match exp

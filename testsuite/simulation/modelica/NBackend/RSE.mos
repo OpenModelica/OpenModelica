@@ -32,15 +32,15 @@ simulate(RSE); getErrorString();
 // ****************************************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] ($RES_SIM_3) x = z
+// 	[SCAL] (1) x = z ($RES_SIM_3)
 //
 // Alias Set 2:
 // ****************************************
-// 	Constant/Parameter Binding: [SCAL] ($RES_SIM_2) c = 3.0
+// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0 ($RES_SIM_2)
 // 	### Set Equations:
-// 	[SCAL] ($RES_SIM_1) y = time + c
-// 	[SCAL] ($RES_SIM_4) b = c
-// 	[SCAL] ($RES_SIM_5) a = b
+// 	[SCAL] (1) y = time + c ($RES_SIM_1)
+// 	[SCAL] (1) b = c ($RES_SIM_4)
+// 	[SCAL] (1) a = b ($RES_SIM_5)
 //
 // [dumprepl] Constant Replacements:
 // ****************************************
@@ -53,6 +53,7 @@ simulate(RSE); getErrorString();
 // [dumprepl] Nontrivial Alias Replacements:
 // ****************************************
 // 	y	 ==> 	3.0 + time
+//
 // ========================================
 // [dumprepl] Alias Sets:
 // ========================================
@@ -65,6 +66,7 @@ simulate(RSE); getErrorString();
 // ****************************************
 // [dumprepl] Nontrivial Alias Replacements:
 // ****************************************
+//
 // record SimulationResult
 //     resultFile = "RSE_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'RSE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

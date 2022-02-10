@@ -59,68 +59,30 @@ val(x3, 0.53);
 // ### Variable:
 // 	Real z
 // ### Equation:
-// 	[SCAL] ($RES_SIM_1) z = sin(time)
+// 	[SCAL] (1) z = sin(time) ($RES_SIM_1)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Boolean $SEV_1
 // ### Equation:
-// 	[SCAL] ($RES_EVT_7) $SEV_1 = z <= 1.0
+// 	[SCAL] (1) $SEV_1 = z <= 1.0 ($RES_EVT_7)
 //
 // BLOCK 3: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Boolean $SEV_0
 // ### Equation:
-// 	[SCAL] ($RES_EVT_8) $SEV_0 = z > 0.5
+// 	[SCAL] (1) $SEV_0 = z > 0.5 ($RES_EVT_8)
 //
 // BLOCK 4: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real x3
 // ### Equation:
-// 	[WHEN] when $SEV_0 then
+// 	[WHEN] (1) when $SEV_0 then
 // 	[----]   x3 := $PRE.x3 + 2.0
 // 	[----] end when;
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2}
-// 	(3)	{4, 2}
-// 	(4)	{4, 3}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{3, 2, 1}
-// 	(3)	{4}
-// 	(4)	{4, 3}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 1
-// 	var 2 --> eqn 2
-// 	var 3 --> eqn 4
-// 	var 4 --> eqn 3
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 1
-// 	eqn 2 --> var 2
-// 	eqn 3 --> var 4
-// 	eqn 4 --> var 3
-//
 //
 // ========================================
 // CONTINUOUS ODE System
@@ -131,46 +93,16 @@ val(x3, 0.53);
 // ### Variable:
 // 	Boolean $TEV_0
 // ### Equation:
-// 	[SCAL] ($RES_EVT_5) $TEV_0 = sample(1, 0.1, t)
+// 	[SCAL] (1) $TEV_0 = sample(1, 0.1, t) ($RES_EVT_5)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real x2
 // ### Equation:
-// 	[WHEN] when $TEV_0 then
+// 	[WHEN] (1) when $TEV_0 then
 // 	[----]   x2 := $PRE.x2 + 0.5
 // 	[----] end when;
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{2, 1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 2
-// 	var 2 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 2
-// 	eqn 2 --> var 1
-//
 //
 // ========================================
 // CONTINUOUS ODE System
@@ -181,46 +113,16 @@ val(x3, 0.53);
 // ### Variable:
 // 	Boolean $TEV_1
 // ### Equation:
-// 	[SCAL] ($RES_EVT_6) $TEV_1 = sample(2, t, 4.611686018427388e+18)
+// 	[SCAL] (1) $TEV_1 = sample(2, t, 4.611686018427388e+18) ($RES_EVT_6)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real x1
 // ### Equation:
-// 	[WHEN] when $TEV_1 then
+// 	[WHEN] (1) when $TEV_1 then
 // 	[----]   x1 := $PRE.x1 + 1.0
 // 	[----] end when;
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{2, 1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 2
-// 	var 2 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 2
-// 	eqn 2 --> var 1
-//
 //
 // ========================================
 // Event Info
@@ -232,8 +134,8 @@ val(x3, 0.53);
 // 	(1) sample(0.1, t)
 // State Events
 // ****************************************
-// 	[DISC] Boolean $SEV_1 = z <= 1.0
-// 	[DISC] Boolean $SEV_0 = z > 0.5
+// 	[DISC] (1) Boolean $SEV_1 = z <= 1.0
+// 	[DISC] (1) Boolean $SEV_0 = z > 0.5
 //
 // ################################################################################
 //
@@ -250,68 +152,30 @@ val(x3, 0.53);
 // ### Variable:
 // 	Real z
 // ### Equation:
-// 	[SCAL] ($RES_SIM_1) z = sin(time)
+// 	[SCAL] (1) z = sin(time) ($RES_SIM_1)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Boolean $SEV_1
 // ### Equation:
-// 	[SCAL] ($RES_EVT_7) $SEV_1 = z <= 1.0
+// 	[SCAL] (1) $SEV_1 = z <= 1.0 ($RES_EVT_7)
 //
 // BLOCK 3: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Boolean $SEV_0
 // ### Equation:
-// 	[SCAL] ($RES_EVT_8) $SEV_0 = z > 0.5
+// 	[SCAL] (1) $SEV_0 = z > 0.5 ($RES_EVT_8)
 //
 // BLOCK 4: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real x3
 // ### Equation:
-// 	[WHEN] when $SEV_0 then
+// 	[WHEN] (1) when $SEV_0 then
 // 	[----]   x3 := $PRE.x3 + 2.0
 // 	[----] end when;
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2}
-// 	(3)	{4, 2}
-// 	(4)	{4, 3}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{3, 2, 1}
-// 	(3)	{4}
-// 	(4)	{4, 3}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 1
-// 	var 2 --> eqn 2
-// 	var 3 --> eqn 4
-// 	var 4 --> eqn 3
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 1
-// 	eqn 2 --> var 2
-// 	eqn 3 --> var 4
-// 	eqn 4 --> var 3
-//
 //
 // ========================================
 // CONTINUOUS ODE System
@@ -322,46 +186,16 @@ val(x3, 0.53);
 // ### Variable:
 // 	Boolean $TEV_0
 // ### Equation:
-// 	[SCAL] ($RES_EVT_5) $TEV_0 = sample(1, 0.1, t)
+// 	[SCAL] (1) $TEV_0 = sample(1, 0.1, t) ($RES_EVT_5)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real x2
 // ### Equation:
-// 	[WHEN] when $TEV_0 then
+// 	[WHEN] (1) when $TEV_0 then
 // 	[----]   x2 := $PRE.x2 + 0.5
 // 	[----] end when;
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{2, 1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 2
-// 	var 2 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 2
-// 	eqn 2 --> var 1
-//
 //
 // ========================================
 // CONTINUOUS ODE System
@@ -372,46 +206,16 @@ val(x3, 0.53);
 // ### Variable:
 // 	Boolean $TEV_1
 // ### Equation:
-// 	[SCAL] ($RES_EVT_6) $TEV_1 = sample(2, t, 4.611686018427388e+18)
+// 	[SCAL] (1) $TEV_1 = sample(2, t, 4.611686018427388e+18) ($RES_EVT_6)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real x1
 // ### Equation:
-// 	[WHEN] when $TEV_1 then
+// 	[WHEN] (1) when $TEV_1 then
 // 	[----]   x1 := $PRE.x1 + 1.0
 // 	[----] end when;
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{2, 1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 2
-// 	var 2 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 2
-// 	eqn 2 --> var 1
-//
 //
 // ################################################################################
 //
@@ -423,66 +227,19 @@ val(x3, 0.53);
 // CONTINUOUS INI System
 // ========================================
 //
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Empty Adjacency Matrix
-// ****************************************
-//
-//
-// ========================================
-// Empty Matching
-// ========================================
-//
-//
-// ========================================
-// CONTINUOUS INI System
-// ========================================
-//
 // BLOCK 1: Single Equation
-// ----------------------------------------
-// ### Variable:
-// 	Boolean $TEV_1
-// ### Equation:
-// 	[SCAL] ($RES_EVT_6) $TEV_1 = sample(2, t, 4.611686018427388e+18)
-//
-// BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Boolean $TEV_0
 // ### Equation:
-// 	[SCAL] ($RES_EVT_5) $TEV_0 = sample(1, 0.1, t)
+// 	[SCAL] (1) $TEV_0 = sample(1, 0.1, t) ($RES_EVT_5)
 //
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{2}
-// 	(2)	{1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 2
-// 	var 2 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 2
-// 	eqn 2 --> var 1
-//
+// BLOCK 2: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Boolean $TEV_1
+// ### Equation:
+// 	[SCAL] (1) $TEV_1 = sample(2, t, 4.611686018427388e+18) ($RES_EVT_6)
 //
 // ========================================
 // CONTINUOUS INI System
@@ -493,44 +250,14 @@ val(x3, 0.53);
 // ### Variable:
 // 	Real x1
 // ### Equation:
-// 	[SIMP] ($RES_SRT_9) x1 = $START.x1
+// 	[SIMP] (1) x1 = $START.x1 ($RES_SRT_9)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real $PRE.x1
 // ### Equation:
-// 	[SIMP] ($RES_PRE_14) $PRE.x1 = x1
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 1
-// 	var 2 --> eqn 2
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 1
-// 	eqn 2 --> var 2
-//
+// 	[SIMP] (1) $PRE.x1 = x1 ($RES_PRE_14)
 //
 // ========================================
 // CONTINUOUS INI System
@@ -541,44 +268,14 @@ val(x3, 0.53);
 // ### Variable:
 // 	Real x2
 // ### Equation:
-// 	[SIMP] ($RES_SRT_10) x2 = $START.x2
+// 	[SIMP] (1) x2 = $START.x2 ($RES_SRT_10)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real $PRE.x2
 // ### Equation:
-// 	[SIMP] ($RES_PRE_13) $PRE.x2 = x2
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 1
-// 	var 2 --> eqn 2
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 1
-// 	eqn 2 --> var 2
-//
+// 	[SIMP] (1) $PRE.x2 = x2 ($RES_PRE_13)
 //
 // ========================================
 // CONTINUOUS INI System
@@ -589,55 +286,21 @@ val(x3, 0.53);
 // ### Variable:
 // 	Real z
 // ### Equation:
-// 	[SCAL] ($RES_SIM_1) z = sin(time)
+// 	[SCAL] (1) z = sin(time) ($RES_SIM_1)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
-// 	Boolean $SEV_0
+// 	Boolean $SEV_1
 // ### Equation:
-// 	[SCAL] ($RES_EVT_8) $SEV_0 = z > 0.5
+// 	[SCAL] (1) $SEV_1 = z <= 1.0 ($RES_EVT_7)
 //
 // BLOCK 3: Single Equation
 // ----------------------------------------
 // ### Variable:
-// 	Boolean $SEV_1
+// 	Boolean $SEV_0
 // ### Equation:
-// 	[SCAL] ($RES_EVT_7) $SEV_1 = z <= 1.0
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{3, 1}
-// 	(2)	{2, 1}
-// 	(3)	{1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{3, 2, 1}
-// 	(2)	{2}
-// 	(3)	{1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 3
-// 	var 2 --> eqn 2
-// 	var 3 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 3
-// 	eqn 2 --> var 2
-// 	eqn 3 --> var 1
-//
+// 	[SCAL] (1) $SEV_0 = z > 0.5 ($RES_EVT_8)
 //
 // ========================================
 // CONTINUOUS INI System
@@ -648,44 +311,14 @@ val(x3, 0.53);
 // ### Variable:
 // 	Real x3
 // ### Equation:
-// 	[SIMP] ($RES_SRT_11) x3 = $START.x3
+// 	[SIMP] (1) x3 = $START.x3 ($RES_SRT_11)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
 // ### Variable:
 // 	Real $PRE.x3
 // ### Equation:
-// 	[SIMP] ($RES_PRE_12) $PRE.x3 = x3
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{1}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 1
-// 	var 2 --> eqn 2
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 1
-// 	eqn 2 --> var 2
-//
+// 	[SIMP] (1) $PRE.x3 = x3 ($RES_PRE_12)
 //
 // ========================================
 // Event Info
@@ -697,8 +330,8 @@ val(x3, 0.53);
 // 	(1) sample(0.1, t)
 // State Events
 // ****************************************
-// 	[DISC] Boolean $SEV_1 = z <= 1.0
-// 	[DISC] Boolean $SEV_0 = z > 0.5
+// 	[DISC] (1) Boolean $SEV_1 = z <= 1.0
+// 	[DISC] (1) Boolean $SEV_0 = z > 0.5
 //
 // record SimulationResult
 //     resultFile = "eventSystem_res.mat",

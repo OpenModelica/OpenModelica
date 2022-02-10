@@ -365,7 +365,7 @@ protected
     end for;
 
     if Flags.isSet(Flags.DUMP_REPL) then
-      print(Replacements.simpleToString(replacements));
+      print(Replacements.simpleToString(replacements) + "\n");
     end if;
   end removeSimpleEquationsCausalize;
 
