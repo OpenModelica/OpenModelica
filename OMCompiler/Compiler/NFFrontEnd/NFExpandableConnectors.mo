@@ -400,7 +400,7 @@ algorithm
       var := Variable.VARIABLE(elem_name, ty, NFBinding.EMPTY_BINDING,
         Visibility.PUBLIC, NFComponent.DEFAULT_ATTR, {}, {},
         SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
-        ElementSource.getInfo(c.source));
+        ElementSource.getInfo(c.source), NFBackendExtension.DUMMY_BACKEND_INFO);
       vars := var :: vars;
     else
       comp_node := InstNode.resolveInner(comp_node);

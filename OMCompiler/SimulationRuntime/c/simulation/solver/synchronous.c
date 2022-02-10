@@ -473,7 +473,7 @@ void printSyncTimer(void* data, int stream, void* elemPointer)
   case SYNC_SUB_CLOCK:
     infoStreamPrint(stream, 0, "%p: (base_idx: %i, sub_idx: %i, type: %s, activationTime: %e)", elemPointer, syncTimerElem->base_idx, syncTimerElem->sub_idx, "sub-clock", syncTimerElem->activationTime);
     break;
-  
+
   default:
     infoStreamPrint(stream, 0, "%p: ERROR: Unknown type", elemPointer);
     break;

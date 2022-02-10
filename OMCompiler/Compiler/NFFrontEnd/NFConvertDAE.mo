@@ -91,6 +91,13 @@ algorithm
   execStat(getInstanceName());
 end convert;
 
+function convertStatements
+  input list<Statement> statements;
+  output list<DAE.Statement> elements;
+algorithm
+  elements := list(convertStatement(s) for s in statements);
+end convertStatements;
+
 protected
 uniontype VariableConversionSettings
   record VARIABLE_CONVERSION_SETTINGS
@@ -794,13 +801,6 @@ algorithm
   elements := DAE.ALGORITHM(dalg, alg.source) :: elements;
 end convertAlgorithm;
 
-function convertStatements
-  input list<Statement> statements;
-  output list<DAE.Statement> elements;
-algorithm
-  elements := list(convertStatement(s) for s in statements);
-end convertStatements;
-
 function convertStatement
   input Statement stmt;
   output DAE.Statement elem;
@@ -1025,7 +1025,7 @@ algorithm
   elements := DAE.INITIALALGORITHM(dalg, alg.source) :: elements;
 end convertInitialAlgorithm;
 
-function convertFunctionTree
+public function convertFunctionTree
   input FunctionTree funcs;
   output DAE.FunctionTree dfuncs;
 algorithm
@@ -1054,7 +1054,7 @@ algorithm
   end match;
 end convertFunctionTree;
 
-function convertFunction
+protected function convertFunction
   input Function func;
   output DAE.Function dfunc;
 protected

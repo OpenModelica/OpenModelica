@@ -233,6 +233,14 @@ public
     Type ty;
   end PARTIAL_FUNCTION_APPLICATION;
 
+  record MULTARY
+    "Multary expressions with the same operator, e.g. a+b+c
+    An empty list has to be interpreted as the neutral element of the operator space"
+    list<Expression> arguments      "arguments that are chained with the operator (+, *)";
+    list<Expression> inv_arguments  "arguments that are chained with the inverse operator (-, :)";
+    Operator operator               "Can only be + or * (commutative)";
+  end MULTARY;
+
   function isArray
     input Expression exp;
     output Boolean isArray;
@@ -382,7 +390,7 @@ public
         Boolean b;
         ComponentRef cr;
         Type ty;
-        list<Expression> expl;
+        list<Expression> expl, inv_expl;
         Expression e1, e2, e3;
         Option<Expression> oe;
         Path p;
@@ -499,6 +507,19 @@ public
           if comp == 0 then compare(exp1.exp, e1) else comp;
 
       case END() then 0;
+
+      case MULTARY()
+        algorithm
+          MULTARY(arguments = expl, inv_arguments = inv_expl, operator = op) := exp2;
+          comp := Operator.compare(exp1.operator, op);
+          if comp == 0 then
+            comp := compareList(exp1.arguments, expl);
+          end if;
+          if comp == 0 then
+            comp := compareList(exp1.inv_arguments, inv_expl);
+          end if;
+        then
+          comp;
 
       case BINARY()
         algorithm
@@ -694,6 +715,7 @@ public
       case SIZE()            then if isSome(exp.dimIndex) then
                                     Type.INTEGER() else Type.sizeType(typeOf(exp.exp));
       case END()             then Type.INTEGER();
+      case MULTARY()         then Operator.typeOf(exp.operator);
       case BINARY()          then Operator.typeOf(exp.operator);
       case UNARY()           then Operator.typeOf(exp.operator);
       case LBINARY()         then Operator.typeOf(exp.operator);
@@ -874,8 +896,23 @@ public
     input Expression exp;
     output String value;
   algorithm
-    STRING(value=value) := exp;
+    try
+      STRING(value=value) := exp;
+    else
+      value := "";
+    end try;
   end stringValue;
+
+  function booleanValue
+    input Expression exp;
+    output Boolean value;
+  algorithm
+    try
+      BOOLEAN(value=value) := exp;
+    else
+      value := false;
+    end try;
+  end booleanValue;
 
   function makeArray
     input Type ty;
@@ -987,6 +1024,28 @@ public
     rangeExp := makeRange(start_exp, step_exp, stop_exp);
   end makeIntegerRange;
 
+  function getIntegerRange
+    input Expression range  "has to be RANGE()!";
+    output Integer start;
+    output Integer step;
+    output Integer stop;
+  algorithm
+    (start, step, stop) := match range
+      local
+        Option<Expression> step_opt;
+      case RANGE(start = INTEGER(start), step = step_opt, stop = INTEGER(stop)) algorithm
+        if Util.isSome(step_opt) then
+          SOME(INTEGER(step)) := step_opt;
+        else
+          step := if start > stop then -1 else 1;
+        end if;
+      then (start, step, stop);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " expression not RANGE(): " + toString(range), sourceInfo());
+      then fail();
+    end match;
+  end getIntegerRange;
+
   function makeTuple
     input list<Expression> expl;
     output Expression tupleExp;
@@ -1000,6 +1059,16 @@ public
       tupleExp := TUPLE(Type.TUPLE(tyl, NONE()), expl);
     end if;
   end makeTuple;
+
+  function rangeSize
+    input Expression range  "has to be RANGE()!";
+    output Integer size;
+  protected
+    Integer start, step, stop;
+  algorithm
+    (start, step, stop) := getIntegerRange(range);
+    size := realInt((stop - start) / step);
+  end rangeSize;
 
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
@@ -1628,6 +1697,8 @@ public
   protected
     Type t;
     ClockKind clk;
+    Expression first, first_inv;
+    list<Expression> rest, rest_inv;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -1661,6 +1732,17 @@ public
                         else ""
                         ) + ")";
       case END() then "end";
+
+      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryString(exp.arguments, exp, exp.operator, false);
+
+      case MULTARY() guard(listEmpty(exp.arguments) and Operator.isDashClassification(Operator.getMathClassification(exp.operator)))
+                     then "-" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
+                          Operator.symbol(Operator.invert(exp.operator)) +
+                          multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -1708,6 +1790,8 @@ public
   protected
     Type t;
     ClockKind clk;
+    Expression first;
+    list<Expression> rest;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -1743,6 +1827,17 @@ public
                         else ""
                         ) + ")";
       case END() then "end";
+
+      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryString(exp.arguments, exp, exp.operator, false);
+
+      case MULTARY() guard(listEmpty(exp.arguments) and Operator.isDashClassification(Operator.getMathClassification(exp.operator)))
+                     then "-" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
+                          Operator.symbol(Operator.invert(exp.operator)) +
+                          multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandFlatString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -1884,6 +1979,28 @@ public
     end if;
   end operandFlatString;
 
+  function multaryString
+    input list<Expression> arguments;
+    input Expression exp;
+    input Operator operator;
+    input Boolean useParanthesis = true;
+    output String str;
+  protected
+    Expression first;
+    list<Expression> rest;
+  algorithm
+    first :: rest := arguments;
+    if listEmpty(rest) then
+      str := toString(first);
+    elseif useParanthesis then
+      str := "(" + operandString(first, exp, true) + Operator.symbol(operator) +
+        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator)) + ")";
+    else
+      str := operandString(first, exp, true) + Operator.symbol(operator) +
+        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator));
+    end if;
+  end multaryString;
+
   function priority
     input Expression exp;
     input Boolean lhs;
@@ -1892,6 +2009,7 @@ public
     priority := match exp
       case INTEGER() then if exp.value < 0 then 4 else 0;
       case REAL() then if exp.value < 0.0 then 4 else 0;
+      case MULTARY() then Operator.priority(exp.operator, lhs);
       case BINARY() then Operator.priority(exp.operator, lhs);
       case UNARY() then 4;
       case LBINARY() then Operator.priority(exp.operator, lhs);
@@ -2083,6 +2201,10 @@ public
 
       // END() doesn't have a DAE representation.
 
+      case MULTARY() algorithm
+        // swapping not necessary because multary expressions have to be commutative
+      then toDAEMultary(exp.arguments, exp.inv_arguments, exp.operator);
+
       case BINARY()
         algorithm
           (daeOp, swap, negate) := Operator.toDAE(exp.operator);
@@ -2126,6 +2248,66 @@ public
 
     end match;
   end toDAE;
+
+  function toDAEMultary
+    "Converts a multary expression to a chain of binary expressions because
+    the old frontend does not have multary expressions."
+    input list<Expression> arguments;
+    input list<Expression> inv_arguments;
+    input Operator operator;
+    output DAE.Exp daeExp;
+  algorithm
+    if listEmpty(inv_arguments) then
+      daeExp := toDAEMultaryArgs(arguments, operator);
+    elseif Type.isBoolean(operator.ty) then
+      daeExp := DAE.LBINARY(
+        exp1      = toDAEMultaryArgs(arguments, operator),
+        operator  = Operator.toDAE(Operator.invert(operator)),
+        exp2      = toDAEMultaryArgs(inv_arguments, operator)
+       );
+    else
+      daeExp := DAE.BINARY(
+        exp1      = toDAEMultaryArgs(arguments, operator),
+        operator  = Operator.toDAE(Operator.invert(operator)),
+        exp2      = toDAEMultaryArgs(inv_arguments, operator)
+       );
+     end if;
+  end toDAEMultary;
+
+  function toDAEMultaryArgs
+    input list<Expression> arguments;
+    input Operator operator;
+    output DAE.Exp daeExp;
+  protected
+    DAE.Operator daeOp;
+  algorithm
+    daeExp := match arguments
+      local
+        Expression arg;
+        list<Expression> rest;
+        DAE.Exp exp;
+
+      // list is empty from the get-go: create neutral element
+      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
+      then Expression.toDAE(Expression.makeZero(operator.ty));
+      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
+      then Expression.toDAE(Expression.makeOne(operator.ty));
+
+      // no rest, just return the DAE representation of last argument
+      case arg :: {} then Expression.toDAE(arg);
+
+      // convert argument to DAE and create new binary. recurse for second argument
+      case arg :: rest algorithm
+        exp := Expression.toDAE(arg);
+       (daeOp, _) := Operator.toDAE(operator);
+      then  DAE.BINARY(exp, daeOp, toDAEMultary(rest, {}, operator));
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got unhandled argument list:
+        {" + stringDelimitList(list(toString(e) for e in arguments), ", ") + "}", sourceInfo());
+      then fail();
+    end match;
+  end toDAEMultaryArgs;
 
   function toDAERecord
     input Type ty;
@@ -2323,6 +2505,13 @@ public
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
 
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          exp.arguments := list(map(arg, func) for arg in exp.arguments);
+          exp.inv_arguments := list(map(arg, func) for arg in exp.inv_arguments);
+        then exp;
+
       case UNARY()
         algorithm
           e1 := map(exp.exp, func);
@@ -2491,6 +2680,13 @@ public
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
+
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          exp.arguments := list(func(arg) for arg in exp.arguments);
+          exp.inv_arguments := list(func(arg) for arg in exp.inv_arguments);
+        then exp;
 
       case UNARY()
         algorithm
@@ -2707,6 +2903,18 @@ public
         then
           fold(exp.exp2, func, result);
 
+      case MULTARY()
+        algorithm
+          result := arg;
+          for argument in exp.arguments loop
+            result := fold(argument, func, result);
+          end for;
+          for argument in exp.inv_arguments loop
+            result := fold(argument, func, result);
+          end for;
+        then
+          result;
+
       case UNARY() then fold(exp.exp, func, arg);
 
       case LBINARY()
@@ -2829,6 +3037,16 @@ public
         then
           ();
 
+      case MULTARY()
+        algorithm
+          for arg in exp.arguments loop
+            apply(arg, func);
+          end for;
+          for arg in exp.inv_arguments loop
+            apply(arg, func);
+          end for;
+        then ();
+
       case UNARY() algorithm apply(exp.exp, func); then ();
 
       case LBINARY()
@@ -2942,6 +3160,16 @@ public
         then
           ();
 
+      case MULTARY()
+        algorithm
+          for arg in exp.arguments loop
+            func(arg);
+          end for;
+          for arg in exp.inv_arguments loop
+            func(arg);
+          end for;
+        then ();
+
       case UNARY() algorithm func(exp.exp); then ();
 
       case LBINARY()
@@ -3009,7 +3237,7 @@ public
   function mapFold<ArgT>
     input Expression exp;
     input MapFunc func;
-          output Expression outExp;
+    output Expression outExp;
     input output ArgT arg;
 
     partial function MapFunc
@@ -3106,6 +3334,23 @@ public
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
+
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          expl := {};
+          for argument in exp.arguments loop
+            (e1, arg) := mapFold(argument, func, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.arguments := listReverse(expl);
+          expl := {};
+          for argument in exp.inv_arguments loop
+            (e1, arg) := mapFold(argument, func, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.inv_arguments := listReverse(expl);
+        then exp;
 
       case UNARY()
         algorithm
@@ -3315,6 +3560,23 @@ public
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
 
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          expl := {};
+          for argument in exp.arguments loop
+            (e1, arg) := func(argument, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.arguments := listReverse(expl);
+          expl := {};
+          for argument in exp.inv_arguments loop
+            (e1, arg) := func(argument, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.inv_arguments := listReverse(expl);
+        then exp;
+
       case UNARY()
         algorithm
           (e1, arg) := func(exp.exp, arg);
@@ -3499,6 +3761,18 @@ public
              contains(exp.exp, func);
 
       case BINARY() then contains(exp.exp1, func) or contains(exp.exp2, func);
+      case MULTARY()
+        algorithm
+          res := false;
+          for arg in exp.arguments loop
+            if res then break; end if;
+            res := contains(arg, func);
+          end for;
+          for arg in exp.inv_arguments loop
+            if res then break; end if;
+            res := contains(arg, func);
+          end for;
+        then res;
       case UNARY() then contains(exp.exp, func);
       case LBINARY() then contains(exp.exp1, func) or contains(exp.exp2, func);
       case LUNARY() then contains(exp.exp, func);
@@ -3586,6 +3860,18 @@ public
              func(exp.exp);
 
       case BINARY() then func(exp.exp1) or func(exp.exp2);
+      case MULTARY()
+        algorithm
+          res := false;
+          for arg in exp.arguments loop
+            if res then break; end if;
+            res := func(arg);
+          end for;
+          for arg in exp.inv_arguments loop
+            if res then break; end if;
+            res := func(arg);
+          end for;
+        then res;
       case UNARY() then func(exp.exp);
       case LBINARY() then func(exp.exp1) or func(exp.exp2);
       case LUNARY() then func(exp.exp);
@@ -3677,6 +3963,33 @@ public
     CREF(cref = cref) := exp;
   end toCref;
 
+  function extract
+    "author: kabdelhak 2020-06
+    Extracts all sub expressions from an expression using a filter function."
+    input Expression exp;
+    input filter func;
+    output list<Expression> exp_lst;
+    partial function filter
+      input Expression exp;
+      output Boolean b;
+    end filter;
+  protected
+    // traverse helper function only needed in this function
+    function traverser
+      input Expression exp;
+      input filter func;
+      input output list<Expression> exp_lst;
+      partial function filter
+        input Expression exp;
+        output Boolean b;
+      end filter;
+    algorithm
+      exp_lst := if func(exp) then exp :: exp_lst else exp_lst;
+    end traverser;
+  algorithm
+    exp_lst := fold(exp, function traverser(func = func), {});
+  end extract;
+
   function isIterator
     input Expression exp;
     output Boolean isIterator;
@@ -3720,11 +4033,26 @@ public
       case INTEGER() then exp.value == 1;
       case REAL() then exp.value == 1.0;
       case CAST() then isOne(exp.exp);
+      case UNARY() then isMinusOne(exp.exp);
       else false;
     end match;
   end isOne;
 
+  function isMinusOne
+    input Expression exp;
+    output Boolean isOne;
+  algorithm
+    isOne := match exp
+      case INTEGER() then exp.value == -1;
+      case REAL() then exp.value == -1.0;
+      case CAST() then isMinusOne(exp.exp);
+      case UNARY() then isOne(exp.exp);
+      else false;
+    end match;
+  end isMinusOne;
+
   function isNegative
+    "this requires proper simplification to be correct"
     input Expression exp;
     output Boolean negative;
   algorithm
@@ -3786,6 +4114,29 @@ public
       else false;
     end match;
   end isInteger;
+
+  function isReal
+    input Expression exp;
+    output Boolean isReal;
+  algorithm
+    isReal := match exp
+      case REAL() then true;
+      else false;
+    end match;
+  end isReal;
+
+  function isConstNumber
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case INTEGER() then true;
+      case REAL() then true;
+      case CAST() then isConstNumber(exp.exp);
+      case UNARY() then isConstNumber(exp.exp);
+      else false;
+    end match;
+  end isConstNumber;
 
   function isBoolean
     input Expression exp;
@@ -3907,6 +4258,7 @@ public
     zeroExp := match ty
       case Type.REAL() then REAL(0.0);
       case Type.INTEGER() then INTEGER(0);
+      case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ARRAY()
         then ARRAY(ty,
                    List.fill(makeZero(Type.unliftArray(ty)),
@@ -3932,18 +4284,33 @@ public
 
   function makeOne
     input Type ty;
-    output Expression zeroExp;
+    output Expression oneExp;
   algorithm
-    zeroExp := match ty
+    oneExp := match ty
       case Type.REAL() then REAL(1.0);
       case Type.INTEGER() then INTEGER(1);
       case Type.ARRAY()
         then ARRAY(ty,
-                   List.fill(makeZero(Type.unliftArray(ty)),
+                   List.fill(makeOne(Type.unliftArray(ty)),
                              Dimension.size(listHead(ty.dimensions))),
                    literal = true);
     end match;
   end makeOne;
+
+  function makeMinusOne
+    input Type ty;
+    output Expression oneExp;
+  algorithm
+    oneExp := match ty
+      case Type.REAL() then REAL(-1.0);
+      case Type.INTEGER() then INTEGER(-1);
+      case Type.ARRAY()
+        then ARRAY(ty,
+                   List.fill(makeMinusOne(Type.unliftArray(ty)),
+                             Dimension.size(listHead(ty.dimensions))),
+                   literal = true);
+    end match;
+  end makeMinusOne;
 
   function makeMaxValue
     input Type ty;
@@ -4063,6 +4430,48 @@ public
       else LUNARY(Operator.makeNot(typeOf(exp)), exp);
     end match;
   end logicNegate;
+
+  function invertRange
+    "inverts the direction of a range"
+    input output Expression range;
+  algorithm
+    range := match range
+      local
+        Expression step;
+      case RANGE()                   then RANGE(range.ty, range.stop, SOME(INTEGER(-1)), range.start);
+      case RANGE(step = SOME(step))  then RANGE(range.ty, range.stop, SOME(negate(step)), range.start);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
+          + toString(range)});
+      then fail();
+    end match;
+  end invertRange;
+
+  function sliceRange
+    "slices the range with a given zero-based start and one-based step"
+    input output Expression range;
+    input tuple<Integer, Integer, Integer> slice  "start step stop";
+  algorithm
+    range := match (range, slice)
+      local
+        Integer start, step, stop;
+        Integer slice_start, slice_step, slice_stop;
+
+      case (RANGE(), (slice_start, slice_step, slice_stop)) algorithm
+        step := if Util.isSome(range.step) then integerValue(Util.getOption(range.step)) else 1;
+        start := integerValue(range.start);
+        // shift start and stop accordingly, multiply step
+        stop  := start + slice_stop * step;
+        start := start + slice_start * step;
+        step  := slice_step * step;
+      then RANGE(range.ty, INTEGER(start), SOME(INTEGER(step)), INTEGER(stop));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
+          + toString(range)});
+      then fail();
+    end match;
+  end sliceRange;
 
   function arrayElements
     input Expression array;
@@ -4314,6 +4723,7 @@ public
           var;
 
       case END() then Variability.PARAMETER;
+      case MULTARY() then Prefixes.variabilityMax(variabilityList(exp.arguments), variabilityList(exp.arguments));
       case BINARY() then Prefixes.variabilityMax(variability(exp.exp1), variability(exp.exp2));
       case UNARY() then variability(exp.exp);
       case LBINARY() then Prefixes.variabilityMax(variability(exp.exp1), variability(exp.exp2));
@@ -4468,6 +4878,16 @@ public
       else false;
     end match;
   end isEmpty;
+
+  function isEnd
+    input Expression exp;
+    output Boolean isend;
+  algorithm
+    isend := match exp
+      case END() then true;
+      else false;
+    end match;
+  end isEnd;
 
   function enumIndexExp
     input Expression enumExp;
@@ -4784,6 +5204,25 @@ public
       else true;
     end match;
   end isPure;
+
+  function containsCref
+    input Expression exp;
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := fold(exp, function isCrefEqual(cref = cref), false);
+  end containsCref;
+
+  function isCrefEqual
+    input Expression exp;
+    input output Boolean b;
+    input ComponentRef cref;
+  algorithm
+    b := match (b, exp)
+      case (false, CREF()) then ComponentRef.isEqual(exp.cref, cref);
+      else b;
+    end match;
+  end isCrefEqual;
 
   function filterSplitIndices
     input output Expression exp;

@@ -1336,7 +1336,6 @@ algorithm
   end while;
 end markStateEquationsWork;
 
-
 public function removeNegative
 "author: PA
   Removes all negative integers."

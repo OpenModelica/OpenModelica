@@ -2979,7 +2979,7 @@ function checkSumComplexType
   input SourceInfo info;
   output Boolean valid = true;
 protected
-  InstNode cls_node, op_node;
+  InstNode cls_node;
   Class cls;
 algorithm
   Type.COMPLEX(cls = cls_node) := ty;

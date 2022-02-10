@@ -34,6 +34,10 @@ encapsulated uniontype SBLinearMap
 protected
   import Array;
   import List;
+  import SBAtomicSet;
+  import SBInterval;
+  import SBMultiInterval;
+  import SBSet;
   import System;
   import Util;
   import MetaModelica.Dangerous.*;
@@ -170,6 +174,41 @@ public
 
     inv := LINEAR_MAP(gain, offset);
   end inverse;
+
+  function apply
+    input SBSet domain;
+    input SBLinearMap map;
+    output SBSet target = SBSet.copy(domain);
+  algorithm
+    UnorderedSet.map(target.asets, function applyAtomicSet(map = map));
+  end apply;
+
+  function applyAtomicSet
+    input output SBAtomicSet atomic;
+    input SBLinearMap map;
+  algorithm
+    atomic.aset := applyMultiInterval(atomic.aset, map);
+  end applyAtomicSet;
+
+  function applyMultiInterval
+    input output SBMultiInterval multiInt;
+    input SBLinearMap map;
+  algorithm
+    for i in 1:multiInt.ndim loop
+      multiInt.intervals[i] := applyInterval(multiInt.intervals[i], map.gain[i], map.offset[i]);
+    end for;
+  end applyMultiInterval;
+
+  function applyInterval
+    input output SBInterval interval;
+    input Real gain;
+    input Real offset;
+  algorithm
+    // take care! theses should always be convertible without rounding errors
+    interval.lo   := realInt(intReal(interval.lo) * gain + offset);
+    interval.step := realInt(intReal(interval.step) * gain);
+    interval.hi   := realInt(intReal(interval.hi) * gain + offset);
+  end applyInterval;
 
   function toString
     input SBLinearMap map;

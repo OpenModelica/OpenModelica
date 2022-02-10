@@ -121,6 +121,7 @@ public
 
   function expandCref
     input Expression crefExp;
+    input Boolean backend = false;
     output Expression arrayExp;
     output Boolean expanded;
   protected
@@ -133,7 +134,7 @@ public
             arrayExp := Expression.makeEmptyArray(crefExp.ty);
             expanded := true;
           elseif Type.hasKnownSize(crefExp.ty) then
-            subs := expandCref2(crefExp.cref);
+            subs := expandCref2(crefExp.cref, backend);
             arrayExp := expandCref3(subs, crefExp.cref, Type.arrayElementType(crefExp.ty));
             expanded := true;
           else
@@ -149,6 +150,7 @@ public
 
   function expandCref2
     input ComponentRef cref;
+    input Boolean backend;
     input output list<list<Subscript>> subs = {};
   protected
     list<Subscript> cr_subs = {};
@@ -157,13 +159,13 @@ public
     import NFComponentRef.Origin;
   algorithm
     subs := match cref
-      case ComponentRef.CREF(origin = Origin.CREF)
+      case ComponentRef.CREF() guard(backend or cref.origin == Origin.CREF)
         algorithm
           dims := Type.arrayDims(cref.ty);
           cr_subs := Subscript.expandList(cref.subscripts, dims);
         then
           if listEmpty(cr_subs) and not listEmpty(dims) then
-            {} else expandCref2(cref.restCref, cr_subs :: subs);
+            {} else expandCref2(cref.restCref, backend, cr_subs :: subs);
 
       else subs;
     end match;
@@ -280,14 +282,14 @@ public
     Absyn.Path fn_path = Function.nameConsiderBuiltin(fn);
   algorithm
     (outExp, expanded) := match AbsynUtil.pathFirstIdent(fn_path)
-      case "cat"       then expandBuiltinCat(args, call);
-      case "der"       then expandBuiltinGeneric(call);
-      case "diagonal"  then expandBuiltinDiagonal(listHead(args));
-      case "fill"      then expandBuiltinFill(args);
-      case "pre"       then expandBuiltinGeneric(call);
-      case "previous"  then expandBuiltinGeneric(call);
-      case "promote"   then expandBuiltinPromote(args);
-      case "transpose" then expandBuiltinTranspose(listHead(args));
+      case "cat"        then expandBuiltinCat(args, call);
+      case "der"        then expandBuiltinGeneric(call);
+      case "diagonal"   then expandBuiltinDiagonal(listHead(args));
+      case "fill"       then expandBuiltinFill(args);
+      case "pre"        then expandBuiltinGeneric(call);
+      case "previous"   then expandBuiltinGeneric(call);
+      case "promote"    then expandBuiltinPromote(args);
+      case "transpose"  then expandBuiltinTranspose(listHead(args));
     end match;
   end expandBuiltinCall;
 

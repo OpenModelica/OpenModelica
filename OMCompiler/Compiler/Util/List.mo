@@ -130,6 +130,21 @@ algorithm
   end while;
 end fill;
 
+public function repeat<T>
+  "Returns a list of n replications of input lst.
+     Example: fill({2, 1}, 3) => {2, 1, 2, 1, 2, 1}"
+  input list<T> inElement;
+  input Integer inCount;
+  output list<T> outList = {};
+protected
+  Integer i = 0;
+algorithm
+  while i < inCount loop
+    outList := listAppend(inElement, outList);
+    i := i + 1;
+  end while;
+end repeat;
+
 public function intRange
   "Returns a list of n integers from 1 to inStop.
      Example: listIntRange(3) => {1,2,3}"
@@ -1111,7 +1126,7 @@ algorithm
 end unique;
 
 public function uniqueIntN
-  "Takes a list of integes and returns a list with duplicates removed, so that
+  "Takes a list of integers and returns a list with duplicates removed, so that
    each element in the new list is unique. O(listLength(inList))"
   input list<Integer> inList;
   input Integer inN;
@@ -6498,11 +6513,11 @@ public function toString<T>
   "
   input list<T> inList;
   input FuncType inPrintFunc;
-  input String inListNameStr = "" "The name of the list." ;
-  input String inBeginStr = "{" "The start of the list";
-  input String inDelimitStr = ", " "The delimiter between list elements.";
-  input String inEndStr = "}" "The end of the list.";
-  input Boolean inPrintEmpty = true "If false, don't output begin and end if the list is empty.";
+  input String inListNameStr  = ""      "The name of the list.";
+  input String inBeginStr     = "{"     "The start of the list";
+  input String inDelimitStr   = ", "    "The delimiter between list elements.";
+  input String inEndStr       = "}"     "The end of the list.";
+  input Boolean inPrintEmpty  = true    "If false, don't output begin and end if the list is empty.";
   output String outString;
 
   partial function FuncType
@@ -7540,23 +7555,24 @@ algorithm
   end match;
 end allCombinations4;
 
- public function contains<T>
-    input list<T> lst;
-    input T elem;
-    input equalityFunc eqFunc;
-    partial function equalityFunc
-      input T t1;
-      input T t2;
-      output Boolean res;
-    end equalityFunc;
-    output Boolean res = false;
-  algorithm
-    for i in lst loop
-      if eqFunc(i, elem) then
-        res := true;
-        return;
-      end if;
-    end for;
+
+public function contains<T>
+  input list<T> lst;
+  input T elem;
+  input equalityFunc eqFunc;
+  partial function equalityFunc
+    input T t1;
+    input T t2;
+    output Boolean res;
+  end equalityFunc;
+  output Boolean res = false;
+algorithm
+  for i in lst loop
+    if eqFunc(i, elem) then
+      res := true;
+      return;
+    end if;
+  end for;
 end contains;
 
 function minElement<T>

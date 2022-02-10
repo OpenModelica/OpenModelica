@@ -1,0 +1,1132 @@
+// name: slice_for
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model slice_for1
+  parameter Integer p = 10;
+  Real[p+1] x;
+equation
+  for i in 1:p loop
+    x[i] = x[i+1] + sin(i*time);
+  end for;
+  x[4] = cos(time);
+end slice_for1;
+
+model slice_nested_for1
+  Real x[4,2];
+equation
+  for i in 1:3, j in 1:2 loop
+    x[i,j] = x[i+1,j] + i*sin(j*time);
+  end for;
+  for i in 1:2 loop
+    x[2,i] = i*cos(time);
+  end for;
+end slice_nested_for1;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=bltdump,dumpSimCode");
+
+simulate(slice_for1); getErrorString();
+val(x[3],1);
+val(x[5],1);
+
+simulate(slice_nested_for1); getErrorString();
+val(x[2,1],1);
+val(x[4,2],1);
+
+// Result:
+// true
+// ""
+// true
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[4]
+// ### Equation:
+// 	[SCAL] ($RES_SIM_0) x[4] = cos(time)
+//     with slices: {}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = x[i + 1] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {2, 1, 0}
+//
+// BLOCK 3: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = x[i + 1] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {3, 4, 5, 6, 7, 8, 9}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{4}
+// 	(2)	{2, 1}
+// 	(3)	{3, 2}
+// 	(4)	{4, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6, 5}
+// 	(7)	{7, 6}
+// 	(8)	{8, 7}
+// 	(9)	{9, 8}
+// 	(10)	{10, 9}
+// 	(11)	{11, 10}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2}
+// 	(2)	{3, 2}
+// 	(3)	{4, 3}
+// 	(4)	{5, 4, 1}
+// 	(5)	{6, 5}
+// 	(6)	{7, 6}
+// 	(7)	{8, 7}
+// 	(8)	{9, 8}
+// 	(9)	{10, 9}
+// 	(10)	{11, 10}
+// 	(11)	{11}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 1
+// (2)	2 | 10
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 11
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 3
+// 	var 3 --> eqn 4
+// 	var 4 --> eqn 1
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+// 	var 9 --> eqn 9
+// 	var 10 --> eqn 10
+// 	var 11 --> eqn 11
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 4
+// 	eqn 2 --> var 1
+// 	eqn 3 --> var 2
+// 	eqn 4 --> var 3
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+// 	eqn 9 --> var 9
+// 	eqn 10 --> var 10
+// 	eqn 11 --> var 11
+//
+//
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[4]
+// ### Equation:
+// 	[SCAL] ($RES_SIM_0) x[4] = cos(time)
+//     with slices: {}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = x[i + 1] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {2, 1, 0}
+//
+// BLOCK 3: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = x[i + 1] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {3, 4, 5, 6, 7, 8, 9}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{4}
+// 	(2)	{2, 1}
+// 	(3)	{3, 2}
+// 	(4)	{4, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6, 5}
+// 	(7)	{7, 6}
+// 	(8)	{8, 7}
+// 	(9)	{9, 8}
+// 	(10)	{10, 9}
+// 	(11)	{11, 10}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2}
+// 	(2)	{3, 2}
+// 	(3)	{4, 3}
+// 	(4)	{5, 4, 1}
+// 	(5)	{6, 5}
+// 	(6)	{7, 6}
+// 	(7)	{8, 7}
+// 	(8)	{9, 8}
+// 	(9)	{10, 9}
+// 	(10)	{11, 10}
+// 	(11)	{11}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 1
+// (2)	2 | 10
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 11
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 3
+// 	var 3 --> eqn 4
+// 	var 4 --> eqn 1
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+// 	var 9 --> eqn 9
+// 	var 10 --> eqn 10
+// 	var 11 --> eqn 11
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 4
+// 	eqn 2 --> var 1
+// 	eqn 3 --> var 2
+// 	eqn 4 --> var 3
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+// 	eqn 9 --> var 9
+// 	eqn 10 --> var 10
+// 	eqn 11 --> var 11
+//
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS INI System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[4]
+// ### Equation:
+// 	[SCAL] ($RES_SIM_0) x[4] = cos(time)
+//     with slices: {}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = x[i + 1] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {2, 1, 0}
+//
+// BLOCK 3: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i]
+// ### Equation:
+// 	[FOR-] for i in 1:10 loop
+// 	[----]   [SCAL] x[i] = x[i + 1] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//     with slices: {3, 4, 5, 6, 7, 8, 9}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{3, 2}
+// 	(3)	{4, 3}
+// 	(4)	{5, 4}
+// 	(5)	{6, 5}
+// 	(6)	{7, 6}
+// 	(7)	{8, 7}
+// 	(8)	{9, 8}
+// 	(9)	{10, 9}
+// 	(10)	{11, 10}
+// 	(11)	{4}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2, 1}
+// 	(3)	{3, 2}
+// 	(4)	{11, 4, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6, 5}
+// 	(7)	{7, 6}
+// 	(8)	{8, 7}
+// 	(9)	{9, 8}
+// 	(10)	{10, 9}
+// 	(11)	{10}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 10
+// (2)	11 | 1
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 11
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 3
+// 	var 4 --> eqn 11
+// 	var 5 --> eqn 4
+// 	var 6 --> eqn 5
+// 	var 7 --> eqn 6
+// 	var 8 --> eqn 7
+// 	var 9 --> eqn 8
+// 	var 10 --> eqn 9
+// 	var 11 --> eqn 10
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 3
+// 	eqn 4 --> var 5
+// 	eqn 5 --> var 6
+// 	eqn 6 --> var 7
+// 	eqn 7 --> var 8
+// 	eqn 8 --> var 9
+// 	eqn 9 --> var 10
+// 	eqn 10 --> var 11
+// 	eqn 11 --> var 4
+//
+//
+// ################################################################################
+//
+// 	SimCode (slice_for1)
+//
+// ################################################################################
+// ========================================
+// SimVars
+// ========================================
+// Algebraic Variables (11)
+// ****************************************
+//   (0)[ALGB] x[1]
+//   (1)[ALGB] x[2]
+//   (2)[ALGB] x[3]
+//   (3)[ALGB] x[4]
+//   (4)[ALGB] x[5]
+//   (5)[ALGB] x[6]
+//   (6)[ALGB] x[7]
+//   (7)[ALGB] x[8]
+//   (8)[ALGB] x[9]
+//   (9)[ALGB] x[10]
+//   (10)[ALGB] x[11]
+//
+// Integer Parameters (1)
+// ****************************************
+//   (0)[PRMT] p
+//
+// INIT
+// ----------------------------------------
+//   (1) x[4] := cos(time)
+//   (2) Algorithm
+//   for i in 3:(-1):2 loop
+//     x[i] := x[1 + i] + sin(CAST(Real, i) * time);
+//   end for;
+//
+//   (3) Algorithm
+//   for i in 4:1:9 loop
+//     x[1 + i] := -(sin(CAST(Real, i) * time) - x[i]);
+//   end for;
+//
+//
+// Algebraic Partition 1
+// ----------------------------------------
+//   (4) x[4] := cos(time)
+//   (5) Algorithm
+//   for i in 3:(-1):2 loop
+//     x[i] := x[1 + i] + sin(CAST(Real, i) * time);
+//   end for;
+//
+//   (6) Algorithm
+//   for i in 4:1:9 loop
+//     x[1 + i] := -(sin(CAST(Real, i) * time) - x[i]);
+//   end for;
+//
+//
+// ========================================
+// [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian B(idx = 1, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian C(idx = 2, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian D(idx = 3, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian F(idx = 4, partition = 0)
+// ========================================
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 4: x[4]=cos(time) [Real]
+// 5:   for i/* iter index 0 */ in 3:-1:2 loop
+//     x[i] := x[1 + i] + sin(/*Real*/(i) * time);
+//   end for;
+//
+// 6:   for i/* iter index 0 */ in 4:1:9 loop
+//     x[1 + i] := -(sin(/*Real*/(i) * time) - x[i]);
+//   end for;
+//
+// ========================================
+//
+//
+//
+// odeEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems):
+// ========================================
+// 4: x[4]=cos(time) [Real]
+// 5:   for i/* iter index 0 */ in 3:-1:2 loop
+//     x[i] := x[1 + i] + sin(/*Real*/(i) * time);
+//   end for;
+//
+// 6:   for i/* iter index 0 */ in 4:1:9 loop
+//     x[1 + i] := -(sin(/*Real*/(i) * time) - x[i]);
+//   end for;
+//
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (3)
+// ========================================
+// 1: x[4]=cos(time) [Real]
+// 2:   for i/* iter index 0 */ in 3:-1:2 loop
+//     x[i] := x[1 + i] + sin(/*Real*/(i) * time);
+//   end for;
+//
+// 3:   for i/* iter index 0 */ in 4:1:9 loop
+//     x[1 + i] := -(sin(/*Real*/(i) * time) - x[i]);
+//   end for;
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+//
+// 	Jacobian idx: 1
+//
+// 	Jacobian idx: 2
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+//
+// modelInfo:
+// ========================================
+// algVars (11)
+// ----------------------
+// index:0: x[1] (no alias)  initial: 	arrCref:x index:(1) []
+// index:1: x[2] (no alias)  initial: 	no arrCref index:(2) []
+// index:2: x[3] (no alias)  initial: 	no arrCref index:(3) []
+// index:3: x[4] (no alias)  initial: 	no arrCref index:(4) []
+// index:4: x[5] (no alias)  initial: 	no arrCref index:(5) []
+// index:5: x[6] (no alias)  initial: 	no arrCref index:(6) []
+// index:6: x[7] (no alias)  initial: 	no arrCref index:(7) []
+// index:7: x[8] (no alias)  initial: 	no arrCref index:(8) []
+// index:8: x[9] (no alias)  initial: 	no arrCref index:(9) []
+// index:9: x[10] (no alias)  initial: 	no arrCref index:(10) []
+// index:10: x[11] (no alias)  initial: 	no arrCref index:(11) []
+// intParamVars
+// ----------------------
+// index:0: p (no alias)  initial: 10	no arrCref index:(12) []
+// functions:
+// -----------
+//
+// record SimulationResult
+//     resultFile = "slice_for1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'slice_for1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.681422313928007
+// 1.297104801176068
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[2, i]
+// ### Equation:
+// 	[FOR-] for i in 1:2 loop
+// 	[----]   [SCAL] x[2, i] = CAST(Real, i) * cos(time)
+// 	[----] end for;
+//     with slices: {0, 1}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i, j]
+// ### Equation:
+// 	[FOR-] for {i in 1:3, j in 1:2} loop
+// 	[----]   [SCAL] x[i, j] = x[i + 1, j] + CAST(Real, i) * sin(CAST(Real, j) * time)
+// 	[----] end for;
+//     with slices: {0, 1}
+//
+// BLOCK 3: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i, j]
+// ### Equation:
+// 	[FOR-] for {i in 1:3, j in 1:2} loop
+// 	[----]   [SCAL] x[i, j] = x[i + 1, j] + CAST(Real, i) * sin(CAST(Real, j) * time)
+// 	[----] end for;
+//     with slices: {2, 3, 4, 5}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{3}
+// 	(2)	{4}
+// 	(3)	{3, 1}
+// 	(4)	{4, 2}
+// 	(5)	{5, 3}
+// 	(6)	{6, 4}
+// 	(7)	{7, 5}
+// 	(8)	{8, 6}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{3}
+// 	(2)	{4}
+// 	(3)	{5, 3, 1}
+// 	(4)	{6, 4, 2}
+// 	(5)	{7, 5}
+// 	(6)	{8, 6}
+// 	(7)	{7}
+// 	(8)	{8}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 2
+// (2)	3 | 6
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 8
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 3
+// 	var 2 --> eqn 4
+// 	var 3 --> eqn 1
+// 	var 4 --> eqn 2
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 3
+// 	eqn 2 --> var 4
+// 	eqn 3 --> var 1
+// 	eqn 4 --> var 2
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+//
+//
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[2, i]
+// ### Equation:
+// 	[FOR-] for i in 1:2 loop
+// 	[----]   [SCAL] x[2, i] = CAST(Real, i) * cos(time)
+// 	[----] end for;
+//     with slices: {0, 1}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i, j]
+// ### Equation:
+// 	[FOR-] for {i in 1:3, j in 1:2} loop
+// 	[----]   [SCAL] x[i, j] = x[i + 1, j] + CAST(Real, i) * sin(CAST(Real, j) * time)
+// 	[----] end for;
+//     with slices: {0, 1}
+//
+// BLOCK 3: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i, j]
+// ### Equation:
+// 	[FOR-] for {i in 1:3, j in 1:2} loop
+// 	[----]   [SCAL] x[i, j] = x[i + 1, j] + CAST(Real, i) * sin(CAST(Real, j) * time)
+// 	[----] end for;
+//     with slices: {2, 3, 4, 5}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{3}
+// 	(2)	{4}
+// 	(3)	{3, 1}
+// 	(4)	{4, 2}
+// 	(5)	{5, 3}
+// 	(6)	{6, 4}
+// 	(7)	{7, 5}
+// 	(8)	{8, 6}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{3}
+// 	(2)	{4}
+// 	(3)	{5, 3, 1}
+// 	(4)	{6, 4, 2}
+// 	(5)	{7, 5}
+// 	(6)	{8, 6}
+// 	(7)	{7}
+// 	(8)	{8}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 2
+// (2)	3 | 6
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 8
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 3
+// 	var 2 --> eqn 4
+// 	var 3 --> eqn 1
+// 	var 4 --> eqn 2
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 3
+// 	eqn 2 --> var 4
+// 	eqn 3 --> var 1
+// 	eqn 4 --> var 2
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+//
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS INI System
+// ========================================
+//
+// BLOCK 1: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[2, i]
+// ### Equation:
+// 	[FOR-] for i in 1:2 loop
+// 	[----]   [SCAL] x[2, i] = CAST(Real, i) * cos(time)
+// 	[----] end for;
+//     with slices: {0, 1}
+//
+// BLOCK 2: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[i, j]
+// ### Equation:
+// 	[FOR-] for {i in 1:3, j in 1:2} loop
+// 	[----]   [SCAL] x[i, j] = x[i + 1, j] + CAST(Real, i) * sin(CAST(Real, j) * time)
+// 	[----] end for;
+//     with slices: {0, 1}
+//
+// BLOCK 3: Sliced Equation
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i, j]
+// ### Equation:
+// 	[FOR-] for {i in 1:3, j in 1:2} loop
+// 	[----]   [SCAL] x[i, j] = x[i + 1, j] + CAST(Real, i) * sin(CAST(Real, j) * time)
+// 	[----] end for;
+//     with slices: {2, 3, 4, 5}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{3, 1}
+// 	(2)	{4, 2}
+// 	(3)	{5, 3}
+// 	(4)	{6, 4}
+// 	(5)	{7, 5}
+// 	(6)	{8, 6}
+// 	(7)	{3}
+// 	(8)	{4}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{7, 3, 1}
+// 	(4)	{8, 4, 2}
+// 	(5)	{5, 3}
+// 	(6)	{6, 4}
+// 	(7)	{5}
+// 	(8)	{6}
+//
+// Equation Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 6
+// (2)	7 | 2
+// Variable Index Mapping (ARR) -> START | SIZE
+// ****************************************
+// (1)	1 | 8
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 7
+// 	var 4 --> eqn 8
+// 	var 5 --> eqn 3
+// 	var 6 --> eqn 4
+// 	var 7 --> eqn 5
+// 	var 8 --> eqn 6
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 5
+// 	eqn 4 --> var 6
+// 	eqn 5 --> var 7
+// 	eqn 6 --> var 8
+// 	eqn 7 --> var 3
+// 	eqn 8 --> var 4
+//
+//
+// ################################################################################
+//
+// 	SimCode (slice_nested_for1)
+//
+// ################################################################################
+// ========================================
+// SimVars
+// ========================================
+// Algebraic Variables (8)
+// ****************************************
+//   (0)[ALGB] x[1, 1]
+//   (1)[ALGB] x[1, 2]
+//   (2)[ALGB] x[2, 1]
+//   (3)[ALGB] x[2, 2]
+//   (4)[ALGB] x[3, 1]
+//   (5)[ALGB] x[3, 2]
+//   (6)[ALGB] x[4, 1]
+//   (7)[ALGB] x[4, 2]
+//
+// INIT
+// ----------------------------------------
+//   (1) Algorithm
+//   for i in 1:2 loop
+//     x[2, i] := CAST(Real, i) * cos(time);
+//   end for;
+//
+//   (2) Algorithm
+//   for i in 1:1:1 loop
+//     for j in 1:1:2 loop
+//       x[i, j] := x[1 + i, j] + CAST(Real, i) * sin(CAST(Real, j) * time);
+//     end for;
+//   end for;
+//
+//   (3) Algorithm
+//   for i in 2:1:3 loop
+//     for j in 1:1:2 loop
+//       x[1 + i, j] := -(CAST(Real, i) * sin(CAST(Real, j) * time) - x[i, j]);
+//     end for;
+//   end for;
+//
+//
+// Algebraic Partition 1
+// ----------------------------------------
+//   (4) Algorithm
+//   for i in 1:2 loop
+//     x[2, i] := CAST(Real, i) * cos(time);
+//   end for;
+//
+//   (5) Algorithm
+//   for i in 1:1:1 loop
+//     for j in 1:1:2 loop
+//       x[i, j] := x[1 + i, j] + CAST(Real, i) * sin(CAST(Real, j) * time);
+//     end for;
+//   end for;
+//
+//   (6) Algorithm
+//   for i in 2:1:3 loop
+//     for j in 1:1:2 loop
+//       x[1 + i, j] := -(CAST(Real, i) * sin(CAST(Real, j) * time) - x[i, j]);
+//     end for;
+//   end for;
+//
+//
+// ========================================
+// [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian B(idx = 1, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian C(idx = 2, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian D(idx = 3, partition = 0)
+// ========================================
+//
+// ========================================
+// [EMPTY] SimCode Jacobian F(idx = 4, partition = 0)
+// ========================================
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 4:   for i/* iter index 0 */ in 1:2 loop
+//     x[2,i] := /*Real*/(i) * cos(time);
+//   end for;
+//
+// 5:   for i/* iter index 0 */ in 1:1:1 loop
+//     for j/* iter index 0 */ in 1:1:2 loop
+//       x[i,j] := x[1 + i,j] + /*Real*/(i) * sin(/*Real*/(j) * time);
+//     end for;
+//   end for;
+//
+// 6:   for i/* iter index 0 */ in 2:1:3 loop
+//     for j/* iter index 0 */ in 1:1:2 loop
+//       x[1 + i,j] := -(/*Real*/(i) * sin(/*Real*/(j) * time) - x[i,j]);
+//     end for;
+//   end for;
+//
+// ========================================
+//
+//
+//
+// odeEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems):
+// ========================================
+// 4:   for i/* iter index 0 */ in 1:2 loop
+//     x[2,i] := /*Real*/(i) * cos(time);
+//   end for;
+//
+// 5:   for i/* iter index 0 */ in 1:1:1 loop
+//     for j/* iter index 0 */ in 1:1:2 loop
+//       x[i,j] := x[1 + i,j] + /*Real*/(i) * sin(/*Real*/(j) * time);
+//     end for;
+//   end for;
+//
+// 6:   for i/* iter index 0 */ in 2:1:3 loop
+//     for j/* iter index 0 */ in 1:1:2 loop
+//       x[1 + i,j] := -(/*Real*/(i) * sin(/*Real*/(j) * time) - x[i,j]);
+//     end for;
+//   end for;
+//
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (3)
+// ========================================
+// 1:   for i/* iter index 0 */ in 1:2 loop
+//     x[2,i] := /*Real*/(i) * cos(time);
+//   end for;
+//
+// 2:   for i/* iter index 0 */ in 1:1:1 loop
+//     for j/* iter index 0 */ in 1:1:2 loop
+//       x[i,j] := x[1 + i,j] + /*Real*/(i) * sin(/*Real*/(j) * time);
+//     end for;
+//   end for;
+//
+// 3:   for i/* iter index 0 */ in 2:1:3 loop
+//     for j/* iter index 0 */ in 1:1:2 loop
+//       x[1 + i,j] := -(/*Real*/(i) * sin(/*Real*/(j) * time) - x[i,j]);
+//     end for;
+//   end for;
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+//
+// 	Jacobian idx: 1
+//
+// 	Jacobian idx: 2
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+//
+// modelInfo:
+// ========================================
+// algVars (8)
+// ----------------------
+// index:0: x[1,1] (no alias)  initial: 	arrCref:x index:(1) []
+// index:1: x[1,2] (no alias)  initial: 	no arrCref index:(2) []
+// index:2: x[2,1] (no alias)  initial: 	no arrCref index:(3) []
+// index:3: x[2,2] (no alias)  initial: 	no arrCref index:(4) []
+// index:4: x[3,1] (no alias)  initial: 	no arrCref index:(5) []
+// index:5: x[3,2] (no alias)  initial: 	no arrCref index:(6) []
+// index:6: x[4,1] (no alias)  initial: 	no arrCref index:(7) []
+// index:7: x[4,2] (no alias)  initial: 	no arrCref index:(8) []
+// functions:
+// -----------
+//
+// record SimulationResult
+//     resultFile = "slice_nested_for1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'slice_nested_for1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5403023058681398
+// -3.465882522392129
+// endResult

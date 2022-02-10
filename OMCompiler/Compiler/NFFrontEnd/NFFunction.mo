@@ -610,7 +610,8 @@ uniontype Function
     fn.path := name;
   end setName;
 
-  function nameConsiderBuiltin "Handles the DAE.mo structure where builtin calls are replaced by their simpler name"
+  function nameConsiderBuiltin
+    "Handles the DAE.mo structure where builtin calls are replaced by their simpler name"
     input Function fn;
     output Absyn.Path path;
   algorithm

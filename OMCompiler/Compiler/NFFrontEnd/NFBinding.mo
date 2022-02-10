@@ -116,6 +116,8 @@ public
     list<ErrorTypes.TotalMessage> errors;
   end INVALID_BINDING;
 
+  record WILD end WILD;
+
 public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;
@@ -672,6 +674,57 @@ public
       else false;
     end match;
   end containsExp;
+
+  function update
+    input output Binding binding;
+    input Expression exp;
+  algorithm
+    binding := match binding
+
+      case UNBOUND()
+      then TYPED_BINDING(
+          bindingExp  = exp,
+          bindingType = Expression.typeOf(exp),
+          variability = Expression.variability(exp),
+          eachType    = EachType.NOT_EACH,
+          evalState   = if Expression.isConstNumber(exp)
+                        then Mutable.create(EvalState.EVALUATED)
+                        else Mutable.create(EvalState.NOT_EVALUATED),
+          isFlattened = true,
+          source      = Source.BINDING,
+          info        = sourceInfo()
+        );
+
+      case UNTYPED_BINDING() algorithm
+        binding.bindingExp := exp;
+      then binding;
+
+      case TYPED_BINDING() algorithm
+        binding.bindingExp := exp;
+      then binding;
+
+      case FLAT_BINDING() algorithm
+        binding.bindingExp := exp;
+      then binding;
+
+      case CEVAL_BINDING() algorithm
+        binding.bindingExp := exp;
+      then binding;
+
+      case INVALID_BINDING() algorithm
+        binding.binding := update(binding.binding, exp);
+      then binding;
+
+      case RAW_BINDING() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because a raw binding cannot be updated."});
+      then fail();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+
+    end match;
+  end update;
 
   function setAttr
     "sets a specific attribute value and adds it if it does not exist"

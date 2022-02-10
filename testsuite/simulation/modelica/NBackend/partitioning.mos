@@ -1,0 +1,166 @@
+// name: partitioning
+// keywords: NewBackend
+// status: correct
+
+
+loadString("
+model partitioning
+  Real x,y,z,k;
+  parameter Real a = 1.0;
+equation
+  k = cos(time);
+  z = a^2 * k;
+  y = x^2 + a;
+  der(x) = sin(time);
+end partitioning;
+
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=bltdump"); getErrorString();
+
+simulate(partitioning); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
+//
+// BLOCK 2: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real y
+// ### Equation:
+// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real k
+// ### Equation:
+// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
+//
+// BLOCK 2: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
+//
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
+//
+// BLOCK 2: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real y
+// ### Equation:
+// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real k
+// ### Equation:
+// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
+//
+// BLOCK 2: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS INI System
+// ========================================
+//
+// BLOCK 1: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real k
+// ### Equation:
+// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
+//
+// BLOCK 2: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
+//
+// BLOCK 3: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real x
+// ### Equation:
+// 	[SIMP] (1) x = $START.x ($RES_SIM_5)
+//
+// BLOCK 4: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real y
+// ### Equation:
+// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
+//
+// BLOCK 5: Single Equation
+// ----------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
+//
+// record SimulationResult
+//     resultFile = "partitioning_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'partitioning', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -9030,7 +9030,7 @@ algorithm
   _ := match(inDaeModedata)
   local
     SimCode.DaeModeData dmd;
-    SimCode.SparsityPattern sparsityT;
+    SimCode.SparsityPattern sparsity, sparsityT;
   case(SOME(dmd)) algorithm
     print("\ndaeMode: \n" + UNDERLINE + "\n");
     str := "residual Equations:\n"+UNDERLINE+"\n";
@@ -9042,7 +9042,10 @@ algorithm
     if isSome(dmd.sparsityPattern) then
       str := "Sparsity Pattern:\n"+UNDERLINE+"\n";
       print(str);
-      SimCode.JAC_MATRIX(sparsityT=sparsityT) := Util.getOption(dmd.sparsityPattern);
+      SimCode.JAC_MATRIX(sparsity = sparsity, sparsityT=sparsityT) := Util.getOption(dmd.sparsityPattern);
+      dumpSparsePatternInt(sparsity);
+      str := "Sparsity Pattern Transposed:\n"+UNDERLINE+"\n";
+      print(str);
       dumpSparsePatternInt(sparsityT);
     end if;
   then ();
@@ -11646,7 +11649,7 @@ algorithm
   end match;
 end getHideResult;
 
-protected function createVarToArrayIndexMapping "author: marcusw
+public function createVarToArrayIndexMapping "author: marcusw
   Creates a mapping for each array-cref to the array dimensions (int list) and to the indices (for the code generation) used to store the array content."
   input SimCode.ModelInfo iModelInfo;
   output HashTableCrIListArray.HashTable oVarToArrayIndexMapping;
@@ -11840,6 +11843,8 @@ algorithm
         if(BaseHashTable.hasKey(varName, iVarToIndexMapping)) then
           varIdx::_ = BaseHashTable.get(varName, iVarToIndexMapping);
           varIdx = intMul(varIdx,-1);
+        elseif ComponentReference.isTime(varName) then
+          varIdx = 0;
         else
           Error.addMessage(Error.INTERNAL_ERROR, {"Negated alias to unknown variable given."});
           fail();
@@ -11850,6 +11855,8 @@ algorithm
         //print("getArrayIdxByVar: Handling alias variable pointing to " + ComponentReference.printComponentRefStr(varName) + "\n");
         if(BaseHashTable.hasKey(varName, iVarToIndexMapping)) then
           varIdx::_ = BaseHashTable.get(varName, iVarToIndexMapping);
+        elseif ComponentReference.isTime(varName) then
+          varIdx = 0;
         else
           Error.addMessage(Error.INTERNAL_ERROR, {"Alias to unknown variable given."});
           fail();
@@ -14253,7 +14260,7 @@ algorithm
   elseif reference > numReal then
     // Integer variable
     reference := reference - numReal;
-  elseif reference < 1 then
+  elseif reference < 0 then
     Error.addInternalError("invalid return value from getVariableIndex", sourceInfo());
   end if;
   outDefaultValueReference := String(reference - 1);

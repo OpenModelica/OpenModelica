@@ -208,6 +208,12 @@ algorithm
   flatModel := InstUtil.replaceEmptyArrays(flatModel);
   InstUtil.dumpFlatModelDebug("scalarize", flatModel, functions);
 
+  // Combine the binaries to multaries. For now only on new backend
+  // since the old frontend and backend do not support it
+  if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    flatModel := SimplifyModel.combineBinaries(flatModel);
+  end if;
+
   VerifyModel.verify(flatModel);
 
   if not Config.simCodeTarget() == "Cpp" and not Config.simCodeTarget() == "omsicpp" then
@@ -2430,11 +2436,11 @@ function makeRecordComplexType
   output ComplexType ty;
 protected
   InstNode cls_node;
-  list<Record.Field> fields;
+  UnorderedMap<String, Integer> indexMap = UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq);
 algorithm
   cls_node := if SCodeUtil.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
-  ty := ComplexType.RECORD(cls_node, {});
+  ty := ComplexType.RECORD(cls_node, listArray({}), indexMap);
 end makeRecordComplexType;
 
 function instComplexType
@@ -3267,9 +3273,14 @@ function instAlgorithmSection
   input InstNode scope;
   input InstContext.Type context;
   output Algorithm alg;
+protected
+  list<Statement> statements;
+  list<ComponentRef> inputs_lst;
+  list<ComponentRef> outputs_lst;
 algorithm
-  alg := Algorithm.ALGORITHM(instStatements(algorithmSection.statements, scope, context),
-                             DAE.emptyElementSource);
+  statements := instStatements(algorithmSection.statements, scope, context);
+  (inputs_lst, outputs_lst) := Algorithm.getInputsOutputs(statements);
+  alg := Algorithm.ALGORITHM(statements, inputs_lst, outputs_lst, DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements

@@ -92,8 +92,10 @@ import FindZeroCrossings;
 import FInst;
 import Flags;
 import FlagsUtil;
+import FlatModel = NFFlatModel;
 import FMI;
 import FMIExt;
+import FunctionTree = NFFlatten.FunctionTree;
 import GCExt;
 import Graph;
 import HashSetString;
@@ -3309,6 +3311,9 @@ algorithm
   end match;
 end getAdjacencyMatrix;
 
+/* -------------------------------------------------------------------
+                         RUN OLD FRONTEND
+   ------------------------------------------------------------------- */
 public function runFrontEnd
   input output FCore.Cache cache;
   input output FCore.Graph env;
@@ -3466,7 +3471,7 @@ algorithm
   end matchcontinue;
 end runFrontEndWork;
 
-function runFrontEndWorkNF
+public function runFrontEndWorkNF
   input Absyn.Path className;
   input Boolean dumpFlat = false;
   output NFFlatModel flatModel;

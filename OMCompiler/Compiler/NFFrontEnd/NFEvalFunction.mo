@@ -595,7 +595,7 @@ algorithm
         // Replace the iterator with the expression in the body of the for loop.
         stmt.body := Statement.replaceIteratorList(stmt.body, stmt.iterator, iter_exp);
         // Replace the iterator node with the mutable expression too.
-        stmt.iterator := InstNode.EXP_NODE(iter_exp);
+        stmt.iterator := InstNode.ITERATOR_NODE(iter_exp);
       then
         ();
 
@@ -909,7 +909,7 @@ algorithm
   range_iter := RangeIterator.fromExp(range_exp);
 
   if RangeIterator.hasNext(range_iter) then
-    InstNode.EXP_NODE(exp = Expression.MUTABLE(exp = iter_exp)) := iterator;
+    InstNode.ITERATOR_NODE(exp = Expression.MUTABLE(exp = iter_exp)) := iterator;
 
     // Loop through each value in the iteration range.
     while RangeIterator.hasNext(range_iter) loop

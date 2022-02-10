@@ -1,6 +1,6 @@
-WARNING: other : Warning: unrecognized command line options -noemit 
+WARNING: other : Warning: unrecognized command line options -noemit
 ERROR  : init  : SimManager: Could not initialize system
-ERROR  : init  : SimManager: Nonlinear solver 423 stopped at time 0 with error in algloop solver: 
+ERROR  : init  : SimManager: Nonlinear solver 423 stopped at time 0 with error in algloop solver:
 Can't get sufficient decrease of solution
 ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
 ERROR  : solver: SimController: Recovering with nonlinear solver kinsol

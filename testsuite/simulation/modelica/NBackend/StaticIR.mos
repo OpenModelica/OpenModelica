@@ -1,0 +1,86 @@
+// name: StaticIR
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  model StaticIR
+    Real x(start = 1.0, fixed=true), y(stateSelect = StateSelect.prefer), z(stateSelect = StateSelect.never);
+    Real a, b;
+  equation
+    der(x) = 2 * z;
+    der(z) = 2 * x + a;
+    der(y) = 4 * y + b;
+    y = sin(z) + x^2;
+    y = z^2 + x + sin(time);
+  end StaticIR;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dummyselect");
+simulate(StaticIR); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ################################################################################
+//
+// 	Index Reduction
+//
+// ################################################################################
+//
+// (3) Sorted State Candidates
+// ****************************************
+// {z, x, y}
+//
+// (2) Constraint Equations
+// ****************************************
+// [SCAL] ($RES_SIM_0) y = x + z ^ 2.0 + sin(time)
+// [SCAL] ($RES_SIM_1) y = sin(z) + x ^ 2.0
+//
+// [dummyselect] 1. Differentiate the constraint equations
+// ----------------------------------------
+// [dummyselect] constraint eqn:		[SCAL] ($RES_SIM_0) y = x + z ^ 2.0 + sin(time)
+// [dummyselect] differentiated eqn:	[SCAL] ($RES_SIM_0) $DER.y = $DER.x + 2.0 * z * $DER.z + cos(time)
+//
+// [dummyselect] constraint eqn:		[SCAL] ($RES_SIM_1) y = sin(z) + x ^ 2.0
+// [dummyselect] differentiated eqn:	[SCAL] ($RES_SIM_1) $DER.y = cos(z) * $DER.z + 2.0 * x * $DER.x
+//
+// (1) Selected States
+// ****************************************
+// {y}
+//
+// ========================================
+// 	 STATIC STATE SELECTION
+// 	(no unmatched equations)
+// ========================================
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'StaticIR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: StaticIR
+// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | debug   | Solving non-linear system 13 failed at time=0.249296973039019.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | debug   | Solving non-linear system 13 failed at time=0.249296973039019.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | debug   | Solving non-linear system 13 failed at time=0.236885073647092.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | debug   | Solving non-linear system 13 failed at time=0.235850748697765.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | debug   | Solving non-linear system 13 failed at time=0.237402236121756.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | debug   | Solving non-linear system 13 failed at time=0.236885073647092.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | debug   | Solving non-linear system 13 failed at time=0.238824432927081.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE
+//       In above,  R1 =   4.6399068387740E-01   R2 =   3.3384411447340E-16
+// DASKR--  NONLINEAR SOLVER FAILED TO CONVERGE
+// DASKR--  REPEATEDLY OR WITH ABS(H)=HMIN
+// stdout            | warning | The corrector could not converge.
+// stdout            | warning | can't continue. time = 0.463991
+// stdout            | info    | model terminate | Integrator failed. | Simulation terminated at time 0.463991
+// "
+// end SimulationResult;
+// ""
+// endResult

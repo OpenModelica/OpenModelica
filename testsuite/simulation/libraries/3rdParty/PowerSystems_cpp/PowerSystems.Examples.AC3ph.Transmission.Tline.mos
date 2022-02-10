@@ -43,7 +43,7 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 40000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Transmission.Tline', options = '', outputFormat = 'mat', variableFilter = 'time|meter.p.1.|meter.p.2.|meter.p.3.|meter.v.1.|meter.v.2.|meter.v.3.|meter.i.1.|meter.i.2.|meter.i.3.', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC3ph.Transmission.Tline_res.mat
 // Messages: ERROR  : init  : SimManager: Could not initialize system
-// ERROR  : init  : SimManager: Nonlinear solver 277 stopped at time 0 with error in algloop solver: 
+// ERROR  : init  : SimManager: Nonlinear solver 277 stopped at time 0 with error in algloop solver:
 // error solving nonlinear system (iteration limit: 50)
 // ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
 // ERROR  : solver: SimController: Recovering with nonlinear solver kinsol

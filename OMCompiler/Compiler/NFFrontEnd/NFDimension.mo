@@ -116,6 +116,29 @@ public
     end match;
   end fromExp;
 
+  function fromRange
+    input Expression range "needs to be RANGE()";
+    output Dimension dim;
+  protected
+    Integer start, step, stop;
+  algorithm
+    (start, step, stop) := match range
+      case Expression.RANGE(start = Expression.INTEGER(start),
+                            step  = NONE(),
+                            stop  = Expression.INTEGER(stop))
+      then (start, 1, stop);
+      case Expression.RANGE(start = Expression.INTEGER(start),
+                            step  = SOME(Expression.INTEGER(step)),
+                            stop  = Expression.INTEGER(stop))
+      then (start, step, stop);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got non-range expression: " + Expression.toString(range), sourceInfo());
+      then fail();
+    end match;
+
+    dim := INTEGER(realInt((stop-start)/step + 1), NFPrefixes.Variability.CONSTANT);
+  end fromRange;
+
   function fromInteger
     input Integer n;
     input Variability var = Variability.CONSTANT;

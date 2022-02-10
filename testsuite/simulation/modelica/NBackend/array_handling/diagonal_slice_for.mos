@@ -1,0 +1,45 @@
+// name: diagonal_slice_for
+// keywords: NewBackend
+// status: correct
+
+loadString("
+
+model diagonal_slice_for1
+  Real x[4,4];
+  Real y[4];
+equation
+  for i in 1:4 loop
+    x[i,i] = i*cos(time);
+  end for;
+  for i in 1:4, j in 1:4 loop
+    x[i,j] = y[j] + i*sin(j*time);
+  end for;
+
+end diagonal_slice_for1;
+
+model entwine_for1
+  Real x[10];
+  Real y[10];
+equation
+  x[1] = 1;
+  y[1] = 2;
+  for j in 2:10 loop
+    x[j] = y[j-1] * sin(time);
+  end for;
+  y[5] = x[4];
+  for i in 2:4 loop
+    y[i] = x[i-1];
+  end for;
+  for i in 6:10 loop
+    y[i] = x[i-1];
+  end for;
+
+end entwine_for1;
+"); getErrorString();
+
+setCommandLineOptions("-d=bltdump,dumpSimCode");
+
+//simulate(entwine_for1); getErrorString();
+
+simulate(diagonal_slice_for1); getErrorString();
+//val(x[2,1],1);

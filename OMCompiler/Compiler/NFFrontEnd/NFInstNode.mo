@@ -55,6 +55,7 @@ import Restriction = NFRestriction;
 import NFClassTree.ClassTree;
 import SCodeUtil;
 import IOStream;
+import Variable = NFVariable;
 import UnorderedMap;
 
 public
@@ -230,9 +231,17 @@ uniontype InstNode
     list<InstNode> locals;
   end IMPLICIT_SCOPE;
 
-  record EXP_NODE
+  record ITERATOR_NODE
     Expression exp;
-  end EXP_NODE;
+  end ITERATOR_NODE;
+
+  record VAR_NODE
+    "This is an extension for better use in the backend. Not used in the Frontend.
+    NOTE: Map and traversal functions are not allowed to follow the variable
+    pointer, it would create cyclic behaviour! Var->cref->pointer->Var"
+    String name;
+    Pointer<Variable> varPointer;
+  end VAR_NODE;
 
   record EMPTY_NODE end EMPTY_NODE;
 
@@ -494,11 +503,12 @@ uniontype InstNode
       case CLASS_NODE() then node.name;
       case COMPONENT_NODE() then node.name;
       case INNER_OUTER_NODE() then name(node.innerNode);
+      case VAR_NODE() then node.name;
       // For bug catching, these names should never be used.
       case REF_NODE() then "$REF[" + String(node.index) + "]";
       case NAME_NODE() then node.name;
       case IMPLICIT_SCOPE() then "$IMPLICIT";
-      case EXP_NODE() then "$EXP(" + Expression.toString(node.exp) + ")";
+      case ITERATOR_NODE() then "$ITERATOR(" + Expression.toString(node.exp) + ")";
       case EMPTY_NODE() then "$EMPTY";
     end match;
   end name;
@@ -530,6 +540,7 @@ uniontype InstNode
       case NAME_NODE() then "name node";
       case IMPLICIT_SCOPE() then "implicit scope";
       case EMPTY_NODE() then "empty node";
+      case VAR_NODE() then "var node";
     end match;
   end typeName;
 
@@ -802,6 +813,7 @@ uniontype InstNode
   algorithm
     component := match node
       case COMPONENT_NODE() then Pointer.access(node.component);
+      case VAR_NODE()       then Component.WILD();
     end match;
   end component;
 
@@ -920,8 +932,9 @@ uniontype InstNode
     output Type ty;
   algorithm
     ty := match node
-      case CLASS_NODE() then Class.getType(Pointer.access(node.cls), node);
+      case CLASS_NODE()     then Class.getType(Pointer.access(node.cls), node);
       case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
+      case VAR_NODE()       then Type.ANY();
     end match;
   end getType;
 

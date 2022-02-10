@@ -1,0 +1,33 @@
+// name: simpleForLoop
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model simpleForLoop
+  parameter Integer N=100;
+  Real[N] x (each start=1, each fixed = true);
+equation
+  for i in 1:N loop
+    der(x[i]) = 1/i * x[i];
+   end for;
+end simpleForLoop;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(simpleForLoop); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "simpleForLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simpleForLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

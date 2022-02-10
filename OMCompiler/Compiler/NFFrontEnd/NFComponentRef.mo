@@ -136,7 +136,7 @@ public
 
   function makeIterator
     input InstNode node;
-    input Type ty;
+    input Type ty = InstNode.getType(node);
     output ComponentRef cref = CREF(node, {}, ty, Origin.ITERATOR, EMPTY());
   end makeIterator;
 
@@ -268,6 +268,14 @@ public
       else ();
     end match;
   end updateNodeType;
+
+  function scalarType
+    input ComponentRef cref;
+    output Type ty;
+  algorithm
+    CREF(ty = ty) := cref;
+    ty := Type.arrayElementType(ty);
+  end scalarType;
 
   function firstName
     input ComponentRef cref;
@@ -424,6 +432,21 @@ public
     end match;
   end purity;
 
+  function rename
+    input String name;
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      case CREF() algorithm
+        cref.node := InstNode.rename(name, cref.node);
+      then cref;
+      case STRING() algorithm
+        cref.name := name;
+      then cref;
+      else cref;
+    end match;
+  end rename;
+
   function addSubscript
     input Subscript subscript;
     input output ComponentRef cref;
@@ -483,6 +506,19 @@ public
     end match;
   end hasSubscripts;
 
+  function hasNonModelSubscripts
+    input ComponentRef cref;
+    output Boolean hasSubscripts;
+  algorithm
+    hasSubscripts := match cref
+      case CREF() guard(InstNode.isModel(cref.node))
+        then hasNonModelSubscripts(cref.restCref);
+      case CREF()
+        then not listEmpty(cref.subscripts) or hasNonModelSubscripts(cref.restCref);
+      else false;
+    end match;
+  end hasNonModelSubscripts;
+
   function hasSplitSubscripts
     input ComponentRef cref;
     output Boolean res;
@@ -541,7 +577,44 @@ public
     end match;
   end setSubscriptsList;
 
-  function subscriptsAll
+  function subscriptsAllWithWhole
+    "Returns all subscripts of a cref in reverse order.
+     Ex: a[1, 2].b[4].c[6, 3] => {{6,3}, {4}, {1,2}}"
+    input ComponentRef cref;
+    input list<list<Subscript>> accumSubs = {};
+    output list<list<Subscript>> subscripts;
+  algorithm
+    subscripts := match cref
+      local
+        list<Integer> sizes_;
+        list<Subscript> subs;
+
+      case CREF(subscripts = {}) guard(not backendCref(cref)) algorithm
+        sizes_ := sizes(cref);
+        subs := {};
+        for size in listReverse(sizes_) loop
+          if size == 1 then
+            subs := Subscript.INDEX(Expression.INTEGER(1)) :: subs;
+          else
+            subs := Subscript.SLICE(Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(size))) :: subs;
+          end if;
+        end for;
+      then subscriptsAllWithWhole(cref.restCref, subs :: accumSubs);
+
+      case CREF() then subscriptsAllWithWhole(cref.restCref, cref.subscripts :: accumSubs);
+
+      else accumSubs;
+    end match;
+  end subscriptsAllWithWhole;
+
+  function subscriptsAllWithWholeFlat
+    "Returns all subscripts of a cref as a flat list in the correct order.
+     Ex: a[1, 2].b[4].c[6, 3] => {1, 2, 4, 6, 3}"
+    input ComponentRef cref;
+    output list<Subscript> subscripts = List.flattenReverse(subscriptsAllWithWhole(cref));
+  end subscriptsAllWithWholeFlat;
+
+ function subscriptsAll
     "Returns all subscripts of a cref in reverse order.
      Ex: a[1, 2].b[4].c[6, 3] => {{6,3}, {4}, {1,2}}"
     input ComponentRef cref;
@@ -560,6 +633,20 @@ public
     input ComponentRef cref;
     output list<Subscript> subscripts = List.flattenReverse(subscriptsAll(cref));
   end subscriptsAllFlat;
+
+  function subscriptsExceptModel
+    "Returns all subscripts of a cref in reverse order leaving out model subs.
+     Ex: a[1, 2].b[4].c[6, 3] => {{6,3}, {4}, {1,2}}"
+    input ComponentRef cref;
+    input list<list<Subscript>> accumSubs = {};
+    output list<list<Subscript>> subscripts;
+  algorithm
+    subscripts := match cref
+      case CREF() guard(InstNode.isModel(cref.node))  then subscriptsExceptModel(cref.restCref, {} :: accumSubs);
+      case CREF()                                     then subscriptsExceptModel(cref.restCref, cref.subscripts :: accumSubs);
+                                                      else accumSubs;
+    end match;
+  end subscriptsExceptModel;
 
   function subscriptsN
     "Returns the subscripts of the N first parts of a cref in reverse order."
@@ -798,24 +885,30 @@ public
   function isEqual
     input ComponentRef cref1;
     input ComponentRef cref2;
-    output Boolean isEqual;
+    output Boolean b;
   algorithm
     if referenceEq(cref1, cref2) then
-      isEqual := true;
+      b := true;
       return;
     end if;
 
-    isEqual := match (cref1, cref2)
-      case (CREF(), CREF())
+    b := match (cref1, cref2)
+      case (CREF(), CREF()) algorithm
         then InstNode.name(cref1.node) == InstNode.name(cref2.node) and
-             Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
-             isEqual(cref1.restCref, cref2.restCref);
-
+          Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
+          isEqual(cref1.restCref, cref2.restCref);
       case (EMPTY(), EMPTY()) then true;
       case (WILD(), WILD()) then true;
       else false;
     end match;
   end isEqual;
+
+  function isEqualStrip
+    "strips the subscripts before comparing. Used for non expandend variables"
+    input ComponentRef cref1;
+    input ComponentRef cref2;
+    output Boolean b = isEqual(stripSubscriptsAll(cref1), stripSubscriptsAll(cref2));
+  end isEqualStrip;
 
   function isLess
     input ComponentRef cref1;
@@ -848,6 +941,12 @@ public
       else false;
     end match;
   end isPrefix;
+
+  function backendCref
+    "returns true if the cref was generated by the backend (starts with $)"
+    input ComponentRef cref;
+    output Boolean b = substring(firstName(cref), 1, 1) == "$";
+  end backendCref;
 
   function toAbsyn
     input ComponentRef cref;
@@ -1021,6 +1120,13 @@ public
     output Integer hash = stringHashDjb2Mod(toString(cref), mod);
   end hash;
 
+  function hashStrip
+    "hashes the cref without subscripts. used for non expanded variables"
+    input ComponentRef cref;
+    input Integer mod;
+    output Integer hash = stringHashDjb2Mod(toString(stripSubscriptsAll(cref)), mod);
+  end hashStrip;
+
   function toPath
     input ComponentRef cref;
     output Absyn.Path path;
@@ -1120,6 +1226,25 @@ public
       else cref;
     end match;
   end stripSubscriptsAll;
+
+  function stripSubscriptsExceptModel
+  "Removes all subscript of a componentref expcept for model subscripts"
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        InstNode node;
+        ComponentRef restCref;
+
+      case CREF(node = node, restCref = restCref) guard(InstNode.isModel(node))
+      then CREF(cref.node, cref.subscripts, cref.ty, cref.origin, stripSubscriptsExceptModel(restCref));
+
+      case CREF(restCref = restCref)
+      then CREF(cref.node, {}, cref.ty, cref.origin, stripSubscriptsExceptModel(restCref));
+
+      else cref;
+    end match;
+  end stripSubscriptsExceptModel;
 
   function simplifySubscripts
     input output ComponentRef cref;
@@ -1228,6 +1353,22 @@ public
       else "EMPTY_CREF" then 0;
     end match;
   end depth;
+
+  function sizes
+    input ComponentRef cref;
+    output list<Integer> s_lst;
+  algorithm
+    s_lst := list(Dimension.size(dim) for dim in Type.arrayDims(getSubscriptedType(cref)));
+    s_lst := if listEmpty(s_lst) then {1} else s_lst;
+  end sizes;
+
+  function subscriptsToInteger
+    input ComponentRef cref;
+    output list<Integer> subs;
+  algorithm
+    subs := list(Expression.integerValue(Subscript.toExp(sub)) for sub in subscriptsAllFlat(cref));
+    subs := if listEmpty(subs) then {1} else subs;
+  end subscriptsToInteger;
 
   function isEmptyArray
     "Returns whether any node in the cref has a dimension that's 0."
@@ -1475,6 +1616,38 @@ public
     end match;
   end mapFoldExpShallow;
 
+  function isTime
+    input ComponentRef cref;
+    output Boolean b = firstName(cref) == "time";
+  end isTime;
+
+  function isTopLevel
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case CREF(restCref = EMPTY()) then true;
+      else false;
+    end match;
+  end isTopLevel;
+  /* ========================================
+      Backend Extension functions
+  ========================================= */
+
+  function listHasDiscrete
+    "kabdelhak: Returns true if any component reference in the list has a
+    discrete type. Used to analyze algorithm outputs."
+    input list<ComponentRef> cref_lst;
+    output Boolean result = false;
+  algorithm
+    for cref in cref_lst loop
+      if Type.isDiscrete(nodeType(cref)) then
+        result := true;
+        return;
+      end if;
+    end for;
+  end listHasDiscrete;
+
   function removeOuterCrefPrefix
     input output ComponentRef cref;
   algorithm
@@ -1517,6 +1690,25 @@ public
       else cref;
     end match;
   end mapTypes;
+
+  function getArrayCrefOpt
+    input ComponentRef scal;
+    output Option<ComponentRef> arr;
+  protected
+    list<Subscript> subs;
+  algorithm
+    subs := List.flattenReverse(subscriptsAll(scal));
+    if listEmpty(subs) then
+      // do not do it for scalar variables
+      arr := NONE();
+    elseif List.mapAllValueBool(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1))), true) then
+      // if it is the first element, save the array var
+      arr := SOME(stripSubscriptsAll(scal));
+    else
+      // not first element
+      arr := NONE();
+    end if;
+  end getArrayCrefOpt;
 
   function isSliced
     input ComponentRef cref;

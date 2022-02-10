@@ -129,7 +129,7 @@ package Synchronous
 
     // Shift sample of event clock
     model shiftSample2
-      Clock u  = Clock(sin(20*Modelica.Constants.pi*time) > 0, 10); // ticks: 0.0, 0.1, 0.2, ... 
+      Clock u  = Clock(sin(20*Modelica.Constants.pi*time) > 0, 10); // ticks: 0.0, 0.1, 0.2, ...
       Clock s1 = shiftSample(u, 2);    // ticks: 0.2, 0.3, 0.4, ...
       Integer y1(start=0);
     equation
@@ -141,11 +141,11 @@ package Synchronous
 
     // Back sample of rational clock
     model backSample1
-      Clock u  = Clock(3, 10);          // ticks: 0, 3/10, 6/10, 
-      Clock s1 = shiftSample(u, 3);     // ticks: 9/10, 12/10, 
-      Clock b1 = backSample(s1, 2);     // ticks: 3/10, 6/10, 
-      Clock s2 = shiftSample(u, 2, 3);  // ticks: 2/10, 5/10, 
-      Clock b2 = backSample(s2, 1, 3);  // ticks: 1/10, 4/10, 
+      Clock u  = Clock(3, 10);          // ticks: 0, 3/10, 6/10,
+      Clock s1 = shiftSample(u, 3);     // ticks: 9/10, 12/10,
+      Clock b1 = backSample(s1, 2);     // ticks: 3/10, 6/10,
+      Clock s2 = shiftSample(u, 2, 3);  // ticks: 2/10, 5/10,
+      Clock b2 = backSample(s2, 1, 3);  // ticks: 1/10, 4/10,
       Integer y1(start=0), y2(start=0);
     equation
       when b1 then
@@ -205,7 +205,7 @@ package Synchronous
       Clock clk = Clock(0.3);  // ticks: 0, 0.3, 0.6, 0.9, ...
       Real x(start=1, fixed=true);
       Real xc;
-    equation 
+    equation
       der(x) = 2*x;
       when clk then
         xc = sample(x);

@@ -609,9 +609,19 @@ public
   algorithm
     arguments := match call
       case UNTYPED_CALL() then call.arguments;
-      case TYPED_CALL() then call.arguments;
+      case TYPED_CALL()   then call.arguments;
     end match;
   end arguments;
+
+  function setArguments
+    input output NFCall call;
+    input list<Expression> arguments;
+  algorithm
+    call := match call
+      case UNTYPED_CALL() algorithm call.arguments := arguments; then call;
+      case TYPED_CALL()   algorithm call.arguments := arguments; then call;
+    end match;
+  end setArguments;
 
   function toRecordExpression
     input NFCall call;
@@ -1892,6 +1902,41 @@ public
 
     outIters := listReverseInPlace(outIters);
   end mapFoldIteratorsExpShallow;
+
+  function getNameAndArgs
+    input Call call;
+    output tuple<String, list<Expression>> tpl;
+  algorithm
+    tpl := match call
+      local
+        Function fn;
+        list<Expression> args;
+
+      case Call.UNTYPED_CALL(arguments = args)
+      then (ComponentRef.firstName(call.ref), args);
+
+      case Call.TYPED_CALL(fn = fn, arguments = args)
+      then (getLastPathName(fn.path), args);
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + ": unhandled case for " + toString(call), sourceInfo());
+      then fail();
+    end match;
+  end getNameAndArgs;
+
+  function getLastPathName
+    input Absyn.Path path;
+    output String name;
+  algorithm
+    name := match path
+      case Absyn.IDENT()          then path.name;
+      case Absyn.QUALIFIED()      then getLastPathName(path.path);
+      case Absyn.FULLYQUALIFIED() then getLastPathName(path.path);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " failed.", sourceInfo());
+      then fail();
+    end match;
+  end getLastPathName;
 
 protected
   function instNormalCall

@@ -63,6 +63,7 @@ import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
 import NFFunction.FunctionStatus;
 import MetaModelica.Dangerous.listReverseInPlace;
+import UnorderedMap;
 import UnorderedSet;
 
 public
@@ -275,13 +276,17 @@ end setFieldDirection;
 
 function collectRecordFields
   input InstNode recNode;
-  output list<Field> fields;
+  output array<Field> fields;
+  output UnorderedMap<String, Integer> indexMap;
 protected
+  list<Field> field_lst;
   ClassTree tree;
 algorithm
   tree := Class.classTree(InstNode.getClass(recNode));
-  fields := ClassTree.foldComponents(tree, collectRecordField, {});
-  fields := listReverseInPlace(fields);
+  field_lst := ClassTree.foldComponents(tree, collectRecordField, {});
+  fields := listArray(listReverseInPlace(field_lst));
+  indexMap := UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq, arrayLength(fields));
+  Type.updateRecordFieldsIndexMap(fields, indexMap);
 end collectRecordFields;
 
 function collectRecordField

@@ -39,7 +39,7 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Drives.ASM_ctrlAv', options = '', outputFormat = 'mat', variableFilter = 'time|asm_ctrl.motor.tau_el|asm_ctrl.motor.w_el|asm_ctrl.motor.i_meas.1.|asm_ctrl.motor.i_meas.2.|asm_ctrl.motor.slip', cflags = '', simflags = ' -emit_protected'
 // Result file: PowerSystems.Examples.AC3ph.Drives.ASM_ctrlAv_res.mat
 // Messages: ERROR  : init  : SimManager: Could not initialize system
-// ERROR  : init  : SimManager: Nonlinear solver 121 stopped at time 0 with error in algloop solver: 
+// ERROR  : init  : SimManager: Nonlinear solver 121 stopped at time 0 with error in algloop solver:
 // error solving nonlinear system (iteration limit: 50)
 // ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
 // ERROR  : solver: SimController: Recovering with nonlinear solver kinsol
