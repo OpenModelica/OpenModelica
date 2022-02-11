@@ -359,9 +359,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
 	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT)
 	cp -pPR 3rdParty/FMIL/install/$(LIB_OMC)/$(LIBFMILIB) $(builddir_lib_omc)
-	@if [ "$(FMILIB_SHARED)" = "ON" ]; then\
-	    cp -v -pPR 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT) $(builddir_lib_omc);\
-	fi
+	cp -v -pPR 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib* $(builddir_lib_omc);\
 	test ! -f $(OMBUILDDIR)/$(LIB_OMC)/libfmilib_shared$(SHREXT) || ln -sf libfmilib_shared$(SHREXT) $(OMBUILDDIR)/$(LIB_OMC)/libfmilib$(SHREXT)
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	mkdir -p $(builddir_inc)/fmil/
@@ -370,7 +368,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt $(LIBMODELICAZLIB)
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DCMAKE_INSTALL_INCLUDEDIR=include -DOMC_ZLIB_LIBRARY=$(LIBMODELICAZLIB) -DOMC_ZLIB_INCLUDE_DIR=$(builddir_inc) .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=ON -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DCMAKE_INSTALL_INCLUDEDIR=include -DOMC_ZLIB_LIBRARY=$(LIBMODELICAZLIB) -DOMC_ZLIB_INCLUDE_DIR=$(builddir_inc) .. -G $(CMAKE_TARGET))
 
 # Install expat
 expat: fmil
