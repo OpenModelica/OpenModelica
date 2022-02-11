@@ -247,6 +247,10 @@ if test "$OPENMODELICADYNAMIC" = "no"; then
   NEED_RUNTIME=1
 fi
 
+if test -f "external_solvers/hybrj_.c"; then
+  NEED_CMINPACK=1
+fi
+
 if echo "$host_os" | grep -q darwin; then
   DLLEXT=".dylib"
   if echo "$host_cpu" | grep -q i@<:@3456@:>@86; then
