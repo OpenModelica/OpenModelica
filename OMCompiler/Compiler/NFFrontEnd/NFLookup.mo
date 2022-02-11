@@ -505,7 +505,7 @@ algorithm
       algorithm
         (node, state) := lookupFirstIdent(name.name, scope);
       then
-        lookupLocalName(name.path, node, state, context, checkAccessViolations, InstNode.refEqual(node, scope));
+        lookupLocalName(name.path, node, state, context, checkAccessViolations, isSelfReference(node, scope));
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
@@ -513,6 +513,25 @@ algorithm
 
   end match;
 end lookupName;
+
+function isSelfReference
+  input InstNode node;
+  input InstNode scope;
+  output Boolean res;
+protected
+  InstNode parent = scope;
+algorithm
+  while not InstNode.isEmpty(parent) loop
+    if InstNode.refEqual(node, parent) then
+      res := true;
+      return;
+    end if;
+
+    parent := InstNode.instanceParent(parent);
+  end while;
+
+  res := false;
+end isSelfReference;
 
 function lookupNames
   input Absyn.Path name;
@@ -538,7 +557,7 @@ algorithm
       algorithm
         (node, state) := lookupFirstIdent(name.name, scope);
       then
-        lookupLocalNames(name.path, node, {node}, state, context, InstNode.refEqual(node, scope));
+        lookupLocalNames(name.path, node, {node}, state, context, isSelfReference(node, scope));
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
