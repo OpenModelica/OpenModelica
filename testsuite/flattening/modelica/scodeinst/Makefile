@@ -897,6 +897,7 @@ RecursiveConstants1.mo \
 RecursiveExtends1.mo \
 RecursiveExtends2.mo \
 RecursiveExtends3.mo \
+RecursiveExtends4.mo \
 RecursiveInst1.mo \
 RecursiveInst2.mo \
 RecursiveInst3.mo \
