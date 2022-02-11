@@ -713,41 +713,35 @@ algorithm
     local
       BackendDAE.Variables vars, globalKnownVars;
       DAE.ComponentRef cr;
-      DAE.Exp e;
-      Boolean blst;
       BackendDAE.Var backendVar;
       Absyn.Ident name;
 
-    case (e as DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
+    case (DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
       ((backendVar::_), _) = BackendVariable.getVar(cr, vars);
       false = BackendVariable.isVarDiscrete(backendVar);
-    then (e, false, (vars, globalKnownVars, true));
+    then (inExp, false, (vars, globalKnownVars, true));
 
     // builtin variable time is not discrete
-    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, globalKnownVars, _))
-    then (e, false, (vars, globalKnownVars, true));
+    case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, globalKnownVars, _))
+    then (inExp, false, (vars, globalKnownVars, true));
 
     // Known variables that are input are continuous
-    case (e as DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
+    case (DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
       (backendVar::_, _) = BackendVariable.getVar(cr, globalKnownVars);
       true = BackendVariable.isInput(backendVar);
-    then (e, false, (vars, globalKnownVars, true));
+    then (inExp, false, (vars, globalKnownVars, true));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name=name)), (vars, globalKnownVars, blst))
+    case (DAE.CALL(path=Absyn.IDENT(name=name)), _)
       guard stringEq("pre", name) or
             stringEq("change", name) or
             stringEq("ceil", name) or
-            stringEq("floor", name) or
-            stringEq("div", name) or
-            stringEq("mod", name) or
-            stringEq("rem", name)
-    then (e, false, (vars, globalKnownVars, blst));
+            stringEq("floor", name)
+    then (inExp, false, inTpl);
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name="noEvent")), (vars, globalKnownVars, _))
-    then (e, false, (vars, globalKnownVars, false));
+    case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), (vars, globalKnownVars, _))
+    then (inExp, false, (vars, globalKnownVars, false));
 
-    case (e, (vars, globalKnownVars, blst))
-    then (e, true, (vars, globalKnownVars, blst));
+    else (inExp, true, inTpl);
   end matchcontinue;
 end traversingContinuousExpFinder;
 
