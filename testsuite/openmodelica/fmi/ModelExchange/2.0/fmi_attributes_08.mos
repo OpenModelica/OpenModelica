@@ -3,6 +3,9 @@
 // status: correct
 // teardown_command: rm -rf fmi_attributes_08.fmu fmi_attributes_08.log fmi_attributes_08.xml fmi_attributes_08_tmp.xml fmi_attributes_08.fmutmp/
 
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
+getErrorString();
+
 loadString("
 model fmi_attributes_08
   parameter Real p;

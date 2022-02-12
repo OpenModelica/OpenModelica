@@ -1778,13 +1778,15 @@ public function createFMIModelDerivativesForInitialization
   input list<BackendDAE.Var> depVars;
   input list<BackendDAE.Var> indepVars;
   input BackendDAE.Variables orderedVars;
+  input BackendDAE.SparsePattern sparsePattern_;
+  input BackendDAE.SparseColoring sparseColoring_;
   output BackendDAE.SymbolicJacobians outJacobianMatrixes = {};
   output DAE.FunctionTree outFunctionTree;
 protected
-  BackendDAE.BackendDAE backendDAE, emptyBDAE;
-  BackendDAE.EqSystem eqSyst;
+  BackendDAE.BackendDAE backendDAE, backendDAE_1, emptyBDAE;
+  BackendDAE.EqSystem eqSyst, currentSystem;
   Option<BackendDAE.SymbolicJacobian> outJacobian;
-  list<BackendDAE.Var> varlst, knvarlst, states, inputvars, outputvars, paramvars;
+  list<BackendDAE.Var> varlst, knvarlst, states, inputvars, outputvars, paramvars, indepVars_1, depVars_1;
   BackendDAE.Variables v, globalKnownVars, statesarr, inputvarsarr, paramvarsarr, outputvarsarr, depVarsArr;
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparseColoring sparseColoring;
@@ -1792,8 +1794,82 @@ protected
   BackendDAE.ExtraInfo ei;
   FCore.Cache cache;
   FCore.Graph graph;
+  BackendDAE.EquationArray newEqArray, newOrderedEquationArray;
+  BackendDAE.Shared shared;
+  DAE.Exp lhs, rhs;
+  BackendDAE.Equation eqn;
+  list<BackendDAE.Equation> eqnlst;
+  Integer eqIndex;
+  BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
+  array<Integer> match1,match2;
+  String strMatchingAlgorithm, strIndexReductionMethod;
+  list<Integer> eqlistToRemove;
+  DAE.ComponentRef cr;
+  list<DAE.ComponentRef> crefsVarsToRemove;
+  BackendDAE.Variables newVars;
 algorithm
 try
+
+  backendDAE_1 := BackendDAEUtil.copyBackendDAE(initDAE);
+  backendDAE_1 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE_1);
+
+  /* add the calculated parameter equations here which does not have constant binding
+   parameter Real x = 10;
+   Real m = x; */
+  BackendDAE.DAE(currentSystem::{}, shared) := backendDAE_1;
+  for var in depVars loop
+    if BackendVariable.isParam(var) and not BackendVariable.varHasConstantBindExp(var) then
+      lhs := BackendVariable.varExp(var);
+      rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
+      eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+      BackendEquation.add(eqn, currentSystem.orderedEqs);
+      if not BackendVariable.containsCref(var.varName, currentSystem.orderedVars) then
+        currentSystem := BackendVariable.addVarDAE(BackendVariable.makeVar(var.varName), currentSystem);
+      end if;
+    end if;
+  end for;
+
+  // remove equations and vars of the form a = $START.b from Eqsyst to simplify jacobian calculations
+  newOrderedEquationArray := BackendEquation.emptyEqns();
+  crefsVarsToRemove:= {};
+  for eq in BackendEquation.equationList(currentSystem.orderedEqs) loop
+    lhs := BackendEquation.getEquationLHS(eq);
+    rhs := BackendEquation.getEquationRHS(eq);
+    //print("\n lhs :" + anyString(lhs));
+    //print("\n rhs :" + anyString(rhs));
+    if Expression.isExpCref(lhs) and Expression.isExpCref(rhs) and ComponentReference.isStartCref(Expression.expCref(rhs)) then
+      crefsVarsToRemove := Expression.expCref(lhs) :: crefsVarsToRemove;
+      //BackendDump.printEquation(eq);
+    else
+      BackendEquation.add(eq, newOrderedEquationArray);
+    end if;
+  end for;
+
+  newVars := BackendVariable.emptyVars();
+  for var in BackendVariable.varList(currentSystem.orderedVars) loop
+    if not listMember(var.varName, crefsVarsToRemove) then
+      newVars := BackendVariable.addVar(var, newVars);
+    end if;
+  end for;
+
+  currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, newOrderedEquationArray);
+  currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, newVars);
+
+  // put the shared globalknown Vars
+  // for var in BackendVariable.varList(simDAE.shared.globalKnownVars) loop
+  //   if not BackendVariable.containsCref(var.varName, currentSystem.orderedVars) then
+  //     shared := BackendVariable.addGlobalKnownVarDAE(var, shared);
+  //   end if;
+  // end for;
+
+
+  backendDAE_1 := BackendDAE.DAE({currentSystem}, shared);
+
+  backendDAE_1 := BackendDAEUtil.transformBackendDAE(backendDAE_1, SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+
+  //BackendDump.printBackendDAE(backendDAE_1);
+
+
   //prepare simulation DAE
   backendDAE := BackendDAEUtil.copyBackendDAE(simDAE);
   backendDAE := BackendDAEOptimize.collapseIndependentBlocks(backendDAE);
@@ -1806,8 +1882,9 @@ try
   states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
 
   // prepare all needed variables from initialization DAE
-  varlst := BackendVariable.varList(orderedVars);
-  knvarlst := BackendVariable.varList(initDAE.shared.globalKnownVars);
+  varlst := BackendVariable.varList(currentSystem.orderedVars);
+  knvarlst := BackendVariable.varList(simDAE.shared.globalKnownVars);
+  //BackendDump.dumpVarList(knvarlst, "shared simulation DAE");
   inputvars := List.select(knvarlst, BackendVariable.isVarOnTopLevelAndInput);
 
   // Generate sparse pattern for matrices states
@@ -1817,7 +1894,7 @@ try
     graph := initDAE.shared.graph;
     ei := initDAE.shared.info;
     emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
-    (sparsePattern, sparseColoring) := generateSparsePattern(initDAE, indepVars, depVars);
+    (sparsePattern, sparseColoring) := generateSparsePattern(backendDAE_1, indepVars, depVars);
 
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
@@ -1827,19 +1904,20 @@ try
     outFunctionTree := initDAE.shared.functionTree;
   else
     // prepare more needed variables
-    paramvars := List.select(varlst, BackendVariable.isParam);
+    paramvars := List.select(knvarlst, BackendVariable.isParam);
     statesarr := BackendVariable.listVar1(states);
     inputvarsarr := BackendVariable.listVar1(inputvars);
     paramvarsarr := BackendVariable.listVar1(paramvars);
     depVarsArr := BackendVariable.listVar1(depVars);
 
-    (outJacobian, outFunctionTree, sparsePattern, sparseColoring) := generateGenericJacobian(initDAE, indepVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr, varlst, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+    //(outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, BackendVariable.emptyVars(), BackendVariable.emptyVars(), BackendVariable.emptyVars(), depVarsArr, depVars, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+    (outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr, varlst, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
 
     if Flags.isSet(Flags.JAC_DUMP2) then
-      BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
+      BackendDump.dumpSparsityPattern(sparsePattern_, "FMI sparsity");
     end if;
 
-    outJacobianMatrixes := (outJacobian, sparsePattern, sparseColoring)::outJacobianMatrixes;
+    outJacobianMatrixes := (outJacobian, sparsePattern_, sparseColoring_)::outJacobianMatrixes;
     //outFunctionTree := DAE.AvlTreePathFunction.join(initDAE.shared.functionTree, outFunctionTree);
   end if;
 else
@@ -2059,7 +2137,9 @@ algorithm
       outJacobian := NONE();
     end if;
     // generate sparse pattern
-    (outSparsePattern,outSparseColoring) := generateSparsePattern(inBackendDAE, inDiffVars, BackendVariable.varList(inDifferentiatedVars));
+    if (not stringEq(inName, "FMIDERINIT")) then
+      (outSparsePattern,outSparseColoring) := generateSparsePattern(inBackendDAE, inDiffVars, BackendVariable.varList(inDifferentiatedVars));
+    end if;
   else
     fail();
   end try;

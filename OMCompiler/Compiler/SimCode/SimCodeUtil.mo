@@ -13795,9 +13795,10 @@ protected function getFmiInitialUnknowns
 protected
   list<DAE.ComponentRef> initialUnknownCrefs, indepCrefs, depCrefs, crefs;
   DAE.ComponentRef cref;
-  BackendDAE.BackendDAE tmpBDAE;
+  BackendDAE.BackendDAE tmpBDAE, tmpBDAE1;
   list<BackendDAE.Var> orderedVars, indepVars, depVars, fmiDerInitIndepVars, fmiDerInitDepVars, stateVars;
   BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.SparseColoring sparseColoring;
   BackendDAE.SparsePatternCrefs rowspt;
   SimCode.SparsityPattern sparseInts;
   list<SimCodeVar.SimVar> vars1, vars2;
@@ -13875,10 +13876,11 @@ algorithm
     BackendDump.dumpVarList(indepVars, "indepVars");
   end if;
 
-  //(fmiDerInit, _) := SymbolicJacobian.createFMIModelDerivativesForInitialization(tmpBDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars);
+  // (fmiDerInit, _) := SymbolicJacobian.createFMIModelDerivativesForInitialization(tmpBDAE, inSimDAE, depVars, indepVars, currentSystem.orderedVars);
+  tmpBDAE1 := BackendDAEUtil.copyBackendDAE(tmpBDAE);
 
   // Calculate the dependecies of initialUnknowns
-  (sparsePattern, _) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
+  (sparsePattern, sparseColoring) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
   if debug then
     dumpFmiInitialUnknownsDependencies(sparsePattern, "FmiInitialUnknownDependency");
   end if;
@@ -13905,15 +13907,15 @@ algorithm
   //print("\nknownVars :" + ComponentReference.printComponentRefListStr(indepCrefs));
 
   // generate Partial derivative for initDAE here, as we have the list of all depVars and inDepVars
-  if not listEmpty(indepCrefs) and not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
+  if not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
     fmiDerInitDepVars := getDependentAndIndepentVarsForJacobian(depCrefs, BackendVariable.listVar(depVars));
     fmiDerInitIndepVars := getDependentAndIndepentVarsForJacobian(indepCrefs, BackendVariable.listVar(indepVars));
 
     if debug then
-      BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInitDepVars");
-      BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInitIndepVars");
+      BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInit_unknownVars");
+      BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInit_knownVars");
     end if;
-    (fmiDerInit, _) := SymbolicJacobian.createFMIModelDerivativesForInitialization(tmpBDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars);
+    (fmiDerInit, _) := SymbolicJacobian.createFMIModelDerivativesForInitialization(inInitDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars, sparsePattern, sparseColoring);
 
     // sort the cref according to FMIINDEX, to be used by fmi2GetDirectionalDerivative()
     sortedknownCrefs := sortInitialUnknowsSimVars(getSimVars2Crefs(indepCrefs, crefSimVarHT));

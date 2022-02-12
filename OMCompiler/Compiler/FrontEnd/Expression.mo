@@ -9690,6 +9690,17 @@ algorithm
   outBoolean:= expContains(inExp2,inExp1);
 end containsExp;
 
+public function isExpCref
+"Returns true if expression is a componentRef"
+  input DAE.Exp e;
+  output Boolean res;
+algorithm
+  res := match(e)
+    case(DAE.CREF(_,_)) then true;
+    else false;
+  end match;
+end isExpCref;
+
 public function isExpCrefOrIfExp
 "Returns true if expression is a componentRef or an if expression"
   input DAE.Exp e;
