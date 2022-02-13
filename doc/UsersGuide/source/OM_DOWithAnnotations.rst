@@ -1,11 +1,14 @@
+.. _builtin-dynamic-optimization :
+
+***********************************************
 Built-in Dynamic Optimisation using Annotations
-===============================================
+***********************************************
 
 *This part of the OM manual is a contribution by Massimo Ceraolo and
 Vitalij Ruge.*
 
 Foreword
---------
+========
 
 Dynamic optimization using Annotations is the most user-friendly way to
 perform Dynamic Optimization in OpenModelica, since it allows the OMEdit
@@ -15,7 +18,7 @@ It is also more powerful that the Built-in Dynamic Optimization using
 Optimica language extensions, since it allows final constraints.
 
 Formulation limitations and algorithm
--------------------------------------
+=====================================
 
 We can formulate the optimization problem as follows:
 
@@ -23,11 +26,12 @@ We can formulate the optimization problem as follows:
    :nowrap:
 
    \begin{eqnarray}
-      \min_{u(t)}{\ \left\lbrack M\left( x\left( t_{f} \right),u\left( t_{f} \right),t_{f} \right) + \int_{t_{0}}^{t_{f}}{L\left( x(t),u(t),t \right)\text{dt}} \right\rbrack}
+      \min_{u(t)}{\ \left\lbrack M\left( \mathbf{x}\left( t_{f} \right), \mathbf{u}\left( t_{f} \right),t_{f} \right) + \int_{t_{0}}^{t_{f}}{L\left( \mathbf{x}(t), \mathbf{u}(t),t \right)\text{dt}} \right\rbrack}
       &&
       \begin{array}[t]{l}
-         $M$ \mbox{ is the Mayer Term} \\
-         $L$ \mbox{  is the Lagrange Term}
+         \mbox{optimization purpose} \\
+         (M \mbox{ \textit{is the Mayer Term}} \\
+         L \mbox{  \textit{is the Lagrange Term}})
       \end{array}
       \\
       \mathbf{0} = \mathbf{f}\left( \mathbf{x}(t),\dot{\mathbf{x}}(t),\mathbf{u}(t),t \right)
@@ -83,7 +87,7 @@ in the simpler form:
 
 .. math:: \mathbf{u}_{\min} \leq \mathbf{u}(t) \leq \mathbf{u}_{\max}
 
-.. math:: g_{\min} \leq g(\mathbf{u}(t)\mathbf{,u}(t)) \leq g_{\max}
+.. math:: g_{\min} \leq g(\mathbf{x}(t),\mathbf{u}(t)) \leq g_{\max}
 
 OpenModelica uses the Radau IIA discretization scheme of order 1 or 5
 depending on user input.
@@ -96,7 +100,7 @@ considered. Therefore, the resulting value of the control variable at
 t=0 may be even totally wrong, since it has no influence on the result.
 
 Syntax
-------
+======
 
 OpenModelica provides specific annotations to allow the optimisation
 problem to be described, as an alternative to the use of Optimica
@@ -214,7 +218,7 @@ language. They are listed and commented below.
       Real energyFinConstr(min = p*energyIni, max = p*energyIni) = p * storage.energy annotation(isFinalConstraint = true); //final time constraint on storage energy
 
 Preparing the system
---------------------
+====================
 
 To allow DO to operate in good conditions it is very important that the
 system has continuous derivatives.
@@ -232,7 +236,7 @@ Here we just give two examples:
    during the simulation.
 
 Example 1: minimum time to destination
---------------------------------------
+======================================
 
 This example refers to a car, which is requested to cover the max
 possible distance using power from an engine which has a torque
@@ -280,14 +284,14 @@ The code is very simple and it is as follows:
 
 The constraint on power is especially worth considering. Above, we
 stated that path constraints are
-:math:`0 \leq g(\mathbf{u}(t)\mathbf{,u}(t))` here we have box limits on
+:math:`0 \leq g(\mathbf{x}(t),\mathbf{u}(t))` here we have box limits on
 pow, which is indeed a function of state variables as follows:
 
 .. math:: - 30 \leq fv \leq 30\  = > \  - 30 \leq mav \leq 30
 
 And *a* and *v* are two state variables. So, these are two box
 constraints of the type
-:math:`0 \leq \ g\left( \mathbf{u}(t)\mathbf{,u}(t) \right)\ ` as
+:math:`0 \leq \ g\left( \mathbf{x}(t),\mathbf{u}(t) \right)\ ` as
 follows:
 
 :math:`mav = m\text{\ x}_{1}\text{\ x}_{2} \geq - 30\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ mav = m\text{\ x}_{1}\text{\ x}_{2} \leq \ 30`.
@@ -313,7 +317,7 @@ is explicitly written as follows:
 In the following example, we will use this capability extensively.
 
 Example 2: hybrid vehicle minimum consumption
----------------------------------------------
+=============================================
 
 This example refers to the electricity generation of a hybrid vehicle.
 These vehicles can choose at any time which amount of the propulsion
@@ -395,7 +399,7 @@ A few comments:
    (regenerative) braking power and energy to be sent into the storage
 
 Ideal storage
-~~~~~~~~~~~~~
+=============
 
 Here we consider the storage to be ideal: the flow of power in and out
 causes no losses to occur
@@ -423,7 +427,7 @@ the transient is the same as the one at t=0.
 This result is good and confirms what we expected.
 
 Effects of tolerance
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 We mentioned that reduction of tolerance may affect the result adversely
 by large, especially when the minimum, as in this case is very flat
@@ -440,7 +444,7 @@ Now the result is badly wrong (and the total cost has changed from to
    :height: 2.43518in
 
 More realistic storage
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 To the DO to be useful, it must obviously go beyond what is exactly
 expected. Therefore, we repeat the simulation adding the simulation of
@@ -467,7 +471,7 @@ reduce the battery power at its peak, since the losses formula pushes
 towards lower powers.
 
 Adding storage power limitation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As a last case for example 2, we ass tome limitation on the power that
 can be exchanged by the battery. This can be physically due to
@@ -506,7 +510,7 @@ time than in the previous cases):
    :height: 2.65217in
 
 Example 3: Acausal vehicle
---------------------------
+==========================
 
 As a last example, we replicate the optimisation of Example 2, but the
 power to be delivered directly deriving from simulation of a vehicle,

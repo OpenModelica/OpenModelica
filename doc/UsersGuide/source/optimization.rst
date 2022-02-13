@@ -1,5 +1,6 @@
+##############################
 Optimization with OpenModelica
-==============================
+##############################
 
 The following facilities for model-based optimization are provided with
 OpenModelica:
@@ -14,13 +15,11 @@ OpenModelica:
 -  Classical :ref:`parameter-sweep-optimization-using-omoptim`. Use
        this if you have a static optimization problem.
 
-.. _builtin-dynamic-optimization :
-
-
 .. include:: OM_DOWithAnnotations.rst
 
+****************************************************************
 Built-in Dynamic Optimization using Optimica language extensions
-----------------------------------------------------------------
+****************************************************************
 
 *Note: this is a very short preliminary decription which soon will be
 considerably improved.*
@@ -39,8 +38,9 @@ simulations as in the parameter-sweep optimization described in section :ref:`pa
 
 For more detailed information regarding background and methods, see :cite:`openmodelica.org:bernhard:modelica:2012,openmodelica.org:Ruge:modelica:2014`
 
+===========================
 Compiling the Modelica code
----------------------------
+===========================
 
 Before starting the optimization the model should be symbolically
 instantiated by the compiler in order to get a single flat system of
@@ -55,7 +55,7 @@ MDT runs immediately the optimization. The generated result file can be
 read in and visualized with OMEdit or within OMNotebook.
 
 An Example
-----------
+==========
 
 In this section, a simple optimal control problem will be solved. When
 formulating the optimization problems, models are expressed in the
@@ -114,8 +114,9 @@ The control and state trajectories of the optimization results:
   x1
   x2
 
+=========================================
 Different Options for the Optimizer IPOPT
------------------------------------------
+=========================================
 
 .. table :: New meanings of the usual simualtion options for Ipopt.
 
@@ -145,8 +146,9 @@ Different Options for the Optimizer IPOPT
 
 .. _dynamic-optimization-casadi :
 
+*************************************************
 Dynamic Optimization with OpenModelica and CasADi
--------------------------------------------------
+*************************************************
 
 OpenModelica coupling with CasADi supports dynamic optimization of
 models by OpenModelica exporting the optimization problem to CasADi
@@ -162,7 +164,7 @@ of optimization methods, including direct collocation and direct
 multiple shooting.
 
 Compiling the Modelica code
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 Before exporting a model to XML, the model should be symbolically
 instantiated by the compiler in order to get a single flat system of
@@ -188,7 +190,7 @@ terminal window:
 -  Run command omc -g=Optimica --simCodeTarget=XML Model.mo
 
 An example
-~~~~~~~~~~
+----------
 
 In this section, a simple optimal control problem will be solved. When
 formulating the optimization problems, models are expressed in the
@@ -230,7 +232,7 @@ and can be inspected in a standard XML editor.
 .. _xml-import-to-casadi :
 
 XML Import to CasADi via OpenModelica Python Script
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------
 
 The symbolic optimal control problem representation (or just model
 description) contained in BatchReactor.xml can be imported into CasADi
@@ -278,8 +280,9 @@ below:
 
 .. _parameter-sweep-optimization-using-omoptim:
 
+******************************************
 Parameter Sweep Optimization using OMOptim
-------------------------------------------
+******************************************
 
 OMOptim is a tool for parameter sweep design optimization of Modelica
 models. By optimization, one should understand a procedure which
@@ -301,13 +304,13 @@ However, the user must be aware of the large number of simulations an
 optimization might require.
 
 Preparing the Model
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Before launching OMOptim, one must prepare the model in order to
 optimize it.
 
 Parameters
-^^^^^^^^^^
+**********
 
 An optimization parameter is picked up from all model variables. The
 choice of parameters can be done using the OMOptim interface.
@@ -323,7 +326,7 @@ For all intended parameters, please note that:
        *i.e.* its modification influences model simulation results.
 
 Constraints
-^^^^^^^^^^^
+===========
 
 If some constraints should be respected during optimization, they must
 be defined in the Modelica model itself.
@@ -339,23 +342,23 @@ If during simulation, the variable *mechanicalStress* exceeds 5
 N.m\ :sup:`-2`, the simulation will stop and be considered as a failure.
 
 Objectives
-^^^^^^^^^^
+==========
 
 As parameters, objectives are picked up from model variables.
 Objectives’ values are considered by the optimizer at the *final time*.
 
 Set problem in OMOptim
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 Launch OMOptim
-^^^^^^^^^^^^^^
+==============
 
 OMOptim can be launched using the executable placed in
 OpenModelicaInstallationDirectory/bin/ OMOptim/OMOptim.exe. Alternately,
 choose OpenModelica > OMOptim from the start menu.
 
 Create a new project
-^^^^^^^^^^^^^^^^^^^^
+====================
 
 To create a new project, click on menu File -> New project
 
@@ -364,7 +367,7 @@ created file created has a .min extension. It will contain information
 regarding model, problems, and results loaded.
 
 Load models
-^^^^^^^^^^^
+===========
 
 First, you need to load the model(s) you want to optimize. To do so,
 click on *Add .mo* button on main window or select menu *Model -> Load
@@ -386,6 +389,7 @@ If an error occurs (indicated in log window), this might be because:
 -  Model use syntax incompatible with OpenModelica.
 
 **Dependencies**
+----------------
 
 OMOptim should detect dependencies and load corresponding files.
 However, it some errors occur, please load by yourself dependencies. You
@@ -399,7 +403,7 @@ When the model correctly loaded, you should see a window similar to :numref:`omo
   OMOptim window after having loaded model.
 
 Create a new optimization problem
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=================================
 
 Problem->Add Problem->Optimization
 
@@ -415,6 +419,7 @@ Variables, the other is called Optimization.
   Forms for defining a new optimization problem.
 
 **List of Variables is Empty**
+------------------------------
 
 If variables are not displayed, right click on model name in model
 hierarchy, and select *Read variables*.
@@ -425,7 +430,7 @@ hierarchy, and select *Read variables*.
   Selecting read variables, set parameters, and selecting simulator.
 
 Select Optimized Variables
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+==========================
 
 To set optimization, we first have to define the variables the optimizer
 will consider as free *i.e.* those that it should find best values of.
@@ -437,7 +442,7 @@ For each variable, you must set minimum and maximum values it can take.
 This can be done in the *Optimized variables* table.
 
 Select objectives
-^^^^^^^^^^^^^^^^^
+=================
 
 Objectives correspond to the final values of chosen variables. To select
 these last, select in left list variables concerned and click |omoptim-blue-cross|
@@ -454,7 +459,7 @@ For each objective, you must:
 This can be done in the *Optimized variables* table.
 
 Select and configure algorithm
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+==============================
 
 After having selected variables and objectives, you should now select
 and configure optimization algorithm. To do this, click on
@@ -503,6 +508,7 @@ defining parameters. These are:
        reduction obtained in previous optimization.
 
 **Use start file**
+------------------
 
 As indicated before, it is possible to pursue an optimization finished
 or stopped. To do this, you must enable *Use start file* option and
@@ -516,12 +522,12 @@ objectives*.** However, minimum, maximum of variables and objectives can
 be changed before pursuing an optimization.
 
 Launch
-^^^^^^
+======
 
 You can now launch Optimization by clicking *Launch* button.
 
 Stopping Optimization
-^^^^^^^^^^^^^^^^^^^^^
+=====================
 
 Optimization will be stopped when the generation counter will reach the
 generation number defined in parameters. However, you can still stop the
@@ -535,13 +541,13 @@ generation, the optimum objectives values and corresponding parameters
 are displayed in log window.
 
 Results
-~~~~~~~
+^^^^^^^
 
 The result tab appear when the optimization is finished. It consists of
 two parts: a table where variables are displayed and a plot region.
 
 Obtaining all Variable Values
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=============================
 
 During optimization, the values of optimized variables and objectives
 are memorized. The others are not. To get these last, you must
@@ -553,7 +559,7 @@ corresponding values. All values of this point (including those which
 are not optimization parameters neither objectives).
 
 Window Regions in OMOptim GUI
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 .. figure :: media/omoptim-window-regions.png
 
