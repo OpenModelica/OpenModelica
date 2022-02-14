@@ -32,6 +32,7 @@ else()
                 ${OpenModelica_SOURCE_DIR}/common/config.sub
                 ${OpenModelica_SOURCE_DIR}/common/config.guess
                 ${OpenModelica_SOURCE_DIR}/common/install-sh
+                ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt.in
           ## This should not be omc/runtime/c/fmi but rather omc/fmi. It is inconsistent
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/runtime/c/fmi/buildproject
   )
