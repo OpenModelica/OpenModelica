@@ -86,7 +86,7 @@ public function solveInitialSystem "author: lochel
   output Option<BackendDAE.BackendDAE> outInitDAE_lambda0 "initialization system for lambda=0";
   output list<BackendDAE.Equation> outRemovedInitialEquations;
   output BackendDAE.Variables outGlobalKnownVars;
-  output BackendDAE.BackendDAE outSimDAE = inDAE "updated with fixed attribute";
+  output BackendDAE.BackendDAE outSimDAE = BackendDAEUtil.copyBackendDAE(inDAE) "updated with fixed attribute";
 protected
   BackendDAE.BackendDAE dae;
   BackendDAE.BackendDAE initdae;
@@ -109,12 +109,13 @@ protected
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
 algorithm
   try
+    dae := BackendDAEUtil.copyBackendDAE(inDAE);
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpBackendDAE(inDAE, "inDAE for initialization");
     //end if;
 
     // inline all when equations, if active with body else with lhs=pre(lhs)
-    dae := inlineWhenForInitialization(inDAE);
+    dae := inlineWhenForInitialization(dae);
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpBackendDAE(dae, "inlineWhenForInitialization");
     //end if;
@@ -265,6 +266,7 @@ algorithm
     initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
 
     // update the fixed attribute in the simulation DAE
+    //BackendDump.dumpVarList(dumpVars, "dumpVars");
     outSimDAE := BackendVariable.traverseBackendDAE(outSimDAE, updateFixedAttribute, BackendVariable.listVar(dumpVars));
 
     // warn about selected default initial conditions
@@ -301,6 +303,8 @@ algorithm
 
     outInitDAE := initdae;
     outRemovedInitialEquations := removedEqns;
+    //BackendDump.dumpBackendDAE(outInitDAE, "outInitDAE");
+    //BackendDump.dumpBackendDAE(outSimDAE, "outSimDAE");
   else
     Error.addCompilerError("No system for the symbolic initialization was generated");
     fail();
@@ -844,8 +848,9 @@ algorithm
         case (_) guard BackendVariable.isVarAlg(v) and 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
           equation
             otherVariables = BackendVariable.addVar(v, otherVariables);
-            v = BackendVariable.setVarFixed(v, true);
+            //v = BackendVariable.setVarFixed(v, true);
             outGlobalKnownVars = BackendVariable.addVar(v, outGlobalKnownVars);
+            //BackendDump.dumpVariables(outGlobalKnownVars, "update outGlobalKnownVars");
             hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
           then ();
 
@@ -870,6 +875,7 @@ algorithm
 
     //BackendDump.dumpVarList(outAllPrimaryParameters, "outAllPrimaryParameters");
     //BackendDump.dumpVariables(otherVariables, "otherVariables");
+    //BackendDump.dumpVariables(outGlobalKnownVars, "outGlobalKnownVars");
   end if;
 end selectInitializationVariablesDAE;
 
