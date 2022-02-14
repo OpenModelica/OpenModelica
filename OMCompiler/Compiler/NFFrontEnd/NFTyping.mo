@@ -526,27 +526,18 @@ algorithm
       TypingError ty_err;
       Integer parent_dims, dim_index;
 
-    // Print an error when a dimension that's currently being processed is
-    // found, which indicates a dependency loop. Another way of handling this
-    // would be to instead view the dimension as unknown and infer it from the
-    // binding, which means that things like x[size(x, 1)] = {...} could be
-    // handled. But that is not specified and doesn't seem needed, and can also
-    // give different results depending on the declaration order of components.
+    // A dimension that we're already trying to type.
     case Dimension.UNTYPED(isProcessing = true)
       algorithm
-        // Only give an error if we're not in a function.
-        if not InstContext.inFunction(context) then
-          // TODO: Tell the user which variables are involved in the loop (can be
-          //       found with DFS on the dimension expression. Maybe have a limit
-          //       on the output in case there's a lot of dimensions involved.
-          Error.addSourceMessage(Error.CYCLIC_DIMENSIONS,
-            {String(index), InstNode.name(component), Expression.toString(dimension.dimension)}, info);
-          fail();
+        if InstContext.inFunction(context) then
+          // If we are in a functions we allow e.g. size expression of unknown dimensions.
+          dim := Dimension.UNKNOWN();
+          arrayUpdate(dimensions, index, dim);
+        else
+          // Otherwise leave the dimension as it is, which is sometimes fine if
+          // the dimension isn't used or generates an error in typeCrefDim.
+          dim := dimension;
         end if;
-
-        // If we are in a functions we allow e.g. size expression of unknown dimensions.
-        dim := Dimension.UNKNOWN();
-        arrayUpdate(dimensions, index, dim);
       then
         dim;
 
@@ -1683,6 +1674,7 @@ algorithm
 
                 if index <= dim_count and index > 0 then
                   dim := typeDimension(c.dimensions, index, node, c.binding, context, c.info);
+                  checkCyclicDimension(dim, node, index, c.info);
                   return;
                 end if;
               then
@@ -1714,6 +1706,29 @@ algorithm
   dim := Dimension.UNKNOWN();
   error := TypingError.OUT_OF_BOUNDS(dim_total);
 end typeCrefDim;
+
+function checkCyclicDimension
+  input Dimension dim;
+  input InstNode component;
+  input Integer index;
+  input SourceInfo info;
+protected
+  Expression dim_exp;
+algorithm
+  () := match dim
+    case Dimension.UNTYPED(isProcessing = true)
+      algorithm
+        // TODO: Tell the user which variables are involved in the loop (can be
+        //       found with DFS on the dimension expression. Maybe have a limit
+        //       on the output in case there's a lot of dimensions involved.
+        Error.addSourceMessage(Error.CYCLIC_DIMENSIONS,
+          {String(index), InstNode.name(component), Expression.toString(dim.dimension)}, info);
+      then
+        fail();
+
+    else ();
+  end match;
+end checkCyclicDimension;
 
 function nthDimensionBoundsChecked
   "Returns the requested dimension from the given type, along with a TypingError

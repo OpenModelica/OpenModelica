@@ -327,6 +327,7 @@ DimSize1.mo \
 DimSize2.mo \
 DimSize3.mo \
 DimSize4.mo \
+DimSize5.mo \
 DimUnknown1.mo \
 DimUnknown2.mo \
 DimUnknown3.mo \
