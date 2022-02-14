@@ -204,6 +204,17 @@ public
     Pointer.update(var_ptr, var);
   end setVarName;
 
+  function subIdxName
+    "creates new variable pointer to not change the old variable!"
+    input output Pointer<Variable> var_ptr;
+    input Pointer<Integer> index;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    var.name := ComponentRef.rename(ComponentRef.firstName(var.name) + "_" + intString(Pointer.access(index)), var.name);
+    var_ptr := Pointer.create(var);
+  end subIdxName;
+
   function toExpression
     input Pointer<Variable> var_ptr;
     output Expression exp = Expression.fromCref(getVarName(var_ptr));

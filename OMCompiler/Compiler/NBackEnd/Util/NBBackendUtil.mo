@@ -46,6 +46,7 @@ public
   // backend imports
   import BEquation = NBEquation;
   import NBEquation.{Equation, Frame, FrameLocation};
+  import System = NBSystem;
   import BVariable = NBVariable;
 
   // Util imports

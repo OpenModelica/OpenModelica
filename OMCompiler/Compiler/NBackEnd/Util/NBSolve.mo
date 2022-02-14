@@ -33,6 +33,9 @@ encapsulated package NBSolve
   package:      NBSolve
   description:  This file contains all functions for the solving process.
 "
+
+import Module = NBModule;
+
 public
   // OF imports
   import AvlSetPath;
@@ -44,15 +47,290 @@ public
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
+  import Variable = NFVariable;
 
   // backend imports
+  import BackendDAE = NBackendDAE;
   import Differentiate = NBDifferentiate;
-  import NBEquation.Equation;
+  import NBEquation.{Equation, EquationPointers, EqData, SlicingStatus};
+  import NBVariable.VarData;
   import Replacements = NBReplacements;
+  import StrongComponent = NBStrongComponent;
+  import NBSystem.{System, SystemType};
+  import Tearing = NBTearing;
 
   type Status = enumeration(UNPROCESSED, EXPLICIT, IMPLICIT, UNSOLVABLE);
+  type StrongComponentLst = list<StrongComponent>;
+  type EquationPointerList = list<Pointer<Equation>>;
 
-  function solve
+  function statusString
+    input Status status;
+    output String str;
+  algorithm
+    str := match status
+      case Status.UNPROCESSED then "Solve.UNPROCESSED";
+      case Status.EXPLICIT    then "Solve.EXPLICIT";
+      case Status.IMPLICIT    then "Solve.IMPLICIT";
+      case Status.UNSOLVABLE  then "Solve.UNSOLVABLE";
+    end match;
+  end statusString;
+
+  function main
+    "solves each strong component and creates ALIAS strong components for each one already solved the exact same way."
+    extends Module.wrapper;
+  protected
+    Pointer<FunctionTree> funcTree_ptr;
+    Pointer<Integer> implicit_index_ptr = Pointer.create(1);
+    UnorderedMap<StrongComponent, StrongComponentLst> duplicate_map = UnorderedMap.new<StrongComponentLst>(StrongComponent.hash, StrongComponent.isEqual);
+  protected
+    StrongComponent unsolved;
+    list<StrongComponent> solved;
+  algorithm
+    bdae := match bdae
+
+      case BackendDAE.MAIN() algorithm
+        funcTree_ptr    := Pointer.create(bdae.funcTree);
+        // The order here is important. Whatever comes first is declared the "original", same components afterwards will be alias
+        bdae.init       := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.init);
+        bdae.ode        := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.ode);
+        bdae.algebraic  := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.algebraic);
+        bdae.ode_event  := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.ode_event);
+        bdae.alg_event  := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.alg_event);
+        bdae.funcTree   := Pointer.access(funcTree_ptr);
+
+
+        if Flags.isSet(Flags.DUMP_SLICE) then
+          for tpl in UnorderedMap.toList(duplicate_map) loop
+            (unsolved, solved) := tpl;
+            print("[dumpSlice] The block:\n" + StrongComponent.toString(unsolved) + "\n"
+              + "[dumpSlice] got sliced to:\n" + List.toString(solved, function StrongComponent.toString(index = -1, showAlias = true), "", "", "\n", "") + "\n\n");
+          end for;
+        end if;
+
+      then bdae;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
+    end match;
+  end main;
+
+  function solveSystem
+    input output System system;
+    input Pointer<FunctionTree> funcTree_ptr;
+    input Pointer<Integer> implicit_index_ptr;
+    input UnorderedMap<StrongComponent, StrongComponentLst> duplicate_map;
+  protected
+    UnorderedMap<ComponentRef, EquationPointerList> slicing_map = UnorderedMap.new<EquationPointerList>(ComponentRef.hash, ComponentRef.isEqual);
+    list<StrongComponent> tmp, solved_comps = {};
+    FunctionTree funcTree = Pointer.access(funcTree_ptr);
+    Integer implicit_index = Pointer.access(implicit_index_ptr);
+    array<StrongComponent> new_comps;
+    Pointer<Integer> sliced_idx, comp_idx = Pointer.create(1);
+    ComponentRef name;
+    list<Pointer<Equation>> sliced_eqns;
+  algorithm
+    if Util.isSome(system.strongComponents) then
+      for comp in Util.getOption(system.strongComponents) loop
+        if UnorderedMap.contains(comp, duplicate_map) then
+          // strong component already solved -> get alias comps
+          solved_comps := listAppend(UnorderedMap.getSafe(comp, duplicate_map), solved_comps);
+        else
+          // solve strong component -> create alias comps
+          (tmp, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, system.systemType, implicit_index, slicing_map);
+          UnorderedMap.add(comp, list(StrongComponent.createAlias(system.systemType, system.partitionIndex, comp_idx, tmp_c) for tmp_c in tmp), duplicate_map);
+          solved_comps := listAppend(tmp, solved_comps);
+        end if;
+      end for;
+      system.strongComponents := SOME(listArray(listReverse(solved_comps)));
+      // update sliced eqn names
+      for tpl in UnorderedMap.toList(slicing_map) loop
+        (name, sliced_eqns) := tpl;
+        if not listEmpty(sliced_eqns) then
+          sliced_idx := Pointer.create(1);
+          for eqn_ptr in sliced_eqns loop
+            Equation.subIdxName(eqn_ptr, sliced_idx);
+          end for;
+        end if;
+      end for;
+      Pointer.update(funcTree_ptr, funcTree);
+      Pointer.update(implicit_index_ptr, implicit_index);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cannot solve system without strong components: " + System.toString(system) + "\n\n"});
+      fail();
+    end if;
+  end solveSystem;
+
+  function solveStrongComponent
+    input StrongComponent comp;
+    output list<StrongComponent> solved_comps = {};
+    input output FunctionTree funcTree;
+    input SystemType systemType;
+    input output Integer implicit_index;
+    input UnorderedMap<ComponentRef, EquationPointerList> slicing_map;
+  protected
+    Status solve_status;
+    StrongComponent implicit_comp;
+  algorithm
+    (solved_comps, solve_status) := match comp
+        local
+          Equation eqn;
+          Pointer<Equation> eqn_ptr;
+          ComponentRef var_cref, eqn_cref;
+          SlicingStatus slicing_status;
+          list<Integer> sizes, eqn_indices;
+          UnorderedMap<ComponentRef, Expression> replacements;
+          Integer index;
+          list<Equation> entwined_eqns = {};
+          list<Pointer<Equation>> rest, sliced_eqns = {};
+
+        case StrongComponent.SINGLE_EQUATION() algorithm
+          (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcTree);
+        then ({StrongComponent.SINGLE_EQUATION(comp.var, Pointer.create(eqn), solve_status)}, solve_status);
+
+        case StrongComponent.SINGLE_ARRAY() algorithm
+          (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcTree);
+        then ({StrongComponent.SINGLE_ARRAY(comp.var, Pointer.create(eqn), solve_status)}, solve_status);
+
+        // ToDo: solve inner branch systems for WHEN and IF
+        case StrongComponent.SINGLE_WHEN_EQUATION() algorithm
+          (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(List.first(comp.vars)), funcTree);
+        then ({StrongComponent.SINGLE_WHEN_EQUATION(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
+
+        // ToDo
+        //case StrongComponent.SINGLE_IF_EQUATION() algorithm
+        //  (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(List.first(comp.vars)), funcTree);
+        //then ({StrongComponent.SINGLE_IF_EQUATION(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
+
+        case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(comp.eqn)) algorithm
+          (eqn_ptr, slicing_status, solve_status, funcTree) := Equation.slice(comp.eqn, comp.eqn_indices, SOME(comp.var_cref), funcTree);
+          if slicing_status == NBEquation.SlicingStatus.FAILURE then
+            // if slicing failed -> scalarize;
+            (eqn, funcTree, solve_status, _) := solveEquation(Pointer.access(comp.eqn), comp.var_cref, funcTree);
+            Pointer.update(eqn_ptr, eqn);
+            sizes := Equation.sizes(comp.eqn);
+            replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+            for index in listReverse(comp.eqn_indices) loop
+              (eqn, funcTree) := Equation.singleSlice(eqn_ptr, index, sizes, ComponentRef.EMPTY(), replacements, funcTree);
+              solved_comps := StrongComponent.fromSolvedEquation(eqn) :: solved_comps;
+              sliced_eqns := Pointer.create(eqn) :: sliced_eqns;
+            end for;
+            sliced_eqns := listReverse(sliced_eqns);
+            solved_comps := listReverse(solved_comps);
+          else
+            Pointer.update(eqn_ptr, Equation.splitIterators(Pointer.access(eqn_ptr)));
+            sliced_eqns := {eqn_ptr};
+            solved_comps := {StrongComponent.SLICED_EQUATION(comp.var_cref, {}, comp.var, eqn_ptr, solve_status)};
+          end if;
+
+          // safe the slicing replacement in the map
+          eqn_cref := Equation.getEqnName(comp.eqn);
+          if UnorderedMap.contains(eqn_cref, slicing_map) then
+            sliced_eqns := listAppend(UnorderedMap.getSafe(eqn_cref, slicing_map), sliced_eqns);
+          end if;
+          UnorderedMap.add(eqn_cref, sliced_eqns, slicing_map);
+
+        then (solved_comps, solve_status);
+
+        case StrongComponent.SLICED_EQUATION() algorithm
+          // just a regular equation solved for a sliced variable
+          // use cref instead of var because it has subscripts!
+          (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Variable.fromCref(comp.var_cref), funcTree);
+          comp.eqn := Pointer.create(eqn);
+        then ({comp}, solve_status);
+
+        case StrongComponent.ENTWINED_EQUATION() algorithm
+          // slice each entwined equation individually
+          for slice in comp.entwined_slices loop
+            StrongComponent.SLICED_EQUATION(var_cref = var_cref, eqn_indices = eqn_indices, eqn = eqn_ptr) := slice;
+            (eqn_ptr, slicing_status, solve_status, funcTree) := Equation.slice(eqn_ptr, eqn_indices, SOME(var_cref), funcTree);
+            if slicing_status == NBEquation.SlicingStatus.FAILURE then break; end if;
+            eqn := Equation.renameIterators(Pointer.access(eqn_ptr), "$k");
+            entwined_eqns := Equation.splitIterators(eqn) :: entwined_eqns;
+          end for;
+
+          if slicing_status == NBEquation.SlicingStatus.FAILURE then
+            // if slicing failed -> scalarize;
+            // first solve all equation bodies accordingly
+            for slice in comp.entwined_slices loop
+              StrongComponent.SLICED_EQUATION(var_cref = var_cref, eqn = eqn_ptr) := slice;
+              (eqn, funcTree, solve_status, _) := solveEquation(Pointer.access(eqn_ptr), var_cref, funcTree);
+              Pointer.update(eqn_ptr, eqn);
+            end for;
+            replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+            for tpl in comp.entwined_tpl_lst loop
+              (eqn_ptr, index) := tpl;
+              // do this more efficiently! (sizes beforehand?)
+              sizes := Equation.sizes(eqn_ptr);
+              (eqn, funcTree) := Equation.singleSlice(eqn_ptr, index, sizes, ComponentRef.EMPTY(), replacements, funcTree);
+              sliced_eqns := Pointer.create(eqn) :: sliced_eqns;
+              solved_comps := StrongComponent.fromSolvedEquation(eqn) :: solved_comps;
+            end for;
+            sliced_eqns := listReverse(sliced_eqns);
+            solved_comps := listReverse(solved_comps);
+          else
+            // entwine the equations as far as possible
+            entwined_eqns := Equation.entwine(listReverse(entwined_eqns));
+            sliced_eqns := list(Pointer.create(eqn) for eqn in entwined_eqns);
+            solved_comps :=  list(StrongComponent.fromSolvedEquation(eqn) for eqn in entwined_eqns);
+          end if;
+
+          // safe the slicing replacement in the map
+          // -> just use the first name as replacement for all of them and all other with empty lists
+          eqn_ptr :: rest := sliced_eqns;
+          eqn_cref := Equation.getEqnName(eqn_ptr);
+          if UnorderedMap.contains(eqn_cref, slicing_map) then
+            sliced_eqns := listAppend(UnorderedMap.getSafe(eqn_cref, slicing_map), sliced_eqns);
+          end if;
+          UnorderedMap.add(eqn_cref, sliced_eqns, slicing_map);
+
+          // empty for all others (do not overwrite if it exists)
+          if not listEmpty(rest) then
+            for eqn_ptr in rest loop
+              eqn_cref := Equation.getEqnName(eqn_ptr);
+              if not UnorderedMap.contains(eqn_cref, slicing_map) then
+                UnorderedMap.add(eqn_cref, {}, slicing_map);
+              end if;
+            end for;
+          end if;
+        then (solved_comps, solve_status);
+
+        else ({comp}, Status.UNSOLVABLE);
+    end match;
+
+    if solve_status > Status.EXPLICIT then
+      if solve_status == Status.IMPLICIT and listLength(solved_comps) == 1 then
+        (implicit_comp, funcTree, implicit_index)  := Tearing.implicit(
+          comp        = List.first(solved_comps),
+          funcTree    = funcTree,
+          index       = implicit_index,
+          systemType  = systemType
+        );
+        solved_comps := {implicit_comp};
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with status = " + statusString(solve_status)
+          + " while trying to solve following strong component:\n" + StrongComponent.toString(comp) + "\n"});
+        fail();
+      end if;
+    end if;
+
+  end solveStrongComponent;
+
+  function solveTrivialStrongComponent
+    input output Equation eqn;
+    input Variable var;
+    input output FunctionTree funcTree;
+    output Status status;
+  algorithm
+    if ComponentRef.isEmpty(var.name) then
+      // empty variable name implies equation without return value
+      (eqn, status) := (eqn, NBSolve.Status.EXPLICIT);
+    else
+      (eqn, funcTree, status, _) := solveEquation(eqn, var.name, funcTree);
+    end if;
+  end solveTrivialStrongComponent;
+
+  function solveEquation
     input output Equation eqn;
     input ComponentRef cref;
     input output FunctionTree funcTree;
@@ -76,7 +354,7 @@ public
 
       else solveBody(eqn, cref, funcTree);
     end match;
-  end solve;
+  end solveEquation;
 
   function solveBody
     input output Equation eqn;

@@ -68,11 +68,27 @@ protected
 
 public
   record TEARING_SET
-    list<Pointer<Variable>> iteration_vars    "the variables used for iteration";
-    list<Slice<EquationPointer>> residual_eqns      "implicitely solved residual equations";
-    array<InnerEquation> innerEquations                             "array of matched equations and variables";
-    Option<Jacobian> jac                                            "optional jacobian";
+    list<Pointer<Variable>> iteration_vars        "the variables used for iteration";
+    list<Slice<EquationPointer>> residual_eqns    "implicitely solved residual equations";
+    array<InnerEquation> innerEquations           "array of matched equations and variables";
+    Option<Jacobian> jac                          "optional jacobian";
   end TEARING_SET;
+
+  function hash
+    input Tearing tearing;
+    input Integer mod;
+    output Integer i = -1;
+  algorithm
+    // ToDo!
+  end hash;
+
+  function isEqual
+    input Tearing tearing1;
+    input Tearing tearing2;
+    output Boolean b = false;
+  algorithm
+    // ToDo!
+  end isEqual;
 
   function toString
     input Tearing set;
@@ -83,7 +99,7 @@ public
     for var in set.iteration_vars loop
       str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
     end for;
-    str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, Equation.pointerToString);
+    str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, function Equation.pointerToString(str = ""));
     str := str + "\n### Inner Equations:\n";
     for eqn in set.innerEquations loop
       str := str  + InnerEquation.toString(eqn, "\t") + "\n";
@@ -149,7 +165,7 @@ public
       case StrongComponent.SINGLE_ARRAY()
       then tearingNoneWork(
           name      = System.System.systemTypeString(systemType) + "_IMP_JAC_",
-          variables = comp.vars,
+          variables = {comp.var},
           equations = {comp.eqn},
           mixed     = false,
           funcTree  = funcTree,

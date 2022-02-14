@@ -485,7 +485,9 @@ public
 
     function pointerToString
       input Pointer<Equation> eqn_ptr;
-      output String str = toString(Pointer.access(eqn_ptr));
+      input output String str = "";
+    algorithm
+      str := toString(Pointer.access(eqn_ptr), str);
     end pointerToString;
 
     function source
@@ -1152,6 +1154,72 @@ public
       Pointer.update(eqn_ptr, eqn);
     end createName;
 
+    function subIdxName
+      input Pointer<Equation> eqn_ptr;
+      input Pointer<Integer> idx;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+      Pointer<Variable> residualVar;
+    algorithm
+      // update equation attributes
+      eqn := match eqn
+        case SCALAR_EQUATION() algorithm
+          residualVar := EquationAttributes.getResidualVar(eqn.attr);
+          residualVar := BVariable.subIdxName(residualVar, idx);
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case ARRAY_EQUATION() algorithm
+          residualVar := EquationAttributes.getResidualVar(eqn.attr);
+          residualVar := BVariable.subIdxName(residualVar, idx);
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case SIMPLE_EQUATION() algorithm
+          residualVar := EquationAttributes.getResidualVar(eqn.attr);
+          residualVar := BVariable.subIdxName(residualVar, idx);
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case RECORD_EQUATION() algorithm
+          residualVar := EquationAttributes.getResidualVar(eqn.attr);
+          residualVar := BVariable.subIdxName(residualVar, idx);
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case ALGORITHM() algorithm
+          residualVar := EquationAttributes.getResidualVar(eqn.attr);
+          residualVar := BVariable.subIdxName(residualVar, idx);
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case IF_EQUATION() algorithm
+          residualVar := EquationAttributes.getResidualVar(eqn.attr);
+          residualVar := BVariable.subIdxName(residualVar, idx);
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case FOR_EQUATION() algorithm
+          residualVar := EquationAttributes.getResidualVar(eqn.attr);
+          residualVar := BVariable.subIdxName(residualVar, idx);
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case WHEN_EQUATION() algorithm
+          residualVar := EquationAttributes.getResidualVar(eqn.attr);
+          residualVar := BVariable.subIdxName(residualVar, idx);
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(eqn)});
+        then fail();
+
+      end match;
+      Pointer.update(idx, Pointer.access(idx) + 1);
+      Pointer.update(eqn_ptr, eqn);
+    end subIdxName;
+
     function createResidual
       "Creates a residual equation from a regular equation.
       Expample (for DAEMode): $RES_DAE_idx := rhs.
@@ -1522,12 +1590,11 @@ public
       input output Pointer<Equation> eqn_ptr  "equation to slice";
       input list<Integer> indices             "zero based indices of the eqn";
       input Option<ComponentRef> cref_opt     "optional cref to solve for, if none is given, the body stays as it is";
-      output SlicingStatus status             "unchanged, trivial (only rearranged) or nontrivial";
+      output SlicingStatus slicing_status     "unchanged, trivial (only rearranged) or nontrivial";
+      output Solve.Status solve_status        "unprocessed, explicit, implicit, unsolvable";
       input output FunctionTree funcTree      "function tree for solving";
     protected
       Equation eqn;
-      Integer first_idx                       "first strong component index";
-      Integer last_idx                        "last strong component index";
       list<Frame> frames;
       list<Dimension> dims;
       list<Integer> sizes;
@@ -1536,10 +1603,10 @@ public
       list<array<Integer>> locations_T;
       list<FrameLocation> frame_locations;
       list<tuple<Integer, Integer, Integer>> ranges;
-      BackendUtil.FrameOrderingStatus fos;
+      BackendUtil.FrameOrderingStatus frame_status;
     algorithm
       eqn := Pointer.access(eqn_ptr);
-      (eqn_ptr, status) := match eqn
+      (eqn_ptr, slicing_status, solve_status) := match eqn
         local
           list<Equation> body_lst;
           Equation body, sliced;
@@ -1549,25 +1616,27 @@ public
           Expression condition;
 
         // empty index list indicates no slicing and no rearranging
-        case _ guard(listEmpty(indices)) then (eqn_ptr, SlicingStatus.UNCHANGED);
+        case _ guard(listEmpty(indices)) then (Pointer.create(eqn), SlicingStatus.UNCHANGED, NBSolve.Status.EXPLICIT);
 
         case FOR_EQUATION() algorithm
-          // get the sizes of the 'return value' if the equation
+          // get the sizes of the 'return value' of the equation
           dims      := Type.arrayDims(Equation.getType(eqn));
           sizes     := list(Dimension.size(dim) for dim in dims);
 
           // trivial slices replace the original equation entirely
-          status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
+          slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
 
-          locations                             := list(BackendUtil.indexToLocation(idx, sizes) for idx in indices);
-          locations_T                           := BackendUtil.transposeLocations(locations, listLength(sizes));
-          frames                                := listReverse(getForFrames(eqn));
-          frame_locations                       := List.zip(locations_T, frames);
-          (frame_locations, replacements, fos)  := BackendUtil.orderTransposedFrameLocations(frame_locations);
-          if fos == NBBackendUtil.FrameOrderingStatus.FAILURE then
-            status := SlicingStatus.FAILURE; return;
+          locations                                       := list(BackendUtil.indexToLocation(idx, sizes) for idx in indices);
+          locations_T                                     := BackendUtil.transposeLocations(locations, listLength(sizes));
+          frames                                          := listReverse(getForFrames(eqn));
+          frame_locations                                 := List.zip(locations_T, frames);
+          (frame_locations, replacements, frame_status)   := BackendUtil.orderTransposedFrameLocations(frame_locations);
+          if frame_status == NBBackendUtil.FrameOrderingStatus.FAILURE then
+            slicing_status  := SlicingStatus.FAILURE;
+            solve_status    := NBSolve.Status.UNPROCESSED;
+            return;
           end if;
-          (frames, removed_diagonals_opt)       := BackendUtil.recollectRangesHeuristic(frame_locations);
+          (frames, removed_diagonals_opt)                 := BackendUtil.recollectRangesHeuristic(frame_locations);
 
           // solve the body equation for the cref if needed
           // ToDo: act on solving status not equal to EXPLICIT ?
@@ -1576,8 +1645,9 @@ public
               ComponentRef cref;
             case SOME(cref) algorithm
               // first solve then replace iterators
-              (body, funcTree, _, _) := Solve.solve(List.first(eqn.body), cref, funcTree);
+              (body, funcTree, solve_status, _) := Solve.solveEquation(List.first(eqn.body), cref, funcTree);
               body := map(body, function Replacements.applySimpleExp(replacements = replacements));
+
               // if there is a diagonal to remove, get the necessary linear maps
               if Util.isSome(removed_diagonals_opt) then
                 removed_diagonals := Util.getOption(removed_diagonals_opt);
@@ -1587,6 +1657,7 @@ public
                   inv_arguments = {},
                   operator      = Operator.OPERATOR(Type.BOOLEAN(), NFOperator.Op.AND)
                 );
+                // removed diagonal is represented with IF_EQUATION
                 body := IF_EQUATION(
                   size    = Equation.size(Pointer.create(body)),
                   body    = IF_EQUATION_BODY(
@@ -1609,7 +1680,7 @@ public
             attr    = eqn.attr
           );
           // create a new pointer and do not overwrite the old one!
-        then (Pointer.create(sliced), status);
+        then (Pointer.create(sliced), slicing_status, solve_status);
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing is not yet supported for: \n" + toString(eqn)});
@@ -1636,7 +1707,7 @@ public
         case FOR_EQUATION() algorithm
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
-            (sliced_eqn, funcTree, _, _) := Solve.solve(List.first(eqn.body), cref_to_solve, funcTree);
+            (sliced_eqn, funcTree, _, _) := Solve.solveEquation(List.first(eqn.body), cref_to_solve, funcTree);
           end if;
           // get the frame location indices from single index
           location := BackendUtil.indexToLocation(scal_idx, sizes);

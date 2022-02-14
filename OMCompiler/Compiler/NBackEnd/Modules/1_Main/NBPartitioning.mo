@@ -111,7 +111,7 @@ public
     end match;
   end getModule;
 
-  function splitSystems
+  function categorize
     "creates ODE, ALG, ODE_EVT, ALG_EVT systems from ODE by checking
     if it contains discrete equations or state equations.
     Should be evoked just before jacobian at the very end."
@@ -138,7 +138,7 @@ public
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
       then fail();
     end match;
-  end splitSystems;
+  end categorize;
 
 protected
   uniontype Cluster
@@ -285,6 +285,7 @@ protected
       input EquationPointers equations;
       input System.SystemType systemType;
       input Pointer<array<Boolean>> marked_vars_ptr;
+      input Pointer<Integer> index;
       output System.System system;
     protected
       array<Boolean> marked_vars = Pointer.access(marked_vars_ptr);
@@ -317,10 +318,11 @@ protected
         matching          = NONE(),
         strongComponents  = NONE(),
         partitionKind     = System.PartitionKind.CONTINUOUS,
-        subPartitionIndex = NONE(),
+        partitionIndex    = Pointer.access(index),
         jacobian          = NONE()
       );
       Pointer.update(marked_vars_ptr, marked_vars);
+      Pointer.update(index, Pointer.access(index) + 1);
     end toSystem;
   end Cluster;
 
@@ -344,7 +346,7 @@ protected
       matching          = NONE(),
       strongComponents  = NONE(),
       partitionKind     = System.PartitionKind.CONTINUOUS,
-      subPartitionIndex = NONE(),
+      partitionIndex    = 1,
       jacobian          = NONE()
     )};
   end partitioningNone;
@@ -356,6 +358,7 @@ protected
     list<Cluster> clusters;
     Pointer<array<Boolean>> marked_vars_ptr = Pointer.create(arrayCreate(VariablePointers.size(variables), true));
     list<Pointer<Variable>> single_vars, non_state_single_vars;
+    Pointer<Integer> index = Pointer.create(1);
   algorithm
     // collect partitions in clusters
     map := UnorderedMap.new<ClusterPointer>(ComponentRef.hash, ComponentRef.isEqual);
@@ -363,7 +366,7 @@ protected
     // extract unique clusters from the unordered map
     clusters := Cluster.getClusters(map, size);
     // create systems from clusters by filtering the variables for relevant ones
-    systems := list(Cluster.toSystem(cluster, variables, equations, systemType, marked_vars_ptr) for cluster in clusters);
+    systems := list(Cluster.toSystem(cluster, variables, equations, systemType, marked_vars_ptr, index) for cluster in clusters);
 
     single_vars := VariablePointers.getMarkedVars(variables, Pointer.access(marked_vars_ptr));
     if systemType <> System.SystemType.INI then
@@ -390,7 +393,7 @@ protected
         matching          = NONE(),
         strongComponents  = NONE(),
         partitionKind     = System.PartitionKind.CONTINUOUS,
-        subPartitionIndex = NONE(),
+        partitionIndex    = Pointer.access(index),
         jacobian          = NONE()
       ) :: systems;
     end if;

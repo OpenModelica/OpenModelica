@@ -324,7 +324,7 @@ public
           algorithm
             // create auxiliary equation and solve for TIME
             tmpEqn := Pointer.access(Equation.fromLHSandRHS(exp.exp1, exp.exp2, Pointer.create(0), "TMP"));
-            (tmpEqn, _, status, invert) := Solve.solve(tmpEqn, NFBuiltin.TIME_CREF, FunctionTreeImpl.EMPTY());
+            (tmpEqn, _, status, invert) := Solve.solveEquation(tmpEqn, NFBuiltin.TIME_CREF, FunctionTreeImpl.EMPTY());
             if status == NBSolve.Status.EXPLICIT then
               // save simplified binary
               exp.exp1 := Equation.getLHS(tmpEqn);

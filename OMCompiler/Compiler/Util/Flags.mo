@@ -553,6 +553,8 @@ constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(190, "dumpSetBasedGraphs",
   Gettext.gettext("Dumps information about set based graphs for efficient array handling (only new frontend and new backend)."));
 constant DebugFlag MERGE_COMPONENTS = DEBUG_FLAG(191, "mergeComponents", false,
   Gettext.gettext("Enables automatic merging of components into arrays."));
+constant DebugFlag DUMP_SLICE = DEBUG_FLAG(192, "dumpSlice", false,
+  Gettext.gettext("Dumps information about the slicing process (pseudo-array causalization)."));
 
 public
 // CONFIGURATION FLAGS

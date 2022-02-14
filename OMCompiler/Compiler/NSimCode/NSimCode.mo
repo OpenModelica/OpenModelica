@@ -57,6 +57,7 @@ protected
   import OldBackendDAE = BackendDAE;
 
   // Backend imports
+  import AliasInfo = NBStrongComponent.AliasInfo;
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.Equation;
@@ -117,17 +118,23 @@ public
 
       Integer jacobianIndex;
       Integer daeModeResidualIndex;
-      Integer implicitIndex;
+      Integer implicitIndex; // this can be removed i think -> moved to solve
 
+      UnorderedMap<AliasInfo, Integer> alias_map;
     end SIM_CODE_INDICES;
   end SimCodeIndices;
 
-  constant SimCodeIndices EMPTY_SIM_CODE_INDICES = SIM_CODE_INDICES(1,
-                                                                    0,0,0,0,
-                                                                    0,0,0,0,
-                                                                    0,0,0,0,
-                                                                    1,0,0,
-                                                                    0,0,0);
+  function EMPTY_SIM_CODE_INDICES
+    output SimCodeIndices indices = SIM_CODE_INDICES(
+      1,
+      0,0,0,0,
+      0,0,0,0,
+      0,0,0,0,
+      1,0,0,
+      0,0,0,
+      UnorderedMap.new<Integer>(AliasInfo.hash, AliasInfo.isEqual)
+    );
+  end EMPTY_SIM_CODE_INDICES;
 
   uniontype SimCode
     record SIM_CODE
@@ -146,7 +153,7 @@ public
       list<SimStrongComponent.Block> param              "Blocks for parameter equations";
       list<SimStrongComponent.Block> no_ret             "Blocks for equations without return value";
       list<SimStrongComponent.Block> algorithms         "Blocks for algorithms and asserts";
-      list<SimStrongComponent.Block> event_blocks  "Blocks for zero crossing functions";
+      list<SimStrongComponent.Block> event_blocks       "Blocks for zero crossing functions";
       list<SimStrongComponent.Block> jac_blocks         "Blocks for jacobian equations";
       list<SimStrongComponent.Block> start              "Blocks for start value equations";
       list<SimStrongComponent.Block> init               "Blocks for initial equations";
@@ -250,7 +257,7 @@ public
         case BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(removed = no_ret_eq))
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
-            simCodeIndices := EMPTY_SIM_CODE_INDICES;
+            simCodeIndices := EMPTY_SIM_CODE_INDICES();
             funcTree := BackendDAE.getFunctionTree(bdae);
 
             // for now approximate number of equations
@@ -263,10 +270,11 @@ public
             // all non constant parameter equations will be added to the initial system.
             // There is no actual need for parameter equations block
             param := {};
+            algorithms := {};
+            // init before everything else!
+            (init, simCodeIndices, funcTree) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, funcTree);
             // start allSim with no return equations
             (no_ret, simCodeIndices, funcTree) := SimStrongComponent.Block.createNoReturnBlocks(no_ret_eq, simCodeIndices, funcTree, NBSystem.SystemType.ODE);
-            algorithms := {};
-            (init, simCodeIndices, funcTree) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, funcTree);
             init_0 := {};
             init_no_ret := {};
             start := {};

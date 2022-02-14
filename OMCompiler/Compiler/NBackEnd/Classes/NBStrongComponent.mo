@@ -54,7 +54,10 @@ protected
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointers, EquationAttributes};
   import Matching = NBMatching;
+  import Solve = NBSolve;
   import Sorting = NBSorting;
+  import BSystem = NBSystem;
+  import NBSystem.{System, SystemType};
   import Tearing = NBTearing;
   import NBVariable.VariablePointers;
 
@@ -66,26 +69,41 @@ protected
   import UnorderedMap;
 
 public
+  uniontype AliasInfo
+    record ALIAS_INFO
+      SystemType systemType     "The partition type";
+      Integer partitionIndex    "the partition index";
+      Integer componentIndex    "The index in that strong component array";
+    end ALIAS_INFO;
+
+    function toString
+      input AliasInfo info;
+      output String str = System.systemTypeString(info.systemType) + "[" + intString(info.partitionIndex) + " | " + intString(info.componentIndex) + "]";
+    end toString;
+
+    function hash
+      input AliasInfo info;
+      input Integer mod;
+      output Integer i = intMod(System.systemTypeInteger(info.systemType) + info.partitionIndex*13 + info.componentIndex*31, mod);
+    end hash;
+
+    function isEqual
+      input AliasInfo info1;
+      input AliasInfo info2;
+      output Boolean b = (info1.componentIndex == info2.componentIndex) and (info1.partitionIndex == info2.partitionIndex) and (info1.systemType == info2.systemType);
+    end isEqual;
+  end AliasInfo;
+
   record SINGLE_EQUATION
     Pointer<Variable> var;
     Pointer<Equation> eqn;
+    Solve.Status status;
   end SINGLE_EQUATION;
 
-  record SLICED_EQUATION
-    ComponentRef var_cref       "variable slice (cref to solve for)";
-    list<Integer> eqn_indices   "equation slice (zero based equation indices)";
-    Pointer<Variable> var       "full unsliced variable";
-    Pointer<Equation> eqn       "full unsliced equation";
-  end SLICED_EQUATION;
-
-  record ENTWINED_EQUATION
-    list<StrongComponent> entwined_slices                     "has to be SLICED_EQUATION()";
-    list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst  "equation with scalar idx (0 based) - fallback scalarization";
-  end ENTWINED_EQUATION;
-
   record SINGLE_ARRAY
-    list<Pointer<Variable>> vars;
+    Pointer<Variable> var;
     Pointer<Equation> eqn;
+    Solve.Status status;
   end SINGLE_ARRAY;
 
   record SINGLE_ALGORITHM
@@ -96,24 +114,40 @@ public
   record SINGLE_RECORD_EQUATION
     list<Pointer<Variable>> vars;
     Pointer<Equation> eqn;
+    Solve.Status status;
   end SINGLE_RECORD_EQUATION;
 
   record SINGLE_WHEN_EQUATION
     list<Pointer<Variable>> vars;
     Pointer<Equation> eqn;
+    Solve.Status status;
   end SINGLE_WHEN_EQUATION;
 
   record SINGLE_IF_EQUATION
     list<Pointer<Variable>> vars;
     Pointer<Equation> eqn;
+    Solve.Status status;
   end SINGLE_IF_EQUATION;
+
+  record SLICED_EQUATION
+    ComponentRef var_cref       "variable slice (cref to solve for)";
+    list<Integer> eqn_indices   "equation slice (zero based equation indices)";
+    Pointer<Variable> var       "full unsliced variable";
+    Pointer<Equation> eqn       "full unsliced equation";
+    Solve.Status status;
+  end SLICED_EQUATION;
+
+  record ENTWINED_EQUATION
+    "intermediate type, cannot be passed to SimCode!"
+    list<StrongComponent> entwined_slices                     "has to be SLICED_EQUATION()";
+    list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst  "equation with scalar idx (0 based) - fallback scalarization";
+  end ENTWINED_EQUATION;
 
   record ALGEBRAIC_LOOP
     list<Pointer<Variable>> vars;
     list<Pointer<Equation>> eqns;
     Option<BackendDAE> jac;
-    Boolean mixed         "true for system that has discrete dependencies to the
-                          iteration variables";
+    Boolean mixed         "true for systems that have discrete variables";
   end ALGEBRAIC_LOOP;
 
   record TORN_LOOP
@@ -121,12 +155,19 @@ public
     Tearing strict;
     Option<Tearing> casual;
     Boolean linear;
-    Boolean mixed "true for system that discrete dependencies to the iteration variables";
+    Boolean mixed "true for systems that have discrete variables";
   end TORN_LOOP;
+
+  record ALIAS
+    "Only to be used by Solve! Represents equal systems in ODE<->INIT<->DAE"
+    AliasInfo aliasInfo       "The strong component array and index it refers to";
+    StrongComponent original  "The original strong component for analysis";
+  end ALIAS;
 
   function toString
     input StrongComponent comp;
-    input Integer index = -1;
+    input Integer index = -1          "negative indices will not be printed";
+    input Boolean showAlias = false   "true if the original strong components of an alias should be printed";
     output String str;
   protected
     String indexStr = if index > 0 then " " + intString(index) else "";
@@ -137,30 +178,27 @@ public
         Integer len;
 
       case SINGLE_EQUATION() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Equation");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Equation (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variable:\n" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
         str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
       case SLICED_EQUATION() algorithm
         len := listLength(comp.eqn_indices);
-        str := if index == -1 then "" else StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Equation");
+        str := if index == -2 then "" else StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Equation (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
         str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
         str := str + "    with slices: " + List.toString(List.firstN(comp.eqn_indices, intMin(len, 10)), intString, "", "{", ", ", if len > 10 then ", ...}" else "}") + "\n";
       then str;
 
       case ENTWINED_EQUATION() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Equation");
-        str := str + List.toString(comp.entwined_slices, function toString(index = -1), "", "", "", "");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Equation (status = Solve.UNPROCESSED)");
+        str := str + List.toString(comp.entwined_slices, function toString(index = -2, showAlias = showAlias), "", "", "", "");
       then str;
 
       case SINGLE_ARRAY() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Array");
-        str := str + "### Variables:\n";
-        for var in comp.vars loop
-          str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
-        end for;
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Array (status = " + Solve.statusString(comp.status) + ")");
+        str := str + "### Variable:\n" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
         str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
@@ -174,7 +212,7 @@ public
       then str;
 
       case SINGLE_RECORD_EQUATION() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Record Equation");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Record Equation (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variables:\n";
         for var in comp.vars loop
           str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
@@ -183,7 +221,7 @@ public
       then str;
 
       case SINGLE_WHEN_EQUATION() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single When-Equation");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single When-Equation (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variables:\n";
         for var in comp.vars loop
           str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
@@ -192,7 +230,7 @@ public
       then str;
 
       case SINGLE_IF_EQUATION() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single If-Equation");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single If-Equation (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variables:\n";
         for var in comp.vars loop
           str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
@@ -221,11 +259,59 @@ public
         end if;
       then str;
 
+      case ALIAS() guard(showAlias) then toString(comp.original);
+
+      case ALIAS() algorithm
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Alias of " + AliasInfo.toString(comp.aliasInfo));
+      then str;
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
       then fail();
     end match;
   end toString;
+
+  function hash
+    "only hashes basic types, isEqual is used to differ between sliced/entwined loops"
+    input StrongComponent comp;
+    input Integer mod;
+    output Integer i;
+  algorithm
+    i := match comp
+      case SINGLE_EQUATION()        then intMod(BVariable.hash(comp.var, mod) + Equation.hash(comp.eqn, mod), mod);
+      case SINGLE_ARRAY()           then intMod(BVariable.hash(comp.var, mod) + Equation.hash(comp.eqn, mod), mod);
+      case SINGLE_ALGORITHM()       then intMod(Equation.hash(comp.eqn, mod), mod);
+      case SINGLE_RECORD_EQUATION() then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + Equation.hash(comp.eqn, mod), mod);
+      case SINGLE_WHEN_EQUATION()   then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + Equation.hash(comp.eqn, mod), mod);
+      case SINGLE_IF_EQUATION()     then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + Equation.hash(comp.eqn, mod), mod);
+      case SLICED_EQUATION()        then intMod(ComponentRef.hash(comp.var_cref, mod) + Equation.hash(comp.eqn, mod), mod);
+      case ENTWINED_EQUATION()      then intMod(sum(hash(sub_comp, mod) for sub_comp in comp.entwined_slices), mod);
+      case ALGEBRAIC_LOOP()         then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + sum(Equation.hash(eqn, mod) for eqn in comp.eqns), mod);
+      case TORN_LOOP()              then intMod(Tearing.hash(comp.strict, mod), mod);
+      case ALIAS()                  then AliasInfo.hash(comp.aliasInfo, mod);
+    end match;
+  end hash;
+
+  function isEqual
+    input StrongComponent comp1;
+    input StrongComponent comp2;
+    output Boolean b;
+  algorithm
+    b := match(comp1, comp2)
+      case (SINGLE_EQUATION(), SINGLE_EQUATION())                 then BVariable.equalName(comp1.var, comp2.var) and Equation.equalName(comp1.eqn, comp2.eqn);
+      case (SINGLE_ARRAY(), SINGLE_ARRAY())                       then BVariable.equalName(comp1.var, comp2.var) and Equation.equalName(comp1.eqn, comp2.eqn);
+      case (SINGLE_ALGORITHM(), SINGLE_ALGORITHM())               then Equation.equalName(comp1.eqn, comp2.eqn);
+      case (SINGLE_RECORD_EQUATION(), SINGLE_RECORD_EQUATION())   then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName);
+      case (SINGLE_WHEN_EQUATION(), SINGLE_WHEN_EQUATION())       then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName);
+      case (SINGLE_IF_EQUATION(), SINGLE_IF_EQUATION())           then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName);
+      case (SLICED_EQUATION(), SLICED_EQUATION())                 then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.eqn_indices, comp2.eqn_indices, intEq);
+      case (ENTWINED_EQUATION(), ENTWINED_EQUATION())             then List.isEqualOnTrue(comp1.entwined_slices, comp2.entwined_slices, isEqual);
+      case (ALGEBRAIC_LOOP(), ALGEBRAIC_LOOP())                   then List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName) and List.isEqualOnTrue(comp1.eqns, comp2.eqns, Equation.equalName);
+      case (TORN_LOOP(), TORN_LOOP())                             then Tearing.isEqual(comp1.strict, comp2.strict);
+      case (ALIAS(), ALIAS())                                     then AliasInfo.isEqual(comp1.aliasInfo, comp2.aliasInfo);
+      else false;
+    end match;
+  end isEqual;
 
   function create
     input list<Integer> comp_indices;
@@ -327,9 +413,21 @@ public
       var_cref    = cref_to_solve,
       eqn_indices = list(idx - first_eqn for idx in listReverse(eqn_scal_indices)),
       var         = BVariable.getVarPointer(cref_to_solve),
-      eqn         = eqn_ptr
+      eqn         = eqn_ptr,
+      status      = NBSolve.Status.UNPROCESSED
     );
   end createPseudoSlice;
+
+  function createAlias
+    input SystemType systemType;
+    input Integer partitionIndex;
+    input Pointer<Integer> index_ptr;
+    input StrongComponent orig_comp;
+    output StrongComponent alias_comp;
+  algorithm
+    alias_comp := ALIAS(ALIAS_INFO(systemType, partitionIndex, Pointer.access(index_ptr)), orig_comp);
+    Pointer.update(index_ptr, Pointer.access(index_ptr) + 1);
+  end createAlias;
 
   function createPseudoEntwinedIndices
     input array<list<Integer>> entwined_indices;
@@ -338,10 +436,12 @@ public
     output list<tuple<Pointer<Equation>, Integer>> flat_tpl_indices = {};
   protected
     Integer arr_idx, first_idx;
+    array<Integer> eqn_StA        "safe access with iterated integer (void pointer)";
   algorithm
     for tmp in entwined_indices loop
       for scal_idx in tmp loop
-        arr_idx := mapping.eqn_StA[scal_idx];
+        eqn_StA := mapping.eqn_StA;
+        arr_idx := eqn_StA[scal_idx];
         (first_idx, _) := mapping.eqn_AtS[arr_idx];
         flat_tpl_indices := (EquationPointers.getEqnAt(eqns, arr_idx), scal_idx-first_idx) :: flat_tpl_indices;
       end for;
@@ -361,14 +461,14 @@ public
         Pointer<Variable> residualVar;
 
       case Equation.SCALAR_EQUATION(attr = EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)))
-      then SINGLE_EQUATION(residualVar, eq_ptr);
+      then SINGLE_EQUATION(residualVar, eq_ptr, NBSolve.Status.UNPROCESSED);
 
       case Equation.ARRAY_EQUATION(attr = EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)))
-      then SINGLE_ARRAY({residualVar}, eq_ptr);
+      then SINGLE_ARRAY(residualVar, eq_ptr, NBSolve.Status.UNPROCESSED);
 
       // maybe check for type SINGLE // ARRAY ?
       case Equation.SIMPLE_EQUATION(attr = EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)))
-      then SINGLE_EQUATION(residualVar, eq_ptr);
+      then SINGLE_EQUATION(residualVar, eq_ptr, NBSolve.Status.UNPROCESSED);
 
       /* are other residuals possible? */
 
@@ -379,6 +479,21 @@ public
 
     Pointer.update(acc, comp :: Pointer.access(acc));
   end makeDAEModeResidualTraverse;
+
+  function fromSolvedEquation
+    input Equation eqn;
+    output StrongComponent comp;
+  algorithm
+    comp := match eqn
+      case Equation.SCALAR_EQUATION() then SINGLE_EQUATION(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(eqn))), Pointer.create(eqn), NBSolve.Status.EXPLICIT);
+      case Equation.ARRAY_EQUATION()  then SINGLE_ARRAY(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(eqn))), Pointer.create(eqn), NBSolve.Status.EXPLICIT);
+      case Equation.FOR_EQUATION()    then SLICED_EQUATION(ComponentRef.EMPTY(), {}, Pointer.create(NBVariable.DUMMY_VARIABLE), Pointer.create(eqn), NBSolve.Status.EXPLICIT);
+      // ToDo: the other types
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
+    end match;
+  end fromSolvedEquation;
 
   function getDependentCrefs
     "Collects dependent crefs in current comp and saves them in the
@@ -413,15 +528,9 @@ public
 
       case SINGLE_ARRAY() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
-        if jacobian then
-          attr := Equation.getAttributes(Pointer.access(comp.eqn));
-          dependentVar := EquationAttributes.getResidualVar(attr);
-          updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
-        else
-          for var in comp.vars loop
-            updateDependencyMap(BVariable.getVarName(var), dependencies, map);
-          end for;
-        end if;
+        attr := Equation.getAttributes(Pointer.access(comp.eqn));
+        dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else comp.var;
+        updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
       then ();
 
       case TORN_LOOP(strict = strict) algorithm
@@ -451,6 +560,10 @@ public
         for cref in loop_vars loop
           updateDependencyMap(cref, dependencies, map);
         end for;
+      then ();
+
+      case ALIAS() algorithm
+        getDependentCrefs(comp.original, map, pseudo, jacobian);
       then ();
 
       /* ToDo add the others and let else case fail! */
@@ -503,8 +616,9 @@ protected
         list<Pointer<Equation>> acc_eqns = {};
 
       case {i} then SINGLE_EQUATION(
-                      var = VariablePointers.getVarAt(vars, eqn_to_var[i]),
-                      eqn = EquationPointers.getEqnAt(eqns, i)
+                      var     = VariablePointers.getVarAt(vars, eqn_to_var[i]),
+                      eqn     = EquationPointers.getEqnAt(eqns, i),
+                      status  = NBSolve.Status.UNPROCESSED
                     );
 
       case _ algorithm
@@ -556,10 +670,10 @@ protected
           sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
           vals := BackendUtil.indexToLocation(var_scal_idx-var_start_idx, sizes);
           cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref);
-          comp := SLICED_EQUATION(cref, {}, var, eqn);
+          comp := SLICED_EQUATION(cref, {}, var, eqn, NBSolve.Status.UNPROCESSED);
         else
           // just create a regular equation
-          comp := SINGLE_EQUATION(var, eqn);
+          comp := SINGLE_EQUATION(var, eqn, NBSolve.Status.UNPROCESSED);
         end if;
       then comp;
 

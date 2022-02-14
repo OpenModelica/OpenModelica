@@ -182,7 +182,7 @@ public
           BVariable.VarData varData;
           Pointer<list<SimStrongComponent.Block>> columnEqns = Pointer.create({});
           Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(indices);
-          Pointer<SimCode.SimCodeIndices> dummy_indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES);
+          Pointer<SimCode.SimCodeIndices> dummy_indices_ptr = Pointer.create(SimCode.EMPTY_SIM_CODE_INDICES());
           Pointer<FunctionTree> funcTree_ptr = Pointer.create(funcTree);
           Pointer<list<SimVar.SimVar>> columnVars_ptr = Pointer.create({});
           Pointer<list<SimVar.SimVar>> seedVars_ptr = Pointer.create({});
@@ -197,8 +197,8 @@ public
           // of JSON file structures (jacobian indices need to be the last)
           BEquation.EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateResidual(acc = columnEqns, indices_ptr = dummy_indices_ptr));
 
-          BVariable.VariablePointers.map(varData.unknowns, function SimVar.SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
-          BVariable.VariablePointers.map(varData.seedVars, function SimVar.SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
+          BVariable.VariablePointers.map(varData.unknowns, function SimVar.SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
+          BVariable.VariablePointers.map(varData.seedVars, function SimVar.SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
           columnVars := listReverse(Pointer.access(columnVars_ptr));
           seedVars := listReverse(Pointer.access(seedVars_ptr));
 
