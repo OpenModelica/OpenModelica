@@ -87,17 +87,15 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"G.p.i\"
 //     valueReference=\"3\"
-//     description=\"Current flowing into the pin\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"A\"/>
+//     description=\"Current flowing into the pin\">
+//     <Real unit=\"A\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
 //     name=\"G.p.v\"
 //     valueReference=\"4\"
-//     description=\"Potential at the pin\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"V\"/>
+//     description=\"Potential at the pin\">
+//     <Real unit=\"V\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
@@ -111,9 +109,8 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"R1.R_actual\"
 //     valueReference=\"6\"
-//     description=\"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"Ohm\"/>
+//     description=\"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\">
+//     <Real unit=\"Ohm\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
 //   <ScalarVariable
