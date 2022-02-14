@@ -9796,16 +9796,17 @@ algorithm
 end getInitialAttributeHelperForParameters;
 
 protected function startValueIsConstOrNone
-  "Returns true iff the start value of the given variable is NONE or a constant."
+  "Returns true iff the start value of the given variable is NONE or a literal constant."
   input BackendDAE.Var var;
   output Boolean b = false;
 protected
   Option<DAE.Exp> start_value = getStartValue(var);
 algorithm
+  //BackendDump.dumpVarList({var}, "startValueIsConstOrNone");
   if isNone(start_value) then
     b := true;
   else
-    b := Expression.isConst(Util.getOption(start_value));
+    b := Expression.isEvaluatedConst(Util.getOption(start_value));
   end if;
 end startValueIsConstOrNone;
 
