@@ -181,7 +181,7 @@ public constant ErrorTypes.Message INVALID_CONNECTOR_VARIABLE = ErrorTypes.MESSA
 public constant ErrorTypes.Message TYPE_ERROR = ErrorTypes.MESSAGE(53, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Wrong type on %s, expected %s."));
 public constant ErrorTypes.Message MODIFY_PROTECTED = ErrorTypes.MESSAGE(54, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("Modification or redeclaration of protected elements is not allowed.\n\tElement: %s, modification: %s."));
+  Gettext.gettext("Modification or redeclaration of protected elements is not allowed.\n  Element: %s, modification: %s."));
 public constant ErrorTypes.Message INVALID_TUPLE_CONTENT = ErrorTypes.MESSAGE(55, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Tuple %s must contain component references only."));
 public constant ErrorTypes.Message MISSING_REDECLARE_IN_CLASS_MOD = ErrorTypes.MESSAGE(56, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -864,6 +864,8 @@ public constant ErrorTypes.Message FUNCTION_ARGUMENT_MUST_BE = ErrorTypes.MESSAG
   Gettext.gettext("The argument to ‘%s‘ must be %s."));
 public constant ErrorTypes.Message UNEXPECTED_COMPONENT_IN_COMPOSITE_NAME = ErrorTypes.MESSAGE(395, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Found component ‘%s‘ in composite name ‘%s‘, expected class."));
+public constant ErrorTypes.Message NF_MODIFY_PROTECTED = ErrorTypes.MESSAGE(54, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Protected element ‘%s‘ may not be modified, got ‘%s‘."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

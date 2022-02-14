@@ -870,6 +870,13 @@ Prefix2.mo \
 Prefix3.mo \
 PrintRecordTypes1.mo \
 PropagateExtends.mo \
+ProtectedMod1.mo \
+ProtectedMod2.mo \
+ProtectedMod3.mo \
+ProtectedMod4.mo \
+ProtectedMod5.mo \
+ProtectedMod6.mo \
+ProtectedMod7.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \
 RangeInvalidStep3.mo \
@@ -1095,7 +1102,6 @@ IfExpression6.mo \
 IfExpression9.mo \
 RedeclareConstant1.mo \
 Connect3.mo \
-ProtectedMod1.mo \
 dim2.mo \
 DuplicateElements6.mo \
 DuplicateElements7.mo \
