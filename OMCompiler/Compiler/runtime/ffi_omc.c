@@ -101,7 +101,7 @@ void* increment_ptr(void *ptr, size_t bytes)
 static int is_exp_pointer_type(void *exp)
 {
   switch (MMC_HDRCTOR(MMC_GETHDR(exp))) {
-    case NFExpression__ARRAY_3dBOX3: return 1;
+    case NFExpression__LIST_3dBOX3: return 1;
     case NFExpression__RECORD_3dBOX3: return 1;
   }
 
@@ -170,7 +170,7 @@ static ffi_type* exp_alignment_and_type(void *exp, struct Alignment *align, int 
       align->size = sizeof(char*);
       return &ffi_type_pointer;
 
-    case NFExpression__ARRAY_3dBOX3: {
+    case NFExpression__LIST_3dBOX3: {
       align->size = sizeof(void*);
       void *elems = MMC_STRUCTDATA(exp)[UNBOX_OFFSET+1];
 
@@ -255,7 +255,7 @@ static size_t size_of_exp(void *exp, struct Alignment *align)
     case NFExpression__STRING_3dBOX1:
       return sizeof(char*);
 
-    case NFExpression__ARRAY_3dBOX3:
+    case NFExpression__LIST_3dBOX3:
       return size_of_type(MMC_STRUCTDATA(exp)[UNBOX_OFFSET]);
 
     case NFExpression__RECORD_3dBOX3:
@@ -357,7 +357,7 @@ static void* mk_array_exp_2(void *arr, void *type, mk_exp_fn_t mkExpFn,
     }
   }
 
-  return NFExpression__ARRAY(type, elems, mmc_mk_icon(1));
+  return NFExpression__LIST(type, elems, mmc_mk_icon(1));
 }
 
 /* Constructs an array expression given a C array and the expected type of the array */
@@ -431,7 +431,7 @@ static void* mk_exp_from_arg(void *arg, void *value, struct Alignment *align)
     case NFExpression__ENUM_5fLITERAL_3dBOX3:
       return mk_enum_exp(value, MMC_STRUCTDATA(arg)[UNBOX_OFFSET]);
 
-    case NFExpression__ARRAY_3dBOX3:
+    case NFExpression__LIST_3dBOX3:
       return mk_array_exp(value, MMC_STRUCTDATA(arg)[UNBOX_OFFSET]);
 
     case NFExpression__RECORD_3dBOX3:
@@ -507,7 +507,7 @@ static void* write_exp_value(void *exp, void *ptr, struct Alignment *align)
       *(int*)ptr = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(exp)[UNBOX_OFFSET+2]);
       return ((int*)ptr)+1;
 
-    case NFExpression__ARRAY_3dBOX3: {
+    case NFExpression__LIST_3dBOX3: {
       void *elems = MMC_STRUCTDATA(exp)[UNBOX_OFFSET+1];
 
       while (!listEmpty(elems)) {

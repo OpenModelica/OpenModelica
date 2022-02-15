@@ -438,7 +438,7 @@ algorithm
       Expression e, e2;
       list<Expression> expl, expl1, expl2;
 
-    case (Expression.ARRAY(elements = expl1), Expression.ARRAY(elements = expl2))
+    case (Expression.LIST(elements = expl1), Expression.LIST(elements = expl2))
       algorithm
         expl := {};
 
@@ -572,7 +572,7 @@ protected
   Type ty;
 algorithm
   (outExp, outType) := match exp2
-    case Expression.ARRAY(elements = {})
+    case Expression.LIST(elements = {})
       algorithm
         try
           ty := Type.unliftArray(type2);
@@ -586,7 +586,7 @@ algorithm
       then
         (Expression.makeArray(outType, {}), outType);
 
-    case Expression.ARRAY(elements = expl)
+    case Expression.LIST(elements = expl)
       algorithm
         ty := Type.unliftArray(type2);
         expl := list(checkOverloadedBinaryScalarArray2(exp1, type1, var1, op, e, ty, var2, candidates, info) for e in expl);
@@ -633,7 +633,7 @@ protected
   Type ty;
 algorithm
   (outExp, outType) := match exp1
-    case Expression.ARRAY(elements = {})
+    case Expression.LIST(elements = {})
       algorithm
         try
           ty := Type.unliftArray(type1);
@@ -647,7 +647,7 @@ algorithm
       then
         (Expression.makeArray(outType, {}), outType);
 
-    case Expression.ARRAY(elements = expl)
+    case Expression.LIST(elements = expl)
       algorithm
         ty := Type.unliftArray(type1);
         expl := list(checkOverloadedBinaryArrayScalar2(e, ty, var1, op, exp2, type2, var2, candidates, info) for e in expl);

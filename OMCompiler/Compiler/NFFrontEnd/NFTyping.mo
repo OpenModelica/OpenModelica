@@ -720,7 +720,7 @@ protected
   Expression exp;
 algorithm
   dimExp := match dimExp
-    case Expression.ARRAY()
+    case Expression.LIST()
       guard Expression.arrayAllEqual(dimExp)
       then Expression.arrayFirstScalar(dimExp);
 
@@ -1173,7 +1173,7 @@ algorithm
       then
         (exp, exp.ty, Variability.CONSTANT, Purity.PURE);
 
-    case Expression.ARRAY()  then typeArray(exp.elements, context, info);
+    case Expression.LIST()   then typeArray(exp.elements, context, info);
     case Expression.MATRIX() then typeMatrix(exp.elements, context, info);
     case Expression.RANGE()  then typeRange(exp, context, info);
     case Expression.TUPLE()  then typeTuple(exp.elements, context, info);
@@ -1471,7 +1471,7 @@ protected
   list<Expression> expl;
 algorithm
   (outExp, ty, variability, purity) := match exp
-    case Expression.ARRAY()
+    case Expression.LIST()
       guard not listEmpty(splitSubs) and not listEmpty(exp.elements)
       algorithm
         expl := {};
@@ -1520,7 +1520,7 @@ algorithm
     // the dimension we need, to avoid introducing unnecessary cycles.
     (dim, error) := match exp
       // An untyped array, use typeArrayDim to get the dimension.
-      case Expression.ARRAY(ty = Type.UNKNOWN())
+      case Expression.LIST(ty = Type.UNKNOWN())
         then typeArrayDim(exp, dimIndex);
 
       // A cref, use typeCrefDim to get the dimension.
@@ -1602,12 +1602,12 @@ function typeArrayDim2
         output TypingError error;
 algorithm
   (dim, error) := match (arrayExp, dimIndex)
-    case (Expression.ARRAY(), 1)
+    case (Expression.LIST(), 1)
       then (Dimension.fromExpList(arrayExp.elements), TypingError.NO_ERROR());
 
     // Modelica arrays are non-ragged and only the last dimension of an array
     // expression can be empty, so just traverse into the first element.
-    case (Expression.ARRAY(), _)
+    case (Expression.LIST(), _)
       then typeArrayDim2(listHead(arrayExp.elements), dimIndex - 1, dimCount + 1);
 
     else
@@ -3419,7 +3419,7 @@ function checkWhenInitial
   output Boolean invalid;
 algorithm
   invalid := match condition
-    case Expression.ARRAY()
+    case Expression.LIST()
       algorithm
         for e in condition.elements loop
           if checkWhenInitial(e) then

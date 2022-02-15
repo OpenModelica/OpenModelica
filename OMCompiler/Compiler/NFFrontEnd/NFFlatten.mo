@@ -684,7 +684,7 @@ algorithm
       then
         Expression.makeRecord(InstNode.scopePath(cls), outExp.ty, fields);
 
-    case Expression.ARRAY()
+    case Expression.LIST()
       algorithm
         outExp.elements := list(splitRecordCref(e) for e in outExp.elements);
       then

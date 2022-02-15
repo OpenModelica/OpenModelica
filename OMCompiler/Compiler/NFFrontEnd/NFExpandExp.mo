@@ -68,9 +68,9 @@ public
       case Expression.CREF(ty = Type.ARRAY()) then expandCref(exp);
 
       // One-dimensional arrays are already expanded.
-      case Expression.ARRAY(ty = Type.ARRAY(dimensions = {})) then (exp, true);
+      case Expression.LIST(ty = Type.ARRAY(dimensions = {})) then (exp, true);
 
-      case Expression.ARRAY()
+      case Expression.LIST()
         algorithm
           (expl, expanded) := expandList(exp.elements);
           exp.elements := expl;
@@ -391,9 +391,9 @@ public
       local
         list<Expression> expl;
 
-      case Expression.ARRAY(literal = true) then exp;
+      case Expression.LIST(literal = true) then exp;
 
-      case Expression.ARRAY()
+      case Expression.LIST()
         algorithm
           expl := list(expandBuiltinGeneric2(e, fn, ty, var, pur, attr) for e in exp.elements);
         then
@@ -612,7 +612,7 @@ public
     output Expression exp;
   algorithm
     exp := match exp2
-      case Expression.ARRAY() then exp2;
+      case Expression.LIST() then exp2;
       else SimplifyExp.simplifyBinaryOp(exp1, op, exp2);
     end match;
   end makeScalarArrayBinary_traverser;
@@ -654,7 +654,7 @@ public
     (exp2, expanded) := expand(exp2);
 
     if expanded then
-      Expression.ARRAY(Type.ARRAY(ty, {m, _}), expl) := Expression.transposeArray(exp2);
+      Expression.LIST(Type.ARRAY(ty, {m, _}), expl) := Expression.transposeArray(exp2);
       ty := Type.ARRAY(ty, {m});
 
       if listEmpty(expl) then
@@ -690,7 +690,7 @@ public
     (exp1, expanded) := expand(exp1);
 
     if expanded then
-      Expression.ARRAY(Type.ARRAY(ty, {n, _}), expl) := exp1;
+      Expression.LIST(Type.ARRAY(ty, {n, _}), expl) := exp1;
       ty := Type.ARRAY(ty, {n});
 
       if listEmpty(expl) then
@@ -742,8 +742,8 @@ public
     Type ty, elem_ty;
     Operator mul_op, add_op;
   algorithm
-    Expression.ARRAY(ty, expl1) := exp1;
-    Expression.ARRAY( _, expl2) := exp2;
+    Expression.LIST(ty, expl1) := exp1;
+    Expression.LIST( _, expl2) := exp2;
     elem_ty := Type.unliftArray(ty);
 
     if listEmpty(expl1) then
@@ -789,10 +789,10 @@ public
     Type ty, row_ty, mat_ty;
     Dimension n, p;
   algorithm
-    Expression.ARRAY(Type.ARRAY(ty, {n, _}), expl1) := exp1;
+    Expression.LIST(Type.ARRAY(ty, {n, _}), expl1) := exp1;
     // Transpose the second matrix. This makes it easier to do the multiplication,
     // since we can do row-row multiplications instead of row-column.
-    Expression.ARRAY(Type.ARRAY(dimensions = {p, _}), expl2) := Expression.transposeArray(exp2);
+    Expression.LIST(Type.ARRAY(dimensions = {p, _}), expl2) := Expression.transposeArray(exp2);
     mat_ty := Type.ARRAY(ty, {n, p});
 
     if listEmpty(expl2) then

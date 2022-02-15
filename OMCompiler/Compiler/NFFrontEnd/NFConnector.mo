@@ -100,7 +100,7 @@ public
   algorithm
     conns := match exp
       case Expression.CREF() then fromCref(exp.cref, exp.ty, source) :: conns;
-      case Expression.ARRAY()
+      case Expression.LIST()
         algorithm
           for e in listReverse(exp.elements) loop
             conns := fromExp(e, source, conns);

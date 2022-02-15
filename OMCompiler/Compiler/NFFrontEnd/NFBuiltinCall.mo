@@ -2024,7 +2024,7 @@ protected
         then
           Expression.CALL(Call.makeTypedCall(fn, {arg}, var, Purity.IMPURE, arg.ty));
 
-      case Expression.ARRAY()
+      case Expression.LIST()
         algorithm
           arg.elements := list(typeActualInStreamCall2(name, fn, e, var, info) for e in arg.elements);
         then
