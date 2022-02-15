@@ -1413,7 +1413,7 @@ algorithm
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         if not Config.simCodeTarget() == "omsic" then
-          (b,cache,compileDir,executable,_,_,initfilename,_,_,vals) := buildModel(cache,env, vals, msg);
+          (b,cache,compileDir,executable,_,_,initfilename,_,_,vals,_) := buildModel(cache,env, vals, msg);
         else
           filenameprefix := AbsynUtil.pathString(className);
           try
@@ -1442,7 +1442,7 @@ algorithm
         //FlagsUtil.set(Flags.WRITE_TO_BUFFER,true);
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (b,cache,_,executable,_,_,initfilename,_,_,vals) = buildModel(cache,env, vals, msg);
+        (b,cache,_,executable,_,_,initfilename,_,_,vals,_) = buildModel(cache,env, vals, msg);
       then
         (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}));
 
@@ -1462,7 +1462,7 @@ algorithm
         vals=listDelete(vals,13);
         /* labelstoCancel; doesn't do anything */
 
-        (b,cache,_,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, msg);
+        (b,cache,_,executable,_,_,initfilename,_,_,_) = buildModel(cache,env, vals, msg);
       then
         (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}));
     case(cache,env,"buildOpenTURNSInterface",vals,_)
@@ -1521,7 +1521,7 @@ algorithm
           simflags:="";
           resultValues:={};
         elseif not Config.simCodeTarget() == "omsic" then
-          (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) := buildModel(cache,env,vals,msg);
+          (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) := buildModel(cache,env,vals,msg);
         else
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Can't simulate for SimCodeTarget=omsic!\n"});
           fail();
@@ -1548,7 +1548,7 @@ algorithm
             System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-            resI := System.systemCall(sim_call,logFile);
+            resI := setPathsAndSystemCall(sim_call,dirs,logFile);
 
             timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
 
@@ -1647,7 +1647,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) = buildModel(cache,env,vals,msg);
+        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(cache,env,vals,msg);
         if b then
           Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
           executableSuffixedExe = stringAppend(executable, Autoconf.exeExt);
@@ -1660,7 +1660,7 @@ algorithm
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-          if 0 == System.systemCall(sim_call,logFile) then
+          if 0 == setPathsAndSystemCall(sim_call, dirs, logFile) then
             result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -1708,7 +1708,7 @@ algorithm
         FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
         FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
-        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) = buildModel(cache,env,vals,msg);
+        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(cache,env,vals,msg);
         if b then
           exeDir=compileDir;
           (cache,simSettings) = calculateSimulationSettings(cache, vals);
@@ -1725,7 +1725,7 @@ algorithm
           sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-          resI = System.systemCall(sim_call,logFile);
+          resI = setPathsAndSystemCall(sim_call, dirs, logFile);
           timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         else
           result_file = "";
@@ -5462,12 +5462,13 @@ protected function buildModel "translates and builds the model by running compil
   output String outSimFlags;
   output list<tuple<String,Values.Value>> resultValues;
   output list<Values.Value> outArgs;
+  output list<String> outLibsAndLibDirs;
 algorithm
-  (outCache,compileDir,outString1,outString2,outputFormat_str,outInitFileName,outSimFlags,resultValues,outArgs):=
+  (outCache,compileDir,outString1,outString2,outputFormat_str,outInitFileName,outSimFlags,resultValues,outArgs,outLibsAndLibDirs):=
   matchcontinue (inCache,inEnv,inValues,inMsg)
     local
       BackendDAE.BackendDAE indexed_dlow_1;
-      list<String> libs;
+      list<String> libsAndLibDirs;
       String file_dir,init_filename,method_str,filenameprefix,exeFile,s3,simflags;
       Absyn.Path classname;
       Absyn.Program p;
@@ -5522,7 +5523,7 @@ algorithm
         (cache,simSettings) := calculateSimulationSettings(cache, values);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) := simSettings;
 
-        (success,cache,libs,file_dir,resultValues) := translateModel(cache,env, classname, filenameprefix,true, SOME(simSettings));
+        (success,cache,libsAndLibDirs,file_dir,resultValues) := translateModel(cache,env, classname, filenameprefix,true, SOME(simSettings));
         //cname_str = AbsynUtil.pathString(classname);
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
@@ -5536,7 +5537,7 @@ algorithm
         end if;
         if success then
           try
-            CevalScript.compileModel(filenameprefix, libs);
+            CevalScript.compileModel(filenameprefix, libsAndLibDirs);
           else
             success := false;
           end try;
@@ -5549,7 +5550,7 @@ algorithm
         end if;
         resultValues := ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
       then
-        (cache,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues,values);
+        (cache,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues,values,libsAndLibDirs);
 
     // failure
     else
@@ -8748,6 +8749,58 @@ algorithm
     scripts := Util.getOption(script) :: scripts;
   end if;
 end findConversionPath;
+
+
+protected function setPathsAndSystemCall
+  "Set the neccesary paths based on library dirs (e.g. those from annotations)
+   and then issue the system command. These dirs/locations are added to the PATH
+   in order to find the neccsary dlls at runtime for Windows simulation executables.
+   NOTE: this function expects the 'link command' as the second argument. This will
+   look something like
+       {\"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library/win64\",
+        \"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library\",
+         ...}
+   The function will check for strings that start with \"-L and then trims it to get the
+   corrseponding directory.
+
+   If you want something more general write another function and generalize this.
+  "
+  input String systemCallStr;
+  input list<String> libsAndLinkDirs;
+  input String logFile;
+  output Integer returnCode;
+protected
+  String oldPath, newPath;
+  list<String> linkDirs = {};
+algorithm
+
+  // If not Windows we do not need to modify the PATH. rpaths are set
+  // when the executable is built and the libs will find their depenencies just fine.
+  if not Autoconf.os == "Windows_NT" then
+    returnCode := System.systemCall(systemCallStr, logFile);
+    return;
+  end if;
+
+  // Otherwise (on Windows) we modify the path with the given additional dirs
+  // (e.g., Modelica library resource directories) and issue the command.
+  // We will then reset the path back.
+  newPath := "";
+  for str in libsAndLinkDirs loop
+    if Util.stringStartsWith("\"-L", str) then
+      newPath := newPath + System.trim(str, "\"-L") + ";";
+    end if;
+  end for;
+
+  oldPath := System.readEnv("PATH");
+  newPath := System.stringReplace(newPath, "/", "\\") + oldPath;
+  // print("Path set: " + newPath + "\n");
+  System.setEnv("PATH", newPath, true);
+
+  returnCode := System.systemCall(systemCallStr, logFile);
+
+  System.setEnv("PATH", oldPath, true);
+
+end setPathsAndSystemCall;
 
 annotation(__OpenModelica_Interface="backend");
 
