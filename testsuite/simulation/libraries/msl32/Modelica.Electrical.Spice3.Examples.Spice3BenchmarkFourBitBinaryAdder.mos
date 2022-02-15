@@ -91,9 +91,9 @@ runScript(modelTesting);getErrorString();
 // stdout            | info    | Using sparse solver for linear system 75,
 // |                 | |       | because density of 0.182 remains under threshold of 0.200.
 // stdout            | info    | Using sparse solver for linear system 87,
-// |                 | |       | because density of 0.162 remains under threshold of 0.200.
+// |                 | |       | because density of 0.171 remains under threshold of 0.200.
 // stdout            | info    | Using sparse solver for linear system 97,
-// |                 | |       | because density of 0.173 remains under threshold of 0.200.
+// |                 | |       | because density of 0.164 remains under threshold of 0.200.
 // stdout            | info    | Using sparse solver for linear system 102,
 // |                 | |       | because density of 0.168 remains under threshold of 0.200.
 // stdout            | info    | The maximum density for using sparse solvers can be specified

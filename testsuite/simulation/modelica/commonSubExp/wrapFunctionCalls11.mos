@@ -63,24 +63,27 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 // Final Results
 // ###############################################################
 //
-// ########### Updated Variable List (simulation) (1)
+// ########### Updated Variable List (simulation) (4)
 // ========================================
-// 1: y:VARIABLE()  type: Real
+// 1: b:VARIABLE()  type: Real
+// 2: a:VARIABLE()  type: Real
+// 3: y:VARIABLE()  type: Real
+// 4: x:VARIABLE()  type: Real
 //
 //
-// ########### Updated Equation List (simulation) (1, 1)
+// ########### Updated Equation List (simulation) (4, 4)
 // ========================================
-// 1/1 (1): x = sin(y)   [unknown |0|0|0|0|]
+// 1/1 (1): b = cos(c)   [unknown |0|0|0|0|]
+// 2/2 (1): a = sin(b)   [unknown |0|0|0|0|]
+// 3/3 (1): x = cos(z)   [unknown |0|0|0|0|]
+// 4/4 (1): x = sin(y)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (6)
+// ########### Updated globalKnownVars (simulation) (3)
 // ========================================
 // 1: z:VARIABLE(fixed = true )  = 2.0 * p1  type: Real
 // 2: c:VARIABLE(fixed = true )  = 2.0 * p1  type: Real
 // 3: p1:PARAM()  = 5.0  type: Real
-// 4: b:VARIABLE(fixed = true )  = cos(c)  type: Real
-// 5: a:VARIABLE(fixed = true )  = sin(b)  type: Real
-// 6: x:VARIABLE(fixed = true )  = cos(z)  type: Real
 //
 //
 // ########### CSE Replacements (4/46)
@@ -108,11 +111,10 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 // 2/2 (1): $cse2 = cos(y)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (jacobian) (3)
+// ########### Updated globalKnownVars (jacobian) (2)
 // ========================================
-// 1: x:VARIABLE(fixed = true )  = cos(z)  type: Real
-// 2: $res_NLSJac1_1:VARIABLE()  type: Real
-// 3: input y.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+// 1: $res_NLSJac1_1:VARIABLE()  type: Real
+// 2: input y.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
 //
 //
 // ########### CSE Replacements (1/43)
