@@ -75,8 +75,8 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (6)
 // ========================================
-// 1: z:VARIABLE(fixed = true )  = 2.0 * p1  type: Real
-// 2: c:VARIABLE(fixed = true )  = 2.0 * p1  type: Real
+// 1: z:VARIABLE()  = 2.0 * p1  type: Real
+// 2: c:VARIABLE()  = 2.0 * p1  type: Real
 // 3: p1:PARAM()  = 5.0  type: Real
 // 4: b:PARAM()  = cos(c)  type: Real
 // 5: a:PARAM()  = sin(b)  type: Real
