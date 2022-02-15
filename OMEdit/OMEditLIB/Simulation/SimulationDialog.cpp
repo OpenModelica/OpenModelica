@@ -1461,7 +1461,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
  * Creates the SimulationOutputWidget.
  * \param simulationOptions
  */
-void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions simulationOptions)
+void SimulationDialog::createAndShowSimulationOutputWidget(const SimulationOptions &simulationOptions)
 {
   /* If resimulation and show algorithmic debugger is checked then show algorithmic debugger.
    * Otherwise run the normal resimulation.
@@ -1526,8 +1526,7 @@ void SimulationDialog::saveExperimentAnnotation()
   // if we have ModelWidget for class then put the change on undo stack.
   if (mpLibraryTreeItem->getModelWidget()) {
     UpdateClassAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
-    pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(mpLibraryTreeItem, oldExperimentAnnotation,
-                                                                               newExperimentAnnotation);
+    pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(mpLibraryTreeItem, oldExperimentAnnotation, newExperimentAnnotation);
     mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
     mpLibraryTreeItem->getModelWidget()->updateModelText();
   } else {
@@ -1721,9 +1720,13 @@ void SimulationDialog::saveTranslationFlagsAnnotation()
   }
 }
 
-void SimulationDialog::performSimulation()
+/*!
+ * \brief SimulationDialog::performSimulation
+ * Translates the model and starts the simulation.
+ * \param simulationOptions
+ */
+void SimulationDialog::performSimulation(const SimulationOptions &simulationOptions)
 {
-  SimulationOptions simulationOptions;
   QString simulationParameters;
   /* build the simulation parameters */
   simulationParameters.append("startTime=").append(mpStartTimeTextBox->text());
@@ -1757,11 +1760,6 @@ void SimulationDialog::performSimulation()
   }
   if (!mpCflagsTextBox->text().isEmpty()) {
     simulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
-  }
-  simulationOptions = createSimulationOptions();
-  // If we are not doing a re-simulation then save the new SimulationOptions in the class.
-  if (!mIsReSimulate) {
-    mpLibraryTreeItem->mSimulationOptions = simulationOptions;
   }
   // change the cursor to Qt::WaitCursor
   QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -2223,9 +2221,14 @@ void SimulationDialog::showSimulationFlagsHelp()
 void SimulationDialog::simulate()
 {
   if (validate()) {
+    SimulationOptions simulationOptions = createSimulationOptions();
+    // If we are not doing a re-simulation then save the new SimulationOptions in the class.
+    if (!mIsReSimulate) {
+      mpLibraryTreeItem->mSimulationOptions = simulationOptions;
+    }
     // interactive simulation
     if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
-      performSimulation();
+      performSimulation(simulationOptions);
     } else {
       // if no option is selected then show error message to user
       if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
@@ -2254,7 +2257,7 @@ void SimulationDialog::simulate()
         mpLibraryTreeItem->getModelWidget()->endMacro();
       }
       if (mpSimulateCheckBox->isChecked()) {
-        performSimulation();
+        performSimulation(simulationOptions);
       }
     }
     if (isVisible()) {

@@ -194,12 +194,12 @@ private:
   void applySimulationOptions(SimulationOptions simulationOptions);
   bool translateModel(QString simulationParameters);
   SimulationOptions createSimulationOptions();
-  void createAndShowSimulationOutputWidget(SimulationOptions simulationOptions);
+  void createAndShowSimulationOutputWidget(const SimulationOptions &simulationOptions);
   void showSimulationOutputWidget(SimulationOutputWidget *pSimulationOutputWidget);
   void saveExperimentAnnotation();
   void saveSimulationFlagsAnnotation();
   void saveTranslationFlagsAnnotation();
-  void performSimulation();
+  void performSimulation(const SimulationOptions &simulationOptions);
   void saveDialogGeometry();
   void killSimulationProcess(int port);
   void removeVariablesFromTree(QString className);
