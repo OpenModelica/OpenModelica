@@ -9667,7 +9667,7 @@ algorithm
                             and isFixed;
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.FIXED(); // PARAMETERS()
-        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar);
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
         initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
@@ -9707,7 +9707,7 @@ algorithm
         isValueChangeable = BackendVariable.varHasConstantStartExp(dlowVar);
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.CONTINUOUS(); // state() should be CONTINUOUS
-        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar);
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
         initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
@@ -9748,7 +9748,7 @@ algorithm
         isValueChangeable = match dir case DAE.INPUT() then true; else false; end match;
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = getVariabilityAttribute(dlowVar);
-        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar);
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar, vars);
         initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
@@ -9789,6 +9789,7 @@ protected function setInitialAttribute
   input Boolean isFixed;
   input list<DAE.ComponentRef> iterationVars;
   input SimCodeVar.AliasVariable aliasvar;
+  input BackendDAE.Variables globalknownVars;
   output SimCodeVar.Initial initial_;
 algorithm
   initial_ := match (variability, causality)
@@ -13826,6 +13827,7 @@ algorithm
     BackendDump.dumpVariables(currentSystem.orderedVars,"orderedVariables");
     BackendDump.dumpEquationArray(currentSystem.orderedEqs,"orderedEquation");
     BackendDump.dumpVariables(shared.globalKnownVars,"globalknownVars");
+    BackendDump.dumpVariables(inSimDAE.shared.globalKnownVars,"SimulationGlobalknownVars");
   end if;
 
   // traverse the simulation DAE globalknownVars and update the initialization DAE with new equations and vars
@@ -13877,7 +13879,7 @@ algorithm
   end if;
 
   // (fmiDerInit, _) := SymbolicJacobian.createFMIModelDerivativesForInitialization(tmpBDAE, inSimDAE, depVars, indepVars, currentSystem.orderedVars);
-  tmpBDAE1 := BackendDAEUtil.copyBackendDAE(tmpBDAE);
+  //tmpBDAE1 := BackendDAEUtil.copyBackendDAE(tmpBDAE);
 
   // Calculate the dependecies of initialUnknowns
   (sparsePattern, sparseColoring) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
@@ -13903,6 +13905,7 @@ algorithm
       end if;
     end for;
   end for;
+
   //print("\nUnknownVars :" + ComponentReference.printComponentRefListStr(depCrefs));
   //print("\nknownVars :" + ComponentReference.printComponentRefListStr(indepCrefs));
 
@@ -13910,7 +13913,6 @@ algorithm
   if not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
     fmiDerInitDepVars := getDependentAndIndepentVarsForJacobian(depCrefs, BackendVariable.listVar(depVars));
     fmiDerInitIndepVars := getDependentAndIndepentVarsForJacobian(indepCrefs, BackendVariable.listVar(indepVars));
-
     if debug then
       BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInit_unknownVars");
       BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInit_knownVars");
@@ -13927,6 +13929,30 @@ algorithm
   // populate the FmiInitial unknowns according to FMI ModelDescription.xml format
   outFmiUnknownlist := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 end getFmiInitialUnknowns;
+
+protected function removeKnownVarsWithFixedTrue
+  "checks if a known var is present in shared.globalKnownVars and in orderedVars
+   and remove from fmiderInit_KnownVars to simplify jacobian calculation"
+  input list<BackendDAE.Var> inVar;
+  input BackendDAE.Variables globalKnownVars;
+  output list<BackendDAE.Var> outVar = {};
+protected
+  list<BackendDAE.Var> varlst;
+  list<DAE.ComponentRef> crefList;
+algorithm
+  crefList := List.map(BackendVariable.varList(globalKnownVars), BackendVariable.varCref);
+  BackendDump.dumpVariables(globalKnownVars, "checkGlobalVars*******");
+  for var in inVar loop
+    if listMember(var.varName, crefList) then
+      (varlst, _ ) := BackendVariable.getVar(var.varName, globalKnownVars);
+      if not BackendVariable.isParam(List.first(varlst)) and BackendVariable.varFixed(List.first(varlst)) then
+        //print("\n Matched Var: " + ComponentReference.printComponentRefStr(var.varName));
+      else
+        outVar := var :: outVar;
+      end if;
+    end if;
+  end for;
+end removeKnownVarsWithFixedTrue;
 
 protected function getDependentAndIndepentVarsForJacobian
  "function which returns the rows and columns vars for jacobian matrix which will

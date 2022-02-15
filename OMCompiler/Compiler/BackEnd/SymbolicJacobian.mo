@@ -1813,15 +1813,20 @@ try
   backendDAE_1 := BackendDAEUtil.copyBackendDAE(initDAE);
   backendDAE_1 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE_1);
 
+  //BackendDump.printBackendDAE(backendDAE_1);
+  //BackendDump.dumpVariables(simDAE.shared.globalKnownVars, "check global vars");
+
   /* add the calculated parameter equations here which does not have constant binding
    parameter Real x = 10;
    Real m = x; */
   BackendDAE.DAE(currentSystem::{}, shared) := backendDAE_1;
   for var in depVars loop
     if BackendVariable.isParam(var) and not BackendVariable.varHasConstantBindExp(var) then
+      //print("\n PARAM_CHECK: " + ComponentReference.printComponentRefStr(var.varName));
       lhs := BackendVariable.varExp(var);
       rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+      //BackendDump.printEquation(eqn);
       BackendEquation.add(eqn, currentSystem.orderedEqs);
       if not BackendVariable.containsCref(var.varName, currentSystem.orderedVars) then
         currentSystem := BackendVariable.addVarDAE(BackendVariable.makeVar(var.varName), currentSystem);
@@ -1833,13 +1838,17 @@ try
   newOrderedEquationArray := BackendEquation.emptyEqns();
   crefsVarsToRemove:= {};
   for eq in BackendEquation.equationList(currentSystem.orderedEqs) loop
-    lhs := BackendEquation.getEquationLHS(eq);
-    rhs := BackendEquation.getEquationRHS(eq);
-    //print("\n lhs :" + anyString(lhs));
-    //print("\n rhs :" + anyString(rhs));
-    if Expression.isExpCref(lhs) and Expression.isExpCref(rhs) and ComponentReference.isStartCref(Expression.expCref(rhs)) then
-      crefsVarsToRemove := Expression.expCref(lhs) :: crefsVarsToRemove;
-      //BackendDump.printEquation(eq);
+    if not BackendEquation.isAlgorithm(eq) then
+      lhs := BackendEquation.getEquationLHS(eq);
+      rhs := BackendEquation.getEquationRHS(eq);
+      // print("\nlhs :" + anyString(lhs));
+      // print("\nrhs :" + anyString(rhs));
+      // BackendDump.printEquation(eq);
+      if Expression.isExpCref(lhs) and Expression.isExpCref(rhs) and (ComponentReference.isStartCref(Expression.expCref(rhs)) and ComponentReference.crefEqual(ComponentReference.popCref(Expression.expCref(rhs)), Expression.expCref(lhs))) then
+        crefsVarsToRemove := Expression.expCref(lhs) :: crefsVarsToRemove;
+      else
+        BackendEquation.add(eq, newOrderedEquationArray);
+      end if;
     else
       BackendEquation.add(eq, newOrderedEquationArray);
     end if;
@@ -1887,20 +1896,13 @@ try
   //BackendDump.dumpVarList(knvarlst, "shared simulation DAE");
   inputvars := List.select(knvarlst, BackendVariable.isVarOnTopLevelAndInput);
 
-  // Generate sparse pattern for matrices states
+  // Generate empty jacobian martices
   if Flags.isSet(Flags.DIS_SYMJAC_FMI20) then
-    // empty BackendDAE in case derivates should not calclulated
     cache := initDAE.shared.cache;
     graph := initDAE.shared.graph;
     ei := initDAE.shared.info;
     emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
-    (sparsePattern, sparseColoring) := generateSparsePattern(backendDAE_1, indepVars, depVars);
-
-    if Flags.isSet(Flags.JAC_DUMP2) then
-      BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
-    end if;
-
-    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), sparsePattern, sparseColoring)::outJacobianMatrixes;
+    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), BackendDAE.emptySparsePattern, {})::outJacobianMatrixes;
     outFunctionTree := initDAE.shared.functionTree;
   else
     // prepare more needed variables
