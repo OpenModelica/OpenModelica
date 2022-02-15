@@ -516,7 +516,8 @@ algorithm
           if debug then print("\ndebug 3 - handle var: " + BackendDump.varString(var) + " Is it a globalKnownVar?\n"); end if;
           cr := BackendVariable.varCref(var);
           // Variable is not in globalKnownVars HT
-          if not isGlobalKnown then
+          //if not isGlobalKnown then
+          if true then
             if debug then print("\ndebug 4 - The variable is not a globalKnownVar. Should an equation be added?\n"); end if;
             if add then
               if debug then print("\ndebug 5 - yes, definitely!\n"); end if;
