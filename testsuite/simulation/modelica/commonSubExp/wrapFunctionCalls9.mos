@@ -43,20 +43,10 @@ simulate(CSE.wrapFunctionCalls9); getErrorString();
 // Final Results
 // ###############################################################
 //
-// ########### Updated Variable List (simulation) (1)
-// ========================================
-// 1: x:VARIABLE()  type: Real
-//
-//
-// ########### Updated Equation List (simulation) (1, 1)
-// ========================================
-// 1/1 (1): (_, x, _) = CSE.wrapFunctionCalls9.f1(p1, p1)   [unknown |0|0|0|0|]
-//
-//
 // ########### Updated globalKnownVars (simulation) (2)
 // ========================================
 // 1: p1:PARAM()  = 5.0  type: Real
-// 2: x:VARIABLE(protected = true )  = CSE.wrapFunctionCalls9.f1(p1, p1)  type: Real unreplaceable
+// 2: x in (_, x, _):PARAM()  = CSE.wrapFunctionCalls9.f1(p1, p1)  type: Real
 //
 //
 // ########### CSE Replacements (1/43)

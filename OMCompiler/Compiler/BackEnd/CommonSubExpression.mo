@@ -516,8 +516,7 @@ algorithm
           if debug then print("\ndebug 3 - handle var: " + BackendDump.varString(var) + " Is it a globalKnownVar?\n"); end if;
           cr := BackendVariable.varCref(var);
           // Variable is not in globalKnownVars HT
-          //if not isGlobalKnown then
-          if true then
+          if not isGlobalKnown then
             if debug then print("\ndebug 4 - The variable is not a globalKnownVar. Should an equation be added?\n"); end if;
             if add then
               if debug then print("\ndebug 5 - yes, definitely!\n"); end if;
@@ -546,7 +545,7 @@ algorithm
 
             // Save the rhs (call) as bind expression and set fixed=true
             var := BackendVariable.setBindExp(var, SOME(call));
-            var := BackendVariable.setVarFixed(var, true);
+            var := BackendVariable.makeParam(var);
 
             // If it is a tuple or a record (or record within tuple)
             if intGt(listLength(varList), 1) or Expression.isTuple(cse) then
