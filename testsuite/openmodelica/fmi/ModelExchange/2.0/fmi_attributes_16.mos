@@ -29,6 +29,8 @@ readFile("fmi_attributes_16.xml"); getErrorString();
 // Result:
 // true
 // ""
+// true
+// ""
 // "fmi_attributes_16.fmu"
 // ""
 // 0

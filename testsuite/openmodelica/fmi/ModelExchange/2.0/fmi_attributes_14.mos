@@ -44,6 +44,8 @@ readFile("fmi_attributes_14.xml"); getErrorString();
 // ""
 // true
 // ""
+// true
+// ""
 // "fmi_attributes_14.fmu"
 // ""
 // 0

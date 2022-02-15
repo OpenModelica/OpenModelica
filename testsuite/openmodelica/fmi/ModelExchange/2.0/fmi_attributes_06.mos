@@ -35,6 +35,8 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 // Result:
 // true
 // ""
+// true
+// ""
 // "fmi_attributes_06.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
