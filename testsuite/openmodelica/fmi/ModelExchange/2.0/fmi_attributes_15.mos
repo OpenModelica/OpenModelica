@@ -135,22 +135,22 @@ readFile("fmi_attributes_15_tmp.xml")
 //   <ScalarVariable
 //     name=\"x\"
 //     valueReference=\"0\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"kg2\"/>
+//     >
+//     <Real unit=\"kg2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"y\"
 //     valueReference=\"1\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"bar\"/>
+//     >
+//     <Real unit=\"bar\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"z\"
 //     valueReference=\"2\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"xyz\"/>
+//     >
+//     <Real unit=\"xyz\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>

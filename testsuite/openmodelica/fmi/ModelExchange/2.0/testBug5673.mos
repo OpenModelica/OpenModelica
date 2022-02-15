@@ -65,7 +65,7 @@ readFile("Bug5673.xml"); getErrorString();
 //     classIndex = \"0\" classType = \"rAlg\"
 //     isProtected = \"false\" hideResult = \"\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"2\" endLine = \"5\" endColumn = \"13\" fileWritable = \"true\">
-//     <Real fixed=\"true\" useNominal=\"false\" />
+//     <Real fixed=\"false\" useNominal=\"false\" />
 //   </ScalarVariable>
 //   <ScalarVariable
 //     name = \"a\"

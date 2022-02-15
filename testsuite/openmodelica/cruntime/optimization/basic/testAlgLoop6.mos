@@ -50,7 +50,7 @@ getErrorString();
 // assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$conDer <= 0.0, has value: 0.770042
 // assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | $EqCon$x2 >= 0.0 and $EqCon$x2 <= 0.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$x2 <= 0.0, has value: 0.493305
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$x2 <= 0.0, has value: -0.763231
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
@@ -359,7 +359,8 @@ getErrorString();
 // Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
 //   x2:VARIABLE(min = -1.0 max = 1.0 )  type: Real
 // "
-// {"Files Equal!"}
+// {"Files not Equal!","x2","x1"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// Warning: Files not Equal
 // "
 // endResult

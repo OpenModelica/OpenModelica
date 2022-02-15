@@ -19,11 +19,6 @@ val(a,0.0);
 // a destroy: #, #, #, #, #, 6, 7, 8
 // a keep: 6, 7, 8
 // a lst: #, #, #, #, #, 6, 7, 8
-// destroy: #, #, #, #, #
-// keep: 6, 7, 8
-// a destroy: #, #, #, #, #, 6, 7, 8
-// a keep: 6, 7, 8
-// a lst: #, #, #, #, #, 6, 7, 8
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
