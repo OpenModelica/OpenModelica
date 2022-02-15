@@ -3543,6 +3543,164 @@ algorithm
   end if;
 end callTranslateModel;
 
+protected function configureFMU_cmake
+"Configure and build binaries with CMake for target platform"
+  input String platform;
+  input String fmutmp;
+  input String fmuTargetName;
+  input String logfile;
+  input Boolean isWindows;
+  input Boolean needs3rdPartyLibs;
+protected
+  String fmuSourceDir;
+  String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
+  String quote, dquote, defaultFmiIncludeDirectoy;
+algorithm
+  fmuSourceDir := fmutmp+"/sources/";
+  quote := "'";
+  dquote := if isWindows then "\"" else "'";
+  defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
+
+  // Set build type
+  if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+    CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=Debug";
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+    CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=Release";
+  else
+    CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=RelWithDebInfo";
+  end if;
+
+  // Remove old log file
+  if System.regularFileExists(logfile) then
+    System.removeFile(logfile);
+  end if;
+
+  _ := match Util.stringSplitAtChar(platform, " ")
+    local
+      String cmd;
+      String cmakeCall;
+      String crossTriple, buildDir;
+      list<String> dockerImgArgs;
+      Integer uid;
+      String cidFile, volumeID, containerID, userID;
+    case {"dynamic"}
+      algorithm
+        if isWindows then
+          CMAKE_GENERATOR := "-G MSYS Makefiles ";
+        end if;
+        buildDir := "build_cmake_dynamic";
+        cmakeCall := "cmake " + CMAKE_GENERATOR +
+                              "-DFMI_INTERFACE_HEADER_FILES_DIRECTORY=" + defaultFmiIncludeDirectoy + " " +
+                              CMAKE_BUILD_TYPE +
+                              " ..";
+        cmd := "cd \"" + fmuSourceDir + "\" && " +
+               "mkdir " + buildDir + " && cd " + buildDir + " && " +
+               cmakeCall " && " +
+               "make all install && " +
+               "cd .. && rm -rf " + "build_cmake_dynamic"; // TODO: Figgure out why I can't use buildDir here!!!!!
+        if 0 <> System.systemCall(cmd, outFile=logfile) then
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          System.removeFile(logfile);
+          fail();
+        end if;
+        then();
+    case crossTriple::"docker"::"run"::dockerImgArgs
+      algorithm
+        uid := System.getuid();
+        cidFile := fmutmp+".cidfile";
+
+        // Create a docker volume for the FMU since we can't forward volumes
+        // to the docker run command depending on where the FMU was generated (inside another volume)
+        cmd := "docker volume create";
+        runDockerCmd(cmd, logfile);
+
+        if System.regularFileExists(cidFile) then
+          System.removeFile(cidFile);
+        end if;
+        volumeID := System.trim(System.readFile(logfile));
+        cmd := "docker run --cidfile " + cidFile + " -v " + volumeID + ":/data busybox true";
+        runDockerCmd(cmd, logfile, true, volumeID, "");
+
+        containerID := System.trim(System.readFile(cidFile));
+        System.removeFile(cidFile);
+
+        // Copy the FMU contents to the container
+        cmd := "docker cp " + fmutmp + " " + containerID + ":/data";
+        runDockerCmd(cmd, logfile, cleanup=true, volumeID=volumeID, containerID=containerID);
+
+        // Copy the FMI headers to the container
+        cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
+        runDockerCmd(cmd, logfile, cleanup=true, volumeID=volumeID, containerID=containerID);
+
+        // Build for target host
+        userID := (if uid<>0 then "--user " + String(uid) else "");
+        buildDir := "mkdir build_cmake_" + crossTriple;
+        cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+                     CMAKE_BUILD_TYPE +
+                     " ..";
+        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu -e CROSS_TRIPLE=" + crossTriple + " " + stringDelimitList(dockerImgArgs," ") +
+               " sh -c " + dquote +
+                  "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
+                  "mkdir " + buildDir + " && cd " + buildDir + " && " +
+                  cmakeCall + " && " +
+                  "make all install && " +
+                  "cd .. && rm -rf " + buildDir +
+                dquote;
+        print("AHeu1\n\n");
+        runDockerCmd(cmd, logfile, cleanup=false, volumeID=volumeID, containerID=containerID);
+
+        print("AHeu2\n\n");
+
+        // Copy the files back from the volume (via the container) to the filesystem
+        //cmd := "docker cp " + quote + containerID + ":/data/" + fmutmp + quote + " .";
+        cmd := "docker cp " + containerID + ":/data/ .";
+        runDockerCmd(cmd, logfile, cleanup=false, volumeID=volumeID, containerID=containerID);
+        // This is stupid but works on Windows
+        if not System.copyFile(System.realpath("data/"+ fmutmp), System.realpath(fmutmp)) then
+          print("AHeu: Failed to move " + System.realpath("data/"+ fmutmp));
+        end if;
+        //System.removeDirectory("data/");
+        print("AHeu3\n\n");
+
+        // Cleanup
+        System.systemCall("docker rm " + containerID);
+        System.systemCall("docker volume rm " + volumeID);
+        then();
+    else
+      algorithm
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Unknown/unsupported platform for CMake FMU build"});
+      then fail();
+  end match;
+end configureFMU_cmake;
+
+protected function runDockerCmd
+  "Run a docker command. Can clean up volumen and container on failure."
+  input String cmd;
+  input String logfile;
+  input Boolean cleanup = false;
+  input String volumeID = "";
+  input String containerID = "";
+protected
+  Boolean verbose = true;
+algorithm
+  if 0 <> System.systemCall(cmd, outFile=logfile) then
+    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
+
+    if cleanup then
+      if not stringEqual(containerID, "") then
+        System.systemCall("docker rm " + containerID);
+      end if;
+      if not stringEqual(volumeID, "") then
+        System.systemCall("docker volume rm " + volumeID);
+      end if;
+    end if;
+
+    fail();
+  elseif verbose then
+      print(cmd + "\n" + System.readFile(logfile) +"\n");
+  end if;
+end runDockerCmd;
+
 protected function configureFMU
 "Configures Makefile.in of FMU for traget configuration."
   input String platform;
@@ -3903,7 +4061,8 @@ algorithm
   // Configure the FMU Makefile
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
-    configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
+    //configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
+    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, isWindows, needs3rdPartyLibs);
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
