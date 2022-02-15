@@ -1051,16 +1051,6 @@ algorithm
   end match;
 end isVarDiscreteRealAlg;
 
-public function hasVarKindDiscrete
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result := match (var)
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then true;
-    else false;
-  end match;
-end hasVarKindDiscrete;
-
 public function isVarAlg
   input BackendDAE.Var var;
   output Boolean result;

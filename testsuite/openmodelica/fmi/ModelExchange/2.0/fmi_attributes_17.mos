@@ -85,67 +85,61 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
-//     name=\"R1.LossPower\"
+//     name=\"G.p.i\"
 //     valueReference=\"3\"
+//     description=\"Current flowing into the pin\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"G.p.v\"
+//     valueReference=\"4\"
+//     description=\"Potential at the pin\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"R1.LossPower\"
+//     valueReference=\"5\"
 //     description=\"Loss power leaving component via heatPort\"
 //     >
 //     <Real unit=\"W\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"5\" -->
-//   <ScalarVariable
-//     name=\"R1.v\"
-//     valueReference=\"4\"
-//     description=\"Voltage drop of the two pins (= p.v - n.v)\"
-//     >
-//     <Real unit=\"V\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"6\" -->
-//   <ScalarVariable
-//     name=\"V.v\"
-//     valueReference=\"5\"
-//     description=\"Voltage drop of the two pins (= p.v - n.v)\"
-//     >
-//     <Real unit=\"V\"/>
-//   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
-//     name=\"C4.C\"
+//     name=\"R1.R_actual\"
 //     valueReference=\"6\"
-//     description=\"Capacitance\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
-//     >
-//     <Real min=\"0.0\" unit=\"F\"/>
+//     description=\"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"Ohm\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
 //   <ScalarVariable
-//     name=\"C4.n.v\"
+//     name=\"R1.v\"
 //     valueReference=\"7\"
-//     description=\"Potential at the pin\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
+//     description=\"Voltage drop of the two pins (= p.v - n.v)\"
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"9\" -->
 //   <ScalarVariable
-//     name=\"G.p.i\"
+//     name=\"V.v\"
 //     valueReference=\"8\"
-//     description=\"Current flowing into the pin\"
-//     variability=\"fixed\"
-//     causality=\"parameter\"
+//     description=\"Voltage drop of the two pins (= p.v - n.v)\"
 //     >
-//     <Real start=\"0.0\" unit=\"A\"/>
+//     <Real unit=\"V\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"10\" -->
 //   <ScalarVariable
-//     name=\"G.p.v\"
+//     name=\"C4.C\"
 //     valueReference=\"9\"
-//     description=\"Potential at the pin\"
+//     description=\"Capacitance\"
 //     variability=\"fixed\"
-//     causality=\"parameter\"
+//     causality=\"calculatedParameter\"
 //     >
-//     <Real start=\"0.0\" unit=\"V\"/>
+//     <Real min=\"0.0\" unit=\"F\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"11\" -->
 //   <ScalarVariable
@@ -159,19 +153,19 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"12\" -->
 //   <ScalarVariable
-//     name=\"R1.R_actual\"
+//     name=\"R1.T\"
 //     valueReference=\"11\"
-//     description=\"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\"
+//     description=\"Fixed device temperature if useHeatPort = false\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real unit=\"Ohm\"/>
+//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"13\" -->
 //   <ScalarVariable
-//     name=\"R1.T\"
+//     name=\"R1.T_heatPort\"
 //     valueReference=\"12\"
-//     description=\"Fixed device temperature if useHeatPort = false\"
+//     description=\"Temperature of heatPort\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -179,119 +173,119 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"14\" -->
 //   <ScalarVariable
-//     name=\"R1.T_heatPort\"
-//     valueReference=\"13\"
-//     description=\"Temperature of heatPort\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
-//     >
-//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"15\" -->
-//   <ScalarVariable
 //     name=\"R1.T_ref\"
-//     valueReference=\"14\"
+//     valueReference=\"13\"
 //     description=\"Reference temperature\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"300.15\" min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"16\" -->
+//   <!-- Index of variable = \"15\" -->
 //   <ScalarVariable
 //     name=\"R1.alpha\"
-//     valueReference=\"15\"
+//     valueReference=\"14\"
 //     description=\"Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.0\" unit=\"1/K\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"17\" -->
+//   <!-- Index of variable = \"16\" -->
 //   <ScalarVariable
 //     name=\"V.V\"
-//     valueReference=\"16\"
+//     valueReference=\"15\"
 //     description=\"Height of step\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\" unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"18\" -->
-//   <ScalarVariable
-//     name=\"V.n.v\"
-//     valueReference=\"17\"
-//     description=\"Potential at the pin\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
-//     >
-//     <Real unit=\"V\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"19\" -->
+//   <!-- Index of variable = \"17\" -->
 //   <ScalarVariable
 //     name=\"V.offset\"
-//     valueReference=\"18\"
+//     valueReference=\"16\"
 //     description=\"Voltage offset\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.0\" unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"20\" -->
+//   <!-- Index of variable = \"18\" -->
 //   <ScalarVariable
 //     name=\"V.signalSource.height\"
-//     valueReference=\"19\"
+//     valueReference=\"17\"
 //     description=\"Height of step\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"21\" -->
+//   <!-- Index of variable = \"19\" -->
 //   <ScalarVariable
 //     name=\"V.signalSource.offset\"
-//     valueReference=\"20\"
+//     valueReference=\"18\"
 //     description=\"Offset of output signal y\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"22\" -->
+//   <!-- Index of variable = \"20\" -->
 //   <ScalarVariable
 //     name=\"V.signalSource.startTime\"
-//     valueReference=\"21\"
+//     valueReference=\"19\"
 //     description=\"Output y = offset for time &lt; startTime\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
 //     <Real unit=\"s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"23\" -->
+//   <!-- Index of variable = \"21\" -->
 //   <ScalarVariable
 //     name=\"V.startTime\"
-//     valueReference=\"22\"
+//     valueReference=\"20\"
 //     description=\"Time offset\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.0\" unit=\"s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"24\" -->
+//   <!-- Index of variable = \"22\" -->
 //   <ScalarVariable
 //     name=\"c1\"
-//     valueReference=\"23\"
+//     valueReference=\"21\"
 //     description=\"filter coefficient c1\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.072\" min=\"0.0\" unit=\"F\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"25\" -->
+//   <!-- Index of variable = \"23\" -->
 //   <ScalarVariable
 //     name=\"c2\"
-//     valueReference=\"24\"
+//     valueReference=\"22\"
 //     description=\"filter coefficient c2\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"0.0\" unit=\"F\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"24\" -->
+//   <ScalarVariable
+//     name=\"c3\"
+//     valueReference=\"23\"
+//     description=\"filter coefficient c3\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"1.682\" min=\"0.0\" unit=\"F\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"25\" -->
+//   <ScalarVariable
+//     name=\"c4\"
+//     valueReference=\"24\"
+//     description=\"filter coefficient c4\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
@@ -299,63 +293,51 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"26\" -->
 //   <ScalarVariable
-//     name=\"c3\"
-//     valueReference=\"25\"
-//     description=\"filter coefficient c3\"
-//     variability=\"fixed\"
-//     causality=\"parameter\"
-//     >
-//     <Real start=\"1.682\" min=\"0.0\" unit=\"F\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"27\" -->
-//   <ScalarVariable
-//     name=\"c4\"
-//     valueReference=\"26\"
-//     description=\"filter coefficient c4\"
-//     variability=\"fixed\"
-//     causality=\"calculatedParameter\"
-//     >
-//     <Real min=\"0.0\" unit=\"F\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"28\" -->
-//   <ScalarVariable
 //     name=\"c5\"
-//     valueReference=\"27\"
+//     valueReference=\"25\"
 //     description=\"filter coefficient c5\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.7262\" min=\"0.0\" unit=\"F\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"29\" -->
+//   <!-- Index of variable = \"27\" -->
 //   <ScalarVariable
 //     name=\"l1\"
-//     valueReference=\"28\"
+//     valueReference=\"26\"
 //     description=\"filter coefficient I1\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"1.304\" unit=\"H\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"30\" -->
+//   <!-- Index of variable = \"28\" -->
 //   <ScalarVariable
 //     name=\"l2\"
-//     valueReference=\"29\"
+//     valueReference=\"27\"
 //     description=\"filter coefficient I2\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
 //     <Real start=\"0.8586\" unit=\"H\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"31\" -->
+//   <!-- Index of variable = \"29\" -->
 //   <ScalarVariable
 //     name=\"C4.n.i\"
-//     valueReference=\"30\"
+//     valueReference=\"28\"
 //     description=\"Current flowing into the pin\"
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"32\" -->
+//   <!-- Index of variable = \"30\" -->
+//   <ScalarVariable
+//     name=\"C4.n.v\"
+//     valueReference=\"4\"
+//     description=\"Potential at the pin\"
+//     >
+//     <Real unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"31\" -->
 //   <ScalarVariable
 //     name=\"C4.p.i\"
 //     valueReference=\"2\"
@@ -363,7 +345,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"33\" -->
+//   <!-- Index of variable = \"32\" -->
 //   <ScalarVariable
 //     name=\"C4.p.v\"
 //     valueReference=\"0\"
@@ -371,7 +353,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"34\" -->
+//   <!-- Index of variable = \"33\" -->
 //   <ScalarVariable
 //     name=\"R1.i\"
 //     valueReference=\"2\"
@@ -379,15 +361,15 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"35\" -->
+//   <!-- Index of variable = \"34\" -->
 //   <ScalarVariable
 //     name=\"R1.n.i\"
-//     valueReference=\"34\"
+//     valueReference=\"33\"
 //     description=\"Current flowing into the pin\"
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"36\" -->
+//   <!-- Index of variable = \"35\" -->
 //   <ScalarVariable
 //     name=\"R1.n.v\"
 //     valueReference=\"0\"
@@ -395,7 +377,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"37\" -->
+//   <!-- Index of variable = \"36\" -->
 //   <ScalarVariable
 //     name=\"R1.p.i\"
 //     valueReference=\"2\"
@@ -403,29 +385,37 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"38\" -->
+//   <!-- Index of variable = \"37\" -->
 //   <ScalarVariable
 //     name=\"R1.p.v\"
-//     valueReference=\"5\"
+//     valueReference=\"8\"
 //     description=\"Potential at the pin\"
 //     >
 //     <Real unit=\"V\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"39\" -->
+//   <!-- Index of variable = \"38\" -->
 //   <ScalarVariable
 //     name=\"V.i\"
-//     valueReference=\"38\"
+//     valueReference=\"37\"
 //     description=\"Current flowing from pin p to pin n\"
 //     >
 //     <Real unit=\"A\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"40\" -->
+//   <!-- Index of variable = \"39\" -->
 //   <ScalarVariable
 //     name=\"V.n.i\"
 //     valueReference=\"2\"
 //     description=\"Current flowing into the pin\"
 //     >
 //     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"40\" -->
+//   <ScalarVariable
+//     name=\"V.n.v\"
+//     valueReference=\"4\"
+//     description=\"Potential at the pin\"
+//     >
+//     <Real unit=\"V\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"41\" -->
 //   <ScalarVariable
@@ -438,7 +428,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   <!-- Index of variable = \"42\" -->
 //   <ScalarVariable
 //     name=\"V.p.v\"
-//     valueReference=\"5\"
+//     valueReference=\"8\"
 //     description=\"Potential at the pin\"
 //     >
 //     <Real unit=\"V\"/>
@@ -446,7 +436,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   <!-- Index of variable = \"43\" -->
 //   <ScalarVariable
 //     name=\"V.signalSource.y\"
-//     valueReference=\"5\"
+//     valueReference=\"8\"
 //     description=\"Connector of Real output signal\"
 //     >
 //     <Real/>
@@ -471,18 +461,15 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
 //     <InitialUnknowns>
-//       <Unknown index=\"2\" dependencies=\"1 11 15 16\" dependenciesKind=\"dependent dependent dependent dependent\" />
-//       <Unknown index=\"7\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"8\" dependencies=\"10\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"12\" dependencies=\"11 15 16\" dependenciesKind=\"dependent dependent dependent\" />
-//       <Unknown index=\"13\" dependencies=\"15\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"14\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"18\" dependencies=\"10\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"20\" dependencies=\"17\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"21\" dependencies=\"19\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"22\" dependencies=\"23\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"25\" dependencies=\"29\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"27\" dependencies=\"30\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"2\" dependencies=\"1 7\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"10\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"12\" dependencies=\"14\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"13\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"18\" dependencies=\"16\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"19\" dependencies=\"17\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"20\" dependencies=\"21\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"23\" dependencies=\"27\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"25\" dependencies=\"28\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"44\" dependencies=\"\" dependenciesKind=\"\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
