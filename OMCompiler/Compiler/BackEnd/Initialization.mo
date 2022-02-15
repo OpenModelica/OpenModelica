@@ -812,28 +812,28 @@ algorithm
     secondary := selectSecondaryParameters(flatComps, globalKnownVars, mT, secondary);
 
     // get primary and secondary parameters and variables
-    //hs := HashSet.emptyHashSetSized(2*nGlobalKnownVars+1);
+    hs := HashSet.emptyHashSetSized(2*nGlobalKnownVars+1);
     for i in flatComps loop
       v := BackendVariable.getVarAt(globalKnownVars, i);
       bindExp := BackendVariable.varBindExpStartValueNoFail(v) "Returns the binding or the start value if no binding is available";
-      //crefs := Expression.getAllCrefsExpanded(bindExp);
+      crefs := Expression.getAllCrefsExpanded(bindExp);
       //BackendDump.dumpVarList({v}, intString(i));
 
       _ := match(v)
         // primary parameter
-        case (BackendDAE.VAR(varKind=BackendDAE.PARAM())) guard 0 == secondary[i] and Expression.isEvaluatedConst(bindExp)
+        case (BackendDAE.VAR(varKind=BackendDAE.PARAM())) guard 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
           equation
             outAllPrimaryParameters = v::outAllPrimaryParameters;
-            //hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
+            hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
         then ();
 
         // primary external object
-        case (BackendDAE.VAR(varKind=BackendDAE.EXTOBJ(), bindExp=SOME(bindExp))) guard 0 == secondary[i] and Expression.isEvaluatedConst(bindExp)
+        case (BackendDAE.VAR(varKind=BackendDAE.EXTOBJ(), bindExp=SOME(bindExp))) guard 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
           equation
             outAllPrimaryParameters = v::outAllPrimaryParameters;
             v = BackendVariable.setVarFixed(v, true);
             outGlobalKnownVars = BackendVariable.addVar(v, outGlobalKnownVars);
-            //hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
+            hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
         then ();
 
         // secondary parameter
@@ -852,7 +852,7 @@ algorithm
             v = BackendVariable.setVarFixed(v, true);
             outGlobalKnownVars = BackendVariable.addVar(v, outGlobalKnownVars);
             //BackendDump.dumpVariables(outGlobalKnownVars, "update outGlobalKnownVars");
-            //hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
+            hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
           then ();
 
         // secondary variable
