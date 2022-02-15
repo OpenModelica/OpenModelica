@@ -72,9 +72,9 @@ public
         Expression e;
         Boolean expanded;
 
-      case Expression.ARRAY()
+      case Expression.LIST()
         algorithm
-          (Expression.ARRAY(elements = arr), expanded) := ExpandExp.expand(exp);
+          (Expression.LIST(elements = arr), expanded) := ExpandExp.expand(exp);
 
           if not expanded then
             Error.assertion(false, getInstanceName() + " got unexpandable expression `" +
@@ -90,7 +90,7 @@ public
           e := ExpandExp.expandCref(exp);
 
           iterator := match e
-            case Expression.ARRAY() then fromExp(e);
+            case Expression.LIST() then fromExp(e);
             else SCALAR_ITERATOR(e);
           end match;
         then
@@ -252,7 +252,7 @@ protected
       e := listHead(array);
 
       (array, slice) := match e
-        case Expression.ARRAY()
+        case Expression.LIST()
           algorithm
             (arr, slice) := nextArraySlice(e.elements);
 

@@ -104,7 +104,7 @@ public
                 fail();
           end match;
 
-      case Expression.ARRAY()
+      case Expression.LIST()
         guard Expression.arrayAllEqual(exp)
         then fromExp(Expression.arrayFirstScalar(exp), var);
 

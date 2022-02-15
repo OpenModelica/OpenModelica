@@ -186,7 +186,7 @@ algorithm
     case Expression.TYPENAME()
       then evalTypename(exp.ty, exp, target);
 
-    case Expression.ARRAY()
+    case Expression.LIST()
       then if exp.literal then exp
            else
              Expression.makeArray(exp.ty,
@@ -1003,7 +1003,7 @@ algorithm
     case (Expression.STRING(), Expression.STRING())
       then Expression.STRING(exp1.value + exp2.value);
 
-    case (Expression.ARRAY(), Expression.ARRAY())
+    case (Expression.LIST(), Expression.LIST())
       guard listLength(exp1.elements) == listLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
         list(evalBinaryAdd(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
@@ -1030,7 +1030,7 @@ algorithm
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value - exp2.value);
 
-    case (Expression.ARRAY(), Expression.ARRAY())
+    case (Expression.LIST(), Expression.LIST())
       guard listLength(exp1.elements) == listLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
         list(evalBinarySub(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
@@ -1057,7 +1057,7 @@ algorithm
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value * exp2.value);
 
-    case (Expression.ARRAY(), Expression.ARRAY())
+    case (Expression.LIST(), Expression.LIST())
       guard listLength(exp1.elements) == listLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
         list(evalBinaryMul(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
@@ -1094,7 +1094,7 @@ algorithm
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value / exp2.value);
 
-    case (Expression.ARRAY(), Expression.ARRAY())
+    case (Expression.LIST(), Expression.LIST())
       guard listLength(exp1.elements) == listLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
         list(evalBinaryDiv(e1, e2, target) threaded for e1 in exp1.elements, e2 in exp2.elements),
@@ -1118,7 +1118,7 @@ algorithm
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value ^ exp2.value);
 
-    case (Expression.ARRAY(), Expression.ARRAY())
+    case (Expression.LIST(), Expression.LIST())
       guard listLength(exp1.elements) == listLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
         list(evalBinaryPow(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
@@ -1146,7 +1146,7 @@ function evalBinaryScalarArray
   end FuncT;
 algorithm
   exp := match arrayExp
-    case Expression.ARRAY()
+    case Expression.LIST()
       then Expression.makeArray(arrayExp.ty,
         list(evalBinaryScalarArray(scalarExp, e, opFunc) for e in arrayExp.elements),
         literal = true);
@@ -1168,7 +1168,7 @@ function evalBinaryArrayScalar
   end FuncT;
 algorithm
   exp := match arrayExp
-    case Expression.ARRAY()
+    case Expression.LIST()
       then Expression.makeArray(arrayExp.ty,
         list(evalBinaryArrayScalar(e, scalarExp, opFunc) for e in arrayExp.elements),
         literal = true);
@@ -1187,7 +1187,7 @@ protected
   Type ty;
 algorithm
   exp := match Expression.transposeArray(matrixExp)
-    case Expression.ARRAY(Type.ARRAY(ty, {m, _}), expl)
+    case Expression.LIST(Type.ARRAY(ty, {m, _}), expl)
       algorithm
         expl := list(evalBinaryScalarProduct(vectorExp, e) for e in expl);
       then
@@ -1213,7 +1213,7 @@ protected
   Type ty;
 algorithm
   exp := match matrixExp
-    case Expression.ARRAY(Type.ARRAY(ty, {n, _}), expl)
+    case Expression.LIST(Type.ARRAY(ty, {n, _}), expl)
       algorithm
         expl := list(evalBinaryScalarProduct(e, vectorExp) for e in expl);
       then
@@ -1240,7 +1240,7 @@ algorithm
       Expression e2;
       list<Expression> rest_e2;
 
-    case (Expression.ARRAY(ty = Type.ARRAY(elem_ty)), Expression.ARRAY())
+    case (Expression.LIST(ty = Type.ARRAY(elem_ty)), Expression.LIST())
       guard listLength(exp1.elements) == listLength(exp2.elements)
       algorithm
         exp := Expression.makeZero(elem_ty);
@@ -1276,8 +1276,8 @@ algorithm
   e2 := Expression.transposeArray(exp2);
 
   exp := match (exp1, e2)
-    case (Expression.ARRAY(Type.ARRAY(elem_ty, {n, _}), expl1),
-          Expression.ARRAY(Type.ARRAY(_, {p, _}), expl2))
+    case (Expression.LIST(Type.ARRAY(elem_ty, {n, _}), expl1),
+          Expression.LIST(Type.ARRAY(_, {p, _}), expl2))
       algorithm
         mat_ty := Type.ARRAY(elem_ty, {n, p});
 
@@ -1310,7 +1310,7 @@ protected
   Integer n;
 algorithm
   exp := match (matrixExp, nExp)
-    case (Expression.ARRAY(), Expression.INTEGER(value = 0))
+    case (Expression.LIST(), Expression.INTEGER(value = 0))
       algorithm
         n := Dimension.size(listHead(Type.arrayDims(matrixExp.ty)));
       then
@@ -1382,7 +1382,7 @@ algorithm
   exp := match exp1
     case Expression.INTEGER() then Expression.INTEGER(-exp1.value);
     case Expression.REAL() then Expression.REAL(-exp1.value);
-    case Expression.ARRAY()
+    case Expression.LIST()
       algorithm
         exp1.elements := list(evalUnaryMinus(e) for e in exp1.elements);
       then
@@ -1452,9 +1452,9 @@ algorithm
     case Expression.BOOLEAN()
       then if exp1.value then evalExp(exp2, target) else exp1;
 
-    case Expression.ARRAY()
+    case Expression.LIST()
       algorithm
-        Expression.ARRAY(elements = expl) := evalExp(exp2, target);
+        Expression.LIST(elements = expl) := evalExp(exp2, target);
         expl := list(evalLogicBinaryAnd(e1, e2, target)
                      threaded for e1 in exp1.elements, e2 in expl);
       then
@@ -1482,9 +1482,9 @@ algorithm
     case Expression.BOOLEAN()
       then if exp1.value then exp1 else evalExp(exp2, target);
 
-    case Expression.ARRAY()
+    case Expression.LIST()
       algorithm
-        Expression.ARRAY(elements = expl) := evalExp(exp2, target);
+        Expression.LIST(elements = expl) := evalExp(exp2, target);
         expl := list(evalLogicBinaryOr(e1, e2, target)
                      threaded for e1 in exp1.elements, e2 in expl);
       then
@@ -1521,7 +1521,7 @@ function evalLogicUnaryNot
 algorithm
   exp := match exp1
     case Expression.BOOLEAN() then Expression.BOOLEAN(not exp1.value);
-    case Expression.ARRAY() then Expression.mapArrayElements(exp1, evalLogicUnaryNot);
+    case Expression.LIST() then Expression.mapArrayElements(exp1, evalLogicUnaryNot);
 
     else
       algorithm
@@ -2129,9 +2129,9 @@ protected
   Boolean e_lit, arg_lit = true;
 algorithm
   result := match arg
-    case Expression.ARRAY(elements = {}) then arg;
+    case Expression.LIST(elements = {}) then arg;
 
-    case Expression.ARRAY(elements = elems)
+    case Expression.LIST(elements = elems)
       algorithm
         n := listLength(elems);
 
@@ -2337,7 +2337,7 @@ algorithm
       Dimension dim1, dim2;
       Type ty;
 
-    case Expression.ARRAY(ty = ty)
+    case Expression.LIST(ty = ty)
       algorithm
         dim_count := Type.dimensionCount(ty);
 
@@ -2377,7 +2377,7 @@ function evalBuiltinMatrix2
   output Expression result;
 algorithm
   result := match arg
-    case Expression.ARRAY()
+    case Expression.LIST()
       then Expression.makeArray(ty,
                                 list(Expression.toScalar(e) for e in arg.elements),
                                 arg.literal);
@@ -2397,7 +2397,7 @@ protected
 algorithm
   result := match args
     case {e1, e2} then evalBuiltinMax2(e1, e2);
-    case {e1 as Expression.ARRAY(ty = ty)}
+    case {e1 as Expression.LIST(ty = ty)}
       algorithm
         result := Expression.fold(e1, evalBuiltinMax2, Expression.EMPTY(ty));
 
@@ -2426,7 +2426,7 @@ algorithm
       then if exp1.value < exp2.value then exp2 else exp1;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then if exp1.index < exp2.index then exp2 else exp1;
-    case (Expression.ARRAY(), _) then exp2;
+    case (Expression.LIST(), _) then exp2;
     case (_, Expression.EMPTY()) then exp1;
     else algorithm printWrongArgsError(getInstanceName(), {exp1, exp2}, sourceInfo()); then fail();
   end match;
@@ -2443,7 +2443,7 @@ protected
 algorithm
   result := match args
     case {e1, e2} then evalBuiltinMin2(e1, e2);
-    case {e1 as Expression.ARRAY(ty = ty)}
+    case {e1 as Expression.LIST(ty = ty)}
       algorithm
         result := Expression.fold(e1, evalBuiltinMin2, Expression.EMPTY(ty));
 
@@ -2472,7 +2472,7 @@ algorithm
       then if exp1.value > exp2.value then exp2 else exp1;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then if exp1.index > exp2.index then exp2 else exp1;
-    case (Expression.ARRAY(), _) then exp2;
+    case (Expression.LIST(), _) then exp2;
     case (_, Expression.EMPTY()) then exp1;
     else algorithm printWrongArgsError(getInstanceName(), {exp1, exp2}, sourceInfo()); then fail();
   end match;
@@ -2530,7 +2530,7 @@ function evalBuiltinProduct
   output Expression result;
 algorithm
   result := match arg
-    case Expression.ARRAY()
+    case Expression.LIST()
       then match Type.arrayElementType(Expression.typeOf(arg))
         case Type.INTEGER() then Expression.INTEGER(Expression.fold(arg, evalBuiltinProductInt, 1));
         case Type.REAL() then Expression.REAL(Expression.fold(arg, evalBuiltinProductReal, 1.0));
@@ -2547,7 +2547,7 @@ function evalBuiltinProductInt
 algorithm
   result := match exp
     case Expression.INTEGER() then result * exp.value;
-    case Expression.ARRAY() then result;
+    case Expression.LIST() then result;
     else fail();
   end match;
 end evalBuiltinProductInt;
@@ -2558,7 +2558,7 @@ function evalBuiltinProductReal
 algorithm
   result := match exp
     case Expression.REAL() then result * exp.value;
-    case Expression.ARRAY() then result;
+    case Expression.LIST() then result;
     else fail();
   end match;
 end evalBuiltinProductReal;
@@ -2625,7 +2625,7 @@ protected
   Expression exp = listHead(args);
 algorithm
   result := match exp
-    case Expression.ARRAY() then evalBuiltinScalar(exp.elements);
+    case Expression.LIST() then evalBuiltinScalar(exp.elements);
     else exp;
   end match;
 end evalBuiltinScalar;
@@ -2673,7 +2673,7 @@ protected
   Boolean literal;
 algorithm
   result := match arg
-    case Expression.ARRAY(ty = ty, elements = {x1, x2, x3}, literal = literal)
+    case Expression.LIST(ty = ty, elements = {x1, x2, x3}, literal = literal)
       algorithm
         zero := Expression.makeZero(Type.arrayElementType(ty));
         y1 := Expression.makeArray(ty, {zero, Expression.negate(x3), x2}, literal);
@@ -2752,7 +2752,7 @@ function evalBuiltinSum
   output Expression result;
 algorithm
   result := match arg
-    case Expression.ARRAY()
+    case Expression.LIST()
       then match Type.arrayElementType(Expression.typeOf(arg))
         case Type.INTEGER() then Expression.INTEGER(Expression.fold(arg, evalBuiltinSumInt, 0));
         case Type.REAL() then Expression.REAL(Expression.fold(arg, evalBuiltinSumReal, 0.0));
@@ -2769,7 +2769,7 @@ function evalBuiltinSumInt
 algorithm
   result := match exp
     case Expression.INTEGER() then result + exp.value;
-    case Expression.ARRAY() then result;
+    case Expression.LIST() then result;
     else fail();
   end match;
 end evalBuiltinSumInt;
@@ -2780,7 +2780,7 @@ function evalBuiltinSumReal
 algorithm
   result := match exp
     case Expression.REAL() then result + exp.value;
-    case Expression.ARRAY() then result;
+    case Expression.LIST() then result;
     else fail();
   end match;
 end evalBuiltinSumReal;
@@ -2795,7 +2795,7 @@ protected
   list<Expression> expl, accum = {};
 algorithm
   result := match arg
-    case Expression.ARRAY() guard Type.isMatrix(arg.ty)
+    case Expression.LIST() guard Type.isMatrix(arg.ty)
       algorithm
         mat := listArray(list(listArray(Expression.arrayElements(row))
                            for row in Expression.arrayElements(arg)));
@@ -2849,7 +2849,7 @@ protected
   Boolean literal;
 algorithm
   result := match arg
-    case Expression.ARRAY(ty = Type.ARRAY(elementType = ty,
+    case Expression.LIST(ty = Type.ARRAY(elementType = ty,
                                           dimensions = dim1 :: dim2 :: rest_dims),
                           elements = arr,
                           literal = literal)

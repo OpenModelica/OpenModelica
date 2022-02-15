@@ -84,7 +84,7 @@ algorithm
       then
         exp;
 
-    case Expression.ARRAY()
+    case Expression.LIST()
       algorithm
         exp.elements := list(simplify(e) for e in exp.elements);
       then
@@ -331,7 +331,7 @@ algorithm
   e := if Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg);
 
   exp := match e
-    case Expression.ARRAY()
+    case Expression.LIST()
       guard List.all(e.elements, Expression.isArray)
       then Expression.transposeArray(e);
 
@@ -417,7 +417,7 @@ algorithm
           outExp := Expression.makeEmptyArray(ty);
         elseif dim_size == 1 then
           // Result is Array[1], return array with the single element.
-          (Expression.ARRAY(elements = {e}), _) := ExpandExp.expand(e);
+          (Expression.LIST(elements = {e}), _) := ExpandExp.expand(e);
           exp := Expression.replaceIterator(exp, iter, e);
           exp := Expression.makeArray(ty, {exp});
           outExp := simplify(exp);
@@ -470,7 +470,7 @@ algorithm
               SOME(outExp) := call.defaultExp;
             elseif dim_size == 1 then
               // Iteration range is one, return reduction expression with iterator value applied.
-              (Expression.ARRAY(elements = {e}), _) := ExpandExp.expand(e);
+              (Expression.LIST(elements = {e}), _) := ExpandExp.expand(e);
               outExp := Expression.replaceIterator(call.exp, iter, e);
               outExp := simplify(outExp);
             else
@@ -946,7 +946,7 @@ algorithm
     // e and true => e
     case (_, Expression.BOOLEAN(true))  then exp1;
 
-    case (Expression.ARRAY(), Expression.ARRAY())
+    case (Expression.LIST(), Expression.LIST())
       algorithm
         o := Operator.unlift(op);
         expl := list(simplifyLogicBinaryAnd(e1, o, e2)
@@ -978,7 +978,7 @@ algorithm
     // e or false => e
     case (_, Expression.BOOLEAN(false)) then exp1;
 
-    case (Expression.ARRAY(), Expression.ARRAY())
+    case (Expression.LIST(), Expression.LIST())
       algorithm
         o := Operator.unlift(op);
         expl := list(simplifyLogicBinaryAnd(e1, o, e2)
@@ -1071,7 +1071,7 @@ algorithm
     case (Type.REAL(), Expression.INTEGER())
       then Expression.REAL(intReal(exp.value));
 
-    case (Type.ARRAY(elementType = Type.REAL()), Expression.ARRAY())
+    case (Type.ARRAY(elementType = Type.REAL()), Expression.LIST())
       algorithm
         ety := Type.unliftArray(ty);
         exp.elements := list(simplifyCast(e, ety) for e in exp.elements);
@@ -1316,7 +1316,7 @@ algorithm
       exp.cref := cref;
     then addArgument(result, exp, inverse);
 
-    case (_, Expression.ARRAY()) algorithm
+    case (_, Expression.LIST()) algorithm
       exp.elements := list(combineBinariesExp(element) for element in exp.elements);
     then addArgument(result, exp, inverse);
 

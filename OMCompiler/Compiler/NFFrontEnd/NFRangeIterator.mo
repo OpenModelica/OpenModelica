@@ -93,7 +93,7 @@ public
         Absyn.Path path;
         list<Expression> values;
 
-      case Expression.ARRAY() then ARRAY_RANGE(exp.elements);
+      case Expression.LIST() then ARRAY_RANGE(exp.elements);
 
       case Expression.RANGE(start = Expression.INTEGER(istart),
                             step = SOME(Expression.INTEGER(istep)),

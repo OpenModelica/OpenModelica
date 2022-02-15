@@ -774,7 +774,7 @@ protected
   list<Expression> subs, vals;
 algorithm
   result := match (arrayExp, subscripts)
-    case (Expression.ARRAY(), Subscript.INDEX(sub) :: rest_subs) guard Expression.isScalarLiteral(sub)
+    case (Expression.LIST(), Subscript.INDEX(sub) :: rest_subs) guard Expression.isScalarLiteral(sub)
       algorithm
         idx := Expression.toInteger(sub);
 
@@ -787,7 +787,7 @@ algorithm
       then
         arrayExp;
 
-    case (Expression.ARRAY(), Subscript.SLICE(sub) :: rest_subs)
+    case (Expression.LIST(), Subscript.SLICE(sub) :: rest_subs)
       algorithm
         subs := Expression.arrayElements(sub);
         vals := Expression.arrayElements(value);
@@ -809,7 +809,7 @@ algorithm
       then
         arrayExp;
 
-    case (Expression.ARRAY(), Subscript.WHOLE() :: rest_subs)
+    case (Expression.LIST(), Subscript.WHOLE() :: rest_subs)
       algorithm
         if listEmpty(rest_subs) then
           arrayExp.elements := Expression.arrayElements(value);

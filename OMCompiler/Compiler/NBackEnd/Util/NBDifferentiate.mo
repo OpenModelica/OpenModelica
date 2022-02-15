@@ -351,12 +351,12 @@ public
     case Expression.CREF() then differentiateComponentRef(exp, diffArguments);
 
     // [a, b, c, ...]' = [a', b', c', ...]
-    case Expression.ARRAY() algorithm
+    case Expression.LIST() algorithm
       for element in exp.elements loop
         (element, diffArguments) := differentiateExpression(element, diffArguments);
         new_elements := element :: new_elements;
       end for;
-    then (Expression.ARRAY(exp.ty, listReverse(new_elements), exp.literal), diffArguments);
+    then (Expression.LIST(exp.ty, listReverse(new_elements), exp.literal), diffArguments);
 
     // |a, b, c|'   |a', b', c'|
     // |d, e, f|  = |d', e', f'|

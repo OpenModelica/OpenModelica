@@ -1196,7 +1196,7 @@ algorithm
           algorithm
             res := match call.arguments
               // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
-              case {Expression.ARRAY(elements = {})}
+              case {Expression.LIST(elements = {})}
                 equation
                  if Flags.isSet(Flags.CGRAPH) then
                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = false\n");
@@ -1237,7 +1237,7 @@ algorithm
           algorithm
             res := match call.arguments
               // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
-              case {Expression.ARRAY(elements = {})}
+              case {Expression.LIST(elements = {})}
                 equation
                   if Flags.isSet(Flags.CGRAPH) then
                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = false\n");
@@ -1261,7 +1261,7 @@ algorithm
           algorithm
             res := match call.arguments
               // normal call
-              case {uroots as Expression.ARRAY(elements = lst),nodes,message}
+              case {uroots as Expression.LIST(elements = lst),nodes,message}
                 equation
                   if Flags.isSet(Flags.CGRAPH) then
                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +
