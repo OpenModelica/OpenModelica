@@ -9796,7 +9796,7 @@ algorithm
 end getInitialAttributeHelperForParameters;
 
 protected function startValueIsConstOrNone
-  "Returns true iff the start value of the given variable is NONE or a constant."
+  "Returns true iff the start value of the given variable is NONE or a literal constant."
   input BackendDAE.Var var;
   output Boolean b = false;
 protected
@@ -9812,7 +9812,7 @@ algorithm
   if isNone(start_value) then
     b := true;
   else
-    b := Expression.isConst(Util.getOption(start_value));
+    b := Expression.isEvaluatedConst(Util.getOption(start_value));
   end if;
 end startValueIsConstOrNone;
 
@@ -10038,7 +10038,7 @@ algorithm
   end matchcontinue;
 end getMinMaxValues;
 
-protected function getStartValue "Extract initial value from BackendDAE.Variable, if it has any"
+protected function getStartValue "Extract initial value from BackendDAE.Var, if it has any"
   input BackendDAE.Var daelowVar;
   output Option<DAE.Exp> initVal;
 algorithm
@@ -10049,42 +10049,42 @@ algorithm
 
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-     then SOME(e);
+    then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-     then SOME(e);
+    then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-     then SOME(e);
+    then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-     then SOME(e);
+    then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-     then SOME(e);
+    then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-     then SOME(e);
+    then SOME(e);
 
-    /* Parameters with constant binding */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard Expression.isConst(e)
-     then SOME(e);
+    /* Parameters with binding */
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e)))
+    then SOME(e);
 
-    /* Parameters without constant binding. Investigate if it has start value */
+    /* Parameters without binding. Investigate if it has start value */
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-     then SOME(e);
+    then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))
-     then SOME(e);
+    then SOME(e);
 
     case (BackendDAE.VAR(values = dae_var_attr)) guard(BackendVariable.isVarNonDiscreteAlg(daelowVar))
-     then SOME(DAEUtil.getStartAttrFail(dae_var_attr));
+    then SOME(DAEUtil.getStartAttrFail(dae_var_attr));
 
     else NONE();
   end matchcontinue;

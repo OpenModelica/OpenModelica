@@ -264,7 +264,7 @@ template ScalarVariableTypeCommonAttributeXml(Option<DAE.Exp> initialValue, Bool
  "Generates XML code for ScalarVariable Type file ."
 ::=
 match initialValue
-  case SOME(exp) then 'start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+  case SOME(exp) then if boolOr(Expression.isEvaluatedConst(exp), Expression.isCref(exp)) then 'start="<%initValXml(exp)%>" fixed="<%isFixed%>"' else ''
 end ScalarVariableTypeCommonAttributeXml;
 
 template ScalarVariableTypeMinAttribute(Option<DAE.Exp> minValue)
