@@ -873,10 +873,10 @@ PropagateExtends.mo \
 ProtectedMod1.mo \
 ProtectedMod2.mo \
 ProtectedMod3.mo \
-ProtectedMod4.mo \
 ProtectedMod5.mo \
 ProtectedMod6.mo \
 ProtectedMod7.mo \
+ProtectedMod8.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \
 RangeInvalidStep3.mo \
@@ -1093,6 +1093,7 @@ sts.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+ProtectedMod4.mo \
 CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \
 FinalParameter1.mo \

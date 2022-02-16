@@ -1277,9 +1277,9 @@ algorithm
           for node_ptr in node_ptrs loop
             node := InstNode.resolveOuter(Mutable.access(node_ptr));
 
-            if InstNode.isProtected(node) and not InstNode.isExtends(parent) then
-              Error.addSourceMessage(Error.NF_MODIFY_PROTECTED,
-                {InstNode.name(node), Modifier.toString(mod)}, InstNode.info(node));
+            if InstNode.isProtected(node) and not (InstNode.isExtends(parent) or InstNode.isBaseClass(parent)) then
+              Error.addMultiSourceMessage(Error.NF_MODIFY_PROTECTED,
+                {InstNode.name(node), Modifier.toString(mod)}, {Modifier.info(mod), InstNode.info(node)});
               fail();
             end if;
 
