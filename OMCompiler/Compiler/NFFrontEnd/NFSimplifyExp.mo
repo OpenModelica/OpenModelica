@@ -54,6 +54,7 @@ import AbsynUtil;
 import ErrorExt;
 import Flags;
 import Debug;
+import Array;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 public
@@ -84,9 +85,9 @@ algorithm
       then
         exp;
 
-    case Expression.LIST()
+    case Expression.ARRAY()
       algorithm
-        exp.elements := list(simplify(e) for e in exp.elements);
+        exp.elements := Array.map(exp.elements, simplify);
       then
         exp;
 
@@ -331,8 +332,8 @@ algorithm
   e := if Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg);
 
   exp := match e
-    case Expression.LIST()
-      guard List.all(e.elements, Expression.isArray)
+    case Expression.ARRAY()
+      guard Array.all(e.elements, Expression.isArray)
       then Expression.transposeArray(e);
 
     else Expression.CALL(call);
@@ -358,7 +359,7 @@ algorithm
 
   if is_literal or List.all(expl, Expression.isScalar) then
     ty := Type.arrayElementType(Expression.typeOf(arg));
-    exp := Expression.makeExpArray(expl, ty);
+    exp := Expression.makeExpArray(listArray(expl), ty);
   else
     exp := Expression.CALL(call);
   end if;
@@ -417,9 +418,10 @@ algorithm
           outExp := Expression.makeEmptyArray(ty);
         elseif dim_size == 1 then
           // Result is Array[1], return array with the single element.
-          (Expression.LIST(elements = {e}), _) := ExpandExp.expand(e);
+          e := ExpandExp.expand(e);
+          e := Expression.arrayScalarElement(e);
           exp := Expression.replaceIterator(exp, iter, e);
-          exp := Expression.makeArray(ty, {exp});
+          exp := Expression.makeArray(ty, listArray({exp}));
           outExp := simplify(exp);
         elseif Expression.isLiteral(e) and not Expression.hasNonArrayIteratorSubscript(exp, iter) then
           // If the iterator is only used to subscript array expressions like
@@ -470,7 +472,8 @@ algorithm
               SOME(outExp) := call.defaultExp;
             elseif dim_size == 1 then
               // Iteration range is one, return reduction expression with iterator value applied.
-              (Expression.LIST(elements = {e}), _) := ExpandExp.expand(e);
+              e := ExpandExp.expand(e);
+              e := Expression.arrayScalarElement(e);
               outExp := Expression.replaceIterator(call.exp, iter, e);
               outExp := simplify(outExp);
             else
@@ -563,7 +566,7 @@ algorithm
 
         if List.all(dims, function Dimension.isKnown(allowExp = true)) then
           exp := Expression.makeArray(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(listLength(dims))}),
-                                      list(Dimension.sizeExp(d) for d in dims));
+                                      listArray(list(Dimension.sizeExp(d) for d in dims)));
         else
           exp := sizeExp;
         end if;
@@ -936,6 +939,7 @@ algorithm
     local
       list<Expression> expl;
       Operator o;
+      array<Expression> arr;
 
     // false and e => false
     case (Expression.BOOLEAN(false), _) then exp1;
@@ -946,13 +950,13 @@ algorithm
     // e and true => e
     case (_, Expression.BOOLEAN(true))  then exp1;
 
-    case (Expression.LIST(), Expression.LIST())
+    case (Expression.ARRAY(), Expression.ARRAY())
       algorithm
         o := Operator.unlift(op);
-        expl := list(simplifyLogicBinaryAnd(e1, o, e2)
-                     threaded for e1 in exp1.elements, e2 in exp2.elements);
+        arr := Array.threadMap(exp1.elements, exp2.elements,
+          function simplifyLogicBinaryAnd(op = o));
       then
-        Expression.makeArray(Operator.typeOf(op), expl);
+        Expression.makeArray(Operator.typeOf(op), arr);
 
     else Expression.LBINARY(exp1, op, exp2);
   end match;
@@ -968,6 +972,7 @@ algorithm
     local
       list<Expression> expl;
       Operator o;
+      array<Expression> arr;
 
     // true or e => true
     case (Expression.BOOLEAN(true), _) then exp1;
@@ -978,13 +983,13 @@ algorithm
     // e or false => e
     case (_, Expression.BOOLEAN(false)) then exp1;
 
-    case (Expression.LIST(), Expression.LIST())
+    case (Expression.ARRAY(), Expression.ARRAY())
       algorithm
         o := Operator.unlift(op);
-        expl := list(simplifyLogicBinaryOr(e1, o, e2)
-                     threaded for e1 in exp1.elements, e2 in exp2.elements);
+        arr := Array.threadMap(exp1.elements, exp2.elements,
+          function simplifyLogicBinaryOr(op = o));
       then
-        Expression.makeArray(Operator.typeOf(op), expl);
+        Expression.makeArray(Operator.typeOf(op), arr);
 
     else Expression.LBINARY(exp1, op, exp2);
   end match;
@@ -1071,10 +1076,10 @@ algorithm
     case (Type.REAL(), Expression.INTEGER())
       then Expression.REAL(intReal(exp.value));
 
-    case (Type.ARRAY(elementType = Type.REAL()), Expression.LIST())
+    case (Type.ARRAY(elementType = Type.REAL()), Expression.ARRAY())
       algorithm
         ety := Type.unliftArray(ty);
-        exp.elements := list(simplifyCast(e, ety) for e in exp.elements);
+        exp.elements := Array.map(exp.elements, function simplifyCast(ty = ety));
         exp.ty := Type.setArrayElementType(exp.ty, Type.arrayElementType(ty));
       then
         exp;
@@ -1316,8 +1321,10 @@ algorithm
       exp.cref := cref;
     then addArgument(result, exp, inverse);
 
-    case (_, Expression.LIST()) algorithm
-      exp.elements := list(combineBinariesExp(element) for element in exp.elements);
+    case (_, Expression.ARRAY()) algorithm
+      exp.elements := Array.map(exp.elements,
+        function combineBinariesExp(optOperator = NONE(),
+          result = Expression.EMPTY(Expression.typeOf(exp)), inverse = false));
     then addArgument(result, exp, inverse);
 
     case (_, Expression.RANGE()) algorithm

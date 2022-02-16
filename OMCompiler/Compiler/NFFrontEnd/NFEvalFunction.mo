@@ -771,51 +771,57 @@ protected
   Expression sub, val;
   list<Subscript> rest_subs;
   Integer idx;
-  list<Expression> subs, vals;
+  array<Expression> subs, vals;
 algorithm
   result := match (arrayExp, subscripts)
-    case (Expression.LIST(), Subscript.INDEX(sub) :: rest_subs) guard Expression.isScalarLiteral(sub)
+    case (Expression.ARRAY(), Subscript.INDEX(sub) :: rest_subs) guard Expression.isScalarLiteral(sub)
       algorithm
         idx := Expression.toInteger(sub);
 
         if listEmpty(rest_subs) then
-          arrayExp.elements := List.set(arrayExp.elements, idx, value);
+          arrayUpdate(arrayExp.elements, idx, value);
         else
-          arrayExp.elements := List.set(arrayExp.elements, idx,
-            assignArrayElement(listGet(arrayExp.elements, idx), rest_subs, value));
+          arrayUpdate(arrayExp.elements, idx,
+            assignArrayElement(arrayGet(arrayExp.elements, idx), rest_subs, value));
         end if;
       then
         arrayExp;
 
-    case (Expression.LIST(), Subscript.SLICE(sub) :: rest_subs)
+    case (Expression.ARRAY(), Subscript.SLICE(sub) :: rest_subs)
       algorithm
         subs := Expression.arrayElements(sub);
         vals := Expression.arrayElements(value);
 
+        if arrayLength(subs) > arrayLength(vals) then
+          fail();
+        end if;
+
         if listEmpty(rest_subs) then
-          for s in subs loop
-            val :: vals := vals;
-            idx := Expression.toInteger(s);
-            arrayExp.elements := List.set(arrayExp.elements, idx, val);
+          for i in 1:arrayLength(subs) loop
+            sub := arrayGetNoBoundsChecking(subs, i);
+            val := arrayGetNoBoundsChecking(vals, i);
+            idx := Expression.toInteger(sub);
+            arrayUpdate(arrayExp.elements, idx, val);
           end for;
         else
-          for s in subs loop
-            val :: vals := vals;
-            idx := Expression.toInteger(s);
-            arrayExp.elements := List.set(arrayExp.elements, idx,
-              assignArrayElement(listGet(arrayExp.elements, idx), rest_subs, val));
+          for i in 1:arrayLength(subs) loop
+            sub := arrayGetNoBoundsChecking(subs, i);
+            val := arrayGetNoBoundsChecking(vals, i);
+            idx := Expression.toInteger(sub);
+            arrayUpdate(arrayExp.elements, idx,
+              assignArrayElement(arrayGet(arrayExp.elements, idx), rest_subs, val));
           end for;
         end if;
       then
         arrayExp;
 
-    case (Expression.LIST(), Subscript.WHOLE() :: rest_subs)
+    case (Expression.ARRAY(), Subscript.WHOLE() :: rest_subs)
       algorithm
         if listEmpty(rest_subs) then
-          arrayExp.elements := Expression.arrayElements(value);
+          arrayExp.elements := arrayCopy(Expression.arrayElements(value));
         else
-          arrayExp.elements := list(assignArrayElement(e, rest_subs, v) threaded for
-            e in arrayExp.elements, v in Expression.arrayElements(value));
+          arrayExp.elements := listArray(list(assignArrayElement(e, rest_subs, v) threaded for
+            e in arrayExp.elements, v in Expression.arrayElements(value)));
         end if;
       then
         arrayExp;

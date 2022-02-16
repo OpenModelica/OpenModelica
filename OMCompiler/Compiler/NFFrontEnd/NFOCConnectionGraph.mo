@@ -1196,7 +1196,7 @@ algorithm
           algorithm
             res := match call.arguments
               // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
-              case {Expression.LIST(elements = {})}
+              case _ guard Expression.isEmptyArray(listHead(call.arguments))
                 equation
                  if Flags.isSet(Flags.CGRAPH) then
                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = false\n");
@@ -1237,7 +1237,7 @@ algorithm
           algorithm
             res := match call.arguments
               // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
-              case {Expression.LIST(elements = {})}
+              case _ guard Expression.isEmptyArray(listHead(call.arguments))
                 equation
                   if Flags.isSet(Flags.CGRAPH) then
                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = false\n");
@@ -1261,7 +1261,7 @@ algorithm
           algorithm
             res := match call.arguments
               // normal call
-              case {uroots as Expression.LIST(elements = lst),nodes,message}
+              case {uroots,nodes,message}
                 equation
                   if Flags.isSet(Flags.CGRAPH) then
                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +
@@ -1269,9 +1269,10 @@ algorithm
                       Expression.toString(nodes) + "," +
                       Expression.toString(message) + ")\n");
                   end if;
+                  lst = Expression.arrayElementList(uroots);
                   lst = List.fill(Expression.INTEGER(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
                 then
-                  Expression.makeArray(Type.INTEGER(), lst);
+                  Expression.makeArray(Type.INTEGER(), listArray(lst));
             end match;
           then
             res;

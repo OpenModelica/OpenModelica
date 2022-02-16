@@ -522,7 +522,7 @@ public
         var := BVariable.getVar(exp.cref);
       then stringHashDjb2Mod(BackendExtension.BackendInfo.toString(var.backendinfo), mod);
       case Expression.TYPENAME() then 1; // ty !!
-      case Expression.LIST() algorithm // ty !!
+      case Expression.ARRAY() algorithm // ty !!
         for elem in exp.elements loop
           hash := hash + noNameHashExp(elem, mod);
         end for;

@@ -230,20 +230,20 @@ extern struct record_description NFExpression_NFExpression_TYPENAME__desc;
 #define NFExpression__TYPENAME_3dBOX1 10
 #define NFExpression__TYPENAME(ty) (mmc_mk_box2(10,&NFExpression_NFExpression_TYPENAME__desc,ty))
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef NFExpression_NFExpression_LIST__desc_added
-#define NFExpression_NFExpression_LIST__desc_added
-ADD_METARECORD_DEFINITIONS const char* NFExpression_NFExpression_LIST__desc__fields[3] = {"ty","elements","literal"};
-ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_LIST__desc = {
-  "NFExpression_NFExpression_LIST",
-  "NFExpression.NFExpression.LIST",
-  NFExpression_NFExpression_LIST__desc__fields
+#ifndef NFExpression_NFExpression_ARRAY__desc_added
+#define NFExpression_NFExpression_ARRAY__desc_added
+ADD_METARECORD_DEFINITIONS const char* NFExpression_NFExpression_ARRAY__desc__fields[3] = {"ty","elements","literal"};
+ADD_METARECORD_DEFINITIONS struct record_description NFExpression_NFExpression_ARRAY__desc = {
+  "NFExpression_NFExpression_ARRAY",
+  "NFExpression.NFExpression.ARRAY",
+  NFExpression_NFExpression_ARRAY__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description NFExpression_NFExpression_LIST__desc;
+extern struct record_description NFExpression_NFExpression_ARRAY__desc;
 #endif
-#define NFExpression__LIST_3dBOX3 11
-#define NFExpression__LIST(ty,elements,literal) (mmc_mk_box4(11,&NFExpression_NFExpression_LIST__desc,ty,elements,literal))
+#define NFExpression__ARRAY_3dBOX3 11
+#define NFExpression__ARRAY(ty,elements,literal) (mmc_mk_box4(11,&NFExpression_NFExpression_ARRAY__desc,ty,elements,literal))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef NFExpression_NFExpression_MATRIX__desc_added
 #define NFExpression_NFExpression_MATRIX__desc_added

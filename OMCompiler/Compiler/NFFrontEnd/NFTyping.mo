@@ -88,6 +88,7 @@ import ErrorExt;
 import ErrorTypes;
 import OperatorOverloading = NFOperatorOverloading;
 import Structural = NFStructural;
+import Array;
 
 public
 uniontype TypingError
@@ -720,7 +721,7 @@ protected
   Expression exp;
 algorithm
   dimExp := match dimExp
-    case Expression.LIST()
+    case Expression.ARRAY()
       guard Expression.arrayAllEqual(dimExp)
       then Expression.arrayFirstScalar(dimExp);
 
@@ -1173,7 +1174,7 @@ algorithm
       then
         (exp, exp.ty, Variability.CONSTANT, Purity.PURE);
 
-    case Expression.LIST()   then typeArray(exp.elements, context, info);
+    case Expression.ARRAY()  then typeArray(exp.elements, context, info);
     case Expression.MATRIX() then typeMatrix(exp.elements, context, info);
     case Expression.RANGE()  then typeRange(exp, context, info);
     case Expression.TUPLE()  then typeTuple(exp.elements, context, info);
@@ -1471,8 +1472,8 @@ protected
   list<Expression> expl;
 algorithm
   (outExp, ty, variability, purity) := match exp
-    case Expression.LIST()
-      guard not listEmpty(splitSubs) and not listEmpty(exp.elements)
+    case Expression.ARRAY()
+      guard not listEmpty(splitSubs) and not arrayEmpty(exp.elements)
       algorithm
         expl := {};
         variability := Variability.CONSTANT;
@@ -1485,7 +1486,7 @@ algorithm
 
         expl := listReverseInPlace(expl);
         ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
-        outExp := Expression.makeArray(ty, expl);
+        outExp := Expression.makeArray(ty, listArray(expl));
       then
         (outExp, ty, variability, purity);
 
@@ -1520,7 +1521,7 @@ algorithm
     // the dimension we need, to avoid introducing unnecessary cycles.
     (dim, error) := match exp
       // An untyped array, use typeArrayDim to get the dimension.
-      case Expression.LIST(ty = Type.UNKNOWN())
+      case Expression.ARRAY(ty = Type.UNKNOWN())
         then typeArrayDim(exp, dimIndex);
 
       // A cref, use typeCrefDim to get the dimension.
@@ -1602,13 +1603,13 @@ function typeArrayDim2
         output TypingError error;
 algorithm
   (dim, error) := match (arrayExp, dimIndex)
-    case (Expression.LIST(), 1)
-      then (Dimension.fromExpList(arrayExp.elements), TypingError.NO_ERROR());
+    case (Expression.ARRAY(), 1)
+      then (Dimension.fromExpArray(arrayExp.elements), TypingError.NO_ERROR());
 
     // Modelica arrays are non-ragged and only the last dimension of an array
     // expression can be empty, so just traverse into the first element.
-    case (Expression.LIST(), _)
-      then typeArrayDim2(listHead(arrayExp.elements), dimIndex - 1, dimCount + 1);
+    case (Expression.ARRAY(), _)
+      then typeArrayDim2(arrayGet(arrayExp.elements, 1), dimIndex - 1, dimCount + 1);
 
     else
       algorithm
@@ -1984,7 +1985,7 @@ algorithm
 end typeSubscript;
 
 function typeArray
-  input list<Expression> elements;
+  input array<Expression> elements;
   input InstContext.Type context;
   input SourceInfo info;
   output Expression arrayExp;
@@ -2038,7 +2039,7 @@ algorithm
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
-  arrayExp := Expression.makeArray(arrayType, expl2);
+  arrayExp := Expression.makeArray(arrayType, listArray(expl2));
 end typeArray;
 
 function typeMatrix "The array concatenation operator"
@@ -2281,7 +2282,7 @@ protected
   TypingError ty_err;
   Option<Expression> oexp;
   InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
-  list<Expression> expl;
+  array<Expression> expl;
 algorithm
   (sizeExp, sizeType, variability, purity) := match sizeExp
     case Expression.SIZE(exp = exp, dimIndex = SOME(index))
@@ -2348,7 +2349,7 @@ algorithm
             // present in the flat model or an array expression that doesn't have enough
             // dimensions (e.g. Real[0, 2] => {}). In that case make an array with the dimension
             // sizes of the expression and index that instead.
-            expl := list(Dimension.sizeExp(d) for d in Type.arrayDims(exp_ty));
+            expl := Array.mapList(Type.arrayDims(exp_ty), Dimension.sizeExp);
             exp := Expression.makeExpArray(expl, Type.INTEGER());
             exp := Expression.makeSubscriptedExp({Subscript.makeIndex(index)}, exp);
           else
@@ -3419,7 +3420,7 @@ function checkWhenInitial
   output Boolean invalid;
 algorithm
   invalid := match condition
-    case Expression.LIST()
+    case Expression.ARRAY()
       algorithm
         for e in condition.elements loop
           if checkWhenInitial(e) then
