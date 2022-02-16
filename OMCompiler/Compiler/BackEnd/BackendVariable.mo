@@ -1248,6 +1248,13 @@ algorithm
   end match;
 end isParam;
 
+public function makeParam
+  "Change variable to parameter"
+  input output BackendDAE.Var var;
+algorithm
+  var.varKind := BackendDAE.PARAM();
+end makeParam;
+
 public function isParamOrConstant
 "Return true if variable is parameter or constant"
   input BackendDAE.Var invar;

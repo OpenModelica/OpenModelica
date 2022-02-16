@@ -81,7 +81,7 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat");
 //
 // ########### Updated Variable List (simulation) (1)
 // ========================================
-// 1: z2:VARIABLE()  type: Real 
+// 1: z2:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List (simulation) (1, 1)
@@ -91,12 +91,12 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat");
 //
 // ########### Updated globalKnownVars (simulation) (6)
 // ========================================
-// 1: p1:PARAM()  = 5  type: Integer 
-// 2: p2:PARAM()  = 10  type: Integer 
-// 3: p3:PARAM()  = 1.0  type: Real 
-// 4: $cse1.d2 in $cse1:DISCRETE(fixed = true protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer  unreplaceable
-// 5: $cse1.d1 in $cse1:DISCRETE(fixed = true protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer  unreplaceable
-// 6: z1:VARIABLE(fixed = true )  = CSE.wrapFunctionCalls10.f1($cse1, p3)  type: Real 
+// 1: p1:PARAM()  = 5  type: Integer
+// 2: p2:PARAM()  = 10  type: Integer
+// 3: p3:PARAM()  = 1.0  type: Real
+// 4: $cse1.d2 in $cse1:PARAM(protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer unreplaceable
+// 5: $cse1.d1 in $cse1:PARAM(protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer unreplaceable
+// 6: z1:PARAM()  = CSE.wrapFunctionCalls10.f1($cse1, p3)  type: Real
 //
 //
 // ########### CSE Replacements (3/44)
