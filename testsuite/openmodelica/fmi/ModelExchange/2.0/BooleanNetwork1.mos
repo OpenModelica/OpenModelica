@@ -1,72 +1,78 @@
 // name:     BooleanNetwork1
 // keywords: BooleanNetwork1 FMI-Export FMI-Import
-// status:   correct
-// teardown_command: rm -rf BooleanNetwork1.fmu BooleanNetwork1.log BooleanNetwork1_init.xml BooleanNetwork1_me_FMU.mo BooleanNetwork1_me_FMU_init.xml binaries/ modelDescription.xml resources/ sources/
-// cflags: -d=-newInst
-// Boolean variables, Boolean input variable, no continuous-time states, time events
+// status:   incorrect
+// teardown_command: rm -rf Modelica.Blocks.Examples.BooleanNetwork1* Modelica_Blocks_Examples_BooleanNetwork1* BooleanNetwork1.lua BooleanNetwork1_systemCall.log
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
-loadFile("BooleanNetwork1.mo"); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
 
-simulate(BooleanNetwork1, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|Q|QI"); getErrorString();
+simulate(Modelica.Blocks.Examples.BooleanNetwork1, stopTime=10, numberOfIntervals=150); getErrorString();
 
-val(y1, 2.2);
-val(y2, 10);
-val(y3, 10);
-val(y4, 10);
-val(Q, 10);
-val(QI, 10);
+val(triggeredAdd.y, 10);
+val(booleanPulse2.y, 10);
+val(set1.y, 10);
+val(onDelay.y, 10);
+val(rSFlipFlop.Q, 10);
+val(rSFlipFlop.QI, 10);
 
-translateModelFMU(BooleanNetwork1, version="2.0"); getErrorString();
+translateModelFMU(Modelica.Blocks.Examples.BooleanNetwork1, version="2.0"); getErrorString();
 
-importFMU("BooleanNetwork1.fmu"); getErrorString();
-loadFile("BooleanNetwork1_me_FMU.mo"); getErrorString();
-simulate(BooleanNetwork1_me_FMU, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|Q|QI"); getErrorString();
+writeFile("BooleanNetwork1.lua", "
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-BooleanNetwork1/\")
 
-val(y1, 2.2);
-val(y2, 10);
-val(y3, 10);
-val(y4, 10);
-val(Q, 10);
-val(QI, 10);
+oms_newModel(\"test\")
+oms_addSystem(\"test.root\", oms_system_sc)
+oms_addSubModel(\"test.root.fmu\", \"Modelica.Blocks.Examples.BooleanNetwork1.fmu\")
+oms_setResultFile(\"test\", \"\")
+oms_setStopTime(\"test\", 10)
+
+oms_instantiate(\"test\")
+oms_initialize(\"test\")
+oms_simulate(\"test\")
+print(\"info:    Simulation\")
+print(\"info:      triggeredAdd.y:  \" .. oms_getReal(\"test.root.fmu.triggeredAdd.y\"))
+print(\"info:      booleanPulse2.y: \" .. oms_getReal(\"test.root.fmu.booleanPulse2.y\"))
+print(\"info:      set1.y:          \" .. oms_getReal(\"test.root.fmu.set1.y\"))
+print(\"info:      onDelay.y:       \" .. oms_getReal(\"test.root.fmu.onDelay.y\"))
+print(\"info:      rSFlipFlop.Q:    \" .. oms_getReal(\"test.root.fmu.rSFlipFlop.Q\"))
+print(\"info:      rSFlipFlop.QI:   \" .. oms_getReal(\"test.root.fmu.rSFlipFlop.QI\"))
+
+oms_terminate(\"test\")
+oms_delete(\"test\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator BooleanNetwork1.lua", "BooleanNetwork1_systemCall.log");
+readFile("BooleanNetwork1_systemCall.log");
 
 // Result:
 // true
 // ""
-// true
-// ""
 // record SimulationResult
-//     resultFile = "BooleanNetwork1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|Q|QI', cflags = '', simflags = ''",
+//     resultFile = "Modelica.Blocks.Examples.BooleanNetwork1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// 8.0
+// 40.0
 // 1.0
 // 0.0
 // 0.0
 // 1.0
 // 0.0
-// "BooleanNetwork1.fmu"
-// ""
-// "BooleanNetwork1_me_FMU.mo"
+// "Modelica.Blocks.Examples.BooleanNetwork1.fmu"
 // ""
 // true
 // ""
-// record SimulationResult
-//     resultFile = "BooleanNetwork1_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BooleanNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|Q|QI', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// "info:    model doesn't contain any continuous state
+// info:    Simulation
+// info:      triggeredAdd.y:  40.0
+// info:      booleanPulse2.y: 1.0
+// info:      set1.y:          0.0
+// info:      onDelay.y:       0.0
+// info:      rSFlipFlop.Q:    1.0
+// info:      rSFlipFlop.QI:   0.0
 // "
-// end SimulationResult;
-// ""
-// 8.0
-// 1.0
-// 0.0
-// 0.0
-// 1.0
-// 0.0
 // endResult
