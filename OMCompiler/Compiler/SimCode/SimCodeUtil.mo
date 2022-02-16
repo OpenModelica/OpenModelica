@@ -9800,8 +9800,15 @@ protected function startValueIsConstOrNone
   input BackendDAE.Var var;
   output Boolean b = false;
 protected
-  Option<DAE.Exp> start_value = getStartValue(var);
+  Option<DAE.Exp> start_value;
 algorithm
+  //BackendDump.dumpVarList({var}, "startValueIsConstOrNone");
+  if BackendVariable.varHasBindExp(var) then
+    b := Expression.isEvaluatedConst(BackendVariable.varBindExpStartValue(var));
+    return;
+  end if;
+
+  start_value := getStartValue(var);
   if isNone(start_value) then
     b := true;
   else
