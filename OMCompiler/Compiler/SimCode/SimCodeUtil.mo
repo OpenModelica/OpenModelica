@@ -9803,14 +9803,16 @@ protected
   Option<DAE.Exp> start_value;
 algorithm
   //BackendDump.dumpVarList({var}, "startValueIsConstOrNone");
-  if BackendVariable.varHasBindExp(var) then
-    b := Expression.isEvaluatedConst(BackendVariable.varBindExpStartValue(var));
-    return;
-  end if;
+  // if BackendVariable.varHasBindExp(var) then
+  //   b := Expression.isEvaluatedConst(BackendVariable.varBindExpStartValue(var));
+  //   return;
+  // end if;
 
   start_value := getStartValue(var);
-  if isNone(start_value) then
-    b := true;
+  if isNone(start_value) and isNone(var.bindExp) then
+    b:= true;
+  elseif isNone(start_value) and BackendVariable.varHasBindExp(var) then
+    b:= Expression.isEvaluatedConst(Util.getOption(var.bindExp));
   else
     b := Expression.isEvaluatedConst(Util.getOption(start_value));
   end if;
