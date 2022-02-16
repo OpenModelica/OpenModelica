@@ -7587,7 +7587,6 @@ protected
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.InlineData inlineData;
-  BackendDAE.Variables globalKnownVars;
   Integer numCheckpoints;
   DAE.FunctionTree funcTree;
 algorithm
@@ -7633,16 +7632,13 @@ algorithm
   dae := SymbolicJacobian.calculateStateSetsJacobians(dae);
 
   // generate system for initialization
-  (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars, dae) := Initialization.solveInitialSystem(dae);
+  (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, _, simDAE) := Initialization.solveInitialSystem(dae);
   if Flags.isSet(Flags.WARN_NO_NOMINAL) then
     warnAboutIterationVariablesWithNoNominal(outInitDAE);
   end if;
 
   // use function tree from initDAE further for simDAE
-  simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
-
-  // Set updated globalKnownVars
-  simDAE := setDAEGlobalKnownVars(simDAE, globalKnownVars);
+  simDAE := BackendDAEUtil.setFunctionTree(simDAE, BackendDAEUtil.getFunctions(outInitDAE.shared));
 
   // add initial assignmnents to all algorithms
   simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE, false);
