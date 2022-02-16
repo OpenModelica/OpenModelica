@@ -909,9 +909,13 @@ algorithm
     local
       DAE.Exp r;
     case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_REAL(start = NONE()))) then DAE.RCONST(0.0);
     case (SOME(DAE.VAR_ATTR_INT(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_INT(start = NONE()))) then DAE.ICONST(0);
     case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_BOOL(start = NONE()))) then DAE.BCONST(false);
     case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_STRING(start = NONE()))) then DAE.SCONST("");
     case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
     else DAE.RCONST(0.0);
   end match;
