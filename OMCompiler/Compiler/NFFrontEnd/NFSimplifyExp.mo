@@ -981,7 +981,7 @@ algorithm
     case (Expression.LIST(), Expression.LIST())
       algorithm
         o := Operator.unlift(op);
-        expl := list(simplifyLogicBinaryAnd(e1, o, e2)
+        expl := list(simplifyLogicBinaryOr(e1, o, e2)
                      threaded for e1 in exp1.elements, e2 in exp2.elements);
       then
         Expression.makeArray(Operator.typeOf(op), expl);

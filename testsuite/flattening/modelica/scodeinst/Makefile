@@ -812,6 +812,7 @@ OperationAddEW1.mo \
 OperationDiv1.mo \
 OperationDivEW1.mo \
 OperationLogicalBinary1.mo \
+OperationLogicalBinary2.mo \
 OperationLogicalUnary1.mo \
 OperationLogicalUnary2.mo \
 OperationMatrixProduct1.mo \
