@@ -112,8 +112,8 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //     name=\"R1.R_actual\"
 //     valueReference=\"6\"
 //     description=\"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"Ohm\"/>
+//     >
+//     <Real unit=\"Ohm\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
 //   <ScalarVariable
@@ -461,7 +461,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
 //     <InitialUnknowns>
-//       <Unknown index=\"2\" dependencies=\"1 7\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"2\" dependencies=\"1 11 14 15\" dependenciesKind=\"dependent dependent dependent dependent\" />
 //       <Unknown index=\"10\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"12\" dependencies=\"14\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"13\" dependencies=\"\" dependenciesKind=\"\" />
