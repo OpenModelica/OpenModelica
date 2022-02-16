@@ -10065,11 +10065,11 @@ algorithm
       e = DAEUtil.getStartAttrFail(dae_var_attr);
      then SOME(e);
 
-    /* Parameters with constant binding */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard Expression.isConst(e)
+    /* Parameters with binding */
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e)))
      then SOME(e);
 
-    /* Parameters without constant binding. Investigate if it has start value */
+    /* Parameters without binding. Investigate if it has start value */
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
      then SOME(e);
