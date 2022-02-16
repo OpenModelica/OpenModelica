@@ -40,6 +40,11 @@
 #include <QCheckBox>
 #include <QDialogButtonBox>
 
+typedef struct {
+  QString source;
+  QStringList versions;
+} FilteredLibrary;
+
 class InstallLibraryDialog : public QDialog
 {
   Q_OBJECT
@@ -48,8 +53,8 @@ public:
 private:
   JsonDocument mIndexJsonDocument;
   QVariantMap mLibrariesMap;
-  QComboBox *mpNameComboBox;
-  Label *mpSourceLabel;
+  QMap<QString, QStringList> mLibrariesAndVersionsMap;
+  QMap<QString, FilteredLibrary> mFilteredLibrariesMap;
   QCheckBox *mpLatestBackwardsCompatibleCheckBox;
   QCheckBox *mpPostReleaseBuildsCheckBox;
   QCheckBox *mpPreReleaseBuildsCheckBox;
@@ -58,7 +63,9 @@ private:
   QCheckBox *mpExperimentalCheckBox;
   QCheckBox *mpObsoleteCheckBox;
   QCheckBox *mpNoSupportCheckBox;
+  QComboBox *mpNameComboBox;
   QComboBox *mpVersionComboBox;
+  Label *mpSourceLabel;
   QCheckBox *mpExactMatchCheckBox;
   Label *mpProgressLabel;
   QPushButton *mpOkButton;
