@@ -1138,7 +1138,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.I.k\" description=\"Integrator gain\" valueReference=\"85\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
-//       <Real fixed=\"true\"   unit=\"1\" />
+//       <Real    unit=\"1\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"I\"/>
@@ -1381,7 +1381,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.gainTrack.k\" description=\"Gain value multiplied with input signal\" valueReference=\"104\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
-//       <Real fixed=\"true\"   unit=\"1\" />
+//       <Real    unit=\"1\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"gainTrack\"/>
@@ -1708,7 +1708,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"loadTorque.flange.tau\" description=\"Cut torque in the flange\" valueReference=\"128\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
-//       <Real fixed=\"true\"   unit=\"N.m\" />
+//       <Real    unit=\"N.m\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"loadTorque\"/>
 //         <exp:QualifiedNamePart name=\"flange\"/>
