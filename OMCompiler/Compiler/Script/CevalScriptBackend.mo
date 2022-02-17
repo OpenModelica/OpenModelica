@@ -1548,7 +1548,7 @@ algorithm
             System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-            resI := setPathsAndSystemCall(sim_call,dirs,logFile);
+            resI := System.systemCall(sim_call, logFile);
 
             timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
 
@@ -1650,7 +1650,7 @@ algorithm
         (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(cache,env,vals,msg);
         if b then
           Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
-          executableSuffixedExe = stringAppend(executable, Autoconf.exeExt);
+          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
           logFile = stringAppend(executable,".log");
           if System.regularFileExists(logFile) then
             0 = System.removeFile(logFile);
@@ -1660,7 +1660,7 @@ algorithm
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-          if 0 == setPathsAndSystemCall(sim_call, dirs, logFile) then
+          if 0 == System.systemCall(sim_call, logFile) then
             result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -1725,7 +1725,7 @@ algorithm
           sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-          resI = setPathsAndSystemCall(sim_call, dirs, logFile);
+          resI = System.systemCall(sim_call, logFile);
           timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         else
           result_file = "";
@@ -3241,18 +3241,23 @@ output String outString;
 algorithm
   outString:=match(inString,inString2)
   local
+    // We now use a bat script, even for the C runtime, on Windows.
+    case ("C","WIN64")
+     then ".bat";
+    case ("C","WIN32")
+      then ".bat";
     case ("Cpp","WIN32")
-       then ".bat";
+      then ".bat";
     case ("Cpp","WIN64")
-       then ".bat";
+      then ".bat";
     case ("Cpp","Unix")
-       then ".sh";
+      then ".sh";
     case ("omsicpp","WIN64")
      then ".bat";
     case ("omsicpp","WIN32")
-       then ".bat";
+      then ".bat";
     case ("omsicpp","Unix")
-       then ".sh";
+      then ".sh";
     else Autoconf.exeExt;
   end match;
  end getSimulationExtension;
@@ -8749,58 +8754,6 @@ algorithm
     scripts := Util.getOption(script) :: scripts;
   end if;
 end findConversionPath;
-
-
-protected function setPathsAndSystemCall
-  "Set the neccesary paths based on library dirs (e.g. those from annotations)
-   and then issue the system command. These dirs/locations are added to the PATH
-   in order to find the neccsary dlls at runtime for Windows simulation executables.
-   NOTE: this function expects the 'link command' as the second argument. This will
-   look something like
-       {\"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library/win64\",
-        \"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library\",
-         ...}
-   The function will check for strings that start with \"-L and then trims it to get the
-   corrseponding directory.
-
-   If you want something more general write another function and generalize this.
-  "
-  input String systemCallStr;
-  input list<String> libsAndLinkDirs;
-  input String logFile;
-  output Integer returnCode;
-protected
-  String oldPath, newPath;
-  list<String> linkDirs = {};
-algorithm
-
-  // If not Windows we do not need to modify the PATH. rpaths are set
-  // when the executable is built and the libs will find their depenencies just fine.
-  if not Autoconf.os == "Windows_NT" then
-    returnCode := System.systemCall(systemCallStr, logFile);
-    return;
-  end if;
-
-  // Otherwise (on Windows) we modify the path with the given additional dirs
-  // (e.g., Modelica library resource directories) and issue the command.
-  // We will then reset the path back.
-  newPath := "";
-  for str in libsAndLinkDirs loop
-    if Util.stringStartsWith("\"-L", str) then
-      newPath := newPath + System.trim(str, "\"-L") + ";";
-    end if;
-  end for;
-
-  oldPath := System.readEnv("PATH");
-  newPath := System.stringReplace(newPath, "/", "\\") + oldPath;
-  // print("Path set: " + newPath + "\n");
-  System.setEnv("PATH", newPath, true);
-
-  returnCode := System.systemCall(systemCallStr, logFile);
-
-  System.setEnv("PATH", oldPath, true);
-
-end setPathsAndSystemCall;
 
 annotation(__OpenModelica_Interface="backend");
 

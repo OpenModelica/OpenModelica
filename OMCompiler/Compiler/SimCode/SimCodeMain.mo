@@ -616,6 +616,10 @@ algorithm
           codegenFuncs := (function runToStr(func=function SerializeTaskSystemInfo.serializeParMod(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         end if;
 
+        if Autoconf.os == "Windows_NT" then
+          codegenFuncs := (function runToStr(func=function SimCodeUtil.generateRunnerBatScript(code=simCode))) :: codegenFuncs;
+        end if;
+
         // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
         numThreads := max(1, if Testsuite.isRunning() then min(2, System.numProcessors()) else Config.noProc());
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
