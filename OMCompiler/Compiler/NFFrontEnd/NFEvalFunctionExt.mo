@@ -547,7 +547,7 @@ function evaluateExtIntArrayArg
 protected
   list<Expression> expl;
 algorithm
-  expl := Expression.arrayElements(Ceval.evalExp(arg));
+  expl := Expression.arrayElementList(Ceval.evalExp(arg));
   value := list(getExtIntValue(e) for e in expl);
 end evaluateExtIntArrayArg;
 
@@ -557,7 +557,7 @@ function evaluateExtRealArrayArg
 protected
   list<Expression> expl;
 algorithm
-  expl := Expression.arrayElements(Ceval.evalExp(arg));
+  expl := Expression.arrayElementList(Ceval.evalExp(arg));
   value := list(getExtRealValue(e) for e in expl);
 end evaluateExtRealArrayArg;
 
@@ -565,10 +565,10 @@ function evaluateExtRealMatrixArg
   input Expression arg;
   output list<list<Real>> value;
 protected
-  list<Expression> expl;
+  array<Expression> expl;
   Type ty;
 algorithm
-  Expression.LIST(ty = ty, elements = expl) := Ceval.evalExp(arg);
+  Expression.ARRAY(ty = ty, elements = expl) := Ceval.evalExp(arg);
 
   // Some external functions don't make a difference between vectors and
   // matrices, so if the argument is a vector we convert it into a matrix.
@@ -595,9 +595,9 @@ algorithm
   exp := match (Expression.typeOf(variable), value)
     // Vector variable, matrix value => convert value to vector.
     case (Type.ARRAY(dimensions = {_}),
-          Expression.LIST(ty = Type.ARRAY(dimensions = {_, _})))
+          Expression.ARRAY(ty = Type.ARRAY(dimensions = {_, _})))
       then Expression.makeArray(Type.unliftArray(value.ty),
-                                list(Expression.arrayScalarElement(e) for e in value.elements),
+                                listArray(list(Expression.arrayScalarElement(e) for e in value.elements)),
                                 literal = true);
 
     else value;

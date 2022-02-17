@@ -101,7 +101,7 @@ void* increment_ptr(void *ptr, size_t bytes)
 static int is_exp_pointer_type(void *exp)
 {
   switch (MMC_HDRCTOR(MMC_GETHDR(exp))) {
-    case NFExpression__LIST_3dBOX3: return 1;
+    case NFExpression__ARRAY_3dBOX3: return 1;
     case NFExpression__RECORD_3dBOX3: return 1;
   }
 
@@ -170,13 +170,13 @@ static ffi_type* exp_alignment_and_type(void *exp, struct Alignment *align, int 
       align->size = sizeof(char*);
       return &ffi_type_pointer;
 
-    case NFExpression__LIST_3dBOX3: {
+    case NFExpression__ARRAY_3dBOX3: {
       align->size = sizeof(void*);
       void *elems = MMC_STRUCTDATA(exp)[UNBOX_OFFSET+1];
 
-      if (!listEmpty(elems)) {
+      if (arrayLength(elems) > 0) {
         align->fields = (struct Alignment*)generic_alloc(1, sizeof(struct Alignment));
-        exp_alignment_and_type(MMC_CAR(elems), &align->fields[0], 0);
+        exp_alignment_and_type(MMC_STRUCTDATA(elems)[0], &align->fields[0], 0);
       }
       }
       return &ffi_type_pointer;
@@ -255,7 +255,7 @@ static size_t size_of_exp(void *exp, struct Alignment *align)
     case NFExpression__STRING_3dBOX1:
       return sizeof(char*);
 
-    case NFExpression__LIST_3dBOX3:
+    case NFExpression__ARRAY_3dBOX3:
       return size_of_type(MMC_STRUCTDATA(exp)[UNBOX_OFFSET]);
 
     case NFExpression__RECORD_3dBOX3:
@@ -330,13 +330,14 @@ static void* mk_enum_exp(void *ptr, void *type)
 static void* mk_array_exp_2(void *arr, void *type, mk_exp_fn_t mkExpFn,
                             size_t dimCount, size_t elemCount, size_t elemSize)
 {
-  void *elems = mmc_mk_nil();
+  void *elems;
 
   if (dimCount == 1) { /* 1-dimensional array */
-    /* Use the given function to construct a list of scalar elements */
-    for (int i = elemCount-1; i >= 0; --i) {
-      void *elem = mkExpFn(increment_ptr(arr, i*elemSize), type);
-      elems = mmc_mk_cons(elem, elems);
+    elems = arrayCreateNoInit(elemCount, 0);
+
+    /* Use the given function to construct an array of scalar elements */
+    for (int i = 0; i < elemCount; ++i) {
+      MMC_STRUCTDATA(elems)[i] = mkExpFn(increment_ptr(arr, i*elemSize), type);
     }
   } else { /* Multidimensional array */
     /* The length of this array */
@@ -348,16 +349,18 @@ static void* mk_array_exp_2(void *arr, void *type, mk_exp_fn_t mkExpFn,
     /* The (array) type of each array element */
     void *elem_ty = unlift_array_type(type);
 
-    /* Divide the array up into equal sized chunks (backwards to avoid a list
-     * reverse) and convert each chunk recursively into an array */
-    for (int i = arr_len-1; i >= 0; --i) {
+    elems = arrayCreateNoInit(arr_len, 0);
+
+    /* Divide the array up into equal sized chunks and convert each chunk
+     * recursively into an array */
+    for (int i = 0; i < arr_len; ++i) {
       void *arr_ptr = increment_ptr(arr, i*elems_bytes);
       void *elem = mk_array_exp_2(arr_ptr, elem_ty, mkExpFn, dimCount - 1, arr_scalar_count, elemSize);
-      elems = mmc_mk_cons(elem, elems);
+      MMC_STRUCTDATA(elems)[i] = elem;
     }
   }
 
-  return NFExpression__LIST(type, elems, mmc_mk_icon(1));
+  return NFExpression__ARRAY(type, elems, mmc_mk_icon(1));
 }
 
 /* Constructs an array expression given a C array and the expected type of the array */
@@ -431,7 +434,7 @@ static void* mk_exp_from_arg(void *arg, void *value, struct Alignment *align)
     case NFExpression__ENUM_5fLITERAL_3dBOX3:
       return mk_enum_exp(value, MMC_STRUCTDATA(arg)[UNBOX_OFFSET]);
 
-    case NFExpression__LIST_3dBOX3:
+    case NFExpression__ARRAY_3dBOX3:
       return mk_array_exp(value, MMC_STRUCTDATA(arg)[UNBOX_OFFSET]);
 
     case NFExpression__RECORD_3dBOX3:
@@ -507,12 +510,12 @@ static void* write_exp_value(void *exp, void *ptr, struct Alignment *align)
       *(int*)ptr = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(exp)[UNBOX_OFFSET+2]);
       return ((int*)ptr)+1;
 
-    case NFExpression__LIST_3dBOX3: {
+    case NFExpression__ARRAY_3dBOX3: {
       void *elems = MMC_STRUCTDATA(exp)[UNBOX_OFFSET+1];
+      int len = arrayLength(elems);
 
-      while (!listEmpty(elems)) {
-        ptr = write_exp_value(MMC_CAR(elems), ptr, align);
-        elems = MMC_CDR(elems);
+      for (int i = 0; i < len; ++i) {
+        ptr = write_exp_value(MMC_STRUCTDATA(elems)[i], ptr, align);
       }
       }
       return ptr;

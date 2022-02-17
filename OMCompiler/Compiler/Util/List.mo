@@ -3310,7 +3310,7 @@ algorithm
 end mapBoolOr;
 
 public function mapBoolAnd<TI>
-  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value."
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of false return value."
   input list<TI> inList;
   input MapFunc inFunc;
   output Boolean res = false;
@@ -3329,7 +3329,7 @@ algorithm
 end mapBoolAnd;
 
 public function mapMapBoolAnd<TI,TI2>
-  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value."
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of false return value."
   input list<TI> inList;
   input MapFunc inFunc;
   input MapBFunc inBFunc;
