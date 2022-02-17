@@ -2341,6 +2341,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         external "C" outCallEventUpdate = fmi2CompletedIntegratorStep_OMC(fmi2me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2CompletedIntegratorStep;
     end fmi2Functions;
+    annotation(uses(Modelica(version="4.0.0")));
   end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
   >>
 end importFMU2ModelExchange;
