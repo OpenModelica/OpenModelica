@@ -55,9 +55,6 @@ private:
   QVariantMap mLibrariesMap;
   QMap<QString, QStringList> mLibrariesAndVersionsMap;
   QMap<QString, FilteredLibrary> mFilteredLibrariesMap;
-  QCheckBox *mpLatestBackwardsCompatibleCheckBox;
-  QCheckBox *mpPostReleaseBuildsCheckBox;
-  QCheckBox *mpPreReleaseBuildsCheckBox;
   QCheckBox *mpFullSupportCheckBox;
   QCheckBox *mpSupportCheckBox;
   QCheckBox *mpExperimentalCheckBox;

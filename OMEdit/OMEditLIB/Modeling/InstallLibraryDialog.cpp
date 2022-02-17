@@ -51,21 +51,6 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   setMinimumWidth(400);
   Label *pHeadingLabel = Utilities::getHeadingLabel(Helper::installLibrary);
   pHeadingLabel->setElideMode(Qt::ElideMiddle);
-  // versions filters
-  mpLatestBackwardsCompatibleCheckBox = new QCheckBox(tr("Latest backwards compatible versions"));
-  mpLatestBackwardsCompatibleCheckBox->setChecked(true);
-  connect(mpLatestBackwardsCompatibleCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
-  mpPostReleaseBuildsCheckBox = new QCheckBox(tr("Post release builds"));
-  mpPostReleaseBuildsCheckBox->setChecked(true);
-  connect(mpPostReleaseBuildsCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
-  mpPreReleaseBuildsCheckBox = new QCheckBox(tr("Pre release builds"));
-  connect(mpPreReleaseBuildsCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
-  QGroupBox *pVersionsFiltersGroupBox = new QGroupBox(tr("Versions Filters"));
-  QGridLayout *pVersionsFiltersGridLayout = new QGridLayout;
-  pVersionsFiltersGridLayout->addWidget(mpLatestBackwardsCompatibleCheckBox, 0, 0);
-  pVersionsFiltersGridLayout->addWidget(mpPostReleaseBuildsCheckBox, 0, 1);
-  pVersionsFiltersGridLayout->addWidget(mpPreReleaseBuildsCheckBox, 1, 0, 1, 2);
-  pVersionsFiltersGroupBox->setLayout(pVersionsFiltersGridLayout);
   // support levels
   mpFullSupportCheckBox = new QCheckBox(tr("Full"));
   mpFullSupportCheckBox->setChecked(true);
@@ -138,7 +123,6 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   pMainGridLayout->setAlignment(Qt::AlignTop);
   pMainGridLayout->addWidget(pHeadingLabel, row++, 0, 1, 2);
   pMainGridLayout->addWidget(Utilities::getHeadingLine(), row++, 0, 1, 2);
-  pMainGridLayout->addWidget(pVersionsFiltersGroupBox, row++, 0, 1, 2);
   pMainGridLayout->addWidget(pSupportLevelsGroupBox, row++, 0, 1, 2);
   pMainGridLayout->addWidget(new Label(Helper::name), row, 0);
   pMainGridLayout->addWidget(mpNameComboBox, row++, 1);
@@ -195,12 +179,6 @@ void InstallLibraryDialog::filterChanged(bool checked)
       foreach (QVariant provide, provides) {
         providesList.append(provide.toString());
       }
-      if (!mpPostReleaseBuildsCheckBox->isChecked() && version.contains("+")) {
-        filteredVersions.removeOne(version);
-      }
-      if (!mpPreReleaseBuildsCheckBox->isChecked() && version.contains("-")) {
-        filteredVersions.removeOne(version);
-      }
       // support filter
       QString support = libraryVersionMap["support"].toString();
       if (!supportList.isEmpty() && !supportList.contains(support)) {
@@ -209,13 +187,6 @@ void InstallLibraryDialog::filterChanged(bool checked)
     }
 
     filteredVersions.removeDuplicates();
-
-    if (mpLatestBackwardsCompatibleCheckBox->isChecked()) {
-      providesList.removeDuplicates();
-      foreach (QString provides, providesList) {
-        filteredVersions.removeOne(provides);
-      }
-    }
 
     if (!filteredVersions.isEmpty()) {
       mpNameComboBox->addItem(library);
