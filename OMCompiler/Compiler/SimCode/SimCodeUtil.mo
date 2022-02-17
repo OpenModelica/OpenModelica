@@ -13663,7 +13663,7 @@ algorithm
         initPartDer := {(optinitialPartDer,spPattern1,spColors1)};
         ({initSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(initPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDERINIT"}, {});
         // collect algebraic loops and symjacs for FMIDer
-        ({initSimJac}, _, symJacsInit) := addAlgebraicLoopsModelInfoSymJacs({initSimJac}, inModelInfo);
+        ({initSimJac}, outModelInfo, symJacsInit) := addAlgebraicLoopsModelInfoSymJacs({initSimJac}, outModelInfo);
         initPartSimDer := SOME(initSimJac);
         // set partition index to number of clocks (max index) for now
         // TODO: use actual clock indices to support multirate systems
