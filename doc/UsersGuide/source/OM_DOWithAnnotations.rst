@@ -1,7 +1,7 @@
 .. _builtin-dynamic-optimization :
 
 ***********************************************
-Built-in Dynamic Optimisation using Annotations
+Built-in Dynamic Optimization using Annotations
 ***********************************************
 
 *This part of the OM manual is a contribution by Massimo Ceraolo and
@@ -11,7 +11,7 @@ Foreword
 ========
 
 Dynamic optimization using Annotations is the most user-friendly way to
-perform Dynamic Optimization in OpenModelica, since it allows the OMEdit
+perform Dynamic Optimization(DO) in OpenModelica, since it allows the OMEdit
 graphical user interface to be used.
 
 It is also more powerful that the Built-in Dynamic Optimization using
@@ -102,13 +102,13 @@ t=0 may be even totally wrong, since it has no influence on the result.
 Syntax
 ======
 
-OpenModelica provides specific annotations to allow the optimisation
+OpenModelica provides specific annotations to allow the optimization
 problem to be described, as an alternative to the use of Optimica
 language. They are listed and commented below.
 
 -  *Request for an optimization*. We must use two simulation flags and a
    command line option. These can conveniently be inserted into the
-   code, to avoitd selecting them manually all the time, as follows:
+   code, to avoid selecting them manually all the time, as follows:
 
    .. code-block :: modelica
 
@@ -122,18 +122,18 @@ language. They are listed and commented below.
    case of questionable results, they can try optimizerNP=3.*
 
    For the simulation, it is known that the stability ranges are
-   different. At the same time, we lose staibility with higher order (see [1]_).
+   different. At the same time, we lose stability with higher order (see [1]_).
 
    Note that Optimica command-line option is added even if we do not use
    Optimica specific language constructs; this it is required for the
-   use of optimisation-related annotations.
+   use of optimization-related annotations.
 
--  *Select optimisation parameters*. We must specify StartTime,
+-  *Select optimization parameters*. We must specify StartTime,
    StopTime, Interval, and Tolerance. The first two have the same
    meaning as in time simulations. Interval not only defines the output
    interval (as in time simulations), but has a more specific meaning:
    it defines the interval between two successive collocation points.
-   I.e., optimisation is done splitting the whole timespan in sparts
+   I.e., optimization is done splitting the whole timespan in sparts
    having interval as length. Therefore this value may have a huge
    effects on the simulation output. For typical runs, number of
    intervals values from 100 to 1000-2000 could be adequate. These
@@ -325,7 +325,7 @@ power must be taken from a battery and which from the Internal
 combustion engine.
 
 In this example the engine can be switched ON and off without penalty,
-wo the DO can choose both when the ICE must be ON /OFF; and the power it
+so the DO can choose both when the ICE must be ON /OFF; and the power it
 must deliver when it is ON.
 
 Objective of the control is to minimise the fuel consumption. This must
@@ -512,7 +512,7 @@ time than in the previous cases):
 Example 3: Acausal vehicle
 ==========================
 
-As a last example, we replicate the optimisation of Example 2, but the
+As a last example, we replicate the optimization of Example 2, but the
 power to be delivered directly deriving from simulation of a vehicle,
 modelled through its physical elements.
 
@@ -530,7 +530,7 @@ friction (independent on speed) and air resistance (proportional to the
 square of vehicle speed).
 
 The lower part contains the management of the storage, and the
-optimisation algorithm, already discussed in example 2.
+optimization algorithm, already discussed in example 2.
 
 The results are shown in the following picture, where the obtained cost
 (red curve) is compared to what obtainable in case the ICE is
