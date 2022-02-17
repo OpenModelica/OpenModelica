@@ -15160,7 +15160,11 @@ algorithm
         locations := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
         str := "@echo off\n"
                 + "set PATH=" + locations + ";%PATH%;\n"
-                + "\"%CD%/" + code.fileNamePrefix + ".exe\"\n";
+                + "set ERRORLEVEL=\n"
+                + "call \"%CD%/" + code.fileNamePrefix + ".exe\"\n"
+                + "set RESULT=%ERRORLEVEL%\n"
+                + "\n"
+                + "exit /b %RESULT%\n";
         File.write(file, str);
       then (fileName);
     else
