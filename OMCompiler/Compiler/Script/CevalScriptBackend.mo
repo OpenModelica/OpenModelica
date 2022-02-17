@@ -3550,7 +3550,6 @@ protected function configureFMU_cmake
   input String fmuTargetName;
   input String logfile;
   input Boolean isWindows;
-  input Boolean needs3rdPartyLibs;
 protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
@@ -3595,9 +3594,9 @@ algorithm
                               " ..";
         cmd := "cd \"" + fmuSourceDir + "\" && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
-               cmakeCall " && " +
-               "make all install && " +
-               "cd .. && rm -rf " + "build_cmake_dynamic"; // TODO: Figgure out why I can't use buildDir here!!!!!
+               cmakeCall + " && " +
+               "cmake --build . --target install && " +
+               "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
           System.removeFile(logfile);
@@ -3608,6 +3607,8 @@ algorithm
       algorithm
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
+
+        // TODO: Move log file outside of fmutmp
 
         // Create a docker volume for the FMU since we can't forward volumes
         // to the docker run command depending on where the FMU was generated (inside another volume)
@@ -3643,32 +3644,24 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  "make all install && " +
+                  "cmake --build . --target install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
-        print("AHeu1\n\n");
         runDockerCmd(cmd, logfile, cleanup=false, volumeID=volumeID, containerID=containerID);
-
-        print("AHeu2\n\n");
 
         // Copy the files back from the volume (via the container) to the filesystem
-        //cmd := "docker cp " + quote + containerID + ":/data/" + fmutmp + quote + " .";
-        cmd := "docker cp " + containerID + ":/data/ .";
-        runDockerCmd(cmd, logfile, cleanup=false, volumeID=volumeID, containerID=containerID);
-        // This is stupid but works on Windows
-        if not System.copyFile(System.realpath("data/"+ fmutmp), System.realpath(fmutmp)) then
-          print("AHeu: Failed to move " + System.realpath("data/"+ fmutmp));
-        end if;
-        //System.removeDirectory("data/");
-        print("AHeu3\n\n");
+        cmd := "docker cp " + containerID + ":/data/" + fmutmp + " .";
+        runDockerCmd(cmd, "myLogFile.log", cleanup=true, volumeID=volumeID, containerID=containerID);
 
         // Cleanup
         System.systemCall("docker rm " + containerID);
         System.systemCall("docker volume rm " + volumeID);
+
+        // Copy log file into resources directory
         then();
     else
       algorithm
-        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Unknown/unsupported platform for CMake FMU build"});
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Unknown/unsupported platform \"" + platform + " \" for CMake FMU build"});
       then fail();
   end match;
 end configureFMU_cmake;
@@ -3681,7 +3674,7 @@ protected function runDockerCmd
   input String volumeID = "";
   input String containerID = "";
 protected
-  Boolean verbose = true;
+  Boolean verbose = false;
 algorithm
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
@@ -3966,10 +3959,10 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   Boolean isWindows;
+  Boolean useCrossCompileCmake = false;
   list<String> fmiFlagsList;
   Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
-
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -4058,11 +4051,26 @@ algorithm
     needs3rdPartyLibs := false;
   end if;
 
+  // Use CMake on Windows when cross-compiling with docker
+  if (listLength(platforms) > 1 and isWindows) then
+    useCrossCompileCmake := true;
+  else
+    for platform in platforms loop
+      if isWindows and 1 == System.regex(platform, " docker run ", 0, true, false) then
+        useCrossCompileCmake := true;
+        break;
+      end if;
+    end for;
+  end if;
+
   // Configure the FMU Makefile
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
-    //configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
-    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, isWindows, needs3rdPartyLibs);
+    if useCrossCompileCmake then
+      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, isWindows);
+    else
+      configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
+    end if;
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;

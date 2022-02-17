@@ -9,7 +9,9 @@ if(NOT FMI_INTERFACE_HEADER_FILES_DIRECTORY)
   message(FATAL_ERROR "No FMI export headers provided. Set -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/path/to/fmi/headers")
 endif()
 
-file(GLOB FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solvers/*.c
+# TODO AHeu: Add pthreads on Windows!
+
+file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solvers/*.c
                               ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.c
                               ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c
                               ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
