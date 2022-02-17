@@ -13663,7 +13663,7 @@ algorithm
         initPartDer := {(optinitialPartDer,spPattern1,spColors1)};
         ({initSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(initPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDERINIT"}, {});
         // collect algebraic loops and symjacs for FMIDer
-        ({initSimJac}, outModelInfo, symJacsInit) := addAlgebraicLoopsModelInfoSymJacs({initSimJac}, outModelInfo);
+        ({initSimJac}, _, symJacsInit) := addAlgebraicLoopsModelInfoSymJacs({initSimJac}, inModelInfo);
         initPartSimDer := SOME(initSimJac);
         // set partition index to number of clocks (max index) for now
         // TODO: use actual clock indices to support multirate systems
@@ -13910,14 +13910,14 @@ algorithm
   //print("\nknownVars :" + ComponentReference.printComponentRefListStr(indepCrefs));
 
   // generate Partial derivative for initDAE here, as we have the list of all depVars and inDepVars
-  if not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
+  if not Flags.isSet(Flags.FMI20_DEPENDENCIES) and not stringEq(Config.simCodeTarget(), "Cpp") then
     fmiDerInitDepVars := getDependentAndIndepentVarsForJacobian(depCrefs, BackendVariable.listVar(depVars));
     fmiDerInitIndepVars := getDependentAndIndepentVarsForJacobian(indepCrefs, BackendVariable.listVar(indepVars));
     if debug then
       BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInit_unknownVars");
       BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInit_knownVars");
     end if;
-    (fmiDerInit, _) := SymbolicJacobian.createFMIModelDerivativesForInitialization(inInitDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars, sparsePattern, sparseColoring);
+    fmiDerInit := SymbolicJacobian.createFMIModelDerivativesForInitialization(inInitDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars, sparsePattern, sparseColoring);
 
     // sort the cref according to FMIINDEX, to be used by fmi2GetDirectionalDerivative()
     sortedknownCrefs := sortInitialUnknowsSimVars(getSimVars2Crefs(indepCrefs, crefSimVarHT));

@@ -1771,8 +1771,7 @@ end createFMIModelDerivatives;
 
 public function createFMIModelDerivativesForInitialization
 "This function genererate the stucture output and the
- partial derivatives for FMI, which are basically the jacobian matrices.
- author: wbraun"
+ partial derivatives for FMI, which are basically the jacobian matrices."
   input BackendDAE.BackendDAE initDAE;
   input BackendDAE.BackendDAE simDAE;
   input list<BackendDAE.Var> depVars;
@@ -1781,7 +1780,6 @@ public function createFMIModelDerivativesForInitialization
   input BackendDAE.SparsePattern sparsePattern_;
   input BackendDAE.SparseColoring sparseColoring_;
   output BackendDAE.SymbolicJacobians outJacobianMatrixes = {};
-  output DAE.FunctionTree outFunctionTree;
 protected
   BackendDAE.BackendDAE backendDAE, backendDAE_1, emptyBDAE;
   BackendDAE.EqSystem eqSyst, currentSystem;
@@ -1798,11 +1796,6 @@ protected
   BackendDAE.Shared shared;
   DAE.Exp lhs, rhs;
   BackendDAE.Equation eqn;
-  list<BackendDAE.Equation> eqnlst;
-  Integer eqIndex;
-  BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
-  array<Integer> match1,match2;
-  String strMatchingAlgorithm, strIndexReductionMethod;
   list<Integer> eqlistToRemove;
   DAE.ComponentRef cr;
   list<DAE.ComponentRef> crefsVarsToRemove;
@@ -1873,11 +1866,9 @@ try
 
 
   backendDAE_1 := BackendDAE.DAE({currentSystem}, shared);
-
   backendDAE_1 := BackendDAEUtil.transformBackendDAE(backendDAE_1, SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
 
   //BackendDump.printBackendDAE(backendDAE_1);
-
 
   //prepare simulation DAE
   backendDAE := BackendDAEUtil.copyBackendDAE(simDAE);
@@ -1903,7 +1894,6 @@ try
     ei := initDAE.shared.info;
     emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
     outJacobianMatrixes := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), BackendDAE.emptySparsePattern, {})::outJacobianMatrixes;
-    outFunctionTree := initDAE.shared.functionTree;
   else
     // prepare more needed variables
     paramvars := List.select(knvarlst, BackendVariable.isParam);
@@ -1913,19 +1903,16 @@ try
     depVarsArr := BackendVariable.listVar1(depVars);
 
     //(outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, BackendVariable.emptyVars(), BackendVariable.emptyVars(), BackendVariable.emptyVars(), depVarsArr, depVars, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
-    (outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr, varlst, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+    (outJacobian, _, _, _) := generateGenericJacobian(backendDAE_1, indepVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr, varlst, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
 
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern_, "FMI sparsity");
     end if;
-
     outJacobianMatrixes := (outJacobian, sparsePattern_, sparseColoring_)::outJacobianMatrixes;
-    //outFunctionTree := DAE.AvlTreePathFunction.join(initDAE.shared.functionTree, outFunctionTree);
   end if;
 else
   Error.addInternalError("function createFMIModelDerivativesForInitialization failed", sourceInfo());
   outJacobianMatrixes := {};
-  outFunctionTree := initDAE.shared.functionTree;
 end try;
 end createFMIModelDerivativesForInitialization;
 
