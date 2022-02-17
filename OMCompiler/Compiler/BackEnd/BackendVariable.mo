@@ -195,7 +195,7 @@ public function varStartValue "author: PA
   input BackendDAE.Var inVar;
   output DAE.Exp sv;
 algorithm
-  sv := DAEUtil.getStartAttr(inVar.values);
+  sv := DAEUtil.getStartAttr(inVar.values, inVar.varType);
 end varStartValue;
 
 public function varUnreplaceable "author: lochel
