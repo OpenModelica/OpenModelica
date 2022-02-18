@@ -1341,7 +1341,7 @@ constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(138, "flatModelica",
   Gettext.gettext("Outputs experimental flat Modelica."));
 
 constant ConfigFlag FMI_FILTER = CONFIG_FLAG(139, "fmiFilter", NONE(), EXTERNAL(),
-  ENUM_FLAG(FMI_INTERNAL, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
+  ENUM_FLAG(FMI_PROTECTED, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("All variables will be exposed, even variables that are introduced by the symbolic transformations. Hence, this is intended to be used for debugging.")),
     ("internal", Gettext.gettext("All internal variables introduced by the symbolic transformations are filtered out. Only the variables from the actual Modelica model are exposed (with minor exceptions, e.g. for state sets).")),
