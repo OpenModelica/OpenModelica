@@ -357,6 +357,12 @@ int (*initialPartialFMIDER)(void* data, threadData_t *threadData, ANALYTIC_JACOB
 int (*functionJacFMIDER_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 const int INDEX_JAC_FMIDER;
 
+/*
+ * FMU partial derivative functions for initilization DAE
+ */
+int (*initialPartialFMIDERINIT)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+int (*functionJacFMIDERINIT_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
+const int INDEX_JAC_FMIDERINIT;
 };
 
 

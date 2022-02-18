@@ -281,6 +281,8 @@ case SIMCODE(__) then
   fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2RealOutputDerivatives(const fmi2ValueReference vr);
+  fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr);
+  fmi2ValueReference mapInitialUnknownsIndependentIndex(const fmi2ValueReference vr);
   >>
   else
   <<
@@ -331,6 +333,8 @@ case SIMCODE(__) then
   <%setExternalFunction2(modelInfo)%>
   <%mapInputAndOutputs(simCode)%>
   <%mapRealOutputDerivatives(simCode, FMUType)%>
+  <%mapInitialUnknownsdependentCrefs(simCode)%>
+  <%mapInitialUnknownsIndependentCrefs(simCode)%>
   >>
   else
   <<
@@ -1192,6 +1196,44 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(outputVars=outputVars))) then
     >>
 end match
 end mapRealOutputDerivatives;
+
+template mapInitialUnknownsdependentCrefs(SimCode simCode)
+""
+::=
+match simCode
+case SIMCODE(modelStructure=SOME(FMIMODELSTRUCTURE(fmiInitialUnknowns=FMIINITIALUNKNOWNS(sortedUnknownCrefs=sortedUnknownCrefs)))) then
+    <<
+    /* function maps initialUnknowns UnknownVars ValueReferences to an internal partial derivatives index */
+    fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%sortedUnknownCrefs |> (index, cref) =>
+          'case <%lookupVR(cref, simCode)%>: return <%index%>; break;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    >>
+end match
+end mapInitialUnknownsdependentCrefs;
+
+template mapInitialUnknownsIndependentCrefs(SimCode simCode)
+""
+::=
+match simCode
+case SIMCODE(modelStructure=SOME(FMIMODELSTRUCTURE(fmiInitialUnknowns=FMIINITIALUNKNOWNS(sortedknownCrefs=sortedknownCrefs)))) then
+    <<
+    /* function maps initialUnknowns knownVars ValueReferences to an internal partial derivatives index */
+    fmi2ValueReference mapInitialUnknownsIndependentIndex(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%sortedknownCrefs |> (index, cref) =>
+          'case <%lookupVR(cref, simCode)%>: return <%index%>; break;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    >>
+end match
+end mapInitialUnknownsIndependentCrefs;
 
 template getPlatformString2(String modelNamePrefix, String platform, String fileNamePrefix, String fmuTargetName, String dirExtra, String libsPos1, String libsPos2, String omhome, String FMUVersion)
  "returns compilation commands for the platform. "

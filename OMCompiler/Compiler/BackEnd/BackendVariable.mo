@@ -1540,6 +1540,16 @@ algorithm
   end match;
 end isOutputVar;
 
+public function isRealVar "Return true if variable is type Real"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varType = DAE.T_REAL())) then true;
+    else false;
+  end match;
+end isRealVar;
+
 public function isRealOutputVar "Return true if variable is declared as output and type is Real. Note that the output
   attribute sticks with a variable even if it is originating from a sub
   component, which is not the case for Dymola."
