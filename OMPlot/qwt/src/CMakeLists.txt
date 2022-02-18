@@ -258,5 +258,5 @@ target_compile_definitions(qwt PRIVATE QWT_MOC_INCLUDE)
 target_link_options(qwt PRIVATE -Wl,--no-undefined)
 
 
-install (FILES ${QWT_HEADERS} DESTINATION include/qwt)
+# install (FILES ${QWT_HEADERS} DESTINATION include/qwt)
 install (TARGETS qwt)
