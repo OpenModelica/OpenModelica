@@ -13955,21 +13955,21 @@ algorithm
     // Filter only Real vars that match the --fmiFilter flag
     if BackendVariable.isRealVar(var) then
       if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_NONE then
-        outVar := BackendVariable.getVarSingle(cr, orderedVars) :: outVar;
+        outVar := var :: outVar;
       elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_INTERNAL then
         // All internal variables introduced by the symbolic
         // transformations are filtered out. Only the variables from the
         // actual Modelica model are exposed (with minor exceptions, e.g.
         // for state sets).
         if not (ComponentReference.isInternalCref(cr) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
-          outVar := BackendVariable.getVarSingle(cr, orderedVars) :: outVar;
+          outVar := var :: outVar;
         end if;
       elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
         // All protected model variables will be filtered out in addition
         // to --fmiFilter=internal.
         if not (ComponentReference.isInternalCref(cr) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
           if not (BackendVariable.isProtected(var) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
-            outVar := BackendVariable.getVarSingle(cr, orderedVars) :: outVar;
+            outVar := var :: outVar;
           end if;
         end if;
       elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
@@ -13978,7 +13978,7 @@ algorithm
         // modelDescription file for structrial reasons will have
         // concealed names.
         if BackendVariable.isInput(var) or BackendVariable.isOutputVar(var) or BackendVariable.isStateVar(var) or BackendVariable.isClockedStateVar(var) then
-          outVar := BackendVariable.getVarSingle(cr, orderedVars) :: outVar;
+          outVar := var :: outVar;
         end if;
       else
         Error.addInternalError("Unknown value detected for --fmiFilter", sourceInfo());
