@@ -13894,6 +13894,7 @@ algorithm
 
   vars2 := listAppend(vars1, vars2);
 
+  // collect the dependency list from sparse pattern
   indepCrefs := {};
   depCrefs := {};
   for i in rowspt loop
@@ -13930,30 +13931,6 @@ algorithm
   outFmiUnknownlist := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 end getFmiInitialUnknowns;
 
-protected function removeKnownVarsWithFixedTrue
-  "checks if a known var is present in shared.globalKnownVars and in orderedVars
-   and remove from fmiderInit_KnownVars to simplify jacobian calculation"
-  input list<BackendDAE.Var> inVar;
-  input BackendDAE.Variables globalKnownVars;
-  output list<BackendDAE.Var> outVar = {};
-protected
-  list<BackendDAE.Var> varlst;
-  list<DAE.ComponentRef> crefList;
-algorithm
-  crefList := List.map(BackendVariable.varList(globalKnownVars), BackendVariable.varCref);
-  BackendDump.dumpVariables(globalKnownVars, "checkGlobalVars*******");
-  for var in inVar loop
-    if listMember(var.varName, crefList) then
-      (varlst, _ ) := BackendVariable.getVar(var.varName, globalKnownVars);
-      if not BackendVariable.isParam(List.first(varlst)) and BackendVariable.varFixed(List.first(varlst)) then
-        //print("\n Matched Var: " + ComponentReference.printComponentRefStr(var.varName));
-      else
-        outVar := var :: outVar;
-      end if;
-    end if;
-  end for;
-end removeKnownVarsWithFixedTrue;
-
 protected function getDependentAndIndepentVarsForJacobian
  "function which returns the rows and columns vars for jacobian matrix which will
   be used to get partial derivatives of fmu's using fmi2GetDirectionalDerivative"
@@ -13965,7 +13942,8 @@ protected
 algorithm
   for cr in crefs loop
     var := BackendVariable.getVarSingle(cr, orderedVars);
-    if BackendVariable.isRealVar(var) then
+    // Filter only Real Vars and check if var is not an internal var (e.g. $cse)
+    if BackendVariable.isRealVar(var) and not ComponentReference.isInternalCref(cr) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var)) then
       outVar := BackendVariable.getVarSingle(cr, orderedVars) :: outVar;
     end if;
   end for;

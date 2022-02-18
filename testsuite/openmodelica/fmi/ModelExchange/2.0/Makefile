@@ -21,6 +21,7 @@ fmi_attributes_14.mos \
 fmi_attributes_15.mos \
 fmi_attributes_16.mos \
 fmi_attributes_17.mos \
+fmi_attributes_18.mos \
 FMIExercise.mos \
 FMUResourceTest.mos \
 HelloFMIWorld.mos \
