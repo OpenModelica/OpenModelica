@@ -16,26 +16,8 @@ readFile("Pendulum_systemCall.log");
 // 0
 // "info:    maximum step size for 'model.root': 0.001000
 // info:    Result file: model_res.mat (bufferSize=10)
-// info:    Variable model.root.fmu.body.cylinder.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.body.sphere.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.rev.cylinder.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.gravityArrowHead.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.gravityArrowLine.shapeType will not be stored in the result file, because the signal type is not supported
 // info:    Parameter model.root.fmu.world.label1 will not be stored in the result file, because the signal type is not supported
 // info:    Parameter model.root.fmu.world.label2 will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.x_arrowHead.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.x_arrowLine.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.x_label.cylinders[1].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.x_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.y_arrowHead.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.y_arrowLine.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.y_label.cylinders[1].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.y_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_arrowHead.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_arrowLine.shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_label.cylinders[1].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
-// info:    Variable model.root.fmu.world.z_label.cylinders[3].shapeType will not be stored in the result file, because the signal type is not supported
 // info:    Final Statistics for 'model.root':
 //          NumSteps = 1004 NumRhsEvals  = 1009 NumLinSolvSetups = 55
 //          NumNonlinSolvIters = 1008 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
