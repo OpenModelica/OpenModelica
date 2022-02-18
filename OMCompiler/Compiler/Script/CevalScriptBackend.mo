@@ -3578,7 +3578,7 @@ algorithm
     local
       String cmd;
       String cmakeCall;
-      String crossTriple, buildDir;
+      String crossTriple, buildDir, fmiTarget;
       list<String> dockerImgArgs;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
@@ -3636,9 +3636,17 @@ algorithm
         // Build for target host
         userID := (if uid<>0 then "--user " + String(uid) else "");
         buildDir := "mkdir build_cmake_" + crossTriple;
+        if 0 <> System.regex(crossTriple, "mingw", 1) then
+          fmiTarget := " -DCMAKE_SYSTEM_NAME=Windows ";
+        elseif 0 <> System.regex(crossTriple, "apple", 1) then
+          fmiTarget := " -DCMAKE_SYSTEM_NAME=Darwin ";
+        else
+          fmiTarget := "";
+        end if;
         cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
-                     CMAKE_BUILD_TYPE +
-                     " ..";
+                            fmiTarget +
+                            CMAKE_BUILD_TYPE +
+                            " ..";
         cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu -e CROSS_TRIPLE=" + crossTriple + " " + stringDelimitList(dockerImgArgs," ") +
                " sh -c " + dquote +
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
@@ -3651,13 +3659,13 @@ algorithm
 
         // Copy the files back from the volume (via the container) to the filesystem
         cmd := "docker cp " + containerID + ":/data/" + fmutmp + " .";
-        runDockerCmd(cmd, "myLogFile.log", cleanup=true, volumeID=volumeID, containerID=containerID);
+        runDockerCmd(cmd, "myLogFile.log", cleanup=false, volumeID=volumeID, containerID=containerID);
 
         // Cleanup
         System.systemCall("docker rm " + containerID);
         System.systemCall("docker volume rm " + volumeID);
 
-        // Copy log file into resources directory
+        // TODO: Copy log file into resources directory
         then();
     else
       algorithm

@@ -9,7 +9,9 @@ if(NOT FMI_INTERFACE_HEADER_FILES_DIRECTORY)
   message(FATAL_ERROR "No FMI export headers provided. Set -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/path/to/fmi/headers")
 endif()
 
-# TODO AHeu: Add pthreads on Windows!
+set(THREADS_PTHREAD_ARG "2" CACHE STRING "Forcibly set by CMakeLists.txt." FORCE)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solvers/*.c
                               ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.c
@@ -27,7 +29,7 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darin")
   set(FMU_TARGET_SYSTEM_NAME "darwin")
 else()
-  message(FATAL_ERROR "Unknown target system")
+  message(FATAL_ERROR "Unknown target system: ${CMAKE_SYSTEM_NAME}")
 endif()
 
 if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
@@ -36,6 +38,8 @@ else()
   set(FMU_TARGET_PLATFORM "${FMU_TARGET_SYSTEM_NAME}32")
 endif()
 
+message(STATUS "Building for FMI platform ${FMU_TARGET_PLATFORM}")
+
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/../binaries/${FMU_TARGET_PLATFORM})
 set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX})
@@ -43,6 +47,9 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 add_library(${FMU_NAME} SHARED
             ${FMU_RUNTIME_SOURCES}
             ${FMU_GENERATED_MODEL_SOURCES})
+
+
+target_link_libraries(${FMU_NAME} PRIVATE Threads::Threads)
 
 target_include_directories(${FMU_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY})
