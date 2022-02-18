@@ -505,6 +505,7 @@ public
   end noNameHashEq;
 
   function noNameHashExp
+    "ToDo: is this mod safe? (missing intMod!)"
     input Expression exp;
     input Integer mod;
     output Integer hash = 0;
