@@ -4655,6 +4655,8 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   int <%symbolName(modelNamePrefix,"function_ZeroCrossings")%>(DATA *data, threadData_t *threadData, double *gout)
   {
     TRACE_PUSH
+    const int *equationIndexes = NULL;
+
     <%varDecls2%>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -4796,6 +4798,8 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   int <%symbolName(modelNamePrefix,"function_updateRelations")%>(DATA *data, threadData_t *threadData, int evalforZeroCross)
   {
     TRACE_PUSH
+    const int *equationIndexes = NULL;
+
     <%varDecls%>
 
     if(evalforZeroCross) {
