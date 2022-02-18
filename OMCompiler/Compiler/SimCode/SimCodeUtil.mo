@@ -15286,5 +15286,69 @@ algorithm
   end match;
 end isArrayVar;
 
+public function generateRunnerBatScript
+  "Always succeeds in order to clean-up external objects.
+
+   This function will generate a .bat file that can be used to launch the simulation
+   executable on Windows. The bat file will set the necessary PATHs and then launches
+   the executable."
+  input SimCode.SimCode code;
+  output String fileName;
+protected
+  File.File file = File.File();
+algorithm
+  (fileName) := matchcontinue code
+    local
+      String str, locations;
+    case SimCode.SIMCODE()
+      algorithm
+        fileName := code.fileNamePrefix + ".bat";
+        File.open(file,fileName,File.Mode.Write);
+
+        locations := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
+        str := "@echo off\n"
+                + "set PATH=" + locations + ";%PATH%;\n"
+                + "set ERRORLEVEL=\n"
+                + "call \"%CD%/" + code.fileNamePrefix + ".exe\"\n"
+                + "set RESULT=%ERRORLEVEL%\n"
+                + "\n"
+                + "exit /b %RESULT%\n";
+        File.write(file, str);
+      then (fileName);
+    else
+      algorithm
+        Error.addInternalError("SimCodeMain.generateRunnerBatScript failed", sourceInfo());
+      then ("");
+  end matchcontinue;
+end generateRunnerBatScript;
+
+protected function getDirectoriesForDLLsFromLinkLibs
+  " Parse the makefileParams.libs and extract the necessary directories
+   to be added to the PATH for finding dependenncy libraries (DLLs on Windows).
+   NOTE: this function expects the 'link command' as the second argument. This will
+   look something like
+       {\"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library/win64\",
+        \"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library\",
+         ...}
+   The function will check for strings that start with \"-L and then trims it to get the
+   corrseponding directory.
+
+   If you want something more general write another function and generalize this.
+   We can also fix the creation of MakefileParams to separately list out these directories
+   (We do have MakefileParams.libDirs which seems to be empty).
+  "
+  input list<String> libsAndLinkDirs;
+  output String outLocations;
+algorithm
+
+  outLocations := "";
+  for str in libsAndLinkDirs loop
+    if Util.stringStartsWith("\"-L", str) then
+      outLocations := outLocations + System.trim(str, "\"-L") + ";";
+    end if;
+  end for;
+
+end getDirectoriesForDLLsFromLinkLibs;
+
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

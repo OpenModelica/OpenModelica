@@ -574,6 +574,37 @@ void SimulationOutputWidget::compileModel()
 #endif
 }
 
+
+/*!
+ * \brief getPathsFromBatFile
+ * Parses the fileName.bat file to get the necessary paths.
+ * Returns "" if it fails to parse the file as expected.
+ */
+QString SimulationOutputWidget::getPathsFromBatFile(QString fileName) {
+
+  QFile batFile(fileName);
+  batFile.open(QIODevice::ReadOnly | QIODevice::Text);
+
+  QString line;
+  // first line is supposed to be '@echo off'
+  line = batFile.readLine();
+  // Second line is where the PATH is set. We want that.
+  line = batFile.readLine();
+
+  if (!line.startsWith("set PATH=")) {
+    QString warnMessage = "Failed to read the neccesary PATH values from '" + fileName + "'\n"
+                          + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
+    writeSimulationOutput(warnMessage, StringHandler::Error, true);
+    line = "";
+  } else {
+    // Strip the 'set PATH='
+    line.remove(0, 9);
+  }
+  batFile.close();
+
+  return line;
+}
+
 /*!
  * \brief SimulationOutputWidget::runSimulationExecutable
  * Runs the simulation executable.
@@ -602,10 +633,15 @@ void SimulationOutputWidget::runSimulationExecutable()
   fileName = fileName.replace("//", "/");
   // run the simulation executable to create the result file
 #if defined(_WIN32)
+  QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
+
+  QString paths = getPathsFromBatFile(fileName + ".bat");
+
   fileName = fileName.append(".exe");
   QFileInfo fileInfo(mSimulationOptions.getFileName());
-  QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
-  processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
+  paths = fileInfo.absoluteDir().absolutePath() + ";" + paths;
+
+  processEnvironment.insert("PATH", paths + ";" + processEnvironment.value("PATH"));
   mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #endif
   // make the output tab enabled and current
