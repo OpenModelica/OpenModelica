@@ -8279,24 +8279,48 @@ algorithm
   simVar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars, iterationVars);
   isalias := isAliasVar(simVar);
 
-  //default is FMI_INTERNAL, clear up internal variable starting with '$' except for states and "$CLKPRE"
-  if ComponentReference.isInternalCref(simVar.name) and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
-    simVar.exportVar := NONE();
-  end if;
-
-  // check for other fmiFilter configFlags (e.g) protected, blackBox and none
-  if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED and simVar.isProtected then
-    simVar.exportVar := NONE();
+  simVar.exportVar := NONE();
+  if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_NONE then
+    // All variables will be exposed, even variables that are
+    // introduced by the symbolic transformations. Hence, this is
+    // intended to be used for debugging.
+    simVar.exportVar := SOME(simVar.name);
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_INTERNAL then
+    // All internal variables introduced by the symbolic
+    // transformations are filtered out. Only the variables from the
+    // actual Modelica model are exposed (with minor exceptions, e.g.
+    // for state sets).
+    if ComponentReference.isInternalCref(simVar.name) and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
+      simVar.exportVar := NONE();
+    else
+      simVar.exportVar := SOME(simVar.name);
+    end if;
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
+    // All protected model variables will be filtered out in addition
+    // to --fmiFilter=internal.
+    if ComponentReference.isInternalCref(simVar.name) and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
+      simVar.exportVar := NONE();
+    else
+      simVar.exportVar := SOME(simVar.name);
+    end if;
+    if simVar.isProtected and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
+      simVar.exportVar := NONE();
+    end if;
   elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
-    if BackendVariable.isInput(dlowVar) or  BackendVariable.isOutputVar(dlowVar) then
+    // This option is used to hide everything except for inputs and
+    // outputs. Additional variables that need to be present in the
+    // modelDescription file for structrial reasons will have
+    // concealed names.
+    if BackendVariable.isInput(dlowVar) or BackendVariable.isOutputVar(dlowVar) then
       simVar.exportVar := SOME(simVar.name);
     elseif BackendVariable.isStateVar(dlowVar) or BackendVariable.isClockedStateVar(dlowVar) then
       simVar.exportVar := SOME(ComponentReference.getConcealedCref());
     else
       simVar.exportVar := NONE();
     end if;
-  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_NONE then // export all the vars
-    simVar.exportVar := SOME(simVar.name);
+  else
+    Error.addInternalError("Unknown value detected for --fmiFilter", sourceInfo());
+    fail();
   end if;
 
   // filter parameters of type string that doesn't have constant start values
@@ -15263,6 +15287,70 @@ algorithm
     else false;
   end match;
 end isArrayVar;
+
+public function generateRunnerBatScript
+  "Always succeeds in order to clean-up external objects.
+
+   This function will generate a .bat file that can be used to launch the simulation
+   executable on Windows. The bat file will set the necessary PATHs and then launches
+   the executable."
+  input SimCode.SimCode code;
+  output String fileName;
+protected
+  File.File file = File.File();
+algorithm
+  (fileName) := matchcontinue code
+    local
+      String str, locations;
+    case SimCode.SIMCODE()
+      algorithm
+        fileName := code.fileNamePrefix + ".bat";
+        File.open(file,fileName,File.Mode.Write);
+
+        locations := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
+        str := "@echo off\n"
+                + "set PATH=" + locations + ";%PATH%;\n"
+                + "set ERRORLEVEL=\n"
+                + "call \"%CD%/" + code.fileNamePrefix + ".exe\"\n"
+                + "set RESULT=%ERRORLEVEL%\n"
+                + "\n"
+                + "exit /b %RESULT%\n";
+        File.write(file, str);
+      then (fileName);
+    else
+      algorithm
+        Error.addInternalError("SimCodeMain.generateRunnerBatScript failed", sourceInfo());
+      then ("");
+  end matchcontinue;
+end generateRunnerBatScript;
+
+protected function getDirectoriesForDLLsFromLinkLibs
+  " Parse the makefileParams.libs and extract the necessary directories
+   to be added to the PATH for finding dependenncy libraries (DLLs on Windows).
+   NOTE: this function expects the 'link command' as the second argument. This will
+   look something like
+       {\"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library/win64\",
+        \"-LC:/Users/username/AppData/Roaming/.openmodelica/libraries/Buildings/Resources/Library\",
+         ...}
+   The function will check for strings that start with \"-L and then trims it to get the
+   corrseponding directory.
+
+   If you want something more general write another function and generalize this.
+   We can also fix the creation of MakefileParams to separately list out these directories
+   (We do have MakefileParams.libDirs which seems to be empty).
+  "
+  input list<String> libsAndLinkDirs;
+  output String outLocations;
+algorithm
+
+  outLocations := "";
+  for str in libsAndLinkDirs loop
+    if Util.stringStartsWith("\"-L", str) then
+      outLocations := outLocations + System.trim(str, "\"-L") + ";";
+    end if;
+  end for;
+
+end getDirectoriesForDLLsFromLinkLibs;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

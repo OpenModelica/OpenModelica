@@ -2015,20 +2015,33 @@ protected function getLinkerLibraryPaths"Builds search paths for the linker to f
   input Absyn.Path path;
   input list<String> inLibs;
   output list<String> libPaths;
+protected
+  String installationDir;
 algorithm
-  libPaths := matchcontinue(uri,path,inLibs)
+  installationDir := Settings.getInstallationDirectoryPath();
+
+  _ := matchcontinue(uri,path,inLibs)
     local
-      String str, platform1, platform2;
   case(_, _,{"-lWinmm"}) guard Autoconf.os=="Windows_NT"
+    algorithm
     //Winmm has to be linked from the windows system but not from the resource directories.
     //This is a fix for M_DD since otherwise the dummy pthread.dll that breaks the built will be linked
-    then {(Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc")};
+      libPaths := {(installationDir + "/lib/" + Autoconf.triple + "/omc")};
+    then ();
   case(, _,_)
-    equation
-      platform1 = uri + "/" + System.openModelicaPlatform();
-      platform2 = uri + "/" + System.modelicaPlatform();
-    then uri::platform2::platform1::(Settings.getHomeDir(false)+"/.openmodelica/binaries/"+AbsynUtil.pathFirstIdent(path))::
-      (Settings.getInstallationDirectoryPath() + "/lib/")::(Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc")::{};
+    algorithm
+      libPaths := {uri,
+                   uri + "/" + System.modelicaPlatform(),
+                   uri + "/" + System.openModelicaPlatform(),
+                   (Settings.getHomeDir(false) + "/.openmodelica/binaries/" + AbsynUtil.pathFirstIdent(path)),
+                   (installationDir + "/lib/"),
+                   (installationDir + "/lib/" + Autoconf.triple + "/omc")};
+
+      if Autoconf.os == "Windows_NT" then
+        libPaths := List.appendElt(installationDir + "/bin/", libPaths);
+      end if;
+
+    then ();
   end matchcontinue;
 end getLinkerLibraryPaths;
 
@@ -2774,7 +2787,6 @@ algorithm
     else algorithm Error.addInternalError("Tried to append cref prefix from a non FUNCTION_CONTEXT() context. cref_pref is only avaiable in FUNCTION_CONTEXT.", sourceInfo()); then fail();
   end match;
 end appendCurrentCrefPrefix;
-
 
 annotation(__OpenModelica_Interface="backendInterface");
 end SimCodeFunctionUtil;
