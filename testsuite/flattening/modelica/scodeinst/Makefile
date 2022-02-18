@@ -129,6 +129,7 @@ CevalFuncArray1.mo \
 CevalFuncArray2.mo \
 CevalFuncArray3.mo \
 CevalFuncArray4.mo \
+CevalFuncArray5.mo \
 CevalFuncAssert1.mo \
 CevalFuncAssert2.mo \
 CevalFuncFor1.mo \
@@ -812,6 +813,7 @@ OperationAddEW1.mo \
 OperationDiv1.mo \
 OperationDivEW1.mo \
 OperationLogicalBinary1.mo \
+OperationLogicalBinary2.mo \
 OperationLogicalUnary1.mo \
 OperationLogicalUnary2.mo \
 OperationMatrixProduct1.mo \
@@ -873,10 +875,10 @@ PropagateExtends.mo \
 ProtectedMod1.mo \
 ProtectedMod2.mo \
 ProtectedMod3.mo \
-ProtectedMod4.mo \
 ProtectedMod5.mo \
 ProtectedMod6.mo \
 ProtectedMod7.mo \
+ProtectedMod8.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \
 RangeInvalidStep3.mo \
@@ -1093,6 +1095,7 @@ sts.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+ProtectedMod4.mo \
 CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \
 FinalParameter1.mo \

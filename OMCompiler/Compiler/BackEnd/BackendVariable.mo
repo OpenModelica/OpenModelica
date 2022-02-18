@@ -195,7 +195,7 @@ public function varStartValue "author: PA
   input BackendDAE.Var inVar;
   output DAE.Exp sv;
 algorithm
-  sv := DAEUtil.getStartAttr(inVar.values);
+  sv := DAEUtil.getStartAttr(inVar.values, inVar.varType);
 end varStartValue;
 
 public function varUnreplaceable "author: lochel
@@ -1248,6 +1248,13 @@ algorithm
   end match;
 end isParam;
 
+public function makeParam
+  "Change variable to parameter"
+  input output BackendDAE.Var var;
+algorithm
+  var.varKind := BackendDAE.PARAM();
+end makeParam;
+
 public function isParamOrConstant
 "Return true if variable is parameter or constant"
   input BackendDAE.Var invar;
@@ -1533,6 +1540,16 @@ algorithm
   end match;
 end isOutputVar;
 
+public function isRealVar "Return true if variable is type Real"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varType = DAE.T_REAL())) then true;
+    else false;
+  end match;
+end isRealVar;
+
 public function isRealOutputVar "Return true if variable is declared as output and type is Real. Note that the output
   attribute sticks with a variable even if it is originating from a sub
   component, which is not the case for Dymola."
@@ -1579,6 +1596,21 @@ algorithm
     hidden := DAEUtil.getProtectedAttr(v.values);
   end try;
 end isProtectedVar;
+
+public function isProtected
+ "Returns the DAE.isProtected attribute."
+  input BackendDAE.Var v;
+  output Boolean b;
+algorithm
+  b := match v.values
+    case SOME(DAE.VAR_ATTR_REAL(isProtected=SOME(b))) then b;
+    case SOME(DAE.VAR_ATTR_INT(isProtected=SOME(b))) then b;
+    case SOME(DAE.VAR_ATTR_BOOL(isProtected=SOME(b))) then b;
+    case SOME(DAE.VAR_ATTR_STRING(isProtected=SOME(b))) then b;
+    case SOME(DAE.VAR_ATTR_ENUMERATION(isProtected=SOME(b))) then b;
+    else false;
+  end match;
+end isProtected;
 
 public function hasVarEvaluateAnnotationOrFinal
   input BackendDAE.Var inVar;

@@ -2,6 +2,9 @@
 // status: correct
 // teardown_command: rm -rf fmi_attributes_03.fmu fmi_attributes_03.log fmi_attributes_03.xml fmi_attributes_03_tmp.xml fmi_attributes_03.fmutmp/
 
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
+getErrorString();
+
 loadString("
 model fmi_attributes_03
   Real x(fixed=true, start=x_start);
@@ -22,6 +25,8 @@ system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_03_t
 readFile("fmi_attributes_03.xml"); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // "fmi_attributes_03.fmu"

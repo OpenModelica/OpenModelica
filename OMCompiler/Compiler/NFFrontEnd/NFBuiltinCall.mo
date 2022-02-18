@@ -66,6 +66,7 @@ protected
   import NFPrefixes.ConnectorType;
   import ClockKind = NFClockKind;
   import Structural = NFStructural;
+  import Array;
 
 public
   function needSpecialHandling
@@ -208,7 +209,7 @@ public
       fail();
     end if;
 
-    arrayExp := Expression.makeArray(Type.UNKNOWN(), posArgs);
+    arrayExp := Expression.makeArray(Type.UNKNOWN(), listArray(posArgs));
   end makeArrayExp;
 
   function makeCatExp
@@ -2024,9 +2025,10 @@ protected
         then
           Expression.CALL(Call.makeTypedCall(fn, {arg}, var, Purity.IMPURE, arg.ty));
 
-      case Expression.LIST()
+      case Expression.ARRAY()
         algorithm
-          arg.elements := list(typeActualInStreamCall2(name, fn, e, var, info) for e in arg.elements);
+          arg.elements := Array.map(arg.elements, function
+            typeActualInStreamCall2(name = name, fn = fn, var = var, info = info));
         then
           arg;
 

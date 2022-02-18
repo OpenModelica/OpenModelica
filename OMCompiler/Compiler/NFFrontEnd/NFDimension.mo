@@ -104,7 +104,7 @@ public
                 fail();
           end match;
 
-      case Expression.LIST()
+      case Expression.ARRAY()
         guard Expression.arrayAllEqual(exp)
         then fromExp(Expression.arrayFirstScalar(exp), var);
 
@@ -144,6 +144,11 @@ public
     input Variability var = Variability.CONSTANT;
     output Dimension dim = INTEGER(n, var);
   end fromInteger;
+
+  function fromExpArray
+    input array<Expression> expl;
+    output Dimension dim = INTEGER(arrayLength(expl), Variability.CONSTANT);
+  end fromExpArray;
 
   function fromExpList
     input list<Expression> expl;

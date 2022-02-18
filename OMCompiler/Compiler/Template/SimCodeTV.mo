@@ -846,6 +846,8 @@ package SimCode
   uniontype FmiInitialUnknowns
     record FMIINITIALUNKNOWNS
       list<FmiUnknown> fmiUnknownsList;
+      list<tuple<Integer, DAE.ComponentRef>> sortedUnknownCrefs "use the sorted crefs to get the ValueReference of unknowns";
+      list<tuple<Integer, DAE.ComponentRef>> sortedknownCrefs "use the sorted crefs to get the ValueReference of knowns";
     end FMIINITIALUNKNOWNS;
   end FmiInitialUnknowns;
 
@@ -854,6 +856,7 @@ package SimCode
       FmiOutputs fmiOutputs;
       FmiDerivatives fmiDerivatives;
       Option<JacobianMatrix> continuousPartialDerivatives;
+      Option<JacobianMatrix> initialPartialDerivatives;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
     end FMIMODELSTRUCTURE;
@@ -3676,6 +3679,16 @@ package Expression
    input DAE.Exp inExp;
    output Boolean outBoolean;
   end isConst;
+
+  function isEvaluatedConst
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end isEvaluatedConst;
+
+  function isCref
+    input DAE.Exp inExp;
+    output Boolean outIsCref;
+  end isCref;
 
   function subscriptConstants
     "returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "

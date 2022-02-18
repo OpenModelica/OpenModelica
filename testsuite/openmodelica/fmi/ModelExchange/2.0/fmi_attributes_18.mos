@@ -1,0 +1,102 @@
+// name: fmi_attributes_18.mos
+// status: correct
+// teardown_command: rm -rf fmi_attributes_18.fmu fmi_attributes_18.log fmi_attributes_18.xml fmi_attributes_18_tmp.xml fmi_attributes_18.fmutmp/
+
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
+getErrorString();
+
+loadString("
+model fmi_attributes_18
+  input Real u1(start=1);
+  input Real u2(start=2);
+  output Real y;
+  Real x;
+initial equation
+  x = u1*u2 + (u1 + u2)/2;
+equation
+  der(x) = x*u1^2;
+  y = x + u1*u2 + x;
+end fmi_attributes_18;
+"); getErrorString();
+
+translateModelFMU(fmi_attributes_18, version="2.0", fmuType="me_cs"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_18.fmu modelDescription.xml > fmi_attributes_18_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_18_tmp.xml > fmi_attributes_18.xml"); getErrorString();
+readFile("fmi_attributes_18.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_18_tmp.xml > fmi_attributes_18.xml"); getErrorString();
+readFile("fmi_attributes_18.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_18.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"u1\"
+//     valueReference=\"2\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"u2\"
+//     valueReference=\"3\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"2.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"4\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"5\" dependencies=\"1 3 4\" dependenciesKind=\"dependent dependent dependent\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"1 3\" dependenciesKind=\"dependent dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"3 4\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"2\" dependencies=\"3 4\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"5\" dependencies=\"3 4\" dependenciesKind=\"dependent dependent\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

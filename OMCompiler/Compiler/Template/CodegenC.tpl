@@ -1314,7 +1314,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDER") else "NULL" else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDER_column") else "NULL" else "NULL" %>,
-       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1" else "-1" %>
+       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1" else "-1" %>,
+       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDERINIT") else "NULL" else "NULL" %>,
+       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL" else "NULL" %>,
+       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1" else "-1" %>
     <%\n%>
     };
 
@@ -4652,6 +4655,8 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   int <%symbolName(modelNamePrefix,"function_ZeroCrossings")%>(DATA *data, threadData_t *threadData, double *gout)
   {
     TRACE_PUSH
+    const int *equationIndexes = NULL;
+
     <%varDecls2%>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -4793,6 +4798,8 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   int <%symbolName(modelNamePrefix,"function_updateRelations")%>(DATA *data, threadData_t *threadData, int evalforZeroCross)
   {
     TRACE_PUSH
+    const int *equationIndexes = NULL;
+
     <%varDecls%>
 
     if(evalforZeroCross) {

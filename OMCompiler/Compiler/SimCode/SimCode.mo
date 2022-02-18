@@ -631,6 +631,8 @@ end FmiDiscreteStates;
 public uniontype FmiInitialUnknowns
   record FMIINITIALUNKNOWNS
     list<FmiUnknown> fmiUnknownsList;
+    list<tuple<Integer, DAE.ComponentRef>> sortedUnknownCrefs "use the sorted crefs to get the ValueReference of unknowns";
+    list<tuple<Integer, DAE.ComponentRef>> sortedknownCrefs "use the sorted crefs to get the ValueReference of knowns";
   end FMIINITIALUNKNOWNS;
 end FmiInitialUnknowns;
 
@@ -639,6 +641,7 @@ public uniontype FmiModelStructure
     FmiOutputs fmiOutputs;
     FmiDerivatives fmiDerivatives;
     Option<JacobianMatrix> continuousPartialDerivatives;
+    Option<JacobianMatrix> initialPartialDerivatives;
     FmiDiscreteStates fmiDiscreteStates;
     FmiInitialUnknowns fmiInitialUnknowns;
   end FMIMODELSTRUCTURE;

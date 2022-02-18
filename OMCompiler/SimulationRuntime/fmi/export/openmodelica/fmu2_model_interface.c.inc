@@ -580,6 +580,32 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     }
   }
 
+  /* allocate memory for Jacobian during initialization DAE */
+  comp->_has_jacobian_intialization = 0;
+  comp->fmiDerJacInitialization = NULL;
+  if (comp->fmuData->callback->initialPartialFMIDERINIT != NULL)
+  {
+    comp->fmiDerJacInitialization = (ANALYTIC_JACOBIAN*) functions->allocateMemory(1, sizeof(ANALYTIC_JACOBIAN));
+    if (! comp->fmuData->callback->initialPartialFMIDERINIT(comp->fmuData, comp->threadData, comp->fmiDerJacInitialization))
+    {
+      comp->_has_jacobian_intialization = 1;
+    }
+  }
+
+  // int cols = comp->fmiDerJac->sizeCols;
+  // int rows = comp->fmiDerJac->sizeRows;
+  // printf("\nFMIDER number of rows and colums");
+  // printf("\nNumber of rows   : %i", rows);
+  // printf("\nNumber of columns: %i", cols);
+  // printf("\n");
+
+  // int cols_ = comp->fmiDerJacInitialization->sizeCols;
+  // int rows_ = comp->fmiDerJacInitialization->sizeRows;
+  // printf("\nFMIDER INITIALIZATION number of rows and colums");
+  // printf("\nNumber of rows   : %i", rows_);
+  // printf("\nNumber of columns: %i", cols_);
+  // printf("\n");
+
   comp->states = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
   comp->states_der = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
   comp->event_indicators = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
@@ -647,6 +673,23 @@ void fmi2FreeInstance(fmi2Component c)
     free(comp->fmiDerJac->sparsePattern); comp->fmiDerJac->sparsePattern = NULL;
 
     freeMemory(comp->fmiDerJac); comp->fmiDerJac=NULL;
+  }
+
+
+  /* Free jacobian data */
+  if (comp->_has_jacobian_intialization == 1) {
+    /* TODO: Use comp->functions->freeMemory insted of free,
+     * but generated code uses malloc / calloc instead of comp->functions->allocateMemory */
+    free(comp->fmiDerJacInitialization->seedVars); comp->fmiDerJacInitialization->seedVars = NULL;
+    free(comp->fmiDerJacInitialization->resultVars); comp->fmiDerJacInitialization->resultVars = NULL;
+    free(comp->fmiDerJacInitialization->tmpVars); comp->fmiDerJacInitialization->tmpVars = NULL;
+
+    free(comp->fmiDerJacInitialization->sparsePattern->leadindex); comp->fmiDerJacInitialization->sparsePattern->leadindex = NULL;
+    free(comp->fmiDerJacInitialization->sparsePattern->index); comp->fmiDerJacInitialization->sparsePattern->index = NULL;
+    free(comp->fmiDerJacInitialization->sparsePattern->colorCols); comp->fmiDerJacInitialization->sparsePattern->colorCols = NULL;
+    free(comp->fmiDerJacInitialization->sparsePattern); comp->fmiDerJacInitialization->sparsePattern = NULL;
+
+    freeMemory(comp->fmiDerJacInitialization); comp->fmiDerJacInitialization=NULL;
   }
 
   freeMemory(comp->states); comp->states = NULL;
@@ -1141,6 +1184,69 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
   return unsupportedFunction(c, "fmi2DeSerializeFMUstate", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
 }
 
+fmi2Status fmi2GetDirectionalDerivativeForInitialization(ModelInstance *comp, MODEL_DATA* modelData, DATA* fmudata, threadData_t* td,
+    const fmi2ValueReference vUnknown_ref[], size_t nUnknown,
+    const fmi2ValueReference vKnown_ref[] , size_t nKnown,
+    const fmi2Real dvKnown[], fmi2Real dvUnknown[])
+{
+  if (!comp->_has_jacobian_intialization)
+    return unsupportedFunction(comp, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+
+  /***************************************/
+  /* This code assumes that the FMU variables are always sorted,
+     states first and then derivatives.
+     This is true for the actual OMC FMUs.
+     The input values references are mapped with mapInputReference2InputNumber
+     and mapOutputReference2OutputNumber functions
+  */
+  /* eval constant part of jacobian */
+
+  int i,j;
+
+  int independent = comp->fmiDerJacInitialization->sizeCols;
+  int dependent = comp->fmiDerJacInitialization->sizeRows;
+
+  /* TODO: Evaluate only once for one evaluation of jacobian */
+  if (comp->fmiDerJacInitialization->constantEqns != NULL) {
+    comp->fmiDerJacInitialization->constantEqns(fmudata, td, comp->fmiDerJacInitialization, NULL);
+  }
+
+  /* clear out the seeds */
+  for (i = 0; i < independent; i++)
+  {
+    comp->fmiDerJacInitialization->seedVars[i] = 0;
+  }
+
+  for (i = 0; i < nKnown; i++)
+  {
+    // map the known ValueReferences to an internal index
+    int idx = mapInitialUnknownsIndependentIndex(vKnown_ref[i]);
+    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index during initialization", idx, independent))
+      return fmi2Error;
+    /* Put the supplied value in the seeds */
+    comp->fmiDerJacInitialization->seedVars[idx] = dvKnown[i];
+  }
+
+  /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
+   * More efficient code could only evaluate the equations needed for the
+   * known variables only */
+  setThreadData(comp);
+  fmudata->callback->functionJacFMIDERINIT_column(fmudata, td, comp->fmiDerJacInitialization, NULL);
+  resetThreadData(comp);
+
+  /* Write the results to dvUnknown array */
+  for (i=0;i<nUnknown; i++)
+  {
+    // map the Unknown ValueReferences to an internal index
+    int idx = mapInitialUnknownsdependentIndex(vUnknown_ref[i]);
+    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative output index during initialization", idx, dependent))
+      return fmi2Error;
+    dvUnknown[i] = comp->fmiDerJacInitialization->resultVars[idx];
+  }
+
+  return fmi2OK;
+}
+
 fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
     const fmi2ValueReference vUnknown_ref[], size_t nUnknown,
     const fmi2ValueReference vKnown_ref[] , size_t nKnown,
@@ -1160,6 +1266,13 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
   if (invalidState(comp, "fmi2GetDirectionalDerivative", modelInstantiated|modelEventMode|modelContinuousTimeMode, ~0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDirectionalDerivative")
+
+  if (modelInitializationMode == comp->state)
+  {
+    //printf("\ngetDirectional Derivative initialized state\n");
+    return fmi2GetDirectionalDerivativeForInitialization(comp, modelData, fmudata, td, vUnknown_ref, nUnknown, vKnown_ref, nKnown, dvKnown, dvUnknown);
+  }
+
   if (!comp->_has_jacobian)
     return unsupportedFunction(c, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
   /***************************************/

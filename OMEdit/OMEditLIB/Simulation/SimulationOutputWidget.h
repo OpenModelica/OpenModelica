@@ -139,6 +139,7 @@ private:
   void deleteIntermediateCompilationFiles();
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinishedHelper();
+  QString getPathsFromBatFile(QString fileName);
 private slots:
   void cancelCompilationOrSimulation();
   void openTransformationalDebugger();

@@ -1277,9 +1277,9 @@ algorithm
           for node_ptr in node_ptrs loop
             node := InstNode.resolveOuter(Mutable.access(node_ptr));
 
-            if InstNode.isProtected(node) and not InstNode.isExtends(parent) then
-              Error.addSourceMessage(Error.NF_MODIFY_PROTECTED,
-                {InstNode.name(node), Modifier.toString(mod)}, InstNode.info(node));
+            if InstNode.isProtected(node) and not (InstNode.isExtends(parent) or InstNode.isBaseClass(parent)) then
+              Error.addMultiSourceMessage(Error.NF_MODIFY_PROTECTED,
+                {InstNode.name(node), Modifier.toString(mod)}, {Modifier.info(mod), InstNode.info(node)});
               fail();
             end if;
 
@@ -2658,6 +2658,7 @@ algorithm
       Operator op;
       list<Expression> expl;
       list<list<Expression>> expll;
+      array<Expression> arr;
 
     case Absyn.Exp.INTEGER() then Expression.INTEGER(absynExp.value);
     case Absyn.Exp.REAL() then Expression.REAL(stringReal(absynExp.value));
@@ -2669,9 +2670,10 @@ algorithm
 
     case Absyn.Exp.ARRAY()
       algorithm
-        expl := list(instExp(e, scope, context, info) for e in absynExp.arrayExp);
+        arr := Array.mapList(absynExp.arrayExp,
+          function instExp(scope = scope, context = context, info = info));
       then
-        Expression.makeArray(Type.UNKNOWN(), expl);
+        Expression.makeArray(Type.UNKNOWN(), arr);
 
     case Absyn.Exp.MATRIX()
       algorithm

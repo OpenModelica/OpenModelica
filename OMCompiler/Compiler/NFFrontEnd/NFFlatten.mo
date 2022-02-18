@@ -684,9 +684,9 @@ algorithm
       then
         Expression.makeRecord(InstNode.scopePath(cls), outExp.ty, fields);
 
-    case Expression.LIST()
+    case Expression.ARRAY()
       algorithm
-        outExp.elements := list(splitRecordCref(e) for e in outExp.elements);
+        outExp.elements := Array.map(outExp.elements, splitRecordCref);
       then
         outExp;
 
@@ -1035,30 +1035,30 @@ public function flattenExp
   input output Expression exp;
   input ComponentRef prefix;
 algorithm
-  exp := Expression.map(exp, function flattenExp_traverse(prefix = prefix));
-end flattenExp;
-
-function flattenExp_traverse
-  input output Expression exp;
-  input ComponentRef prefix;
-algorithm
   exp := match exp
     case Expression.CREF(cref = ComponentRef.CREF())
       algorithm
+        exp.cref := ComponentRef.mapExpShallow(exp.cref, function flattenExp(prefix = prefix));
         exp.cref := flattenCref(exp.cref, prefix);
         exp.ty := flattenType(exp.ty, prefix);
       then
         exp;
 
-    case Expression.SUBSCRIPTED_EXP()
-      then replaceSplitIndices(exp.exp, exp.subscripts, prefix);
+    case Expression.SUBSCRIPTED_EXP(split = true)
+      then Expression.mapShallow(
+        replaceSplitIndices(exp.exp, exp.subscripts, prefix),
+        function flattenExp(prefix = prefix));
 
-    case Expression.IF(ty = Type.CONDITIONAL_ARRAY()) then flattenConditionalArrayIfExp(exp);
-    else exp;
+    case Expression.IF(ty = Type.CONDITIONAL_ARRAY())
+      then Expression.mapShallow(
+          flattenConditionalArrayIfExp(exp),
+          function flattenExp(prefix = prefix));
+
+    else Expression.mapShallow(exp, function flattenExp(prefix = prefix));
   end match;
 
   exp := flattenExpType(exp, prefix);
-end flattenExp_traverse;
+end flattenExp;
 
 function replaceSplitIndices
   input output Expression exp;
@@ -1086,6 +1086,7 @@ algorithm
 
   subs := Subscript.expandSplitIndices(subs);
   exp := Expression.applySubscripts(subs, exp);
+  exp := flattenExp(exp, prefix);
 end replaceSplitIndices;
 
 function replaceSplitIndices2

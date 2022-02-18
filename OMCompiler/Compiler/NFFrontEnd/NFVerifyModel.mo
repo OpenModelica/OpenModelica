@@ -235,7 +235,7 @@ protected
     output list<ComponentRef> outCrefs = {};
   protected
     Expression exp;
-    list<Expression> expl;
+    array<Expression> expl;
   algorithm
     for cref in crefs loop
       exp := Expression.fromCref(cref);

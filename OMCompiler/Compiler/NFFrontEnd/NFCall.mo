@@ -1138,7 +1138,7 @@ public
 
       case UNTYPED_CALL()
         algorithm
-          res := Expression.listContainsShallow(call.arguments, func);
+          res := List.exist(call.arguments, func);
 
           if not res then
             for arg in call.named_args loop
@@ -1171,7 +1171,7 @@ public
         then
           false;
 
-      case TYPED_CALL() then Expression.listContainsShallow(call.arguments, func);
+      case TYPED_CALL() then List.exist(call.arguments, func);
       case UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case UNTYPED_REDUCTION() then func(call.exp);
@@ -1608,20 +1608,23 @@ public
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
         then
-          UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
+          UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, call.iters);
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
 
       case UNTYPED_REDUCTION()
         algorithm
           e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
         then
-          UNTYPED_REDUCTION(call.ref, e, call.iters);
+          UNTYPED_REDUCTION(call.ref, e, iters);
 
       case TYPED_REDUCTION()
         algorithm

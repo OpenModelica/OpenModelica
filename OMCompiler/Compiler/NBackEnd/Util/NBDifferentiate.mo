@@ -61,6 +61,7 @@ public
   import BVariable = NBVariable;
 
   // Util imports
+  import Array;
   import Error;
   import UnorderedMap;
 
@@ -339,6 +340,7 @@ public
       Expression elem1, elem2;
       list<Expression> new_elements = {};
       list<list<Expression>> new_matrix_elements = {};
+      array<Expression> arr;
 
     // differentiation of constant expressions results in zero
     case Expression.INTEGER()   then (Expression.INTEGER(0), diffArguments);
@@ -351,12 +353,10 @@ public
     case Expression.CREF() then differentiateComponentRef(exp, diffArguments);
 
     // [a, b, c, ...]' = [a', b', c', ...]
-    case Expression.LIST() algorithm
-      for element in exp.elements loop
-        (element, diffArguments) := differentiateExpression(element, diffArguments);
-        new_elements := element :: new_elements;
-      end for;
-    then (Expression.LIST(exp.ty, listReverse(new_elements), exp.literal), diffArguments);
+    case Expression.ARRAY() algorithm
+      (arr, diffArguments) := Array.mapFold(exp.elements, differentiateExpression, diffArguments);
+      exp.elements := arr;
+    then (exp, diffArguments);
 
     // |a, b, c|'   |a', b', c'|
     // |d, e, f|  = |d', e', f'|

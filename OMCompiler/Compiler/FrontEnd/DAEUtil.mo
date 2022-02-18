@@ -903,16 +903,24 @@ end setMinMax;
 public function getStartAttr "
   Return the start attribute."
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  input DAE.Type inType;
   output DAE.Exp start;
 algorithm
-  start := match(inVariableAttributesOption)
+  start := match(inVariableAttributesOption, inType)
     local
       DAE.Exp r;
-    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
+      Absyn.Path path;
+      list<String> names;
+    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r))), _) then r;
+    case (SOME(DAE.VAR_ATTR_REAL(start = NONE())), _) then DAE.RCONST(0.0);
+    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r))), _) then r;
+    case (SOME(DAE.VAR_ATTR_INT(start = NONE())), _) then DAE.ICONST(0);
+    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r))), _) then r;
+    case (SOME(DAE.VAR_ATTR_BOOL(start = NONE())), _) then DAE.BCONST(false);
+    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r))), _) then r;
+    case (SOME(DAE.VAR_ATTR_STRING(start = NONE())), _) then DAE.SCONST("");
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r))), _) then r;
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = NONE())), DAE.T_ENUMERATION(path = path, names = names)) then DAE.ENUM_LITERAL(AbsynUtil.joinPaths(path, Absyn.IDENT(listHead(names))), 1);
     else DAE.RCONST(0.0);
   end match;
 end getStartAttr;
