@@ -8279,24 +8279,48 @@ algorithm
   simVar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars, iterationVars);
   isalias := isAliasVar(simVar);
 
-  //default is FMI_INTERNAL, clear up internal variable starting with '$' except for states and "$CLKPRE"
-  if ComponentReference.isInternalCref(simVar.name) and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
-    simVar.exportVar := NONE();
-  end if;
-
-  // check for other fmiFilter configFlags (e.g) protected, blackBox and none
-  if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED and simVar.isProtected then
-    simVar.exportVar := NONE();
+  simVar.exportVar := NONE();
+  if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_NONE then
+    // All variables will be exposed, even variables that are
+    // introduced by the symbolic transformations. Hence, this is
+    // intended to be used for debugging.
+    simVar.exportVar := SOME(simVar.name);
+  else if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_INTERNAL then
+    // All internal variables introduced by the symbolic
+    // transformations are filtered out. Only the variables from the
+    // actual Modelica model are exposed (with minor exceptions, e.g.
+    // for state sets).
+    if ComponentReference.isInternalCref(simVar.name) and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
+      simVar.exportVar := NONE();
+    else
+      simVar.exportVar := SOME(simVar.name);
+    end if;
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
+    // All protected model variables will be filtered out in addition
+    // to --fmiFilter=internal.
+    if ComponentReference.isInternalCref(simVar.name) and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
+      simVar.exportVar := NONE();
+    else
+      simVar.exportVar := SOME(simVar.name);
+    end if;
+    if simVar.isProtected and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
+      simVar.exportVar := NONE();
+    end if;
   elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
-    if BackendVariable.isInput(dlowVar) or  BackendVariable.isOutputVar(dlowVar) then
+    // This option is used to hide everything except for inputs and
+    // outputs. Additional variables that need to be present in the
+    // modelDescription file for structrial reasons will have
+    // concealed names.
+    if BackendVariable.isInput(dlowVar) or BackendVariable.isOutputVar(dlowVar) then
       simVar.exportVar := SOME(simVar.name);
     elseif BackendVariable.isStateVar(dlowVar) or BackendVariable.isClockedStateVar(dlowVar) then
       simVar.exportVar := SOME(ComponentReference.getConcealedCref());
     else
       simVar.exportVar := NONE();
     end if;
-  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_NONE then // export all the vars
-    simVar.exportVar := SOME(simVar.name);
+  else
+    Error.addInternalError("Unknown value detected for --fmiFilter", sourceInfo());
+    fail();
   end if;
 
   // filter parameters of type string that doesn't have constant start values
