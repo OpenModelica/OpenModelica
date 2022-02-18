@@ -50,7 +50,7 @@ protected
   import ExpandExp = NFExpandExp;
   import TypeCheck = NFTypeCheck;
   import ValuesUtil;
-  import MetaModelica.Dangerous.listReverseInPlace;
+  import MetaModelica.Dangerous.*;
   import RangeIterator = NFRangeIterator;
 
 public
@@ -4221,17 +4221,11 @@ public
     output Expression exp = fillExp;
   protected
     list<Dimension> dims = Type.arrayDims(ty);
-    list<Expression> expl;
     Type arr_ty = Type.arrayElementType(ty);
+    Boolean is_literal = isLiteral(exp);
   algorithm
     for dim in listReverse(dims) loop
-      expl := {};
-      for i in 1:Dimension.size(dim) loop
-        expl := map(exp, clone) :: expl;
-      end for;
-
-      arr_ty := Type.liftArrayLeft(arr_ty, dim);
-      exp := makeArray(arr_ty, listArray(expl), literal = isLiteral(exp));
+      (exp, arr_ty) := fillArray_impl(Dimension.size(dim), exp, arr_ty, is_literal);
     end for;
   end fillType;
 
@@ -4243,18 +4237,36 @@ public
     input list<Expression> dims;
     output Expression result = fillExp;
   protected
-    Integer dim_size;
-    list<Expression> arr;
     Type arr_ty = typeOf(result);
     Boolean is_literal = isLiteral(fillExp);
   algorithm
     for d in listReverse(dims) loop
-      dim_size := toInteger(d);
-      arr := list(map(result, clone) for e in 1:dim_size);
-      arr_ty := Type.liftArrayLeft(arr_ty, Dimension.fromInteger(dim_size));
-      result := makeArray(arr_ty, listArray(arr), is_literal);
+      (result, arr_ty) := fillArray_impl(toInteger(d), result, arr_ty, is_literal);
     end for;
   end fillArgs;
+
+  function fillArray
+    input Integer n;
+    input Expression fillExp;
+    output Expression result;
+  algorithm
+    result := fillArray_impl(n, fillExp, typeOf(fillExp), isLiteral(fillExp));
+  end fillArray;
+
+  function fillArray_impl
+    input Integer n;
+    input Expression fillExp;
+    input Type ty;
+    input Boolean isLiteral;
+    output Expression result;
+    output Type resultType;
+  protected
+    array<Expression> arr;
+  algorithm
+    arr := Array.generate(n, function clone(exp = fillExp));
+    resultType := Type.liftArrayLeft(ty, Dimension.fromInteger(n));
+    result := makeArray(resultType, arr, isLiteral);
+  end fillArray_impl;
 
   function liftArray
     "Creates an array with the given dimension, where each element is the given
@@ -4262,15 +4274,8 @@ public
     input Dimension dim;
     input output Expression exp;
           output Type arrayType = typeOf(exp);
-  protected
-    list<Expression> expl = {};
   algorithm
-    for i in 1:Dimension.size(dim) loop
-      expl := exp :: expl;
-    end for;
-
-    arrayType := Type.liftArrayLeft(arrayType, dim);
-    exp := makeArray(arrayType, listArray(expl), literal = isLiteral(exp));
+    (exp, arrayType) := fillArray_impl(Dimension.size(dim), exp, arrayType, isLiteral(exp));
   end liftArray;
 
   function liftArrayList
@@ -4281,17 +4286,10 @@ public
     input output Expression exp;
           output Type arrayType = typeOf(exp);
   protected
-    list<Expression> expl;
     Boolean is_literal = isLiteral(exp);
   algorithm
     for dim in listReverse(dims) loop
-      expl := {};
-      for i in 1:Dimension.size(dim) loop
-        expl := exp :: expl;
-      end for;
-
-      arrayType := Type.liftArrayLeft(arrayType, dim);
-      exp := makeArray(arrayType, listArray(expl), literal = is_literal);
+      (exp, arrayType) := fillArray_impl(Dimension.size(dim), exp, arrayType, is_literal);
     end for;
   end liftArrayList;
 
@@ -4303,11 +4301,7 @@ public
       case Type.REAL() then REAL(0.0);
       case Type.INTEGER() then INTEGER(0);
       case Type.BOOLEAN() then BOOLEAN(false);
-      case Type.ARRAY()
-        then ARRAY(ty,
-                   arrayCreate(Dimension.size(listHead(ty.dimensions)),
-                               makeZero(Type.unliftArray(ty))),
-                   literal = true);
+      case Type.ARRAY() then fillType(ty, makeZero(Type.arrayElementType(ty)));
       case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
     end match;
   end makeZero;
@@ -4333,11 +4327,7 @@ public
     oneExp := match ty
       case Type.REAL() then REAL(1.0);
       case Type.INTEGER() then INTEGER(1);
-      case Type.ARRAY()
-        then ARRAY(ty,
-                   arrayCreate(Dimension.size(listHead(ty.dimensions)),
-                               makeOne(Type.unliftArray(ty))),
-                   literal = true);
+      case Type.ARRAY() then fillType(ty, makeOne(Type.arrayElementType(ty)));
     end match;
   end makeOne;
 
@@ -4348,11 +4338,7 @@ public
     oneExp := match ty
       case Type.REAL() then REAL(-1.0);
       case Type.INTEGER() then INTEGER(-1);
-      case Type.ARRAY()
-        then ARRAY(ty,
-                   arrayCreate(Dimension.size(listHead(ty.dimensions)),
-                               makeMinusOne(Type.unliftArray(ty))),
-                   literal = true);
+      case Type.ARRAY() then fillType(ty, makeMinusOne(Type.arrayElementType(ty)));
     end match;
   end makeMinusOne;
 
@@ -4365,11 +4351,7 @@ public
       case Type.INTEGER() then INTEGER(System.intMaxLit());
       case Type.BOOLEAN() then BOOLEAN(true);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, List.last(ty.literals), listLength(ty.literals));
-      case Type.ARRAY()
-        then makeArray(ty,
-                       arrayCreate(Dimension.size(listHead(ty.dimensions)),
-                                   makeMaxValue(Type.unliftArray(ty))),
-                       literal = true);
+      case Type.ARRAY() then fillType(ty, makeMaxValue(Type.arrayElementType(ty)));
     end match;
   end makeMaxValue;
 
@@ -4382,11 +4364,7 @@ public
       case Type.INTEGER() then INTEGER(-System.intMaxLit());
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
-      case Type.ARRAY()
-        then makeArray(ty,
-                       arrayCreate(Dimension.size(listHead(ty.dimensions)),
-                                   makeMinValue(Type.unliftArray(ty))),
-                       literal = true);
+      case Type.ARRAY() then fillType(ty, makeMinValue(Type.arrayElementType(ty)));
     end match;
   end makeMinValue;
 
@@ -4633,31 +4611,27 @@ public
     input Type elementType;
     output Expression matrix;
   protected
+    array<Expression> row, rows;
     Expression zero, one;
-    list<Expression> row, rows = {};
     Type row_ty;
   algorithm
     zero := makeZero(elementType);
     one := makeOne(elementType);
+
+    rows := arrayCreateNoInit(n, zero);
     row_ty := Type.ARRAY(elementType, {Dimension.fromInteger(n)});
 
     for i in 1:n loop
-      row := {};
+      row := arrayCreateNoInit(n, zero);
 
-      for j in 2:i loop
-        row := zero :: row;
+      for j in 1:n loop
+        arrayUpdateNoBoundsChecking(row, j, if i == j then one else zero);
       end for;
 
-      row := one :: row;
-
-      for j in i:n-1 loop
-        row := zero :: row;
-      end for;
-
-      rows := makeArray(row_ty, listArray(row), literal = true) :: rows;
+      arrayUpdateNoBoundsChecking(rows, i, makeArray(row_ty, row, true));
     end for;
 
-    matrix := makeArray(Type.liftArrayLeft(row_ty, Dimension.fromInteger(n)), listArray(rows), literal = true);
+    matrix := makeExpArray(rows, row_ty, true);
   end makeIdentityMatrix;
 
   function promote
@@ -4735,7 +4709,7 @@ public
         algorithm
           outExp := exp;
           for ty in listReverse(types) loop
-            outExp := makeArray(ty, listArray({outExp}));
+            outExp := makeArray(ty, arrayCreate(1, outExp));
           end for;
         then
           outExp;
@@ -5479,7 +5453,8 @@ public
     list<Expression> rest_dims;
     Integer dim_size_int;
     Expression sub_exp;
-    list<Expression> rest_subs, expl;
+    list<Expression> rest_subs;
+    array<Expression> expl;
     Type ty;
   algorithm
     if listEmpty(dimSizes) then
@@ -5489,16 +5464,16 @@ public
       dim_size :: rest_dims := dimSizes;
       dim_size_int := toInteger(Ceval.evalExp(dim_size));
       sub_exp :: rest_subs := subExps;
-      expl := {};
+      expl := arrayCreateNoInit(dim_size_int, exp);
 
-      for i in dim_size_int:-1:1 loop
+      for i in 1:dim_size_int loop
         updateMutable(sub_exp, INTEGER(i));
-        outExp := mapSplitExpressions2(exp, rest_dims, rest_subs, func);
-        expl := outExp :: expl;
+        arrayUpdateNoBoundsChecking(expl, i,
+          mapSplitExpressions2(exp, rest_dims, rest_subs, func));
       end for;
 
-      ty := typeOf(if listEmpty(expl) then exp else listHead(expl));
-      outExp := makeExpArray(listArray(expl), ty, isLiteral = true);
+      ty := typeOf(if arrayEmpty(expl) then exp else arrayGet(expl, 1));
+      outExp := makeExpArray(expl, ty, isLiteral = true);
     end if;
   end mapSplitExpressions2;
 

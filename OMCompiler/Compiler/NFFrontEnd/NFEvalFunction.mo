@@ -307,6 +307,7 @@ algorithm
 
   if Binding.isBound(binding) then
     bindingExp := Binding.getExp(binding);
+    bindingExp := Expression.map(bindingExp, Expression.clone);
   else
     bindingExp := buildBinding(node, map, mutableParams, buildArrayBinding);
   end if;
