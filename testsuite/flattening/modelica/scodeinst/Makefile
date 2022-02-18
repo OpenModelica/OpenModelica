@@ -129,6 +129,7 @@ CevalFuncArray1.mo \
 CevalFuncArray2.mo \
 CevalFuncArray3.mo \
 CevalFuncArray4.mo \
+CevalFuncArray5.mo \
 CevalFuncAssert1.mo \
 CevalFuncAssert2.mo \
 CevalFuncFor1.mo \

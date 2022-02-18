@@ -264,6 +264,8 @@ algorithm
   // Apply the arguments to the arguments themselves. This is done after
   // building the map to make sure all the arguments are available.
   UnorderedMap.apply(map, function applyBindingReplacement(map = map));
+  // Evaluate the values of outputs and local variables.
+  UnorderedMap.apply(map, evaluateReplacement);
 end createArgumentMap;
 
 function addMutableArgument
@@ -531,6 +533,44 @@ algorithm
     else exp;
   end match;
 end applyReplacementCall;
+
+function evaluateReplacement
+  "Evaluates the values of mutable variables."
+  input output Expression exp;
+algorithm
+  () := match exp
+    case Expression.MUTABLE()
+      algorithm
+        Expression.applyMutable(exp, evaluateReplacement2);
+      then
+        ();
+
+    else ();
+  end match;
+end evaluateReplacement;
+
+function evaluateReplacement2
+  input output Expression exp;
+algorithm
+  exp := match exp
+    // A mutable expression, only evaluate the expression it contains.
+    case Expression.MUTABLE()
+      algorithm
+        Expression.applyMutable(exp,
+          function Ceval.evalExp(target = NFCeval.EvalTarget.IGNORE_ERRORS()));
+      then
+        exp;
+
+    // A record expression, evaluate the fields but keep them mutable if they are.
+    case Expression.RECORD()
+      algorithm
+        exp.elements := list(evaluateReplacement2(e) for e in exp.elements);
+      then
+        exp;
+
+    else Ceval.evalExp(exp);
+  end match;
+end evaluateReplacement2;
 
 function mergeFunctionApplicationArgs
   input Function oldFn;

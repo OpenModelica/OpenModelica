@@ -4949,6 +4949,20 @@ public
     Mutable.update(exp_ptr, value);
   end updateMutable;
 
+  function applyMutable
+    input Expression mutableExp;
+    input FuncType func;
+
+    partial function FuncType
+      input output Expression exp;
+    end FuncType;
+  protected
+    Mutable<Expression> exp_ptr;
+  algorithm
+    MUTABLE(exp = exp_ptr) := mutableExp;
+    Mutable.update(exp_ptr, func(Mutable.access(exp_ptr)));
+  end applyMutable;
+
   function isEmpty
     input Expression exp;
     output Boolean empty;
