@@ -8285,7 +8285,7 @@ algorithm
     // introduced by the symbolic transformations. Hence, this is
     // intended to be used for debugging.
     simVar.exportVar := SOME(simVar.name);
-  else if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_INTERNAL then
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_INTERNAL then
     // All internal variables introduced by the symbolic
     // transformations are filtered out. Only the variables from the
     // actual Modelica model are exposed (with minor exceptions, e.g.
