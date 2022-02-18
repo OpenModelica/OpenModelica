@@ -18,12 +18,12 @@ importFMU("Modelica.Blocks.Examples.BooleanNetwork1.fmu"); getErrorString();
 loadFile("Modelica_Blocks_Examples_BooleanNetwork1_me_FMU.mo"); getErrorString();
 simulate(Modelica_Blocks_Examples_BooleanNetwork1_me_FMU, stopTime=10, numberOfIntervals=150); getErrorString();
 
-val(triggeredAdd.y, 2.2);
-val(booleanPulse2.y, 10);
-val(set1.y, 10);
-val(onDelay.y, 10);
-val(rSFlipFlop.Q, 10);
-val(rSFlipFlop.QI, 10);
+val(triggeredAdd_y, 2.2);
+val(booleanPulse2_y, 10);
+val(set1_y, 10);
+val(onDelay_y, 10);
+val(rSFlipFlop_Q, 10);
+val(rSFlipFlop_QI, 10);
 
 // Result:
 // true
@@ -49,15 +49,10 @@ val(rSFlipFlop.QI, 10);
 // true
 // ""
 // record SimulationResult
-//     resultFile = "",
+//     resultFile = "Modelica_Blocks_Examples_BooleanNetwork1_me_FMU_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Blocks_Examples_BooleanNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: Modelica_Blocks_Examples_BooleanNetwork1_me_FMU
-// assert            | debug   | Simulation terminated due to too many, i.e. 20, event iterations.
-// |                 | |       | This could either indicate an inconsistent system or an undersized limit of event iterations.
-// |                 | |       | The limit of event iterations can be specified using the runtime flag '–mei=<value>'.
-// module = Modelica_Blocks_Examples_BooleanNetwork1, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2EnterInitializationMode: terminated by an assertion.
-// assert            | debug   | fmi2ExitInitializationMode failed with status : Error
-// assert            | info    | simulation terminated by an assertion at initialization
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
