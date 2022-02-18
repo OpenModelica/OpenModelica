@@ -52,14 +52,14 @@ protected
   import Causalize = NBCausalize;
   import BVariable = NBVariable;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EquationAttributes};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes};
   import Matching = NBMatching;
   import Solve = NBSolve;
   import Sorting = NBSorting;
   import BSystem = NBSystem;
   import NBSystem.{System, SystemType};
   import Tearing = NBTearing;
-  import NBVariable.VariablePointers;
+  import NBVariable.{VariablePointer, VariablePointers};
 
   // Util imports
   import BackendUtil = NBBackendUtil;
@@ -130,10 +130,10 @@ public
   end SINGLE_IF_EQUATION;
 
   record SLICED_EQUATION
-    ComponentRef var_cref       "variable slice (cref to solve for)";
-    list<Integer> eqn_indices   "equation slice (zero based equation indices)";
-    Pointer<Variable> var       "full unsliced variable";
-    Pointer<Equation> eqn       "full unsliced equation";
+    "zero based indices"
+    ComponentRef var_cref       "cref to solve for";
+    Slice<VariablePointer> var  "sliced variable";
+    Slice<EquationPointer> eqn  "sliced equation";
     Solve.Status status;
   end SLICED_EQUATION;
 
@@ -184,11 +184,10 @@ public
       then str;
 
       case SLICED_EQUATION() algorithm
-        len := listLength(comp.eqn_indices);
+        len := listLength(comp.eqn.indices);
         str := if index == -2 then "" else StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Equation (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
-        str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
-        str := str + "    with slices: " + List.toString(List.firstN(comp.eqn_indices, intMin(len, 10)), intString, "", "{", ", ", if len > 10 then ", ...}" else "}") + "\n";
+        str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
       then str;
 
       case ENTWINED_EQUATION() algorithm
@@ -284,7 +283,7 @@ public
       case SINGLE_RECORD_EQUATION() then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + Equation.hash(comp.eqn, mod), mod);
       case SINGLE_WHEN_EQUATION()   then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + Equation.hash(comp.eqn, mod), mod);
       case SINGLE_IF_EQUATION()     then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + Equation.hash(comp.eqn, mod), mod);
-      case SLICED_EQUATION()        then intMod(ComponentRef.hash(comp.var_cref, mod) + Equation.hash(comp.eqn, mod), mod);
+      case SLICED_EQUATION()        then intMod(ComponentRef.hash(comp.var_cref, mod) + Equation.hash(Slice.getT(comp.eqn), mod), mod);
       case ENTWINED_EQUATION()      then intMod(sum(hash(sub_comp, mod) for sub_comp in comp.entwined_slices), mod);
       case ALGEBRAIC_LOOP()         then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + sum(Equation.hash(eqn, mod) for eqn in comp.eqns), mod);
       case TORN_LOOP()              then intMod(Tearing.hash(comp.strict, mod), mod);
@@ -304,7 +303,7 @@ public
       case (SINGLE_RECORD_EQUATION(), SINGLE_RECORD_EQUATION())   then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName);
       case (SINGLE_WHEN_EQUATION(), SINGLE_WHEN_EQUATION())       then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName);
       case (SINGLE_IF_EQUATION(), SINGLE_IF_EQUATION())           then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName);
-      case (SLICED_EQUATION(), SLICED_EQUATION())                 then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.eqn_indices, comp2.eqn_indices, intEq);
+      case (SLICED_EQUATION(), SLICED_EQUATION())                 then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.equalName);
       case (ENTWINED_EQUATION(), ENTWINED_EQUATION())             then List.isEqualOnTrue(comp1.entwined_slices, comp2.entwined_slices, isEqual);
       case (ALGEBRAIC_LOOP(), ALGEBRAIC_LOOP())                   then List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName) and List.isEqualOnTrue(comp1.eqns, comp2.eqns, Equation.equalName);
       case (TORN_LOOP(), TORN_LOOP())                             then Tearing.isEqual(comp1.strict, comp2.strict);
@@ -409,11 +408,11 @@ public
       arrayUpdate(bucket.marks, scal_idx, true);
     end for;
 
+    // variable slice necessary? if yes fill it!
     slice := SLICED_EQUATION(
       var_cref    = cref_to_solve,
-      eqn_indices = list(idx - first_eqn for idx in listReverse(eqn_scal_indices)),
-      var         = BVariable.getVarPointer(cref_to_solve),
-      eqn         = eqn_ptr,
+      var         = Slice.SLICE(BVariable.getVarPointer(cref_to_solve), {}),
+      eqn         = Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in listReverse(eqn_scal_indices))),
       status      = NBSolve.Status.UNPROCESSED
     );
   end createPseudoSlice;
@@ -487,7 +486,7 @@ public
     comp := match eqn
       case Equation.SCALAR_EQUATION() then SINGLE_EQUATION(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(eqn))), Pointer.create(eqn), NBSolve.Status.EXPLICIT);
       case Equation.ARRAY_EQUATION()  then SINGLE_ARRAY(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(eqn))), Pointer.create(eqn), NBSolve.Status.EXPLICIT);
-      case Equation.FOR_EQUATION()    then SLICED_EQUATION(ComponentRef.EMPTY(), {}, Pointer.create(NBVariable.DUMMY_VARIABLE), Pointer.create(eqn), NBSolve.Status.EXPLICIT);
+      case Equation.FOR_EQUATION()    then SLICED_EQUATION(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), Slice.SLICE(Pointer.create(eqn), {}), NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
@@ -509,7 +508,7 @@ public
         EquationAttributes attr;
         Pointer<Variable> dependentVar;
         Tearing strict;
-        Pointer<Equation> eqn;
+        Equation eqn;
 
       case SINGLE_EQUATION() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
@@ -519,8 +518,9 @@ public
       then ();
 
       case SLICED_EQUATION() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
-        attr := Equation.getAttributes(Pointer.access(comp.eqn));
+        eqn := Pointer.access(Slice.getT(comp.eqn));
+        dependencies := Equation.collectCrefs(eqn, function getDependentCref(map = map, pseudo = pseudo));
+        attr := Equation.getAttributes(eqn);
         // assume full dependency
         dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else BVariable.getVarPointer(comp.var_cref);
         updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
@@ -670,7 +670,7 @@ protected
           sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
           vals := BackendUtil.indexToLocation(var_scal_idx-var_start_idx, sizes);
           cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref);
-          comp := SLICED_EQUATION(cref, {}, var, eqn, NBSolve.Status.UNPROCESSED);
+          comp := SLICED_EQUATION(cref, Slice.SLICE(var, {}), Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
         else
           // just create a regular equation
           comp := SINGLE_EQUATION(var, eqn, NBSolve.Status.UNPROCESSED);

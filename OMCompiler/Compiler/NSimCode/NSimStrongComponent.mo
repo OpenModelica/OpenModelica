@@ -453,8 +453,8 @@ public
           (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, funcTree, systemType);
         then tmp;
 
-        case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(comp.eqn)) algorithm
-          eqn := Pointer.access(comp.eqn);
+        case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
+          eqn := Pointer.access(Slice.getT(comp.eqn));
           stmts := {Equation.toStatement(eqn)};
           tmp := ALGORITHM(simCodeIndices.equationIndex, stmts, Equation.getAttributes(eqn));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
@@ -463,7 +463,7 @@ public
         case StrongComponent.SLICED_EQUATION() algorithm
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
-          eqn := Pointer.access(comp.eqn);
+          eqn := Pointer.access(Slice.getT(comp.eqn));
           (tmp, simCodeIndices, funcTree) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, funcTree, systemType);
         then tmp;
 

@@ -48,20 +48,17 @@ public
     IntLst indices;
   end SLICE;
 
-  partial function toStringT
-    input T t;
-    output String str;
-  end toStringT;
-
-  partial function sizeT<T>
-    input T t;
-    output Integer s;
-  end sizeT;
-
   function getT
     input Slice<T> slice;
     output T t = slice.t;
   end getT;
+
+  function isEqual
+    input Slice<T> slice1;
+    input Slice<T> slice2;
+    input isEqualT func;
+    output Boolean b = func(slice1.t, slice2.t) and List.isEqualOnTrue(slice1.indices, slice2.indices, intEq);
+  end isEqual;
 
   function toString
     input Slice<T> slice;
@@ -122,6 +119,26 @@ public
     input UnorderedMap<T, IntLst> map;
     output list<Slice<T>> slices = list(fromTpl(tpl) for tpl in UnorderedMap.toList(map));
   end fromMap;
+
+  // ############################################################
+  //                Partial Functions
+  // ############################################################
+
+  partial function toStringT
+    input T t;
+    output String str;
+  end toStringT;
+
+  partial function sizeT
+    input T t;
+    output Integer s;
+  end sizeT;
+
+  partial function isEqualT
+    input T t1;
+    input T t2;
+    output Boolean b;
+  end isEqualT;
 
   annotation(__OpenModelica_Interface="backend");
 end NBSlice;
