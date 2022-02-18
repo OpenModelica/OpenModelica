@@ -4227,7 +4227,7 @@ public
     for dim in listReverse(dims) loop
       expl := {};
       for i in 1:Dimension.size(dim) loop
-        expl := exp :: expl;
+        expl := map(exp, clone) :: expl;
       end for;
 
       arr_ty := Type.liftArrayLeft(arr_ty, dim);
@@ -4250,7 +4250,7 @@ public
   algorithm
     for d in listReverse(dims) loop
       dim_size := toInteger(d);
-      arr := list(result for e in 1:dim_size);
+      arr := list(map(result, clone) for e in 1:dim_size);
       arr_ty := Type.liftArrayLeft(arr_ty, Dimension.fromInteger(dim_size));
       result := makeArray(arr_ty, listArray(arr), is_literal);
     end for;
@@ -5611,6 +5611,19 @@ public
       else false;
     end match;
   end isComponentExpression;
+
+  function clone
+    input output Expression exp;
+  algorithm
+    () := match exp
+      case ARRAY()
+        algorithm
+          exp.elements := arrayCopy(exp.elements);
+        then
+          ();
+      else ();
+    end match;
+  end clone;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
