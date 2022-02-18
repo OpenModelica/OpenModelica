@@ -8258,6 +8258,47 @@ algorithm
   end if;
 end extractVarFromVar;
 
+protected function getExportVar
+  input BackendDAE.Var var;
+  output Option<DAE.ComponentRef> exportVar = NONE();
+algorithm
+  if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_NONE then
+    // All variables will be exposed, even variables that are
+    // introduced by the symbolic transformations. Hence, this is
+    // intended to be used for debugging.
+    exportVar := SOME(var.varName);
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_INTERNAL then
+    // All internal variables introduced by the symbolic
+    // transformations are filtered out. Only the variables from the
+    // actual Modelica model are exposed (with minor exceptions, e.g.
+    // for state sets).
+    if not (ComponentReference.isInternalCref(var.varName) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
+      exportVar := SOME(var.varName);
+    end if;
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
+    // All protected model variables will be filtered out in addition
+    // to --fmiFilter=internal.
+    if not (ComponentReference.isInternalCref(var.varName) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
+      if not (BackendVariable.isProtected(var) and (not BackendVariable.isStateVar(var) and not BackendVariable.isClockedStateVar(var))) then
+        exportVar := SOME(var.varName);
+      end if;
+    end if;
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+    // This option is used to hide everything except for inputs and
+    // outputs. Additional variables that need to be present in the
+    // modelDescription file for structrial reasons will have
+    // concealed names.
+    if BackendVariable.isInput(var) or BackendVariable.isOutputVar(var) then
+      exportVar := SOME(var.varName);
+    elseif BackendVariable.isStateVar(var) or BackendVariable.isClockedStateVar(var) then
+      exportVar := SOME(ComponentReference.getConcealedCref());
+    end if;
+  else
+    Error.addInternalError("Unknown value detected for --fmiFilter", sourceInfo());
+    fail();
+  end if;
+end getExportVar;
+
 // one dlow var can result in multiple simvars: input and output are a subset
 // of algvars for example
 protected function extractVarFromVar2
@@ -8279,49 +8320,7 @@ algorithm
   simVar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars, iterationVars);
   isalias := isAliasVar(simVar);
 
-  simVar.exportVar := NONE();
-  if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_NONE then
-    // All variables will be exposed, even variables that are
-    // introduced by the symbolic transformations. Hence, this is
-    // intended to be used for debugging.
-    simVar.exportVar := SOME(simVar.name);
-  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_INTERNAL then
-    // All internal variables introduced by the symbolic
-    // transformations are filtered out. Only the variables from the
-    // actual Modelica model are exposed (with minor exceptions, e.g.
-    // for state sets).
-    if ComponentReference.isInternalCref(simVar.name) and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
-      simVar.exportVar := NONE();
-    else
-      simVar.exportVar := SOME(simVar.name);
-    end if;
-  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
-    // All protected model variables will be filtered out in addition
-    // to --fmiFilter=internal.
-    if ComponentReference.isInternalCref(simVar.name) and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
-      simVar.exportVar := NONE();
-    else
-      simVar.exportVar := SOME(simVar.name);
-    end if;
-    if simVar.isProtected and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
-      simVar.exportVar := NONE();
-    end if;
-  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
-    // This option is used to hide everything except for inputs and
-    // outputs. Additional variables that need to be present in the
-    // modelDescription file for structrial reasons will have
-    // concealed names.
-    if BackendVariable.isInput(dlowVar) or BackendVariable.isOutputVar(dlowVar) then
-      simVar.exportVar := SOME(simVar.name);
-    elseif BackendVariable.isStateVar(dlowVar) or BackendVariable.isClockedStateVar(dlowVar) then
-      simVar.exportVar := SOME(ComponentReference.getConcealedCref());
-    else
-      simVar.exportVar := NONE();
-    end if;
-  else
-    Error.addInternalError("Unknown value detected for --fmiFilter", sourceInfo());
-    fail();
-  end if;
+  simVar.exportVar := getExportVar(dlowVar);
 
   // filter parameters of type string that doesn't have constant start values
   if BackendVariable.isStringParam(dlowVar) and isSome(simVar.initialValue) and not Expression.isEvaluatedConst(Util.getOption(simVar.initialValue)) then
@@ -9671,7 +9670,7 @@ algorithm
       equation
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
-        isProtected = getProtected(dae_var_attr);
+        isProtected = BackendVariable.isProtected(dlowVar);
         hideResult = getHideResult(hideResultExp);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
@@ -9716,7 +9715,7 @@ algorithm
         end match;
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
-        isProtected = getProtected(dae_var_attr);
+        isProtected = BackendVariable.isProtected(dlowVar);
         hideResult = getHideResult(hideResultExp);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
@@ -9757,7 +9756,7 @@ algorithm
         end match;
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
-        isProtected = getProtected(dae_var_attr);
+        isProtected = BackendVariable.isProtected(dlowVar);
         hideResult = getHideResult(hideResultExp);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
@@ -11688,20 +11687,6 @@ algorithm
   (_, i) := traverseExpsEqSystems({eqs}, Expression.complexityTraverse, 0, {});
   tpl := (eqs, i);
 end eqSystemWCET;
-
-protected function getProtected
-  input Option<DAE.VariableAttributes> attr;
-  output Boolean b;
-algorithm
-  b := match attr
-    case SOME(DAE.VAR_ATTR_REAL(isProtected=SOME(b))) then b;
-    case SOME(DAE.VAR_ATTR_INT(isProtected=SOME(b))) then b;
-    case SOME(DAE.VAR_ATTR_BOOL(isProtected=SOME(b))) then b;
-    case SOME(DAE.VAR_ATTR_STRING(isProtected=SOME(b))) then b;
-    case SOME(DAE.VAR_ATTR_ENUMERATION(isProtected=SOME(b))) then b;
-    else false;
-  end match;
-end getProtected;
 
 protected function getHideResult
   "Returns the value of the hideResult attribute."
@@ -13918,6 +13903,7 @@ algorithm
 
   vars2 := listAppend(vars1, vars2);
 
+  // collect the dependency list from sparse pattern
   indepCrefs := {};
   depCrefs := {};
   for i in rowspt loop
@@ -13935,8 +13921,8 @@ algorithm
 
   // generate Partial derivative for initDAE here, as we have the list of all depVars and inDepVars
   if not Flags.isSet(Flags.FMI20_DEPENDENCIES) and not stringEq(Config.simCodeTarget(), "Cpp") then
-    fmiDerInitDepVars := getDependentAndIndepentVarsForJacobian(depCrefs, BackendVariable.listVar(depVars));
-    fmiDerInitIndepVars := getDependentAndIndepentVarsForJacobian(indepCrefs, BackendVariable.listVar(indepVars));
+    fmiDerInitDepVars := getDependentAndIndepentVarsForJacobian(depCrefs, BackendVariable.listVar(depVars), crefSimVarHT);
+    fmiDerInitIndepVars := getDependentAndIndepentVarsForJacobian(indepCrefs, BackendVariable.listVar(indepVars), crefSimVarHT);
     if debug then
       BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInit_unknownVars");
       BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInit_knownVars");
@@ -13954,43 +13940,23 @@ algorithm
   outFmiUnknownlist := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 end getFmiInitialUnknowns;
 
-protected function removeKnownVarsWithFixedTrue
-  "checks if a known var is present in shared.globalKnownVars and in orderedVars
-   and remove from fmiderInit_KnownVars to simplify jacobian calculation"
-  input list<BackendDAE.Var> inVar;
-  input BackendDAE.Variables globalKnownVars;
-  output list<BackendDAE.Var> outVar = {};
-protected
-  list<BackendDAE.Var> varlst;
-  list<DAE.ComponentRef> crefList;
-algorithm
-  crefList := List.map(BackendVariable.varList(globalKnownVars), BackendVariable.varCref);
-  BackendDump.dumpVariables(globalKnownVars, "checkGlobalVars*******");
-  for var in inVar loop
-    if listMember(var.varName, crefList) then
-      (varlst, _ ) := BackendVariable.getVar(var.varName, globalKnownVars);
-      if not BackendVariable.isParam(List.first(varlst)) and BackendVariable.varFixed(List.first(varlst)) then
-        //print("\n Matched Var: " + ComponentReference.printComponentRefStr(var.varName));
-      else
-        outVar := var :: outVar;
-      end if;
-    end if;
-  end for;
-end removeKnownVarsWithFixedTrue;
-
 protected function getDependentAndIndepentVarsForJacobian
  "function which returns the rows and columns vars for jacobian matrix which will
   be used to get partial derivatives of fmu's using fmi2GetDirectionalDerivative"
   input list<DAE.ComponentRef> crefs;
   input BackendDAE.Variables orderedVars;
+  input SimCode.HashTableCrefToSimVar crefSimVarHT;
   output list<BackendDAE.Var> outVar = {};
 protected
   BackendDAE.Var var;
+  SimCodeVar.SimVar simVar;
 algorithm
   for cr in crefs loop
     var := BackendVariable.getVarSingle(cr, orderedVars);
-    if BackendVariable.isRealVar(var) then
-      outVar := BackendVariable.getVarSingle(cr, orderedVars) :: outVar;
+    simVar := BaseHashTable.get(cr, crefSimVarHT);
+    // Filter only Real vars that match the --fmiFilter flag
+    if BackendVariable.isRealVar(var) and isSome(simVar.exportVar) then
+      outVar := var :: outVar;
     end if;
   end for;
 end getDependentAndIndepentVarsForJacobian;

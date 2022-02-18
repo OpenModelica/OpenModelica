@@ -1597,6 +1597,21 @@ algorithm
   end try;
 end isProtectedVar;
 
+public function isProtected
+ "Returns the DAE.isProtected attribute."
+  input BackendDAE.Var v;
+  output Boolean b;
+algorithm
+  b := match v.values
+    case SOME(DAE.VAR_ATTR_REAL(isProtected=SOME(b))) then b;
+    case SOME(DAE.VAR_ATTR_INT(isProtected=SOME(b))) then b;
+    case SOME(DAE.VAR_ATTR_BOOL(isProtected=SOME(b))) then b;
+    case SOME(DAE.VAR_ATTR_STRING(isProtected=SOME(b))) then b;
+    case SOME(DAE.VAR_ATTR_ENUMERATION(isProtected=SOME(b))) then b;
+    else false;
+  end match;
+end isProtected;
+
 public function hasVarEvaluateAnnotationOrFinal
   input BackendDAE.Var inVar;
   output Boolean select;
