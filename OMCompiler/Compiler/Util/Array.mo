@@ -1231,6 +1231,7 @@ algorithm
 end mapBoolAnd;
 
 function transpose<T>
+  "Transposes a two-dimensional array."
   input array<array<T>> arr;
   output array<array<T>> outArray;
 protected
@@ -1270,6 +1271,8 @@ algorithm
 end transpose;
 
 function threadMap<T1, T2, TO>
+  "Creates an array with the result from calling the given function on each pair
+   of elements in two arrays."
   input array<T1> arr1;
   input array<T2> arr2;
   input MapFunc func;
@@ -1307,11 +1310,38 @@ algorithm
 end threadMap;
 
 function fromScalar<T>
+  "Creates an array of length 1 containing the given value."
   input T e;
   output array<T> arr;
 algorithm
   arr := arrayCreate(1, e);
 end fromScalar;
+
+function generate<T>
+  "Generates an array of length n and fills it by calling the given generator
+   function for each array element."
+  input Integer n;
+  input Generator generator;
+  output array<T> arr;
+
+  partial function Generator
+    output T e;
+  end Generator;
+protected
+  T e;
+algorithm
+  if n <= 0 then
+    arr := listArray({});
+  else
+    e := generator();
+    arr := arrayCreateNoInit(n, e);
+    arrayUpdateNoBoundsChecking(arr, 1, e);
+
+    for i in 2:n loop
+      arrayUpdateNoBoundsChecking(arr, i, generator());
+    end for;
+  end if;
+end generate;
 
 annotation(__OpenModelica_Interface="util");
 end Array;
