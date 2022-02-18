@@ -429,6 +429,10 @@ public
 
       // create coloring
       sparsityColoring := createEmptyColoring(sparsityPattern);
+
+      if Flags.isSet(Flags.DUMP_SPARSE) then
+        print(toString(sparsityPattern, sparsityColoring));
+      end if;
     end create;
 
     function createEmpty
