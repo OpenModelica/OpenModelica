@@ -557,8 +557,7 @@ algorithm
     // A mutable expression, only evaluate the expression it contains.
     case Expression.MUTABLE()
       algorithm
-        Expression.applyMutable(exp,
-          function Ceval.evalExp(target = NFCeval.EvalTarget.IGNORE_ERRORS()));
+        Expression.applyMutable(exp, evaluateReplacement2);
       then
         exp;
 
@@ -569,7 +568,7 @@ algorithm
       then
         exp;
 
-    else Ceval.evalExp(exp);
+    else if Expression.contains(exp, Expression.isEmpty) then exp else Ceval.evalExp(exp);
   end match;
 end evaluateReplacement2;
 
