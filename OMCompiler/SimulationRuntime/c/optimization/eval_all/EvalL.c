@@ -35,46 +35,40 @@
 #include "../OptimizerLocalFunction.h"
 #include "../../simulation/solver/model_help.h"
 
-static inline void num_hessian0(double * v, const double * const lambda, const double objFactor , OptData *optData, const int i, const int j);
-static inline void sumLagrange0(const int i, const int j, double * res,  const modelica_boolean upC, OptData *optData);
-static inline void num_hessian1(double * v, const double * const lambda, const double objFactor, OptData *optData, const int i, const int j);
-static inline void sumLagrange1(const int i, const int j, double * res,  const modelica_boolean upC, const modelica_boolean upC2, OptData *optData);
-#define DF_STEP(v) (1e-5*fabsl(v) + 1e-8)
+static inline void calculate_hessian_matrix_numericle(double * v, const double * const lambda, const double objFactor , OptData *optData, const int i, const int j);
+static inline void calculate_weighted_sum_with_lagrange_multiplicator_from_tensor(const int i, const int j, double * res,  const modelica_boolean upC, OptData *optData);
+static inline void calculate_hessian_matrix_numericle_last_time_intervall(double * v, const double * const lambda, const double objFactor, OptData *optData, const int i, const int j);
+static inline void calculate_weighted_sum_with_lagrange_multiplicator_from_tensor_last_time_intervall(const int i, const int j, double * res,  const modelica_boolean upC, const modelica_boolean upC2, OptData *optData);
 
-/* eval hessian
- * author: Vitalij Ruge
- */
-Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *lambda, Bool new_lambda,
-                    int nele_hess, int *iRow, int *iCol, double *values, void* useData){
 
-  OptData *optData = (OptData*)useData;
-  const int np = optData->dim.np;
-  const int np1 = np + 1;
-  const int nv = optData->dim.nv;
-  const int nsi = optData->dim.nsi;
-  modelica_boolean keepH = optData->dim.updateHessian > optData->dim.iter_updateHessian++;
+static inline long double guess_step_size_for_numerical_differentiation(const long double v)
+{
+  return 1e-5*fabsl(v) + 1e-8;
+}
 
-  if(values == NULL){
+
+static void init_hessian_structure(int *iRow, int *iCol, OptData *optData){
     int i, j, k, p, l, r, c;
+    const int nsi = optData->dim.nsi;
+    const int np = optData->dim.np;
+    const int np1 = np + 1;
+    const int nv = optData->dim.nv;
 
     for(i = 0, r = 0, c = 0, k = 0; i + 1 < nsi; ++i){
       for(p = 1; p < np1; ++p, r += nv, c += nv){
-
-        /*******************/
-        for(j = 0; j< nv; ++j){
-          for(l = 0; l< j+1; ++l){
+        for(j = 0; j < nv; ++j){
+          for(l = 0; l < j+1; ++l){
             if(optData->s.H0[j][l]){
               iRow[k] = r + j;
               iCol[k++] = c + l;
             }
           }
         }
-        /*******************/
       }
     }
 
+    /* init_hessian_structure_last_time_intervall */
     for(p = 1; p < np1; ++p, r += nv, c += nv){
-      /*******************/
       for(j = 0; j< nv; ++j){
         for(l = 0; l< j+1; ++l){
           if(optData->s.H1[j][l] && np == p){
@@ -86,66 +80,77 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
           }
         }
       }
-      /*******************/
     }
-  }else if(keepH){
-    memcpy(values,optData->oldH,nele_hess*sizeof(double));
-  }else{
+}
+
+static void fill_hessian_values(double *vopt, double *lambda, double obj_factor, OptData *optData, double *values){
+    const int nJ = optData->dim.nJ;
+    const modelica_boolean do_update_cost_function = obj_factor != 0;
+    const modelica_boolean do_update_mayer_cost_function = do_update_cost_function && optData->s.mayer;
+    const modelica_boolean do_update_lagrange_cost_function = do_update_cost_function && optData->s.lagrange;
+    const int np = optData->dim.np;
+    const int np1 = np + 1;
+    const int nv = optData->dim.nv;
+    const int nsi = optData->dim.nsi;
+
     int ii, p, i, j, k;
     double * v;
     double * la;
-    const int nJ = optData->dim.nJ;
-    modelica_boolean upC;
-    modelica_boolean upC2;
+
     DATA * data = optData->data;
 
-    upC = obj_factor != 0;
-    /*
-    if(new_x){
-      optData2ModelData(optData, vopt, 1);
-    }
-    */
-    if(optData->ipop.csvOstep)
-      debugeSteps(optData, vopt, lambda);
     ++optData->dim.iter;
     optData->dim.iter_updateHessian = 0;
-    upC2 = upC && optData->s.mayer;
-    upC = upC && optData->s.lagrange;
     copy_initial_values(optData, data);
 
     for(ii = 0, k = 0, v = vopt, la = lambda; ii + 1 < nsi; ++ii){
       for(p = 1; p < np1; ++p, v += nv, la += nJ){
-        num_hessian0(v, la, obj_factor, optData, ii, p-1);
+        calculate_hessian_matrix_numericle(v, la, obj_factor, optData, ii, p-1);
         /*******************/
         for(i = 0; i < nv; ++i){
           for(j = 0; j < i + 1; ++j){
             if(optData->s.H0[i][j]){
-              sumLagrange0(i, j, values + (k++),upC,optData);
+              calculate_weighted_sum_with_lagrange_multiplicator_from_tensor(i, j, values + (k++), do_update_lagrange_cost_function, optData);
             }
           }
         }
         /*******************/
       }
     }
-    /*******************/
+
+    /* fill_hessian_values last time intervall */
     for(p = 1; p < np1; ++p, v += nv, la += nJ){
-      num_hessian1(v, la, obj_factor, optData, ii, p-1);
-      /*******************/
+      calculate_hessian_matrix_numericle_last_time_intervall(v, la, obj_factor, optData, ii, p-1);
       for(i = 0; i < nv; ++i){
         for(j = 0; j < i + 1; ++j){
           if(optData->s.H1[i][j] && np == p){
-            sumLagrange1(i, j, values + (k++),upC, upC2,optData);
+            calculate_weighted_sum_with_lagrange_multiplicator_from_tensor_last_time_intervall(i, j, values + (k++), do_update_lagrange_cost_function, do_update_mayer_cost_function, optData);
           }else if(optData->s.H0[i][j]){
-            sumLagrange0(i, j, values + (k++),upC,optData);
+            calculate_weighted_sum_with_lagrange_multiplicator_from_tensor(i, j, values + (k++),do_update_lagrange_cost_function, optData);
           }
         }
       }
-      /*******************/
-
-      /*for(i=0; i< nele_hess; ++i){
-        printf("values[%i] = %g\n",i,values[i]);
-      }*/
     }
+
+}
+
+/* eval hessian
+ * author: Vitalij Ruge
+ */
+Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *lambda, Bool new_lambda,
+                    int nele_hess, int *iRow, int *iCol, double *values, void* useData){
+
+  OptData *optData = (OptData*)useData;
+  modelica_boolean keepH = optData->dim.updateHessian > optData->dim.iter_updateHessian++;
+
+  if(values == NULL){
+      init_hessian_structure(iRow, iCol, optData);
+  }else if(keepH){
+    memcpy(values,optData->oldH,nele_hess*sizeof(double));
+  }else{
+    if(optData->ipop.csvOstep)
+      debugeSteps(optData, vopt, lambda);
+    fill_hessian_values(vopt,lambda, obj_factor, optData, values);
     if(optData->dim.updateHessian > 0)
       memcpy(optData->oldH, values, nele_hess*sizeof(double));
   }
@@ -158,7 +163,7 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
  *  hessian
  * author: Vitalij Ruge
  */
-static inline void num_hessian0(double * v, const double * const lambda,
+static inline void calculate_hessian_matrix_numericle(double * v, const double * const lambda,
     const double objFactor , OptData *optData, const int i, const int j){
 
   const modelica_boolean la = optData->s.lagrange;
@@ -187,7 +192,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
   for(ii = 0; ii < nv; ++ii){
     /********************/
     v_save = (long double) v[ii];
-    h = (long double)DF_STEP(v_save);
+    h = (long double)guess_step_size_for_numerical_differentiation(v_save);
     v[ii] += h;
     if( v[ii] >=  vmax[ii]){
       h *= -1.0;
@@ -235,12 +240,11 @@ static inline void num_hessian0(double * v, const double * const lambda,
 }
 
 
-
 /* numerical approximation
  *  hessian
  * author: Vitalij Ruge
  */
-static inline void num_hessian1(double * v, const double * const lambda,
+static inline void calculate_hessian_matrix_numericle_last_time_intervall(double * v, const double * const lambda,
     const double objFactor, OptData *optData, const int i, const int j){
 
   const modelica_boolean la = optData->s.lagrange;
@@ -276,7 +280,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
   for(ii = 0; ii < nv; ++ii){
     /********************/
     v_save = (long double) v[ii];
-    h = (long double)DF_STEP(v_save);
+    h = (long double)guess_step_size_for_numerical_differentiation(v_save);
     v[ii] += h;
     if(v[ii] > vmax[ii]){
       h *= -1.0;
@@ -350,7 +354,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
 /* eval hessian for lagrange
  * author: Vitalij Ruge
  */
-static inline void sumLagrange0(const int i, const int j, double * res,
+static inline void calculate_weighted_sum_with_lagrange_multiplicator_from_tensor(const int i, const int j, double * res,
     const modelica_boolean upC, OptData *optData){
   const int nJ = optData->dim.nJ;
 
@@ -372,7 +376,7 @@ static inline void sumLagrange0(const int i, const int j, double * res,
 /* eval hessian for lagrange
  * author: Vitalij Ruge
  */
-static inline void sumLagrange1(const int i, const int j, double * res,
+static inline void calculate_weighted_sum_with_lagrange_multiplicator_from_tensor_last_time_intervall(const int i, const int j, double * res,
     const modelica_boolean upC, const modelica_boolean upC2, OptData *optData){
   const int nJ = optData->dim.nJ;
   const int ncf = optData->dim.ncf;
@@ -400,4 +404,3 @@ static inline void sumLagrange1(const int i, const int j, double * res,
 
 }
 
-#undef DF_STEP
