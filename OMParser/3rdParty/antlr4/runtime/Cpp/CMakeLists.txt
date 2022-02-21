@@ -25,6 +25,8 @@ option(WITH_STATIC_CRT "(Visual C++) Enable to statically link CRT, which avoids
 
 project(LIBANTLR4)
 
+include(GNUInstallDirs)
+
 if(CMAKE_VERSION VERSION_EQUAL "3.0.0" OR
    CMAKE_VERSION VERSION_GREATER "3.0.0")
   CMAKE_POLICY(SET CMP0026 NEW)
@@ -147,7 +149,6 @@ endif(WITH_DEMO)
 # Generate CMake Package Files only if install is active
 if (ANTLR4_INSTALL)
 
-  include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
 
   if(NOT ANTLR4_CMAKE_DIR)

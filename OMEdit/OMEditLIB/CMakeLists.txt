@@ -298,5 +298,3 @@ target_include_directories(OMEditLib PRIVATE
 
 target_link_options(OMEditLib PRIVATE -Wl,--no-undefined)
 
-install(TARGETS OMEditLib)
-

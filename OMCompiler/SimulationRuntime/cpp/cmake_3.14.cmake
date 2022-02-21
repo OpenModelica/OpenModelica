@@ -30,14 +30,12 @@ add_subdirectory(FMU2)
 ## This little function will give us the filename of the CPP runtime
 ## library given its alias.
 function (omc_get_library_filename target_alias LIB_FILENAME)
-  message(STATUS ${target_alias})
   get_target_property(LIB_FILENAME_LOCAL ${target_alias} ALIASED_TARGET)
-  message(STATUS ${LIB_FILENAME_LOCAL})
   set(${LIB_FILENAME} ${CMAKE_SHARED_LIBRARY_PREFIX}${LIB_FILENAME_LOCAL}${CMAKE_SHARED_LIBRARY_SUFFIX} PARENT_SCOPE)
 endfunction(omc_get_library_filename)
 
 ## Get the actual output filenames of the CPP runtime shared libs
-## This are to be used in LibrariesConfig for the purpose of loading the
+## This are to be used in LibrariesConfig.h for the purpose of loading the
 ## libs at simulation time using their file name.
 omc_get_library_filename(omc::simrt::cpp::core::system SYSTEM_LIB)
 omc_get_library_filename(omc::simrt::cpp::core::dataexchange DATAEXCHANGE_LIB)
