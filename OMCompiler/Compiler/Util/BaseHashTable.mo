@@ -113,16 +113,12 @@ protected
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 protected
-  Integer szArr;
+  Integer szArr, szBucketFixed = intMax(szBucket, 1);
 algorithm
-  if szBucket < 1 then
-    Error.addInternalError("Got internal hash table size " + intString(szBucket) + " <1", sourceInfo());
-    fail();
-  end if;
-  arr := arrayCreate(szBucket, {});
-  szArr := bucketToValuesSize(szBucket);
+  arr := arrayCreate(szBucketFixed, {});
+  szArr := bucketToValuesSize(szBucketFixed);
   emptyarr := arrayCreate(szArr, NONE());
-  hashTable := (arr,(0,szArr,emptyarr),szBucket,fntpl);
+  hashTable := (arr,(0,szArr,emptyarr),szBucketFixed,fntpl);
 end emptyHashTableWork;
 
 public function add
