@@ -2910,7 +2910,7 @@ algorithm
     case DAE.T_REAL() then 1;
     case DAE.T_STRING() then 1;
     case DAE.T_BOOL() then 1;
-    case DAE.T_ENUMERATION(index = NONE()) then 1;
+    case DAE.T_ENUMERATION() then 1;
     // The size of an array is its dimension multiplied with the size of its type.
     case DAE.T_ARRAY()
       then intMul(Expression.dimensionSize(dim) for dim in ty.dims) * sizeOfType(ty.ty);

@@ -9945,7 +9945,7 @@ algorithm
     case (DAE.T_REAL()) then SOME(DAE.RCONST(0.0));
     case (DAE.T_BOOL()) then SOME(DAE.BCONST(false));
     case (DAE.T_STRING()) then SOME(DAE.SCONST(""));
-    case (DAE.T_ENUMERATION()) then SOME(DAE.ICONST(0));
+    case (DAE.T_ENUMERATION()) then SOME(Types.getNthEnumLiteral(type_, 1));
     else NONE();
   end match;
 end setDefaultStartValue;

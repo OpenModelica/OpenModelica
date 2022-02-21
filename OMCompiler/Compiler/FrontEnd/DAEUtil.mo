@@ -906,21 +906,19 @@ public function getStartAttr "
   input DAE.Type inType;
   output DAE.Exp start;
 algorithm
-  start := match(inVariableAttributesOption, inType)
+  start := match inVariableAttributesOption
     local
       DAE.Exp r;
-      Absyn.Path path;
-      list<String> names;
-    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r))), _) then r;
-    case (SOME(DAE.VAR_ATTR_REAL(start = NONE())), _) then DAE.RCONST(0.0);
-    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r))), _) then r;
-    case (SOME(DAE.VAR_ATTR_INT(start = NONE())), _) then DAE.ICONST(0);
-    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r))), _) then r;
-    case (SOME(DAE.VAR_ATTR_BOOL(start = NONE())), _) then DAE.BCONST(false);
-    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r))), _) then r;
-    case (SOME(DAE.VAR_ATTR_STRING(start = NONE())), _) then DAE.SCONST("");
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r))), _) then r;
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = NONE())), DAE.T_ENUMERATION(path = path, names = names)) then DAE.ENUM_LITERAL(AbsynUtil.joinPaths(path, Absyn.IDENT(listHead(names))), 1);
+    case SOME(DAE.VAR_ATTR_REAL(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_REAL(start = NONE())) then DAE.RCONST(0.0);
+    case SOME(DAE.VAR_ATTR_INT(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_INT(start = NONE())) then DAE.ICONST(0);
+    case SOME(DAE.VAR_ATTR_BOOL(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_BOOL(start = NONE())) then DAE.BCONST(false);
+    case SOME(DAE.VAR_ATTR_STRING(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_STRING(start = NONE())) then DAE.SCONST("");
+    case SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_ENUMERATION(start = NONE())) then Types.getNthEnumLiteral(inType, 1);
     else DAE.RCONST(0.0);
   end match;
 end getStartAttr;

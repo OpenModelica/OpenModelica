@@ -789,6 +789,10 @@ algorithm
         algorithm
           Error.addCompilerWarning("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value. Defaulting to start=\"\".\n");
         then DAE.SCONST("");
+      case DAE.T_ENUMERATION()
+        algorithm
+          Error.addCompilerWarning("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value. Defaulting to start=\"\".\n");
+        then Types.getNthEnumLiteral(inLHSty, 1);
       else
         algorithm
           Error.addCompilerError("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value.\n");
@@ -891,6 +895,10 @@ algorithm
         algorithm
           Error.addCompilerWarning("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value. Defaulting to start=\"\".\n");
         then DAE.SCONST("");
+      case DAE.T_ENUMERATION()
+        algorithm
+          Error.addCompilerWarning("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value. Defaulting to start=\"\".\n");
+        then Types.getNthEnumLiteral(inLHSty, 1);
       else
         algorithm
           Error.addCompilerError("Variable "+ComponentReference.crefStr(inLHSCref)+" lacks start value.\n");

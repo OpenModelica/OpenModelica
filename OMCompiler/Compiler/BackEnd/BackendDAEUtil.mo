@@ -8085,11 +8085,7 @@ protected
   BackendDAE.Equation eqn;
 algorithm
   lhs := BackendVariable.varExp(var);
-  try
-    rhs := BackendVariable.varBindExpStartValue(var);
-  else
-    rhs := DAE.RCONST(0.0);
-  end try;
+  rhs := BackendVariable.varBindExpStartValueNoFail(var);
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
   parameterEqns := BackendEquation.add(eqn, parameterEqns);
 end createGlobalKnownVarsEquations;

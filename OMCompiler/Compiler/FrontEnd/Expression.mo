@@ -13346,6 +13346,7 @@ algorithm
     case DAE.RCONST() then true;
     case DAE.SCONST() then true;
     case DAE.BCONST() then true;
+    case DAE.ENUM_LITERAL() then true;
     case DAE.BINARY() then true;
     case DAE.UNARY() then true;
     case DAE.LBINARY() then true;
