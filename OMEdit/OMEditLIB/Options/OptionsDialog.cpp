@@ -5013,7 +5013,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");
   mpModelDescriptionFiltersComboBox = new QComboBox;
   mpModelDescriptionFiltersComboBox->addItems(fmiFilters.validOptions);
-  mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText("internal"));
+  mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText("protected"));
   Utilities::setToolTip(mpModelDescriptionFiltersComboBox, fmiFilters.mainDescription, fmiFilters.descriptions);
   connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableIncludeSourcesCheckBox(QString)));
   // include resources checkbox
