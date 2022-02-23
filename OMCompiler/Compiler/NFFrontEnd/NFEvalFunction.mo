@@ -1227,7 +1227,13 @@ algorithm
       // Search for both dir/lib and e.g. dir/linux64/lib.
       paths := (dir + "/" + lib) :: paths;
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
+
+      if Autoconf.os == "Windows_NT" then
+        paths := (dir + "/" + System.openModelicaPlatform() + "/" + lib) :: paths;
+      end if;
+
     end for;
+
     paths := installLibDir + "/" + lib :: paths;
   end for;
 
