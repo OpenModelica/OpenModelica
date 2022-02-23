@@ -6051,14 +6051,6 @@ algorithm
       then
         (cr, arg);
 
-    case DAE.CREF_ITER(id, idx, ty, subs)
-      equation
-        (new_ty, arg) = traverseExpTypeDims(ty, inFunc, inArg);
-        cr = if referenceEq(new_ty, ty)
-          then inCref else DAE.CREF_ITER(id, idx, new_ty, subs);
-      then
-        (cr, arg);
-
     else (inCref, inArg);
   end match;
 end traverseExpCrefDims;
@@ -7397,13 +7389,6 @@ algorithm
       equation
         (subs_1, arg) = traverseExpSubs(subs, rel, arg);
         cr = if referenceEq(subs,subs_1) then inCref else DAE.CREF_IDENT(name, ty, subs_1);
-      then
-        (cr, arg);
-
-    case (DAE.CREF_ITER(ident = name, index = ix, identType = ty, subscriptLst = subs), _, arg)
-      equation
-        (subs_1, arg) = traverseExpSubs(subs, rel, arg);
-        cr = if referenceEq(subs,subs_1) then inCref else DAE.CREF_ITER(name, ix, ty, subs_1);
       then
         (cr, arg);
 

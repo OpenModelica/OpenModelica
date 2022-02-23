@@ -7863,14 +7863,14 @@ algorithm
     case (DAE.STMT_FOR(iter=iter,range=exp,statementLst=stmts,source=source),_,(_,_,unbound))
       equation
         info = ElementSource.getElementSourceFileInfo(source);
-        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter) "TODO: This is not needed if all references are tagged CREF_ITER";
+        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter);
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_PARFOR(iter=iter,range=exp,statementLst=stmts,source=source),_,(_,_,unbound))
       equation
         info = ElementSource.getElementSourceFileInfo(source);
-        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter) "TODO: This is not needed if all references are tagged CREF_ITER";
+        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter);
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));

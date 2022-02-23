@@ -1109,7 +1109,6 @@ algorithm
       DAE.ComponentRef cRef;
       Boolean bool;
       DAE.Else elseBranch;
-      Integer ix;
       case DAE.STMT_ASSIGN(t,e1,e,source)
         equation
           (outCache,e1) = prefixExpWork(outCache,env,inIH,e1,p);
@@ -1134,11 +1133,11 @@ algorithm
           outStmts = elem::outStmts;
         then ();
 
-      case DAE.STMT_FOR(t,bool,id,ix,e,sList,source)
+      case DAE.STMT_FOR(t,bool,id,e,sList,source)
         equation
           (outCache,e) = prefixExpWork(outCache,env,inIH,e,p);
           (outCache,sList) = prefixStatements(outCache,env,inIH,sList,p);
-          elem = DAE.STMT_FOR(t,bool,id,ix,e,sList,source);
+          elem = DAE.STMT_FOR(t,bool,id,e,sList,source);
           outStmts = elem::outStmts;
         then ();
 

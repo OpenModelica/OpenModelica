@@ -3381,7 +3381,6 @@ algorithm
       then
         (if referenceEq(subs_1,subs) then inCref else DAE.CREF_IDENT(name, ty, subs_1), b);
 
-    case (DAE.CREF_ITER(), _) then (inCref, iPerformed);
     case (DAE.OPTIMICA_ATTR_INST_CREF(), _) then (inCref, iPerformed);
     case (DAE.WILD(), _) then (inCref, iPerformed);
 

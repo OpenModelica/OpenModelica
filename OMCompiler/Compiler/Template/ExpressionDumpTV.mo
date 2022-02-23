@@ -163,13 +163,6 @@ package DAE
       list<Subscript> subscriptLst;
     end CREF_IDENT;
 
-    record CREF_ITER
-      Ident ident;
-      Integer index;
-      Type identType;
-      list<Subscript> subscriptLst;
-    end CREF_ITER;
-
     record OPTIMICA_ATTR_INST_CREF
       ComponentRef componentRef;
       String instant;
