@@ -508,13 +508,6 @@ interface package VisualXMLTplTV
         list<Subscript> subscriptLst;
       end CREF_IDENT;
 
-      record CREF_ITER "An iterator index; used in local scopes in for-loops and reductions"
-        Ident ident;
-        Integer index;
-        Type identType "type of the identifier, without considering the subscripts";
-        list<Subscript> subscriptLst;
-      end CREF_ITER;
-
       record OPTIMICA_ATTR_INST_CREF "An Optimica component reference with the time instant in it. e.g x2(finalTime)"
         ComponentRef componentRef;
         String instant;

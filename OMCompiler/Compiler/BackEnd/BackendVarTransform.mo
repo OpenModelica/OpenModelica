@@ -2036,7 +2036,6 @@ protected
   DAE.Ident ident;
   list<DAE.ComponentRef> conditions;
   Boolean initialCall;
-  Integer index;
   Boolean b,b1,b2,b3;
   list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
 algorithm
@@ -2089,7 +2088,7 @@ algorithm
         then
           replaceSTMT_IF(e1_2,statementLst,else_,source,repl,inFuncTypeExpExpToBooleanOption,outStatementLst,replacementPerformed or b1);
 
-      case DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,index=index,range=e1,statementLst=statementLst,source=source)
+      case DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,source=source)
         equation
           repl = addIterationVar(repl,ident);
           (statementLst_1,b1) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -2100,9 +2099,9 @@ algorithm
           source = ElementSource.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
           repl = removeIterationVar(repl,ident);
         then
-          (DAE.STMT_FOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,source) :: outStatementLst, true);
+          (DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source) :: outStatementLst, true);
 
-      case DAE.STMT_PARFOR(type_=type_,iterIsArray=iterIsArray,iter=ident,index=index,range=e1,statementLst=statementLst,loopPrlVars=loopPrlVars,source=source)
+      case DAE.STMT_PARFOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,loopPrlVars=loopPrlVars,source=source)
         equation
           (statementLst_1,b1) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
           (e1_1,b2) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -2111,7 +2110,7 @@ algorithm
           (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
           source = ElementSource.addSymbolicTransformationSimplify(b1,source,DAE.PARTIAL_EQUATION(e1_1),DAE.PARTIAL_EQUATION(e1_2));
         then
-          (DAE.STMT_PARFOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,loopPrlVars,source) :: outStatementLst, true);
+          (DAE.STMT_PARFOR(type_,iterIsArray,ident,e1_2,statementLst_1,loopPrlVars,source) :: outStatementLst, true);
 
       case DAE.STMT_WHILE(exp=e1,statementLst=statementLst,source=source)
         equation

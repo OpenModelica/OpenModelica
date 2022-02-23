@@ -482,7 +482,6 @@ algorithm
       list<DAE.Statement> stmts,stmts_1;
       Boolean b,b1,b2,b3;
       String i;
-      Integer ix;
       DAE.ElementSource source;
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
@@ -516,13 +515,13 @@ algorithm
         true = b1 or b2 or b3;
       then
         (DAE.STMT_IF(e_1,stmts_1,a_else_1,source),true);
-    case(DAE.STMT_FOR(t,b,i,ix,e,stmts,source),fns)
+    case(DAE.STMT_FOR(t,b,i,e,stmts,source),fns)
       equation
         (e_1,source,b1,_) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
         true = b1 or b2;
       then
-        (DAE.STMT_FOR(t,b,i,ix,e_1,stmts_1,source),true);
+        (DAE.STMT_FOR(t,b,i,e_1,stmts_1,source),true);
     case(DAE.STMT_WHILE(e,stmts,source),fns)
       equation
         (e_1,source,b1,_) = inlineExp(e,fns,source);

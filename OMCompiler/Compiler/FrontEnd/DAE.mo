@@ -716,7 +716,6 @@ uniontype Statement "There are four kinds of statements:
     Type type_ "this is the type of the iterator";
     Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
     Ident iter "the iterator variable";
-    Integer index "the index of the iterator variable, to make it unique; used by the new inst";
     Exp range "range for the loop";
     list<Statement> statementLst;
     ElementSource source "the origin of the component/equation/algorithm" ;
@@ -726,7 +725,6 @@ uniontype Statement "There are four kinds of statements:
     Type type_ "this is the type of the iterator";
     Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
     Ident iter "the iterator variable";
-    Integer index "the index of the iterator variable, to make it unique; used by the new inst";
     Exp range "range for the loop";
     list<Statement> statementLst;
     list<tuple<ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
@@ -1833,13 +1831,6 @@ uniontype ComponentRef "- Component references
     Type identType "type of the identifier, without considering the subscripts";
     list<Subscript> subscriptLst;
   end CREF_IDENT;
-
-  record CREF_ITER "An iterator index; used in local scopes in for-loops and reductions"
-    Ident ident;
-    Integer index;
-    Type identType "type of the identifier, without considering the subscripts";
-    list<Subscript> subscriptLst;
-  end CREF_ITER;
 
   record OPTIMICA_ATTR_INST_CREF "An Optimica component reference with the time instant in it. e.g x2(finalTime)"
     ComponentRef componentRef;

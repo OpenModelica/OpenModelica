@@ -514,7 +514,6 @@ protected function addLabelToAlgorithms
       Boolean iterIsArray;
       DAE.Ident iter;
       list<Integer> helpVarIndices;
-    Integer index;
     list<DAE.ComponentRef> conditions;
     Boolean initialCall;
     case({},vars,idx,_,_)
@@ -552,7 +551,7 @@ protected function addLabelToAlgorithms
       then
         (DAE.STMT_IF(e,stmtLst2,else_,source)::rest2,vars_2,idx3,labels3);
 
-    case(DAE.STMT_FOR(ty,iterIsArray,iter,index,e,stmtLst,source)::rest,vars,idx,_,_)
+    case(DAE.STMT_FOR(ty,iterIsArray,iter,e,stmtLst,source)::rest,vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -562,7 +561,7 @@ protected function addLabelToAlgorithms
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
       then
-        (DAE.STMT_FOR(ty,iterIsArray,iter,index,e,stmtLst2,source)::rest2,vars_2,idx3,labels3);
+        (DAE.STMT_FOR(ty,iterIsArray,iter,e,stmtLst2,source)::rest2,vars_2,idx3,labels3);
 
     case(DAE.STMT_WHILE(e,stmtLst,source)::rest,vars,idx,_,_)
       equation

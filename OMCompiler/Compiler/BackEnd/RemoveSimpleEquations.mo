@@ -4533,7 +4533,6 @@ algorithm
       unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
     then unReplaceable;
 
-    case (DAE.CREF_ITER(), _) then iUnreplaceable;
     case (DAE.OPTIMICA_ATTR_INST_CREF(), _) then iUnreplaceable;
     case (DAE.WILD(), _) then iUnreplaceable;
   end match;

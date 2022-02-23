@@ -931,14 +931,14 @@ algorithm
   forDAE := match for_type
     case Statement.ForType.NORMAL()
       then DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
-        InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+        InstNode.name(iterator), Expression.toDAE(range), dbody, source);
 
     case Statement.ForType.PARALLEL()
       algorithm
         loop_vars := list(convertForStatementParallelVar(v) for v in for_type.vars);
       then
         DAE.Statement.STMT_PARFOR(Type.toDAE(ty), Type.isArray(ty),
-          InstNode.name(iterator), 0, Expression.toDAE(range), dbody, loop_vars, source);
+          InstNode.name(iterator), Expression.toDAE(range), dbody, loop_vars, source);
   end match;
 end convertForStatement;
 

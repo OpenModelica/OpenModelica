@@ -3433,8 +3433,6 @@ import Util;
         then DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef);
       case(DAE.CREF_IDENT(ident,identType,subscriptLst))
         then DAE.CREF_IDENT(ident,identType,{});
-      case(DAE.CREF_ITER(ident,index,identType,subscriptLst))
-        then DAE.CREF_ITER(ident,index,identType,{});
       else iCref;
     end match;
   end removeSubscripts;
