@@ -389,6 +389,22 @@ public
     key := Vector.get(map.keys, 1);
   end firstKey;
 
+  function keyAt
+    input UnorderedMap<K, V> map;
+    input Integer index;
+    output K key;
+  algorithm
+    key := Vector.get(map.keys, index);
+  end keyAt;
+
+  function valueAt
+    input UnorderedMap<K, V> map;
+    input Integer index;
+    output V value;
+  algorithm
+    value := Vector.get(map.values, index);
+  end valueAt;
+
   function toList
     "Returns a list with the (key, value) pairs."
     input UnorderedMap<K, V> map;
@@ -490,13 +506,13 @@ public
   end valueVector;
 
   function fold<FT>
-    "Folds over the keys in the map."
+    "Folds over the values in the map."
     input UnorderedMap<K, V> map;
     input FoldFn fn;
     input output FT arg;
 
     partial function FoldFn
-      input K value;
+      input V value;
       input output FT arg;
     end FoldFn;
   algorithm

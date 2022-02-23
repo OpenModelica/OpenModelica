@@ -16,12 +16,6 @@ loadFile(pathPrefix + "Parsers/JSON.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/Autoconf.mo");
 getErrorString();
-loadFile(pathPrefix + "Util/BaseAvlSet.mo");
-getErrorString();
-loadFile(pathPrefix + "Util/BaseAvlTree.mo");
-getErrorString();
-loadFile(pathPrefix + "Util/Config.mo");
-getErrorString();
 loadFile(pathPrefix + "Util/Error.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/ErrorExt.mo");
@@ -32,13 +26,21 @@ loadFile(pathPrefix + "Util/Flags.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/Gettext.mo");
 getErrorString();
-loadFile(pathPrefix + "Util/List.mo");
+loadFile(pathPrefix + "Util/IOStream.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/IOStreamExt.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/Mutable.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/System.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/Testsuite.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/Util.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/UnorderedMap.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/Vector.mo");
 getErrorString();
 
 loadString("function testJSON
@@ -55,6 +57,8 @@ getErrorString();
 // Result:
 // true
 // true
+// true
+// ""
 // true
 // ""
 // true
