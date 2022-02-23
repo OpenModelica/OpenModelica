@@ -1233,7 +1233,7 @@ namespace IAEX {
   QString GraphCell::ChapterCounter()
   {
     if( chaptercounter_->toPlainText().isEmpty() )
-      return QString::null;
+      return QString();
 
     return chaptercounter_->toPlainText();
   }
@@ -1248,7 +1248,7 @@ namespace IAEX {
   QString GraphCell::ChapterCounterHtml()
   {
     if( chaptercounter_->toPlainText().isEmpty() )
-      return QString::null;
+      return QString();
 
     return chaptercounter_->toHtml();
   }
