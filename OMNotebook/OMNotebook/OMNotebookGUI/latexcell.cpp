@@ -655,7 +655,7 @@ namespace IAEX {
   QString LatexCell::ChapterCounter()
   {
     if( chaptercounter_->toPlainText().isEmpty() )
-      return QString::null;
+      return QString();
 
     return chaptercounter_->toPlainText();
   }
@@ -667,7 +667,7 @@ namespace IAEX {
   QString LatexCell::ChapterCounterHtml()
   {
     if( chaptercounter_->toPlainText().isEmpty() )
-      return QString::null;
+      return QString();
 
     return chaptercounter_->toHtml();
   }

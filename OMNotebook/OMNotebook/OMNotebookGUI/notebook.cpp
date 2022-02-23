@@ -112,10 +112,10 @@ namespace IAEX
 
 
 // 2006-03-01 AF, Open, Save, Image and Link dir
-QString NotebookWindow::openDir_ = QString::null;
-QString NotebookWindow::saveDir_ = QString::null;
-QString NotebookWindow::imageDir_ = QString::null;
-QString NotebookWindow::linkDir_ = QString::null;
+QString NotebookWindow::openDir_ = QString();
+QString NotebookWindow::saveDir_ = QString();
+QString NotebookWindow::imageDir_ = QString();
+QString NotebookWindow::linkDir_ = QString();
 
 
 /*!
@@ -136,7 +136,7 @@ NotebookWindow::NotebookWindow(Document *subject,
     app_( subject->application() ), //AF
     findForm_( 0 )          //AF
 {
-  if( filename_ != QString::null )
+  if( !filename_.isNull() )
     qDebug( filename_.toStdString().c_str() );
 
   //    subject_->attach(this);
@@ -2396,7 +2396,7 @@ void NotebookWindow::newFile()
   if( subject_->isOpen() )
   {
     // a file is open, open a new window with the new file //AF
-    application()->commandCenter()->executeCommand(new OpenFileCommand(QString::null));
+    application()->commandCenter()->executeCommand(new OpenFileCommand(QString()));
   }
   else
   {
@@ -2413,7 +2413,7 @@ void NotebookWindow::newFile()
         return;
     }
 
-    subject_ = new CellDocument(app_, QString::null);
+    subject_ = new CellDocument(app_, QString());
     dynamic_cast<CellDocument*>(subject_)->autoIndent = autoIndentAction->isChecked();
     subject_->executeCommand(new NewFileCommand());
     subject_->attach(this);

@@ -493,7 +493,7 @@ void OMS::returnPressed()
   currentCommand_ = -1;
 
   // remove any newline
-  commandText.simplified();
+  commandText = commandText.simplified();
 
   // if 'quit()' exit OMShell
   if( commandText == "quit()" )
@@ -715,7 +715,7 @@ void OMS::loadModel()
   QString filename = QFileDialog::getOpenFileName(
     this,
     "OMShell - Load Model",
-    QString::null,
+    QString(),
     "Modelica files (*.mo)" );
 
   if( !filename.isNull() )

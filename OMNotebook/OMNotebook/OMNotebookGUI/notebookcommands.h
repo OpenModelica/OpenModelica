@@ -360,7 +360,7 @@ namespace IAEX
       {
         /*
         Document *doc = document();
-        doc = new CellDocument( application(), QString::null );
+        doc = new CellDocument( application(), QString() );
         */
       }
       catch(exception &e)

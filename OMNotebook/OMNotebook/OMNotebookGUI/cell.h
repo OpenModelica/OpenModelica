@@ -112,7 +112,7 @@ namespace IAEX
 
     //TextCell interface.
     virtual QString text() = 0;
-    virtual QString textHtml(){return QString::null;}  // Added 2005-10-27 AF
+    virtual QString textHtml(){return QString();}  // Added 2005-10-27 AF
     virtual QTextCursor textCursor();          // Added 2005-10-27 AF
     virtual QTextEdit* textEdit(){return 0;}      // Added 2005-10-27 AF
     virtual void viewExpression(const bool){};
