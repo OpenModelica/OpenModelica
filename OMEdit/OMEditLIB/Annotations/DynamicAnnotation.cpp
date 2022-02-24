@@ -84,26 +84,22 @@ void DynamicAnnotation::reset()
 
 /*!
  * \brief DynamicAnnotation::isDynamicSelectExpression
- * Returns true is expression is DynamicSelect call.
+ * Returns true if state is not none. DynamicSelect doesn't have state none.
  * \return
  */
 bool DynamicAnnotation::isDynamicSelectExpression() const
 {
-  return mExp.isCall("DynamicSelect");
+  return mState != State::None;
 }
 
 /*!
- * \brief DynamicAnnotation::toExpressionString
- * Creates the actual expression string.
+ * \brief DynamicAnnotation::toQString
+ * Unparses the Annotation into a string.
  * \return
  */
-QString DynamicAnnotation::toExpressionString() const
+QString DynamicAnnotation::toQString() const
 {
-  if (mExp.isCall("DynamicSelect")) {
-    return QString("DynamicSelect(%1, %2)").arg(mExp.arg(0).toQString(), mExp.arg(1).toQString());
-  } else {
-    return mExp.toQString();
-  }
+  return mExp.toQString();
 }
 
 void DynamicAnnotation::setExp()
