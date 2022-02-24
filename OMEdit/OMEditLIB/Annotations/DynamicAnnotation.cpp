@@ -82,6 +82,30 @@ void DynamicAnnotation::reset()
   }
 }
 
+/*!
+ * \brief DynamicAnnotation::isDynamicSelectExpression
+ * Returns true is expression is DynamicSelect call.
+ * \return
+ */
+bool DynamicAnnotation::isDynamicSelectExpression() const
+{
+  return mExp.isCall("DynamicSelect");
+}
+
+/*!
+ * \brief DynamicAnnotation::toExpressionString
+ * Creates the actual expression string.
+ * \return
+ */
+QString DynamicAnnotation::toExpressionString() const
+{
+  if (mExp.isCall("DynamicSelect")) {
+    return QString("DynamicSelect(%1, %2)").arg(mExp.arg(0).toQString(), mExp.arg(1).toQString());
+  } else {
+    return mExp.toQString();
+  }
+}
+
 void DynamicAnnotation::setExp()
 {
   if (mState == State::None) {

@@ -45,6 +45,8 @@ class DynamicAnnotation
     void reset();
     virtual void clear() = 0;
     virtual FlatModelica::Expression toExp() const = 0;
+    bool isDynamicSelectExpression() const;
+    QString toExpressionString() const;
 
   protected:
     virtual void fromExp(const FlatModelica::Expression &exp) = 0;

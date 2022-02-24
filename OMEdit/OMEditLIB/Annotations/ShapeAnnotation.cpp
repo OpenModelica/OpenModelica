@@ -100,7 +100,7 @@ QStringList GraphicItem::getOMCShapeAnnotation()
 {
   QStringList annotationString;
   /* get visible */
-  annotationString.append(mVisible ? "true" : "false");
+  annotationString.append(mVisible.toExpressionString());
   /* get origin */
   QString originString;
   originString.append("{").append(QString::number(mOrigin.x())).append(",");
@@ -120,8 +120,8 @@ QStringList GraphicItem::getShapeAnnotation()
 {
   QStringList annotationString;
   /* get visible */
-  if (!mVisible) {
-    annotationString.append("visible=false");
+  if (mVisible.isDynamicSelectExpression() || !mVisible) {
+    annotationString.append(QString("visible=%1").arg(mVisible.toExpressionString()));
   }
   /* get origin */
   if (mOrigin != QPointF(0, 0)) {
@@ -211,7 +211,7 @@ QStringList FilledShape::getOMCShapeAnnotation()
   fillColorString.append(QString::number(mFillColor.green())).append(",");
   fillColorString.append(QString::number(mFillColor.blue()));
   fillColorString.append("}");
-  annotationString.append(fillColorString);
+  annotationString.append(mFillColor.toExpressionString());
   /* get the line pattern */
   annotationString.append(StringHandler::getLinePatternString(mLinePattern));
   /* get the fill pattern */
@@ -240,14 +240,8 @@ QStringList FilledShape::getShapeAnnotation()
     annotationString.append(lineColorString);
   }
   /* get the fill color */
-  if (mFillColor != Qt::black) {
-    QString fillColorString;
-    fillColorString.append("fillColor={");
-    fillColorString.append(QString::number(mFillColor.red())).append(",");
-    fillColorString.append(QString::number(mFillColor.green())).append(",");
-    fillColorString.append(QString::number(mFillColor.blue()));
-    fillColorString.append("}");
-    annotationString.append(fillColorString);
+  if (mFillColor.isDynamicSelectExpression() || mFillColor != Qt::black) {
+    annotationString.append(QString("fillColor=%1").arg(mFillColor.toExpressionString()));
   }
   /* get the line pattern */
   if (mLinePattern != StringHandler::LineSolid) {
