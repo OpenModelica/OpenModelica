@@ -184,18 +184,9 @@ QString RectangleAnnotation::getOMCShapeAnnotation()
   // get the border pattern
   annotationString.append(StringHandler::getBorderPatternString(mBorderPattern));
   // get the extents
-  if (mExtents.size() > 1) {
-    QString extentString;
-    extentString.append("{");
-    extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
-    extentString.append(QString::number(mExtents.at(0).y())).append("},");
-    extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
-    extentString.append(QString::number(mExtents.at(1).y())).append("}");
-    extentString.append("}");
-    annotationString.append(extentString);
-  }
+  annotationString.append(mExtents.toQString());
   // get the radius
-  annotationString.append(QString::number(mRadius));
+  annotationString.append(mRadius.toQString());
   return annotationString.join(",");
 }
 
@@ -224,19 +215,12 @@ QString RectangleAnnotation::getShapeAnnotation()
     annotationString.append(QString("borderPattern=").append(StringHandler::getBorderPatternString(mBorderPattern)));
   }
   // get the extents
-  if (mExtents.size() > 1) {
-    QString extentString;
-    extentString.append("extent={");
-    extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
-    extentString.append(QString::number(mExtents.at(0).y())).append("},");
-    extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
-    extentString.append(QString::number(mExtents.at(1).y())).append("}");
-    extentString.append("}");
-    annotationString.append(extentString);
+  if (mExtents.isDynamicSelectExpression() || mExtents.size() > 1) {
+    annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
   }
   // get the radius
-  if (mRadius != 0) {
-    annotationString.append(QString("radius=").append(QString::number(mRadius)));
+  if (mRadius.isDynamicSelectExpression() || mRadius != 0) {
+    annotationString.append(QString("radius=%1").arg(mRadius.toQString()));
   }
   return QString("Rectangle(").append(annotationString.join(",")).append(")");
 }

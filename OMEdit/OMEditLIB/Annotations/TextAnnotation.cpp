@@ -374,26 +374,13 @@ QString TextAnnotation::getOMCShapeAnnotation()
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   annotationString.append(FilledShape::getOMCShapeAnnotation());
   // get the extents
-  QString extentString;
-  extentString.append("{");
-  extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
-  extentString.append(QString::number(mExtents.at(0).y())).append("},");
-  extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
-  extentString.append(QString::number(mExtents.at(1).y())).append("}");
-  extentString.append("}");
-  annotationString.append(extentString);
+  annotationString.append(mExtents.toQString());
   // get the text string
-  annotationString.append(QString("\"").append(mTextString).append("\""));
+  annotationString.append(mTextString.toQString());
   // get the font size
-  annotationString.append(QString::number(mFontSize));
+  annotationString.append(mFontSize.toQString());
   // get the text color
-  QString textColorString;
-  textColorString.append("{");
-  textColorString.append(QString::number(mLineColor.red())).append(",");
-  textColorString.append(QString::number(mLineColor.green())).append(",");
-  textColorString.append(QString::number(mLineColor.blue()));
-  textColorString.append("}");
-  annotationString.append(textColorString);
+  annotationString.append(mLineColor.toQString());
   // get the font name
   if (!mFontName.isEmpty() && mFontName.compare(Helper::systemFontInfo.family()) != 0) {
     annotationString.append(QString("\"").append(mFontName).append("\""));
@@ -434,21 +421,14 @@ QString TextAnnotation::getShapeAnnotation()
   annotationString.append(GraphicItem::getShapeAnnotation());
   annotationString.append(FilledShape::getTextShapeAnnotation());
   // get the extents
-  if (mExtents.size() > 1) {
-    QString extentString;
-    extentString.append("extent={");
-    extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
-    extentString.append(QString::number(mExtents.at(0).y())).append("},");
-    extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
-    extentString.append(QString::number(mExtents.at(1).y())).append("}");
-    extentString.append("}");
-    annotationString.append(extentString);
+  if (mExtents.isDynamicSelectExpression() || mExtents.size() > 1) {
+    annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
   }
   // get the text string
-  annotationString.append(QString("textString=\"").append(mTextString).append("\""));
+  annotationString.append(QString("textString=%1").arg(mTextString.toQString()));
   // get the font size
-  if (mFontSize != 0) {
-    annotationString.append(QString("fontSize=").append(QString::number(mFontSize)));
+  if (mFontSize.isDynamicSelectExpression() || mFontSize != 0) {
+    annotationString.append(QString("fontSize=%1").arg(mFontSize.toQString()));
   }
   // get the font name
   /* Ticket:4204
