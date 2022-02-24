@@ -8400,7 +8400,7 @@ algorithm
         addSimVar(simVar, SimVarsIndex.const, simVars);
       end if;
     // Integer vars
-    elseif Types.isInteger(dlowVar.varType) or  Types.isEnumeration(dlowVar.varType) then
+    elseif Types.isInteger(dlowVar.varType) or Types.isEnumeration(dlowVar.varType) then
       if isAlg then
         addSimVar(simVar, SimVarsIndex.intAlg, simVars);
       elseif isParam then
@@ -10108,6 +10108,7 @@ algorithm
     local
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Exp e;
+      DAE.Type tp;
 
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
@@ -10138,8 +10139,8 @@ algorithm
     then SOME(e);
 
     /* Parameters without binding. Investigate if it has start value */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr)) equation
-      e = DAEUtil.getStartAttrFail(dae_var_attr);
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr, varType = tp)) equation
+      e = DAEUtil.getStartAttr(dae_var_attr, tp);
     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))

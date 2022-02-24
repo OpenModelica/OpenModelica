@@ -4573,7 +4573,7 @@ public function varExp
   input BackendDAE.Var inVar;
   output DAE.Exp outExp;
 algorithm
-  outExp := Expression.crefExp(inVar.varName);
+  outExp := Expression.crefToExp(inVar.varName);
 end varExp;
 
 public function varExp2 "same as varExp but adds a der()-call for state derivatives"
