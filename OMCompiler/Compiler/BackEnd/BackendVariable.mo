@@ -265,30 +265,12 @@ public function varStartValueType "author: Frenkel TUD 2012-11
   Returns the DAE.StartValue of a variable. If nothing is set the type specific one is used"
   input BackendDAE.Var v;
   output DAE.Exp sv;
+protected
+  Option<DAE.VariableAttributes> attr;
+  DAE.Type ty;
 algorithm
-  sv := matchcontinue(v)
-    local
-      Option<DAE.VariableAttributes> attr;
-      DAE.Type ty;
-
-    case (BackendDAE.VAR(values=attr)) equation
-      sv = DAEUtil.getStartAttrFail(attr);
-    then sv;
-
-    case BackendDAE.VAR(varType=ty) equation
-      true = Types.isIntegerOrSubTypeInteger(ty);
-    then DAE.ICONST(0);
-
-    case BackendDAE.VAR(varType=ty) equation
-      true = Types.isBooleanOrSubTypeBoolean(ty);
-    then DAE.BCONST(false);
-
-    case BackendDAE.VAR(varType=ty) equation
-      true = Types.isStringOrSubTypeString(ty);
-    then DAE.SCONST("");
-
-    else DAE.RCONST(0.0);
-  end matchcontinue;
+  BackendDAE.VAR(values=attr, varType=ty) := v;
+  sv := DAEUtil.getStartAttr(attr, ty);
 end varStartValueType;
 
 public function varStartValueOption "author: Frenkel TUD
@@ -622,7 +604,6 @@ public function getVariableAttributefromType
 algorithm
   attr := match(inType)
     case DAE.T_REAL() then DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-    case DAE.T_INTEGER() then DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     case DAE.T_INTEGER() then DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     case DAE.T_BOOL() then DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     case DAE.T_STRING() then DAE.VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
@@ -4175,6 +4156,9 @@ algorithm
     case(NONE(),_) guard Types.isStringOrSubTypeString(iTy)
       then
         DAE.SCONST("");
+    case(NONE(),_) guard Types.isEnumerationOrSubTypeEnumeration(iTy)
+      then
+        Types.getNthEnumLiteral(iTy, 1);
     else
       DAE.RCONST(0.0);
   end match;
@@ -4588,7 +4572,7 @@ public function varExp
   input BackendDAE.Var inVar;
   output DAE.Exp outExp;
 algorithm
-  outExp := Expression.crefExp(inVar.varName);
+  outExp := Expression.crefToExp(inVar.varName);
 end varExp;
 
 public function varExp2 "same as varExp but adds a der()-call for state derivatives"

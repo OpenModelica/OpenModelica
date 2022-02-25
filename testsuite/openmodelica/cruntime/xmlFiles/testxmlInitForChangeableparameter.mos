@@ -128,7 +128,7 @@ readFile("testParameters_init.tmp.xml");
 //     classIndex = \"1\" classType = \"rPar\"
 //     isProtected = \"false\" hideResult = \"\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"3\" startColumn = \"3\" endLine = \"3\" endColumn = \"20\" fileWritable = \"true\">
-//     <Real fixed=\"true\" useNominal=\"false\" />
+//     <Real start=\"0.0\" fixed=\"true\" useNominal=\"false\" />
 //   </ScalarVariable>
 //   <ScalarVariable
 //     name = \"b\"
@@ -161,7 +161,7 @@ readFile("testParameters_init.tmp.xml");
 //     classIndex = \"4\" classType = \"rPar\"
 //     isProtected = \"false\" hideResult = \"\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"7\" startColumn = \"3\" endLine = \"7\" endColumn = \"32\" fileWritable = \"true\">
-//     <Real fixed=\"false\" useNominal=\"false\" />
+//     <Real start=\"0.0\" fixed=\"false\" useNominal=\"false\" />
 //   </ScalarVariable>
 //
 //
