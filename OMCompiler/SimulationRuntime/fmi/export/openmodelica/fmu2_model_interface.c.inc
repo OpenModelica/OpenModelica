@@ -337,7 +337,6 @@ fmi2Status fmi2EventIteration(fmi2Component c, fmi2EventInfo *eventInfo)
   return status;
 }
 
-
 /**
  * @brief Helper function for fmi2GetXXX to update the component if needed.
  *
@@ -1184,11 +1183,17 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
   return unsupportedFunction(c, "fmi2DeSerializeFMUstate", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
 }
 
-fmi2Status fmi2GetDirectionalDerivativeForInitialization(ModelInstance *comp, MODEL_DATA* modelData, DATA* fmudata, threadData_t* td,
+fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
     const fmi2ValueReference vUnknown_ref[], size_t nUnknown,
     const fmi2ValueReference vKnown_ref[] , size_t nKnown,
     const fmi2Real dvKnown[], fmi2Real dvUnknown[])
 {
+  ModelInstance *comp = (ModelInstance *)c;
+  DATA* fmudata = (DATA *) comp->fmuData;
+  SIMULATION_INFO* simInfo = (SIMULATION_INFO*) fmudata->simulationInfo;
+  MODEL_DATA* modelData = (MODEL_DATA*) fmudata->modelData;
+  threadData_t* td = comp->threadData;
+
   if (!comp->_has_jacobian_intialization)
     return unsupportedFunction(comp, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
 
@@ -1267,10 +1272,13 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDirectionalDerivative")
 
+  if (updateIfNeeded(comp, "fmi2GetDirectionalDerivative") != fmi2OK)
+    return fmi2Error;
+
   if (modelInitializationMode == comp->state)
   {
-    //printf("\ngetDirectional Derivative initialized state\n");
-    return fmi2GetDirectionalDerivativeForInitialization(comp, modelData, fmudata, td, vUnknown_ref, nUnknown, vKnown_ref, nKnown, dvKnown, dvUnknown);
+    // directional derivative in initialization mode
+    return fmi2GetDirectionalDerivativeForInitialization(c, vUnknown_ref, nUnknown, vKnown_ref, nKnown, dvKnown, dvUnknown);
   }
 
   if (!comp->_has_jacobian)
