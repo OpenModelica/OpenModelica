@@ -1343,12 +1343,12 @@ constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(138, "flatModelica",
 constant ConfigFlag FMI_FILTER = CONFIG_FLAG(139, "fmiFilter", NONE(), EXTERNAL(),
   ENUM_FLAG(FMI_PROTECTED, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
   SOME(STRING_DESC_OPTION({
-    ("none", Gettext.gettext("All variables will be exposed, even variables that are introduced by the symbolic transformations. Hence, this is intended to be used for debugging.")),
-    ("internal", Gettext.gettext("All internal variables introduced by the symbolic transformations are filtered out. Only the variables from the actual Modelica model are exposed (with minor exceptions, e.g. for state sets).")),
-    ("protected", Gettext.gettext("All protected model variables will be filtered out in addition to --fmiFilter=internal.")),
-    ("blackBox", Gettext.gettext("This option is used to hide everything except for inputs and outputs. Additional variables that need to be present in the modelDescription file for structrial reasons will have concealed names."))
+    ("none", Gettext.gettext("All variables are exposed, even variables introduced by the symbolic transformations. This is mainly for debugging purposes.")),
+    ("internal", Gettext.gettext("All model variables are exposed, including protected ones. Variables introduced by the symbolic transformations are filtered out, with minor exceptions, e.g. for state sets.")),
+    ("protected", Gettext.gettext("All public model variables are exposed. Internal and protected variables are filtered out, with small exceptions, e.g. for state sets.")),
+    ("blackBox", Gettext.gettext("Only the interface is exposed. All other variables are hidden or exposed with concealed names."))
     })),
-  Gettext.gettext("Specifies which model variables get exposed by the modelDescription.xml"));
+  Gettext.gettext("Specifies which model variables are exposed by the modelDescription.xml"));
 
 constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(140, "fmiSources", NONE(), EXTERNAL(),
   BOOL_FLAG(true), NONE(),
