@@ -64,6 +64,7 @@ public
   import StrongComponent = NBStrongComponent;
   import Solve = NBSolve;
   import BVariable = NBVariable;
+  import NBVariable.VariablePointers;
 
   // Util imports
   import BackendUtil = NBBackendUtil;
@@ -1222,59 +1223,21 @@ public
 
     function createResidual
       "Creates a residual equation from a regular equation.
-      Expample (for DAEMode): $RES_DAE_idx := rhs.
-      Does not solve the equation, only saves the residual term!"
-      input output Equation eqn;
-      input String context;
-      input Pointer<list<Pointer<Variable>>> residual_vars;
-      input Pointer<Integer> idx;
+      Expample (for DAEMode): $RES_DAE_idx := rhs."
+      input Pointer<Equation> eqn_ptr;
     protected
-      Pointer<Variable> residualVar;
+      Equation eqn = Pointer.access(eqn_ptr);
+      ComponentRef residualCref;
+      Expression lhs, rhs;
     algorithm
-      // create residual var and update pointers
-      (residualVar, _) := BVariable.makeResidualVar(context, Pointer.access(idx), getType(eqn));
-      Pointer.update(residual_vars, residualVar :: Pointer.access(residual_vars));
-      Pointer.update(idx, Pointer.access(idx) + 1);
-
-      // update equation attributes
-      eqn := match eqn
-        case SCALAR_EQUATION() algorithm
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        case ARRAY_EQUATION() algorithm
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        case SIMPLE_EQUATION() algorithm
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        case RECORD_EQUATION() algorithm
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        case ALGORITHM() algorithm
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        case IF_EQUATION() algorithm
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        case FOR_EQUATION() algorithm
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        case WHEN_EQUATION() algorithm
-          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
-        then eqn;
-
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(eqn)});
-        then fail();
-
-      end match;
+      // get name cref which is the residual
+      residualCref:= Equation.getEqnName(eqn_ptr);
+      // update RHS and LHS
+      lhs := Expression.fromCref(residualCref);
+      rhs := Equation.getResidualExp(eqn);
+      eqn := Equation.setLHS(eqn, lhs);
+      eqn := Equation.setRHS(eqn, rhs);
+      Pointer.update(eqn_ptr, eqn);
     end createResidual;
 
     function getResidualExp
@@ -2270,7 +2233,14 @@ public
 
     function clone
       input EquationPointers equations;
-      output EquationPointers new = fromList(toList(equations));
+      input Boolean shallow = true;
+      output EquationPointers new;
+    algorithm
+      if shallow then
+        new := fromList(toList(equations));
+      else
+        new := fromList(list(Pointer.create(Pointer.access(eqn)) for eqn in toList(equations)));
+      end if;
     end clone;
 
     function size
@@ -2594,7 +2564,7 @@ public
       end for;
     end compress;
 
-     function sort
+    function sort
       "author: kabdelhak
       Sorts the equations solely by cref and operator attributes and type hash.
       Does not use the name! Used for reproduceable heuristic behavior independent of names."
@@ -2617,6 +2587,13 @@ public
         equations.eqArr := ExpandableArray.add(eqn_ptr, equations.eqArr);
       end for;
     end sort;
+
+    function getResiduals
+      input EquationPointers equations;
+      output VariablePointers residuals;
+    algorithm
+      residuals := VariablePointers.fromList(list(Equation.getResidualVar(eqn) for eqn in EquationPointers.toList(equations)));
+    end getResiduals;
 
   protected
     function createSortHashTpl

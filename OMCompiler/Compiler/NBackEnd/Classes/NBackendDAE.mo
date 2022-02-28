@@ -68,6 +68,7 @@ protected
   import DetectStates = NBDetectStates;
   import DAEMode = NBDAEMode;
   import Initialization = NBInitialization;
+  import NBJacobian.JacobianType;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
   import RemoveSimpleEquations = NBRemoveSimpleEquations;
@@ -102,8 +103,9 @@ public
 
   record JACOBIAN
     String name                                 "unique matrix name";
-    VarData varData                   "Variable data.";
-    EqData eqData                     "Equation data.";
+    JacobianType jacType                        "type of jacobian";
+    VarData varData                             "Variable data.";
+    EqData eqData                               "Equation data.";
     Jacobian.SparsityPattern sparsityPattern    "Sparsity pattern for the jacobian";
     Jacobian.SparsityColoring sparsityColoring  "Coloring information";
   end JACOBIAN;
@@ -317,6 +319,37 @@ public
       else ();
     end match;
   end simplify;
+
+  function getLoopResiduals
+    input BackendDAE bdae;
+    output VariablePointers residuals;
+  algorithm
+    residuals := match bdae
+      local
+        list<Pointer<Variable>> var_lst = {};
+
+      case MAIN() algorithm
+        for syst in bdae.ode loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        for syst in bdae.algebraic loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        for syst in bdae.ode_event loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        for syst in bdae.alg_event loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        for syst in bdae.init loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        residuals := VariablePointers.fromList(var_lst);
+      then residuals;
+
+      else VariablePointers.empty();
+    end match;
+  end getLoopResiduals;
 
 protected
   function lowerVariableData

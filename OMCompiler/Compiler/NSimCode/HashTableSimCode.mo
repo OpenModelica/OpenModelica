@@ -43,9 +43,14 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 
 public import BaseHashTable;
 import ComponentRef = NFComponentRef;
+import List;
 import NSimVar.SimVar;
 import NSimVar.SimVars;
 
+// Old SimCode structures
+import HashTableCrefSimVar;
+
+// hash table specific definitions
 public type Key = ComponentRef;
 public type Value = SimVar;
 
@@ -115,6 +120,7 @@ public
     ht := addList(simVars.intConstVars, ht);
     ht := addList(simVars.boolConstVars, ht);
     ht := addList(simVars.stringConstVars, ht);
+    ht := addList(simVars.residualVars, ht);
     ht := addList(simVars.jacobianVars, ht);
     ht := addList(simVars.seedVars, ht);
     ht := addList(simVars.realOptimizeConstraintsVars, ht);
@@ -132,6 +138,16 @@ public
       ht := BaseHashTable.add((SimVar.getName(var), var), ht);
     end for;
   end addList;
+
+  function convert
+    input HashTable ht;
+    output HashTableCrefSimVar.HashTable old_ht;
+  protected
+    list<SimVar> vars = BaseHashTable.hashTableValueList(ht);
+  algorithm
+    old_ht := HashTableCrefSimVar.emptyHashTableSized(listLength(vars));
+    old_ht := List.fold(SimVar.convertList(vars), HashTableCrefSimVar.addSimVarToHashTable, old_ht);
+  end convert;
 
 annotation(__OpenModelica_Interface="backend");
 end HashTableSimCode;

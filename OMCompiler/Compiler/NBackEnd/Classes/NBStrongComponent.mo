@@ -53,6 +53,7 @@ protected
   import BVariable = NBVariable;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes};
+  import NBJacobian.JacobianType;
   import Matching = NBMatching;
   import Solve = NBSolve;
   import Sorting = NBSorting;
@@ -148,6 +149,7 @@ public
     list<Pointer<Equation>> eqns;
     Option<BackendDAE> jac;
     Boolean mixed         "true for systems that have discrete variables";
+    Solve.Status status;
   end ALGEBRAIC_LOOP;
 
   record TORN_LOOP
@@ -156,6 +158,7 @@ public
     Option<Tearing> casual;
     Boolean linear;
     Boolean mixed "true for systems that have discrete variables";
+    Solve.Status status;
   end TORN_LOOP;
 
   record ALIAS
@@ -480,13 +483,13 @@ public
   end makeDAEModeResidualTraverse;
 
   function fromSolvedEquation
-    input Equation eqn;
+    input Pointer<Equation> eqn;
     output StrongComponent comp;
   algorithm
-    comp := match eqn
-      case Equation.SCALAR_EQUATION() then SINGLE_EQUATION(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(eqn))), Pointer.create(eqn), NBSolve.Status.EXPLICIT);
-      case Equation.ARRAY_EQUATION()  then SINGLE_ARRAY(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(eqn))), Pointer.create(eqn), NBSolve.Status.EXPLICIT);
-      case Equation.FOR_EQUATION()    then SLICED_EQUATION(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), Slice.SLICE(Pointer.create(eqn), {}), NBSolve.Status.EXPLICIT);
+    comp := match Pointer.access(eqn)
+      case Equation.SCALAR_EQUATION() then SINGLE_EQUATION(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.ARRAY_EQUATION()  then SINGLE_ARRAY(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.FOR_EQUATION()    then SLICED_EQUATION(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), Slice.SLICE(eqn, {}), NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
@@ -500,37 +503,32 @@ public
     input StrongComponent comp                                "strong component to be analyzed";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
     input Boolean pseudo                                      "true if arrays are unscalarized";
-    input Boolean jacobian = true                             "true if the analysis is for jacobian sparsity pattern";
+    input JacobianType jacType                                "sets the context";
   algorithm
     _ := match comp
       local
         list<ComponentRef> dependencies = {}, loop_vars = {}, tmp;
         EquationAttributes attr;
-        Pointer<Variable> dependentVar;
         Tearing strict;
         Equation eqn;
 
       case SINGLE_EQUATION() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
         attr := Equation.getAttributes(Pointer.access(comp.eqn));
-        dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else comp.var;
-        updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
+        updateDependencyMap(BVariable.getVarName(comp.var), dependencies, map, jacType);
       then ();
 
       case SLICED_EQUATION() algorithm
         eqn := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function getDependentCref(map = map, pseudo = pseudo));
         attr := Equation.getAttributes(eqn);
-        // assume full dependency
-        dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else BVariable.getVarPointer(comp.var_cref);
-        updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
+        updateDependencyMap(comp.var_cref, dependencies, map, jacType);
       then ();
 
       case SINGLE_ARRAY() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
         attr := Equation.getAttributes(Pointer.access(comp.eqn));
-        dependentVar := if jacobian then EquationAttributes.getResidualVar(attr) else comp.var;
-        updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
+        updateDependencyMap(BVariable.getVarName(comp.var), dependencies, map, jacType);
       then ();
 
       case TORN_LOOP(strict = strict) algorithm
@@ -558,12 +556,12 @@ public
 
         // add all dependencies
         for cref in loop_vars loop
-          updateDependencyMap(cref, dependencies, map);
+          updateDependencyMap(cref, dependencies, map, jacType);
         end for;
       then ();
 
       case ALIAS() algorithm
-        getDependentCrefs(comp.original, map, pseudo, jacobian);
+        getDependentCrefs(comp.original, map, pseudo, jacType);
       then ();
 
       /* ToDo add the others and let else case fail! */
@@ -595,6 +593,16 @@ public
       then fail();
     end match;
   end addLoopJacobian;
+
+  function getLoopResiduals
+    input StrongComponent comp;
+    output list<Pointer<Variable>> residuals;
+  algorithm
+    residuals := match comp
+      case TORN_LOOP()  then Tearing.getResidualVars(comp.strict);
+                        else {};
+    end match;
+  end getLoopResiduals;
 
   // ############################################################
   //                Protected Functions and Types
@@ -629,7 +637,8 @@ protected
           vars    = acc_vars,
           eqns    = acc_eqns,
           jac     = NONE(),
-          mixed   = false
+          mixed   = false,
+          status  = NBSolve.Status.UNPROCESSED
         );
 
       else algorithm
@@ -685,7 +694,8 @@ protected
           vars    = acc_vars,
           eqns    = acc_eqns,
           jac     = NONE(),
-          mixed   = false
+          mixed   = false,
+          status  = NBSolve.Status.UNPROCESSED
         );
 
       else algorithm
@@ -736,10 +746,26 @@ protected
     input ComponentRef cref                                   "cref representing current equation";
     input list<ComponentRef> dependencies                     "the dependency crefs";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
+    input JacobianType jacType                                "gives context";
+  protected
+    list<ComponentRef> fixed_dependencies = {};
   algorithm
     try
+      // replace non derivative dependencies with their previous dependencies
+      // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
+      if jacType == NBJacobian.JacobianType.SIMULATION then
+        for dep in listReverse(dependencies) loop
+          if BVariable.checkCref(dep, BVariable.isStateDerivative) then
+            fixed_dependencies := dep :: fixed_dependencies;
+          else
+            fixed_dependencies := listAppend(UnorderedMap.getSafe(dep, map), fixed_dependencies);
+          end if;
+        end for;
+      else
+        fixed_dependencies := dependencies;
+      end if;
       // update the current value (res/tmp) --> {independent vars}
-      UnorderedMap.add(cref, dependencies, map);
+      UnorderedMap.add(cref, fixed_dependencies, map);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
     end try;

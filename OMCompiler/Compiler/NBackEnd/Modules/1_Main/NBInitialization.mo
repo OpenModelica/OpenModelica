@@ -90,7 +90,7 @@ public
             varData.variables := variables;
             varData.initials := initialVars;
             eqData.equations := equations;
-            eqData.initials := initialEqs;
+            eqData.initials := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
 
             bdae.varData := varData;
             bdae.eqData := eqData;

@@ -84,7 +84,7 @@ public
           bdae.ode := list(sys for sys guard(not System.System.isEmpty(sys)) in func(systemType, variables, equations));
         then bdae;
 
-      case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
+      case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(initials = equations)))
         algorithm
           // remove the when equations for initial systems
           equations := EquationPointers.mapRemovePtr(equations, Equation.isWhenEquation);

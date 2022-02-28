@@ -44,7 +44,7 @@ protected
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
-  import FunctionTree = NFFlatten.FunctionTree;
+  import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import Statement = NFStatement;
@@ -72,8 +72,7 @@ protected
   // SimCode imports
   import SimCode = NSimCode;
   import NSimJacobian.SimJacobian;
-  import NSimVar.SimVar;
-  import NSimVar.VarType;
+  import NSimVar.{SimVar, SimVars, VarType};
 
   // Util imports
   import Error;
@@ -212,6 +211,29 @@ public
       end match;
     end toString;
 
+    function getIndex
+      input Block blck;
+      output Integer index;
+    algorithm
+      index := match blck
+        case RESIDUAL()           then blck.index;
+        case ARRAY_RESIDUAL()     then blck.index;
+        case SIMPLE_ASSIGN()      then blck.index;
+        case ARRAY_ASSIGN()       then blck.index;
+        case ALIAS()              then blck.index;
+        case ALGORITHM()          then blck.index;
+        case INVERSE_ALGORITHM()  then blck.index;
+        case IF()                 then blck.index;
+        case WHEN()               then blck.index;
+        case LINEAR()             then blck.system.index;
+        case NONLINEAR()          then blck.system.index;
+        case HYBRID()             then blck.index;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+        then fail();
+      end match;
+    end getIndex;
+
     function isDiscrete
       input Block blck;
       output Boolean b;
@@ -281,12 +303,12 @@ public
       output list<list<Block>> blcks = {};
       input output list<Block> all_blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     protected
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree, NBSystem.SystemType.ODE);
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, crefToSimVarHT);
         blcks := tmp :: blcks;
         all_blcks := listAppend(tmp, all_blcks);
       end for;
@@ -299,12 +321,12 @@ public
       input output list<Block> all_blcks;
       input output list<Block> event_dependencies;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     protected
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree, NBSystem.SystemType.ODE);
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, crefToSimVarHT);
         // add all
         all_blcks := listAppend(tmp, all_blcks);
         // filter all when equations and add to blcks (ode or algebraic)
@@ -321,13 +343,13 @@ public
       input list<System.System> systems;
       output list<Block> blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     protected
       list<Block> tmp;
       list<list<Block>> tmp_lst = {};
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree, NBSystem.SystemType.INI);
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, crefToSimVarHT);
         tmp_lst := tmp :: tmp_lst;
       end for;
       blcks := List.flatten(tmp_lst);
@@ -338,15 +360,15 @@ public
       output list<list<Block>> blcks = {};
       output list<SimVar> vars = {};
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     protected
       Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
       Pointer<list<SimVar>> vars_ptr = Pointer.create({});
       list<Block> tmp;
     algorithm
       for system in listReverse(systems) loop
-        BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.DAE_MODE_RESIDUAL));
-        (tmp, simCodeIndices, funcTree) := fromSystem(system, Pointer.access(indices_ptr), funcTree, NBSystem.SystemType.DAE);
+        BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
+        (tmp, simCodeIndices) := fromSystem(system, Pointer.access(indices_ptr), crefToSimVarHT);
         blcks := tmp :: blcks;
       end for;
       vars := listReverse(Pointer.access(vars_ptr));
@@ -356,8 +378,8 @@ public
       input EquationPointers equations;
       output list<Block> blcks = {};
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
       input System.SystemType systemType;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     protected
       Equation eqn;
       Block tmp;
@@ -365,16 +387,16 @@ public
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
           eqn := Pointer.access(ExpandableArray.get(i, equations.eqArr));
-          (tmp, simCodeIndices, funcTree) := match eqn
+          (tmp, simCodeIndices) := match eqn
             local
               ComponentRef cref;
 
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
-            then createEquation(NBVariable.getVar(cref), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, funcTree, systemType);
+            then createEquation(NBVariable.getVar(cref), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, crefToSimVarHT);
 
 
             case Equation.WHEN_EQUATION()
-            then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, funcTree, systemType);
+            then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, crefToSimVarHT);
 
             /* ToDo: ARRAY_EQUATION ... */
 
@@ -393,20 +415,21 @@ public
       input System.System system;
       output list<Block> blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
-      input System.SystemType systemType;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     algorithm
       blcks := match system.strongComponents
         local
           array<StrongComponent> comps;
           Block tmp;
           list<Block> result = {};
+          Integer index;
+
         case SOME(comps)
           algorithm
             for i in 1:arrayLength(comps) loop
+              (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, system.systemType, crefToSimVarHT);
               // add it to the alias map (before creating because of index bump)
-              UnorderedMap.add(AliasInfo.ALIAS_INFO(systemType, system.partitionIndex, i), simCodeIndices.equationIndex, simCodeIndices.alias_map);
-              (tmp, simCodeIndices, funcTree) := fromStrongComponent(comps[i], simCodeIndices, funcTree, systemType);
+              UnorderedMap.add(AliasInfo.ALIAS_INFO(system.systemType, system.partitionIndex, i), index, simCodeIndices.alias_map);
               result := tmp :: result;
             end for;
         then listReverse(result);
@@ -421,10 +444,11 @@ public
       input StrongComponent comp;
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
+      output Integer index;
       input System.SystemType systemType;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     algorithm
-      blck := match comp
+      (blck, index) := match comp
         local
           Tearing strict;
           NonlinearSystem system;
@@ -440,40 +464,39 @@ public
           list<Statement> stmts = {};
           SlicingStatus status;
           ComponentRef var_cref;
-          Integer index, aliasOf;
+          Integer aliasOf;
           list<Integer> eqn_indices, sizes;
           list<Equation> entwined_eqns = {};
           UnorderedMap<ComponentRef, Expression> replacements;
 
         case StrongComponent.SINGLE_EQUATION() algorithm
-          (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, funcTree, systemType);
-        then tmp;
+          (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, crefToSimVarHT);
+        then (tmp, getIndex(tmp));
 
         case StrongComponent.SINGLE_ARRAY() algorithm
-          (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, funcTree, systemType);
-        then tmp;
+          (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, crefToSimVarHT);
+        then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
           eqn := Pointer.access(Slice.getT(comp.eqn));
           stmts := {Equation.toStatement(eqn)};
           tmp := ALGORITHM(simCodeIndices.equationIndex, stmts, Equation.getAttributes(eqn));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-        then tmp;
+        then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_EQUATION() algorithm
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
           eqn := Pointer.access(Slice.getT(comp.eqn));
-          (tmp, simCodeIndices, funcTree) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, funcTree, systemType);
-        then tmp;
+          (tmp, simCodeIndices) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, systemType, crefToSimVarHT);
+        then (tmp, getIndex(tmp));
 
         case StrongComponent.TORN_LOOP(strict = strict)algorithm
           for i in 1:arrayLength(strict.innerEquations) loop
-            (tmp, simCodeIndices, funcTree) := fromInnerEquation(strict.innerEquations[i], simCodeIndices, funcTree, systemType);
+            (tmp, simCodeIndices) := fromInnerEquation(strict.innerEquations[i], simCodeIndices, systemType, crefToSimVarHT);
             eqns := tmp :: eqns;
           end for;
           for slice in strict.residual_eqns loop
-            // ToDo: Slicing here!
             (tmp, simCodeIndices) := createResidual(Pointer.access(Slice.getT(slice)), simCodeIndices);
             eqns := tmp :: eqns;
           end for;
@@ -484,12 +507,12 @@ public
             Pointer.update(var_ptr, var);
             crefs := var.name :: crefs;
           end for;
-          // ToDo: correct the following values: size, homotopy, torn
-          if Util.isSome(strict.jac) then
-            (jacobian, simCodeIndices, funcTree) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, funcTree);
+
+          // reactivate this once nonlinear loops actually work
+          if Util.isSome(strict.jac) and false then
+            (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, crefToSimVarHT);
           else
-            (tmpJac, simCodeIndices) := SimJacobian.empty("NLS_DUMMY_" + intString(simCodeIndices.jacobianIndex), simCodeIndices);
-            jacobian := SOME(tmpJac);
+            jacobian := NONE();
           end if;
           system := NONLINEAR_SYSTEM(
             index         = simCodeIndices.equationIndex,
@@ -497,14 +520,14 @@ public
             crefs         = listReverse(crefs),
             indexSystem   = simCodeIndices.nonlinearSystemIndex,
             size          = listLength(crefs),
-            jacobian      = jacobian,
+            jacobian      = Pointer.create(jacobian),
             homotopy      = false,
             mixed         = comp.mixed,
             torn          = true
           );
           simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-        then NONLINEAR(system, NONE());
+        then (NONLINEAR(system, NONE()), system.index);
 
         case StrongComponent.ALIAS() algorithm
           if UnorderedMap.contains(comp.aliasInfo, simCodeIndices.alias_map) then
@@ -514,7 +537,7 @@ public
           end if;
           tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-        then tmp;
+        then (tmp, getIndex(tmp));
 
         case StrongComponent.ENTWINED_EQUATION() algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because entwined equations have to be resolved beforehand in Solve.solve(). Failed for:\n"
@@ -531,22 +554,22 @@ public
       input BEquation.InnerEquation innerEqn;
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
       input System.SystemType systemType;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     algorithm
       blck := match innerEqn
         case BEquation.InnerEquation.INNER_EQUATION()
           algorithm
-            (blck, simCodeIndices, funcTree) := createEquation(Pointer.access(innerEqn.var), Pointer.access(innerEqn.eqn), NBSolve.Status.EXPLICIT, simCodeIndices, funcTree, systemType);
+            (blck, simCodeIndices) := createEquation(Pointer.access(innerEqn.var), Pointer.access(innerEqn.eqn), NBSolve.Status.EXPLICIT, simCodeIndices, systemType, crefToSimVarHT);
         then blck;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(Pointer.access(innerEqn.eqn))});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(Pointer.access(innerEqn.eqn))});
         then fail();
       end match;
     end fromInnerEquation;
 
     function createResidual
-      input BEquation.Equation eqn;
+      input Equation eqn;
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
     algorithm
@@ -559,21 +582,21 @@ public
           Equation forEqn;
 
         case BEquation.SCALAR_EQUATION() algorithm
-          tmp := RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
+          tmp := RESIDUAL(simCodeIndices.equationIndex, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case BEquation.ARRAY_EQUATION() algorithm
-          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
+          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case BEquation.SIMPLE_EQUATION() algorithm
           ty := ComponentRef.getComponentType(eqn.lhs);
           if Type.isArray(ty) then
-            tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
+            tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.fromCref(eqn.rhs), eqn.source, eqn.attr);
           else
-            tmp := RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
+            tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.fromCref(eqn.rhs), eqn.source, eqn.attr);
           end if;
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
@@ -590,7 +613,7 @@ public
         then tmp;
         */
         case BEquation.FOR_EQUATION() algorithm
-          rhs := BEquation.Equation.getResidualExp(eqn);
+          rhs := Equation.getRHS(eqn);
           lhs := Expression.makeZero(Expression.typeOf(rhs));
           tmp := RESIDUAL(simCodeIndices.equationIndex, lhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
@@ -599,7 +622,7 @@ public
         // ToDo: add all other cases!
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
         then fail();
 
       end match;
@@ -607,13 +630,13 @@ public
 
     function createEquation
       "Creates a single equation"
-      input BVariable.Variable var;
-      input BEquation.Equation eqn;
+      input Variable var;
+      input Equation eqn;
       input Solve.Status status;
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
       input System.SystemType systemType;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     algorithm
       blck := match (eqn, status)
         local
@@ -655,11 +678,11 @@ public
         // fallback implicit solving
         case (_, NBSolve.Status.IMPLICIT)
           algorithm
-            (tmp, simCodeIndices, funcTree) := createImplicitEquation(var, eqn, simCodeIndices, funcTree, systemType);
+            (tmp, simCodeIndices) := createImplicitEquation(var, eqn, simCodeIndices, systemType, crefToSimVarHT);
          then tmp;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
         then fail();
 
       end match;
@@ -668,23 +691,23 @@ public
     function createImplicitEquation
       "Creates a single implicit equation"
       input BVariable.Variable var;
-      input BEquation.Equation eqn;
+      input Equation eqn;
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input output FunctionTree funcTree;
       input System.SystemType systemType;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     protected
       StrongComponent comp;
       Integer index;
     algorithm
-      (comp, funcTree, index)  := Tearing.implicit(
+      (comp, _, index)  := Tearing.implicit(
         comp        = StrongComponent.SINGLE_EQUATION(Pointer.create(var), Pointer.create(eqn), NBSolve.Status.IMPLICIT),
-        funcTree    = funcTree,
+        funcTree    = FunctionTreeImpl.EMPTY(),
         index       = simCodeIndices.implicitIndex,
         systemType  = systemType
       );
       simCodeIndices.implicitIndex := index;
-      (blck, simCodeIndices, funcTree) := fromStrongComponent(comp, simCodeIndices, funcTree, systemType);
+      (blck, simCodeIndices) := fromStrongComponent(comp, simCodeIndices, systemType, crefToSimVarHT);
     end createImplicitEquation;
 
     function createWhenBody
@@ -712,27 +735,24 @@ public
     end createWhenBody;
 
     function traverseCreateEquation
-      "Only works, if the variable to solve for is saved in equation attributes!
-      used for dae mode jacobians."
-      input output BEquation.Equation eqn;
+      "Only works, if the variable to solve for is already isolated in the LHS!"
+      input output Equation eqn;
       input Pointer<list<Block>> acc;
       input Pointer<SimCode.SimCodeIndices> indices_ptr;
-      input Pointer<FunctionTree> funcTree_ptr;
       input System.SystemType systemType;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     protected
-      Pointer<Variable> residualVar;
+      Variable var;
       Block blck;
       SimCode.SimCodeIndices indices;
-      FunctionTree funcTree;
     algorithm
       try
-        residualVar := EquationAttributes.getResidualVar(BEquation.Equation.getAttributes(eqn));
-        (blck, indices, funcTree) := createEquation(Pointer.access(residualVar), eqn, NBSolve.Status.EXPLICIT, Pointer.access(indices_ptr), Pointer.access(funcTree_ptr), systemType);
+        var := BVariable.getVar(Expression.toCref(Equation.getLHS(eqn)));
+        (blck, indices) := createEquation(var, eqn, NBSolve.Status.EXPLICIT, Pointer.access(indices_ptr), systemType, crefToSimVarHT);
         Pointer.update(acc, blck :: Pointer.access(acc));
         Pointer.update(indices_ptr, indices);
-        Pointer.update(funcTree_ptr, funcTree);
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + BEquation.Equation.toString(eqn)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.toString(eqn)});
         fail();
       end try;
     end traverseCreateEquation;
@@ -740,7 +760,7 @@ public
     function traverseCreateResidual
       "Only works, if the variable to solve for is saved in equation attributes!
       used for dae mode jacobians."
-      input output BEquation.Equation eqn;
+      input output Equation eqn;
       input Pointer<list<Block>> acc;
       input Pointer<SimCode.SimCodeIndices> indices_ptr;
     protected
@@ -752,20 +772,20 @@ public
         Pointer.update(acc, blck :: Pointer.access(acc));
         Pointer.update(indices_ptr, indices);
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + BEquation.Equation.toString(eqn)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.toString(eqn)});
         fail();
       end try;
     end traverseCreateResidual;
 
     function createAssignment
       "Creates an assignment equation."
-      input BEquation.Equation eqn;
+      input Equation eqn;
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
     algorithm
       blck := match eqn
         local
-          BEquation.Equation qual;
+          Equation qual;
           Type ty;
           Operator operator;
           SimVar residualVar;
@@ -795,7 +815,7 @@ public
         // ToDo: add all other cases!
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
         then fail();
 
       end match;
@@ -806,20 +826,23 @@ public
       input output list<Block> linearLoops;
       input output list<Block> nonlinearLoops;
       input output list<SimJacobian> jacobians;
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input HashTableSimCode.HashTable crefToSimVarHT;
     algorithm
       for blck_lst in blcks loop
         for blck in blck_lst loop
           (linearLoops, nonlinearLoops) := match blck
             local
               Option<SimJacobian> jacobian;
-            case LINEAR()     then (blck :: linearLoops, nonlinearLoops);
+            case LINEAR() then (blck :: linearLoops, nonlinearLoops);
             case NONLINEAR() algorithm
               jacobian := NonlinearSystem.getJacobian(blck.system);
               if Util.isSome(jacobian) then
                 jacobians := Util.getOption(jacobian) :: jacobians;
               end if;
+              blck.system := NonlinearSystem.setJacobian(blck.system, jacobian);
             then (linearLoops, blck :: nonlinearLoops);
-                              else (linearLoops, nonlinearLoops);
+            else (linearLoops, nonlinearLoops);
           end match;
         end for;
       end for;
@@ -1060,7 +1083,7 @@ public
       list<ComponentRef> crefs;
       Integer indexSystem;
       Integer size "Number of variables that are solved in this system. Needed because 'crefs' only contains the iteration variables.";
-      Option<SimJacobian> jacobian;
+      Pointer<Option<SimJacobian>> jacobian;
       Boolean homotopy;
       Boolean mixed;
       Boolean torn;
@@ -1068,8 +1091,15 @@ public
 
     function getJacobian
       input NonlinearSystem syst;
-      output Option<SimJacobian> jacobian = syst.jacobian;
+      output Option<SimJacobian> jacobian = Pointer.access(syst.jacobian);
     end getJacobian;
+
+    function setJacobian
+      input output NonlinearSystem syst;
+      input Option<SimJacobian> jacobian;
+    algorithm
+      Pointer.update(syst.jacobian, jacobian);
+    end setJacobian;
 
     function toString
       input NonlinearSystem system;
@@ -1095,7 +1125,7 @@ public
         crefs                 = listReverse(crefs),
         indexNonLinearSystem  = system.indexSystem,
         nUnknowns             = system.size,
-        jacobianMatrix        = SimJacobian.convertOpt(system.jacobian), // ToDo update this!
+        jacobianMatrix        = SimJacobian.convertOpt(Pointer.access(system.jacobian)), // ToDo update this!
         homotopySupport       = system.homotopy,
         mixedSystem           = system.mixed,
         tornSystem            = system.torn,

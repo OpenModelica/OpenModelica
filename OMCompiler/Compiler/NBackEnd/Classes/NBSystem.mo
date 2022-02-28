@@ -41,6 +41,9 @@ public
   import StrongComponent = NBStrongComponent;
 
 protected
+  // NF imports
+  import Variable = NFVariable;
+
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
@@ -56,7 +59,7 @@ protected
 
 public
   // ToDo: Expand with Jacobian and Hessian later on
-  type SystemType = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE);
+  type SystemType = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE, JAC);
   type PartitionKind = enumeration(UNKNOWN, UNSPECIFIED, CLOCKED, CONTINUOUS);
 
   uniontype System
@@ -217,6 +220,17 @@ public
       end match;
     end categorize;
 
+    function getLoopResiduals
+      input System syst;
+      output list<Pointer<Variable>> residuals = {};
+    algorithm
+      if Util.isSome(syst.strongComponents) then
+        for comp in Util.getOption(syst.strongComponents) loop
+          residuals := listAppend(StrongComponent.getLoopResiduals(comp), residuals);
+        end for;
+      end if;
+    end getLoopResiduals;
+
     function systemTypeString
       input SystemType systemType;
       output String str = "";
@@ -228,6 +242,7 @@ public
         case SystemType.ALG_EVT     then "ALG_EVT";
         case SystemType.INI         then "INI";
         case SystemType.DAE         then "DAE";
+        case SystemType.JAC         then "JAC";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown system type in match."});
         then fail();
@@ -245,6 +260,7 @@ public
         case SystemType.ALG_EVT     then 3;
         case SystemType.INI         then 4;
         case SystemType.DAE         then 5;
+        case SystemType.JAC         then 6;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown system type in match."});
         then fail();

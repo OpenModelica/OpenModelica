@@ -407,6 +407,16 @@ public
     end match;
   end isDAEResidual;
 
+  function isSeed
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.SEED_VAR())) then true;
+      else false;
+    end match;
+  end isSeed;
+
   function isInput
     input Pointer<Variable> var;
     output Boolean b;

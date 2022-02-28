@@ -120,6 +120,20 @@ public
     output list<Slice<T>> slices = list(fromTpl(tpl) for tpl in UnorderedMap.toList(map));
   end fromMap;
 
+  function apply
+    input output Slice<T> slice;
+    input applyT func;
+  algorithm
+    slice.t := func(slice.t);
+  end apply;
+
+  function applyMutable
+    input Slice<T> slice;
+    input applyMutableT func;
+  algorithm
+    func(slice.t);
+  end applyMutable;
+
   // ############################################################
   //                Partial Functions
   // ############################################################
@@ -139,6 +153,14 @@ public
     input T t2;
     output Boolean b;
   end isEqualT;
+
+  partial function applyT
+    input output T t;
+  end applyT;
+
+  partial function applyMutableT
+    input T t;
+  end applyMutableT;
 
   annotation(__OpenModelica_Interface="backend");
 end NBSlice;

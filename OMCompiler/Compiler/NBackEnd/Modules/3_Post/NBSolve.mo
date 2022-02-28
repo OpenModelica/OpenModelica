@@ -92,6 +92,7 @@ public
       case BackendDAE.MAIN() algorithm
         funcTree_ptr    := Pointer.create(bdae.funcTree);
         // The order here is important. Whatever comes first is declared the "original", same components afterwards will be alias
+        // Has to be the same order as in SimCode!
         bdae.init       := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.init);
         bdae.ode        := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.ode);
         bdae.algebraic  := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.algebraic);
@@ -204,6 +205,11 @@ public
         //  (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(List.first(comp.vars)), funcTree);
         //then ({StrongComponent.SINGLE_IF_EQUATION(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
 
+        case StrongComponent.TORN_LOOP() algorithm
+          // do we need to do smth here? e.g. solve inner equations? call tearing from here?
+          comp.status := Status.IMPLICIT;
+       then ({comp}, Status.IMPLICIT);
+
         case StrongComponent.SLICED_EQUATION(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
           eqn_ptr := Slice.getT(eqn_slice);
           (eqn_ptr, slicing_status, solve_status, funcTree) := Equation.slice(eqn_ptr, eqn_slice.indices, SOME(comp.var_cref), funcTree);
@@ -215,11 +221,10 @@ public
             replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
             for index in listReverse(eqn_slice.indices) loop
               (eqn, funcTree) := Equation.singleSlice(eqn_ptr, index, sizes, ComponentRef.EMPTY(), replacements, funcTree);
-              solved_comps := StrongComponent.fromSolvedEquation(eqn) :: solved_comps;
               sliced_eqns := Pointer.create(eqn) :: sliced_eqns;
             end for;
             sliced_eqns := listReverse(sliced_eqns);
-            solved_comps := listReverse(solved_comps);
+            solved_comps := list(StrongComponent.fromSolvedEquation(eqn) for eqn in sliced_eqns);
           else
             Pointer.update(eqn_ptr, Equation.splitIterators(Pointer.access(eqn_ptr)));
             sliced_eqns := {eqn_ptr};
@@ -267,15 +272,14 @@ public
               sizes := Equation.sizes(eqn_ptr);
               (eqn, funcTree) := Equation.singleSlice(eqn_ptr, index, sizes, ComponentRef.EMPTY(), replacements, funcTree);
               sliced_eqns := Pointer.create(eqn) :: sliced_eqns;
-              solved_comps := StrongComponent.fromSolvedEquation(eqn) :: solved_comps;
             end for;
             sliced_eqns := listReverse(sliced_eqns);
-            solved_comps := listReverse(solved_comps);
+            solved_comps := list(StrongComponent.fromSolvedEquation(eqn) for eqn in sliced_eqns);
           else
             // entwine the equations as far as possible
             entwined_eqns := Equation.entwine(listReverse(entwined_eqns));
             sliced_eqns := list(Pointer.create(eqn) for eqn in entwined_eqns);
-            solved_comps :=  list(StrongComponent.fromSolvedEquation(eqn) for eqn in entwined_eqns);
+            solved_comps := list(StrongComponent.fromSolvedEquation(eqn) for eqn in sliced_eqns);
           end if;
 
           // safe the slicing replacement in the map
@@ -301,20 +305,19 @@ public
         else ({comp}, Status.UNSOLVABLE);
     end match;
 
-    if solve_status > Status.EXPLICIT then
-      if solve_status == Status.IMPLICIT and listLength(solved_comps) == 1 then
-        (implicit_comp, funcTree, implicit_index)  := Tearing.implicit(
-          comp        = List.first(solved_comps),
-          funcTree    = funcTree,
-          index       = implicit_index,
-          systemType  = systemType
-        );
-        solved_comps := {implicit_comp};
-      else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with status = " + statusString(solve_status)
-          + " while trying to solve following strong component:\n" + StrongComponent.toString(comp) + "\n"});
-        fail();
-      end if;
+    // solve implicit equation (algebraic loop is always implicit)
+    if solve_status == Status.IMPLICIT and listLength(solved_comps) == 1 then
+      (implicit_comp, funcTree, implicit_index)  := Tearing.implicit(
+        comp        = List.first(solved_comps),
+        funcTree    = funcTree,
+        index       = implicit_index,
+        systemType  = systemType
+      );
+      solved_comps := {implicit_comp};
+    elseif solve_status > Status.EXPLICIT then
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with status = " + statusString(solve_status)
+        + " while trying to solve following strong component:\n" + StrongComponent.toString(comp) + "\n"});
+      fail();
     end if;
 
   end solveStrongComponent;
