@@ -303,6 +303,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/2_Pre/NBEvents.mo",
     "../NBackEnd/Modules/2_Pre/NBRemoveSimpleEquations.mo",
     "../NBackEnd/Modules/3_Post/NBJacobian.mo",
+    "../NBackEnd/Modules/3_Post/NBSolve.mo",
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
   // "NBackend Util"
     "../NBackEnd/Util/NBBackendUtil.mo",
@@ -310,7 +311,6 @@ if true then /* Suppress output */
     "../NBackEnd/Util/NBGraphUtil.mo",
     "../NBackEnd/Util/NBReplacements.mo",
     "../NBackEnd/Util/NBSlice.mo",
-    "../NBackEnd/Util/NBSolve.mo",
 
   // "NSimCode"
     "../NSimCode/HashTableSimCode.mo",

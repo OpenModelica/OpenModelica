@@ -17,7 +17,7 @@ equation
 end exemplary;
 
 model exemplaryS
-  parameter Integer s = 2000;
+  parameter Integer s = 20;
   Real x[5+s,2+s];
   Real y[2+s];
 equation

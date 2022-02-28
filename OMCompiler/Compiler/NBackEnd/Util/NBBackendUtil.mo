@@ -46,6 +46,7 @@ public
   // backend imports
   import BEquation = NBEquation;
   import NBEquation.{Equation, Frame, FrameLocation};
+  import System = NBSystem;
   import BVariable = NBVariable;
 
   // Util imports
@@ -504,6 +505,7 @@ public
   end noNameHashEq;
 
   function noNameHashExp
+    "ToDo: is this mod safe? (missing intMod!)"
     input Expression exp;
     input Integer mod;
     output Integer hash = 0;

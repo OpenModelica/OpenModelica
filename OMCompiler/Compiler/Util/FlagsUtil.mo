@@ -247,7 +247,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_SIMPLIFY,
   Flags.DUMP_BACKEND_CLOCKS,
   Flags.DUMP_SET_BASED_GRAPHS,
-  Flags.MERGE_COMPONENTS
+  Flags.MERGE_COMPONENTS,
+  Flags.DUMP_SLICE
 };
 
 protected

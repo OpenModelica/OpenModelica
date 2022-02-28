@@ -68,11 +68,27 @@ protected
 
 public
   record TEARING_SET
-    list<Pointer<Variable>> iteration_vars    "the variables used for iteration";
-    list<Slice<EquationPointer>> residual_eqns      "implicitely solved residual equations";
-    array<InnerEquation> innerEquations                             "array of matched equations and variables";
-    Option<Jacobian> jac                                            "optional jacobian";
+    list<Pointer<Variable>> iteration_vars        "the variables used for iteration";
+    list<Slice<EquationPointer>> residual_eqns    "implicitely solved residual equations";
+    array<InnerEquation> innerEquations           "array of matched equations and variables";
+    Option<Jacobian> jac                          "optional jacobian";
   end TEARING_SET;
+
+  function hash
+    input Tearing tearing;
+    input Integer mod;
+    output Integer i = -1;
+  algorithm
+    // ToDo!
+  end hash;
+
+  function isEqual
+    input Tearing tearing1;
+    input Tearing tearing2;
+    output Boolean b = false;
+  algorithm
+    // ToDo!
+  end isEqual;
 
   function toString
     input Tearing set;
@@ -83,7 +99,7 @@ public
     for var in set.iteration_vars loop
       str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
     end for;
-    str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, Equation.pointerToString);
+    str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, function Equation.pointerToString(str = ""));
     str := str + "\n### Inner Equations:\n";
     for eqn in set.innerEquations loop
       str := str  + InnerEquation.toString(eqn, "\t") + "\n";
@@ -149,7 +165,7 @@ public
       case StrongComponent.SINGLE_ARRAY()
       then tearingNoneWork(
           name      = System.System.systemTypeString(systemType) + "_IMP_JAC_",
-          variables = comp.vars,
+          variables = {comp.var},
           equations = {comp.eqn},
           mixed     = false,
           funcTree  = funcTree,
@@ -185,6 +201,13 @@ public
       else fail();
     end match;
   end getModule;
+
+  function getResidualVars
+    input Tearing tearing;
+    output list<Pointer<Variable>> residuals;
+  algorithm
+    residuals := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
+  end getResidualVars;
 
 protected
   // Traverser function
@@ -248,16 +271,21 @@ protected
     InnerEquation dummy;
     Tearing tearingSet;
     Option<Jacobian> jacobian;
+    list<StrongComponent> residual_comps;
   algorithm
     index := index + 1;
+    for eqn in equations loop
+      Equation.createResidual(eqn);
+    end for;
     dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), Pointer.create(NBVariable.DUMMY_VARIABLE));
     tearingSet := TEARING_SET(variables, list(Slice.SLICE(eqn, {}) for eqn in equations), arrayCreate(0, dummy), NONE());
-    comp := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, mixed);
+    comp := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, mixed, NBSolve.Status.IMPLICIT);
+    residual_comps := list(StrongComponent.fromSolvedEquation(eqn) for eqn in equations);
 
-    (jacobian, funcTree) := BJacobian.simple(
+    (jacobian, funcTree) := BJacobian.nonlinear(
       variables = VariablePointers.fromList(variables),
       equations = EquationPointers.fromList(equations),
-      comp      = comp,
+      comps     = listArray(residual_comps),
       funcTree  = funcTree,
       name      = name + intString(index)
     );
@@ -299,7 +327,7 @@ protected
     EquationPointers eqns;
     Adjacency.Matrix adj;
     Matching matching;
-    list<StrongComponent> comps;
+    list<StrongComponent> inner_comps, residual_comps;
     list<InnerEquation> innerEquations;
     Tearing tearingSet;
     Option<Jacobian> jacobian;
@@ -311,6 +339,7 @@ protected
     if listEmpty(disc_lst) then
       cont_lst        := variables;
       residual_lst    := list(Slice.SLICE(eqn, {}) for eqn in equations);
+      inner_comps     := {};
       innerEquations  := {};
     else
       discreteVars    := VariablePointers.fromList(disc_lst);
@@ -320,18 +349,23 @@ protected
       (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
       matching := Matching.regular(Matching.EMPTY_MATCHING(), adj, true, false);
       (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
-      comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
-      innerEquations := list(BEquation.InnerEquation.fromStrongComponent(c) for c in comps);
+      inner_comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
+      innerEquations := list(BEquation.InnerEquation.fromStrongComponent(c) for c in inner_comps);
     end if;
 
+    for res in residual_lst loop
+      Slice.applyMutable(res, Equation.createResidual);
+    end for;
+    residual_comps := list(StrongComponent.fromSolvedEquation(Slice.getT(res)) for res in residual_lst);
+
     tearingSet := TEARING_SET(cont_lst, residual_lst, listArray(innerEquations), NONE());
-    comp := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, mixed);
+    comp := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, mixed, NBSolve.Status.IMPLICIT);
 
     // inner equations are part of the jacobian
-    (jacobian, funcTree) := BJacobian.simple(
+    (jacobian, funcTree) := BJacobian.nonlinear(
       variables = VariablePointers.fromList(variables),
       equations = EquationPointers.fromList(equations),
-      comp      = comp,
+      comps     = listArray(listAppend(inner_comps, residual_comps)),
       funcTree  = funcTree,
       name      = name + intString(index)
     );

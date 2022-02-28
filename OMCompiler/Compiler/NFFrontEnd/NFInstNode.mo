@@ -560,6 +560,12 @@ uniontype InstNode
           node.name := name;
         then
           ();
+
+      case VAR_NODE()
+        algorithm
+          node.name := name;
+        then
+          ();
     end match;
   end rename;
 

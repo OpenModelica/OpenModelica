@@ -277,7 +277,7 @@ public
       if not listEmpty(unmatched_eqns) then
         Error.addMessage(Error.COMPILER_WARNING, {getInstanceName()
         + " reports an overdetermined initialization!\nChecking for consistency is not yet supported, following equations had to be removed:\n"
-        + Slice.lstToString(unmatched_eqns, Equation.pointerToString)});
+        + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = ""))});
         // update this for potential arrays!
         sliced_eqns := list(Slice.getT(eqn) for eqn in unmatched_eqns);
         eqData := EqData.removeList(sliced_eqns, eqData);
@@ -419,7 +419,7 @@ protected
             + StringUtil.headline_4("(" + intString(listLength(state_candidates)) + ") Sorted State Candidates")
             + Slice.lstToString(state_candidates, BVariable.pointerToString) + "\n"
             + StringUtil.headline_4("(" + intString(listLength(constraint_eqns)) + ") Constraint Equations")
-            + Slice.lstToString(constraint_eqns, Equation.pointerToString) + "\n";
+            + Slice.lstToString(constraint_eqns, function Equation.pointerToString(str = "")) + "\n";
   end toStringCandidatesConstraints;
 
   function toStringDynamicSelect
@@ -431,7 +431,7 @@ protected
             + StringUtil.headline_4("(" + intString(listLength(dummy_states)) + ") Remaining State Candidates")
             + Slice.lstToString(dummy_states, BVariable.pointerToString) + "\n"
             + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Remaining Equations")
-            + Slice.lstToString(unmatched_eqns, Equation.pointerToString) + "\n";
+            + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = "")) + "\n";
   end toStringDynamicSelect;
 
   function toStringUnmatched
@@ -446,7 +446,7 @@ protected
     s3 := StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + ") Unmatched variables:")
           + Slice.lstToString(unmatched_vars, BVariable.pointerToString) + "\n";
     s4 := "\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched equations:")
-          + Slice.lstToString(unmatched_eqns, Equation.pointerToString) + "\n";
+          + Slice.lstToString(unmatched_eqns, function Equation.pointerToString(str = "")) + "\n";
     str := s1 + s2 + s3 + s4;
   end toStringUnmatched;
 

@@ -36,23 +36,31 @@ simulate(minimalTearing); getErrorString();
 // 	Real y
 //
 // ### Residual Equations:
-// 	[SCAL] (1) y = cos(1.0 + time) * CAST(Real, i) ($RES_SIM_0) ;
+// 	[SCAL] (1) $RES_SIM_0 = cos(1.0 + time) * CAST(Real, i) - y ($RES_SIM_0) ;
 // ### Inner Equations:
 // 	([DISC] (1) Integer i) [SCAL] (1) i = if y > 0.0 then 1 else 2 ($RES_SIM_1)
 //
 // ========================================
-// Jacobian INI_NLS_JAC_1: NLS
+// [NLS] Jacobian INI_NLS_JAC_1: NLS
 // ========================================
 //
 // Result Equations (1/1)
 // ****************************************
-// (1)       [SCAL] (1) $SEED_INI_NLS_JAC_1.y = 0.0 ($RES_INI_NLS_JAC_1_0)
+// (1)       [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0 = -$SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_0)
 //
 //
+// ========================================
 // Sparsity Pattern (nnz: 4)
+// ========================================
+//
+// ### Columns ###
 // ----------------------------------------
-// (i)	{y,i}
-// (y)	{y,i}
+// (i)	 affects:	{$RES_SIM_0,y,i}
+// (y)	 affects:	{$RES_SIM_0}
+//
+// ##### Rows #####
+// ----------------------------------------
+// ($RES_SIM_0)	 depends on:	{y,i}
 //
 // Sparsity Coloring Groups
 // ----------------------------------------
@@ -73,23 +81,31 @@ simulate(minimalTearing); getErrorString();
 // 	Real y
 //
 // ### Residual Equations:
-// 	[SCAL] (1) y = cos(1.0 + time) * CAST(Real, i) ($RES_SIM_0) ;
+// 	[SCAL] (1) $RES_SIM_0 = cos(1.0 + time) * CAST(Real, i) - y ($RES_SIM_0) ;
 // ### Inner Equations:
 // 	([DISC] (1) Integer i) [SCAL] (1) i = if y > 0.0 then 1 else 2 ($RES_SIM_1)
 //
 // ========================================
-// Jacobian ODE_NLS_JAC_1: NLS
+// [NLS] Jacobian ODE_NLS_JAC_1: NLS
 // ========================================
 //
 // Result Equations (1/1)
 // ****************************************
-// (1)       [SCAL] (1) $SEED_ODE_NLS_JAC_1.y = 0.0 ($RES_ODE_NLS_JAC_1_0)
+// (1)       [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0 = -$SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_0)
 //
 //
+// ========================================
 // Sparsity Pattern (nnz: 4)
+// ========================================
+//
+// ### Columns ###
 // ----------------------------------------
-// (i)	{y,i}
-// (y)	{y,i}
+// (i)	 affects:	{$RES_SIM_0,y,i}
+// (y)	 affects:	{$RES_SIM_0}
+//
+// ##### Rows #####
+// ----------------------------------------
+// ($RES_SIM_0)	 depends on:	{y,i}
 //
 // Sparsity Coloring Groups
 // ----------------------------------------

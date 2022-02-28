@@ -42,6 +42,8 @@ public
   import Jacobian = NBJacobian;
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
+  import NBEquation.{Equation, EquationPointers, EqData, Iterator};
+  import NBVariable.{VariablePointers, VarData};
 
 protected
   // New Frontend imports
@@ -65,15 +67,13 @@ protected
   import Causalize = NBCausalize;
   import DetectStates = NBDetectStates;
   import DAEMode = NBDAEMode;
-  import NBEquation.EquationPointers;
-  import NBEquation.Equation;
   import Initialization = NBInitialization;
-  import NBEquation.Iterator;
+  import NBJacobian.JacobianType;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
   import RemoveSimpleEquations = NBRemoveSimpleEquations;
+  import Solve = NBSolve;
   import Tearing = NBTearing;
-  import NBVariable.VariablePointers;
 
   // Util imports
   import BuiltinSystem = System;
@@ -94,8 +94,8 @@ public
     Option<list<System>> init_0       "Systems for lambda 0 (homotopy) Initialization";
     Option<list<System>> dae          "Systems for dae mode";
 
-    BVariable.VarData varData         "Variable data.";
-    BEquation.EqData eqData           "Equation data.";
+    VarData varData                   "Variable data.";
+    EqData eqData                     "Equation data.";
 
     Events.EventInfo eventInfo        "contains time and state events";
     FunctionTree funcTree             "Function bodies.";
@@ -103,15 +103,16 @@ public
 
   record JACOBIAN
     String name                                 "unique matrix name";
-    BVariable.VarData varData                   "Variable data.";
-    BEquation.EqData eqData                     "Equation data.";
+    JacobianType jacType                        "type of jacobian";
+    VarData varData                             "Variable data.";
+    EqData eqData                               "Equation data.";
     Jacobian.SparsityPattern sparsityPattern    "Sparsity pattern for the jacobian";
     Jacobian.SparsityColoring sparsityColoring  "Coloring information";
   end JACOBIAN;
 
   record HESSIAN
-    BVariable.VarData varData     "Variable data.";
-    BEquation.EqData eqData       "Equation data.";
+    VarData varData     "Variable data.";
+    EqData eqData       "Equation data.";
   end HESSIAN;
 
   function toString
@@ -127,8 +128,8 @@ public
           if (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event))
              or not Flags.isSet(Flags.BLT_DUMP) then
             tmp := StringUtil.headline_1("BackendDAE: " + str) + "\n";
-            tmp := tmp +  BVariable.VarData.toString(bdae.varData, 2) + "\n" +
-                          BEquation.EqData.toString(bdae.eqData, 1);
+            tmp := tmp +  VarData.toString(bdae.varData, 2) + "\n" +
+                          EqData.toString(bdae.eqData, 1);
           else
             tmp := tmp + System.toStringList(bdae.ode, "[ODE] Differential-Algebraic: " + str);
             tmp := tmp + System.toStringList(bdae.algebraic, "[ALG] Algebraic: " + str);
@@ -144,13 +145,13 @@ public
       then tmp;
 
       case JACOBIAN() then StringUtil.headline_1("Jacobian " + bdae.name + ": " + str) + "\n" +
-                              BVariable.VarData.toString(bdae.varData, 1) + "\n" +
-                              BEquation.EqData.toString(bdae.eqData, 1) + "\n" +
+                              VarData.toString(bdae.varData, 1) + "\n" +
+                              EqData.toString(bdae.eqData, 1) + "\n" +
                               Jacobian.SparsityPattern.toString(bdae.sparsityPattern, bdae.sparsityColoring);
 
       case HESSIAN() then StringUtil.headline_1("Hessian: " + str) + "\n" +
-                              BVariable.VarData.toString(bdae.varData, 1) + "\n" +
-                              BEquation.EqData.toString(bdae.eqData, 1);
+                              VarData.toString(bdae.varData, 1) + "\n" +
+                              EqData.toString(bdae.eqData, 1);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
@@ -159,7 +160,7 @@ public
 
   function getVarData
     input BackendDAE bdae;
-    output BVariable.VarData varData;
+    output VarData varData;
   algorithm
     varData := match bdae
       case MAIN() then bdae.varData;
@@ -173,7 +174,7 @@ public
 
   function getEqData
     input BackendDAE bdae;
-    output BEquation.EqData eqData;
+    output EqData eqData;
   algorithm
     eqData := match bdae
       case MAIN() then bdae.eqData;
@@ -203,8 +204,8 @@ public
     input FunctionTree funcTree;
     output BackendDAE bdae;
   protected
-    BVariable.VarData variableData;
-    BEquation.EqData equationData;
+    VarData variableData;
+    EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
   algorithm
     variableData := lowerVariableData(flatModel.variables);
@@ -212,7 +213,7 @@ public
     bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
   end lower;
 
-  function solve
+  function main
     input output BackendDAE bdae;
   protected
     list<tuple<Module.wrapper, String>> preOptModules;
@@ -243,7 +244,8 @@ public
 
     postOptModules := {
       (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing"),
-      (Partitioning.splitSystems,                                     "Split Systems"),
+      (Partitioning.categorize,                                       "Categorize"),
+      (Solve.main,                                                    "Solve"),
       (function Jacobian.main(systemType = NBSystem.SystemType.ODE),  "Jacobian")
     };
 
@@ -264,7 +266,7 @@ public
         print(stringDelimitList(list(Module.moduleClockString(clck) for clck in postOptClocks), "\n") + "\n\n");
       end if;
     end if;
-  end solve;
+  end main;
 
   function applyModules
     input output BackendDAE bdae;
@@ -295,7 +297,7 @@ public
         bdae := func(bdae);
       end if;
 
-      if Flags.isSet(Flags.OPT_DAE_DUMP) or (Flags.isSet(Flags.BLT_DUMP) and name == "Causalize") then
+      if Flags.isSet(Flags.OPT_DAE_DUMP) or (Flags.isSet(Flags.BLT_DUMP) and (name == "Causalize" or name == "Solve")) then
         print(toString(bdae, "(" + name + ")"));
       end if;
     end for;
@@ -318,6 +320,37 @@ public
     end match;
   end simplify;
 
+  function getLoopResiduals
+    input BackendDAE bdae;
+    output VariablePointers residuals;
+  algorithm
+    residuals := match bdae
+      local
+        list<Pointer<Variable>> var_lst = {};
+
+      case MAIN() algorithm
+        for syst in bdae.ode loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        for syst in bdae.algebraic loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        for syst in bdae.ode_event loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        for syst in bdae.alg_event loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        for syst in bdae.init loop
+          var_lst := listAppend(System.getLoopResiduals(syst), var_lst);
+        end for;
+        residuals := VariablePointers.fromList(var_lst);
+      then residuals;
+
+      else VariablePointers.empty();
+    end match;
+  end getLoopResiduals;
+
 protected
   function lowerVariableData
     "Lowers all variables to backend structure.
@@ -325,7 +358,7 @@ protected
     pointer arrays in two steps is slightly less effective, but way more readable
     and maintainable."
     input list<Variable> varList;
-    output BVariable.VarData variableData;
+    output VarData variableData;
   protected
     Variable lowVar;
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
@@ -545,8 +578,8 @@ protected
     input list<Algorithm> al_lst;
     input list<FEquation> init_eq_lst;
     input list<Algorithm> init_al_lst;
-    output BEquation.EqData eqData;
-    input output BVariable.VarData varData;
+    output EqData eqData;
+    input output VarData varData;
   protected
     list<ComponentRef> iterators = {};
     list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {}, simulation_lst = {}, removed_lst = {};
@@ -560,9 +593,9 @@ protected
       iterators := listAppend(Equation.getForIterators(Pointer.access(eqn_ptr)), iterators);
     end for;
     iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);
-    varData := BVariable.VarData.addTypedList(varData, list(lowerIterator(iter) for iter in iterators), NBVariable.VarData.VarType.ITERATOR);
+    varData := VarData.addTypedList(varData, list(lowerIterator(iter) for iter in iterators), NBVariable.VarData.VarType.ITERATOR);
     equations := EquationPointers.fromList(equation_lst);
-    equations := lowerComponentReferences(equations, BVariable.VarData.getVariables(varData));
+    equations := lowerComponentReferences(equations, VarData.getVariables(varData));
 
     for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
       if ExpandableArray.occupied(i, equations.eqArr) then

@@ -25,7 +25,7 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ################################################################################
 //
 // ========================================
-// CONTINUOUS ODE System
+// CONTINUOUS 1 ODE System
 // ========================================
 //
 // BLOCK 1: Algebraic Loop (Mixed = false)
@@ -45,7 +45,7 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ################################################################################
 //
 // ========================================
-// CONTINUOUS ODE System
+// CONTINUOUS 1 ODE System
 // ========================================
 //
 // BLOCK 1: Algebraic Loop (Mixed = false)
@@ -65,7 +65,7 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ################################################################################
 //
 // ========================================
-// CONTINUOUS INI System
+// CONTINUOUS 1 INI System
 // ========================================
 //
 // BLOCK 1: Algebraic Loop (Mixed = false)
@@ -77,6 +77,110 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ### Equations:
 // 	[SCAL] (1) y = sin(x) ($RES_SIM_0)
 // 	[SCAL] (1) x = y ^ 2.0 + sin(time) ($RES_SIM_1)
+//
+// ################################################################################
+//
+// 	[ALG] Algebraic: (Solve)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 ALG System
+// ========================================
+//
+// BLOCK 1: Torn Algebraic Loop (Linear = false, Mixed = false)
+// ----------------------------------------
+// Strict Tearing Set
+// ****************************************
+// ### Iteration Variables:
+// 	Real y
+// 	Real x
+//
+// ### Residual Equations:
+// 	[SCAL] (1) $RES_SIM_1 = y ^ 2.0 + sin(time) - x ($RES_SIM_1) ;
+// 	[SCAL] (1) $RES_SIM_0 = sin(x) - y ($RES_SIM_0) ;
+// ### Inner Equations:
+//
+// ========================================
+// [NLS] Jacobian ODE_NLS_JAC_1: NLS
+// ========================================
+//
+// Result Equations (2/2)
+// ****************************************
+// (1)       [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_ODE_NLS_JAC_1.y - $SEED_ODE_NLS_JAC_1.x ($RES_ODE_NLS_JAC_1_0)
+// (2)       [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_ODE_NLS_JAC_1.x - $SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_1)
+//
+//
+// ========================================
+// Sparsity Pattern (nnz: 4)
+// ========================================
+//
+// ### Columns ###
+// ----------------------------------------
+// (x)	 affects:	{$RES_SIM_0,$RES_SIM_1}
+// (y)	 affects:	{$RES_SIM_0,$RES_SIM_1}
+//
+// ##### Rows #####
+// ----------------------------------------
+// ($RES_SIM_0)	 depends on:	{y,x}
+// ($RES_SIM_1)	 depends on:	{x,y}
+//
+// Sparsity Coloring Groups
+// ----------------------------------------
+// {y}
+// {x}
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Solve)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 INI System
+// ========================================
+//
+// BLOCK 1: Torn Algebraic Loop (Linear = false, Mixed = false)
+// ----------------------------------------
+// Strict Tearing Set
+// ****************************************
+// ### Iteration Variables:
+// 	Real x
+// 	Real y
+//
+// ### Residual Equations:
+// 	[SCAL] (1) $RES_SIM_0 = sin(x) - y ($RES_SIM_0) ;
+// 	[SCAL] (1) $RES_SIM_1 = y ^ 2.0 + sin(time) - x ($RES_SIM_1) ;
+// ### Inner Equations:
+//
+// ========================================
+// [NLS] Jacobian INI_NLS_JAC_1: NLS
+// ========================================
+//
+// Result Equations (2/2)
+// ****************************************
+// (1)       [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_INI_NLS_JAC_1.x - $SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_0)
+// (2)       [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_INI_NLS_JAC_1.y - $SEED_INI_NLS_JAC_1.x ($RES_INI_NLS_JAC_1_1)
+//
+//
+// ========================================
+// Sparsity Pattern (nnz: 4)
+// ========================================
+//
+// ### Columns ###
+// ----------------------------------------
+// (y)	 affects:	{$RES_SIM_1,$RES_SIM_0}
+// (x)	 affects:	{$RES_SIM_1,$RES_SIM_0}
+//
+// ##### Rows #####
+// ----------------------------------------
+// ($RES_SIM_1)	 depends on:	{x,y}
+// ($RES_SIM_0)	 depends on:	{y,x}
+//
+// Sparsity Coloring Groups
+// ----------------------------------------
+// {x}
+// {y}
 //
 // record SimulationResult
 //     resultFile = "simpleNonlinearLoop_res.mat",

@@ -41,6 +41,9 @@ public
   import StrongComponent = NBStrongComponent;
 
 protected
+  // NF imports
+  import Variable = NFVariable;
+
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
@@ -55,6 +58,10 @@ protected
   import StringUtil;
 
 public
+  // ToDo: Expand with Jacobian and Hessian later on
+  type SystemType = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE, JAC);
+  type PartitionKind = enumeration(UNKNOWN, UNSPECIFIED, CLOCKED, CONTINUOUS);
+
   uniontype System
     record SYSTEM
       SystemType systemType                           "Type of system";
@@ -65,7 +72,7 @@ public
       Option<Matching> matching                       "Matching (see 2.5)";
       Option<array<StrongComponent>> strongComponents "Strong Components";
       PartitionKind partitionKind                     "Clocked/Continuous partition kind";
-      Option<Integer> subPartitionIndex               "For clocked partitions";
+      Integer partitionIndex                          "For clocked partitions";
       Option<Jacobian> jacobian                       "Analytic jacobian for the integrator";
     end SYSTEM;
 
@@ -74,7 +81,7 @@ public
       input Integer level = 0;
       output String str;
     algorithm
-      str := StringUtil.headline_2(partitionKindString(system.partitionKind) + " " + systemTypeString(system.systemType) + " System") + "\n";
+      str := StringUtil.headline_2(partitionKindString(system.partitionKind) + " " + intString(system.partitionIndex) + " " + systemTypeString(system.systemType) + " System") + "\n";
       str := match system.strongComponents
         local
           array<StrongComponent> comps;
@@ -213,6 +220,17 @@ public
       end match;
     end categorize;
 
+    function getLoopResiduals
+      input System syst;
+      output list<Pointer<Variable>> residuals = {};
+    algorithm
+      if Util.isSome(syst.strongComponents) then
+        for comp in Util.getOption(syst.strongComponents) loop
+          residuals := listAppend(StrongComponent.getLoopResiduals(comp), residuals);
+        end for;
+      end if;
+    end getLoopResiduals;
+
     function systemTypeString
       input SystemType systemType;
       output String str = "";
@@ -224,11 +242,30 @@ public
         case SystemType.ALG_EVT     then "ALG_EVT";
         case SystemType.INI         then "INI";
         case SystemType.DAE         then "DAE";
+        case SystemType.JAC         then "JAC";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown system type in match."});
         then fail();
       end match;
     end systemTypeString;
+
+    function systemTypeInteger
+      input SystemType systemType;
+      output Integer i;
+    algorithm
+      i := match systemType
+        case SystemType.ODE         then 0;
+        case SystemType.ALG         then 1;
+        case SystemType.ODE_EVT     then 2;
+        case SystemType.ALG_EVT     then 3;
+        case SystemType.INI         then 4;
+        case SystemType.DAE         then 5;
+        case SystemType.JAC         then 6;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown system type in match."});
+        then fail();
+      end match;
+    end systemTypeInteger;
 
   protected
     function partitionKindString
@@ -247,11 +284,6 @@ public
     end partitionKindString;
 
   end System;
-
-  // ToDo: Expand with Jacobian and Hessian later on
-  type SystemType = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE);
-  type PartitionKind = enumeration(UNKNOWN, UNSPECIFIED, CLOCKED, CONTINUOUS);
-
 
   annotation(__OpenModelica_Interface="backend");
 end NBSystem;

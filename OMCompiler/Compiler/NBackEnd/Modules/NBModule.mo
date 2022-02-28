@@ -68,6 +68,7 @@ protected
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointers, EqData};
   import Jacobian = NBackendDAE;
+  import NBJacobian.JacobianType;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import BVariable = NBVariable;
@@ -230,8 +231,9 @@ public
       [!] This function can not only be used as an optimization module but also for
       nonlinear systems, state sets, linearization and dynamic optimization."
       input String name                                     "Name of jacobian";
-      input VariablePointers unknowns                       "Variable array of unknowns";
-      input Option<VariablePointers> daeUnknowns            "Variable array of unknowns in the case of dae mode";
+      input JacobianType jacType                            "Type of jacobian (sim/nonlin)";
+      input VariablePointers seedCandidates                 "differentiate by these";
+      input VariablePointers partialCandidates              "solve the equations for these";
       input EquationPointers equations                      "Equations array";
       input VariablePointers knowns                         "Variable array of knowns";
       input Option<array<StrongComponent>> strongComponents "Strong Components";

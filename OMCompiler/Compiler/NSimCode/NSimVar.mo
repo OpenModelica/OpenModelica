@@ -226,10 +226,10 @@ public
           simCodeIndices.realAliasIndex := simCodeIndices.realAliasIndex +1;
         then ();
 
-        case VarType.DAE_MODE_RESIDUAL algorithm
-          Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.daeModeResidualIndex) :: Pointer.access(acc));
+        case VarType.RESIDUAL algorithm
+          Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.residualIndex) :: Pointer.access(acc));
           simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-          simCodeIndices.daeModeResidualIndex := simCodeIndices.daeModeResidualIndex +1;
+          simCodeIndices.residualIndex := simCodeIndices.residualIndex +1;
         then ();
 
         else algorithm
@@ -697,6 +697,7 @@ public
       list<SimVar> intConstVars;
       list<SimVar> boolConstVars;
       list<SimVar> stringConstVars;
+      list<SimVar> residualVars;
       list<SimVar> jacobianVars;
       list<SimVar> seedVars;
       list<SimVar> realOptimizeConstraintsVars;
@@ -716,12 +717,14 @@ public
       str := str + SimVar.listToString(vars.algVars, "Algebraic Variables");
       str := str + SimVar.listToString(vars.paramVars, "Real Parameters");
       str := str + SimVar.listToString(vars.intParamVars, "Integer Parameters");
+      str := str + SimVar.listToString(vars.residualVars, "Residual Variables");
       str := str + SimVar.listToString(vars.aliasVars, "Real Alias", true);
       // ToDo: all the other stuff
     end toString;
 
     function create
       input BVariable.VarData varData;
+      input VariablePointers residual_vars;
       output SimVars simVars;
       input output SimCode.SimCodeIndices simCodeIndices;
     protected
@@ -733,6 +736,7 @@ public
       list<SimVar> paramVars = {}, intParamVars = {}, boolParamVars = {}, stringParamVars = {};
       list<SimVar> constVars = {}, intConstVars = {}, boolConstVars = {}, stringConstVars = {};
       list<SimVar> extObjVars = {};
+      list<SimVar> residualVars = {};
       list<SimVar> jacobianVars = {};
       list<SimVar> seedVars = {};
       list<SimVar> realOptimizeConstraintsVars = {};
@@ -755,6 +759,7 @@ public
             ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices) := createSimVarLists(qual.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
             ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices) := createSimVarLists(qual.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
             ({constVars, intConstVars, boolConstVars, stringConstVars}, simCodeIndices) := createSimVarLists(qual.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+            ({residualVars}, simCodeIndices)                                            := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
         then ();
 
         case qual as BVariable.VAR_DATA_JAC() then ();
@@ -788,6 +793,7 @@ public
         intConstVars                        = intConstVars,
         boolConstVars                       = boolConstVars,
         stringConstVars                     = stringConstVars,
+        residualVars                        = residualVars,
         jacobianVars                        = jacobianVars,
         seedVars                            = seedVars,
         realOptimizeConstraintsVars         = realOptimizeConstraintsVars,
@@ -797,6 +803,27 @@ public
         dataReconinputVars                  = dataReconinputVars
       );
     end create;
+
+    function addSeedAndJacobianVars
+      input output SimVars vars;
+      input list<tuple<ComponentRef, SimVar>> hash_tpl;
+    protected
+      ComponentRef cref;
+      SimVar var;
+      list<SimVar> seed_vars = {};
+      list<SimVar> jacobian_vars = {};
+    algorithm
+      for tpl in hash_tpl loop
+        (cref, var) := tpl;
+        if BVariable.checkCref(cref, BVariable.isSeed) then
+          seed_vars := var :: seed_vars;
+        else
+          jacobian_vars := var :: jacobian_vars;
+        end if;
+      end for;
+      vars.seedVars := listAppend(seed_vars, vars.seedVars);
+      vars.jacobianVars := listAppend(jacobian_vars, vars.jacobianVars);
+    end addSeedAndJacobianVars;
 
     function size
       input SimVars simVars;
@@ -1016,7 +1043,6 @@ public
             Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
-
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled Variable " + ComponentRef.toString(var.name) + "."});
         then fail();
@@ -1026,11 +1052,11 @@ public
 
   end SimVars;
 
-  constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+  constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
   type SplitType  = enumeration(NONE, TYPE);
-  type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, DAE_MODE_RESIDUAL); // ToDo: PRE, OLD, RELATIONS...
+  type VarType    = enumeration(SIMULATION, PARAMETER, ALIAS, RESIDUAL); // ToDo: PRE, OLD, RELATIONS...
 
   annotation(__OpenModelica_Interface="backend");
 end NSimVar;

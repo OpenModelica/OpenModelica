@@ -98,8 +98,6 @@ protected
   function daeModeDefault extends Module.daeModeInterface;
   protected
     list<System.System> new_systems = {};
-    Pointer<list<Pointer<Variable>>> residual_vars = Pointer.create({});
-    Pointer<Integer> idx = Pointer.create(0);
   algorithm
     for syst in systems loop
       // move unknowns
@@ -107,8 +105,8 @@ protected
       // convert all algebraic variables to algebraic states
       // BVariable.VariablePointers.mapPtr(syst.unknowns, function BVariable.makeAlgStateVar());
       // convert all residual equations to dae residuals
-      BEquation.EquationPointers.map(syst.equations, function BEquation.Equation.createResidual(context = "DAE", residual_vars = residual_vars, idx = idx));
-      syst.unknowns := BVariable.VariablePointers.fromList(listReverse(Pointer.access(residual_vars)));
+      BEquation.EquationPointers.mapPtr(syst.equations, BEquation.Equation.createResidual);
+      syst.unknowns := BEquation.EquationPointers.getResiduals(syst.equations);
       new_systems := syst :: new_systems;
     end for;
     systems := listReverse(new_systems);
