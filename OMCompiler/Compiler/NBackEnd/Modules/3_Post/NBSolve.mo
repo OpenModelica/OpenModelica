@@ -245,6 +245,7 @@ public
           // use cref instead of var because it has subscripts!
           (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcTree);
           comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
+          comp.status := solve_status;
         then ({comp}, solve_status);
 
         case StrongComponent.ENTWINED_EQUATION() algorithm

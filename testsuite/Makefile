@@ -321,6 +321,9 @@ simulationdaemode.log: omc-diff
 simulationnewbackend.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend-arrayhandling.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/array_handling/ -f Makefile test > $@
+	@echo $@ done
 simulationdeclarations.log: omc-diff
 	$(MAKE) -C simulation/modelica/declarations -f Makefile test > $@
 	@echo $@ done

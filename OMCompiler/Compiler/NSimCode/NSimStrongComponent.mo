@@ -682,7 +682,7 @@ public
          then tmp;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with status " + Solve.statusString(status) + " for \n" + Equation.toString(eqn)});
         then fail();
 
       end match;
