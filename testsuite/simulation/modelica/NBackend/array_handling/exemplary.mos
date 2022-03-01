@@ -2,6 +2,9 @@
 // keywords: NewBackend
 // status: correct
 
+// from OpenModelica Workshop Presentation 2022 by kabdelhak
+// used for extreme scaling purposes with slicing, only scaled one is tested
+
 loadString("
 model exemplary
   Real x[5,2];
@@ -32,7 +35,242 @@ end exemplaryS;
 
 "); getErrorString();
 
-
+setCommandLineOptions("--newBackend -d=bltdump");
 simulate(exemplaryS); getErrorString();
 val(x[2,1],1);
 val(x[4,2],1);
+
+// Result:
+// true
+// ""
+// true
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	y[j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_1)
+// 	[----] for j in 1:22 loop
+// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time)
+// 	[----] end for;
+// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ...}
+//
+// BLOCK 2: Entwined Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[3, j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_0)
+// 	[----] for j in 1:22 loop
+// 	[----]   [SCAL] (1) x[3, j] = CAST(Real, j) * cos(time)
+// 	[----] end for;
+// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ...}
+// ### Variable:
+// 	x[i, j]
+// ### Equation:
+// 	[FOR-] (528) ($RES_SIM_2)
+// 	[----] for {i in 1:24, j in 1:22} loop
+// 	[----]   [SCAL] (1) x[i + 1, j] = x[i, j] - y[j]
+// 	[----] end for;
+// 	 slice: {22, 0, 23, 1, 24, 2, 25, 3, 26, 4 ...}
+//
+// BLOCK 3: Sliced Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i, j]
+// ### Equation:
+// 	[FOR-] (528) ($RES_SIM_2)
+// 	[----] for {i in 1:24, j in 1:22} loop
+// 	[----]   [SCAL] (1) x[i + 1, j] = x[i, j] - y[j]
+// 	[----] end for;
+// 	 slice: {44, 45, 46, 47, 48, 49, 50, 51, 52, 53 ...}
+//
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 ODE System
+// ========================================
+//
+// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	y[j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_1)
+// 	[----] for j in 1:22 loop
+// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time)
+// 	[----] end for;
+// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ...}
+//
+// BLOCK 2: Entwined Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[3, j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_0)
+// 	[----] for j in 1:22 loop
+// 	[----]   [SCAL] (1) x[3, j] = CAST(Real, j) * cos(time)
+// 	[----] end for;
+// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ...}
+// ### Variable:
+// 	x[i, j]
+// ### Equation:
+// 	[FOR-] (528) ($RES_SIM_2)
+// 	[----] for {i in 1:24, j in 1:22} loop
+// 	[----]   [SCAL] (1) x[i + 1, j] = x[i, j] - y[j]
+// 	[----] end for;
+// 	 slice: {22, 0, 23, 1, 24, 2, 25, 3, 26, 4 ...}
+//
+// BLOCK 3: Sliced Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i, j]
+// ### Equation:
+// 	[FOR-] (528) ($RES_SIM_2)
+// 	[----] for {i in 1:24, j in 1:22} loop
+// 	[----]   [SCAL] (1) x[i + 1, j] = x[i, j] - y[j]
+// 	[----] end for;
+// 	 slice: {44, 45, 46, 47, 48, 49, 50, 51, 52, 53 ...}
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 INI System
+// ========================================
+//
+// BLOCK 1: Sliced Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	y[j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_1)
+// 	[----] for j in 1:22 loop
+// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time)
+// 	[----] end for;
+// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ...}
+//
+// BLOCK 2: Entwined Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[3, j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_0)
+// 	[----] for j in 1:22 loop
+// 	[----]   [SCAL] (1) x[3, j] = CAST(Real, j) * cos(time)
+// 	[----] end for;
+// 	 slice: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ...}
+// ### Variable:
+// 	x[i, j]
+// ### Equation:
+// 	[FOR-] (528) ($RES_SIM_2)
+// 	[----] for {i in 1:24, j in 1:22} loop
+// 	[----]   [SCAL] (1) x[i + 1, j] = x[i, j] - y[j]
+// 	[----] end for;
+// 	 slice: {22, 0, 23, 1, 24, 2, 25, 3, 26, 4 ...}
+//
+// BLOCK 3: Sliced Equation (status = Solve.UNPROCESSED)
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i, j]
+// ### Equation:
+// 	[FOR-] (528) ($RES_SIM_2)
+// 	[----] for {i in 1:24, j in 1:22} loop
+// 	[----]   [SCAL] (1) x[i + 1, j] = x[i, j] - y[j]
+// 	[----] end for;
+// 	 slice: {44, 45, 46, 47, 48, 49, 50, 51, 52, 53 ...}
+//
+// ################################################################################
+//
+// 	[ALG] Algebraic: (Solve)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 ALG System
+// ========================================
+//
+// BLOCK 1: Alias of INI[1 | 1]
+// ----------------------------------------
+//
+// BLOCK 2: Alias of INI[1 | 2]
+// ----------------------------------------
+//
+// BLOCK 3: Alias of INI[1 | 3]
+// ----------------------------------------
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Solve)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 INI System
+// ========================================
+//
+// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	y[j]
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_1_1)
+// 	[----] for j in 1:1:22 loop
+// 	[----]   [SCAL] (1) y[j] = CAST(Real, j) * sin(time)
+// 	[----] end for;
+//
+// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+//
+// ### Equation:
+// 	[FOR-] (22) ($RES_SIM_0_1)
+// 	[----] for $k1 in 1:1:22 loop
+// 	[----]   [SCAL] (1) x[3, $k1] = CAST(Real, $k1) * cos(time)
+// 	[----]   [FOR-] (528) ($RES_SIM_2)
+// 	[----]   [----] for $k2 in 2:(-1):1 loop
+// 	[----]   [----]   [SCAL] (1) x[$k2, $k1] = -(-(x[1 + $k2, $k1] + y[$k1]))
+// 	[----]   [----] end for;
+// 	[----] end for;
+//
+// BLOCK 3: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	x[1 + i, j]
+// ### Equation:
+// 	[FOR-] (528) ($RES_SIM_2_1)
+// 	[----] for i in 3:1:24 loop
+// 	[----]   [FOR-] (528) ($RES_SIM_2)
+// 	[----]   [----] for j in 1:1:22 loop
+// 	[----]   [----]   [SCAL] (1) x[1 + i, j] = x[i, j] - y[j]
+// 	[----]   [----] end for;
+// 	[----] end for;
+//
+// record SimulationResult
+//     resultFile = "exemplaryS_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'exemplaryS', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.381773290676036
+// -0.6023373578795135
+// endResult

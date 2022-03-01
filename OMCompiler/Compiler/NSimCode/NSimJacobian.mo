@@ -31,8 +31,7 @@
 encapsulated package NSimJacobian
 "file:        NSimJacobian.mo
  package:     NSimJacobian
- description: This file contains the main data type for the backend containing
-              all data. It further contains the lower and solve main function.
+ description: This file contains the functions for creating simcode jaobians and sparsity patterns.
 "
 
 public
@@ -52,7 +51,7 @@ public
   import System = NBSystem;
 
   // SimCode imports
-  import HashTableSimCode;
+  import SimCodeUtil = NSimCodeUtil;
   import SimCode = NSimCode;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.{SimVar, SimVars, VarType};
@@ -80,7 +79,7 @@ public
       SparsityPattern sparsityT                       "transposed sparsity pattern";
       SparsityColoring coloring                       "coloring groups in index form";
       Integer numColors                               "number of colors";
-      Option<HashTableSimCode.HashTable> jacobianHT   "hash table for cref -> simVar";
+      Option<UnorderedMap<ComponentRef, SimVar>> jac_map   "hash table for cref -> simVar";
     end SIM_JAC;
 
     function toString
@@ -176,7 +175,7 @@ public
     function fromSystemsSparsity
       input list<System.System> systems;
       input output Option<SimJacobian> simJacobian;
-      input HashTableSimCode.HashTable simulationHT;
+      input UnorderedMap<ComponentRef, SimVar> sim_map;
       input output SimCode.SimCodeIndices indices;
     algorithm
       (simJacobian, indices) := match (systems, simJacobian)
@@ -185,7 +184,7 @@ public
 
         case (_, NONE())                                      then (NONE(), indices);
         case ({System.SYSTEM(jacobian = NONE())}, _)          then (NONE(), indices);
-        case ({System.SYSTEM(jacobian = SOME(jacobian))}, _)  then createSparsity(jacobian, Util.getOption(simJacobian), simulationHT, indices);
+        case ({System.SYSTEM(jacobian = SOME(jacobian))}, _)  then createSparsity(jacobian, Util.getOption(simJacobian), sim_map, indices);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Partitioned systems are not yet supported by this function."});
         then fail();
@@ -197,7 +196,7 @@ public
       input BackendDAE jacobian;
       output Option<SimJacobian> simJacobian;
       input output SimCode.SimCodeIndices indices;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     algorithm
       simJacobian := match jacobian
         local
@@ -208,13 +207,14 @@ public
           Pointer<list<SimVar>> columnVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
           list<SimVar> columnVars, seedVars;
-          HashTableSimCode.HashTable jacobianHT;
+          UnorderedMap<ComponentRef, SimVar> jac_map;
           SparsityPattern sparsity, sparsityT;
           SparsityColoring coloring;
+          Integer numColors;
           SimJacobian jac;
 
         case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC(), eqData = eqData as BEquation.EQ_DATA_JAC()) algorithm
-          EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr, systemType = NBSystem.SystemType.JAC, crefToSimVarHT = crefToSimVarHT));
+          EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr, systemType = NBSystem.SystemType.JAC, simcode_map = simcode_map));
 
           // use dummy simcode indices to always start at 0 for column and seed vars
           VariablePointers.map(varData.unknowns, function SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
@@ -222,11 +222,12 @@ public
           columnVars := listReverse(Pointer.access(columnVars_ptr));
           seedVars := listReverse(Pointer.access(seedVars_ptr));
 
-          jacobianHT := HashTableSimCode.empty(listLength(columnVars) + listLength(seedVars));
-          jacobianHT := HashTableSimCode.addList(columnVars, jacobianHT);
-          jacobianHT := HashTableSimCode.addList(seedVars, jacobianHT);
+          jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(columnVars) + listLength(seedVars));
+          SimCodeUtil.addListSimCodeMap(columnVars, jac_map);
+          SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
 
           indices := Pointer.access(indices_ptr);
+          (sparsity, sparsityT, coloring, indices) := createSparsity(jacobian, simcode_map, indices);
 
           jac := SIM_JAC(
             name                = jacobian.name,
@@ -237,14 +238,12 @@ public
             constantEqns        = {},
             columnVars          = columnVars,
             seedVars            = seedVars,
-            sparsity            = {},                //needs to be added later
-            sparsityT           = {},                //needs to be added later
-            coloring            = {},                //needs to be added later
-            numColors           = 0,                 //needs to be added later
-            jacobianHT          = SOME(jacobianHT)
+            sparsity            = sparsity,
+            sparsityT           = sparsityT,
+            coloring            = coloring,
+            numColors           = listLength(coloring),
+            jac_map             = SOME(jac_map)
           );
-
-          (jac, indices) := createSparsity(jacobian, jac, crefToSimVarHT, indices);
 
           indices.jacobianIndex := indices.jacobianIndex + 1;
         then SOME(jac);
@@ -260,7 +259,7 @@ public
       input list<System.System> ode_event;
       output SimJacobian simJac;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
       list<System.System> systems = listAppend(ode, ode_event);
       list<BackendDAE> jacobians = {};
@@ -279,7 +278,7 @@ public
         (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
       else
         simJacobian := Jacobian.combine(jacobians, "A");
-        (simJac_opt, simCodeIndices) := SimJacobian.create(simJacobian, simCodeIndices, crefToSimVarHT);
+        (simJac_opt, simCodeIndices) := SimJacobian.create(simJacobian, simCodeIndices, simcode_map);
         if Util.isSome(simJac_opt) then
           simJac := Util.getOption(simJac_opt);
         else
@@ -290,21 +289,22 @@ public
 
     function createSparsity
       input BackendDAE jacobian;
-      input output SimJacobian simJacobian;
-      input HashTableSimCode.HashTable simulationHT;
+      input UnorderedMap<ComponentRef, SimVar> sim_map;
+      output SparsityPattern sparsity;
+      output SparsityPattern sparsityT;
+      output SparsityColoring coloring;
       input output SimCode.SimCodeIndices indices;
     algorithm
-      simJacobian := match (jacobian, simJacobian)
+      (sparsity, sparsityT, coloring) := match jacobian
         local
-          Jacobian.SparsityPattern pattern;
-          Jacobian.SparsityColoring coloring;
+          Jacobian.SparsityPattern Bpattern;
+          Jacobian.SparsityColoring Bcoloring;
 
-        case (BackendDAE.JACOBIAN(sparsityPattern = pattern, sparsityColoring = coloring), SIM_JAC()) algorithm
-          simJacobian.sparsity  := createSparsityPattern(pattern.col_wise_pattern, simulationHT, false);
-          simJacobian.sparsityT := createSparsityPattern(pattern.row_wise_pattern, simulationHT, true);
-          simJacobian.coloring  := createSparsityColoring(coloring, simulationHT);
-          simJacobian.numColors := listLength(coloring);
-        then simJacobian;
+        case BackendDAE.JACOBIAN(sparsityPattern = Bpattern, sparsityColoring = Bcoloring) algorithm
+          sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, sim_map, false);
+          sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, sim_map, true);
+          coloring  := createSparsityColoring(Bcoloring, sim_map);
+        then (sparsity, sparsityT, coloring);
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
@@ -314,7 +314,7 @@ public
 
     function createSparsityPattern
       input list<Jacobian.SparsityPatternCol> cols    "columns that need to be generated (can be used for rows too)";
-      input HashTableSimCode.HashTable simulationHT   "hash table cr --> simVar";
+      input UnorderedMap<ComponentRef, SimVar> sim_map   "hash table cr --> simVar";
       input Boolean transposed;
       output SparsityPattern simPattern = {};
     protected
@@ -333,8 +333,8 @@ public
             // get states for dependencies
             dependencies := list(derivativeToStateCref(dep) for dep in dependencies);
           end if;
-          dep_indices := list(SimVar.getIndex(BaseHashTable.get(dep, simulationHT)) for dep in dependencies);
-          simPattern := (SimVar.getIndex(BaseHashTable.get(cref, simulationHT)), List.sort(dep_indices, intGt)) :: simPattern;
+          dep_indices := list(SimVar.getIndex(UnorderedMap.getSafe(dep, sim_map)) for dep in dependencies);
+          simPattern := (SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map)), List.sort(dep_indices, intGt)) :: simPattern;
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get index for cref: " + ComponentRef.toString(cref)});
           fail();
@@ -344,14 +344,14 @@ public
 
     function createSparsityColoring
       input Jacobian.SparsityColoring coloring;
-      input HashTableSimCode.HashTable simulationHT;
+      input UnorderedMap<ComponentRef, SimVar> sim_map;
       output SparsityColoring simColoring = {};
     protected
       list<Integer> tmp;
     algorithm
       for group in listReverse(coloring) loop
         try
-          tmp := list(SimVar.getIndex(BaseHashTable.get(cref, simulationHT)) for cref in group);
+          tmp := list(SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map)) for cref in group);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get indices for crefs:\n"
             + List.toString(group, ComponentRef.toString)});
@@ -397,10 +397,10 @@ public
 
     function getJacobianHT
       input SimJacobian jacobian;
-      output Option<HashTableSimCode.HashTable> jacobianHT;
+      output Option<UnorderedMap<ComponentRef, SimVar>> jac_map;
     algorithm
-      jacobianHT := match jacobian
-        case SIM_JAC() then jacobian.jacobianHT;
+      jac_map := match jacobian
+        case SIM_JAC() then jacobian.jac_map;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
         then fail();
@@ -432,7 +432,7 @@ public
             maxColorCols    = simJac.numColors,
             jacobianIndex   = simJac.jacobianIndex,
             partitionIndex  = simJac.partitionIndex,
-            crefsHT         = if Util.isSome(simJac.jacobianHT) then SOME(HashTableSimCode.convert(Util.getOption(simJac.jacobianHT))) else NONE()
+            crefsHT         = if Util.isSome(simJac.jac_map) then SOME(SimCodeUtil.convertSimCodeMap(Util.getOption(simJac.jac_map))) else NONE()
           );
         then oldJac;
 

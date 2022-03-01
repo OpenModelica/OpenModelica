@@ -63,10 +63,15 @@ public
   function toString
     input Slice<T> slice;
     input toStringT func;
+    input Integer maxLength = 10;
     output String str;
+  protected
+    String sliceStr;
   algorithm
     str := func(slice.t);
-    if not listEmpty(slice.indices) then
+    if listLength(slice.indices) > maxLength then
+      str := str + "\n\t slice: " + List.toString(List.firstN(slice.indices, maxLength), intString, "", "{", ", ", "") + " ...}";
+    elseif not listEmpty(slice.indices) then
       str := str + "\n\t slice: " + List.toString(slice.indices, intString);
     end if;
   end toString;
@@ -74,8 +79,9 @@ public
   function lstToString
     input list<Slice<T>> lst;
     input toStringT_ func;
+    input Integer maxLength = 10;
     partial function toStringT_ = toStringT "ugly hack to make type T known to subfunction";
-    output String str = List.toString(lst, function toString(func = func), "", "\t", ";\n\t", ";", false);
+    output String str = List.toString(lst, function toString(func = func, maxLength = maxLength), "", "\t", ";\n\t", ";", false);
   end lstToString;
 
   function simplify
