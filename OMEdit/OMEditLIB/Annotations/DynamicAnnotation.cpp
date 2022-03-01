@@ -83,6 +83,18 @@ void DynamicAnnotation::reset()
 }
 
 /*!
+ * \brief DynamicAnnotation::resetDynamicToStatic
+ * Resets from dynamic to static.
+ */
+void DynamicAnnotation::resetDynamicToStatic()
+{
+  if (mState == State::Dynamic) {
+    mState = State::Static;
+    reset();
+  }
+}
+
+/*!
  * \brief DynamicAnnotation::isDynamicSelectExpression
  * Returns true if state is not none. DynamicSelect doesn't have state none.
  * \return

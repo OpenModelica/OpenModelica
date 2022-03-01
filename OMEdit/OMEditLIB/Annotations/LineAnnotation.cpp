@@ -1000,12 +1000,12 @@ void LineAnnotation::setShapeFlags(bool enable)
   if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType
        || mLineType == LineAnnotation::InitialStateType || mLineType == LineAnnotation::ShapeType)
       && mpGraphicsView) {
-    /*
-      Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
-      AND Line is not an inherited Line AND Line type is not ConnectionType.
-      */
+    /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
+     * AND not a visualization view
+     * AND Line is not an inherited Line AND Line type is not ConnectionType.
+     */
     bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
-    if (!isSystemLibrary && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType &&
+    if (!isSystemLibrary && !mpGraphicsView->isVisualizationView() && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType &&
         mLineType != LineAnnotation::TransitionType && mLineType != LineAnnotation::InitialStateType) {
       setFlag(QGraphicsItem::ItemIsMovable, enable);
       setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
@@ -2164,7 +2164,7 @@ CreateOrEditTransitionDialog::CreateOrEditTransitionDialog(GraphicsView *pGraphi
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpGraphicsView->isVisualizationView()) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()) {
     mpOkButton->setDisabled(true);
   }
   connect(mpOkButton, SIGNAL(clicked()), SLOT(createOrEditTransition()));

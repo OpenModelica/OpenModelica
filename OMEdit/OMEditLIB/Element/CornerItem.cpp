@@ -119,7 +119,7 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
  */
 void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (event->button() == Qt::LeftButton) {
+  if (event->button() == Qt::LeftButton && !mpShapeAnnotation->getGraphicsView()->isVisualizationView()) {
     if (!signalsBlocked()) {
       emit cornerItemPress(mConnectedPointIndex);
     }
@@ -136,7 +136,7 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
  */
 void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (mpShapeAnnotation->isInheritedShape()
+  if (mpShapeAnnotation->isInheritedShape() && mpShapeAnnotation->getGraphicsView()->isVisualizationView()
       || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
           && (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
               || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
@@ -179,7 +179,7 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
   QGraphicsItem::mouseReleaseEvent(event);
-  if (event->button() == Qt::LeftButton) {
+  if (event->button() == Qt::LeftButton && !mpShapeAnnotation->getGraphicsView()->isVisualizationView()) {
     if (!signalsBlocked()) {
       emit cornerItemRelease(mOldScenePosition != scenePos());
     }
@@ -300,7 +300,7 @@ bool ResizerItem::isPressed()
   */
 void ResizerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (event->button() == Qt::LeftButton) {
+  if (event->button() == Qt::LeftButton && !mpComponent->getGraphicsView()->isVisualizationView()) {
     emit resizerItemPressed(this);
     mIsPressed = true;
     mResizerItemOldPosition = event->scenePos();
@@ -331,7 +331,7 @@ void ResizerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
   QGraphicsItem::mouseReleaseEvent(event);
-  if (event->button() == Qt::LeftButton) {
+  if (event->button() == Qt::LeftButton && !mpComponent->getGraphicsView()->isVisualizationView()) {
     mIsPressed = false;
     emit resizerItemReleased();
     if (mResizerItemOldPosition != mpComponent->getGraphicsView()->snapPointToGrid(event->scenePos())) {

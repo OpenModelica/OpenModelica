@@ -415,6 +415,7 @@ public slots:
   void showSubModelAttributes();
   void showElementPropertiesDialog();
   void updateDynamicSelect(double time);
+  void resetDynamicSelect();
 protected:
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };

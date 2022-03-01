@@ -2818,7 +2818,7 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
     }
     // if ModelWidget is used by DiagramWindow
     if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
-      MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->removeDiagram(pLibraryTreeItem->getModelWidget());
+      MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->removeVisualizationDiagram();
     }
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);
@@ -3263,29 +3263,7 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
       if (!MainWindow::instance()->getModelWidgetContainer()->validateText()) {
         return;
       }
-      /* Check if we are in the plotting perspective
-       * If yes then we first load the model and switch to Modeling perspective like normal
-       * and then switches back to plotting perspective and show the DiagramWindow
-       * If we don't do that then the window title is messed up.
-       */
-      bool isPlottingPerspectiveActive = MainWindow::instance()->isPlottingPerspectiveActive();
       mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-      // Issue #7772. If control is not clicked then switch to plotting perspective.
-      bool controlModifier = QApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
-      if (!controlModifier) {
-        // if we are in the plotting perspective then open the Diagram Window
-        if (isPlottingPerspectiveActive) {
-          MainWindow::instance()->switchToPlottingPerspectiveSlot();
-          if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
-            if (pLibraryTreeItem->getModelWidget()) {
-              pLibraryTreeItem->getModelWidget()->loadDiagramView();
-              pLibraryTreeItem->getModelWidget()->loadConnections();
-            }
-            MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
-          }
-          MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
-        }
-      }
     }
   }
 }
