@@ -50,114 +50,42 @@ DiagramWindow::DiagramWindow(QWidget *parent) : QWidget(parent)
   setObjectName("diagramWindow");
   setWindowTitle("Diagram");
 
-  mpGraphicsScene = 0;
-  mpGraphicsView = 0;
-
+  mpModelWidget = 0;
   mpMainLayout = new QVBoxLayout;
   mpMainLayout->setContentsMargins(0, 0, 0, 0);
   setLayout(mpMainLayout);
 }
 
 /*!
- * \brief DiagramWindow::drawDiagram
- * Draws the diagram based on the passed ModelWidget.
+ * \brief DiagramWindow::showVisualizationDiagram
+ * Shows the diagram graphics view of the passed ModelWidget for visualization.
  * \param pModelWidget
  */
-void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
+void DiagramWindow::showVisualizationDiagram(ModelWidget *pModelWidget)
 {
-  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     setWindowTitle(pModelWidget->getLibraryTreeItem()->getName());
-    deleteGraphicsViewAndScene();
-    mpGraphicsScene = new GraphicsScene(StringHandler::Diagram, pModelWidget);
-    mpGraphicsView = new GraphicsView(StringHandler::Diagram, pModelWidget, true);
-    mpGraphicsView->setScene(mpGraphicsScene);
-    mpGraphicsView->setCoOrdinateSystem(pModelWidget->getDiagramGraphicsView()->getCoOrdinateSystem());
-    mpGraphicsView->mMergedCoOrdinateSystem = pModelWidget->getDiagramGraphicsView()->mMergedCoOrdinateSystem;
-    mpGraphicsView->setExtentRectangle(pModelWidget->getDiagramGraphicsView()->mMergedCoOrdinateSystem.getExtentRectangle());
-    mpMainLayout->addWidget(mpGraphicsView);
-    // draw inherited shapes
-    foreach (ShapeAnnotation *pReferenceShapeAnnotation, pModelWidget->getDiagramGraphicsView()->getInheritedShapesList()) {
-      ShapeAnnotation *pShapeAnnotation = ModelWidget::createInheritedShape(pReferenceShapeAnnotation, mpGraphicsView);
-      mpGraphicsView->addShapeToList(pShapeAnnotation);
-      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), pShapeAnnotation, SLOT(updateDynamicSelect(double)));
-    }
-    // draw shapes
-    foreach (ShapeAnnotation *pReferenceShapeAnnotation, pModelWidget->getDiagramGraphicsView()->getShapesList()) {
-      ShapeAnnotation *pShapeAnnotation = ModelWidget::createInheritedShape(pReferenceShapeAnnotation, mpGraphicsView);
-      mpGraphicsView->addShapeToList(pShapeAnnotation);
-      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), pShapeAnnotation, SLOT(updateDynamicSelect(double)));
-    }
-    // draw inherited elements
-    foreach (Element *pReferenceComponent, pModelWidget->getDiagramGraphicsView()->getInheritedElementsList()) {
-      Element *pElement = new Element(pReferenceComponent, mpGraphicsView);
-      mpGraphicsView->addElementToList(pElement);
-      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), pElement, SLOT(updateDynamicSelect(double)));
-    }
-    // draw elements
-    foreach (Element *pReferenceComponent, pModelWidget->getDiagramGraphicsView()->getElementsList()) {
-      Element *pElement = new Element(pReferenceComponent, mpGraphicsView);
-      mpGraphicsView->addElementToList(pElement);
-      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), pElement, SLOT(updateDynamicSelect(double)));
-    }
-    // draw inherited connections
-    foreach (LineAnnotation *pConnectionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getInheritedConnectionsList()) {
-      LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation(pConnectionLineAnnotation, mpGraphicsView);
-      pNewConnectionLineAnnotation->drawCornerItems();
-      pNewConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-      pNewConnectionLineAnnotation->applyTransformation();
-      mpGraphicsView->addConnectionToList(pNewConnectionLineAnnotation);
-    }
-    // draw connections
-    foreach (LineAnnotation *pConnectionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
-      LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation(pConnectionLineAnnotation, mpGraphicsView);
-      pNewConnectionLineAnnotation->drawCornerItems();
-      pNewConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-      pNewConnectionLineAnnotation->applyTransformation();
-      mpGraphicsView->addConnectionToList(pNewConnectionLineAnnotation);
-    }
-    // draw transitions
-    foreach (LineAnnotation *pTransitionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getTransitionsList()) {
-      LineAnnotation *pNewTransitionLineAnnotation = new LineAnnotation(pTransitionLineAnnotation, mpGraphicsView);
-      pNewTransitionLineAnnotation->updateToolTip();
-      pNewTransitionLineAnnotation->drawCornerItems();
-      pNewTransitionLineAnnotation->setCornerItemsActiveOrPassive();
-      pNewTransitionLineAnnotation->applyTransformation();
-      mpGraphicsView->addTransitionToList(pNewTransitionLineAnnotation);
-    }
+    mpModelWidget = pModelWidget;
+    mpModelWidget->getDiagramGraphicsView()->setIsVisualizationView(true);
+    connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), mpModelWidget->getDiagramGraphicsView(), SIGNAL(updateDynamicSelect(double)));
+    mpModelWidget->getDiagramGraphicsView()->show();
+    mpMainLayout->addWidget(mpModelWidget->getDiagramGraphicsView());
+  } else {
+    removeVisualizationDiagram();
   }
 }
 
 /*!
- * \brief DiagramWindow::removeDiagram
+ * \brief DiagramWindow::removeVisualizationDiagram
  * When the corresponding ModelWidget is about to delete then clear the DiagramWindow.
- * \param pModelWidget
  */
-void DiagramWindow::removeDiagram(ModelWidget *pModelWidget)
+void DiagramWindow::removeVisualizationDiagram()
 {
-  if (mpGraphicsView && mpGraphicsView->getModelWidget() == pModelWidget) {
+  if (mpModelWidget) {
     // set the window title to default
     setWindowTitle("Diagram");
-    deleteGraphicsViewAndScene();
-  }
-}
-
-/*!
- * \brief DiagramWindow::deleteGraphicsViewAndScene
- * Clears the GraphicsView and deletes it and GraphicsScene.
- */
-void DiagramWindow::deleteGraphicsViewAndScene()
-{
-  // Stop any running visualization
-  MainWindow::instance()->getVariablesWidget()->rewindVisualization();
-  if (mpGraphicsView) {
-    mpGraphicsView->clearGraphicsView();
-    mpMainLayout->removeWidget(mpGraphicsView);
-    mpGraphicsView->deleteLater();
-    mpGraphicsView = 0;
-  }
-  if (mpGraphicsScene) {
-    mpGraphicsScene->deleteLater();
-    mpGraphicsScene = 0;
+    disconnect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), mpModelWidget->getDiagramGraphicsView(), SIGNAL(updateDynamicSelect(double)));
+    mpMainLayout->removeWidget(mpModelWidget->getDiagramGraphicsView());
   }
 }
 

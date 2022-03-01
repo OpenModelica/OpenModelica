@@ -95,10 +95,11 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
  * \param pModelWidget
  * \param visualizationView
  */
-GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView)
-  : QGraphicsView(pModelWidget), mViewType(viewType), mVisualizationView(visualizationView), mSkipBackground(false), mContextMenuStartPosition(QPointF(0, 0)),
+GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget)
+  : QGraphicsView(pModelWidget), mViewType(viewType), mSkipBackground(false), mContextMenuStartPosition(QPointF(0, 0)),
     mContextMenuStartPositionValid(false)
 {
+  setIsVisualizationView(false);
   /* Ticket #3275
    * Set the scroll bars policy to always on to avoid unnecessary resize events.
    */
@@ -190,6 +191,12 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpBitmapShapeAnnotation = 0;
   createActions();
   mAllItems.clear();
+}
+
+void GraphicsView::setIsVisualizationView(bool visualizationView)
+{
+  setItemsFlags(!visualizationView);
+  mVisualizationView = visualizationView;
 }
 
 bool GraphicsView::isCreatingShape()
@@ -1783,6 +1790,15 @@ void GraphicsView::fitInViewInternal()
     extentRectangle.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
     fitInView(extentRectangle, Qt::KeepAspectRatio);
   }
+}
+
+/*!
+ * \brief GraphicsView::emitResetDynamicSelect
+ * Emits the reset dynamic select signal.
+ */
+void GraphicsView::emitResetDynamicSelect()
+{
+  emit resetDynamicSelect();
 }
 
 /*!
@@ -3623,6 +3639,9 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
 
 void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
 {
+  if (isVisualizationView()) {
+    return;
+  }
   const bool removeLastAddedPoint = true;
   if (isCreatingLineShape()) {
     finishDrawingLineShape(removeLastAddedPoint);
@@ -3877,8 +3896,8 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
  */
 void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
-  /* If we are creating the connection OR creating any shape then don't show context menu */
-  if (isCreatingShape()) {
+  /* If we are creating the connection OR creating any shape OR is visualization view then don't show context menu */
+  if (isCreatingShape() || isVisualizationView()) {
     return;
   }
   // if creating a connection
@@ -4961,11 +4980,11 @@ void ModelWidget::createModelWidgetComponents()
     mpModelStatusBar->setSizeGripEnabled(false);
     mpModelStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
     // create the main layout
-    QVBoxLayout *pMainLayout = new QVBoxLayout;
-    pMainLayout->setContentsMargins(0, 0, 0, 0);
-    pMainLayout->setSpacing(4);
-    pMainLayout->addWidget(mpModelStatusBar);
-    setLayout(pMainLayout);
+    mpMainLayout = new QVBoxLayout;
+    mpMainLayout->setContentsMargins(0, 0, 0, 0);
+    mpMainLayout->setSpacing(4);
+    mpMainLayout->addWidget(mpModelStatusBar);
+    setLayout(mpMainLayout);
     MainWindow *pMainWindow = MainWindow::instance();
     // show hide widgets based on library type
     if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
@@ -4994,10 +5013,10 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
       if (MainWindow::instance()->isDebug()) {
-        pMainLayout->addWidget(mpUndoView);
+        mpMainLayout->addWidget(mpUndoView);
       }
-      pMainLayout->addWidget(mpDiagramGraphicsView, 1);
-      pMainLayout->addWidget(mpIconGraphicsView, 1);
+      mpMainLayout->addWidget(mpDiagramGraphicsView, 1);
+      mpMainLayout->addWidget(mpIconGraphicsView, 1);
       mpUndoStack->clear();
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
@@ -5028,7 +5047,7 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
-      pMainLayout->addWidget(mpModelStatusBar);
+      mpMainLayout->addWidget(mpModelStatusBar);
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
@@ -5074,11 +5093,11 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
-      pMainLayout->addWidget(mpModelStatusBar);
+      mpMainLayout->addWidget(mpModelStatusBar);
       if (MainWindow::instance()->isDebug()) {
-        pMainLayout->addWidget(mpUndoView);
+        mpMainLayout->addWidget(mpUndoView);
       }
-      pMainLayout->addWidget(mpDiagramGraphicsView, 1);
+      mpMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
@@ -5107,19 +5126,19 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
-      pMainLayout->addWidget(mpModelStatusBar);
+      mpMainLayout->addWidget(mpModelStatusBar);
       if (MainWindow::instance()->isDebug() && mpUndoView) {
-        pMainLayout->addWidget(mpUndoView);
+        mpMainLayout->addWidget(mpUndoView);
       }
-      pMainLayout->addWidget(mpDiagramGraphicsView, 1);
+      mpMainLayout->addWidget(mpDiagramGraphicsView, 1);
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
-        pMainLayout->addWidget(mpIconGraphicsView, 1);
+        mpMainLayout->addWidget(mpIconGraphicsView, 1);
       }
     }
     if (mpEditor) {
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
-      pMainLayout->addWidget(mpEditor, 1);
+      mpMainLayout->addWidget(mpEditor, 1);
     }
     mCreateModelWidgetComponents = true;
   }

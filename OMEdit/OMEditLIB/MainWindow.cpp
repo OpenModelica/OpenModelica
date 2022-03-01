@@ -2029,8 +2029,9 @@ void MainWindow::resetZoom()
       }
     }
   } else if (isPlottingPerspectiveActive()) {
-    if (mpPlotWindowContainer->currentSubWindow() && mpPlotWindowContainer->isDiagramWindow(mpPlotWindowContainer->currentSubWindow()->widget())) {
-      mpPlotWindowContainer->getDiagramWindow()->getGraphicsView()->resetZoom();
+    if (mpPlotWindowContainer->currentSubWindow() && mpPlotWindowContainer->isDiagramWindow(mpPlotWindowContainer->currentSubWindow()->widget())
+        && mpPlotWindowContainer->getDiagramWindow() && mpPlotWindowContainer->getDiagramWindow()->getModelWidget()) {
+      mpPlotWindowContainer->getDiagramWindow()->getModelWidget()->getDiagramGraphicsView()->resetZoom();
     }
   }
 }
@@ -2055,8 +2056,9 @@ void MainWindow::zoomIn()
       }
     }
   } else if (isPlottingPerspectiveActive()) {
-    if (mpPlotWindowContainer->currentSubWindow() && mpPlotWindowContainer->isDiagramWindow(mpPlotWindowContainer->currentSubWindow()->widget())) {
-      mpPlotWindowContainer->getDiagramWindow()->getGraphicsView()->zoomIn();
+    if (mpPlotWindowContainer->currentSubWindow() && mpPlotWindowContainer->isDiagramWindow(mpPlotWindowContainer->currentSubWindow()->widget())
+        && mpPlotWindowContainer->getDiagramWindow() && mpPlotWindowContainer->getDiagramWindow()->getModelWidget()) {
+      mpPlotWindowContainer->getDiagramWindow()->getModelWidget()->getDiagramGraphicsView()->zoomIn();
     }
   }
 }
@@ -2081,8 +2083,9 @@ void MainWindow::zoomOut()
       }
     }
   } else if (isPlottingPerspectiveActive()) {
-    if (mpPlotWindowContainer->currentSubWindow() && mpPlotWindowContainer->isDiagramWindow(mpPlotWindowContainer->currentSubWindow()->widget())) {
-      mpPlotWindowContainer->getDiagramWindow()->getGraphicsView()->zoomOut();
+    if (mpPlotWindowContainer->currentSubWindow() && mpPlotWindowContainer->isDiagramWindow(mpPlotWindowContainer->currentSubWindow()->widget())
+        && mpPlotWindowContainer->getDiagramWindow() && mpPlotWindowContainer->getDiagramWindow()->getModelWidget()) {
+      mpPlotWindowContainer->getDiagramWindow()->getModelWidget()->getDiagramGraphicsView()->zoomOut();
     }
   }
 }
@@ -4165,6 +4168,19 @@ void MainWindow::switchToWelcomePerspective()
   mpOMSimulatorToobar->setVisible(false);
 }
 
+#define ADD_SHOW_DIAGRAMVIEW() \
+  if (mpPlotWindowContainer->getDiagramWindow() && mpPlotWindowContainer->getDiagramWindow()->getModelWidget()) { \
+    ModelWidget *pModelWidget = mpPlotWindowContainer->getDiagramWindow()->getModelWidget(); \
+    pModelWidget->getDiagramGraphicsView()->setIsVisualizationView(false); \
+    if ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) \
+        || (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible())) { \
+      pModelWidget->getDiagramGraphicsView()->hide(); \
+    } \
+    mpPlotWindowContainer->getDiagramWindow()->removeVisualizationDiagram(); \
+    pModelWidget->getDiagramGraphicsView()->emitResetDynamicSelect(); \
+    pModelWidget->getMainLayout()->addWidget(pModelWidget->getDiagramGraphicsView(), 1); \
+  }
+
 /*!
  * \brief MainWindow::switchToModelingPerspective
  * Switches to Modeling perspective.
@@ -4176,6 +4192,7 @@ void MainWindow::switchToModelingPerspective()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
+  ADD_SHOW_DIAGRAMVIEW()
   // show/hide toolbars
   mpEditToolBar->setVisible(true);
   mpViewToolBar->setVisible(true);
@@ -4217,9 +4234,9 @@ void MainWindow::switchToPlottingPerspective()
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
     mpPlotWindowContainer->addPlotWindow(true);
   }
-  // if we have DiagramWindow then draw items on it based on the current ModelWidget
-  if (pModelWidget && mpPlotWindowContainer->getDiagramSubWindowFromMdi()) {
-    mpPlotWindowContainer->getDiagramWindow()->drawDiagram(pModelWidget);
+  QMdiSubWindow *pDiagramSubWindow = mpPlotWindowContainer->getDiagramSubWindowFromMdi();
+  if (pModelWidget && pDiagramSubWindow) {
+    mpPlotWindowContainer->getDiagramWindow()->showVisualizationDiagram(pModelWidget);
   }
   mpVariablesDockWidget->show();
   // show/hide toolbars
@@ -4260,6 +4277,7 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
+  ADD_SHOW_DIAGRAMVIEW()
   // show/hide toolbars
   mpEditToolBar->setVisible(true);
   mpViewToolBar->setVisible(true);

@@ -2485,8 +2485,8 @@ void VariablesWidget::updateVisualization()
   // Update the DiagramWindow
   emit updateDynamicSelect(mpTimeManager->getVisTime());
   if (MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()
-      && MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getGraphicsView()) {
-    MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getGraphicsView()->scene()->update();
+      && MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget()) {
+    MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget()->getDiagramGraphicsView()->scene()->update();
   }
   mpTimeManager->updateTick();  //for real-time measurement
   visTime = mpTimeManager->getRealTime() - visTime;

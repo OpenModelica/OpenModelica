@@ -299,6 +299,8 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
     connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
     connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
   }
+  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
+  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
 
 int ShapeAnnotation::maxTextLengthToShowOnLibraryIcon = 2;
@@ -1041,10 +1043,11 @@ void ShapeAnnotation::moveShape(const qreal dx, const qreal dy)
 void ShapeAnnotation::setShapeFlags(bool enable)
 {
   /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
+   * AND not a visualization view.
    * AND shape is not an inherited shape.
    * AND shape is not a OMS connector i.e., input/output signals of fmu.
    */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedShape()
       && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
            && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
                || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
@@ -1062,25 +1065,51 @@ void ShapeAnnotation::setShapeFlags(bool enable)
  */
 void ShapeAnnotation::updateDynamicSelect(double time)
 {
-  bool updated = false;
+  if ((mpGraphicsView && mpGraphicsView->isVisualizationView())
+      || (mpParentComponent && mpParentComponent->getGraphicsView() && mpParentComponent->getGraphicsView()->isVisualizationView())) {
+    bool updated = false;
 
-  updated |= mVisible.update(time, mpParentComponent);
-  updated |= mOrigin.update(time, mpParentComponent);
-  updated |= mRotation.update(time, mpParentComponent);
-  updated |= mLineColor.update(time, mpParentComponent);
-  updated |= mFillColor.update(time, mpParentComponent);
-  updated |= mLineThickness.update(time, mpParentComponent);
-  updated |= mArrowSize.update(time, mpParentComponent);
-  updated |= mExtents.update(time, mpParentComponent);
-  updated |= mRadius.update(time, mpParentComponent);
-  updated |= mStartAngle.update(time, mpParentComponent);
-  updated |= mEndAngle.update(time, mpParentComponent);
-  updated |= mFontSize.update(time, mpParentComponent);
-  updated |= mTextString.update(time, mpParentComponent);
+    updated |= mVisible.update(time, mpParentComponent);
+    updated |= mOrigin.update(time, mpParentComponent);
+    updated |= mRotation.update(time, mpParentComponent);
+    updated |= mLineColor.update(time, mpParentComponent);
+    updated |= mFillColor.update(time, mpParentComponent);
+    updated |= mLineThickness.update(time, mpParentComponent);
+    updated |= mArrowSize.update(time, mpParentComponent);
+    updated |= mExtents.update(time, mpParentComponent);
+    updated |= mRadius.update(time, mpParentComponent);
+    updated |= mStartAngle.update(time, mpParentComponent);
+    updated |= mEndAngle.update(time, mpParentComponent);
+    updated |= mFontSize.update(time, mpParentComponent);
+    updated |= mTextString.update(time, mpParentComponent);
 
-  if (updated) {
-    update();
+    if (updated) {
+      update();
+    }
   }
+}
+
+/*!
+ * \brief ShapeAnnotation::resetDynamicSelect
+ * Resets the DynamicSelect back to static.
+ */
+void ShapeAnnotation::resetDynamicSelect()
+{
+  mVisible.resetDynamicToStatic();
+  mOrigin.resetDynamicToStatic();
+  mRotation.resetDynamicToStatic();
+  mLineColor.resetDynamicToStatic();
+  mFillColor.resetDynamicToStatic();
+  mLineThickness.resetDynamicToStatic();
+  mArrowSize.resetDynamicToStatic();
+  mExtents.resetDynamicToStatic();
+  mRadius.resetDynamicToStatic();
+  mStartAngle.resetDynamicToStatic();
+  mEndAngle.resetDynamicToStatic();
+  mFontSize.resetDynamicToStatic();
+  mTextString.resetDynamicToStatic();
+
+  update();
 }
 
 /*!
@@ -1785,8 +1814,8 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
     if (isSelected()) {
       setCornerItemsActiveOrPassive();
       setCursor(Qt::SizeAllCursor);
-      /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
+      /* Only allow manipulations on shapes if the class is not a system library class OR not a visualization view OR shape is not an inherited component. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
         if (pLineAnnotation) {
           connect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
         }
@@ -1819,8 +1848,8 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
     } else if (!mIsCornerItemClicked) {
       setCornerItemsActiveOrPassive();
       unsetCursor();
-      /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
+      /* Only allow manipulations on shapes if the class is not a system library class OR not a visualization view OR shape is not an inherited component. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
         if (pLineAnnotation) {
           disconnect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()));
         }

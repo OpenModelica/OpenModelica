@@ -43,6 +43,7 @@ class DynamicAnnotation
     void parse(const QString &str);
     bool update(double time, Element *parent);
     void reset();
+    void resetDynamicToStatic();
     virtual void clear() = 0;
     virtual FlatModelica::Expression toExp() const = 0;
     bool isDynamicSelectExpression() const;
