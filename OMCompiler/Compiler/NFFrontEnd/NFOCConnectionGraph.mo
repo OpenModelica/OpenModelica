@@ -1188,6 +1188,7 @@ algorithm
       list<Expression> lst;
       Call call;
       String str;
+      Dimension dim;
 
     case Expression.CALL(call = call as Call.TYPED_CALL())
       then match identifyConnectionsOperator(Function.name(call.fn))
@@ -1262,17 +1263,23 @@ algorithm
             res := match call.arguments
               // normal call
               case {uroots,nodes,message}
-                equation
+                algorithm
                   if Flags.isSet(Flags.CGRAPH) then
-                    print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +
+                    print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndices(" +
                       Expression.toString(uroots) + "," +
                       Expression.toString(nodes) + "," +
                       Expression.toString(message) + ")\n");
                   end if;
-                  lst = Expression.arrayElementList(uroots);
-                  lst = List.fill(Expression.INTEGER(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
+
+                  dim := Type.nthDimension(Expression.typeOf(uroots), 1);
+
+                  if not Dimension.isKnown(dim) then
+                    Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN,
+                      {Expression.toString(exp)}, info);
+                    fail();
+                  end if;
                 then
-                  Expression.makeArray(Type.INTEGER(), listArray(lst));
+                  Expression.fillArray(Dimension.size(dim), Expression.INTEGER(1)); // TODO! FIXME! actually implement this correctly
             end match;
           then
             res;
