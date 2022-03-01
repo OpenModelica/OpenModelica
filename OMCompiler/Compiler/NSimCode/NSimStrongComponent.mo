@@ -303,12 +303,12 @@ public
       output list<list<Block>> blcks = {};
       input output list<Block> all_blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, crefToSimVarHT);
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, simcode_map);
         blcks := tmp :: blcks;
         all_blcks := listAppend(tmp, all_blcks);
       end for;
@@ -321,12 +321,12 @@ public
       input output list<Block> all_blcks;
       input output list<Block> event_dependencies;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, crefToSimVarHT);
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, simcode_map);
         // add all
         all_blcks := listAppend(tmp, all_blcks);
         // filter all when equations and add to blcks (ode or algebraic)
@@ -343,13 +343,13 @@ public
       input list<System.System> systems;
       output list<Block> blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
       list<Block> tmp;
       list<list<Block>> tmp_lst = {};
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, crefToSimVarHT);
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, simcode_map);
         tmp_lst := tmp :: tmp_lst;
       end for;
       blcks := List.flatten(tmp_lst);
@@ -360,7 +360,7 @@ public
       output list<list<Block>> blcks = {};
       output list<SimVar> vars = {};
       input output SimCode.SimCodeIndices simCodeIndices;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
       Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
       Pointer<list<SimVar>> vars_ptr = Pointer.create({});
@@ -368,7 +368,7 @@ public
     algorithm
       for system in listReverse(systems) loop
         BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
-        (tmp, simCodeIndices) := fromSystem(system, Pointer.access(indices_ptr), crefToSimVarHT);
+        (tmp, simCodeIndices) := fromSystem(system, Pointer.access(indices_ptr), simcode_map);
         blcks := tmp :: blcks;
       end for;
       vars := listReverse(Pointer.access(vars_ptr));
@@ -379,7 +379,7 @@ public
       output list<Block> blcks = {};
       input output SimCode.SimCodeIndices simCodeIndices;
       input System.SystemType systemType;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
       Equation eqn;
       Block tmp;
@@ -392,11 +392,11 @@ public
               ComponentRef cref;
 
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
-            then createEquation(NBVariable.getVar(cref), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, crefToSimVarHT);
+            then createEquation(NBVariable.getVar(cref), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, simcode_map);
 
 
             case Equation.WHEN_EQUATION()
-            then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, crefToSimVarHT);
+            then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, systemType, simcode_map);
 
             /* ToDo: ARRAY_EQUATION ... */
 
@@ -415,7 +415,7 @@ public
       input System.System system;
       output list<Block> blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     algorithm
       blcks := match system.strongComponents
         local
@@ -427,7 +427,7 @@ public
         case SOME(comps)
           algorithm
             for i in 1:arrayLength(comps) loop
-              (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, system.systemType, crefToSimVarHT);
+              (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, system.systemType, simcode_map);
               // add it to the alias map (before creating because of index bump)
               UnorderedMap.add(AliasInfo.ALIAS_INFO(system.systemType, system.partitionIndex, i), index, simCodeIndices.alias_map);
               result := tmp :: result;
@@ -446,7 +446,7 @@ public
       input output SimCode.SimCodeIndices simCodeIndices;
       output Integer index;
       input System.SystemType systemType;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     algorithm
       (blck, index) := match comp
         local
@@ -470,11 +470,11 @@ public
           UnorderedMap<ComponentRef, Expression> replacements;
 
         case StrongComponent.SINGLE_EQUATION() algorithm
-          (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, crefToSimVarHT);
+          (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SINGLE_ARRAY() algorithm
-          (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, crefToSimVarHT);
+          (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
@@ -488,12 +488,12 @@ public
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
           eqn := Pointer.access(Slice.getT(comp.eqn));
-          (tmp, simCodeIndices) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, systemType, crefToSimVarHT);
+          (tmp, simCodeIndices) := createEquation(Variable.fromCref(comp.var_cref), eqn, comp.status, simCodeIndices, systemType, simcode_map);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.TORN_LOOP(strict = strict)algorithm
           for i in 1:arrayLength(strict.innerEquations) loop
-            (tmp, simCodeIndices) := fromInnerEquation(strict.innerEquations[i], simCodeIndices, systemType, crefToSimVarHT);
+            (tmp, simCodeIndices) := fromInnerEquation(strict.innerEquations[i], simCodeIndices, systemType, simcode_map);
             eqns := tmp :: eqns;
           end for;
           for slice in strict.residual_eqns loop
@@ -510,7 +510,7 @@ public
 
           // reactivate this once nonlinear loops actually work
           if Util.isSome(strict.jac) and false then
-            (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, crefToSimVarHT);
+            (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
           end if;
@@ -555,12 +555,12 @@ public
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
       input System.SystemType systemType;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     algorithm
       blck := match innerEqn
         case BEquation.InnerEquation.INNER_EQUATION()
           algorithm
-            (blck, simCodeIndices) := createEquation(Pointer.access(innerEqn.var), Pointer.access(innerEqn.eqn), NBSolve.Status.EXPLICIT, simCodeIndices, systemType, crefToSimVarHT);
+            (blck, simCodeIndices) := createEquation(Pointer.access(innerEqn.var), Pointer.access(innerEqn.eqn), NBSolve.Status.EXPLICIT, simCodeIndices, systemType, simcode_map);
         then blck;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(Pointer.access(innerEqn.eqn))});
@@ -636,7 +636,7 @@ public
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
       input System.SystemType systemType;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     algorithm
       blck := match (eqn, status)
         local
@@ -678,7 +678,7 @@ public
         // fallback implicit solving
         case (_, NBSolve.Status.IMPLICIT)
           algorithm
-            (tmp, simCodeIndices) := createImplicitEquation(var, eqn, simCodeIndices, systemType, crefToSimVarHT);
+            (tmp, simCodeIndices) := createImplicitEquation(var, eqn, simCodeIndices, systemType, simcode_map);
          then tmp;
 
         else algorithm
@@ -695,7 +695,7 @@ public
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
       input System.SystemType systemType;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
       StrongComponent comp;
       Integer index;
@@ -707,7 +707,7 @@ public
         systemType  = systemType
       );
       simCodeIndices.implicitIndex := index;
-      (blck, simCodeIndices) := fromStrongComponent(comp, simCodeIndices, systemType, crefToSimVarHT);
+      (blck, simCodeIndices) := fromStrongComponent(comp, simCodeIndices, systemType, simcode_map);
     end createImplicitEquation;
 
     function createWhenBody
@@ -740,7 +740,7 @@ public
       input Pointer<list<Block>> acc;
       input Pointer<SimCode.SimCodeIndices> indices_ptr;
       input System.SystemType systemType;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
       Variable var;
       Block blck;
@@ -748,7 +748,7 @@ public
     algorithm
       try
         var := BVariable.getVar(Expression.toCref(Equation.getLHS(eqn)));
-        (blck, indices) := createEquation(var, eqn, NBSolve.Status.EXPLICIT, Pointer.access(indices_ptr), systemType, crefToSimVarHT);
+        (blck, indices) := createEquation(var, eqn, NBSolve.Status.EXPLICIT, Pointer.access(indices_ptr), systemType, simcode_map);
         Pointer.update(acc, blck :: Pointer.access(acc));
         Pointer.update(indices_ptr, indices);
       else
@@ -827,7 +827,7 @@ public
       input output list<Block> nonlinearLoops;
       input output list<SimJacobian> jacobians;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input HashTableSimCode.HashTable crefToSimVarHT;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
     algorithm
       for blck_lst in blcks loop
         for blck in blck_lst loop

@@ -396,8 +396,8 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFVerifyModel.mo
 
     # "NSimCode";
-    ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/HashTableSimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimCode.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimCodeUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimJacobian.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimStrongComponent.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NSimCode/NSimVar.mo

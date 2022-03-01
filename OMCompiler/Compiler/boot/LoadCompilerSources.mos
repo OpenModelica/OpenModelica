@@ -313,8 +313,8 @@ if true then /* Suppress output */
     "../NBackEnd/Util/NBSlice.mo",
 
   // "NSimCode"
-    "../NSimCode/HashTableSimCode.mo",
     "../NSimCode/NSimCode.mo",
+    "../NSimCode/NSimCodeUtil.mo",
     "../NSimCode/NSimJacobian.mo",
     "../NSimCode/NSimStrongComponent.mo",
     "../NSimCode/NSimVar.mo",
