@@ -84,7 +84,6 @@ public
           algorithm
             (variables, equations, initialEqs) := createStartEquations(varData.states, variables, equations, initialEqs, eqData.uniqueIndex);
             (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex);
-            (equations, initialEqs) := createPreEquations(varData.previous, equations, initialEqs, eqData.uniqueIndex);
             (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, eqData.uniqueIndex);
 
             varData.variables := variables;
@@ -171,7 +170,7 @@ public
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)), start = start)))
         algorithm
           name := BVariable.getVarName(state);
-          (start_name, start_var) := BVariable.makeStartVar(name);
+          (start_var, start_name) := createStartVar(state, name, {});
           start_eq := BEquation.Equation.makeStartEq(name, start_name, idx);
           Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
           Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
@@ -196,12 +195,11 @@ public
     Pointer<Equation> start_eq;
   algorithm
     var_ptr := Slice.getT(state);
-    name := BVariable.getVarName(var_ptr);
-    dims := Type.arrayDims(ComponentRef.nodeType(name));
+    name    := BVariable.getVarName(var_ptr);
+    dims    := Type.arrayDims(ComponentRef.nodeType(name));
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
-    frames := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
-    name := ComponentRef.mergeSubscripts(subscripts, name);
-    (start_name, start_var) := BVariable.makeStartVar(name);
+    frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
+    (start_var, start_name) := createStartVar(var_ptr, name, subscripts);
     start_eq := BEquation.Equation.makeStartEq(name, start_name, idx, frames);
     if listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
@@ -210,6 +208,25 @@ public
     Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
     Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
   end createStartEquationSlice;
+
+  function createStartVar
+    input Pointer<Variable> var_ptr;
+    input ComponentRef name;
+    input list<Subscript> subscripts;
+    output Pointer<Variable> start_var;
+    output ComponentRef start_name;
+  protected
+    Pointer<Variable> disc_state_var;
+    ComponentRef merged_name;
+  algorithm
+    merged_name := ComponentRef.mergeSubscripts(subscripts, name);
+    if BVariable.isPrevious(var_ptr) then
+      disc_state_var  := BVariable.getDiscreteStateVar(var_ptr);
+      merged_name := BVariable.getVarName(disc_state_var);
+      merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name);
+    end if;
+    (start_name, start_var) := BVariable.makeStartVar(merged_name);
+  end createStartVar;
 
   function createPreEquations
     "Creates start equations from fixed start values.
@@ -241,7 +258,8 @@ public
       local
         Pointer<Variable> disc_var;
         Pointer<BEquation.Equation> pre_eq;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.PREVIOUS(disc = disc_var)))
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.PREVIOUS(state = disc_var)))
+        guard(BVariable.isFixed(disc_var))
         algorithm
           pre_eq := BEquation.Equation.makePreEq(BVariable.getVarName(preVar), BVariable.getVarName(disc_var), idx);
           Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));

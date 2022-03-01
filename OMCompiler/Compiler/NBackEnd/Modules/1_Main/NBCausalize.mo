@@ -225,6 +225,11 @@ protected
         (fixable, unfixable)    := List.splitOnTrue(VariablePointers.toList(system.unknowns), BVariable.isFixable);
         (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(system.equations), Equation.isInitial);
 
+        // ToDo: it should be:
+        // Phase I initial equations <-> unfixables
+        // Phase II all equations <-> unfixables
+        // Phase III all equations <-> all variables
+
         // #################################################
         // Phase I: match sim equations <-> unfixable vars
         // #################################################

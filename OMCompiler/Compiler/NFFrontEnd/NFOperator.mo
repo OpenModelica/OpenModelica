@@ -135,6 +135,33 @@ public
     end match;
   end invert;
 
+  function isLogical
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.AND   then true;
+      case Op.OR    then true;
+      case Op.NOT   then true;
+                    else false;
+    end match;
+  end isLogical;
+
+  function isRelational
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.LESS      then true;
+      case Op.LESSEQ    then true;
+      case Op.GREATER   then true;
+      case Op.GREATEREQ then true;
+      case Op.EQUAL     then true;
+      case Op.NEQUAL    then true;
+                        else false;
+    end match;
+  end isRelational;
+
   function fromAbsyn
     input Absyn.Operator inOperator;
     output Operator outOperator;
