@@ -1681,7 +1681,20 @@ protected
     arg1 :: arg2 :: args := args;
 
     (arg1, ty1) := typeConnectionsArg(arg1, context, info, fn_ref, 1);
+
+    if not Type.isArray(ty1) then
+      Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+        {"1", ComponentRef.toString(fn_ref), "", Expression.toString(arg1),
+         Type.toString(ty1), "Connector[:]"}, info);
+    end if;
+
     (arg2, ty2) := typeConnectionsArg(arg2, context, info, fn_ref, 2);
+
+    if not Type.isArray(ty2) then
+      Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+        {"2", ComponentRef.toString(fn_ref), "", Expression.toString(arg2),
+         Type.toString(ty2), "Connector[:]"}, info);
+    end if;
 
     if args_len == 3 then
       arg3 := listHead(args);
@@ -1693,13 +1706,13 @@ protected
            Type.toString(ty3), "String"}, info);
       end if;
     else
-      arg2 := Expression.STRING("");
+      arg3 := Expression.STRING("");
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
     assert(listLength(Type.arrayDims(ty1)) == listLength(Type.arrayDims(ty2)), "the first two parameters need to have the same size");
     ty := Type.ARRAY(Type.Type.INTEGER(), Type.arrayDims(ty1));
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, purity, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2, arg3}, var, purity, ty));
 
   end typeUniqueRootIndicesCall;
 
