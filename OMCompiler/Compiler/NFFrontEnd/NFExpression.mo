@@ -5049,6 +5049,7 @@ public
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := InstNode.getType(Class.nthComponent(index, cls));
+          ty := Type.liftArrayLeftList(ty, Type.arrayDims(recordExp.ty));
         then
           makeEmptyArray(ty);
 
