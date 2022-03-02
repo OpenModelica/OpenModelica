@@ -2570,29 +2570,17 @@ protected
       function getLocalDependenciesExp(locals = locals), deps);
   end getLocalDependenciesDim;
 
-  function getDerivative
+  function getDerivatives
+    "returns all derivatives of a function of a certain order."
     input Function original;
     input Integer order = 1;
-    output Function derivative;
+    output list<Function> derivatives;
   protected
-    list<FunctionDerivative> derivatives;
-    FunctionDerivative der_func;
-    String err_str = "\n";
+    list<FunctionDerivative> order_derivatives;
   algorithm
-    derivatives := list(func for func guard(FunctionDerivative.isOfOrder(func, order)) in original.derivatives);
-    if listLength(derivatives) == 1 then
-      //derivative
-      der_func := List.first(derivatives);
-      {derivative} := getCachedFuncs(der_func.derivativeFn);
-    else
-      for der_func in derivatives loop
-        err_str := err_str + InstNode.toString(der_func.derivativeFn) + "\n";
-      end for;
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there were " + intString(listLength(derivatives))
-        + " derivatives of order " + intString(order) + " (expected is exactly one).\n Derivatives:" + err_str});
-      fail();
-    end if;
-  end getDerivative;
+    order_derivatives := list(func for func guard(FunctionDerivative.getOrder(func) == order) in original.derivatives);
+    derivatives       := List.flatten(list(getCachedFuncs(func.derivativeFn) for func in order_derivatives));
+  end getDerivatives;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

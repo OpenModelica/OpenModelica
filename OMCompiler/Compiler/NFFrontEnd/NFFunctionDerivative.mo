@@ -179,21 +179,20 @@ public
     subMod := SCode.NAMEMOD("derivative", mod);
   end toSubMod;
 
-  function isOfOrder
+  function getOrder
     "returns true if the function derivative is of given order"
     input FunctionDerivative funcDer;
-    input Integer order;
-    output Boolean b;
+    output Integer order;
   algorithm
-    b := match funcDer.order
+    order := match funcDer.order
       local
         Integer value;
-      case Expression.INTEGER(value = value) then value == order;
+      case Expression.INTEGER(value = order) then order;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the order was not evaluated to be a constant: " + Expression.toString(funcDer.order)});
       then fail();
     end match;
-  end isOfOrder;
+  end getOrder;
 
 protected
 

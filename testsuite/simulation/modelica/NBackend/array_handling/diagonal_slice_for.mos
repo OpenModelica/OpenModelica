@@ -205,7 +205,6 @@ val(y[3],1);
 // 	[----]   [----]   [-IF-] (1) if j <> i then
 // 	[----]   [----]   [----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
 // 	[----]   [----]   [----] end if;
-//
 // 	[----]   [----] end for;
 // 	[----] end for;
 //
@@ -242,7 +241,6 @@ val(y[3],1);
 // 	[----]   [----]   [-IF-] (1) if j <> i then
 // 	[----]   [----]   [----]   [SCAL] (1) x[i, j] = y[j] + CAST(Real, i) * sin(CAST(Real, j) * time)
 // 	[----]   [----]   [----] end if;
-//
 // 	[----]   [----] end for;
 // 	[----] end for;
 //

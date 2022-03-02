@@ -7,7 +7,7 @@ model annotate_test
   Real x;
   Real y;
 equation
-  y = sin(time);
+  y = sin(x);
   der(x) = f(y);
 end annotate_test;
 
@@ -15,15 +15,16 @@ function f
   input Real x;
   output Real y;
 algorithm
-  y := -x;
+  y := x^2;
   annotation(derivative=df,Inline=false);
 end f;
 
 function df
   input Real x;
-  output Real y;
+  input Real der_x;
+  output Real der_y;
 algorithm
-  y := -1;
+  der_y := 2*x*der_x;
   annotation(Inline=false);
 end df;
 "); getErrorString();
@@ -45,15 +46,15 @@ simulate(annotate_test); getErrorString();
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// --- Alias of INI[1 | 1] ---
+// --- Alias of INI[1 | 2] ---
 // BLOCK 1: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
 // 	Real y
 // ### Equation:
-// 	[SCAL] (1) y = sin(time) ($RES_SIM_1)
+// 	[SCAL] (1) y = sin(x) ($RES_SIM_1)
 //
-// --- Alias of INI[1 | 2] ---
+// --- Alias of INI[1 | 3] ---
 // BLOCK 2: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -67,8 +68,8 @@ simulate(annotate_test); getErrorString();
 //
 // Result Equations (2/2)
 // ****************************************
-// (1)       [SCAL] (1) $pDER_ODE_JAC.$DER.x = df(y) ($RES_ODE_JAC_0)
-// (2)       [SCAL] (1) $pDER_ODE_JAC.y = 0.0 ($RES_ODE_JAC_1)
+// (1)       [SCAL] (1) $pDER_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x ($RES_ODE_JAC_0)
+// (2)       [SCAL] (1) $pDER_ODE_JAC.$DER.x = df(y, $pDER_ODE_JAC.y) ($RES_ODE_JAC_1)
 //
 //
 // ========================================
