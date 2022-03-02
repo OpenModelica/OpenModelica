@@ -2569,6 +2569,30 @@ protected
     deps := Dimension.foldExp(dim,
       function getLocalDependenciesExp(locals = locals), deps);
   end getLocalDependenciesDim;
+
+  function getDerivative
+    input Function original;
+    input Integer order = 1;
+    output Function derivative;
+  protected
+    list<FunctionDerivative> derivatives;
+    FunctionDerivative der_func;
+    String err_str = "\n";
+  algorithm
+    derivatives := list(func for func guard(FunctionDerivative.isOfOrder(func, order)) in original.derivatives);
+    if listLength(derivatives) == 1 then
+      //derivative
+      der_func := List.first(derivatives);
+      {derivative} := getCachedFuncs(der_func.derivativeFn);
+    else
+      for der_func in derivatives loop
+        err_str := err_str + InstNode.toString(der_func.derivativeFn) + "\n";
+      end for;
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there were " + intString(listLength(derivatives))
+        + " derivatives of order " + intString(order) + " (expected is exactly one).\n Derivatives:" + err_str});
+      fail();
+    end if;
+  end getDerivative;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

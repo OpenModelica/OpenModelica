@@ -120,8 +120,16 @@ val(x[3],1);
 // CONTINUOUS 1 ALG System
 // ========================================
 //
-// BLOCK 1: Alias of INI[1 | 1]
+// --- Alias of INI[1 | 1] ---
+// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] (10) ($RES_SIM_0_1)
+// 	[----] for i in 1:1:10 loop
+// 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
 //
 // ################################################################################
 //
@@ -246,11 +254,24 @@ val(x[3],1);
 // CONTINUOUS 1 ALG System
 // ========================================
 //
-// BLOCK 1: Alias of INI[1 | 1]
+// --- Alias of INI[1 | 1] ---
+// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[i]
+// ### Equation:
+// 	[FOR-] (10) ($RES_SIM_1_1)
+// 	[----] for i in 1:1:10 loop
+// 	[----]   [SCAL] (1) x[i] = sin(CAST(Real, i) * time)
+// 	[----] end for;
 //
-// BLOCK 2: Alias of INI[1 | 2]
+// --- Alias of INI[1 | 2] ---
+// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[11]
+// ### Equation:
+// 	[SCAL] (1) x[11] = cos(time) ($RES_SIM_0)
 //
 // ################################################################################
 //
@@ -382,11 +403,24 @@ val(x[3],1);
 // CONTINUOUS 1 ALG System
 // ========================================
 //
-// BLOCK 1: Alias of INI[1 | 1]
+// --- Alias of INI[1 | 1] ---
+// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[1]
+// ### Equation:
+// 	[SCAL] (1) x[1] = cos(time) ($RES_SIM_0)
 //
-// BLOCK 2: Alias of INI[1 | 2]
+// --- Alias of INI[1 | 2] ---
+// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	x[1 + i]
+// ### Equation:
+// 	[FOR-] (10) ($RES_SIM_1_1)
+// 	[----] for i in 1:1:10 loop
+// 	[----]   [SCAL] (1) x[1 + i] = -(sin(CAST(Real, i) * time) - x[i])
+// 	[----] end for;
 //
 // ################################################################################
 //

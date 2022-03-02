@@ -170,7 +170,6 @@ public
   function toString
     input StrongComponent comp;
     input Integer index = -1          "negative indices will not be printed";
-    input Boolean showAlias = false   "true if the original strong components of an alias should be printed";
     output String str;
   protected
     String indexStr = if index > 0 then " " + intString(index) else "";
@@ -195,7 +194,7 @@ public
 
       case ENTWINED_EQUATION() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Equation (status = Solve.UNPROCESSED)");
-        str := str + List.toString(comp.entwined_slices, function toString(index = -2, showAlias = showAlias), "", "", "", "");
+        str := str + List.toString(comp.entwined_slices, function toString(index = -2), "", "", "", "");
       then str;
 
       case SINGLE_ARRAY() algorithm
@@ -261,10 +260,8 @@ public
         end if;
       then str;
 
-      case ALIAS() guard(showAlias) then toString(comp.original);
-
       case ALIAS() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Alias of " + AliasInfo.toString(comp.aliasInfo));
+        str := "--- Alias of " + AliasInfo.toString(comp.aliasInfo) + " ---\n" + toString(comp.original, index);
       then str;
 
       else algorithm

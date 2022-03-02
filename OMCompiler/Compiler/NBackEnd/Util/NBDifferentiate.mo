@@ -36,6 +36,7 @@ encapsulated package NBDifferentiate
 "
 public
   // OF imports
+  import BaseAvlTree;
   import AvlSetPath;
   import DAE;
 
@@ -44,6 +45,7 @@ public
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import NFInstNode.InstNode;
   import NFFunction.Function;
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import Operator = NFOperator;
@@ -625,26 +627,33 @@ public
 
     (exp, diffArguments) := match exp
       local
-        Call call;
-      case Expression.CALL(call=call) algorithm
-        _ := match call
-          local
-            String name;
+        Call call, der_call;
+        String name;
+        Option<Function> func_opt;
+        Function func, der_func;
+        Boolean has_derviative_annotation = false;
 
-          case Call.TYPED_CALL() algorithm
-            name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-            exp := differentiateCallExp(name, exp, diffArguments);
-            then();
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Call.toString(call)});
-          then fail();
-        end match;
+      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        func_opt := FunctionTreeImpl.getOpt(diffArguments.funcTree, call.fn.path);
+        if Util.isSome(func_opt) then
+          SOME(func) := func_opt;
+          if not listEmpty(func.derivatives) then
+            has_derviative_annotation := true;
+            der_func := Function.getDerivative(func, 1);
+            exp := Expression.CALL(Call.makeTypedCall(der_func, call.arguments, call.var, call.purity));
+          end if;
+        end if;
 
-        then (exp, diffArguments);
+        // if there was no derivative annotation - create one
+        if not has_derviative_annotation then
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+          exp := differentiateCallExp(name, exp, diffArguments);
+        end if;
+      then (exp, diffArguments);
+
       else algorithm
-        // Add failtrace here
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
-        then fail();
+      then fail();
     end match;
 
     if debug then

@@ -105,7 +105,7 @@ public
           for tpl in UnorderedMap.toList(duplicate_map) loop
             (unsolved, solved) := tpl;
             print("[dumpSlice] The block:\n" + StrongComponent.toString(unsolved) + "\n"
-              + "[dumpSlice] got sliced to:\n" + List.toString(solved, function StrongComponent.toString(index = -1, showAlias = true), "", "", "\n", "") + "\n\n");
+              + "[dumpSlice] got sliced to:\n" + List.toString(solved, function StrongComponent.toString(index = -1), "", "", "\n", "") + "\n\n");
           end for;
         end if;
 

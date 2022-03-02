@@ -1,0 +1,98 @@
+// name: function_annotation_der
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model annotate_test
+  Real x;
+  Real y;
+equation
+  y = sin(time);
+  der(x) = f(y);
+end annotate_test;
+
+function f
+  input Real x;
+  output Real y;
+algorithm
+  y := -x;
+  annotation(derivative=df,Inline=false);
+end f;
+
+function df
+  input Real x;
+  output Real y;
+algorithm
+  y := -1;
+  annotation(Inline=false);
+end df;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=symjacdump"); getErrorString();
+simulate(annotate_test); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// ################################################################################
+//
+// 	[symjacdump] Creating symbolic Jacobians:
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 ODE System
+// ========================================
+//
+// --- Alias of INI[1 | 1] ---
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real y
+// ### Equation:
+// 	[SCAL] (1) y = sin(time) ($RES_SIM_1)
+//
+// --- Alias of INI[1 | 2] ---
+// BLOCK 2: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = f(y) ($RES_SIM_0)
+//
+// ========================================
+// [SIM] Jacobian ODE_JAC:
+// ========================================
+//
+// Result Equations (2/2)
+// ****************************************
+// (1)       [SCAL] (1) $pDER_ODE_JAC.$DER.x = df(y) ($RES_ODE_JAC_0)
+// (2)       [SCAL] (1) $pDER_ODE_JAC.y = 0.0 ($RES_ODE_JAC_1)
+//
+//
+// ========================================
+// Sparsity Pattern (nnz: 0)
+// ========================================
+//
+// ### Columns ###
+// ----------------------------------------
+// (x)	 affects:	{}
+//
+// ##### Rows #####
+// ----------------------------------------
+// ($DER.x)	 depends on:	{}
+//
+// Sparsity Coloring Groups
+// ----------------------------------------
+// {x}
+//
+// record SimulationResult
+//     resultFile = "annotate_test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'annotate_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

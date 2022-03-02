@@ -343,14 +343,29 @@ val(x3, 0.53);
 // CONTINUOUS 1 ALG_EVT System
 // ========================================
 //
-// BLOCK 1: Alias of INI[4 | 1]
+// --- Alias of INI[4 | 1] ---
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = sin(time) ($RES_SIM_1)
 //
-// BLOCK 2: Alias of INI[4 | 2]
+// --- Alias of INI[4 | 2] ---
+// BLOCK 2: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	Boolean $SEV_1
+// ### Equation:
+// 	[SCAL] (1) $SEV_1 = z <= 1.0 ($RES_EVT_7)
 //
-// BLOCK 3: Alias of INI[4 | 3]
+// --- Alias of INI[4 | 3] ---
+// BLOCK 3: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	Boolean $SEV_0
+// ### Equation:
+// 	[SCAL] (1) $SEV_0 = z > 0.5 ($RES_EVT_8)
 //
 // BLOCK 4: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
@@ -365,8 +380,13 @@ val(x3, 0.53);
 // CONTINUOUS 2 ALG_EVT System
 // ========================================
 //
-// BLOCK 1: Alias of INI[1 | 1]
+// --- Alias of INI[1 | 1] ---
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	Boolean $TEV_0
+// ### Equation:
+// 	[SCAL] (1) $TEV_0 = sample(1, 0.1, t) ($RES_EVT_5)
 //
 // BLOCK 2: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
@@ -381,8 +401,13 @@ val(x3, 0.53);
 // CONTINUOUS 3 ALG_EVT System
 // ========================================
 //
-// BLOCK 1: Alias of INI[1 | 2]
+// --- Alias of INI[1 | 2] ---
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	Boolean $TEV_1
+// ### Equation:
+// 	[SCAL] (1) $TEV_1 = sample(2, t, 4.611686018427388e+18) ($RES_EVT_6)
 //
 // BLOCK 2: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------

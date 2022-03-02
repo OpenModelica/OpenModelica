@@ -320,7 +320,6 @@ public
             (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, ConvertDAE.convertFunctionTree(funcTree));
             makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
 
-
             // This needs to be done after the variables have been created by ModelInfo.create()
             // for now do not allow dae mode -- this has to be fixed and redesigned to fit before modelInfo!
             //if isSome(bdae.dae) then
@@ -586,7 +585,7 @@ public
         directory                       = modelInfo.directory,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),
         vars                            = SimVar.SimVars.convert(modelInfo.vars),
-        functions                       = {}, // ToDo: add this once functions are supported
+        functions                       = modelInfo.functions,
         labels                          = modelInfo.labels,
         resourcePaths                   = modelInfo.resourcePaths,
         sortedClasses                   = modelInfo.sortedClasses,
