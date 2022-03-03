@@ -1,13 +1,13 @@
 Data Reconciliation
 ===================
 
-Objective of DataReconciliation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Objective of Data Reconciliation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The objective of data reconciliation is to use physical models to reduce the impact of measurement errors by decreasing measurement uncertainties and detecting faulty sensors. Data reconciliation is possible only when redundant measurements are available. Redundancy can be achieved by linking together the measured variables of interest using the physical laws that constrain them. This can be done with static Modelica models (models featuring algebraic equations only, no differential equations).
 
-Defining DataReconciliation Problem in OpenModelica
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Defining the Data Reconciliation Problem in OpenModelica
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Let us take the example of the Modelica model of a splitter.
 
 .. figure :: media/dataReconciliationsplitter.png
@@ -18,14 +18,14 @@ Water flows from left to right, from the source to the sinks. The model is made 
 .. figure :: media/dataReconciliationsplittercomponent.png
   :name: dataReconciliationsplittercomponent
 
-To perform data reconciliation, two kinds of variables must be declared
+To perform data reconciliation, two kinds of variables must be declared:
     1.  The boundary conditions (which represent assumptions on the environment);
     2.  The variables of interest to be reconciled.
 These two kinds of variables must be manually declared in the source code
     1.	With annotations for the boundary conditions;
     2.	With modifiers for the variables of interest.
 
-The boundary conditions are declared with the annotation annotation(__OpenModelica_BoundaryCondition = true)
+The boundary conditions are declared with the annotation: annotation(__OpenModelica_BoundaryCondition = true).
 For the pressure source, the boundary conditions are the pressure P0, and the specific enthalpy h0
 or the temperature T0 of the source (depending on the option chosen by the user).
 
@@ -116,9 +116,9 @@ correlation coefficients of the variables of interest:
     1.  The first row contains names of variables of interest [ident].
     2.  The first column contains names of variables of interest [ident].
     3.  The names in the first row and first column must be identical in the same order.
-    4.  The first cell in the first row (which is also the first cell in the first column) must no be empty, but can contain any character string (except column separators).
-    5.  The off-diagonal lower triangular matrix cells contain the correlation coefficients [positive or nul floating point number]. The correlation coefficients  :math:`r_ij` are defined such that :math:`s_ij =r_ij \sigma_i \sigma_j` where :math:`\sigma_i` and  :math:`\sigma_j` are respectively the standard deviations of variables :math:`x_i` and :math:`x_j`, and :math:`s_ij` is the covariance matrix. :math:`r_ii = 1` because :math:`s_ii = \sigma_i^2 | r_ij| <= 1`
-    6.  The upper triangular and diagonal cells are ignored because the correlation matrix is symmetric :math:`r_ji = r_ij`, and its diagonal is :math:`r_ii = 1`
+    4.  The first cell in the first row (which is also the first cell in the first column) must not be empty, but can contain any character string (except column separators).
+    5.  The off-diagonal lower triangular matrix cells contain the correlation coefficients [positive or nul floating point number]. The correlation coefficients  :math:`r_{ij}` are defined such that :math:`s_{ij} =r_{ij} \sigma_i \sigma_j` where :math:`\sigma_i` and  :math:`\sigma_j` are respectively the standard deviations of variables :math:`x_i` and :math:`x_j`, and :math:`s_{ij}` is the covariance matrix. :math:`r_{ii} = 1` because :math:`s_{ii} = \sigma_i^2 | r_{ij}| <= 1`
+    6.  The upper triangular and diagonal cells are ignored because the correlation matrix is symmetric :math:`r_{ji} = r_{ij}`, and its diagonal is :math:`r_{ii} = 1`
     7.  Only variables of interest with positive correlation coefficients must appear in the matrix. Unfilled cells are equal to zero. Variables of interest that do not appear in the matrix have correlation coefficients equal to zero. Therefore, if all correlation coefficients are equal to zero, the matrix can be empty and the correlation matrix file is not needed
 
 The following correlation file is drawn from the VDI2048 standard example of a heat circuit of a steam turbine plant.
@@ -138,8 +138,8 @@ The above file can be more easily visualized in matrix form:
 
 The variables mV and mHK could have been omitted because they do not have any positive correlation coefficients.
 
-DataReconciliation Support in OMEdit
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Data Reconciliation Support in OMEdit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The data reconciliation setup is done by:
     1. Opening the Modelica model with the data reconciliation modifiers in OMEdit.
     2. Selecting Data Reconciliation > Calculate Data Reconciliation.
@@ -164,7 +164,7 @@ The data reconciliation computation is performed in three main steps:
             b. The number r of auxiliary equations is zero.
 
          Both errors occur when there are too many boundary conditions related to the variables of interest.
-         Variables of interest that are not involved in any of the auxiliary conditions are not reconciled.
+         Variables of interest that are not involved in any of the auxiliary conditions or intermediate equations are not reconciled.
 
     2. The model is simulated to compute the Jacobian matrices and eliminate numerically the intermediate variables.
        At this step, numerical simulation errors can occur, such as divisions by zero, non-convergence, etc. They can be corrected by improving the model or providing better start values.
@@ -185,9 +185,9 @@ The results are displayed:
          b. The other that contains the reconciled covariance matrix.
 
     These files do not pop up automatically when the calculation is completed. The names of the files are respectively
-         | <working directory>\<model name>\< model name>_Outputs.csv
+         | <working directory>\\<model name>\\< model name>_Outputs.csv
     and
-         | <working directory>\<model name>\< model name>_Reconciled_Sx.csv,
+         | <working directory>\\<model name>\\< model name>_Reconciled_Sx.csv,
 
     where <model name> denotes the full name of the model, including its path. The name of the working directory can be read with the command Tools > Options.
 
@@ -319,7 +319,7 @@ The table below compares the results obtained with OpenModelica with those given
   :name: dataReconciliationResult_2
 
 The value of mD is left unchanged after reconciliation. This is indicated by ‘Not reconciled’ in OpenModelica,
-and by repeating the initial measured values in VDI2048.In order to compute the reconciled values of mFD1, mFD2, mFD3 and mHDANZ, which have no measurements, it is possible to consider them as variables of interest with very large half-width confidence, e.g., 1e4, and assigne them arbitrary mesured values, e.g. 0. The result is
+and by repeating the initial measured values in VDI2048. In order to compute the reconciled values of mFD1, mFD2, mFD3 and mHDANZ, which have no measurements, it is possible to consider them as variables of interest with very large half-width confidence, e.g., 1e4, and assigne them arbitrary mesured values, e.g. 0. The result is
 
 .. figure :: media/dataReconciliationResult_3.png
   :name: dataReconciliationResult_3
@@ -360,7 +360,7 @@ The results are displayed:
     1. In an html file with the title: Boundary Condition Report. This file pops up automatically when the calculation is completed.
 
     2. In a csv output file. The name of the csv output file is
-    <working directory>\<model name>\< model name>_ BoundaryConditions_Outputs.csv
+    <working directory>\\<model name>\\< model name>_ BoundaryConditions_Outputs.csv
 
 The Boundary Condition Report has three sections:
 
@@ -382,13 +382,13 @@ Analysis
 
 Debug log
 ---------
-  log of the numerical iteration loop
+  Log of the numerical iteration loop
 
 Results
 -------
 A table with the following columns
   a. Boundary Conditions: the names of the boundary conditions.
-  b. Values: the computed values entered of the boundary conditions.
+  b. Values: the computed values of the boundary conditions.
   c. Reconciled Half-width Confidence Intervals: the half-with confidence intervals for the boundary conditions.
 
 The results for the splitter are:
