@@ -180,13 +180,11 @@ public
   end toSubMod;
 
   function getOrder
-    "returns true if the function derivative is of given order"
+    "returns the order of the given function derivative"
     input FunctionDerivative funcDer;
     output Integer order;
   algorithm
     order := match funcDer.order
-      local
-        Integer value;
       case Expression.INTEGER(value = order) then order;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the order was not evaluated to be a constant: " + Expression.toString(funcDer.order)});

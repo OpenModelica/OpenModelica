@@ -49,6 +49,7 @@ public
   import NFFunction.Function;
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import Operator = NFOperator;
+  import Prefixes = NFPrefixes;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
   import NFPrefixes.Variability;
@@ -631,7 +632,6 @@ public
         Expression ret;
         Boolean has_derviative_annotation = false;
         Call call, der_call;
-        String name;
         Option<Function> func_opt;
         list<Function> derivatives;
         Function func, der_func;
@@ -640,8 +640,7 @@ public
 
       // builtin functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
-        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-        ret := differentiateBuiltinCall(name, exp, diffArguments);
+        ret := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
 
       // user defined functions
@@ -662,6 +661,7 @@ public
             then Expression.CALL(Call.makeTypedCall(der_func, listAppend(call.arguments, arguments), call.var, call.purity));
 
             // ERROR - more than one derivative of order 1 defined
+            // TODO pick first one according to MLS 3.5 section 12.7.1
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there were " + intString(listLength(derivatives))
                 + " derivatives of order 1 (expected is exactly one).\n Derivatives:" + List.toString(derivatives, function Function.signatureString(printTypes = true), "", "", "\n", "")});
@@ -705,7 +705,7 @@ public
         Expression ret, ret1, ret2, arg1, arg2, diffArg1, diffArg2;
 
       // Builtin function call with one argument
-      // df/dx = df/dy * dy/dx
+      // df(y)/dx = df/dy * dy/dx
       case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 1)
       algorithm
         // differentiate the call
@@ -762,12 +762,19 @@ public
       local
         Expression ret;
 
-      // all these are integer based and therefore zero
-      case ("abs")      then Expression.makeZero(Type.INTEGER());
-      case ("sign")     then Expression.makeZero(Type.INTEGER());
-      case ("ceil")     then Expression.makeZero(Type.INTEGER());
-      case ("floor")    then Expression.makeZero(Type.INTEGER());
+      // all these have integer values and therefore zero derivative
+      case ("sign")     then Expression.makeZero(Expression.typeOf(arg));
+      case ("ceil")     then Expression.makeZero(Type.REAL());
+      case ("floor")    then Expression.makeZero(Type.REAL());
       case ("integer")  then Expression.makeZero(Type.INTEGER());
+
+      // abs(arg) -> sign(arg)
+      case ("abs") then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.SIGN_REAL,
+          args        = {arg},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE
+        ));
 
       // sqrt(arg) -> 0.5/arg^(0.5)
       case ("sqrt") algorithm
@@ -784,7 +791,7 @@ public
         ));
 
       // cos(arg) -> -sin(arg)
-      case("cos") then Expression.negate(Expression.CALL(Call.makeTypedCall(
+      case ("cos") then Expression.negate(Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.SIN_REAL,
           args        = {arg},
           variability = Expression.variability(arg),
@@ -793,7 +800,7 @@ public
 
       // tan(arg) -> 1/cos(arg)^2
       // kabdelhak: ToDo - investigate numerical properties: 1+tan(arg)^2 maybe better?
-      case("tan") algorithm
+      case ("tan") algorithm
         ret := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.COS_REAL,
           args        = {arg},
@@ -804,7 +811,7 @@ public
       then ret;
 
       // asin(arg) -> 1/sqrt(1-arg^2)
-      case("asin") algorithm
+      case ("asin") algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-arg^2
         ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));       // sqrt(1-arg^2)
@@ -812,7 +819,7 @@ public
       then ret;
 
       // acos(arg) -> -1/sqrt(1-arg^2)
-      case("acos") algorithm
+      case ("acos") algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-arg^2
         ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));       // sqrt(1-arg^2)
@@ -820,7 +827,7 @@ public
       then ret;
 
       // atan(arg) -> 1/(1+arg^2)
-      case("atan") algorithm
+      case ("atan") algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0), ret}, {}, addOp);// 1+arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, mulOp);  // 1/(1+arg^2)
@@ -835,7 +842,7 @@ public
         ));
 
       // cosh(arg) -> sinh(arg)
-      case("cosh") then Expression.CALL(Call.makeTypedCall(
+      case ("cosh") then Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.SINH_REAL,
           args        = {arg},
           variability = Expression.variability(arg),
@@ -843,7 +850,7 @@ public
         ));
 
       // tanh(arg) -> 1-tanh(arg)^2
-      case("tanh") algorithm
+      case ("tanh") algorithm
         ret := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.TANH_REAL,
           args        = {arg},
@@ -869,9 +876,9 @@ public
         ret := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.LOG_REAL,
           args        = {Expression.REAL(10.0)},
-          variability = Expression.variability(arg),
+          variability = Variability.CONSTANT,
           purity      = NFPrefixes.Purity.PURE));                             // log(10)
-        ret := Expression.MULTARY({Expression.REAL(1.0)}, {arg, ret}, mulOp); // 1/arg*log(10)
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {arg, ret}, mulOp); // 1/(arg*log(10))
       then ret;
 
       else algorithm
@@ -898,10 +905,33 @@ public
       local
         Expression exp1, exp2, ret1, ret2;
 
-      // all these are integer based and therefore zero
+      // div(arg1, arg2) truncates the fractional part of arg1/arg2 so it has discrete values
+      // therefore it has zero derivative where it's defined
       case ("div") then (Expression.makeZero(Type.INTEGER()), Expression.makeZero(Type.INTEGER()));
-      case ("mod") then (Expression.makeZero(Type.INTEGER()), Expression.makeZero(Type.INTEGER()));
-      case ("rem") then (Expression.makeZero(Type.INTEGER()), Expression.makeZero(Type.INTEGER()));
+
+      // d/darg1 mod(arg1, arg2) -> 1
+      // d/darg2 mod(arg1, arg2) -> -floor(arg1/arg2)
+      case ("mod") algorithm
+        exp2 := Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.FLOOR,
+          args        = {Expression.MULTARY({arg1}, {arg2}, mulOp)},          // arg1/arg2
+          variability = Prefixes.variabilityMax(Expression.variability(arg1), Expression.variability(arg2)),
+          purity      = NFPrefixes.Purity.PURE
+        ));                                                                   // floor(arg1/arg2)
+        ret2 := Expression.negate(exp2);                                      // -floor(arg1/arg2)
+      then (Expression.makeOne(Type.REAL()), ret2);
+
+      // d/darg1 rem(arg1, arg2) -> 1
+      // d/darg2 rem(arg1, arg2) -> -div(arg1, arg2)
+      case ("rem") algorithm
+        exp2 := Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.DIV_REAL,
+          args        = {arg1, arg2},
+          variability = Prefixes.variabilityMax(Expression.variability(arg1), Expression.variability(arg2)),
+          purity      = NFPrefixes.Purity.PURE
+        ));                                                                   // div(arg1, arg2)
+        ret2 := Expression.negate(exp2);                                      // -div(arg1, arg2)
+      then (Expression.makeOne(Type.REAL()), ret2);
 
       // d/darg1 atan2(arg1, arg2) -> -arg2/(arg1^2+arg2^2)
       // d/darg2 atan2(arg1, arg2) ->  arg1/(arg1^2+arg2^2)
