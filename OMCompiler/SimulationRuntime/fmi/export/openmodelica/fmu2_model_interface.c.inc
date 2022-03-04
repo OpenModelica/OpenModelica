@@ -1249,7 +1249,14 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) functions->allocateMemory(1, sizeof(INTERNAL_FMU_STATE));
   internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
 
-  // TODO: copy the ring buffer
+  // copy the ring buffer data to internal_state
+  DATA* fmudata = (DATA *) comp->fmuData;
+  int i;
+  for(i=0; i<ringBufferLength(fmudata->simulationData); ++i)
+  {
+    //internal_state->simulationData[i] = fmudata->localData[i];
+    appendRingData(internal_state->simulationData, fmudata->localData[i]);
+  }
 
   // return the fmu state
   *FMUstate = (fmi2FMUstate) internal_state;
