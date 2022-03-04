@@ -36,6 +36,7 @@ encapsulated package NBDifferentiate
 "
 public
   // OF imports
+  import BaseAvlTree;
   import AvlSetPath;
   import DAE;
 
@@ -44,9 +45,11 @@ public
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import NFInstNode.InstNode;
   import NFFunction.Function;
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import Operator = NFOperator;
+  import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
   import NFPrefixes.Variability;
   import Variable = NFVariable;
@@ -625,26 +628,58 @@ public
 
     (exp, diffArguments) := match exp
       local
-        Call call;
-      case Expression.CALL(call=call) algorithm
-        _ := match call
-          local
-            String name;
+        Expression ret;
+        Boolean has_derviative_annotation = false;
+        Call call, der_call;
+        String name;
+        Option<Function> func_opt;
+        list<Function> derivatives;
+        Function func, der_func;
+        list<Expression> arguments = {};
+        Operator addOp, mulOp;
 
-          case Call.TYPED_CALL() algorithm
-            name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-            exp := differentiateCallExp(name, exp, diffArguments);
-            then();
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Call.toString(call)});
-          then fail();
-        end match;
+      // builtin functions
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        ret := differentiateBuiltinCall(name, exp, diffArguments);
+      then (ret, diffArguments);
 
-        then (exp, diffArguments);
+      // user defined functions
+      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        func_opt := FunctionTreeImpl.getOpt(diffArguments.funcTree, call.fn.path);
+        if Util.isSome(func_opt) then
+          // The function is in the function tree
+          derivatives := Function.getDerivatives(Util.getOption(func_opt));
+          ret := match derivatives
+            // no derivative of order 1 defined -> differentiate and add to the function tree
+            case {} algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because function differentiation is not yet implemented."});
+            then fail();
+
+            // exactly one derivative of order 1 -> use it
+            case {der_func} algorithm
+              (arguments, diffArguments) := List.mapFold(call.arguments, differentiateExpression, diffArguments);
+            then Expression.CALL(Call.makeTypedCall(der_func, listAppend(call.arguments, arguments), call.var, call.purity));
+
+            // ERROR - more than one derivative of order 1 defined
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there were " + intString(listLength(derivatives))
+                + " derivatives of order 1 (expected is exactly one).\n Derivatives:" + List.toString(derivatives, function Function.signatureString(printTypes = true), "", "", "\n", "")});
+            then fail();
+          end match;
+        else
+          // The function is not in the function tree and not builtin -> error
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+            + " failed because the function is not a builtin function and could not be found in the function tree: "
+            + Expression.toString(exp)});
+          fail();
+        end if;
+      then (ret, diffArguments);
+
+      // If the call was not typed correctly by the frontend
       else algorithm
-        // Add failtrace here
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
-        then fail();
+      then fail();
     end match;
 
     if debug then
@@ -653,100 +688,236 @@ public
 
   end differentiateCall;
 
-  protected function differentiateCallExp
-    "This function differentiates built-in call expressions with 1 argument
-    with respect to a given variable,given as third argument."
+  protected function differentiateBuiltinCall
+    "This function differentiates built-in call expressions with respect to a given variable.
+    Also creates and multiplies inner derivatives."
     input String name;
     input output Expression exp;
     input output DifferentiationArguments diffArguments;
+  protected
+    // these need to be adapted to size and type of exp
+    Operator.SizeClassification sizeClass = NFOperator.SizeClassification.SCALAR;
+    Operator addOp = Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
+    Operator mulOp = Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
   algorithm
     exp := match (exp)
       local
-        Call call;
-        Expression derFuncCall, arg1, diffArg1, exp1, diffExp1;
-        list<Expression> arguments;
-        Operator operator, addOp, mulOp;
-        Operator.SizeClassification sizeClass;
+        Expression ret, ret1, ret2, arg1, arg2, diffArg1, diffArg2;
 
       // Builtin function call with one argument
-      case (Expression.CALL(call=call))
-      guard (listLength(Call.arguments(call)) == 1)
+      // df/dx = df/dy * dy/dx
+      case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 1)
       algorithm
-        arguments := Call.arguments(call);
-        arg1 := List.first(arguments);
-        diffArg1 := differentiateExpression(arg1, diffArguments);
-        // TODO: Check sizeClass for array-equations
-        sizeClass := NFOperator.SizeClassification.SCALAR;
-        mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
-        derFuncCall := differentiateNamedCall1Arg(name, arg1);
-      then(Expression.MULTARY({derFuncCall, diffArg1}, {}, mulOp));
+        // differentiate the call
+        {arg1} := Call.arguments(exp.call);
+        ret := differentiateBuiltinCall1Arg(name, arg1);
+        if not Expression.isZero(ret) then
+          // differentiate the argument (inner derivative)
+          diffArg1 := differentiateExpression(arg1, diffArguments);
+          ret := Expression.MULTARY({ret, diffArg1}, {}, mulOp);
+        end if;
+      then ret;
 
       // Builtin function call with two arguments
-      case (Expression.CALL(call=call))
-      guard (listLength(Call.arguments(call)) == 2)
+      // df(y,z)/dx = df/dy * dy/dx + df/dz * dz/dx
+      case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 2)
       algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + " Not implemeted yet!"});
-      then fail();
+        // differentiate the call
+        {arg1, arg2} := Call.arguments(exp.call);
+        (ret1, ret2) := differentiateBuiltinCall2Arg(name, arg1, arg2); // df/dy and df/dz
+        diffArg1 := differentiateExpression(arg1, diffArguments);       // dy/dx
+        diffArg2 := differentiateExpression(arg2, diffArguments);       // dz/dx
+        ret1 := Expression.MULTARY({ret1, diffArg1}, {}, mulOp);        // df/dy * dy/dx
+        ret2 := Expression.MULTARY({ret2, diffArg2}, {}, mulOp);        // df/dz * dz/dx
+        ret := Expression.MULTARY({ret1,ret2}, {}, addOp);              // df/dy * dy/dx + df/dz * dz/dx
+     then ret;
 
       // try some simple known cases
-      case (Expression.CALL(call=call)) algorithm
-        exp1 := match Call.getLastPathName(Call.functionName(call))
+      case (Expression.CALL()) algorithm
+        ret := match Call.getLastPathName(Call.functionName(exp.call))
           case "sample" then Expression.BOOLEAN(false);
           else fail();
         end match;
-      then exp1;
+      then ret;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
         then fail();
     end match;
-  end differentiateCallExp;
+  end differentiateBuiltinCall;
 
-  function differentiateNamedCall1Arg
+  function differentiateBuiltinCall1Arg
+    "differentiate a builtin call with one argument."
     input String name;
-    input Expression innerExp;
+    input Expression arg;
     output Expression derFuncCall;
+  protected
+    // these probably need to be adapted to the size and type of arg
+    Operator.SizeClassification sizeClass = NFOperator.SizeClassification.SCALAR;
+    Operator powOp = Operator.fromClassification((NFOperator.MathClassification.POWER, sizeClass), Type.REAL());
+    Operator addOp = Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
+    Operator mulOp = Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
   algorithm
     derFuncCall := match (name)
       local
-        Expression exp1;
-        Operator addOp, mulOp, powOp;
-        Operator.SizeClassification sizeClass;
-      // acos -> - 1 / sqrt(1-innerExp^2)
-      case("acos") algorithm
-        sizeClass := NFOperator.SizeClassification.SCALAR;
-        powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, sizeClass), Type.REAL());    // TODO: How to get size and what is ty?
-        addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
-        mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
-        exp1 := Expression.BINARY(innerExp, powOp, Expression.REAL(2.0));                       // innerExp^2
-        exp1 := Expression.MULTARY({Expression.REAL(1.0)}, {exp1}, addOp);                      // 1 - innerExp^2
-        exp1 := Expression.BINARY(exp1, powOp, Expression.REAL(0.5));                           // sqrt(1-innerExp^2)   // TODO: Or do we wan't to use sqrt builtin-function?
-        exp1 := Expression.MULTARY({Expression.negate(Expression.REAL(1.0))}, {exp1}, mulOp);   // -1/sqrt(1-innerExp^2)
-        then exp1;
-      // cos -> -sin
-      case("cos") algorithm
-        then Expression.negate(Expression.CALL(Call.makeTypedCall(
+        Expression ret;
+
+      // all these are integer based and therefore zero
+      case ("abs")      then Expression.makeZero(Type.INTEGER());
+      case ("sign")     then Expression.makeZero(Type.INTEGER());
+      case ("ceil")     then Expression.makeZero(Type.INTEGER());
+      case ("floor")    then Expression.makeZero(Type.INTEGER());
+      case ("integer")  then Expression.makeZero(Type.INTEGER());
+
+      // sqrt(arg) -> 0.5/arg^(0.5)
+      case ("sqrt") algorithm
+        ret := Expression.BINARY(arg, powOp, Expression.REAL(0.5));       // arg^0.5
+        ret := Expression.MULTARY({Expression.REAL(0.5)}, {ret}, mulOp);  // 1/(2*arg^0.5)
+      then ret;
+
+      // sin(arg) -> cos(arg)
+      case ("sin") then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.COS_REAL,
+          args        = {arg},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE
+        ));
+
+      // cos(arg) -> -sin(arg)
+      case("cos") then Expression.negate(Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.SIN_REAL,
-          args        = {innerExp},
-          variability = Expression.variability(innerExp),
+          args        = {arg},
+          variability = Expression.variability(arg),
           purity      = NFPrefixes.Purity.PURE
         )));
-      // sin -> cos
-      case ("sin") algorithm
-        then Expression.CALL(Call.makeTypedCall(
-          fn          = NFBuiltinFuncs.COS_REAL,
-          args        = {innerExp},
-          variability = Expression.variability(innerExp),
-          purity      = NFPrefixes.Purity.PURE
-         ));
-      case ("integer") then Expression.makeZero(Type.INTEGER());
 
-      // TODO Add all builtin functions with one argument here
-    else algorithm
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
+      // tan(arg) -> 1/cos(arg)^2
+      // kabdelhak: ToDo - investigate numerical properties: 1+tan(arg)^2 maybe better?
+      case("tan") algorithm
+        ret := Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.COS_REAL,
+          args        = {arg},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE));                         // cos(arg)
+        ret := Expression.BINARY(ret, powOp, Expression.REAL(2.0));       // cos(arg)^2
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, mulOp);  // 1/cos(arg)^2
+      then ret;
+
+      // asin(arg) -> 1/sqrt(1-arg^2)
+      case("asin") algorithm
+        ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-arg^2
+        ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));       // sqrt(1-arg^2)
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, mulOp);  // 1/sqrt(1-arg^2)
+      then ret;
+
+      // acos(arg) -> -1/sqrt(1-arg^2)
+      case("acos") algorithm
+        ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-arg^2
+        ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));       // sqrt(1-arg^2)
+        ret := Expression.MULTARY({Expression.REAL(-1.0)}, {ret}, mulOp); // -1/sqrt(1-arg^2)
+      then ret;
+
+      // atan(arg) -> 1/(1+arg^2)
+      case("atan") algorithm
+        ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
+        ret := Expression.MULTARY({Expression.REAL(1.0), ret}, {}, addOp);// 1+arg^2
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, mulOp);  // 1/(1+arg^2)
+      then ret;
+
+      // sinh(arg) -> cosh(arg)
+      case ("sinh") then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.COSH_REAL,
+          args        = {arg},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE
+        ));
+
+      // cosh(arg) -> sinh(arg)
+      case("cosh") then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.SINH_REAL,
+          args        = {arg},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE
+        ));
+
+      // tanh(arg) -> 1-tanh(arg)^2
+      case("tanh") algorithm
+        ret := Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.TANH_REAL,
+          args        = {arg},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE));                         // tanh(arg)
+        ret := Expression.BINARY(ret, powOp, Expression.REAL(2.0));       // tanh(arg)^2
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-tanh(arg)^2
+      then ret;
+
+      // exp(arg) -> exp(arg)
+      case ("exp") then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.EXP_REAL,
+          args        = {arg},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE
+        ));
+
+      // log(arg) -> 1/arg
+      case ("log") then Expression.MULTARY({Expression.REAL(1.0)}, {arg}, mulOp);
+
+      // log10(arg) -> 1/(arg*log(10))
+      case ("log10") algorithm
+        ret := Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.LOG_REAL,
+          args        = {Expression.REAL(10.0)},
+          variability = Expression.variability(arg),
+          purity      = NFPrefixes.Purity.PURE));                             // log(10)
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {arg, ret}, mulOp); // 1/arg*log(10)
+      then ret;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
       then fail();
     end match;
-  end differentiateNamedCall1Arg;
+  end differentiateBuiltinCall1Arg;
+
+  function differentiateBuiltinCall2Arg
+    "differentiate a builtin call with two arguments."
+    input String name;
+    input Expression arg1;
+    input Expression arg2;
+    output Expression derFuncCall1;
+    output Expression derFuncCall2;
+  protected
+    // these probably need to be adapted to the size and type of arg
+    Operator.SizeClassification sizeClass = NFOperator.SizeClassification.SCALAR;
+    Operator powOp = Operator.fromClassification((NFOperator.MathClassification.POWER, sizeClass), Type.REAL());
+    Operator addOp = Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
+    Operator mulOp = Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
+  algorithm
+    (derFuncCall1, derFuncCall2) := match (name)
+      local
+        Expression exp1, exp2, ret1, ret2;
+
+      // all these are integer based and therefore zero
+      case ("div") then (Expression.makeZero(Type.INTEGER()), Expression.makeZero(Type.INTEGER()));
+      case ("mod") then (Expression.makeZero(Type.INTEGER()), Expression.makeZero(Type.INTEGER()));
+      case ("rem") then (Expression.makeZero(Type.INTEGER()), Expression.makeZero(Type.INTEGER()));
+
+      // d/darg1 atan2(arg1, arg2) -> -arg2/(arg1^2+arg2^2)
+      // d/darg2 atan2(arg1, arg2) ->  arg1/(arg1^2+arg2^2)
+      case ("atan2") algorithm
+        exp1 := Expression.BINARY(arg1, powOp, Expression.REAL(2.0));         // arg1^2
+        exp2 := Expression.BINARY(arg2, powOp, Expression.REAL(2.0));         // arg2^2
+        exp1 := Expression.MULTARY({exp1, exp2}, {}, addOp);                  // arg1^2+arg2^2
+        ret1 := Expression.MULTARY({Expression.negate(arg2)}, {exp1}, mulOp); // -arg2/(arg1^2+arg2^2)
+        ret2 := Expression.MULTARY({arg1}, {exp1}, mulOp);                    //  arg1/(arg1^2+arg2^2)
+      then (ret1, ret2);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
+      then fail();
+    end match;
+  end differentiateBuiltinCall2Arg;
 
   function differentiateBinary
     "Some of this is depcreated because of Expression.MULTARY().

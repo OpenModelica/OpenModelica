@@ -164,11 +164,21 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// BLOCK 1: Alias of INI[1 | 5]
+// --- Alias of INI[1 | 5] ---
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	Real $DER.x
+// ### Equation:
+// 	[SCAL] (1) $DER.x = sin(time) ($RES_SIM_0)
 //
-// BLOCK 2: Alias of INI[1 | 4]
+// --- Alias of INI[1 | 4] ---
+// BLOCK 2: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	Real y
+// ### Equation:
+// 	[SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 //
 // ################################################################################
 //
@@ -180,11 +190,21 @@ simulate(partitioning); getErrorString();
 // CONTINUOUS 2 ALG System
 // ========================================
 //
-// BLOCK 1: Alias of INI[1 | 1]
+// --- Alias of INI[1 | 1] ---
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	Real k
+// ### Equation:
+// 	[SCAL] (1) k = cos(time) ($RES_SIM_3)
 //
-// BLOCK 2: Alias of INI[1 | 2]
+// --- Alias of INI[1 | 2] ---
+// BLOCK 2: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
+// ### Variable:
+// 	Real z
+// ### Equation:
+// 	[SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
 //
 // ################################################################################
 //

@@ -544,9 +544,8 @@ protected
     // filter all discrete equations and differentiate the others
     eqn_lst := list(eqn for eqn guard(not Equation.isDiscrete(eqn)) in EquationPointers.toList(equations));
 
-    (diffed_eqn_lst, diffArguments) := Differentiate.differentiateEquationPointerList(eqn_lst, diffArguments, idx, name, getInstanceName());
+    (diffed_eqn_lst, diffArguments) := Differentiate.differentiateEquationPointerList(listReverse(eqn_lst), diffArguments, idx, name, getInstanceName());
     diffedEquations := EquationPointers.fromList(diffed_eqn_lst);
-
 
     // create equation data for jacobian
     // ToDo: split temporary and auxiliares once tearing is applied

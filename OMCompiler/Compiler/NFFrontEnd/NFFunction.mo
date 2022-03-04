@@ -2569,6 +2569,18 @@ protected
     deps := Dimension.foldExp(dim,
       function getLocalDependenciesExp(locals = locals), deps);
   end getLocalDependenciesDim;
+
+  function getDerivatives
+    "returns all derivatives of a function of a certain order."
+    input Function original;
+    input Integer order = 1;
+    output list<Function> derivatives;
+  protected
+    list<FunctionDerivative> order_derivatives;
+  algorithm
+    order_derivatives := list(func for func guard(FunctionDerivative.getOrder(func) == order) in original.derivatives);
+    derivatives       := List.flatten(list(getCachedFuncs(func.derivativeFn) for func in order_derivatives));
+  end getDerivatives;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");
