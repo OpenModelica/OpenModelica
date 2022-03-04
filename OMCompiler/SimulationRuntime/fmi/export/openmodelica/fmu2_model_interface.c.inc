@@ -1239,7 +1239,18 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
 
 fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
-  return unsupportedFunction((ModelInstance *)c, "fmi2GetFMUstate");
+  ModelInstance *comp = (ModelInstance *) c;
+  fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*) comp->functions;
+
+  int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
+  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  if (invalidState(comp, "fmi2GetFMUstate", meStates, csStates))
+    return fmi2Error;
+
+  INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) functions->allocateMemory(1, sizeof(INTERNAL_FMU_STATE));
+  internal_state->simulationData = nullptr;
+  *FMUstate = (fmi2FMUstate) internal_state;
+  return fmi2OK;
 }
 
 fmi2Status fmi2SetFMUstate(fmi2Component c, fmi2FMUstate FMUstate)
@@ -1249,7 +1260,20 @@ fmi2Status fmi2SetFMUstate(fmi2Component c, fmi2FMUstate FMUstate)
 
 fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
-  return unsupportedFunction((ModelInstance *)c, "fmi2FreeFMUstate");
+  ModelInstance *comp = (ModelInstance *) c;
+  fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*) comp->functions;
+
+  int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
+  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  if (invalidState(comp, "fmi2FreeFMUstate", meStates, csStates))
+    return fmi2Error;
+
+  if (*FMUstate)
+  {
+    functions->freeMemory(*FMUstate);
+    *FMUstate = nullptr;
+  }
+  return fmi2OK;
 }
 
 fmi2Status fmi2SerializedFMUstateSize(fmi2Component c, fmi2FMUstate FMUstate, size_t *size)
