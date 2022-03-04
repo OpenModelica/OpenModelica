@@ -1241,14 +1241,17 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
   fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*) comp->functions;
-
   int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
   int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
   if (invalidState(comp, "fmi2GetFMUstate", meStates, csStates))
     return fmi2Error;
 
   INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) functions->allocateMemory(1, sizeof(INTERNAL_FMU_STATE));
-  internal_state->simulationData = nullptr;
+  internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
+
+  // TODO: copy the ring buffer
+
+  // return the fmu state
   *FMUstate = (fmi2FMUstate) internal_state;
   return fmi2OK;
 }
@@ -1270,6 +1273,8 @@ fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 
   if (*FMUstate)
   {
+    INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) *FMUstate;
+    freeRingBuffer(internal_state->simulationData);
     functions->freeMemory(*FMUstate);
     *FMUstate = nullptr;
   }
