@@ -3881,16 +3881,6 @@ algorithm
              else expSub(e1,e2);
 end makeDiff;
 
-public function makeDifference
-"Takes two expressions and create
- the difference between them --> a-(b+c) = a-b-c"
-  input DAE.Exp e1;
-  input DAE.Exp e2;
-  output DAE.Exp res;
-algorithm
-  res := makeDiff(e1, e2);
-end makeDifference;
-
 public function makeLBinary
 "Makes a binary logical expression of all elements in the list."
   input list<DAE.Exp> inExpLst;

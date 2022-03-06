@@ -127,7 +127,7 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
   ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
   int nth = 0;
-  int nnz = jacobian->sparsePattern->numberOfNoneZeros;
+  int nnz = jacobian->sparsePattern->numberOfNonZeros;
 
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);

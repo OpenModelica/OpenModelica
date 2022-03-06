@@ -169,7 +169,7 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
       kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
     kinsolData->J = SUNDenseMatrix(size, size);
   } else if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-    kinsolData->nnz = nlsData->sparsePattern->numberOfNoneZeros;
+    kinsolData->nnz = nlsData->sparsePattern->numberOfNonZeros;
     kinsolData->J = SUNSparseMatrix(size, size, kinsolData->nnz, CSC_MAT);
   } else {
     kinsolData->J = NULL;
@@ -551,7 +551,7 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
     }
   }
   /* Finish sparse matrix */
-  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
+  finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
 
   /* Debug print */
   if (ACTIVE_STREAM(LOG_NLS_JAC)) {
@@ -664,7 +664,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   }
 
   /* Finish sparse matrix and do a cheap check for singularity */
-  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
+  finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
 
   /* Debug print */
   if (ACTIVE_STREAM(LOG_NLS_JAC)) {

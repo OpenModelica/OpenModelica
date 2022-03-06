@@ -1297,7 +1297,7 @@ uniontype ClockKind
   end RATIONAL_CLOCK;
 
   record REAL_CLOCK
-    Exp interval " real type > 0";
+    Exp interval " real type > 0 ";
   end REAL_CLOCK;
 
   record EVENT_CLOCK
@@ -1306,7 +1306,7 @@ uniontype ClockKind
   end EVENT_CLOCK;
 
   record SOLVER_CLOCK
-    Exp c;
+    Exp c " clock type ";
     Exp solverMethod " string type ";
   end SOLVER_CLOCK;
 end ClockKind;

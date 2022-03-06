@@ -1771,7 +1771,7 @@ algorithm
     case ("smooth",{DAE.ICONST(i),e2}, DAE.CALL_ATTR(ty=tp))
       equation
         (res1, funcs) = differentiateExp(e2,inDiffwrtCref,inInputData,inDiffType,inFunctionTree, maxIter);
-        e1 = Expression.expSub(DAE.ICONST(i), DAE.ICONST(1));
+        e1 = DAE.ICONST(i-1);
         res2 = if intGe(i,1) then Expression.makePureBuiltinCall("smooth", {e1, res1}, tp) else res1;
       then
         (res2, funcs);
@@ -1832,14 +1832,14 @@ algorithm
       then
         (DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.LESS(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), res1, res2), funcs);
 
-    // diff(div(e1,e2)) =  diff(if noEvent(e1 > 0) then floor(e1/e2) else ceil(e1/e2)) = 0.0;
+    // diff(div(e1,e2)) = diff(if noEvent(e1 > 0) then floor(e1/e2) else ceil(e1/e2)) = 0.0;
     case ("div", {_,_}, DAE.CALL_ATTR(ty=tp))
       equation
         (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         (res1, inFunctionTree);
 
-    // diff(mod(e1,e2)) =  diff(e1 - e2*floor(e1/e2))
+    // diff(mod(e1,e2)) = diff(e1 - e2*floor(e1/e2))
     case ("mod", {e1,e2}, DAE.CALL_ATTR(ty=tp))
       equation
         etmp = Expression.makePureBuiltinCall("floor", {DAE.BINARY(e1, DAE.DIV(tp), e2)}, tp);

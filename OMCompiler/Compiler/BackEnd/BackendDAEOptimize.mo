@@ -3925,7 +3925,7 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})})
       equation
         str = ComponentReference.crefStr(cr);
-        str = stringAppendList({"The model includes derivatives of order > 1 for: ", str, ". That is not supported. Real d", str, " = der(", str, ") *might* result in a solvable model"});
+        str = stringAppendList({"The model includes derivatives of order > 1 for: ", str, ". That is not supported. Adding 'Real d", str, " = der(", str, ");' *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
     // case for arrays

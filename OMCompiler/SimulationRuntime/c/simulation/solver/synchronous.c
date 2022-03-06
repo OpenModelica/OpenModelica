@@ -282,7 +282,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
   while(nextTimer->activationTime <= solverInfo->currentTime + SYNC_EPS)
   {
-    base_idx =  nextTimer->base_idx;
+    base_idx = nextTimer->base_idx;
     sub_idx = nextTimer->sub_idx;
     type = nextTimer->type;
     activationTime = nextTimer->activationTime;
@@ -356,7 +356,7 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
 
   *nextTimerDefined = 0;
 
-  if (data->simulationInfo->intvlTimers == NULL ||listLen(data->simulationInfo->intvlTimers) <= 0) {
+  if (data->simulationInfo->intvlTimers == NULL || listLen(data->simulationInfo->intvlTimers) <= 0) {
     TRACE_POP
     return (int) ret;
   }
@@ -365,7 +365,7 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
   nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
   while(nextTimer->activationTime <= currentTime + SYNC_EPS)
   {
-    base_idx =  nextTimer->base_idx;
+    base_idx = nextTimer->base_idx;
     sub_idx = nextTimer->sub_idx;
     type = nextTimer->type;
     activationTime = nextTimer->activationTime;
