@@ -373,6 +373,7 @@ protected
   LoadModelFoldArg arg = (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted);
 algorithm
   (pnew, success) := List.fold2(imodelsToLoad, loadModel1, arg, pathToFile, (ip, true));
+  System.loadModelCallBack();
 end loadModel;
 
 protected function loadModel1
@@ -608,6 +609,7 @@ algorithm
         paths := List.map(classes,AbsynUtil.className);
         paths := List.map1r(paths,AbsynUtil.joinWithinPath,within_);
         vals := List.map(paths,ValuesUtil.makeCodeTypeName);
+        System.loadModelCallBack();
       then
         ValuesUtil.makeArray(vals);
 
@@ -1352,6 +1354,7 @@ algorithm
         newp := InteractiveUtil.updateProgram(newp, SymbolTable.getAbsyn(), mergeAST);
         SymbolTable.setAbsyn(newp);
         outCache := FCore.emptyCache();
+        System.loadModelCallBack();
       then
         Values.BOOL(true);
 
