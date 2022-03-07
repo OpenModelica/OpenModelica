@@ -275,13 +275,20 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
     sim_result.emit(&sim_result, data, threadData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
-  if (embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue)) {
+  int terminate=0;
+
+  if (embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue, &terminate)) {
     solverInfo->didEventStep = 1;
     overwriteOldSimulationData(data);
     storePreValues(data); // Maybe??
     storeOldValues(data); // Maybe??
     sim_result.emit(&sim_result, data, threadData);
   }
+
+  if (terminate) {
+    omc_terminate((FILE_INFO) omc_dummyFileInfo, "The embedded server received command to terminate.");
+  }
+
   if (data->real_time_sync.enabled) {
     double time = data->localData[0]->timeValue;
     int64_t res = rt_ext_tp_sync_nanosec(&data->real_time_sync.clock, (uint64_t) (data->real_time_sync.scaling*(time-data->real_time_sync.time)*1e9));

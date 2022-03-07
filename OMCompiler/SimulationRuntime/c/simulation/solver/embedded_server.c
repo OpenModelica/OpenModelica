@@ -55,7 +55,7 @@ void no_embedded_server_deinit(void *handle)
 {
 }
 
-int no_embedded_server_update(void *handle, double tout)
+int no_embedded_server_update(void *handle, double tout, int *terminate)
 {
   return 0;
 }
@@ -65,7 +65,7 @@ void (*wait_for_step)(void*) = no_wait_for_step;
 void (*embedded_server_deinit)(void*) = no_embedded_server_deinit;
 // Tells the embedded server that a simulation step has passed; the server
 // can read/write values from/to the simulator
-int (*embedded_server_update)(void*, double tout) = no_embedded_server_update;
+int (*embedded_server_update)(void*, double tout, int*) = no_embedded_server_update;
 
 void* embedded_server_load_functions(const char *server_name)
 {

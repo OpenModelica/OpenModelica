@@ -50,7 +50,7 @@
 OPC_UA_EXPORT void* omc_embedded_server_init(DATA *data, double t, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port);
 OPC_UA_EXPORT void omc_wait_for_step(void*);
 OPC_UA_EXPORT void omc_embedded_server_deinit(void*);
-OPC_UA_EXPORT int omc_embedded_server_update(void*, double t);
+OPC_UA_EXPORT int omc_embedded_server_update(void*, double t, int*);
 
 #define OMC_OPC_NODEID_STEP 10000
 #define OMC_OPC_NODEID_RUN  10001

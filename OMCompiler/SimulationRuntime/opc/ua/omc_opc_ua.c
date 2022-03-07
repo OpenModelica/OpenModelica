@@ -681,7 +681,7 @@ void omc_embedded_server_deinit(void *state_vp)
   free(state);
 }
 
-int omc_embedded_server_update(void *state_vp, double t)
+int omc_embedded_server_update(void *state_vp, double t, int *terminate)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) state_vp;
   int i, realIndex=0, boolIndex=0, res=0;
@@ -729,7 +729,7 @@ int omc_embedded_server_update(void *state_vp, double t)
   }
 
   if (state->terminate)
-    omc_terminate((FILE_INFO) omc_dummyFileInfo, "The embedded server received command to terminate.");
+    *terminate = 1;
 
   pthread_mutex_unlock(&state->write_values);
 
