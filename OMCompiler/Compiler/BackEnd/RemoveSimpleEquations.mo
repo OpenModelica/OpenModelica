@@ -70,7 +70,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
-import GC;
+import GCExt;
 import HashSet;
 import HashTableCrToCrEqLst;
 import HashTableCrToExp;
@@ -581,7 +581,7 @@ algorithm
 
     outSystem := updateSystem(globalFoundSimple, eqnslst, vars, repl, outSystem);
     outTpl := ((repl, globalFoundSimple, unReplaceable, maxTraversals, warnAliasConflicts));
-    GC.free(mT);
+    GCExt.free(mT);
   else
     //Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
     outSystem := inSystem;
@@ -4533,7 +4533,6 @@ algorithm
       unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
     then unReplaceable;
 
-    case (DAE.CREF_ITER(), _) then iUnreplaceable;
     case (DAE.OPTIMICA_ATTR_INST_CREF(), _) then iUnreplaceable;
     case (DAE.WILD(), _) then iUnreplaceable;
   end match;
@@ -4605,6 +4604,8 @@ algorithm
       HashTableCrToExp.HashTable HTCrToExp;
       HashTableCrToCrEqLst.HashTable HTCrToCrEqLst, HTAliasLst;
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplExp;
+      DAE.ComponentRef cr_print;
+      DAE.Exp exp_print;
       list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplCrEqLst, tplAliasLst;
 
       Integer countAliasEquations, countSimpleEquations, size;
@@ -4711,6 +4712,7 @@ algorithm
         print("Number of Alias Equations:   " +  intString(countAliasEquations) + "\n");
         print("Number of Simple Equations:   " +  intString(countSimpleEquations) + "\n");
         print("\nAliases:\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+        BaseHashTable.dumpHashTable(HTCrToExp);
       end if;
       //SimCodeUtil.execStat("FINDSIMPLE6: ");
 

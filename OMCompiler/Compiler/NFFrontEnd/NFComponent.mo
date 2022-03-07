@@ -216,6 +216,12 @@ public
     Modifier modifier;
   end TYPE_ATTRIBUTE;
 
+  record DELETED_COMPONENT
+    Component component;
+  end DELETED_COMPONENT;
+
+  record WILD "needed for new crefs in the backend" end WILD;
+
   function new
     input SCode.Element definition;
     output Component component;
@@ -278,9 +284,10 @@ public
     output InstNode classInst;
   algorithm
     classInst := match component
-      case UNTYPED_COMPONENT() then component.classInst;
-      case TYPED_COMPONENT() then component.classInst;
+      case UNTYPED_COMPONENT()  then component.classInst;
+      case TYPED_COMPONENT()    then component.classInst;
       case ITERATOR(ty = Type.COMPLEX(cls = classInst)) then classInst;
+      case ITERATOR()           then InstNode.ITERATOR_NODE(Expression.EMPTY(component.ty));
     end match;
   end classInstance;
 
@@ -429,6 +436,7 @@ public
     attr := match component
       case UNTYPED_COMPONENT() then component.attributes;
       case TYPED_COMPONENT() then component.attributes;
+      else DEFAULT_ATTR;
     end match;
   end getAttributes;
 
@@ -457,10 +465,11 @@ public
     output Binding b;
   algorithm
     b := match component
-      case UNTYPED_COMPONENT() then component.binding;
-      case TYPED_COMPONENT() then component.binding;
-      case TYPE_ATTRIBUTE() then Modifier.binding(component.modifier);
-      else NFBinding.EMPTY_BINDING;
+      case UNTYPED_COMPONENT()  then component.binding;
+      case TYPED_COMPONENT()    then component.binding;
+      case TYPE_ATTRIBUTE()     then Modifier.binding(component.modifier);
+      case WILD()               then Binding.WILD();
+                                else NFBinding.EMPTY_BINDING;
     end match;
   end getBinding;
 

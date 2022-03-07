@@ -313,7 +313,7 @@ void GDBAdapter::launch(QString program, QString workingDirectory, QStringList a
   }
   mpGDBProcess = new QProcess;
   setGDBKilled(false);
-#ifdef WIN32
+#if defined(_WIN32)
   /* Set the environment for GDB process */
   QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
   if (!simulationOptions.getFileName().isEmpty()) {
@@ -363,7 +363,7 @@ void GDBAdapter::launch(QString processId, QString GDBPath)
   mAttachToProcessId = processId;
   mpGDBProcess = new QProcess;
   setGDBKilled(false);
-#ifdef WIN32
+#if defined(_WIN32)
   /* Set the environment for GDB process */
   mpGDBProcess->setProcessEnvironment(StringHandler::simulationProcessEnvironment());
 #endif

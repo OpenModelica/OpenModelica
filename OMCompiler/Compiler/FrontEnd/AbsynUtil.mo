@@ -1621,6 +1621,21 @@ algorithm
   end match;
 end addSubscriptsLast;
 
+public function crefReplaceFirst
+  "Replaces the first part of a cref with another cref."
+  input Absyn.ComponentRef cref;
+  input Absyn.ComponentRef replacement;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := match cref
+    case Absyn.ComponentRef.CREF_IDENT() then replacement;
+    case Absyn.ComponentRef.CREF_QUAL()
+      then joinCrefs(replacement, crefStripFirst(cref));
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      then Absyn.ComponentRef.CREF_FULLYQUALIFIED(crefReplaceFirst(cref.componentRef, replacement));
+  end match;
+end crefReplaceFirst;
+
 public function crefReplaceFirstIdent "
   Replaces the first part of a cref with a replacement path:
   (a[4].b.c[3], d.e) => d.e[4].b.c[3]
@@ -2273,6 +2288,18 @@ algorithm
   end match;
 end crefIsQual;
 
+public function crefFirstSubs
+  "Returns the subscripts on the first part of an Absyn.ComponentRef."
+  input Absyn.ComponentRef cref;
+  output list<Absyn.Subscript> subscripts;
+algorithm
+  subscripts := match cref
+    case Absyn.ComponentRef.CREF_IDENT() then cref.subscripts;
+    case Absyn.ComponentRef.CREF_QUAL() then cref.subscripts;
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED() then crefFirstSubs(cref.componentRef);
+  end match;
+end crefFirstSubs;
+
 public function crefLastSubs "Return the last subscripts of an Absyn.ComponentRef"
   input Absyn.ComponentRef cref;
   output list<Absyn.Subscript> subscripts;
@@ -2283,6 +2310,32 @@ algorithm
     case Absyn.CREF_FULLYQUALIFIED() then crefLastSubs(cref.componentRef);
   end match;
 end crefLastSubs;
+
+public function crefSetFirstSubs
+  "Sets the subscripts of the first part of an Absyn.ComponentRef."
+  input output Absyn.ComponentRef cref;
+  input list<Absyn.Subscript> subscripts;
+algorithm
+  () := match cref
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        cref.subscripts := subscripts;
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        cref.subscripts := subscripts;
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      algorithm
+        cref.componentRef := crefSetFirstSubs(cref.componentRef, subscripts);
+      then
+        ();
+  end match;
+end crefSetFirstSubs;
 
 public function crefSetLastSubs
   input output Absyn.ComponentRef cref;
@@ -2365,6 +2418,18 @@ algorithm
     case Absyn.CREF_FULLYQUALIFIED() then crefGetLastIdent(cref.componentRef);
   end match;
 end crefGetLastIdent;
+
+public function crefGetLastSubs
+  "Gets the last subscripts in a Absyn.ComponentRef"
+  input Absyn.ComponentRef cref;
+  output list<Absyn.Subscript> subscripts;
+algorithm
+  subscripts := match cref
+    case Absyn.CREF_IDENT() then cref.subscripts;
+    case Absyn.CREF_QUAL() then crefGetLastSubs(cref.componentRef);
+    case Absyn.CREF_FULLYQUALIFIED() then crefGetLastSubs(cref.componentRef);
+  end match;
+end crefGetLastSubs;
 
 public function crefStripLastSubs "Strips the last subscripts of a Absyn.ComponentRef"
   input output Absyn.ComponentRef cref;
@@ -4536,6 +4601,13 @@ algorithm
   outSubscript := Absyn.SUBSCRIPT(inExp);
 end makeSubscript;
 
+public function makeIntegerSubscript
+  input Integer n;
+  output Absyn.Subscript sub;
+algorithm
+  sub := Absyn.SUBSCRIPT(Absyn.INTEGER(n));
+end makeIntegerSubscript;
+
 public function crefExplode
   "Splits a cref into parts."
   input Absyn.ComponentRef inCref;
@@ -4900,6 +4972,13 @@ algorithm
 
     // add graphics to the second tuple
     case (mod as Absyn.MODIFICATION(modification = SOME(_), path = Absyn.IDENT(name = "graphics"))) :: rest
+      equation
+        (l1,l2) = stripGraphicsAndInteractionModification(rest);
+      then
+        (l1,mod::l2);
+
+    // add choice to the second tuple
+    case (mod as Absyn.MODIFICATION(modification = SOME(_), path = Absyn.IDENT(name = "choice"))) :: rest
       equation
         (l1,l2) = stripGraphicsAndInteractionModification(rest);
       then
@@ -5752,6 +5831,117 @@ algorithm
     else ();
   end match;
 end mapAnnotationBindingInEqMod;
+
+public function createChoiceArray
+"translates
+  choices(choice(mod1),choice(mod2),choice(mod3)) -> choices(choice={\"mod1\", \"mod2\", \"mod3\"})
+  choices(choice = mod1, choice = mod2, choice = mod3) -> choices(choice={\"mod1\", \"mod2\", \"mod3\"})"
+  input Absyn.ElementArg inChoices;
+  output Absyn.ElementArg outChoices = inChoices;
+protected
+   Absyn.ElementArg choices;
+   list<Absyn.ElementArg> choice, acc_choice = {}, acc = {}, args;
+   Absyn.ElementArg c, el;
+   Absyn.Info info1, info2;
+   Option<String> cmt1, cmt2;
+   Boolean fp1, fp2;
+   Absyn.Each ep1, ep2;
+   list<String> choiceArray = {};
+   String s;
+   Absyn.Exp e;
+algorithm
+  outChoices := match(inChoices)
+    case Absyn.MODIFICATION(
+          finalPrefix = fp1,
+          eachPrefix = ep1,
+          path = Absyn.IDENT("choices"),
+          modification = SOME(Absyn.CLASSMOD(choice, Absyn.NOMOD())),
+          comment = cmt1,
+          info = info1)
+      algorithm
+        for m in choice loop
+          (choiceArray, acc) := match m
+          // if is a choice, remember it and put it in an array of strings
+          case Absyn.MODIFICATION(fp2, ep2, Absyn.IDENT("choice"), SOME(Absyn.CLASSMOD({el}, Absyn.NOMOD())), cmt2, info2)
+            algorithm
+              s := Dump.unparseElementArgStr(el);
+            then
+              (s::choiceArray, acc);
+          // if is a choice, remember it and put it in an array of strings
+          case Absyn.MODIFICATION(fp2, ep2, Absyn.IDENT("choice"), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(exp = e))), cmt2, info2)
+            algorithm
+              s := Dump.printExpStr(e);
+            then
+              (s::choiceArray, acc);
+          // otherwise put it in any other arguments except choice
+          else
+             (choiceArray, m::acc);
+          end match;
+        end for;
+        if not listEmpty(choiceArray) then
+          e := Absyn.ARRAY(list(Absyn.STRING(s) for s in listReverse(choiceArray)));
+          c := Absyn.MODIFICATION(fp2, ep2, Absyn.IDENT("choice"), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(e, info2))), cmt2, info2);
+          args := listReverse(c::acc);
+        else
+          args := listReverse(acc);
+        end if;
+        choices := Absyn.MODIFICATION(fp1, ep1, Absyn.IDENT("choices"), SOME(Absyn.CLASSMOD(args, Absyn.NOMOD())), cmt1, info1);
+      then
+        choices;
+    else then inChoices;
+  end match;
+end createChoiceArray;
+
+function mapCrefExps
+  "Applies a function to the expressions in an Absyn.ComponentRef, i.e. in its subscripts."
+  input output Absyn.ComponentRef cref;
+  input Func func;
+
+  partial function Func
+    input output Absyn.Exp exp;
+  end Func;
+algorithm
+  () := match cref
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        cref.subscripts := list(mapSubscriptExp(s, func) for s in cref.subscripts);
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        cref.subscripts := list(mapSubscriptExp(s, func) for s in cref.subscripts);
+      then
+        ();
+
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      algorithm
+        cref.componentRef := mapCrefExps(cref.componentRef, func);
+      then
+        ();
+
+    else ();
+  end match;
+end mapCrefExps;
+
+function mapSubscriptExp
+  input output Absyn.Subscript sub;
+  input Func func;
+
+  partial function Func
+    input output Absyn.Exp exp;
+  end Func;
+algorithm
+  () := match sub
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        sub.subscript := func(sub.subscript);
+      then
+        ();
+
+    else ();
+  end match;
+end mapSubscriptExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

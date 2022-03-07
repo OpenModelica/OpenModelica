@@ -68,7 +68,7 @@ end VT;
 // end VectorTest.mysum;
 //
 // class VT
-//   input Real[10] u(start = 1.0);
+//   input Real[10] u(start = fill(1.0, 10));
 //   Real[10] x1;
 //   Real[10] x2;
 //   output Real y0;
@@ -79,7 +79,7 @@ end VT;
 //     for i in 1:10 loop
 //       x1[i] = previous(x1[i]) + u[i];
 //     end for;
-//     x2 = VectorTest.myfor(u, previous(x2));
+//     x2 = VectorTest.myfor(u, array(previous(x2[$i1]) for $i1 in 1:10));
 //   end when;
 //   y0 = sum(u);
 //   y1 = VectorTest.mysum(u);

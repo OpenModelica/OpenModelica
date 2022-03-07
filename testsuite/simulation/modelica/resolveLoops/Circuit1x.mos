@@ -41,12 +41,13 @@ simulate(Circuit1x); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 2 {(1,100.0%) 3,(1,100.0%) 4}
-//  * Non-linear torn systems: 0
+//  * Linear torn systems (#iteration vars, #inner vars, density): 2 systems
+//    {(1,3,100.0%), (1,4,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 3
 //  * Number of states: 1 (Cds.v)
@@ -61,11 +62,12 @@ simulate(Circuit1x); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 2 {(1,100.0%) 3,(1,100.0%) 3}
-//  * Non-linear torn systems: 0
+//  * Linear torn systems (#iteration vars, #inner vars, density): 2 systems
+//    {(1,3,100.0%), (1,3,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // "
 // endResult

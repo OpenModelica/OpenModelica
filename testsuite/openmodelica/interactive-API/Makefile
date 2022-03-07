@@ -41,6 +41,7 @@ getIconAnnotation.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
 IllegalGraphics.mos\
+instantiateFunction.mos \
 interactive_api_annotations.mos \
 interactive_api_attributes.mos \
 interactive_api_calls.mos \
@@ -96,7 +97,9 @@ ReadOnlyPkg.mos \
 getComponentsTestNF.mos \
 getComponentsTestOF.mos \
 Issue7544.mos \
-Issue7706.mos
+Issue7706.mos \
+TestChoices.mos \
+
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

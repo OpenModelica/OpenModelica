@@ -55,19 +55,19 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | TIME:   0.0000000000e+00
 // LOG_NLS_V         | info    | number of function calls (so far!):  0
 // LOG_NLS_V         | info    | System values [2-dim]
-// |                 | |       | |            50000            5e-06 
+// |                 | |       | |            50000            5e-06
 // LOG_NLS_V         | info    | Nominal values [2-dim]
-// |                 | |       | |           100000            1e-05 
+// |                 | |       | |           100000            1e-05
 // LOG_NLS_V         | info    | Scaling values [3-dim]
-// |                 | |       | |           100000            1e-05                1 
+// |                 | |       | |           100000            1e-05                1
 // LOG_NLS_V         | info    | x0 [2-dim]
-// |                 | |       | |            50000            5e-06 
+// |                 | |       | |            50000            5e-06
 // LOG_NLS_V         | info    | indRow: [2-dim]
-// |                 | |       | | 0 1 
+// |                 | |       | | 0 1
 // LOG_NLS_V         | info    | indCol: [3-dim]
-// |                 | |       | | 1 0 2 
+// |                 | |       | | 1 0 2
 // LOG_NLS_V         | info    | vector x (solution): [3-dim]
-// |                 | |       | |       -2.5510381      -0.51701271                1 
+// |                 | |       | |       -2.5510381      -0.51701271                1
 // LOG_NLS_V         | info    | regular initial point!!!
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  7
@@ -87,9 +87,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    1.4962663898e+00
 // LOG_NLS_V         | info    | Need to damp, forced error =    1.7443467584e+00
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |       -1.1300587       0.98070403 
+// |                 | |       | |       -1.1300587       0.98070403
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |      -0.56502936        1.2592489 
+// |                 | |       | |      -0.56502936        1.2592489
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   2.5510381250e+05
 // LOG_NLS_V         | info    | delta_x_scaled =   2.6029017761e+00
@@ -108,9 +108,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    9.6161691115e-01
 // LOG_NLS_V         | info    | Need to damp, forced error =    1.7910504874e+00
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |      -0.81295855      -0.51361997 
+// |                 | |       | |      -0.81295855      -0.51361997
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |       -0.1063414       -0.1028369 
+// |                 | |       | |       -0.1063414       -0.1028369
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   1.5879325945e+05
 // LOG_NLS_V         | info    | delta_x_scaled =   1.5926812124e+00
@@ -131,9 +131,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp this!! lambda2 =    5.3704647184e-01
 // LOG_NLS_V         | info    | Need to damp, error_f2 =    2.4573839117e-01
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |      -0.17461754      -0.17290481 
+// |                 | |       | |      -0.17461754      -0.17290481
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |     -0.081575501      -0.13029728 
+// |                 | |       | |     -0.081575501      -0.13029728
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   3.8871288659e+04
 // LOG_NLS_V         | info    | delta_x_scaled =   5.4285136346e-01
@@ -152,9 +152,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    1.9741282299e-02
 // LOG_NLS_V         | info    | Need to damp, forced error =    4.8309885515e-02
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |       0.01676503      0.010423627 
+// |                 | |       | |       0.01676503      0.010423627
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |     0.0038820924     0.0051030272 
+// |                 | |       | |     0.0038820924     0.0051030272
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   1.0705396718e+04
 // LOG_NLS_V         | info    | delta_x_scaled =   1.0986490978e-01
@@ -173,9 +173,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    1.1072572859e-04
 // LOG_NLS_V         | info    | Need to damp, forced error =    3.1177458145e-04
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |    0.00010009472    4.7341682e-05 
+// |                 | |       | |    0.00010009472    4.7341682e-05
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |    1.9715336e-05    1.9548009e-05 
+// |                 | |       | |    1.9715336e-05    1.9548009e-05
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   4.9898724582e+02
 // LOG_NLS_V         | info    | delta_x_scaled =   5.7611141106e-03
@@ -194,9 +194,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    3.3977697965e-09
 // LOG_NLS_V         | info    | Need to damp, forced error =    9.8081495766e-09
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |    3.1818097e-09    1.1920263e-09 
+// |                 | |       | |    3.1818097e-09    1.1920263e-09
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |    6.3385044e-10    4.9722581e-10 
+// |                 | |       | |    6.3385044e-10    4.9722581e-10
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   1.9617464993e+00
 // LOG_NLS_V         | info    | delta_x_scaled =   2.8029483704e-05
@@ -215,9 +215,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    2.2204460493e-16
 // LOG_NLS_V         | info    | Need to damp, forced error =    9.2358716720e-18
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |     2.220446e-16                0 
+// |                 | |       | |     2.220446e-16                0
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |    4.4236473e-17                0 
+// |                 | |       | |    4.4236473e-17                0
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   4.0495538608e-05
 // LOG_NLS_V         | info    | delta_x_scaled =   8.0078626897e-10
@@ -236,9 +236,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    2.2204460493e-16
 // LOG_NLS_V         | info    | Need to damp, forced error =    3.9443045261e-32
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |    -2.220446e-16                0 
+// |                 | |       | |    -2.220446e-16                0
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |   -4.4236473e-17                0 
+// |                 | |       | |   -4.4236473e-17                0
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   2.9880129153e-12
 // LOG_NLS_V         | info    | delta_x_scaled =   6.9433956834e-17
@@ -262,7 +262,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // |                 | |       | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
-// |                 | |       | |       -77390.689    3.3118158e-06 
+// |                 | |       | |       -77390.689    3.3118158e-06
 // LOG_NLS           | info    | | Solution status: SOLVED
 // |                 | |       | | |  number of iterations           : 8
 // |                 | |       | | |  number of function evaluations : 10
@@ -291,19 +291,19 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | TIME:   0.0000000000e+00
 // LOG_NLS_V         | info    | number of function calls (so far!):  0
 // LOG_NLS_V         | info    | System values [2-dim]
-// |                 | |       | |       -77390.689    3.3118158e-06 
+// |                 | |       | |       -77390.689    3.3118158e-06
 // LOG_NLS_V         | info    | Nominal values [2-dim]
-// |                 | |       | |           100000            1e-05 
+// |                 | |       | |           100000            1e-05
 // LOG_NLS_V         | info    | Scaling values [3-dim]
-// |                 | |       | |           100000            1e-05                1 
+// |                 | |       | |           100000            1e-05                1
 // LOG_NLS_V         | info    | x0 [2-dim]
-// |                 | |       | |       -77390.689    3.3118158e-06 
+// |                 | |       | |       -77390.689    3.3118158e-06
 // LOG_NLS_V         | info    | indRow: [2-dim]
-// |                 | |       | | 0 1 
+// |                 | |       | | 0 1
 // LOG_NLS_V         | info    | indCol: [3-dim]
-// |                 | |       | | 1 0 2 
+// |                 | |       | | 1 0 2
 // LOG_NLS_V         | info    | vector x (solution): [3-dim]
-// |                 | |       | |    2.9880129e-17    6.2675771e-17                1 
+// |                 | |       | |    2.9880129e-17    6.2675771e-17                1
 // LOG_NLS_V         | info    | regular initial point!!!
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  18
@@ -323,9 +323,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    2.2204460493e-16
 // LOG_NLS_V         | info    | Need to damp, forced error =    3.9443045261e-32
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |     2.220446e-16                0 
+// |                 | |       | |     2.220446e-16                0
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |    4.4236473e-17                0 
+// |                 | |       | |    4.4236473e-17                0
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   2.9880129153e-12
 // LOG_NLS_V         | info    | delta_x_scaled =   6.9433956834e-17
@@ -349,7 +349,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // |                 | |       | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
-// |                 | |       | |       -77390.689    3.3118158e-06 
+// |                 | |       | |       -77390.689    3.3118158e-06
 // LOG_NLS           | info    | | Solution status: SOLVED
 // |                 | |       | | |  number of iterations           : 1
 // |                 | |       | | |  number of function evaluations : 2
@@ -368,19 +368,19 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | TIME:   0.0000000000e+00
 // LOG_NLS_V         | info    | number of function calls (so far!):  2
 // LOG_NLS_V         | info    | System values [2-dim]
-// |                 | |       | |       -77390.689    3.3118158e-06 
+// |                 | |       | |       -77390.689    3.3118158e-06
 // LOG_NLS_V         | info    | Nominal values [2-dim]
-// |                 | |       | |           100000            1e-05 
+// |                 | |       | |           100000            1e-05
 // LOG_NLS_V         | info    | Scaling values [3-dim]
-// |                 | |       | |           100000            1e-05                1 
+// |                 | |       | |           100000            1e-05                1
 // LOG_NLS_V         | info    | x0 [2-dim]
-// |                 | |       | |       -77390.689    3.3118158e-06 
+// |                 | |       | |       -77390.689    3.3118158e-06
 // LOG_NLS_V         | info    | indRow: [2-dim]
-// |                 | |       | | 0 1 
+// |                 | |       | | 0 1
 // LOG_NLS_V         | info    | indCol: [3-dim]
-// |                 | |       | | 1 0 2 
+// |                 | |       | | 1 0 2
 // LOG_NLS_V         | info    | vector x (solution): [3-dim]
-// |                 | |       | |   -2.9880129e-17   -6.2675771e-17                1 
+// |                 | |       | |   -2.9880129e-17   -6.2675771e-17                1
 // LOG_NLS_V         | info    | regular initial point!!!
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  18
@@ -400,9 +400,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    2.2204460493e-16
 // LOG_NLS_V         | info    | Need to damp, forced error =    3.9443045261e-32
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |    -2.220446e-16                0 
+// |                 | |       | |    -2.220446e-16                0
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |   -4.4236473e-17                0 
+// |                 | |       | |   -4.4236473e-17                0
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   2.9880129153e-12
 // LOG_NLS_V         | info    | delta_x_scaled =   6.9433956834e-17
@@ -426,7 +426,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // |                 | |       | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
-// |                 | |       | |       -77390.689    3.3118158e-06 
+// |                 | |       | |       -77390.689    3.3118158e-06
 // LOG_NLS           | info    | | Solution status: SOLVED
 // |                 | |       | | |  number of iterations           : 2
 // |                 | |       | | |  number of function evaluations : 4

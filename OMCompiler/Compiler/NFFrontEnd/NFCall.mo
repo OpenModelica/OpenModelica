@@ -170,7 +170,7 @@ public
     outExp := match call
       case UNTYPED_CALL(ref = cref)
         algorithm
-          if(BuiltinCall.needSpecialHandling(call)) then
+          if BuiltinCall.needSpecialHandling(call) then
             (outExp, ty, var, pur) := BuiltinCall.typeSpecial(call, context, info);
           else
             checkNotPartial(cref, context, info);
@@ -305,6 +305,8 @@ public
 
   function unboxArgs
     input output NFCall call;
+  protected
+    Call c;
   algorithm
     () := match call
       case TYPED_CALL()
@@ -312,6 +314,14 @@ public
           call.arguments := list(Expression.unbox(arg) for arg in call.arguments);
         then
           ();
+
+      case TYPED_ARRAY_CONSTRUCTOR(exp = Expression.CALL(call = c))
+        algorithm
+          call.exp := Expression.CALL(unboxArgs(c));
+        then
+          ();
+
+      else ();
     end match;
   end unboxArgs;
 
@@ -351,7 +361,7 @@ public
 
     args := {};
     var := Variability.CONSTANT;
-    pur := Purity.PURE;
+    pur := if Function.isImpure(func) or Function.isOMImpure(func) then Purity.IMPURE else Purity.PURE;
 
     for a in typed_args loop
       TypedArg.TYPED_ARG(value = arg_exp, var = arg_var, purity = arg_pur) := a;
@@ -362,11 +372,7 @@ public
     args := listReverseInPlace(args);
 
     ty := Function.returnType(func);
-
-    // Hack to fix return type of some builtin functions.
-    if Type.isPolymorphic(ty) then
-      ty := getSpecialReturnType(func, args);
-    end if;
+    ty := resolvePolymorphicReturnType(func, typed_args, ty);
 
     if var == Variability.PARAMETER and Function.isExternal(func) then
       // Mark external functions with parameter expressions as non-structural,
@@ -510,7 +516,7 @@ public
   algorithm
     isImpure := match call
       case UNTYPED_CALL() then Function.isImpure(listHead(Function.getRefCache(call.ref)));
-      case TYPED_CALL() then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
+      case TYPED_CALL(purity = Purity.IMPURE) then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
       else false;
     end match;
   end isImpure;
@@ -603,9 +609,19 @@ public
   algorithm
     arguments := match call
       case UNTYPED_CALL() then call.arguments;
-      case TYPED_CALL() then call.arguments;
+      case TYPED_CALL()   then call.arguments;
     end match;
   end arguments;
+
+  function setArguments
+    input output NFCall call;
+    input list<Expression> arguments;
+  algorithm
+    call := match call
+      case UNTYPED_CALL() algorithm call.arguments := arguments; then call;
+      case TYPED_CALL()   algorithm call.arguments := arguments; then call;
+    end match;
+  end setArguments;
 
   function toRecordExpression
     input NFCall call;
@@ -1122,7 +1138,7 @@ public
 
       case UNTYPED_CALL()
         algorithm
-          res := Expression.listContainsShallow(call.arguments, func);
+          res := List.exist(call.arguments, func);
 
           if not res then
             for arg in call.named_args loop
@@ -1155,7 +1171,7 @@ public
         then
           false;
 
-      case TYPED_CALL() then Expression.listContainsShallow(call.arguments, func);
+      case TYPED_CALL() then List.exist(call.arguments, func);
       case UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case UNTYPED_REDUCTION() then func(call.exp);
@@ -1592,20 +1608,23 @@ public
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
         then
-          UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
+          UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, call.iters);
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
 
       case UNTYPED_REDUCTION()
         algorithm
           e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
         then
-          UNTYPED_REDUCTION(call.ref, e, call.iters);
+          UNTYPED_REDUCTION(call.ref, e, iters);
 
       case TYPED_REDUCTION()
         algorithm
@@ -1886,6 +1905,41 @@ public
 
     outIters := listReverseInPlace(outIters);
   end mapFoldIteratorsExpShallow;
+
+  function getNameAndArgs
+    input Call call;
+    output tuple<String, list<Expression>> tpl;
+  algorithm
+    tpl := match call
+      local
+        Function fn;
+        list<Expression> args;
+
+      case Call.UNTYPED_CALL(arguments = args)
+      then (ComponentRef.firstName(call.ref), args);
+
+      case Call.TYPED_CALL(fn = fn, arguments = args)
+      then (getLastPathName(fn.path), args);
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + ": unhandled case for " + toString(call), sourceInfo());
+      then fail();
+    end match;
+  end getNameAndArgs;
+
+  function getLastPathName
+    input Absyn.Path path;
+    output String name;
+  algorithm
+    name := match path
+      case Absyn.IDENT()          then path.name;
+      case Absyn.QUALIFIED()      then getLastPathName(path.path);
+      case Absyn.FULLYQUALIFIED() then getLastPathName(path.path);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " failed.", sourceInfo());
+      then fail();
+    end match;
+  end getLastPathName;
 
 protected
   function instNormalCall
@@ -2652,42 +2706,58 @@ protected
     end match;
   end evaluateCallTypeDimExp;
 
-  function getSpecialReturnType
+  function resolvePolymorphicReturnType
+    "Resolves a polymorphic type to the actual type based on the inputs of a function."
     input Function fn;
-    input list<Expression> args;
-    output Type ty;
+    input list<TypedArg> args;
+    input Type ty;
+    output Type outType;
+  protected
+    String name;
+    Type input_ty;
+    TypedArg arg;
+    list<TypedArg> rest_args = args;
   algorithm
-    ty := match fn.path
-      case Absyn.IDENT("min")
-        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
-      case Absyn.IDENT("max")
-        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
-      case Absyn.IDENT("sum")
-        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
-      case Absyn.IDENT("product")
-        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
-      case Absyn.IDENT("previous")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("shiftSample")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("backSample")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("hold")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("superSample")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("subSample")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      case Absyn.IDENT("DynamicSelect")
-        then Expression.typeOf(Expression.unbox(listHead(args)));
-      else
+    outType := match ty
+      case Type.POLYMORPHIC(name = name)
         algorithm
-          Error.assertion(false, getInstanceName() + ": unhandled case for " +
-            AbsynUtil.pathString(fn.path), sourceInfo());
+          // Go through the inputs until we find one with the same polymorphic
+          // type as the one we're looking for.
+          for i in fn.inputs loop
+            arg :: rest_args := rest_args;
+            input_ty := InstNode.getType(i);
+
+            if Type.isPolymorphicNamed(Type.arrayElementType(input_ty), name) then
+              // Replace the type with the corresponding argument type, but
+              // remove as many dimensions from it as the input has.
+              //   For example: T[:] and Real[2, 3] gives T = Real[3]
+              outType := Type.unliftArrayN(Type.dimensionCount(input_ty), arg.ty);
+              return;
+            end if;
+          end for;
+
+          // If no input with the same type could be found and the result type
+          // is __Scalar, try to find some input with the type __Array and
+          // assume they have the same element type.
+          if name == "__Scalar" then
+            outType := resolvePolymorphicReturnType(fn, args, Type.POLYMORPHIC("__Array"));
+            outType := Type.arrayElementType(outType);
+            return;
+          end if;
         then
           fail();
+
+      case Type.ARRAY(elementType = Type.POLYMORPHIC())
+        algorithm
+          // For an array of polymorphic types, only resolve the polymorphic
+          // type itself and keep the dimensions.
+          ty.elementType := resolvePolymorphicReturnType(fn, args, ty.elementType);
+        then
+          ty;
+
+      else ty;
     end match;
-  end getSpecialReturnType;
+  end resolvePolymorphicReturnType;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCall;

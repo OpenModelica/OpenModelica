@@ -1,13 +1,18 @@
 // name: ErrorSimPackage
 // status: correct
 // cflags: -d=-newInst
+//
+// This is now allowed temporarily by the OF. For consistency.
+// We have test cases assuming we can do this on the .mo files, i.e,
+// when it is instantiated as the LAST CLASS in a file it is expected
+// to work. But not when it is asked for explicilty.
+// So we are going to allow this for now in the OF.
 
 loadString("package P end P;");
 translateModel(P);getErrorString();
 
 // Result:
 // true
-// false
-// "Error: Cannot instantiate P due to class specialization PACKAGE.
-// "
+// true
+// ""
 // endResult

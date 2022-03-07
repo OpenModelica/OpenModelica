@@ -1,6 +1,6 @@
 // status: correct
 // https://trac.openmodelica.org/OpenModelica/ticket/6027
-// cflags: -d=-newInst
+// cflags: -d=-newInst --std=3.4
 
 loadModel(Modelica, {"3.2.3"});getErrorString();
 loadString("

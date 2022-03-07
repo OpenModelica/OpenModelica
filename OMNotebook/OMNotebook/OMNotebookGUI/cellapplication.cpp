@@ -228,7 +228,7 @@ namespace IAEX
         else
         {
           cout << "File not found: " << fileToOpen.toStdString() << endl;
-          open(QString::null);
+          open(QString());
         }
       }
       else
@@ -269,7 +269,7 @@ namespace IAEX
             {
               cout << "Unable to find (3): " << drmodelica.toStdString() << endl;
               cout << "Unable to find (4): DrModelica/DrModelica.nb" << endl;
-              open(QString::null);
+              open(QString());
             }
           }
         }

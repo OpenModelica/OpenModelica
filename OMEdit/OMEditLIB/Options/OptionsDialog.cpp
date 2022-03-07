@@ -4198,7 +4198,7 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   mpSaveModelForBitmapInsertionCheckBox = new QCheckBox(tr("Show save model for bitmap insertion message"));
   mpSaveModelForBitmapInsertionCheckBox->setChecked(true);
   // create the save model for bitmap insertion checkbox
-  mpAlwaysAskForDraggedComponentName = new QCheckBox(tr("Always ask for the dragged component name"));
+  mpAlwaysAskForDraggedComponentName = new QCheckBox(tr("Always ask for the dragged/duplicated component name"));
   mpAlwaysAskForDraggedComponentName->setChecked(true);
   // create the always ask for text editor error
   mpAlwaysAskForTextEditorErrorCheckBox = new QCheckBox(tr("Always ask for what to do with the text editor error"));
@@ -4791,7 +4791,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   // GDB Path
   mpGDBPathLabel = new Label(tr("GDB Path:"));
   mpGDBPathTextBox = new QLineEdit;
-#ifdef WIN32
+#if defined(_WIN32)
   mpGDBPathTextBox->setPlaceholderText(Utilities::getGDBPath());
 #else
   mpGDBPathTextBox->setPlaceholderText("gdb");
@@ -4980,7 +4980,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, dockerPlarform);
     pPlatformsLayout->addWidget(pCheckBox);
   }
-#ifdef WIN32
+#if defined(_WIN32)
   QStringList paths = QString(getenv("PATH")).split(";");
 #else
   QStringList paths = QString(getenv("PATH")).split(":");
@@ -5013,7 +5013,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");
   mpModelDescriptionFiltersComboBox = new QComboBox;
   mpModelDescriptionFiltersComboBox->addItems(fmiFilters.validOptions);
-  mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText("internal"));
+  mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText("protected"));
   Utilities::setToolTip(mpModelDescriptionFiltersComboBox, fmiFilters.mainDescription, fmiFilters.descriptions);
   connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableIncludeSourcesCheckBox(QString)));
   // include resources checkbox
@@ -5266,14 +5266,14 @@ void TLMPage::browseTLMPluginPath()
   path = path.replace('\\', '/');
   mpTLMPluginPathTextBox->setText(path);
   if (mpTLMManagerProcessTextBox->text().isEmpty()) {
-#ifdef WIN32
+#if defined(_WIN32)
     mpTLMManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager.exe");
 #else
     mpTLMManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager");
 #endif
   }
   if (mpTLMMonitorProcessTextBox->text().isEmpty()) {
-#ifdef WIN32
+#if defined(_WIN32)
     mpTLMMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor.exe");
 #else
     mpTLMMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor");

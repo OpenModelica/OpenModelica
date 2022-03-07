@@ -55,6 +55,7 @@ import Restriction = NFRestriction;
 import NFClassTree.ClassTree;
 import SCodeUtil;
 import IOStream;
+import Variable = NFVariable;
 import UnorderedMap;
 
 public
@@ -230,9 +231,17 @@ uniontype InstNode
     list<InstNode> locals;
   end IMPLICIT_SCOPE;
 
-  record EXP_NODE
+  record ITERATOR_NODE
     Expression exp;
-  end EXP_NODE;
+  end ITERATOR_NODE;
+
+  record VAR_NODE
+    "This is an extension for better use in the backend. Not used in the Frontend.
+    NOTE: Map and traversal functions are not allowed to follow the variable
+    pointer, it would create cyclic behaviour! Var->cref->pointer->Var"
+    String name;
+    Pointer<Variable> varPointer;
+  end VAR_NODE;
 
   record EMPTY_NODE end EMPTY_NODE;
 
@@ -290,6 +299,24 @@ uniontype InstNode
       InstNodeType.BASE_CLASS(parent, definition));
   end newExtends;
 
+  function newIterator
+    input String name;
+    input Type ty;
+    input SourceInfo info;
+    output InstNode iterator;
+  algorithm
+    iterator := fromComponent(name, Component.newIterator(ty, info), EMPTY_NODE());
+  end newIterator;
+
+  function newIndexedIterator
+    input Integer index;
+    input Type ty = Type.INTEGER();
+    input SourceInfo info = AbsynUtil.dummyInfo;
+    output InstNode iterator;
+  algorithm
+    iterator := newIterator("$i" + String(index), ty, info);
+  end newIndexedIterator;
+
   function fromComponent
     input String name;
     input Component component;
@@ -346,6 +373,16 @@ uniontype InstNode
       else false;
     end match;
   end isDerivedClass;
+
+  function isRootClass
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match node
+      case CLASS_NODE(nodeType = InstNodeType.ROOT_CLASS()) then true;
+      else false;
+    end match;
+  end isRootClass;
 
   function isFunction
     input InstNode node;
@@ -466,11 +503,12 @@ uniontype InstNode
       case CLASS_NODE() then node.name;
       case COMPONENT_NODE() then node.name;
       case INNER_OUTER_NODE() then name(node.innerNode);
+      case VAR_NODE() then node.name;
       // For bug catching, these names should never be used.
       case REF_NODE() then "$REF[" + String(node.index) + "]";
       case NAME_NODE() then node.name;
       case IMPLICIT_SCOPE() then "$IMPLICIT";
-      case EXP_NODE() then "$EXP(" + Expression.toString(node.exp) + ")";
+      case ITERATOR_NODE() then "$ITERATOR(" + Expression.toString(node.exp) + ")";
       case EMPTY_NODE() then "$EMPTY";
     end match;
   end name;
@@ -502,6 +540,7 @@ uniontype InstNode
       case NAME_NODE() then "name node";
       case IMPLICIT_SCOPE() then "implicit scope";
       case EMPTY_NODE() then "empty node";
+      case VAR_NODE() then "var node";
     end match;
   end typeName;
 
@@ -517,6 +556,12 @@ uniontype InstNode
           ();
 
       case COMPONENT_NODE()
+        algorithm
+          node.name := name;
+        then
+          ();
+
+      case VAR_NODE()
         algorithm
           node.name := name;
         then
@@ -548,17 +593,20 @@ uniontype InstNode
     CLASS_NODE(parentScope = parent) := node;
   end classParent;
 
-  function derivedParent
+  function instanceParent
+    "Returns the parent of the node in the instance tree."
     input InstNode node;
     output InstNode parent;
   algorithm
     parent := match node
       case CLASS_NODE() then getDerivedNode(node.parentScope);
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
+        then getDerivedNode(parent);
       case COMPONENT_NODE() then getDerivedNode(node.parent);
       case IMPLICIT_SCOPE() then getDerivedNode(node.parentScope);
       else EMPTY_NODE();
     end match;
-  end derivedParent;
+  end instanceParent;
 
   function rootParent
     input InstNode node;
@@ -771,6 +819,7 @@ uniontype InstNode
   algorithm
     component := match node
       case COMPONENT_NODE() then Pointer.access(node.component);
+      case VAR_NODE()       then Component.WILD();
     end match;
   end component;
 
@@ -889,8 +938,9 @@ uniontype InstNode
     output Type ty;
   algorithm
     ty := match node
-      case CLASS_NODE() then Class.getType(Pointer.access(node.cls), node);
+      case CLASS_NODE()     then Class.getType(Pointer.access(node.cls), node);
       case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
+      case VAR_NODE()       then Type.ANY();
     end match;
   end getType;
 
@@ -1399,9 +1449,6 @@ uniontype InstNode
     output Boolean isProtected;
   algorithm
     isProtected := match node
-      local
-        SCode.Element def;
-
       case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition =
           SCode.Element.EXTENDS(visibility = SCode.Visibility.PROTECTED())))
         then true;
@@ -1710,7 +1757,7 @@ uniontype InstNode
   algorithm
     hasBinding := match node
       case COMPONENT_NODE()
-        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(derivedParent(node));
+        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(instanceParent(node));
       else false;
     end match;
   end hasBinding;
@@ -1760,6 +1807,28 @@ uniontype InstNode
     end match;
   end isClockType;
 
+  function restriction
+    input InstNode node;
+    output Restriction res;
+  algorithm
+    res := match node
+      case CLASS_NODE() then Class.restriction(Pointer.access(node.cls));
+      case COMPONENT_NODE() then restriction(Component.classInstance(Pointer.access(node.component)));
+      case INNER_OUTER_NODE() then restriction(node.innerNode);
+      else Restriction.UNKNOWN();
+    end match;
+  end restriction;
+
+  function isExtends
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match node
+      case CLASS_NODE(definition = SCode.Element.EXTENDS()) then true;
+      case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition = SCode.Element.EXTENDS())) then true;
+      else false;
+    end match;
+  end isExtends;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

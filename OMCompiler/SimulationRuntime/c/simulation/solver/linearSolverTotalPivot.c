@@ -69,7 +69,7 @@ void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, i
         }
         else
         {
-          sprintf(buffer, "%s%12.4g ", buffer, matrix[i + j*(m-1)]);
+          sprintf(buffer, "%s %12.4g", buffer, matrix[i + j*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -88,14 +88,20 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
     buffer[0] = 0;
-    for(i=0; i<n;i++)
+    if (vector[0]<-1e+300)
+      sprintf(buffer, "%s -INF", buffer);
+    else if (vector[0]>1e+300)
+      sprintf(buffer, "%s +INF", buffer);
+    else
+      sprintf(buffer, "%s %16.8g", buffer, vector[0]);
+    for(i=1; i<n;i++)
     {
       if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF ", buffer);
+        sprintf(buffer, "%s -INF", buffer);
       else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF ", buffer);
+        sprintf(buffer, "%s +INF", buffer);
       else
-        sprintf(buffer, "%s%16.8g ", buffer, vector[i]);
+        sprintf(buffer, "%s %16.8g", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     free(buffer);

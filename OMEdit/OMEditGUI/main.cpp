@@ -48,7 +48,7 @@ extern "C" {
 #include <QMessageBox>
 
 #ifdef QT_NO_DEBUG
-#ifdef WIN32
+#if defined(_WIN32)
 #include "CrashReport/backtrace.h"
 
 static char *g_output = NULL;
@@ -126,7 +126,7 @@ void signalHandler(int signalNumber)
   pCrashReportDialog->exec();
   exit(signalNumber);
 }
-#endif // #ifdef WIN32
+#endif // #if defined(_WIN32)
 #endif // #ifdef QT_NO_DEBUG
 
 void printOMEditUsage()
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
   MMC_TRY_TOP()
   /* Do not use the signal handler OR exception filter if user is building a debug version. Perhaps the user wants to use gdb. */
 #ifdef QT_NO_DEBUG
-#ifdef WIN32
+#if defined(_WIN32)
   SetUnhandledExceptionFilter(exceptionFilter);
 #else
   /* Abnormal termination (abort) */

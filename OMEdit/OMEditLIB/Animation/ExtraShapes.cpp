@@ -32,6 +32,11 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
+#ifndef _USE_MATH_DEFINES
+  #define _USE_MATH_DEFINES
+#endif
+#include <cmath>
+
 #include "ExtraShapes.h"
 #include <iostream>
 

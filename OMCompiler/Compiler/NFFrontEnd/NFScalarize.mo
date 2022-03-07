@@ -35,6 +35,7 @@ import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 
 protected
+import BackendInfo = NFBackendExtension.BackendInfo;
 import ExecStat.execStat;
 import ComponentRef = NFComponentRef;
 import Type = NFType;
@@ -79,11 +80,10 @@ algorithm
   execStat(getInstanceName());
 end scalarize;
 
-protected
 function scalarizeVariable
   input Variable var;
-  input output list<Variable> vars;
-  input output list<Equation> eqns;
+  input output list<Variable> vars = {};
+  input output list<Equation> eqns = {};
 protected
   ComponentRef name;
   Binding binding;
@@ -96,16 +96,17 @@ protected
   ExpressionIterator binding_iter;
   list<ComponentRef> crefs;
   Expression exp;
-  Variable v;
   list<String> ty_attr_names;
   array<ExpressionIterator> ty_attr_iters;
+  list<BackendInfo> backend_attributes;
   Variability bind_var;
+  BackendInfo binfo;
   Binding.Source bind_src;
   Boolean force_scalar_attributes = false;
 algorithm
   if Type.isArray(var.ty) then
     try
-      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, _, cmt, info) := var;
+      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, _, cmt, info, binfo) := var;
       crefs := ComponentRef.scalarize(name);
 
       if listEmpty(crefs) then
@@ -114,6 +115,8 @@ algorithm
 
       if Binding.isBound(binding) then
         binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
+        bind_var := Binding.variability(binding);
+
         for attribute in {"min", "max", "nominal"} loop
           force_scalar_attributes := not Binding.isUnbound(Variable.lookupTypeAttribute(attribute, var));
           if force_scalar_attributes then break; end if;
@@ -135,19 +138,23 @@ algorithm
           bind_src := Binding.source(binding);
           elem_ty := Type.arrayElementType(ty);
           (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+          backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
             binding := Binding.makeFlat(exp, bind_var, bind_src);
             ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-            vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
+            binfo :: backend_attributes := backend_attributes;
+            vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
           end for;
         end if;
       else
         elem_ty := Type.arrayElementType(ty);
         (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+        backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
         for cr in crefs loop
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
+          binfo :: backend_attributes := backend_attributes;
+          vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
         end for;
       end if;
     else
@@ -160,6 +167,7 @@ algorithm
   end if;
 end scalarizeVariable;
 
+protected
 function scalarizeTypeAttributes
   input list<tuple<String, Binding>> attrs;
   output list<String> names = {};

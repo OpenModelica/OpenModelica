@@ -305,7 +305,9 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       eventInfo->nextEventTime = fmin(nextSampleEvent,nextTimerActivationTime);
     }
     else {
-      eventInfo->nextEventTimeDefined = fmi2False;
+      if (eventInfo->nextEventTime <= comp->fmuData->localData[0]->timeValue) {
+        eventInfo->nextEventTimeDefined = fmi2False;
+      }
     }
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime)
 
@@ -334,7 +336,6 @@ fmi2Status fmi2EventIteration(fmi2Component c, fmi2EventInfo *eventInfo)
   }
   return status;
 }
-
 
 /**
  * @brief Helper function for fmi2GetXXX to update the component if needed.
@@ -578,10 +579,40 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     }
   }
 
+  /* allocate memory for Jacobian during initialization DAE */
+  comp->_has_jacobian_intialization = 0;
+  comp->fmiDerJacInitialization = NULL;
+  if (comp->fmuData->callback->initialPartialFMIDERINIT != NULL)
+  {
+    comp->fmiDerJacInitialization = (ANALYTIC_JACOBIAN*) functions->allocateMemory(1, sizeof(ANALYTIC_JACOBIAN));
+    if (! comp->fmuData->callback->initialPartialFMIDERINIT(comp->fmuData, comp->threadData, comp->fmiDerJacInitialization))
+    {
+      comp->_has_jacobian_intialization = 1;
+    }
+  }
+
+  // int cols = comp->fmiDerJac->sizeCols;
+  // int rows = comp->fmiDerJac->sizeRows;
+  // printf("\nFMIDER number of rows and colums");
+  // printf("\nNumber of rows   : %i", rows);
+  // printf("\nNumber of columns: %i", cols);
+  // printf("\n");
+
+  // int cols_ = comp->fmiDerJacInitialization->sizeCols;
+  // int rows_ = comp->fmiDerJacInitialization->sizeRows;
+  // printf("\nFMIDER INITIALIZATION number of rows and colums");
+  // printf("\nNumber of rows   : %i", rows_);
+  // printf("\nNumber of columns: %i", cols_);
+  // printf("\n");
+
   comp->states = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
   comp->states_der = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
   comp->event_indicators = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
   comp->event_indicators_prev = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
+  if (NUMBER_OF_REAL_INPUTS == 0)
+    comp->input_real_derivative = NULL; // initialize to 0
+  else
+    comp->input_real_derivative = (fmi2Real*)functions->allocateMemory(NUMBER_OF_REAL_INPUTS, sizeof(fmi2Real));
 
   comp->_need_update = 1;
 
@@ -643,18 +674,33 @@ void fmi2FreeInstance(fmi2Component c)
     freeMemory(comp->fmiDerJac); comp->fmiDerJac=NULL;
   }
 
+
+  /* Free jacobian data */
+  if (comp->_has_jacobian_intialization == 1) {
+    /* TODO: Use comp->functions->freeMemory insted of free,
+     * but generated code uses malloc / calloc instead of comp->functions->allocateMemory */
+    free(comp->fmiDerJacInitialization->seedVars); comp->fmiDerJacInitialization->seedVars = NULL;
+    free(comp->fmiDerJacInitialization->resultVars); comp->fmiDerJacInitialization->resultVars = NULL;
+    free(comp->fmiDerJacInitialization->tmpVars); comp->fmiDerJacInitialization->tmpVars = NULL;
+
+    free(comp->fmiDerJacInitialization->sparsePattern->leadindex); comp->fmiDerJacInitialization->sparsePattern->leadindex = NULL;
+    free(comp->fmiDerJacInitialization->sparsePattern->index); comp->fmiDerJacInitialization->sparsePattern->index = NULL;
+    free(comp->fmiDerJacInitialization->sparsePattern->colorCols); comp->fmiDerJacInitialization->sparsePattern->colorCols = NULL;
+    free(comp->fmiDerJacInitialization->sparsePattern); comp->fmiDerJacInitialization->sparsePattern = NULL;
+
+    freeMemory(comp->fmiDerJacInitialization); comp->fmiDerJacInitialization=NULL;
+  }
+
   freeMemory(comp->states); comp->states = NULL;
   freeMemory(comp->states_der); comp->states_der = NULL;
   freeMemory(comp->event_indicators); comp->event_indicators = NULL;
   freeMemory(comp->event_indicators_prev); comp->event_indicators_prev = NULL;
+  freeMemory(comp->input_real_derivative); comp->input_real_derivative = NULL;
 
   freeMemory(comp->fmuData->modelData->resourcesDir);
   if (comp->solverInfo) {
     FMI2CS_deInitializeSolverData(comp);
   }
-
-  /* Free synchronus data */
-  freeSynchronous(comp->fmuData);
 
   /* free simuation data */
   freeMemory(comp->fmuData->modelData);
@@ -1137,6 +1183,75 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
   return unsupportedFunction(c, "fmi2DeSerializeFMUstate", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
 }
 
+fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
+    const fmi2ValueReference vUnknown_ref[], size_t nUnknown,
+    const fmi2ValueReference vKnown_ref[] , size_t nKnown,
+    const fmi2Real dvKnown[], fmi2Real dvUnknown[])
+{
+  ModelInstance *comp = (ModelInstance *)c;
+  DATA* fmudata = (DATA *) comp->fmuData;
+  SIMULATION_INFO* simInfo = (SIMULATION_INFO*) fmudata->simulationInfo;
+  MODEL_DATA* modelData = (MODEL_DATA*) fmudata->modelData;
+  threadData_t* td = comp->threadData;
+
+  if (!comp->_has_jacobian_intialization)
+    return unsupportedFunction(comp, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+
+  /***************************************/
+  /* This code assumes that the FMU variables are always sorted,
+     states first and then derivatives.
+     This is true for the actual OMC FMUs.
+     The input values references are mapped with mapInputReference2InputNumber
+     and mapOutputReference2OutputNumber functions
+  */
+  /* eval constant part of jacobian */
+
+  int i,j;
+
+  int independent = comp->fmiDerJacInitialization->sizeCols;
+  int dependent = comp->fmiDerJacInitialization->sizeRows;
+
+  /* TODO: Evaluate only once for one evaluation of jacobian */
+  if (comp->fmiDerJacInitialization->constantEqns != NULL) {
+    comp->fmiDerJacInitialization->constantEqns(fmudata, td, comp->fmiDerJacInitialization, NULL);
+  }
+
+  /* clear out the seeds */
+  for (i = 0; i < independent; i++)
+  {
+    comp->fmiDerJacInitialization->seedVars[i] = 0;
+  }
+
+  for (i = 0; i < nKnown; i++)
+  {
+    // map the known ValueReferences to an internal index
+    int idx = mapInitialUnknownsIndependentIndex(vKnown_ref[i]);
+    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index during initialization", idx, independent))
+      return fmi2Error;
+    /* Put the supplied value in the seeds */
+    comp->fmiDerJacInitialization->seedVars[idx] = dvKnown[i];
+  }
+
+  /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
+   * More efficient code could only evaluate the equations needed for the
+   * known variables only */
+  setThreadData(comp);
+  fmudata->callback->functionJacFMIDERINIT_column(fmudata, td, comp->fmiDerJacInitialization, NULL);
+  resetThreadData(comp);
+
+  /* Write the results to dvUnknown array */
+  for (i=0;i<nUnknown; i++)
+  {
+    // map the Unknown ValueReferences to an internal index
+    int idx = mapInitialUnknownsdependentIndex(vUnknown_ref[i]);
+    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative output index during initialization", idx, dependent))
+      return fmi2Error;
+    dvUnknown[i] = comp->fmiDerJacInitialization->resultVars[idx];
+  }
+
+  return fmi2OK;
+}
+
 fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
     const fmi2ValueReference vUnknown_ref[], size_t nUnknown,
     const fmi2ValueReference vKnown_ref[] , size_t nKnown,
@@ -1156,6 +1271,16 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
   if (invalidState(comp, "fmi2GetDirectionalDerivative", modelInstantiated|modelEventMode|modelContinuousTimeMode, ~0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDirectionalDerivative")
+
+  if (updateIfNeeded(comp, "fmi2GetDirectionalDerivative") != fmi2OK)
+    return fmi2Error;
+
+  if (modelInitializationMode == comp->state)
+  {
+    // directional derivative in initialization mode
+    return fmi2GetDirectionalDerivativeForInitialization(c, vUnknown_ref, nUnknown, vKnown_ref, nKnown, dvKnown, dvUnknown);
+  }
+
   if (!comp->_has_jacobian)
     return unsupportedFunction(c, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
   /***************************************/
@@ -1478,8 +1603,39 @@ Functions for FMI2 for Co-Simulation
 ****************************************************/
 fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], const fmi2Real value[])
 {
-  // TODO Write code here
-  return unsupportedFunction(c, "fmi2SetRealInputDerivatives", ~0);
+  /* Variables */
+  int i;
+  int mappedIndex;
+  ModelInstance *comp = (ModelInstance*)c;
+
+  /* Check for valid call sequence */
+  if (invalidState(comp, "fmi2SetRealInputDerivatives", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
+    return fmi2Error;
+  if (nvr > 0 && nullPointer(comp, "fmi2SetRealInputDerivatives", "vr[]", vr))
+    return fmi2Error;
+  if (nvr > 0 && nullPointer(comp, "fmi2SetRealInputDerivatives", "value[]", value))
+    return fmi2Error;
+
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: nvr = %d", nvr)
+
+#if NUMBER_OF_REAL_INPUTS > 0
+  for (i = 0; i < nvr; i++)
+  {
+    if (order[i] > 1) // currently first order derivative is supported
+      return fmi2Error;
+    if (vrOutOfRange(comp, "fmi2SetRealInputDerivatives", vr[i], NUMBER_OF_REALS))
+      return fmi2Error;
+    // check valueReference is an input of type Real
+    mappedIndex = mapInputReference2InputNumber(vr[i]);
+    if (mappedIndex == -1)
+      return fmi2Error;
+    comp->input_real_derivative[mappedIndex] = value[i]; // store the values in an external array
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetRealInputDerivatives: #r%u# = %.16g", vr[i], value[i])
+  }
+#endif
+
+  comp->_need_update = 1;
+  return fmi2OK;
 }
 
 fmi2Status fmi2GetRealOutputDerivatives(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], fmi2Real value[])
@@ -1545,6 +1701,18 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
   tCommunication = currentCommunicationPoint;
 
+  // copy the input values
+  fmi2Real realInputDerivatives[NUMBER_OF_REAL_INPUTS];
+  if (NUMBER_OF_REAL_INPUTS > 0)
+  {
+    for (int i = 0; i < NUMBER_OF_REALS; ++i)
+    {
+      int mappedIndex = mapInputReference2InputNumber(i);
+      if (mappedIndex != -1)
+        realInputDerivatives[mappedIndex] = getReal(comp, i);
+    }
+  }
+
   fmi2EnterEventMode(c);
   fmi2EventIteration(c, &eventInfo);
   fmi2EnterContinuousTimeMode(c);
@@ -1557,6 +1725,22 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     }
 
     /* fprintf(stderr, "DoStep %g -> %g State: %s\n", comp->fmuData->localData[0]->timeValue, tNext, stateToString(comp)); */
+
+    // set the real Inputs with output_derivative values
+    if (NUMBER_OF_REAL_INPUTS > 0)
+    {
+      for (int i = 0; i < NUMBER_OF_REALS; ++i)
+      {
+        int mappedIndex = mapInputReference2InputNumber(i);
+        if (mapInputReference2InputNumber(i) != -1)
+        {
+          double dt = comp->fmuData->localData[0]->timeValue - t;
+          double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
+          if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
+            return fmi2Error;
+        }
+      }
+    }
 
     if (NUMBER_OF_STATES > 0)
     {
@@ -1609,6 +1793,22 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         return fmi2Fatal;
     }
     fmi2SetTime(c, tNext);
+
+    // set the real Inputs with output_derivative values
+    if (NUMBER_OF_REAL_INPUTS > 0)
+    {
+      for (int i = 0; i < NUMBER_OF_REALS; ++i)
+      {
+        int mappedIndex = mapInputReference2InputNumber(i);
+        if (mapInputReference2InputNumber(i) != -1)
+        {
+          double dt = comp->fmuData->localData[0]->timeValue - t;
+          double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
+          if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
+            return fmi2Error;
+        }
+      }
+    }
 
     /* set the continuous states */
     if (NUMBER_OF_STATES > 0)

@@ -181,7 +181,7 @@ public constant ErrorTypes.Message INVALID_CONNECTOR_VARIABLE = ErrorTypes.MESSA
 public constant ErrorTypes.Message TYPE_ERROR = ErrorTypes.MESSAGE(53, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Wrong type on %s, expected %s."));
 public constant ErrorTypes.Message MODIFY_PROTECTED = ErrorTypes.MESSAGE(54, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("Modification or redeclaration of protected elements is not allowed.\n\tElement: %s, modification: %s."));
+  Gettext.gettext("Modification or redeclaration of protected elements is not allowed.\n  Element: %s, modification: %s."));
 public constant ErrorTypes.Message INVALID_TUPLE_CONTENT = ErrorTypes.MESSAGE(55, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Tuple %s must contain component references only."));
 public constant ErrorTypes.Message MISSING_REDECLARE_IN_CLASS_MOD = ErrorTypes.MESSAGE(56, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -261,7 +261,7 @@ public constant ErrorTypes.Message RECURSIVE_DEFINITION = ErrorTypes.MESSAGE(92,
 public constant ErrorTypes.Message NOT_ARRAY_TYPE_IN_FOR_STATEMENT = ErrorTypes.MESSAGE(93, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Expression %s in for-statement must be an array type."));
 public constant ErrorTypes.Message NON_CLASS_IN_COMP_FUNC_NAME = ErrorTypes.MESSAGE(94, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Found non-class %s while looking for function via component. The only valid form is c.C1..CN.f where c is a scalar component and C1..CN are classes."));
+  Gettext.gettext("Found non-class %s while looking for function via component. The only valid form is c1..cN.C1..CN.f where c1..cN are scalar components and C1..CN are classes."));
 public constant ErrorTypes.Message DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN = ErrorTypes.MESSAGE(95, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
   Gettext.gettext("The same variables must be solved in elsewhen clause as in the when clause."));
 public constant ErrorTypes.Message CLASS_IN_COMPOSITE_COMP_NAME = ErrorTypes.MESSAGE(96, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -595,11 +595,11 @@ public constant ErrorTypes.Message BACKENDDAEINFO_STATISTICS = ErrorTypes.MESSAG
 public constant ErrorTypes.Message BACKENDDAEINFO_MIXED = ErrorTypes.MESSAGE(260, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Mixed equation statistics:\n * Mixed systems with single equation: %s\n * Mixed systems with array equation: %s\n * Mixed systems with algorithm: %s\n * Mixed systems with complex equation: %s\n * Mixed systems with constant Jacobian: %s\n * Mixed systems with linear Jacobian: %s\n * Mixed systems with non-linear Jacobian: %s\n * Mixed systems with analytic Jacobian: %s\n * Mixed systems with linear tearing system: %s\n * Mixed systems with nonlinear tearing system: %s"));
 public constant ErrorTypes.Message BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS = ErrorTypes.MESSAGE(261, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Strong component statistics for %s (%s):\n * Single equations (assignments): %s\n * Array equations: %s\n * Algorithm blocks: %s\n * Record equations: %s\n * When equations: %s\n * If-equations: %s\n * Equation systems (linear and non-linear blocks): %s\n * Torn equation systems: %s\n * Mixed (continuous/discrete) equation systems: %s"));
+  Gettext.gettext("Strong component statistics for %s (%s):\n * Single equations (assignments): %s\n * Array equations: %s\n * Algorithm blocks: %s\n * Record equations: %s\n * When equations: %s\n * If-equations: %s\n * Equation systems (not torn): %s\n * Torn equation systems: %s\n * Mixed (continuous/discrete) equation systems: %s"));
 public constant ErrorTypes.Message BACKENDDAEINFO_SYSTEMS = ErrorTypes.MESSAGE(262, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Equation system details:\n * Constant Jacobian: %s\n * Linear Jacobian (size,density): %s\n * Non-linear Jacobian: %s\n * Without analytic Jacobian: %s"));
+  Gettext.gettext("Equation system details (not torn):\n * Constant Jacobian (size): %s\n * Linear Jacobian (size,density): %s\n * Non-linear Jacobian (size): %s\n * Without analytic Jacobian (size): %s"));
 public constant ErrorTypes.Message BACKENDDAEINFO_TORN = ErrorTypes.MESSAGE(263, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Torn system details for %s tearing set:\n * Linear torn systems: %s\n * Non-linear torn systems: %s"));
+  Gettext.gettext("Torn system details for %s tearing set:\n * Linear torn systems (#iteration vars, #inner vars, density): %s\n * Non-linear torn systems (#iteration vars, #inner vars): %s"));
 public constant ErrorTypes.Message BACKEND_DAE_TO_MODELICA = ErrorTypes.MESSAGE(264, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("The following Modelica-like model represents the back-end DAE for the '%s' stage:\n%s"));
 public constant ErrorTypes.Message NEGATIVE_DIMENSION_INDEX = ErrorTypes.MESSAGE(265, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -859,6 +859,14 @@ public constant ErrorTypes.Message CONVERSION_MISSING_USES = ErrorTypes.MESSAGE(
 public constant ErrorTypes.Message CONVERSION_NO_COMPATIBLE_SCRIPT_FOUND = ErrorTypes.MESSAGE(393, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("No compatible conversion script for converting from %s %s to %s could be found."));
 
+public constant Gettext.TranslatableContent FUNCTION_CALL_EXPRESSION = Gettext.gettext("a function call expression");
+public constant ErrorTypes.Message FUNCTION_ARGUMENT_MUST_BE = ErrorTypes.MESSAGE(394, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("The argument to ‘%s‘ must be %s."));
+public constant ErrorTypes.Message UNEXPECTED_COMPONENT_IN_COMPOSITE_NAME = ErrorTypes.MESSAGE(395, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Found component ‘%s‘ in composite name ‘%s‘, expected class."));
+public constant ErrorTypes.Message NF_MODIFY_PROTECTED = ErrorTypes.MESSAGE(396, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Protected element ‘%s‘ may not be modified, got ‘%s‘."));
+
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
 public constant ErrorTypes.Message INITIALIZATION_OVER_SPECIFIED = ErrorTypes.MESSAGE(497, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
@@ -891,6 +899,9 @@ public constant ErrorTypes.Message CONSISTENT_UNITS = ErrorTypes.MESSAGE(518, Er
   Gettext.gettext("The system of units is consistent."));
 public constant ErrorTypes.Message INCOMPLETE_UNITS = ErrorTypes.MESSAGE(519, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("The system of units is incomplete. Please provide unit information to the model by e.g. using types from the SIunits package."));
+public constant ErrorTypes.Message INVALID_UNIT = ErrorTypes.MESSAGE(520, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Invalid unit expression ‘%s‘."));
+
 public constant ErrorTypes.Message ASSIGN_RHS_ELABORATION = ErrorTypes.MESSAGE(521, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to elaborate rhs of %s."));
 public constant ErrorTypes.Message FAILED_TO_EVALUATE_EXPRESSION = ErrorTypes.MESSAGE(522, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

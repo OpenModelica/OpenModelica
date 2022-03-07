@@ -1394,7 +1394,7 @@ algorithm
     local
       DAE.ComponentRef c;
       DAE.Exp e,cond,msg,e1,e2;
-      Integer i,i_1,index;
+      Integer i,i_1;
       String s1,s2,s3,str,id,name;
       list<String> es;
       list<DAE.Exp> expl;
@@ -1452,14 +1452,11 @@ algorithm
       then
         ();
 
-    case (DAE.STMT_FOR(iter = id,index = index,range = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(iter = id,range = e,statementLst = stmts),i)
       equation
         indent(i);
         Print.printBuf("for ");
         Print.printBuf(id);
-        if index <> -1 then
-          Print.printBuf(" /* iter index " + intString(index) + " */");
-        end if;
         Print.printBuf(" in ");
         ExpressionDump.printExp(e);
         Print.printBuf(" loop\n");
@@ -1470,14 +1467,11 @@ algorithm
       then
         ();
 
-    case (DAE.STMT_PARFOR(iter = id,index=index,range = e,statementLst = stmts),i)
+    case (DAE.STMT_PARFOR(iter = id,range = e,statementLst = stmts),i)
       equation
         indent(i);
         Print.printBuf("parfor ");
         Print.printBuf(id);
-        if index <> -1 then
-          Print.printBuf(" /* iter index " + intString(index) + " */");
-        end if;
         Print.printBuf(" in ");
         ExpressionDump.printExp(e);
         Print.printBuf(" loop\n");
@@ -1641,7 +1635,7 @@ algorithm
       String s1,s2,s3,s4,s5,s6,str,s7,s8,s9,s10,s11,id,cond_str,msg_str,e1_str,e2_str;
       DAE.ComponentRef c;
       DAE.Exp e,cond,msg,e1,e2;
-      Integer i,i_1,index;
+      Integer i,i_1;
       list<String> es;
       list<DAE.Exp> expl;
       list<DAE.Statement> then_,stmts;
@@ -1695,27 +1689,25 @@ algorithm
       then
         str;
 
-    case (DAE.STMT_FOR(iter = id,index = index,range = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(iter = id,range = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
-        s2 = if index == -1 then "" else ("/* iter index " + intString(index) + " */");
         s3 = ExpressionDump.printExpStr(e);
         i_1 = i + 2;
         s4 = ppStmtListStr(stmts, i_1);
         s5 = indentStr(i);
-        str = stringAppendList({s1,"for ",id,s2," in ",s3," loop\n",s4,s5,"end for;\n"});
+        str = stringAppendList({s1,"for ",id," in ",s3," loop\n",s4,s5,"end for;\n"});
       then
         str;
 
-    case (DAE.STMT_PARFOR(iter = id,index = index,range = e,statementLst = stmts),i)
+    case (DAE.STMT_PARFOR(iter = id,range = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
-        s2 = if index == -1 then "" else ("/* iter index " + intString(index) + " */");
         s3 = ExpressionDump.printExpStr(e);
         i_1 = i + 2;
         s4 = ppStmtListStr(stmts, i_1);
         s5 = indentStr(i);
-        str = stringAppendList({s1,"parfor ",id,s2," in ",s3," loop\n",s4,s5,"end for;\n"});
+        str = stringAppendList({s1,"parfor ",id," in ",s3," loop\n",s4,s5,"end for;\n"});
       then
         str;
 
@@ -3825,12 +3817,12 @@ algorithm
       DAE.Exp e1,e2;
   case(DAE.INFERRED_CLOCK())
     then "Inferred Clock";
-  case(DAE.INTEGER_CLOCK(intervalCounter=e1, resolution=e2))
-    then "Integer Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
+  case(DAE.RATIONAL_CLOCK(intervalCounter=e1, resolution=e2))
+    then "Rational Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
   case(DAE.REAL_CLOCK(interval=e1))
     then "Real Clock("+ExpressionDump.printExpStr(e1)+")";
-  case(DAE.BOOLEAN_CLOCK(condition=e1, startInterval=e2))
-    then "Boolean Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
+  case(DAE.EVENT_CLOCK(condition=e1, startInterval=e2))
+    then "Event Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
   case(DAE.SOLVER_CLOCK(c=e1, solverMethod=e2))
     then "Solver Clock("+ExpressionDump.printExpStr(e1)+"; "+ExpressionDump.printExpStr(e2)+")";
   end match;

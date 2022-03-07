@@ -111,7 +111,7 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables graphstream boehm-gc idl ModelicaExternalC antlr-copy libffi $(MINGW_EXTRA_LIBS)
+interactive-common: .testvariables graphstream boehm-gc idl antlr-copy libffi $(MINGW_EXTRA_LIBS)
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
@@ -359,9 +359,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
 	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT)
 	cp -pPR 3rdParty/FMIL/install/$(LIB_OMC)/$(LIBFMILIB) $(builddir_lib_omc)
-	@if [ "$(FMILIB_SHARED)" = "ON" ]; then\
-	    cp -v -pPR 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT) $(builddir_lib_omc);\
-	fi
+	cp -v -pPR 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib* $(builddir_lib_omc);\
 	test ! -f $(OMBUILDDIR)/$(LIB_OMC)/libfmilib_shared$(SHREXT) || ln -sf libfmilib_shared$(SHREXT) $(OMBUILDDIR)/$(LIB_OMC)/libfmilib$(SHREXT)
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	mkdir -p $(builddir_inc)/fmil/
@@ -370,7 +368,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt $(LIBMODELICAZLIB)
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DCMAKE_INSTALL_INCLUDEDIR=include -DOMC_ZLIB_LIBRARY=$(LIBMODELICAZLIB) -DOMC_ZLIB_INCLUDE_DIR=$(builddir_inc) .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=ON -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DCMAKE_INSTALL_INCLUDEDIR=include -DOMC_ZLIB_LIBRARY=$(LIBMODELICAZLIB) -DOMC_ZLIB_INCLUDE_DIR=$(builddir_inc) .. -G $(CMAKE_TARGET))
 
 # Install expat
 expat: fmil
@@ -409,7 +407,7 @@ libzmq: $(builddir_lib_omc)/$(LIBZMQLIB)
 $(builddir_lib_omc)/$(LIBZMQLIB):
 	test -d 3rdParty/libzmq
 	mkdir -p 3rdParty/libzmq/build
-	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_INSTALL_PREFIX="`pwd`" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_INSTALL_PREFIX="`pwd`" -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
 	test -f 3rdParty/libzmq/build/lib/$(LIBZMQLIB) || $(MAKE) -C 3rdParty/libzmq/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBZMQLIB) 3rdParty/libzmq/build/lib/$(LIBZMQLIB)
 	# copy dll/so to $(LIB_OMC) and $(builddir_bin) folders
@@ -489,13 +487,11 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean ipopt-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean ipopt-clean ModelicaExternalC-clean zlib-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
-	# remove ModelicaExternalC stuff
-	if test -f SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf 3rdParty/sundials-5.4.0/build
 	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
@@ -614,11 +610,17 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 		-DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
 		-DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" \
 		-DLDFLAGS="$(LDFLAGS)" \
-		-DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
+		-DSUNDIALS_KLU_ENABLE:Bool=ON \
+		-DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" \
+		-DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
 		$(SUITESPARSE_LIBS) \
-		-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF \
-		$(IS_MINGW32) $(IS_MINGW64) \
-		-DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS))
+		-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF \
+		-DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF \
+		-DSUNDIALS_EXAMPLES_INSTALL=OFF $(IS_MINGW32) $(IS_MINGW64) \
+		-DSUNDIALS_LAPACK_ENABLE:Bool=ON \
+		-DLAPACK_LIBRARIES="$(LD_LAPACK)" \
+		-DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS) \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON)
 
 	$(MAKE) -C 3rdParty/sundials-5.4.0/build install
 	# Test SUNDIALS but allow it to fail
@@ -685,25 +687,40 @@ libffi-clean:
 sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos
 
-MODELICAEXTERNALC=SimulationRuntime/ModelicaExternalC
-ModelicaExternalC: $(LIBMODELICAEXTERNALC) $(LIBMODELICASTANDARDTABLES) $(LIBMODELICAIO) $(LIBMODELICAMATIO) $(LIBMODELICAZLIB)
-$(LIBMODELICAEXTERNALC):
-	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || ./autogen.sh))
-	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || (./configure --prefix="`pwd`" ${MSL_EXTRA_ARGS} --enable-shared --disable-hdf5 --enable-static-zlib "--host=$(host)" --libdir="$(OMBUILDDIR)/$(LIB_OMC)/" CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
-	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools"
-	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools" install
-	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libzlib.la $(OMBUILDDIR)/$(LIB_OMC)/libModelica*.la
-	cp -pPR "$(MODELICAEXTERNALC)/C-Sources/zlib/zlib.h" $(builddir_inc)/
-	cp -pPR "$(MODELICAEXTERNALC)/C-Sources/zlib/zconf.h" $(builddir_inc)/
-	# test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaExternalC.0.dylib "$(LIBMODELICAEXTERNALC)"
-	# test ! `uname` = Darwin || (install_name_tool -id @rpath/libModelicaStandardTables.0.dylib "$(LIBMODELICASTANDARDTABLES)" && install_name_tool -change "$(LIBMODELICAMATIO:%.dylib=%.0.dylib)" @rpath/libModelicaMatIO.0.dylib "$(LIBMODELICASTANDARDTABLES)" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$(LIBMODELICASTANDARDTABLES)")
-	# test ! `uname` = Darwin || (install_name_tool -id @rpath/libzlib.0.dylib "$(LIBMODELICAZLIB)" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$(LIBMODELICAZLIB)")
-	# test ! `uname` = Darwin || (install_name_tool -id @rpath/libModelicaIO.0.dylib "$(LIBMODELICAIO)" && install_name_tool -change "$(LIBMODELICAMATIO:%.dylib=%.0.dylib)" @rpath/libModelicaMatIO.0.dylib "$(LIBMODELICAIO)" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$(LIBMODELICAIO)")
-	# test ! `uname` = Darwin || (install_name_tool -id @rpath/libModelicaMatIO.0.dylib "$(LIBMODELICAMATIO)" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$(LIBMODELICAMATIO)")
-	@test -f "$@"
+$(LIBMODELICAZLIB):
+	mkdir -p $(ZLIB_DIR)/build
+	cd $(ZLIB_DIR)/build && $(CMAKE) .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
+		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON
+	$(MAKE) -C $(ZLIB_DIR)/build/ install
+
+zlib-clean:
+	if test -f $(ZLIB_DIR)/build/Makefile; then $(MAKE) -C $(ZLIB_DIR)/build/ clean; fi
+	rm -rf $(ZLIB_DIR)/build
+
+MODELICAEXTERNALC_DIR=SimulationRuntime/ModelicaExternalC
+ModelicaExternalC: interactive $(LIBMODELICAZLIB)
+	mkdir -p $(MODELICAEXTERNALC_DIR)/build
+	cd $(MODELICAEXTERNALC_DIR)/build && $(CMAKE) .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
+		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
+		-DCMAKE_INSTALL_BINDIR="$(builddir_bin)" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+		-DMODELICA_EXTERNAL_C_STANDALONE=ON
+	$(MAKE) -C $(MODELICAEXTERNALC_DIR)/build/ install
+
+ModelicaExternalC-clean:
+	if test -f $(MODELICAEXTERNALC_DIR)/build/Makefile; then $(MAKE) -C $(MODELICAEXTERNALC_DIR)/build/ clean; fi
+	rm -rf $(MODELICAEXTERNALC_DIR)/build
+
 $(LIBMODELICASTANDARDTABLES): $(LIBMODELICAEXTERNALC)
-	@test -f "$@"
-$(LIBMODELICAZLIB): $(LIBMODELICAEXTERNALC)
 	@test -f "$@"
 $(LIBMODELICAIO): $(LIBMODELICAEXTERNALC)
 	@test -f "$@"

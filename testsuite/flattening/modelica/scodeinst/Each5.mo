@@ -22,6 +22,4 @@ end Each5;
 //   Real b[2].a.x = 1.0;
 //   Real b[3].a.x = 1.0;
 // end Each5;
-// [flattening/modelica/scodeinst/Each5.mo:16:17-16:24:writable] Warning: 'each' used when modifying non-array element a.
-//
 // endResult

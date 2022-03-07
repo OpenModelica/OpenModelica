@@ -16,6 +16,4 @@ end Each4;
 // class Each4
 //   Real a.n(fixed = true);
 // end Each4;
-// [flattening/modelica/scodeinst/Each4.mo:12:14-12:24:writable] Warning: 'each' used when modifying non-array element n.
-//
 // endResult

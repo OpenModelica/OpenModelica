@@ -389,16 +389,16 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
       infoStreamPrint(LOG_SIMULATION, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jac->sizeCols, jac->sizeRows);
-      infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jac->sparsePattern->numberOfNoneZeros, jac->sparsePattern->maxColors);
+      infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jac->sparsePattern->numberOfNonZeros, jac->sparsePattern->maxColors);
       messageClose(LOG_SIMULATION);
     }
   }
 
   /* Set NNZ */
   if (idaData->daeMode) {
-    idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNoneZeros;
+    idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNonZeros;
   } else {
-    idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNoneZeros;
+    idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNonZeros;
   }
 
   /* if FLAG_IDA_LS is set, choose ida linear solver method */
@@ -1742,7 +1742,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
       }
     }
   }
-  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
+  finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
 
   /* scale idaData->y and idaData->yp again */
   if ((omc_flag[FLAG_IDA_SCALING] && !idaData->disableScaling))
@@ -1799,7 +1799,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   genericColoredSymbolicJacobianEvaluation(rows, columns, sparsePattern, Jac, t_jac,
                                            data, threadData, &setJacElementKluSparse);
 
-  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
+  finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
   unsetContext(data);
 
   TRACE_POP

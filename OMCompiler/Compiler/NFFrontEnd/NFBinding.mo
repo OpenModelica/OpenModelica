@@ -46,7 +46,7 @@ protected
   import Error;
 
 public
-  constant Binding EMPTY_BINDING = UNBOUND(false, AbsynUtil.dummyInfo);
+  constant Binding EMPTY_BINDING = UNBOUND();
 
   type EachType = enumeration(
     NOT_EACH,
@@ -67,12 +67,6 @@ public
   );
 
   record UNBOUND
-    // NOTE: Use the EMPTY_BINDING constant above when a default unbound binding
-    //       is needed, to save memory. UNBOUND contains this information to be
-    //       able to check that 'each' is used correctly, so info is only needed
-    //       when isEach is true.
-    Boolean isEach;
-    SourceInfo info;
   end UNBOUND;
 
   record RAW_BINDING
@@ -122,6 +116,8 @@ public
     list<ErrorTypes.TotalMessage> errors;
   end INVALID_BINDING;
 
+  record WILD end WILD;
+
 public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;
@@ -144,7 +140,7 @@ public
         then
           RAW_BINDING(exp, scope, {}, each_ty, source, info);
 
-      else if eachPrefix then UNBOUND(true, info) else EMPTY_BINDING;
+      else EMPTY_BINDING;
     end match;
   end fromAbsyn;
 
@@ -381,7 +377,6 @@ public
     output SourceInfo info;
   algorithm
     info := match binding
-      case UNBOUND() then binding.info;
       case RAW_BINDING() then binding.info;
       case UNTYPED_BINDING() then binding.info;
       case TYPED_BINDING() then binding.info;
@@ -409,7 +404,6 @@ public
     output Boolean isEach;
   algorithm
     isEach := match binding
-      case UNBOUND() then binding.isEach;
       case RAW_BINDING() then binding.eachType == EachType.EACH;
       case UNTYPED_BINDING() then binding.eachType == EachType.EACH;
       case TYPED_BINDING() then binding.eachType == EachType.EACH;
@@ -680,6 +674,57 @@ public
       else false;
     end match;
   end containsExp;
+
+  function update
+    input output Binding binding;
+    input Expression exp;
+  algorithm
+    binding := match binding
+
+      case UNBOUND()
+      then TYPED_BINDING(
+          bindingExp  = exp,
+          bindingType = Expression.typeOf(exp),
+          variability = Expression.variability(exp),
+          eachType    = EachType.NOT_EACH,
+          evalState   = if Expression.isConstNumber(exp)
+                        then Mutable.create(EvalState.EVALUATED)
+                        else Mutable.create(EvalState.NOT_EVALUATED),
+          isFlattened = true,
+          source      = Source.BINDING,
+          info        = sourceInfo()
+        );
+
+      case UNTYPED_BINDING() algorithm
+        binding.bindingExp := exp;
+      then binding;
+
+      case TYPED_BINDING() algorithm
+        binding.bindingExp := exp;
+      then binding;
+
+      case FLAT_BINDING() algorithm
+        binding.bindingExp := exp;
+      then binding;
+
+      case CEVAL_BINDING() algorithm
+        binding.bindingExp := exp;
+      then binding;
+
+      case INVALID_BINDING() algorithm
+        binding.binding := update(binding.binding, exp);
+      then binding;
+
+      case RAW_BINDING() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because a raw binding cannot be updated."});
+      then fail();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+
+    end match;
+  end update;
 
   function setAttr
     "sets a specific attribute value and adds it if it does not exist"

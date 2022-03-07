@@ -723,8 +723,10 @@ protected
   Connector c;
   list<Connector> sl;
   Integer set;
+  ComponentRef cr;
 algorithm
-  c := Connector.CONNECTOR(cref, Type.UNKNOWN(), Face.INSIDE,
+  cr := ComponentRef.evaluateSubscripts(cref);
+  c := Connector.CONNECTOR(cr, Type.UNKNOWN(), Face.INSIDE,
     ConnectorType.STREAM, DAE.emptyElementSource);
 
   try
@@ -734,7 +736,7 @@ algorithm
     sl := {c};
   end try;
 
-  exp := generateInStreamExp(cref, sl, sets, setsArray, variables, ctable,
+  exp := generateInStreamExp(cr, sl, sets, setsArray, variables, ctable,
     Flags.getConfigReal(Flags.FLOW_THRESHOLD));
 end evaluateInStream;
 
@@ -851,24 +853,26 @@ protected function evaluateActualStream
   output Expression exp;
   output ComponentRef flowCref;
 protected
+  ComponentRef stream_cref;
   Integer flow_dir;
   Expression flow_exp, stream_exp, instream_exp;
   Operator op;
 algorithm
-  flowCref := associatedFlowCref(streamCref);
+  stream_cref := ComponentRef.evaluateSubscripts(streamCref);
+  flowCref := associatedFlowCref(stream_cref);
   flow_dir := evaluateFlowDirection(flowCref, variables);
 
   // Select a branch if we know the flow direction, otherwise generate the whole
   // if-equation.
   if flow_dir == 1 then
-    exp := evaluateInStream(streamCref, sets, setsArray, variables, ctable);
+    exp := evaluateInStream(stream_cref, sets, setsArray, variables, ctable);
   elseif flow_dir == -1 then
-    exp := Expression.fromCref(streamCref);
+    exp := Expression.fromCref(stream_cref);
   else
     // actualStream(stream_var) = if flow_var > 0 then inStream(stream_var) else stream_var);
     flow_exp := Expression.fromCref(flowCref);
-    stream_exp := Expression.fromCref(streamCref);
-    instream_exp := evaluateInStream(streamCref, sets, setsArray, variables, ctable);
+    stream_exp := Expression.fromCref(stream_cref);
+    instream_exp := evaluateInStream(stream_cref, sets, setsArray, variables, ctable);
     op := Operator.makeGreater(ComponentRef.nodeType(flowCref));
 
     exp := Expression.IF(

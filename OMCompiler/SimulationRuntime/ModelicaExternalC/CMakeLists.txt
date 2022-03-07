@@ -1,98 +1,137 @@
 
+# We now exclusively use CMake to build ModelicaExternalC. That is, even for
+# the autotools+Makefiles build system OpenModelica uses, CMake is used to
+# compile ModelicaExternalC.
+# If we get here from autotools+Makefiles build we use a standalone CMake project file
+# to compile the ModelicaExternalC libs. This is signified by setting MODELICA_EXTERNAL_C_STANDALONE
+# when configuring this file.
+if(MODELICA_EXTERNAL_C_STANDALONE)
+  include(MEC_standalone_2.8.cmake)
+  return()
+endif()
+
+
 cmake_minimum_required(VERSION 3.14)
 project(OMModelicaExternalC)
 
-
-# zlib
-# We have decided to use zlib from here. We could have used the system zlib. However,
-# modelica annotations request for "zlib" while the system zlib is OFTEN (but not always) called "libz"
-# which means it should be used as "z". We can modify the annotations to use "z" but then
-# it will be the same issue on systems that call it "zlib". So we need to find a solution.
-# Originally I was creating a sym link to the system zlib in our lib directories. However,
-# that might be confusing for others. So it might be better to explicitly
-# build it and use it from here. The one advantage of this is that we can compile it with -fpic so
-# that we can link it into our static FMUs.
-file(GLOB libzlib_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/*.c)
-add_library(zlib STATIC ${libzlib_SOURCES})
-add_library(omc::simrt::Modelica::zlib ALIAS zlib)
-
-
-target_include_directories(zlib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib)
-
-## Check if we have unistd.h and define accordingly
-## We can not use the omc macro omc_check_header_exists_and_define() because
-## this file is processed for the omc-msvc targets right now. Do it manually.
-include(CheckIncludeFile)
-check_include_file(unistd.h HAVE_UNISTD_H)
-if(HAVE_UNISTD_H)
-  target_compile_definitions(zlib PRIVATE -DHAVE_UNISTD_H=1)
-endif()
-
-install(TARGETS zlib)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/zlib.h
-              ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/zconf.h
-        TYPE INCLUDE)
-
-
-
-# ModelicaExternalC
+## ModelicaExternalC #########################################################################
 set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
                                  C-Sources/ModelicaInternal.c
                                  C-Sources/ModelicaRandom.c
                                  C-Sources/ModelicaStrings.c)
 
+# Static version
 add_library(ModelicaExternalC STATIC ${libModelicaExternalC_SOURCES})
 add_library(omc::simrt::Modelica::ExternalC ALIAS ModelicaExternalC)
 
 target_link_libraries(ModelicaExternalC PUBLIC m)
+target_link_libraries(ModelicaExternalC PUBLIC omc::simrt::runtime)
+
+# Shared version.
+add_library(ModelicaExternalC_shared SHARED ${libModelicaExternalC_SOURCES})
+add_library(omc::simrt::Modelica::ExternalC::shared ALIAS ModelicaExternalC_shared)
+set_target_properties(ModelicaExternalC_shared
+                      PROPERTIES OUTPUT_NAME ModelicaExternalC CLEAN_DIRECT_OUTPUT 1)
+
+target_link_libraries(ModelicaExternalC_shared PUBLIC m)
+target_link_libraries(ModelicaExternalC_shared PUBLIC omc::simrt::runtime)
+if(WIN32)
+  target_link_options(ModelicaExternalC_shared PRIVATE -Wl,--export-all-symbols)
+endif()
 
 
-# ModelicaMatIO
+
+## ModelicaMatIO #########################################################################
 set(libModelicaMatIO_SOURCES C-Sources/ModelicaMatIO.c C-Sources/snprintf.c)
+# Static version
 add_library(ModelicaMatIO STATIC ${libModelicaMatIO_SOURCES})
 add_library(omc::simrt::Modelica::MatIO ALIAS ModelicaMatIO)
 
 target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
-target_link_libraries(ModelicaMatIO PUBLIC zlib)
+target_link_libraries(ModelicaMatIO PUBLIC omc::3rd::zlib)
 target_link_libraries(ModelicaMatIO PUBLIC omc::simrt::runtime)
 
-# find_package(ZLIB)
-# if(ZLIB_FOUND)
-#     target_link_libraries(ModelicaMatIO PUBLIC ZLIB::ZLIB)
-#     target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
-# endif()
+# Shared version
+add_library(ModelicaMatIO_shared SHARED ${libModelicaMatIO_SOURCES})
+add_library(omc::simrt::Modelica::MatIO::shared ALIAS ModelicaMatIO_shared)
+set_target_properties(ModelicaMatIO_shared
+                      PROPERTIES OUTPUT_NAME ModelicaMatIO CLEAN_DIRECT_OUTPUT 1)
 
-# find_package(HDF5)
-# if(HDF5_FOUND)
-#     target_include_directories(ModelicaMatIO PRIVATE ${HDF5_INCLUDE_DIRS})
-#     target_link_libraries(ModelicaMatIO PUBLIC ${HDF5_LIBRARIES})
-#     target_compile_definitions(ModelicaMatIO PRIVATE HAVE_HDF5)
-# endif()
+target_compile_definitions(ModelicaMatIO_shared PUBLIC HAVE_ZLIB)
+target_link_libraries(ModelicaMatIO_shared PUBLIC omc::3rd::zlib)
+target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
+if(WIN32)
+  target_link_options(ModelicaMatIO_shared PRIVATE -Wl,--export-all-symbols)
+endif()
 
 
-# ModelicaIO
+## ModelicaIO #########################################################################
 set(libModelicaIO_SOURCES C-Sources/ModelicaIO.c)
+# Static version
 add_library(ModelicaIO STATIC ${libModelicaIO_SOURCES})
 add_library(omc::simrt::Modelica::IO ALIAS ModelicaIO)
 
 target_link_libraries(ModelicaIO PUBLIC ModelicaMatIO)
 
+# Shared version
+add_library(ModelicaIO_shared SHARED ${libModelicaIO_SOURCES})
+add_library(omc::simrt::Modelica::IO::shared ALIAS ModelicaIO_shared)
+set_target_properties(ModelicaIO_shared
+                      PROPERTIES OUTPUT_NAME ModelicaIO CLEAN_DIRECT_OUTPUT 1)
+
+target_link_libraries(ModelicaIO_shared PUBLIC ModelicaMatIO_shared)
+if(WIN32)
+  target_link_options(ModelicaIO_shared PRIVATE -Wl,--export-all-symbols)
+endif()
 
 
-# ModelicaStandardTables
+
+## ModelicaStandardTables #########################################################################
 set(ModelicaStandardTables_SOURCES C-Sources/ModelicaStandardTables.c
                                    C-Sources/ModelicaStandardTablesUsertab.c)
+# Static version.
 add_library(ModelicaStandardTables STATIC ${ModelicaStandardTables_SOURCES})
 add_library(omc::simrt::Modelica::StandardTables ALIAS ModelicaStandardTables)
 
-# This seems to be needed. Otherwise we get undefined referenes to function 'usertab'
+# This seems to be needed. Otherwise we get undefined references to function 'usertab'
 target_compile_definitions(ModelicaStandardTables PRIVATE -DDUMMY_FUNCTION_USERTAB)
 
-target_link_libraries(ModelicaStandardTables INTERFACE ModelicaMatIO)
+target_link_libraries(ModelicaStandardTables PUBLIC ModelicaIO)
 target_link_libraries(ModelicaStandardTables PUBLIC m)
 
+# Shared version
+add_library(ModelicaStandardTables_shared SHARED ${ModelicaStandardTables_SOURCES})
+add_library(omc::simrt::Modelica::StandardTables::shared ALIAS ModelicaStandardTables_shared)
+set_target_properties(ModelicaStandardTables_shared
+                      PROPERTIES OUTPUT_NAME ModelicaStandardTables CLEAN_DIRECT_OUTPUT 1)
 
+# This seems to be needed. Otherwise we get undefined references to function 'usertab'
+target_compile_definitions(ModelicaStandardTables_shared PRIVATE -DDUMMY_FUNCTION_USERTAB)
+
+target_link_libraries(ModelicaStandardTables_shared PUBLIC ModelicaIO_shared)
+target_link_libraries(ModelicaStandardTables_shared PUBLIC m)
+if(WIN32)
+  target_link_options(ModelicaStandardTables_shared PRIVATE -Wl,--export-all-symbols)
+endif()
+
+
+## Install
+# Install the static libs to the normal lib dir.
 install(TARGETS ModelicaExternalC
                 ModelicaMatIO
                 ModelicaIO
-                ModelicaStandardTables)
+                ModelicaStandardTables
+       )
+
+# Install the shared libs to a directory 'ffi' within the lib dir.
+# This is so that they are not on the normal link path of simulation executables.
+# We do not want to have them for anything other than FFI based for constant
+# evaluation by omc (They are only loaded never linked)
+install(TARGETS ModelicaExternalC_shared
+                ModelicaMatIO_shared
+                ModelicaIO_shared
+                ModelicaStandardTables_shared
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/ffi
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/ffi
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/ffi
+       )

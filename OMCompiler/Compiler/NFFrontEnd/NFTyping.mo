@@ -88,6 +88,7 @@ import ErrorExt;
 import ErrorTypes;
 import OperatorOverloading = NFOperatorOverloading;
 import Structural = NFStructural;
+import Array;
 
 public
 uniontype TypingError
@@ -336,16 +337,17 @@ function makeRecordType
 protected
   CachedData cache;
   Function fn;
-  list<Record.Field> fields;
+  array<Record.Field> fields;
+  UnorderedMap<String, Integer> indexMap;
 algorithm
   cache := InstNode.getFuncCache(constructor);
 
   recordTy := match cache
     case CachedData.FUNCTION(funcs = fn :: _)
       algorithm
-        fields := Record.collectRecordFields(fn.node);
+        (fields, indexMap) := Record.collectRecordFields(fn.node);
       then
-        ComplexType.RECORD(constructor, fields);
+        ComplexType.RECORD(constructor, fields, indexMap);
 
     else
       algorithm
@@ -366,6 +368,10 @@ protected
   Expression cond;
   Boolean is_deleted;
 algorithm
+  if InstNode.isOnlyOuter(component) then
+    return;
+  end if;
+
   ty := match c
     // An untyped component, type it.
     case Component.UNTYPED_COMPONENT()
@@ -521,27 +527,18 @@ algorithm
       TypingError ty_err;
       Integer parent_dims, dim_index;
 
-    // Print an error when a dimension that's currently being processed is
-    // found, which indicates a dependency loop. Another way of handling this
-    // would be to instead view the dimension as unknown and infer it from the
-    // binding, which means that things like x[size(x, 1)] = {...} could be
-    // handled. But that is not specified and doesn't seem needed, and can also
-    // give different results depending on the declaration order of components.
+    // A dimension that we're already trying to type.
     case Dimension.UNTYPED(isProcessing = true)
       algorithm
-        // Only give an error if we're not in a function.
-        if not InstContext.inFunction(context) then
-          // TODO: Tell the user which variables are involved in the loop (can be
-          //       found with DFS on the dimension expression. Maybe have a limit
-          //       on the output in case there's a lot of dimensions involved.
-          Error.addSourceMessage(Error.CYCLIC_DIMENSIONS,
-            {String(index), InstNode.name(component), Expression.toString(dimension.dimension)}, info);
-          fail();
+        if InstContext.inFunction(context) then
+          // If we are in a functions we allow e.g. size expression of unknown dimensions.
+          dim := Dimension.UNKNOWN();
+          arrayUpdate(dimensions, index, dim);
+        else
+          // Otherwise leave the dimension as it is, which is sometimes fine if
+          // the dimension isn't used or generates an error in typeCrefDim.
+          dim := dimension;
         end if;
-
-        // If we are in a functions we allow e.g. size expression of unknown dimensions.
-        dim := Dimension.UNKNOWN();
-        arrayUpdate(dimensions, index, dim);
       then
         dim;
 
@@ -676,8 +673,6 @@ algorithm
     // Other kinds of dimensions are already typed.
     else dimension;
   end match;
-
-  verifyDimension(dimension, component, info);
 end typeDimension;
 
 function subscriptDimExp
@@ -700,7 +695,7 @@ algorithm
   // If the expression has too many dimensions, add split subscripts based on
   // the component's parent's dimensions until we get a scalar expression.
   subs := {};
-  parent := InstNode.derivedParent(component);
+  parent := InstNode.instanceParent(component);
 
   while exp_dims > 0 and not InstNode.isEmpty(parent) loop
     parent_dims := InstNode.dimensionCount(parent);
@@ -714,7 +709,7 @@ algorithm
       end if;
     end for;
 
-    parent := InstNode.derivedParent(parent);
+    parent := InstNode.instanceParent(parent);
   end while;
 
   dimExp := Expression.applySubscripts(subs, dimExp);
@@ -737,27 +732,6 @@ algorithm
     else dimExp;
   end match;
 end simplifyDimExp;
-
-function verifyDimension
-  input Dimension dimension;
-  input InstNode component;
-  input SourceInfo info;
-algorithm
-  () := match dimension
-    case Dimension.INTEGER()
-      algorithm
-        // Check that integer dimensions are not negative.
-        if dimension.size < 0 then
-          Error.addSourceMessage(Error.NEGATIVE_DIMENSION_INDEX,
-            {String(dimension.size), InstNode.name(component)}, info);
-          fail();
-        end if;
-      then
-        ();
-
-    else ();
-  end match;
-end verifyDimension;
 
 function makeDimension
   input Expression dimExp;
@@ -790,7 +764,7 @@ protected
   Expression exp;
   Binding parent_binding;
 algorithm
-  parent := InstNode.derivedParent(component);
+  parent := InstNode.instanceParent(component);
 
   if InstNode.isComponent(parent) then
     // Get the binding of the component's parent.
@@ -884,6 +858,10 @@ protected
 algorithm
   c := InstNode.component(node);
 
+  if InstNode.isOnlyOuter(component) then
+    return;
+  end if;
+
   () := match c
     case Component.TYPED_COMPONENT()
       guard Component.isDeleted(c)
@@ -896,7 +874,6 @@ algorithm
 
         ErrorExt.setCheckpoint(getInstanceName());
         try
-          checkBindingEach(c.binding, component);
           binding := typeBinding(binding, InstContext.set(context, NFInstContext.BINDING));
 
           if not (Config.getGraphicsExpMode() and stringEq(name, "graphics")) then
@@ -932,8 +909,6 @@ algorithm
     // A component without a binding, or with a binding that's already been typed.
     case Component.TYPED_COMPONENT()
       algorithm
-        checkBindingEach(c.binding, component);
-
         if Binding.isTyped(c.binding) then
           c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node);
           checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
@@ -951,7 +926,6 @@ algorithm
     case Component.UNTYPED_COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
       algorithm
         name := InstNode.name(component);
-        checkBindingEach(c.binding, component);
         binding := typeBinding(c.binding, InstContext.set(context, NFInstContext.BINDING));
         comp_var := checkComponentBindingVariability(name, c, binding, context);
 
@@ -1054,22 +1028,6 @@ algorithm
   end match;
 end typeBinding;
 
-function checkBindingEach
-  input Binding binding;
-  input InstNode component;
-protected
-  InstNode parent;
-algorithm
-  if Binding.isEach(binding) then
-    parent := InstNode.derivedParent(component);
-
-    if not Type.isArray(InstNode.getType(parent)) then
-      Error.addStrictMessage(Error.EACH_ON_NON_ARRAY,
-        {InstNode.name(parent)}, Binding.getInfo(binding));
-    end if;
-  end if;
-end checkBindingEach;
-
 function typeComponentCondition
   input output Binding condition;
   input InstContext.Type context;
@@ -1147,10 +1105,9 @@ algorithm
         fail();
 
     // Modifier with no binding, e.g. Real x(final start).
+    // Remove it so we don't have to deal with it in later.
     case Modifier.MODIFIER()
       guard Binding.isUnbound(attribute.binding)
-      algorithm
-        checkBindingEach(attribute.binding, component);
       then
         NFModifier.NOMOD();
 
@@ -1158,8 +1115,6 @@ algorithm
     case Modifier.MODIFIER(name = name, binding = binding)
       algorithm
         // Type and type check the attribute.
-        checkBindingEach(binding, component);
-
         if Binding.isBound(binding) then
           binding := typeBinding(binding, context);
           parent := InstNode.parent(component);
@@ -1518,7 +1473,7 @@ protected
 algorithm
   (outExp, ty, variability, purity) := match exp
     case Expression.ARRAY()
-      guard not listEmpty(splitSubs) and not listEmpty(exp.elements)
+      guard not listEmpty(splitSubs) and not arrayEmpty(exp.elements)
       algorithm
         expl := {};
         variability := Variability.CONSTANT;
@@ -1531,7 +1486,7 @@ algorithm
 
         expl := listReverseInPlace(expl);
         ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
-        outExp := Expression.makeArray(ty, expl);
+        outExp := Expression.makeArray(ty, listArray(expl));
       then
         (outExp, ty, variability, purity);
 
@@ -1649,12 +1604,12 @@ function typeArrayDim2
 algorithm
   (dim, error) := match (arrayExp, dimIndex)
     case (Expression.ARRAY(), 1)
-      then (Dimension.fromExpList(arrayExp.elements), TypingError.NO_ERROR());
+      then (Dimension.fromExpArray(arrayExp.elements), TypingError.NO_ERROR());
 
     // Modelica arrays are non-ragged and only the last dimension of an array
     // expression can be empty, so just traverse into the first element.
     case (Expression.ARRAY(), _)
-      then typeArrayDim2(listHead(arrayExp.elements), dimIndex - 1, dimCount + 1);
+      then typeArrayDim2(arrayGet(arrayExp.elements, 1), dimIndex - 1, dimCount + 1);
 
     else
       algorithm
@@ -1720,6 +1675,7 @@ algorithm
 
                 if index <= dim_count and index > 0 then
                   dim := typeDimension(c.dimensions, index, node, c.binding, context, c.info);
+                  checkCyclicDimension(dim, node, index, c.info);
                   return;
                 end if;
               then
@@ -1751,6 +1707,29 @@ algorithm
   dim := Dimension.UNKNOWN();
   error := TypingError.OUT_OF_BOUNDS(dim_total);
 end typeCrefDim;
+
+function checkCyclicDimension
+  input Dimension dim;
+  input InstNode component;
+  input Integer index;
+  input SourceInfo info;
+protected
+  Expression dim_exp;
+algorithm
+  () := match dim
+    case Dimension.UNTYPED(isProcessing = true)
+      algorithm
+        // TODO: Tell the user which variables are involved in the loop (can be
+        //       found with DFS on the dimension expression. Maybe have a limit
+        //       on the output in case there's a lot of dimensions involved.
+        Error.addSourceMessage(Error.CYCLIC_DIMENSIONS,
+          {String(index), InstNode.name(component), Expression.toString(dim.dimension)}, info);
+      then
+        fail();
+
+    else ();
+  end match;
+end checkCyclicDimension;
 
 function nthDimensionBoundsChecked
   "Returns the requested dimension from the given type, along with a TypingError
@@ -1806,7 +1785,7 @@ algorithm
   // TODO: Fix NFBuiltin.TIME_CREF so that the compiler treats it like an actual
   //       constant, then maybe we can use referenceEq here instead.
   if InstContext.inFunction(context) and
-     ComponentRef.firstName(cref) == "time" then
+     ComponentRef.isTime(cref) then
     Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"time"}, info);
     fail();
   end if;
@@ -1831,12 +1810,12 @@ algorithm
       Type node_ty;
       list<Subscript> subs;
       Variability subs_var, rest_var;
-      InstContext.Type node_context;
       Function fn;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
       algorithm
         cref.ty := InstNode.getType(cref.node);
+        cref.restCref := typeCref2(cref.restCref, context, info, false);
       then
         (cref, Variability.CONSTANT);
 
@@ -1851,9 +1830,7 @@ algorithm
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
-        node_context := if InstNode.isFunction(InstNode.explicitParent(cref.node)) then
-          NFInstContext.FUNCTION else NFInstContext.CLASS;
-        node_ty := typeComponent(cref.node, node_context);
+        node_ty := typeComponent(cref.node, crefContext(cref.node));
 
         (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, cref, context, info);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
@@ -1868,7 +1845,7 @@ algorithm
         cref.ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTION_REFERENCE);
         cref.restCref := typeCref2(cref.restCref, context, info, false);
       then
-        (cref, Variability.CONTINUOUS);
+        (cref, Variability.CONSTANT);
 
     case ComponentRef.CREF(node = InstNode.CLASS_NODE())
       algorithm
@@ -1879,6 +1856,27 @@ algorithm
     else (cref, Variability.CONSTANT);
   end match;
 end typeCref2;
+
+function crefContext
+  input InstNode crefNode;
+  output InstContext.Type context;
+protected
+  InstNode parent;
+  Restriction parent_res;
+algorithm
+  parent := InstNode.explicitParent(crefNode);
+
+  // Records might actually be record constructors that should count as
+  // functions here, such record constructors are always root classes.
+  if not InstNode.isRootClass(parent) then
+    context := NFInstContext.CLASS;
+    return;
+  end if;
+
+  parent_res := InstNode.restriction(parent);
+  context := if Restriction.isFunction(parent_res) or Restriction.isRecord(parent_res) then
+    NFInstContext.FUNCTION else NFInstContext.CLASS;
+end crefContext;
 
 function typeSubscripts
   input list<Subscript> subscripts;
@@ -1987,7 +1985,7 @@ algorithm
 end typeSubscript;
 
 function typeArray
-  input list<Expression> elements;
+  input array<Expression> elements;
   input InstContext.Type context;
   input SourceInfo info;
   output Expression arrayExp;
@@ -2041,7 +2039,7 @@ algorithm
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
-  arrayExp := Expression.makeArray(arrayType, expl2);
+  arrayExp := Expression.makeArray(arrayType, listArray(expl2));
 end typeArray;
 
 function typeMatrix "The array concatenation operator"
@@ -2284,7 +2282,7 @@ protected
   TypingError ty_err;
   Option<Expression> oexp;
   InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
-  list<Expression> expl;
+  array<Expression> expl;
 algorithm
   (sizeExp, sizeType, variability, purity) := match sizeExp
     case Expression.SIZE(exp = exp, dimIndex = SOME(index))
@@ -2351,7 +2349,7 @@ algorithm
             // present in the flat model or an array expression that doesn't have enough
             // dimensions (e.g. Real[0, 2] => {}). In that case make an array with the dimension
             // sizes of the expression and index that instead.
-            expl := list(Dimension.sizeExp(d) for d in Type.arrayDims(exp_ty));
+            expl := Array.mapList(Type.arrayDims(exp_ty), Dimension.sizeExp);
             exp := Expression.makeExpArray(expl, Type.INTEGER());
             exp := Expression.makeSubscriptedExp({Subscript.makeIndex(index)}, exp);
           else
@@ -2786,7 +2784,7 @@ protected
 algorithm
   comp := InstNode.component(component);
 
-  if Component.isDeleted(comp) then
+  if Component.isDeleted(comp) or InstNode.isOnlyOuter(component) then
     return;
   end if;
 

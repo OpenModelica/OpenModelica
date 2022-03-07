@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFExpression
 protected
+  import Array;
   import Util;
   import Absyn;
   import AbsynUtil;
@@ -49,7 +50,7 @@ protected
   import ExpandExp = NFExpandExp;
   import TypeCheck = NFTypeCheck;
   import ValuesUtil;
-  import MetaModelica.Dangerous.listReverseInPlace;
+  import MetaModelica.Dangerous.*;
   import RangeIterator = NFRangeIterator;
 
 public
@@ -110,7 +111,7 @@ public
 
   record ARRAY
     Type ty;
-    list<Expression> elements;
+    array<Expression> elements;
     Boolean literal "True if the array is known to only contain literal expressions.";
   end ARRAY;
 
@@ -176,6 +177,14 @@ public
     Operator operator;
     Expression exp2;
   end RELATION;
+
+  record MULTARY
+    "Multary expressions with the same operator, e.g. a+b+c
+    An empty list has to be interpreted as the neutral element of the operator space"
+    list<Expression> arguments      "arguments that are chained with the operator (+, *)";
+    list<Expression> inv_arguments  "arguments that are chained with the inverse operator (-, :)";
+    Operator operator               "Can only be + or * (commutative)";
+  end MULTARY;
 
   record IF
     Type ty;
@@ -248,10 +257,20 @@ public
     output Boolean emptyArray;
   algorithm
     emptyArray := match exp
-      case ARRAY(elements = {}) then true;
+      case ARRAY() then arrayEmpty(exp.elements);
       else false;
     end match;
   end isEmptyArray;
+
+  function isVector
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case ARRAY() then Type.isVector(exp.ty);
+      else false;
+    end match;
+  end isVector;
 
   function isCref
     input Expression exp;
@@ -320,17 +339,7 @@ public
   algorithm
     isTrue := match exp
       case BOOLEAN(true) then true;
-      case ARRAY()
-        algorithm
-          for e in exp.elements loop
-            if not isAllTrue(e) then
-              isTrue := false;
-              return;
-            end if;
-          end for;
-        then
-          true;
-
+      case ARRAY() then Array.all(exp.elements, isAllTrue);
       else false;
     end match;
   end isAllTrue;
@@ -382,7 +391,7 @@ public
         Boolean b;
         ComponentRef cr;
         Type ty;
-        list<Expression> expl;
+        list<Expression> expl, inv_expl;
         Expression e1, e2, e3;
         Option<Expression> oe;
         Path p;
@@ -392,6 +401,7 @@ public
         ClockKind clk1, clk2;
         Mutable<Expression> me;
         list<list<Expression>> mat;
+        array<Expression> arr;
 
       case INTEGER()
         algorithm
@@ -448,10 +458,10 @@ public
 
       case ARRAY()
         algorithm
-          ARRAY(ty = ty, elements = expl) := exp2;
+          ARRAY(ty = ty, elements = arr) := exp2;
           comp := valueCompare(ty, exp1.ty);
         then
-          if comp == 0 then List.compare(exp1.elements, expl, compare) else comp;
+          if comp == 0 then Array.compare(exp1.elements, arr, compare) else comp;
 
       case MATRIX()
         algorithm
@@ -499,6 +509,19 @@ public
           if comp == 0 then compare(exp1.exp, e1) else comp;
 
       case END() then 0;
+
+      case MULTARY()
+        algorithm
+          MULTARY(arguments = expl, inv_arguments = inv_expl, operator = op) := exp2;
+          comp := Operator.compare(exp1.operator, op);
+          if comp == 0 then
+            comp := compareList(exp1.arguments, expl);
+          end if;
+          if comp == 0 then
+            comp := compareList(exp1.inv_arguments, inv_expl);
+          end if;
+        then
+          comp;
 
       case BINARY()
         algorithm
@@ -694,6 +717,7 @@ public
       case SIZE()            then if isSome(exp.dimIndex) then
                                     Type.INTEGER() else Type.sizeType(typeOf(exp.exp));
       case END()             then Type.INTEGER();
+      case MULTARY()         then Operator.typeOf(exp.operator);
       case BINARY()          then Operator.typeOf(exp.operator);
       case UNARY()           then Operator.typeOf(exp.operator);
       case LBINARY()         then Operator.typeOf(exp.operator);
@@ -763,6 +787,7 @@ public
     list<Expression> el;
     Expression e1, e2;
     Integer dim_diff;
+    array<Expression> arr;
   algorithm
     ety := Type.arrayElementType(ty);
 
@@ -783,12 +808,12 @@ public
         then if Type.isReal(ety) then exp else typeCastGeneric(exp, ety);
 
       // For arrays we typecast each element and update the type of the array.
-      case ARRAY(ty = t, elements = el)
+      case ARRAY(ty = t, elements = arr)
         algorithm
-          el := list(typeCast(e, ety) for e in el);
+          arr := Array.map(arr, function typeCast(ty = ety));
           t := Type.setArrayElementType(t, ety);
         then
-          ARRAY(t, el, exp.literal);
+          ARRAY(t, arr, exp.literal);
 
       case RANGE(ty = t)
         algorithm
@@ -874,12 +899,27 @@ public
     input Expression exp;
     output String value;
   algorithm
-    STRING(value=value) := exp;
+    try
+      STRING(value=value) := exp;
+    else
+      value := "";
+    end try;
   end stringValue;
+
+  function booleanValue
+    input Expression exp;
+    output Boolean value;
+  algorithm
+    try
+      BOOLEAN(value=value) := exp;
+    else
+      value := false;
+    end try;
+  end booleanValue;
 
   function makeArray
     input Type ty;
-    input list<Expression> expl;
+    input array<Expression> expl;
     input Boolean literal = false;
     output Expression outExp;
   algorithm
@@ -891,7 +931,7 @@ public
     input Type ty;
     output Expression outExp;
   algorithm
-    outExp := ARRAY(ty, {}, true);
+    outExp := ARRAY(ty, listArray({}), true);
     annotation(__OpenModelica_EarlyInline = true);
   end makeEmptyArray;
 
@@ -900,7 +940,7 @@ public
     output Expression exp;
   algorithm
     exp := makeArray(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(listLength(values))}),
-                     list(INTEGER(v) for v in values),
+                     Array.mapList(values, makeInteger),
                      literal = true);
   end makeIntegerArray;
 
@@ -909,7 +949,7 @@ public
     output Expression exp;
   algorithm
     exp := makeArray(Type.ARRAY(Type.REAL(), {Dimension.fromInteger(listLength(values))}),
-                     list(REAL(v) for v in values),
+                     Array.mapList(values, makeReal),
                      literal = true);
   end makeRealArray;
 
@@ -925,21 +965,21 @@ public
       exp := makeEmptyArray(ty);
     else
       ty := Type.ARRAY(Type.REAL(), {Dimension.fromInteger(listLength(listHead(values)))});
-      expl := list(makeArray(ty, list(REAL(v) for v in row), literal = true) for row in values);
+      expl := list(makeArray(ty, listArray(list(REAL(v) for v in row)), literal = true) for row in values);
       ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
-      exp := makeArray(ty, expl, literal = true);
+      exp := makeArray(ty, listArray(expl), literal = true);
     end if;
   end makeRealMatrix;
 
   function makeExpArray
-    input list<Expression> elements;
+    input array<Expression> elements;
     input Type elementType;
     input Boolean isLiteral = false;
     output Expression exp;
   protected
     Type ty;
   algorithm
-    ty := Type.liftArrayLeft(elementType, Dimension.fromInteger(listLength(elements)));
+    ty := Type.liftArrayLeft(elementType, Dimension.fromInteger(arrayLength(elements)));
     exp := makeArray(ty, elements, isLiteral);
   end makeExpArray;
 
@@ -973,19 +1013,41 @@ public
     Expression start_exp, stop_exp;
     Option<Expression> step_exp;
   algorithm
-    start_exp := Expression.INTEGER(start);
-    stop_exp := Expression.INTEGER(stop);
+    start_exp := INTEGER(start);
+    stop_exp := INTEGER(stop);
 
     if start == stop or
        step == 1 and start <= stop or
        step == -1 and start >= stop then
       step_exp := NONE();
     else
-      step_exp := SOME(Expression.INTEGER(step));
+      step_exp := SOME(INTEGER(step));
     end if;
 
     rangeExp := makeRange(start_exp, step_exp, stop_exp);
   end makeIntegerRange;
+
+  function getIntegerRange
+    input Expression range  "has to be RANGE()!";
+    output Integer start;
+    output Integer step;
+    output Integer stop;
+  algorithm
+    (start, step, stop) := match range
+      local
+        Option<Expression> step_opt;
+      case RANGE(start = INTEGER(start), step = step_opt, stop = INTEGER(stop)) algorithm
+        if Util.isSome(step_opt) then
+          SOME(INTEGER(step)) := step_opt;
+        else
+          step := if start > stop then -1 else 1;
+        end if;
+      then (start, step, stop);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " expression not RANGE(): " + toString(range), sourceInfo());
+      then fail();
+    end match;
+  end getIntegerRange;
 
   function makeTuple
     input list<Expression> expl;
@@ -1000,6 +1062,16 @@ public
       tupleExp := TUPLE(Type.TUPLE(tyl, NONE()), expl);
     end if;
   end makeTuple;
+
+  function rangeSize
+    input Expression range  "has to be RANGE()!";
+    output Integer size;
+  protected
+    Integer start, step, stop;
+  algorithm
+    (start, step, stop) := getIntegerRange(range);
+    size := realInt((stop - start) / step);
+  end rangeSize;
 
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
@@ -1077,7 +1149,7 @@ public
   protected
     Subscript sub;
     Integer index;
-    list<Expression> expl;
+    array<Expression> expl;
   algorithm
     sub := Subscript.expandSlice(subscript);
 
@@ -1092,9 +1164,9 @@ public
 
       case Subscript.EXPANDED_SLICE()
         algorithm
-          expl := list(applyIndexSubscriptTypename(ty, i) for i in sub.indices);
+          expl := Array.mapList(sub.indices, function applyIndexSubscriptTypename(ty = ty));
         then
-          makeArray(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl, literal = true);
+          makeArray(Type.liftArrayLeft(ty, Dimension.fromInteger(arrayLength(expl))), expl, literal = true);
 
     end match;
   end applySubscriptTypename;
@@ -1131,7 +1203,7 @@ public
   protected
     Subscript sub, s;
     list<Subscript> rest_subs;
-    list<Expression> expl;
+    array<Expression> expl;
     Type ty;
     Integer el_count;
     Boolean literal;
@@ -1154,7 +1226,7 @@ public
           else
             ARRAY(ty = ty, elements = expl, literal = literal) := exp;
             s :: rest_subs := restSubscripts;
-            expl := list(applySubscript(s, e, rest_subs) for e in expl);
+            expl := Array.map(expl, function applySubscript(subscript = s, restSubscripts = rest_subs));
             (ty, literal) := typeSubscriptedArray(expl, restSubscripts, ty, literal);
             outExp := makeArray(ty, expl, literal);
           end if;
@@ -1164,7 +1236,8 @@ public
       case Subscript.EXPANDED_SLICE()
         algorithm
           ARRAY(ty = ty, literal = literal) := exp;
-          expl := list(applyIndexSubscriptArray(exp, i, restSubscripts) for i in sub.indices);
+          expl := Array.mapList(sub.indices,
+            function applyIndexSubscriptArray(exp = exp, restSubscripts = restSubscripts));
           (ty, literal) := typeSubscriptedArray(expl, restSubscripts, ty, literal);
         then
           makeArray(ty, expl, literal);
@@ -1175,7 +1248,7 @@ public
   end applySubscriptArray;
 
   function typeSubscriptedArray
-    input list<Expression> elements;
+    input array<Expression> elements;
     input list<Subscript> subscripts;
     input output Type ty;
     input output Boolean literal;
@@ -1183,11 +1256,11 @@ public
     Integer count;
     Expression e;
   algorithm
-    count := listLength(elements);
+    count := arrayLength(elements);
 
     if count > 0 then
       // If the array isn't empty, use the type of the first element.
-      e := listHead(elements);
+      e := elements[1];
       ty := typeOf(e);
       // Non-literal subscripts might change an array from literal to non-literal.
       literal := literal and isLiteral(e);
@@ -1214,11 +1287,11 @@ public
     input list<Subscript> restSubscripts;
     output Expression outExp;
   protected
-    list<Expression> expl;
+    array<Expression> expl;
   algorithm
     if isScalarLiteral(index) then
       ARRAY(elements = expl) := exp;
-      outExp := applySubscripts(restSubscripts, listGet(expl, toInteger(index)));
+      outExp := applySubscripts(restSubscripts, arrayGet(expl, toInteger(index)));
     else
       outExp := makeSubscriptedExp(Subscript.INDEX(index) :: restSubscripts, exp);
     end if;
@@ -1233,7 +1306,7 @@ public
     Expression start_exp, stop_exp;
     Option<Expression> step_exp;
     Type ty;
-    list<Expression> expl;
+    array<Expression> expl;
   algorithm
     sub := Subscript.expandSlice(subscript);
 
@@ -1251,10 +1324,10 @@ public
 
       case Subscript.EXPANDED_SLICE()
         algorithm
-          expl := list(applyIndexSubscriptRange(exp, i) for i in sub.indices);
+          expl := Array.mapList(sub.indices, function applyIndexSubscriptRange(rangeExp = exp));
           RANGE(ty = ty) := exp;
         then
-          makeArray(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl);
+          makeArray(Type.liftArrayLeft(ty, Dimension.fromInteger(arrayLength(expl))), expl);
 
       case Subscript.SPLIT_INDEX()
         algorithm
@@ -1406,11 +1479,25 @@ public
     Type ty;
   algorithm
     IF(ty, cond, tb, fb) := exp;
-    tb := applySubscript(subscript, tb, restSubscripts);
-    fb := applySubscript(subscript, fb, restSubscripts);
-    ty := if Type.isConditionalArray(ty) then
-      Type.setConditionalArrayTypes(ty, typeOf(tb), typeOf(fb)) else typeOf(tb);
-    outExp := IF(ty, cond, tb, fb);
+
+    if Type.isConditionalArray(ty) then
+      // Subscripting both branches of a conditional array might not be possible
+      // since they have different dimensions. If it fails just subscript the
+      // whole if-expression instead.
+      try
+        tb := applySubscript(subscript, tb, restSubscripts);
+        fb := applySubscript(subscript, fb, restSubscripts);
+        ty := Type.setConditionalArrayTypes(ty, typeOf(tb), typeOf(fb));
+        outExp := IF(ty, cond, tb, fb);
+      else
+        outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      end try;
+    else
+      tb := applySubscript(subscript, tb, restSubscripts);
+      fb := applySubscript(subscript, fb, restSubscripts);
+      ty := typeOf(tb);
+      outExp := IF(ty, cond, tb, fb);
+    end if;
   end applySubscriptIf;
 
   function makeSubscriptedExp
@@ -1553,7 +1640,7 @@ public
 
     if List.hasOneElement(inDims) then
       Error.assertion(dimsize == listLength(inExps), "Length mismatch in arrayFromList.", sourceInfo());
-      outExp := makeArray(ty,inExps);
+      outExp := makeArray(ty, listArray(inExps));
       return;
     end if;
 
@@ -1561,7 +1648,7 @@ public
 
     newlst := {};
     for arrexp in partexps loop
-      newlst := makeArray(ty,arrexp)::newlst;
+      newlst := makeArray(ty, listArray(arrexp))::newlst;
     end for;
 
     newlst := listReverse(newlst);
@@ -1614,6 +1701,8 @@ public
   protected
     Type t;
     ClockKind clk;
+    Expression first, first_inv;
+    list<Expression> rest, rest_inv;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -1647,6 +1736,17 @@ public
                         else ""
                         ) + ")";
       case END() then "end";
+
+      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryString(exp.arguments, exp, exp.operator, false);
+
+      case MULTARY() guard(listEmpty(exp.arguments) and Operator.isDashClassification(Operator.getMathClassification(exp.operator)))
+                     then "-" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
+                          Operator.symbol(Operator.invert(exp.operator)) +
+                          multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -1694,6 +1794,8 @@ public
   protected
     Type t;
     ClockKind clk;
+    Expression first;
+    list<Expression> rest;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -1708,8 +1810,13 @@ public
 
       case CREF() then ComponentRef.toFlatString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
-      case ARRAY(elements={}) then "fill("+toFlatString(makeDefaultValue(Type.elementType(exp.ty)))+", " + Type.dimensionsToFlatString(exp.ty) + ")";
-      case ARRAY() then "{" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + "}";
+
+      case ARRAY()
+        then if arrayEmpty(exp.elements) then
+          "fill("+toFlatString(makeDefaultValue(Type.elementType(exp.ty)))+", " + Type.dimensionsToFlatString(exp.ty) + ")"
+        else
+          "{" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + "}";
+
       case MATRIX() then "[" + stringDelimitList(list(stringDelimitList(list(toFlatString(e) for e in el), ", ") for el in exp.elements), "; ") + "]";
 
       case RANGE() then operandFlatString(exp.start, exp, false) +
@@ -1729,6 +1836,17 @@ public
                         else ""
                         ) + ")";
       case END() then "end";
+
+      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryString(exp.arguments, exp, exp.operator, false);
+
+      case MULTARY() guard(listEmpty(exp.arguments) and Operator.isDashClassification(Operator.getMathClassification(exp.operator)))
+                     then "-" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
+                          Operator.symbol(Operator.invert(exp.operator)) +
+                          multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandFlatString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -1870,6 +1988,28 @@ public
     end if;
   end operandFlatString;
 
+  function multaryString
+    input list<Expression> arguments;
+    input Expression exp;
+    input Operator operator;
+    input Boolean useParanthesis = true;
+    output String str;
+  protected
+    Expression first;
+    list<Expression> rest;
+  algorithm
+    first :: rest := arguments;
+    if listEmpty(rest) then
+      str := toString(first);
+    elseif useParanthesis then
+      str := "(" + operandString(first, exp, true) + Operator.symbol(operator) +
+        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator)) + ")";
+    else
+      str := operandString(first, exp, true) + Operator.symbol(operator) +
+        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator));
+    end if;
+  end multaryString;
+
   function priority
     input Expression exp;
     input Boolean lhs;
@@ -1878,6 +2018,7 @@ public
     priority := match exp
       case INTEGER() then if exp.value < 0 then 4 else 0;
       case REAL() then if exp.value < 0.0 then 4 else 0;
+      case MULTARY() then Operator.priority(exp.operator, lhs);
       case BINARY() then Operator.priority(exp.operator, lhs);
       case UNARY() then 4;
       case LBINARY() then Operator.priority(exp.operator, lhs);
@@ -2069,6 +2210,10 @@ public
 
       // END() doesn't have a DAE representation.
 
+      case MULTARY() algorithm
+        // swapping not necessary because multary expressions have to be commutative
+      then toDAEMultary(exp.arguments, exp.inv_arguments, exp.operator);
+
       case BINARY()
         algorithm
           (daeOp, swap, negate) := Operator.toDAE(exp.operator);
@@ -2112,6 +2257,66 @@ public
 
     end match;
   end toDAE;
+
+  function toDAEMultary
+    "Converts a multary expression to a chain of binary expressions because
+    the old frontend does not have multary expressions."
+    input list<Expression> arguments;
+    input list<Expression> inv_arguments;
+    input Operator operator;
+    output DAE.Exp daeExp;
+  algorithm
+    if listEmpty(inv_arguments) then
+      daeExp := toDAEMultaryArgs(arguments, operator);
+    elseif Type.isBoolean(operator.ty) then
+      daeExp := DAE.LBINARY(
+        exp1      = toDAEMultaryArgs(arguments, operator),
+        operator  = Operator.toDAE(Operator.invert(operator)),
+        exp2      = toDAEMultaryArgs(inv_arguments, operator)
+       );
+    else
+      daeExp := DAE.BINARY(
+        exp1      = toDAEMultaryArgs(arguments, operator),
+        operator  = Operator.toDAE(Operator.invert(operator)),
+        exp2      = toDAEMultaryArgs(inv_arguments, operator)
+       );
+     end if;
+  end toDAEMultary;
+
+  function toDAEMultaryArgs
+    input list<Expression> arguments;
+    input Operator operator;
+    output DAE.Exp daeExp;
+  protected
+    DAE.Operator daeOp;
+  algorithm
+    daeExp := match arguments
+      local
+        Expression arg;
+        list<Expression> rest;
+        DAE.Exp exp;
+
+      // list is empty from the get-go: create neutral element
+      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
+      then toDAE(makeZero(operator.ty));
+      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
+      then toDAE(makeOne(operator.ty));
+
+      // no rest, just return the DAE representation of last argument
+      case arg :: {} then toDAE(arg);
+
+      // convert argument to DAE and create new binary. recurse for second argument
+      case arg :: rest algorithm
+        exp := toDAE(arg);
+       (daeOp, _) := Operator.toDAE(operator);
+      then  DAE.BINARY(exp, daeOp, toDAEMultary(rest, {}, operator));
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got unhandled argument list:
+        {" + stringDelimitList(list(toString(e) for e in arguments), ", ") + "}", sourceInfo());
+      then fail();
+    end match;
+  end toDAEMultaryArgs;
 
   function toDAERecord
     input Type ty;
@@ -2170,9 +2375,6 @@ public
     value := match exp
       local
         Type ty;
-        list<Values.Value> vals;
-        list<Record.Field> fields;
-        list<String> field_names;
 
       case INTEGER() then Values.INTEGER(exp.value);
       case REAL() then Values.REAL(exp.value);
@@ -2180,13 +2382,7 @@ public
       case BOOLEAN() then Values.BOOL(exp.value);
       case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
         then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
-
-      case ARRAY()
-        algorithm
-          vals := list(toDAEValue(e) for e in exp.elements);
-        then
-          ValuesUtil.makeArray(vals);
-
+      case ARRAY() then ValuesUtil.makeArray(list(toDAEValue(e) for e in exp.elements));
       case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
 
       else
@@ -2234,7 +2430,7 @@ public
   algorithm
     dimCount := match exp
       case ARRAY(ty = Type.UNKNOWN())
-        then 1 + dimensionCount(listHead(exp.elements));
+        then 1 + dimensionCount(arrayGet(exp.elements, 1));
       case ARRAY() then Type.dimensionCount(exp.ty);
       case RANGE() then Type.dimensionCount(exp.ty);
       case SIZE(dimIndex = NONE()) then dimensionCount(exp.exp);
@@ -2261,7 +2457,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, list(map(e, func) for e in exp.elements), exp.literal);
+      case ARRAY() then ARRAY(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
       case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2308,6 +2504,13 @@ public
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
+
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          exp.arguments := list(map(arg, func) for arg in exp.arguments);
+          exp.inv_arguments := list(map(arg, func) for arg in exp.inv_arguments);
+        then exp;
 
       case UNARY()
         algorithm
@@ -2430,7 +2633,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExpShallow(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExpShallow(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, list(func(e) for e in exp.elements), exp.literal);
+      case ARRAY() then ARRAY(exp.ty, Array.map(exp.elements, func), exp.literal);
       case MATRIX() then MATRIX(list(list(func(e) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2477,6 +2680,13 @@ public
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
+
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          exp.arguments := list(func(arg) for arg in exp.arguments);
+          exp.inv_arguments := list(func(arg) for arg in exp.inv_arguments);
+        then exp;
 
       case UNARY()
         algorithm
@@ -2595,14 +2805,30 @@ public
     outExp := match exp
       case ARRAY()
         algorithm
-          exp.elements := list(mapArrayElements(e, func) for e in exp.elements);
-          exp.literal := List.all(exp.elements, isLiteral);
+          exp.elements := Array.map(exp.elements, function mapArrayElements(func = func));
+          exp.literal := Array.all(exp.elements, isLiteral);
         then
           exp;
 
       else func(exp);
     end match;
   end mapArrayElements;
+
+  function foldArray<ArgT>
+    input array<Expression> expl;
+    input FoldFunc func;
+    input ArgT arg;
+    output ArgT result = arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    for e in expl loop
+      result := fold(e, func, result);
+    end for;
+  end foldArray;
 
   function foldList<ArgT>
     input list<Expression> expl;
@@ -2657,7 +2883,7 @@ public
 
       case CLKCONST() then ClockKind.foldExp(exp.clk, func, arg);
       case CREF() then ComponentRef.foldExp(exp.cref, func, arg);
-      case ARRAY() then foldList(exp.elements, func, arg);
+      case ARRAY() then foldArray(exp.elements, func, arg);
 
       case MATRIX()
         algorithm
@@ -2692,6 +2918,18 @@ public
           result := fold(exp.exp1, func, arg);
         then
           fold(exp.exp2, func, result);
+
+      case MULTARY()
+        algorithm
+          result := arg;
+          for argument in exp.arguments loop
+            result := fold(argument, func, result);
+          end for;
+          for argument in exp.inv_arguments loop
+            result := fold(argument, func, result);
+          end for;
+        then
+          result;
 
       case UNARY() then fold(exp.exp, func, arg);
 
@@ -2736,6 +2974,19 @@ public
     result := func(exp, result);
   end fold;
 
+  function applyArray
+    input array<Expression> expl;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    for e in expl loop
+      apply(e, func);
+    end for;
+  end applyArray;
+
   function applyList
     input list<Expression> expl;
     input ApplyFunc func;
@@ -2779,7 +3030,7 @@ public
 
       case CLKCONST() algorithm ClockKind.applyExp(exp.clk, func); then ();
       case CREF() algorithm ComponentRef.applyExp(exp.cref, func); then ();
-      case ARRAY() algorithm applyList(exp.elements, func); then ();
+      case ARRAY() algorithm applyArray(exp.elements, func); then ();
 
       case MATRIX()
         algorithm
@@ -2814,6 +3065,16 @@ public
           apply(exp.exp2, func);
         then
           ();
+
+      case MULTARY()
+        algorithm
+          for arg in exp.arguments loop
+            apply(arg, func);
+          end for;
+          for arg in exp.inv_arguments loop
+            apply(arg, func);
+          end for;
+        then ();
 
       case UNARY() algorithm apply(exp.exp, func); then ();
 
@@ -2865,6 +3126,19 @@ public
     func(exp);
   end apply;
 
+  function applyArrayShallow
+    input array<Expression> expl;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    for e in expl loop
+      func(e);
+    end for;
+  end applyArrayShallow;
+
   function applyListShallow
     input list<Expression> expl;
     input ApplyFunc func;
@@ -2892,7 +3166,7 @@ public
 
       case CLKCONST() algorithm ClockKind.applyExpShallow(exp.clk, func); then ();
       case CREF() algorithm ComponentRef.applyExpShallow(exp.cref, func); then ();
-      case ARRAY() algorithm applyListShallow(exp.elements, func); then ();
+      case ARRAY() algorithm applyArrayShallow(exp.elements, func); then ();
 
       case MATRIX()
         algorithm
@@ -2927,6 +3201,16 @@ public
           func(exp.exp2);
         then
           ();
+
+      case MULTARY()
+        algorithm
+          for arg in exp.arguments loop
+            func(arg);
+          end for;
+          for arg in exp.inv_arguments loop
+            func(arg);
+          end for;
+        then ();
 
       case UNARY() algorithm func(exp.exp); then ();
 
@@ -2995,7 +3279,7 @@ public
   function mapFold<ArgT>
     input Expression exp;
     input MapFunc func;
-          output Expression outExp;
+    output Expression outExp;
     input output ArgT arg;
 
     partial function MapFunc
@@ -3012,6 +3296,7 @@ public
         list<Subscript> subs;
         ClockKind ck;
         list<list<Expression>> mat;
+        array<Expression> arr;
 
       case CLKCONST()
         algorithm
@@ -3027,9 +3312,9 @@ public
 
       case ARRAY()
         algorithm
-          (expl, arg) := List.map1Fold(exp.elements, mapFold, func, arg);
+          (arr, arg) := Array.mapFold(exp.elements, function mapFold(func = func), arg);
         then
-          ARRAY(exp.ty, expl, exp.literal);
+          ARRAY(exp.ty, arr, exp.literal);
 
       case MATRIX()
         algorithm
@@ -3092,6 +3377,23 @@ public
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
+
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          expl := {};
+          for argument in exp.arguments loop
+            (e1, arg) := mapFold(argument, func, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.arguments := listReverse(expl);
+          expl := {};
+          for argument in exp.inv_arguments loop
+            (e1, arg) := mapFold(argument, func, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.inv_arguments := listReverse(expl);
+        then exp;
 
       case UNARY()
         algorithm
@@ -3233,6 +3535,7 @@ public
         Boolean unchanged;
         ClockKind ck;
         list<list<Expression>> mat;
+        array<Expression> arr;
 
       case CLKCONST()
         algorithm
@@ -3248,9 +3551,9 @@ public
 
       case ARRAY()
         algorithm
-          (expl, arg) := List.mapFold(exp.elements, func, arg);
+          (arr, arg) := Array.mapFold(exp.elements, func, arg);
         then
-          ARRAY(exp.ty, expl, exp.literal);
+          ARRAY(exp.ty, arr, exp.literal);
 
       case MATRIX()
         algorithm
@@ -3300,6 +3603,23 @@ public
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
+
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          expl := {};
+          for argument in exp.arguments loop
+            (e1, arg) := func(argument, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.arguments := listReverse(expl);
+          expl := {};
+          for argument in exp.inv_arguments loop
+            (e1, arg) := func(argument, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.inv_arguments := listReverse(expl);
+        then exp;
 
       case UNARY()
         algorithm
@@ -3456,7 +3776,7 @@ public
 
       case CLKCONST() then ClockKind.containsExp(exp.clk, func);
       case CREF() then ComponentRef.containsExp(exp.cref, func);
-      case ARRAY() then listContains(exp.elements, func);
+      case ARRAY() then arrayContains(exp.elements, func);
 
       case MATRIX()
         algorithm
@@ -3485,6 +3805,18 @@ public
              contains(exp.exp, func);
 
       case BINARY() then contains(exp.exp1, func) or contains(exp.exp2, func);
+      case MULTARY()
+        algorithm
+          res := false;
+          for arg in exp.arguments loop
+            if res then break; end if;
+            res := contains(arg, func);
+          end for;
+          for arg in exp.inv_arguments loop
+            if res then break; end if;
+            res := contains(arg, func);
+          end for;
+        then res;
       case UNARY() then contains(exp.exp, func);
       case LBINARY() then contains(exp.exp1, func) or contains(exp.exp2, func);
       case LUNARY() then contains(exp.exp, func);
@@ -3509,6 +3841,26 @@ public
       else false;
     end match;
   end contains;
+
+  function arrayContains
+    input array<Expression> expl;
+    input ContainsPred func;
+    output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
+  algorithm
+    for e in expl loop
+      if contains(e, func) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end arrayContains;
 
   function listContains
     input list<Expression> expl;
@@ -3543,14 +3895,14 @@ public
     res := match exp
       case CLKCONST() then ClockKind.containsExpShallow(exp.clk, func);
       case CREF() then ComponentRef.containsExpShallow(exp.cref, func);
-      case ARRAY() then listContainsShallow(exp.elements, func);
+      case ARRAY() then Array.exist(exp.elements, func);
 
       case MATRIX()
         algorithm
           res := false;
 
           for row in exp.elements loop
-            if listContainsShallow(row, func) then
+            if List.exist(row, func) then
               res := true;
               break;
             end if;
@@ -3563,8 +3915,8 @@ public
              Util.applyOptionOrDefault(exp.step, func, false) or
              func(exp.stop);
 
-      case TUPLE() then listContainsShallow(exp.elements, func);
-      case RECORD() then listContainsShallow(exp.elements, func);
+      case TUPLE() then List.exist(exp.elements, func);
+      case RECORD() then List.exist(exp.elements, func);
       case CALL() then Call.containsExpShallow(exp.call, func);
 
       case SIZE()
@@ -3572,6 +3924,18 @@ public
              func(exp.exp);
 
       case BINARY() then func(exp.exp1) or func(exp.exp2);
+      case MULTARY()
+        algorithm
+          res := false;
+          for arg in exp.arguments loop
+            if res then break; end if;
+            res := func(arg);
+          end for;
+          for arg in exp.inv_arguments loop
+            if res then break; end if;
+            res := func(arg);
+          end for;
+        then res;
       case UNARY() then func(exp.exp);
       case LBINARY() then func(exp.exp1) or func(exp.exp2);
       case LUNARY() then func(exp.exp);
@@ -3592,33 +3956,13 @@ public
     end match;
   end containsShallow;
 
-  function listContainsShallow
-    input list<Expression> expl;
-    input ContainsPred func;
-    output Boolean res;
-
-    partial function ContainsPred
-      input Expression exp;
-      output Boolean res;
-    end ContainsPred;
-  algorithm
-    for e in expl loop
-      if func(e) then
-        res := true;
-        return;
-      end if;
-    end for;
-
-    res := false;
-  end listContainsShallow;
-
   function arrayFirstScalar
     "Returns the first scalar element of an array. Fails if the array is empty."
     input Expression arrayExp;
     output Expression exp;
   algorithm
     exp := match arrayExp
-      case ARRAY() then arrayFirstScalar(listHead(arrayExp.elements));
+      case ARRAY() then arrayFirstScalar(arrayGet(arrayExp.elements, 1));
       else arrayExp;
     end match;
   end arrayFirstScalar;
@@ -3629,8 +3973,7 @@ public
     output Boolean allEqual;
   algorithm
     allEqual := matchcontinue arrayExp
-      case ARRAY()
-        then arrayAllEqual2(arrayExp, arrayFirstScalar(arrayExp));
+      case ARRAY() then arrayAllEqual2(arrayExp, arrayFirstScalar(arrayExp));
       else true;
     end matchcontinue;
   end arrayAllEqual;
@@ -3641,10 +3984,11 @@ public
     output Boolean allEqual;
   algorithm
     allEqual := match arrayExp
-      case ARRAY(elements = ARRAY() :: _)
-        then List.map1BoolAnd(arrayExp.elements, arrayAllEqual2, element);
       case ARRAY()
-        then List.map1BoolAnd(arrayExp.elements, isEqual, element);
+        guard not arrayEmpty(arrayExp.elements) and isArray(arrayGet(arrayExp.elements, 1))
+        then Array.mapBoolAnd(arrayExp.elements, function arrayAllEqual2(element = element));
+      case ARRAY()
+        then Array.mapBoolAnd(arrayExp.elements, function isEqual(exp2 = element));
       else true;
     end match;
   end arrayAllEqual2;
@@ -3662,6 +4006,33 @@ public
   algorithm
     CREF(cref = cref) := exp;
   end toCref;
+
+  function extract
+    "author: kabdelhak 2020-06
+    Extracts all sub expressions from an expression using a filter function."
+    input Expression exp;
+    input filter func;
+    output list<Expression> exp_lst;
+    partial function filter
+      input Expression exp;
+      output Boolean b;
+    end filter;
+  protected
+    // traverse helper function only needed in this function
+    function traverser
+      input Expression exp;
+      input filter func;
+      input output list<Expression> exp_lst;
+      partial function filter
+        input Expression exp;
+        output Boolean b;
+      end filter;
+    algorithm
+      exp_lst := if func(exp) then exp :: exp_lst else exp_lst;
+    end traverser;
+  algorithm
+    exp_lst := fold(exp, function traverser(func = func), {});
+  end extract;
 
   function isIterator
     input Expression exp;
@@ -3706,11 +4077,26 @@ public
       case INTEGER() then exp.value == 1;
       case REAL() then exp.value == 1.0;
       case CAST() then isOne(exp.exp);
+      case UNARY() then isMinusOne(exp.exp);
       else false;
     end match;
   end isOne;
 
+  function isMinusOne
+    input Expression exp;
+    output Boolean isOne;
+  algorithm
+    isOne := match exp
+      case INTEGER() then exp.value == -1;
+      case REAL() then exp.value == -1.0;
+      case CAST() then isMinusOne(exp.exp);
+      case UNARY() then isOne(exp.exp);
+      else false;
+    end match;
+  end isMinusOne;
+
   function isNegative
+    "this requires proper simplification to be correct"
     input Expression exp;
     output Boolean negative;
   algorithm
@@ -3754,7 +4140,7 @@ public
       case STRING() then true;
       case BOOLEAN() then true;
       case ENUM_LITERAL() then true;
-      case ARRAY() then exp.literal or List.all(exp.elements, isLiteral);
+      case ARRAY() then exp.literal or Array.all(exp.elements, isLiteral);
       case RECORD() then List.all(exp.elements, isLiteral);
       case RANGE() then isLiteral(exp.start) and
                         isLiteral(exp.stop) and
@@ -3772,6 +4158,29 @@ public
       else false;
     end match;
   end isInteger;
+
+  function isReal
+    input Expression exp;
+    output Boolean isReal;
+  algorithm
+    isReal := match exp
+      case REAL() then true;
+      else false;
+    end match;
+  end isReal;
+
+  function isConstNumber
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case INTEGER() then true;
+      case REAL() then true;
+      case CAST() then isConstNumber(exp.exp);
+      case UNARY() then isConstNumber(exp.exp);
+      else false;
+    end match;
+  end isConstNumber;
 
   function isBoolean
     input Expression exp;
@@ -3799,7 +4208,7 @@ public
   algorithm
     isRecord := match exp
       case RECORD() then true;
-      case ARRAY() then List.all(exp.elements, isRecordOrRecordArray);
+      case ARRAY() then Array.all(exp.elements, isRecordOrRecordArray);
       else false;
     end match;
   end isRecordOrRecordArray;
@@ -3812,19 +4221,52 @@ public
     output Expression exp = fillExp;
   protected
     list<Dimension> dims = Type.arrayDims(ty);
-    list<Expression> expl;
     Type arr_ty = Type.arrayElementType(ty);
+    Boolean is_literal = isLiteral(exp);
   algorithm
     for dim in listReverse(dims) loop
-      expl := {};
-      for i in 1:Dimension.size(dim) loop
-        expl := exp :: expl;
-      end for;
-
-      arr_ty := Type.liftArrayLeft(arr_ty, dim);
-      exp := makeArray(arr_ty, expl, literal = isLiteral(exp));
+      (exp, arr_ty) := fillArray_impl(Dimension.size(dim), exp, arr_ty, is_literal);
     end for;
   end fillType;
+
+  function fillArgs
+    "Creates an array from the given fill expression and list of dimensions,
+     similar to fill(fillExp, dims...). Fails if not all dimensions can be
+     converted to Integer values."
+    input Expression fillExp;
+    input list<Expression> dims;
+    output Expression result = fillExp;
+  protected
+    Type arr_ty = typeOf(result);
+    Boolean is_literal = isLiteral(fillExp);
+  algorithm
+    for d in listReverse(dims) loop
+      (result, arr_ty) := fillArray_impl(toInteger(d), result, arr_ty, is_literal);
+    end for;
+  end fillArgs;
+
+  function fillArray
+    input Integer n;
+    input Expression fillExp;
+    output Expression result;
+  algorithm
+    result := fillArray_impl(n, fillExp, typeOf(fillExp), isLiteral(fillExp));
+  end fillArray;
+
+  function fillArray_impl
+    input Integer n;
+    input Expression fillExp;
+    input Type ty;
+    input Boolean isLiteral;
+    output Expression result;
+    output Type resultType;
+  protected
+    array<Expression> arr;
+  algorithm
+    arr := Array.generate(n, function clone(exp = fillExp));
+    resultType := Type.liftArrayLeft(ty, Dimension.fromInteger(n));
+    result := makeArray(resultType, arr, isLiteral);
+  end fillArray_impl;
 
   function liftArray
     "Creates an array with the given dimension, where each element is the given
@@ -3832,15 +4274,8 @@ public
     input Dimension dim;
     input output Expression exp;
           output Type arrayType = typeOf(exp);
-  protected
-    list<Expression> expl = {};
   algorithm
-    for i in 1:Dimension.size(dim) loop
-      expl := exp :: expl;
-    end for;
-
-    arrayType := Type.liftArrayLeft(arrayType, dim);
-    exp := makeArray(arrayType, expl, literal = isLiteral(exp));
+    (exp, arrayType) := fillArray_impl(Dimension.size(dim), exp, arrayType, isLiteral(exp));
   end liftArray;
 
   function liftArrayList
@@ -3851,17 +4286,10 @@ public
     input output Expression exp;
           output Type arrayType = typeOf(exp);
   protected
-    list<Expression> expl;
     Boolean is_literal = isLiteral(exp);
   algorithm
     for dim in listReverse(dims) loop
-      expl := {};
-      for i in 1:Dimension.size(dim) loop
-        expl := exp :: expl;
-      end for;
-
-      arrayType := Type.liftArrayLeft(arrayType, dim);
-      exp := makeArray(arrayType, expl, literal = is_literal);
+      (exp, arrayType) := fillArray_impl(Dimension.size(dim), exp, arrayType, is_literal);
     end for;
   end liftArrayList;
 
@@ -3872,11 +4300,8 @@ public
     zeroExp := match ty
       case Type.REAL() then REAL(0.0);
       case Type.INTEGER() then INTEGER(0);
-      case Type.ARRAY()
-        then ARRAY(ty,
-                   List.fill(makeZero(Type.unliftArray(ty)),
-                             Dimension.size(listHead(ty.dimensions))),
-                   literal = true);
+      case Type.BOOLEAN() then BOOLEAN(false);
+      case Type.ARRAY() then fillType(ty, makeZero(Type.arrayElementType(ty)));
       case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
     end match;
   end makeZero;
@@ -3897,18 +4322,25 @@ public
 
   function makeOne
     input Type ty;
-    output Expression zeroExp;
+    output Expression oneExp;
   algorithm
-    zeroExp := match ty
+    oneExp := match ty
       case Type.REAL() then REAL(1.0);
       case Type.INTEGER() then INTEGER(1);
-      case Type.ARRAY()
-        then ARRAY(ty,
-                   List.fill(makeZero(Type.unliftArray(ty)),
-                             Dimension.size(listHead(ty.dimensions))),
-                   literal = true);
+      case Type.ARRAY() then fillType(ty, makeOne(Type.arrayElementType(ty)));
     end match;
   end makeOne;
+
+  function makeMinusOne
+    input Type ty;
+    output Expression oneExp;
+  algorithm
+    oneExp := match ty
+      case Type.REAL() then REAL(-1.0);
+      case Type.INTEGER() then INTEGER(-1);
+      case Type.ARRAY() then fillType(ty, makeMinusOne(Type.arrayElementType(ty)));
+    end match;
+  end makeMinusOne;
 
   function makeMaxValue
     input Type ty;
@@ -3919,11 +4351,7 @@ public
       case Type.INTEGER() then INTEGER(System.intMaxLit());
       case Type.BOOLEAN() then BOOLEAN(true);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, List.last(ty.literals), listLength(ty.literals));
-      case Type.ARRAY()
-        then ARRAY(ty,
-                   List.fill(makeMaxValue(Type.unliftArray(ty)),
-                             Dimension.size(listHead(ty.dimensions))),
-                   literal = true);
+      case Type.ARRAY() then fillType(ty, makeMaxValue(Type.arrayElementType(ty)));
     end match;
   end makeMaxValue;
 
@@ -3936,11 +4364,7 @@ public
       case Type.INTEGER() then INTEGER(-System.intMaxLit());
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
-      case Type.ARRAY()
-        then makeArray(ty,
-                       List.fill(makeMinValue(Type.unliftArray(ty)),
-                                 Dimension.size(listHead(ty.dimensions))),
-                       literal = true);
+      case Type.ARRAY() then fillType(ty, makeMinValue(Type.arrayElementType(ty)));
     end match;
   end makeMinValue;
 
@@ -4029,12 +4453,63 @@ public
     end match;
   end logicNegate;
 
+  function invertRange
+    "inverts the direction of a range"
+    input output Expression range;
+  algorithm
+    range := match range
+      local
+        Expression step;
+      case RANGE()                   then RANGE(range.ty, range.stop, SOME(INTEGER(-1)), range.start);
+      case RANGE(step = SOME(step))  then RANGE(range.ty, range.stop, SOME(negate(step)), range.start);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
+          + toString(range)});
+      then fail();
+    end match;
+  end invertRange;
+
+  function sliceRange
+    "slices the range with a given zero-based start and one-based step"
+    input output Expression range;
+    input tuple<Integer, Integer, Integer> slice  "start step stop";
+  algorithm
+    range := match (range, slice)
+      local
+        Integer start, step, stop;
+        Integer slice_start, slice_step, slice_stop;
+
+      case (RANGE(), (slice_start, slice_step, slice_stop)) algorithm
+        step := if Util.isSome(range.step) then integerValue(Util.getOption(range.step)) else 1;
+        start := integerValue(range.start);
+        // shift start and stop accordingly, multiply step
+        stop  := start + slice_stop * step;
+        start := start + slice_start * step;
+        step  := slice_step * step;
+      then RANGE(range.ty, INTEGER(start), SOME(INTEGER(step)), INTEGER(stop));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
+          + toString(range)});
+      then fail();
+    end match;
+  end sliceRange;
+
   function arrayElements
     input Expression array;
-    output list<Expression> elements;
+    output array<Expression> elements;
   algorithm
     ARRAY(elements = elements) := array;
   end arrayElements;
+
+  function arrayElementList
+    input Expression array;
+    output list<Expression> elements;
+  algorithm
+    elements := match array
+      case ARRAY() then arrayList(array.elements);
+    end match;
+  end arrayElementList;
 
   function arrayScalarElements
     input Expression exp;
@@ -4064,7 +4539,11 @@ public
     input Expression arrayExp;
     output Expression scalarExp;
   algorithm
-    ARRAY(elements = {scalarExp}) := arrayExp;
+    scalarExp := match arrayExp
+      case ARRAY()
+        guard arrayLength(arrayExp.elements) == 1
+        then arrayGet(arrayExp.elements, 1);
+    end match;
   end arrayScalarElement;
 
   function hasArrayCall
@@ -4110,17 +4589,21 @@ public
     list<Expression> expl;
     list<list<Expression>> matrix;
     Boolean literal;
+    array<Expression> arr;
+    array<array<Expression>> matrix_arr;
   algorithm
-    ARRAY(Type.ARRAY(ty, dim1 :: dim2 :: rest_dims), expl, literal) := arrayExp;
-
-    if not listEmpty(expl) then
-      row_ty := Type.ARRAY(ty, dim1 :: rest_dims);
-      matrix := list(arrayElements(e) for e in expl);
-      matrix := List.transposeList(matrix);
-      expl := list(makeArray(row_ty, row, literal) for row in matrix);
-    end if;
-
-    outExp := makeArray(Type.ARRAY(ty, dim2 :: dim1 :: rest_dims), expl, literal);
+    outExp := match arrayExp
+      case ARRAY(Type.ARRAY(ty, dim1 :: dim2 :: rest_dims), arr, literal)
+        algorithm
+          if not arrayEmpty(arr) then
+            row_ty := Type.ARRAY(ty, dim1 :: rest_dims);
+            matrix_arr := Array.map(arr, arrayElements);
+            matrix_arr := Array.transpose(matrix_arr);
+            arr := Array.map(matrix_arr, function makeArray(ty = row_ty, literal = literal));
+          end if;
+        then
+          makeArray(Type.ARRAY(ty, dim2 :: dim1 :: rest_dims), arr, literal);
+    end match;
   end transposeArray;
 
   function makeIdentityMatrix
@@ -4128,31 +4611,27 @@ public
     input Type elementType;
     output Expression matrix;
   protected
+    array<Expression> row, rows;
     Expression zero, one;
-    list<Expression> row, rows = {};
     Type row_ty;
   algorithm
     zero := makeZero(elementType);
     one := makeOne(elementType);
+
+    rows := arrayCreateNoInit(n, zero);
     row_ty := Type.ARRAY(elementType, {Dimension.fromInteger(n)});
 
     for i in 1:n loop
-      row := {};
+      row := arrayCreateNoInit(n, zero);
 
-      for j in 2:i loop
-        row := zero :: row;
+      for j in 1:n loop
+        arrayUpdateNoBoundsChecking(row, j, if i == j then one else zero);
       end for;
 
-      row := one :: row;
-
-      for j in i:n-1 loop
-        row := zero :: row;
-      end for;
-
-      rows := makeArray(row_ty, row, literal = true) :: rows;
+      arrayUpdateNoBoundsChecking(rows, i, makeArray(row_ty, row, true));
     end for;
 
-    matrix := makeArray(Type.liftArrayLeft(row_ty, Dimension.fromInteger(n)), rows, literal = true);
+    matrix := makeExpArray(rows, row_ty, true);
   end makeIdentityMatrix;
 
   function promote
@@ -4207,7 +4686,8 @@ public
 
       // An array, promote each element in the array.
       case (ARRAY(), ty :: rest_ty)
-        then makeArray(ty, list(promote2(e, false, dims, rest_ty) for e in exp.elements));
+        then makeArray(ty, Array.map(exp.elements,
+               function promote2(isArray = false, dims = dims, types = rest_ty)));
 
       // An expression with array type, but which is not an array expression.
       // Such an expression can't be promoted here, so we create a promote call instead.
@@ -4229,7 +4709,7 @@ public
         algorithm
           outExp := exp;
           for ty in listReverse(types) loop
-            outExp := makeArray(ty, {outExp});
+            outExp := makeArray(ty, arrayCreate(1, outExp));
           end for;
         then
           outExp;
@@ -4250,7 +4730,7 @@ public
       case CLKCONST() then Variability.DISCRETE;
       case CREF() then ComponentRef.variability(exp.cref);
       case TYPENAME() then Variability.CONSTANT;
-      case ARRAY() then variabilityList(exp.elements);
+      case ARRAY() then variabilityArray(exp.elements);
       case MATRIX() then List.fold(exp.elements, variabilityList, Variability.CONSTANT);
 
       case RANGE()
@@ -4279,6 +4759,7 @@ public
           var;
 
       case END() then Variability.PARAMETER;
+      case MULTARY() then Prefixes.variabilityMax(variabilityList(exp.arguments), variabilityList(exp.arguments));
       case BINARY() then Prefixes.variabilityMax(variability(exp.exp1), variability(exp.exp2));
       case UNARY() then variability(exp.exp);
       case LBINARY() then Prefixes.variabilityMax(variability(exp.exp1), variability(exp.exp2));
@@ -4310,6 +4791,15 @@ public
     end match;
   end variability;
 
+  function variabilityArray
+    input array<Expression> expl;
+    input output Variability var = Variability.CONSTANT;
+  algorithm
+    for e in expl loop
+      var := Prefixes.variabilityMax(var, variability(e));
+    end for;
+  end variabilityArray;
+
   function variabilityList
     input list<Expression> expl;
     input output Variability var = Variability.CONSTANT;
@@ -4332,7 +4822,7 @@ public
       case CLKCONST() then Purity.PURE;
       case CREF() then ComponentRef.purity(exp.cref);
       case TYPENAME() then Purity.PURE;
-      case ARRAY() then purityList(exp.elements);
+      case ARRAY() then purityArray(exp.elements);
       case MATRIX() then List.fold(exp.elements, purityList, Purity.PURE);
 
       case RANGE()
@@ -4378,6 +4868,15 @@ public
     end match;
   end purity;
 
+  function purityArray
+    input array<Expression> expl;
+    input output Purity pur = Purity.PURE;
+  algorithm
+    for e in expl loop
+      pur := Prefixes.purityMin(pur, purity(e));
+    end for;
+  end purityArray;
+
   function purityList
     input list<Expression> expl;
     input output Purity pur = Purity.PURE;
@@ -4420,9 +4919,23 @@ public
   protected
     Mutable<Expression> exp_ptr;
   algorithm
-    Expression.MUTABLE(exp = exp_ptr) := mutableExp;
+    MUTABLE(exp = exp_ptr) := mutableExp;
     Mutable.update(exp_ptr, value);
   end updateMutable;
+
+  function applyMutable
+    input Expression mutableExp;
+    input FuncType func;
+
+    partial function FuncType
+      input output Expression exp;
+    end FuncType;
+  protected
+    Mutable<Expression> exp_ptr;
+  algorithm
+    MUTABLE(exp = exp_ptr) := mutableExp;
+    Mutable.update(exp_ptr, func(Mutable.access(exp_ptr)));
+  end applyMutable;
 
   function isEmpty
     input Expression exp;
@@ -4433,6 +4946,16 @@ public
       else false;
     end match;
   end isEmpty;
+
+  function isEnd
+    input Expression exp;
+    output Boolean isend;
+  algorithm
+    isend := match exp
+      case END() then true;
+      else false;
+    end match;
+  end isEnd;
 
   function enumIndexExp
     input Expression enumExp;
@@ -4450,7 +4973,9 @@ public
     output Expression outExp;
   algorithm
     outExp := match exp
-      case ARRAY(elements = {outExp}) then toScalar(outExp);
+      case ARRAY()
+        guard arrayLength(exp.elements) == 1
+        then toScalar(arrayGet(exp.elements, 1));
       else exp;
     end match;
   end toScalar;
@@ -4470,7 +4995,7 @@ public
       case ARRAY()
         algorithm
           ety := Type.unliftArray(ty);
-          exp.elements := list(tupleElement(e, ety, index) for e in exp.elements);
+          exp.elements := Array.map(exp.elements, function tupleElement(ty = ety, index = index));
         then
           exp;
 
@@ -4498,6 +5023,7 @@ public
         Integer index;
         list<Expression> expl;
         ComponentRef cref;
+        array<Expression> arr;
 
       case RECORD(ty = Type.COMPLEX(cls = node))
         algorithm
@@ -4517,22 +5043,24 @@ public
         then
           CREF(ty, cref);
 
-      case ARRAY(elements = {}, ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+        guard arrayEmpty(recordExp.elements)
         algorithm
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := InstNode.getType(Class.nthComponent(index, cls));
+          ty := Type.liftArrayLeftList(ty, Type.arrayDims(recordExp.ty));
         then
-          makeArray(ty, {});
+          makeEmptyArray(ty);
 
       case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
           index := Class.lookupComponentIndex(elementName, InstNode.getClass(node));
-          expl := list(nthRecordElement(index, e) for e in recordExp.elements);
-          ty := Type.liftArrayLeft(typeOf(listHead(expl)),
-                                   Dimension.fromInteger(listLength(expl)));
+          arr := Array.map(recordExp.elements, function nthRecordElement(index = index));
+          ty := Type.liftArrayLeft(typeOf(arrayGet(arr, 1)),
+                                   Dimension.fromInteger(arrayLength(arr)));
         then
-          makeArray(ty, expl, recordExp.literal);
+          makeArray(ty, arr, recordExp.literal);
 
       case SUBSCRIPTED_EXP()
         algorithm
@@ -4570,6 +5098,7 @@ public
         InstNode node;
         list<Expression> expl;
         Type ty;
+        array<Expression> arr;
 
       case RECORD() then listGet(recordExp.elements, index);
 
@@ -4580,15 +5109,16 @@ public
         then
           fromCref(ComponentRef.prefixCref(node, InstNode.getType(node), {}, recordExp.cref));
 
-      case ARRAY(elements = {}, ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+        guard arrayEmpty(recordExp.elements)
         then makeEmptyArray(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))));
 
       case ARRAY()
         algorithm
-          expl := list(nthRecordElement(index, e) for e in recordExp.elements);
-          ty := Type.liftArrayLeft(typeOf(listHead(expl)), listHead(Type.arrayDims(recordExp.ty)));
+          arr := Array.map(recordExp.elements, function nthRecordElement(index = index));
+          ty := Type.liftArrayLeft(typeOf(arrayGet(arr, 1)), listHead(Type.arrayDims(recordExp.ty)));
         then
-          makeArray(ty, expl);
+          makeArray(ty, arr);
 
       case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
@@ -4739,8 +5269,8 @@ public
     output Boolean isPure;
   algorithm
     isPure := match exp
-      case Expression.CREF() then not ComponentRef.isIterator(exp.cref);
-      case Expression.CALL()
+      case CREF() then not ComponentRef.isIterator(exp.cref);
+      case CALL()
         then match AbsynUtil.pathFirstIdent(Call.functionName(exp.call))
           case "Connections" then false;
           case "cardinality" then false;
@@ -4750,6 +5280,25 @@ public
     end match;
   end isPure;
 
+  function containsCref
+    input Expression exp;
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := fold(exp, function isCrefEqual(cref = cref), false);
+  end containsCref;
+
+  function isCrefEqual
+    input Expression exp;
+    input output Boolean b;
+    input ComponentRef cref;
+  algorithm
+    b := match (b, exp)
+      case (false, CREF()) then ComponentRef.isEqual(exp.cref, cref);
+      else b;
+    end match;
+  end isCrefEqual;
+
   function filterSplitIndices
     input output Expression exp;
     input InstNode node;
@@ -4758,11 +5307,11 @@ public
     list<Subscript> subs;
   algorithm
     exp := match exp
-      case Expression.SUBSCRIPTED_EXP(exp = e, subscripts = subs)
+      case SUBSCRIPTED_EXP(exp = e, subscripts = subs)
         algorithm
           subs := list(s for s guard not filterSplitIndices2(s, node) in subs);
         then
-          Expression.applySubscripts(subs, exp.exp);
+          applySubscripts(subs, exp.exp);
 
       else exp;
     end match;
@@ -4786,8 +5335,8 @@ public
     output Expression outExp;
   algorithm
     outExp := match exp
-      case Expression.SUBSCRIPTED_EXP()
-        then Expression.applySubscripts(Subscript.expandSplitIndices(exp.subscripts, {}), exp.exp);
+      case SUBSCRIPTED_EXP()
+        then applySubscripts(Subscript.expandSplitIndices(exp.subscripts, {}), exp.exp);
 
       else exp;
     end match;
@@ -4801,8 +5350,8 @@ public
     output Expression outExp;
   algorithm
     outExp := match exp
-      case Expression.SUBSCRIPTED_EXP(split = true)
-        then Expression.applySubscripts(Subscript.expandSplitIndices(exp.subscripts, indicesToKeep), exp.exp);
+      case SUBSCRIPTED_EXP(split = true)
+        then applySubscripts(Subscript.expandSplitIndices(exp.subscripts, indicesToKeep), exp.exp);
       else exp;
     end match;
   end expandNonListedSplitIndices;
@@ -4812,7 +5361,7 @@ public
     output Boolean split;
   algorithm
     split := match exp
-      case Expression.SUBSCRIPTED_EXP(split = split) then split;
+      case SUBSCRIPTED_EXP(split = split) then split;
       else false;
     end match;
   end isSplitSubscriptedExp;
@@ -4831,7 +5380,7 @@ public
     list<Subscript> subs;
     list<Expression> sub_exps, dim_sizes;
   algorithm
-    (outExp, osub_repls) := Expression.mapFold(exp, replaceSplitSubscripts, NONE());
+    (outExp, osub_repls) := mapFold(exp, replaceSplitSubscripts, NONE());
 
     if isNone(osub_repls) then
       outExp := func(exp);
@@ -4842,7 +5391,7 @@ public
       dim_sizes := list(Subscript.splitIndexDimExp(s) for s in subs);
       dim_sizes := list(replaceSplitSubscripts(d, SOME(sub_repls)) for d in dim_sizes);
       outExp := mapSplitExpressions2(outExp, dim_sizes, sub_exps, func);
-      outExp := Expression.applySubscripts(subs, outExp);
+      outExp := applySubscripts(subs, outExp);
     end if;
   end mapSplitExpressions;
 
@@ -4854,11 +5403,11 @@ public
       local
         list<Subscript> subs;
 
-      case Expression.SUBSCRIPTED_EXP(split = true)
+      case SUBSCRIPTED_EXP(split = true)
         algorithm
           (subs, subRepls) := List.mapFold(exp.subscripts, replaceSplitSubscripts2, subRepls);
         then
-          Expression.applySubscripts(subs, exp.exp);
+          applySubscripts(subs, exp.exp);
 
       else exp;
     end match;
@@ -4881,7 +5430,7 @@ public
             subRepls := SOME(sub_repls);
           end if;
 
-          sub_exp := Expression.makeMutable(Expression.INTEGER(0));
+          sub_exp := makeMutable(INTEGER(0));
           sub_exp := UnorderedMap.tryAdd(subscript, sub_exp, sub_repls);
         then
           Subscript.INDEX(sub_exp);
@@ -4905,26 +5454,27 @@ public
     list<Expression> rest_dims;
     Integer dim_size_int;
     Expression sub_exp;
-    list<Expression> rest_subs, expl;
+    list<Expression> rest_subs;
+    array<Expression> expl;
     Type ty;
   algorithm
     if listEmpty(dimSizes) then
-      outExp := Expression.map(exp, mapSplitExpressions3);
+      outExp := map(exp, mapSplitExpressions3);
       outExp := func(outExp);
     else
       dim_size :: rest_dims := dimSizes;
       dim_size_int := toInteger(Ceval.evalExp(dim_size));
       sub_exp :: rest_subs := subExps;
-      expl := {};
+      expl := arrayCreateNoInit(dim_size_int, exp);
 
-      for i in dim_size_int:-1:1 loop
-        Expression.updateMutable(sub_exp, Expression.INTEGER(i));
-        outExp := mapSplitExpressions2(exp, rest_dims, rest_subs, func);
-        expl := outExp :: expl;
+      for i in 1:dim_size_int loop
+        updateMutable(sub_exp, INTEGER(i));
+        arrayUpdateNoBoundsChecking(expl, i,
+          mapSplitExpressions2(exp, rest_dims, rest_subs, func));
       end for;
 
-      ty := Expression.typeOf(if listEmpty(expl) then exp else listHead(expl));
-      outExp := Expression.makeExpArray(expl, ty, isLiteral = true);
+      ty := typeOf(if arrayEmpty(expl) then exp else arrayGet(expl, 1));
+      outExp := makeExpArray(expl, ty, isLiteral = true);
     end if;
   end mapSplitExpressions2;
 
@@ -4934,10 +5484,10 @@ public
     list<Subscript> subs;
   algorithm
     exp := match exp
-      case Expression.MUTABLE() then Mutable.access(exp.exp);
+      case MUTABLE() then Mutable.access(exp.exp);
 
-      case Expression.SUBSCRIPTED_EXP(subscripts = subs)
-        then Expression.applySubscripts(subs, exp.exp);
+      case SUBSCRIPTED_EXP(subscripts = subs)
+        then applySubscripts(subs, exp.exp);
 
       else exp;
     end match;
@@ -4990,21 +5540,80 @@ public
     Type ty;
     Boolean literal;
     ComponentRef cref;
+    array<Expression> arr;
   algorithm
     outExp := match exp
-      case Expression.ARRAY()
-        guard not listEmpty(exp.elements)
+      case ARRAY()
+        guard not arrayEmpty(exp.elements)
         algorithm
-          expl := list(mapCrefScalars2(e, mapFn) for e in exp.elements);
-          ty := typeOf(listHead(expl));
-          literal := List.all(expl, isLiteral);
+          arr := Array.map(exp.elements, function mapCrefScalars2(mapFn = mapFn));
+          ty := typeOf(arrayGet(arr, 1));
+          literal := Array.all(arr, isLiteral);
         then
-          makeExpArray(expl, ty, literal);
+          makeExpArray(arr, ty, literal);
 
-      case Expression.CREF() then mapFn(exp.cref);
+      case CREF() then mapFn(exp.cref);
       else exp;
     end match;
   end mapCrefScalars2;
+
+  function isFunctionPointer
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF(ty = Type.FUNCTION()) then true;
+      case PARTIAL_FUNCTION_APPLICATION() then true;
+      else false;
+    end match;
+  end isFunctionPointer;
+
+  function isConnector
+    "Returns true if the expression is a component reference that refers to a
+     connector, otherwise false."
+    input Expression exp;
+    output Boolean res;
+  protected
+    InstNode node;
+  algorithm
+    res := match exp
+      case CREF()
+        algorithm
+          node := ComponentRef.node(exp.cref);
+        then
+          InstNode.isComponent(node) and InstNode.isConnector(node);
+
+      else false;
+    end match;
+  end isConnector;
+
+  function isComponentExpression
+    "Returns true if the expression is a component reference that refers to an
+     actual component (and not e.g. a function), otherwise false"
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF()
+        then ComponentRef.isCref(exp.cref) and
+             InstNode.isComponent(ComponentRef.node(exp.cref));
+
+      else false;
+    end match;
+  end isComponentExpression;
+
+  function clone
+    input output Expression exp;
+  algorithm
+    () := match exp
+      case ARRAY()
+        algorithm
+          exp.elements := arrayCopy(exp.elements);
+        then
+          ();
+      else ();
+    end match;
+  end clone;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

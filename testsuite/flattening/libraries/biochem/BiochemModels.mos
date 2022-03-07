@@ -2023,7 +2023,8 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "Check of BioChem.Examples.centralMetabolism.cytosol completed successfully.
 // Class BioChem.Examples.centralMetabolism.cytosol has 320 equation(s) and 320 variable(s).
 // 229 of these are trivial equation(s)."
-// "Error: Cannot instantiate BioChem.Examples.centralMetabolism due to class specialization PACKAGE.
+// "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:426:3-1027:24:writable] Error: Cannot instantiate BioChem.Examples.centralMetabolism due to class specialization package.
+// Error: Error occurred while flattening model BioChem.Examples.centralMetabolism
 // "
 // "Check of BioChem.Examples.CircadianOscillator.Container completed successfully.
 // Class BioChem.Examples.CircadianOscillator.Container has 252 equation(s) and 252 variable(s).

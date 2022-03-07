@@ -10,7 +10,7 @@ set(OMSHELLLIB_HEADERS commandcompletion.h
                        oms.h)
 
 
-add_library(OMShellLib SHARED ${OMSHELLLIB_SOURCES} ${OMSHELLLIB_HEADERS})
+add_library(OMShellLib STATIC ${OMSHELLLIB_SOURCES} ${OMSHELLLIB_HEADERS})
 target_compile_definitions(OMShellLib PRIVATE OMSHELLLIB_MOC_INCLUDE)
 
 target_link_libraries(OMShellLib PUBLIC Qt5::Xml)
@@ -22,10 +22,9 @@ target_link_libraries(OMShellLib PUBLIC OpenModelicaCompiler)
 target_link_options(OMShellLib PRIVATE -Wl,--no-undefined)
 
 
-add_executable(OMShell main.cpp)
+add_executable(OMShell WIN32 MACOSX_BUNDLE main.cpp rc_omshell.rc)
 target_link_libraries(OMShell PRIVATE OMShellLib)
 
-install(TARGETS OMShellLib)
 install(TARGETS OMShell)
 
 install(FILES commands.xml

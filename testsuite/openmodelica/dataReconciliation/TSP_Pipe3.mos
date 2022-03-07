@@ -2256,7 +2256,7 @@ getErrorString();
 // stdout            | info    | Using sparse solver kinsol for nonlinear system 2 (66),
 // |                 | |       | because density of 0.02 remains under threshold of 0.10.
 // stdout            | info    | The maximum density for using sparse solvers can be specified
-// |                 | |       | using the runtime flag '<-nlsMaxDensity=value>'.
+// |                 | |       | using the runtime flag '<-nlssMaxDensity=value>'.
 // stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
 // stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
 // stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.

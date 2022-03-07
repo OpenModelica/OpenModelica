@@ -351,7 +351,7 @@ void OMSUSystem::initializeMemory()
     const fmi2_value_reference_t* vrl = fmi2_import_get_value_referece_list(vl);
     //number of alle variables
     nv = fmi2_import_get_variable_list_size(vl);
-    
+
     //Sort all variables for results outputs routine
     for (i = 0; i < nv; i++)
     {
@@ -411,7 +411,7 @@ void OMSUSystem::initializeMemory()
 }
 
 /**
- *  \brief adds variable  tho the list of output variables and paramater 
+ *  \brief adds variable  tho the list of output variables and paramater
  *
  *  \param [in] v fmu variable
  *  \param [in] output_value_references list of output references
@@ -447,8 +447,8 @@ void OMSUSystem::addValueReferences()
        throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "integer variable value references are not set");
     if(!_bool_vr)
       throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "boolean variable value references are not set");
-    
-    
+
+
    for (out_vars_t::iterator iter = _real_out_vars.begin();
          iter != _real_out_vars.end(); iter++)
     {
@@ -494,7 +494,7 @@ void OMSUSystem::addValueReferences()
         unsigned int index = get < 1> (*iter);
         size_t vr = fmi2_import_get_variable_vr(v);
         _int_vr[index]=vr;
-        
+
     }
     //add integer parameter to write output structure
     for (out_vars_t::iterator iter = _int_param_vars.begin();
@@ -504,9 +504,9 @@ void OMSUSystem::addValueReferences()
         unsigned int index = get < 1> (*iter);
         size_t vr = fmi2_import_get_variable_vr(v);
         _int_vr[index]=vr;
-    }   
-    
-    
+    }
+
+
 }
 void OMSUSystem::initializeResultOutputVars()
 {
@@ -518,14 +518,14 @@ void OMSUSystem::initializeResultOutputVars()
         string name = string(fmi2_import_get_variable_name(v));
         const char* descripton_cstr = fmi2_import_get_variable_description(v);
         const char* name_cstr = name.c_str();
-        
+
         string descripton;
         if (descripton_cstr)
             descripton = string(descripton_cstr);
         const double& realVar = _simVars->getRealVar(get < 1 > (*iter));
         const double* realVarPtr = &realVar;
         _real_vars.addOutputVar(name, descripton, realVarPtr, false);
-        
+
     }
     //add real parameter to write output structure
     for (out_vars_t::iterator iter = _real_param_vars.begin();
@@ -540,7 +540,7 @@ void OMSUSystem::initializeResultOutputVars()
         const double& realVar = _simVars->getRealVar(get < 1 > (*iter));
         const double* realVarPtr = &realVar;
         _real_vars.addParameter(name, descripton, realVarPtr, false);
-       
+
     }
 
     //add boolean output variables to write output structure
@@ -1184,30 +1184,30 @@ void OMSUSystem::writeOutput(const IWriteOutput::OUTPUT command)
     else
     {
         write_data_t& container = _writeOutput->getFreeContainer();
-        
+
         /*debug output*/
        /* var_names_t::iterator name_iter =  _real_vars.ourputVarNames.begin();
         boost::container::vector<const double*>::iterator values_iter =  _real_vars.outputVars.begin();
         for(;name_iter!=_real_vars.ourputVarNames.end();++name_iter)
         {
-                
+
                 cout << "vars name: " << *name_iter << " value: " << *(*values_iter) << std::endl;
                 values_iter++;
-                
+
         }
-        
-        
+
+
         var_names_t::iterator name_iter2 =  _real_vars.parameterNames.begin();
         boost::container::vector<const double*>::iterator values_iter2 =  _real_vars.outputParams.begin();
         for(;name_iter2!=_real_vars.parameterNames.end();++name_iter2)
         {
-                
+
                 cout << "param name: " << *name_iter2 << " value: " << *(*values_iter2) << std::endl;
                 values_iter2++;
-                
+
         }
         */
-        
+
         /*debug output*/
         all_vars_time_t all_vars = make_tuple(_real_vars.outputVars,
                                               _int_vars.outputVars, _bool_vars.outputVars, _simTime,
@@ -1225,7 +1225,7 @@ void OMSUSystem::getReal(double* z)
     if (_real_out_vars.size() > 0)
     {
         /*size_t vr = fmi2_import_get_variable_vr(get < 0 > (_real_out_vars[0]));
-        
+
         fmi2_value_reference_t* value_reference_list = &(get < 0
             > (_real_out_vars[0]));*/
         fmi2_status_t status = fmi2_import_get_real(_osu_me->instance,

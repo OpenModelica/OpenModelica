@@ -91,6 +91,13 @@ algorithm
   execStat(getInstanceName());
 end convert;
 
+function convertStatements
+  input list<Statement> statements;
+  output list<DAE.Statement> elements;
+algorithm
+  elements := list(convertStatement(s) for s in statements);
+end convertStatements;
+
 protected
 uniontype VariableConversionSettings
   record VARIABLE_CONVERSION_SETTINGS
@@ -794,13 +801,6 @@ algorithm
   elements := DAE.ALGORITHM(dalg, alg.source) :: elements;
 end convertAlgorithm;
 
-function convertStatements
-  input list<Statement> statements;
-  output list<DAE.Statement> elements;
-algorithm
-  elements := list(convertStatement(s) for s in statements);
-end convertStatements;
-
 function convertStatement
   input Statement stmt;
   output DAE.Statement elem;
@@ -931,14 +931,14 @@ algorithm
   forDAE := match for_type
     case Statement.ForType.NORMAL()
       then DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
-        InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+        InstNode.name(iterator), Expression.toDAE(range), dbody, source);
 
     case Statement.ForType.PARALLEL()
       algorithm
         loop_vars := list(convertForStatementParallelVar(v) for v in for_type.vars);
       then
         DAE.Statement.STMT_PARFOR(Type.toDAE(ty), Type.isArray(ty),
-          InstNode.name(iterator), 0, Expression.toDAE(range), dbody, loop_vars, source);
+          InstNode.name(iterator), Expression.toDAE(range), dbody, loop_vars, source);
   end match;
 end convertForStatement;
 
@@ -1025,7 +1025,7 @@ algorithm
   elements := DAE.INITIALALGORITHM(dalg, alg.source) :: elements;
 end convertInitialAlgorithm;
 
-function convertFunctionTree
+public function convertFunctionTree
   input FunctionTree funcs;
   output DAE.FunctionTree dfuncs;
 algorithm
@@ -1054,7 +1054,7 @@ algorithm
   end match;
 end convertFunctionTree;
 
-function convertFunction
+protected function convertFunction
   input Function func;
   output DAE.Function dfunc;
 protected

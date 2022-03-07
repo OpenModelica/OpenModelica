@@ -38,6 +38,7 @@
 #include "../util/omc_mmap.h"
 #include "../util/omc_numbers.h"
 #include "solver/model_help.h"
+#include "../util/omc_file.h"
 
 static inline const char* skipSpace(const char* str)
 {
@@ -373,6 +374,27 @@ static void readInfoJson(const char *str,MODEL_DATA_XML *xml)
 
 void modelInfoInit(MODEL_DATA_XML* xml)
 {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  struct _stat buf;
+#else
+  struct stat buf = {0};
+#endif
+  // check for file exists, as --fmiFilter=blackBox or protected will not export the _info.json file
+  int fileStatus;
+  if (omc_flag[FLAG_INPUT_PATH])
+  {
+    const char *jsonFile;
+    GC_asprintf(&jsonFile, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], xml->fileName);
+    fileStatus = omc_stat(jsonFile, &buf);
+  }
+  else
+  {
+    fileStatus = omc_stat(xml->fileName, &buf);
+  }
+
+  if (fileStatus != 0)
+    return;
+
 #if !defined(OMC_NO_FILESYSTEM)
   omc_mmap_read mmap_reader = {0};
 #endif

@@ -58,7 +58,7 @@ protected
   import Expression;
   import ExpressionDump;
   import Flags;
-  import GC;
+  import GCExt;
   import List;
   import MetaModelica.Dangerous;
   import Sorting;
@@ -96,7 +96,7 @@ algorithm
 
       markarray := arrayCreate(BackendEquation.getNumberOfEquations(inSystem.orderedEqs), -1);
       comps := analyseStrongComponentsScalar(comps_m, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray);
-      GC.free(markarray);
+      GCExt.free(markarray);
       ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
 
       // Frenkel TUD: Do not hand over the scalar adjacency Matrix because following modules does not check if scalar or not

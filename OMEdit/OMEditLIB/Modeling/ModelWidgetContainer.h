@@ -156,12 +156,13 @@ private:
   // scene->items().contains(...) involves sorting on each items() call, avoid it
   QSet<QGraphicsItem*> mAllItems;
 public:
-  GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView = false);
+  GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
   bool mSkipBackground; /* Do not draw the background rectangle */
   QPointF mContextMenuStartPosition;
   bool mContextMenuStartPositionValid;
   StringHandler::ViewType getViewType() {return mViewType;}
   ModelWidget* getModelWidget() {return mpModelWidget;}
+  void setIsVisualizationView(bool visualizationView);
   bool isVisualizationView() {return mVisualizationView;}
   void setExtentRectangle(const QRectF rectangle);
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
@@ -212,6 +213,7 @@ public:
   QAction* getRotateAntiClockwiseAction() {return mpRotateAntiClockwiseAction;}
   QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
+  bool performElementCreationChecks(LibraryTreeItem *pLibraryTreeItem, QString *name, QString *defaultPrefix);
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
@@ -301,6 +303,7 @@ public:
   void addItem(QGraphicsItem *pGraphicsItem);
   void removeItem(QGraphicsItem *pGraphicsItem);
   void fitInViewInternal();
+  void emitResetDynamicSelect();
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
@@ -362,6 +365,8 @@ signals:
   void keyPressShiftRight();
   void keyPressCtrlRight();
   void keyPressDuplicate();
+  void updateDynamicSelect(double time);
+  void resetDynamicSelect();
 public slots:
   void addConnection(Element *pComponent);
   void removeCurrentConnection();
@@ -527,6 +532,7 @@ public:
   BaseEditor* getEditor() {return mpEditor;}
   void setModelClassPathLabel(QString path) {mpModelClassPathLabel->setText(path);}
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
+  QVBoxLayout* getMainLayout() {return mpMainLayout;}
   bool isLoadedWidgetComponents() {return mCreateModelWidgetComponents;}
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.append(pLibraryTreeItem);}
   void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.removeOne(pLibraryTreeItem);}
@@ -603,6 +609,7 @@ private:
   bool mDiagramViewLoaded;
   bool mConnectionsLoaded;
   bool mCreateModelWidgetComponents;
+  QVBoxLayout *mpMainLayout;
   QString mIconAnnotationString;
   QString mDiagramAnnotationString;
   bool mExtendsModifiersLoaded;

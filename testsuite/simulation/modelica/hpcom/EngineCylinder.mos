@@ -57,13 +57,16 @@ res := OpenModelica.Scripting.compareSimulationResults("EngineCylinder_res.mat",
 //  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Equation system details:
-//  * Constant Jacobian: 0
-//  * Linear Jacobian (size,density): 2 {(2,100.0%),(2,100.0%)}
-//  * Non-linear Jacobian: 0
-//  * Without analytic Jacobian: 0
+//  * Constant Jacobian (size): 0 systems
+//  * Linear Jacobian (size,density): 2 systems
+//    {(2,100.0%),(2,100.0%)}
+//  * Non-linear Jacobian (size): 0 systems
+//  * Without analytic Jacobian (size): 0 systems
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {6 53}
-//  * Non-linear torn systems: 1 {1 13}
+//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//    {6 53}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
+//    {1 13}
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 520
 //  * Number of states: 0 ()
@@ -81,13 +84,16 @@ res := OpenModelica.Scripting.compareSimulationResults("EngineCylinder_res.mat",
 //  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Equation system details:
-//  * Constant Jacobian: 0
-//  * Linear Jacobian (size,density): 2 {(2,100.0%),(2,100.0%)}
-//  * Non-linear Jacobian: 0
-//  * Without analytic Jacobian: 0
+//  * Constant Jacobian (size): 0 system
+//  * Linear Jacobian (size,density): 2 systems
+//    {(2,100.0%),(2,100.0%)}
+//  * Non-linear Jacobian (size): 0 systems
+//  * Without analytic Jacobian (size): 0 systems
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {6 53}
-//  * Non-linear torn systems: 1 {1 13}
+//  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
+//    {6 53}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
+//    {1 13}
 // "
 // {"Files Equal!"}
 // endResult

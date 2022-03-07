@@ -49,12 +49,13 @@ val(c,0.5); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {4 4}
+//  * Linear torn systems (#iteration vars, #inner vars, density): 0 systems
+//  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
+//    {(4,4)}
 // Error: There is no possible matching for a user-defined tearing set.
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
@@ -70,14 +71,15 @@ val(c,0.5); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 1
+//  * Equation systems (not torn): 1
 //  * Torn equation systems: 0
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Equation system details:
-//  * Constant Jacobian: 0
-//  * Linear Jacobian (size,density): 0
-//  * Non-linear Jacobian: 0
-//  * Without analytic Jacobian: 1 {6}
+// Notification: Equation system details (not torn):
+//  * Constant Jacobian (size): 0 systems
+//  * Linear Jacobian (size,density): 0 systems
+//  * Non-linear Jacobian (size): 0 systems
+//  * Without analytic Jacobian (size): 1 system
+//    {6}
 // "
 // -0.5
 // ""

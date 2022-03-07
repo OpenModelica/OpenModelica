@@ -657,6 +657,18 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   setTransform(mTransformation.getTransformationMatrix());
   setDialogAnnotation(StringHandler::getAnnotation(annotation, "Dialog"));
   setChoicesAnnotation(StringHandler::getAnnotation(annotation, "choices"));
+  setChoicesAllMatchingAnnotation(StringHandler::getAnnotation(annotation, "choicesAllMatching"));
+  // add choices if there are any
+  if (getChoicesAnnotation().size() > 2)
+  {
+      QString array = getChoicesAnnotation()[2];
+      QStringList choices = StringHandler::unparseStrings(array);
+      setChoices(choices);
+  }
+  else
+  {
+      setChoices(QStringList());
+  }
   // create actions
   createActions();
   mpOriginItem = new OriginItem(this);
@@ -673,6 +685,8 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
   connect(this, SIGNAL(transformChange(bool)), SLOT(updateOriginItem()));
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
+  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
+  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
   /* Ticket:4204
    * If the child class use text annotation from base class then we need to call this
    * since when the base class is created the child class doesn't exist.
@@ -707,6 +721,8 @@ Element::Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement)
   drawInheritedElementsAndShapes();
   setDialogAnnotation(QStringList());
   setChoicesAnnotation(QStringList());
+  setChoicesAllMatchingAnnotation(QStringList());
+  setChoices(QStringList());
   mpOriginItem = 0;
   mpBottomLeftResizerItem = 0;
   mpTopLeftResizerItem = 0;
@@ -718,6 +734,8 @@ Element::Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement)
     connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
     connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
   }
+  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
+  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
 
 Element::Element(Element *pElement, Element *pParentElement, Element *pRootParentElement)
@@ -731,6 +749,8 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
   mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
+  mChoicesAllMatchingAnnotation = mpReferenceComponent->getChoicesAllMatchingAnnotation();
+  mChoices = mpReferenceComponent->getChoices();
   createNonExistingElement();
   mpDefaultElementRectangle = 0;
   mpDefaultElementText = 0;
@@ -759,6 +779,8 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
   connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
+  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
+  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
 
 Element::Element(Element *pElement, GraphicsView *pGraphicsView)
@@ -773,6 +795,8 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
   mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
+  mChoicesAllMatchingAnnotation = mpReferenceComponent->getChoicesAllMatchingAnnotation();
+  mChoices = mpReferenceComponent->getChoices();
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
   setElementFlags(true);
@@ -821,6 +845,8 @@ Element::Element(ElementInfo *pElementInfo, Element *pParentElement)
   mTransformationString = "";
   mDialogAnnotation.clear();
   mChoicesAnnotation.clear();
+  mChoicesAllMatchingAnnotation.clear();
+  mChoices.clear();
   createNonExistingElement();
   createDefaultElement();
   mpStateElementRectangle = 0;
@@ -1026,9 +1052,10 @@ CoOrdinateSystem Element::getCoOrdinateSystem() const
 void Element::setElementFlags(bool enable)
 {
   /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on component if the class is not a system library class
+   * AND not a visualization view.
    * AND component is not an inherited shape.
    */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedElement()) {
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }
@@ -2507,7 +2534,7 @@ void Element::updateToolTip()
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     comment = pOMCProxy->makeDocumentationUriToFileName(comment);
     // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
-  #ifdef WIN32
+  #if defined(_WIN32)
     comment.replace("src=\"file:///", "src=\"");
   #else
     comment.replace("src=\"file://", "src=\"");
@@ -2967,10 +2994,12 @@ void Element::deleteMe()
  */
 void Element::duplicate()
 {
-  QString name;
+  QString name = getName();
+  QString defaultPrefix = "";
   if (mpLibraryTreeItem) {
-    QString defaultName;
-    name = mpGraphicsView->getUniqueElementName(mpLibraryTreeItem->getNameStructure(), mpLibraryTreeItem->getName(), &defaultName);
+    if (!mpGraphicsView->performElementCreationChecks(mpLibraryTreeItem, &name, &defaultPrefix)) {
+      return;
+    }
   } else {
     name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(getName()));
   }
@@ -2979,6 +3008,7 @@ void Element::duplicate()
   mpElementInfo->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), this);
   ElementInfo *pElementInfo = new ElementInfo(mpElementInfo);
   pElementInfo->setName(name);
+  pElementInfo->applyDefaultPrefixes(defaultPrefix);
   mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, getOMCPlacementAnnotation(gridStep), QPointF(0, 0), pElementInfo, true, true, true);
   Element *pDiagramElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementsList().last();
   setSelected(false);
@@ -3316,6 +3346,17 @@ void Element::updateDynamicSelect(double time)
   }
 }
 
+void Element::resetDynamicSelect()
+{
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isState()) {
+    // no need to do anything for state machines case.
+  } else { // DynamicSelect
+    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+      pShapeAnnotation->resetDynamicSelect();
+    }
+  }
+}
+
 QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
 {
   QGraphicsItem::itemChange(change, value);
@@ -3323,8 +3364,8 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
     if (isSelected()) {
       showResizerItems();
       setCursor(Qt::SizeAllCursor);
-      // Only allow manipulations on component if the class is not a system library class OR component is not an inherited component.
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedElement()) {
+      // Only allow manipulations on component if the class is not a system library class OR not a visualization view OR component is not an inherited component.
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
         connect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
@@ -3359,8 +3400,8 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
         hideResizerItems();
       }
       unsetCursor();
-      /* Only allow manipulations on component if the class is not a system library class OR component is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedElement()) {
+      /* Only allow manipulations on component if the class is not a system library class OR not a visualization view OR component is not an inherited component. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
         disconnect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView, SIGNAL(mouseDuplicate()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()));

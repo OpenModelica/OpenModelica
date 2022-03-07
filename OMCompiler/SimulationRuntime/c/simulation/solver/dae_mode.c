@@ -54,10 +54,6 @@ int evaluateDAEResiduals_wrapperEventUpdate(DATA* data, threadData_t* threadData
 {
   int retVal;
 
-  if (0 == data->simulationInfo->daeModeData->nResidualVars) {
-    return 0;
-  }
-
   data->simulationInfo->discreteCall = 1;
   retVal = data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_DISCRETE);
   data->simulationInfo->discreteCall = 0;

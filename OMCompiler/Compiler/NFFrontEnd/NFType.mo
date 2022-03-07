@@ -45,6 +45,7 @@ public
   import ComplexType = NFComplexType;
   import NFFunction.Function;
   import Record = NFRecord;
+  import UnorderedMap;
 
   type FunctionType = enumeration(
     FUNCTIONAL_PARAMETER "Function parameter of function type.",
@@ -218,6 +219,10 @@ public
     input Integer N;
     input output Type ty;
   algorithm
+    if N == 0 then
+      return;
+    end if;
+
     ty := match ty
       local
         list<Dimension> dims;
@@ -597,6 +602,17 @@ public
     end match;
   end isPolymorphic;
 
+  function isPolymorphicNamed
+    input Type ty;
+    input String name;
+    output Boolean res;
+  algorithm
+    res := match ty
+      case POLYMORPHIC() then name == ty.name;
+      else false;
+    end match;
+  end isPolymorphicNamed;
+
   function firstTupleType
     input Type ty;
     output Type outTy;
@@ -680,6 +696,7 @@ public
       case ARRAY() then ty.dimensions;
       case FUNCTION() then arrayDims(Function.returnType(ty.fn));
       case METABOXED() then arrayDims(ty.ty);
+      case CONDITIONAL_ARRAY() then List.fill(Dimension.UNKNOWN(), dimensionCount(ty.trueType));
       else {};
     end match;
   end arrayDims;
@@ -854,7 +871,10 @@ public
       case Type.COMPLEX() then AbsynUtil.pathString(InstNode.scopePath(ty.cls));
       case Type.FUNCTION() then Function.typeString(ty.fn);
       case Type.METABOXED() then "#" + toString(ty.ty);
-      case Type.POLYMORPHIC() then "<" + ty.name + ">";
+      case Type.POLYMORPHIC()
+        then if Util.stringStartsWith("__", ty.name) then
+          substring(ty.name, 3, stringLength(ty.name)) else "<" + ty.name + ">";
+
       case Type.ANY() then "$ANY$";
       case Type.CONDITIONAL_ARRAY() then toString(ty.trueType) + "|" + toString(ty.falseType);
       else
@@ -1180,28 +1200,43 @@ public
 
   function recordFields
     input Type recordType;
-    output list<Record.Field> fields;
+    output list<Record.Field> field_lst;
   algorithm
-    fields := match recordType
-      case COMPLEX(complexTy = ComplexType.RECORD(fields = fields)) then fields;
+    field_lst := match recordType
+      local
+        array<Record.Field> fields;
+      case COMPLEX(complexTy = ComplexType.RECORD(fields = fields)) then arrayList(fields);
       else {};
     end match;
   end recordFields;
 
   function setRecordFields
-    input list<Record.Field> fields;
+    input list<Record.Field> field_lst;
     input output Type recordType;
   algorithm
     recordType := match recordType
       local
         InstNode rec_node;
+        UnorderedMap<String, Integer> indexMap;
+        array<Record.Field> fields = listArray(field_lst);
 
-      case COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_node))
-        then COMPLEX(recordType.cls, ComplexType.RECORD(rec_node, fields));
+      case COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_node)) algorithm
+        indexMap := UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq, arrayLength(fields));
+        updateRecordFieldsIndexMap(fields, indexMap);
+      then COMPLEX(recordType.cls, ComplexType.RECORD(rec_node, fields, indexMap));
 
       else recordType;
     end match;
   end setRecordFields;
+
+  function updateRecordFieldsIndexMap
+    input array<Record.Field> fields;
+    input UnorderedMap<String, Integer> indexMap;
+  algorithm
+   for i in 1:arrayLength(fields) loop
+      UnorderedMap.add(Record.Field.name(fields[i]), i, indexMap);
+    end for;
+  end updateRecordFieldsIndexMap;
 
   function enumName
     input Type ty;
@@ -1304,7 +1339,8 @@ public
 
     function fold_comp_size
       input InstNode comp;
-      input output Integer sz = sz + sizeOf(InstNode.getType(comp));
+      input Integer sz;
+      output Integer outSize = sz + sizeOf(InstNode.getType(comp));
     end fold_comp_size;
   algorithm
     sz := match ty
@@ -1315,6 +1351,7 @@ public
       case CLOCK() then 1;
       case ENUMERATION() then 1;
       case ARRAY() then sizeOf(ty.elementType) * product(Dimension.size(d) for d in ty.dimensions);
+      case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
       case COMPLEX()
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
       else 0;

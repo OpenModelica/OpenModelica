@@ -1530,10 +1530,10 @@ algorithm
       then DAE.CLKCONST(DAE.REAL_CLOCK(e1));
 
     case (DAE.CALL(path=Absyn.IDENT("booleanClock"),expLst={e1,e2}))
-      then DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e1,e2));
+      then DAE.CLKCONST(DAE.EVENT_CLOCK(e1,e2));
 
     case (DAE.CALL(path=Absyn.IDENT("rationalClock"),expLst={e1,e2}))
-      then DAE.CLKCONST(DAE.INTEGER_CLOCK(e1, e2));
+      then DAE.CLKCONST(DAE.RATIONAL_CLOCK(e1, e2));
 
     case (DAE.CALL(path=Absyn.IDENT("solverClock"),expLst={e1,e2}))
       then DAE.CLKCONST(DAE.SOLVER_CLOCK(e1, e2));
@@ -5987,9 +5987,9 @@ algorithm
   {y1, y2, y3} := v2;
 
   // res = {x[2]*y[3] - x[3]*y[2], x[3]*y[1] - x[1]*y[3], x[1]*y[2] - x[2]*y[1]}
-  res := {Expression.makeDiff(Expression.makeProduct(x2, y3), Expression.makeProduct(x3, y2)),
-          Expression.makeDiff(Expression.makeProduct(x3, y1), Expression.makeProduct(x1, y3)),
-          Expression.makeDiff(Expression.makeProduct(x1, y2), Expression.makeProduct(x2, y1))};
+  res := {Expression.expSub(Expression.makeProduct(x2, y3), Expression.makeProduct(x3, y2)),
+          Expression.expSub(Expression.makeProduct(x3, y1), Expression.makeProduct(x1, y3)),
+          Expression.expSub(Expression.makeProduct(x1, y2), Expression.makeProduct(x2, y1))};
 end simplifyCross;
 
 annotation(__OpenModelica_Interface="frontend");

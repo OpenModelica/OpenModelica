@@ -22,6 +22,6 @@ getErrorString();
 // ""
 // true
 // ""
-// {-100.0,-100.0,100.0,100.0,true,-,-,, {Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-100.0, 100.0}, {100.0, -100.0}}, 0.0), Text(true, {0.0, 0.0}, 0.0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150.0, 145.0}, {150.0, 105.0}}, "%name", 0.0, {-1, -1, -1}, "", {}, TextAlignment.Center), Bitmap(true, {0.0, 0.0}, 0.0, {{-97.0, -39.0}, {99.0, 75.0}}, "modelica://Modelica/Resources/Images/Mechanics/MultiBody/Examples/Loops/EngineV6_CAD.png", "")}}
+// {-100.0,-100.0,100.0,100.0,true,-,-,,{Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-100.0, 100.0}, {100.0, -100.0}}, 0.0), Text(true, {0.0, 0.0}, 0.0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150.0, 145.0}, {150.0, 105.0}}, "%name", 0.0, {-1, -1, -1}, "", {}, TextAlignment.Center), Bitmap(true, {0.0, 0.0}, 0.0, {{-97.0, -39.0}, {99.0, 75.0}}, "modelica://Modelica/Resources/Images/Mechanics/MultiBody/Examples/Loops/EngineV6_CAD.png", "")}}
 // ""
 // endResult

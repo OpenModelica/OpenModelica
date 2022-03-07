@@ -110,20 +110,21 @@ set_target_properties(antlr4_static
                                  ARCHIVE_OUTPUT_DIRECTORY ${LIB_OUTPUT_DIR}
                                  COMPILE_FLAGS "${disabled_compile_warnings} ${extra_static_compile_flags}")
 
-install(TARGETS antlr4_shared
-        DESTINATION lib
-        EXPORT antlr4-targets)
-install(TARGETS antlr4_static
-        DESTINATION lib
-        EXPORT antlr4-targets)
-
-install(DIRECTORY "${PROJECT_SOURCE_DIR}/runtime/src/"
-        DESTINATION "include/antlr4-runtime"
-        COMPONENT dev
-        FILES_MATCHING
-          PATTERN "*.h"
-          PATTERN "UTF8_LICENSE"
+install(TARGETS antlr4_shared antlr4_static
+        EXPORT antlr4-targets
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         )
+
+
+# install(DIRECTORY "${PROJECT_SOURCE_DIR}/runtime/src/"
+#         DESTINATION "include/antlr4-runtime"
+#         COMPONENT dev
+#         FILES_MATCHING
+#           PATTERN "*.h"
+#           PATTERN "UTF8_LICENSE"
+#         )
 
 
 

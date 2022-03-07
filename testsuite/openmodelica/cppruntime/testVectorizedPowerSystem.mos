@@ -156,13 +156,13 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1: busBar1.p:VARIABLE(unit = {"W"} )  type: Real[1] [1]
 // 2: busBar1.i:VARIABLE(start = busBar1.i_start unit = {"A"} nominal = {1.0} )  type: Real[1] [1]
 // 3: busBar1.v:VARIABLE(start = busBar1.v_start unit = {"V"} nominal = {1000.0} )  type: Real[1] [1]
-// 4: busBar1.terminal_n.v:VARIABLE(flow=false unit = {"V"} nominal = {1000.0} )  "voltage vector" type: Real[3, 1] [3,1]
-// 5: busBar1.terminal_n.i:VARIABLE(flow=true unit = {"A"} nominal = {1.0} )  "current vector" type: Real[3, 1] [3,1]
+// 4: busBar1.terminal_n.v:VARIABLE(flow=false unit = fill({"V"}, 3) nominal = fill({1000.0}, 3) )  "voltage vector" type: Real[3, 1] [3,1]
+// 5: busBar1.terminal_n.i:VARIABLE(flow=true unit = fill({"A"}, 3) nominal = fill({1.0}, 3) )  "current vector" type: Real[3, 1] [3,1]
 // 6: busBar1.terminal_p.i:VARIABLE(flow=true unit = {"A"} nominal = {1.0} )  "current vector" type: Real[1] [1]
 // 7: busBar1.terminal_p.v:VARIABLE(flow=false unit = {"V"} nominal = {1000.0} )  "voltage vector" type: Real[1] [1]
-// 8: fixedLoad1.terminal.v:VARIABLE(flow=false start = fixedLoad1.v_start unit = {"V"} nominal = {1000.0} )  "voltage vector" type: Real[3, 1] [3,1]
-// 9: fixedLoad1.terminal.i:VARIABLE(flow=true unit = {"A"} nominal = {1.0} )  "current vector" type: Real[3, 1] [3,1]
-// 10: fixedLoad1.p:VARIABLE(unit = {"W"} )  type: Real[3, 1] [3,1]
+// 8: fixedLoad1.terminal.v:VARIABLE(flow=false start = fixedLoad1.v_start unit = fill({"V"}, 3) nominal = fill({1000.0}, 3) )  "voltage vector" type: Real[3, 1] [3,1]
+// 9: fixedLoad1.terminal.i:VARIABLE(flow=true unit = fill({"A"}, 3) nominal = fill({1.0}, 3) )  "current vector" type: Real[3, 1] [3,1]
+// 10: fixedLoad1.p:VARIABLE(unit = fill({"W"}, 3) )  type: Real[3, 1] [3,1]
 // 11: fixedVoltageSource1.p:VARIABLE(unit = {"W"} )  type: Real[1] [1]
 // 12: fixedVoltageSource1.terminal.i:VARIABLE(flow=true unit = {"A"} nominal = {1.0} )  "current vector" type: Real[1] [1]
 // 13: fixedVoltageSource1.terminal.v:VARIABLE(flow=false unit = {"V"} nominal = {1000.0} )  "voltage vector" type: Real[1] [1]
@@ -265,9 +265,9 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1: busBar1.n_n:PARAM(final = true )  = 3  type: Integer
 // 2: busBar1.i_start:PARAM(unit = {"A"} nominal = {1.0} )  = {0.0}  "Start value for current" type: Real[1] [1]
 // 3: busBar1.v_start:PARAM(unit = {"V"} nominal = {1000.0} )  = {0.0}  "Start value for voltage drop" type: Real[1] [1]
-// 4: fixedLoad1.v_start:PARAM(unit = {"V"} nominal = {1000.0} )  = {1.0}  "Start value for voltage drop" type: Real[3, 1] [3,1]
-// 5: fixedLoad1.P:PARAM(unit = "W" )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3] [3]
-// 6: fixedLoad1.phi:PARAM(unit = "rad" )  = 0.1:0.1:0.3  "phase angle" type: Real[3] [3]
+// 4: fixedLoad1.v_start:PARAM(unit = fill({"V"}, 3) nominal = fill({1000.0}, 3) )  = {{1.0}, {1.0}, {1.0}}  "Start value for voltage drop" type: Real[3, 1] [3,1]
+// 5: fixedLoad1.P:PARAM(unit = fill("W", 3) )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3] [3]
+// 6: fixedLoad1.phi:PARAM(unit = fill("rad", 3) )  = 0.1:0.1:0.3  "phase angle" type: Real[3] [3]
 // 7: system.synRef:PARAM(final = true )  = true  type: Boolean
 // 8: system.w_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nom r.p.m." type: Real
 // 9: system.omega_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nominal angular frequency" type: Real
@@ -402,13 +402,13 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1: busBar1.p:VARIABLE(unit = {"W"} )  type: Real[1] [1]
 // 2: busBar1.i:VARIABLE(start = busBar1.i_start unit = {"A"} nominal = {1.0} )  type: Real[1] [1]
 // 3: busBar1.v:VARIABLE(start = busBar1.v_start unit = {"V"} nominal = {1000.0} )  type: Real[1] [1]
-// 4: busBar1.terminal_n.v:VARIABLE(flow=false unit = {"V"} nominal = {1000.0} )  "voltage vector" type: Real[3, 1] [3,1]
-// 5: busBar1.terminal_n.i:VARIABLE(flow=true unit = {"A"} nominal = {1.0} )  "current vector" type: Real[3, 1] [3,1]
+// 4: busBar1.terminal_n.v:VARIABLE(flow=false unit = {{"V"}, {"V"}, {"V"}} nominal = {{1000.0}, {1000.0}, {1000.0}} )  "voltage vector" type: Real[3, 1] [3,1]
+// 5: busBar1.terminal_n.i:VARIABLE(flow=true unit = {{"A"}, {"A"}, {"A"}} nominal = {{1.0}, {1.0}, {1.0}} )  "current vector" type: Real[3, 1] [3,1]
 // 6: busBar1.terminal_p.i:VARIABLE(flow=true unit = {"A"} nominal = {1.0} )  "current vector" type: Real[1] [1]
 // 7: busBar1.terminal_p.v:VARIABLE(flow=false unit = {"V"} nominal = {1000.0} )  "voltage vector" type: Real[1] [1]
-// 8: fixedLoad1.terminal.v:VARIABLE(flow=false start = fixedLoad1.v_start unit = {"V"} nominal = {1000.0} )  "voltage vector" type: Real[3, 1] [3,1]
-// 9: fixedLoad1.terminal.i:VARIABLE(flow=true unit = {"A"} nominal = {1.0} )  "current vector" type: Real[3, 1] [3,1]
-// 10: fixedLoad1.p:VARIABLE(unit = {"W"} )  type: Real[3, 1] [3,1]
+// 8: fixedLoad1.terminal.v:VARIABLE(flow=false start = fixedLoad1.v_start unit = {{"V"}, {"V"}, {"V"}} nominal = {{1000.0}, {1000.0}, {1000.0}} )  "voltage vector" type: Real[3, 1] [3,1]
+// 9: fixedLoad1.terminal.i:VARIABLE(flow=true unit = {{"A"}, {"A"}, {"A"}} nominal = {{1.0}, {1.0}, {1.0}} )  "current vector" type: Real[3, 1] [3,1]
+// 10: fixedLoad1.p:VARIABLE(unit = {{"W"}, {"W"}, {"W"}} )  type: Real[3, 1] [3,1]
 // 11: fixedVoltageSource1.p:VARIABLE(unit = {"W"} )  type: Real[1] [1]
 // 12: fixedVoltageSource1.terminal.i:VARIABLE(flow=true unit = {"A"} nominal = {1.0} )  "current vector" type: Real[1] [1]
 // 13: fixedVoltageSource1.terminal.v:VARIABLE(flow=false unit = {"V"} nominal = {1000.0} )  "voltage vector" type: Real[1] [1]
@@ -641,9 +641,9 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1: busBar1.n_n:PARAM(final = true )  = 3  type: Integer
 // 2: busBar1.i_start:PARAM(unit = {"A"} nominal = {1.0} )  = {0.0}  "Start value for current" type: Real[1] [1]
 // 3: busBar1.v_start:PARAM(unit = {"V"} nominal = {1000.0} )  = {0.0}  "Start value for voltage drop" type: Real[1] [1]
-// 4: fixedLoad1.v_start:PARAM(unit = {"V"} nominal = {1000.0} )  = {1.0}  "Start value for voltage drop" type: Real[3, 1] [3,1]
-// 5: fixedLoad1.P:PARAM(unit = "W" )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3] [3]
-// 6: fixedLoad1.phi:PARAM(unit = "rad" )  = 0.1:0.1:0.3  "phase angle" type: Real[3] [3]
+// 4: fixedLoad1.v_start:PARAM(unit = {{"V"}, {"V"}, {"V"}} nominal = {{1000.0}, {1000.0}, {1000.0}} )  = {{1.0}, {1.0}, {1.0}}  "Start value for voltage drop" type: Real[3, 1] [3,1]
+// 5: fixedLoad1.P:PARAM(unit = {"W", "W", "W"} )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3] [3]
+// 6: fixedLoad1.phi:PARAM(unit = {"rad", "rad", "rad"} )  = 0.1:0.1:0.3  "phase angle" type: Real[3] [3]
 // 7: system.synRef:PARAM(final = true )  = true  type: Boolean
 // 8: system.w_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nom r.p.m." type: Real
 // 9: system.omega_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nominal angular frequency" type: Real

@@ -595,6 +595,89 @@ public
     end match;
   end mapExp;
 
+  function mapExpShallow
+    input output Equation eq;
+    input MapExpFn func;
+  algorithm
+    eq := match eq
+      local
+        Expression e1, e2, e3;
+
+      case EQUALITY()
+        algorithm
+          e1 := func(eq.lhs);
+          e2 := func(eq.rhs);
+        then
+          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
+            then eq else EQUALITY(e1, e2, eq.ty, eq.source);
+
+      case ARRAY_EQUALITY()
+        algorithm
+          e1 := func(eq.lhs);
+          e2 := func(eq.rhs);
+        then
+          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
+            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.source);
+
+      case CONNECT()
+        algorithm
+          e1 := func(eq.lhs);
+          e2 := func(eq.rhs);
+        then
+          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
+            then eq else CONNECT(e1, e2, eq.source);
+
+      case FOR()
+        algorithm
+          eq.range := Util.applyOption(eq.range, func);
+        then
+          eq;
+
+      case IF()
+        algorithm
+          eq.branches := list(Branch.mapExp(b, func, mapBody = false) for b in eq.branches);
+        then
+          eq;
+
+      case WHEN()
+        algorithm
+          eq.branches := list(Branch.mapExp(b, func, mapBody = false) for b in eq.branches);
+        then
+          eq;
+
+      case ASSERT()
+        algorithm
+          e1 := func(eq.condition);
+          e2 := func(eq.message);
+          e3 := func(eq.level);
+        then
+          if referenceEq(e1, eq.condition) and referenceEq(e2, eq.message) and
+            referenceEq(e3, eq.level) then eq else ASSERT(e1, e2, e3, eq.source);
+
+      case TERMINATE()
+        algorithm
+          e1 := func(eq.message);
+        then
+          if referenceEq(e1, eq.message) then eq else TERMINATE(e1, eq.source);
+
+      case REINIT()
+        algorithm
+          e1 := func(eq.cref);
+          e2 := func(eq.reinitExp);
+        then
+          if referenceEq(e1, eq.cref) and referenceEq(e2, eq.reinitExp) then
+            eq else REINIT(e1, e2, eq.source);
+
+      case NORETCALL()
+        algorithm
+          e1 := func(eq.exp);
+        then
+          if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.source);
+
+      else eq;
+    end match;
+  end mapExpShallow;
+
   function foldExpList<ArgT>
     input list<Equation> eq;
     input FoldFunc func;

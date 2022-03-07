@@ -1,0 +1,66 @@
+// name:     firstTick.mos
+// keywords: synchronous features, firstTick, c
+// status: correct
+//
+// Check sampled values
+// Base-clock ticks: 0, 0.3, 0.6, 0.9
+// base-clock ticks: 0
+
+loadFile("Synchronous.mo"); getErrorString();
+
+simulate(Synchronous.Conversion.firstTickBool, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
+
+print("Clock 2 y:");
+val(y, 0.0);      // 1.0
+val(y, 0.00001);  // 1.0
+val(y, 0.002);    // 1.0
+
+print("Bool firstTick():");
+val(clk1_firstTick, 0.0);     // 1 true
+val(clk1_firstTick, 0.49999); // 1 true
+val(clk1_firstTick, 0.5);     // 0 false
+val(clk1_firstTick, 1.0);     // 0 false
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Synchronous.Conversion.firstTickBool_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Synchronous.Conversion.firstTickBool', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
+//     messages = "LOG_SYNCHRONOUS   | info    | Initialized synchronous timers.
+// |                 | |       | | Number of base clocks: 2
+// |                 | |       | | Base clock 1
+// |                 | |       | | | interval: 5.000000e-01
+// |                 | |       | | | Number of sub-clocks: 1
+// |                 | |       | | | Sub-clock 1 of base clock 1
+// |                 | |       | | | | shift: 0/1
+// |                 | |       | | | | factor: 1/1
+// |                 | |       | | | | solverMethod: none
+// |                 | |       | | | | holdEvents: true
+// |                 | |       | | Base clock 2
+// |                 | |       | | | is event clock
+// |                 | |       | | | Number of sub-clocks: 1
+// |                 | |       | | | Sub-clock 1 of base clock 2
+// |                 | |       | | | | shift: 0/1
+// |                 | |       | | | | factor: 1/1
+// |                 | |       | | | | solverMethod: none
+// |                 | |       | | | | holdEvents: false
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 1 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.500000
+// LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.000000
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Clock 2 y:
+// 1.0
+// 1.0
+// 1.0
+// Bool firstTick():
+// 1.0
+// 1.0
+// 0.0
+// 0.0
+// endResult

@@ -536,10 +536,10 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
   connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), mpTransformationWidget, SLOT(fetchEquationData(QTreeWidgetItem*,int)));
 }
 
-TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidget *pParent)
+TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool profiling, QWidget *pParent)
   : QWidget(pParent), mInfoJSONFullFileName(infoJSONFullFileName)
 {
-  if (!mInfoJSONFullFileName.endsWith("_info.json")) {
+  if (!mInfoJSONFullFileName.endsWith("_info.json") || !profiling) {
     mProfJSONFullFileName = "";
     mProfilingDataRealFileName = "";
   } else {

@@ -1,0 +1,483 @@
+// name: fmi_attributes_17.mos
+// status: correct
+// teardown_command: rm -rf fmi_attributes_17.fmu fmi_attributes_17.log fmi_attributes_17.xml fmi_attributes_17_tmp.xml fmi_attributes_17.fmutmp/
+
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
+getErrorString();
+
+loadString("
+model fmi_attributes_17 \"based on CauerLowPassAnalog\"
+  extends Modelica.Icons.Example;
+  import SI = Modelica.SIunits;
+
+  parameter SI.Inductance l1 = 1.304 \"filter coefficient I1\";
+  parameter SI.Inductance l2 = 0.8586 \"filter coefficient I2\";
+  parameter SI.Capacitance c1 = 1.072 \"filter coefficient c1\";
+  parameter SI.Capacitance c2 = 1 / (1.704992 ^ 2 * l1) \"filter coefficient c2\";
+  parameter SI.Capacitance c3 = 1.682 \"filter coefficient c3\";
+  parameter SI.Capacitance c4 = 1 / (1.179945 ^ 2 * l2) \"filter coefficient c4\";
+  parameter SI.Capacitance c5 = 0.7262 \"filter coefficient c5\";
+  Modelica.Electrical.Analog.Basic.Ground G annotation(
+    Placement(transformation(extent = {{-10, -90}, {10, -70}})));
+  Modelica.Electrical.Analog.Basic.Resistor R1(R = 1, useHeatPort = false) annotation(
+    Placement(transformation(extent = {{-100, 20}, {-80, 40}})));
+  Modelica.Electrical.Analog.Sources.StepVoltage V(startTime = 1, offset = 0, V = 1) annotation(
+    Placement(transformation(origin = {-100, -10}, extent = {{-10, -10}, {10, 10}}, rotation = 270)));
+  Modelica.Electrical.Analog.Basic.Capacitor C4(C = c4) annotation(
+    Placement(visible = true, transformation(extent = {{20, 20}, {40, 40}}, rotation = 0)));
+equation
+  connect(R1.p, V.p) annotation(
+    Line(points = {{-100, 30}, {-100, 0}}, color = {0, 0, 255}));
+  connect(V.n, G.p) annotation(
+    Line(points = {{-100, -20}, {-100, -70}, {0, -70}}, color = {0, 0, 255}));
+  connect(C4.n, G.p) annotation(
+    Line(points = {{40, 30}, {54, 30}, {54, -70}, {0, -70}}, color = {0, 0, 255}));
+  connect(R1.n, C4.p) annotation(
+    Line(points = {{-80, 30}, {20, 30}}, color = {0, 0, 255}));
+  annotation(uses(Modelica(version = \"3.2.3\")));
+end fmi_attributes_17;
+"); getErrorString();
+
+translateModelFMU(fmi_attributes_17); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_17.fmu modelDescription.xml > fmi_attributes_17_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_17_tmp.xml > fmi_attributes_17.xml"); getErrorString();
+readFile("fmi_attributes_17.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_17_tmp.xml > fmi_attributes_17.xml"); getErrorString();
+readFile("fmi_attributes_17.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_17.fmu"
+// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"C4.v\"
+//     valueReference=\"0\"
+//     description=\"Voltage drop of the two pins (= p.v - n.v)\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(C4.v)\"
+//     valueReference=\"1\"
+//     description=\"der(Voltage drop of the two pins (= p.v - n.v))\"
+//     >
+//     <Real derivative=\"1\" unit=\"km2.s-4.A-1.g\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"C4.i\"
+//     valueReference=\"2\"
+//     description=\"Current flowing from pin p to pin n\"
+//     >
+//     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"G.p.i\"
+//     valueReference=\"3\"
+//     description=\"Current flowing into the pin\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"G.p.v\"
+//     valueReference=\"4\"
+//     description=\"Potential at the pin\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"R1.LossPower\"
+//     valueReference=\"5\"
+//     description=\"Loss power leaving component via heatPort\"
+//     >
+//     <Real unit=\"W\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"R1.R_actual\"
+//     valueReference=\"6\"
+//     description=\"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\"
+//     >
+//     <Real unit=\"Ohm\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"R1.v\"
+//     valueReference=\"7\"
+//     description=\"Voltage drop of the two pins (= p.v - n.v)\"
+//     >
+//     <Real unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"V.v\"
+//     valueReference=\"8\"
+//     description=\"Voltage drop of the two pins (= p.v - n.v)\"
+//     >
+//     <Real unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"C4.C\"
+//     valueReference=\"9\"
+//     description=\"Capacitance\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"0.0\" unit=\"F\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"11\" -->
+//   <ScalarVariable
+//     name=\"R1.R\"
+//     valueReference=\"10\"
+//     description=\"Resistance at temperature T_ref\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"1.0\" unit=\"Ohm\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"12\" -->
+//   <ScalarVariable
+//     name=\"R1.T\"
+//     valueReference=\"11\"
+//     description=\"Fixed device temperature if useHeatPort = false\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"13\" -->
+//   <ScalarVariable
+//     name=\"R1.T_heatPort\"
+//     valueReference=\"12\"
+//     description=\"Temperature of heatPort\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"14\" -->
+//   <ScalarVariable
+//     name=\"R1.T_ref\"
+//     valueReference=\"13\"
+//     description=\"Reference temperature\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"300.15\" min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"15\" -->
+//   <ScalarVariable
+//     name=\"R1.alpha\"
+//     valueReference=\"14\"
+//     description=\"Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"0.0\" unit=\"1/K\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"16\" -->
+//   <ScalarVariable
+//     name=\"V.V\"
+//     valueReference=\"15\"
+//     description=\"Height of step\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"1.0\" unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"17\" -->
+//   <ScalarVariable
+//     name=\"V.offset\"
+//     valueReference=\"16\"
+//     description=\"Voltage offset\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"0.0\" unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"18\" -->
+//   <ScalarVariable
+//     name=\"V.signalSource.height\"
+//     valueReference=\"17\"
+//     description=\"Height of step\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"19\" -->
+//   <ScalarVariable
+//     name=\"V.signalSource.offset\"
+//     valueReference=\"18\"
+//     description=\"Offset of output signal y\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"20\" -->
+//   <ScalarVariable
+//     name=\"V.signalSource.startTime\"
+//     valueReference=\"19\"
+//     description=\"Output y = offset for time &lt; startTime\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real unit=\"s\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"21\" -->
+//   <ScalarVariable
+//     name=\"V.startTime\"
+//     valueReference=\"20\"
+//     description=\"Time offset\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"1.0\" unit=\"s\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"22\" -->
+//   <ScalarVariable
+//     name=\"c1\"
+//     valueReference=\"21\"
+//     description=\"filter coefficient c1\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"1.072\" min=\"0.0\" unit=\"F\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"23\" -->
+//   <ScalarVariable
+//     name=\"c2\"
+//     valueReference=\"22\"
+//     description=\"filter coefficient c2\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"0.0\" unit=\"F\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"24\" -->
+//   <ScalarVariable
+//     name=\"c3\"
+//     valueReference=\"23\"
+//     description=\"filter coefficient c3\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"1.682\" min=\"0.0\" unit=\"F\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"25\" -->
+//   <ScalarVariable
+//     name=\"c4\"
+//     valueReference=\"24\"
+//     description=\"filter coefficient c4\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real min=\"0.0\" unit=\"F\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"26\" -->
+//   <ScalarVariable
+//     name=\"c5\"
+//     valueReference=\"25\"
+//     description=\"filter coefficient c5\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"0.7262\" min=\"0.0\" unit=\"F\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"27\" -->
+//   <ScalarVariable
+//     name=\"l1\"
+//     valueReference=\"26\"
+//     description=\"filter coefficient I1\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"1.304\" unit=\"H\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"28\" -->
+//   <ScalarVariable
+//     name=\"l2\"
+//     valueReference=\"27\"
+//     description=\"filter coefficient I2\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"0.8586\" unit=\"H\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"29\" -->
+//   <ScalarVariable
+//     name=\"C4.n.i\"
+//     valueReference=\"28\"
+//     description=\"Current flowing into the pin\"
+//     >
+//     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"30\" -->
+//   <ScalarVariable
+//     name=\"C4.n.v\"
+//     valueReference=\"4\"
+//     description=\"Potential at the pin\"
+//     >
+//     <Real unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"31\" -->
+//   <ScalarVariable
+//     name=\"C4.p.i\"
+//     valueReference=\"2\"
+//     description=\"Current flowing into the pin\"
+//     >
+//     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"32\" -->
+//   <ScalarVariable
+//     name=\"C4.p.v\"
+//     valueReference=\"0\"
+//     description=\"Potential at the pin\"
+//     >
+//     <Real unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"33\" -->
+//   <ScalarVariable
+//     name=\"R1.i\"
+//     valueReference=\"2\"
+//     description=\"Current flowing from pin p to pin n\"
+//     >
+//     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"34\" -->
+//   <ScalarVariable
+//     name=\"R1.n.i\"
+//     valueReference=\"33\"
+//     description=\"Current flowing into the pin\"
+//     >
+//     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"35\" -->
+//   <ScalarVariable
+//     name=\"R1.n.v\"
+//     valueReference=\"0\"
+//     description=\"Potential at the pin\"
+//     >
+//     <Real unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"36\" -->
+//   <ScalarVariable
+//     name=\"R1.p.i\"
+//     valueReference=\"2\"
+//     description=\"Current flowing into the pin\"
+//     >
+//     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"37\" -->
+//   <ScalarVariable
+//     name=\"R1.p.v\"
+//     valueReference=\"8\"
+//     description=\"Potential at the pin\"
+//     >
+//     <Real unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"38\" -->
+//   <ScalarVariable
+//     name=\"V.i\"
+//     valueReference=\"37\"
+//     description=\"Current flowing from pin p to pin n\"
+//     >
+//     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"39\" -->
+//   <ScalarVariable
+//     name=\"V.n.i\"
+//     valueReference=\"2\"
+//     description=\"Current flowing into the pin\"
+//     >
+//     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"40\" -->
+//   <ScalarVariable
+//     name=\"V.n.v\"
+//     valueReference=\"4\"
+//     description=\"Potential at the pin\"
+//     >
+//     <Real unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"41\" -->
+//   <ScalarVariable
+//     name=\"V.p.i\"
+//     valueReference=\"40\"
+//     description=\"Current flowing into the pin\"
+//     >
+//     <Real unit=\"A\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"42\" -->
+//   <ScalarVariable
+//     name=\"V.p.v\"
+//     valueReference=\"8\"
+//     description=\"Potential at the pin\"
+//     >
+//     <Real unit=\"V\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"43\" -->
+//   <ScalarVariable
+//     name=\"V.signalSource.y\"
+//     valueReference=\"8\"
+//     description=\"Connector of Real output signal\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"44\" -->
+//   <ScalarVariable
+//     name=\"R1.useHeatPort\"
+//     valueReference=\"0\"
+//     description=\"=true, if heatPort is enabled\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Boolean/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"1 11 14 15\" dependenciesKind=\"dependent dependent dependent dependent\" />
+//       <Unknown index=\"10\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"12\" dependencies=\"14\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"13\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"18\" dependencies=\"16\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"19\" dependencies=\"17\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"20\" dependencies=\"21\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"23\" dependencies=\"27\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"25\" dependencies=\"28\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"44\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

@@ -1007,7 +1007,8 @@ protected function analyseExp
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  (_, (_, _, outGraph)) := AbsynUtil.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, (inRef, inKind, inGraph));
+  (_, outGraph) := AbsynUtil.traverseExpBidir(inExp,
+    function analyseExpTraverserEnter(ref = inRef, kind = inKind), analyseExpTraverserExit, inGraph);
 end analyseExp;
 
 protected function analyseOptExp
@@ -1036,70 +1037,34 @@ end analyseOptExp;
 
 protected function analyseExpTraverserEnter
   "Traversal enter function for use in analyseExp."
-  input Absyn.Exp inExp;
-  input tuple<Ref, Kind, Graph> inTuple;
-  output Absyn.Exp exp;
-  output tuple<Ref, Kind, Graph> outTuple;
-protected
-  Ref ref;
-  Kind k;
-  Graph g;
+  input output Absyn.Exp inExp;
+  input Ref ref;
+  input Kind kind;
+  input output Graph graph;
 algorithm
-  (ref, k, g) := inTuple;
-  g := analyseExp2(inExp, ref, k, g);
-  exp := inExp;
-  outTuple := (ref, k, g);
-end analyseExpTraverserEnter;
-
-protected function analyseExp2
-  "Helper function to analyseExp, does the actual work."
-  input Absyn.Exp inExp;
-  input Ref inRef;
-  input Kind inKind;
-  input Graph inGraph;
-  output Graph outGraph;
-algorithm
-  outGraph := match(inExp, inRef, inKind, inGraph)
+  graph := match inExp
     local
       Absyn.ComponentRef cref;
-      Absyn.FunctionArgs args;
       Absyn.ForIterators iters;
-      Ref ref;
-      Graph g;
 
-    case (Absyn.CREF(componentRef = cref), _, _, g)
-      equation
-        g = analyseCref(cref, inRef, inKind, g);
-      then
-        g;
+    case Absyn.CREF(componentRef = cref)
+      then analyseCref(cref, ref, kind, graph);
 
-    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = iters)), _, _, g)
-      equation
-        g = addIterators(iters, inRef, inKind, g);
-      then
-        g;
+    case Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = iters))
+      then addIterators(iters, ref, kind, graph);
 
-    case (Absyn.CALL(function_ = cref), _, _, g)
-      equation
-        g = analyseCref(cref, inRef, inKind, g);
-      then
-        g;
+    case Absyn.CALL(function_ = cref)
+      then analyseCref(cref, ref, kind, graph);
 
-    case (Absyn.PARTEVALFUNCTION(function_ = cref), _, _, g)
-      equation
-        g = analyseCref(cref, inRef, inKind, g);
-      then
-        g;
+    case Absyn.PARTEVALFUNCTION(function_ = cref)
+      then analyseCref(cref, ref, kind, graph);
 
-    case (Absyn.MATCHEXP(), _, _, g)
-      equation
-        g = addMatchScope(inExp, inRef, inKind, g);
-      then
-        g;
+    case Absyn.MATCHEXP()
+      then addMatchScope(inExp, ref, kind, graph);
 
-    else inGraph;
+    else graph;
   end match;
-end analyseExp2;
+end analyseExpTraverserEnter;
 
 protected function analyseCref
   "Analyses a component reference."
@@ -1128,14 +1093,10 @@ end analyseCref;
 
 protected function analyseExpTraverserExit
   "Traversal exit function for use in analyseExp."
-  input Absyn.Exp inExp;
-  input tuple<Ref, Kind, Graph> inTuple;
-  output Absyn.Exp outExp;
-  output tuple<Ref, Kind, Graph> outTuple;
+  input output Absyn.Exp exp;
+  input output Graph graph;
 algorithm
   // nothing to do here!
-  outExp := inExp;
-  outTuple := inTuple;
 end analyseExpTraverserExit;
 
 protected function analyseEquation
@@ -1149,44 +1110,39 @@ protected
   SCode.EEquation equ;
 algorithm
   SCode.EQUATION(equ) := inEquation;
-  (_, (_, (_, _, outGraph))) := SCodeUtil.traverseEEquations(equ, (analyseEEquationTraverser, (inParentRef, inKind, inGraph)));
+  (_, outGraph) := SCodeUtil.mapFoldEEquations(equ,
+    function analyseEEquationTraverser(ref = inParentRef, kind = inKind), inGraph);
 end analyseEquation;
 
 protected function analyseEEquationTraverser
   "Traversal function for use in analyseEquation."
-  input tuple<SCode.EEquation, tuple<Ref, Kind, Graph>> inTuple;
-  output tuple<SCode.EEquation, tuple<Ref, Kind, Graph>> outTuple;
+  input output SCode.EEquation eq;
+  input Ref ref;
+  input Kind kind;
+  input output Graph graph;
 algorithm
-  outTuple := match(inTuple)
+  (eq, graph) := match eq
     local
-      SCode.EEquation equ, equf, equr;
       SCode.Ident iter_name;
-      Ref ref;
-      SourceInfo info;
       Absyn.ComponentRef cref1;
-      Graph g;
-      Kind k;
 
-    case ((equf as SCode.EQ_FOR(index = iter_name), (ref, k, g)))
-      equation
-        g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
-        (equ, (_, _, g)) = SCodeUtil.traverseEEquationExps(equf, traverseExp, (ref, k, g));
+    case SCode.EQ_FOR(index = iter_name)
+      algorithm
+        graph := addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, kind, graph);
       then
-        ((equ, (ref, k, g)));
+        SCodeUtil.mapFoldEEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
 
-    case ((equr as SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1)), (ref, k, g)))
-      equation
-        g = analyseCref(cref1, ref, k, g);
-        (equ, (_, _, g)) = SCodeUtil.traverseEEquationExps(equr, traverseExp, (ref, k, g));
+    case SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1))
+      algorithm
+        graph := analyseCref(cref1, ref, kind, graph);
       then
-        ((equ, (ref, k, g)));
+        SCodeUtil.mapFoldEEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
 
-    case ((equ, (ref, k, g)))
-      equation
-        _ = SCodeUtil.getEEquationInfo(equ);
-        (equ, (_, _, g)) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (ref, k, g));
+    else
+      algorithm
+        _ := SCodeUtil.getEEquationInfo(eq);
       then
-        ((equ, (ref, k, g)));
+        SCodeUtil.mapFoldEEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
 
   end match;
 end analyseEEquationTraverser;
@@ -1194,12 +1150,13 @@ end analyseEEquationTraverser;
 protected function traverseExp
   "Traversal function used by analyseEEquationTraverser and
   analyseStatementTraverser."
-  input Absyn.Exp inExp;
-  input tuple<Ref, Kind, Graph> inTuple;
-  output Absyn.Exp outExp;
-  output tuple<Ref, Kind, Graph> outTuple;
+  input output Absyn.Exp exp;
+  input output Graph graph;
+  input Ref ref;
+  input Kind kind;
 algorithm
-  (outExp, outTuple) := AbsynUtil.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, inTuple);
+  (exp, graph) := AbsynUtil.traverseExpBidir(exp,
+    function analyseExpTraverserEnter(ref = ref, kind = kind), analyseExpTraverserExit, graph);
 end traverseExp;
 
 protected function analyseAlgorithm
@@ -1224,45 +1181,44 @@ protected function analyseStatement
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  (_, (_, (_, _, outGraph))) := SCodeUtil.traverseStatements(inStatement,
-    (analyseStatementTraverser, (inParentRef, inKind, inGraph)));
+  (_, outGraph) := SCodeUtil.mapFoldStatements(inStatement,
+    function analyseStatementTraverser(ref = inParentRef, kind = inKind), inGraph);
 end analyseStatement;
 
 protected function analyseStatementTraverser
   "Traversal function used by analyseStatement."
-  input tuple<SCode.Statement, tuple<Ref, Kind, Graph>> inTuple;
-  output tuple<SCode.Statement, tuple<Ref, Kind, Graph>> outTuple;
+  input output SCode.Statement stmt;
+  input Ref ref;
+  input Kind kind;
+  input output Graph graph;
 algorithm
-  outTuple := match(inTuple)
+  (stmt, graph) := match stmt
     local
-      Ref ref;
-      SCode.Statement stmt;
-      SourceInfo info;
-      list<SCode.Statement> parforBody;
       String iter_name;
-      Graph g;
-      Kind k;
 
-    case ((stmt as SCode.ALG_FOR(index = iter_name), (ref, k, g)))
-      equation
-        g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
-        (_, (_, _, g)) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (ref, k, g));
+    case SCode.ALG_FOR()
+      algorithm
+        graph := addIterators({Absyn.ITERATOR(stmt.index, NONE(), NONE())}, ref, kind, graph);
+        (_, graph) := SCodeUtil.mapFoldStatementExps(stmt,
+          function traverseExp(ref = ref, kind = kind), graph);
       then
-        ((stmt, (ref, k, g)));
+        (stmt, graph);
 
-     case ((stmt as SCode.ALG_PARFOR(index = iter_name), (ref, k, g)))
-      equation
-        g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
-        (_, (_, _, g)) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (ref, k, g));
+     case SCode.ALG_PARFOR()
+      algorithm
+        graph := addIterators({Absyn.ITERATOR(stmt.index, NONE(), NONE())}, ref, kind, graph);
+        (_, graph) := SCodeUtil.mapFoldStatementExps(stmt,
+          function traverseExp(ref = ref, kind = kind), graph);
       then
-        ((stmt, (ref, k, g)));
+        (stmt, graph);
 
-    case ((stmt, (ref, k, g)))
-      equation
-        _ = SCodeUtil.getStatementInfo(stmt);
-        (_, (_, _, g)) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (ref, k, g));
+    else
+      algorithm
+        _ := SCodeUtil.getStatementInfo(stmt);
+        (_, graph) := SCodeUtil.mapFoldStatementExps(stmt,
+          function traverseExp(ref = ref, kind = kind), graph);
       then
-        ((stmt, (ref, k, g)));
+        (stmt, graph);
 
   end match;
 end analyseStatementTraverser;

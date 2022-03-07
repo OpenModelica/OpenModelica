@@ -187,14 +187,14 @@ template dumpClockKind(DAE.ClockKind clk, String stringDelimiter)
 ::=
 match clk
   case INFERRED_CLOCK(__) then "Clock()"
-  case INTEGER_CLOCK(__) then
+  case RATIONAL_CLOCK(__) then
     let ic_str = dumpExp(intervalCounter, stringDelimiter)
     let re_str = dumpExp(resolution, stringDelimiter)
     'Clock(<%ic_str%>, <%re_str%>)'
   case REAL_CLOCK(__) then
     let interval_str = dumpExp(interval, stringDelimiter)
     'Clock(<%interval_str%>)'
-  case BOOLEAN_CLOCK(__) then
+  case EVENT_CLOCK(__) then
     let condition_str = dumpExp(condition, stringDelimiter)
     let si_str = dumpExp(startInterval, stringDelimiter)
     'Clock(<%condition_str%>, <%si_str%>)'
@@ -211,9 +211,6 @@ match cref
   case CREF_IDENT(__) then
     let sub_str = dumpSubscripts(subscriptLst)
     '<%ident%><%sub_str%>'
-  case CREF_ITER(__) then
-    let sub_str = dumpSubscripts(subscriptLst)
-    '<%ident%><%sub_str%> /* iter index <%index%> */'
   case CREF_QUAL(__) then
     let sub_str = dumpSubscripts(subscriptLst)
     let cref_str = dumpCref(componentRef)

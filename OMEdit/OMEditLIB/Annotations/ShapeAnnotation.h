@@ -261,6 +261,7 @@ public slots:
   void referenceShapeChanged();
   void referenceShapeDeleted();
   void updateDynamicSelect(double time);
+  void resetDynamicSelect();
 protected:
   GraphicsView *mpGraphicsView;
   Element *mpParentComponent;

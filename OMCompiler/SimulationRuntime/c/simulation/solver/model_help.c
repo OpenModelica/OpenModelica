@@ -60,8 +60,8 @@
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = DEFAULT_FLAG_LSS_MAX_DENSITY;
 int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;
-double nonlinearSparseSolverMaxDensity = DEFAULT_FLAG_NLS_MAX_DENSITY;
-int nonlinearSparseSolverMinSize = DEFAULT_FLAG_NLS_MIN_SIZE;
+double nonlinearSparseSolverMaxDensity = DEFAULT_FLAG_NLSS_MAX_DENSITY;
+int nonlinearSparseSolverMinSize = DEFAULT_FLAG_NLSS_MIN_SIZE;
 double maxStepFactor = 1e12;
 double newtonXTol = 1e-12;
 double newtonFTol = 1e-12;
@@ -404,7 +404,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*sizeCols + 4);
 
   infoStreamPrint(stream, 1, "Sparse structure of %s [size: %ux%u]", name, sizeRows, sizeCols);
-  infoStreamPrint(stream, 0, "%u nonzero elements", sparsePattern->numberOfNoneZeros);
+  infoStreamPrint(stream, 0, "%u nonzero elements", sparsePattern->numberOfNonZeros);
 
   infoStreamPrint(stream, 1, "Transposed sparse structure (rows: states)");
   i=0;
@@ -950,11 +950,15 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->nextSampleTimes = (double*) calloc(data->modelData->nSamples, sizeof(double));
   data->simulationInfo->samples = (modelica_boolean*) calloc(data->modelData->nSamples, sizeof(modelica_boolean));
 
-  data->modelData->clocksInfo = (CLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nClocks * sizeof(CLOCK_INFO));
-  data->modelData->subClocksInfo = (SUBCLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSubClocks * sizeof(SUBCLOCK_INFO));
-  data->simulationInfo->clocksData = (CLOCK_DATA*) calloc(data->modelData->nClocks, sizeof(CLOCK_DATA));
+  if (data->modelData->nBaseClocks > 0) {
+    data->simulationInfo->baseClocks = (BASECLOCK_DATA*) calloc(data->modelData->nBaseClocks, sizeof(BASECLOCK_DATA));
+    data->simulationInfo->intvlTimers = allocList(sizeof(SYNC_TIMER));
+  } else {
+    data->simulationInfo->baseClocks = NULL;
+    data->simulationInfo->intvlTimers = NULL;
+  }
+
   data->simulationInfo->spatialDistributionData = allocSpatialDistribution(data->modelData->nSpatialDistributions);
-  data->simulationInfo->intvlTimers = NULL;
 
   /* set default solvers for algebraic loops */
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -1187,9 +1191,9 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->nextSampleTimes);
   free(data->simulationInfo->samples);
 
-  omc_alloc_interface.free_uncollectable(data->modelData->clocksInfo);
-  omc_alloc_interface.free_uncollectable(data->modelData->subClocksInfo);
-  free(data->simulationInfo->clocksData);
+  free(data->simulationInfo->baseClocks);
+  freeList(data->simulationInfo->intvlTimers);
+  data->simulationInfo->intvlTimers = NULL;
 
   freeSpatialDistribution(data->simulationInfo->spatialDistributionData, data->modelData->nSpatialDistributions);
   free(data->simulationInfo->spatialDistributionData);

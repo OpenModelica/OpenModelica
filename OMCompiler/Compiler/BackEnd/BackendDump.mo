@@ -3552,7 +3552,7 @@ algorithm
     clockedstates := BackendVariable.filterCrefs(syst.orderedVars, BackendVariable.isVarClockedState, clockedstates);
   end for;
 
-  ((sys,inp,st,states,dvar,discvars,seq,salg,sarr,sce,swe,sie,systemsTpl,mixedTpl,tornTpl,tornTpl2)) := BackendDAEUtil.foldEqSystem(inDAE,dumpCompShort1,(0,0,0,{},0,{},0,0,0,0,0,0,({},{},{},{}),({},{},{},{},{},{},{},{},{},{}),({},{}),({},{})));
+  (sys,inp,st,states,dvar,discvars,seq,salg,sarr,sce,swe,sie,systemsTpl,mixedTpl,tornTpl,tornTpl2) := BackendDAEUtil.foldEqSystem(inDAE,dumpCompShort1,(0,0,0,{},0,{},0,0,0,0,0,0,({},{},{},{}),({},{},{},{},{},{},{},{},{},{}),({},{}),({},{})));
   (e_jc,e_jt,e_jn,e_nj) := systemsTpl;
   (m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt) := mixedTpl;
   (te_l,te_nl) := tornTpl;
@@ -3625,10 +3625,10 @@ protected
   String s_jc,s_jn,s_nj,s_jt;
 algorithm
   (e_jc,e_jt,e_jn,e_nj) := systemsTpl;
-  s_jc := equationSizesStr(e_jc,intString);
+  s_jc := equationSizesStr(e_jc,intString); // TODO add density, like for the linear case
   s_jt := equationSizesStr(e_jt,sizeNumNonZeroTplString);
-  s_jn := equationSizesStr(e_jn,intString);
-  s_nj := equationSizesStr(e_nj,intString);
+  s_jn := equationSizesStr(e_jn,intString); // TODO add density, like for the linear case
+  s_nj := equationSizesStr(e_nj,intString); // TODO add density, like for the linear case
   Error.addMessage(Error.BACKENDDAEINFO_SYSTEMS, {s_jc,s_jt,s_jn,s_nj});
 end dumpCompSystems;
 
@@ -3642,7 +3642,7 @@ protected
 algorithm
   (te_l,te_nl) := systemsTpl;
   s_l := equationSizesStr(te_l,sizeNumNonZeroTornTplString);
-  s_nl := equationSizesStr(te_nl,intTplString);
+  s_nl := equationSizesStr(te_nl,intTplString); // TODO add density, like for the linear case
   Error.addMessage(Error.BACKENDDAEINFO_TORN, {whichset,s_l,s_nl});
 end dumpCompTorn;
 
@@ -3680,7 +3680,8 @@ protected
   Integer len;
 algorithm
   len := listLength(eqs);
-  str := if len == 0 then "0" else (intString(len) + " {" + stringDelimitList(List.map(eqs,fn),",") + "}");
+  str := if len == 1 then "1 system" else (intString(len) + " systems");
+  str := if len == 0 then str else (str + "\n   {" + stringDelimitList(List.map(eqs,fn),", ") + "}");
 end equationSizesStr;
 
 protected function sizeNumNonZeroTplString
@@ -3706,7 +3707,7 @@ algorithm
   (sz,others,nnz) := inTpl;
   density := if nnz == 0 then 0.0 else realDiv(realMul(100.0,intReal(nnz)),realMul(intReal(sz),intReal(sz)));
   str := System.snprintff("%.1f",20,density);
-  str := "(" + intString(sz) + "," + str + "%)" + " " + intString(others);
+  str := "(" + intString(sz) + "," + intString(others) + "," + str + "%)";
 end sizeNumNonZeroTornTplString;
 
 protected function intTplString
@@ -3715,8 +3716,10 @@ protected function intTplString
 protected
   Integer e,d;
 algorithm
+  // d = number of residual/iteration/tearing vars
+  // e = number of internal/inner/torn vars
   (d,e) := inTpl;
-  outStr := intString(d) + " " + intString(e);
+  outStr := "(" + intString(d) + "," + intString(e) + ")";
 end intTplString;
 
 protected function dumpCompShort1
@@ -3752,11 +3755,11 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars) := inSyst;
   (sys, inp, st, states, dvar, discvars, seq, salg, sarr, sce, swe, sie, eqsys, meqsys, teqsys, teqsys_2) := inTpl;
 
-  ((inp1,st1,states1,dvar1,discvars1)) := BackendVariable.traverseBackendDAEVars(vars,traversingisStateTopInputVarFinder,(inp,st,states,dvar,discvars));
+  (inp1,st1,states1,dvar1,discvars1) := BackendVariable.traverseBackendDAEVars(vars,traversingisStateTopInputVarFinder,(inp,st,states,dvar,discvars));
   comps := BackendDAEUtil.getStrongComponents(inSyst);
-  ((seq1,salg1,sarr1,sce1,swe1,sie1,eqsys1,meqsys1,teqsys1,teqsys1_2)) := List.fold(comps,dumpCompShort2,(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys,teqsys_2));
+  (seq1,salg1,sarr1,sce1,swe1,sie1,eqsys1,meqsys1,teqsys1,teqsys1_2) := List.fold(comps,dumpCompShort2,(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys,teqsys_2));
 
-  outTpl := ((sys+1, inp1, st1, states1, dvar1, discvars1, seq1, salg1, sarr1, sce1, swe1, sie1, eqsys1, meqsys1, teqsys1, teqsys1_2));
+  outTpl := (sys+1, inp1, st1, states1, dvar1, discvars1, seq1, salg1, sarr1, sce1, swe1, sie1, eqsys1, meqsys1, teqsys1, teqsys1_2);
 end dumpCompShort1;
 
 protected function traversingisStateTopInputVarFinder

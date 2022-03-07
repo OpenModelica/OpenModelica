@@ -3,6 +3,15 @@
 # file(GLOB_RECURSE OMEDITLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 # set(OMEDITLIB_SOURCES resource_omedit.qrc ${OMEDITLIB_SOURCES})
 
+
+# This small module (OpenModelica/cmake/modules/Findbinutils.cmake) finds and sets up
+# libbfd which is need for providing bactrace support for OMEdit.
+# It is required always on MinGW for now. Can be made optional with some changes.
+if(MINGW)
+  find_package(binutils REQUIRED)
+endif()
+
+
 omc_add_subdirectory(Debugger/Parser)
 
 set(CMAKE_AUTOMOC ON)
@@ -256,8 +265,15 @@ add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS})
 
 target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+# qmake adds -DUNICODE by defult (As far as I can gather).
+# So add it for CMake as well to avoid having to modify the code.
+if(WIN32)
+  target_compile_definitions(OMEditLib PRIVATE -DUNICODE)
+endif()
+
 target_link_libraries(OMEditLib PUBLIC omedit::config)
 target_link_libraries(OMEditLib PUBLIC libOMSimulator)
+target_link_libraries(OMEditLib PUBLIC OMParser)
 target_link_libraries(OMEditLib PUBLIC omedit::debugger::parser)
 target_link_libraries(OMEditLib PUBLIC Qt5::Xml)
 target_link_libraries(OMEditLib PUBLIC Qt5::Widgets)
@@ -265,27 +281,20 @@ target_link_libraries(OMEditLib PUBLIC Qt5::PrintSupport)
 target_link_libraries(OMEditLib PUBLIC Qt5::WebKitWidgets)
 target_link_libraries(OMEditLib PUBLIC Qt5::OpenGL)
 target_link_libraries(OMEditLib PUBLIC Qt5::Network)
+target_link_libraries(OMEditLib PUBLIC Qt5::Svg)
 target_link_libraries(OMEditLib PUBLIC Qt5::XmlPatterns)
 target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})
 
+if(MINGW)
+  target_link_libraries(OMEditLib PUBLIC binutils::bfd)
+  target_link_libraries(OMEditLib PUBLIC zlib)
+endif()
 
-# OMEditLib needs OpenModelicaScriptingAPI.h which is generated in the build dir.
-# So we have the build dir as include through linking libOpenModelicaCompiler
-# There is also an OMSimulator.h generated in that dir from OMSimulator.mo
-# We also have an OMSimulator.h from OMSimulatorLib which we actually want to use.
-# Except we are using libOMSimulator as an imported lib now.
-# Headers from imported libs are treated as system libs and are added at the end of the include command line.
-# Which means the OMSimulator.h from OMSimulator.mo will be picked up first regardless of the order we specify for linking.
-# So for now we disable SYSTEM marking of imported libs for OMEditLib here.
-set_target_properties(OMEditLib PROPERTIES
-        NO_SYSTEM_FROM_IMPORTED ON)
-
-target_include_directories(OMEditLib PRIVATE ${OMCompiler_SOURCE_DIR}/Compiler/Script)
+target_include_directories(OMEditLib PRIVATE
+  ${OMCompiler_SOURCE_DIR}/Compiler/Script)
 
 target_link_options(OMEditLib PRIVATE -Wl,--no-undefined)
-
-install(TARGETS OMEditLib)
 

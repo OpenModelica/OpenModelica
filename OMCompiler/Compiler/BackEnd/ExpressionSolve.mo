@@ -1738,7 +1738,7 @@ algorithm
     case (_,_,DAE.CREF(componentRef = cr))
       equation
         false = hasOnlyFactors(inExp1,inExp2);
-        e = Expression.makeDiff(inExp1,inExp2);
+        e = Expression.expSub(inExp1,inExp2);
         (e,_) = ExpressionSimplify.simplify1(e);
         //print("\ne: ");print(ExpressionDump.printExpStr(e));
         dere = Differentiate.differentiateExpSolve(e, cr, functions);

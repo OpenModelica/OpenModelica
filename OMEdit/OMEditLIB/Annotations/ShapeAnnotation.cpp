@@ -100,14 +100,11 @@ QStringList GraphicItem::getOMCShapeAnnotation()
 {
   QStringList annotationString;
   /* get visible */
-  annotationString.append(mVisible ? "true" : "false");
+  annotationString.append(mVisible.toQString());
   /* get origin */
-  QString originString;
-  originString.append("{").append(QString::number(mOrigin.x())).append(",");
-  originString.append(QString::number(mOrigin.y())).append("}");
-  annotationString.append(originString);
+  annotationString.append(mOrigin.toQString());
   /* get rotation */
-  annotationString.append(QString::number(mRotation));
+  annotationString.append(mRotation.toQString());
   return annotationString;
 }
 
@@ -120,20 +117,16 @@ QStringList GraphicItem::getShapeAnnotation()
 {
   QStringList annotationString;
   /* get visible */
-  if (!mVisible) {
-    annotationString.append("visible=false");
+  if (mVisible.isDynamicSelectExpression() || !mVisible) {
+    annotationString.append(QString("visible=%1").arg(mVisible.toQString()));
   }
   /* get origin */
-  if (mOrigin != QPointF(0, 0)) {
-    QString originString;
-    originString.append("origin=");
-    originString.append("{").append(QString::number(mOrigin.x())).append(",");
-    originString.append(QString::number(mOrigin.y())).append("}");
-    annotationString.append(originString);
+  if (mOrigin.isDynamicSelectExpression() || mOrigin != QPointF(0, 0)) {
+    annotationString.append(QString("origin=%1").arg(mOrigin.toQString()));
   }
   /* get rotation */
-  if (mRotation != 0) {
-    annotationString.append(QString("rotation=").append(QString::number(mRotation)));
+  if (mRotation.isDynamicSelectExpression() || mRotation != 0) {
+    annotationString.append(QString("rotation=%1").arg(mRotation.toQString()));
   }
   return annotationString;
 }
@@ -197,27 +190,15 @@ QStringList FilledShape::getOMCShapeAnnotation()
 {
   QStringList annotationString;
   /* get the line color */
-  QString lineColorString;
-  lineColorString.append("{");
-  lineColorString.append(QString::number(mLineColor.red())).append(",");
-  lineColorString.append(QString::number(mLineColor.green())).append(",");
-  lineColorString.append(QString::number(mLineColor.blue()));
-  lineColorString.append("}");
-  annotationString.append(lineColorString);
+  annotationString.append(mLineColor.toQString());
   /* get the fill color */
-  QString fillColorString;
-  fillColorString.append("{");
-  fillColorString.append(QString::number(mFillColor.red())).append(",");
-  fillColorString.append(QString::number(mFillColor.green())).append(",");
-  fillColorString.append(QString::number(mFillColor.blue()));
-  fillColorString.append("}");
-  annotationString.append(fillColorString);
+  annotationString.append(mFillColor.toQString());
   /* get the line pattern */
   annotationString.append(StringHandler::getLinePatternString(mLinePattern));
   /* get the fill pattern */
   annotationString.append(StringHandler::getFillPatternString(mFillPattern));
   // get the thickness
-  annotationString.append(QString::number(mLineThickness));
+  annotationString.append(mLineThickness.toQString());
   return annotationString;
 }
 
@@ -230,24 +211,12 @@ QStringList FilledShape::getShapeAnnotation()
 {
   QStringList annotationString;
   /* get the line color */
-  if (mLineColor != Qt::black) {
-    QString lineColorString;
-    lineColorString.append("lineColor={");
-    lineColorString.append(QString::number(mLineColor.red())).append(",");
-    lineColorString.append(QString::number(mLineColor.green())).append(",");
-    lineColorString.append(QString::number(mLineColor.blue()));
-    lineColorString.append("}");
-    annotationString.append(lineColorString);
+  if (mLineColor.isDynamicSelectExpression() || mLineColor != Qt::black) {
+    annotationString.append(QString("lineColor=%1").arg(mLineColor.toQString()));
   }
   /* get the fill color */
-  if (mFillColor != Qt::black) {
-    QString fillColorString;
-    fillColorString.append("fillColor={");
-    fillColorString.append(QString::number(mFillColor.red())).append(",");
-    fillColorString.append(QString::number(mFillColor.green())).append(",");
-    fillColorString.append(QString::number(mFillColor.blue()));
-    fillColorString.append("}");
-    annotationString.append(fillColorString);
+  if (mFillColor.isDynamicSelectExpression() || mFillColor != Qt::black) {
+    annotationString.append(QString("fillColor=%1").arg(mFillColor.toQString()));
   }
   /* get the line pattern */
   if (mLinePattern != StringHandler::LineSolid) {
@@ -258,8 +227,8 @@ QStringList FilledShape::getShapeAnnotation()
     annotationString.append(QString("fillPattern=").append(StringHandler::getFillPatternString(mFillPattern)));
   }
   // get the thickness
-  if (mLineThickness != 0.25) {
-    annotationString.append(QString("lineThickness=").append(QString::number(mLineThickness)));
+  if (mLineThickness.isDynamicSelectExpression() || mLineThickness != 0.25) {
+    annotationString.append(QString("lineThickness=%1").arg(mLineThickness.toQString()));
   }
   return annotationString;
 }
@@ -273,14 +242,8 @@ QStringList FilledShape::getTextShapeAnnotation()
 {
   QStringList annotationString;
   /* get the text color */
-  if (mLineColor != Qt::black) {
-    QString lineColorString;
-    lineColorString.append("textColor={");
-    lineColorString.append(QString::number(mLineColor.red())).append(",");
-    lineColorString.append(QString::number(mLineColor.green())).append(",");
-    lineColorString.append(QString::number(mLineColor.blue()));
-    lineColorString.append("}");
-    annotationString.append(lineColorString);
+  if (mLineColor.isDynamicSelectExpression() || mLineColor != Qt::black) {
+    annotationString.append(QString("lineColor=%1").arg(mLineColor.toQString()));
   }
   return annotationString;
 }
@@ -336,6 +299,8 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
     connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
     connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
   }
+  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
+  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
 
 int ShapeAnnotation::maxTextLengthToShowOnLibraryIcon = 2;
@@ -1078,10 +1043,11 @@ void ShapeAnnotation::moveShape(const qreal dx, const qreal dy)
 void ShapeAnnotation::setShapeFlags(bool enable)
 {
   /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
+   * AND not a visualization view.
    * AND shape is not an inherited shape.
    * AND shape is not a OMS connector i.e., input/output signals of fmu.
    */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedShape()
       && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
            && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
                || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
@@ -1099,25 +1065,51 @@ void ShapeAnnotation::setShapeFlags(bool enable)
  */
 void ShapeAnnotation::updateDynamicSelect(double time)
 {
-  bool updated = false;
+  if ((mpGraphicsView && mpGraphicsView->isVisualizationView())
+      || (mpParentComponent && mpParentComponent->getGraphicsView() && mpParentComponent->getGraphicsView()->isVisualizationView())) {
+    bool updated = false;
 
-  updated |= mVisible.update(time, mpParentComponent);
-  updated |= mOrigin.update(time, mpParentComponent);
-  updated |= mRotation.update(time, mpParentComponent);
-  updated |= mLineColor.update(time, mpParentComponent);
-  updated |= mFillColor.update(time, mpParentComponent);
-  updated |= mLineThickness.update(time, mpParentComponent);
-  updated |= mArrowSize.update(time, mpParentComponent);
-  updated |= mExtents.update(time, mpParentComponent);
-  updated |= mRadius.update(time, mpParentComponent);
-  updated |= mStartAngle.update(time, mpParentComponent);
-  updated |= mEndAngle.update(time, mpParentComponent);
-  updated |= mFontSize.update(time, mpParentComponent);
-  updated |= mTextString.update(time, mpParentComponent);
+    updated |= mVisible.update(time, mpParentComponent);
+    updated |= mOrigin.update(time, mpParentComponent);
+    updated |= mRotation.update(time, mpParentComponent);
+    updated |= mLineColor.update(time, mpParentComponent);
+    updated |= mFillColor.update(time, mpParentComponent);
+    updated |= mLineThickness.update(time, mpParentComponent);
+    updated |= mArrowSize.update(time, mpParentComponent);
+    updated |= mExtents.update(time, mpParentComponent);
+    updated |= mRadius.update(time, mpParentComponent);
+    updated |= mStartAngle.update(time, mpParentComponent);
+    updated |= mEndAngle.update(time, mpParentComponent);
+    updated |= mFontSize.update(time, mpParentComponent);
+    updated |= mTextString.update(time, mpParentComponent);
 
-  if (updated) {
-    update();
+    if (updated) {
+      update();
+    }
   }
+}
+
+/*!
+ * \brief ShapeAnnotation::resetDynamicSelect
+ * Resets the DynamicSelect back to static.
+ */
+void ShapeAnnotation::resetDynamicSelect()
+{
+  mVisible.resetDynamicToStatic();
+  mOrigin.resetDynamicToStatic();
+  mRotation.resetDynamicToStatic();
+  mLineColor.resetDynamicToStatic();
+  mFillColor.resetDynamicToStatic();
+  mLineThickness.resetDynamicToStatic();
+  mArrowSize.resetDynamicToStatic();
+  mExtents.resetDynamicToStatic();
+  mRadius.resetDynamicToStatic();
+  mStartAngle.resetDynamicToStatic();
+  mEndAngle.resetDynamicToStatic();
+  mFontSize.resetDynamicToStatic();
+  mTextString.resetDynamicToStatic();
+
+  update();
 }
 
 /*!
@@ -1822,8 +1814,8 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
     if (isSelected()) {
       setCornerItemsActiveOrPassive();
       setCursor(Qt::SizeAllCursor);
-      /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
+      /* Only allow manipulations on shapes if the class is not a system library class OR not a visualization view OR shape is not an inherited component. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
         if (pLineAnnotation) {
           connect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
         }
@@ -1856,8 +1848,8 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
     } else if (!mIsCornerItemClicked) {
       setCornerItemsActiveOrPassive();
       unsetCursor();
-      /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
+      /* Only allow manipulations on shapes if the class is not a system library class OR not a visualization view OR shape is not an inherited component. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->isVisualizationView() && !isInheritedShape()) {
         if (pLineAnnotation) {
           disconnect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()));
         }

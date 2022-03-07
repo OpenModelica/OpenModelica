@@ -1,0 +1,222 @@
+// name: homotopy7
+// keywords: initialization, homotopy, causalization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.homotopy7* _initializationTests.homotopy7* output.log
+// cflags: -d=-newInst
+//
+//  case for homotopy
+//
+
+loadString("
+within ;
+package initializationTests
+  model homotopy7
+    Real x, y, z;
+  equation
+    0 = x^2 + y^2 + 1e-6*z^3 - 1;
+    x + y = 1;
+    0 = homotopy(z, x + y + z);
+  end homotopy7;
+end initializationTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpSimCode"); getErrorString();
+simulate(initializationTests.homotopy7, startTime=0.0, stopTime=0.0, simflags="-homotopyOnFirstTry"); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy7_res.mat", {time, x, y, z}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 11: z=0.0 [Real]
+// 15:  (NONLINEAR) index:2 jacobian: true
+// crefs: x
+// 	12: y=1.0 - x [Real]
+// 	13: y ^ 2.0 + x ^ 2.0 + -1.0 (RESIDUAL)
+// 	Jacobian idx: 2
+// 	14: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2=2.0 * (x - y) * x.SeedNLSJac2 [Real]
+//
+// columnVars(2)
+// ----------------------
+// index:0: y.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
+// index:0: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
+//
+// ========================================
+//
+//
+//
+// odeEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems):
+// ========================================
+// 11: z=0.0 [Real]
+// 15:  (NONLINEAR) index:2 jacobian: true
+// crefs: x
+// 	12: y=1.0 - x [Real]
+// 	13: y ^ 2.0 + x ^ 2.0 + -1.0 (RESIDUAL)
+// 	Jacobian idx: -1
+// 	14: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2=2.0 * (x - y) * x.SeedNLSJac2 [Real]
+//
+// columnVars(2)
+// ----------------------
+// index:0: y.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
+// index:0: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
+//
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (1)
+// ========================================
+// 5:  (NONLINEAR) index:0 jacobian: true
+// crefs: x
+// 	1: y=1.0 - x [Real]
+// 	2: z=-homotopy(0.0, x + y) [Real]
+// 	3: 1e-06 * z ^ 3.0 + y ^ 2.0 + x ^ 2.0 + -1.0 (RESIDUAL)
+// 	Jacobian idx: 0
+// 	4: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0=2.0 * (x - y) * x.SeedNLSJac0 [Real]
+//
+// columnVars(3)
+// ----------------------
+// index:1: z.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
+// index:0: y.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
+// index:0: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (1)
+// ========================================
+// 10:  (NONLINEAR) index:1 jacobian: true
+// crefs: x
+// 	6: y=1.0 - x [Real]
+// 	7: z=(-x) - y [Real]
+// 	8: 1e-06 * z ^ 3.0 + y ^ 2.0 + x ^ 2.0 + -1.0 (RESIDUAL)
+// 	Jacobian idx: 1
+// 	9: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1=2.0 * (x - y) * x.SeedNLSJac1 [Real]
+//
+// columnVars(3)
+// ----------------------
+// index:1: z.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
+// index:0: y.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
+// index:0: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
+//
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+// 	4: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0=2.0 * (x - y) * x.SeedNLSJac0 [Real]
+//
+// columnVars(3)
+// ----------------------
+// index:1: z.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
+// index:0: y.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
+// index:0: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
+// 	Jacobian idx: 1
+// 	9: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1=2.0 * (x - y) * x.SeedNLSJac1 [Real]
+//
+// columnVars(3)
+// ----------------------
+// index:1: z.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
+// index:0: y.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
+// index:0: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
+// 	Jacobian idx: 2
+// 	14: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2=2.0 * (x - y) * x.SeedNLSJac2 [Real]
+//
+// columnVars(2)
+// ----------------------
+// index:0: y.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
+// index:0: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+// 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
+//
+// 	Jacobian idx: 7
+//
+//
+// modelInfo:
+// ========================================
+// algVars (3)
+// ----------------------
+// index:0: x (no alias)  initial: 	no arrCref index:(1) []
+// index:1: y (no alias)  initial: 	no arrCref index:(2) []
+// index:2: z (no alias)  initial: 0.0	no arrCref index:(3) []
+// functions:
+// -----------
+//
+// record SimulationResult
+//     resultFile = "/home/phili/ws/Arbeit/models/ticket8376/TestHomotopyDependencies_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestHomotopyDependencies', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// ",
+//     timeFrontend = 0.001580187,
+//     timeBackend = 0.026294012,
+//     timeSimCode = 0.002955854,
+//     timeTemplates = 0.006096265,
+//     timeCompile = 2.027850072,
+//     timeSimulation = 0.037023694,
+//     timeTotal = 2.101955276
+// end SimulationResult;
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// {{0.0,0.0},{1.879383799350276e-17,1.879383799350276e-17},{1.0,1.0},{0.0,0.0}}
+// ""
+// endResult

@@ -82,6 +82,38 @@ void DynamicAnnotation::reset()
   }
 }
 
+/*!
+ * \brief DynamicAnnotation::resetDynamicToStatic
+ * Resets from dynamic to static.
+ */
+void DynamicAnnotation::resetDynamicToStatic()
+{
+  if (mState == State::Dynamic) {
+    mState = State::Static;
+    reset();
+  }
+}
+
+/*!
+ * \brief DynamicAnnotation::isDynamicSelectExpression
+ * Returns true if state is not none. DynamicSelect doesn't have state none.
+ * \return
+ */
+bool DynamicAnnotation::isDynamicSelectExpression() const
+{
+  return mState != State::None;
+}
+
+/*!
+ * \brief DynamicAnnotation::toQString
+ * Unparses the Annotation into a string.
+ * \return
+ */
+QString DynamicAnnotation::toQString() const
+{
+  return mExp.toQString();
+}
+
 void DynamicAnnotation::setExp()
 {
   if (mState == State::None) {

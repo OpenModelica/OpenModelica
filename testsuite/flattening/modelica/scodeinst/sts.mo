@@ -16,7 +16,7 @@ package ScalableTestSuite  "A library of scalable Modelica test models"
           parameter SIunits.RotationalDampingConstant DampCoeff "damping coefficient";
           final parameter SIunits.RotationalSpringConstant SpringCoeff = E * J / l "spring coefficient";
           parameter SIunits.PerUnit F "force component at y-axis";
-          Modelica.Mechanics.MultiBody.Joints.Revolute[N] revolute(each useAxisFlange = true, phi(each fixed = true), w(each fixed = true)) "N revolute joint";
+          Modelica.Mechanics.MultiBody.Joints.Revolute[N] revolute(each useAxisFlange = true, each phi(fixed = true), each w(fixed = true)) "N revolute joint";
           Modelica.Mechanics.Rotational.Components.SpringDamper[N] springdamper(each c = SpringCoeff, each d = DampCoeff) "N spring damper to connect to N revolute";
           Modelica.Mechanics.MultiBody.Parts.BodyBox bodybox1(length = l / 2, width = W, height = H, r = {l / 2, 0, 0}, density = D) "first bodybox connected to world";
           Modelica.Mechanics.MultiBody.Parts.BodyBox bodyboxN(length = l / 2, width = W, height = H, r = {l / 2, 0, 0}, density = D) "last bodybox which is free end";

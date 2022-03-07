@@ -597,7 +597,7 @@ QString& Utilities::tempDirectory()
   static QString tmpPath;
   if (!init) {
     init = 1;
-#ifdef WIN32
+#if defined(_WIN32)
     tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
 #else // UNIX environment
     char *user = getenv("USER");
@@ -867,7 +867,7 @@ qint64 Utilities::getProcessId(QProcess *pProcess)
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))
   processId = pProcess->processId();
 #else /* Qt4 */
-#ifdef WIN32
+#if defined(_WIN32)
   _PROCESS_INFORMATION *procInfo = pProcess->pid();
   if (procInfo) {
     processId = procInfo->dwProcessId;
@@ -887,7 +887,7 @@ qint64 Utilities::getProcessId(QProcess *pProcess)
  */
 QString Utilities::formatExitCode(int code)
 {
-#ifdef WIN32
+#if defined(_WIN32)
   // Use 0xXXXXXXXX format on Windows.
   return QStringLiteral("0x%1").arg(code, 8, 16, QChar('0'));
 #else
@@ -896,7 +896,7 @@ QString Utilities::formatExitCode(int code)
 #endif
 }
 
-#ifdef WIN32
+#if defined(_WIN32)
 /* adrpo: found this on http://stackoverflow.com/questions/1173342/terminate-a-process-tree-c-for-windows
  * thanks go to: mjmarsh & Firas Assaad
  * adapted to recurse on children ids
@@ -1009,7 +1009,7 @@ QGenericMatrix<3,3, double> Utilities::getRotationMatrix(QGenericMatrix<3,1,doub
   return R;
 }
 
-#ifdef WIN32
+#if defined(_WIN32)
 QString Utilities::getGDBPath()
 {
 #if defined(__MINGW32__) && !defined(__MINGW64__)

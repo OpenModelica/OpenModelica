@@ -217,8 +217,7 @@ void DeleteShapeCommand::undo()
 }
 
 AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
-                                         ElementInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView,
-                                         UndoCommand *pParent)
+                                         ElementInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -278,6 +277,16 @@ void AddComponentCommand::redoInternal()
   if (mAddObject) {
     mpDiagramGraphicsView->addElementToClass(mpDiagramComponent);
     UpdateComponentAttributesCommand::updateComponentModifiers(mpDiagramComponent, *mpDiagramComponent->getComponentInfo());
+    if (mpDiagramComponent->getComponentInfo()->isArray()) {
+      QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
+      OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+      const QString arrayIndex = QString("{%1}").arg(mpDiagramComponent->getComponentInfo()->getArrayIndex());
+      if (!pOMCProxy->setComponentDimensions(modelName, mpDiagramComponent->getComponentInfo()->getName(), arrayIndex)) {
+        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+        pOMCProxy->printMessagesStringInternal();
+      }
+    }
+
   }
 }
 

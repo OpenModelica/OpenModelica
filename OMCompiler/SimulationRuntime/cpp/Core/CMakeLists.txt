@@ -253,7 +253,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 
 
 #####################################################################################################
-find_package(Boost COMPONENTS filesystem)
+find_package(Boost COMPONENTS filesystem REQUIRED)
 
 # OMCppSimulationSettings
 set(OMC_SIMRT_CPP_CORE_SIM_SETTINGS_SOURCES SimulationSettings/GlobalSettings.cpp

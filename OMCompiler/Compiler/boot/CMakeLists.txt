@@ -14,7 +14,12 @@ target_sources(bomc PRIVATE ../.cmake/omc_main.c)
 
 target_compile_definitions(bomc PRIVATE ADD_METARECORD_DEFINITIONS=)
 
-# OMC will overflow the stack (at least on Windows old OMDev) on very deep
+# Silence warnings about extra parenthesized equality checks. if((a==b)).
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_compile_options(bomc PRIVATE -Wno-parentheses-equality)
+endif()
+
+# OMC will overflow the stack (at least on Windows old OMDev) on very deep recursive calls.
 # E.g., try translating the CodegenCpp* tpl files to mo files with
 # an omc not compiled without large stack size. The tpl parser is quite recursive and will
 # overflow on parsing comments with very long lines ~300. *CPP tpl files have lines longer
@@ -32,12 +37,25 @@ target_link_libraries(bomc PRIVATE omc::compiler::runtime)
 target_link_libraries(bomc PRIVATE omc::compiler::graphstream)
 
 
+# Set up for proper usage of the bootstrap omc (bomc).
 
+# omc (bomc) refuses to run if it is not in a directory named ...../bin/.
+# It uses that assumption to locate the lib dir and everything it needs.
+# With cmake the bin, lib ... structure is created when installing. We do not want
+# to have to build and install bomc before we can start building omc. Although in
+# my opinion that should be how it works, most people are used to thinking bootstrapped
+# omc and normal omc as equivalent things. So we want to keep and follow that view
+# for now.
+# One way to think about the difference is: bomc is a MetaModelica compiler while
+# omc is a Modelica compiler.
+# Anyway for now just output it in a directory called bin within the current cmake
+# binary dir (<build_dir>/OMCompiler/Compiler/boot/boostrapped/bin)
 set_target_properties(bomc
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
 )
 
+# It also wants to have these builtin files in ../lib/ relative to its location.
 add_custom_command (
     TARGET bomc
     POST_BUILD
@@ -47,6 +65,8 @@ add_custom_command (
     COMMENT "Copying (NF/Meta/Modelica)Builtin.mo files for the bootstrapped omc.")
 
 
+# On Windows it also needs to have the dlls it depends on (remember bomc is being used without being installed)
+# think of this as a manual install for it. Luckily it depends only on one dll for now,
 if(WIN32)
   add_custom_command (
     TARGET bomc

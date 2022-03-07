@@ -3568,7 +3568,7 @@ algorithm
     local
       list<DAE.Exp> arraylist;
       DAE.Type at;
-      Boolean a;
+      Boolean is_scalar;
       FCore.Graph env;
       DAE.Exp s,exp;
       DAE.Type sty,ty,sty2;
@@ -3588,18 +3588,18 @@ algorithm
         arraylist = List.fill(s, v);
         sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
         at = Types.simplifyType(sty2);
-        a = Types.isArray(sty2);
+        is_scalar = not Types.isArray(sty);
       then
-        (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
+        (cache,DAE.ARRAY(at,is_scalar,arraylist),DAE.PROP(sty2,c1));
 
     case (cache,_,s,sty,{Values.INTEGER(integer = v)},c1,_,_,_)
       equation
         arraylist = List.fill(s, v);
         sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
         at = Types.simplifyType(sty2);
-        a = Types.isArray(sty2);
+        is_scalar = not Types.isArray(sty);
       then
-        (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
+        (cache,DAE.ARRAY(at,is_scalar,arraylist),DAE.PROP(sty2,c1));
 
     case (cache,env,s,sty,(Values.INTEGER(integer = v) :: rest),c1,pre,_,_)
       equation
@@ -3607,9 +3607,8 @@ algorithm
         arraylist = List.fill(exp, v);
         sty2 = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(v)});
         at = Types.simplifyType(sty2);
-        a = Types.isArray(sty2);
       then
-        (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
+        (cache,DAE.ARRAY(at,false,arraylist),DAE.PROP(sty2,c1));
 
     else
       equation
@@ -4577,16 +4576,16 @@ algorithm
         call = DAE.CLKCONST(DAE.INFERRED_CLOCK());
       then (cache, call, DAE.PROP(DAE.T_CLOCK_DEFAULT, DAE.C_VAR()));
 
-    // clock with Integer interval "Clock(intervalCounter)"
+    // clock with rational interval "Clock(intervalCounter)"
     case (cache,env,{aintervalCounter},{},impl,pre,_)
       equation
         (cache, intervalCounter, prop1) = elabExpInExpression(cache,env,aintervalCounter,impl,true,pre,info);
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         (intervalCounter,_) = Types.matchType(intervalCounter,ty1,DAE.T_INTEGER_DEFAULT,true);
-        call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, DAE.ICONST(1)));
+        call = DAE.CLKCONST(DAE.RATIONAL_CLOCK(intervalCounter, DAE.ICONST(1)));
       then (cache, call, prop);
 
-    // clock with Integer interval "Clock(intervalCounter, resolution)"
+    // clock with rational interval "Clock(intervalCounter, resolution)"
     case (cache,env,{aintervalCounter, aresolution},{},impl,pre,_)
       equation
         (cache, intervalCounter, prop1) = elabExpInExpression(cache,env,aintervalCounter,impl,true,pre,info);
@@ -4600,7 +4599,7 @@ algorithm
         Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 1,
           Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", ValuesUtil.valString(val), ">= 1"}, info);
         resolution = ValuesUtil.valueExp(val, SOME(resolution));
-        call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, resolution));
+        call = DAE.CLKCONST(DAE.RATIONAL_CLOCK(intervalCounter, resolution));
       then (cache, call, prop);
 
     // clock with Real interval "Clock(interval)"
@@ -4612,16 +4611,16 @@ algorithm
         call = DAE.CLKCONST(DAE.REAL_CLOCK(interval));
       then (cache, call, prop);
 
-    // Boolean Clock (clock triggered by zero-crossing events) "Clock(condition)"
+    // Event Clock (clock triggered by zero-crossing events) "Clock(condition)"
     case (cache,env,{acondition},{},impl,pre,_)
       equation
         (cache, condition, prop1) = elabExpInExpression(cache,env,acondition,impl,true,pre,info);
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         (condition,_) = Types.matchType(condition,ty1,DAE.T_BOOL_DEFAULT,true);
-        call = DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition, DAE.RCONST(0.0)));
+        call = DAE.CLKCONST(DAE.EVENT_CLOCK(condition, DAE.RCONST(0.0)));
       then (cache, call, prop);
 
-    // Boolean Clock (clock triggered by zero-crossing events) "Clock(condition, startInterval)"
+    // Event Clock (clock triggered by zero-crossing events) "Clock(condition, startInterval)"
     case (cache,env,{acondition, astartInterval},{},impl,pre,_)
       equation
         (cache, condition, prop1) = elabExpInExpression(cache,env,acondition,impl,true,pre,info);
@@ -4633,7 +4632,7 @@ algorithm
         // TODO! check if expression startInterval is >= 0.0
         // rStartInterval = Expression.toReal(startInterval);
         // true = rStartInterval >= 0.0;
-        call = DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition, startInterval));
+        call = DAE.CLKCONST(DAE.EVENT_CLOCK(condition, startInterval));
       then (cache, call, prop);
 
     // Solver Clock "Clock(c, solverMethod)"
@@ -10138,6 +10137,8 @@ algorithm
       DAE.FunctionBuiltin isBuiltin;
       DAE.Attributes attr;
       DAE.Binding binding "equation modification";
+      list<Absyn.Subscript> subscripts;
+      Absyn.ComponentRef stripped_cref;
 
     // wildcard
     case (cache, _, Absyn.WILD(), _, _)
@@ -10162,34 +10163,51 @@ algorithm
       then
         (inCache, res);
 
-    // MetaModelica arrays are only used in function context as IDENT, and at most one subscript
-    // No vectorization is performed
+    // qualified subscripted array
+    case (cache, env, Absyn.CREF_QUAL(name = id), impl, pre)
+      algorithm
+        true := Config.acceptMetaModelicaGrammar();
+        true := AbsynUtil.crefHasSubscripts(inComponentRef);
+
+        // get the last subscripts and then strip them
+        subscripts := AbsynUtil.crefGetLastSubs(inComponentRef);
+        stripped_cref := AbsynUtil.crefStripLastSubs(inComponentRef);
+
+        // fail if there are still subscripts left or more than one have been extracted
+        true := not AbsynUtil.crefHasSubscripts(stripped_cref) and listLength(subscripts) == 1;
+
+        // elaborate the subscript
+        {Absyn.SUBSCRIPT(e)} := subscripts;
+        (cache, res) := elabCrefArraySubscripts(
+          cref      = stripped_cref,
+          e         = e,
+          cache     = cache,
+          env       = env,
+          pre       = pre,
+          evalCref  = evalCref,
+          impl      = impl,
+          info      = info
+        );
+      then
+        (cache, res);
+
+    // ident subscripted array
     case (cache, env, Absyn.CREF_IDENT(name = id, subscripts = {Absyn.SUBSCRIPT(e)}), impl, pre)
       algorithm
         true := Config.acceptMetaModelicaGrammar();
-        // Elaborate the cref without the subscript.
-        (cache, SOME((exp1, DAE.PROP(t, const1), attr))) :=
-          elabCref1(cache, env, Absyn.CREF_IDENT(id, {}), false, false, pre, evalCref, info);
-
-        // Check that the type is a MetaModelica array, and get the element type.
-        t := Types.metaArrayElementType(t);
-
-        // Elaborate the subscript.
-        (cache,exp2,DAE.PROP(sub_ty, const2)) :=
-          elabExpInExpression(cache,env,e,impl,false,pre,info);
-
-        // Unbox the subscript if it's boxed, since it will be converted to an
-        // arrayGet/arrayUpdate in code generation.
-        if Types.isMetaBoxedType(sub_ty) then
-          sub_ty := Types.unboxedType(sub_ty);
-          exp2 := DAE.UNBOX(exp2, sub_ty);
-        end if;
-
-        true := Types.isScalarInteger(sub_ty);
-        const := Types.constAnd(const1,const2);
-        exp := Expression.makeASUB(exp1,{exp2});
+        // elaborate the subscript
+        (cache, res) := elabCrefArraySubscripts(
+          cref      = Absyn.CREF_IDENT(id, {}),
+          e         = e,
+          cache     = cache,
+          env       = env,
+          pre       = pre,
+          evalCref  = evalCref,
+          impl      = impl,
+          info      = info
+        );
       then
-        (cache, SOME((exp, DAE.PROP(t, const), attr)));
+        (cache, res);
 
     // a normal cref
     case (cache, env, c, impl, pre)
@@ -10287,6 +10305,48 @@ algorithm
         (cache,NONE());
   end matchcontinue;
 end elabCref1;
+
+protected function elabCrefArraySubscripts
+"function: elabCrefArraySubscripts
+  Parse the subscripts of an array and unbox if necessary."
+  input Absyn.ComponentRef cref                                   "originally subscripted (now stripped) cref";
+  input Absyn.Exp e                                               "the subscript";
+  input output FCore.Cache cache                                  "cache";
+  input FCore.Graph env                                           "environment";
+  input DAE.Prefix pre                                            "cref prefixes";
+  input Boolean evalCref                                          "true if cref should be evaluated";
+  input Boolean impl                                              "implicit instantiation";
+  input SourceInfo info                                           "source information";
+  output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res "elaborated expression with props and attr";
+protected
+  DAE.Exp exp, exp1, exp2;
+  DAE.Const const, const1, const2;
+  DAE.Type t, sub_ty;
+  DAE.Attributes attr;
+algorithm
+  // Elaborate the cref without the subscript.
+  (cache, SOME((exp1, DAE.PROP(t, const1), attr))) :=
+    elabCref1(cache, env, cref, false, false, pre, evalCref, info);
+
+  // Check that the type is a MetaModelica array, and get the element type.
+  t := Types.metaArrayElementType(t);
+
+  // Elaborate the subscript.
+  (cache,exp2,DAE.PROP(sub_ty, const2)) :=
+    elabExpInExpression(cache,env,e,impl,false,pre,info);
+
+  // Unbox the subscript if it's boxed, since it will be converted to an
+  // arrayGet/arrayUpdate in code generation.
+  if Types.isMetaBoxedType(sub_ty) then
+    sub_ty := Types.unboxedType(sub_ty);
+    exp2 := DAE.UNBOX(exp2, sub_ty);
+  end if;
+
+  true := Types.isScalarInteger(sub_ty);
+  const := Types.constAnd(const1,const2);
+  exp := Expression.makeASUB(exp1,{exp2});
+  res := SOME((exp, DAE.PROP(t, const), attr));
+end elabCrefArraySubscripts;
 
 protected function isValidTimeScope
   "Checks if time is allowed to be used in the current scope."

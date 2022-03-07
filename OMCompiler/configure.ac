@@ -70,7 +70,6 @@ AC_SUBST(LIBFMIRUNTIME)
 AC_SUBST(LIBFMILIB)
 AC_SUBST(WITH_FMIL)
 AC_SUBST(NO_FMIL)
-AC_SUBST(FMILIB_SHARED)
 AC_SUBST(LIBCMINPACKLIB)
 AC_SUBST(LIBZMQLIB)
 AC_SUBST(CMINPACKLIB_SHARED)
@@ -755,7 +754,6 @@ if test "$DARWIN" = "1"; then
   LIBRUNTIME=libOpenModelicaRuntimeC.dylib
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.dylib
   LIBFMILIB=libfmilib_shared.dylib
-  FMILIB_SHARED=ON
   LIBCMINPACKLIB=libcminpack.dylib
   LIBZMQLIB=libzmq.dylib
   CMINPACKLIB_SHARED=ON
@@ -791,7 +789,6 @@ elif echo "$host" | grep -iq "mingw"; then
   LIBRUNTIME=libOpenModelicaRuntimeC.a
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib.a
-  FMILIB_SHARED=OFF
   LIBCMINPACKLIB=libcminpack.a
   LIBZMQLIB=libzmq.a
   CMINPACKLIB_SHARED=OFF
@@ -824,9 +821,8 @@ else
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.so"
   LIBSIMULATION=libSimulationRuntimeC.so
   LIBRUNTIME=libOpenModelicaRuntimeC.so
-  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
+  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib_shared.so
-  FMILIB_SHARED=ON
   LIBCMINPACKLIB=libcminpack.so
   LIBZMQLIB=libzmq.so
   CMINPACKLIB_SHARED=ON

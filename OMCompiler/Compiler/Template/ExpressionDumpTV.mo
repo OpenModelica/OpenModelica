@@ -163,13 +163,6 @@ package DAE
       list<Subscript> subscriptLst;
     end CREF_IDENT;
 
-    record CREF_ITER
-      Ident ident;
-      Integer index;
-      Type identType;
-      list<Subscript> subscriptLst;
-    end CREF_ITER;
-
     record OPTIMICA_ATTR_INST_CREF
       ComponentRef componentRef;
       String instant;
@@ -205,19 +198,19 @@ package DAE
     record INFERRED_CLOCK
     end INFERRED_CLOCK;
 
-    record INTEGER_CLOCK
+    record RATIONAL_CLOCK
       Exp intervalCounter;
       Exp resolution;
-    end INTEGER_CLOCK;
+    end RATIONAL_CLOCK;
 
     record REAL_CLOCK
       Exp interval;
     end REAL_CLOCK;
 
-    record BOOLEAN_CLOCK
+    record EVENT_CLOCK
       Exp condition;
       Exp startInterval;
-    end BOOLEAN_CLOCK;
+    end EVENT_CLOCK;
 
     record SOLVER_CLOCK
       Exp c;

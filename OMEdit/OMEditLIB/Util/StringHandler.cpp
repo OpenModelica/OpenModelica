@@ -34,6 +34,12 @@
 
 //! @brief Contains functions used for parsing results obtained from OpenModelica Compiler.
 
+#define ANTLR4CPP_STATIC
+#include "antlr4-runtime.h"
+#include "modelicaLexer.h"
+#include "modelicaParser.h"
+#include "modelicaBaseListener.h"
+
 #include "StringHandler.h"
 #include "Helper.h"
 #include "Utilities.h"
@@ -1349,7 +1355,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
   }
 
   QString fileName = "";
-#ifdef WIN32
+#if defined(_WIN32)
   fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
 #else
   Q_UNUSED(selectedFilter)
@@ -1382,7 +1388,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   }
 
   QStringList fileNames;
-#ifdef WIN32
+#if defined(_WIN32)
   fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
 #else
   Q_UNUSED(selectedFilter);
@@ -1666,7 +1672,7 @@ bool StringHandler::naturalSortForResultVariables(const QString &s1, const QStri
   return StringHandler::naturalSort(s3, s4);
 }
 
-#ifdef WIN32
+#if defined(_WIN32)
 /*!
  * \brief StringHandler::simulationProcessEnvironment
  * Returns the environment for simulation process.
@@ -1959,4 +1965,38 @@ QString StringHandler::insertClassAtPosition(QString parentClassText, QString ch
 QString StringHandler::number(double value, char format, int precision)
 {
   return QString::number(value, format, precision);
+}
+
+static std::string cmt = "";
+
+class ModelicaCommentListener : public openmodelica::modelicaBaseListener {
+    void exitComment(openmodelica::modelicaParser::CommentContext *ctx) override {
+        cmt = ctx->getText();
+    }
+};
+
+/*!
+ * \brief StringHandler::getModelicaComment
+ * Helper for QString::getModelicaComment
+ * \param element
+ * \return comment
+ */
+QString StringHandler::getModelicaComment(QString element)
+{
+  cmt = "";
+  std::string s = element.toStdString();
+  antlr4::ANTLRInputStream input(s);
+  openmodelica::modelicaLexer lexer(&input);
+  antlr4::CommonTokenStream tokens(&lexer);
+  openmodelica::modelicaParser parser(&tokens);
+  antlr4::tree::ParseTree* tree = parser.argument();
+  ModelicaCommentListener listener;
+  antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
+  if (cmt.size() > 1)
+  {
+    QString q;
+    q = q.fromStdString(cmt);
+    return removeFirstLastQuotes(q);
+  }
+  return element;
 }

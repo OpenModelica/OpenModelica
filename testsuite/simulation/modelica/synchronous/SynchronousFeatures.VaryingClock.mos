@@ -62,7 +62,7 @@ translateModel(SynchronousFeatures.VaryingClock); getErrorString();
 //
 // Base clocks (1)
 // ========================================
-// 1: Clock(previous(nextInterval), 100)[1]
+// 1: Clock(nextInterval, 100)[1]
 //
 //
 // Sub clocks (1)
@@ -102,7 +102,7 @@ translateModel(SynchronousFeatures.VaryingClock); getErrorString();
 //
 // Base clocks (1)
 // ========================================
-// 1: Clock(previous(nextInterval), 100)[1]
+// 1: Clock(nextInterval, 100)[1]
 //
 //
 // Sub clocks (1)

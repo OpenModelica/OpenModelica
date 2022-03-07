@@ -13,10 +13,12 @@
 /install-sh
 /issues/
 /Makefile
+/OMCompiler/SimulationRuntime/ModelicaExternalC/build/
 /OMEncryption/
 /OMJava/
 /OMPublicKey/
 /OMPython/
 /OMSetup/
 /OpenModelicaSetup/
+/testsuite/libraries-for-testing/.ccache/
 trace.txt

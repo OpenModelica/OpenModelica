@@ -51,12 +51,13 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 4
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 4 {(1,100.0%) 7,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
-//  * Non-linear torn systems: 0
+//  * Linear torn systems (#iteration vars, #inner vars, density): 4 systems
+//    {(1,7,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 7
 //  * Number of states: 2 (C2.v,C3.v)
@@ -71,12 +72,13 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 4
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 4 {(1,100.0%) 6,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
-//  * Non-linear torn systems: 0
+//  * Linear torn systems (#iteration vars, #inner vars, density): 4 systems
+//    {(1,6,100.0%), (1,2,100.0%), (1,2,100.0%), (1,2,100.0%)}
+//  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // "
 // {"Files Equal!"}
 // endResult

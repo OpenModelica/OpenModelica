@@ -60,7 +60,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
-import GC;
+import GCExt;
 import Global;
 import List;
 import Matching;
@@ -310,7 +310,7 @@ algorithm
           print("To disable tearing of this component use '--noTearingForComponent=" + intString(strongComponentIndexOut+1) + "'.\n");
         end if;
       end if;
-     then (strongComponentIndexOut + 1);
+    then (strongComponentIndexOut + 1);
     else strongComponentIndexOut;
   end match;
 
@@ -327,6 +327,7 @@ algorithm
       isLinear := BackendDAEUtil.getLinearfromJacType(jacType);
       useTearing := checkTearingSettings(isLinear, strongComponentIndexOut, listLength(vindx));
       if useTearing then
+        // do some printing
         if debugFlag then
           print("\nTearing of " + (if isLinear then "LINEAR" else "NONLINEAR") + " component\n");
           _ := match (Flags.isSet(Flags.TEARING_DUMPVERBOSE), Flags.isSet(Flags.ITERATION_VARS))
@@ -350,6 +351,8 @@ algorithm
         if debug then
           execStat("Tearing.traverseComponent " + (if isLinear then "LS" else "NLS") + " start");
         end if;
+
+        // try the actual tearing
         try
           oComp := callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, strongComponentIndexOut);
           outRunMatching := true;
@@ -361,10 +364,10 @@ algorithm
         oComp := inComp;
         outRunMatching := false;
       end if;
-    then(oComp, outRunMatching);
+    then (oComp, outRunMatching);
 
     // no component for tearing
-    else then(inComp, false);
+    else (inComp, false);
   end match;
 end traverseComponent;
 
@@ -3175,7 +3178,7 @@ algorithm
   // Remove variables with attribute tearingSelect=never
   (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
   if listEmpty(potentialTVars) then
-    Error.addCompilerError("It is not possible to select a new tearing variable, because all left variables have the attribute tearingSelect=never");
+    Error.addCompilerError("It is not possible to select a new tearing variable, because all remaining variables have the attribute tearingSelect=never");
     return;
   end if;
 
@@ -4165,7 +4168,7 @@ algorithm
       end if;
     end for;
   end for;
-  GC.free(eqn_size_arr);
+  GCExt.free(eqn_size_arr);
 end getVarsOfEqnsWithMostVars;
 
 

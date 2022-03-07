@@ -243,7 +243,12 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.COMBINE_SUBSCRIPTS,
   Flags.ZMQ_LISTEN_TO_ALL,
   Flags.DUMP_CONVERSION_RULES,
-  Flags.PRINT_RECORD_TYPES
+  Flags.PRINT_RECORD_TYPES,
+  Flags.DUMP_SIMPLIFY,
+  Flags.DUMP_BACKEND_CLOCKS,
+  Flags.DUMP_SET_BASED_GRAPHS,
+  Flags.MERGE_COMPONENTS,
+  Flags.DUMP_SLICE
 };
 
 protected

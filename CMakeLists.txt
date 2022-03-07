@@ -2,6 +2,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(OpenModelica C CXX Fortran)
 
+# Any custom Find* modules should be placed here.
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
+
 #########################################################################################################
 ## Enable verbose Makefiles if you want to debug. (you can also instead use 'make VERBOSE=1')
 # set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -27,6 +30,17 @@ omc_add_to_report(CMAKE_Fortran_COMPILER_ID)
 omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
 
+## OPTIONS #################################################################################################
+omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
+## Use ccache to speedup compilation! It is important to use ccache if you can.
+## You get almost no op compilations (for unmodified files) at the cost of some memory.
+## This is usefull, for example, in cases where you change branches often or need to clean
+## for some reason. However, it is even more important with OMC because we generate C sources
+## from MetaModelica files whenever they change. This causes CMake to issue compilations of
+## dependent source files because headers are changed. ccache will essentially eliminate that cost.
+omc_option(OM_USE_CCACHE "Use ccache to speedup compilations." ON)
+
+
 ### Standards ###############################################################################################
 ## Set the C standard to use. Unfortunately, we can not enforce c90.
 ## Our sources contain a lot of c99 and gnu extension code.
@@ -47,15 +61,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
 
-## Use ccache to speedup compilation! It is important to use ccache if you can.
-## You get almost no op compilations (for unmodified files) at the cost of some memory.
-## This is usefull, for example, in cases where you change branches often or need to clean
-## for some reason. However, it is even more importatn with OMC because we generate C sources
-## from MetaModelica files whenever they change. This causes CMake to issue compilations of
-## dependent source files because headers are changed. This will pretty much nullify that.
-omc_option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
-
-if(OMC_USE_CCACHE)
+if(OM_USE_CCACHE)
   find_program(CCACHE_PROGRAM ccache)
   if(CCACHE_PROGRAM)
     message(STATUS "Found ccache. It will be used for compilation C/C++ sources")
@@ -64,7 +70,7 @@ if(OMC_USE_CCACHE)
     omc_add_to_report(CCACHE_PROGRAM)
   else()
     message(FATAL_ERROR "ccache program not found. It is highly recommended to use ccache for compilation of OpenModelica. Please install ccache and rerun configuration.
-            You can disable this check by specifying -DOMC_USE_CCACHE=OFF to CMake configuration command.")
+            You can disable this check by specifying -DOM_USE_CCACHE=OFF to CMake configuration command.")
   endif()
 endif()
 
@@ -119,15 +125,17 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 
 ## Subdirectories ##########################################################################################
 omc_add_subdirectory(OMCompiler)
-omc_add_subdirectory(OMParser EXCLUDE_FROM_ALL)
-omc_add_subdirectory(OMPlot EXCLUDE_FROM_ALL)
-omc_add_subdirectory(OMShell EXCLUDE_FROM_ALL)
-omc_add_subdirectory(OMNotebook EXCLUDE_FROM_ALL)
 
-include(omsimulator.cmake)
-omc_add_subdirectory(OMEdit EXCLUDE_FROM_ALL)
-omc_add_subdirectory(testsuite EXCLUDE_FROM_ALL)
-# omc_add_subdirectory(libraries)
+if(OM_ENABLE_GUI_CLIENTS)
+  omc_add_subdirectory(OMParser)
+  omc_add_subdirectory(OMPlot)
+  omc_add_subdirectory(OMShell)
+  omc_add_subdirectory(OMNotebook)
+  include(omsimulator.cmake)
+  omc_add_subdirectory(OMEdit)
+endif()
+
+omc_add_subdirectory(testsuite)
 
 
 ## Report some status info.

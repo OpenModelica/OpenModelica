@@ -55,7 +55,7 @@ val(x2,{0,1});
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 0
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
@@ -72,7 +72,7 @@ val(x2,{0,1});
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 0
 //  * Mixed (continuous/discrete) equation systems: 0
 // "

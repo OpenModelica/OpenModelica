@@ -348,7 +348,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                   /></Clock>
           >>
         ; separator="\n")
-      case INTEGER_CLOCK(intervalCounter=ic as ICONST(integer=bic), resolution=res as ICONST(integer=resi)) then
+      case RATIONAL_CLOCK(intervalCounter=ic as ICONST(integer=bic), resolution=res as ICONST(integer=resi)) then
         (subPartitions |> subPartition =>
           match subPartition
           case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fsub, denom=fsuper), shift=RATIONAL(nom=snom, denom=sres))) then
@@ -361,7 +361,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           >>
         ; separator="\n")
       case REAL_CLOCK()
-      case INTEGER_CLOCK()
+      case RATIONAL_CLOCK()
       case INFERRED_CLOCK() then
         <<
         <Clock><Inferred/></Clock>

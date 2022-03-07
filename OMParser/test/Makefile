@@ -3,7 +3,7 @@ EXT=.exe
 
 CFLAGS=-O3
 CXXFLAGS=$(CFLAGS) -I../install/include/antlr4-runtime -I../ -std=c++11 -DANTLR4CPP_STATIC
-LDFLAGS=-L../install/lib -L../  -lomcparserantlr4 -Bstatic -lantlr4-runtime -lstdc++ -Bdynamic -static-libgcc
+LDFLAGS=-L../install/lib -L../  -Bstatic -lOMParser -lantlr4-runtime -lstdc++ -Bdynamic -static-libgcc
 
 all: mp$(EXT) runtest
 

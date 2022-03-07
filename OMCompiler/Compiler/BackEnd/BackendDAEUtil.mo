@@ -713,41 +713,35 @@ algorithm
     local
       BackendDAE.Variables vars, globalKnownVars;
       DAE.ComponentRef cr;
-      DAE.Exp e;
-      Boolean blst;
       BackendDAE.Var backendVar;
       Absyn.Ident name;
 
-    case (e as DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
+    case (DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
       ((backendVar::_), _) = BackendVariable.getVar(cr, vars);
       false = BackendVariable.isVarDiscrete(backendVar);
-    then (e, false, (vars, globalKnownVars, true));
+    then (inExp, false, (vars, globalKnownVars, true));
 
     // builtin variable time is not discrete
-    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, globalKnownVars, _))
-    then (e, false, (vars, globalKnownVars, true));
+    case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, globalKnownVars, _))
+    then (inExp, false, (vars, globalKnownVars, true));
 
     // Known variables that are input are continuous
-    case (e as DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
+    case (DAE.CREF(componentRef=cr), (vars, globalKnownVars, _)) equation
       (backendVar::_, _) = BackendVariable.getVar(cr, globalKnownVars);
       true = BackendVariable.isInput(backendVar);
-    then (e, false, (vars, globalKnownVars, true));
+    then (inExp, false, (vars, globalKnownVars, true));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name=name)), (vars, globalKnownVars, blst))
+    case (DAE.CALL(path=Absyn.IDENT(name=name)), _)
       guard stringEq("pre", name) or
             stringEq("change", name) or
             stringEq("ceil", name) or
-            stringEq("floor", name) or
-            stringEq("div", name) or
-            stringEq("mod", name) or
-            stringEq("rem", name)
-    then (e, false, (vars, globalKnownVars, blst));
+            stringEq("floor", name)
+    then (inExp, false, inTpl);
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name="noEvent")), (vars, globalKnownVars, _))
-    then (e, false, (vars, globalKnownVars, false));
+    case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), (vars, globalKnownVars, _))
+    then (inExp, false, (vars, globalKnownVars, false));
 
-    case (e, (vars, globalKnownVars, blst))
-    then (e, true, (vars, globalKnownVars, blst));
+    else (inExp, true, inTpl);
   end matchcontinue;
 end traversingContinuousExpFinder;
 
@@ -1335,7 +1329,6 @@ algorithm
     end if;
   end while;
 end markStateEquationsWork;
-
 
 public function removeNegative
 "author: PA
@@ -1939,7 +1932,6 @@ algorithm
       DAE.Type tp;
       Boolean b1;
       String id1;
-      Integer index;
 
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
@@ -1978,11 +1970,11 @@ algorithm
         xs = removeDiscreteAssignments(rest,vars);
       then DAE.STMT_IF(e,stmts,algElse,source)::xs;
 
-    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=index,range=e,statementLst=stmts, source = source))::rest),vars)
+    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source))::rest),vars)
       equation
         stmts = removeDiscreteAssignments(stmts,vars);
         xs = removeDiscreteAssignments(rest,vars);
-      then DAE.STMT_FOR(tp,b1,id1,index,e,stmts,source)::xs;
+      then DAE.STMT_FOR(tp,b1,id1,e,stmts,source)::xs;
 
     case (((DAE.STMT_WHILE(exp=e,statementLst=stmts, source = source))::rest),vars)
       equation
@@ -3084,8 +3076,11 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, _, true, _))
       algorithm
-        (_, _, tpl) := traversingadjacencyRowExpSolvableFinder(e2, inTpl);
-    then traversingadjacencyRowExpSolvableFinder(e1, tpl);
+        (_, b, tpl) := traversingadjacencyRowExpSolvableFinder(e1, inTpl);
+        if b then
+          (_, b, tpl) := traversingadjacencyRowExpSolvableFinder(e2, tpl);
+        end if;
+    then (inExp, b, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -3335,7 +3330,7 @@ algorithm
         (_, outTpl) := Expression.traverseExpTopDown(e, traversingAdjacencyRowExpFinderBaseClock, inTpl);
       then (inExp, true, outTpl);
 
-    case (DAE.CLKCONST(DAE.BOOLEAN_CLOCK()), _)
+    case (DAE.CLKCONST(DAE.EVENT_CLOCK()), _)
       then (inExp, false, inTpl);
 
     case (DAE.CALL(path=Absyn.IDENT(name="hold")), _)
@@ -3478,8 +3473,11 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true))
       algorithm
-        (_, _, tpl) := traversingadjacencyRowExpFinder(e2, inTpl);
-    then traversingadjacencyRowExpFinder(e1, tpl);
+        (_, b, tpl) := traversingadjacencyRowExpFinder(e1, inTpl);
+        if b then
+          (_, b, tpl) := traversingadjacencyRowExpFinder(e2, tpl);
+        end if;
+    then (inExp, b, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -3585,7 +3583,7 @@ algorithm
       DAE.Exp e, e1, e2;
       list<BackendDAE.Var> varslst;
       tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
-      Boolean isInitial;
+      Boolean b, isInitial;
 
     // inner variable
     case (DAE.CREF(componentRef = cr),(vars,pa,isInitial))
@@ -3642,8 +3640,11 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true))
       algorithm
-        (_, _, tpl) := traversingadjacencyRowExpFinderwithInput(e2, inTpl);
-    then traversingadjacencyRowExpFinderwithInput(e1, tpl);
+        (_, b, tpl) := traversingadjacencyRowExpFinderwithInput(e1, inTpl);
+        if b then
+          (_, b, tpl) := traversingadjacencyRowExpFinderwithInput(e2, tpl);
+        end if;
+    then (inExp, b, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -6008,8 +6009,11 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true, _, _, _))
       algorithm
-        (_, _, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, inTpl);
-    then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, tpl);
+        (_, b, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
+        if b then
+          (_, b, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, tpl);
+        end if;
+    then (inExp, b, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -6156,6 +6160,7 @@ algorithm
       then (e,not b,bt);
 
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), _) equation
+    // phi: what about e2?
     then getIfExpBranchVarOccurency(e1, inBt);
 
     else (inExp,true,inBt);
@@ -8079,11 +8084,7 @@ protected
   BackendDAE.Equation eqn;
 algorithm
   lhs := BackendVariable.varExp(var);
-  try
-    rhs := BackendVariable.varBindExpStartValue(var);
-  else
-    rhs := DAE.RCONST(0.0);
-  end try;
+  rhs := BackendVariable.varBindExpStartValueNoFail(var);
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
   parameterEqns := BackendEquation.add(eqn, parameterEqns);
 end createGlobalKnownVarsEquations;

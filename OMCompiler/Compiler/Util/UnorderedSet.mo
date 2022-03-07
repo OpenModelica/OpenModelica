@@ -278,6 +278,22 @@ public
     end for;
   end toArray;
 
+  function map
+    "Maps all keys in the set."
+    input UnorderedSet<T> set;
+    input MapFn fn;
+    partial function MapFn
+      input output T key;
+    end MapFn;
+  protected
+    array<list<T>> new_buckets = Mutable.access(set.buckets);
+  algorithm
+    for b in 1:arrayLength(new_buckets) loop
+      new_buckets[b] := list(fn(k) for k in new_buckets[b]);
+    end for;
+    Mutable.update(set.buckets, new_buckets);
+  end map;
+
   function fold<FT>
     "Folds over the keys in the set."
     input UnorderedSet<T> set;

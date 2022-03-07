@@ -557,7 +557,8 @@ algorithm
     is_con := Function.isDefaultRecordConstructor(func);
 
     func := Function.mapExp(func,
-      function evaluateFuncExp(fnNode = func.node, evaluateAll = is_con));
+      function evaluateFuncExp(fnNode = func.node, evaluateAll = is_con),
+      function evaluateFuncExp(fnNode = func.node, evaluateAll = true));
 
     if is_con then
       Record.checkLocalFieldOrder(func.locals, func.node, InstNode.info(func.node));
@@ -632,7 +633,7 @@ algorithm
   if ComponentRef.isPackageConstant(cref) then
     res := false;
   elseif ComponentRef.nodeVariability(cref) <= Variability.PARAMETER and ComponentRef.isCref(cref) then
-    node := InstNode.derivedParent(ComponentRef.node(ComponentRef.last(cref)));
+    node := InstNode.instanceParent(ComponentRef.node(ComponentRef.last(cref)));
 
     if InstNode.isClass(node) then
       fnl := Function.getCachedFuncs(node);

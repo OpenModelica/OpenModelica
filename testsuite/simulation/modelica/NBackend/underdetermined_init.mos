@@ -1,0 +1,67 @@
+// name: underdetermined_init
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  model underdetermined_init
+    Real x(start=1.0, fixed = true), y(start=2.0);
+  equation
+    der(x) = sin(time);
+    der(y) = cos(time);
+  end underdetermined_init
+;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=initialization");
+simulate(underdetermined_init); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// Created Start Equations:
+// ****************************************
+// 	[SIMP] (1) x = $START.x ($RES_SRT_2)
+//
+// ################################################################################
+//
+// 	Balance Initialization
+//
+// ################################################################################
+//
+// Not underdetermined.
+// Not overdetermined.
+// (0) Unmatched variables:
+// ****************************************
+//
+//
+// (0) Unmatched equations:
+// ****************************************
+//
+// Stage 1 underdetermined.
+// Not overdetermined.
+// (1) Unmatched variables:
+// ****************************************
+// 	[STAT] (1) Real y (start = 2.0);
+//
+// (0) Unmatched equations:
+// ****************************************
+//
+// Not underdetermined.
+// Not overdetermined.
+// (0) Unmatched variables:
+// ****************************************
+//
+//
+// (0) Unmatched equations:
+// ****************************************
+//
+// record SimulationResult
+//     resultFile = "underdetermined_init_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'underdetermined_init', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

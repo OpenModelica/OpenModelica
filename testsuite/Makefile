@@ -55,11 +55,13 @@ simulationasserts.log \
 simulationbuilt-in-functions.log \
 simulationconnectors.log \
 simulationdaemode.log \
+simulationnewbackend.log \
 simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
 simulationevents.log \
 simulationsynchronous.log \
+simulationsynchronous_c.log \
 simulationstatemachines.log \
 simulationexternal-functions.log \
 simulationindexreduction.log \
@@ -114,7 +116,6 @@ simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
 simulationevents.log \
-simulationsynchronous.log \
 simulationstatemachines.log \
 simulationexternal-functions.log \
 simulationindexreduction.log \
@@ -317,6 +318,15 @@ simulationconnectors.log: omc-diff
 simulationdaemode.log: omc-diff
 	$(MAKE) -C simulation/modelica/daemode -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-arrayhandling.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/array_handling/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-functions.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/functions/ -f Makefile test > $@
+	@echo $@ done
 simulationdeclarations.log: omc-diff
 	$(MAKE) -C simulation/modelica/declarations -f Makefile test > $@
 	@echo $@ done
@@ -331,6 +341,9 @@ simulationevents.log: omc-diff
 	@echo $@ done
 simulationsynchronous.log: omc-diff
 	$(MAKE) -C simulation/modelica/synchronous -f Makefile test > $@
+	@echo $@ done
+simulationsynchronous_c.log: omc-diff
+	$(MAKE) -C simulation/modelica/synchronous_c/ -f Makefile test > $@
 	@echo $@ done
 simulationstatemachines.log: omc-diff
 	$(MAKE) -C simulation/modelica/statemachines -f Makefile test > $@

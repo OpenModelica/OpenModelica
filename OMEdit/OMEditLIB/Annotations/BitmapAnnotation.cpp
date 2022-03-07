@@ -176,14 +176,7 @@ QString BitmapAnnotation::getOMCShapeAnnotation()
   QStringList annotationString;
   annotationString.append(GraphicItem::getOMCShapeAnnotation());
   // get the extents
-  QString extentString;
-  extentString.append("{");
-  extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
-  extentString.append(QString::number(mExtents.at(0).y())).append("},");
-  extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
-  extentString.append(QString::number(mExtents.at(1).y())).append("}");
-  extentString.append("}");
-  annotationString.append(extentString);
+  annotationString.append(mExtents.toQString());
   // get the file name
   annotationString.append(QString("\"").append(mOriginalFileName).append("\""));
   // get the image source
@@ -211,15 +204,8 @@ QString BitmapAnnotation::getShapeAnnotation()
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
   // get the extents
-  if (mExtents.size() > 1) {
-    QString extentString;
-    extentString.append("extent={");
-    extentString.append("{").append(QString::number(mExtents.at(0).x())).append(",");
-    extentString.append(QString::number(mExtents.at(0).y())).append("},");
-    extentString.append("{").append(QString::number(mExtents.at(1).x())).append(",");
-    extentString.append(QString::number(mExtents.at(1).y())).append("}");
-    extentString.append("}");
-    annotationString.append(extentString);
+  if (mExtents.isDynamicSelectExpression() || mExtents.size() > 1) {
+    annotationString.append(QString("extent=%1").arg(mExtents.toQString()));
   }
   // get the file name
   if (!mOriginalFileName.isEmpty()) {

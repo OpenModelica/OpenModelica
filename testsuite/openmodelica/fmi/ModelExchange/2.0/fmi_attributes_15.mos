@@ -3,6 +3,9 @@
 // status: correct
 // teardown_command: rm -rf fmi_attributes_15.fmu fmi_attributes_15.log fmi_attributes_15_tmp.xml fmi_attributes_15.fmutmp/
 
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
+getErrorString();
+
 loadString("
 model fmi_attributes_15
   Real x(unit = \"kg2\");
@@ -23,6 +26,8 @@ readFile("fmi_attributes_15_tmp.xml")
 
 
 // Result:
+// true
+// ""
 // true
 // ""
 // "fmi_attributes_15.fmu"
@@ -117,17 +122,17 @@ readFile("fmi_attributes_15_tmp.xml")
 //     </Unit>
 //   </UnitDefinitions>
 //   <LogCategories>
-//     <Category name=\"logEvents\" />
-//     <Category name=\"logSingularLinearSystems\" />
-//     <Category name=\"logNonlinearSystems\" />
-//     <Category name=\"logDynamicStateSelection\" />
-//     <Category name=\"logStatusWarning\" />
-//     <Category name=\"logStatusDiscard\" />
-//     <Category name=\"logStatusError\" />
-//     <Category name=\"logStatusFatal\" />
-//     <Category name=\"logStatusPending\" />
-//     <Category name=\"logAll\" />
-//     <Category name=\"logFmi2Call\" />
+//     <Category name=\"logEvents\" description=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" description=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" description=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" description=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" description=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" description=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" description=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" description=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" description=\"logStatusPending\" />
+//     <Category name=\"logAll\" description=\"logAll\" />
+//     <Category name=\"logFmi2Call\" description=\"logFmi2Call\" />
 //   </LogCategories>
 //   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
 //   <ModelVariables>

@@ -38,23 +38,18 @@
 #include <QGraphicsView>
 #include <QVBoxLayout>
 
-class GraphicsScene;
-class GraphicsView;
 class ModelWidget;
 class DiagramWindow : public QWidget
 {
   Q_OBJECT
 public:
   explicit DiagramWindow(QWidget *parent = 0);
-  GraphicsView* getGraphicsView() {return mpGraphicsView;}
-  void drawDiagram(ModelWidget *pModelWidget);
-  void removeDiagram(ModelWidget *pModelWidget);
+  ModelWidget* getModelWidget() {return mpModelWidget;}
+  void showVisualizationDiagram(ModelWidget *pModelWidget);
+  void removeVisualizationDiagram();
 private:
-  GraphicsScene *mpGraphicsScene;
-  GraphicsView *mpGraphicsView;
+  ModelWidget *mpModelWidget;
   QVBoxLayout *mpMainLayout;
-
-  void deleteGraphicsViewAndScene();
 protected:
   virtual void closeEvent(QCloseEvent *event) override;
 };

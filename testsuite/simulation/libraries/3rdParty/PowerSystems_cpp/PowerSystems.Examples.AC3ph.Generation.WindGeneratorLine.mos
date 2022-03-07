@@ -39,7 +39,7 @@ runScript(modelTesting);getErrorString();
 // Result file: PowerSystems.Examples.AC3ph.Generation.WindGeneratorLine_res.mat
 // Messages: ... loading "torque" from "/home/rfranke/Modelica/PowerSystems/PowerSystems/Resources/Tables/WindTorque.tab"
 // ERROR  : init  : SimManager: Could not initialize system
-// ERROR  : init  : SimManager: Nonlinear solver 91 stopped at time 0 with error in algloop solver: 
+// ERROR  : init  : SimManager: Nonlinear solver 91 stopped at time 0 with error in algloop solver:
 // error solving nonlinear system (iteration limit: 50)
 // ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
 // ERROR  : solver: SimController: Recovering with nonlinear solver kinsol

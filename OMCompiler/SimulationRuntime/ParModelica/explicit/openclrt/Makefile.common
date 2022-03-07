@@ -13,9 +13,6 @@ OBJS = $(SRCS:.c=.o)
 
 .PHONY : ocloffc libParModelicaExpl clean
 
-ocloffc: omc_ocl_util.h libParModelicaExpl.a
-	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.cpp libParModelicaExpl.a $(OPENLC_LIB) $(CFLAGS)
-
 libParModelicaExpl.a: $(OBJS)
 	@rm -f $@
 	$(AR_) $@ $(OBJS)

@@ -91,12 +91,15 @@ typedef struct {
 
   int _need_update;
   int _has_jacobian;
+  int _has_jacobian_intialization;
   ANALYTIC_JACOBIAN* fmiDerJac;
+  ANALYTIC_JACOBIAN* fmiDerJacInitialization;
 
   fmi2Real* states;
   fmi2Real* states_der;
   fmi2Real* event_indicators;
   fmi2Real* event_indicators_prev;
+  fmi2Real* input_real_derivative;
 } ModelInstance;
 
 /* reset alignment policy to the one set before reading this file */

@@ -3440,9 +3440,9 @@ algorithm
     case (v, _, {}, _) then v;
     case (v, globalKnownVars, ((DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr)))::xs), true)
       equation
-        ((var::_), _) = BackendVariable.getVar(cr, v);
-        var = BackendVariable.setVarKind(var, BackendDAE.DISCRETE());
-        v_1 = BackendVariable.addVar(var, v);
+        (vars, _) = BackendVariable.getVar(cr, v);
+        vars = List.map(vars, function BackendVariable.setVarKind(inVarKind=BackendDAE.DISCRETE()));
+        v_1 = BackendVariable.addVars(vars, v);
         v_2 = detectImplicitDiscreteAlgsStatemens(v_1, globalKnownVars, xs, true);
       then
         v_2;

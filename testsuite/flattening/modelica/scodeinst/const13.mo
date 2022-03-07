@@ -22,7 +22,7 @@ end C;
 
 // Result:
 // Error processing file: const13.mo
-// [flattening/modelica/scodeinst/const13.mo:20:3-20:17:writable] Error: Found class y during lookup of composite component name 'a.B.y', expected component.
+// [flattening/modelica/scodeinst/const13.mo:20:3-20:17:writable] Error: Found component ‘y‘ in composite name ‘a.B.y‘, expected class.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -1,0 +1,65 @@
+// keywords: fmu export
+// status: correct
+// teardown_command: rm -rf fmiprotected.lua fmiprotected_res.mat fmi_attributes_12.fmu fmiprotected_fmi_attributes_12.log fmi_attributes_12_info fmiprotected_systemCall.log temp-fmiprotected/
+
+loadString("
+model fmi_attributes_12
+  input Real u;
+  Real x;
+  output Real y;
+  Real a, b;
+  parameter Real z=30;
+protected
+  Real m, n;
+initial equation
+  x = 0.0;
+equation
+  a = 2.0*u;
+  b = 0.5*a;
+  der(x) = b+z;
+  y = x;
+  m = z;
+  n = a;
+end fmi_attributes_12;
+"); getErrorString();
+
+setCommandLineOptions("--fmiFilter=protected"); getErrorString();
+buildModelFMU(fmi_attributes_12, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
+
+writeFile("fmiprotected.lua", "
+oms_setTempDirectory(\"./temp-fmiprotected/\")
+
+oms_newModel(\"fmiprotected\")
+oms_addSystem(\"fmiprotected.root\", oms_system_sc)
+oms_addSubModel(\"fmiprotected.root.fmi_attributes_12\", \"fmi_attributes_12.fmu\")
+
+oms_instantiate(\"fmiprotected\")
+
+oms_initialize(\"fmiprotected\")
+
+oms_simulate(\"fmiprotected\")
+
+oms_terminate(\"fmiprotected\")
+oms_delete(\"fmiprotected\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator fmiprotected.lua", "fmiprotected_systemCall.log");
+readFile("fmiprotected_systemCall.log");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_12.fmu"
+// ""
+// true
+// ""
+// 0
+// "info:    maximum step size for 'fmiprotected.root': 0.001000
+// info:    Result file: fmiprotected_res.mat (bufferSize=10)
+// info:    Final Statistics for 'fmiprotected.root':
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// endResult

@@ -31,7 +31,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifdef WIN32
+#if defined(_WIN32)
 #include <winsock2.h>
 #else
 #include <sys/socket.h>
@@ -308,7 +308,7 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
 #define MAXHOSTNAME 1024
     char myname[MAXHOSTNAME+1];
     struct hostent *hp;
-#ifdef WIN32
+#if defined(_WIN32)
     WSADATA ws;
     int d;
     d = WSAStartup(0x0101,&ws);
@@ -340,14 +340,14 @@ void TLMCoSimulationDialog::browseTLMPluginPath()
 {
   mpTLMPluginPathTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
   if (mpManagerProcessTextBox->text().isEmpty()) {
-#ifdef WIN32
+#if defined(_WIN32)
     mpManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager.exe");
 #else
     mpManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager");
 #endif
   }
   if (mpMonitorProcessTextBox->text().isEmpty()) {
-#ifdef WIN32
+#if defined(_WIN32)
     mpMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor.exe");
 #else
     mpMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor");

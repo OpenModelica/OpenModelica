@@ -48,12 +48,14 @@ import HashTableExpToIndex;
 import Tpl;
 import Values;
 import SimCode;
+import NSimCode; /* used for new backend */
 
 protected
 import Autoconf;
 import AvlSetString;
 import BackendDAECreate;
 import BackendDump;
+import NBackendDAE;
 import BackendVariable;
 import Builtin;
 import ClockIndexes;
@@ -79,8 +81,10 @@ import Error;
 import ErrorExt;
 import ExecStat;
 import Flags;
+import FlatModel = NFFlatModel;
+import FunctionTree = NFFlatten.FunctionTree;
 import FMI;
-import GC;
+import GCExt;
 import HashTable;
 import HashTableCrefSimVar;
 import HashTableCrIListArray;
@@ -378,6 +382,53 @@ algorithm
   end matchcontinue;
 end createSimCode;
 
+function generateModelCodeNewBackend
+  input NBackendDAE.BackendDAE bdae;
+  input Absyn.Path className;
+  input Option<SimCode.SimulationSettings> simSettingsOpt;
+  output list<String> libs;
+  output String fileDir;
+  output Real timeSimCode = 0.0;
+  output Real timeTemplates = 0.0;
+protected
+  Integer numCheckpoints;
+  NSimCode.SimCode simCode;
+  SimCode.SimCode oldSimCode;
+algorithm
+  numCheckpoints := ErrorExt.getNumCheckpoints();
+  StackOverflow.clearStacktraceMessages();
+  try
+    System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
+    simCode := NSimCode.SimCode.create(bdae, className, simSettingsOpt);
+    (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
+    oldSimCode := NSimCode.SimCode.convert(simCode);
+    if Flags.isSet(Flags.DUMP_SIMCODE) then
+      print(NSimCode.SimCode.toString(simCode));
+      SimCodeUtil.dumpSimCodeDebug(oldSimCode);
+    end if;
+    timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
+
+    ExecStat.execStat("SimCode");
+
+    if Flags.isSet(Flags.SERIALIZED_SIZE) then
+      serializeNotify(oldSimCode, "SimCode");
+      ExecStat.execStat("Serialize simCode");
+    end if;
+
+    System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
+    callTargetTemplates(oldSimCode, Config.simCodeTarget());
+    timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+    ExecStat.execStat("Templates");
+  else
+    setGlobalRoot(Global.stackoverFlowIndex, NONE());
+    ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+    Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    /* Do not fail or we can loop too much */
+    StackOverflow.clearStacktraceMessages();
+    fail();
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+end generateModelCodeNewBackend;
+
 protected
 partial function PartialRunTpl
   output tuple<Boolean,list<String>> res;
@@ -565,10 +616,14 @@ algorithm
           codegenFuncs := (function runToStr(func=function SerializeTaskSystemInfo.serializeParMod(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         end if;
 
+        if Autoconf.os == "Windows_NT" then
+          codegenFuncs := (function runToStr(func=function SimCodeUtil.generateRunnerBatScript(code=simCode))) :: codegenFuncs;
+        end if;
+
         // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
         numThreads := max(1, if Testsuite.isRunning() then min(2, System.numProcessors()) else Config.noProc());
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
-          res := list(func() for func in codegenFuncs);
+          res := list(codegen_func() for codegen_func in codegenFuncs);
         else
           res := System.launchParallelTasks(numThreads, codegenFuncs, runCodegenFunc);
         end if;
@@ -688,7 +743,7 @@ algorithm
       String fileprefix;
       String install_include_omc_dir, install_include_omc_c_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       list<String> sourceFiles, model_desc_src_files;
-      list<String> dgesv_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
+      list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"C")
@@ -747,8 +802,8 @@ algorithm
             fail();
           end if;
         else
-          // check for _info.json file in resource directory  when --fmiFilter=blackBox is not set
-          if Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX then
+          // Add _info.json file to resources/ directory if neither --fmiFilter=blackBox nor --fmiFilter=protected are used
+          if Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX and Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_PROTECTED then
             if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_info.json"+"' '" + fmutmp+"/resources/" + "'") then
               Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_info.json file", sourceInfo());
             end if;
@@ -775,6 +830,15 @@ algorithm
           dgesv_sources := RuntimeSources.dgesv_sources;
         else
           dgesv_sources := {};
+        end if;
+
+        // Add CMinpack sources to FMU
+        if varInfo.numNonLinearSystems > 0 then
+          copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          cminpack_sources := RuntimeSources.cminpack_sources;
+        else
+          cminpack_sources := {};
         end if;
 
         // Check if the sundials files are needed. Shouldn't this actually check what the flags are
@@ -827,7 +891,7 @@ algorithm
 
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
 
-        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/omc_simulation_settings.h")));
@@ -948,7 +1012,7 @@ protected
 algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
   (success, outStringLst, outFileDir) :=
-  matchcontinue (inEnv, className, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
+  match (inEnv,inFileNamePrefix)
     local
       String filenameprefix, file_dir, resstr, description, fmuType;
       DAE.DAElist dae, dae1;
@@ -967,9 +1031,48 @@ algorithm
       BackendDAE.SymbolicJacobians fmiDer;
       DAE.FunctionTree funcs;
       list<Option<Integer>> allRoots;
+      FlatModel flatModel;
+      FunctionTree funcTree;
+      NBackendDAE bdae;
 
-    case (graph, _, filenameprefix, _, _, _) algorithm
+    // new backend - also activates new frontend by default
+    case (graph, filenameprefix) guard(Flags.getConfigBool(Flags.NEW_BACKEND))
+      algorithm
+        // set implied flags to true
+        FlagsUtil.enableDebug(Flags.SCODE_INST);
+        FlagsUtil.enableDebug(Flags.ARRAY_CONNECT);
+        FlagsUtil.disableDebug(Flags.NF_SCALARIZE);
+        // ToDo: set permanently matching -> SBGraphs
 
+        // ================================
+        //             FRONTEND
+        // ================================
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
+        ExecStat.execStatReset();
+        (flatModel, funcTree, _) := CevalScriptBackend.runFrontEndWorkNF(className);
+        timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
+        ExecStat.execStat("FrontEnd");
+
+        // ================================
+        //             BACKEND
+        // ================================
+        System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
+        bdae := NBackendDAE.lower(flatModel, funcTree);
+        if Flags.isSet(Flags.OPT_DAE_DUMP) then
+          print(NBackendDAE.toString(bdae, "(After Lowering)"));
+        end if;
+        bdae := NBackendDAE.main(bdae);
+        timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
+        ExecStat.execStat("backend");
+
+        // ================================
+        //             SIMCODE
+        // ================================
+        (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, className, inSimSettingsOpt);
+    then (true, libs, file_dir);
+
+    // old backend
+    case (graph, filenameprefix) algorithm
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
       ExecStat.execStatReset();
@@ -1004,8 +1107,8 @@ algorithm
         serializeNotify((dae,dae1), "FrontEnd DAE before+after transformations");
         ExecStat.execStat("Serialize DAE (2)");
       end if;
-      GC.free(dae1);
-      GC.free(odae);
+      GCExt.free(dae1);
+      GCExt.free(odae);
       odae := NONE();
       dae1 := DAE.emptyDae;
 
@@ -1019,7 +1122,7 @@ algorithm
       description := DAEUtil.daeDescription(dae);
       dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
-      GC.free(dae);
+      GCExt.free(dae);
       dae := DAE.emptyDae;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
@@ -1109,7 +1212,7 @@ algorithm
           timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
         end if;
       then (false, {}, "");
-  end matchcontinue;
+  end match;
   if generateFunctions then
     FlagsUtil.set(Flags.GEN, true);
   end if;
@@ -1190,7 +1293,7 @@ algorithm
       description := DAEUtil.daeDescription(dae);
       dlow := BackendDAECreate.lower(dae, outCache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
-      GC.free(dae);
+      GCExt.free(dae);
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dlow, "dlow");

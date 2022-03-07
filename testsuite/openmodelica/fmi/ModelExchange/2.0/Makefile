@@ -20,6 +20,8 @@ fmi_attributes_13.mos \
 fmi_attributes_14.mos \
 fmi_attributes_15.mos \
 fmi_attributes_16.mos \
+fmi_attributes_17.mos \
+fmi_attributes_18.mos \
 FMIExercise.mos \
 FMUResourceTest.mos \
 HelloFMIWorld.mos \
@@ -69,6 +71,13 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
+
+baseline:
+	@echo
+	@echo Updating badelines...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) -b $(TESTFILES)
 
 # Cleans all files that are not listed as dependencies
 clean :

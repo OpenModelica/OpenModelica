@@ -1742,7 +1742,6 @@ protected function traverseStmtsExps "Handles the traversing of list<DAE.Stateme
   output ForArgType extraArg = inExtraArg;
 protected
   DAE.Exp e_1, e_2, e, e2, iteratorExp;
-  Integer ix;
   list<DAE.Exp> expl1, expl2, iteratorexps;
   DAE.ComponentRef cr_1, cr;
   list<DAE.Statement> stmts, stmts2;
@@ -1787,19 +1786,19 @@ algorithm
         (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
       then (DAE.STMT_IF(e_1, stmts2, algElse, source), extraArg);
 
-      case (DAE.STMT_FOR(type_=tp, iterIsArray=b1, iter=id1, index=ix, range=e, statementLst=stmts, source=source)) equation
+      case (DAE.STMT_FOR(type_=tp, iterIsArray=b1, iter=id1, range=e, statementLst=stmts, source=source)) equation
         cr = ComponentReference.makeCrefIdent(id1, tp, {});
         iteratorExp = Expression.crefExp(cr);
         iteratorexps = BackendDAEUtil.extendRange(e, inKnvars);
         (stmts2, extraArg) = traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, extraArg);
-      then (DAE.STMT_FOR(tp, b1, id1, ix, e, stmts2, source), extraArg);
+      then (DAE.STMT_FOR(tp, b1, id1, e, stmts2, source), extraArg);
 
-      case (DAE.STMT_PARFOR(type_=tp, iterIsArray=b1, iter=id1, index=ix, range=e, statementLst=stmts, loopPrlVars= loopPrlVars, source=source)) equation
+      case (DAE.STMT_PARFOR(type_=tp, iterIsArray=b1, iter=id1, range=e, statementLst=stmts, loopPrlVars= loopPrlVars, source=source)) equation
         cr = ComponentReference.makeCrefIdent(id1, tp, {});
         iteratorExp = Expression.crefExp(cr);
         iteratorexps = BackendDAEUtil.extendRange(e, inKnvars);
         (stmts2, extraArg) = traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, extraArg);
-      then (DAE.STMT_PARFOR(tp, b1, id1, ix, e, stmts2, loopPrlVars, source), extraArg);
+      then (DAE.STMT_PARFOR(tp, b1, id1, e, stmts2, loopPrlVars, source), extraArg);
 
       case (DAE.STMT_WHILE(exp=e, statementLst=stmts, source=source)) equation
         (stmts2, extraArg) = traverseStmtsExps(stmts, extraArg, inKnvars);

@@ -475,8 +475,8 @@ void PlotWindowContainer::addDiagramWindow(ModelWidget *pModelWidget, bool maxim
 {
   if (!mpDiagramWindow) {
     mpDiagramWindow = new DiagramWindow(this);
-    mpDiagramWindow->drawDiagram(pModelWidget ? pModelWidget : MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget());
   }
+  mpDiagramWindow->showVisualizationDiagram(pModelWidget ? pModelWidget : MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget());
   QMdiSubWindow *pSubWindow = getDiagramSubWindowFromMdi();
   if (!pSubWindow) {
     pSubWindow = addSubWindow(mpDiagramWindow);

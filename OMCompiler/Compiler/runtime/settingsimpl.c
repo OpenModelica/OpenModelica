@@ -50,7 +50,7 @@
 #include <pwd.h>
 #endif
 
-#ifdef WIN32
+#if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -338,7 +338,7 @@ extern const char* SettingsImpl__getTempDirectoryPath(void)
   if (tempDirectoryPath == NULL) {
   // On windows, set Temp directory path to Temp directory as returned by GetTempPath,
   // which is usually TMP or TEMP or windows catalogue.
-  #ifdef WIN32
+  #if defined(_WIN32)
     int numChars;
     char tempDirectory[1024];
       //extract the temp path

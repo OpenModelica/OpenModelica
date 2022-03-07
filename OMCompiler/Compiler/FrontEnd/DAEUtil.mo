@@ -903,16 +903,22 @@ end setMinMax;
 public function getStartAttr "
   Return the start attribute."
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  input DAE.Type inType;
   output DAE.Exp start;
 algorithm
-  start := match(inVariableAttributesOption)
+  start := match inVariableAttributesOption
     local
       DAE.Exp r;
-    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
+    case SOME(DAE.VAR_ATTR_REAL(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_REAL(start = NONE())) then DAE.RCONST(0.0);
+    case SOME(DAE.VAR_ATTR_INT(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_INT(start = NONE())) then DAE.ICONST(0);
+    case SOME(DAE.VAR_ATTR_BOOL(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_BOOL(start = NONE())) then DAE.BCONST(false);
+    case SOME(DAE.VAR_ATTR_STRING(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_STRING(start = NONE())) then DAE.SCONST("");
+    case SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r))) then r;
+    case SOME(DAE.VAR_ATTR_ENUMERATION(start = NONE())) then Types.getNthEnumLiteral(inType, 1);
     else DAE.RCONST(0.0);
   end match;
 end getStartAttr;
@@ -4530,7 +4536,6 @@ algorithm
       DAE.Statement x,ew,ew_1;
       Boolean b1;
       String id1,str;
-      Integer ix;
       DAE.ElementSource source;
       DAE.Else algElse,algElse1;
       Type_a extraArg;
@@ -4585,18 +4590,18 @@ algorithm
         stmts1 = if not b and referenceEq(e,e_1) and referenceEq(stmts,stmts2) and referenceEq(algElse,algElse1) then (inStmt::{}) else stmts1;
       then (stmts1,extraArg);
 
-    case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source),_,_,extraArg)
+    case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) = func(e, extraArg);
-        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source);
+        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source);
       then (x::{},extraArg);
 
-    case (DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source),_,_,extraArg)
+    case (DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) = func(e, extraArg);
-        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source);
+        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_PARFOR(tp,b1,id1,e_1,stmts2,loopPrlVars,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source),_,_,extraArg)
@@ -4740,7 +4745,6 @@ protected
   DAE.Statement ew,ew_1;
   Boolean b1;
   String id1,str;
-  Integer ix;
   DAE.ElementSource source;
   DAE.Else algElse;
   list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
@@ -4784,19 +4788,19 @@ algorithm
         then
           List.append_reverse(stmts1, outStmts);
 
-      case DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source)
+      case DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)
         equation
           (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
           (e_1, extraArg) = func(e, stmt, extraArg);
         then
-          if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then stmt :: outStmts else DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source)::outStmts;
+          if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then stmt :: outStmts else DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source)::outStmts;
 
-      case DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)
+      case DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)
         equation
           (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
           (e_1, extraArg) = func(e, stmt, extraArg);
         then
-          DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source)::outStmts;
+          DAE.STMT_PARFOR(tp,b1,id1,e_1,stmts2,loopPrlVars,source)::outStmts;
 
       case DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)
         equation

@@ -547,7 +547,7 @@ void SimulationOutputWidget::compileModel()
     numProcs = QString::number(mSimulationOptions.getNumberOfProcessors());
   }
   QStringList args;
-#ifdef WIN32
+#if defined(_WIN32)
   if (OptionsDialog::instance()->getSimulationPage()->getUseStaticLinkingCheckBox()->isChecked()) {
     linkType = "static";
   }
@@ -572,6 +572,37 @@ void SimulationOutputWidget::compileModel()
   writeCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Qt::blue);
   mpCompilationProcess->start("make", args);
 #endif
+}
+
+
+/*!
+ * \brief getPathsFromBatFile
+ * Parses the fileName.bat file to get the necessary paths.
+ * Returns "" if it fails to parse the file as expected.
+ */
+QString SimulationOutputWidget::getPathsFromBatFile(QString fileName) {
+
+  QFile batFile(fileName);
+  batFile.open(QIODevice::ReadOnly | QIODevice::Text);
+
+  QString line;
+  // first line is supposed to be '@echo off'
+  line = batFile.readLine();
+  // Second line is where the PATH is set. We want that.
+  line = batFile.readLine();
+
+  if (!line.startsWith("set PATH=")) {
+    QString warnMessage = "Failed to read the neccesary PATH values from '" + fileName + "'\n"
+                          + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
+    writeSimulationOutput(warnMessage, StringHandler::Error, true);
+    line = "";
+  } else {
+    // Strip the 'set PATH='
+    line.remove(0, 9);
+  }
+  batFile.close();
+
+  return line;
 }
 
 /*!
@@ -601,11 +632,16 @@ void SimulationOutputWidget::runSimulationExecutable()
   QString fileName = QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getOutputFileName());
   fileName = fileName.replace("//", "/");
   // run the simulation executable to create the result file
-#ifdef WIN32
+#if defined(_WIN32)
+  QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
+
+  QString paths = getPathsFromBatFile(fileName + ".bat");
+
   fileName = fileName.append(".exe");
   QFileInfo fileInfo(mSimulationOptions.getFileName());
-  QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
-  processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
+  paths = fileInfo.absoluteDir().absolutePath() + ";" + paths;
+
+  processEnvironment.insert("PATH", paths + ";" + processEnvironment.value("PATH"));
   mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #endif
   // make the output tab enabled and current
@@ -635,10 +671,11 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
   mpProgressBar->setValue(1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+    bool profiling = mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
     if (mSimulationOptions.getBuildOnly() &&
         (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
-         mSimulationOptions.getLaunchTransformationalDebugger() || mSimulationOptions.getProfiling() != "none")) {
-      MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json");
+         mSimulationOptions.getLaunchTransformationalDebugger() || profiling)) {
+      MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling);
     }
     MainWindow::instance()->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
   }
@@ -805,10 +842,9 @@ void SimulationOutputWidget::openTransformationalDebugger()
   QString fileName = QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName());
   /* open the model_info.json file */
   if (QFileInfo(fileName).exists()) {
-    MainWindow::instance()->showTransformationsWidget(fileName);
+    MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0);
   } else {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
   }
 }
 
@@ -1058,12 +1094,12 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
   if (url.scheme().compare("omedittransformationsbrowser") == 0) {
     /* read the file name */
     QString fileName = url.path();
-#ifdef WIN32
+#if defined(_WIN32)
     if (fileName.startsWith("/")) fileName.remove(0, 1);
 #endif
     /* open the model_info.json file */
     if (QFileInfo(fileName).exists()) {
-      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName);
+      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
       QUrlQuery query(url);
       int equationIndex = query.queryItemValue("index").toInt();

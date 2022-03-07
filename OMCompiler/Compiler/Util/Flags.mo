@@ -545,6 +545,16 @@ constant DebugFlag DUMP_CONVERSION_RULES = DEBUG_FLAG(186, "dumpConversionRules"
   Gettext.gettext("Dumps the rules when converting a package using a conversion script."));
 constant DebugFlag PRINT_RECORD_TYPES = DEBUG_FLAG(187, "printRecordTypes", false,
   Gettext.gettext("Prints out record types as part of the flat code."));
+constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(188, "dumpSimplify", false,
+  Gettext.gettext("Dumps expressions before and after simplification."));
+constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(189, "dumpBackendClocks", false,
+  Gettext.gettext("Dumps times for each backend module (only new backend)."));
+constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(190, "dumpSetBasedGraphs", false,
+  Gettext.gettext("Dumps information about set based graphs for efficient array handling (only new frontend and new backend)."));
+constant DebugFlag MERGE_COMPONENTS = DEBUG_FLAG(191, "mergeComponents", false,
+  Gettext.gettext("Enables automatic merging of components into arrays."));
+constant DebugFlag DUMP_SLICE = DEBUG_FLAG(192, "dumpSlice", false,
+  Gettext.gettext("Dumps information about the slicing process (pseudo-array causalization)."));
 
 public
 // CONFIGURATION FLAGS
@@ -677,7 +687,9 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("HKDWExt", Gettext.gettext("Combined BFS and DFS algorithm external c implementation.")),
     ("ABMPExt", Gettext.gettext("Combined BFS and DFS algorithm external c implementation.")),
     ("PRExt", Gettext.gettext("Matching algorithm using push relabel mechanism external c implementation.")),
-    ("BB", Gettext.gettext("BBs try."))})),
+    ("BB", Gettext.gettext("BBs try.")),
+    ("SBGraph", Gettext.gettext("Set-Based Graph matching algorithm for efficient array handling.")),
+    ("pseudo", Gettext.gettext("Pseudo array matching that uses scalar matching and reconstructs arrays afterwards as much as possible."))})),
     Gettext.gettext("Sets the matching algorithm to use. See --help=optmodules for more info."));
 
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
@@ -1331,14 +1343,14 @@ constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(138, "flatModelica",
   Gettext.gettext("Outputs experimental flat Modelica."));
 
 constant ConfigFlag FMI_FILTER = CONFIG_FLAG(139, "fmiFilter", NONE(), EXTERNAL(),
-  ENUM_FLAG(FMI_INTERNAL, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
+  ENUM_FLAG(FMI_PROTECTED, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
   SOME(STRING_DESC_OPTION({
-    ("none", Gettext.gettext("All variables will be exposed, even variables that are introduced by the symbolic transformations. Hence, this is intended to be used for debugging.")),
-    ("internal", Gettext.gettext("All internal variables introduced by the symbolic transformations are filtered out. Only the variables from the actual Modelica model are exposed (with minor exceptions, e.g. for state sets).")),
-    ("protected", Gettext.gettext("All protected model variables will be filtered out in addition to --fmiFilter=internal.")),
-    ("blackBox", Gettext.gettext("This option is used to hide everything except for inputs and outputs. Additional variables that need to be present in the modelDescription file for structrial reasons will have concealed names."))
+    ("none", Gettext.gettext("All variables are exposed, even variables introduced by the symbolic transformations. This is mainly for debugging purposes.")),
+    ("internal", Gettext.gettext("All model variables are exposed, including protected ones. Variables introduced by the symbolic transformations are filtered out, with minor exceptions, e.g. for state sets.")),
+    ("protected", Gettext.gettext("All public model variables are exposed. Internal and protected variables are filtered out, with small exceptions, e.g. for state sets.")),
+    ("blackBox", Gettext.gettext("Only the interface is exposed. All other variables are hidden or exposed with concealed names."))
     })),
-  Gettext.gettext("Specifies which model variables get exposed by the modelDescription.xml"));
+  Gettext.gettext("Specifies which model variables are exposed by the modelDescription.xml"));
 
 constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(140, "fmiSources", NONE(), EXTERNAL(),
   BOOL_FLAG(true), NONE(),
@@ -1387,14 +1399,13 @@ constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(148, "tearingAlways
   Gettext.gettext("Always choose state derivatives as iteration variables in strong components."));
 
 constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(149, "dumpFlatModel",
-  NONE(), EXTERNAL(), STRING_LIST_FLAG({}),
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({"all"}),
   SOME(STRING_DESC_OPTION({
     ("flatten", Gettext.gettext("After flattening but before connection handling.")),
     ("connections", Gettext.gettext("After connection handling.")),
     ("eval", Gettext.gettext("After evaluating constants.")),
     ("simplify", Gettext.gettext("After model simplification.")),
-    ("scalarize", Gettext.gettext("After scalarizing arrays.")),
-    ("all", Gettext.gettext("Dump after every stage."))
+    ("scalarize", Gettext.gettext("After scalarizing arrays."))
   })),
   Gettext.gettext("Dumps the flat model at the given stages of the frontend."));
 

@@ -1,0 +1,85 @@
+// name:     subSuperSample2.mos
+// keywords: synchronous features, sub-clock, superSample, supSample, c
+// status: correct
+//
+// SuperSample of subSample clock is 2 times slower then base-clock
+// Base-clock ticks:  0.0, 0.1, 0.2, 0.3, ...
+// SubSample ticks:   0.0, 0.4, 0.8, ...
+// SuperSample ticks: 0.0, 0.2, 0.4, ...
+
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+loadFile("Synchronous.mo"); getErrorString();
+
+simulate(Synchronous.SubClocks.subSuperSample2, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
+
+print("Clock 1");
+val(y1, 0.0);
+val(y1, 0.4);
+val(y1, 0.8);
+
+print("Clock 2");
+val(y2, 0.0);
+val(y2, 0.2);
+val(y2, 0.4);
+val(y2, 0.6);
+val(y2, 0.8);
+val(y2, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Synchronous.SubClocks.subSuperSample2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Synchronous.SubClocks.subSuperSample2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
+//     messages = "LOG_SYNCHRONOUS   | info    | Initialized synchronous timers.
+// |                 | |       | | Number of base clocks: 1
+// |                 | |       | | Base clock 1
+// |                 | |       | | | is event clock
+// |                 | |       | | | Number of sub-clocks: 2
+// |                 | |       | | | Sub-clock 1 of base clock 1
+// |                 | |       | | | | shift: 0/1
+// |                 | |       | | | | factor: 4/1
+// |                 | |       | | | | solverMethod: none
+// |                 | |       | | | | holdEvents: false
+// |                 | |       | | | Sub-clock 2 of base clock 1
+// |                 | |       | | | | shift: 0/1
+// |                 | |       | | | | factor: 2/1
+// |                 | |       | | | | solverMethod: none
+// |                 | |       | | | | holdEvents: false
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.000000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.100000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.200000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.200000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.300000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.400000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.400000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.400000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.500000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.600000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.600000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.700000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.800000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.800000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.800000
+// LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.900000
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// Clock 1
+// 0.0
+// 1.0
+// 2.0
+// Clock 2
+// 0.0
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 5.0
+// endResult

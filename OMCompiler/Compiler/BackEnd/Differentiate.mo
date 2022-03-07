@@ -831,7 +831,6 @@ algorithm
       DAE.Exp elseif_exp;
       DAE.Else elseif_else_;
       list<DAE.Exp> expLst, dexpLst, expLstRHS;
-      Integer index;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
       list<DAE.Statement> statementLst, restStatements, derivedStatements1, derivedStatements2, else_statementLst, elseif_statementLst;
       String s1,s2;
@@ -888,14 +887,14 @@ algorithm
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements2, functions, maxIter);
       then (derivedStatements2, functions);
 
-    case DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, index=index, range=exp, statementLst=statementLst, source=source)::restStatements
+    case DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, range=exp, statementLst=statementLst, source=source)::restStatements
       equation
         cref = ComponentReference.makeCrefIdent(ident, DAE.T_INTEGER_DEFAULT, {});
         controlVar = BackendDAE.VAR(cref, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
         inputData = addGlobalVars({controlVar}, inInputData);
         (derivedStatements1, functions) = differentiateStatements(statementLst, inDiffwrtCref, inputData, inDiffType, {}, inFunctionTree, maxIter);
 
-        derivedStatements1 = {DAE.STMT_FOR(type_, iterIsArray, ident, index, exp, derivedStatements1, source)};
+        derivedStatements1 = {DAE.STMT_FOR(type_, iterIsArray, ident, exp, derivedStatements1, source)};
 
         derivedStatements2 = listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements2, functions, maxIter);
@@ -1772,7 +1771,7 @@ algorithm
     case ("smooth",{DAE.ICONST(i),e2}, DAE.CALL_ATTR(ty=tp))
       equation
         (res1, funcs) = differentiateExp(e2,inDiffwrtCref,inInputData,inDiffType,inFunctionTree, maxIter);
-        e1 = Expression.expSub(DAE.ICONST(i), DAE.ICONST(1));
+        e1 = DAE.ICONST(i-1);
         res2 = if intGe(i,1) then Expression.makePureBuiltinCall("smooth", {e1, res1}, tp) else res1;
       then
         (res2, funcs);
@@ -1833,14 +1832,14 @@ algorithm
       then
         (DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.LESS(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), res1, res2), funcs);
 
-    // diff(div(e1,e2)) =  diff(if noEvent(e1 > 0) then floor(e1/e2) else ceil(e1/e2)) = 0.0;
+    // diff(div(e1,e2)) = diff(if noEvent(e1 > 0) then floor(e1/e2) else ceil(e1/e2)) = 0.0;
     case ("div", {_,_}, DAE.CALL_ATTR(ty=tp))
       equation
         (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         (res1, inFunctionTree);
 
-    // diff(mod(e1,e2)) =  diff(e1 - e2*floor(e1/e2))
+    // diff(mod(e1,e2)) = diff(e1 - e2*floor(e1/e2))
     case ("mod", {e1,e2}, DAE.CALL_ATTR(ty=tp))
       equation
         etmp = Expression.makePureBuiltinCall("floor", {DAE.BINARY(e1, DAE.DIV(tp), e2)}, tp);

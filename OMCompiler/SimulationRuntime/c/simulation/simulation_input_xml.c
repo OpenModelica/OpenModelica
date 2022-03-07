@@ -512,7 +512,7 @@ void read_input_xml(MODEL_DATA* modelData,
      ARE WE READING THE OLD XML FILE?? */
   guid = findHashStringStringNull(mi.md,"guid");
   if (NULL==guid) {
-     warningStreamPrint(LOG_STDOUT, 0, "The Model GUID: %s is not set in file: %s",
+    warningStreamPrint(LOG_STDOUT, 0, "The Model GUID: %s is not set in file: %s",
         modelData->modelGUID,
         filename);
   } else if (strcmp(modelData->modelGUID, guid)) {

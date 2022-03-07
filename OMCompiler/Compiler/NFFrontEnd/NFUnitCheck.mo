@@ -334,7 +334,7 @@ algorithm
         formal_args := listHead(out_units);
         formal_var := listHead(out_vars);
 
-        unit2 := if formal_args == "NONE" then Unit.MASTER({}) else Unit.parseUnitString(formal_args, htS2U);
+        unit2 := if formal_args == "NONE" then Unit.MASTER({}) else Unit.parseUnitString(formal_args, htS2U, Equation.info(eq));
 
         b := unitTypesEqual(unit1, unit2, htCr2U);
         if b then
@@ -728,7 +728,7 @@ algorithm
         (op_unit, icu1);
 
     case Expression.CREF()
-      guard ComponentRef.isSimple(eq.cref) and ComponentRef.firstName(eq.cref) == "time"
+      guard ComponentRef.isTime(eq.cref)
       algorithm
         op_unit := Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0);
         htS2U := addUnit2HtS2U("time", op_unit, htS2U);
@@ -1114,7 +1114,7 @@ algorithm
     case SOME(Expression.STRING(value = unit_string))
       guard not stringEmpty(unit_string)
       algorithm
-        (unit, htS2U, htU2S) := parse(unit_string, var.name, htS2U, htU2S);
+        (unit, htS2U, htU2S) := parse(unit_string, var.name, htS2U, htU2S, var.info);
         htCr2U := BaseHashTable.add((var.name, unit), htCr2U);
       then
         ();
@@ -1135,6 +1135,7 @@ protected function parse "author: lochel"
         output Unit.Unit unit;
   input output HashTableStringToUnit.HashTable htS2U;
   input output HashTableUnitToString.HashTable htU2S;
+  input SourceInfo info;
 algorithm
   if stringEmpty(unitString) then
     unit := Unit.MASTER({cref});
@@ -1144,7 +1145,7 @@ algorithm
     unit := BaseHashTable.get(unitString, htS2U);
   else
     try
-      unit := Unit.parseUnitString(unitString, htS2U);
+      unit := Unit.parseUnitString(unitString, htS2U, info);
     else
       unit := Unit.UNKNOWN(unitString);
     end try;

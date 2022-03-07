@@ -2,7 +2,7 @@ find_package(CURL REQUIRED)
 find_package(Intl REQUIRED)
 find_package(Iconv REQUIRED)
 
-if(OMC_USE_LAPACK)
+if(OM_OMC_USE_LAPACK)
   message(STATUS "Looking for LAPACK. This can be slow sometimes. Hang tight!")
   find_package(LAPACK REQUIRED)
 
@@ -44,7 +44,7 @@ set(OMC_RUNTIIME_SOURCES
     Dynload_omc.cpp
     Print_omc.c
     ErrorMessage.cpp
-    System_omc
+    System_omc.c
     Lapack_omc.cpp
     Settings_omc.cpp
     UnitParserExt_omc.cpp
@@ -77,15 +77,15 @@ target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
 target_link_libraries(omcruntime PUBLIC omc::simrt::runtime)
 target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
-target_link_libraries(omcruntime PUBLIC omc::simrt::Modelica::zlib)
+target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
 
-if(OMC_USE_LPSOLVE)
+if(OM_OMC_USE_LPSOLVE)
   target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
 else()
   target_compile_definitions(omcruntime PRIVATE NO_LPLIB)
 endif()
 
-if(OMC_USE_LAPACK)
+if(OM_OMC_USE_LAPACK)
   target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
 endif()
 
@@ -99,7 +99,7 @@ if(NOT WIN32)
 endif()
 
 # Corba support
-if(OMC_USE_CORBA)
+if(OM_OMC_USE_CORBA)
   if(MINGW)
     # setup omniORB for MinGW OMDev
     include(.cmake/omdev_omniorb_setup.cmake)
@@ -126,7 +126,7 @@ if(OMC_USE_CORBA)
   endif()
 else() # No corba support requested. Use the stub file.
   target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
-endif(OMC_USE_CORBA)
+endif(OM_OMC_USE_CORBA)
 
 # Install omcruntime. It is needed by bootstrapping tests.
 install(TARGETS omcruntime)
@@ -155,7 +155,7 @@ target_link_libraries(omcbackendruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcbackendruntime PUBLIC omc::simrt::runtime)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
-target_link_libraries(omcbackendruntime PUBLIC omc::simrt::Modelica::zlib)
+target_link_libraries(omcbackendruntime PUBLIC omc::3rd::zlib)
 
 target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

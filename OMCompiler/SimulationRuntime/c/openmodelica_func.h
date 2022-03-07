@@ -326,14 +326,14 @@ int (*symbolicInlineSystems)(DATA * data, threadData_t *threadData);
 void (*function_initSynchronous)(DATA * data, threadData_t *threadData);
 
 /*
- * Update clock interval.
+ * Update base-clock interval.
  */
-void (*function_updateSynchronous)(DATA *data, threadData_t *threadData, long i);
+void (*function_updateSynchronous)(DATA *data, threadData_t *threadData, long base_idx);
 
 /*
  * Sub-partition's equations
  */
-int (*function_equationsSynchronous)(DATA *data, threadData_t *threadData, long i);
+int (*function_equationsSynchronous)(DATA *data, threadData_t *threadData, long base_idx, long sub_idx);
 
 /*
  * return input names
@@ -357,6 +357,12 @@ int (*initialPartialFMIDER)(void* data, threadData_t *threadData, ANALYTIC_JACOB
 int (*functionJacFMIDER_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 const int INDEX_JAC_FMIDER;
 
+/*
+ * FMU partial derivative functions for initilization DAE
+ */
+int (*initialPartialFMIDERINIT)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+int (*functionJacFMIDERINIT_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
+const int INDEX_JAC_FMIDERINIT;
 };
 
 

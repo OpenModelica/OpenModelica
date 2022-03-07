@@ -4,7 +4,7 @@ protected
 
 import ClockIndexes;
 import Error;
-import GC;
+import GCExt;
 import Global;
 import Flags;
 import System;
@@ -16,7 +16,7 @@ function execStatReset
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
   System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
-  setGlobalRoot(Global.gcProfilingIndex, GC.getProfStats());
+  setGlobalRoot(Global.gcProfilingIndex, GCExt.getProfStats());
 end execStatReset;
 
 function execStat
@@ -31,24 +31,24 @@ protected
   Real t, total;
   String timeStr, totalTimeStr, gcStr;
   Integer memory, oldMemory, heapsize_full, free_bytes_full, since, before;
-  GC.ProfStats stats, oldStats;
+  GCExt.ProfStats stats, oldStats;
 algorithm
   if Flags.isSet(Flags.EXEC_STAT) then
     for i in if Flags.isSet(Flags.EXEC_STAT_EXTRA_GC) then {1,2} else {1} loop
       if i==2 then
-        GC.gcollect();
+        GCExt.gcollect();
       end if;
-      (stats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before, heapsize_full=heapsize_full, free_bytes_full=free_bytes_full)) := GC.getProfStats();
+      (stats as GCExt.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before, heapsize_full=heapsize_full, free_bytes_full=free_bytes_full)) := GCExt.getProfStats();
       memory := since+before;
       oldStats := getGlobalRoot(Global.gcProfilingIndex);
-      GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before) := oldStats;
+      GCExt.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before) := oldStats;
       oldMemory := since+before;
       t := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
       total := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
       timeStr := System.snprintff("%.4g", 20, t);
       totalTimeStr := System.snprintff("%.4g", 20, total);
       if Flags.isSet(Flags.GC_PROF) then
-        gcStr := GC.profStatsStr(stats, head="", delimiter=" / ");
+        gcStr := GCExt.profStatsStr(stats, head="", delimiter=" / ");
         Error.addMessage(Error.EXEC_STAT_GC, {name + (if i==2 then " GC" else ""), timeStr, totalTimeStr, gcStr});
       else
         Error.addMessage(Error.EXEC_STAT, {name + (if i==2 then " GC" else ""), timeStr, totalTimeStr,

@@ -129,6 +129,36 @@ void copyReferenceFile(DATA * data, const std::string & filename)
   }
 }
 
+int getRealtedBoundaryConditions(DATA * data)
+{
+  // check for _relatedBoundaryConditionsEquations.txt file exists to map the nonReconciled Vars failing with condition-2 of extraction algorithm
+  std::string relatedBoundaryConditionsFilename = string(data->modelData->modelFilePrefix) +  "_relatedBoundaryConditionsEquations.txt";
+
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    relatedBoundaryConditionsFilename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + relatedBoundaryConditionsFilename;
+    copyReferenceFile(data, "_relatedBoundaryConditionsEquations.txt");
+  }
+
+  ifstream relatedBoundaryConditionsFilenameip(relatedBoundaryConditionsFilename);
+  string line;
+  int count = 0;
+  if (relatedBoundaryConditionsFilenameip.good())
+  {
+    while (relatedBoundaryConditionsFilenameip.good())
+    {
+      getline(relatedBoundaryConditionsFilenameip, line);
+      if (!line.empty())
+      {
+        count = count + 1;
+      }
+    }
+    relatedBoundaryConditionsFilenameip.close();
+    //omc_unlink(relatedBoundaryConditionsFilename.c_str());
+  }
+  return count;
+}
+
 /*
  * create html report with error logs for D.1
  */
@@ -173,6 +203,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   myfile << "<table> \n";
   myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of related boundary conditions: </th> \n" << "<td>" << getRealtedBoundaryConditions(data) << "</td> </tr>\n";
   myfile << "</table> \n";
 
   // Auxiliary Conditions
@@ -285,6 +316,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   myfile << "<table> \n";
   myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of related boundary conditions: </th> \n" << "<td>" << getRealtedBoundaryConditions(data) << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Number of iterations to convergence: </th> \n" << "<td>" << iterationcount << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Final value of (J*/r) : </th> \n" << "<td>" << value << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Epsilon : </th> \n" << "<td>" << eps << "</td> </tr>\n";
@@ -2431,6 +2463,7 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   {
     copyReferenceFile(data, "_AuxiliaryConditions.html");
     copyReferenceFile(data, "_IntermediateEquations.html");
+    copyReferenceFile(data, "_relatedBoundaryConditionsEquations.txt");
   }
 
   // report run time initialization and non linear convergence error to html

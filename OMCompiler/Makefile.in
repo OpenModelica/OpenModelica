@@ -78,9 +78,12 @@ endif
 LIB_OMC=lib/@host_short@/omc
 LIBMODELICAEXTERNALC=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaExternalC$(STAEXT)
 LIBMODELICASTANDARDTABLES=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaStandardTables$(STAEXT)
-LIBMODELICAZLIB=@OMBUILDDIR@/lib/@host_short@/omc/libzlib$(STAEXT)
 LIBMODELICAIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaIO$(STAEXT)
 LIBMODELICAMATIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaMatIO$(STAEXT)
+
+ZLIB_DIR=3rdParty/zlib
+LIBMODELICAZLIB=@OMBUILDDIR@/lib/@host_short@/omc/libzlib$(STAEXT)
+
 OMENCRYPTION=@OMENCRYPTION@
 LVE_EXE_SUFFIX=@MODELICA_SPEC_PLATFORM@
 MINGW_EXTRA_LIBS=@MINGW_EXTRA_LIBS@
@@ -113,6 +116,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 
 omc-bootstrapped: $(SEMLA_LIB)
 	$(MAKE) interactive sim-dependencies install-openturns
+	$(MAKE) ModelicaExternalC
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
 	@# See if any library is linked directly into the build dirs (we should use @rpath everywhere)

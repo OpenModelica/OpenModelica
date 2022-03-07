@@ -7,7 +7,7 @@
 
 setCommandLineOptions("-g=MetaModelica");
 loadString("
-  package P1
+  model P1
     function f
     algorithm
       try
@@ -16,19 +16,31 @@ loadString("
     end f;
   end P1;
 
-  package P2
+  model P2
     extends P1;
+  algorithm
+    f();
   end P2;
 "); getErrorString();
 
-instantiateModel(P2.f); getErrorString();
+instantiateModel(P2); getErrorString();
 
 // Result:
 // true
 // true
 // ""
-// "class P2.f
+// "function P2.f
+// algorithm
+//   matchcontinue ()
+//       case () then ();
+//       case () then ();
+//     end matchcontinue;
 // end P2.f;
+//
+// class P2
+// algorithm
+//   P2.f();
+// end P2;
 // "
 // ""
 // endResult

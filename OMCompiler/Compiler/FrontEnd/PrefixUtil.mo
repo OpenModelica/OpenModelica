@@ -1109,7 +1109,6 @@ algorithm
       DAE.ComponentRef cRef;
       Boolean bool;
       DAE.Else elseBranch;
-      Integer ix;
       case DAE.STMT_ASSIGN(t,e1,e,source)
         equation
           (outCache,e1) = prefixExpWork(outCache,env,inIH,e1,p);
@@ -1134,11 +1133,11 @@ algorithm
           outStmts = elem::outStmts;
         then ();
 
-      case DAE.STMT_FOR(t,bool,id,ix,e,sList,source)
+      case DAE.STMT_FOR(t,bool,id,e,sList,source)
         equation
           (outCache,e) = prefixExpWork(outCache,env,inIH,e,p);
           (outCache,sList) = prefixStatements(outCache,env,inIH,sList,p);
-          elem = DAE.STMT_FOR(t,bool,id,ix,e,sList,source);
+          elem = DAE.STMT_FOR(t,bool,id,e,sList,source);
           outStmts = elem::outStmts;
         then ();
 
@@ -1371,11 +1370,11 @@ algorithm
     case (cache, _, _, DAE.INFERRED_CLOCK(), _)
       then (cache, inClkKind);
 
-    case (cache, env, ih, DAE.INTEGER_CLOCK(e, resolution), p)
+    case (cache, env, ih, DAE.RATIONAL_CLOCK(e, resolution), p)
       equation
         (cache, e) = prefixExpWork(cache, env, ih, e, p);
         (cache, resolution) = prefixExpWork(cache, env, ih, resolution, p);
-        clkKind = DAE.INTEGER_CLOCK(e, resolution);
+        clkKind = DAE.RATIONAL_CLOCK(e, resolution);
       then
         (cache, clkKind);
 
@@ -1386,11 +1385,11 @@ algorithm
       then
         (cache, clkKind);
 
-    case (cache, env, ih, DAE.BOOLEAN_CLOCK(e, interval), p)
+    case (cache, env, ih, DAE.EVENT_CLOCK(e, interval), p)
       equation
         (cache, e) = prefixExpWork(cache, env, ih, e, p);
         (cache, interval) = prefixExpWork(cache, env, ih, interval, p);
-        clkKind = DAE.BOOLEAN_CLOCK(e, interval);
+        clkKind = DAE.EVENT_CLOCK(e, interval);
       then
         (cache, clkKind);
 
@@ -1468,17 +1467,17 @@ algorithm
   end match;
 end writeComponentPrefix;
 
-public function haveSubs "Function: crefHaveSubs
+public function hasSubs "Function: crefHaveSubs
   Checks whether Prefix has any subscripts, recursive "
   input DAE.ComponentPrefix pre;
   output Boolean ob;
 algorithm
   ob := match pre
-    case DAE.PRE(subscripts = {}) then haveSubs(pre.next);
+    case DAE.PRE(subscripts = {}) then hasSubs(pre.next);
     case DAE.PRE() then true;
     else false;
   end match;
-end haveSubs;
+end hasSubs;
 
 function removeCompPrefixFromExps
   input DAE.Exp inExp;

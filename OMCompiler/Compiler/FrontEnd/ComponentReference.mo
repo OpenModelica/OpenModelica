@@ -100,8 +100,6 @@ hash := match(cr)
     //print("QUAL, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
   then stringHashDjb2(id)+hashSubscripts(tp,subs)+hashComponentRef(cr1);
 
-  case(DAE.CREF_ITER(id,_,tp,subs))
-  then stringHashDjb2(id)+ hashSubscripts(tp,subs);
   else 0;
 end match;
 end hashComponentRef;
@@ -314,13 +312,6 @@ algorithm
       Absyn.ComponentRef cr_1;
       DAE.ComponentRef cr;
 
-    // iterators
-    case (DAE.CREF_ITER(ident = id, subscriptLst = subs))
-      equation
-        subs_1 = unelabSubscripts(subs);
-      then
-        Absyn.CREF_IDENT(id ,subs_1);
-
     // identifiers
     case (DAE.CREF_IDENT(ident = id, subscriptLst = subs))
       equation
@@ -509,17 +500,6 @@ algorithm
         str = printComponentRef2Str(s, subs);
       then
         str;
-
-    // Optimize -- a function call less
-    case (DAE.CREF_ITER(ident = s,index=ix,subscriptLst = {}))
-      then s + "/* iter index " + intString(ix) + " */";
-
-    // idents with subscripts
-    case DAE.CREF_ITER(ident = s,index=ix,subscriptLst = subs)
-      equation
-        str = printComponentRef2Str(s, subs);
-      then
-        str + "/* iter index " + intString(ix) + " */";
 
     // Qualified - Modelica output - does not handle names with underscores
     // Qualified - non Modelica output
@@ -2298,12 +2278,6 @@ algorithm
       then
         DAE.CREF_IDENT(id, ty, subs);
 
-    case (_, DAE.CREF_ITER(id, idx, ty, subs))
-      equation
-        id = stringAppend(id, inString);
-      then
-        DAE.CREF_ITER(id, idx, ty, subs);
-
   end match;
 end appendStringFirstIdent;
 
@@ -2331,12 +2305,6 @@ algorithm
         id = stringAppend(id, inString);
       then
         DAE.CREF_IDENT(id, ty, subs);
-
-    case (_, DAE.CREF_ITER(id, idx, ty, subs))
-      equation
-        id = stringAppend(id, inString);
-      then
-        DAE.CREF_ITER(id, idx, ty, subs);
 
   end match;
 end appendStringLastIdent;
@@ -2578,9 +2546,6 @@ algorithm
         child = crefSetLastType(child,newType);
       then
         makeCrefQual(id,ty,subs,child);
-
-    case DAE.CREF_ITER(id, idx, _, subs)
-      then DAE.CREF_ITER(id, idx, newType, subs);
 
   end match;
 end crefSetLastType;
@@ -3523,9 +3488,6 @@ algorithm
       then
         cr;
 
-    case DAE.CREF_ITER()
-      then
-        inCref;
     case DAE.WILD()
       then
         inCref;
@@ -3806,12 +3768,6 @@ algorithm
       then
         ();
 
-    case (DAE.CREF_ITER(identType = ty, subscriptLst = subs), _, _)
-      equation
-        checkCrefSubscriptsBounds3(ty, subs, inWholeCref, inInfo);
-      then
-        ();
-
   end match;
 end checkCrefSubscriptsBounds2;
 
@@ -4042,11 +3998,6 @@ algorithm
           szTypes := szTypes + System.getSizeOfData(cr.identType);
           szSubs := szSubs + System.getSizeOfData(cr.subscriptLst);
         then (false,cr);
-      case DAE.CREF_ITER()
-        algorithm
-          szIdents := szIdents + System.getSizeOfData(cr.ident);
-          szTypes := szTypes + System.getSizeOfData(cr.identType);
-        then (false,cr);
       case DAE.CREF_QUAL()
         algorithm
           szIdents := szIdents + System.getSizeOfData(cr.ident);
@@ -4088,6 +4039,16 @@ algorithm
   outCref := crefSetLastType(outCref, crefLastType(inCref));
   if debug then print("outCref: " + printComponentRefStr(outCref) + "\n"); end if;
 end createDifferentiatedCrefName;
+
+public function isTime
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := match cref
+    case DAE.CREF_IDENT(ident = "time") then true;
+    else false;
+  end match;
+end isTime;
 
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;

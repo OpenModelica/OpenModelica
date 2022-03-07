@@ -95,10 +95,11 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
  * \param pModelWidget
  * \param visualizationView
  */
-GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView)
-  : QGraphicsView(pModelWidget), mViewType(viewType), mVisualizationView(visualizationView), mSkipBackground(false), mContextMenuStartPosition(QPointF(0, 0)),
+GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget)
+  : QGraphicsView(pModelWidget), mViewType(viewType), mSkipBackground(false), mContextMenuStartPosition(QPointF(0, 0)),
     mContextMenuStartPositionValid(false)
 {
+  setIsVisualizationView(false);
   /* Ticket #3275
    * Set the scroll bars policy to always on to avoid unnecessary resize events.
    */
@@ -190,6 +191,12 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpBitmapShapeAnnotation = 0;
   createActions();
   mAllItems.clear();
+}
+
+void GraphicsView::setIsVisualizationView(bool visualizationView)
+{
+  setItemsFlags(!visualizationView);
+  mVisualizationView = visualizationView;
 }
 
 bool GraphicsView::isCreatingShape()
@@ -326,6 +333,59 @@ void GraphicsView::updateUndoRedoActions(bool enable)
   }
 }
 
+/*!
+ * \brief GraphicsView::performElementCreationChecks
+ * Performs the checks like partial model, default name, inner component etc.
+ * \param pLibraryTreeItem
+ * \param defaultPrefix
+ * \return
+ */
+bool GraphicsView::performElementCreationChecks(LibraryTreeItem *pLibraryTreeItem, QString *name, QString *defaultPrefix)
+{
+  MainWindow *pMainWindow = MainWindow::instance();
+  OptionsDialog *pOptionsDialog = OptionsDialog::instance();
+  // check if the model is partial
+  if (pLibraryTreeItem->isPartial()) {
+    if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
+      NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial, NotificationsDialog::InformationIcon, MainWindow::instance());
+      pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
+                                                       .arg(StringHandler::getModelicaClassType(pLibraryTreeItem->getRestriction()).toLower()).arg(pLibraryTreeItem->getName()));
+      if (!pNotificationsDialog->exec()) {
+        return false;
+      }
+    }
+  }
+  // get the model defaultComponentPrefixes
+  *defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(pLibraryTreeItem->getNameStructure());
+  QString defaultName;
+  *name = getUniqueElementName(pLibraryTreeItem->getNameStructure(), *name, &defaultName);
+  // Allow user to change the component name if always ask for component name settings is true.
+  if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
+    ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(*name, this, pMainWindow);
+    if (pComponentNameDialog->exec()) {
+      *name = pComponentNameDialog->getComponentName();
+      pComponentNameDialog->deleteLater();
+    } else {
+      pComponentNameDialog->deleteLater();
+      return false;
+    }
+  }
+  // if we or user has changed the default name
+  if (!defaultName.isEmpty() && name->compare(defaultName) != 0) {
+    // show the information to the user if we have changed the name of some inner component.
+    if (defaultPrefix->contains("inner")) {
+      if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
+        NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged, NotificationsDialog::InformationIcon, MainWindow::instance());
+        pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED).arg(defaultName).arg(*name));
+        if (!pNotificationsDialog->exec()) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 bool GraphicsView::addComponent(QString className, QPointF position)
 {
   MainWindow *pMainWindow = MainWindow::instance();
@@ -374,57 +434,23 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       return false;
     }
     StringHandler::ModelicaClasses type = pLibraryTreeItem->getRestriction();
-    OptionsDialog *pOptionsDialog = OptionsDialog::instance();
     // item not to be dropped on itself; if dropping an item on itself
     if (isClassDroppedOnItself(pLibraryTreeItem)) {
       return false;
-    } else { // check if the model is partial
-      if (pLibraryTreeItem->isPartial()) {
-        if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
-          NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial, NotificationsDialog::InformationIcon, MainWindow::instance());
-          pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
-                                                           .arg(StringHandler::getModelicaClassType(type).toLower()).arg(pLibraryTreeItem->getName()));
-          if (!pNotificationsDialog->exec()) {
-            return false;
-          }
-        }
+    } else {
+      QString name = pLibraryTreeItem->getName();
+      QString defaultPrefix = "";
+      if (!performElementCreationChecks(pLibraryTreeItem, &name, &defaultPrefix)) {
+        return false;
       }
-      // get the model defaultComponentPrefixes
-      QString defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(pLibraryTreeItem->getNameStructure());
-      QString defaultName;
-      QString name = getUniqueElementName(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getName(), &defaultName);
-      // Allow user to change the component name if always ask for component name settings is true.
-      if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
-        ComponentNameDialog *pComponentNameDialog = new ComponentNameDialog(name, this, pMainWindow);
-        if (pComponentNameDialog->exec()) {
-          name = pComponentNameDialog->getComponentName();
-          pComponentNameDialog->deleteLater();
-        } else {
-          pComponentNameDialog->deleteLater();
-          return false;
-        }
-      }
-      // if we or user has changed the default name
-      if (!defaultName.isEmpty() && name.compare(defaultName) != 0) {
-        // show the information to the user if we have changed the name of some inner component.
-        if (defaultPrefix.contains("inner")) {
-          if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
-            NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged, NotificationsDialog::InformationIcon, MainWindow::instance());
-            pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED).arg(defaultName).arg(name));
-            if (!pNotificationsDialog->exec()) {
-              return false;
-            }
-          }
-        }
-      }
-      ElementInfo *pComponentInfo = new ElementInfo;
-      pComponentInfo->applyDefaultPrefixes(defaultPrefix);
+      ElementInfo *pElementInfo = new ElementInfo;
+      pElementInfo->applyDefaultPrefixes(defaultPrefix);
       // if dropping an item on the diagram layer
       if (mViewType == StringHandler::Diagram) {
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
         if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
             (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)) {
-          addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo, true, false, true);
+          addComponentToView(name, pLibraryTreeItem, "", position, pElementInfo, true, false, true);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -435,7 +461,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
         // if item is a connector. then we can drop it to the graphicsview
         if (type == StringHandler::Connector || type == StringHandler::ExpandableConnector) {
-          addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo, true, false, true);
+          addComponentToView(name, pLibraryTreeItem, "", position, pElementInfo, true, false, true);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -1764,6 +1790,15 @@ void GraphicsView::fitInViewInternal()
     extentRectangle.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
     fitInView(extentRectangle, Qt::KeepAspectRatio);
   }
+}
+
+/*!
+ * \brief GraphicsView::emitResetDynamicSelect
+ * Emits the reset dynamic select signal.
+ */
+void GraphicsView::emitResetDynamicSelect()
+{
+  emit resetDynamicSelect();
 }
 
 /*!
@@ -3604,6 +3639,9 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
 
 void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
 {
+  if (isVisualizationView()) {
+    return;
+  }
   const bool removeLastAddedPoint = true;
   if (isCreatingLineShape()) {
     finishDrawingLineShape(removeLastAddedPoint);
@@ -3858,8 +3896,8 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
  */
 void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
-  /* If we are creating the connection OR creating any shape then don't show context menu */
-  if (isCreatingShape()) {
+  /* If we are creating the connection OR creating any shape OR is visualization view then don't show context menu */
+  if (isCreatingShape() || isVisualizationView()) {
     return;
   }
   // if creating a connection
@@ -4942,11 +4980,11 @@ void ModelWidget::createModelWidgetComponents()
     mpModelStatusBar->setSizeGripEnabled(false);
     mpModelStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
     // create the main layout
-    QVBoxLayout *pMainLayout = new QVBoxLayout;
-    pMainLayout->setContentsMargins(0, 0, 0, 0);
-    pMainLayout->setSpacing(4);
-    pMainLayout->addWidget(mpModelStatusBar);
-    setLayout(pMainLayout);
+    mpMainLayout = new QVBoxLayout;
+    mpMainLayout->setContentsMargins(0, 0, 0, 0);
+    mpMainLayout->setSpacing(4);
+    mpMainLayout->addWidget(mpModelStatusBar);
+    setLayout(mpMainLayout);
     MainWindow *pMainWindow = MainWindow::instance();
     // show hide widgets based on library type
     if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
@@ -4975,10 +5013,10 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
       if (MainWindow::instance()->isDebug()) {
-        pMainLayout->addWidget(mpUndoView);
+        mpMainLayout->addWidget(mpUndoView);
       }
-      pMainLayout->addWidget(mpDiagramGraphicsView, 1);
-      pMainLayout->addWidget(mpIconGraphicsView, 1);
+      mpMainLayout->addWidget(mpDiagramGraphicsView, 1);
+      mpMainLayout->addWidget(mpIconGraphicsView, 1);
       mpUndoStack->clear();
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
@@ -5009,7 +5047,7 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
-      pMainLayout->addWidget(mpModelStatusBar);
+      mpMainLayout->addWidget(mpModelStatusBar);
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
@@ -5055,11 +5093,11 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
-      pMainLayout->addWidget(mpModelStatusBar);
+      mpMainLayout->addWidget(mpModelStatusBar);
       if (MainWindow::instance()->isDebug()) {
-        pMainLayout->addWidget(mpUndoView);
+        mpMainLayout->addWidget(mpUndoView);
       }
-      pMainLayout->addWidget(mpDiagramGraphicsView, 1);
+      mpMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
@@ -5088,19 +5126,19 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
-      pMainLayout->addWidget(mpModelStatusBar);
+      mpMainLayout->addWidget(mpModelStatusBar);
       if (MainWindow::instance()->isDebug() && mpUndoView) {
-        pMainLayout->addWidget(mpUndoView);
+        mpMainLayout->addWidget(mpUndoView);
       }
-      pMainLayout->addWidget(mpDiagramGraphicsView, 1);
+      mpMainLayout->addWidget(mpDiagramGraphicsView, 1);
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
-        pMainLayout->addWidget(mpIconGraphicsView, 1);
+        mpMainLayout->addWidget(mpIconGraphicsView, 1);
       }
     }
     if (mpEditor) {
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
-      pMainLayout->addWidget(mpEditor, 1);
+      mpMainLayout->addWidget(mpEditor, 1);
     }
     mCreateModelWidgetComponents = true;
   }

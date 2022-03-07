@@ -662,7 +662,6 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
   setObjectName("BaseEditor");
-  setReadOnlyStyleSheet();
   QTextDocument *pTextDocument = document();
   pTextDocument->setDocumentMargin(2);
   BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
@@ -698,6 +697,7 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   mpCompleter->setCompletionMode(QCompleter::PopupCompletion);
   connect(mpCompleter, SIGNAL(highlighted(QModelIndex)), this, SLOT(showCompletionItemToolTip(QModelIndex)));
   connect(mpCompleter, SIGNAL(activated(QModelIndex)), this, SLOT(insertCompletionItem(QModelIndex)));
+  setReadOnlyStyleSheet();
   updateLineNumberAreaWidth(0);
   updateHighlights();
   updateCursorPosition();

@@ -6,6 +6,7 @@ ActualStream.mo \
 ActualStreamNonCref1.mo \
 ActualStreamNoStream1.mo \
 ActualStreamVariability1.mo \
+ActualStreamVariability2.mo \
 Algorithm1.mo \
 Algorithm2.mo \
 Algorithm3.mo \
@@ -109,6 +110,8 @@ CevalBinding2.mo \
 CevalBinding3.mo \
 CevalBinding4.mo \
 CevalBinding5.mo \
+CevalBinding6.mo \
+CevalBinding7.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
@@ -126,6 +129,7 @@ CevalFuncArray1.mo \
 CevalFuncArray2.mo \
 CevalFuncArray3.mo \
 CevalFuncArray4.mo \
+CevalFuncArray5.mo \
 CevalFuncAssert1.mo \
 CevalFuncAssert2.mo \
 CevalFuncFor1.mo \
@@ -173,6 +177,7 @@ CevalRecord6.mo \
 CevalRecord7.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
+CevalRecordArray3.mo \
 CevalRecordArray4.mo \
 CevalRecordArray5.mo \
 CevalRecordArray6.mo \
@@ -305,6 +310,7 @@ ConstrainingClass1.mo \
 ConstrainingClass2.mo \
 ConstrainingClass3.mo \
 ConstrainingClassFunc1.mo \
+ConstrainingClassFunc2.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
 DimCyclic3.mo \
@@ -315,12 +321,14 @@ DimInvalidExp3.mo \
 DimInvalidType1.mo \
 DimInvalidType2.mo \
 DimNegative1.mo \
+DimNegative2.mo \
 DimRagged1.mo \
 DimRagged2.mo \
 DimSize1.mo \
 DimSize2.mo \
 DimSize3.mo \
 DimSize4.mo \
+DimSize5.mo \
 DimUnknown1.mo \
 DimUnknown2.mo \
 DimUnknown3.mo \
@@ -347,6 +355,7 @@ DuplicateElements5.mo \
 DuplicateElements9.mo \
 DuplicateElements10.mo \
 DuplicateElementsValid1.mo \
+DuplicateElementsValid2.mo \
 DuplicateMod1.mo \
 DuplicateMod2.mo \
 DuplicateMod3.mo \
@@ -487,6 +496,7 @@ ForStatementPrefix.mo \
 func1.mo \
 func2.mo \
 FuncBuiltinAbs.mo \
+FuncBuiltinBackSample1.mo \
 FuncBuiltinCeil.mo \
 FuncBuiltinChange.mo \
 FuncBuiltinCross.mo \
@@ -496,11 +506,13 @@ FuncBuiltinDerInvalid1.mo \
 FuncBuiltinDiagonal.mo \
 FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \
+FuncBuiltinEdge2.mo \
 FuncBuiltinFill.mo \
 FuncBuiltinFill2.mo \
 FuncBuiltinFill3.mo \
 FuncBuiltinFloor.mo \
 FuncBuiltinGetInstanceName.mo \
+FuncBuiltinHold1.mo \
 FuncBuiltinHomotopy.mo \
 FuncBuiltinIdentity.mo \
 FuncBuiltinInitial1.mo \
@@ -514,18 +526,26 @@ FuncBuiltinMax.mo \
 FuncBuiltinMin.mo \
 FuncBuiltinMod.mo \
 FuncBuiltinNdims.mo \
+FuncBuiltinNoClock1.mo \
 FuncBuiltinOnes.mo \
 FuncBuiltinOuterProduct.mo \
 FuncBuiltinPre.mo \
+FuncBuiltinPrevious1.mo \
+FuncBuiltinPrevious2.mo \
+FuncBuiltinPrevious3.mo \
+FuncBuiltinPrevious4.mo \
 FuncBuiltinProduct.mo \
 FuncBuiltinPromote.mo \
 FuncBuiltinPromoteInvalid1.mo \
+FuncBuiltinPure1.mo \
+FuncBuiltinPure2.mo \
 FuncBuiltinReduction.mo \
 FuncBuiltinRem.mo \
 FuncBuiltinSample.mo \
 FuncBuiltinScalar.mo \
 FuncBuiltinScalar2.mo \
 FuncBuiltinSemiLinear.mo \
+FuncBuiltinShiftSample1.mo \
 FuncBuiltinSign.mo \
 FuncBuiltinSize.mo \
 FuncBuiltinSkew.mo \
@@ -536,8 +556,13 @@ FuncBuiltinSmoothWrongType1.mo \
 FuncBuiltinSmoothWrongType2.mo \
 FuncBuiltinSpatialDistribution.mo \
 FuncBuiltinSqrt.mo \
+FuncBuiltinSubSample1.mo \
+FuncBuiltinSubSample2.mo \
 FuncBuiltinSum.mo \
+FuncBuiltinSuperSample1.mo \
+FuncBuiltinSuperSample2.mo \
 FuncBuiltinSymmetric.mo \
+FuncBuiltinSymmetric2.mo \
 FuncBuiltinTerminal1.mo \
 FuncBuiltinTerminal2.mo \
 FuncBuiltinTranspose.mo \
@@ -550,6 +575,8 @@ FuncDefaultArg2.mo \
 FuncDefaultArg3.mo \
 FuncDefaultArg4.mo \
 FuncDefaultArg5.mo \
+FuncDefaultArg6.mo \
+FuncDefaultArg7.mo \
 FuncDuplicateParams1.mo \
 FuncExtends.mo \
 FuncInnerParam.mo \
@@ -573,6 +600,7 @@ FuncUnknownDim3.mo \
 FuncVariability.mo \
 FuncViaComp.mo \
 FuncViaComp2.mo \
+FuncViaComp3.mo \
 FuncVectorization1.mo \
 FuncVectorization2.mo \
 FuncVectorization3.mo \
@@ -586,6 +614,7 @@ FuncWildcard.mo \
 FuncWrongType.mo \
 FunctionalArg1.mo \
 FunctionalArg2.mo \
+FunctionalArg3.mo \
 FunctionalArgBinary1.mo \
 FunctionalArgInvalidType1.mo \
 FunctionCompOrder1.mo \
@@ -648,6 +677,8 @@ IfExpression8.mo \
 IfExpression10.mo \
 IfExpression11.mo \
 IfExpression12.mo \
+IfExpression13.mo \
+IfExpression14.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -712,6 +743,11 @@ InnerOuterMissing6.mo \
 InnerOuterMissing7.mo \
 InnerOuterMissing8.mo \
 InnerOuterNotInner1.mo \
+InnerOuterPartialOuter1.mo \
+InnerOuterPartialOuter2.mo \
+InnerOuterReplaceable1.mo \
+InstanceRestriction1.mo \
+InstanceRestriction2.mo \
 InStreamArray.mo \
 InStreamFlowThreshold.mo \
 InStreamInsideOutside.mo \
@@ -738,6 +774,13 @@ LookupLibrary1.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \
+MergeComponents1.mo \
+MergeComponents2.mo \
+MergeComponents3.mo \
+MergeComponents4.mo \
+MergeComponents5.mo \
+MergeComponents6.mo \
+MergeComponents7.mo \
 MissingRedeclare1.mo \
 mod1.mo \
 mod10.mo \
@@ -764,11 +807,13 @@ NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 NoScalarize1.mo \
+NoScalarize2.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
 OperationDivEW1.mo \
 OperationLogicalBinary1.mo \
+OperationLogicalBinary2.mo \
 OperationLogicalUnary1.mo \
 OperationLogicalUnary2.mo \
 OperationMatrixProduct1.mo \
@@ -811,6 +856,7 @@ PackageConstant3.mo \
 PackageConstant4.mo \
 ParameterBug.mos \
 PartialApplication1.mo \
+PartialApplication2.mo \
 PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \
@@ -826,6 +872,13 @@ Prefix2.mo \
 Prefix3.mo \
 PrintRecordTypes1.mo \
 PropagateExtends.mo \
+ProtectedMod1.mo \
+ProtectedMod2.mo \
+ProtectedMod3.mo \
+ProtectedMod5.mo \
+ProtectedMod6.mo \
+ProtectedMod7.mo \
+ProtectedMod8.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \
 RangeInvalidStep3.mo \
@@ -842,6 +895,9 @@ RecordBinding5.mo \
 RecordBinding6.mo \
 RecordBinding7.mo \
 RecordBinding8.mo \
+RecordBinding9.mo \
+RecordBinding10.mo \
+RecordBinding11.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordExtends1.mo \
@@ -849,7 +905,9 @@ RecordExtends2.mo \
 RecordUnknownDim1.mo \
 RecursiveConstants1.mo \
 RecursiveExtends1.mo \
+RecursiveExtends2.mo \
 RecursiveExtends3.mo \
+RecursiveExtends4.mo \
 RecursiveInst1.mo \
 RecursiveInst2.mo \
 RecursiveInst3.mo \
@@ -927,6 +985,9 @@ SizeInvalidIndex4.mo \
 SizeInvalidType1.mo \
 SizeInvalidType2.mo \
 SizeInvalidType3.mo \
+SlicedCref1.mo \
+SlicedCref2.mo \
+SlicedCref3.mo \
 StatementInvalidType1.mo \
 StateSelectVariability1.mo \
 StateSelect1.mo \
@@ -1029,28 +1090,26 @@ WhenVariableMismatch2.mo \
 WhenVariableMismatch3.mo \
 Wild1.mo \
 OCGTests.mos \
+sts.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+ProtectedMod4.mo \
 CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \
 FinalParameter1.mo \
 FinalParameter2.mo \
 FinalParameter3.mo \
-CevalRecordArray3.mo \
 IfExpression6.mo \
 IfExpression9.mo \
 RedeclareConstant1.mo \
 Connect3.mo \
-ProtectedMod1.mo \
 dim2.mo \
 DuplicateElements6.mo \
 DuplicateElements7.mo \
 DuplicateElements8.mo \
-DuplicateElementsValid2.mo \
 DuplicateElementsCond1.mo \
-cond3.mo \
 conn12.mo \
 conn13.mo \
 conn14.mo \
@@ -1087,14 +1146,11 @@ InvalidConnectorType6.mo \
 InvalidExpandableConnector1.mo \
 InvalidVariability1.mo \
 InvalidVariability2.mo \
-loop4.mo \
 PropagateRedeclareMod1.mo \
-RecursiveExtends2.mo \
 redeclare8.mo \
 type4.mo \
 type5.mo \
 PackageConstant2.mo \
-sts.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile

@@ -332,46 +332,43 @@ protected
   SCode.EEquation equ;
 algorithm
   SCode.EQUATION(equ) := inEquation;
-  (equ, _) := SCodeUtil.traverseEEquations(equ, (flattenEEquationTraverser, inEnv));
+  (equ, _) := SCodeUtil.mapFoldEEquations(equ, flattenEEquationTraverser, inEnv);
   outEquation := SCode.EQUATION(equ);
 end flattenEquation;
 
 protected function flattenEEquationTraverser
-  input tuple<SCode.EEquation, Env> inTuple;
-  output tuple<SCode.EEquation, Env> outTuple;
+  input output SCode.EEquation eq;
+  input output Env env;
 algorithm
-  outTuple := match(inTuple)
+  (eq, env) := match eq
     local
-      SCode.EEquation equ;
       SCode.Ident iter_name;
-      Env env;
       SourceInfo info;
       Absyn.ComponentRef cref;
       SCode.Comment cmt;
       Absyn.Exp crefExp, exp;
 
-    case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
-      equation
-        env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
+    case SCode.EQ_FOR(index = iter_name, info = info)
+      algorithm
+        env := NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
       then
-        ((equ, env));
+        (eq, env);
 
-    case ((SCode.EQ_REINIT(cref = crefExp as Absyn.CREF(componentRef = cref), expReinit = exp, comment = cmt,
-        info = info), env))
-      equation
-        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
-        equ = SCode.EQ_REINIT(crefExp, exp, cmt, info);
-        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
+    case SCode.EQ_REINIT(cref = crefExp as Absyn.CREF(componentRef = cref), expReinit = exp, comment = cmt, info = info)
+      algorithm
+        cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
+        eq := SCode.EQ_REINIT(crefExp, exp, cmt, info);
+        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
       then
-        ((equ, env));
+        (eq, env);
 
-    case ((equ, env))
-      equation
-        info = SCodeUtil.getEEquationInfo(equ);
-        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
+    else
+      algorithm
+        info := SCodeUtil.getEEquationInfo(eq);
+        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
       then
-        ((equ, env));
+        (eq, env);
 
   end match;
 end flattenEEquationTraverser;
@@ -415,40 +412,38 @@ protected function flattenStatement
   input Env inEnv;
   output SCode.Statement outStatement;
 algorithm
-  (outStatement, _) := SCodeUtil.traverseStatements(inStatement, (flattenStatementTraverser, inEnv));
+  (outStatement, _) := SCodeUtil.mapFoldStatements(inStatement, flattenStatementTraverser, inEnv);
 end flattenStatement;
 
 protected function flattenStatementTraverser
-  input tuple<SCode.Statement, Env> inTuple;
-  output tuple<SCode.Statement, Env> outTuple;
+  input output SCode.Statement stmt;
+  input output Env env;
 algorithm
-  outTuple := match(inTuple)
+  (stmt, env) := match stmt
     local
-      Env env;
       String iter_name;
-      SCode.Statement stmt;
       SourceInfo info;
 
-    case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
-      equation
-        env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (stmt, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
+    case SCode.ALG_FOR(index = iter_name, info = info)
+      algorithm
+        env := NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        (stmt, _) := SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
       then
-        ((stmt, env));
+        (stmt, env);
 
-    case ((stmt as SCode.ALG_PARFOR(index = iter_name, info = info), env))
-      equation
-        env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (stmt, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
+    case SCode.ALG_PARFOR(index = iter_name, info = info)
+      algorithm
+        env := NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        (stmt, _) := SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
       then
-        ((stmt, env));
+        (stmt, env);
 
-    case ((stmt, env))
-      equation
-        info = SCodeUtil.getStatementInfo(stmt);
-        (stmt, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
+    else
+      algorithm
+        info := SCodeUtil.getStatementInfo(stmt);
+        (stmt, _) := SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
       then
-        ((stmt, env));
+        (stmt, env);
 
   end match;
 end flattenStatementTraverser;

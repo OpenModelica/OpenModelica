@@ -7,6 +7,9 @@ DualMassOscillator.mos \
 enumeration.mos \
 enumeration2.mos \
 enumeration3.mos \
+fmi_interpolate_cs.mos \
+fmiBlackBox.mos \
+fmiProtected.mos \
 initialization_omc.mos \
 initialization.mos \
 initialization2_omc.mos \
@@ -14,6 +17,7 @@ initialization2.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.mos \
 outputState_omc.mos \
 outputState.mos \
+recompileFMU.mos \
 reset_omc.mos \
 reset.mos \
 resetWithLoops.mos \

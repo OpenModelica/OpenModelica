@@ -92,8 +92,11 @@ public:
     setCPUTime(false);
     setEnableAllWarnings(true);
     setEnableDataReconciliation(false);
+    setDataReconciliationAlgorithm("");
     setDataReconciliationMeasurementInputFile("");
+    setBoundaryConditionMeasurementInputFile("");
     setDataReconciliationCorrelationMatrixInputFile("");
+    setBoundaryConditionCorrelationMatrixInputFile("");
     setDataReconciliationEpsilon("");
     setDataReconciliationSaveSetting(false);
     setLogStreams(QStringList() << "LOG_STATS");
@@ -119,50 +122,50 @@ public:
     setTargetLanguage("C");
   }
 
-  void setClassName(QString className) {mClassName = className;}
-  QString getClassName() {return mClassName;}
-  void setStartTime(QString startTime) {mStartTime = startTime;}
-  QString getStartTime() {return mStartTime;}
-  void setStopTime(QString stopTime) {mStopTime = stopTime;}
-  QString getStopTime() {return mStopTime;}
+  void setClassName(const QString &className) {mClassName = className;}
+  QString getClassName() const {return mClassName;}
+  void setStartTime(const QString &startTime) {mStartTime = startTime;}
+  QString getStartTime() const {return mStartTime;}
+  void setStopTime(const QString &stopTime) {mStopTime = stopTime;}
+  QString getStopTime() const {return mStopTime;}
   void setNumberofIntervals(int numberofIntervals) {mNumberofIntervals = numberofIntervals;}
-  int getNumberofIntervals() {return mNumberofIntervals;}
+  int getNumberofIntervals() const {return mNumberofIntervals;}
   void setStepSize(qreal stepSize) {mStepSize = stepSize;}
-  qreal getStepSize() {return mStepSize;}
+  qreal getStepSize() const {return mStepSize;}
   void setInteractiveSimulation(bool interactiveSim) {mInteractiveSimulation = interactiveSim;}
-  bool isInteractiveSimulation() {return mInteractiveSimulation;}
+  bool isInteractiveSimulation() const {return mInteractiveSimulation;}
   void setInteractiveSimulationWithSteps(bool withSteps) {mInteractiveSimulationWithSteps = withSteps;}
-  bool isInteractiveSimulationWithSteps() {return mInteractiveSimulationWithSteps;}
+  bool isInteractiveSimulationWithSteps() const {return mInteractiveSimulationWithSteps;}
   void setInteractiveSimulationPortNumber(int port) { mInteractiveSimulationPortNumber = port;}
-  int getInteractiveSimulationPortNumber() {return mInteractiveSimulationPortNumber;}
-  void setMethod(QString method) {mMethod = method;}
-  QString getMethod() {return mMethod;}
-  void setTolerance(QString tolerance) {mTolerance = tolerance;}
-  QString getTolerance() {return mTolerance;}
-  void setJacobian(QString jacobian) {mJacobian = jacobian;}
-  QString getJacobian() {return mJacobian;}
+  int getInteractiveSimulationPortNumber() const {return mInteractiveSimulationPortNumber;}
+  void setMethod(const QString &method) {mMethod = method;}
+  QString getMethod() const {return mMethod;}
+  void setTolerance(const QString &tolerance) {mTolerance = tolerance;}
+  QString getTolerance() const {return mTolerance;}
+  void setJacobian(const QString &jacobian) {mJacobian = jacobian;}
+  QString getJacobian() const {return mJacobian;}
   void setRootFinding(bool rootFinding) {mRootFinding = rootFinding;}
-  bool getRootFinding() {return mRootFinding;}
+  bool getRootFinding() const {return mRootFinding;}
   void setRestartAfterEvent(bool restartAfterEvent) {mRestartAfterEvent = restartAfterEvent;}
-  bool getRestartAfterEvent() {return mRestartAfterEvent;}
-  void setInitialStepSize(QString initialStepSize) {mInitialStepSize = initialStepSize;}
-  QString getInitialStepSize() {return mInitialStepSize;}
-  void setMaxStepSize(QString maxStepSize) {mMaxStepSize = maxStepSize;}
-  QString getMaxStepSize() {return mMaxStepSize;}
+  bool getRestartAfterEvent() const {return mRestartAfterEvent;}
+  void setInitialStepSize(const QString &initialStepSize) {mInitialStepSize = initialStepSize;}
+  QString getInitialStepSize() const {return mInitialStepSize;}
+  void setMaxStepSize(const QString &maxStepSize) {mMaxStepSize = maxStepSize;}
+  QString getMaxStepSize() const {return mMaxStepSize;}
   void setMaxIntegration(int maxIntegration) {mMaxIntegration = maxIntegration;}
-  int getMaxIntegration() {return mMaxIntegration;}
-  void setCflags(QString cflags) {mCflags = cflags;}
-  QString getCflags() {return mCflags;}
+  int getMaxIntegration() const {return mMaxIntegration;}
+  void setCflags(const QString &cflags) {mCflags = cflags;}
+  QString getCflags() const {return mCflags;}
   void setNumberOfProcessors(int numberOfProcessors) {mNumberOfProcessors = numberOfProcessors;}
-  int getNumberOfProcessors() {return mNumberOfProcessors;}
+  int getNumberOfProcessors() const {return mNumberOfProcessors;}
   void setBuildOnly(bool buildOnly) {mBuildOnly = buildOnly;}
-  bool getBuildOnly() {return mBuildOnly;}
+  bool getBuildOnly() const {return mBuildOnly;}
   void setLaunchTransformationalDebugger(bool launchTransformationalDebugger) {mLaunchTransformationalDebugger = launchTransformationalDebugger;}
-  bool getLaunchTransformationalDebugger() {return mLaunchTransformationalDebugger;}
+  bool getLaunchTransformationalDebugger() const {return mLaunchTransformationalDebugger;}
   void setLaunchAlgorithmicDebugger(bool launchAlgorithmicDebugger) {mLaunchAlgorithmicDebugger = launchAlgorithmicDebugger;}
-  bool getLaunchAlgorithmicDebugger() {return mLaunchAlgorithmicDebugger;}
+  bool getLaunchAlgorithmicDebugger() const {return mLaunchAlgorithmicDebugger;}
   void setSimulateWithAnimation(bool simulateWithAnimation) {mSimulateWithAnimation = simulateWithAnimation;}
-  bool getSimulateWithAnimation() {return mSimulateWithAnimation;}
+  bool getSimulateWithAnimation() const {return mSimulateWithAnimation;}
 
   void setMatchingAlgorithm(const QString &matchingAlgorithm) {mMatchingAlgorithm = matchingAlgorithm;}
   QString getMatchingAlgorithm() const {return mMatchingAlgorithm;}
@@ -178,86 +181,90 @@ public:
   bool getParmodauto() const {return mParmodauto;}
   void setOldInstantiation(bool oldInstantiation) {mOldInstantiation = oldInstantiation;}
   bool getOldInstantiation() const {return mOldInstantiation;}
-  void setAdditionalTranslationFlags(QString additionalTranslationFlags) {mAdditionalTranslationFlags = additionalTranslationFlags;}
+  void setAdditionalTranslationFlags(const QString &additionalTranslationFlags) {mAdditionalTranslationFlags = additionalTranslationFlags;}
   QString getAdditionalTranslationFlags() const {return mAdditionalTranslationFlags;}
 
-  void setModelSetupFile(QString modelSetupFile) {mModelSetupFile = modelSetupFile;}
-  QString getModelSetupFile() {return mModelSetupFile;}
-  void setInitializationMethod(QString initializationMethod) {mInitializationMethod = initializationMethod;}
-  QString getInitializationMethod() {return mInitializationMethod;}
-  void setEquationSystemInitializationFile(QString equationSystemInitializationFile) {mEquationSystemInitializationFile = equationSystemInitializationFile;}
-  QString getEquationSystemInitializationFile() {return mEquationSystemInitializationFile;}
-  void setEquationSystemInitializationTime(QString equationSystemInitializationTime) {mEquationSystemInitializationTime = equationSystemInitializationTime;}
-  QString getEquationSystemInitializationTime() {return mEquationSystemInitializationTime;}
-  void setClock(QString clock) {mClock = clock;}
-  QString getClock() {return mClock;}
-  void setLinearSolver(QString linearSolver) {mLinearSolver = linearSolver;}
-  QString getLinearSolver() {return mLinearSolver;}
-  void setNonLinearSolver(QString nonLinearSolver) {mNonLinearSolver = nonLinearSolver;}
-  QString getNonLinearSolver() {return mNonLinearSolver;}
-  void setLinearizationTime(QString linearizationTime) {mLinearizationTime = linearizationTime;}
-  QString getLinearizationTime() {return mLinearizationTime;}
-  void setOutputVariables(QString outputVariables) {mOutputVariables = outputVariables;}
-  QString getOutputVariables() {return mOutputVariables;}
-  void setProfiling(QString profiling) {mProfiling = profiling;}
-  QString getProfiling() {return mProfiling;}
+  void setModelSetupFile(const QString &modelSetupFile) {mModelSetupFile = modelSetupFile;}
+  QString getModelSetupFile() const {return mModelSetupFile;}
+  void setInitializationMethod(const QString &initializationMethod) {mInitializationMethod = initializationMethod;}
+  QString getInitializationMethod() const {return mInitializationMethod;}
+  void setEquationSystemInitializationFile(const QString &equationSystemInitializationFile) {mEquationSystemInitializationFile = equationSystemInitializationFile;}
+  QString getEquationSystemInitializationFile() const {return mEquationSystemInitializationFile;}
+  void setEquationSystemInitializationTime(const QString &equationSystemInitializationTime) {mEquationSystemInitializationTime = equationSystemInitializationTime;}
+  QString getEquationSystemInitializationTime() const {return mEquationSystemInitializationTime;}
+  void setClock(const QString &clock) {mClock = clock;}
+  QString getClock() const {return mClock;}
+  void setLinearSolver(const QString &linearSolver) {mLinearSolver = linearSolver;}
+  QString getLinearSolver() const {return mLinearSolver;}
+  void setNonLinearSolver(const QString &nonLinearSolver) {mNonLinearSolver = nonLinearSolver;}
+  QString getNonLinearSolver() const {return mNonLinearSolver;}
+  void setLinearizationTime(const QString &linearizationTime) {mLinearizationTime = linearizationTime;}
+  QString getLinearizationTime() const {return mLinearizationTime;}
+  void setOutputVariables(const QString &outputVariables) {mOutputVariables = outputVariables;}
+  QString getOutputVariables() const {return mOutputVariables;}
+  void setProfiling(const QString &profiling) {mProfiling = profiling;}
+  QString getProfiling() const {return mProfiling;}
   void setCPUTime(bool cpuTime) {mCPUTime = cpuTime;}
-  bool getCPUTime() {return mCPUTime;}
+  bool getCPUTime() const {return mCPUTime;}
   void setEnableAllWarnings(bool enableAllWarnings) {mEnableAllWarnings = enableAllWarnings;}
-  bool getEnableAllWarnings() {return mEnableAllWarnings;}
+  bool getEnableAllWarnings() const {return mEnableAllWarnings;}
   void setEnableDataReconciliation(bool dataReconciliation) {mEnableDataReconciliation = dataReconciliation;}
-  bool getEnableDataReconciliation() {return mEnableDataReconciliation;}
-  void setDataReconciliationAlgorithm(QString dataReconciliationAlgorithm) {mDataReconciliationAlgorithm = dataReconciliationAlgorithm;}
-  QString getDataReconciliationAlgorithm() {return mDataReconciliationAlgorithm;}
-  void setDataReconciliationMeasurementInputFile(QString dataReconciliationMeasurementInputFile) {mDataReconciliationMeasurementInputFile = dataReconciliationMeasurementInputFile;}
-  QString getDataReconciliationMeasurementInputFile() {return mDataReconciliationMeasurementInputFile;}
-  void setDataReconciliationCorrelationMatrixInputFile(QString dataReconciliationCorrelationMatrixInputFile) {mDataReconciliationCorrelationMatrixInputFile = dataReconciliationCorrelationMatrixInputFile;}
-  QString getDataReconciliationCorrelationMatrixInputFile() {return mDataReconciliationCorrelationMatrixInputFile;}
-  void setDataReconciliationEpsilon(QString dataReconciliationEpsilon) {mDataReconciliationEpsilon = dataReconciliationEpsilon;}
-  QString getDataReconciliationEpsilon() {return mDataReconciliationEpsilon;}
+  bool getEnableDataReconciliation() const {return mEnableDataReconciliation;}
+  void setDataReconciliationAlgorithm(const QString &dataReconciliationAlgorithm) {mDataReconciliationAlgorithm = dataReconciliationAlgorithm;}
+  QString getDataReconciliationAlgorithm() const {return mDataReconciliationAlgorithm;}
+  void setDataReconciliationMeasurementInputFile(const QString &dataReconciliationMeasurementInputFile) {mDataReconciliationMeasurementInputFile = dataReconciliationMeasurementInputFile;}
+  QString getDataReconciliationMeasurementInputFile() const {return mDataReconciliationMeasurementInputFile;}
+  void setBoundaryConditionMeasurementInputFile(const QString &boundaryConditionMeasurementInputFile) {mBoundaryConditionMeasurementInputFile = boundaryConditionMeasurementInputFile;}
+  QString getBoundaryConditionMeasurementInputFile() const {return mBoundaryConditionMeasurementInputFile;}
+  void setDataReconciliationCorrelationMatrixInputFile(const QString &dataReconciliationCorrelationMatrixInputFile) {mDataReconciliationCorrelationMatrixInputFile = dataReconciliationCorrelationMatrixInputFile;}
+  QString getDataReconciliationCorrelationMatrixInputFile() const {return mDataReconciliationCorrelationMatrixInputFile;}
+  void setBoundaryConditionCorrelationMatrixInputFile(const QString &boundaryConditionCorrelationMatrixInputFile) {mBoundaryConditionCorrelationMatrixInputFile = boundaryConditionCorrelationMatrixInputFile;}
+  QString getBoundaryConditionCorrelationMatrixInputFile() const {return mBoundaryConditionCorrelationMatrixInputFile;}
+  void setDataReconciliationEpsilon(const QString &dataReconciliationEpsilon) {mDataReconciliationEpsilon = dataReconciliationEpsilon;}
+  QString getDataReconciliationEpsilon() const {return mDataReconciliationEpsilon;}
   void setDataReconciliationSaveSetting(bool dataReconciliationSaveSetting) {mDataReconciliationSaveSetting = dataReconciliationSaveSetting;}
-  bool getDataReconciliationSaveSetting() {return mDataReconciliationSaveSetting;}
+  bool getDataReconciliationSaveSetting() const {return mDataReconciliationSaveSetting;}
   void setLogStreams(QStringList logStreams) {mLogStreams = logStreams;}
-  QStringList getLogStreams() {return mLogStreams;}
-  void setAdditionalSimulationFlags(QString additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
-  QString getAdditionalSimulationFlags() {return mAdditionalSimulationFlags;}
+  QStringList getLogStreams() const {return mLogStreams;}
+  void setAdditionalSimulationFlags(const QString &additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
+  QString getAdditionalSimulationFlags() const {return mAdditionalSimulationFlags;}
 
-  void setOutputFormat(QString outputFormat) {mOutputFormat = outputFormat;}
-  QString getOutputFormat() {return mOutputFormat;}
+  void setOutputFormat(const QString &outputFormat) {mOutputFormat = outputFormat;}
+  QString getOutputFormat() const {return mOutputFormat;}
   void setSinglePrecision(bool singlePrecision) {mSinglePrecision = singlePrecision;}
-  bool getSinglePrecision() {return mSinglePrecision;}
-  void setFileNamePrefix(QString fileNamePrefix) {mFileNamePrefix = fileNamePrefix;}
-  QString getFileNamePrefix() {return mFileNamePrefix;}
+  bool getSinglePrecision() const {return mSinglePrecision;}
+  void setFileNamePrefix(const QString &fileNamePrefix) {mFileNamePrefix = fileNamePrefix;}
+  QString getFileNamePrefix() const {return mFileNamePrefix;}
   QString getOutputFileName() const {return mFileNamePrefix.isEmpty() ? mClassName : mFileNamePrefix;}
-  void setResultFileName(QString resultFileName) {mResultFileName = resultFileName;}
-  QString getResultFileName() {return mResultFileName;}
-  QString getFullResultFileName() {return mResultFileName.isEmpty() ? getOutputFileName() + "_res." + mOutputFormat : mResultFileName;}
-  void setVariableFilter(QString variableFilter) {mVariableFilter = variableFilter;}
-  QString getVariableFilter() {return mVariableFilter.isEmpty() ? ".*" : mVariableFilter;}
+  void setResultFileName(const QString &resultFileName) {mResultFileName = resultFileName;}
+  QString getResultFileName() const {return mResultFileName;}
+  QString getFullResultFileName() const {return mResultFileName.isEmpty() ? getOutputFileName() + "_res." + mOutputFormat : mResultFileName;}
+  void setVariableFilter(const QString &variableFilter) {mVariableFilter = variableFilter;}
+  QString getVariableFilter() const {return mVariableFilter.isEmpty() ? ".*" : mVariableFilter;}
   void setProtectedVariables(bool protectedVariables) {mProtectedVariables = protectedVariables;}
-  bool getProtectedVariables() {return mProtectedVariables;}
+  bool getProtectedVariables() const {return mProtectedVariables;}
   void setIgnoreHideResult(bool ignoreHideResult) {mIgnoreHideResult = ignoreHideResult;}
-  bool getIgnoreHideResult() {return mIgnoreHideResult;}
+  bool getIgnoreHideResult() const {return mIgnoreHideResult;}
   void setEquidistantTimeGrid(bool equidistantTimeGrid) {mEquidistantTimeGrid = equidistantTimeGrid;}
-  bool getEquidistantTimeGrid() {return mEquidistantTimeGrid;}
+  bool getEquidistantTimeGrid() const {return mEquidistantTimeGrid;}
   void setStoreVariablesAtEvents(bool storeVariablesAtEvents) {mStoreVariablesAtEvents = storeVariablesAtEvents;}
-  bool getStoreVariablesAtEvents() {return mStoreVariablesAtEvents;}
+  bool getStoreVariablesAtEvents() const {return mStoreVariablesAtEvents;}
   void setShowGeneratedFiles(bool showGeneratedFiles) {mShowGeneratedFiles = showGeneratedFiles;}
-  bool getShowGeneratedFiles() {return mShowGeneratedFiles;}
+  bool getShowGeneratedFiles() const {return mShowGeneratedFiles;}
 
   void setSimulationFlags(QStringList simulationFlags) {mSimulationFlags = simulationFlags;}
-  QStringList getSimulationFlags() {return mSimulationFlags;}
+  QStringList getSimulationFlags() const {return mSimulationFlags;}
   void setIsValid(bool isValid) {mValid = isValid;}
-  bool isValid() {return mValid;}
+  bool isValid() const {return mValid;}
   void setDataReconciliationInitialized(bool dataReconciliationInitialized) {mDataReconciliationInitialized = dataReconciliationInitialized;}
-  bool isDataReconciliationInitialized() {return mDataReconciliationInitialized;}
+  bool isDataReconciliationInitialized() const {return mDataReconciliationInitialized;}
   void setReSimulate(bool reSimulate) {mReSimulate = reSimulate;}
-  bool isReSimulate() {return mReSimulate;}
-  void setWorkingDirectory(QString workingDirectory) {mWorkingDirectory = workingDirectory;}
+  bool isReSimulate() const {return mReSimulate;}
+  void setWorkingDirectory(const QString &workingDirectory) {mWorkingDirectory = workingDirectory;}
   QString getWorkingDirectory() const {return mWorkingDirectory;}
-  void setFileName(QString fileName) {mFileName = fileName;}
+  void setFileName(const QString &fileName) {mFileName = fileName;}
   QString getFileName() const {return mFileName;}
-  void setTargetLanguage(QString targetLanguage) {mTargetLanguage = targetLanguage;}
+  void setTargetLanguage(const QString &targetLanguage) {mTargetLanguage = targetLanguage;}
   QString getTargetLanguage() const {return mTargetLanguage;}
 private:
   QString mClassName;
@@ -308,6 +315,8 @@ private:
   QString mDataReconciliationAlgorithm;
   QString mDataReconciliationMeasurementInputFile;
   QString mDataReconciliationCorrelationMatrixInputFile;
+  QString mBoundaryConditionMeasurementInputFile;
+  QString mBoundaryConditionCorrelationMatrixInputFile;
   QString mDataReconciliationEpsilon;
   bool mDataReconciliationSaveSetting;
   QStringList mLogStreams;

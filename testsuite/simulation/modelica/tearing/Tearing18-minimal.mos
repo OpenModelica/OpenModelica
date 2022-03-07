@@ -56,12 +56,13 @@ val(x8,1.0); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {6 0}
+//  * Linear torn systems (#iteration vars, #inner vars, density): 0 systems
+//  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
+//    {(6,0)}
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
@@ -76,12 +77,13 @@ val(x8,1.0); getErrorString();
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 0
+//  * Equation systems (not torn): 0
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {5 1}
+//  * Linear torn systems (#iteration vars, #inner vars, density): 0 systems
+//  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
+//    {(5,1)}
 // "
 // -0.9589242746631385
 // ""

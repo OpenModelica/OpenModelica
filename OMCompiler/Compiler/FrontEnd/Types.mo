@@ -593,7 +593,7 @@ end isRealOrSubTypeReal;
 
 public function isIntegerOrSubTypeInteger "
 Author BZ 2009-02
-This function verifies if it is some kind of a Integer type we are working with."
+This function verifies if it is some kind of an Integer type we are working with."
   input DAE.Type inType;
   output Boolean b;
 protected
@@ -603,6 +603,18 @@ algorithm
   lb2 := equivtypes(inType, DAE.T_INTEGER_DEFAULT);
   b := lb1 or lb2;
 end isIntegerOrSubTypeInteger;
+
+public function isEnumerationOrSubTypeEnumeration "
+This function verifies if it is some kind of an Enumeration type we are working with."
+  input DAE.Type inType;
+  output Boolean b;
+protected
+  Boolean lb1, lb2;
+algorithm
+  lb1 := isEnumeration(inType);
+  lb2 := equivtypes(inType, DAE.T_ENUMERATION_DEFAULT);
+  b := lb1 or lb2;
+end isEnumerationOrSubTypeEnumeration;
 
 protected function isClockOrSubTypeClock1
   input DAE.Type inType;
@@ -817,7 +829,7 @@ algorithm
   end match;
 end isString;
 
-public function isEnumeration "Return true if Type is the builtin String type."
+public function isEnumeration "Return true if Type is the enumeration type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -2864,6 +2876,23 @@ algorithm
     case DAE.VAR(ty = ty) then ty;
   end match;
 end makeElementReturnTypeSingle;
+
+public function getNthEnumLiteral
+  "Returns the n:th literal of an enumeration type."
+  input DAE.Type ty;
+  input Integer n;
+  output DAE.Exp literalExp;
+algorithm
+  literalExp := match ty
+    case DAE.T_ENUMERATION()
+      then DAE.ENUM_LITERAL(AbsynUtil.joinPaths(ty.path, Absyn.IDENT(listGet(ty.names, n))), n);
+
+    // Not sure if this is correct, maybe it would be more correct to
+    // use the path in the ClassInf.State inside the subtype?
+    case DAE.T_SUBTYPE_BASIC()
+      then getNthEnumLiteral(ty.complexType, n);
+  end match;
+end getNthEnumLiteral;
 
 public function makeEnumerationType
   "Creates an enumeration type from a name and an enumeration type containing
@@ -7541,7 +7570,6 @@ protected function makeDummyExpFromType
 algorithm
   outExp := match(inType)
     local
-      Absyn.Path p;
       Type ty;
       DAE.Dimension dim;
       Integer idim;
@@ -7553,7 +7581,7 @@ algorithm
     case (DAE.T_REAL()) then DAE.RCONST(0.0);
     case (DAE.T_STRING()) then DAE.SCONST("");
     case (DAE.T_BOOL()) then DAE.BCONST(false);
-    case (DAE.T_ENUMERATION(path = p)) then DAE.ENUM_LITERAL(p, 1);
+    case (DAE.T_ENUMERATION()) then getNthEnumLiteral(inType, 1);
     case (DAE.T_ARRAY(ty = ty, dims = {dim}))
       equation
         idim = Expression.dimensionSize(dim);

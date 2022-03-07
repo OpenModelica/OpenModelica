@@ -192,6 +192,11 @@ add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES} .cmake/omc_entry_p
 
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
+# Silence warnings about extra parenthesized equality checks. if((a==b))
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_compile_options(OpenModelicaCompiler PRIVATE -Wno-parentheses-equality)
+endif()
+
 # There is a lonely omc_file.h in Util/. It belongs in runtime/. Remove this when it is moved.
 target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Util)
 
@@ -222,7 +227,12 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::Modelica::External
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::Modelica::IO)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
 
-
+# On Windows we need explicitly tell the dll to export all symbols. It is not so good
+# that we have to export all symbols. However, OMEdit uses some of the functions in the
+# lib directly and we have no way of marking specific MetaModelica functions for exporting.
+if(MINGW)
+  target_link_options(OpenModelicaCompiler PRIVATE  -Wl,--export-all-symbols)
+endif()
 
 # OMC Executable.
 add_executable(omc .cmake/omc_main.c)

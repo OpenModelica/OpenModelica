@@ -185,8 +185,8 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file);
     extern int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
     extern void <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>(DATA * data, threadData_t *threadData);
-    extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long clockIndex);
-    extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long clockIndex);
+    extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long base_idx);
+    extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long base_idx, long sub_idx);
     extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
@@ -247,7 +247,7 @@ template simulationFile_syn(SimCode simCode)
 
       <%functionUpdateSynchronous(clockedPartitions, modelNamePrefix(simCode))%>
 
-      <%functionSystemsSynchronous(getSubPartitions(clockedPartitions), modelNamePrefix(simCode))%>
+      <%functionSystemsSynchronous(clockedPartitions, modelNamePrefix(simCode))%>
 
       <%functionSavePreSynchronous(getSubPartitions(clockedPartitions), modelNamePrefix(simCode))%>
 
@@ -264,7 +264,7 @@ template functionSavePreSynchronous(list<SimCode.SubPartition> subPartitions, St
   let preVars = subPartitions |> subPartition =>
     functionSavePreSynchronous1(subPartition); separator="\n"
   <<
-  /* pre(%v%) = %v% */
+  /* %v% = pre(%v%)*/
   void <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
@@ -289,52 +289,118 @@ end functionSavePreSynchronous2;
 
 template functionSavePreSynchronous3(tuple<SimCodeVar.SimVar, Boolean> var)
 ::=
+let &sub = buffer ""
 match var
   case (simVar, previous) then
     match simVar
       case SIMVAR(arrayCref=SOME(c), aliasvar=NOALIAS()) then
-        '<%cref(c)%> = <%crefPre(c)%>;'
+        '<%cref(c, &sub)%> = <%crefPre(c)%>;'
       case SIMVAR(aliasvar=NOALIAS()) then
-        '<%cref(name)%> = <%crefPre(name)%>;'
+        '<%cref(name, &sub)%> = <%crefPre(name)%>;'
 end functionSavePreSynchronous3;
 
-template isBoolClock(DAE.ClockKind clock)
+template isEventClock(DAE.ClockKind clock)
 ::=
 match clock
-  case BOOLEAN_CLOCK(__) then boolStrC(true)
+  case EVENT_CLOCK(__) then boolStrC(true)
   else boolStrC(false)
-end isBoolClock;
+end isEventClock;
 
 template functionInitSynchronous(list<ClockedPartition> clockedPartitions, String modelNamePrefix)
 "Synchonous features"
 ::=
-  let body = clockedPartitions |> partition =>
+  let body = clockedPartitions |> partition hasindex baseClockIdx =>
+
+    let &varDecls = buffer ""
+    let &auxFunction = buffer ""
     match partition
       case CLOCKED_PARTITION(__) then
-        let boolClock = isBoolClock(baseClock)
-        let subClocksInfo = subPartitions |> subPartition =>
-                            subPartitionStr(subPartition); separator="\n"
+        let baseClockStr = baseClockInit(baseClock, baseClockIdx, subPartitions, varDecls, auxFunction)
         <<
-        data->modelData->clocksInfo[i].nSubClocks = <%listLength(subPartitions)%>;
-        data->modelData->clocksInfo[i].subClocks = data->modelData->subClocksInfo + j;
-        data->modelData->clocksInfo[i].isBoolClock = <%boolClock%>;
-        i++;
-        <%subClocksInfo%>
-
+        <%varDecls%>
+        <%auxFunction%>
+        <%baseClockStr%>
         >>
   <<
   /* Initializes the clocks of model. */
   void <%symbolName(modelNamePrefix,"function_initSynchronous")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    long i=0, j=0;
+    data->simulationInfo->baseClocks = calloc(<%listLength(clockedPartitions)%>, sizeof(BASECLOCK_DATA));
+
     <%body%>
     TRACE_POP
   }
   >>
 end functionInitSynchronous;
 
-template subPartitionStr(SubPartition subPartition)
+template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartition> subPartitions, Text &varDecls, Text &auxFunction)
+::=
+  let &preExp = buffer ""
+  let intervalCounter = match baseClock
+    case RATIONAL_CLOCK() then
+      if isConst(intervalCounter) then
+        daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
+      else
+        '-1 /* Interval set in _updateSynchronous */'
+    case INFERRED_CLOCK() then
+      '1'
+    else
+      '-1'
+  let resolution = match baseClock
+    case RATIONAL_CLOCK() then
+      daeExp(resolution, contextOther, &preExp, &varDecls, &auxFunction)
+    else
+      '1'
+  let startInterval = match baseClock
+    case EVENT_CLOCK() then
+      daeExp(startInterval, contextOther, &preExp, &varDecls, &auxFunction)
+    else
+      '0'
+  let interval = match baseClock
+    case REAL_CLOCK() then
+      if isConst(interval) then
+        daeExp(interval, contextOther, &preExp, &varDecls, &auxFunction)
+      else
+        '-1 /* Interval set in _updateSynchronous */'
+    case INFERRED_CLOCK() then
+      '1'
+    else
+      '-1'
+  let computeInterval = match baseClock
+    case RATIONAL_CLOCK() then
+      if isConst(intervalCounter) then
+        <<
+        data->simulationInfo->baseClocks[<%baseClockIdx%>].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[<%baseClockIdx%>].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[<%baseClockIdx%>].resolution, "base-clock[<%baseClockIdx%>].interval = intervalCounter/resolution");
+        >>
+      else
+        ''
+  let subClocksInfo = subPartitions |> subPartition hasindex subClockIdx =>
+    subPartitionStr(subPartition, baseClockIdx, subClockIdx); separator="\n"
+  let warning = match baseClock
+    case INFERRED_CLOCK() then
+      <<
+      warningStreamPrint(LOG_STDOUT, 0, "Inferred clock, using default clock \'Clock(intervalCounter=1, resolution=1)\'");
+      >>
+    else ''
+  <<
+  /* Base-Clock <%baseClockIdx%> */
+  <%warning%>
+  data->simulationInfo->baseClocks[<%baseClockIdx%>] = (BASECLOCK_DATA){
+    .resolution = <%resolution%>,
+    .intervalCounter = <%intervalCounter%>,
+    .interval = <%interval%>,
+    .nSubClocks = <%listLength(subPartitions)%>,
+    .isEventClock = <%isEventClock(baseClock)%>,
+    .stats = (CLOCK_STATS){<%startInterval%>, 0, -1}};
+  <%computeInterval%>
+  data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks = calloc(<%listLength(subPartitions)%>, sizeof(SUBCLOCK_DATA));
+  <%subClocksInfo%>
+
+  >>
+end baseClockInit;
+
+template subPartitionStr(SubPartition subPartition, Integer baseClockIdx, Integer subClockIdx)
 ::=
 match subPartition
   case SUBPARTITION(subClock = SUBCLOCK(__), holdEvents=holdEvents) then
@@ -342,23 +408,23 @@ match subPartition
       case NONE() then ""
       else "External"
     <<
-    <%rationalStr("data->modelData->subClocksInfo[j].shift", subClock.shift)%>
-    <%rationalStr("data->modelData->subClocksInfo[j].factor", subClock.factor)%>
-    data->modelData->subClocksInfo[j].solverMethod = "<%methodStr%>";
-    data->modelData->subClocksInfo[j].holdEvents = <%boolStrC(holdEvents)%>;
-    j++;
+    data->simulationInfo->baseClocks[<%baseClockIdx%>].subClocks[<%subClockIdx%>] = (SUBCLOCK_DATA) {
+      .shift = <%makeCRational(subClock.shift)%>,
+      .factor = <%makeCRational(subClock.factor)%>,
+      .solverMethod = "<%methodStr%>",
+      .holdEvents = <%boolStrC(holdEvents)%>,
+      .stats = (CLOCK_STATS) {0, 0, -1}};
     >>
 end subPartitionStr;
 
-template rationalStr(String prefix, Rational rational)
+template makeCRational(Rational rational)
 ::=
 match rational
   case RATIONAL(__) then
     <<
-    <%prefix%>.m = <%nom%>;
-    <%prefix%>.n = <%denom%>;
+    makeRATIONAL(<%nom%>, <%denom%>)
     >>
-end rationalStr;
+end makeCRational;
 
 template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, String modelNamePrefix)
 ::=
@@ -375,16 +441,16 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
         >>; separator = "\n"
   <<
   <%auxFunction%>
-  /* Update the base clock. */
-  void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long clockIndex)
+  /* Update base-clock. */
+  void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long base_idx)
   {
     TRACE_PUSH
     <%varDecls%>
     modelica_boolean ret;
-    switch (clockIndex) {
+    switch (base_idx) {
       <%body%>
       default:
-        throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", clockIndex);
+        throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", base_idx);
         break;
     }
     TRACE_POP
@@ -393,65 +459,110 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
 end functionUpdateSynchronous;
 
 template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Text &auxFunction)
+"Update intervalCounter or interval of base-clock"
 ::=
-match baseClock
-  case DAE.BOOLEAN_CLOCK(__) then
-    let cond = cref(expCref(condition))
-    let &preExp = buffer ""
-    let si = daeExp(startInterval, contextOther, &preExp, &varDecls, &auxFunction)
-    <<
-    <%preExp%>
-    if (data->simulationInfo->clocksData[clockIndex].cnt > 0)
-      data->simulationInfo->clocksData[clockIndex].interval = data->localData[0]->timeValue - data->simulationInfo->clocksData[clockIndex].timepoint;
-    else
-      data->simulationInfo->clocksData[clockIndex].interval = <%si%>;
-    >>
-  else
-    let &preExp = buffer ""
-    let intvl = match baseClock
-      case REAL_CLOCK()
-      case INTEGER_CLOCK()
-      case BOOLEAN_CLOCK() then
-        daeExp(getClockInterval(baseClock), contextOther, &preExp, &varDecls, &auxFunction)
-      else "unspecified"
-      let interval = match intvl case "unspecified" then '1.0' else intvl
-      let warning = match intvl case "unspecified" then
-        'warningStreamPrint(LOG_STDOUT, 0, "Using default Clock(1.0)!");'
-    <<
-    <%preExp%>
-    data->simulationInfo->clocksData[clockIndex].interval = <%interval%>;
-    <%warning%>
-    >>
+  let &preExp = buffer ""
+
+  match baseClock
+    case RATIONAL_CLOCK() then
+      if isConst(intervalCounter) then
+        <<
+        /* Nothing to do */
+        >>
+      else
+        let intervalCounterStr = daeExp(intervalCounter, contextOther, &preExp, &varDecls, &auxFunction)
+        <<
+        <%preExp%>
+        data->simulationInfo->baseClocks[base_idx].intervalCounter = <%intervalCounterStr%>;
+        data->simulationInfo->baseClocks[base_idx].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[base_idx].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[base_idx].resolution, "intervalCounter/resolution");
+        >>
+    case REAL_CLOCK() then
+      if isConst(interval) then
+        <<
+        /* Nothing to do */
+        >>
+      else
+        let interval_ = daeExp(interval, contextOther, &preExp, &varDecls, &auxFunction)
+        <<
+        <%preExp%>
+        data->simulationInfo->baseClocks[base_idx].interval = <%interval_%>;
+        >>
+    case INFERRED_CLOCK()
+    case SOLVER_CLOCK()
+    case EVENT_CLOCK() then
+      <<
+      /* Nothing to do */
+      >>
+    else 'ERROR in updatePartition'
 end updatePartition;
 
-template functionSystemsSynchronous(list<SubPartition> subPartitions, String modelNamePrefix)
+
+template functionSystemsSynchronousSubClocks(list<SubPartition> subPartitions, Integer base_idx, String modelNamePrefix)
 ::=
-  let systs = subPartitions |> subPartition hasindex clockIndex =>
+  let subCases = subPartitions |> subPartition hasindex sub_idx =>
     match subPartition
-       case SUBPARTITION(__) then
-        functionEquationsSynchronous(clockIndex, vars, listAppend(equations, removedEquations), modelNamePrefix)
+      case SUBPARTITION(__) then
+        let name = 'functionEquationsSynchronous_system_<%base_idx%>_<%sub_idx%>'
+        <<
+        case <%sub_idx%>:
+          ret = <%symbolName(modelNamePrefix, name)%>(data, threadData);
+          break;
+        >>
+      else ""
     ; separator = "\n"
-  let cases = subPartitions |> subPartition hasindex clockIndex =>
-    let name = 'functionEquationsSynchronous_system<%clockIndex%>'
-    <<
-    case <%clockIndex%>:
-      ret = <%symbolName(modelNamePrefix, name)%>(data, threadData);
-      break;
-    >>; separator = "\n"
+
+  <<
+  case <%base_idx%>:
+    switch (sub_idx) {
+      <%subCases%>
+      default:
+        throwStreamPrint(NULL, "Internal Error: unknown sub-clock partition %ld", sub_idx);
+        ret = 1;
+        break;
+    }
+    break;
+  >>
+end functionSystemsSynchronousSubClocks;
+
+
+template functionSystemsSynchronous(list<ClockedPartition> clockedPartitions, String modelNamePrefix)
+::=
+  let baseCases = clockedPartitions |> partition hasindex base_idx =>
+    match partition
+      case CLOCKED_PARTITION(__) then
+        functionSystemsSynchronousSubClocks(subPartitions, base_idx, modelNamePrefix)
+      else ""
+    ; separator = "\n"
+
+  let systs = clockedPartitions |> partition hasindex base_idx =>
+    match partition
+      case CLOCKED_PARTITION(__) then
+        let funcCall = subPartitions |> subPart hasindex sub_idx =>
+          match subPart
+            case SUBPARTITION(__) then
+            functionEquationsSynchronous(base_idx, sub_idx, vars, listAppend(equations, removedEquations), modelNamePrefix)
+            else ""
+        ; separator = "\n"
+        <<
+        <%funcCall%>
+        >>
+      else ""
+    ; separator = "\n"
+
   <<
 
   <%systs%>
 
   /* Clocked systems equations */
-  int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long clockIndex)
+  int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long base_idx, long sub_idx)
   {
     TRACE_PUSH
     int ret;
 
-    switch (clockIndex) {
-      <%cases%>
+    switch (base_idx) {
+      <%baseCases%>
       default:
-        throwStreamPrint(NULL, "Internal Error: unknown sub partition %ld", clockIndex);
+        throwStreamPrint(NULL, "Internal Error: unknown base-clock partition %ld", base_idx);
         ret = 1;
         break;
     }
@@ -463,12 +574,12 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
 
 end functionSystemsSynchronous;
 
-template functionEquationsSynchronous(Integer clockIndex, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, String modelNamePrefix)
+template functionEquationsSynchronous(Integer base_idx, Integer sub_idx, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, String modelNamePrefix)
 ::=
   <<
-  <%equations |> eq => equation_impl(clockIndex, eq, contextOther, modelNamePrefix, false) ; separator="\n"%>
+  <%equations |> eq => equation_impl(base_idx, sub_idx, eq, contextOther, modelNamePrefix, false) ; separator="\n"%>
 
-  int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system<%clockIndex%>')%>(DATA *data, threadData_t *threadData)
+  int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system_<%base_idx%>_<%sub_idx%>')%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     int i;
@@ -885,20 +996,21 @@ end simulationFile_lnz;
 template defineSimVarArray(SimVar simVar, String arrayName)
   "Generates a define statement for a parameter."
 ::=
+let &sub = buffer ""
  match simVar
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
     /* <%crefStrNoUnderscore(c)%> */
-    // #define <%cref(c)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
+    // #define <%cref(c, &sub)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
 
     /* <%crefStrNoUnderscore(name)%> */
-    // #define <%cref(name)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
+    // #define <%cref(name, &sub)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
 
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
     /* <%crefStrNoUnderscore(name)%> */
-    // #define <%cref(name)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
+    // #define <%cref(name, &sub)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
 
     >>
   end match
@@ -1023,7 +1135,7 @@ template simulationFile_inl(SimCode simCode)
       #endif
 
       <%(inlineEquations |> eq hasindex i0 =>
-          equation_impl(-1, eq, contextSimulationNonDiscrete, modelNamePrefixStr, false)
+          equation_impl(-1, -1, eq, contextSimulationNonDiscrete, modelNamePrefixStr, false)
           ;separator="\n")%>
 
       /* inline equations*/
@@ -1202,7 +1314,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDER") else "NULL" else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDER_column") else "NULL" else "NULL" %>,
-       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1" else "-1" %>
+       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1" else "-1" %>,
+       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDERINIT") else "NULL" else "NULL" %>,
+       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL" else "NULL" %>,
+       <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1" else "-1" %>
     <%\n%>
     };
 
@@ -1382,8 +1497,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nDelayExpressions = <%match delayed case
      DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
-    data->modelData->nClocks = <%nClocks%>;
-    data->modelData->nSubClocks = <%nSubClocks%>;
+    data->modelData->nBaseClocks = <%nClocks%>;
 
     data->modelData->nSpatialDistributions = <%nSpatialDistributions%>;
 
@@ -1560,22 +1674,23 @@ end variableDefinitions;
 template globalDataParDefine(SimVar simVar, String arrayName)
   "Generates a define statement for a parameter."
 ::=
+let &sub = buffer ""
  match simVar
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
     /* <%crefStrNoUnderscore(c)%> */
-    #define <%cref(c)%> data->simulationInfo-><%arrayName%>[<%index%>]
+    #define <%cref(c, &sub)%> data->simulationInfo-><%arrayName%>[<%index%>]
 
     /* <%crefStrNoUnderscore(name)%> */
-    #define <%cref(name)%> data->simulationInfo-><%arrayName%>[<%index%>]
-    #define _<%cref(name)%>(i) <%cref(name)%>
+    #define <%cref(name, &sub)%> data->simulationInfo-><%arrayName%>[<%index%>]
+    #define _<%cref(name, &sub)%>(i) <%cref(name, &sub)%>
 
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
     /* <%crefStrNoUnderscore(name)%> */
-    #define <%cref(name)%> data->simulationInfo-><%arrayName%>[<%index%>]
-    #define _<%cref(name)%>(i) <%cref(name)%>
+    #define <%cref(name, &sub)%> data->simulationInfo-><%arrayName%>[<%index%>]
+    #define _<%cref(name, &sub)%>(i) <%cref(name, &sub)%>
 
     >>
   end match
@@ -1584,27 +1699,28 @@ end globalDataParDefine;
 template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDataVarDefine
   Generates a define statement for a varable in the global data section."
 ::=
+let &sub = buffer ""
   match simVar
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
     /* <%crefStrNoUnderscore(c)%> */
-    #define _<%cref(c)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
-    #define <%cref(c)%> _<%cref(c)%>(0)
-    #define <%cref(crefPrefixPre(c))%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
+    #define _<%cref(c, &sub)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
+    #define <%cref(c, &sub)%> _<%cref(c, &sub)%>(0)
+    #define <%cref(crefPrefixPre(c), &sub)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
 
     /* <%crefStrNoUnderscore(name)%> */
-    #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
-    #define <%cref(name)%> _<%cref(name)%>(0)
-    #define <%cref(crefPrefixPre(name))%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
+    #define _<%cref(name, &sub)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
+    #define <%cref(name, &sub)%> _<%cref(name, &sub)%>(0)
+    #define <%cref(crefPrefixPre(name), &sub)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
 
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
     /* <%crefStrNoUnderscore(name)%> */
-    #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
-    #define <%cref(name)%> _<%cref(name)%>(0)
-    #define <%cref(crefPrefixPre(name))%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
-    #define _<%cref(crefPrefixPre(name))%>(i) <%cref(crefPrefixPre(name))%>
+    #define _<%cref(name, &sub)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
+    #define <%cref(name, &sub)%> _<%cref(name, &sub)%>(0)
+    #define <%cref(crefPrefixPre(name), &sub)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
+    #define _<%cref(crefPrefixPre(name), &sub)%>(i) <%cref(crefPrefixPre(name), &sub)%>
 
     >>
   end match
@@ -1654,6 +1770,7 @@ end symJacDefinition;
 template aliasVarNameType(AliasVariable var)
   "Generates type of alias."
 ::=
+let &sub = buffer ""
   match var
   case NOALIAS() then
     <<
@@ -1661,11 +1778,11 @@ template aliasVarNameType(AliasVariable var)
     >>
   case ALIAS(__) then
     <<
-    &<%cref(varName)%>,0
+    &<%cref(varName, &sub)%>,0
     >>
   case NEGATEDALIAS(__) then
     <<
-    &<%cref(varName)%>,1
+    &<%cref(varName, &sub)%>,1
     >>
   end match
 end aliasVarNameType;
@@ -1673,6 +1790,7 @@ end aliasVarNameType;
 template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
+let &sub = buffer ""
   match extObjInfo
   case extObjInfo as EXTOBJINFO(__) then
     <<
@@ -1680,7 +1798,7 @@ template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo, String mod
     {
       if(data->simulationInfo->extObjs)
       {
-        <%listReverse(extObjInfo.vars) |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'omc_<%underscorePath(ext.fullClassName)%>_destructor(threadData,<%cref(var.name)%>);' ;separator="\n"%>
+        <%listReverse(extObjInfo.vars) |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'omc_<%underscorePath(ext.fullClassName)%>_destructor(threadData,<%cref(var.name, &sub)%>);' ;separator="\n"%>
         free(data->simulationInfo->extObjs);
         data->simulationInfo->extObjs = 0;
       }
@@ -1692,6 +1810,7 @@ end functionCallExternalObjectDestructors;
 template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
+let &sub = buffer ""
   match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
     <<
@@ -1700,7 +1819,7 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
       TRACE_PUSH
 
       <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
-        '<%cref(name)%> = data->simulationInfo->inputVars[<%i0%>];'
+        '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%i0%>];'
         ;separator="\n"
       %>
 
@@ -1761,6 +1880,7 @@ end functionInput;
 template functionDataInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
+let &sub = buffer ""
   match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
     <<
@@ -1769,7 +1889,7 @@ template functionDataInput(SimCode simCode, ModelInfo modelInfo, String modelNam
       TRACE_PUSH
 
       <%vars.dataReconinputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
-        '<%cref(name)%> = data->simulationInfo->datainputVars[<%i0%>];'
+        '<%cref(name, &sub)%> = data->simulationInfo->datainputVars[<%i0%>];'
         ;separator="\n"
       %>
       TRACE_POP
@@ -1797,6 +1917,7 @@ end functionDataInput;
 template functionOutput(ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
+let &sub = buffer ""
   match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
     <<
@@ -1805,7 +1926,7 @@ template functionOutput(ModelInfo modelInfo, String modelNamePrefix)
       TRACE_PUSH
 
       <%vars.outputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
-        'data->simulationInfo->outputVars[<%i0%>] = <%cref(name)%>;'
+        'data->simulationInfo->outputVars[<%i0%>] = <%cref(name, &sub)%>;'
         ;separator="\n"
       %>
 
@@ -1820,6 +1941,7 @@ end functionOutput;
 template functionSetC(ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
+let &sub = buffer ""
   match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
     <<
@@ -1828,7 +1950,7 @@ template functionSetC(ModelInfo modelInfo, String modelNamePrefix)
       TRACE_PUSH
 
       <%vars.dataReconSetcVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
-        'data->simulationInfo->setcVars[<%i0%>] = <%cref(name)%>;'
+        'data->simulationInfo->setcVars[<%i0%>] = <%cref(name, &sub)%>;'
         ;separator="\n"
       %>
 
@@ -1856,8 +1978,7 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           /* sample <%index%> */
           data->modelData->samplesInfo[i].index = <%index%>;
           data->modelData->samplesInfo[i].start = <%e1%>;
-          data->modelData->samplesInfo[i].interval = <%e2%>;
-          assertStreamPrint(threadData,data->modelData->samplesInfo[i].interval > 0.0, "sample-interval <= 0.0");
+          data->modelData->samplesInfo[i].interval = <%e2%> /* (max int for single time events) */;
           i++;
           >>
         else '')
@@ -1947,6 +2068,7 @@ end functionSetupMixedSystems;
 template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations, Text &header, String modelNamePrefixStr)
   "Generates functions in simulation file."
 ::=
+let &sub = buffer ""
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then
        let contEqsIndex = equationIndex(cont)
@@ -1974,7 +2096,7 @@ template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations, Text &hea
        let discExp = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
           let expPart = daeExp(exp, contextSimulationDiscrete, &preDisc, &varDecls, &auxFunction)
           <<
-          <%cref(cref)%> = <%expPart%>;
+          <%cref(cref, &sub)%> = <%expPart%>;
           >>
         ;separator="\n")
        let &header += 'void updateContinuousPart<%index%>(void *);<%\n%>void updateIterationExpMixedSystem<%index%>(void *);<%\n%>'
@@ -2169,6 +2291,7 @@ end functionSetupLinearSystems;
 template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
+  let &sub = buffer ""
   (linearSystems |> eqn => (match eqn
      case eq as SES_MIXED(__) then functionSetupLinearSystemsTemp(fill(eq.cont,1), modelNamePrefix)
      // no dynamic tearing
@@ -2178,7 +2301,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let &varDeclsRes = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
          let &tmp = buffer ""
-         let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var))%> = xloc[<%i0%>];' ;separator="\n")
+         let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
          let prebody = (match ls.partOfJac
            case true then
              (ls.residual |> eq2 =>
@@ -2201,9 +2324,9 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var)%>.max;
+           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
+           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
+           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
            >> ;separator="\n")
        <<
        <%auxFunction%>
@@ -2255,9 +2378,9 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var)%>.max;
+           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
+           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
+           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
            >> ;separator="\n")
        <<
        <%auxFunction%>
@@ -2297,10 +2420,11 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
      match ls.jacobianMatrix
        case SOME(__) then
          // for strict tearing set
+         let &sub = buffer ""
          let &varDeclsRes = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
          let &tmp = buffer ""
-         let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var))%> = xloc[<%i0%>];' ;separator="\n")
+         let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
          let prebody = (ls.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
@@ -2316,15 +2440,15 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var)%>.max;
+           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
+           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
+           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
            >> ;separator="\n")
          // for casual tearing set
          let &varDeclsRes2 = buffer "" /*BUFD*/
          let &auxFunction2 = buffer ""
          let &tmp2 = buffer ""
-         let xlocs2 = (at.vars |> var hasindex i0 => '<%cref(varName(var))%> = xloc[<%i0%>];' ;separator="\n")
+         let xlocs2 = (at.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
          let prebody2 = (at.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
           ;separator="\n")
@@ -2340,9 +2464,9 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let body_initializeStaticLSData2 = (at.vars |> var hasindex i0 =>
            <<
            /* static at data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var)%>.max;
+           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
+           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
+           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
            >> ;separator="\n")
 
        <<
@@ -2427,9 +2551,9 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var)%>.max;
+           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
+           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
+           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
            >> ;separator="\n")
          // for casual tearing set
          let &varDecls3 = buffer "" /*BUFD*/
@@ -2449,9 +2573,9 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          let body_initializeStaticLSData2 = (at.vars |> var hasindex i0 =>
            <<
            /* static at data for <%crefStrNoUnderscore(varName(var))%> */
-           linearSystemData->nominal[i] = <%varAttributes(var)%>.nominal;
-           linearSystemData->min[i]     = <%varAttributes(var)%>.min;
-           linearSystemData->max[i++]   = <%varAttributes(var)%>.max;
+           linearSystemData->nominal[i] = <%varAttributes(var, &sub)%>.nominal;
+           linearSystemData->min[i]     = <%varAttributes(var, &sub)%>.min;
+           linearSystemData->max[i++]   = <%varAttributes(var, &sub)%>.max;
            >> ;separator="\n")
 
        <<
@@ -2664,7 +2788,7 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNa
   case e as SES_RESIDUAL(__)
    then ""
   else
-    let &eqs += equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefixStr, false)
+    let &eqs += equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefixStr, false)
     <<
     /* local constraints */
     <%createLocalConstraints(eq)%>
@@ -2681,7 +2805,7 @@ template functionExtraResidualsPreBodyJacobian(SimEqSystem eq, Text &eqs, String
   case e as SES_RESIDUAL(__)
    then ""
   else
-    let &eqs += equation_impl(-1, eq, contextJacobian, modelNamePrefixStr, false)
+    let &eqs += equation_impl(-1, -1, eq, contextJacobian, modelNamePrefixStr, false)
     <<
     /* local constraints */
     <%createLocalConstraints(eq)%>
@@ -2873,6 +2997,7 @@ template generateNonLinearResidualFunction(NonlinearSystem system, String modelN
    whichSet = 1: Casual Set"
 ::=
 let () = tmpTickReset(0)
+let &sub = buffer ""
 match system
   case nls as NONLINEARSYSTEM(__) then
     let &varDecls = buffer ""
@@ -2883,7 +3008,7 @@ match system
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
         let body = (alg.knownOutputCrefs |> cr hasindex i0 =>
           let &varDecls += '<%crefType(cr)%> OLD_<%i0%>;<%\n%>'
-          'OLD_<%i0%> = <%cref(cr)%>;'
+          'OLD_<%i0%> = <%cref(cr, &sub)%>;'
         ;separator="\n")
         <<
         /* backup outputs of the algorithm */
@@ -2891,19 +3016,19 @@ match system
         >>
     let restoreKnownOutputs = match nls.eqs
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
-        let body = (alg.knownOutputCrefs |> cr hasindex i0 => '<%cref(cr)%> = OLD_<%i0%>;' ;separator="\n")
+        let body = (alg.knownOutputCrefs |> cr hasindex i0 => '<%cref(cr, &sub)%> = OLD_<%i0%>;' ;separator="\n")
         <<
         /* restore previously known outputs of the algorithm */
         <%body%>
         >>
-    let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
+    let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr, &sub)%> = xloc[<%i0%>];' ;separator="\n")
     let prebody = (nls.eqs |> eq2 =>
       functionExtraResidualsPreBody(eq2, &innerEqns, modelNamePrefix)
     ;separator="\n")
     let body = match nls.eqs
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
         let init = (nls.crefs |> cr hasindex i0 => 'res[<%i0%>] = 0;' ;separator="\n")
-        let known = (alg.knownOutputCrefs |> cr hasindex i0 => 'res[(int)fmod(<%i0%>, <%listLength(nls.crefs)%>)] += pow(OLD_<%i0%> - <%cref(cr)%>, 2);' ;separator="\n")
+        let known = (alg.knownOutputCrefs |> cr hasindex i0 => 'res[(int)fmod(<%i0%>, <%listLength(nls.crefs)%>)] += pow(OLD_<%i0%> - <%cref(cr, &sub)%>, 2);' ;separator="\n")
         <<
         <%init%>
         <%known%>
@@ -3012,7 +3137,7 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
         inSysData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
         inSysData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
         inSysData->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
-        inSysData->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
+        inSysData->sparsePattern->numberOfNonZeros = <%sp_size_index%>;
         inSysData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(unsigned int));
         inSysData->sparsePattern->maxColors = <%maxColor%>;
 
@@ -3061,8 +3186,9 @@ end generateStaticInitialData;
 template getIterationVars(list<ComponentRef> crefs, String indexName)
   "Generates iteration variables update."
 ::=
+  let &sub = buffer ""
   let vars = (crefs |> cr hasindex i0 =>
-      'array[<%i0%>] = <%cref(cr)%>;'
+      'array[<%i0%>] = <%cref(cr, &sub)%>;'
   ;separator="\n")
   <<
 
@@ -3135,11 +3261,12 @@ end functionInitialStateSets;
 template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem> startValueEquations, list<SimEqSystem> nominalValueEquations, list<SimEqSystem> minValueEquations, list<SimEqSystem> maxValueEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
+let &sub = buffer ""
   <<
-  <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")
-  %><%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")
-  %><%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")
-  %><%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n") %>
+  <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")
+  %><%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")
+  %><%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n")
+  %><%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, -1, eq, contextOther, modelNamePrefix, /* Static? */ true, /* No optimization */ true, /* Initial? */ true) ; separator="\n") %>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData)
   {
@@ -3150,9 +3277,9 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     infoStreamPrint(LOG_INIT, 1, "updating min-values");
     <%minValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
-      <%crefAttributes(cref)%>.min = <%cref(cref)%>;
+      <%crefAttributes(cref)%>.min = <%cref(cref, &sub)%>;
         infoStreamPrint(LOG_INIT_V, 0, "%s(min=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.min);
-      <%cref(cref)%> = <%crefAttributes(cref)%>.start;
+      <%cref(cref, &sub)%> = <%crefAttributes(cref)%>.start;
       >>
       ;separator="\n"
     %>
@@ -3164,9 +3291,9 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     infoStreamPrint(LOG_INIT, 1, "updating max-values");
     <%maxValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
-      <%crefAttributes(cref)%>.max = <%cref(cref)%>;
+      <%crefAttributes(cref)%>.max = <%cref(cref, &sub)%>;
         infoStreamPrint(LOG_INIT_V, 0, "%s(max=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.max);
-      <%cref(cref)%> = <%crefAttributes(cref)%>.start;
+      <%cref(cref, &sub)%> = <%crefAttributes(cref)%>.start;
       >>
       ;separator="\n"
     %>
@@ -3178,9 +3305,9 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     infoStreamPrint(LOG_INIT, 1, "updating nominal-values");
     <%nominalValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
-      <%crefAttributes(cref)%>.nominal = <%cref(cref)%>;
+      <%crefAttributes(cref)%>.nominal = <%cref(cref, &sub)%>;
         infoStreamPrint(LOG_INIT_V, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.nominal);
-      <%cref(cref)%> = <%crefAttributes(cref)%>.start;
+      <%cref(cref, &sub)%> = <%crefAttributes(cref)%>.start;
       >>
       ;separator="\n"
     %>
@@ -3200,6 +3327,7 @@ end functionUpdateBoundVariableAttributes;
 template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquations, list<SimEqSystem> parameterEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, SimCode simCode)
   "Generates function in simulation file."
 ::=
+  let &sub = buffer ""
   let &eqFuncs = buffer ""
   let &auxFunction = buffer ""
   let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations),
@@ -3213,7 +3341,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
     TRACE_PUSH
     <%sortSimpleAssignmentBasedOnLhs(simpleParameterEquations) |> eq as SES_SIMPLE_ASSIGN(__) =>
       <<
-      <%cref(cref)%> = <%daeExpSimpleLiteral(exp)%>;
+      <%cref(cref, &sub)%> = <%daeExpSimpleLiteral(exp)%>;
       <%match cref2simvar(cref, simCode)
         case SIMVAR(aliasvar=NOALIAS(), varKind=PARAM()) then
           'data->modelData-><%expTypeShort(type_)%>ParameterData[<%index%>].time_unvarying = 1;'
@@ -3247,7 +3375,7 @@ template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, In
                   extern "C" {
                   #endif<%\n%>
                   >>)) +
-                  (eqs |> eq => equation_impl_options(-1, eq, contextSimulationDiscrete, modelNamePrefix, static, noOpt, init) ; separator="\n") +
+                  (eqs |> eq => equation_impl_options(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, static, noOpt, init) ; separator="\n") +
                   <<
                   <%\n%>
                   OMC_DISABLE_OPT
@@ -3318,7 +3446,7 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
     let nrfuncs = listLength(initalEquations_lambda0)
     let &eqfuncs = buffer ""
     let fncalls =
-                let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 => equation_impl(-1, eq, contextSimulationDiscrete,
+                let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 => equation_impl(-1, -1, eq, contextSimulationDiscrete,
                     modelNamePrefix, true) ;separator="\n")
                 (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
     <<
@@ -3362,7 +3490,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
       >>
     end match
   else
-    let &eqs += equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix, true)
+    let &eqs += equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, true)
     equation_call(eq, modelNamePrefix)
   end match
 end functionRemovedInitialEquationsBody;
@@ -4137,7 +4265,7 @@ template createEquationsAndCalls(list<list<SimEqSystem>> systems, String name, C
 ::=
   let _ = (systems |> equations => (
           equations |> eq => (
-            let &eqFuncs += equation_impl(-1, eq, context, modelNamePrefixStr, false)
+            let &eqFuncs += equation_impl(-1, -1, eq, context, modelNamePrefixStr, false)
             let &eqCalls += equationNames_(eq, context, modelNamePrefixStr)
             <<>>
           )
@@ -4277,9 +4405,9 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   #endif
     data->simulationInfo->callStatistics.functionAlgebraics++;
 
-    <%fncalls %>
-
     <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
+
+    <%fncalls %>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_ALGEBRAICS);
@@ -4384,7 +4512,7 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
 
     daeModeData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeCols%>+1)*sizeof(int));
     daeModeData->sparsePattern->index = (unsigned int*) malloc(<%sizeNNZ%>*sizeof(int));
-    daeModeData->sparsePattern->numberOfNoneZeros = <%sizeNNZ%>;
+    daeModeData->sparsePattern->numberOfNonZeros = <%sizeNNZ%>;
     daeModeData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeCols%>*sizeof(int));
     daeModeData->sparsePattern->maxColors = <%maxColorStr%>;
 
@@ -4413,7 +4541,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   let &eqfuncs = buffer ""
   let &eqArray = buffer ""
   let fncalls = (allEquationsPlusWhen |> eq hasindex i0 =>
-                    let &eqfuncs += equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix, false)
+                    let &eqfuncs += equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, false)
                     equation_call(eq, modelNamePrefix)
                     ;separator="\n")
 
@@ -4453,7 +4581,7 @@ template functionLocalKnownVars(list<SimEqSystem> localKnownVars, String modelNa
 ::=
   <<
   <%(localKnownVars |> eq =>
-                    equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix, false)
+                    equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, false)
                     ;separator="\n")%>
 
   int <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(DATA *data, threadData_t *threadData)
@@ -4527,6 +4655,8 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   int <%symbolName(modelNamePrefix,"function_ZeroCrossings")%>(DATA *data, threadData_t *threadData, double *gout)
   {
     TRACE_PUSH
+    const int *equationIndexes = NULL;
+
     <%varDecls2%>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -4668,6 +4798,8 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   int <%symbolName(modelNamePrefix,"function_updateRelations")%>(DATA *data, threadData_t *threadData, int evalforZeroCross)
   {
     TRACE_PUSH
+    const int *equationIndexes = NULL;
+
     <%varDecls%>
 
     if(evalforZeroCross) {
@@ -4745,7 +4877,7 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
 ::=
   <<
   <%(algAndEqAssertsEquations |> eq =>
-    equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix, false)
+    equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, false)
     ;separator="\n")%>
   /* function to check assert after a step is done */
   OMC_DISABLE_OPT
@@ -5119,7 +5251,7 @@ match sparsepattern
         jacobian->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
         jacobian->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
         jacobian->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
-        jacobian->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
+        jacobian->sparsePattern->numberOfNonZeros = <%sp_size_index%>;
         jacobian->sparsePattern->colorCols = (unsigned int*) malloc(<%index_%>*sizeof(unsigned int));
         jacobian->sparsePattern->maxColors = <%maxColor%>;
         jacobian->constantEqns = <%constantEqns%>;
@@ -5202,18 +5334,18 @@ template generateConstantEqns(list<SimEqSystem> constantEqns, String matrixName,
     >>
 end generateConstantEqns;
 
-template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantEqns, Integer partIdx, String matrixName, Option<HashTableCrefSimVar.HashTable> jacHT, String modelNamePrefix)
+template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantEqns, Integer base_idx, String matrixName, Option<HashTableCrefSimVar.HashTable> jacHT, String modelNamePrefix)
   "This template generates functions for each column of a single jacobian.
    This is a helper of generateMatrix."
 ::=
   let constantEqns2 = generateConstantEqns(constantEqns, matrixName, modelNamePrefix)
   <<
   /* constant equations */
-  <%(constantEqns |> eq =>
-    equation_impl(partIdx, eq, createJacContext(jacHT), modelNamePrefix, false); separator="\n")%>
+  <%(constantEqns |> eq hasindex sub_idx =>
+    equation_impl(base_idx, sub_idx, eq, createJacContext(jacHT), modelNamePrefix, false); separator="\n")%>
   /* dynamic equations */
-  <%(jacEquations |> eq =>
-    equation_impl(partIdx, eq, createJacContext(jacHT), modelNamePrefix, false); separator="\n")%>
+  <%(jacEquations |> eq hasindex sub_idx =>
+    equation_impl(base_idx, sub_idx, eq, createJacContext(jacHT), modelNamePrefix, false); separator="\n")%>
 
   <%constantEqns2%>
 
@@ -5351,23 +5483,23 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   )
 end equation_arrayFormat;
 
-template equation_impl(Integer clockIndex, SimEqSystem eq, Context context, String modelNamePrefix, Boolean init)
+template equation_impl(Integer base_idx, Integer sub_idx, SimEqSystem eq, Context context, String modelNamePrefix, Boolean init)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-equation_impl2(clockIndex, eq, context, modelNamePrefix, false, false, init)
+  equation_impl2(base_idx, sub_idx, eq, context, modelNamePrefix, false, false, init)
 end equation_impl;
 
-template equation_impl_options(Integer clockIndex, SimEqSystem eq, Context context, String modelNamePrefix, Boolean static, Boolean noOpt, Boolean init)
+template equation_impl_options(Integer base_idx, Integer sub_idx, SimEqSystem eq, Context context, String modelNamePrefix, Boolean static, Boolean noOpt, Boolean init)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-equation_impl2(clockIndex, eq, context, modelNamePrefix, static, noOpt, init)
+  equation_impl2(base_idx, sub_idx, eq, context, modelNamePrefix, static, noOpt, init)
 end equation_impl_options;
 
-template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, String modelNamePrefix, Boolean static, Boolean noOpt, Boolean init)
+template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Context context, String modelNamePrefix, Boolean static, Boolean noOpt, Boolean init)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -5445,7 +5577,8 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
         else ""
 
     let &varD += addRootsTempArray()
-    let clockIndex_ = if intLt(clockIndex, 0) then '' else 'const int clockIndex = <%clockIndex%>;'
+    let baseClockIndex_ = if intLt(base_idx, 0) then '' else 'const int baseClockIndex = <%base_idx%>;'
+    let subClockIndex_ = if intLt(sub_idx, 0) then '' else 'const int subClockIndex = <%sub_idx%>;'
 
     match eq
         // dynamic tearing
@@ -5460,7 +5593,8 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
         <%OMC_NO_OPT%><% if static then "static "%>int <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
         {
           TRACE_PUSH
-          <%clockIndex_%>
+          <%baseClockIndex_%>
+          <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
           <%x%>
@@ -5474,7 +5608,8 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
         <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix2%>(DATA *data, threadData_t *threadData)
         {
           TRACE_PUSH
-          <%clockIndex_%>
+          <%baseClockIndex_%>
+          <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix2%>};
           <%&varD%>
           <%x2%>
@@ -5496,7 +5631,8 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
         <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
         {
           TRACE_PUSH
-          <%clockIndex_%>
+          <%baseClockIndex_%>
+          <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
           <%x%>
@@ -5513,7 +5649,8 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
         <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
         {
           TRACE_PUSH
-          <%clockIndex_%>
+          <%baseClockIndex_%>
+          <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
           <%x%>
@@ -5641,17 +5778,18 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(exp=CALL(path=IDENT(name="fail"))) then
   '<%generateThrow()%><%\n%>'
 case SES_SIMPLE_ASSIGN(__)
 case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
+  let &sub = buffer ""
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   let postExp = if isStartCref(cref) then
     <<
-    <%cref(popCref(cref))%> = <%cref(cref)%>;
-    infoStreamPrint(LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref))%>);
+    <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
+    infoStreamPrint(LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
     >>
   <<
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
-  <%contextCref(cref, context, &preExp, &varDecls, auxFunction)%> = <%expPart%>;
+  <%contextCref(cref, context, &preExp, &varDecls, auxFunction, &sub)%> = <%expPart%>;
     <%postExp%>
   <%endModelicaLine()%>
   >>
@@ -5735,14 +5873,15 @@ case SES_ALGORITHM(__) then
   without continuous variables, discrete variables are
   handled by the event iteration */
 case alg as SES_INVERSE_ALGORITHM(__) then
+  let &sub = buffer ""
   let backupKnown = (alg.knownOutputCrefs |> cr hasindex i0 =>
     let &varDecls += '<%crefType(cr)%> OLD_<%i0%>;<%\n%>'
-       'OLD_<%i0%> = <%cref(cr)%>;'
+       'OLD_<%i0%> = <%cref(cr, &sub)%>;'
       ;separator="\n")
   let stmts = (statements |> stmt =>
     algStatement(stmt, context, &varDecls, &auxFunction)
   ;separator="\n")
-  let restoreKnownVars = (alg.knownOutputCrefs |> cr hasindex i0 => '<%cref(cr)%> = OLD_<%i0%>;' ;separator="\n")
+  let restoreKnownVars = (alg.knownOutputCrefs |> cr hasindex i0 => '<%cref(cr, &sub)%> = OLD_<%i0%>;' ;separator="\n")
   <<
   /* backup outputs of the algorithm */
   <%backupKnown%>
@@ -5838,12 +5977,13 @@ template equationMixed(SimEqSystem eq, Context context, Text &tmp, String modelN
 ::=
 match eq
 case eqn as SES_MIXED(__) then
-  let &tmp += equation_impl(-1, cont, context, modelNamePrefixStr, init)
+  let &sub = buffer ""
+  let &tmp += equation_impl(-1, -1, cont, context, modelNamePrefixStr, init)
   let numDiscVarsStr = listLength(discVars)
   <<
   /* Continuous equation part */
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%index%>).profileBlockIndex);' %>
-  <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->mixedSystemData[<%eqn.indexMixedSystem%>].iterationVarsPtr[<%i0%>] = (modelica_boolean*)&<%cref(name)%>;' ;separator="\n"%>;
+  <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->mixedSystemData[<%eqn.indexMixedSystem%>].iterationVarsPtr[<%i0%>] = (modelica_boolean*)&<%cref(name, &sub)%>;' ;separator="\n"%>;
   <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->mixedSystemData[<%eqn.indexMixedSystem%>].iterationPreVarsPtr[<%i0%>] = (modelica_boolean*)&<%crefPre(name)%>;' ;separator="\n"%>;
   solve_mixed_system(data, <%indexMixedSystem%>);
   <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%index%>).profileBlockIndex);' %>
@@ -5879,10 +6019,11 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       %>
       /* get old value */
       <%nls.crefs |> name hasindex i0 =>
+        let &sub = buffer ""
         let &preExp = buffer ""
         let &varDecls = buffer ""
         let &auxFunction = buffer ""
-        let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name)
+        let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name, &sub)
         let PREV = if stringEq(&preExp, "") then "" else &preExp + "\n"
         let DECL = if stringEq(&varDecls, "") then "" else &varDecls + "\n"
         let AUX = if stringEq(&auxFunction, "") then "" else &auxFunction + "\n"
@@ -5896,7 +6037,9 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
         <%returnval2%>
       }
       /* write solution */
-      <%nls.crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
+      <%nls.crefs |> name hasindex i0 =>
+        let &sub = buffer ""
+        '<%cref(name, &sub)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
       <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex);' %>
       <%returnval%>
       >>
@@ -5931,10 +6074,11 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       {
         /* get old value */
         <%at.crefs |> name hasindex i0 =>
+          let &sub = buffer ""
           let &preExp = buffer ""
           let &varDecls = buffer ""
           let &auxFunction = buffer ""
-          let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name)
+          let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name, &sub)
           let PREV = if stringEq(&preExp, "") then "" else &preExp + "\n"
           let DECL = if stringEq(&varDecls, "") then "" else &varDecls + "\n"
           let AUX = if stringEq(&auxFunction, "") then "" else &auxFunction + "\n"
@@ -5944,7 +6088,9 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
         /* The casual tearing set found a solution */
         if (retValue == 0){
           /* write solution */
-          <%at.crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
+          <%at.crefs |> name hasindex i0 =>
+            let &sub = buffer ""
+            '<%cref(name, &sub)%> = data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
           <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
         }
       }
@@ -5966,7 +6112,8 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
 ::=
   match eq
     case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE()) then
-      let helpIf = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+      let &sub = buffer ""
+      let helpIf = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
       let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
       <<
       if(<%helpIf%>)
@@ -5975,7 +6122,8 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
       }
       >>
     case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
-      let helpIf = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+      let &sub = buffer ""
+      let helpIf = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
       let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls,&auxFunction)
       <<
@@ -5990,9 +6138,10 @@ end equationWhen;
 template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
  "Generates a else when equation."
 ::=
+let &sub = buffer ""
 match eq
 case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE()) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ")
   let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
 
   if not listEmpty(conditions) then
@@ -6003,7 +6152,7 @@ case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE())
     }
     >>
 case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ")
+  let helpIf = (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ")
   let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
   let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, auxFunction)
   let body = if not listEmpty(conditions) then
@@ -6040,17 +6189,18 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       <%postExp%>
       >>
     case REINIT(__) then
+      let &sub = buffer ""
       let &preExp = buffer ""
       let val = daeExp(value, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
       let lhs = match crefTypeConsiderSubs(stateVar)
          case DAE.T_ARRAY(__) then
-           'copy_real_array_data_mem(<%val%>, &<%cref(stateVar)%>);'
+           'copy_real_array_data_mem(<%val%>, &<%cref(stateVar, &sub)%>);'
          else
-           '<%cref(stateVar)%> = <%val%>;'
+           '<%cref(stateVar, &sub)%> = <%val%>;'
       <<
       <%preExp%>
       <%lhs%>
-      infoStreamPrint(LOG_EVENTS, 0, "reinit <%crefStrNoUnderscore(stateVar)%> = <%crefToPrintfArg(stateVar)%>", <%cref(stateVar)%>);
+      infoStreamPrint(LOG_EVENTS, 0, "reinit <%crefStrNoUnderscore(stateVar)%> = <%crefToPrintfArg(stateVar)%>", <%cref(stateVar, &sub)%>);
       data->simulationInfo->needToIterate = 1;
       >>
     case TERMINATE(__) then
@@ -6124,7 +6274,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   let &preExp = buffer ""
   let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
   let condition = daeExp(e, context, &preExp, &varDecls, &eqnsDecls)
-  let &eqnsDecls += ( eqns |> eqn => equation_impl(-1, eqn, context, modelNamePrefixStr, init) ; separator="\n" )
+  let &eqnsDecls += ( eqns |> eqn => equation_impl(-1, -1, eqn, context, modelNamePrefixStr, init) ; separator="\n" )
   let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
     <<
     <%conditionline%>
@@ -6133,7 +6283,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
     }
     >>
     ;separator="\n")
-  let &eqnsDecls += ( elsebranch |> eqn => equation_impl(-1, eqn, context, modelNamePrefixStr, init) ; separator="\n" )
+  let &eqnsDecls += ( elsebranch |> eqn => equation_impl(-1, -1, eqn, context, modelNamePrefixStr, init) ; separator="\n" )
   <<
   <%preExp%>
   <%IfEquation%>else
@@ -6503,6 +6653,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
 ::=
   match classAttribute
     case OPTIMIZATION_ATTRS(__) then
+      let &sub = buffer ""
       let &varDecls = buffer ""
       let &preExp = buffer ""
       let &varDecls1 = buffer ""
@@ -6517,7 +6668,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
           return 0;
           >>
           <<
-          *res =  &<%cref(makeUntypedCrefIdent(BackendDAE.optimizationMayerTermName))%>;
+          *res =  &<%cref(makeUntypedCrefIdent(BackendDAE.optimizationMayerTermName), &sub)%>;
           <%setMayerIndex%>
           >>
 
@@ -6537,7 +6688,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
           return 0;
           >>
           <<
-          *res =  &<%cref(makeUntypedCrefIdent(BackendDAE.optimizationLagrangeTermName))%>;
+          *res =  &<%cref(makeUntypedCrefIdent(BackendDAE.optimizationLagrangeTermName), &sub)%>;
           <%setLagrangeIndex%>
           >>
 
@@ -6548,12 +6699,12 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             <<
               if(file){
               <%vars.inputVars |> SIMVAR(varKind = OPT_LOOP_INPUT(replaceExp=cr)) hasindex i0 =>
-              '<%cref(name)%> = <%cref(cr)%> ;'
+              '<%cref(name, &sub)%> = <%cref(cr, &sub)%> ;'
               ;separator="\n"
               %>
               }
               <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-              'data->simulationInfo->inputVars[<%i0%>] = <%cref(name)%>;'
+              'data->simulationInfo->inputVars[<%i0%>] = <%cref(name, &sub)%>;'
               ;separator="\n"
               %>
             >>
@@ -6567,7 +6718,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                ;separator=" "%>);
               *t = (modelica_real*) malloc((*nsi+1)*sizeof(modelica_real));
               <%vars.paramVars |> SIMVAR(varKind=OPT_TGRID(__)) hasindex i0 =>
-              '(*t)[<%i0%>] = <%cref(name)%>;'
+              '(*t)[<%i0%>] = <%cref(name, &sub)%>;'
               ;separator="\n"
               %>
             >>

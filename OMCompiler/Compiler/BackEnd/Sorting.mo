@@ -40,7 +40,7 @@ import BackendDAE;
 
 protected
 import BackendDump;
-import GC;
+import GCExt;
 import Matching;
 
 public function Tarjan "author: lochel
@@ -70,9 +70,9 @@ algorithm
       (stack, index, outComponents) := StrongConnect(m, ass1, eqn, stack, index, number, lowlink, onStack, outComponents);
     end if;
   end for;
-  GC.free(number);
-  GC.free(lowlink);
-  GC.free(onStack);
+  GCExt.free(number);
+  GCExt.free(lowlink);
+  GCExt.free(onStack);
 
   outComponents := listReverse(outComponents);
 end Tarjan;

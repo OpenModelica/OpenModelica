@@ -102,6 +102,39 @@ public
     comp := Util.intCompare(Integer(o1), Integer(o2));
   end compare;
 
+  function invert
+    input output Operator operator;
+  algorithm
+    operator.op := match operator.op
+      case Op.ADD then Op.SUB;
+      case Op.SUB then Op.ADD;
+      case Op.MUL then Op.DIV;
+      case Op.DIV then Op.MUL;
+      case Op.ADD_EW then Op.SUB_EW;
+      case Op.SUB_EW then Op.ADD_EW;
+      case Op.MUL_EW then Op.DIV_EW;
+      case Op.DIV_EW then Op.MUL_EW;
+      case Op.ADD_SCALAR_ARRAY then Op.SUB_SCALAR_ARRAY;
+      case Op.ADD_ARRAY_SCALAR then Op.SUB_ARRAY_SCALAR;
+      case Op.SUB_SCALAR_ARRAY then Op.ADD_SCALAR_ARRAY;
+      case Op.SUB_ARRAY_SCALAR then Op.ADD_ARRAY_SCALAR;
+      case Op.MUL_SCALAR_ARRAY then Op.DIV_SCALAR_ARRAY;
+      case Op.MUL_ARRAY_SCALAR then Op.DIV_ARRAY_SCALAR;
+      case Op.DIV_SCALAR_ARRAY then Op.MUL_SCALAR_ARRAY;
+      case Op.DIV_ARRAY_SCALAR then Op.MUL_ARRAY_SCALAR;
+      case Op.LESS             then Op.GREATEREQ;
+      case Op.LESSEQ           then Op.GREATER;
+      case Op.GREATER          then Op.LESSEQ;
+      case Op.GREATEREQ        then Op.LESS;
+      case Op.EQUAL            then Op.EQUAL;
+      case Op.NEQUAL           then Op.NEQUAL;
+      // ToDo: should POW return POW? exponent should be negated
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Don't know how to invert: " + symbol(operator)});
+      then fail();
+    end match;
+  end invert;
+
   function fromAbsyn
     input Absyn.Operator inOperator;
     output Operator outOperator;
@@ -527,24 +560,194 @@ public
     end match;
   end isElementWise;
 
-  function negate
-    input Operator op;
-    output Operator outOp;
-  protected
-    Op neg_op;
+  type MathClassification = enumeration(ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, POWER, LOGICAL, RELATION);
+  type SizeClassification = enumeration(SCALAR, ELEMENT_WISE, ARRAY_SCALAR, SCALAR_ARRAY, MATRIX, VECTOR_MATRIX, MATRIX_VECTOR, LOGICAL, RELATION);
+  type Classification = tuple<MathClassification, SizeClassification>;
+
+  function mathSymbol
+    input MathClassification mcl;
+    output String str;
   algorithm
-    neg_op := match op.op
-      case Op.ADD then Op.SUB;
-      case Op.SUB then Op.ADD;
-      case Op.ADD_EW then Op.SUB_EW;
-      case Op.SUB_EW then Op.ADD_EW;
-      case Op.ADD_SCALAR_ARRAY then Op.SUB_SCALAR_ARRAY;
-      case Op.SUB_SCALAR_ARRAY then Op.ADD_SCALAR_ARRAY;
-      case Op.ADD_ARRAY_SCALAR then Op.SUB_ARRAY_SCALAR;
+    str := match mcl
+      case MathClassification.ADDITION        then "+";
+      case MathClassification.SUBTRACTION     then "-";
+      case MathClassification.MULTIPLICATION  then "*";
+      case MathClassification.DIVISION        then "/";
+      case MathClassification.POWER           then "^";
+      case MathClassification.LOGICAL         then "L";
+      case MathClassification.RELATION        then "R";
+                                              else fail();
+    end match;
+  end mathSymbol;
+
+  function classify
+    input Operator op;
+    output Classification cl;
+  algorithm
+    cl := match op.op
+      case Op.ADD                 then (MathClassification.ADDITION,        SizeClassification.SCALAR);
+      case Op.SUB                 then (MathClassification.SUBTRACTION,     SizeClassification.SCALAR);
+      case Op.MUL                 then (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR);
+      case Op.DIV                 then (MathClassification.DIVISION,        SizeClassification.SCALAR);
+      case Op.POW                 then (MathClassification.POWER,           SizeClassification.SCALAR);
+      case Op.ADD_EW              then (MathClassification.ADDITION,        SizeClassification.ELEMENT_WISE);
+      case Op.SUB_EW              then (MathClassification.SUBTRACTION,     SizeClassification.ELEMENT_WISE);
+      case Op.MUL_EW              then (MathClassification.MULTIPLICATION,  SizeClassification.ELEMENT_WISE);
+      case Op.DIV_EW              then (MathClassification.DIVISION,        SizeClassification.ELEMENT_WISE);
+      case Op.POW_EW              then (MathClassification.POWER,           SizeClassification.ELEMENT_WISE);
+      case Op.MUL_ARRAY_SCALAR    then (MathClassification.MULTIPLICATION,  SizeClassification.ARRAY_SCALAR);
+      case Op.ADD_ARRAY_SCALAR    then (MathClassification.ADDITION,        SizeClassification.ARRAY_SCALAR);
+      case Op.SUB_SCALAR_ARRAY    then (MathClassification.SUBTRACTION,     SizeClassification.SCALAR_ARRAY);
+      case Op.SCALAR_PRODUCT      then (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR);
+      case Op.MATRIX_PRODUCT      then (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX);
+      case Op.MUL_VECTOR_MATRIX   then (MathClassification.MULTIPLICATION,  SizeClassification.VECTOR_MATRIX);
+      case Op.MUL_MATRIX_VECTOR   then (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX_VECTOR);
+      case Op.DIV_ARRAY_SCALAR    then (MathClassification.DIVISION,        SizeClassification.ARRAY_SCALAR);
+      case Op.DIV_SCALAR_ARRAY    then (MathClassification.DIVISION,        SizeClassification.SCALAR_ARRAY);
+      case Op.POW_ARRAY_SCALAR    then (MathClassification.POWER,           SizeClassification.ARRAY_SCALAR);
+      case Op.POW_SCALAR_ARRAY    then (MathClassification.POWER,           SizeClassification.SCALAR_ARRAY);
+      case Op.POW_MATRIX          then (MathClassification.POWER,           SizeClassification.MATRIX);
+      case Op.AND                 then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.OR                  then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.NOT                 then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.LESS                then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.LESSEQ              then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.GREATER             then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.GREATEREQ           then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.EQUAL               then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.NEQUAL              then (MathClassification.RELATION,        SizeClassification.RELATION);
+      else algorithm
+        Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo());
+      then fail();
+    end match;
+  end classify;
+
+  function fromClassification
+    "Only works for non-logical operators!"
+    input Classification cl "mathematical and size classification";
+    input Type ty           "Type information";
+    output Operator result        "Resulting operator";
+  protected
+    Op op;
+  algorithm
+    op := match cl
+      case (MathClassification.ADDITION,        SizeClassification.SCALAR)                  then Op.ADD;
+      case (MathClassification.SUBTRACTION,     SizeClassification.SCALAR)                  then Op.SUB;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR)                  then Op.MUL;
+      case (MathClassification.DIVISION,        SizeClassification.SCALAR)                  then Op.DIV;
+      case (MathClassification.POWER,           SizeClassification.SCALAR)                  then Op.POW;
+      case (MathClassification.ADDITION,        SizeClassification.ELEMENT_WISE)            then Op.ADD_EW;
+      case (MathClassification.SUBTRACTION,     SizeClassification.ELEMENT_WISE)            then Op.SUB_EW;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.ELEMENT_WISE)            then Op.MUL_EW;
+      case (MathClassification.DIVISION,        SizeClassification.ELEMENT_WISE)            then Op.DIV_EW;
+      case (MathClassification.POWER,           SizeClassification.ELEMENT_WISE)            then Op.POW_EW;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.ARRAY_SCALAR)            then Op.MUL_ARRAY_SCALAR;
+      case (MathClassification.ADDITION,        SizeClassification.ARRAY_SCALAR)            then Op.ADD_ARRAY_SCALAR;
+      case (MathClassification.SUBTRACTION,     SizeClassification.SCALAR_ARRAY)            then Op.SUB_SCALAR_ARRAY;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR)                  then Op.SCALAR_PRODUCT;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX)                  then Op.MATRIX_PRODUCT;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.VECTOR_MATRIX)           then Op.MUL_VECTOR_MATRIX;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX_VECTOR)           then Op.MUL_MATRIX_VECTOR;
+      case (MathClassification.DIVISION,        SizeClassification.ARRAY_SCALAR)            then Op.DIV_ARRAY_SCALAR;
+      case (MathClassification.DIVISION,        SizeClassification.SCALAR_ARRAY)            then Op.DIV_SCALAR_ARRAY;
+      case (MathClassification.POWER,           SizeClassification.ARRAY_SCALAR)            then Op.POW_ARRAY_SCALAR;
+      case (MathClassification.POWER,           SizeClassification.SCALAR_ARRAY)            then Op.POW_SCALAR_ARRAY;
+      case (MathClassification.POWER,           SizeClassification.MATRIX)                  then Op.POW_MATRIX;
+      else algorithm
+        Error.addInternalError(getInstanceName() + ": Don't know how to handle math class and size class combination.", sourceInfo());
+      then fail();
+    end match;
+    result := OPERATOR(ty, op);
+  end fromClassification;
+
+  function getMathClassification
+    input Operator op;
+    output MathClassification mcl;
+  algorithm
+    (mcl, _) := classify(op);
+  end getMathClassification;
+
+  function isDashClassification
+    input MathClassification mcl;
+    output Boolean b;
+  algorithm
+    b := match mcl
+      case MathClassification.ADDITION    then true;
+      case MathClassification.SUBTRACTION then true;
+      else false;
+    end match;
+  end isDashClassification;
+
+  function isCommutative
+    "returns true for operators that are commutative"
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.ADD               then true;
+      case Op.MUL               then true;
+      case Op.ADD_EW            then true;
+      case Op.MUL_EW            then true;
+      // the following might need adaption since they depend on argument ordering
+      // furthermore weird regarding more than two arguments in Expression.MULTARY()
+      case Op.ADD_SCALAR_ARRAY  then true;
+      case Op.ADD_ARRAY_SCALAR  then true;
+      case Op.MUL_SCALAR_ARRAY  then true;
+      case Op.MUL_ARRAY_SCALAR  then true;
+      else false;
     end match;
 
-    outOp := OPERATOR(op.ty, neg_op);
-  end negate;
+  end isCommutative;
+
+  function isSoftCommutative
+    "returns true for operators that are not commutative but have an easy rule for swapping arguments"
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.SUB               then true;
+      case Op.DIV               then true;
+      case Op.SUB_EW            then true;
+      case Op.DIV_EW            then true;
+      // the following might need adaption since they depend on argument ordering
+      // furthermore weird regarding more than two arguments in Expression.MULTARY()
+      case Op.SUB_SCALAR_ARRAY  then true;
+      case Op.SUB_ARRAY_SCALAR  then true;
+      case Op.DIV_SCALAR_ARRAY  then true;
+      case Op.DIV_ARRAY_SCALAR  then true;
+      else false;
+    end match;
+  end isSoftCommutative;
+
+  function isCombineable
+    input Operator op1;
+    input Operator op2;
+    output Boolean b;
+  protected
+    MathClassification mcl1, mcl2;
+    SizeClassification scl1, scl2;
+  algorithm
+    (mcl1, scl1) := classify(op1);
+    (mcl2, scl2) := classify(op2);
+    b := isCombineableMath(mcl1, mcl2) and isCombineableSize(scl1, scl2);
+  end isCombineable;
+
+  function isCombineableMath
+    input MathClassification mcl1;
+    input MathClassification mcl2;
+    output Boolean b;
+  algorithm
+    b :=  (Util.intCompare(Integer(mcl1), Integer(mcl2)) == 0)
+          or (isDashClassification(mcl1) and isDashClassification(mcl2));
+  end isCombineableMath;
+
+  function isCombineableSize
+    input SizeClassification scl1;
+    input SizeClassification scl2;
+    output Boolean b;
+  algorithm
+    b := (Util.intCompare(Integer(scl1), Integer(scl2)) == 0);
+  end isCombineableSize;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;

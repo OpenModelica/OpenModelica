@@ -380,7 +380,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   int i;
 
   freeList(solverInfo->eventLst);
-  freeSynchronous(data);
   /* free solver statistics */
   free(solverInfo->solverStats);
   free(solverInfo->solverStatsTmp);

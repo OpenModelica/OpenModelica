@@ -81,7 +81,7 @@ getModelicaPath();
 echo(false);
 OpenModelica.Scripting.mkdir(".openmodelica");
 if not OpenModelica.Scripting.mkdir(".openmodelica/libraries/") then
-  print("\nmkdir failed\n");
+  print("\\nmkdir failed\\n");
   print(getErrorString());
   exit(1);
 end if;
@@ -91,12 +91,12 @@ if 0 <> system("cp index.json .openmodelica/libraries/") then
 end if;
 vers:=OpenModelica.Scripting.getAvailablePackageVersions(Modelica, "3.2.3");
 if size(vers,1) <> 1 then
-  print("getAvailablePackageVersions(Modelica, \"3.2.3\") returned " + String(size(vers,1)) + " results\n");
+  print("getAvailablePackageVersions(Modelica, \\"3.2.3\\") returned " + String(size(vers,1)) + " results\\n");
   print(getErrorString());
   exit(1);
 end if;
 if vers[1] <> "3.2.3+maint.om" then
-  print("getAvailablePackageVersions(Modelica, \"3.2.3\") returned " + vers[1] + "\n");
+  print("getAvailablePackageVersions(Modelica, \\"3.2.3\\") returned " + vers[1] + "\\n");
   print(getErrorString());
   exit(1);
 end if;
@@ -104,11 +104,13 @@ end if;
   for lib in desired.keys():
     for version in desired[lib]:
       fout.write('''if not installPackage(%s, "%s", exactMatch=true) then
-  print("%s %s failed\n");
+  print("%s %s failed.\\n");
   print(getErrorString());
   exit(1);
+else
+  print("Installed: %s %s\\n");
 end if;
-''' % (lib, version, lib, version))
+''' % (lib, version, lib, version, lib, version))
   fout.write('system("touch .openmodelica/libraries/%s")' % stamp)
 
 with open("index.json", "w") as fout:

@@ -64,7 +64,7 @@ void FetchInterfaceDataThread::run()
   args << fileInfo.absoluteFilePath();
   TLMPage *pTLMPage = OptionsDialog::instance()->getTLMPage();
   QProcessEnvironment environment;
-#ifdef WIN32
+#if defined(_WIN32)
   environment = StringHandler::simulationProcessEnvironment();
   environment.insert("PATH", pTLMPage->getOMTLMSimulatorPath() + ";" + environment.value("PATH"));
 #else
@@ -129,7 +129,7 @@ void FetchInterfaceDataThread::managerProcessFinished(int exitCode, QProcess::Ex
     emit sendManagerOutput(mpManagerProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error);
   }
   emit sendManagerFinished(exitCode, exitStatus);
-#ifdef WIN32
+#if defined(_WIN32)
   Utilities::killProcessTreeWindows(mManagerProcessId);
 #else
   /*! @todo do similar stuff for Linux! */
