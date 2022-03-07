@@ -136,7 +136,7 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
  */
 void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (mpShapeAnnotation->isInheritedShape() && mpShapeAnnotation->getGraphicsView()->isVisualizationView()
+  if (mpShapeAnnotation->isInheritedShape() || mpShapeAnnotation->getGraphicsView()->isVisualizationView()
       || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
           && (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
               || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
