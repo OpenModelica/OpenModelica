@@ -1248,9 +1248,9 @@ void LineAnnotation::updateConnectionTransformation()
   /* If both start and end component are selected then this function is called twice.
    * we use the flag mStartAndEndComponentSelected to make sure that we only use this function once in such case.
    */
-  if (!mStartAndEndComponentsSelected
-      && mpStartComponent && mpStartComponent->getRootParentComponent()->isSelected()
-      && mpEndComponent && mpEndComponent->getRootParentComponent()->isSelected()) {
+  if (mpStartComponent && mpStartComponent->getRootParentComponent()->isSelected()
+      && mpEndComponent && mpEndComponent->getRootParentComponent()->isSelected()
+      && mpStartComponent->getRootParentComponent() != mpEndComponent->getRootParentComponent() && !mStartAndEndComponentsSelected) {
       mStartAndEndComponentsSelected = true;
       return;
   } else if (mStartAndEndComponentsSelected) {
