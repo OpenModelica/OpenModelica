@@ -3829,20 +3829,6 @@ algorithm
   end match;
 end expSub;
 
-public function makeDiff
-"Takes two expressions and create
- the difference between them"
-  input DAE.Exp e1;
-  input DAE.Exp e2;
-  output DAE.Exp res;
-algorithm
-  res := if isZero(e2)
-         then e1
-         elseif isZero(e1)
-             then negate(e2)
-             else expSub(e1,e2);
-end makeDiff;
-
 public function makeLBinary
 "Makes a binary logical expression of all elements in the list."
   input list<DAE.Exp> inExpLst;
