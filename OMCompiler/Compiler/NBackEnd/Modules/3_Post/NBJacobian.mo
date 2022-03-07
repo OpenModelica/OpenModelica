@@ -537,7 +537,6 @@ protected
       jacobianHT      = optHT, // seed and temporary cref hashtable
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,
-      diffedFunctions = AvlSetPath.new(),
       scalarized      = seedCandidates.scalarized
     );
 
@@ -546,6 +545,7 @@ protected
 
     (diffed_eqn_lst, diffArguments) := Differentiate.differentiateEquationPointerList(listReverse(eqn_lst), diffArguments, idx, name, getInstanceName());
     diffedEquations := EquationPointers.fromList(diffed_eqn_lst);
+    funcTree := diffArguments.funcTree;
 
     // create equation data for jacobian
     // ToDo: split temporary and auxiliares once tearing is applied

@@ -533,14 +533,14 @@ uniontype InstNode
     output String name;
   algorithm
     name := match node
-      case CLASS_NODE() then "class";
-      case COMPONENT_NODE() then "component";
-      case INNER_OUTER_NODE() then typeName(node.innerNode);
-      case REF_NODE() then "ref node";
-      case NAME_NODE() then "name node";
-      case IMPLICIT_SCOPE() then "implicit scope";
-      case EMPTY_NODE() then "empty node";
-      case VAR_NODE() then "var node";
+      case CLASS_NODE()         then "class";
+      case COMPONENT_NODE()     then "component";
+      case INNER_OUTER_NODE()   then typeName(node.innerNode);
+      case REF_NODE()           then "ref node";
+      case NAME_NODE()          then "name node";
+      case IMPLICIT_SCOPE()     then "implicit scope";
+      case EMPTY_NODE()         then "empty node";
+      case VAR_NODE()           then "var node";
     end match;
   end typeName;
 

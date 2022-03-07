@@ -36,32 +36,34 @@ encapsulated package NBDifferentiate
 "
 public
   // OF imports
+  import Absyn;
+  import AbsynUtil;
   import BaseAvlTree;
   import AvlSetPath;
   import DAE;
 
   // NF imports
+  import Algorithm = NFAlgorithm;
   import BuiltinFuncs = NFBuiltinFuncs;
   import Call = NFCall;
+  import Class = NFClass;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import NFInstNode.InstNode;
-  import NFFunction.Function;
+  import NFInstNode.{InstNode, CachedData};
   import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFunction.Function;
+  import FunctionDerivative = NFFunctionDerivative;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
+  import Sections = NFSections;
   import SimplifyExp = NFSimplifyExp;
+  import Statement = NFStatement;
   import Type = NFType;
   import NFPrefixes.Variability;
   import Variable = NFVariable;
 
   // Backend imports
-  import NBEquation.Equation;
-  import NBEquation.EquationAttributes;
-  import NBEquation.EquationPointers;
-  import NBEquation.IfEquationBody;
-  import NBEquation.WhenEquationBody;
-  import NBEquation.WhenStatement;
+  import NBEquation.{Equation, EquationAttributes, EquationPointers, IfEquationBody, WhenEquationBody, WhenStatement};
   import BVariable = NBVariable;
 
   // Util imports
@@ -81,7 +83,6 @@ public
       Option<UnorderedMap<ComponentRef,ComponentRef>> jacobianHT  "seed and temporary cref hashtable x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y";
       DifferentiationType diffType                                "Differentiation use case (time, simple, function, jacobian)";
       FunctionTree funcTree                                       "Function tree containing all functions and their known derivatives";
-      AvlSetPath.Tree diffedFunctions                             "current functions, to prevent recursive differentiation";
       Boolean scalarized                                          "true if the variables are scalarized";
     end DIFFERENTIATION_ARGUMENTS;
 
@@ -94,7 +95,6 @@ public
         jacobianHT      = NONE(),
         diffType        = ty,
         funcTree        = funcTree,
-        diffedFunctions = AvlSetPath.new(),
         scalarized      = false
       );
     end default;
@@ -107,7 +107,7 @@ public
 
   function differentiateEquationPointerList
     "author: kabdelhak
-    Differentiates an array of equations wrapped in pointers."
+    Differentiates a list of equations wrapped in pointers."
     input output list<Pointer<Equation>> equations;
     input output DifferentiationArguments diffArguments;
     input Pointer<Integer> idx;
@@ -116,7 +116,6 @@ public
   protected
     Pointer<DifferentiationArguments> diffArguments_ptr = Pointer.create(diffArguments);
   algorithm
-    // don't use EquationPointers.map because that would manipulate original eqn pointers
     equations := List.map(equations, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
     for eqn in equations loop
       Equation.createName(eqn, idx, context);
@@ -177,6 +176,7 @@ public
         WhenEquationBody whenBody;
         Pointer<DifferentiationArguments> diffArguments_ptr;
         EquationAttributes attr;
+        Algorithm alg;
 
       // ToDo: Element source stuff (see old backend)
       case Equation.SCALAR_EQUATION() algorithm
@@ -231,21 +231,18 @@ public
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.WHEN_EQUATION(eq.size, whenBody, eq.source, attr), diffArguments);
 
+      case Equation.ALGORITHM() algorithm
+        (alg, diffArguments) := differentiateAlgorithm(eq.alg, diffArguments);
+      then (Equation.ALGORITHM(eq.size, alg, eq.source, eq.expand, eq.attr), diffArguments);
+
       else algorithm
         // maybe add failtrace here and allow failing
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Equation.toString(eq)});
       then fail();
 
     end match;
-  /* ToDo:
-    record ALGORITHM
-      Integer size                    "output size";
-      Algorithm alg                   "Algorithm statements";
-      DAE.ElementSource source        "origin of algorithm";
-      DAE.Expand expand               "this algorithm was translated from an equation. we should not expand array crefs!";
-      EquationAttributes attr         "Additional Attributes";
-    end ALGORITHM;
 
+/* ToDo
     record AUX_EQUATION
       "Auxiliary equations are generated when auxiliary variables are generated
       that are known to always be solved in this specific equation. E.G. $CSE
@@ -480,6 +477,8 @@ public
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
+      // function body expressions are not lowered (maybe do it?)
+      case _ guard(diffArguments.diffType == DifferentiationType.FUNCTION) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(exp.cref);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
@@ -490,6 +489,30 @@ public
       local
         Expression res;
         UnorderedMap<ComponentRef,ComponentRef> jacobianHT;
+
+
+      // -------------------------------------
+      //    Special rules for Type: FUNCTION
+      //    (needs to be first because var_ptr is DUMMY)
+      // -------------------------------------
+
+      // Types: (FUNCTION)
+      // Any variable that is in the HT will be differentiated accordingly. 0 otherwise
+      case (Expression.CREF(), DifferentiationType.FUNCTION, SOME(jacobianHT)) algorithm
+        strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
+        if UnorderedMap.contains(strippedCref, jacobianHT) then
+          // get the derivative an reapply subscripts
+          derCref := UnorderedMap.getOrFail(strippedCref, jacobianHT);
+          derCref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(exp.cref)), derCref);
+          res     := Expression.fromCref(derCref);
+        else
+          res     := Expression.makeZero(exp.ty);
+        end if;
+      then (res, diffArguments);
+
+      // -------------------------------------
+      //    Generic Rules
+      // -------------------------------------
 
       // Types: (TIME)
       // differentiate time cref => 1
@@ -568,12 +591,6 @@ public
       then (Expression.fromCref(derCref), diffArguments);
 
       // -------------------------------------
-      //    Special rules for Type: FUNCTION
-      // -------------------------------------
-
-      // ToDo: Types (FUNCTION) all of this!
-
-      // -------------------------------------
       //    Special rules for Type: JACOBIAN
       // -------------------------------------
 
@@ -614,8 +631,6 @@ public
     end match;
   end differentiateComponentRef;
 
-
-  // TODO: Copy Differentiate.mo function differentiateCalls
   function differentiateCall
   "Differentiate builtin function calls"
     input output Expression exp "Has to be Expression.CALL()";
@@ -643,17 +658,24 @@ public
         ret := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
 
+
       // user defined functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
         func_opt := FunctionTreeImpl.getOpt(diffArguments.funcTree, call.fn.path);
         if Util.isSome(func_opt) then
           // The function is in the function tree
-          derivatives := Function.getDerivatives(Util.getOption(func_opt));
+          SOME(func) := func_opt;
+          derivatives := Function.getDerivatives(func);
           ret := match derivatives
+            // ToDo: strip discrete stuff when adding differentiated arguments to the call
+
             // no derivative of order 1 defined -> differentiate and add to the function tree
             case {} algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because function differentiation is not yet implemented."});
-            then fail();
+              // ToDo: catch recursive function differentiation here (saved in diffArguments)
+              // if so do not differentiate function only create the call (prepend $pDer)
+              (der_func, diffArguments) := differentiateFunction(func, diffArguments);
+              (arguments, diffArguments) := List.mapFold(call.arguments, differentiateExpression, diffArguments);
+            then Expression.CALL(Call.makeTypedCall(der_func, listAppend(call.arguments, arguments), call.var, call.purity));
 
             // exactly one derivative of order 1 -> use it
             case {der_func} algorithm
@@ -948,6 +970,200 @@ public
       then fail();
     end match;
   end differentiateBuiltinCall2Arg;
+
+  function differentiateFunction
+    input Function func;
+    output Function der_func;
+    input output DifferentiationArguments diffArguments;
+  algorithm
+    der_func := match func
+      local
+        InstNode node;
+        Pointer<Class> cls;
+        Class new_cls;
+        DifferentiationArguments funcDiffArgs;
+        UnorderedMap<ComponentRef, ComponentRef> map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+        Sections sections;
+        list<Algorithm> algorithms;
+        Absyn.Path new_path;
+        FunctionDerivative funcDer;
+        Function dummy_func;
+        CachedData cachedData;
+
+      case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
+        new_cls := match Pointer.access(cls)
+          case new_cls as Class.INSTANCED_CLASS(sections = sections as Sections.SECTIONS()) algorithm
+
+            // differentiate interface arguments
+            der_func.inputs   := differentiateFunctionInterfaceNodes(der_func.inputs, map, true);
+            der_func.outputs  := differentiateFunctionInterfaceNodes(der_func.outputs, map, false);
+            der_func.locals   := differentiateFunctionInterfaceNodes(der_func.locals, map, true);
+
+            // prepare differentiation arguments
+            funcDiffArgs              := DifferentiationArguments.default();
+            funcDiffArgs.diffType     := DifferentiationType.FUNCTION;
+            funcDiffArgs.funcTree     := diffArguments.funcTree;
+            funcDiffArgs.jacobianHT   := SOME(map);
+
+            // create "fake" function with correct interface to have the interface
+            // in the case of recursive differentiation (e.g. function calls itself)
+            dummy_func    := func;
+            node.cls      := Pointer.create(new_cls);
+            node.name     := NBVariable.FUNCTION_DERIVATIVE_STR + "." + node.name;
+            // create "fake" function from new node (update cache to get correct derivative name)
+            der_func.path := AbsynUtil.prefixPath(NBVariable.FUNCTION_DERIVATIVE_STR, der_func.path);
+            cachedData    := CachedData.FUNCTION({der_func}, true, false);
+            der_func.node := InstNode.setFuncCache(node, cachedData);
+
+            // create fake derivative
+            funcDer := FunctionDerivative.FUNCTION_DER(
+              derivativeFn          = der_func.node,
+              derivedFn             = dummy_func.node,
+              order                 = Expression.INTEGER(1),
+              conditions            = {}, // possibly needs updating
+              lowerOrderDerivatives = {}  // possibly needs updating
+            );
+
+            // add fake derivative to function tree
+            dummy_func.derivatives  := funcDer :: dummy_func.derivatives;
+            funcDiffArgs.funcTree   := FunctionTreeImpl.add(funcDiffArgs.funcTree, dummy_func.path, dummy_func, FunctionTreeImpl.addConflictReplace);
+
+            // differentiate function statements
+            (algorithms, funcDiffArgs) := List.mapFold(sections.algorithms, differentiateAlgorithm, funcDiffArgs);
+
+            // add them to new node
+            sections.algorithms := algorithms;
+            new_cls.sections    := sections;
+            node.cls            := Pointer.create(new_cls);
+            cachedData          := CachedData.FUNCTION({der_func}, true, false);
+            der_func.node       := InstNode.setFuncCache(node, cachedData);
+          then new_cls;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for class " + Class.toFlatString(Pointer.access(cls), func.node) + "."});
+          then fail();
+        end match;
+
+        // add function to function tree
+        diffArguments.funcTree := FunctionTreeImpl.add(diffArguments.funcTree, der_func.path, der_func);
+        // add new function as derivative to original function
+        funcDer := FunctionDerivative.FUNCTION_DER(
+          derivativeFn          = der_func.node,
+          derivedFn             = func.node,
+          order                 = Expression.INTEGER(1),
+          conditions            = {}, // possibly needs updating
+          lowerOrderDerivatives = {}  // possibly needs updating
+        );
+        func.derivatives := funcDer :: func.derivatives;
+        diffArguments.funcTree := FunctionTreeImpl.add(diffArguments.funcTree, func.path, func, FunctionTreeImpl.addConflictReplace);
+      then der_func;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for uninstanced function " + Function.signatureString(func) + "."});
+      then fail();
+    end match;
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("\n[BEFORE] " + Function.toFlatString(func) + "\n");
+      print("\n[AFTER]  " + Function.toFlatString(der_func) + "\n\n");
+    end if;
+  end differentiateFunction;
+
+  function differentiateFunctionInterfaceNodes
+    "differentiates function interface nodes (inputs, outputs, locals) and
+    adds them to the map used for differentiation. Also returns the new
+    interface node lists for the differentiated function.
+    (outputs only have the differentiated and not the original interface nodes)"
+    input output list<InstNode> interface_nodes;
+    input UnorderedMap<ComponentRef, ComponentRef> map;
+    input Boolean keepOld                                 "false for outputs, else true";
+  protected
+    list<InstNode> new_nodes;
+    ComponentRef cref, diff_cref;
+  algorithm
+    new_nodes := if keepOld then listReverse(interface_nodes) else {};
+    for node in interface_nodes loop
+      cref := ComponentRef.fromNode(node, InstNode.getType(node));
+      diff_cref := BVariable.makeFDerVar(cref);
+      UnorderedMap.add(cref, diff_cref, map);
+      new_nodes := ComponentRef.node(diff_cref) :: new_nodes;
+    end for;
+    interface_nodes := listReverse(new_nodes);
+  end differentiateFunctionInterfaceNodes;
+
+  function differentiateAlgorithm
+    input output Algorithm alg;
+    input output DifferentiationArguments diffArguments;
+  protected
+    list<Statement> statements;
+    list<ComponentRef> inputs, outputs;
+  algorithm
+    (statements, diffArguments) := List.mapFold(alg.statements, differentiateStatement, diffArguments);
+    (inputs, outputs) := Algorithm.getInputsOutputs(statements);
+    alg := Algorithm.ALGORITHM(statements, inputs, outputs, alg.source);
+  end differentiateAlgorithm;
+
+  function differentiateStatement
+    input Statement stmt;
+    output Statement diff_stmt;
+    input output DifferentiationArguments diffArguments;
+  algorithm
+    diff_stmt := match stmt
+      local
+        Expression exp, lhs, rhs;
+        list<Statement> branch_stmts;
+        list<tuple<Expression, list<Statement>>> branches = {};
+
+      case Statement.FUNCTION_ARRAY_INIT()  then stmt;
+      case Statement.ASSERT()               then stmt;
+      case Statement.TERMINATE()            then stmt;
+      case Statement.NORETCALL()            then stmt;
+      case Statement.RETURN()               then stmt;
+      case Statement.BREAK()                then stmt;
+
+      case Statement.ASSIGNMENT() algorithm
+        (lhs, diffArguments) := differentiateExpression(stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(stmt.rhs, diffArguments);
+        stmt.lhs := lhs;
+        stmt.rhs := rhs;
+      then stmt;
+
+      case Statement.FOR() algorithm
+        (branch_stmts, diffArguments) := List.mapFold(stmt.body, differentiateStatement, diffArguments);
+        stmt.body := branch_stmts;
+      then stmt;
+
+      case Statement.WHILE() algorithm
+        (branch_stmts, diffArguments) := List.mapFold(stmt.body, differentiateStatement, diffArguments);
+        stmt.body := branch_stmts;
+      then stmt;
+
+      case Statement.FAILURE() algorithm
+        (branch_stmts, diffArguments) := List.mapFold(stmt.body, differentiateStatement, diffArguments);
+        stmt.body := branch_stmts;
+      then stmt;
+
+      case Statement.IF() algorithm
+        for branch in stmt.branches loop
+          (exp, branch_stmts) := branch;
+          (branch_stmts, diffArguments) := List.mapFold(branch_stmts, differentiateStatement, diffArguments);
+          branches := (exp, branch_stmts) :: branches;
+        end for;
+        stmt.branches := listReverse(branches);
+      then stmt;
+
+      case Statement.WHEN() algorithm
+        for branch in stmt.branches loop
+          (exp, branch_stmts) := branch;
+          (branch_stmts, diffArguments) := List.mapFold(branch_stmts, differentiateStatement, diffArguments);
+          branches := (exp, branch_stmts) :: branches;
+        end for;
+        stmt.branches := listReverse(branches);
+      then stmt;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:" + Statement.toString(stmt)});
+      then fail();
+    end match;
+  end differentiateStatement;
 
   function differentiateBinary
     "Some of this is depcreated because of Expression.MULTARY().

@@ -818,21 +818,19 @@ public
     _ := match ComponentRef.node(cref)
       local
         InstNode qual;
-        Pointer<Variable> old_var_ptr;
         Variable var;
-      case qual as InstNode.VAR_NODE()
-        algorithm
-          // get the variable pointer from the old cref to later on link back to it
-          old_var_ptr := BVariable.getVarPointer(cref);
-          // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
-          qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-          var := fromCref(cref);
-          // update the variable to be a jac var and pass the pointer to the original variable
-          // ToDo: tmps will get JAC_DIFF_VAR !
-          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.JAC_VAR());
-          // create the new variable pointer and safe it to the component reference
-          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+
+      // regular case for jacobians
+      case qual as InstNode.VAR_NODE() algorithm
+        // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
+        qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
+        cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+        var := fromCref(cref);
+        // update the variable to be a jac var and pass the pointer to the original variable
+        // ToDo: tmps will get JAC_DIFF_VAR !
+        var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.JAC_VAR());
+        // create the new variable pointer and safe it to the component reference
+        (var_ptr, cref) := makeVarPtrCyclic(var, cref);
       then ();
 
       else algorithm
@@ -840,6 +838,28 @@ public
       then fail();
     end match;
   end makePDerVar;
+
+  function makeFDerVar
+      "Creates a function derivative cref. Used in NBDifferentiation
+    for differentiating body vars of a function."
+    input output ComponentRef cref    "old component reference to new component reference";
+  algorithm
+    cref := match ComponentRef.node(cref)
+      local
+        InstNode qual;
+
+      // for function differentiation (crefs are not lowered and only known locally)
+      case qual as InstNode.COMPONENT_NODE() algorithm
+        // prepend the seed str, matrix name locally not needed
+        qual.name := FUNCTION_DERIVATIVE_STR + "_" + qual.name;
+        cref := ComponentRef.fromNode(qual, ComponentRef.scalarType(cref));
+     then cref;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
+      then fail();
+    end match;
+  end makeFDerVar;
 
   function makeStartVar
     "Creates a start variable pointer from a cref. Used in NBInitialization.
