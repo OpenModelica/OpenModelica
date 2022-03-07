@@ -9869,6 +9869,17 @@ protected
   Option<DAE.Exp> start_value = getStartValue(var);
 algorithm
   //BackendDump.dumpVarList({var}, "startValueIsConstOrNone");
+
+  // This is the old implementation which seems to be needed for the CPP runtime
+  if stringEq(Config.simCodeTarget(), "Cpp") then
+    if isNone(start_value) then
+      b := true;
+    else
+      b := Expression.isEvaluatedConst(Util.getOption(start_value));
+    end if;
+    return;
+  end if;
+
   if isNone(start_value) and isNone(var.bindExp) then
     b := true;
   elseif isNone(start_value) and isSome(var.bindExp) then
