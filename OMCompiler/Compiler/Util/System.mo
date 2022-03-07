@@ -365,6 +365,16 @@ public function plotCallBack
   external "C" SystemImpl__plotCallBack(OpenModelica.threadData(), externalWindow, filename, title, grid, plotType, logX, logY, xLabel, yLabel, x1, x2, y1, y2, curveWidth, curveStyle, legendPosition, footer, autoScale, variables) annotation(Library = "omcruntime");
 end plotCallBack;
 
+public function loadModelCallBackDefined
+  output Boolean isDefined;
+  external "C"
+  isDefined=SystemImpl__loadModelCallBackDefined(OpenModelica.threadData()) annotation(Library = "omcruntime");
+end loadModelCallBackDefined;
+
+public function loadModelCallBack
+  external "C" SystemImpl__loadModelCallBack(OpenModelica.threadData()) annotation(Library = "omcruntime");
+end loadModelCallBack;
+
 public function cd
   input String inString;
   output Integer outInteger;
