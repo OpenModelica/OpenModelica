@@ -3137,7 +3137,7 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
         inSysData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
         inSysData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
         inSysData->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
-        inSysData->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
+        inSysData->sparsePattern->numberOfNonZeros = <%sp_size_index%>;
         inSysData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(unsigned int));
         inSysData->sparsePattern->maxColors = <%maxColor%>;
 
@@ -4512,7 +4512,7 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
 
     daeModeData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeCols%>+1)*sizeof(int));
     daeModeData->sparsePattern->index = (unsigned int*) malloc(<%sizeNNZ%>*sizeof(int));
-    daeModeData->sparsePattern->numberOfNoneZeros = <%sizeNNZ%>;
+    daeModeData->sparsePattern->numberOfNonZeros = <%sizeNNZ%>;
     daeModeData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeCols%>*sizeof(int));
     daeModeData->sparsePattern->maxColors = <%maxColorStr%>;
 
@@ -5251,7 +5251,7 @@ match sparsepattern
         jacobian->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
         jacobian->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
         jacobian->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
-        jacobian->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
+        jacobian->sparsePattern->numberOfNonZeros = <%sp_size_index%>;
         jacobian->sparsePattern->colorCols = (unsigned int*) malloc(<%index_%>*sizeof(unsigned int));
         jacobian->sparsePattern->maxColors = <%maxColor%>;
         jacobian->constantEqns = <%constantEqns%>;

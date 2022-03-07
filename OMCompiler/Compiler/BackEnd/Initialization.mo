@@ -2885,16 +2885,16 @@ protected function removeInitializationStuff2
   output DAE.Exp outExp;
   output Boolean outUseHomotopy;
 algorithm
-  (outExp, outUseHomotopy) := match (inExp, inUseHomotopy)
+  (outExp, outUseHomotopy) := match inExp
     local
       DAE.Exp e1, e2, e3, actual, simplified;
 
     // replace initial() with false
-    case (DAE.CALL(path=Absyn.IDENT(name="initial")), _)
+    case DAE.CALL(path=Absyn.IDENT(name="initial"))
     then (DAE.BCONST(false), inUseHomotopy);
 
     // replace homotopy(actual, simplified) with actual
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_::_), _)
+    case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_::_)
     then (actual, true);
 
     else (inExp, inUseHomotopy);

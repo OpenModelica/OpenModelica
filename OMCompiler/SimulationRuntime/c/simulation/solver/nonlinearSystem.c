@@ -436,7 +436,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 #if !defined(OMC_MINIMAL_RUNTIME)
     if (nonlinsys[i].isPatternAvailable && data->simulationInfo->nlsMethod != NLS_KINSOL)
     {
-      nnz = nonlinsys[i].sparsePattern->numberOfNoneZeros;
+      nnz = nonlinsys[i].sparsePattern->numberOfNonZeros;
 
       if (nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity) {
         nonlinsys[i].nlsMethod = NLS_KINSOL;

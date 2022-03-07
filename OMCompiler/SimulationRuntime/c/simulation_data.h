@@ -136,7 +136,7 @@ typedef struct SPARSE_PATTERN
   unsigned int* index;
   unsigned int sizeofIndex;
   unsigned int* colorCols;
-  unsigned int numberOfNoneZeros;
+  unsigned int numberOfNonZeros;
   unsigned int maxColors;
 } SPARSE_PATTERN;
 
@@ -610,7 +610,7 @@ typedef struct BASECLOCK_DATA {
   double interval;    // is intervalCounter/resolution
 
   SUBCLOCK_DATA* subClocks;       /**< Array with sub-clocks */
-  int nSubClocks;                /**< Number of sub-clocks */
+  int nSubClocks;                 /**< Number of sub-clocks */
   modelica_boolean isEventClock;  /**< true if base-clock is a event clock */
 
   CLOCK_STATS stats;

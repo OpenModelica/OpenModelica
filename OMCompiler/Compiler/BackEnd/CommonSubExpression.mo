@@ -2402,7 +2402,7 @@ case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, sy
       (lhs1, _) = ExpressionSolve.solve(lhs2, rhs2, varExp);
 
       (_,lhs1,rhs1) = cancelExpressions(lhs1,rhs1);
-      n = listLength(Expression.getAllCrefs(Expression.makeDiff(lhs1,rhs1)));
+      n = listLength(Expression.getAllCrefs(Expression.expSub(lhs1,rhs1)));
         //print("n1 "+intString(n1)+"\n");
         //print("n2 "+intString(n2)+"\n");
 

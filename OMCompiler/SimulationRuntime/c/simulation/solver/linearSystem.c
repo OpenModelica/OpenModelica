@@ -118,7 +118,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         linsys[i].jacobianIndex = -1;
         throwStreamPrint(threadData, "Failed to initialize the jacobian for torn linear system %d.", (int)linsys[i].equationIndex);
       }
-      nnz = jacobian->sparsePattern->numberOfNoneZeros;
+      nnz = jacobian->sparsePattern->numberOfNonZeros;
       linsys[i].nnz = nnz;
 
 #ifdef USE_PARJAC

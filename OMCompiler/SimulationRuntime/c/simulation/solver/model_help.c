@@ -404,7 +404,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*sizeCols + 4);
 
   infoStreamPrint(stream, 1, "Sparse structure of %s [size: %ux%u]", name, sizeRows, sizeCols);
-  infoStreamPrint(stream, 0, "%u nonzero elements", sparsePattern->numberOfNoneZeros);
+  infoStreamPrint(stream, 0, "%u nonzero elements", sparsePattern->numberOfNonZeros);
 
   infoStreamPrint(stream, 1, "Transposed sparse structure (rows: states)");
   i=0;
