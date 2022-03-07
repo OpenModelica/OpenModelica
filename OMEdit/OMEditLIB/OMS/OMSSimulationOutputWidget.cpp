@@ -62,6 +62,7 @@ QString OMSInteractiveCommands::pause = QStringLiteral("pause");
 QString OMSInteractiveCommands::end = QStringLiteral("end");
 QString OMSInteractiveCommands::_signals = QStringLiteral("signals");
 QString OMSInteractiveCommands::available = QStringLiteral("available");
+QString OMSInteractiveCommands::results = QStringLiteral("results");
 
 /*!
  * \class SimulationSubscriberSocket
@@ -398,6 +399,15 @@ void OMSSimulationOutputWidget::parseSimulationVariables(const QVariant variable
 }
 
 /*!
+ * \brief OMSSimulationOutputWidget::parseSimulationResults
+ * \param results
+ */
+void OMSSimulationOutputWidget::parseSimulationResults(const QVariant results)
+{
+  qDebug() << results.toMap();
+}
+
+/*!
  * \brief OMSSimulationOutputWidget::simulationProcessStarted
  * Updates the simulation output window when the simulation has started.
  */
@@ -484,6 +494,8 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
   QByteArray jsonData;
   if (data.startsWith(OMSInteractiveCommands::status.toStdString().c_str())) {
     jsonData = data.mid(QString(OMSInteractiveCommands::status).length());
+  } else if (data.startsWith(OMSInteractiveCommands::results.toStdString().c_str())) {
+    jsonData = data.mid(QString(OMSInteractiveCommands::results).length());
   } else {
     writeSimulationOutput(QString("Unknown simulation data %1.\n").arg(QString(data)), StringHandler::Error);
     return;
@@ -495,6 +507,8 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
   } else {
     if (data.startsWith(OMSInteractiveCommands::status.toStdString().c_str())) {
       parseSimulationProgress(jsonDocument.result);
+    } else if (data.startsWith(OMSInteractiveCommands::results.toStdString().c_str())) {
+      parseSimulationResults(jsonDocument.result);
     }
   }
 }
@@ -508,7 +522,9 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
  */
 void OMSSimulationOutputWidget::simulationReply(const QByteArray &reply, const QJsonObject &jsonObject)
 {
-  writeSimulationOutput("client: " + reply + "\n", StringHandler::OMEditInfo);
+  if (MainWindow::instance()->isDebug()) {
+    writeSimulationOutput("client: " + reply + "\n", StringHandler::OMEditInfo);
+  }
   JsonDocument jsonDocument;
   if (jsonDocument.parse(reply)) {
     QVariantMap resultMap = jsonDocument.result.toMap();

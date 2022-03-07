@@ -61,6 +61,7 @@ public:
   static QString end;
   static QString _signals;
   static QString available;
+  static QString results;
 };
 
 class SimulationSubscriberSocket : public QObject
@@ -142,6 +143,7 @@ private:
 
   void parseSimulationProgress(const QVariant progress);
   void parseSimulationVariables(const QVariant variables);
+  void parseSimulationResults(const QVariant results);
 signals:
   void sendRequest(const QJsonObject &jsonObject);
 public slots:
