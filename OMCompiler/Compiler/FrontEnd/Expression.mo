@@ -3693,7 +3693,7 @@ public function expAdd
   input DAE.Exp e2;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(e1,e2)
+  outExp := match(e1,e2)
     local
       Type tp;
       Boolean b;
@@ -3701,24 +3701,12 @@ algorithm
       Real r1,r2;
       Integer i1,i2;
       DAE.Exp e, x, y, z;
-    case(_,_)
-      equation
-        true = isZero(e1);
-      then e2;
-    case(_,_)
-      equation
-        true = isZero(e2);
-      then e1;
-    case(DAE.RCONST(r1),DAE.RCONST(r2))
-      equation
-        r1 = realAdd(r1,r2);
-      then
-        DAE.RCONST(r1);
-    case(DAE.ICONST(i1),DAE.ICONST(i2))
-      equation
-        i1 = intAdd(i1,i2);
-      then
-        DAE.ICONST(i1);
+
+    case(_,_) guard isZero(e1)          then e2;
+    case(_,_) guard isZero(e2)          then e1;
+    case(DAE.RCONST(r1),DAE.RCONST(r2)) then DAE.RCONST(r1 + r2);
+    case(DAE.ICONST(i1),DAE.ICONST(i2)) then DAE.ICONST(i1 + i2);
+
     /* a + (-b) = a - b */
     case (_,DAE.UNARY(operator=DAE.UMINUS(),exp=e))
       then
@@ -3762,21 +3750,17 @@ algorithm
       then
         expSub(e2,DAE.BINARY(x,op,y));
 
-    case (_,_)
-      equation
-        tp = typeof(e1);
-        true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
-        b = DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
-        op = if b then DAE.ADD_ARR(tp) else DAE.ADD(tp);
+    case (_,_) guard Types.isIntegerOrRealOrSubTypeOfEither(typeof(e1))
+      algorithm
+        tp := typeof(e1);
+        b := DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
+        op := if b then DAE.ADD_ARR(tp) else DAE.ADD(tp);
       then
         DAE.BINARY(e1,op,e2);
-    else
-      equation
-        tp = typeof(e1);
-        true = Types.isEnumeration(tp);
+    case (_,_) guard Types.isEnumeration(typeof(e1))
       then
-        DAE.BINARY(e1,DAE.ADD(tp),e2);
-  end matchcontinue;
+        DAE.BINARY(e1,DAE.ADD(typeof(e1)),e2);
+  end match;
 end expAdd;
 
 public function expSub
@@ -3786,7 +3770,7 @@ public function expSub
   input DAE.Exp e2;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(e1,e2)
+  outExp := match(e1,e2)
     local
       Type tp;
       Boolean b;
@@ -3794,26 +3778,11 @@ algorithm
       Real r1,r2;
       Integer i1,i2;
       DAE.Exp e, x,y;
-    case(_,_)
-      equation
-        true = isZero(e1);
-      then
-        negate(e2);
-    case(_,_)
-      equation
-        true = isZero(e2);
-      then
-        e1;
-    case(DAE.RCONST(r1),DAE.RCONST(r2))
-      equation
-        r1 = realSub(r1,r2);
-      then
-        DAE.RCONST(r1);
-    case(DAE.ICONST(i1),DAE.ICONST(i2))
-      equation
-        i1 = intSub(i1,i2);
-      then
-        DAE.ICONST(i1);
+    case(_,_) guard isZero(e1) then negate(e2);
+    case(_,_) guard isZero(e2) then e1;
+    case(DAE.RCONST(r1),DAE.RCONST(r2)) then DAE.RCONST(r1-r2);
+    case(DAE.ICONST(i1),DAE.ICONST(i2)) then DAE.ICONST(i1-i2);
+
     /* a - (-b) = a + b */
     case (_,DAE.UNARY(operator=DAE.UMINUS(),exp=e))
       then
@@ -3846,25 +3815,18 @@ algorithm
         e = expAdd(e,e2);
       then
         negate(e);
-    case (_,_)
-      equation
-        tp = typeof(e1);
-        if Types.isIntegerOrRealOrSubTypeOfEither(tp)
-        then
-          b = DAEUtil.expTypeArray(tp);
-          op = if b then DAE.SUB_ARR(tp) else DAE.SUB(tp);
-          outExp = DAE.BINARY(e1,op,e2);
-        else if Types.isEnumeration(tp)
-             then
-               outExp = DAE.BINARY(e1,DAE.SUB(tp),e2);
-             else
-               fail();
-             end if;
-        end if;
-      then
-        outExp;
 
-  end matchcontinue;
+    case (_,_) guard Types.isIntegerOrRealOrSubTypeOfEither(typeof(e1))
+      algorithm
+        tp := typeof(e1);
+        b := DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
+        op := if b then DAE.SUB_ARR(tp) else DAE.SUB(tp);
+      then
+        DAE.BINARY(e1,op,e2);
+    case (_,_) guard Types.isEnumeration(typeof(e1))
+      then
+        DAE.BINARY(e1,DAE.SUB(typeof(e1)),e2);
+  end match;
 end expSub;
 
 public function makeDiff
