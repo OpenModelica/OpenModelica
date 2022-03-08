@@ -120,7 +120,6 @@ public
     input output VarData varData;
     input output EqData eqData;
     input output FunctionTree funcTree;
-    input Adjacency.MatrixStrictness matrixStrictness;
   end causalizeInterface;
 
   partial function resolveSingularitiesInterface

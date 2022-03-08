@@ -279,37 +279,5 @@ public
     end if;
   end createParameterEquations;
 
-  function sortInitEqns
-    "sorts initial equations to be at the start of the array"
-    input output EquationPointers equations;
-  protected
-    DoubleEnded.MutableList<Pointer<Equation>> eqns = DoubleEnded.empty(Pointer.create(Equation.DUMMY_EQUATION()));
-  algorithm
-    for eqn in EquationPointers.toList(equations) loop
-      if Equation.isInitial(eqn) then
-        DoubleEnded.push_front(eqns, eqn);
-      else
-        DoubleEnded.push_back(eqns, eqn);
-      end if;
-    end for;
-    equations := EquationPointers.fromList(DoubleEnded.toListAndClear(eqns));
-  end sortInitEqns;
-
-  function sortInitVars
-    "sorts initial variables such that states are at the end of the array"
-    input output VariablePointers variables;
-  protected
-    DoubleEnded.MutableList<Pointer<Variable>> vars = DoubleEnded.empty(Pointer.create(NBVariable.DUMMY_VARIABLE));
-  algorithm
-    for var in VariablePointers.toList(variables) loop
-      if BVariable.isState(var) then
-        DoubleEnded.push_back(vars, var);
-      else
-        DoubleEnded.push_front(vars, var);
-      end if;
-    end for;
-    variables := VariablePointers.fromList(DoubleEnded.toListAndClear(vars));
-  end sortInitVars;
-
   annotation(__OpenModelica_Interface="backend");
 end NBInitialization;
