@@ -917,6 +917,22 @@ uniontype InstNode
     end match;
   end setDefinition;
 
+  function setComponentDirection
+    "creates new component!"
+    input Prefixes.Direction direction;
+    input output InstNode node;
+  algorithm
+    node := match node
+      case COMPONENT_NODE() algorithm
+        node.component := Pointer.create(Component.setDirection(Pointer.access(node.component), direction));
+      then node;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non component node: " + toString(node)});
+      then fail();
+    end match;
+  end setComponentDirection;
+
   function info
     input InstNode node;
     output SourceInfo info;

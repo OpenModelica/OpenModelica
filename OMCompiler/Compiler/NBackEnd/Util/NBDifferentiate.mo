@@ -68,6 +68,7 @@ public
 
   // Util imports
   import Array;
+  import BackendUtil = NBBackendUtil;
   import Error;
   import UnorderedMap;
 
@@ -632,7 +633,13 @@ public
   end differentiateComponentRef;
 
   function differentiateCall
-  "Differentiate builtin function calls"
+  "Differentiate builtin function calls
+  1. if the function is builtin -> use hardcoded logic
+  2. if the function is not builtin -> check if there is a 'fitting' derivative defined.
+    - 'fitting' means that all the zeroDerivative annotations have to hold
+    2.1 fitting function found -> use it
+    2.2 fitting function not found -> differentiate the body of the function
+  ToDo: respect the 'order' of the derivative when differentiating!"
     input output Expression exp "Has to be Expression.CALL()";
     input output DifferentiationArguments diffArguments;
   protected
@@ -645,19 +652,25 @@ public
     (exp, diffArguments) := match exp
       local
         Expression ret;
-        Boolean has_derviative_annotation = false;
         Call call, der_call;
-        Option<Function> func_opt;
+        Option<Function> func_opt, der_func_opt;
         list<Function> derivatives;
         Function func, der_func;
         list<Expression> arguments = {};
         Operator addOp, mulOp;
+        list<tuple<Expression, InstNode>> arguments_inputs;
+        Expression arg;
+        InstNode inp;
+        Boolean isCont, isReal;
+        // interface map. If the map contains a variable it has a zero derivative
+        // if the value is "true" it has to be stripped from the interface
+        // (it is possible that a variable has a zero derivative, but still appears in the interface)
+        UnorderedMap<String, Boolean> interface_map = UnorderedMap.new<Boolean>(stringHashDjb2Mod, stringEqual);
 
       // builtin functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
         ret := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
-
 
       // user defined functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
@@ -665,30 +678,43 @@ public
         if Util.isSome(func_opt) then
           // The function is in the function tree
           SOME(func) := func_opt;
-          derivatives := Function.getDerivatives(func);
-          ret := match derivatives
-            // ToDo: strip discrete stuff when adding differentiated arguments to the call
 
-            // no derivative of order 1 defined -> differentiate and add to the function tree
-            case {} algorithm
-              // ToDo: catch recursive function differentiation here (saved in diffArguments)
-              // if so do not differentiate function only create the call (prepend $pDer)
-              (der_func, diffArguments) := differentiateFunction(func, diffArguments);
-              (arguments, diffArguments) := List.mapFold(call.arguments, differentiateExpression, diffArguments);
-            then Expression.CALL(Call.makeTypedCall(der_func, listAppend(call.arguments, arguments), call.var, call.purity));
+          // build interface map to check if a function fits
+          // save all inputs that would end up in a zero derivative in a map
+          arguments_inputs := List.zip(call.arguments, func.inputs);
+          for tpl in arguments_inputs loop
+            (arg, inp) := tpl;
+            // do not check for continuous if it is for functions (differentiating a function inside a function)
+            // crefs are not lowered there! assume it is continuous
+            isCont := (diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.isContinuous(arg);
+            isReal := Type.isRealRecursive(Expression.typeOf(arg)); // ToDo also records
+            if not (isCont and isReal) then
+              // add to map; if it is not continuous also already set to true (always removed from interface)
+              UnorderedMap.add(InstNode.name(inp), not isCont, interface_map);
+            end if;
+          end for;
 
-            // exactly one derivative of order 1 -> use it
-            case {der_func} algorithm
-              (arguments, diffArguments) := List.mapFold(call.arguments, differentiateExpression, diffArguments);
-            then Expression.CALL(Call.makeTypedCall(der_func, listAppend(call.arguments, arguments), call.var, call.purity));
+          // try to get a fitting function from derivatives -> if none is found, differentiate
+          der_func_opt := Function.getDerivative(func, interface_map);
+          if Util.isSome(der_func_opt) then
+            SOME(der_func) := der_func_opt;
+          else
+            (der_func, diffArguments) := differentiateFunction(func, interface_map, diffArguments);
+          end if;
 
-            // ERROR - more than one derivative of order 1 defined
-            // TODO pick first one according to MLS 3.5 section 12.7.1
-            else algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there were " + intString(listLength(derivatives))
-                + " derivatives of order 1 (expected is exactly one).\n Derivatives:" + List.toString(derivatives, function Function.signatureString(printTypes = true), "", "", "\n", "")});
-            then fail();
-          end match;
+          for tpl in listReverse(arguments_inputs) loop
+            (arg, inp) := tpl;
+            // only keep the arguments which are not in the map or have value false
+            if not(UnorderedMap.contains(InstNode.name(inp), interface_map) and UnorderedMap.getSafe(InstNode.name(inp), interface_map)) then
+              arguments := arg :: arguments;
+            end if;
+          end for;
+
+          // differentiate type arguments and append to original ones
+          (arguments, diffArguments) := List.mapFold(arguments, differentiateExpression, diffArguments);
+          arguments := listAppend(call.arguments, arguments);
+
+          ret := Expression.CALL(Call.makeTypedCall(der_func, arguments, call.var, call.purity));
         else
           // The function is not in the function tree and not builtin -> error
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -974,6 +1000,7 @@ public
   function differentiateFunction
     input Function func;
     output Function der_func;
+    input UnorderedMap<String, Boolean> interface_map;
     input output DifferentiationArguments diffArguments;
   algorithm
     der_func := match func
@@ -982,7 +1009,7 @@ public
         Pointer<Class> cls;
         Class new_cls;
         DifferentiationArguments funcDiffArgs;
-        UnorderedMap<ComponentRef, ComponentRef> map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+        UnorderedMap<ComponentRef, ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
         Sections sections;
         list<Algorithm> algorithms;
         Absyn.Path new_path;
@@ -995,15 +1022,16 @@ public
           case new_cls as Class.INSTANCED_CLASS(sections = sections as Sections.SECTIONS()) algorithm
 
             // differentiate interface arguments
-            der_func.inputs   := differentiateFunctionInterfaceNodes(der_func.inputs, map, true);
-            der_func.outputs  := differentiateFunctionInterfaceNodes(der_func.outputs, map, false);
-            der_func.locals   := differentiateFunctionInterfaceNodes(der_func.locals, map, true);
+            der_func.inputs   := differentiateFunctionInterfaceNodes(der_func.inputs, interface_map, diff_map, true);
+            der_func.locals   := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, true);
+            der_func.locals   := listAppend(der_func.locals, list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, node) for node in der_func.outputs));
+            der_func.outputs  := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, false);
 
             // prepare differentiation arguments
             funcDiffArgs              := DifferentiationArguments.default();
             funcDiffArgs.diffType     := DifferentiationType.FUNCTION;
             funcDiffArgs.funcTree     := diffArguments.funcTree;
-            funcDiffArgs.jacobianHT   := SOME(map);
+            funcDiffArgs.jacobianHT   := SOME(diff_map);
 
             // create "fake" function with correct interface to have the interface
             // in the case of recursive differentiation (e.g. function calls itself)
@@ -1032,12 +1060,14 @@ public
             (algorithms, funcDiffArgs) := List.mapFold(sections.algorithms, differentiateAlgorithm, funcDiffArgs);
 
             // add them to new node
-            sections.algorithms := algorithms;
-            new_cls.sections    := sections;
-            node.cls            := Pointer.create(new_cls);
-            cachedData          := CachedData.FUNCTION({der_func}, true, false);
-            der_func.node       := InstNode.setFuncCache(node, cachedData);
+            sections.algorithms   := algorithms;
+            new_cls.sections      := sections;
+            node.cls              := Pointer.create(new_cls);
+            cachedData            := CachedData.FUNCTION({der_func}, true, false);
+            der_func.node         := InstNode.setFuncCache(node, cachedData);
+            der_func.derivatives  := {};
           then new_cls;
+
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for class " + Class.toFlatString(Pointer.access(cls), func.node) + "."});
           then fail();
@@ -1069,21 +1099,23 @@ public
 
   function differentiateFunctionInterfaceNodes
     "differentiates function interface nodes (inputs, outputs, locals) and
-    adds them to the map used for differentiation. Also returns the new
+    adds them to the diff_map used for differentiation. Also returns the new
     interface node lists for the differentiated function.
     (outputs only have the differentiated and not the original interface nodes)"
     input output list<InstNode> interface_nodes;
-    input UnorderedMap<ComponentRef, ComponentRef> map;
-    input Boolean keepOld                                 "false for outputs, else true";
+    input UnorderedMap<String, Boolean> interface_map;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    input Boolean keepOld;
   protected
     list<InstNode> new_nodes;
     ComponentRef cref, diff_cref;
   algorithm
     new_nodes := if keepOld then listReverse(interface_nodes) else {};
+    interface_nodes := list(node for node guard(not UnorderedMap.contains(InstNode.name(node), interface_map)) in interface_nodes);
     for node in interface_nodes loop
       cref := ComponentRef.fromNode(node, InstNode.getType(node));
       diff_cref := BVariable.makeFDerVar(cref);
-      UnorderedMap.add(cref, diff_cref, map);
+      UnorderedMap.add(cref, diff_cref, diff_map);
       new_nodes := ComponentRef.node(diff_cref) :: new_nodes;
     end for;
     interface_nodes := listReverse(new_nodes);
@@ -1093,71 +1125,79 @@ public
     input output Algorithm alg;
     input output DifferentiationArguments diffArguments;
   protected
-    list<Statement> statements;
+    list<list<Statement>> statements;
+    list<Statement> statements_flat;
     list<ComponentRef> inputs, outputs;
   algorithm
     (statements, diffArguments) := List.mapFold(alg.statements, differentiateStatement, diffArguments);
-    (inputs, outputs) := Algorithm.getInputsOutputs(statements);
-    alg := Algorithm.ALGORITHM(statements, inputs, outputs, alg.source);
+    statements_flat := List.flatten(statements);
+    (inputs, outputs) := Algorithm.getInputsOutputs(statements_flat);
+    alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, alg.source);
   end differentiateAlgorithm;
 
   function differentiateStatement
     input Statement stmt;
-    output Statement diff_stmt;
+    output list<Statement> diff_stmts "two statements for 'Real' assignments (diff; original) and else one";
     input output DifferentiationArguments diffArguments;
   algorithm
-    diff_stmt := match stmt
+    diff_stmts := match stmt
       local
+        Statement diff_stmt;
         Expression exp, lhs, rhs;
-        list<Statement> branch_stmts;
+        list<Statement> branch_stmts_flat;
+        list<list<Statement>> branch_stmts;
         list<tuple<Expression, list<Statement>>> branches = {};
 
-      case Statement.FUNCTION_ARRAY_INIT()  then stmt;
-      case Statement.ASSERT()               then stmt;
-      case Statement.TERMINATE()            then stmt;
-      case Statement.NORETCALL()            then stmt;
-      case Statement.RETURN()               then stmt;
-      case Statement.BREAK()                then stmt;
+      // I. differentiate 'Real' assignment and return differentiated and original statement
+      case diff_stmt as Statement.ASSIGNMENT() guard(Type.isRealRecursive(Expression.typeOf(diff_stmt.lhs))) algorithm
+        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
+        diff_stmt.lhs := lhs;
+        diff_stmt.rhs := SimplifyExp.simplify(rhs);
+      then {diff_stmt, stmt};
 
-      case Statement.ASSIGNMENT() algorithm
-        (lhs, diffArguments) := differentiateExpression(stmt.lhs, diffArguments);
-        (rhs, diffArguments) := differentiateExpression(stmt.rhs, diffArguments);
-        stmt.lhs := lhs;
-        stmt.rhs := rhs;
-      then stmt;
+      // II. delegate differentiation to body and only return differentiated statement
+      case diff_stmt as Statement.FOR() algorithm
+        (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, differentiateStatement, diffArguments);
+        diff_stmt.body := List.flatten(branch_stmts);
+      then {diff_stmt};
 
-      case Statement.FOR() algorithm
-        (branch_stmts, diffArguments) := List.mapFold(stmt.body, differentiateStatement, diffArguments);
-        stmt.body := branch_stmts;
-      then stmt;
+      case diff_stmt as Statement.WHILE() algorithm
+        (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, differentiateStatement, diffArguments);
+        diff_stmt.body := List.flatten(branch_stmts);
+      then {diff_stmt};
 
-      case Statement.WHILE() algorithm
-        (branch_stmts, diffArguments) := List.mapFold(stmt.body, differentiateStatement, diffArguments);
-        stmt.body := branch_stmts;
-      then stmt;
+      case diff_stmt as Statement.FAILURE() algorithm
+        (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, differentiateStatement, diffArguments);
+        diff_stmt.body := List.flatten(branch_stmts);
+      then {diff_stmt};
 
-      case Statement.FAILURE() algorithm
-        (branch_stmts, diffArguments) := List.mapFold(stmt.body, differentiateStatement, diffArguments);
-        stmt.body := branch_stmts;
-      then stmt;
-
-      case Statement.IF() algorithm
-        for branch in stmt.branches loop
-          (exp, branch_stmts) := branch;
-          (branch_stmts, diffArguments) := List.mapFold(branch_stmts, differentiateStatement, diffArguments);
-          branches := (exp, branch_stmts) :: branches;
+      case diff_stmt as Statement.IF() algorithm
+        for branch in diff_stmt.branches loop
+          (exp, branch_stmts_flat) := branch;
+          (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, differentiateStatement, diffArguments);
+          branches := (exp, List.flatten(branch_stmts)) :: branches;
         end for;
-        stmt.branches := listReverse(branches);
-      then stmt;
+        diff_stmt.branches := listReverse(branches);
+      then {diff_stmt};
 
-      case Statement.WHEN() algorithm
-        for branch in stmt.branches loop
-          (exp, branch_stmts) := branch;
-          (branch_stmts, diffArguments) := List.mapFold(branch_stmts, differentiateStatement, diffArguments);
-          branches := (exp, branch_stmts) :: branches;
+      case diff_stmt as Statement.WHEN() algorithm
+        for branch in diff_stmt.branches loop
+          (exp, branch_stmts_flat) := branch;
+          (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, differentiateStatement, diffArguments);
+          branches := (exp, List.flatten(branch_stmts)) :: branches;
         end for;
-        stmt.branches := listReverse(branches);
-      then stmt;
+        diff_stmt.branches := listReverse(branches);
+      then {diff_stmt};
+
+      // III. assignments of non-Real are not differentiated, as well as empty statements
+      case Statement.ASSIGNMENT()           then {stmt};
+      case Statement.FUNCTION_ARRAY_INIT()  then {stmt};
+      case Statement.ASSERT()               then {stmt};
+      case Statement.TERMINATE()            then {stmt};
+      case Statement.NORETCALL()            then {stmt};
+      case Statement.RETURN()               then {stmt};
+      case Statement.BREAK()                then {stmt};
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:" + Statement.toString(stmt)});

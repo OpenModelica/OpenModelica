@@ -3,7 +3,7 @@
 // status: correct
 
 loadString("
-model diff_func_test
+model function_diff
   Real x;
   Real y;
   Real z;
@@ -11,7 +11,7 @@ equation
   y = sin(x);
   der(x) = f(y);
   der(z) = f(x);
-end diff_func_test;
+end function_diff;
 
 function f
   input Real a;
@@ -27,7 +27,7 @@ end f;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend -d=debugDifferentiation"); getErrorString();
-simulate(diff_func_test); getErrorString();
+simulate(function_diff); getErrorString();
 // Result:
 // true
 // ""
@@ -56,11 +56,15 @@ simulate(diff_func_test); getErrorString();
 //   input Real 'a';
 //   input Real '$fDER_a';
 //   output Real '$fDER_b';
+// protected
+//   Real 'b';
 // algorithm
 //   if 'a' >= 0.0 then
-//     '$fDER_b' := 2.0 * a ^ 1.0 * $fDER_a;
+//     '$fDER_b' := 2.0 * a * $fDER_a;
+//     'b' := 'a' ^ 2.0;
 //   elseif true then
 //     '$fDER_b' := '$fDER.f'(-'a', -'$fDER_a');
+//     'b' := 'f'(-'a');
 //   end if;
 //   annotation(Inline = false);
 // end '$fDER.f'
@@ -72,8 +76,8 @@ simulate(diff_func_test); getErrorString();
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.z = $fDER.f(x, $SEED_ODE_JAC.x) ($RES_SIM_0)
 //
 // record SimulationResult
-//     resultFile = "diff_func_test_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'diff_func_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "function_diff_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'function_diff', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

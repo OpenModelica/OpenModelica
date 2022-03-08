@@ -595,29 +595,30 @@ public
     output Boolean isInput = direction(component) == Direction.INPUT;
   end isInput;
 
-  function makeInput
+  function setDirection
     input output Component component;
+    input Direction direction;
   protected
     Attributes attr;
   algorithm
     () := match component
       case UNTYPED_COMPONENT(attributes = attr)
         algorithm
-          attr.direction := Direction.INPUT;
+          attr.direction := direction;
           component.attributes := attr;
         then
           ();
 
       case TYPED_COMPONENT(attributes = attr)
         algorithm
-          attr.direction := Direction.INPUT;
+          attr.direction := direction;
           component.attributes := attr;
         then
           ();
 
       else ();
     end match;
-  end makeInput;
+  end setDirection;
 
   function isOutput
     input Component component;
