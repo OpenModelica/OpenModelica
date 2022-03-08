@@ -638,5 +638,24 @@ public
     end if;
   end isOnlyTimeDependentFold;
 
+  function isContinuous
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := Expression.fold(exp, isContinuousFold, true);
+  end isContinuous;
+
+  function isContinuousFold
+    input Expression exp;
+    input output Boolean b;
+  algorithm
+    if b then
+      b := match exp
+        case Expression.CREF() then BVariable.checkCref(exp.cref, BVariable.isContinuous);
+        else true;
+      end match;
+    end if;
+  end isContinuousFold;
+
   annotation(__OpenModelica_Interface="backend");
 end NBBackendUtil;

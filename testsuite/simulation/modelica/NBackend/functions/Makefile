@@ -1,8 +1,9 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-function_annotation_der.mos\
 builtin_functions.mos\
+function_annotation_der.mos\
+function_diff.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

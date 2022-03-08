@@ -533,14 +533,14 @@ uniontype InstNode
     output String name;
   algorithm
     name := match node
-      case CLASS_NODE() then "class";
-      case COMPONENT_NODE() then "component";
-      case INNER_OUTER_NODE() then typeName(node.innerNode);
-      case REF_NODE() then "ref node";
-      case NAME_NODE() then "name node";
-      case IMPLICIT_SCOPE() then "implicit scope";
-      case EMPTY_NODE() then "empty node";
-      case VAR_NODE() then "var node";
+      case CLASS_NODE()         then "class";
+      case COMPONENT_NODE()     then "component";
+      case INNER_OUTER_NODE()   then typeName(node.innerNode);
+      case REF_NODE()           then "ref node";
+      case NAME_NODE()          then "name node";
+      case IMPLICIT_SCOPE()     then "implicit scope";
+      case EMPTY_NODE()         then "empty node";
+      case VAR_NODE()           then "var node";
     end match;
   end typeName;
 
@@ -916,6 +916,22 @@ uniontype InstNode
 
     end match;
   end setDefinition;
+
+  function setComponentDirection
+    "creates new component!"
+    input Prefixes.Direction direction;
+    input output InstNode node;
+  algorithm
+    node := match node
+      case COMPONENT_NODE() algorithm
+        node.component := Pointer.create(Component.setDirection(Pointer.access(node.component), direction));
+      then node;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non component node: " + toString(node)});
+      then fail();
+    end match;
+  end setComponentDirection;
 
   function info
     input InstNode node;

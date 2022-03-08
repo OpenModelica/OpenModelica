@@ -2570,17 +2570,31 @@ protected
       function getLocalDependenciesExp(locals = locals), deps);
   end getLocalDependenciesDim;
 
-  function getDerivatives
-    "returns all derivatives of a function of a certain order."
+  function getDerivative
+    "returns the first derivative that fits the interface_map
+    and returns NONE() if none of them fit."
     input Function original;
-    input Integer order = 1;
-    output list<Function> derivatives;
+    input UnorderedMap<String, Boolean> interface_map;
+    output Option<Function> derivative = NONE();
   protected
-    list<FunctionDerivative> order_derivatives;
+    list<FunctionDerivative> derivatives;
+    Boolean perfect_fit;
   algorithm
-    order_derivatives := list(func for func guard(FunctionDerivative.getOrder(func) == order) in original.derivatives);
-    derivatives       := List.flatten(list(getCachedFuncs(func.derivativeFn) for func in order_derivatives));
-  end getDerivatives;
+    for func in original.derivatives loop
+      if FunctionDerivative.perfectFit(func, interface_map) then
+        derivative := SOME(List.first(getCachedFuncs(func.derivativeFn)));
+        return;
+      end if;
+    end for;
+
+    // if no derivative could be found, set whole map to true
+    // so that the self-generated function removes as much as possible
+    if Util.isSome(derivative) then
+      for key in UnorderedMap.keyList(interface_map) loop
+        UnorderedMap.add(key, true, interface_map);
+      end for;
+    end if;
+  end getDerivative;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");
