@@ -898,11 +898,11 @@ int SystemImpl__loadModelCallBackDefined(threadData_t *threadData)
   return threadData->loadModelClassPointer && threadData->loadModelCB;
 }
 
-void SystemImpl__loadModelCallBack(threadData_t *threadData)
+void SystemImpl__loadModelCallBack(threadData_t *threadData, const char* modelname)
 {
   if (SystemImpl__loadModelCallBackDefined(threadData)) {
     LoadModelCallback cb = threadData->loadModelCB;
-    cb(threadData->loadModelClassPointer);
+    cb(threadData->loadModelClassPointer, modelname);
   }
 }
 

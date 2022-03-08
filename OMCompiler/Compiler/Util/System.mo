@@ -372,7 +372,8 @@ public function loadModelCallBackDefined
 end loadModelCallBackDefined;
 
 public function loadModelCallBack
-  external "C" SystemImpl__loadModelCallBack(OpenModelica.threadData()) annotation(Library = "omcruntime");
+  input String modelName;
+  external "C" SystemImpl__loadModelCallBack(OpenModelica.threadData(), modelName) annotation(Library = "omcruntime");
 end loadModelCallBack;
 
 public function cd

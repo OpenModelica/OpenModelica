@@ -3254,7 +3254,8 @@ algorithm
   else
     str := AbsynUtil.pathFirstIdent(className);
     (p,b) := CevalScript.loadModel({(Absyn.IDENT(str),"the given model name to instantiate",{"default"},false)},Settings.getModelicaPath(Testsuite.isRunning()),p,true,true,true,false);
-    Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_NOT_LOADED,{str,"default"},AbsynUtil.dummyInfo);
+    Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_LOAD_MODEL_DUE_TO_USES,{str,"default"},AbsynUtil.dummyInfo);
+    System.loadModelCallBack(str);
     // print(stringDelimitList(list(AbsynUtil.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
     SymbolTable.setAbsyn(p);
   end try;
