@@ -61,6 +61,18 @@ int evaluateDAEResiduals_wrapperEventUpdate(DATA* data, threadData_t* threadData
   return retVal;
 }
 
+/*! \fn void evaluateDAEResiduals_wrapperZeroCrossingsEquations
+ *
+ * wrapper function of the ZeroCrossing function for DAE mode
+ */
+int evaluateDAEResiduals_wrapperZeroCrossingsEquations(DATA* data, threadData_t* threadData)
+{
+  int retVal;
+  retVal = data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ZEROCROSS);
+
+  return retVal;
+}
+
 /*! \fn void getAlgebraicDAEVarNominals
  *
  *  collects DAE mode algebraic nominal values from modelData

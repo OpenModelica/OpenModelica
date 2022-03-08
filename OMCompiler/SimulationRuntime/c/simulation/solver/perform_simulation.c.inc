@@ -72,9 +72,7 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
 
   if (compiledInDAEMode) /* dae mode */
   {
-    if (data->simulationInfo->daeModeData->nResidualVars > 0) {
-      data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
-    }
+    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
   }
   else /* ode mode */
   {
@@ -473,7 +471,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         printAllVars(data, 0, LOG_SOLVER_V);
 
         clear_rt_step(data);
-        if (!compiledInDAEMode) { /* do not use ringbuffer for daeMode */
+        if (!compiledInDAEMode || data->modelData->nStates == 0) { /* do not use ringbuffer for daeMode */
           rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
         }
 
