@@ -440,7 +440,7 @@ public constant ErrorTypes.Message EMPTY_ARRAY = ErrorTypes.MESSAGE(182, ErrorTy
   Gettext.gettext("Array constructor may not be empty."));
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS = ErrorTypes.MESSAGE(183, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("Requested package %s of version %s, but this package was already loaded with version %s. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions."));
-public constant ErrorTypes.Message LOAD_MODEL = ErrorTypes.MESSAGE(184, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message LOAD_MODEL_FAILED = ErrorTypes.MESSAGE(184, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to load package %s (%s) using MODELICAPATH %s."));
 public constant ErrorTypes.Message REPLACEABLE_BASE_CLASS_SIMPLE = ErrorTypes.MESSAGE(185, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Base class %s is replaceable."));
@@ -518,7 +518,7 @@ public constant ErrorTypes.Message CONNECT_IN_INITIAL_EQUATION = ErrorTypes.MESS
   Gettext.gettext("Connect equations are not allowed in initial equation sections."));
 public constant ErrorTypes.Message FINAL_COMPONENT_OVERRIDE = ErrorTypes.MESSAGE(222, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Trying to override final element %s with modifier '%s'."));
-public constant ErrorTypes.Message NOTIFY_NOT_LOADED = ErrorTypes.MESSAGE(223, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+public constant ErrorTypes.Message NOTIFY_LOAD_MODEL_DUE_TO_USES = ErrorTypes.MESSAGE(223, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Automatically loaded package %s %s due to uses annotation."));
 public constant ErrorTypes.Message REINIT_MUST_BE_REAL = ErrorTypes.MESSAGE(224, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The first argument to reinit must be a subtype of Real, but %s has type %s."));

@@ -67,6 +67,7 @@ import Testsuite;
 import AbsynToSCode;
 import NFClassTree.ClassTree;
 import SCodeUtil;
+import System;
 
 public
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
@@ -1064,6 +1065,7 @@ algorithm
   try
     version := loadLibrary_work(name, scope);
     Error.addMessage(Error.NOTIFY_IMPLICIT_LOAD, {name, version});
+    System.loadModelCallBack();
     ErrorExt.delCheckpoint(getInstanceName());
   else
     ErrorExt.rollBack(getInstanceName());
