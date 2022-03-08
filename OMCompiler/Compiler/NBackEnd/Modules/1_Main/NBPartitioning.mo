@@ -339,9 +339,9 @@ protected
     clone_eqns := EquationPointers.clone(equations);
     systems := {System.SYSTEM(
       systemType        = systemType,
-      unknowns          = if isInit then Initialization.sortInitVars(clone_vars) else clone_vars,
+      unknowns          = clone_vars,
       daeUnknowns       = NONE(),
-      equations         = if isInit then Initialization.sortInitEqns(clone_eqns) else clone_eqns,
+      equations         = clone_eqns,
       adjacencyMatrix   = NONE(),
       matching          = NONE(),
       strongComponents  = NONE(),

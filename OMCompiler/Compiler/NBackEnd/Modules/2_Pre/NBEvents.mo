@@ -710,12 +710,12 @@ protected
         IfEquationBody ifBody;
 
       case Equation.WHEN_EQUATION() algorithm
-        (whenBody, bucket) := collectEventsWhenBody(eqn.body, bucket , eqn_ptr);
+        (whenBody, bucket) := collectEventsWhenBody(eqn.body, bucket, eqn_ptr);
         eqn.body := whenBody;
       then bucket;
 
       case Equation.IF_EQUATION() algorithm
-        (ifBody, bucket) := collectEventsIfBody(eqn.body, bucket , eqn_ptr);
+        (ifBody, bucket) := collectEventsIfBody(eqn.body, bucket, eqn_ptr);
         eqn.body := ifBody;
       then bucket;
 

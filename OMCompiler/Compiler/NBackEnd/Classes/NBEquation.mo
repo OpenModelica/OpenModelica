@@ -81,6 +81,7 @@ public
   partial function MapFuncExp
     input output Expression e;
   end MapFuncExp;
+
   partial function MapFuncCref
     input output ComponentRef c;
   end MapFuncCref;
@@ -850,40 +851,34 @@ public
       input Equation eq;
       input filterCref filter;
       output list<ComponentRef> cref_lst;
-
-      partial function filterCref
-        "partial function that needs to be provided.
-        decides if the the cref is added to the list pointer."
-        input output ComponentRef cref;
-        input Pointer<list<ComponentRef>> cref_lst_ptr;
-      end filterCref;
-
-      function filterExp
-        "wrapper function that applies filter cref to
-        a cref expression."
-        input output Expression exp;
-        input filterCref filter;
-        input Pointer<list<ComponentRef>> cref_lst_ptr;
-      algorithm
-        _ := match exp
-          local
-            ComponentRef cref;
-            filterCref func;
-          case Expression.CREF(cref = cref) algorithm
-            filter(cref, cref_lst_ptr);
-          then ();
-          else ();
-        end match;
-      end filterExp;
-
     protected
-      Pointer<list<ComponentRef>> cref_lst_ptr = Pointer.create({});
+      Pointer<list<ComponentRef>> acc = Pointer.create({});
     algorithm
       // map with the expression and cref filter functions
-      _ := map(eq, function filterExp(filter = filter, cref_lst_ptr = cref_lst_ptr),
-              SOME(function filter(cref_lst_ptr = cref_lst_ptr)));
-      cref_lst := Pointer.access(cref_lst_ptr);
+      _ := map(eq, function filterExp(filter = filter, acc = acc),
+              SOME(function filter(acc = acc)));
+      cref_lst := Pointer.access(acc);
     end collectCrefs;
+
+    partial function filterCref
+      "partial function that needs to be provided.
+      decides if the the cref is added to the list pointer."
+      input output ComponentRef cref;
+      input Pointer<list<ComponentRef>> acc;
+    end filterCref;
+
+    function filterExp
+      "wrapper function that applies filter cref to
+      a cref expression."
+      input output Expression exp;
+      input filterCref filter;
+      input Pointer<list<ComponentRef>> acc;
+    algorithm
+      _ := match exp
+        case Expression.CREF() algorithm filter(exp.cref, acc); then ();
+        else ();
+      end match;
+    end filterExp;
 
     function getLHS
       "gets the left hand side expression of an equation."

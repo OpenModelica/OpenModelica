@@ -73,7 +73,7 @@ protected
 
 public
   type MatrixType        = enumeration(SCALAR, ARRAY, PSEUDO);
-  type MatrixStrictness  = enumeration(FULL, LINEAR, STATE_SELECT, INIT);
+  type MatrixStrictness  = enumeration(LINEAR, SOLVABLE, FULL);
   type BipartiteGraph    = BipartiteIncidenceList<SetVertex, SetEdge>;
 
   uniontype Mapping
@@ -672,11 +672,6 @@ public
         // also sorts the matrix
         mT := transposeScalar(m, var_scalar_size);
 
-        // after proper sorting fixup the indices for STATE_SELECT and INIT
-        if st > MatrixStrictness.LINEAR then
-          m := absoluteMatrix(m);
-          mT := absoluteMatrix(mT);
-        end if;
         if Util.isSome(funcTree) then
           diffArgs := Pointer.access(diffArgs_ptr);
           funcTree := SOME(diffArgs.funcTree);
@@ -723,11 +718,6 @@ public
       // also sorts the matrix
       mT := transposeScalar(m, VariablePointers.scalarSize(vars));
 
-      // after proper sorting fixup the indices for STATE_SELECT and INIT
-      if st > MatrixStrictness.LINEAR then
-        m := absoluteMatrix(m);
-        mT := absoluteMatrix(mT);
-      end if;
       if Util.isSome(funcTree) then
         diffArgs := Pointer.access(diffArgs_ptr);
         funcTree := SOME(diffArgs.funcTree);
@@ -736,7 +726,7 @@ public
 
     function updateRow
       "updates a row and adds all occurences of variables in the input map
-      updates multiple rows for multi-dimensional equations"
+      updates multiple rows for multi-dimensional equations."
       input Pointer<Equation> eqn_ptr;
       input Pointer<Differentiate.DifferentiationArguments> diffArgs_ptr;
       input MatrixStrictness st;
@@ -749,7 +739,8 @@ public
       input Option<FunctionTree> funcTree = NONE()  "only needed for LINEAR without existing derivatives";
     protected
       Equation eqn;
-      list<ComponentRef> dependencies, state_dependencies, nonlinear_dependencies;
+      Pointer<list<ComponentRef>> unsolvable_ptr = Pointer.create({});
+      list<ComponentRef> dependencies, nonlinear_dependencies, remove_dependencies = {};
       BEquation.EquationAttributes attr;
       Pointer<Equation> derivative;
     algorithm
@@ -757,15 +748,17 @@ public
       // possibly adapt for algorithms
       dependencies := BEquation.Equation.collectCrefs(eqn, function getDependentCref(map = map, pseudo = pseudo));
 
-        // INIT
-      if (st == MatrixStrictness.INIT) then
-        // for initialization all regular rules apply but states have to be
-        // sorted to be at the end
-        (state_dependencies, dependencies) := List.extractOnTrue(dependencies, function BVariable.checkCref(func = BVariable.isState));
-        fillMatrix(eqn, m, mapping_opt, modes, eqn_idx, state_dependencies, map, true, pseudo);
+      if (st < MatrixStrictness.FULL) then
+        // SOLVABLE & LINEAR
+        // remove all unsolvables
+        BEquation.Equation.map(eqn, function getUnsolvableExpCrefs(acc = unsolvable_ptr, map = map, pseudo = pseudo));
+        remove_dependencies := Pointer.access(unsolvable_ptr);
+      end if;
 
-      // LINEAR and STATE SELECT
-      elseif (st > MatrixStrictness.FULL) then
+      if (st < MatrixStrictness.SOLVABLE) then
+        // LINEAR
+        // if we only want linear dependencies, try to look if there is a derivative saved.
+        // remove all dependencies of that equation because those are the nonlinear ones.
         attr := Equation.getAttributes(eqn);
         if Util.isSome(attr.derivative) then
           derivative := Util.getOption(attr.derivative);
@@ -773,21 +766,14 @@ public
           derivative := Differentiate.differentiateEquationPointer(eqn_ptr, diffArgs_ptr);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no derivative is saved and no function tree is given for linear adjacency matrix!"});
+          fail();
         end if;
-        // if we only want linear dependencies, try to look if there is a derivative saved. remove all dependencies
-        // of that equation because those are the nonlinear ones.
-        // for now fail if there is no derivative, possible fallback: differentiate eq and save it
-        nonlinear_dependencies := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(map = map, pseudo = pseudo));
-        dependencies := List.setDifferenceOnTrue(dependencies, nonlinear_dependencies, ComponentRef.isEqual);
-        if st == MatrixStrictness.STATE_SELECT then
-          // if we are preparing for state selection we only search for linear occurences. One exception
-          // are StateSelect.NEVER variables, which are allowed to appear nonlinear. but they have to be
-          // the last checked option, so they have a negative index and are afterwards sorted to be at the end
-          // of the list.
-          (nonlinear_dependencies, _) := List.extractOnTrue(nonlinear_dependencies,
-            function BVariable.checkCref(func = function BVariable.isStateSelect(stateSelect = NFBackendExtension.StateSelect.NEVER)));
-          fillMatrix(eqn, m, mapping_opt, modes, eqn_idx, nonlinear_dependencies, map, true, pseudo);
-        end if;
+        nonlinear_dependencies  := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(map = map, pseudo = pseudo));
+        remove_dependencies := listAppend(nonlinear_dependencies, remove_dependencies);
+      end if;
+
+      if not listEmpty(remove_dependencies) then
+        dependencies := List.setDifferenceOnTrue(dependencies, remove_dependencies, ComponentRef.isEqual);
       end if;
 
       // create the actual matrix row(s).
@@ -950,14 +936,6 @@ public
       end for;
     end transposeScalar;
 
-    function absoluteMatrix
-      input output array<list<Integer>> m;
-    algorithm
-      for row in 1:arrayLength(m) loop
-        m[row] := list(intAbs(i) for i in m[row]);
-      end for;
-    end absoluteMatrix;
-
     function createArray
       input VariablePointers vars;
       input EquationPointers eqns;
@@ -1032,6 +1010,22 @@ public
         Pointer.update(acc, cref :: Pointer.access(acc));
       end if;
     end getDependentCref;
+
+    function getUnsolvableExpCrefs
+      "finds all unsolvable crefs in an expression."
+      input output Expression exp                   "the exp to check for unsolvable crefs";
+      input Pointer<list<ComponentRef>> acc         "accumulator for relevant crefs";
+      input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
+      input Boolean pseudo;
+    algorithm
+      // put all unsolvable logic here!
+      _ := match exp
+        case Expression.RANGE()     then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+        case Expression.LBINARY()   then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+        case Expression.RELATION()  then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+        else exp;
+      end match;
+    end getUnsolvableExpCrefs;
 
     function getDependentCrefIndices
       input list<ComponentRef> dependencies         "dependent var crefs";
