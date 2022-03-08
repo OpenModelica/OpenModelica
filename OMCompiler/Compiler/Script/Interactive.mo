@@ -14824,7 +14824,6 @@ algorithm
   if updateProgram then
     SymbolTable.setAbsyn(InteractiveUtil.updateProgram(parsed, SymbolTable.getAbsyn()));
   end if;
-  System.loadModelCallBack();
 end parseFile;
 
 //he-mag begin
