@@ -269,7 +269,7 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   }
 
   /* prevent emit if noEventEmit flag is used, if it's an event */
-  if ((omc_flag[FLAG_NOEVENTEMIT] && solverInfo->didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT]) {
+  if (!omc_flag[FLAG_NOEVENTEMIT] || !solverInfo->didEventStep) {
     sim_result.emit(&sim_result, data, threadData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -355,7 +355,7 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
 static void saveIntegratorStats(SOLVER_INFO* solverInfo)
 {
   int ui;
-  if (!(omc_flag[FLAG_NO_RESTART] && solverInfo->solverMethod==S_DASSL) && solverInfo->didEventStep == 1)
+  if (!(omc_flag[FLAG_NO_RESTART] && solverInfo->solverMethod==S_DASSL) && solverInfo->didEventStep)
   {
     for(ui=0; ui<numStatistics; ui++)
     {
@@ -517,10 +517,10 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           continue;
         }
 
-      /*
-      * integration step determine all states by a integration method
-      * update continuous system
-      */
+        /*
+        * integration step determine all states by a integration method
+        * update continuous system
+        */
         infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
         retValIntegrator = simulationStep(data, threadData, solverInfo);
         infoStreamPrint(LOG_SOLVER, 0, "finished solver step %g", solverInfo->currentTime);

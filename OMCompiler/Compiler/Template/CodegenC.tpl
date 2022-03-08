@@ -1204,6 +1204,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <% if stringEq("",isModelExchangeFMU) then
     <<
+    /* FIXME these defines are ugly and hard to read, why not use direct function pointers instead? */
     #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #define prefixedName_updateContinuousSystem <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>
     #include <simulation/solver/perform_simulation.c.inc>
@@ -5759,12 +5760,13 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
   let simEqAttrEval = match context case(DAE_MODE_CONTEXT()) then '<%simEqAttrEval(eq)%>'
   let simEqAttrIsDiscreteKind = match context case(DAE_MODE_CONTEXT()) then '<%simEqAttrIsDiscreteKind(eq)%>'
   <<
-  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <% match simEqAttrEval case "" then '' else '<%simEqAttrEval%>' %>
-  <% match simEqAttrEval case "" then '' else 'if ((evalStages & currentEvalStage) && !((currentEvalStage!=EVAL_DISCRETE)?(<%simEqAttrIsDiscreteKind%>):0))' %>
-  <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
-  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-  threadData->lastEquationSolved = <%ix%>;
+  <% match simEqAttrEval case "" then '{' else 'if ((evalStages & currentEvalStage) && !((currentEvalStage!=EVAL_DISCRETE)?(<%simEqAttrIsDiscreteKind%>):0)) {' %>
+    <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
+    <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
+    <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
+    threadData->lastEquationSolved = <%ix%>;
+  }
   >>
 end equationNames_;
 
