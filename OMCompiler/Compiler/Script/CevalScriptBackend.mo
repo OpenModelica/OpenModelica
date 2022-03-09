@@ -3635,7 +3635,7 @@ algorithm
 
         // Build for target host
         userID := (if uid<>0 then "--user " + String(uid) else "");
-        buildDir := "mkdir build_cmake_" + crossTriple;
+        buildDir := "build_cmake_" + crossTriple;
         if 0 <> System.regex(crossTriple, "mingw", 1) then
           fmiTarget := " -DCMAKE_SYSTEM_NAME=Windows ";
         elseif 0 <> System.regex(crossTriple, "apple", 1) then
@@ -3659,7 +3659,7 @@ algorithm
 
         // Copy the files back from the volume (via the container) to the filesystem
         cmd := "docker cp " + containerID + ":/data/" + fmutmp + " .";
-        runDockerCmd(cmd, "myLogFile.log", cleanup=false, volumeID=volumeID, containerID=containerID);
+        runDockerCmd(cmd, "myLogFile.log", cleanup=true, volumeID=volumeID, containerID=containerID);
 
         // Cleanup
         System.systemCall("docker rm " + containerID);
@@ -3682,7 +3682,7 @@ protected function runDockerCmd
   input String volumeID = "";
   input String containerID = "";
 protected
-  Boolean verbose = false;
+  Boolean verbose = true;
 algorithm
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
@@ -4062,10 +4062,12 @@ algorithm
   // Use CMake on Windows when cross-compiling with docker
   if (listLength(platforms) > 1 and isWindows) then
     useCrossCompileCmake := true;
+    Error.addCompilerNotification("OS is Windows and multiple platform detected. Using CMake to build FMU.");
   else
     for platform in platforms loop
       if isWindows and 1 == System.regex(platform, " docker run ", 0, true, false) then
         useCrossCompileCmake := true;
+        Error.addCompilerNotification("OS is Windows and docker platform detected. Using CMake to build FMU.");
         break;
       end if;
     end for;

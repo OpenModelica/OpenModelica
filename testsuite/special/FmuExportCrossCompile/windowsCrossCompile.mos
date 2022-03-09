@@ -1,0 +1,22 @@
+// status: correct
+// Note: Requires docker in PATH
+//
+// Test cross compilation with CMake FMU build using multiarch/crossbuild image.
+
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+
+/*
+platforms := {
+  "x86_64-apple-darwin docker run multiarch/crossbuild",
+  "arm-linux-gnueabihf docker run multiarch/crossbuild",
+  "x86_64-linux-gnu docker run multiarch/crossbuild",
+  "i686-linux-gnu docker run multiarch/crossbuild",
+  "x86_64-w64-mingw32 docker run multiarch/crossbuild",
+  "i686-w64-mingw32 docker run multiarch/crossbuild"};
+*/
+
+platforms := {
+  "x86_64-apple-darwin docker run multiarch/crossbuild"};
+
+cd("temp"); getErrorString();
+buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", platforms=platforms); getErrorString();
