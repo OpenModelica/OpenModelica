@@ -1280,7 +1280,7 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
     tmpSimData.timeValue = fmudata->localData[i]->timeValue;
     /* allocate memory for all Real values */
     tmpSimData.realVars = (modelica_real *)calloc(fmudata->modelData->nVariablesReal, sizeof(modelica_real));
-    tmpSimData.realVars = fmudata->localData[i]->realVars;
+    memcpy(tmpSimData.realVars, fmudata->localData[i]->realVars, sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
     // TODO buffer for all variable type
     appendRingData(internal_state->simulationData, &tmpSimData);
   }
@@ -1312,6 +1312,12 @@ fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   if (*FMUstate)
   {
     INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) *FMUstate;
+    // free the SIMULATION_DATA variable buffers
+    for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
+    {
+      SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
+      free(sdata->realVars);
+    }
     freeRingBuffer(internal_state->simulationData);
     functions->freeMemory(*FMUstate);
     *FMUstate = NULL;
