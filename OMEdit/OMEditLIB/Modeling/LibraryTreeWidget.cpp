@@ -4057,6 +4057,9 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
 LibraryWidget::LibraryWidget(QWidget *pParent)
   : QWidget(pParent)
 {
+  mAutoLoadedLibrariesTimer.setSingleShot(true);
+  connect(&mAutoLoadedLibrariesTimer, SIGNAL(timeout()), SLOT(handleAutoLoadedLibrary()));
+  mAutoLoadedLibrariesList.clear();
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterClasses);
@@ -4203,7 +4206,6 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
           }
         }
         MainWindow::instance()->addRecentFile(fileName, encoding);
-        mpLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
         if (showProgress) {
           MainWindow::instance()->hideProgressBar();
         }
@@ -4285,7 +4287,6 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
           }
         }
         MainWindow::instance()->addRecentFile(fileName, encoding);
-        mpLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
         if (showProgress) {
           MainWindow::instance()->hideProgressBar();
         }
@@ -4710,6 +4711,19 @@ void LibraryWidget::openLibraryTreeItem(QString nameStructure)
     return;
   } else {
     mpLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryWidget::loadAutoLoadedLibrary
+ * Load the automatically loaded libraries.
+ * \param modelName
+ */
+void LibraryWidget::loadAutoLoadedLibrary(const QString &modelName)
+{
+  mAutoLoadedLibrariesList.append(modelName);
+  if (!mAutoLoadedLibrariesTimer.isActive()) {
+    mAutoLoadedLibrariesTimer.start();
   }
 }
 
@@ -5202,7 +5216,6 @@ bool LibraryWidget::saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryT
   return true;
 }
 
-
 /*!
  * \brief LibraryWidget::saveTotalLibraryTreeItemHelper
  * Helper function for LibraryWidget::saveTotalLibraryTreeItem()
@@ -5216,6 +5229,16 @@ void LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTree
     SaveTotalFileDialog *pSaveTotalFileDialog = new SaveTotalFileDialog(pLibraryTreeItem);
     pSaveTotalFileDialog->exec();
   }
+}
+
+/*!
+ * \brief LibraryWidget::handleAutoLoadedLibrary
+ * Slot activated when auto load library timer is timeout.
+ */
+void LibraryWidget::handleAutoLoadedLibrary()
+{
+  mpLibraryTreeModel->loadDependentLibraries(mAutoLoadedLibrariesList);
+  mAutoLoadedLibrariesList.clear();
 }
 
 /*!
