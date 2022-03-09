@@ -100,7 +100,6 @@ public
         bdae.alg_event  := list(solveSystem(sys, funcTree_ptr, implicit_index_ptr, duplicate_map) for sys in bdae.alg_event);
         bdae.funcTree   := Pointer.access(funcTree_ptr);
 
-
         if Flags.isSet(Flags.DUMP_SLICE) then
           for tpl in UnorderedMap.toList(duplicate_map) loop
             (unsolved, solved) := tpl;
@@ -420,49 +419,76 @@ protected
     output Boolean invertRelation;
   algorithm
     (eqn, status, invertRelation) := match eqn
-      local
-        ComponentRef lhs, rhs;
 
-      case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = lhs))
-        guard(ComponentRef.isEqual(cref, lhs) and not Expression.containsCref(eqn.rhs, cref))
-      then (eqn, Status.EXPLICIT, false);
+      // check lhs and rhs for simple structure
+      case Equation.SCALAR_EQUATION() then solveSimpleLhsRhs(eqn.lhs, eqn.rhs, cref, eqn);
+      case Equation.ARRAY_EQUATION()  then solveSimpleLhsRhs(eqn.lhs, eqn.rhs, cref, eqn);
+      case Equation.RECORD_EQUATION() then solveSimpleLhsRhs(eqn.lhs, eqn.rhs, cref, eqn);
+      case Equation.SIMPLE_EQUATION() then solveSimpleLhsRhs(Expression.fromCref(eqn.lhs), Expression.fromCref(eqn.rhs), cref, eqn);
 
-      case Equation.SCALAR_EQUATION(rhs = Expression.CREF(cref = rhs))
-        guard(ComponentRef.isEqual(cref, rhs) and not Expression.containsCref(eqn.lhs, cref))
-      then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
-
-      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = lhs))
-        guard(ComponentRef.isEqual(cref, lhs) and not Expression.containsCref(eqn.rhs, cref))
-      then (eqn, Status.EXPLICIT, false);
-
-      case Equation.ARRAY_EQUATION(rhs = Expression.CREF(cref = rhs))
-        guard(ComponentRef.isEqual(cref, rhs) and not Expression.containsCref(eqn.lhs, cref))
-      then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
-
-      // we do not check for x = x because that is nonsensical
-      case Equation.SIMPLE_EQUATION()
-        guard(ComponentRef.isEqual(cref, eqn.lhs))
-      then (eqn, Status.EXPLICIT, false);
-
-      case Equation.SIMPLE_EQUATION()
-        guard(ComponentRef.isEqual(cref, eqn.rhs))
-      then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
-
-      case Equation.RECORD_EQUATION(lhs = Expression.CREF(cref = lhs))
-        guard(ComponentRef.isEqual(cref, lhs) and not Expression.containsCref(eqn.rhs, cref))
-      then (eqn, Status.EXPLICIT, false);
-
-      case Equation.RECORD_EQUATION(rhs = Expression.CREF(cref = rhs))
-        guard(ComponentRef.isEqual(cref, rhs) and not Expression.containsCref(eqn.lhs, cref))
-      then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
-
-      case Equation.WHEN_EQUATION() then (eqn, Status.EXPLICIT, false); // ToDo: need to check if implicit
+      // ToDo: need to check if implicit
+      case Equation.WHEN_EQUATION() then (eqn, Status.EXPLICIT, false);
 
       // ToDo: more cases
 
       else (eqn, Status.UNPROCESSED, false);
     end match;
   end solveSimple;
+
+  function solveSimpleLhsRhs
+    input Expression lhs;
+    input Expression rhs;
+    input ComponentRef cref;
+    input output Equation eqn;
+    output Status status;
+    output Boolean invertRelation;
+  algorithm
+    (eqn, status, invertRelation) := match (lhs, rhs)
+      local
+        ComponentRef checkCref;
+        Expression exp;
+
+      // allways checks if exp is independent of cref!
+
+      // 1. already solved
+      // cref = exp
+      case (Expression.CREF(cref = checkCref), exp)
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (eqn, Status.EXPLICIT, false);
+
+      // 2. only swap lsh and rhs
+      // exp = cref
+      case (exp, Expression.CREF(cref = checkCref))
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
+
+      // 3.1 negate (MINUS) lhs and rhs
+      // -cref = exp
+      case (Expression.UNARY(exp = Expression.CREF(cref = checkCref)), exp)
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (Equation.updateLHSandRHS(eqn, Expression.negate(lhs), Expression.negate(rhs)), Status.EXPLICIT, false);
+
+      // 3.2 negate (NOT) lhs and rhs
+      // not cref = exp
+      case (Expression.LUNARY(exp = Expression.CREF(cref = checkCref)), exp)
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (Equation.updateLHSandRHS(eqn, Expression.logicNegate(lhs), Expression.logicNegate(rhs)), Status.EXPLICIT, false);
+
+      // 4.1 negate (MINUS) and swap lhs and rhs
+      // exp = -cref
+      case (exp, Expression.UNARY(exp = Expression.CREF(cref = checkCref)))
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (Equation.updateLHSandRHS(eqn, Expression.negate(rhs), Expression.negate(lhs)), Status.EXPLICIT, false);
+
+      // 4.2 negate (NOT) and swap lhs and rhs
+      // exp = not cref
+      case (exp, Expression.LUNARY(exp = Expression.CREF(cref = checkCref)))
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (Equation.updateLHSandRHS(eqn, Expression.logicNegate(rhs), Expression.logicNegate(lhs)), Status.EXPLICIT, false);
+
+      else (eqn, Status.UNPROCESSED, false);
+    end match;
+  end solveSimpleLhsRhs;
 
   function solveLinear
     "author: kabdelhak, phannebohm

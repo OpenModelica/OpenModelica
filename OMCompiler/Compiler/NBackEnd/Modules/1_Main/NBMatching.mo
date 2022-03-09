@@ -209,22 +209,14 @@ public
       // SCALAR
       case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
         (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
-        if not transposed then
-          (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
-        else
-          (eqn_to_var, var_to_eqn, marked_eqns) := PFPlusExternal(adj.mT, eqn_to_var, var_to_eqn, clear);
-        end if;
+        (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
         matching := SCALAR_MATCHING(var_to_eqn, eqn_to_var);
       then (matching, marked_eqns, NONE(), NBAdjacency.MatrixType.SCALAR, adj.st);
 
       // PSEUDO ARRAY
       case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
         (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
-        //if not transposed then
-          (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
-        //else
-          //(eqn_to_var, var_to_eqn, marked_eqns) := PFPlusExternal(adj.mT, eqn_to_var, var_to_eqn, clear);
-        //end if;
+        (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
         matching := SCALAR_MATCHING(var_to_eqn, eqn_to_var);
       then (matching, marked_eqns, SOME(adj.mapping), NBAdjacency.MatrixType.PSEUDO, adj.st);
 

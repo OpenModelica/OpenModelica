@@ -585,6 +585,9 @@ public
 
         // negated alias
         case Expression.UNARY(exp = e as Expression.CREF()) then ALIAS(e.cref, -1.0, 0.0);
+
+        // negated logical alias
+        case Expression.LUNARY(exp = e as Expression.CREF()) then ALIAS(e.cref, -1.0, 0.0);
 /*
         // gain alias
         case e as Expression.MULTARY(arguments = {e1, e2}, inv_arguments = {})

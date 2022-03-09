@@ -462,9 +462,11 @@ public
     output Boolean b;
   algorithm
     b := match Pointer.access(var)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE()))       then not isFixed(var);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))    then not isFixed(var);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))   then not isFixed(var);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE()))             then not isFixed(var);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))          then not isFixed(var);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))    then not isFixed(var);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))          then not isFixed(var);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))         then not isFixed(var);
       else false;
     end match;
   end isFixable;
@@ -594,6 +596,8 @@ public
     state_var := match Pointer.access(der_var)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER(state = state_var)))
       then state_var;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS(state = state_var)))
+      then state_var;
       else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + pointerToString(der_var) + " because of wrong variable kind."});
         then fail();
@@ -611,6 +615,10 @@ public
         Variable stateVar;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = derivative)) then match Pointer.access(derivative)
         case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER(state = state)))
+          algorithm
+            stateVar := Pointer.access(state);
+        then stateVar.name;
+        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS(state = state)))
           algorithm
             stateVar := Pointer.access(state);
         then stateVar.name;
@@ -660,6 +668,20 @@ public
       then fail();
     end match;
   end getDerCref;
+
+  function getDiscreteStateVar
+    input Pointer<Variable> pre_var;
+    output Pointer<Variable> state_var;
+  algorithm
+    state_var := match Pointer.access(pre_var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS(state = state_var)))
+      then state_var;
+      else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + pointerToString(pre_var) + " because of wrong variable kind."});
+        then fail();
+    end match;
+  end getDiscreteStateVar;
+
 
   function makeDummyState
     input Pointer<Variable> varPointer;
@@ -1063,8 +1085,7 @@ public
   algorithm
     var := Pointer.access(var_ptr);
     binding := Binding.getExp(var.binding);
-    b := not (Expression.isCref(binding) or Expression.isCref(Expression.negate(binding)));
-    b := b and checkExpMap(binding, isTimeDependent);
+    b := (not Expression.isTrivialCref(binding)) and checkExpMap(binding, isTimeDependent);
   end hasNonTrivialAliasBinding;
 
   function hasConstOrParamAliasBinding
@@ -1223,6 +1244,29 @@ public
         end if;
       end for;
     end mapPtr;
+
+    function mapRemovePtr
+      "Traverses all variable pointers and may invoke to remove the variable pointer
+      (does not affect other instances of the variable)"
+      input output VariablePointers variables;
+      input MapFunc func;
+      partial function MapFunc
+        input Pointer<Variable> v;
+        output Boolean delete;
+      end MapFunc;
+    protected
+      Pointer<Variable> var_ptr;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(variables.varArr) loop
+        if ExpandableArray.occupied(i, variables.varArr) then
+          var_ptr := ExpandableArray.get(i, variables.varArr);
+          if func(var_ptr) then
+            variables := remove(var_ptr, variables);
+          end if;
+         end if;
+      end for;
+      variables := compress(variables);
+    end mapRemovePtr;
 
     function empty
       "Creates an empty VariablePointers using given size * 1.4."

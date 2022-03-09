@@ -347,7 +347,7 @@ public
       /* Maybe add optional markings here */
     end ARRAY_ADJACENCY_MATRIX;
 
-    record PSEUDO_ARRAY_ADJACENCY_MATRIX
+    record PSEUDO_ARRAY_ADJACENCY_MATRIX // ToDo: add optional solvability map for tearing
       array<list<Integer>> m        "eqn -> list<var>";
       array<list<Integer>> mT       "var -> list<eqn>";
       Mapping mapping               "index mapping scalar <-> array";
@@ -362,6 +362,8 @@ public
     end SCALAR_ADJACENCY_MATRIX;
 
     record EMPTY_ADJACENCY_MATRIX
+      MatrixType ty;
+      MatrixStrictness st;
     end EMPTY_ADJACENCY_MATRIX;
 
     function create
@@ -460,6 +462,12 @@ public
 
         case ARRAY_ADJACENCY_MATRIX() algorithm
           // ToDo
+        then (adj, vars, eqns, funcTree);
+
+        case EMPTY_ADJACENCY_MATRIX() algorithm
+          vars := VariablePointers.addList(new_vars, vars);
+          eqns := EquationPointers.addList(new_eqns, eqns);
+          (adj, funcTree) := create(vars, eqns, adj.ty, adj.st, funcTree);
         then (adj, vars, eqns, funcTree);
 
         else algorithm
@@ -683,7 +691,7 @@ public
           adj := SCALAR_ADJACENCY_MATRIX(m, mT, st);
         end if;
       else
-        adj := EMPTY_ADJACENCY_MATRIX();
+        adj := EMPTY_ADJACENCY_MATRIX(if pseudo then MatrixType.PSEUDO else MatrixType.SCALAR, st);
       end if;
     end createScalar;
 
@@ -768,7 +776,7 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no derivative is saved and no function tree is given for linear adjacency matrix!"});
           fail();
         end if;
-        nonlinear_dependencies  := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(map = map, pseudo = pseudo));
+        nonlinear_dependencies := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(map = map, pseudo = pseudo));
         remove_dependencies := listAppend(nonlinear_dependencies, remove_dependencies);
       end if;
 
@@ -1019,7 +1027,7 @@ public
       input Boolean pseudo;
     algorithm
       // put all unsolvable logic here!
-      _ := match exp
+      exp := match exp
         case Expression.RANGE()     then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
         case Expression.LBINARY()   then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
         case Expression.RELATION()  then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));

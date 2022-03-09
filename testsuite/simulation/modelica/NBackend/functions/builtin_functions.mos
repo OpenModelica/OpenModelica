@@ -46,7 +46,6 @@ simulate(builtin_functions); getErrorString();
 // CONTINUOUS 1 ODE System
 // ========================================
 //
-// --- Alias of INI[1 | 2] ---
 // BLOCK 1: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -54,7 +53,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) y = abs(x[2]) ($RES_SIM_14)
 //
-// --- Alias of INI[1 | 3] ---
 // BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -62,7 +60,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[1] = sqrt(y) ($RES_SIM_13)
 //
-// --- Alias of INI[1 | 4] ---
 // BLOCK 3: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -70,7 +67,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[2] = sin(y) ($RES_SIM_12)
 //
-// --- Alias of INI[1 | 5] ---
 // BLOCK 4: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -78,7 +74,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[3] = cos(y) ($RES_SIM_11)
 //
-// --- Alias of INI[1 | 6] ---
 // BLOCK 5: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -86,7 +81,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[4] = tan(y) ($RES_SIM_10)
 //
-// --- Alias of INI[1 | 7] ---
 // BLOCK 6: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -94,7 +88,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[5] = asin(y) ($RES_SIM_9)
 //
-// --- Alias of INI[1 | 8] ---
 // BLOCK 7: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -102,7 +95,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[6] = acos(y) ($RES_SIM_8)
 //
-// --- Alias of INI[1 | 9] ---
 // BLOCK 8: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -110,7 +102,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[7] = atan(y) ($RES_SIM_7)
 //
-// --- Alias of INI[1 | 10] ---
 // BLOCK 9: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -118,7 +109,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[8] = sinh(y) ($RES_SIM_6)
 //
-// --- Alias of INI[1 | 11] ---
 // BLOCK 10: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -126,7 +116,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[9] = cosh(y) ($RES_SIM_5)
 //
-// --- Alias of INI[1 | 12] ---
 // BLOCK 11: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -134,7 +123,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[10] = tanh(y) ($RES_SIM_4)
 //
-// --- Alias of INI[1 | 13] ---
 // BLOCK 12: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -142,7 +130,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[11] = exp(y) ($RES_SIM_3)
 //
-// --- Alias of INI[1 | 14] ---
 // BLOCK 13: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -150,7 +137,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[12] = log(1.0 + y) ($RES_SIM_2)
 //
-// --- Alias of INI[1 | 15] ---
 // BLOCK 14: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -158,7 +144,6 @@ simulate(builtin_functions); getErrorString();
 // ### Equation:
 // 	[SCAL] (1) $DER.x[13] = log10(1.0 + y) ($RES_SIM_1)
 //
-// --- Alias of INI[1 | 17] ---
 // BLOCK 15: Sliced Equation (status = Solve.EXPLICIT)
 // ----------------------------------------
 // ### Variable:
@@ -206,7 +191,8 @@ simulate(builtin_functions); getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'builtin_functions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: builtin_functions"
 // end SimulationResult;
-// "Error: Internal error UnorderedMap.getSafe failed because the key did not exist.
+// "Error: Internal error NBInitialization.main failed!
+// Error: Internal error UnorderedMap.getSafe failed because the key did not exist.
 // Error: Internal error NSimJacobian.SimJacobian.createSparsityPattern failed to get index for cref: x
 // "
 // endResult

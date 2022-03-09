@@ -231,7 +231,7 @@ public
       if Expression.isConstNumber(value) then
         // constant alias
         constStr := constStr + "\t" + ComponentRef.toString(key) + "\t ==> \t" + Expression.toString(value) + "\n";
-      elseif (not (Expression.isCref(value) or Expression.isCref(Expression.negate(value)))) and BVariable.checkExpMap(value, BVariable.isTimeDependent) then
+      elseif not Expression.isTrivialCref(value) then
         // non trivial alias
         nonTrivialStr := nonTrivialStr + "\t" + ComponentRef.toString(key) + "\t ==> \t" + Expression.toString(value) + "\n";
       else

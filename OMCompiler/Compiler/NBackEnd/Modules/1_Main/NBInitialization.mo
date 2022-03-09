@@ -82,14 +82,15 @@ public
         case BackendDAE.MAIN( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, initials = initialVars),
                               eqData = eqData as BEquation.EQ_DATA_SIM(equations = equations, initials = initialEqs))
           algorithm
+            // create the equations from fixed variables.
             (variables, equations, initialEqs) := createStartEquations(varData.states, variables, equations, initialEqs, eqData.uniqueIndex);
             (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex);
-            (equations, initialEqs) := createPreEquations(varData.previous, equations, initialEqs, eqData.uniqueIndex);
             (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, eqData.uniqueIndex);
 
             varData.variables := variables;
             varData.initials := initialVars;
             eqData.equations := equations;
+            // clone all simulation equations and add them to the initial equations
             eqData.initials := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
 
             bdae.varData := varData;
@@ -121,9 +122,7 @@ public
   end main;
 
   function createStartEquations
-    "Creates start equations from fixed start values.
-     kabdelhak: currently does not check for consistency!"
-    // ToDo: create Module wrapper for this.
+    "Creates start equations from fixed start values."
     input BVariable.VariablePointers states;
     input output BVariable.VariablePointers variables;
     input output BEquation.EquationPointers equations;
@@ -149,6 +148,7 @@ public
   end createStartEquations;
 
   function createStartEquation
+    "creates a start equation for a fixed state or discrete state."
     input Pointer<Variable> state;
     input Pointer<list<Pointer<Variable>>> ptr_start_vars;
     input Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqs;
@@ -157,7 +157,7 @@ public
     _ := match Pointer.access(state)
       local
         ComponentRef name, start_name;
-        Pointer<Variable> start_var;
+        Pointer<Variable> var_ptr, start_var;
         Pointer<BEquation.Equation> start_eq;
         Option<Expression> start;
 
@@ -171,7 +171,7 @@ public
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)), start = start)))
         algorithm
           name := BVariable.getVarName(state);
-          (start_name, start_var) := BVariable.makeStartVar(name);
+          (var_ptr, name, start_var, start_name) := createStartVar(state, name, {});
           start_eq := BEquation.Equation.makeStartEq(name, start_name, idx);
           Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
           Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
@@ -181,6 +181,8 @@ public
   end createStartEquation;
 
   function createStartEquationSlice
+    "creates a start equation for a sliced variable.
+    usually results in a for equation, but might be scalarized if that is not possible."
     input Slice<VariablePointer> state;
     input Pointer<list<Pointer<Variable>>> ptr_start_vars;
     input Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqs;
@@ -196,12 +198,11 @@ public
     Pointer<Equation> start_eq;
   algorithm
     var_ptr := Slice.getT(state);
-    name := BVariable.getVarName(var_ptr);
-    dims := Type.arrayDims(ComponentRef.nodeType(name));
+    name    := BVariable.getVarName(var_ptr);
+    dims    := Type.arrayDims(ComponentRef.nodeType(name));
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
-    frames := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
-    name := ComponentRef.mergeSubscripts(subscripts, name);
-    (start_name, start_var) := BVariable.makeStartVar(name);
+    frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
+    (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, subscripts);
     start_eq := BEquation.Equation.makeStartEq(name, start_name, idx, frames);
     if listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
@@ -211,46 +212,32 @@ public
     Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
   end createStartEquationSlice;
 
-  function createPreEquations
-    "Creates start equations from fixed start values.
-     kabdelhak: currently does not check for consistency!"
-    // ToDo: create Module wrapper for this.
-    input BVariable.VariablePointers previous;
-    input output BEquation.EquationPointers equations;
-    input output BEquation.EquationPointers initialEqs;
-    input Pointer<Integer> idx;
+  function createStartVar
+    "creates start variable and cref.
+    for discrete states the variable itself is changed to its
+    pre variable because they have to be initialized instead!.
+    normal:     var = $START.var
+    disc state: $PRE.dst = $START.dst"
+    input output Pointer<Variable> var_ptr;
+    input output ComponentRef name;
+    input list<Subscript> subscripts;
+    output Pointer<Variable> start_var;
+    output ComponentRef start_name;
   protected
-    Pointer<list<Pointer<BEquation.Equation>>> ptr_pre_eqs = Pointer.create({});
-    list<Pointer<BEquation.Equation>> pre_eqs;
+    Pointer<Variable> disc_state_var;
+    ComponentRef merged_name;
   algorithm
-    _ := BVariable.VariablePointers.mapPtr(previous, function createPreEquation(ptr_pre_eqs = ptr_pre_eqs, idx = idx));
-    pre_eqs := Pointer.access(ptr_pre_eqs);
-    equations := BEquation.EquationPointers.addList(pre_eqs, equations);
-    initialEqs := BEquation.EquationPointers.addList(pre_eqs, initialEqs);
-    if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(pre_eqs) then
-      print(List.toString(pre_eqs, function Equation.pointerToString(str = ""), StringUtil.headline_4("Created Unfixed Discrete Equations:"), "\t", "\n\t", "", false) + "\n\n");
+    merged_name := ComponentRef.mergeSubscripts(subscripts, name);
+    if BVariable.isDiscreteState(var_ptr) then
+      name := BVariable.getPreCref(name);
+      name := ComponentRef.mergeSubscripts(subscripts, name);
+      var_ptr := BVariable.getVarPointer(name);
     end if;
-  end createPreEquations;
-
-  function createPreEquation
-    input Pointer<Variable> preVar;
-    input Pointer<list<Pointer<BEquation.Equation>>> ptr_pre_eqs;
-    input Pointer<Integer> idx;
-  algorithm
-    _ := match Pointer.access(preVar)
-      local
-        Pointer<Variable> disc_var;
-        Pointer<BEquation.Equation> pre_eq;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.PREVIOUS(disc = disc_var)))
-        algorithm
-          pre_eq := BEquation.Equation.makePreEq(BVariable.getVarName(preVar), BVariable.getVarName(disc_var), idx);
-          Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
-      then ();
-      else ();
-    end match;
-  end createPreEquation;
+    (start_name, start_var) := BVariable.makeStartVar(merged_name);
+  end createStartVar;
 
   function createParameterEquations
+    "creates parameter equations of the form param = $START.param for all fixed params."
     input BVariable.VariablePointers parameters;
     input output BEquation.EquationPointers equations;
     input output BEquation.EquationPointers initialEqs;
