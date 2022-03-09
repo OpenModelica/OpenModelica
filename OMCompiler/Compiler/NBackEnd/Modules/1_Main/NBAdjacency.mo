@@ -362,6 +362,8 @@ public
     end SCALAR_ADJACENCY_MATRIX;
 
     record EMPTY_ADJACENCY_MATRIX
+      MatrixType ty;
+      MatrixStrictness st;
     end EMPTY_ADJACENCY_MATRIX;
 
     function create
@@ -460,6 +462,12 @@ public
 
         case ARRAY_ADJACENCY_MATRIX() algorithm
           // ToDo
+        then (adj, vars, eqns, funcTree);
+
+        case EMPTY_ADJACENCY_MATRIX() algorithm
+          vars := VariablePointers.addList(new_vars, vars);
+          eqns := EquationPointers.addList(new_eqns, eqns);
+          (adj, funcTree) := create(vars, eqns, adj.ty, adj.st, funcTree);
         then (adj, vars, eqns, funcTree);
 
         else algorithm
@@ -683,7 +691,7 @@ public
           adj := SCALAR_ADJACENCY_MATRIX(m, mT, st);
         end if;
       else
-        adj := EMPTY_ADJACENCY_MATRIX();
+        adj := EMPTY_ADJACENCY_MATRIX(if pseudo then MatrixType.PSEUDO else MatrixType.SCALAR, st);
       end if;
     end createScalar;
 
@@ -1019,7 +1027,7 @@ public
       input Boolean pseudo;
     algorithm
       // put all unsolvable logic here!
-      _ := match exp
+      exp := match exp
         case Expression.RANGE()     then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
         case Expression.LBINARY()   then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
         case Expression.RELATION()  then Expression.map(exp, function Equation.filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));

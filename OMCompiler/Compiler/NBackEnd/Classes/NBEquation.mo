@@ -82,6 +82,11 @@ public
     input output Expression e;
   end MapFuncExp;
 
+  partial function MapFuncExpWrapper
+    input output Expression e;
+    input MapFuncExp func;
+  end MapFuncExpWrapper;
+
   partial function MapFuncCref
     input output ComponentRef c;
   end MapFuncCref;
@@ -370,14 +375,15 @@ public
       "Traverses all expressions of the iterator range and applies a function to it."
       input output Iterator iter;
       input MapFuncExp funcExp;
+      input MapFuncExpWrapper mapFunc;
     algorithm
       iter := match iter
         case SINGLE() algorithm
-          iter.range := Expression.map(iter.range, funcExp);
+          iter.range := mapFunc(iter.range, funcExp);
         then iter;
         case NESTED() algorithm
           for i in 1:arrayLength(iter.ranges) loop
-            iter.ranges[i] := Expression.map(iter.ranges[i], funcExp);
+            iter.ranges[i] := mapFunc(iter.ranges[i], funcExp);
           end for;
         then iter;
         else algorithm
@@ -727,6 +733,7 @@ public
       input output Equation eq;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt = NONE();
+      input MapFuncExpWrapper mapFunc = Expression.map;
     algorithm
       eq := match eq
         local
@@ -740,100 +747,91 @@ public
           WhenEquationBody whenEqBody;
           Equation body, new_body;
 
-        case SCALAR_EQUATION()
-          algorithm
-            lhs := Expression.map(eq.lhs, funcExp);
-            rhs := Expression.map(eq.rhs, funcExp);
-            if not referenceEq(lhs, eq.lhs) then
-              eq.lhs := lhs;
-            end if;
-            if not referenceEq(rhs, eq.rhs) then
-              eq.rhs := rhs;
-            end if;
+        case SCALAR_EQUATION() algorithm
+          lhs := mapFunc(eq.lhs, funcExp);
+          rhs := mapFunc(eq.rhs, funcExp);
+          if not referenceEq(lhs, eq.lhs) then
+            eq.lhs := lhs;
+          end if;
+          if not referenceEq(rhs, eq.rhs) then
+            eq.rhs := rhs;
+          end if;
         then eq;
 
-        case ARRAY_EQUATION()
-          algorithm
-            lhs := Expression.map(eq.lhs, funcExp);
-            rhs := Expression.map(eq.rhs, funcExp);
-            if not referenceEq(lhs, eq.lhs) then
-              eq.lhs := lhs;
-            end if;
-            if not referenceEq(rhs, eq.rhs) then
-              eq.rhs := rhs;
-            end if;
+        case ARRAY_EQUATION() algorithm
+          lhs := mapFunc(eq.lhs, funcExp);
+          rhs := mapFunc(eq.rhs, funcExp);
+          if not referenceEq(lhs, eq.lhs) then
+            eq.lhs := lhs;
+          end if;
+          if not referenceEq(rhs, eq.rhs) then
+            eq.rhs := rhs;
+          end if;
         then eq;
 
-        case SIMPLE_EQUATION()
-          algorithm
-            if isSome(funcCrefOpt) then
-              SOME(funcCref) := funcCrefOpt;
-              lhs_cref := funcCref(eq.lhs);
-              rhs_cref := funcCref(eq.rhs);
-              if not referenceEq(lhs_cref, eq.lhs) then
-                eq.lhs := lhs_cref;
-              end if;
-              if not referenceEq(rhs_cref, eq.rhs) then
-                eq.rhs := rhs_cref;
-              end if;
+        case SIMPLE_EQUATION() algorithm
+          if isSome(funcCrefOpt) then
+            SOME(funcCref) := funcCrefOpt;
+            lhs_cref := funcCref(eq.lhs);
+            rhs_cref := funcCref(eq.rhs);
+            if not referenceEq(lhs_cref, eq.lhs) then
+              eq.lhs := lhs_cref;
             end if;
+            if not referenceEq(rhs_cref, eq.rhs) then
+              eq.rhs := rhs_cref;
+            end if;
+          end if;
         then eq;
 
-        case RECORD_EQUATION()
-          algorithm
-            lhs := Expression.map(eq.lhs, funcExp);
-            rhs := Expression.map(eq.rhs, funcExp);
-            if not referenceEq(lhs, eq.lhs) then
-              eq.lhs := lhs;
-            end if;
-            if not referenceEq(rhs, eq.rhs) then
-              eq.rhs := rhs;
-            end if;
+        case RECORD_EQUATION() algorithm
+          lhs := mapFunc(eq.lhs, funcExp);
+          rhs := mapFunc(eq.rhs, funcExp);
+          if not referenceEq(lhs, eq.lhs) then
+            eq.lhs := lhs;
+          end if;
+          if not referenceEq(rhs, eq.rhs) then
+            eq.rhs := rhs;
+          end if;
         then eq;
 
-        case ALGORITHM()
-          algorithm
-            alg := Algorithm.mapExp(eq.alg, funcExp);
-            if isSome(funcCrefOpt) then
-              SOME(funcCref) := funcCrefOpt;
-              // ToDo referenceEq for lists?
-              //alg.inputs := List.map(alg.inputs, funcCref);
-              alg.outputs := List.map(alg.outputs, funcCref);
-            end if;
-            eq.alg := alg;
+        case ALGORITHM() algorithm
+          alg := Algorithm.mapExp(eq.alg, funcExp); //ToDo: this has to use mapping func
+          if isSome(funcCrefOpt) then
+            SOME(funcCref) := funcCrefOpt;
+            // ToDo referenceEq for lists?
+            //alg.inputs := List.map(alg.inputs, funcCref);
+            alg.outputs := List.map(alg.outputs, funcCref);
+          end if;
+          eq.alg := alg;
         then eq;
 
-        case IF_EQUATION()
-          algorithm
-            ifEqBody := IfEquationBody.map(eq.body, funcExp, funcCrefOpt);
-            if not referenceEq(ifEqBody, eq.body) then
-              eq.body := ifEqBody;
-            end if;
+        case IF_EQUATION() algorithm
+          ifEqBody := IfEquationBody.map(eq.body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(ifEqBody, eq.body) then
+            eq.body := ifEqBody;
+          end if;
         then eq;
 
-        case FOR_EQUATION()
-          algorithm
-            iter := Iterator.map(eq.iter, funcExp);
-            if not referenceEq(iter, eq.iter) then
-              eq.iter := iter;
-            end if;
-            eq.body := list(map(body_eqn, funcExp, funcCrefOpt) for body_eqn in eq.body);
+        case FOR_EQUATION() algorithm
+          iter := Iterator.map(eq.iter, funcExp, mapFunc);
+          if not referenceEq(iter, eq.iter) then
+            eq.iter := iter;
+          end if;
+          eq.body := list(map(body_eqn, funcExp, funcCrefOpt) for body_eqn in eq.body);
         then eq;
 
-        case WHEN_EQUATION()
-          algorithm
-            whenEqBody := WhenEquationBody.map(eq.body, funcExp, funcCrefOpt);
-            if not referenceEq(whenEqBody, eq.body) then
-              eq.body := whenEqBody;
-            end if;
+        case WHEN_EQUATION() algorithm
+          whenEqBody := WhenEquationBody.map(eq.body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(whenEqBody, eq.body) then
+            eq.body := whenEqBody;
+          end if;
         then eq;
 
-        case AUX_EQUATION(body = SOME(body))
-          algorithm
-            new_body := map(body, funcExp, funcCrefOpt);
-            if not referenceEq(new_body, body) then
-              eq.body := SOME(new_body);
-            end if;
+        case AUX_EQUATION(body = SOME(body)) algorithm
+          new_body := map(body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(new_body, body) then
+            eq.body := SOME(new_body);
+          end if;
         then eq;
 
         case DUMMY_EQUATION() then eq;
@@ -1007,12 +1005,11 @@ public
     end fromLHSandRHS;
 
     function updateLHSandRHS
-      input Pointer<Equation> eqn_ptr;
+      input output Equation eqn;
       input Expression lhs;
       input Expression rhs;
     protected
       Type ty;
-      Equation eqn = Pointer.access(eqn_ptr);
       EquationAttributes attr = getAttributes(eqn);
       DAE.ElementSource src = source(eqn);
     algorithm
@@ -1021,7 +1018,6 @@ public
         case Type.ARRAY() then ARRAY_EQUATION(ty, lhs, rhs, src, attr, NONE());
                           else SCALAR_EQUATION(ty, lhs, rhs, src, attr);
       end match;
-      Pointer.update(eqn_ptr, eqn);
     end updateLHSandRHS;
 
     function swapLHSandRHS
@@ -1770,16 +1766,17 @@ public
       input output IfEquationBody ifBody;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
     algorithm
-      condition := Expression.map(ifBody.condition, funcExp);
+      condition := mapFunc(ifBody.condition, funcExp);
       if not referenceEq(condition, ifBody.condition) then
         ifBody.condition := condition;
       end if;
 
       // referenceEq for lists?
-      ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = function funcExp(), funcCrefOpt = function funcCrefOpt())));
+      ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)));
     end map;
 
     function toStatement
@@ -1854,16 +1851,17 @@ public
       input output WhenEquationBody whenBody;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
     algorithm
-      condition := Expression.map(whenBody.condition, funcExp);
+      condition := mapFunc(whenBody.condition, funcExp);
       if not referenceEq(condition, whenBody.condition) then
         whenBody.condition := condition;
       end if;
 
       // ToDo reference eq for lists?
-      whenBody.when_stmts := List.map(whenBody.when_stmts, function WhenStatement.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt));
+      whenBody.when_stmts := List.map(whenBody.when_stmts, function WhenStatement.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
     end map;
 /*
     function convert
@@ -1951,14 +1949,9 @@ public
 
     function map
       input output WhenStatement stmt;
-      input MapFunc funcExp;
+      input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
-      partial function MapFunc
-        input output Expression e;
-      end MapFunc;
-      partial function MapFuncCref
-        input output ComponentRef c;
-      end MapFuncCref;
+      input MapFuncExpWrapper mapFunc;
     algorithm
       stmt := match stmt
         local
@@ -1968,8 +1961,8 @@ public
 
         case ASSIGN()
           algorithm
-            lhs := Expression.map(stmt.lhs, funcExp);
-            rhs := Expression.map(stmt.rhs, funcExp);
+            lhs := mapFunc(stmt.lhs, funcExp);
+            rhs := mapFunc(stmt.rhs, funcExp);
             if not referenceEq(lhs, stmt.lhs) then
               stmt.lhs := lhs;
             end if;
@@ -1987,7 +1980,7 @@ public
                 stmt.stateVar := stateVar;
               end if;
             end if;
-            value := Expression.map(stmt.value, funcExp);
+            value := mapFunc(stmt.value, funcExp);
             if not referenceEq(value, stmt.value) then
               stmt.value := value;
             end if;
@@ -1995,7 +1988,7 @@ public
 
         case ASSERT()
           algorithm
-            condition := Expression.map(stmt.condition, funcExp);
+            condition := mapFunc(stmt.condition, funcExp);
             if not referenceEq(condition, stmt.condition) then
               stmt.condition := condition;
             end if;
@@ -2005,7 +1998,7 @@ public
 
         case NORETCALL()
           algorithm
-            value := Expression.map(stmt.exp, funcExp);
+            value := mapFunc(stmt.exp, funcExp);
             if not referenceEq(value, stmt.exp) then
               stmt.exp := value;
             end if;

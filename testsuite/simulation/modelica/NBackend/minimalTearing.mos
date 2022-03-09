@@ -38,7 +38,8 @@ simulate(minimalTearing); getErrorString();
 // ### Residual Equations:
 // 	[SCAL] (1) $RES_SIM_0 = cos(1.0 + time) * CAST(Real, i) - y ($RES_SIM_0) ;
 // ### Inner Equations:
-// 	([DISC] (1) Integer i) [SCAL] (1) i = if y > 0.0 then 1 else 2 ($RES_SIM_1)
+// 	([DISC] (1) Boolean $SEV_0) [SCAL] (1) $SEV_0 = y > 0.0 ($RES_EVT_2)
+// 	([DISC] (1) Integer i) [SCAL] (1) i = if $SEV_0 then 1 else 2 ($RES_SIM_1)
 //
 // ========================================
 // [NLS] Jacobian INI_NLS_JAC_1: NLS
@@ -50,22 +51,24 @@ simulate(minimalTearing); getErrorString();
 //
 //
 // ========================================
-// Sparsity Pattern (nnz: 4)
+// Sparsity Pattern (nnz: 8)
 // ========================================
 //
 // ### Columns ###
 // ----------------------------------------
-// (i)	 affects:	{$RES_SIM_0,y,i}
+// ($SEV_0)	 affects:	{$RES_SIM_0,y,$SEV_0}
+// (i)	 affects:	{$RES_SIM_0,y,$SEV_0,i}
 // (y)	 affects:	{$RES_SIM_0}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_0)	 depends on:	{y,i}
+// ($RES_SIM_0)	 depends on:	{y,$SEV_0,i}
 //
 // Sparsity Coloring Groups
 // ----------------------------------------
 // {y}
 // {i}
+// {$SEV_0}
 //
 // ################################################################################
 //
@@ -83,7 +86,8 @@ simulate(minimalTearing); getErrorString();
 // ### Residual Equations:
 // 	[SCAL] (1) $RES_SIM_0 = cos(1.0 + time) * CAST(Real, i) - y ($RES_SIM_0) ;
 // ### Inner Equations:
-// 	([DISC] (1) Integer i) [SCAL] (1) i = if y > 0.0 then 1 else 2 ($RES_SIM_1)
+// 	([DISC] (1) Boolean $SEV_0) [SCAL] (1) $SEV_0 = y > 0.0 ($RES_EVT_2)
+// 	([DISC] (1) Integer i) [SCAL] (1) i = if $SEV_0 then 1 else 2 ($RES_SIM_1)
 //
 // ========================================
 // [NLS] Jacobian ODE_NLS_JAC_1: NLS
@@ -95,22 +99,24 @@ simulate(minimalTearing); getErrorString();
 //
 //
 // ========================================
-// Sparsity Pattern (nnz: 4)
+// Sparsity Pattern (nnz: 8)
 // ========================================
 //
 // ### Columns ###
 // ----------------------------------------
-// (i)	 affects:	{$RES_SIM_0,y,i}
+// ($SEV_0)	 affects:	{$RES_SIM_0,y,$SEV_0}
+// (i)	 affects:	{$RES_SIM_0,y,$SEV_0,i}
 // (y)	 affects:	{$RES_SIM_0}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_0)	 depends on:	{y,i}
+// ($RES_SIM_0)	 depends on:	{y,$SEV_0,i}
 //
 // Sparsity Coloring Groups
 // ----------------------------------------
 // {y}
 // {i}
+// {$SEV_0}
 //
 // record SimulationResult
 //     resultFile = "minimalTearing_res.mat",

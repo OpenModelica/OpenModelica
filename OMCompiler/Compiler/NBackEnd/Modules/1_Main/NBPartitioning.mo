@@ -86,8 +86,9 @@ public
 
       case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(initials = equations)))
         algorithm
-          // remove the when equations for initial systems
-          equations := EquationPointers.mapRemovePtr(equations, Equation.isWhenEquation);
+          // remove the when equations and discrete states for initial systems
+          //variables := VariablePointers.mapRemovePtr(variables, BVariable.isDiscreteState);
+          //equations := EquationPointers.mapRemovePtr(equations, Equation.isWhenEquation);
           bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in func(systemType, variables, equations));
         then bdae;
 
@@ -357,7 +358,7 @@ protected
     Integer size = VariablePointers.size(variables) + EquationPointers.size(equations);
     list<Cluster> clusters;
     Pointer<array<Boolean>> marked_vars_ptr = Pointer.create(arrayCreate(VariablePointers.size(variables), true));
-    list<Pointer<Variable>> single_vars, non_state_single_vars;
+    list<Pointer<Variable>> single_vars, unfixable_vars;
     Pointer<Integer> index = Pointer.create(1);
   algorithm
     // collect partitions in clusters
@@ -377,11 +378,11 @@ protected
         fail();
       end if;
     else
-      (single_vars, non_state_single_vars) := List.extractOnTrue(single_vars, BVariable.isState);
-      if not listEmpty(non_state_single_vars) then
+      (single_vars, unfixable_vars) := List.extractOnTrue(single_vars, BVariable.isFixable);
+      if not listEmpty(unfixable_vars) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (" + System.System.systemTypeString(systemType)
-          + ") failed because the following non state variables could not be assigned to a partition:\n  {"
-          + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in non_state_single_vars), ", ") + "}"});
+          + ") failed because the following unfixable variables could not be assigned to a partition:\n  {"
+          + stringDelimitList(list(BVariable.toString(Pointer.access(var)) for var in unfixable_vars), ", ") + "}"});
         fail();
       end if;
       systems := System.SYSTEM(
@@ -498,6 +499,9 @@ protected
     ComponentRef cref2;
     Boolean addSecond = false;
   algorithm
+    // add residuals to eqn identificators
+    // states and there derivatives belong to one partition
+    // discrete states and there previous value also
     if BVariable.isDAEResidual(var_ptr) then
       cluster.eqn_idnts := cref :: cluster.eqn_idnts;
     elseif BVariable.isState(var_ptr) then
@@ -506,6 +510,16 @@ protected
       cluster.variables := cref2 :: cluster.variables;
       addSecond := true;
     elseif BVariable.isStateDerivative(var_ptr) then
+      cluster.variables := cref :: cluster.variables;
+      cref2 := BVariable.getStateCref(cref);
+      cluster.variables := cref2 :: cluster.variables;
+      addSecond := true;
+    elseif BVariable.isDiscreteState(var_ptr) then
+      cluster.variables := cref :: cluster.variables;
+      cref2 := BVariable.getPreCref(cref);
+      cluster.variables := cref2 :: cluster.variables;
+      addSecond := true;
+    elseif BVariable.isPrevious(var_ptr) then
       cluster.variables := cref :: cluster.variables;
       cref2 := BVariable.getStateCref(cref);
       cluster.variables := cref2 :: cluster.variables;

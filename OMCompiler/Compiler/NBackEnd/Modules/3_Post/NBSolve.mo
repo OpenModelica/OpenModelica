@@ -446,36 +446,45 @@ protected
     (eqn, status, invertRelation) := match (lhs, rhs)
       local
         ComponentRef checkCref;
+        Expression exp;
 
-      // 1. already solved cref = rhs (rhs independent of cref)
-      case (Expression.CREF(cref = checkCref), _)
-        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(rhs, cref))
+      // allways checks if exp is independent of cref!
+
+      // 1. already solved
+      // cref = exp
+      case (Expression.CREF(cref = checkCref), exp)
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
       then (eqn, Status.EXPLICIT, false);
 
-      // 2. only swap lsh and rhs; lhs = cref (lhs independent of cref)
-      case (_, Expression.CREF(cref = checkCref))
-        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(lhs, cref))
+      // 2. only swap lsh and rhs
+      // exp = cref
+      case (exp, Expression.CREF(cref = checkCref))
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
       then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
 
-      // 3.1 negate (MINUS) lhs then back to case 1
-      case (Expression.UNARY(exp = Expression.CREF(cref = checkCref)), _)
-        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(rhs, cref))
-      then (Equation.setLHS(eqn, Expression.negate(lhs)), Status.EXPLICIT, false);
+      // 3.1 negate (MINUS) lhs and rhs
+      // -cref = exp
+      case (Expression.UNARY(exp = Expression.CREF(cref = checkCref)), exp)
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (Equation.updateLHSandRHS(eqn, Expression.negate(lhs), Expression.negate(rhs)), Status.EXPLICIT, false);
 
-      // 3.2 negate (NOT) lhs then back to case 1
-      case (Expression.LUNARY(exp = Expression.CREF(cref = checkCref)), _)
-        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(lhs, cref))
-      then (Equation.setLHS(eqn, Expression.logicNegate(lhs)), Status.EXPLICIT, false);
+      // 3.2 negate (NOT) lhs and rhs
+      // not cref = exp
+      case (Expression.LUNARY(exp = Expression.CREF(cref = checkCref)), exp)
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (Equation.updateLHSandRHS(eqn, Expression.logicNegate(lhs), Expression.logicNegate(rhs)), Status.EXPLICIT, false);
 
-      // 4.1 negate (MINUS) rhs then back to case 2
-      case (_, Expression.UNARY(exp = Expression.CREF(cref = checkCref)))
-        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(rhs, cref))
-      then (Equation.swapLHSandRHS(Equation.setRHS(eqn, Expression.negate(rhs))), Status.EXPLICIT, false);
+      // 4.1 negate (MINUS) and swap lhs and rhs
+      // exp = -cref
+      case (exp, Expression.UNARY(exp = Expression.CREF(cref = checkCref)))
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (Equation.updateLHSandRHS(eqn, Expression.negate(rhs), Expression.negate(lhs)), Status.EXPLICIT, false);
 
-      // 4.2 negate (NOT) rhs then back to case 2
-      case (_, Expression.LUNARY(exp = Expression.CREF(cref = checkCref)))
-        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(lhs, cref))
-      then ((Equation.setRHS(eqn, Expression.logicNegate(rhs))), Status.EXPLICIT, false);
+      // 4.2 negate (NOT) and swap lhs and rhs
+      // exp = not cref
+      case (exp, Expression.LUNARY(exp = Expression.CREF(cref = checkCref)))
+        guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
+      then (Equation.updateLHSandRHS(eqn, Expression.logicNegate(rhs), Expression.logicNegate(lhs)), Status.EXPLICIT, false);
 
       else (eqn, Status.UNPROCESSED, false);
     end match;

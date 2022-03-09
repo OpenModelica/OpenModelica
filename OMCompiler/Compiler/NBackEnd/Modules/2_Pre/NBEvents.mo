@@ -47,6 +47,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFlatten.FunctionTreeImpl;
+  import NFFunction.Function;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import Variable = NFVariable;
@@ -305,7 +306,7 @@ public
       2. creates a sample time event from a sample operator
       3. fails for anything else
       NOTE: create sample from sin and cos functions?"
-      input output Expression exp         "has to be BINARY() with comparing operator or a sample CALL()";
+      input output Expression exp         "has to be LBINARY() with comparing operator or a sample CALL()";
       input output Bucket bucket          "bucket containing the events";
       output Boolean failed               "true if it did not work to create a compact time event";
     protected
@@ -400,7 +401,7 @@ public
 
     function createSampleTraverse
       "used only for StateEvent traversel to encapsulate sample operators"
-      input output Expression exp         "has to be BINARY() with comparing operator or a sample CALL()";
+      input output Expression exp         "has to be LBINARY() with comparing operator or a sample CALL()";
       input output Bucket bucket          "bucket containing the events";
     algorithm
       exp := match exp
@@ -670,13 +671,17 @@ protected
   function eventsDefault extends Module.eventsInterface;
   protected
     Bucket bucket = BUCKET(TimeEventSet.new(), TimeEventTree.new(), StateEventTree.new(), 0, 0, 0);
+    Pointer<Bucket> bucket_ptr;
     list<Pointer<Variable>> auxiliary_vars;
     list<Pointer<Equation>> auxiliary_eqns;
   algorithm
     eventInfo := match (varData, eqData)
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
         // collect event info and replace all conditions with auxiliary variables
-        bucket := EquationPointers.foldPtr(eqData.equations, collectEvents, bucket);
+        bucket_ptr := Pointer.create(bucket);
+        EquationPointers.mapPtr(eqData.equations, function collectEvents(bucket_ptr = bucket_ptr));
+        bucket := Pointer.access(bucket_ptr);
+
         (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, eqData.uniqueIndex);
 
         // add auxiliary variables
@@ -700,74 +705,45 @@ protected
 
   function collectEvents
     input Pointer<Equation> eqn_ptr;
-    input output Bucket bucket;
+    input Pointer<Bucket> bucket_ptr;
   protected
     Equation eqn = Pointer.access(eqn_ptr);
   algorithm
-    bucket := match eqn
-      local
-        WhenEquationBody whenBody;
-        IfEquationBody ifBody;
-
-      case Equation.WHEN_EQUATION() algorithm
-        (whenBody, bucket) := collectEventsWhenBody(eqn.body, bucket, eqn_ptr);
-        eqn.body := whenBody;
-      then bucket;
-
-      case Equation.IF_EQUATION() algorithm
-        (ifBody, bucket) := collectEventsIfBody(eqn.body, bucket, eqn_ptr);
-        eqn.body := ifBody;
-      then bucket;
-
-      else bucket;
-    end match;
+    eqn := Equation.map(eqn, function collectEventsTraverse(bucket_ptr = bucket_ptr, eqn_ptr = eqn_ptr), NONE(), Expression.mapReverse);
 
     if not referenceEq(eqn, Pointer.access(eqn_ptr)) then
       Pointer.update(eqn_ptr, eqn);
     end if;
   end collectEvents;
 
-  function collectEventsWhenBody
-    input output WhenEquationBody body;
-    input output Bucket bucket;
+  function collectEventsTraverse
+    input output Expression exp;
+    input Pointer<Bucket> bucket_ptr;
     input Pointer<Equation> eqn_ptr;
-  protected
-    Expression new_condition;
-    WhenEquationBody else_when;
   algorithm
-    // condition is replaced by auxiliary variable
-    (new_condition, bucket) := collectEventsCondition(body.condition, bucket, eqn_ptr);
-    body.condition := new_condition;
+    exp := match exp
+      local
+        Bucket bucket;
+        Function fn;
 
-    // ToDo: traverse statements?
+      case Expression.LBINARY() algorithm
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn_ptr);
+        Pointer.update(bucket_ptr, bucket);
+      then exp;
 
-    // go deeper and collect in else when
-    if Util.isSome(body.else_when) then
-      (else_when, bucket) := collectEventsWhenBody(Util.getOption(body.else_when), bucket, eqn_ptr);
-      body.else_when := SOME(else_when);
-    end if;
-  end collectEventsWhenBody;
+      case Expression.RELATION() algorithm
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn_ptr);
+        Pointer.update(bucket_ptr, bucket);
+      then exp;
 
-  function collectEventsIfBody
-    input output IfEquationBody body;
-    input output Bucket bucket;
-    input Pointer<Equation> eqn_ptr;
-  protected
-    Expression new_condition;
-    IfEquationBody else_if;
-  algorithm
-    // condition is replaced by auxiliary variable
-    (new_condition, bucket) := collectEventsCondition(body.condition, bucket, eqn_ptr);
-    body.condition := new_condition;
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) guard(Call.getLastPathName(fn.path) == "sample") algorithm
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn_ptr);
+        Pointer.update(bucket_ptr, bucket);
+      then exp;
 
-    // ToDo: traverse statements?
-
-    // go deeper and collect in else if
-    if Util.isSome(body.else_if) then
-      (else_if, bucket) := collectEventsIfBody(Util.getOption(body.else_if), bucket, eqn_ptr);
-      body.else_if := SOME(else_if);
-    end if;
-  end collectEventsIfBody;
+      else exp;
+    end match;
+  end collectEventsTraverse;
 
   function collectEventsCondition
     input output Expression condition;
