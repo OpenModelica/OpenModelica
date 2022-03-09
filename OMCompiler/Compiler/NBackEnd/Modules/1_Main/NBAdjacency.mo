@@ -347,7 +347,7 @@ public
       /* Maybe add optional markings here */
     end ARRAY_ADJACENCY_MATRIX;
 
-    record PSEUDO_ARRAY_ADJACENCY_MATRIX
+    record PSEUDO_ARRAY_ADJACENCY_MATRIX // ToDo: add optional solvability map for tearing
       array<list<Integer>> m        "eqn -> list<var>";
       array<list<Integer>> mT       "var -> list<eqn>";
       Mapping mapping               "index mapping scalar <-> array";
@@ -776,7 +776,7 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no derivative is saved and no function tree is given for linear adjacency matrix!"});
           fail();
         end if;
-        nonlinear_dependencies  := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(map = map, pseudo = pseudo));
+        nonlinear_dependencies := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(map = map, pseudo = pseudo));
         remove_dependencies := listAppend(nonlinear_dependencies, remove_dependencies);
       end if;
 

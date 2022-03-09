@@ -226,7 +226,7 @@ protected
         (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(system.equations), Equation.isInitial);
 
         // ToDo: it should be:
-        // Phase I initial equations <-> unfixables
+        // Phase I initial equations <-> unfixables (maybe simulation eqns first? to be tested)
         // Phase II all equations <-> unfixables
         // Phase III all equations <-> all variables
 

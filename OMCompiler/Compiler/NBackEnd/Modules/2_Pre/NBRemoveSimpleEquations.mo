@@ -35,6 +35,14 @@ encapsulated package NBRemoveSimpleEquations
               module.
 "
 
+// ToDo: simple state rules
+// 1. state = state
+// 2. state = alg
+// 3. state = time
+// 4. state = const
+
+// trivial solution a = b; a = -b;
+
 public
   import Module = NBModule;
 protected

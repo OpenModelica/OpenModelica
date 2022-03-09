@@ -686,15 +686,15 @@ protected
 
         // add auxiliary variables
         varData.variables := VariablePointers.addList(auxiliary_vars, varData.variables);
-        varData.unknowns := VariablePointers.addList(auxiliary_vars, varData.unknowns);
-        varData.initials := VariablePointers.addList(auxiliary_vars, varData.initials);
+        varData.unknowns  := VariablePointers.addList(auxiliary_vars, varData.unknowns);
+        varData.initials  := VariablePointers.addList(auxiliary_vars, varData.initials);
         varData.discretes := VariablePointers.addList(auxiliary_vars, varData.discretes);
 
         // add auxiliary equations
-        eqData.equations := EquationPointers.addList(auxiliary_eqns, eqData.equations);
+        eqData.equations  := EquationPointers.addList(auxiliary_eqns, eqData.equations);
         eqData.simulation := EquationPointers.addList(auxiliary_eqns, eqData.simulation);
-        eqData.initials := EquationPointers.addList(auxiliary_eqns, eqData.initials);
-        eqData.discretes := EquationPointers.addList(auxiliary_eqns, eqData.discretes);
+        eqData.initials   := EquationPointers.addList(auxiliary_eqns, eqData.initials);
+        eqData.discretes  := EquationPointers.addList(auxiliary_eqns, eqData.discretes);
       then eventInfo;
 
       else algorithm
@@ -704,6 +704,7 @@ protected
   end eventsDefault;
 
   function collectEvents
+    "collects all events from an equation pointer."
     input Pointer<Equation> eqn_ptr;
     input Pointer<Bucket> bucket_ptr;
   protected
@@ -717,6 +718,9 @@ protected
   end collectEvents;
 
   function collectEventsTraverse
+    "checks expressions if they are a zero crossing.
+    can be used on any expression with Exression.mapReverse
+    (reverse is necessary so the subexpressions are not traversed first)"
     input output Expression exp;
     input Pointer<Bucket> bucket_ptr;
     input Pointer<Equation> eqn_ptr;
@@ -726,26 +730,35 @@ protected
         Bucket bucket;
         Function fn;
 
+      // logical binarys: e.g. (a and b)
+      // Todo: this might not always be correct -> check with something like "contains relation?"
       case Expression.LBINARY() algorithm
         (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn_ptr);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
+      // relations: e.g. (a > b)
       case Expression.RELATION() algorithm
         (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn_ptr);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
+      // sample functions
       case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) guard(Call.getLastPathName(fn.path) == "sample") algorithm
         (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn_ptr);
         Pointer.update(bucket_ptr, bucket);
       then exp;
+
+      // ToDo: math events (check the call name in a function and merge with sample case?)
 
       else exp;
     end match;
   end collectEventsTraverse;
 
   function collectEventsCondition
+    "collects an expression as a zero crossing.
+    has to be used with collectEventsTraverse to make sure that only
+    suitable expressions are checked."
     input output Expression condition;
     input output Bucket bucket;
     input Pointer<Equation> eqn_ptr;

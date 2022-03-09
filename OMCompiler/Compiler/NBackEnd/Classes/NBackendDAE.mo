@@ -92,6 +92,7 @@ public
     list<System> alg_event            "Systems for algebraic event iteration";
     list<System> init                 "Systems for initialization";
     Option<list<System>> init_0       "Systems for lambda 0 (homotopy) Initialization";
+    // add init_1 for lambda = 1 (test for efficency)
     Option<list<System>> dae          "Systems for dae mode";
 
     VarData varData                   "Variable data.";

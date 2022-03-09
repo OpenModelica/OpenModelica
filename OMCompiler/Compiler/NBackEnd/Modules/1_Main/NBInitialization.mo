@@ -82,6 +82,7 @@ public
         case BackendDAE.MAIN( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, initials = initialVars),
                               eqData = eqData as BEquation.EQ_DATA_SIM(equations = equations, initials = initialEqs))
           algorithm
+            // create the equations from fixed variables.
             (variables, equations, initialEqs) := createStartEquations(varData.states, variables, equations, initialEqs, eqData.uniqueIndex);
             (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex);
             (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, eqData.uniqueIndex);
@@ -89,6 +90,7 @@ public
             varData.variables := variables;
             varData.initials := initialVars;
             eqData.equations := equations;
+            // clone all simulation equations and add them to the initial equations
             eqData.initials := EquationPointers.addList(EquationPointers.toList(initialEqs), EquationPointers.clone(equations, false));
 
             bdae.varData := varData;
@@ -146,6 +148,7 @@ public
   end createStartEquations;
 
   function createStartEquation
+    "creates a start equation for a fixed state or discrete state."
     input Pointer<Variable> state;
     input Pointer<list<Pointer<Variable>>> ptr_start_vars;
     input Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqs;
@@ -178,6 +181,8 @@ public
   end createStartEquation;
 
   function createStartEquationSlice
+    "creates a start equation for a sliced variable.
+    usually results in a for equation, but might be scalarized if that is not possible."
     input Slice<VariablePointer> state;
     input Pointer<list<Pointer<Variable>>> ptr_start_vars;
     input Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqs;
@@ -208,6 +213,11 @@ public
   end createStartEquationSlice;
 
   function createStartVar
+    "creates start variable and cref.
+    for discrete states the variable itself is changed to its
+    pre variable because they have to be initialized instead!.
+    normal:     var = $START.var
+    disc state: $PRE.dst = $START.dst"
     input output Pointer<Variable> var_ptr;
     input output ComponentRef name;
     input list<Subscript> subscripts;
@@ -227,6 +237,7 @@ public
   end createStartVar;
 
   function createParameterEquations
+    "creates parameter equations of the form param = $START.param for all fixed params."
     input BVariable.VariablePointers parameters;
     input output BEquation.EquationPointers equations;
     input output BEquation.EquationPointers initialEqs;
