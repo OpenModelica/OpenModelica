@@ -1362,11 +1362,34 @@ void MainWindow::printStandardOutAndErrorFilesMessages()
   }
 }
 
+/*!
+ * \brief MainWindow::PlotCallbackFunction
+ * Callback function to handle the plot API calls.
+ * \param p
+ * \param externalWindow
+ * \param filename
+ * \param title
+ * \param grid
+ * \param plotType
+ * \param logX
+ * \param logY
+ * \param xLabel
+ * \param yLabel
+ * \param x1
+ * \param x2
+ * \param y1
+ * \param y2
+ * \param curveWidth
+ * \param curveStyle
+ * \param legendPosition
+ * \param footer
+ * \param autoScale
+ * \param variables
+ */
 void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
                                       const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
                                       const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
-                                      const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
-                                      const char *variables)
+                                      const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale, const char *variables)
 {
   MainWindow *pMainWindow = (MainWindow*)p;
   if (pMainWindow) {
@@ -1454,6 +1477,20 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
       }
     }
     pVariablesTreeModel->blockSignals(state);
+  }
+}
+
+/*!
+ * \brief MainWindow::LoadModelCallbackFunction
+ * Callback function to handle automatically loaded libraries.
+ * \param p
+ * \param modelName
+ */
+void MainWindow::LoadModelCallbackFunction(void *p, const char *modelName)
+{
+  MainWindow *pMainWindow = (MainWindow*)p;
+  if (pMainWindow) {
+    pMainWindow->getLibraryWidget()->loadAutoLoadedLibrary(QString(modelName));
   }
 }
 
@@ -1873,11 +1910,9 @@ void MainWindow::loadSystemLibrary(const QString &library, QString version)
       version = QString("default");
     }
 
-    if (library.compare("OpenModelica") == 0) {
+    if ((library.compare("OpenModelica") == 0) || (mpOMCProxy->loadModel(library, version))) {
       pLibraryTreeModel->createLibraryTreeItem(library, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
       pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-    } else if (mpOMCProxy->loadModel(library, version)) {
-      mpLibraryWidget->getLibraryTreeModel()->loadDependentLibraries(mpOMCProxy->getClassNames());
     }
     mpStatusBar->clearMessage();
     hideProgressBar();
