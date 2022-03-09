@@ -733,13 +733,6 @@ void OptionsDialog::readNotificationsSettings()
   if (mpSettings->contains("notifications/alwaysAskForTextEditorError")) {
     mpNotificationsPage->getAlwaysAskForTextEditorErrorCheckBox()->setChecked(mpSettings->value("notifications/alwaysAskForTextEditorError").toBool());
   }
-  if (mpSettings->contains("notifications/promptOldFrontend")) {
-    bool ok;
-    int currentIndex = mpNotificationsPage->getOldFrontendComboBox()->findData(mpSettings->value("notifications/promptOldFrontend").toInt(&ok));
-    if (currentIndex > -1 && ok) {
-      mpNotificationsPage->getOldFrontendComboBox()->setCurrentIndex(currentIndex);
-    }
-  }
 }
 
 //! Reads the LineStyle section settings from omedit.ini
@@ -1454,7 +1447,6 @@ void OptionsDialog::saveNotificationsSettings()
   mpSettings->setValue("notifications/saveModelForBitmapInsertion", mpNotificationsPage->getSaveModelForBitmapInsertionCheckBox()->isChecked());
   mpSettings->setValue("notifications/alwaysAskForDraggedComponentName", mpNotificationsPage->getAlwaysAskForDraggedComponentName()->isChecked());
   mpSettings->setValue("notifications/alwaysAskForTextEditorError", mpNotificationsPage->getAlwaysAskForTextEditorErrorCheckBox()->isChecked());
-  mpSettings->setValue("notifications/promptOldFrontend", mpNotificationsPage->getOldFrontendComboBox()->itemData(mpNotificationsPage->getOldFrontendComboBox()->currentIndex()).toInt());
 }
 
 //! Saves the LineStyle section settings to omedit.ini
@@ -4203,13 +4195,6 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   // create the always ask for text editor error
   mpAlwaysAskForTextEditorErrorCheckBox = new QCheckBox(tr("Always ask for what to do with the text editor error"));
   mpAlwaysAskForTextEditorErrorCheckBox->setChecked(true);
-  // prompt for old frontend
-  mpOldFrontendLabel = new Label(tr("If new frontend for code generation fails?"));
-  mpOldFrontendComboBox = new QComboBox;
-  mpOldFrontendComboBox->addItem(tr("Always ask for old frontend"), NotificationsPage::AlwaysAskForOF);
-  mpOldFrontendComboBox->addItem(tr("Try with old frontend once"), NotificationsPage::TryOnceWithOF);
-  mpOldFrontendComboBox->addItem(tr("Switch to old frontend permanently"), NotificationsPage::SwitchPermanentlyToOF);
-  mpOldFrontendComboBox->addItem(tr("Keep using new frontend"), NotificationsPage::KeepUsingNF);
   // set the layout of notifications group
   QGridLayout *pNotificationsLayout = new QGridLayout;
   pNotificationsLayout->setAlignment(Qt::AlignTop);
@@ -4220,8 +4205,6 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   pNotificationsLayout->addWidget(mpSaveModelForBitmapInsertionCheckBox, 4, 0, 1, 2);
   pNotificationsLayout->addWidget(mpAlwaysAskForDraggedComponentName, 5, 0, 1, 2);
   pNotificationsLayout->addWidget(mpAlwaysAskForTextEditorErrorCheckBox, 6, 0, 1, 2);
-  pNotificationsLayout->addWidget(mpOldFrontendLabel, 7, 0);
-  pNotificationsLayout->addWidget(mpOldFrontendComboBox, 7, 1);
   mpNotificationsGroupBox->setLayout(pNotificationsLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
