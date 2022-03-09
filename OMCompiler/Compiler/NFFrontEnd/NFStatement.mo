@@ -435,8 +435,8 @@ public
 
       case ASSIGNMENT()
         algorithm
-          e1 := func(stmt.lhs);
-          e2 := func(stmt.rhs);
+          e1 := Expression.map(stmt.lhs, func);
+          e2 := Expression.map(stmt.rhs, func);
         then
           if referenceEq(e1, stmt.lhs) and referenceEq(e2, stmt.rhs) then
             stmt else ASSIGNMENT(e1, e2, stmt.ty, stmt.source);
