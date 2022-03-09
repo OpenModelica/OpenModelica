@@ -1470,6 +1470,9 @@ algorithm
       markedEqns := markStateEquationsWork(indicesAlgebraic, adjMatrix, assigndVar, markedEqns);
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageAlgebraic);
 
+      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqSystem.removedEqs), 1);
+      eqSystem.removedEqs := setMarkedEqnsEvalStage(eqSystem.removedEqs, markedEqns, BackendEquation.setEvalStageDiscrete);
+
       /* For now avoid this and evaluate all the event update breaks right now
          quite a lot models.
       */
