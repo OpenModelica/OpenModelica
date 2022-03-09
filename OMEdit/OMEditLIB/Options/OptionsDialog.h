@@ -725,7 +725,6 @@ public:
   QCheckBox* getSaveModelForBitmapInsertionCheckBox() {return mpSaveModelForBitmapInsertionCheckBox;}
   QCheckBox* getAlwaysAskForDraggedComponentName() {return mpAlwaysAskForDraggedComponentName;}
   QCheckBox* getAlwaysAskForTextEditorErrorCheckBox() {return mpAlwaysAskForTextEditorErrorCheckBox;}
-  QComboBox* getOldFrontendComboBox() {return mpOldFrontendComboBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpNotificationsGroupBox;
@@ -736,8 +735,6 @@ private:
   QCheckBox *mpSaveModelForBitmapInsertionCheckBox;
   QCheckBox *mpAlwaysAskForDraggedComponentName;
   QCheckBox *mpAlwaysAskForTextEditorErrorCheckBox;
-  Label *mpOldFrontendLabel;
-  QComboBox *mpOldFrontendComboBox;
 };
 
 class LineStylePage : public QWidget
