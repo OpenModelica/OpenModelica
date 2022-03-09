@@ -1237,6 +1237,26 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
   return fmi2OK;
 }
 
+/*
+* print information about ring buffer simulation data
+*/
+void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
+{
+
+  infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Real Variable");
+  for (int i = 0; i < ringBufferLength(rb); i++)
+  {
+    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(rb, i);
+    infoStreamPrint(LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
+    for (int j = 0; j < data->modelData->nVariablesReal; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
+    }
+    messageClose(LOG_STDOUT);
+  }
+  // TODO other variable types of SIMULATION_DATA
+}
+
 fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
@@ -1249,14 +1269,25 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) functions->allocateMemory(1, sizeof(INTERNAL_FMU_STATE));
   internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
 
-  // copy the ring buffer data to internal_state
   DATA* fmudata = (DATA *) comp->fmuData;
-  int i;
-  for(i=0; i<ringBufferLength(fmudata->simulationData); ++i)
+
+  /* prepare RingBuffer, by allocating memory for real Vars
+   * copy the ring buffer data to INTERNAL_FMU_STATE
+  */
+  SIMULATION_DATA tmpSimData = {0};
+  for (int i = 0; i < ringBufferLength(fmudata->simulationData); i++)
   {
-    //internal_state->simulationData[i] = fmudata->localData[i];
-    appendRingData(internal_state->simulationData, fmudata->localData[i]);
+    tmpSimData.timeValue = fmudata->localData[i]->timeValue;
+    /* allocate memory for all Real values */
+    tmpSimData.realVars = (modelica_real *)calloc(fmudata->modelData->nVariablesReal, sizeof(modelica_real));
+    tmpSimData.realVars = fmudata->localData[i]->realVars;
+    // TODO buffer for all variable type
+    appendRingData(internal_state->simulationData, &tmpSimData);
   }
+
+  //infoRingBuffer(fmudata->simulationData);
+  //printRingBufferSimulationData(fmudata->simulationData, fmudata); // original ringBuffer data
+  //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
 
   // return the fmu state
   *FMUstate = (fmi2FMUstate) internal_state;
