@@ -735,6 +735,10 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
+  memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
+  memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+  idaData->y = N_VMake_Serial(idaData->N, idaData->states);
+  idaData->yp = N_VMake_Serial(idaData->N, idaData->statesDer);
   flag = IDAReInit(idaData->ida_mem,
                     data->localData[0]->timeValue,
                     idaData->y,
