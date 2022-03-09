@@ -443,6 +443,7 @@ private:
   QSplitter *mpSplitter;
   QFrame *mpBottomFrame;
   QPushButton *mpCreateModelButton;
+  QPushButton *mpSystemLibrariesButton;
   QPushButton *mpOpenModelButton;
 public slots:
   void addLatestNewsListItems();

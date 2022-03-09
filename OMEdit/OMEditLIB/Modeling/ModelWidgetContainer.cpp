@@ -4224,16 +4224,21 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpBottomFrame = new QFrame;
   mpBottomFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
   // bottom frame create and open buttons buttons
+  const QString buttonStyleSheet = "QPushButton{padding: 5px 15px 5px 15px;}";
   mpCreateModelButton = new QPushButton(Helper::createNewModelicaClass);
-  mpCreateModelButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
+  mpCreateModelButton->setStyleSheet(buttonStyleSheet);
   connect(mpCreateModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(createNewModelicaClass()));
   mpOpenModelButton = new QPushButton(Helper::openModelicaFiles);
-  mpOpenModelButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
+  mpOpenModelButton->setStyleSheet(buttonStyleSheet);
   connect(mpOpenModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openModelicaFile()));
+  mpSystemLibrariesButton = new QPushButton(tr("System Libraries"));
+  mpSystemLibrariesButton->setStyleSheet(buttonStyleSheet);
+  mpSystemLibrariesButton->setMenu(MainWindow::instance()->getLibrariesMenu());
   // bottom frame layout
   QHBoxLayout *bottomFrameLayout = new QHBoxLayout;
-  bottomFrameLayout->addWidget(mpCreateModelButton, 0, Qt::AlignLeft);
-  bottomFrameLayout->addWidget(mpOpenModelButton, 0, Qt::AlignRight);
+  bottomFrameLayout->addWidget(mpCreateModelButton);
+  bottomFrameLayout->addWidget(mpOpenModelButton);
+  bottomFrameLayout->addWidget(mpSystemLibrariesButton);
   mpBottomFrame->setLayout(bottomFrameLayout);
   // vertical layout for frames
   QVBoxLayout *verticalLayout = new QVBoxLayout;
