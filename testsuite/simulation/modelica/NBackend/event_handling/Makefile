@@ -1,25 +1,12 @@
-TEST = ../../../rtest -v
+TEST = ../../../../rtest -v
 
 TESTFILES = \
-emptyModel.mos \
-helloWorld.mos \
-multary_simplification.mos \
-parameterSystem.mos \
-RSE.mos \
-RSE2.mos \
-simpleNonlinearLoop.mos \
-implicitEquation.mos \
-minimalTearing.mos \
-underdetermined_init.mos \
-partitioning.mos \
+eventSystem.mos \
+hybridSys.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-simpleForLoop.mos \
-solveSingleEquation.mos \
-StaticIR.mos \
-detectStates.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
