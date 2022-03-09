@@ -1296,7 +1296,26 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 
 fmi2Status fmi2SetFMUstate(fmi2Component c, fmi2FMUstate FMUstate)
 {
-  return unsupportedFunction((ModelInstance *)c, "fmi2SetFMUstate");
+  ModelInstance *comp = (ModelInstance *) c;
+  int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
+  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  if (invalidState(comp, "fmi2GetFMUstate", meStates, csStates))
+    return fmi2Error;
+
+  INTERNAL_FMU_STATE * internal_state = (INTERNAL_FMU_STATE *) FMUstate;
+  DATA* fmudata = (DATA *) comp->fmuData;
+
+  //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
+
+  // override the SIMULATION_DATA with INTERNAL_FMU_STATE
+  for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
+  {
+    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
+    fmudata->localData[i]->timeValue = sdata->timeValue;
+    fmudata->localData[i]->realVars = sdata->realVars;
+    // TODO other SIMULATION_DATA variable types
+  }
+  return fmi2OK;
 }
 
 fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
