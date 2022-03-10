@@ -3570,7 +3570,7 @@ algorithm
   LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
               "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
               System.getLDFlags()+" ");
-  CPPFLAGS := "-I" + includeDefaultFmi + " -DOMC_FMI_RUNTIME=1";
+  CPPFLAGS := "-I. -I" + includeDefaultFmi + " -DOMC_FMI_RUNTIME=1";
   if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
     CPPFLAGS := CPPFLAGS + " -O0 -g ";
   end if;
