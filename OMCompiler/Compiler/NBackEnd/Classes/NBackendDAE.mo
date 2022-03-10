@@ -590,7 +590,7 @@ protected
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
-      BEquation.Equation.createName(eqn_ptr, idx, "SIM");
+      BEquation.Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
       iterators := listAppend(Equation.getForIterators(Pointer.access(eqn_ptr)), iterators);
     end for;
     iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);

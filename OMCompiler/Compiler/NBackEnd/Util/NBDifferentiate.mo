@@ -588,7 +588,7 @@ public
           // add derivative to new_vars
           diffArguments.new_vars := der_ptr :: diffArguments.new_vars;
           // update algebraic variable to be a state
-          var_ptr := BVariable.makeStateVar(var_ptr, der_ptr);
+          BVariable.makeStateVar(var_ptr, der_ptr);
       then (Expression.fromCref(derCref), diffArguments);
 
       // -------------------------------------

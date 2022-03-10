@@ -291,8 +291,16 @@ public
       for var in unmatched_vars loop
         var_ptr := Slice.getT(var);
         if BVariable.isFixable(var_ptr) then
-          var_ptr := BVariable.setFixed(var_ptr);
-          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
+          if BVariable.isDiscreteState(var_ptr) then
+            // create previous equations for discrete states
+            // d = $PRE.d
+            Initialization.createPreEquationSlice(var, ptr_start_eqns, idx);
+          else
+            // create start equations for everything else
+            // var = $START.var ($PRE.d = $START.d for previous vars)
+            var_ptr := BVariable.setFixed(var_ptr);
+            Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
+          end if;
         else
           failed_vars := var_ptr :: failed_vars;
         end if;
