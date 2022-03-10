@@ -222,11 +222,78 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
   mpParentPlotWindow->setLegendFont(font);
 }
 
+/*!
+ * \brief Plot::prefixableUnit
+ * Returns true if the unit is prefixable.
+ * \param unit
+ * \return
+ */
+bool Plot::prefixableUnit(const QString &unit)
+{
+  QStringList prefixableUnits;
+  prefixableUnits << "s"
+                  << "m"
+                  << "m/s"
+                  << "m/s2"
+                  << "rad"
+                  << "rad/s"
+                  << "rad/s2"
+                  << "Hz"
+                  << "N"
+                  << "N.m"
+                  << "Pa"
+                  << "Pa.s"
+                  << "J"
+                  << "J/kg"
+                  << "J/(kg.K)"
+                  << "K"
+                  << "V"
+                  << "V/m"
+                  << "A"
+                  << "C"
+                  << "F"
+                  << "T"
+                  << "Wb"
+                  << "Wb/m"
+                  << "H"
+                  << "Ohm"
+                  << "S"
+                  << "W"
+                  << "W/m"
+                  << "W/m2"
+                  << "Wh"
+                  << "var";
+
+  return prefixableUnits.contains(unit);
+}
+
 // just overloaded this function to get colors for curves.
 void Plot::replot()
 {
   bool canUseXPrefixUnits = true;
   bool canUseYPrefixUnits = true;
+
+  // we need to loop through curves to find the prefix for units
+  for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
+    if ((mpParentPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)
+        && canUseXPrefixUnits && !Plot::prefixableUnit(mPlotCurvesList[i]->getXDisplayUnit())) {
+      canUseXPrefixUnits = false;
+    }
+    if (canUseYPrefixUnits && !Plot::prefixableUnit(mPlotCurvesList[i]->getYDisplayUnit())) {
+      canUseYPrefixUnits = false;
+    }
+  }
+
+  if (canUseXPrefixUnits != mpParentPlotWindow->canUseXPrefixUnits()) {
+    mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
+    mpXScaleDraw->invalidateCache();
+  }
+  if (canUseYPrefixUnits != mpParentPlotWindow->canUseYPrefixUnits()) {
+    mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
+    mpYScaleDraw->invalidateCache();
+  }
+
+  // Now we need to again loop through curves to set the color and title.
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
     if (!mPlotCurvesList[i]->hasCustomColor()) {
@@ -235,22 +302,6 @@ void Plot::replot()
       mPlotCurvesList[i]->setPen(pen);
     }
     mPlotCurvesList[i]->setTitleLocal();
-    if ((mpParentPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)
-        && canUseXPrefixUnits && mPlotCurvesList[i]->getXDisplayUnit().isEmpty()) {
-      canUseXPrefixUnits = false;
-    }
-    if (canUseYPrefixUnits && mPlotCurvesList[i]->getYDisplayUnit().isEmpty()) {
-      canUseYPrefixUnits = false;
-    }
-  }
-
-  if (canUseXPrefixUnits != mpParentPlotWindow->canUseXPrefixUnits()) {
-    mpXScaleDraw->invalidateCache();
-    mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
-  }
-  if (canUseYPrefixUnits != mpParentPlotWindow->canUseYPrefixUnits()) {
-    mpYScaleDraw->invalidateCache();
-    mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
   }
 
   if (mpParentPlotWindow->getXCustomLabel().isEmpty()) {

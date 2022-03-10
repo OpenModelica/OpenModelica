@@ -128,7 +128,7 @@ void PlotWindow::initializePlot(QStringList arguments)
     throw PlotException("Invalid input" + arguments[17]);
   }
   setTimeUnit("");
-  setPrefixUnits(false);
+  setPrefixUnits(true);
   setCanUseXPrefixUnits(false);
   setCanUseYPrefixUnits(false);
   /* read variables */
