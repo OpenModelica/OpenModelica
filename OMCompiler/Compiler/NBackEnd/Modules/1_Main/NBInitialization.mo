@@ -275,7 +275,6 @@ public
     Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
   end createStartEquationSlice;
 
-
   function createPreEquation
     "creates d = $PRE.d equations"
     input Pointer<Variable> disc_state;
