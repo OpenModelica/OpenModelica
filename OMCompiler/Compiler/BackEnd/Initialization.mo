@@ -363,7 +363,6 @@ protected
 algorithm
   outDAE.eqs := List.map(inDAE.eqs, inlineWhenForInitializationSystem);
   (eqnlst, _) := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, inlineWhenForInitializationEquation, ({}, leftCrs));
-  // TODO AHEU: Add simCodeTarget C around this?
   clockEqnsLst := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, SynchronousFeatures.getBoolClockWhenClauses, {});
   eqnlst := listAppend(clockEqnsLst, eqnlst);
   outDAE.shared := BackendDAEUtil.setSharedRemovedEqns(outDAE.shared, BackendEquation.listEquation(eqnlst));
