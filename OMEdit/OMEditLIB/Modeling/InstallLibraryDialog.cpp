@@ -64,7 +64,7 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   connect(mpObsoleteCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
   mpNoSupportCheckBox = new QCheckBox(tr("None"));
   connect(mpNoSupportCheckBox, SIGNAL(toggled(bool)), SLOT(filterChanged(bool)));
-  QGroupBox *pSupportLevelsGroupBox = new QGroupBox(tr("Support Levels"));
+  QGroupBox *pSupportLevelsGroupBox = new QGroupBox(tr("Level of support by OpenModelica"));
   QGridLayout *pSupportLevelsGridLayout = new QGridLayout;
   pSupportLevelsGridLayout->addWidget(mpFullSupportCheckBox, 0, 0);
   pSupportLevelsGridLayout->addWidget(mpSupportCheckBox, 0, 1);
