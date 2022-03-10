@@ -3470,7 +3470,7 @@ void MainWindow::createActions()
   mpExportToOMNotebookAction->setEnabled(false);
   connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
   // install library action
-  mpInstallLibraryAction = new QAction(tr("Install Library"), this);
+  mpInstallLibraryAction = new QAction(Helper::installLibrary, this);
   mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
   connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
   // upgrade installed libraries action

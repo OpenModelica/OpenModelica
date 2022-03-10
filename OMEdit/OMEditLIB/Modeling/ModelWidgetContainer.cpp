@@ -4234,12 +4234,17 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpSystemLibrariesButton = new QPushButton(tr("System Libraries"));
   mpSystemLibrariesButton->setStyleSheet(buttonStyleSheet);
   mpSystemLibrariesButton->setMenu(MainWindow::instance()->getLibrariesMenu());
+  mpInstallLibraryButton = new QPushButton(Helper::installLibrary);
+  mpInstallLibraryButton->setStyleSheet(buttonStyleSheet);
+  connect(mpInstallLibraryButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openInstallLibraryDialog()));
   // bottom frame layout
-  QHBoxLayout *bottomFrameLayout = new QHBoxLayout;
-  bottomFrameLayout->addWidget(mpCreateModelButton);
-  bottomFrameLayout->addWidget(mpOpenModelButton);
-  bottomFrameLayout->addWidget(mpSystemLibrariesButton);
-  mpBottomFrame->setLayout(bottomFrameLayout);
+  QHBoxLayout *pBottomFrameLayout = new QHBoxLayout;
+  pBottomFrameLayout->setAlignment(Qt::AlignLeft);
+  pBottomFrameLayout->addWidget(mpCreateModelButton);
+  pBottomFrameLayout->addWidget(mpOpenModelButton);
+  pBottomFrameLayout->addWidget(mpSystemLibrariesButton);
+  pBottomFrameLayout->addWidget(mpInstallLibraryButton);
+  mpBottomFrame->setLayout(pBottomFrameLayout);
   // vertical layout for frames
   QVBoxLayout *verticalLayout = new QVBoxLayout;
   verticalLayout->setSpacing(4);
