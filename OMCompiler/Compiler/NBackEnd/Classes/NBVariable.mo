@@ -458,14 +458,16 @@ public
   end isFixed;
 
   function isFixable
+    "states, discretes and parameters are fixable if they are not already fixed.
+    discrete states are always fixable. previous vars are only fixable if the discrete state for it wasn't fixed."
     input Pointer<Variable> var;
     output Boolean b;
   algorithm
     b := match Pointer.access(var)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE()))             then not isFixed(var);
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE()))          then not isFixed(var);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))    then not isFixed(var);
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))          then not isFixed(var);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE()))    then true;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS()))          then not isFixed(getDiscreteStateVar(var));
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))         then not isFixed(var);
       else false;
     end match;
@@ -537,7 +539,7 @@ public
 
   function makeStateVar
     "Updates a variable pointer to be a state, requires the pointer to its derivative."
-    input output Pointer<Variable> varPointer;
+    input Pointer<Variable> varPointer;
     input Pointer<Variable> derivative;
   protected
     Variable var;
@@ -682,6 +684,29 @@ public
     end match;
   end getDiscreteStateVar;
 
+  function getDiscreteStateCref
+    "Returns the discrete state variable component reference from a previous reference.
+    Only works after the discrete state has been detected by the DetectStates module and fails for non-previous crefs!"
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        Pointer<Variable> previous, state;
+        Variable stateVar;
+      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = previous)) then match Pointer.access(previous)
+        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS(state = state)))
+          algorithm
+            stateVar := Pointer.access(state);
+        then stateVar.name;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
+        then fail();
+      end match;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
+      then fail();
+    end match;
+  end getDiscreteStateCref;
 
   function makeDummyState
     input Pointer<Variable> varPointer;
@@ -735,7 +760,7 @@ public
 
   function makeDiscreteStateVar
     "Updates a discrete variable pointer to be a discrete state, requires the pointer to its left limit (pre) variable."
-    input output Pointer<Variable> varPointer;
+    input Pointer<Variable> varPointer;
     input Pointer<Variable> previous;
   protected
     Variable var;
@@ -992,7 +1017,7 @@ public
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
     (der_cref, der_var) := BVariable.makeDerVar(cref);
-    var_ptr := BVariable.makeStateVar(var_ptr, der_var);
+    BVariable.makeStateVar(var_ptr, der_var);
   end makeAuxStateVar;
 
   function getBindingVariability

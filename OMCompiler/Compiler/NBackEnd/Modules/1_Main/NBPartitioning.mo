@@ -86,14 +86,8 @@ public
 
       case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(initials = equations)))
         algorithm
-          // remove the when equations and discrete states for initial systems
-
-          // 1. remove all (non initial) when equations
-          // 2. add d = $PRE.d for all discrete states
-          // make d unfixable and $PRE.d fixable
-
-          //variables := VariablePointers.mapRemovePtr(variables, BVariable.isDiscreteState);
-          //equations := EquationPointers.mapRemovePtr(equations, Equation.isWhenEquation);
+          // ToDo: check if when equation is active during initialization
+          equations := EquationPointers.mapRemovePtr(equations, Equation.isWhenEquation);
           bdae.init := list(sys for sys guard(not System.System.isEmpty(sys)) in func(systemType, variables, equations));
         then bdae;
 

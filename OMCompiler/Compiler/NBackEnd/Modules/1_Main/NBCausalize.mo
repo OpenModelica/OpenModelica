@@ -225,24 +225,25 @@ protected
         (fixable, unfixable)    := List.splitOnTrue(VariablePointers.toList(system.unknowns), BVariable.isFixable);
         (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(system.equations), Equation.isInitial);
 
-        // ToDo: it should be:
-        // Phase I initial equations <-> unfixables (maybe simulation eqns first? to be tested)
-        // Phase II all equations <-> unfixables
-        // Phase III all equations <-> all variables
-
         // #################################################
-        // Phase I: match sim equations <-> unfixable vars
+        // Phase I: match initial equations <-> unfixable vars
         // #################################################
         variables := VariablePointers.fromList(unfixable);
-        equations := EquationPointers.fromList(simulation);
+        equations := EquationPointers.fromList(initials);
         adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.SOLVABLE);
         // do not resolve potential singular systems in Phase I! -> regular matching
         matching := Matching.regular(Matching.EMPTY_MATCHING(), adj, true, true);
 
         // #################################################
-        // Phase II: match all equations <-> all vars
+        // Phase II: match all equations <-> unfixables
         // #################################################
-        (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, fixable, initials);
+        (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, {}, simulation);
+        matching := Matching.regular(matching, adj, true, true);
+
+        // #################################################
+        // Phase III: match all equations <-> all vars
+        // #################################################
+        (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, fixable, {});
         (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj, variables, equations, funcTree, varData, eqData, system.systemType, false, true, false);
 
         adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.FULL);

@@ -73,6 +73,10 @@ public
   import StringUtil;
   import UnorderedMap;
 
+  constant String SIMULATION_STR  = "SIM";
+  constant String START_STR       = "SRT";
+  constant String PRE_STR         = "PRE";
+
   type EquationPointer = Pointer<Equation>                                    "mainly used for mapping purposes";
   type Frame = tuple<ComponentRef, Expression>                                "iterator-like tuple for array handling";
   type FrameLocation = tuple<array<Integer>, Frame>                           "sliced frame at specific sub locations";
@@ -605,11 +609,12 @@ public
       end try;
     end getResidualVar;
 
-    function makeStartEq
+    function makeEq
       " x = $START.x"
       input ComponentRef lhs;
       input ComponentRef rhs;
       input Pointer<Integer> idx;
+      input String str;
       input list<Frame> frames = {};
       output Pointer<Equation> eq;
     protected
@@ -643,19 +648,8 @@ public
           attr    = EQ_ATTR_DEFAULT_INITIAL
         ));
       end if;
-      Equation.createName(eq, idx, "SRT");
-    end makeStartEq;
-
-    function makePreEq
-      "$PRE.d = d"
-      input ComponentRef lhs;
-      input ComponentRef rhs;
-      input Pointer<Integer> idx;
-      output Pointer<Equation> eq;
-    algorithm
-      eq := Pointer.create(SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs, true), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
-      Equation.createName(eq, idx, "PRE");
-    end makePreEq;
+      Equation.createName(eq, idx, str);
+    end makeEq;
 
     function forEquationToString
       input Iterator iter             "the iterator variable(s)";
@@ -2722,7 +2716,7 @@ public
         case (EQ_DATA_SIM(), EqType.CONTINUOUS) algorithm
           if newName then
             for eqn_ptr in eq_lst loop
-              Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
             end for;
           end if;
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
@@ -2733,7 +2727,7 @@ public
         case (EQ_DATA_SIM(), EqType.DISCRETE) algorithm
           if newName then
             for eqn_ptr in eq_lst loop
-              Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
             end for;
           end if;
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
@@ -2744,7 +2738,7 @@ public
         case (EQ_DATA_SIM(), EqType.INITIAL) algorithm
           if newName then
             for eqn_ptr in eq_lst loop
-              Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
             end for;
           end if;
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
