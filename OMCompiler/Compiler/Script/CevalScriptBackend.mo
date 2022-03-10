@@ -102,6 +102,7 @@ import Inst;
 import LexerModelicaDiff;
 import List;
 import Lookup;
+import NFApi;
 import NFConvertDAE;
 import NFFlatModel;
 import NFFlatten;
@@ -3107,6 +3108,9 @@ algorithm
 
     case ("convertPackageToLibrary", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
       then convertPackageToLibrary(classpath, path, str);
+
+    case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
+      then NFApi.getModelInstance(classpath, b);
 
  end matchcontinue;
 end cevalInteractiveFunctions4;
