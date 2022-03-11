@@ -3652,10 +3652,10 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  "cmake --build . --target install && " +
+                  "cmake --build . && make install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
-        runDockerCmd(cmd, logfile, cleanup=false, volumeID=volumeID, containerID=containerID);
+        runDockerCmd(cmd, logfile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
         // Copy the files back from the volume (via the container) to the filesystem
         cmd := "docker cp " + containerID + ":/data/" + fmutmp + " .";
