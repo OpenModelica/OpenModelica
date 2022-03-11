@@ -984,7 +984,7 @@ protected
   SCode.Comment cmt;
   SCode.Annotation ann;
 algorithm
-  comp := InstNode.component(compNode);
+  comp := InstNode.component(InstNode.resolveOuter(compNode));
   json := JSON.emptyObject();
 
   () := match comp

@@ -5507,6 +5507,12 @@ public
       case SUBSCRIPTED_EXP()
         then applySubscripts(Subscript.expandSplitIndices(exp.subscripts, {}), exp.exp);
 
+      case CREF()
+        algorithm
+          exp.cref := ComponentRef.expandSplitSubscripts(exp.cref);
+        then
+          exp;
+
       else exp;
     end match;
   end expandSplitIndices;
