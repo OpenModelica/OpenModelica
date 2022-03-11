@@ -51,7 +51,7 @@ encapsulated package Flags
 
   To add a new flag, simply add a new constant of either DebugFlag or ConfigFlag
   type below, and then add it to either the allDebugFlags or allConfigFlags list
-  depending on which type it is.
+  (in FlagsUtilmo),  depending on which type it is.
   "
 
 public
@@ -1356,7 +1356,11 @@ constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(140, "fmiSources", NONE(), EXTERNA
   BOOL_FLAG(true), NONE(),
   Gettext.gettext("Defines if FMUs will be exported with sources or not. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code."));
 
-constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(141, "fmuCMakeBuild", NONE(), EXTERNAL(),
+constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(141, "fmiFlags", NONE(), EXTERNAL(),
+  STRING_LIST_FLAG({}), NONE(),
+  Gettext.gettext("Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json."));
+
+constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(142, "fmuCMakeBuild", NONE(), EXTERNAL(),
   STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
     ("default", Gettext.notrans("Let omc decide if CMake should be used.")),
@@ -1364,10 +1368,6 @@ constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(141, "fmuCMakeBuild", NONE(), 
     ("false", Gettext.notrans("Use default GNU Autoconf toolchain to compile FMU binaries."))
     })),
   Gettext.gettext("Defines if FMUs will be configured and build with CMake."));
-
-constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(142, "fmiFlags", NONE(), EXTERNAL(),
-  STRING_LIST_FLAG({}), NONE(),
-  Gettext.gettext("Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json."));
 
 constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(143, "newBackend",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
