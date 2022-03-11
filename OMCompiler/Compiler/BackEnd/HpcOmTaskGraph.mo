@@ -4305,7 +4305,7 @@ public function equalLists "author: Waurich TUD 2013-07
   input list<Integer> inList2;
   output Boolean outIsEqual;
 algorithm
-  outIsEqual := matchcontinue(inList1, inList2)
+  outIsEqual := match(inList1, inList2)
     local
       Integer e1, e2;
       list<Integer> rest1, rest2;
@@ -4313,13 +4313,11 @@ algorithm
     case ({}, {}) then true;
     case ({}, _) then false;
     case (_, {}) then false;
-    case (e1 :: rest1, e2 :: rest2)
-      equation
-        true = intEq(e1,e2);
+    case (e1 :: rest1, e2 :: rest2) guard intEq(e1,e2)
       then
         equalLists(rest1, rest2);
     else false;
-  end matchcontinue;
+  end match;
 end equalLists;
 
 protected function findOneChildParents "author: Waurich TUD 2013-07

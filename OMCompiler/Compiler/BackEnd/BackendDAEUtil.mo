@@ -2505,12 +2505,13 @@ protected function filladjacencyMatrixT
   output BackendDAE.AdjacencyMatrixT outAdjacencyArrayT = inAdjacencyArrayT;
 protected
   BackendDAE.AdjacencyMatrixElement row;
-  list<Integer> ei;
+  list<Integer> ei, eqnsindxsNeg;
 algorithm
+  eqnsindxsNeg := list(intNeg(e) for e in eqnsindxs);
   for v in eqns loop
     if v < 0 then
       v := intAbs(v);
-      ei := list(intNeg(e) for e in eqnsindxs);
+      ei := eqnsindxsNeg;
     else
       ei := eqnsindxs;
     end if;
