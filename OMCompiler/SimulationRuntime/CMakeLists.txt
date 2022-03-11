@@ -10,7 +10,7 @@ endif()
 omc_add_subdirectory(ModelicaExternalC)
 
 # omc_add_subdirectory(opc)
-# omc_add_subdirectory(ParModelica)
+omc_add_subdirectory(ParModelica)
 #ADD_SUBDIRECTORY(cpp)
 #ADD_SUBDIRECTORY(interactive)
 

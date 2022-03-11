@@ -6,9 +6,8 @@ PARMODELICAAUTO_INC=$(OPENMODELICA_INC)/ParModelica/auto/
 OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
 OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
-OMC_TBB_ROOT = $(OMCOMPILER_ROOT)/3rdParty/tbb/
 BOOST_HOME = $(OMDEV)/lib/3rdParty/boost-1_49
-INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMC_TBB_ROOT)/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
+INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMCOMPILER_ROOT)/3rdParty/tbb/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
 
 CC=gcc
 CXX=g++
@@ -20,13 +19,13 @@ OS_SRCS = pm_win_timer.cpp
 EXEEXT=.exe
 DLLEXT=.dll
 
-all: transfer
+all: install
 
-transfer: libParModelicaAuto.a
+install: libParModelicaAuto.a
 	$(COPY) libParModelicaAuto.a $(OPENMODELICA_LIB)
 	mkdir -p $(PARMODELICAAUTO_INC)
 	$(COPY) om_pm_interface.hpp $(PARMODELICAAUTO_INC)
-    
+
 include Makefile.common
 
 

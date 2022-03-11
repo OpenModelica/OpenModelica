@@ -54,6 +54,8 @@ $(builddir_man)/man1/
 CMAKE := $(CMAKE) -DCMAKE_INSTALL_MESSAGE=LAZY
 
 OMC_IPOPT_ROOT = 3rdParty/Ipopt-3.13.4
+OMC_TBB_ROOT = 3rdParty/tbb
+
 
 ifeq ("$(APP)",".app")
 	BUILD_DIRS += $(builddir_app)
@@ -214,15 +216,31 @@ opencl_rt_clean:
 	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 
 
-parmodauto: boehm-gc
-ifeq ("$(ENABLE_PARMODAUTO)","yes")
-	$(MAKE) -C $(OMC_TBB_ROOT)/build_cmake/ install_for_omc
+tbb: boehm-gc
+	mkdir -p $(OMC_TBB_ROOT)/build_cmake
+	cd $(OMC_TBB_ROOT)/build_cmake && $(CMAKE) .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE=ON \
+		-DCMAKE_INSTALL_PREFIX="$(top_builddir)" \
+		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
+		-DCMAKE_INSTALL_DATAROOTDIR="$(builddir_share)" \
+		-DTBB_BUILD_TESTS=OFF \
+		-DTBB_BUILD_SHARED=OFF \
+		-DTBB_BUILD_TBBMALLOC=OFF \
+		-DTBB_BUILD_TBBMALLOC_PROXY=OFF \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON
+	$(MAKE) -C $(OMC_TBB_ROOT)/build_cmake install
+
+tbb_clean:
+	if test -f $(OMC_TBB_ROOT)/build_cmake/Makefile; then $(MAKE) -C $(OMC_TBB_ROOT)/build_cmake/ clean; fi
+	rm -rf $(OMC_TBB_ROOT)/build_cmake
+
+parmodauto: tbb
 	$(MAKE) -C SimulationRuntime/ParModelica/auto/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
-endif
 
-parmodauto_clean:
+parmodauto_clean: tbb_clean
 	$(MAKE) -C SimulationRuntime/ParModelica/auto/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
-
 
 breakprocess:
 	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
