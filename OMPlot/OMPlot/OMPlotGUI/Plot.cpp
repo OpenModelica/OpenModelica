@@ -238,6 +238,7 @@ bool Plot::prefixableUnit(const QString &unit)
                   << "rad"
                   << "rad/s"
                   << "rad/s2"
+                  << "rpm"
                   << "Hz"
                   << "N"
                   << "N.m"
