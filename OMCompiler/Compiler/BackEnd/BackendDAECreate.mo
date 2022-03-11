@@ -610,7 +610,7 @@ algorithm
       else
         algorithm
           true := Flags.isSet(Flags.FAILTRACE);
-          Debug.traceln("- BackendDAECreate.lower2 failed on: " + DAEDump.dumpElementsStr({el}));
+          Debug.traceln(getInstanceName() + " failed on: " + DAEDump.dumpElementsStr({el}));
         then
           fail();
     end match;

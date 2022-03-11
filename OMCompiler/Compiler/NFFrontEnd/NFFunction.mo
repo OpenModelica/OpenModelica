@@ -2587,13 +2587,11 @@ protected
       end if;
     end for;
 
-    // if no derivative could be found, set whole map to true
+    // no derivative could be found, set whole map to true
     // so that the self-generated function removes as much as possible
-    if Util.isSome(derivative) then
-      for key in UnorderedMap.keyList(interface_map) loop
-        UnorderedMap.add(key, true, interface_map);
-      end for;
-    end if;
+    for key in UnorderedMap.keyList(interface_map) loop
+      UnorderedMap.add(key, true, interface_map);
+    end for;
   end getDerivative;
 end Function;
 
