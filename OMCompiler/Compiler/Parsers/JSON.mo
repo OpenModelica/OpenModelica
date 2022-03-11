@@ -31,7 +31,6 @@
 
 encapsulated uniontype JSON
 
-import BaseAvlTree;
 import LexerJSON;
 import LexerJSON.{Token,TokenId,tokenContent,printToken,tokenSourceInfo};
 import IOStream;
@@ -44,29 +43,6 @@ import Error;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 public
-
-encapsulated package AvlTree "AvlTree for String to String"
-  import BaseAvlTree;
-  import JSON;
-  extends BaseAvlTree;
-  redeclare type Key = String;
-  redeclare type Value = JSON;
-  redeclare function extends keyStr
-  algorithm
-    outString := inKey;
-  end keyStr;
-  redeclare function extends valueStr
-  algorithm
-    outString := JSON.toString(inValue);
-  end valueStr;
-  redeclare function extends keyCompare
-  algorithm
-    outResult := stringCompare(inKey1, inKey2);
-  end keyCompare;
-annotation(__OpenModelica_Interface="util");
-end AvlTree;
-
-type Dict = JSON.AvlTree.Tree;
 
 record OBJECT
   UnorderedMap<String, JSON> values;

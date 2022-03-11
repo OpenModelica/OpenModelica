@@ -532,6 +532,21 @@ public
     end match;
   end hasSplitSubscripts;
 
+  function expandSplitSubscripts
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      case CREF(origin = Origin.CREF)
+        algorithm
+          cref.subscripts := Subscript.expandSplitIndices(cref.subscripts, {});
+          cref.restCref := expandSplitSubscripts(cref.restCref);
+        then
+          ();
+
+      else ();
+    end match;
+  end expandSplitSubscripts;
+
   function getSubscripts
     input ComponentRef cref;
     output list<Subscript> subscripts;
