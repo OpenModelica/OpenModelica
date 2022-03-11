@@ -4481,6 +4481,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpAutoScaleCheckBox->setToolTip(tr("Auto scale the plot to fit in view when variable is plotted."));
   // prefix units
   mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
+  mpPrefixUnitsCheckbox->setChecked(true);
   mpPrefixUnitsCheckbox->setToolTip(tr("Automatically pick the right prefix for units."));
   // set general groupbox layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;

@@ -1684,7 +1684,11 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
           mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
         }
         // if a simulation was left running, make a replot
-        pPlotWindow->getPlot()->replot();
+        if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+          pPlotWindow->fitInView();
+        } else {
+          pPlotWindow->updatePlot();
+        }
       }
     }
     mpVariablesTreeModel->blockSignals(state);
@@ -2024,11 +2028,9 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
             pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
-            pPlotWindow->getPlot()->replot();
           } else {
-            pPlotCurve->setYDisplayUnit(pVariablesTreeItem->getUnit());
+            pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getUnit()));
           }
-          pPlotCurve->setTitleLocal();
         }
         // update the time values if time unit is different then s
         if (pPlotWindow->getTimeUnit().compare("s") != 0) {
@@ -2038,7 +2040,6 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
             pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
-            pPlotWindow->getPlot()->replot();
           }
         }
         if (pPlotWindow->getAutoScaleButton()->isChecked()) {
@@ -2309,11 +2310,14 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
             pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
           }
           pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
-          pPlotCurve->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
-          pPlotCurve->setTitleLocal();
-          pPlotWindow->getPlot()->replot();
+          pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
           break;
         }
+      }
+      if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+        pPlotWindow->fitInView();
+      } else {
+        pPlotWindow->updatePlot();
       }
     }
   } catch (PlotException &e) {
@@ -2568,7 +2572,11 @@ void VariablesWidget::timeUnitChanged(QString unit)
           }
           pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
         }
-        pPlotWindow->getPlot()->replot();
+        if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+          pPlotWindow->fitInView();
+        } else {
+          pPlotWindow->updatePlot();
+        }
       }
     }
   } catch (PlotException &e) {
