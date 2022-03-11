@@ -4060,18 +4060,30 @@ algorithm
   end if;
 
   // Use CMake on Windows when cross-compiling with docker
-  if (listLength(platforms) > 1 and isWindows) then
-    useCrossCompileCmake := true;
-    Error.addCompilerNotification("OS is Windows and multiple platform detected. Using CMake to build FMU.");
-  else
-    for platform in platforms loop
-      if isWindows and 1 == System.regex(platform, " docker run ", 0, true, false) then
+  useCrossCompileCmake := match ((Flags.getConfigString(Flags.FMU_CMAKE_BUILD)), isWindows)
+    case("true", _) then true;
+    case("false", _) then false;
+    case("default", true) then true;
+  end match;
+
+  /*
+    case("default") algorithm
+      if (listLength(platforms) > 1 and isWindows) then
+        Error.addCompilerNotification("OS is Windows and multiple platform detected. Using CMake to build FMU.");
         useCrossCompileCmake := true;
-        Error.addCompilerNotification("OS is Windows and docker platform detected. Using CMake to build FMU.");
-        break;
+      else
+        for platform in platforms loop
+          if isWindows and 1 == System.regex(platform, " docker run ", 0, true, false) then
+            Error.addCompilerNotification("OS is Windows and docker platform detected. Using CMake to build FMU.");
+            useCrossCompileCmake := true;
+          end if;
+        end for;
       end if;
-    end for;
-  end if;
+    else
+      useCrossCompileCmake := false;
+      then();
+  end match;
+  */
 
   // Configure the FMU Makefile
   for platform in platforms loop
