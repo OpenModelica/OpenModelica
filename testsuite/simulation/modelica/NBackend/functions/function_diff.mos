@@ -49,10 +49,10 @@ simulate(function_diff); getErrorString();
 //   elseif true then
 //     'b' := 'f'(-'a');
 //   end if;
-//   annotation(derivative(order = 1) = '$fDER.f', Inline = false);
+//   annotation(derivative(order = 1) = '$fDER0.f', Inline = false);
 // end 'f'
 //
-// [AFTER]  function '$fDER.f'
+// [AFTER ] function '$fDER0.f'
 //   input Real 'a';
 //   input Real '$fDER_a';
 //   output Real '$fDER_b';
@@ -63,17 +63,17 @@ simulate(function_diff); getErrorString();
 //     '$fDER_b' := 2.0 * a * $fDER_a;
 //     'b' := 'a' ^ 2.0;
 //   elseif true then
-//     '$fDER_b' := '$fDER.f'(-'a', -'$fDER_a');
+//     '$fDER_b' := '$fDER0.f'(-'a', -'$fDER_a');
 //     'b' := 'f'(-'a');
 //   end if;
 //   annotation(Inline = false);
-// end '$fDER.f'
+// end '$fDER0.f'
 //
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.x = $fDER.f(y, $pDER_ODE_JAC.y) ($RES_SIM_1)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.x = $fDER0.f(y, $pDER_ODE_JAC.y) ($RES_SIM_1)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) $DER.z = f(x) ($RES_SIM_0)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.z = $fDER.f(x, $SEED_ODE_JAC.x) ($RES_SIM_0)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.z = $fDER0.f(x, $SEED_ODE_JAC.x) ($RES_SIM_0)
 //
 // record SimulationResult
 //     resultFile = "function_diff_res.mat",
