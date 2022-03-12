@@ -614,6 +614,7 @@ algorithm
 
         if Flags.getConfigBool(Flags.PARMODAUTO) then
           codegenFuncs := (function runToStr(func=function SerializeTaskSystemInfo.serializeParMod(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
+          generatedObjects := AvlSetString.add(generatedObjects, simCode.fileNamePrefix + "_ode.json\n");
         end if;
 
         if Autoconf.os == "Windows_NT" then
