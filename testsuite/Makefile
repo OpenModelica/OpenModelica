@@ -561,6 +561,9 @@ parallel.log: omc-diff
 parameters.log: omc-diff
 	$(MAKE) -C simulation/modelica/parameters -f Makefile test > $@
 	@echo $@ done
+parmodauto.log: omc-diff
+	$(MAKE) -C simulation/modelica/parmodauto -f Makefile test > $@
+	@echo $@ done
 taskGraph.log: omc-diff
 	$(MAKE) -C simulation/modelica/hpcom -f Makefile test > $@
 	@echo $@ done
