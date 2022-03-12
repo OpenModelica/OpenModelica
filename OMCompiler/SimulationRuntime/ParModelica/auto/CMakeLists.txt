@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(ParModelicaAuto)
+set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/auto)
 
 find_package(Boost REQUIRED COMPONENTS graph chrono)
 
@@ -19,6 +20,11 @@ target_link_libraries(ParModelicaAuto PUBLIC omc::simrt::runtime)
 target_link_libraries(ParModelicaAuto PUBLIC omc::3rd::tbb)
 target_compile_definitions(ParModelicaAuto PRIVATE USE_FLOW_SCHEDULER)
 
-add_executable(ParModelicaAutoTest)
-target_sources(ParModelicaAutoTest PRIVATE test_task_graph.cpp)
-target_link_libraries(ParModelicaAutoTest ParModelicaAuto ParModelicaAuto)
+# add_executable(ParModelicaAutoTest)
+# target_sources(ParModelicaAutoTest PRIVATE test_task_graph.cpp)
+# target_link_libraries(ParModelicaAutoTest PRIVATE ParModelicaAuto)
+
+
+install(TARGETS ParModelicaAuto)
+install(FILES om_pm_interface.hpp
+        TYPE INCLUDE)
