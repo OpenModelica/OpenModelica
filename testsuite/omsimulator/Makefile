@@ -14,6 +14,7 @@ initialization_omc.mos \
 initialization.mos \
 initialization2_omc.mos \
 initialization2.mos \
+Issue_FMU_update_vars.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.mos \
 outputState_omc.mos \
 outputState.mos \

@@ -1,0 +1,84 @@
+// name:  Issue_FMU_update_vars
+// keywords: FMI 2.0 fmi2setReal OMSimulator
+// status: correct
+// teardown_command: rm -rf temp_Issue_FMU_update_vars/ Issue_FMU_update_vars.mat Issue_FMU_update_vars_info.json Issue_FMU_update_vars.lua Issue_FMU_update_vars_systemCall.log Issue_FMU_update_vars.fmu Issue_FMU_update_vars.log
+
+loadString("model Issue_FMU_update_vars
+  Real var;
+  parameter Real x = 1;
+equation
+  der(var) = 1.0;
+end Issue_FMU_update_vars;");
+getErrorString();
+
+// Build 2.0 FMU
+buildModelFMU(Issue_FMU_update_vars, version="2.0", fmuType="me_cs", platforms={"static"});
+getErrorString();
+
+// Simulate with OMSimulator
+writeFile("Issue_FMU_update_vars.lua", "
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp_Issue_FMU_update_vars/\")
+
+oms_newModel(\"model\")
+
+oms_addSystem(\"model.root\", oms_system_sc)
+
+oms_addSubModel(\"model.root.fmuvar\", \"Issue_FMU_update_vars.fmu\")
+
+oms_setResultFile(\"model\", \"Issue_FMU_update_vars.mat\")
+
+print(\"info:    Virgin settings\")
+oms_setReal(\"model.root.fmuvar.var\", -4.0)
+oms_setReal(\"model.root.fmuvar.x\", -30.0)
+
+print(\"info:      model.root.fmuvar.var     : \" .. oms_getReal(\"model.root.fmuvar.var\"))
+print(\"info:      model.root.fmuvar.x       : \" .. oms_getReal(\"model.root.fmuvar.x\"))
+
+oms_instantiate(\"model\")
+oms_setReal(\"model.root.fmuvar.var\", -3.0)
+oms_setReal(\"model.root.fmuvar.x\", -40.0)
+
+print(\"info:    Instantiate settings\")
+print(\"info:      model.root.fmuvar.var     : \" .. oms_getReal(\"model.root.fmuvar.var\"))
+print(\"info:      model.root.fmuvar.x       : \" .. oms_getReal(\"model.root.fmuvar.x\"))
+
+oms_initialize(\"model\")
+
+print(\"info:    Initialize settings\")
+print(\"info:      model.root.fmuvar.var     : \" .. oms_getReal(\"model.root.fmuvar.var\"))
+print(\"info:      model.root.fmuvar.x       : \" .. oms_getReal(\"model.root.fmuvar.x\"))
+oms_simulate(\"model\")
+
+oms_terminate(\"model\")
+oms_delete(\"model\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Issue_FMU_update_vars.lua", "Issue_FMU_update_vars_systemCall.log");
+readFile("Issue_FMU_update_vars_systemCall.log");
+
+// Result:
+// true
+// ""
+// "Issue_FMU_update_vars.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// true
+// ""
+// 0
+// "info:    Virgin settings
+// info:      model.root.fmuvar.var     : -4.0
+// info:      model.root.fmuvar.x       : -30.0
+// info:    Instantiate settings
+// info:      model.root.fmuvar.var     : -3.0
+// info:      model.root.fmuvar.x       : -40.0
+// info:    maximum step size for 'model.root': 0.001000
+// info:    Result file: Issue_FMU_update_vars.mat (bufferSize=1)
+// info:    Initialize settings
+// info:      model.root.fmuvar.var     : -3.0
+// info:      model.root.fmuvar.x       : -40.0
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// endResult
