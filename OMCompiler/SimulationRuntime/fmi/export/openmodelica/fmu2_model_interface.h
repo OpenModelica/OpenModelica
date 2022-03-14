@@ -69,6 +69,30 @@ typedef enum {
   modelError              = 1<<6  /* ME and CS */
 } ModelState;
 
+typedef enum {
+  model_state_cs_start_end           = 1<<0,
+  model_state_cs_instantiated        = 1<<1,
+  model_state_cs_initialization_mode = 1<<2,
+  model_state_cs_step_complete       = 1<<3,
+  model_state_cs_step_in_progress    = 1<<4,
+  model_state_cs_step_failed         = 1<<5,
+  model_state_cs_step_canceled       = 1<<6,
+  model_state_cs_terminated          = 1<<7,
+  model_state_cs_error               = 1<<8,
+  model_state_cs_fatal               = 1<<9
+} ModelStateCS;
+
+typedef enum {
+  model_state_me_start_end            = 1<<0,
+  model_state_me_instantiated         = 1<<1,
+  model_state_me_initialization_mode  = 1<<2,
+  model_state_me_event_mode           = 1<<3,
+  model_state_me_continuous_time_mode = 1<<4,
+  model_state_me_terminated           = 1<<5,
+  model_state_me_error                = 1<<6,
+  model_state_me_fatal                = 1<<7,
+} ModelStateME;
+
 typedef struct {
   fmi2String instanceName;
   fmi2Type type;
