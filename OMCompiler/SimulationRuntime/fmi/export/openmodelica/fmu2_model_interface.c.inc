@@ -75,66 +75,108 @@ fmi2ValueReference vrStatesDerivatives[NUMBER_OF_STATES] = STATESDERIVATIVES;
 // ---------------------------------------------------------------------------
 // Private helpers used below to validate function arguments
 // ---------------------------------------------------------------------------
-const char* stateToString(ModelInstance *comp)
+static fmi2Boolean isModelExchange(ModelInstance *comp)
 {
-  switch (comp->state)
-  {
-    case modelInstantiated: return "Instantiated";
-    case modelInitializationMode: return "Initialization Mode";
-    case modelEventMode: return "Event Mode";
-    case modelContinuousTimeMode: return "Continuous-Time Mode";
-    case modelTerminated: return "Terminated";
-    case modelError: return "Error";
-    default: return "Unknown";
-  }
+  return (fmi2ModelExchange == comp->type);
 }
 
-static fmi2Boolean invalidNumber(ModelInstance *comp, const char *f, const char *arg, int n, int nExpected)
+static fmi2Boolean isCoSimulation(ModelInstance *comp)
 {
-  if (n != nExpected) {
-    comp->state = modelError;
-    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Invalid argument %s = %d. Expected %d.", f, arg, n, nExpected)
+  return (fmi2CoSimulation == comp->type);
+}
+
+const char* stateToString(ModelInstance *comp)
+{
+  if (isModelExchange(comp))
+  {
+    switch (comp->state)
+    {
+      case model_state_me_start_end:            return "model_state_me_start_end";
+      case model_state_me_instantiated:         return "model_state_me_instantiated";
+      case model_state_me_initialization_mode:  return "model_state_me_initialization_mode";
+      case model_state_me_event_mode:           return "model_state_me_event_mode";
+      case model_state_me_continuous_time_mode: return "model_state_me_continuous_time_mode";
+      case model_state_me_terminated:           return "model_state_me_terminated";
+      case model_state_me_error:                return "model_state_me_error";
+      case model_state_me_fatal:                return "model_state_me_fatal";
+    }
+  }
+
+  if (isCoSimulation(comp))
+  {
+    switch (comp->state)
+    {
+      case model_state_cs_start_end:           return "model_state_cs_start_end";
+      case model_state_cs_instantiated:        return "model_state_cs_instantiated";
+      case model_state_cs_initialization_mode: return "model_state_cs_initialization_mode";
+      case model_state_cs_step_complete:       return "model_state_cs_step_complete";
+      case model_state_cs_step_in_progress:    return "model_state_cs_step_in_progress";
+      case model_state_cs_step_failed:         return "model_state_cs_step_failed";
+      case model_state_cs_step_canceled:       return "model_state_cs_step_canceled";
+      case model_state_cs_terminated:          return "model_state_cs_terminated";
+      case model_state_cs_error:               return "model_state_cs_error";
+      case model_state_cs_fatal:               return "model_state_cs_fatal";
+    }
+  }
+
+  return "Unknown";
+}
+
+static fmi2Boolean invalidNumber(ModelInstance *comp, const char *func, const char *arg, int n, int nExpected)
+{
+  if (n != nExpected)
+  {
+    comp->state = isModelExchange(comp) ? model_state_me_error : model_state_cs_error;
+    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Invalid argument %s = %d. Expected %d.", func, arg, n, nExpected)
     return fmi2True;
   }
   return fmi2False;
 }
 
-static fmi2Boolean invalidState(ModelInstance *comp, const char *f, int meStates, int csStates)
+static fmi2Boolean invalidState(ModelInstance *comp, const char *func, int meStates, int csStates)
 {
   if (!comp)
     return fmi2True;
 
-  int statesExpected;
-  if (fmi2ModelExchange == comp->type)
-    statesExpected = meStates;
-  else /* fmi2CoSimulation */
-    statesExpected = csStates;
-
-  if (!(comp->state & statesExpected))
+  if (isModelExchange(comp))
   {
-    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Illegal call sequence. %s is not allowed in %s state.", f, f, stateToString(comp))
-    comp->state = modelError;
-    return fmi2True;
+    if (!(comp->state & meStates))
+    {
+      FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Illegal model exchange call sequence. %s is not allowed in %s state.", func, func, stateToString(comp))
+      comp->state = model_state_me_error;
+      return fmi2True;
+    }
+  }
+
+  if (isCoSimulation(comp))
+  {
+    if (!(comp->state & csStates))
+    {
+      FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Illegal co-simulation call sequence. %s is not allowed in %s state.", func, func, stateToString(comp))
+      comp->state = model_state_cs_error;
+      return fmi2True;
+    }
   }
 
   return fmi2False;
 }
 
-static fmi2Boolean nullPointer(ModelInstance* comp, const char *f, const char *arg, const void *p)
+static fmi2Boolean nullPointer(ModelInstance* comp, const char *func, const char *arg, const void *p)
 {
-  if (!p) {
-    comp->state = modelError;
-    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Invalid argument %s = NULL.", f, arg)
+  if (!p)
+  {
+    comp->state = isModelExchange(comp) ? model_state_me_error : model_state_cs_error;
+    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Invalid argument %s = NULL.", func, arg)
     return fmi2True;
   }
   return fmi2False;
 }
 
-static fmi2Boolean vrOutOfRange(ModelInstance *comp, const char *f, fmi2ValueReference vr, int end)
+static fmi2Boolean vrOutOfRange(ModelInstance *comp, const char *func, fmi2ValueReference vr, int end)
 {
   if (vr >= end) {
     comp->state = modelError;
-    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Illegal value reference %u.", f, vr)
+    FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Illegal value reference %u.", func, vr)
     return fmi2True;
   }
   return fmi2False;
@@ -341,10 +383,10 @@ fmi2Status fmi2EventIteration(fmi2Component c, fmi2EventInfo *eventInfo)
  * @brief Helper function for fmi2GetXXX to update the component if needed.
  *
  * @param comp          FMI component
- * @param f             Name of fmi2GetXXX function calling this function.
+ * @param func          Name of fmi2GetXXX function calling this function.
  * @return fmi2Status   Returns fmi2Error if an error was caught, fmi2OK otherwise.
  */
-fmi2Status updateIfNeeded(ModelInstance *comp, const char *f)
+fmi2Status updateIfNeeded(ModelInstance *comp, const char *func)
 {
   /* Variables */
   threadData_t *threadData = comp->threadData;
@@ -387,7 +429,7 @@ fmi2Status updateIfNeeded(ModelInstance *comp, const char *f)
     resetThreadData(comp);
     if (!success)
     {
-      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "%s: terminated by an assertion.", f)
+      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "%s: terminated by an assertion.", func)
       // TODO: Check if fmi2Error or fmi2Discard should be returned
       return fmi2Error;
     }
