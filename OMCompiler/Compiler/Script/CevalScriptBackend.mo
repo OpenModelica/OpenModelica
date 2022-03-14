@@ -3561,18 +3561,18 @@ algorithm
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   // Set build type
-  if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
-    CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=Debug";
-  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+  if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
     CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=Release";
+  elseif Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+    CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=Debug";
   else
     CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=RelWithDebInfo";
   end if;
 
   // Remove old log file
-  if System.regularFileExists(logfile) then
-    System.removeFile(logfile);
-  end if;
+  //if System.regularFileExists(logfile) then
+  //  System.removeFile(logfile);
+  //end if;
 
   _ := match Util.stringSplitAtChar(platform, " ")
     local
@@ -3582,6 +3582,7 @@ algorithm
       list<String> dockerImgArgs;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
+      String dockerLogFile;
     case {"dynamic"}
       algorithm
         if isWindows then
@@ -3609,29 +3610,31 @@ algorithm
         cidFile := fmutmp+".cidfile";
 
         // TODO: Move log file outside of fmutmp
+        dockerLogFile := System.realpath(crossTriple + ".tmp.log");
+
 
         // Create a docker volume for the FMU since we can't forward volumes
         // to the docker run command depending on where the FMU was generated (inside another volume)
         cmd := "docker volume create";
-        runDockerCmd(cmd, logfile);
+        runDockerCmd(cmd, dockerLogFile);
 
         if System.regularFileExists(cidFile) then
           System.removeFile(cidFile);
         end if;
-        volumeID := System.trim(System.readFile(logfile));
+        volumeID := System.trim(System.readFile(dockerLogFile));
         cmd := "docker run --cidfile " + cidFile + " -v " + volumeID + ":/data busybox true";
-        runDockerCmd(cmd, logfile, true, volumeID, "");
+        runDockerCmd(cmd, dockerLogFile, true, volumeID, "");
 
         containerID := System.trim(System.readFile(cidFile));
         System.removeFile(cidFile);
 
         // Copy the FMU contents to the container
         cmd := "docker cp " + fmutmp + " " + containerID + ":/data";
-        runDockerCmd(cmd, logfile, cleanup=true, volumeID=volumeID, containerID=containerID);
+        runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
         // Copy the FMI headers to the container
         cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
-        runDockerCmd(cmd, logfile, cleanup=true, volumeID=volumeID, containerID=containerID);
+        runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
         // Build for target host
         userID := (if uid<>0 then "--user " + String(uid) else "");
@@ -3655,17 +3658,29 @@ algorithm
                   "cmake --build . && make install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
-        runDockerCmd(cmd, logfile, cleanup=true, volumeID=volumeID, containerID=containerID);
+        runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
         // Copy the files back from the volume (via the container) to the filesystem
         cmd := "docker cp " + containerID + ":/data/" + fmutmp + " .";
-        runDockerCmd(cmd, "myLogFile.log", cleanup=true, volumeID=volumeID, containerID=containerID);
+        runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
         // Cleanup
         System.systemCall("docker rm " + containerID);
         System.systemCall("docker volume rm " + volumeID);
 
         // TODO: Copy log file into resources directory
+        print("AHeu1: Copy \"" + dockerLogFile + "\" to \"" + logfile + "\"\n");
+        if not System.copyFile(dockerLogFile, logfile) then
+          print("AHeu2: Failed to copy CMake build log file into resources folder");
+          fail();
+        end if;
+        if not System.regularFileExists(logfile) then
+          print("AHeu3: This is stupid\n");
+          fail();
+        else
+          print("AHeu4: The file is there\n");
+        end if;
+        //System.removeFile(dockerLogFile);
         then();
     else
       algorithm
@@ -4060,14 +4075,14 @@ algorithm
   end if;
 
   // Use CMake on Windows when cross-compiling with docker
-  _ := match (Flags.getConfigString(Flags.FMU_CMAKE_BUILD))
-    case "true" algorithm
+  _ := match (Flags.getConfigString(Flags.FMU_CMAKE_BUILD), needs3rdPartyLibs)
+    case ("true", _) algorithm
       useCrossCompileCmake := true;
       then();
-    case "false" algorithm
+    case ("false", _) algorithm
       useCrossCompileCmake := false;
       then();
-    case "default" algorithm
+    case ("default", false) algorithm
       if (listLength(platforms) > 1 and isWindows) then
         Error.addCompilerNotification("OS is Windows and multiple platform detected. Using CMake to build FMU.");
         useCrossCompileCmake := true;
