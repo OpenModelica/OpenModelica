@@ -856,7 +856,7 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
     FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: terminated by an assertion.")
   }
 
-  comp->state = model_state_me_event_mode;
+  comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
   resetThreadData(comp);
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeed")
@@ -960,7 +960,7 @@ fmi2Status fmi2Reset(fmi2Component c)
   }
 
   comp->_need_update = 1;
-  comp->state = isCoSimulation(comp) ? model_state_instantiated : model_state_instantiated;
+  comp->state = model_state_instantiated;
   resetThreadData(comp);
   return fmi2OK;
 }
@@ -1089,7 +1089,18 @@ fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
   int i;
   ModelInstance *comp = (ModelInstance *)c;
   int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+
+  // Co-simulation
+  // - instantiated (1) for a variable with variability != "constant" that has initial = "exact" or "approx"
+  // - initialization mode (3) for a variable with variability != "constant" that has initial = "exact", or causality = "input"
+  // - stepComplete (6) for a variable with causality = "input" or (causality = "parameter" and variability = "tunable")
+  //
+  // Model exchange
+  // - instantiated (1) for a variable with variability != "constant" that has initial = "exact" or "approx"
+  // - initialization mode (3) for a variable with variability != "constant" that has initial = "exact", or causality = "input"
+  // - event mode (4) for a variable with causality = "input", or (causality = "parameter" and variability = "tunable")
+  // - continuous-time mode (5) for a variable with causality = "input" and variability = "continuous"
 
   if (invalidState(comp, "fmi2SetReal", meStates, csStates))
     return fmi2Error;
@@ -1421,7 +1432,7 @@ fmi2Status fmi2NewDiscreteStates(fmi2Component c, fmi2EventInfo* eventInfo)
 fmi2Status fmi2EnterContinuousTimeMode(fmi2Component c)
 {
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2EnterContinuousTimeMode", model_state_me_event_mode, ~0))
+  if (invalidState(comp, "fmi2EnterContinuousTimeMode", model_state_me_event_mode, 0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL,"fmi2EnterContinuousTimeMode")
   comp->state = model_state_me_continuous_time_mode;
@@ -1434,7 +1445,7 @@ fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStat
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp=threadData->mmc_jumper;
-  if (invalidState(comp, "fmi2CompletedIntegratorStep", model_state_me_continuous_time_mode, ~0))
+  if (invalidState(comp, "fmi2CompletedIntegratorStep", model_state_me_continuous_time_mode, 0))
     return fmi2Error;
   if (nullPointer(comp, "fmi2CompletedIntegratorStep", "enterEventMode", enterEventMode))
     return fmi2Error;
@@ -1736,7 +1747,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   eventInfo.nominalsOfContinuousStatesChanged = fmi2False;
   eventInfo.valuesOfContinuousStatesChanged   = fmi2True;
   eventInfo.nextEventTimeDefined              = fmi2False;
-  eventInfo.nextEventTime                     = -0.0;
+  eventInfo.nextEventTime                     = 0.0;
 
   tEnd = currentCommunicationPoint + communicationStepSize;
   if (comp->stopTimeDefined && (tEnd > comp->stopTime))
@@ -1756,9 +1767,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     }
   }
 
-  fmi2EnterEventMode(c);
   fmi2EventIteration(c, &eventInfo);
-  fmi2EnterContinuousTimeMode(c);
 
   while (status == fmi2OK && comp->fmuData->localData[0]->timeValue < tEnd)
   {
@@ -1861,6 +1870,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     }
 
     /* signal completed integrator step */
+    // TODO: do not call fmi2CompletedIntegratorStep!
     status = fmi2CompletedIntegratorStep(c, fmi2True, &enterEventMode, &terminateSimulation);
     if (status != fmi2OK) {status=fmi2Error; break;}
 
@@ -1886,7 +1896,13 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     {
       /* fprintf(stderr, "enterEventMode = %d, zc_event = %d, time_event = %d\n", enterEventMode, zc_event, time_event); */
 
-      fmi2EnterEventMode(c);
+      // Reset eventInfo
+      eventInfo.newDiscreteStatesNeeded           = fmi2False;
+      eventInfo.terminateSimulation               = fmi2False;
+      eventInfo.nominalsOfContinuousStatesChanged = fmi2False;
+      eventInfo.valuesOfContinuousStatesChanged   = fmi2True;
+      eventInfo.nextEventTimeDefined              = fmi2False;
+      eventInfo.nextEventTime                     = 0.0;
       fmi2EventIteration(c, &eventInfo);
 
       if (eventInfo.valuesOfContinuousStatesChanged)
