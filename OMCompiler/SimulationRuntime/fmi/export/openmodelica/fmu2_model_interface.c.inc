@@ -932,9 +932,26 @@ fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
   /* Variables */
   int i;
   ModelInstance *comp = (ModelInstance*)c;
+  int meStates = modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
+  int csStates = modelInitializationMode|modelTerminated;
+
+  // Co-simulation
+  // - initialization mode (2) for a variable with causality = "output" or continuous-time states or state derivatives (if element <Derivatives> is present)
+  // - stepComplete
+  // - stepFailed (8) always, but if status is other than fmi2Terminated, retrieved values are useable for debugging only
+  // - stepCanceled (7) always, but retrieved values are usable for debugging only
+  // - terminated
+  // - error (7) always, but retrieved values are usable for debugging only
+  //
+  // Model exchange
+  // - initialization mode (2) for a variable with causality = "output", or continuous-time states or state derivatives
+  // - event mode
+  // - continuous-time mode
+  // - terminated
+  // - error (7) always, but retrieved values are usable for debugging only
 
   /* Check for valid call sequence */
-  if (invalidState(comp, "fmi2GetReal", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
+  if (invalidState(comp, "fmi2GetReal", meStates, csStates))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetReal", "vr[]", vr))
     return fmi2Error;
@@ -1051,7 +1068,18 @@ fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
   int i;
   ModelInstance *comp = (ModelInstance *)c;
   int meStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
-  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  int csStates = modelInstantiated|modelInitializationMode;
+
+  // Co-simulation
+  // - instantiated (1) for a variable with variability != "constant" that has initial = "exact" or "approx"
+  // - initialization mode (3) for a variable with variability != "constant" that has initial = "exact", or causality = "input"
+  // - stepComplete (6) for a variable with causality = "input" or (causality = "parameter" and variability = "tunable")
+  //
+  // Model exchange
+  // - instantiated (1) for a variable with variability ≠ "constant" that has initial = "exact" or "approx"
+  // - initialization mode (3) for a variable with variability≠"constant" that has initial = "exact", or causality = "input"
+  // - event mode (4) for a variable with causality = "input", or (causality = "parameter" and variability = "tunable")
+  // - continuous-time mode (5) for a variable with causality = "input" and variability = "continuous"
 
   if (invalidState(comp, "fmi2SetReal", meStates, csStates))
     return fmi2Error;
