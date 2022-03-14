@@ -502,7 +502,7 @@ public
       case (Expression.CREF(), DifferentiationType.FUNCTION, SOME(jacobianHT)) algorithm
         strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
         if UnorderedMap.contains(strippedCref, jacobianHT) then
-          // get the derivative an reapply subscripts
+          // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, jacobianHT);
           derCref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(exp.cref)), derCref);
           res     := Expression.fromCref(derCref);
@@ -705,7 +705,7 @@ public
           for tpl in listReverse(arguments_inputs) loop
             (arg, inp) := tpl;
             // only keep the arguments which are not in the map or have value false
-            if not(UnorderedMap.contains(InstNode.name(inp), interface_map) and UnorderedMap.getSafe(InstNode.name(inp), interface_map)) then
+            if not UnorderedMap.getOrDefault(InstNode.name(inp), interface_map, false) then
               arguments := arg :: arguments;
             end if;
           end for;

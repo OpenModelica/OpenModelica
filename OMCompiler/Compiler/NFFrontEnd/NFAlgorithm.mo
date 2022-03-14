@@ -197,7 +197,7 @@ protected
     input UnorderedSet<ComponentRef> inputs_set;
     input UnorderedSet<ComponentRef> outputs_set;
   algorithm
-    _ := match statement
+    () := match statement
       local
         Expression lhs, rhs;
         list<Expression> elements;
@@ -286,7 +286,7 @@ protected
     input UnorderedSet<ComponentRef> inputs_set;
     input UnorderedSet<ComponentRef> outputs_set "outputs from previous statements";
   algorithm
-    _ := match exp
+    () := match exp
       local
         ComponentRef cr;
         Type ty;
@@ -319,7 +319,7 @@ protected
     input UnorderedSet<ComponentRef> inputs_set;
     input UnorderedSet<ComponentRef> outputs_set;
   algorithm
-    _ := match exp
+    () := match exp
       local
         ComponentRef cr;
         Type ty;

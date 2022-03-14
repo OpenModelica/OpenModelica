@@ -193,12 +193,13 @@ public
       // if a zero derivative is required but the argument is not in the map
       // this function derivative cannot be used
       if cond == Condition.ZERO_DERIVATIVE and not UnorderedMap.contains(name, interface_map) then
-        b := false; return;
+        b := false;
+        return;
       end if;
     end for;
-    // if the function derivative is a perfect fit, add all conditions to the interface
+    // the function derivative is a perfect fit, add all conditions to the interface
     for condition in fnDer.conditions loop
-      (_, name, cond) := condition;
+      (_, name, _) := condition;
       UnorderedMap.add(name, true, interface_map);
     end for;
   end perfectFit;

@@ -266,7 +266,7 @@ algorithm
     then (whenEquation, vars1, eqns1, index, ht);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Equations failed"});
+      Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;
 end encapsulateWhenConditions_Equations;
@@ -443,7 +443,7 @@ algorithm
     then (stmt::stmts, {}, index);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Algorithms failed"});
+      Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;
 end encapsulateWhenConditions_Algorithms;
@@ -509,7 +509,7 @@ algorithm
     then (condition, {var}, {stmt}, inIndex+1);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Algorithms1 failed"});
+      Error.addInternalError(getInstanceName() + " failed.", sourceInfo());Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;
 end encapsulateWhenConditions_Algorithms1;
@@ -1562,7 +1562,7 @@ algorithm
     then (res2, index);
 
     else equation
-      Error.addInternalError("function replaceIteratorWithStaticValues failed", sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;
 end replaceIteratorWithStaticValues;
@@ -1604,7 +1604,7 @@ algorithm
       then (relation, index+2);
 
     else equation
-      Error.addInternalError("function zcIndex failed for: " + ExpressionDump.printExpStr(relation), sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed for: " + ExpressionDump.printExpStr(relation), sourceInfo());
     then fail();
   end match;
 end zcIndex;
@@ -1646,7 +1646,7 @@ algorithm
       then (rel, index);
 
     else equation
-      Error.addInternalError("function zcIndex failed for: " + ExpressionDump.printExpStr(relation), sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed for: " + ExpressionDump.printExpStr(relation), sourceInfo());
     then fail();
   end match;
 end zcIndexRelation;
@@ -1726,7 +1726,7 @@ algorithm
     then inZCexp2;
 
     else equation
-      Error.addInternalError("function getMinZeroCrossings failed for {" + ExpressionDump.printExpStr(inZCexp1) + "} and {" + ExpressionDump.printExpStr(inZCexp2) + "}", sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed for {" + ExpressionDump.printExpStr(inZCexp1) + "} and {" + ExpressionDump.printExpStr(inZCexp2) + "}", sourceInfo());
     then fail();
   end match;
 end getMinZeroCrossings;
@@ -1822,22 +1822,21 @@ algorithm
       case DAE.STMT_TERMINATE() then (stmt, extraArg);
       case DAE.STMT_REINIT() then (stmt, extraArg);
 
-      case (DAE.STMT_NORETCALL(exp=e, source=source)) equation
+      case DAE.STMT_NORETCALL(exp=e, source=source) equation
         (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
       then (DAE.STMT_NORETCALL(e_1, source), extraArg);
 
       case DAE.STMT_RETURN() then (stmt, extraArg);
-      case (x as DAE.STMT_BREAK()) then (stmt, extraArg);
+      case DAE.STMT_BREAK() then (stmt, extraArg);
 
       // MetaModelica extension. KS
       case DAE.STMT_FAILURE(body=stmts, source=source) equation
         (stmts2, extraArg) = traverseStmtsExps(stmts, extraArg, inKnvars);
       then (DAE.STMT_FAILURE(stmts2, source), extraArg);
 
-      else
-        algorithm
-          Error.addInternalError("function traverseStmtsExps failed: " + DAEDump.ppStatementStr(stmt), sourceInfo());
-        then fail();
+      else algorithm
+        Error.addInternalError(getInstanceName() + " failed: " + DAEDump.ppStatementStr(stmt), sourceInfo());
+      then fail();
     end match;
 
     slist := stmt :: slist;
@@ -1905,7 +1904,7 @@ algorithm
     then (statementLst, extraArg);
 
     else equation
-      Error.addInternalError("function traverseStmtsForExps failed", sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;
 end traverseStmtsForExps;
