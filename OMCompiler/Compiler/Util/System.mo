@@ -172,6 +172,8 @@ public function tolower
 end tolower;
 
 public function strtok
+"Break string into a series of tokens using the delimiter token.
+ See strtok from C standard."
   input String string;
   input String token;
   output list<String> strings;

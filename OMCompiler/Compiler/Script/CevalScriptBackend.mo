@@ -3570,9 +3570,9 @@ algorithm
   end if;
 
   // Remove old log file
-  //if System.regularFileExists(logfile) then
-  //  System.removeFile(logfile);
-  //end if;
+  if System.regularFileExists(logfile) then
+    System.removeFile(logfile);
+  end if;
 
   _ := match Util.stringSplitAtChar(platform, " ")
     local
@@ -3612,16 +3612,15 @@ algorithm
         // TODO: Move log file outside of fmutmp
         dockerLogFile := System.realpath(crossTriple + ".tmp.log");
 
-
         // Create a docker volume for the FMU since we can't forward volumes
         // to the docker run command depending on where the FMU was generated (inside another volume)
         cmd := "docker volume create";
         runDockerCmd(cmd, dockerLogFile);
+        volumeID := List.last(System.strtok(System.readFile(dockerLogFile), "\n"));
 
         if System.regularFileExists(cidFile) then
           System.removeFile(cidFile);
         end if;
-        volumeID := System.trim(System.readFile(dockerLogFile));
         cmd := "docker run --cidfile " + cidFile + " -v " + volumeID + ":/data busybox true";
         runDockerCmd(cmd, dockerLogFile, true, volumeID, "");
 
@@ -3668,19 +3667,9 @@ algorithm
         System.systemCall("docker rm " + containerID);
         System.systemCall("docker volume rm " + volumeID);
 
-        // TODO: Copy log file into resources directory
-        print("AHeu1: Copy \"" + dockerLogFile + "\" to \"" + logfile + "\"\n");
-        if not System.copyFile(dockerLogFile, logfile) then
-          print("AHeu2: Failed to copy CMake build log file into resources folder");
-          fail();
-        end if;
-        if not System.regularFileExists(logfile) then
-          print("AHeu3: This is stupid\n");
-          fail();
-        else
-          print("AHeu4: The file is there\n");
-        end if;
-        //System.removeFile(dockerLogFile);
+        // Copy log file into resources directory
+        System.copyFile(dockerLogFile, logfile);
+        System.removeFile(dockerLogFile);
         then();
     else
       algorithm
@@ -3697,8 +3686,9 @@ protected function runDockerCmd
   input String volumeID = "";
   input String containerID = "";
 protected
-  Boolean verbose = true;
+  Boolean verbose = false;
 algorithm
+  System.appendFile(logfile, cmd + "\n");
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
 
@@ -3713,7 +3703,7 @@ algorithm
 
     fail();
   elseif verbose then
-      print(cmd + "\n" + System.readFile(logfile) +"\n");
+      print(System.readFile(logfile) +"\n");
   end if;
 end runDockerCmd;
 

@@ -4,8 +4,7 @@
 # all cross-compilation targets (including OSX)
 # fmuCheck.linux32 fmuCheck.linux64 fmuCheck.win32.exe fmuCheck.win64.exe
 
-#OMC=../../../build/bin/omc
-OMC=../../../install_cmake/bin/omc
+OMC=../../../build/bin/omc
 
 test: clean
 	$(MAKE) fmuExportCrossCompile

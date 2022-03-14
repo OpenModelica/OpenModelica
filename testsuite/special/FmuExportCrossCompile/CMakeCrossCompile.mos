@@ -16,6 +16,6 @@ system("rm -rf CMakeCrossCompile && mkdir CMakeCrossCompile", "CMakeCrossCompile
 cd("CMakeCrossCompile"); getErrorString();
 
 // Build FMU
-setCommandLineOptions("--fmuCMakeBuild=true"); getErrorString();
+setCommandLineOptions("--fmuCMakeBuild=true --fmiFilter=none"); getErrorString();
 buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", platforms=platforms); getErrorString();
 
