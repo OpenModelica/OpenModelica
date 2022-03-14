@@ -182,13 +182,9 @@ static fmi2Boolean vrOutOfRange(ModelInstance *comp, const char *func, fmi2Value
   return fmi2False;
 }
 
-static fmi2Status unsupportedFunction(fmi2Component c, const char *fName, int statesExpected)
+static fmi2Status unsupportedFunction(ModelInstance *comp, const char *func)
 {
-  ModelInstance *comp = (ModelInstance *)c;
-  fmi2CallbackLogger log = comp->functions->logger;
-  if (invalidState(comp, fName, statesExpected, ~0))
-    return fmi2Error;
-  FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Function not implemented.", fName)
+  FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "%s: Function not implemented.", func)
   return fmi2Error;
 }
 
@@ -565,7 +561,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   memcpy((void*)comp->functions, (void*)functions, sizeof(fmi2CallbackFunctions));
   comp->componentEnvironment = functions->componentEnvironment;
   comp->loggingOn = loggingOn;
-  comp->state = modelInstantiated;
+  comp->state = isCoSimulation(comp) ? model_state_cs_instantiated : model_state_me_instantiated;
 
   /* Add the resourcesDir */
   fmuResourceLocation = OpenModelica_parseFmuResourcePath(fmuResourceLocation);
@@ -675,8 +671,8 @@ void fmi2FreeInstance(fmi2Component c)
   ModelInstance *comp = (ModelInstance *)c;
   fmi2CallbackFreeMemory freeMemory = comp->functions->freeMemory;
 
-  int meStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
-  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
+  int meStates = model_state_me_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
+  int csStates = model_state_cs_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
 
   if (invalidState(comp, "fmi2FreeInstance", meStates, csStates))
     return;
@@ -763,7 +759,7 @@ void fmi2FreeInstance(fmi2Component c)
 fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fmi2Real tolerance, fmi2Real startTime, fmi2Boolean stopTimeDefined, fmi2Real stopTime)
 {
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2SetupExperiment", modelInstantiated, ~0))
+  if (invalidState(comp, "fmi2SetupExperiment", model_state_me_instantiated, ~0))
     return fmi2Error;
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetupExperiment: toleranceDefined=%d tolerance=%g startTime=%g stopTimeDefined=%d stopTime=%g", toleranceDefined, tolerance,
@@ -781,7 +777,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c)
 {
   ModelInstance *comp = (ModelInstance *)c;
 
-  if (invalidState(comp, "fmi2EnterInitializationMode", modelInstantiated, ~0))
+  if (invalidState(comp, "fmi2EnterInitializationMode", model_state_me_instantiated, ~0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode...")
 
@@ -894,7 +890,7 @@ fmi2Status fmi2Terminate(fmi2Component c)
 fmi2Status fmi2Reset(fmi2Component c)
 {
   ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2Reset", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
+  if (invalidState(comp, "fmi2Reset", model_state_me_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Reset")
 
@@ -964,7 +960,7 @@ fmi2Status fmi2Reset(fmi2Component c)
   }
 
   comp->_need_update = 1;
-  comp->state = modelInstantiated;
+  comp->state = isCoSimulation(comp) ? model_state_cs_instantiated : model_state_me_instantiated;
   resetThreadData(comp);
   return fmi2OK;
 }
@@ -1092,8 +1088,8 @@ fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
 {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  int meStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
-  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  int meStates = model_state_me_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  int csStates = model_state_cs_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
 
   if (invalidState(comp, "fmi2SetReal", meStates, csStates))
     return fmi2Error;
@@ -1119,8 +1115,8 @@ fmi2Status fmi2SetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
 {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
-  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  int meStates = model_state_me_instantiated|modelInitializationMode|modelEventMode;
+  int csStates = model_state_cs_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
 
   if (invalidState(comp, "fmi2SetInteger", meStates, csStates))
     return fmi2Error;
@@ -1145,8 +1141,8 @@ fmi2Status fmi2SetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
 fmi2Status fmi2SetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Boolean value[]) {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
-  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  int meStates = model_state_me_instantiated|modelInitializationMode|modelEventMode;
+  int csStates = model_state_cs_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
 
   if (invalidState(comp, "fmi2SetBoolean", meStates, csStates))
     return fmi2Error;
@@ -1172,8 +1168,8 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
 {
   int i, n;
   ModelInstance *comp = (ModelInstance *)c;
-  int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
-  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  int meStates = model_state_me_instantiated|modelInitializationMode|modelEventMode;
+  int csStates = model_state_cs_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
 
   if (invalidState(comp, "fmi2SetString", meStates, csStates))
     return fmi2Error;
@@ -1197,32 +1193,32 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
 
 fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
-  return unsupportedFunction(c, "fmi2GetFMUstate", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+  return unsupportedFunction((ModelInstance *)c, "fmi2GetFMUstate");
 }
 
 fmi2Status fmi2SetFMUstate(fmi2Component c, fmi2FMUstate FMUstate)
 {
-  return unsupportedFunction(c, "fmi2SetFMUstate", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+  return unsupportedFunction((ModelInstance *)c, "fmi2SetFMUstate");
 }
 
 fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
-  return unsupportedFunction(c, "fmi2FreeFMUstate", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+  return unsupportedFunction((ModelInstance *)c, "fmi2FreeFMUstate");
 }
 
 fmi2Status fmi2SerializedFMUstateSize(fmi2Component c, fmi2FMUstate FMUstate, size_t *size)
 {
-  return unsupportedFunction(c, "fmi2SerializedFMUstateSize", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+  return unsupportedFunction((ModelInstance *)c, "fmi2SerializedFMUstateSize");
 }
 
 fmi2Status fmi2SerializeFMUstate(fmi2Component c, fmi2FMUstate FMUstate, fmi2Byte serializedState[], size_t size)
 {
-  return unsupportedFunction(c, "fmi2SerializeFMUstate", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+  return unsupportedFunction((ModelInstance *)c, "fmi2SerializeFMUstate");
 }
 
 fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedState[], size_t size, fmi2FMUstate* FMUstate)
 {
-  return unsupportedFunction(c, "fmi2DeSerializeFMUstate", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+  return unsupportedFunction((ModelInstance *)c, "fmi2DeSerializeFMUstate");
 }
 
 fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
@@ -1237,7 +1233,7 @@ fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
   threadData_t* td = comp->threadData;
 
   if (!comp->_has_jacobian_intialization)
-    return unsupportedFunction(comp, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+    return unsupportedFunction(comp, "fmi2GetDirectionalDerivative");
 
   /***************************************/
   /* This code assumes that the FMU variables are always sorted,
@@ -1324,7 +1320,7 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
   }
 
   if (!comp->_has_jacobian)
-    return unsupportedFunction(c, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
+    return unsupportedFunction(comp, "fmi2GetDirectionalDerivative");
   /***************************************/
   /* This code assumes that the FMU variables are always sorted,
      states first and then derivatives.
@@ -1916,37 +1912,37 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 fmi2Status fmi2CancelStep(fmi2Component c)
 {
   // TODO Write code here
-  return unsupportedFunction(c, "fmi2CancelStep", ~0);
+  return unsupportedFunction((ModelInstance *)c, "fmi2CancelStep");
 }
 
 fmi2Status fmi2GetStatus(fmi2Component c, const fmi2StatusKind s, fmi2Status* value)
 {
   // TODO Write code here
-  return unsupportedFunction(c, "fmi2GetStatus", ~0);
+  return unsupportedFunction((ModelInstance *)c, "fmi2GetStatus");
 }
 
 fmi2Status fmi2GetRealStatus(fmi2Component c, const fmi2StatusKind s, fmi2Real* value)
 {
   // TODO Write code here
-  return unsupportedFunction(c, "fmi2GetRealStatus", ~0);
+  return unsupportedFunction((ModelInstance *)c, "fmi2GetRealStatus");
 }
 
 fmi2Status fmi2GetIntegerStatus(fmi2Component c, const fmi2StatusKind s, fmi2Integer* value)
 {
   // TODO Write code here
-  return unsupportedFunction(c, "fmi2GetIntegerStatus", ~0);
+  return unsupportedFunction((ModelInstance *)c, "fmi2GetIntegerStatus");
 }
 
 fmi2Status fmi2GetBooleanStatus(fmi2Component c, const fmi2StatusKind s, fmi2Boolean* value)
 {
   // TODO Write code here
-  return unsupportedFunction(c, "fmi2GetBooleanStatus", ~0);
+  return unsupportedFunction((ModelInstance *)c, "fmi2GetBooleanStatus");
 }
 
 fmi2Status fmi2GetStringStatus(fmi2Component c, const fmi2StatusKind s, fmi2String* value)
 {
   // TODO Write code here
-  return unsupportedFunction(c, "fmi2GetStringStatus", ~0);
+  return unsupportedFunction((ModelInstance *)c, "fmi2GetStringStatus");
 }
 
 // ---------------------------------------------------------------------------
