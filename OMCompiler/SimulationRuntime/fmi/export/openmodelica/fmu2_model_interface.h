@@ -60,16 +60,6 @@ extern "C" {
 #define NUMBER_OF_CATEGORIES 11
 
 typedef enum {
-  modelInstantiated       = 1<<0, /* ME and CS */
-  modelInitializationMode = 1<<1, /* ME and CS */
-  modelContinuousTimeMode = 1<<2, /* ME only */
-  modelEventMode          = 1<<3, /* ME only */
-  modelSlaveInitialized   = 1<<4, /* CS only */
-  modelTerminated         = 1<<5, /* ME and CS */
-  modelError              = 1<<6  /* ME and CS */
-} ModelState;
-
-typedef enum {
   model_state_cs_start_end           = 1<<0,
   model_state_cs_instantiated        = 1<<1,
   model_state_cs_initialization_mode = 1<<2,
