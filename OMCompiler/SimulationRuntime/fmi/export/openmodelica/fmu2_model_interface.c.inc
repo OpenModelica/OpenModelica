@@ -1306,7 +1306,7 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
   int independent = modelData->nStates+modelData->nInputVars;
   int dependent = modelData->nStates+modelData->nOutputVars;
 
-  if (invalidState(comp, "fmi2GetDirectionalDerivative", modelInstantiated|modelEventMode|modelContinuousTimeMode, ~0))
+  if (invalidState(comp, "fmi2GetDirectionalDerivative", model_state_me_instantiated|modelEventMode|modelContinuousTimeMode, ~0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDirectionalDerivative")
 
@@ -1478,7 +1478,7 @@ fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStat
 fmi2Status fmi2SetTime(fmi2Component c, fmi2Real t)
 {
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2SetTime", modelInstantiated|modelEventMode|modelContinuousTimeMode, ~0))
+  if (invalidState(comp, "fmi2SetTime", model_state_me_instantiated|modelEventMode|modelContinuousTimeMode, ~0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetTime: time=%.16g", t)
   comp->fmuData->localData[0]->timeValue = t;
@@ -1493,7 +1493,7 @@ fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t n
   /* According to FMI RC2 specification fmi2SetContinuousStates should only be allowed in Continuous-Time Mode.
    * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call fmi2SetContinuousStates after fmi2EnterInitializationMode.
    */
-  if (invalidState(comp, "fmi2SetContinuousStates", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode, ~0))
+  if (invalidState(comp, "fmi2SetContinuousStates", model_state_me_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode, ~0))
   /*if (invalidState(comp, "fmi2SetContinuousStates", modelContinuousTimeMode))*/
     return fmi2Error;
   if (invalidNumber(comp, "fmi2SetContinuousStates", "nx", nx, NUMBER_OF_STATES))
@@ -1564,7 +1564,7 @@ fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], s
   /* According to FMI RC2 specification fmi2GetEventIndicators should only be allowed in Event Mode, Continuous-Time Mode & terminated.
    * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call fmi2GetEventIndicators after fmi2EnterInitializationMode.
    */
-  if (invalidState(comp, "fmi2GetEventIndicators", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
+  if (invalidState(comp, "fmi2GetEventIndicators", model_state_me_instantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
   /*if (invalidState(comp, "fmi2GetEventIndicators", modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))*/
     return fmi2Error;
   if (invalidNumber(comp, "fmi2GetEventIndicators", "nx", nx, NUMBER_OF_EVENT_INDICATORS))
@@ -1623,7 +1623,7 @@ fmi2Status fmi2GetNominalsOfContinuousStates(fmi2Component c, fmi2Real x_nominal
 {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2GetNominalsOfContinuousStates", modelInstantiated|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
+  if (invalidState(comp, "fmi2GetNominalsOfContinuousStates", model_state_me_instantiated|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
     return fmi2Error;
   if (invalidNumber(comp, "fmi2GetNominalsOfContinuousStates", "nx", nx, NUMBER_OF_STATES))
     return fmi2Error;
@@ -1953,7 +1953,7 @@ fmi2Status fmi2SetExternalFunction(fmi2Component c, fmi2ValueReference vr[], siz
 {
   unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2Terminate", modelInstantiated, ~0))
+  if (invalidState(comp, "fmi2Terminate", model_state_me_instantiated, ~0))
     return fmi2Error;
   if (nvr>0 && nullPointer(comp, "fmi2SetExternalFunction", "vr[]", vr))
     return fmi2Error;
