@@ -70,6 +70,7 @@ public
   import BackendUtil = NBBackendUtil;
   import BaseHashTable;
   import ExpandableArray;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
 
@@ -77,10 +78,15 @@ public
   constant String START_STR       = "SRT";
   constant String PRE_STR         = "PRE";
 
-  type EquationPointer = Pointer<Equation>                                    "mainly used for mapping purposes";
-  type Frame = tuple<ComponentRef, Expression>                                "iterator-like tuple for array handling";
-  type FrameLocation = tuple<array<Integer>, Frame>                           "sliced frame at specific sub locations";
-  type SlicingStatus = enumeration(UNCHANGED, TRIVIAL, NONTRIVIAL, FAILURE);
+  type EquationPointer = Pointer<Equation> "mainly used for mapping purposes";
+
+  // used to process different outcomes of slicing from Util/Slice.mo
+  // have to be defined here and not in Util/Slice.mo because it is a uniontype and not a package
+  type Frame                = tuple<ComponentRef, Expression>                       "iterator-like tuple for array handling";
+  type FrameLocation        = tuple<array<Integer>, Frame>                          "sliced frame at specific sub locations";
+  type SlicingStatus        = enumeration(UNCHANGED, TRIVIAL, NONTRIVIAL, FAILURE)  "final result of slicing";
+  type RecollectStatus      = enumeration(SUCCESS, FAILURE)                         "result of sub-routine recollect";
+  type FrameOrderingStatus  = enumeration(UNCHANGED, CHANGED, FAILURE)              "result of sub-routine frame ordering";
 
   partial function MapFuncExp
     input output Expression e;
@@ -1551,7 +1557,7 @@ public
       list<array<Integer>> locations_T;
       list<FrameLocation> frame_locations;
       list<tuple<Integer, Integer, Integer>> ranges;
-      BackendUtil.FrameOrderingStatus frame_status;
+      FrameOrderingStatus frame_status;
     algorithm
       eqn := Pointer.access(eqn_ptr);
       (eqn_ptr, slicing_status, solve_status) := match eqn
@@ -1574,17 +1580,17 @@ public
           // trivial slices replace the original equation entirely
           slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
 
-          locations                                       := list(BackendUtil.indexToLocation(idx, sizes) for idx in indices);
-          locations_T                                     := BackendUtil.transposeLocations(locations, listLength(sizes));
+          locations                                       := list(Slice.indexToLocation(idx, sizes) for idx in indices);
+          locations_T                                     := Slice.transposeLocations(locations, listLength(sizes));
           frames                                          := listReverse(getForFrames(eqn));
           frame_locations                                 := List.zip(locations_T, frames);
-          (frame_locations, replacements, frame_status)   := BackendUtil.orderTransposedFrameLocations(frame_locations);
-          if frame_status == NBBackendUtil.FrameOrderingStatus.FAILURE then
+          (frame_locations, replacements, frame_status)   := Slice.orderTransposedFrameLocations(frame_locations);
+          if frame_status == FrameOrderingStatus.FAILURE then
             slicing_status  := SlicingStatus.FAILURE;
             solve_status    := NBSolve.Status.UNPROCESSED;
             return;
           end if;
-          (frames, removed_diagonals_opt)                 := BackendUtil.recollectRangesHeuristic(frame_locations);
+          (frames, removed_diagonals_opt)                 := Slice.recollectRangesHeuristic(frame_locations);
 
           // solve the body equation for the cref if needed
           // ToDo: act on solving status not equal to EXPLICIT ?
@@ -1658,7 +1664,7 @@ public
             (sliced_eqn, funcTree, _, _) := Solve.solveEquation(List.first(eqn.body), cref_to_solve, funcTree);
           end if;
           // get the frame location indices from single index
-          location := BackendUtil.indexToLocation(scal_idx, sizes);
+          location := Slice.indexToLocation(scal_idx, sizes);
           // create the replacement rules for this location
           Iterator.createSingleReplacements(eqn.iter, listArray(location), replacements);
           // replace iterators

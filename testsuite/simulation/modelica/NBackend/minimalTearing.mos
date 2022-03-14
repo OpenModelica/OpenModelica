@@ -51,24 +51,20 @@ simulate(minimalTearing); getErrorString();
 //
 //
 // ========================================
-// Sparsity Pattern (nnz: 8)
+// Sparsity Pattern (nnz: 1)
 // ========================================
 //
 // ### Columns ###
 // ----------------------------------------
-// ($SEV_0)	 affects:	{$RES_SIM_0,y,$SEV_0}
-// (i)	 affects:	{$RES_SIM_0,y,$SEV_0,i}
 // (y)	 affects:	{$RES_SIM_0}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_0)	 depends on:	{y,$SEV_0,i}
+// ($RES_SIM_0)	 depends on:	{y}
 //
 // Sparsity Coloring Groups
 // ----------------------------------------
 // {y}
-// {i}
-// {$SEV_0}
 //
 // ################################################################################
 //
@@ -99,24 +95,20 @@ simulate(minimalTearing); getErrorString();
 //
 //
 // ========================================
-// Sparsity Pattern (nnz: 8)
+// Sparsity Pattern (nnz: 1)
 // ========================================
 //
 // ### Columns ###
 // ----------------------------------------
-// ($SEV_0)	 affects:	{$RES_SIM_0,y,$SEV_0}
-// (i)	 affects:	{$RES_SIM_0,y,$SEV_0,i}
 // (y)	 affects:	{$RES_SIM_0}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_0)	 depends on:	{y,$SEV_0,i}
+// ($RES_SIM_0)	 depends on:	{y}
 //
 // Sparsity Coloring Groups
 // ----------------------------------------
 // {y}
-// {i}
-// {$SEV_0}
 //
 // record SimulationResult
 //     resultFile = "minimalTearing_res.mat",

@@ -70,6 +70,7 @@ protected
   import AvlSetPath;
   import StringUtil;
   import UnorderedMap;
+  import UnorderedSet;
   import Util;
 
 public
@@ -385,8 +386,9 @@ public
       sparsityPattern := match strongComponents
         local
           array<StrongComponent> comps;
-          list<ComponentRef> seed_vars, partial_vars, tmp;
+          list<ComponentRef> seed_vars, seed_vars_array, partial_vars, tmp;
           UnorderedMap<ComponentRef, list<ComponentRef>> map;
+          UnorderedSet<ComponentRef> set;
           list<SparsityPatternCol> cols = {};
           list<SparsityPatternRow> rows = {};
           Integer nnz = 0;
@@ -396,20 +398,26 @@ public
 
         case SOME(comps) algorithm
           // get all relevant crefs
-          partial_vars := VariablePointers.getVarNames(partialCandidates);
-          seed_vars := VariablePointers.getVarNames(seedCandidates);
+          partial_vars      := VariablePointers.getVarNames(VariablePointers.scalarize(partialCandidates));
+          seed_vars         := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
+          // unscalarized seed vars are currently needed for sparsity pattern
+          seed_vars_array  := VariablePointers.getVarNames(seedCandidates);
 
           // create a sufficiant big unordered map
           map := UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars) + listLength(partial_vars)));
+          set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars_array)));
 
-          // save all relevant crefs to know later on if a cref should be added
+          // save all seed_vars to know later on if a cref should be added
           for cref in seed_vars loop
             UnorderedMap.add(cref, {}, map);
+          end for;
+          for cref in seed_vars_array loop
+            UnorderedSet.add(cref, set);
           end for;
 
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
-            StrongComponent.getDependentCrefs(comps[i], map, not partialCandidates.scalarized, jacType);
+            StrongComponent.collectCrefs(comps[i], map, set, not partialCandidates.scalarized, jacType);
           end for;
 
           // create row-wise sparsity pattern
