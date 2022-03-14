@@ -51,7 +51,7 @@ encapsulated package Flags
 
   To add a new flag, simply add a new constant of either DebugFlag or ConfigFlag
   type below, and then add it to either the allDebugFlags or allConfigFlags list
-  (in FlagsUtilmo),  depending on which type it is.
+  (in FlagsUtil.mo),  depending on which type it is.
   "
 
 public
@@ -1360,8 +1360,8 @@ constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(141, "fmiFlags", NONE(), EXTERNAL(),
   STRING_LIST_FLAG({}), NONE(),
   Gettext.gettext("Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json."));
 
-constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(142, "fmuCMakeBuild", NONE(), EXTERNAL(),
-  STRING_FLAG("default"),
+constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(142, "fmuCMakeBuild",
+  NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
     ("default", Gettext.notrans("Let omc decide if CMake should be used.")),
     ("true", Gettext.notrans("Use CMake to compile FMU binaries.")),
@@ -1418,7 +1418,7 @@ constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(150, "dumpFlatModel",
   })),
   Gettext.gettext("Dumps the flat model at the given stages of the frontend."));
 
-constant ConfigFlag SIMULATION = CONFIG_FLAG(150, "simulation",
+constant ConfigFlag SIMULATION = CONFIG_FLAG(151, "simulation",
   SOME("u"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Simulates the last model in the given Modelica file."));
 
