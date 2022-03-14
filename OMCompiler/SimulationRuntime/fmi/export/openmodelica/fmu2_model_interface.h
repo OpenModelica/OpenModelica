@@ -60,18 +60,18 @@ extern "C" {
 #define NUMBER_OF_CATEGORIES 11
 
 typedef enum {
-  model_state_start_end               = 1<<0,
-  model_state_instantiated            = 1<<1,
-  model_state_initialization_mode     = 1<<2,
-  model_state_cs_step_complete        = 1<<3,
-  model_state_cs_step_in_progress     = 1<<4,
-  model_state_cs_step_failed          = 1<<5,
-  model_state_cs_step_canceled        = 1<<6,
-  model_state_me_event_mode           = 1<<7,
-  model_state_me_continuous_time_mode = 1<<8,
-  model_state_terminated              = 1<<9,
-  model_state_error                   = 1<<10,
-  model_state_fatal                   = 1<<11,
+  model_state_start_end               = 1<<0,  /* ME and CS */
+  model_state_instantiated            = 1<<1,  /* ME and CS */
+  model_state_initialization_mode     = 1<<2,  /* ME and CS */
+  model_state_cs_step_complete        = 1<<3,  /* CS only */
+  model_state_cs_step_in_progress     = 1<<4,  /* CS only */
+  model_state_cs_step_failed          = 1<<5,  /* CS only */
+  model_state_cs_step_canceled        = 1<<6,  /* CS only */
+  model_state_me_event_mode           = 1<<7,  /* ME only */
+  model_state_me_continuous_time_mode = 1<<8,  /* ME only */
+  model_state_terminated              = 1<<9,  /* ME and CS */
+  model_state_error                   = 1<<10, /* ME and CS */
+  model_state_fatal                   = 1<<11  /* ME and CS */
 } ModelState;
 
 typedef struct {
