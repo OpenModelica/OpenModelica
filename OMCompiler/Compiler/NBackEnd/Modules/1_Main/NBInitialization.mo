@@ -208,7 +208,8 @@ public
       merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name);
     else
       // just apply subscripts and make start var
-      merged_name := ComponentRef.mergeSubscripts(subscripts, name);
+      name := ComponentRef.mergeSubscripts(subscripts, name);
+      merged_name := name;
     end if;
     (start_name, start_var) := BVariable.makeStartVar(merged_name);
   end createStartVar;
@@ -266,7 +267,7 @@ public
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
     frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
     (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, subscripts);
-    start_eq := BEquation.Equation.makeEq(name, start_name, idx, NBEquation.START_STR, frames);
+    start_eq := Equation.makeEq(name, start_name, idx, NBEquation.START_STR, frames);
     if not listEmpty(state.indices) then
       // empty list indicates full array, slice otherwise
       (start_eq, _, _) := Equation.slice(start_eq, state.indices, NONE(), FunctionTreeImpl.EMPTY());

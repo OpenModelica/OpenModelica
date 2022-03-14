@@ -21,7 +21,7 @@ simulate(underdetermined_init); getErrorString();
 // true
 // Created State Start Equations:
 // ****************************************
-// 	[SIMP] (1) x = $START.x ($RES_SRT_2)
+// 	[SCAL] (1) x = $START.x ($RES_SRT_2)
 //
 // ################################################################################
 //

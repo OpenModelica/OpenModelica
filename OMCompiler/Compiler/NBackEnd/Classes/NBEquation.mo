@@ -637,10 +637,10 @@ public
             recordSize  = NONE()
           ));
         else
-          eq := Pointer.create(SIMPLE_EQUATION(
+          eq := Pointer.create(SCALAR_EQUATION(
             ty      = ty,
-            lhs     = lhs,
-            rhs     = rhs,
+            lhs     = Expression.fromCref(lhs),
+            rhs     = Expression.fromCref(rhs),
             source  = DAE.emptyElementSource,
             attr    = EQ_ATTR_DEFAULT_INITIAL
           ));
@@ -649,7 +649,7 @@ public
         eq := Pointer.create(FOR_EQUATION(
           ty      = ComponentRef.nodeType(lhs),
           iter    = Iterator.fromFrames(frames),
-          body    = {SIMPLE_EQUATION(ty, lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL)}, // this can also be an array?
+          body    = {SCALAR_EQUATION(ty, Expression.fromCref(lhs), Expression.fromCref(rhs), DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL)}, // this can also be an array?
           source  = DAE.emptyElementSource,
           attr    = EQ_ATTR_DEFAULT_INITIAL
         ));
@@ -2660,8 +2660,8 @@ public
             if level == 0 then
               tmp :=  EquationPointers.toString(eqData.equations, "Jacobian", false);
             else
-              tmp :=  EquationPointers.toString(eqData.results, "Result", false) +
-                      EquationPointers.toString(eqData.temporary, "Temporary Inner", false) +
+              tmp :=  EquationPointers.toString(eqData.results, "Residual", false) +
+                      EquationPointers.toString(eqData.temporary, "Inner", false) +
                       EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
             end if;
         then tmp;

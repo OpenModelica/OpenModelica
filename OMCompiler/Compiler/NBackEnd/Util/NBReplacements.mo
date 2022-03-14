@@ -194,8 +194,7 @@ public
     input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
   algorithm
     exp := match exp
-      case Expression.CREF() guard(UnorderedMap.contains(exp.cref, replacements))
-      then UnorderedMap.getSafe(exp.cref, replacements);
+      case Expression.CREF() then UnorderedMap.getOrDefault(exp.cref, replacements, exp);
       else exp;
     end match;
   end applySimpleExp;

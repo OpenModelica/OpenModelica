@@ -45,7 +45,16 @@ simulate(minimalTearing); getErrorString();
 // [NLS] Jacobian INI_NLS_JAC_1: NLS
 // ========================================
 //
-// Result Equations (1/1)
+// Partial Derivative Variables (1/1)
+// ****************************************
+// (1)       [JACV] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
+//
+// Seed Variables (1/1)
+// ****************************************
+// (1)       [SEED] (1) Real $SEED_INI_NLS_JAC_1.y
+//
+//
+// Residual Equations (1/1)
 // ****************************************
 // (1)       [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0 = -$SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_0)
 //
@@ -89,7 +98,16 @@ simulate(minimalTearing); getErrorString();
 // [NLS] Jacobian ODE_NLS_JAC_1: NLS
 // ========================================
 //
-// Result Equations (1/1)
+// Partial Derivative Variables (1/1)
+// ****************************************
+// (1)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
+//
+// Seed Variables (1/1)
+// ****************************************
+// (1)       [SEED] (1) Real $SEED_ODE_NLS_JAC_1.y
+//
+//
+// Residual Equations (1/1)
 // ****************************************
 // (1)       [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0 = -$SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_0)
 //

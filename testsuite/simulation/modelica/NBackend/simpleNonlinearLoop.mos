@@ -105,7 +105,18 @@ simulate(simpleNonlinearLoop); getErrorString();
 // [NLS] Jacobian ODE_NLS_JAC_1: NLS
 // ========================================
 //
-// Result Equations (2/2)
+// Partial Derivative Variables (2/2)
+// ****************************************
+// (1)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+// (2)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
+//
+// Seed Variables (2/2)
+// ****************************************
+// (1)       [SEED] (1) Real $SEED_ODE_NLS_JAC_1.x
+// (2)       [SEED] (1) Real $SEED_ODE_NLS_JAC_1.y
+//
+//
+// Residual Equations (2/2)
 // ****************************************
 // (1)       [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_ODE_NLS_JAC_1.x - $SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_0)
 // (2)       [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_ODE_NLS_JAC_1.y - $SEED_ODE_NLS_JAC_1.x ($RES_ODE_NLS_JAC_1_1)
@@ -157,7 +168,18 @@ simulate(simpleNonlinearLoop); getErrorString();
 // [NLS] Jacobian INI_NLS_JAC_1: NLS
 // ========================================
 //
-// Result Equations (2/2)
+// Partial Derivative Variables (2/2)
+// ****************************************
+// (1)       [JACV] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
+// (2)       [JACV] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_1
+//
+// Seed Variables (2/2)
+// ****************************************
+// (1)       [SEED] (1) Real $SEED_INI_NLS_JAC_1.y
+// (2)       [SEED] (1) Real $SEED_INI_NLS_JAC_1.x
+//
+//
+// Residual Equations (2/2)
 // ****************************************
 // (1)       [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_INI_NLS_JAC_1.y - $SEED_INI_NLS_JAC_1.x ($RES_INI_NLS_JAC_1_0)
 // (2)       [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_INI_NLS_JAC_1.x - $SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_1)

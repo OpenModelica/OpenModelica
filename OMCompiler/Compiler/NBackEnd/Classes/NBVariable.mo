@@ -1741,17 +1741,16 @@ public
         then tmp;
 
         case VAR_DATA_JAC() algorithm
-          tmp := StringUtil.headline_2("Variable Data Jacobian") + "\n" +
-            VariablePointers.toString(varData.unknowns, "Unknown", false) +
-            VariablePointers.toString(varData.knowns, "Known", false) +
-            VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
-            VariablePointers.toString(varData.aliasVars, "Alias", false);
+          tmp := VariablePointers.toString(varData.unknowns, "Partial Derivative", false) +
+            VariablePointers.toString(varData.seedVars, "Seed", false);
           if full then
             tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation", false) +
+              VariablePointers.toString(varData.resultVars, "Residual", false) +
+              VariablePointers.toString(varData.tmpVars, "Inner", false) +
               VariablePointers.toString(varData.dependencies, "Dependencies", false) +
-              VariablePointers.toString(varData.resultVars, "Result", false) +
-              VariablePointers.toString(varData.tmpVars, "Temporary", false) +
-              VariablePointers.toString(varData.seedVars, "Seed", false);
+              VariablePointers.toString(varData.knowns, "Known", false) +
+              VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
+              VariablePointers.toString(varData.aliasVars, "Alias", false);
           end if;
         then tmp;
 

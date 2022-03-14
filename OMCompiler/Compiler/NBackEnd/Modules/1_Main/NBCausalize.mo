@@ -224,6 +224,7 @@ protected
       case NBSystem.SystemType.INI algorithm
         (fixable, unfixable)    := List.splitOnTrue(VariablePointers.toList(system.unknowns), BVariable.isFixable);
         (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(system.equations), Equation.isInitial);
+        matching                := Matching.EMPTY_MATCHING();
 
         // #################################################
         // Phase I: match initial equations <-> unfixable vars
@@ -231,13 +232,14 @@ protected
         variables := VariablePointers.fromList(unfixable);
         equations := EquationPointers.fromList(initials);
         adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.SOLVABLE);
-        // do not resolve potential singular systems in Phase I! -> regular matching
-        matching := Matching.regular(Matching.EMPTY_MATCHING(), adj, true, true);
+        // do not resolve potential singular systems in Phase I or II! -> regular matching
+        matching := Matching.regular(matching, adj, true, true);
 
         // #################################################
         // Phase II: match all equations <-> unfixables
         // #################################################
         (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, {}, simulation);
+        // do not resolve potential singular systems in Phase I or II! -> regular matching
         matching := Matching.regular(matching, adj, true, true);
 
         // #################################################

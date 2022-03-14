@@ -303,6 +303,7 @@ public
     else
       str := match jacobian
         case BackendDAE.JACOBIAN() then StringUtil.headline_2(jacobianTypeString(jacobian.jacType) + " Jacobian " + jacobian.name + ": " + str)
+                                        + "\n" + BVariable.VarData.toString(jacobian.varData, 1)
                                         + "\n" + BEquation.EqData.toString(jacobian.eqData, 1)
                                         + "\n" + SparsityPattern.toString(jacobian.sparsityPattern, jacobian.sparsityColoring);
         else algorithm

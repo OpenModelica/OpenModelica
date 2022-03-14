@@ -669,7 +669,7 @@ public
       max_size := arrayLength(dim);
       if max_size == 1 then
         // if there is only one frame, it is a single equation at that exact point
-        frames := applyNewFrameRange(frame, (dim[1], 0, dim[1])) :: frames;
+        frames := applyNewFrameRange(frame, (dim[1], 1, dim[1])) :: frames;
         starts := dim[1] :: starts;
         steps := 0 :: steps;
         stops := dim[1] :: stops;
