@@ -3660,8 +3660,20 @@ algorithm
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
         // Copy the files back from the volume (via the container) to the filesystem
-        cmd := "docker cp " + containerID + ":/data/" + fmutmp + " .";
-        runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+        // Docker cp can't handle too long names on Windows
+        // Workaround: Zip it in the container, copy it to host, unzip it
+        if isWindows then
+          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + stringDelimitList(dockerImgArgs," ") +
+                 " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
+          runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+
+          cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
+          runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+          System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz");
+        else
+          cmd := "docker cp " + containerID + ":/data/" + fmutmp + "/ .";
+          runDockerCmd(cmd, dockerLogFile, cleanup=false, volumeID=volumeID, containerID=containerID);
+        end if;
 
         // Cleanup
         System.systemCall("docker rm " + containerID);
