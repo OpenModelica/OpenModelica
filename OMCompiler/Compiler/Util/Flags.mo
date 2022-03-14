@@ -1409,6 +1409,10 @@ constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(149, "dumpFlatModel",
   })),
   Gettext.gettext("Dumps the flat model at the given stages of the frontend."));
 
+constant ConfigFlag SIMULATION = CONFIG_FLAG(150, "simulation",
+  SOME("u"), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("Simulates the last model in the given Modelica file."));
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

@@ -102,6 +102,12 @@ algorithm
   outBoolean := Flags.getConfigBool(Flags.SIMULATION_CG);
 end simulationCg;
 
+public function simulation
+  output Boolean outBoolean;
+algorithm
+  outBoolean := Flags.getConfigBool(Flags.SIMULATION);
+end simulation;
+
 public function simulationCodeTarget
 "@author: adrpo
  returns: 'gcc' or 'msvc'

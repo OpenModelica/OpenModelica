@@ -1556,7 +1556,11 @@ primary returns [void* ast]
 #endif
 
       errno = 0;
+#if defined(_WIN64) || defined(__MINGW64__)
+      l = strtoll(chars,&endptr,10);
+#else
       l = strtol(chars,&endptr,10);
+#endif
 
 #if !defined(OMJULIA)
       args[0] = chars;

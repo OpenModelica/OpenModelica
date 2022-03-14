@@ -92,6 +92,17 @@ typedef int mmc_sint_t;
 
 #endif
 
+/* helpers for mmc_sint_t: printing / div */
+#if defined(_WIN64) || defined(__MINGW64__)
+#define modelica_div_integer lldiv
+#define OMC_INT_FORMAT_LEFT_JUSTIFIED "%-*lld"
+#define OMC_INT_FORMAT "%*lld"
+#else
+#define modelica_div_integer ldiv
+#define OMC_INT_FORMAT_LEFT_JUSTIFIED "%-*ld"
+#define OMC_INT_FORMAT "%*ld"
+#endif
+
 typedef double            m_real;
 typedef mmc_sint_t        m_integer;
 typedef modelica_metatype m_string;

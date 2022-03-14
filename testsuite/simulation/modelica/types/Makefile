@@ -1,7 +1,8 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-ComplexTypeEquationCount.mos 
+ComplexTypeEquationCount.mos \
+IntegerTest.mos
 
 
 # test that currently fail. Move up when fixed. 

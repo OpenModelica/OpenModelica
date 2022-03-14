@@ -554,7 +554,7 @@ protected
   Option<BackendDAE.InlineData> inlineData;
   list<BackendDAE.Equation> removedInitialEquationLst;
 algorithm
-  if Config.simulationCg() then
+  if Config.simulationCg() or Config.simulation() then
     info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), AbsynUtil.pathString(inClassName));
     dlow := BackendDAECreate.lower(dae, inCache, inEnv, info);
     (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow, "");
@@ -576,7 +576,7 @@ protected
   SimCode.SimulationSettings sim_settings;
   Integer intervals;
 algorithm
-  if Config.simulationCg() then
+  if Config.simulationCg() or Config.simulation() then
     Print.clearErrorBuf();
     Print.clearBuf();
     cname := AbsynUtil.pathString(inClassName);

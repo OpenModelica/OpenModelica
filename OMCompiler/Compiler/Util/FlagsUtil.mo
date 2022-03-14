@@ -404,7 +404,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION,
   Flags.LINK_TYPE,
   Flags.TEARING_ALWAYS_DERIVATIVES,
-  Flags.DUMP_FLAT_MODEL
+  Flags.DUMP_FLAT_MODEL,
+  Flags.SIMULATION
 };
 
 public function new
