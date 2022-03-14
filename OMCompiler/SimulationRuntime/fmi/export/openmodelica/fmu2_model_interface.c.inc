@@ -1076,8 +1076,8 @@ fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
   // - stepComplete (6) for a variable with causality = "input" or (causality = "parameter" and variability = "tunable")
   //
   // Model exchange
-  // - instantiated (1) for a variable with variability ≠ "constant" that has initial = "exact" or "approx"
-  // - initialization mode (3) for a variable with variability≠"constant" that has initial = "exact", or causality = "input"
+  // - instantiated (1) for a variable with variability != "constant" that has initial = "exact" or "approx"
+  // - initialization mode (3) for a variable with variability != "constant" that has initial = "exact", or causality = "input"
   // - event mode (4) for a variable with causality = "input", or (causality = "parameter" and variability = "tunable")
   // - continuous-time mode (5) for a variable with causality = "input" and variability = "continuous"
 
