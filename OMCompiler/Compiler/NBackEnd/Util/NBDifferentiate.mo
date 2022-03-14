@@ -689,8 +689,8 @@ public
             isCont := (diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.isContinuous(arg);
             isReal := Type.isRealRecursive(Expression.typeOf(arg)); // ToDo also records
             if not (isCont and isReal) then
-              // add to map; if it is not continuous also already set to true (always removed from interface)
-              UnorderedMap.add(InstNode.name(inp), not isCont, interface_map);
+              // add to map; if it is not Real also already set to true (always removed from interface)
+              UnorderedMap.add(InstNode.name(inp), not isReal, interface_map);
             end if;
           end for;
 
@@ -1016,6 +1016,7 @@ public
         FunctionDerivative funcDer;
         Function dummy_func;
         CachedData cachedData;
+        String der_func_name;
 
       case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
         new_cls := match Pointer.access(cls)
@@ -1037,9 +1038,10 @@ public
             // in the case of recursive differentiation (e.g. function calls itself)
             dummy_func    := func;
             node.cls      := Pointer.create(new_cls);
-            node.name     := NBVariable.FUNCTION_DERIVATIVE_STR + "." + node.name;
+            der_func_name := NBVariable.FUNCTION_DERIVATIVE_STR + intString(listLength(func.derivatives));
+            node.name     := der_func_name + "." + node.name;
             // create "fake" function from new node (update cache to get correct derivative name)
-            der_func.path := AbsynUtil.prefixPath(NBVariable.FUNCTION_DERIVATIVE_STR, der_func.path);
+            der_func.path := AbsynUtil.prefixPath(der_func_name, der_func.path);
             cachedData    := CachedData.FUNCTION({der_func}, true, false);
             der_func.node := InstNode.setFuncCache(node, cachedData);
 
@@ -1083,7 +1085,7 @@ public
           conditions            = {}, // possibly needs updating
           lowerOrderDerivatives = {}  // possibly needs updating
         );
-        func.derivatives := funcDer :: func.derivatives;
+        func.derivatives := List.appendElt(funcDer, func.derivatives);
         diffArguments.funcTree := FunctionTreeImpl.add(diffArguments.funcTree, func.path, func, FunctionTreeImpl.addConflictReplace);
       then der_func;
 
@@ -1093,7 +1095,7 @@ public
     end match;
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       print("\n[BEFORE] " + Function.toFlatString(func) + "\n");
-      print("\n[AFTER]  " + Function.toFlatString(der_func) + "\n\n");
+      print("\n[AFTER ] " + Function.toFlatString(der_func) + "\n\n");
     end if;
   end differentiateFunction;
 

@@ -775,12 +775,12 @@ uniontype Function
       annMod := SCodeUtil.filterSubMods(annMod,
         function SCodeUtil.removeGivenSubModNames(namesToRemove={"derivative", "inverse"}));
 
-      for derivative in fn.derivatives loop
+      for derivative in listReverse(fn.derivatives) loop
         annMod := SCodeUtil.prependSubModToMod(FunctionDerivative.toSubMod(derivative), annMod);
       end for;
 
-      for inverse in fn.inverses loop
-        annMod := SCodeUtil.prependSubModToMod(FunctionInverse.toSubMod(inverse), annMod);
+      for i in arrayLength(fn.inverses):-1:1 loop
+        annMod := SCodeUtil.prependSubModToMod(FunctionInverse.toSubMod(fn.inverses[i]), annMod);
       end for;
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
