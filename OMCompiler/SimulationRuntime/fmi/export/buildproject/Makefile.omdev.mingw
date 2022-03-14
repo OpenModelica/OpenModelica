@@ -7,4 +7,4 @@ default: install
 
 install:
 	mkdir -p $(PROJECTDIR)
-	cp -a configure.ac $(PROJECTDIR)/
+	cp -a configure.ac CMakeLists.txt.in $(PROJECTDIR)/
