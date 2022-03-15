@@ -40,6 +40,7 @@
 #include "PlotZoomer.h"
 #include "PlotPanner.h"
 #include "PlotPicker.h"
+#include "LinearScaleEngine.h"
 #include "ScaleDraw.h"
 #include "PlotCurve.h"
 
@@ -51,6 +52,7 @@ class PlotGrid;
 class PlotZoomer;
 class PlotPanner;
 class PlotPicker;
+class LinearScaleEngine;
 class ScaleDraw;
 class PlotCurve;
 
@@ -61,6 +63,8 @@ private:
   PlotWindow *mpParentPlotWindow;
   Legend *mpLegend;
   PlotGrid *mpPlotGrid;
+  LinearScaleEngine *mpXLinearScaleEngine;
+  LinearScaleEngine *mpYLinearScaleEngine;
   ScaleDraw *mpXScaleDraw;
   ScaleDraw *mpYScaleDraw;
   PlotZoomer *mpPlotZoomer;
@@ -78,6 +82,8 @@ public:
   Legend* getLegend();
   PlotPicker *getPlotPicker();
   PlotGrid* getPlotGrid();
+  LinearScaleEngine* getXLinearScaleEngine() const {mpXLinearScaleEngine;}
+  LinearScaleEngine* getYLinearScaleEngine() const {mpYLinearScaleEngine;}
   ScaleDraw *getXScaleDraw() const {return mpXScaleDraw;}
   ScaleDraw *getYScaleDraw() const {return mpYScaleDraw;}
   PlotZoomer* getPlotZoomer();

@@ -33,6 +33,7 @@
 
 #include <QtSvg/QSvgGenerator>
 #include "PlotWindow.h"
+#include "LinearScaleEngine.h"
 #include "iostream"
 #include "qwt_plot_layout.h"
 #if QWT_VERSION >= 0x060000
@@ -1806,7 +1807,7 @@ void PlotWindow::setLogX(bool on)
   }
   else
   {
-    mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
+    mpPlot->setAxisScaleEngine(QwtPlot::xBottom, mpPlot->getXLinearScaleEngine());
   }
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
   mpLogXCheckBox->blockSignals(true);
@@ -1827,7 +1828,7 @@ void PlotWindow::setLogY(bool on)
   }
   else
   {
-    mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
+    mpPlot->setAxisScaleEngine(QwtPlot::yLeft, mpPlot->getYLinearScaleEngine());
   }
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
   mpLogYCheckBox->blockSignals(true);
@@ -2288,8 +2289,6 @@ void SetupDialog::applySetup()
     mpPlotWindow->setYRange(mpYMinimumTextBox->text().toDouble(), mpYMaximumTextBox->text().toDouble());
   }
   // replot
-  mpPlotWindow->getPlot()->getXScaleDraw()->invalidateCache();
-  mpPlotWindow->getPlot()->getYScaleDraw()->invalidateCache();
   mpPlotWindow->getPlot()->updateLayout();
   mpPlotWindow->getPlot()->replot();
   if (requiresFitInView) {

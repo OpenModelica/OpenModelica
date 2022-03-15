@@ -52,6 +52,14 @@ Plot::Plot(PlotWindow *pParent)
   insertLegend(mpLegend, QwtPlot::TopLegend);
   // create an instance of grid
   mpPlotGrid = new PlotGrid(this);
+  // create the scale engine
+  mpXLinearScaleEngine = new LinearScaleEngine;
+  setAxisScaleEngine(QwtPlot::xBottom, mpXLinearScaleEngine);
+  setAxisAutoScale(QwtPlot::xBottom);
+  mpYLinearScaleEngine = new LinearScaleEngine;
+  setAxisScaleEngine(QwtPlot::yLeft, mpYLinearScaleEngine);
+  setAxisAutoScale(QwtPlot::yLeft);
+  // create the scale draw
   mpXScaleDraw = new ScaleDraw(QwtPlot::xBottom, this);
   setAxisScaleDraw(QwtPlot::xBottom, mpXScaleDraw);
   mpYScaleDraw = new ScaleDraw(QwtPlot::yLeft, this);
@@ -285,14 +293,10 @@ void Plot::replot()
     }
   }
 
-  if (canUseXPrefixUnits != mpParentPlotWindow->canUseXPrefixUnits()) {
-    mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
-    mpXScaleDraw->invalidateCache();
-  }
-  if (canUseYPrefixUnits != mpParentPlotWindow->canUseYPrefixUnits()) {
-    mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
-    mpYScaleDraw->invalidateCache();
-  }
+  mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
+  mpXScaleDraw->invalidateCache();
+  mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
+  mpYScaleDraw->invalidateCache();
 
   // Now we need to again loop through curves to set the color and title.
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
