@@ -786,6 +786,36 @@ extern const char* System_realpath(const char *path)
 #else
   char buf[PATH_MAX];
   if (realpath(path, buf) == NULL) {
+    fprintf(stderr, "System_realpath failed.\n");
+    switch (errno)
+    {
+    case EACCES:
+      fprintf(stderr, "Read or search permission was denied for a component of the path prefix.\n");
+      break;
+    case EINVAL:
+      fprintf(stderr, "path is NULL.\n");
+      break;
+    case EIO:
+      fprintf(stderr, "An I/O error occurred while reading from the filesystem.\n");
+      break;
+    case ELOOP:
+      fprintf(stderr, "Too many symbolic links were encountered in translating the pathname.\n");
+      break;
+    case ENAMETOOLONG:
+      fprintf(stderr, "A component of a pathname exceeded %u characters, or an entire pathname exceeded %u characters.\n", NAME_MAX, PATH_MAX);
+      break;
+    case ENOENT:
+      fprintf(stderr, "The named file does not exist.\n");
+      break;
+    case ENOMEM:
+      fprintf(stderr, "Out of memory.\n");
+      break;
+    case ENOTDIR:
+      fprintf(stderr, "A component of the path prefix is not a directory.\n");
+      break;
+    default:
+      break;
+    }
     MMC_THROW();
   }
   return omc_alloc_interface.malloc_strdup(buf);
