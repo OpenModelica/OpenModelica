@@ -1944,7 +1944,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     /* check for events */
     if (NUMBER_OF_EVENT_INDICATORS > 0)
     {
-      status = fmi2GetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
+      status = internalGetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
       if (status != fmi2OK) return fmi2Error;
 
       for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
