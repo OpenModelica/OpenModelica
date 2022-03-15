@@ -3609,7 +3609,7 @@ algorithm
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
 
-        // TODO: Move log file outside of fmutmp
+        // Temp log file outside of Docker volume
         dockerLogFile := System.realpath(crossTriple + ".tmp.log");
 
         // Create a docker volume for the FMU since we can't forward volumes
@@ -3659,8 +3659,8 @@ algorithm
                 dquote;
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
-        // Copy the files back from the volume (via the container) to the filesystem
-        // Docker cp can't handle too long names on Windows
+        // Copy the files back from the volume (via the container) to the filesystem.
+        // Docker cp can't handle too long names on Windows.
         // Workaround: Zip it in the container, copy it to host, unzip it
         if isWindows then
           cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + stringDelimitList(dockerImgArgs," ") +
@@ -4099,8 +4099,8 @@ algorithm
       then();
     else
       algorithm
-        Error.addCompilerError("Unknown value \""+ Flags.getConfigString(Flags.FMU_CMAKE_BUILD) + "\" for flag --fmuCMakeBuild.\nUse \"true\", \"false\" or don't set it");
-        then fail();
+        useCrossCompileCmake := false;
+        then();
   end match;
 
 
