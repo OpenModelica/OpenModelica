@@ -1451,24 +1451,23 @@ fmi2Status fmi2EnterContinuousTimeMode(fmi2Component c)
   ModelInstance *comp = (ModelInstance *)c;
   if (invalidState(comp, "fmi2EnterContinuousTimeMode", model_state_me_event_mode, 0))
     return fmi2Error;
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL,"fmi2EnterContinuousTimeMode")
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterContinuousTimeMode")
   comp->state = model_state_me_continuous_time_mode;
   return fmi2OK;
 }
 
-fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStatePriorToCurrentPoint, fmi2Boolean* enterEventMode, fmi2Boolean* terminateSimulation)
+fmi2Status internal_CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStatePriorToCurrentPoint, fmi2Boolean* enterEventMode, fmi2Boolean* terminateSimulation)
 {
   int done=0;
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp=threadData->mmc_jumper;
-  if (invalidState(comp, "fmi2CompletedIntegratorStep", model_state_me_continuous_time_mode, 0))
-    return fmi2Error;
+
   if (nullPointer(comp, "fmi2CompletedIntegratorStep", "enterEventMode", enterEventMode))
     return fmi2Error;
   if (nullPointer(comp, "fmi2CompletedIntegratorStep", "terminateSimulation", terminateSimulation))
     return fmi2Error;
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL,"fmi2CompletedIntegratorStep")
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2CompletedIntegratorStep")
 
   setThreadData(comp);
   /* try */
@@ -1487,7 +1486,7 @@ fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStat
     {
       /* if new set is calculated reinit the solver */
       *enterEventMode = fmi2True;
-      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL,"fmi2CompletedIntegratorStep: Need to iterate state values changed!")
+      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2CompletedIntegratorStep: Need to iterate state values changed!")
     }
 #endif
     /* TODO: fix the extrapolation in non-linear system
@@ -1506,6 +1505,16 @@ fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStat
   }
   FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2CompletedIntegratorStep: terminated by an assertion.")
   return fmi2Error;
+}
+
+fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStatePriorToCurrentPoint, fmi2Boolean* enterEventMode, fmi2Boolean* terminateSimulation)
+{
+  ModelInstance *comp = (ModelInstance *)c;
+
+  if (invalidState(comp, "fmi2CompletedIntegratorStep", model_state_me_continuous_time_mode, 0))
+    return fmi2Error;
+
+  return internal_CompletedIntegratorStep(c, noSetFMUStatePriorToCurrentPoint, enterEventMode, terminateSimulation);
 }
 
 fmi2Status fmi2SetTime(fmi2Component c, fmi2Real t)
@@ -1883,19 +1892,18 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     if (NUMBER_OF_STATES > 0)
     {
       status = fmi2SetContinuousStates(c, states, NUMBER_OF_STATES);
-      if (status != fmi2OK) {status=fmi2Error; break;}
+      if (status != fmi2OK) return fmi2Error;
     }
 
     /* signal completed integrator step */
-    // TODO: do not call fmi2CompletedIntegratorStep!
-    status = fmi2CompletedIntegratorStep(c, fmi2True, &enterEventMode, &terminateSimulation);
-    if (status != fmi2OK) {status=fmi2Error; break;}
+    status = internal_CompletedIntegratorStep(c, fmi2True, &enterEventMode, &terminateSimulation);
+    if (status != fmi2OK) return fmi2Error;
 
     /* check for events */
     if (NUMBER_OF_EVENT_INDICATORS > 0)
     {
       status = fmi2GetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
-      if (status != fmi2OK) {status=fmi2Error; break;}
+      if (status != fmi2OK) return fmi2Error;
 
       for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
       {
