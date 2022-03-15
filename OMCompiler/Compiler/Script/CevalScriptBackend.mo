@@ -3610,7 +3610,7 @@ algorithm
         cidFile := fmutmp+".cidfile";
 
         // Temp log file outside of Docker volume
-        dockerLogFile := System.realpath(crossTriple + ".tmp.log");
+        dockerLogFile := crossTriple + ".tmp.log";
 
         // Create a docker volume for the FMU since we can't forward volumes
         // to the docker run command depending on where the FMU was generated (inside another volume)
