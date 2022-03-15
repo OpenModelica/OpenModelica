@@ -39,6 +39,7 @@ public
   import ComponentRef = NFComponentRef;
   import NFInstNode.InstNode;
   import FunctionTree = NFFlatten.FunctionTree;
+  import Subscript = NFSubscript;
   import Type = NFType;
 
   // Backend imports
@@ -202,6 +203,7 @@ public
         local
           EqData eqData;
           VarData varData;
+          VariablePointers unknowns_scalar, seed_scalar;
           Pointer<list<SimStrongComponent.Block>> columnEqns = Pointer.create({});
           Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(indices);
           Pointer<list<SimVar>> columnVars_ptr = Pointer.create({});
@@ -214,11 +216,15 @@ public
           SimJacobian jac;
 
         case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC(), eqData = eqData as BEquation.EQ_DATA_JAC()) algorithm
-          EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr, systemType = NBSystem.SystemType.JAC, simcode_map = simcode_map));
+          EquationPointers.mapPtr(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr, systemType = NBSystem.SystemType.JAC, simcode_map = simcode_map));
+
+          // scalarize variables for sim code
+          unknowns_scalar := VariablePointers.scalarize(varData.unknowns);
+          seed_scalar := VariablePointers.scalarize(varData.seedVars);
 
           // use dummy simcode indices to always start at 0 for column and seed vars
-          VariablePointers.map(varData.unknowns, function SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
-          VariablePointers.map(varData.seedVars, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
+          VariablePointers.map(unknowns_scalar, function SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
+          VariablePointers.map(seed_scalar, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
           columnVars := listReverse(Pointer.access(columnVars_ptr));
           seedVars := listReverse(Pointer.access(seedVars_ptr));
 
@@ -466,9 +472,13 @@ protected
     "returns the state of a derivative if it is one, otherwise it just returns the cref itself.
     used for getting jacobian dependencies in the sparsity pattern."
     input output ComponentRef cref;
+  protected
+    list<Subscript> subscripts;
   algorithm
     if BVariable.checkCref(cref, BVariable.isStateDerivative) then
-      cref := BVariable.getStateCref(cref);
+      subscripts := ComponentRef.subscriptsAllFlat(cref);
+      cref := BVariable.getStateCref(ComponentRef.stripSubscriptsAll(cref));
+      cref := ComponentRef.mergeSubscripts(subscripts, cref);
     end if;
   end derivativeToStateCref;
 

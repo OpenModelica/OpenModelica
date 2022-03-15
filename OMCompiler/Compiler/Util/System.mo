@@ -40,6 +40,7 @@ encapsulated package System
 
 protected
 import Autoconf;
+import Error;
 
 public function trim
 "removes chars in charsToRemove from begin and end of inString"
@@ -172,8 +173,8 @@ public function tolower
 end tolower;
 
 public function strtok
-"Break string into a series of tokens using the delimiter token.
- See strtok from C standard."
+  "Break string into a series of tokens using the delimiter token.
+   See strtok from C standard."
   input String string;
   input String token;
   output list<String> strings;
@@ -1084,9 +1085,22 @@ public function numBits
 end numBits;
 
 public function realpath
+  "Return the canonicalized absolute pathname"
   input String path;
   output String fullpath;
-  external "C" fullpath = System_realpath(path) annotation(Library = {"omcruntime"});
+protected
+  function system_realpath
+    input String path;
+    output String fullpath;
+    external "C" fullpath = System_realpath(path) annotation(Library = {"omcruntime"});
+  end system_realpath;
+algorithm
+  try
+    fullpath := system_realpath(path);
+  else
+    Error.addInternalError(getInstanceName() + " failed", sourceInfo());
+    fail();
+  end try;
 end realpath;
 
 public function getSimulationHelpText

@@ -478,10 +478,7 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-          eqn := Pointer.access(Slice.getT(comp.eqn));
-          stmts := {Equation.toStatement(eqn)};
-          tmp := ALGORITHM(simCodeIndices.equationIndex, stmts, Equation.getAttributes(eqn));
-          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          (tmp, simCodeIndices) := createAlgorithm(Pointer.access(Slice.getT(comp.eqn)), simCodeIndices);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_EQUATION() algorithm
@@ -736,19 +733,24 @@ public
 
     function traverseCreateEquation
       "Only works, if the variable to solve for is already isolated in the LHS!"
-      input output Equation eqn;
+      input Pointer<Equation> eqn_ptr;
       input Pointer<list<Block>> acc;
       input Pointer<SimCode.SimCodeIndices> indices_ptr;
       input System.SystemType systemType;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
+      Equation eqn = Pointer.access(eqn_ptr);
       Variable var;
       Block blck;
-      SimCode.SimCodeIndices indices;
+      SimCode.SimCodeIndices indices = Pointer.access(indices_ptr);
     algorithm
       try
-        var := BVariable.getVar(Expression.toCref(Equation.getLHS(eqn)));
-        (blck, indices) := createEquation(var, eqn, NBSolve.Status.EXPLICIT, Pointer.access(indices_ptr), systemType, simcode_map);
+        if Equation.isForEquation(eqn_ptr) then
+          (blck, indices) := createAlgorithm(eqn, indices);
+        else
+          var := BVariable.getVar(Expression.toCref(Equation.getLHS(eqn)));
+          (blck, indices) := createEquation(var, eqn, NBSolve.Status.EXPLICIT, Pointer.access(indices_ptr), systemType, simcode_map);
+        end if;
         Pointer.update(acc, blck :: Pointer.access(acc));
         Pointer.update(indices_ptr, indices);
       else
@@ -756,6 +758,22 @@ public
         fail();
       end try;
     end traverseCreateEquation;
+
+    function createAlgorithm
+      input Equation eqn;
+      output Block blck;
+      input output SimCode.SimCodeIndices indices;
+    protected
+      list<Statement> stmts;
+    algorithm
+      stmts := match eqn
+        case Equation.ALGORITHM() then eqn.alg.statements;
+        else {Equation.toStatement(eqn)};
+      end match;
+
+      blck := ALGORITHM(indices.equationIndex, stmts, Equation.getAttributes(eqn));
+      indices.equationIndex := indices.equationIndex + 1;
+    end createAlgorithm;
 
     function traverseCreateResidual
       "Only works, if the variable to solve for is saved in equation attributes!
