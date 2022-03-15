@@ -255,7 +255,7 @@ static inline void setThreadData(ModelInstance* comp)
   }
 }
 
-fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
+fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
 {
   int i, done=0;
   ModelInstance* comp = (ModelInstance *)c;
@@ -266,11 +266,11 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   fmi2Real nextTimerActivationTime;
   int syncRet;
 
-  if (nullPointer(comp, "fmi2EventUpdate", "eventInfo", eventInfo)) {
+  if (nullPointer(comp, "internalEventUpdate", "eventInfo", eventInfo)) {
     return fmi2Error;
   }
 
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
 
   setThreadData(comp);
   /* try */
@@ -278,7 +278,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
 
 #if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, comp->threadData, 1, 1)) {
-      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate state values changed!")
+      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: Need to iterate state values changed!")
       /* if new set is calculated reinit the solver */
       eventInfo->valuesOfContinuousStatesChanged = fmi2True;
     }
@@ -313,7 +313,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
 
     if (checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData) || syncRet==2 ) {
-      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate(discrete changes)!")
+      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: Need to iterate(discrete changes)!")
       eventInfo->newDiscreteStatesNeeded = fmi2True;
       eventInfo->valuesOfContinuousStatesChanged = fmi2True;
       eventInfo->terminateSimulation = fmi2False;
@@ -321,7 +321,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       eventInfo->newDiscreteStatesNeeded = fmi2False;
       eventInfo->terminateSimulation = fmi2False;
     }
-    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: newDiscreteStatesNeeded %s",eventInfo->newDiscreteStatesNeeded?"true":"false");
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: newDiscreteStatesNeeded %s",eventInfo->newDiscreteStatesNeeded?"true":"false");
 
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
@@ -353,7 +353,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
         eventInfo->nextEventTimeDefined = fmi2False;
       }
     }
-    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime)
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime)
 
     done=1;
 
@@ -364,19 +364,19 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   if (done) {
     return fmi2OK;
   }
-  FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EventUpdate: terminated by an assertion.")
+  FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "internalEventUpdate: terminated by an assertion.")
   comp->_need_update = 1;
   return fmi2Error;
 }
 
 
-fmi2Status fmi2EventIteration(fmi2Component c, fmi2EventInfo *eventInfo)
+fmi2Status internalEventIteration(fmi2Component c, fmi2EventInfo *eventInfo)
 {
   fmi2Status status = fmi2OK;
   eventInfo->newDiscreteStatesNeeded = fmi2True;
   eventInfo->terminateSimulation     = fmi2False;
   while (eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation) {
-    status = fmi2NewDiscreteStates(c, eventInfo);
+    status = internalEventUpdate((ModelInstance *)c, eventInfo);
   }
   return status;
 }
@@ -843,7 +843,7 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   {
     comp->eventInfo.nextEventTimeDefined = fmi2True;
     comp->eventInfo.nextEventTime = nextSampleEvent;
-    fmi2EventUpdate(comp, &(comp->eventInfo));
+    internalEventUpdate(comp, &(comp->eventInfo));
   }
   else
   {
@@ -1447,7 +1447,7 @@ fmi2Status fmi2NewDiscreteStates(fmi2Component c, fmi2EventInfo* eventInfo)
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2NewDiscreteStates")
 
-  returnValue = fmi2EventUpdate(comp, eventInfo);
+  returnValue = internalEventUpdate(comp, eventInfo);
 
   return returnValue;
 }
@@ -1534,16 +1534,10 @@ fmi2Status fmi2SetTime(fmi2Component c, fmi2Real t)
   return fmi2OK;
 }
 
-fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t nx)
+fmi2Status internalSetContinuousStates(fmi2Component c, const fmi2Real x[], size_t nx)
 {
   ModelInstance *comp = (ModelInstance *)c;
   int i;
-  /* According to FMI RC2 specification fmi2SetContinuousStates should only be allowed in Continuous-Time Mode.
-   * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call fmi2SetContinuousStates after fmi2EnterInitializationMode.
-   */
-  if (invalidState(comp, "fmi2SetContinuousStates", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
-  /*if (invalidState(comp, "fmi2SetContinuousStates", model_state_me_continuous_time_mode))*/
-    return fmi2Error;
   if (invalidNumber(comp, "fmi2SetContinuousStates", "nx", nx, NUMBER_OF_STATES))
     return fmi2Error;
   if (nullPointer(comp, "fmi2SetContinuousStates", "x[]", x))
@@ -1561,13 +1555,23 @@ fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t n
   return fmi2OK;
 }
 
-fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx)
+fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t nx)
+{
+  ModelInstance *comp = (ModelInstance *)c;
+  /* According to FMI RC2 specification fmi2SetContinuousStates should only be allowed in Continuous-Time Mode.
+   * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call fmi2SetContinuousStates after fmi2EnterInitializationMode.
+   */
+  if (invalidState(comp, "fmi2SetContinuousStates", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode, 0))
+    return fmi2Error;
+
+  return internalSetContinuousStates(c, x, nx);
+}
+
+fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx)
 {
   int i, done=0;
   ModelInstance* comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
-  if (invalidState(comp, "fmi2GetDerivatives", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
-    return fmi2Error;
   if (invalidNumber(comp, "fmi2GetDerivatives", "nx", nx, NUMBER_OF_STATES))
     return fmi2Error;
   if (nullPointer(comp, "fmi2GetDerivatives", "derivatives[]", derivatives))
@@ -1604,17 +1608,20 @@ fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx
   return fmi2Error;
 }
 
-fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], size_t nx)
+fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx)
+{
+  ModelInstance* comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmi2GetDerivatives", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
+    return fmi2Error;
+
+  return internalGetDerivatives(c, derivatives, nx);
+}
+
+fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], size_t nx)
 {
   int i, done=0;
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
-  /* According to FMI RC2 specification fmi2GetEventIndicators should only be allowed in Event Mode, Continuous-Time Mode & terminated.
-   * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call fmi2GetEventIndicators after fmi2EnterInitializationMode.
-   */
-  if (invalidState(comp, "fmi2GetEventIndicators", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
-  /*if (invalidState(comp, "fmi2GetEventIndicators", model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error))*/
-    return fmi2Error;
   if (invalidNumber(comp, "fmi2GetEventIndicators", "nx", nx, NUMBER_OF_EVENT_INDICATORS))
     return fmi2Error;
 
@@ -1647,18 +1654,30 @@ fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], s
   return fmi2Error;
 }
 
-fmi2Status fmi2GetContinuousStates(fmi2Component c, fmi2Real x[], size_t nx)
+fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], size_t nx)
+{
+  ModelInstance *comp = (ModelInstance *)c;
+  /* According to FMI RC2 specification fmi2GetEventIndicators should only be allowed in Event Mode, Continuous-Time Mode & terminated.
+   * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call fmi2GetEventIndicators after fmi2EnterInitializationMode.
+   */
+  if (invalidState(comp, "fmi2GetEventIndicators", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
+  /*if (invalidState(comp, "fmi2GetEventIndicators", model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error))*/
+    return fmi2Error;
+
+  return internalGetEventIndicators(c, eventIndicators, nx);
+}
+
+fmi2Status internalGetContinuousStates(fmi2Component c, fmi2Real x[], size_t nx)
 {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2GetContinuousStates", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
-    return fmi2Error;
   if (invalidNumber(comp, "fmi2GetContinuousStates", "nx", nx, NUMBER_OF_STATES))
     return fmi2Error;
   if (nullPointer(comp, "fmi2GetContinuousStates", "states[]", x))
     return fmi2Error;
 #if NUMBER_OF_STATES>0
-  for (i = 0; i < nx; i++) {
+  for (i = 0; i < nx; i++)
+  {
     fmi2ValueReference vr = vrStates[i];
     x[i] = getReal(comp, vr); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetContinuousStates: #r%u# = %.16g", vr, x[i])
@@ -1667,12 +1686,20 @@ fmi2Status fmi2GetContinuousStates(fmi2Component c, fmi2Real x[], size_t nx)
   return fmi2OK;
 }
 
-fmi2Status fmi2GetNominalsOfContinuousStates(fmi2Component c, fmi2Real x_nominal[], size_t nx)
+fmi2Status fmi2GetContinuousStates(fmi2Component c, fmi2Real x[], size_t nx)
 {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2GetNominalsOfContinuousStates", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
+  if (invalidState(comp, "fmi2GetContinuousStates", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
     return fmi2Error;
+
+  return internalGetContinuousStates(c, x, nx);
+}
+
+fmi2Status internalGetNominalsOfContinuousStates(fmi2Component c, fmi2Real x_nominal[], size_t nx)
+{
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
   if (invalidNumber(comp, "fmi2GetNominalsOfContinuousStates", "nx", nx, NUMBER_OF_STATES))
     return fmi2Error;
   if (nullPointer(comp, "fmi2GetNominalsOfContinuousStates", "x_nominal[]", x_nominal))
@@ -1682,6 +1709,15 @@ fmi2Status fmi2GetNominalsOfContinuousStates(fmi2Component c, fmi2Real x_nominal
   for (i = 0; i < nx; i++)
     x_nominal[i] = 1;
   return fmi2OK;
+}
+
+fmi2Status fmi2GetNominalsOfContinuousStates(fmi2Component c, fmi2Real x_nominal[], size_t nx)
+{
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmi2GetNominalsOfContinuousStates", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, 0))
+    return fmi2Error;
+
+  return internalGetNominalsOfContinuousStates(c, x_nominal, nx);
 }
 
 /***************************************************
@@ -1803,7 +1839,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     }
   }
 
-  fmi2EventIteration(c, &eventInfo);
+  internalEventIteration(c, &eventInfo);
 
   while (status == fmi2OK && comp->fmuData->localData[0]->timeValue < tEnd)
   {
@@ -1832,18 +1868,18 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
     if (NUMBER_OF_STATES > 0)
     {
-      status = fmi2GetDerivatives(c, states_der, NUMBER_OF_STATES);
-      if (status != fmi2OK) {status=fmi2Error; break;}
+      status = internalGetDerivatives(c, states_der, NUMBER_OF_STATES);
+      if (status != fmi2OK) return fmi2Error;
 
 
-      status = fmi2GetContinuousStates(c, states, NUMBER_OF_STATES);
-      if (status != fmi2OK) {status=fmi2Error; break;}
+      status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
+      if (status != fmi2OK) return fmi2Error;
     }
 
     if (NUMBER_OF_EVENT_INDICATORS > 0)
     {
-      status = fmi2GetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-      if (status != fmi2OK) {status=fmi2Error; break;}
+      status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+      if (status != fmi2OK) return fmi2Error;
     }
 
     /* adjust tNext step to get tEnd exactly */
@@ -1880,7 +1916,10 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
         return fmi2Fatal;
     }
-    fmi2SetTime(c, tNext);
+
+    // update time
+    comp->fmuData->localData[0]->timeValue = tNext;
+    comp->_need_update = 1;
 
     // set the real Inputs with output_derivative values
     if (NUMBER_OF_REAL_INPUTS > 0)
@@ -1901,7 +1940,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     /* set the continuous states */
     if (NUMBER_OF_STATES > 0)
     {
-      status = fmi2SetContinuousStates(c, states, NUMBER_OF_STATES);
+      status = internalSetContinuousStates(c, states, NUMBER_OF_STATES);
       if (status != fmi2OK) return fmi2Error;
     }
 
@@ -1938,21 +1977,21 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       eventInfo.valuesOfContinuousStatesChanged   = fmi2True;
       eventInfo.nextEventTimeDefined              = fmi2False;
       eventInfo.nextEventTime                     = 0.0;
-      fmi2EventIteration(c, &eventInfo);
+      internalEventIteration(c, &eventInfo);
 
       if (eventInfo.valuesOfContinuousStatesChanged)
       {
-        status = fmi2GetContinuousStates(c, states, NUMBER_OF_STATES);
+        status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
         if (status != fmi2OK) return fmi2Error;
       }
 
       if (eventInfo.nominalsOfContinuousStatesChanged)
       {
-        status = fmi2GetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
+        status = internalGetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
         if (status != fmi2OK) return fmi2Error;
       }
 
-      status = fmi2GetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+      status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
       if (status != fmi2OK) return fmi2Error;
 
       comp->solverInfo->didEventStep = 1;
