@@ -801,7 +801,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars,
   <<
   fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value) {
     // set start value attribute for all variable that has start value, till initialization mode
-    if (comp->state == modelInstantiated  || comp->state == modelInitializationMode) {
+    if (vr < <%ixFirstParam%> && (comp->state == modelInstantiated || comp->state == modelInitializationMode)) {
       comp->fmuData->modelData->realVarsData[vr].attribute.start = value;
     }
     if (vr < <%ixFirstParam%>) {
@@ -883,7 +883,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, nu
   <<
   fmi2Status setInteger(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Integer value) {
     // set start value attribute for all variable that has start value, till initialization mode
-    if (comp->state == modelInstantiated  || comp->state == modelInitializationMode) {
+    if (vr < <%ixFirstParam%> && (comp->state == modelInstantiated || comp->state == modelInitializationMode)) {
       comp->fmuData->modelData->integerVarsData[vr].attribute.start = value;
     }
     if (vr < <%ixFirstParam%>) {
@@ -933,10 +933,6 @@ match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmi2Status setBoolean(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Boolean value) {
-    // set start value attribute for all variable that has start value, till initialization mode
-    if (comp->state == modelInstantiated  || comp->state == modelInitializationMode) {
-      comp->fmuData->modelData->booleanVarsData[vr].attribute.start = value;
-    }
     switch (vr) {
       <%vars.boolAlgVars |> var => SwitchVarsSet(simCode, var, "booleanVars") ;separator="\n"%>
       <%vars.boolParamVars |> var => SwitchParametersSet(simCode, var, "booleanParameter") ;separator="\n"%>
@@ -976,10 +972,6 @@ match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmi2Status setString(ModelInstance* comp, const fmi2ValueReference vr, fmi2String value) {
-    // set start value attribute for all variable that has start value, till initialization mode
-    if (comp->state == modelInstantiated  || comp->state == modelInitializationMode) {
-      comp->fmuData->modelData->stringVarsData[vr].attribute.start = value;
-    }
     switch (vr) {
       <%vars.stringAlgVars |> var => SwitchVarsSet(simCode, var, "stringVars") ;separator="\n"%>
       <%vars.stringParamVars |> var => SwitchParametersSet(simCode, var, "stringParameter") ;separator="\n"%>
