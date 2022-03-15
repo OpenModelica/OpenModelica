@@ -347,10 +347,8 @@ extern const char* SettingsImpl__getTempDirectoryPath(void)
       fprintf(stderr, "Error setting temppath in Kernel\n");
       exit(1);
     } else {
-      // Must do replacement in two steps, since the _replace function can not have similar source as target.
-      char *str = _replace(tempDirectory, (char*)"\\", (char*)"/");
-      tempDirectoryPath = _replace(str, (char*)"/", (char*)"\\\\");
-      GC_free(str);
+      tempDirectoryPath = strdup(tempDirectory);
+      tempDirectoryPath = covertToForwardSlashesInPlace(tempDirectoryPath);
     }
   #else
     const char* str = getenv("TMPDIR");
