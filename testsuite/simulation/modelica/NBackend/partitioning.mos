@@ -138,7 +138,7 @@ simulate(partitioning); getErrorString();
 // ### Variable:
 // 	Real x
 // ### Equation:
-// 	[SIMP] (1) x = $START.x ($RES_SIM_5)
+// 	[SCAL] (1) x = $START.x ($RES_SIM_5)
 //
 // BLOCK 4: Single Equation (status = Solve.UNPROCESSED)
 // ----------------------------------------
@@ -235,7 +235,7 @@ simulate(partitioning); getErrorString();
 // ### Variable:
 // 	Real x
 // ### Equation:
-// 	[SIMP] (1) x = $START.x ($RES_SIM_5)
+// 	[SCAL] (1) x = $START.x ($RES_SIM_5)
 //
 // BLOCK 4: Single Equation (status = Solve.EXPLICIT)
 // ----------------------------------------

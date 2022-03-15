@@ -51,8 +51,7 @@ protected
   import BackendDAE = NBackendDAE;
   import Causalize = NBCausalize;
   import BVariable = NBVariable;
-  import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes, Iterator};
   import NBJacobian.JacobianType;
   import Matching = NBMatching;
   import Solve = NBSolve;
@@ -63,11 +62,11 @@ protected
   import NBVariable.{VariablePointer, VariablePointers};
 
   // Util imports
-  import BackendUtil = NBBackendUtil;
   import Pointer;
   import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
+  import UnorderedSet;
 
 public
   uniontype AliasInfo
@@ -494,37 +493,51 @@ public
     end match;
   end fromSolvedEquation;
 
-  function getDependentCrefs
+  function collectCrefs
     "Collects dependent crefs in current comp and saves them in the
      unordered map. Saves both directions."
     input StrongComponent comp                                "strong component to be analyzed";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
+    input UnorderedSet<ComponentRef> set                      "unordered set of array crefs to check for relevance";
     input Boolean pseudo                                      "true if arrays are unscalarized";
     input JacobianType jacType                                "sets the context";
   algorithm
     _ := match comp
       local
+        ComponentRef cref;
         list<ComponentRef> dependencies = {}, loop_vars = {}, tmp;
-        EquationAttributes attr;
+        list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
         Tearing strict;
         Equation eqn;
+        Iterator iter;
+        list<ComponentRef> names;
+        list<Expression> ranges;
 
       case SINGLE_EQUATION() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
-        attr := Equation.getAttributes(Pointer.access(comp.eqn));
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
         updateDependencyMap(BVariable.getVarName(comp.var), dependencies, map, jacType);
       then ();
 
+      // sliced for equations - create all the single entries
+      case SLICED_EQUATION() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
+        eqn as Equation.FOR_EQUATION(iter = iter) := Pointer.access(Slice.getT(comp.eqn));
+        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
+        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(comp.var_cref, dependencies, map, iter);
+        for tpl in scalarized_dependencies loop
+          (cref, dependencies) := tpl;
+          updateDependencyMap(cref, dependencies, map, jacType);
+        end for;
+      then ();
+
+      // sliced regular equation. ToDo: what if slice is array?
       case SLICED_EQUATION() algorithm
         eqn := Pointer.access(Slice.getT(comp.eqn));
-        dependencies := Equation.collectCrefs(eqn, function getDependentCref(map = map, pseudo = pseudo));
-        attr := Equation.getAttributes(eqn);
+        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
         updateDependencyMap(comp.var_cref, dependencies, map, jacType);
       then ();
 
       case SINGLE_ARRAY() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map, pseudo = pseudo));
-        attr := Equation.getAttributes(Pointer.access(comp.eqn));
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
         updateDependencyMap(BVariable.getVarName(comp.var), dependencies, map, jacType);
       then ();
 
@@ -537,14 +550,14 @@ public
         // traverse residual equations and collect dependencies
         for slice in strict.residual_eqns loop
           // ToDo: does this work properly for arrays?
-          tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function getDependentCref(map = map, pseudo = pseudo));
+          tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function Slice.getDependentCrefCausalized(set = set));
           dependencies := listAppend(tmp, dependencies);
         end for;
 
         // traverse inner equations and collect loop vars and dependencies
         for i in 1:arrayLength(strict.innerEquations) loop
           // collect inner equation dependencies
-          tmp := Equation.collectCrefs(Pointer.access(strict.innerEquations[i].eqn), function getDependentCref(map = map, pseudo = pseudo));
+          tmp := Equation.collectCrefs(Pointer.access(strict.innerEquations[i].eqn), function Slice.getDependentCrefCausalized(set = set));
           dependencies := listAppend(tmp, dependencies);
 
           // collect inner loop variables
@@ -558,14 +571,14 @@ public
       then ();
 
       case ALIAS() algorithm
-        getDependentCrefs(comp.original, map, pseudo, jacType);
+        collectCrefs(comp.original, map, set, pseudo, jacType);
       then ();
 
       /* ToDo add the others and let else case fail! */
 
       else ();
     end match;
-  end getDependentCrefs;
+  end collectCrefs;
 
   function addLoopJacobian
     input output StrongComponent comp;
@@ -674,7 +687,7 @@ protected
           // create the scalar variable and make sliced equation
           Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
           sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
-          vals := BackendUtil.indexToLocation(var_scal_idx-var_start_idx, sizes);
+          vals := Slice.indexToLocation(var_scal_idx-var_start_idx, sizes);
           cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref);
           comp := SLICED_EQUATION(cref, Slice.SLICE(var, {}), Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
         else
@@ -715,51 +728,29 @@ protected
     acc_eqns := EquationPointers.getEqnAt(eqns, idx) :: acc_eqns;
   end getLoopPair;
 
-  function getDependentCref
-    "checks if crefs are relevant in the given context and collects them"
-    input output ComponentRef cref                              "the cref to check";
-    input Pointer<list<ComponentRef>> acc                       "accumulator for relevant crefs";
-    input UnorderedMap<ComponentRef, list<ComponentRef>> map    "unordered map to check for relevance";
-    input Boolean pseudo;
-  protected
-    ComponentRef checkCref;
-    list<ComponentRef> dependencies;
-  algorithm
-    checkCref := if pseudo then ComponentRef.stripSubscriptsAll(cref) else cref;
-    if UnorderedMap.contains(checkCref, map) then
-      dependencies := UnorderedMap.getSafe(checkCref, map);
-      if listEmpty(dependencies) then
-        // if no previous dependencies are found, it is an independent variable
-        Pointer.update(acc, checkCref :: Pointer.access(acc));
-      else
-        // if previous dependencies are found, it is a temporary inner variable
-        // recursively add all their dependencies
-        Pointer.update(acc, listAppend(dependencies, Pointer.access(acc)));
-      end if;
-    end if;
-  end getDependentCref;
-
   function updateDependencyMap
     input ComponentRef cref                                   "cref representing current equation";
     input list<ComponentRef> dependencies                     "the dependency crefs";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
     input JacobianType jacType                                "gives context";
   protected
-    list<ComponentRef> fixed_dependencies = {};
+    list<ComponentRef> tmp_dependencies, fixed_dependencies = {};
   algorithm
     try
-      // replace non derivative dependencies with their previous dependencies
+      // replace non derivative dependencies with their previous dependencies (also remove self dependency)
       // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
       if jacType == NBJacobian.JacobianType.SIMULATION then
         for dep in listReverse(dependencies) loop
-          if BVariable.checkCref(dep, BVariable.isStateDerivative) then
+          if BVariable.checkCref(dep, BVariable.isState) then
             fixed_dependencies := dep :: fixed_dependencies;
           else
-            fixed_dependencies := listAppend(UnorderedMap.getSafe(dep, map), fixed_dependencies);
+            tmp_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in UnorderedMap.getSafe(dep, map));
+            fixed_dependencies := listAppend(tmp_dependencies, fixed_dependencies);
           end if;
         end for;
       else
-        fixed_dependencies := dependencies;
+        // only remove self dependency
+        fixed_dependencies := list(tmp for tmp guard(not ComponentRef.isEqual(tmp, cref)) in dependencies);
       end if;
       // update the current value (res/tmp) --> {independent vars}
       UnorderedMap.add(cref, fixed_dependencies, map);
