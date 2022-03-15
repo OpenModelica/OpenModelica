@@ -51,7 +51,7 @@ encapsulated package Flags
 
   To add a new flag, simply add a new constant of either DebugFlag or ConfigFlag
   type below, and then add it to either the allDebugFlags or allConfigFlags list
-  depending on which type it is.
+  (in FlagsUtil.mo),  depending on which type it is.
   "
 
 public
@@ -1360,19 +1360,28 @@ constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(141, "fmiFlags", NONE(), EXTERNAL(),
   STRING_LIST_FLAG({}), NONE(),
   Gettext.gettext("Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json."));
 
-constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(142, "newBackend",
+constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(142, "fmuCMakeBuild",
+  NONE(), EXTERNAL(), STRING_FLAG("default"),
+  SOME(STRING_DESC_OPTION({
+    ("default", Gettext.notrans("Let omc decide if CMake should be used.")),
+    ("true", Gettext.notrans("Use CMake to compile FMU binaries.")),
+    ("false", Gettext.notrans("Use default GNU Autoconf toolchain to compile FMU binaries."))
+    })),
+  Gettext.gettext("Defines if FMUs will be configured and build with CMake."));
+
+constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(143, "newBackend",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Activates experimental new backend for better array handling. This also activates the new frontend. [WIP]"));
 
-constant ConfigFlag PARMODAUTO = CONFIG_FLAG(143, "parmodauto",
+constant ConfigFlag PARMODAUTO = CONFIG_FLAG(144, "parmodauto",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Experimental: Enable parallelization of independent systems of equations in the translated model."));
 
-constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(144, "interactivePort",
+constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(145, "interactivePort",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Sets the port used by the interactive server."));
 
-constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(145, "allowNonStandardModelica",
+constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(146, "allowNonStandardModelica",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     }),
   SOME(STRING_DESC_OPTION({
@@ -1383,22 +1392,22 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(145, "allowNonStan
     })),
   Gettext.gettext("Flags to allow non-standard Modelica."));
 
-constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(146, "exportClocksInModelDescription",
+constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(147, "exportClocksInModelDescription",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("exports clocks in modeldescription.xml for fmus, The default is false."));
 
-constant ConfigFlag LINK_TYPE = CONFIG_FLAG(147, "linkType",
+constant ConfigFlag LINK_TYPE = CONFIG_FLAG(148, "linkType",
   NONE(), EXTERNAL(), ENUM_FLAG(1, {("dynamic",1), ("static",2)}),
   SOME(STRING_OPTION({"dynamic", "static"})),
   Gettext.gettext("Sets the link type for the simulation executable.\n"+
                "dynamic: libraries are dynamically linked; the executable is built very fast but is not portable because of DLL dependencies.\n"+
                "static: libraries are statically linked; the executable is built more slowly but it is portable and dependency-free.\n"));
 
-constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(148, "tearingAlwaysDer",
+constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(149, "tearingAlwaysDer",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Always choose state derivatives as iteration variables in strong components."));
 
-constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(149, "dumpFlatModel",
+constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(150, "dumpFlatModel",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({"all"}),
   SOME(STRING_DESC_OPTION({
     ("flatten", Gettext.gettext("After flattening but before connection handling.")),
@@ -1409,7 +1418,7 @@ constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(149, "dumpFlatModel",
   })),
   Gettext.gettext("Dumps the flat model at the given stages of the frontend."));
 
-constant ConfigFlag SIMULATION = CONFIG_FLAG(150, "simulation",
+constant ConfigFlag SIMULATION = CONFIG_FLAG(151, "simulation",
   SOME("u"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Simulates the last model in the given Modelica file."));
 
