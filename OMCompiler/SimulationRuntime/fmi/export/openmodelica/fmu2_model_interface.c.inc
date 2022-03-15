@@ -1933,20 +1933,17 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       if (eventInfo.valuesOfContinuousStatesChanged)
       {
         status = fmi2GetContinuousStates(c, states, NUMBER_OF_STATES);
-        if (status != fmi2OK) {status=fmi2Error; break;}
+        if (status != fmi2OK) return fmi2Error;
       }
 
       if (eventInfo.nominalsOfContinuousStatesChanged)
       {
         status = fmi2GetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
-        if (status != fmi2OK) {status=fmi2Error; break;}
+        if (status != fmi2OK) return fmi2Error;
       }
 
       status = fmi2GetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-      if (status != fmi2OK) {status=fmi2Error; break;}
-
-      status = fmi2EnterContinuousTimeMode(c);
-      if (status != fmi2OK) {status=fmi2Error; break;}
+      if (status != fmi2OK) return fmi2Error;
 
       comp->solverInfo->didEventStep = 1;
     }
