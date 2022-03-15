@@ -22,7 +22,7 @@ fmuExportCrossCompile:
 	$(MAKE) check-FmuExportCrossCompile-files
 
 CMakeCrossCompile:
-	$(OMC) CMakeCrossCompile.mos
+	HOME=$(CURDIR)/../../libraries-for-testing/ $(OMC) CMakeCrossCompile.mos
 	unzip -qq CMakeCrossCompile/Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu -d CMakeCrossCompile/Pendulum_FMU/
 	$(MAKE) check-CMakeCrossCompile-files
 
