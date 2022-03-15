@@ -458,6 +458,10 @@ fmi2Status fmi2SetDebugLogging(fmi2Component c, fmi2Boolean loggingOn, size_t nC
 {
   int i, j;
   ModelInstance *comp = (ModelInstance *)c;
+
+  if (invalidState(comp, "fmi2SetupExperiment", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_in_progress|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
+    return fmi2Error;
+
   comp->loggingOn = loggingOn;
   for (j = 0; j < NUMBER_OF_CATEGORIES; j++) {
     comp->logCategories[j] = fmi2False;
@@ -522,6 +526,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     threadData_t *threadData = NULL;
     int i;
 
+    comp->state = model_state_start_end;
     comp->instanceName = (fmi2String)functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = (fmi2String)functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
     comp->functions = (fmi2CallbackFunctions*)functions->allocateMemory(1, sizeof(fmi2CallbackFunctions));
@@ -678,7 +683,7 @@ void fmi2FreeInstance(fmi2Component c)
   fmi2CallbackFreeMemory freeMemory = comp->functions->freeMemory;
 
   int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_terminated|model_state_error;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
 
   if (invalidState(comp, "fmi2FreeInstance", meStates, csStates))
     return;
@@ -765,7 +770,8 @@ void fmi2FreeInstance(fmi2Component c)
 fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fmi2Real tolerance, fmi2Real startTime, fmi2Boolean stopTimeDefined, fmi2Real stopTime)
 {
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2SetupExperiment", model_state_instantiated, ~0))
+
+  if (invalidState(comp, "fmi2SetupExperiment", model_state_instantiated, model_state_instantiated))
     return fmi2Error;
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetupExperiment: toleranceDefined=%d tolerance=%g startTime=%g stopTimeDefined=%d stopTime=%g", toleranceDefined, tolerance,
@@ -783,7 +789,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c)
 {
   ModelInstance *comp = (ModelInstance *)c;
 
-  if (invalidState(comp, "fmi2EnterInitializationMode", model_state_instantiated, ~0))
+  if (invalidState(comp, "fmi2EnterInitializationMode", model_state_instantiated, model_state_instantiated))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode...")
 
@@ -880,7 +886,7 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
 fmi2Status fmi2Terminate(fmi2Component c)
 {
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2Terminate", model_state_me_event_mode|model_state_me_continuous_time_mode, ~0))
+  if (invalidState(comp, "fmi2Terminate", model_state_me_event_mode|model_state_me_continuous_time_mode, model_state_cs_step_complete|model_state_cs_step_failed))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Terminate")
 
@@ -896,7 +902,7 @@ fmi2Status fmi2Terminate(fmi2Component c)
 fmi2Status fmi2Reset(fmi2Component c)
 {
   ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2Reset", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, ~0))
+  if (invalidState(comp, "fmi2Reset", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Reset")
 
@@ -1025,7 +1031,9 @@ fmi2Status fmi2GetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
   ModelInstance *comp = (ModelInstance *)c;
 
   /* Check for valid call sequence */
-  if (invalidState(comp, "fmi2GetInteger", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, ~0))
+  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
+  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
+  if (invalidState(comp, "fmi2GetInteger", meStates, csStates))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetInteger", "vr[]", vr))
     return fmi2Error;
@@ -1055,7 +1063,9 @@ fmi2Status fmi2GetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
   ModelInstance *comp = (ModelInstance *)c;
 
   /* Check for valid call sequence */
-  if (invalidState(comp, "fmi2GetBoolean", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, ~0))
+  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
+  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
+  if (invalidState(comp, "fmi2GetBoolean", meStates, csStates))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetBoolean", "vr[]", vr))
     return fmi2Error;
@@ -1085,7 +1095,9 @@ fmi2Status fmi2GetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
   ModelInstance *comp = (ModelInstance *)c;
 
   /* Check for valid call sequence */
-  if (invalidState(comp, "fmi2GetString", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, ~0))
+  int meStates = model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error;
+  int csStates = model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error;
+  if (invalidState(comp, "fmi2GetString", meStates, csStates))
     return fmi2Error;
   if (nvr>0 && nullPointer(comp, "fmi2GetString", "vr[]", vr))
     return fmi2Error;
