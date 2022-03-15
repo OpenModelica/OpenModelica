@@ -1266,9 +1266,6 @@ fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
   MODEL_DATA* modelData = (MODEL_DATA*) fmudata->modelData;
   threadData_t* td = comp->threadData;
 
-  if (!comp->_has_jacobian_intialization)
-    return unsupportedFunction(comp, "fmi2GetDirectionalDerivative");
-
   /***************************************/
   /* This code assumes that the FMU variables are always sorted,
      states first and then derivatives.
@@ -1342,24 +1339,20 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
 
   if (invalidState(comp, "fmi2GetDirectionalDerivative", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmi2Error;
+  if (!comp->_has_jacobian)
+    return unsupportedFunction(comp, "fmi2GetDirectionalDerivative");
+
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDirectionalDerivative")
 
   if (updateIfNeeded(comp, "fmi2GetDirectionalDerivative") != fmi2OK)
     return fmi2Error;
 
-  if (isModelExchange(comp) && model_state_initialization_mode == comp->state)
-  {
-    // directional derivative in initialization mode
-    return fmi2GetDirectionalDerivativeForInitialization(c, vUnknown_ref, nUnknown, vKnown_ref, nKnown, dvKnown, dvUnknown);
-  }
-  else if (isCoSimulation(comp) && model_state_initialization_mode == comp->state)
+  if (model_state_initialization_mode == comp->state)
   {
     // directional derivative in initialization mode
     return fmi2GetDirectionalDerivativeForInitialization(c, vUnknown_ref, nUnknown, vKnown_ref, nKnown, dvKnown, dvUnknown);
   }
 
-  if (!comp->_has_jacobian)
-    return unsupportedFunction(comp, "fmi2GetDirectionalDerivative");
   /***************************************/
   /* This code assumes that the FMU variables are always sorted,
      states first and then derivatives.
