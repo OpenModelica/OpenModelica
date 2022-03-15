@@ -43,7 +43,7 @@ LinearScaleEngine::LinearScaleEngine(uint base)
 bool LinearScaleEngine::fuzzyCompare(double p1, double p2)
 {
   //! @todo What tolerance should be used?
-  return (qAbs(p1 - p2) * 1e-8 <= qMin(qAbs(p1), qAbs(p2)));
+  return (qAbs(p1 - p2) <= qMax(1e-4 * qMin(qAbs(p1), qAbs(p2)),1e-5));
 }
 
 void LinearScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, double &stepSize) const
