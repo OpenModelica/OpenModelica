@@ -40,7 +40,6 @@
 #include "PlotZoomer.h"
 #include "PlotPanner.h"
 #include "PlotPicker.h"
-#include "LinearScaleEngine.h"
 #include "ScaleDraw.h"
 #include "PlotCurve.h"
 

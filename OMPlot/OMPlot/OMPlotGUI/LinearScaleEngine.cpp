@@ -35,18 +35,38 @@
 
 using namespace OMPlot;
 
+/*!
+ * \brief LinearScaleEngine::LinearScaleEngine
+ * \param base
+ */
 LinearScaleEngine::LinearScaleEngine(uint base)
   : QwtLinearScaleEngine(base)
 {
 
 }
 
+/*!
+ * \brief LinearScaleEngine::fuzzyCompare
+ * Compare if two values are almost equal or not.
+ * \param p1
+ * \param p2
+ * \return
+ */
 bool LinearScaleEngine::fuzzyCompare(double p1, double p2)
 {
   //! @todo What tolerance should be used?
   return (qAbs(p1 - p2) <= qMax(1e-4 * qMin(qAbs(p1), qAbs(p2)),1e-5));
 }
 
+/*!
+ * \brief LinearScaleEngine::autoScale
+ * Reimplementation of QwtLinearScaleEngine::autoScale
+ * Calculates the interval for practically constant variables.
+ * \param maxNumSteps
+ * \param x1
+ * \param x2
+ * \param stepSize
+ */
 void LinearScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, double &stepSize) const
 {
   QwtInterval interval( x1, x2 );
