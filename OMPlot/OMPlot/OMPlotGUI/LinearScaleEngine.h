@@ -33,7 +33,7 @@
 #ifndef LINEARSCALEENGINE_H
 #define LINEARSCALEENGINE_H
 
-#include "OMPlot.h"
+#include "qwt_scale_engine.h"
 
 namespace OMPlot
 {

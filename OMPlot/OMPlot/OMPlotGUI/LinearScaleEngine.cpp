@@ -30,6 +30,7 @@
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
+
 #include "LinearScaleEngine.h"
 
 using namespace OMPlot;
