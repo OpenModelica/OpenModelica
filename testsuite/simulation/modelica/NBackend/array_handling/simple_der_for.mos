@@ -135,19 +135,13 @@ simulate(simple_der_for); getErrorString();
 // ($DER.x[2])	 depends on:	{x[2]}
 // ($DER.x[1])	 depends on:	{x[1]}
 //
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {x[1]}
-// {x[2]}
-// {x[3]}
-// {x[4]}
-// {x[5]}
-// {x[6]}
-// {x[7]}
-// {x[8]}
-// {x[9]}
-// {x[10]}
-// {x[11]}
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {x[11],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Row:    {$DER.x[1],$DER.x[2],$DER.x[4],$DER.x[5],$DER.x[6],$DER.x[7],$DER.x[8],$DER.x[9],$DER.x[10],$DER.x[11]}
+//
 //
 // record SimulationResult
 //     resultFile = "simple_der_for_res.mat",

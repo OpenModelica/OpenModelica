@@ -360,7 +360,7 @@ public
     protected
       list<Integer> tmp;
     algorithm
-      for group in listReverse(coloring) loop
+      for group in listReverse(arrayList(coloring.cols)) loop
         try
           tmp := list(SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map)) for cref in group);
         else
