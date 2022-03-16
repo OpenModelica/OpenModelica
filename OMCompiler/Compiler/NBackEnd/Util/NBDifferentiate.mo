@@ -63,14 +63,17 @@ public
   import Variable = NFVariable;
 
   // Backend imports
-  import NBEquation.{Equation, EquationAttributes, EquationPointers, IfEquationBody, WhenEquationBody, WhenStatement};
+  import NBEquation.{Equation, EquationAttributes, EquationPointer, EquationPointers, IfEquationBody, WhenEquationBody, WhenStatement};
+  import NBVariable.{VariablePointer};
   import BVariable = NBVariable;
+  import StrongComponent = NBStrongComponent;
 
   // Util imports
   import Array;
   import BackendUtil = NBBackendUtil;
   import Error;
   import UnorderedMap;
+  import Slice = NBSlice;
 
   // ================================
   //        TYPES AND UNIONTYPES
@@ -99,12 +102,109 @@ public
         scalarized      = false
       );
     end default;
-
   end DifferentiationArguments;
 
   // ================================
   //             FUNCTIONS
   // ================================
+
+  function differentiateStrongComponentList
+    "author: kabdelhak
+    Differentiates a list of strong components."
+    input output list<StrongComponent> comps;
+    input output DifferentiationArguments diffArguments;
+    input Pointer<Integer> idx;
+    input String context;
+    input String name;
+  protected
+    Pointer<DifferentiationArguments> diffArguments_ptr = Pointer.create(diffArguments);
+  algorithm
+    comps := List.map(comps, function differentiateStrongComponent(diffArguments_ptr = diffArguments_ptr, idx = idx, context = context, name = name));
+    diffArguments := Pointer.access(diffArguments_ptr);
+  end differentiateStrongComponentList;
+
+  function differentiateStrongComponent
+    input output StrongComponent comp;
+    input Pointer<DifferentiationArguments> diffArguments_ptr;
+    input Pointer<Integer> idx;
+    input String context;
+    input String name;
+  algorithm
+    comp := match comp
+      local
+        Pointer<Variable> new_var;
+        Pointer<Equation> new_eqn;
+        list<Pointer<Variable>> new_vars;
+        list<Pointer<Equation>> new_eqns;
+        ComponentRef new_cref;
+        Slice<VariablePointer> new_var_slice;
+        Slice<EquationPointer> new_eqn_slice;
+        DifferentiationArguments diffArguments;
+
+      case StrongComponent.SINGLE_EQUATION() algorithm
+        new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
+        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
+        Equation.createName(new_eqn, idx, context);
+      then StrongComponent.SINGLE_EQUATION(new_var, new_eqn, comp.status);
+
+      case StrongComponent.SINGLE_ARRAY() algorithm
+        new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
+        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
+        Equation.createName(new_eqn, idx, context);
+      then StrongComponent.SINGLE_ARRAY(new_var, new_eqn, comp.status);
+
+      case StrongComponent.SINGLE_ALGORITHM() algorithm
+        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
+        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
+        Equation.createName(new_eqn, idx, context);
+      then StrongComponent.SINGLE_ALGORITHM(new_vars, new_eqn);
+
+      case StrongComponent.SINGLE_RECORD_EQUATION() algorithm
+        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
+        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
+        Equation.createName(new_eqn, idx, context);
+      then StrongComponent.SINGLE_RECORD_EQUATION(new_vars, new_eqn, comp.status);
+
+      // is this needed? when equations should never be differentiated
+      case StrongComponent.SINGLE_WHEN_EQUATION() algorithm
+        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
+        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
+        Equation.createName(new_eqn, idx, context);
+      then StrongComponent.SINGLE_WHEN_EQUATION(new_vars, new_eqn, comp.status);
+
+      case StrongComponent.SINGLE_IF_EQUATION() algorithm
+        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
+        new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
+        Equation.createName(new_eqn, idx, context);
+      then StrongComponent.SINGLE_IF_EQUATION(new_vars, new_eqn, comp.status);
+
+      case StrongComponent.SLICED_EQUATION() algorithm
+        (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRef(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
+        Pointer.update(diffArguments_ptr, diffArguments);
+        new_var_slice := Slice.apply(comp.var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr));
+        new_eqn_slice := Slice.apply(comp.eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
+        Slice.applyMutable(new_eqn_slice, function Equation.createName(idx = idx, context = context));
+      then StrongComponent.SLICED_EQUATION(new_cref, new_var_slice, new_eqn_slice, comp.status);
+
+      case StrongComponent.ENTWINED_EQUATION() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});
+      then fail();
+
+      case StrongComponent.ALGEBRAIC_LOOP() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for algebraic loop:\n" + StrongComponent.toString(comp)});
+      then fail();
+
+      case StrongComponent.TORN_LOOP() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for torn loop:\n" + StrongComponent.toString(comp)});
+      then fail();
+
+      case StrongComponent.ALIAS() then differentiateStrongComponent(comp.original, diffArguments_ptr, idx, context, name);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for unknown strong component:\n" + StrongComponent.toString(comp)});
+      then fail();
+    end match;
+  end differentiateStrongComponent;
 
   function differentiateEquationPointerList
     "author: kabdelhak
@@ -547,7 +647,7 @@ public
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
-      // Known variables, except top for level inputs have a 0-derivative
+      // Known variables, except for top level inputs have a 0-derivative
       case (Expression.CREF(), _, _)
         guard(BVariable.isParamOrConst(var_ptr) and
               not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr)))
@@ -631,6 +731,26 @@ public
 
     end match;
   end differentiateComponentRef;
+
+  function differentiateVariablePointer
+    input Pointer<Variable> var_ptr;
+    input Pointer<DifferentiationArguments> diffArguments_ptr;
+    output Pointer<Variable> diff_ptr;
+  protected
+    DifferentiationArguments diffArguments = Pointer.access(diffArguments_ptr);
+    Variable var = Pointer.access(var_ptr);
+    Expression crefExp;
+  algorithm
+    (crefExp, diffArguments) := differentiateComponentRef(Expression.fromCref(var.name), diffArguments);
+    diff_ptr := match crefExp
+      case Expression.CREF() then BVariable.getVarPointer(crefExp.cref);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)
+          + " because the result is expected to be a variable but turned out to be " + Expression.toString(crefExp) + "."});
+      then fail();
+    end match;
+    Pointer.update(diffArguments_ptr, diffArguments);
+  end differentiateVariablePointer;
 
   function differentiateCall
   "Differentiate builtin function calls
