@@ -145,10 +145,17 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ($RES_SIM_0)	 depends on:	{y,x}
 // ($RES_SIM_1)	 depends on:	{x,y}
 //
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {y}
-// {x}
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {y}
+//   - Row:    {$RES_SIM_0,$RES_SIM_1}
+//
+// Color (2)
+//   - Column: {x}
+//   - Row:    {$RES_SIM_0,$RES_SIM_1}
+//
 //
 // ################################################################################
 //
@@ -217,10 +224,17 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ($RES_SIM_1)	 depends on:	{x,y}
 // ($RES_SIM_0)	 depends on:	{y,x}
 //
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {x}
-// {y}
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {x}
+//   - Row:    {$RES_SIM_1,$RES_SIM_0}
+//
+// Color (2)
+//   - Column: {y}
+//   - Row:    {$RES_SIM_1,$RES_SIM_0}
+//
 //
 // record SimulationResult
 //     resultFile = "simpleNonlinearLoop_res.mat",

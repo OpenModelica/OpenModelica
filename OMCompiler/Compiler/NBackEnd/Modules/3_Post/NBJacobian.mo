@@ -175,7 +175,7 @@ public
     VarData varData;
     EqData eqData;
     SparsityPattern sparsityPattern;
-    list<list<ComponentRef>> sparsityColoring = {};
+    SparsityColoring sparsityColoring = SparsityColoring.lazy(EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
   algorithm
 
     if listLength(jacobians) == 1 then
@@ -187,8 +187,6 @@ public
           local
             VarData tmpVarData;
             SparsityPattern tmpPattern;
-            Integer size1, size2;
-            list<list<ComponentRef>> coloring1, coloring2;
 
           case BackendDAE.JACOBIAN(varData = tmpVarData as VarData.VAR_DATA_JAC(), sparsityPattern = tmpPattern) algorithm
             jacType       := jac.jacType;
@@ -210,20 +208,7 @@ public
             seed_vars         := listAppend(tmpPattern.seed_vars, seed_vars);
             partial_vars      := listAppend(tmpPattern.partial_vars, partial_vars);
             nnz               := nnz + tmpPattern.nnz;
-
-            // combine the sparsity colorings since all are independent
-            size1 := listLength(sparsityColoring);
-            size2 := listLength(jac.sparsityColoring);
-            (coloring1, coloring2) := if size1 > size2
-                                      then (sparsityColoring, jac.sparsityColoring)
-                                      else (jac.sparsityColoring, sparsityColoring);
-
-            // fill up the smaller coloring with empty groups
-            for i in 1:intAbs(size1-size2) loop
-              coloring2 := {} :: coloring2;
-            end for;
-
-            sparsityColoring := List.threadMap(coloring1, coloring2, listAppend);
+            sparsityColoring  := SparsityColoring.combine(sparsityColoring, jac.sparsityColoring);
           then ();
 
           else algorithm
@@ -297,8 +282,11 @@ public
     end match;
   end jacobianTypeString;
 
-  type SparsityPatternCol = tuple<ComponentRef, list<ComponentRef>> "residual, {independents}";
-  type SparsityPatternRow = SparsityPatternCol                      "independent, {residuals}";
+  // necessary as wrapping value type for UnorderedMap
+  type CrefLst = list<ComponentRef>;
+
+  type SparsityPatternCol = tuple<ComponentRef, CrefLst>  "partial_vars, {seed_vars}";
+  type SparsityPatternRow = SparsityPatternCol            "seed_vars, {partial_vars}";
 
   uniontype SparsityPattern
     record SPARSITY_PATTERN
@@ -311,7 +299,6 @@ public
 
     function toString
       input SparsityPattern pattern;
-      input SparsityColoring coloring;
       output String str = StringUtil.headline_2("Sparsity Pattern (nnz: " + intString(pattern.nnz) + ")");
     protected
       ComponentRef cref;
@@ -333,21 +320,7 @@ public
           str := str + "(" + ComponentRef.toString(cref) + ")\t depends on:\t" + ComponentRef.listToString(dependencies) + "\n";
         end for;
       end if;
-      if colEmpty and rowEmpty then
-        str := str + "\n<empty sparsity pattern>\n";
-      end if;
-      str := str + "\n" + StringUtil.headline_3("Sparsity Coloring Groups");
-      if not listEmpty(coloring) then
-        for group in coloring loop
-          str := str + ComponentRef.listToString(group) + "\n";
-        end for;
-      else
-        str := str + "<empty sparsity coloring>\n";
-      end if;
     end toString;
-
-    // necessary as wrapping value type for UnorderedMap
-    type CrefLst = list<ComponentRef>;
 
     function create
       input VariablePointers seedCandidates;
@@ -356,19 +329,20 @@ public
       input JacobianType jacType;
       output SparsityPattern sparsityPattern;
       output SparsityColoring sparsityColoring;
+    protected
+      UnorderedMap<ComponentRef, CrefLst> map;
     algorithm
-      sparsityPattern := match strongComponents
+      (sparsityPattern, map) := match strongComponents
         local
           array<StrongComponent> comps;
           list<ComponentRef> seed_vars, seed_vars_array, partial_vars, tmp;
-          UnorderedMap<ComponentRef, list<ComponentRef>> map;
           UnorderedSet<ComponentRef> set;
           list<SparsityPatternCol> cols = {};
           list<SparsityPatternRow> rows = {};
           Integer nnz = 0;
 
         case SOME(comps) guard(arrayEmpty(comps)) algorithm
-        then EMPTY_SPARSITY_PATTERN;
+        then (EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
 
         case SOME(comps) algorithm
           // get all relevant crefs
@@ -420,7 +394,7 @@ public
             (_, tmp) := col;
             nnz := nnz + listLength(tmp);
           end for;
-        then SPARSITY_PATTERN(cols, rows, seed_vars, partial_vars, nnz);
+        then (SPARSITY_PATTERN(cols, rows, seed_vars, partial_vars, nnz), map);
 
         case NONE() algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing strong components."});
@@ -433,30 +407,144 @@ public
       end match;
 
       // create coloring
-      sparsityColoring := createEmptyColoring(sparsityPattern);
+      sparsityColoring := SparsityColoring.PartialD2ColoringAlg(sparsityPattern, map);
 
       if Flags.isSet(Flags.DUMP_SPARSE) then
-        print(toString(sparsityPattern, sparsityColoring));
+        print(toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring));
       end if;
     end create;
 
     function createEmpty
       output SparsityPattern sparsityPattern = EMPTY_SPARSITY_PATTERN;
-      output SparsityColoring sparsityColoring = createEmptyColoring(sparsityPattern);
+      output SparsityColoring sparsityColoring = EMPTY_SPARSITY_COLORING;
     end createEmpty;
-
-    function createEmptyColoring
-      "creates an empty coloring that just groups each independent variable individually"
-      input SparsityPattern sparsityPattern;
-      output SparsityColoring sparsityColoring = {};
-    algorithm
-      sparsityColoring := list({cref} for cref in sparsityPattern.seed_vars);
-    end createEmptyColoring;
-
   end SparsityPattern;
 
   constant SparsityPattern EMPTY_SPARSITY_PATTERN = SPARSITY_PATTERN({}, {}, {}, {}, 0);
-  type SparsityColoring = list<list<ComponentRef>>  "list of independent variable groups belonging to the same color";
+  constant SparsityColoring EMPTY_SPARSITY_COLORING = SPARSITY_COLORING(listArray({}), listArray({}));
+
+  type SparsityColoringCol = list<ComponentRef>  "seed variable lists belonging to the same color";
+  type SparsityColoringRow = SparsityColoringCol "partial variable lists for each color (multiples allowed!)";
+
+  uniontype SparsityColoring
+    record SPARSITY_COLORING
+      "column wise coloring with extra row sparsity information"
+      array<SparsityColoringCol> cols;
+      array<SparsityColoringRow> rows;
+    end SPARSITY_COLORING;
+
+    function toString
+      input SparsityColoring sparsityColoring;
+      output String str = StringUtil.headline_2("Sparsity Coloring");
+    protected
+      Boolean empty = arrayLength(sparsityColoring.cols) == 0;
+    algorithm
+       if empty then
+        str := str + "\n<empty sparsity pattern>\n";
+      end if;
+      for i in 1:arrayLength(sparsityColoring.cols) loop
+        str := str + "Color (" + intString(i) + ")\n"
+          + "  - Column: " + ComponentRef.listToString(sparsityColoring.cols[i]) + "\n"
+          + "  - Row:    " + ComponentRef.listToString(sparsityColoring.rows[i]) + "\n\n";
+      end for;
+    end toString;
+
+    function lazy
+      "creates a lazy coloring that just groups each independent variable individually
+      and implies dependence for each row"
+      input SparsityPattern sparsityPattern;
+      input UnorderedMap<ComponentRef, CrefLst> map;
+      output SparsityColoring sparsityColoring;
+    protected
+      array<SparsityColoringCol> cols;
+      array<SparsityColoringRow> rows;
+    algorithm
+      cols := listArray(list({cref} for cref in sparsityPattern.seed_vars));
+      rows := arrayCreate(arrayLength(cols), sparsityPattern.partial_vars);
+      sparsityColoring := SPARSITY_COLORING(cols, rows);
+    end lazy;
+
+    function PartialD2ColoringAlg
+      "author: kabdelhak 2022-03
+      taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
+      https://doi.org/10.1137/S0036144504444711
+      A greedy partial distance-2 coloring algorithm. Slightly adapted to also track row sparsity."
+      input SparsityPattern sparsityPattern;
+      input UnorderedMap<ComponentRef, CrefLst> map;
+      output SparsityColoring sparsityColoring;
+    protected
+      array<ComponentRef> cref_lookup;
+      UnorderedMap<ComponentRef, Integer> index_lookup;
+      array<Boolean> color_exists;
+      array<Integer> coloring, forbidden_colors;
+      array<list<ComponentRef>> col_coloring, row_coloring;
+      Integer color;
+      list<SparsityColoringCol> cols_lst = {};
+      list<SparsityColoringRow> rows_lst = {};
+    algorithm
+      // integer to cref and reverse lookup arrays
+      cref_lookup := listArray(sparsityPattern.seed_vars);
+      index_lookup := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(sparsityPattern.seed_vars)));
+      for i in 1:arrayLength(cref_lookup) loop
+        UnorderedMap.add(cref_lookup[i], i, index_lookup);
+      end for;
+
+      // create empty colorings
+      coloring := arrayCreate(arrayLength(cref_lookup), 0);
+      forbidden_colors := arrayCreate(arrayLength(cref_lookup), 0);
+      color_exists := arrayCreate(arrayLength(cref_lookup), false);
+      col_coloring := arrayCreate(arrayLength(cref_lookup), {});
+      row_coloring := arrayCreate(arrayLength(cref_lookup), {});
+
+      for i in 1:arrayLength(cref_lookup) loop
+        for row_var /* w */ in UnorderedMap.getSafe(cref_lookup[i], map) loop
+          for col_var /* x */ in UnorderedMap.getSafe(row_var, map) loop
+            color := coloring[UnorderedMap.getSafe(col_var, index_lookup)];
+            if color > 0 then
+              forbidden_colors[color] := i;
+            end if;
+          end for;
+        end for;
+        (_, color) := Array.findFirstOnTrueWithIdx(forbidden_colors, function intNe(i2 = i));
+        coloring[i] := color;
+        // also save all row dependencies of this color
+        row_coloring[color] := listAppend(row_coloring[color], UnorderedMap.getSafe(cref_lookup[i], map));
+        color_exists[color] := true;
+      end for;
+
+      for i in 1:arrayLength(coloring) loop
+        col_coloring[coloring[i]] := cref_lookup[i] :: col_coloring[coloring[i]];
+      end for;
+
+      // traverse in reverse to have correct ordering in the end)
+      for i in arrayLength(color_exists):-1:1 loop
+        if color_exists[i] then
+          cols_lst := col_coloring[i] :: cols_lst;
+          rows_lst := row_coloring[i] :: rows_lst;
+        end if;
+      end for;
+
+      sparsityColoring := SPARSITY_COLORING(listArray(cols_lst), listArray(rows_lst));
+    end PartialD2ColoringAlg;
+
+    function combine
+      "combines sparsity patterns by just appending them because they are supposed to
+      be entirely independent of each other."
+      input SparsityColoring coloring1;
+      input SparsityColoring coloring2;
+      output SparsityColoring coloring_out;
+    protected
+      SparsityColoring smaller_coloring;
+    algorithm
+      // append the smaller to the bigger
+      (coloring_out, smaller_coloring) := if arrayLength(coloring2.cols) > arrayLength(coloring1.cols) then (coloring2, coloring1) else (coloring1, coloring2);
+
+      for i in 1:arrayLength(smaller_coloring.cols) loop
+        coloring_out.cols[i] := listAppend(coloring_out.cols[i], smaller_coloring.cols[i]);
+        coloring_out.rows[i] := listAppend(coloring_out.rows[i], smaller_coloring.rows[i]);
+      end for;
+    end combine;
+  end SparsityColoring;
 
 protected
   // ToDo: all the DAEMode stuff is probably incorrect!

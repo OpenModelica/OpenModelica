@@ -42,7 +42,7 @@ public
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
   import Jacobian = NBJacobian;
-  import NBJacobian.SparsityPattern;
+  import NBJacobian.{SparsityPattern, SparsityColoring};
   import StrongComponent = NBStrongComponent;
   import NBSystem;
   import NBSystem.System;
@@ -154,7 +154,7 @@ public
         for i in 1:arrayLength(bdae.comps) loop
           tmp := tmp + StrongComponent.toString(bdae.comps[i], i) + "\n";
         end for;
-        tmp := tmp + SparsityPattern.toString(bdae.sparsityPattern, bdae.sparsityColoring);
+        tmp := tmp + SparsityPattern.toString(bdae.sparsityPattern) + "\n" + SparsityColoring.toString(bdae.sparsityColoring);
       then tmp;
 
       case HESSIAN() then StringUtil.headline_1("Hessian: " + str) + "\n" +

@@ -321,22 +321,13 @@ simulate(builtin_functions); getErrorString();
 // ($DER.x[2])	 depends on:	{}
 // ($DER.x[1])	 depends on:	{}
 //
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {x[1]}
-// {x[2]}
-// {x[3]}
-// {x[4]}
-// {x[5]}
-// {x[6]}
-// {x[7]}
-// {x[8]}
-// {x[9]}
-// {x[10]}
-// {x[11]}
-// {x[12]}
-// {x[13]}
-// {x[14]}
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {x[14],x[13],x[12],x[11],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Row:    {$DER.x[14]}
+//
 //
 // record SimulationResult
 //     resultFile = "builtin_functions_res.mat",
