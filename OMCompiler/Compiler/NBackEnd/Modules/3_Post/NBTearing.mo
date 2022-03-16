@@ -105,7 +105,7 @@ public
       str := str  + InnerEquation.toString(eqn, "\t") + "\n";
     end for;
     if Util.isSome(set.jac) then
-      str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS", true);
+      str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS");
     end if;
   end toString;
 

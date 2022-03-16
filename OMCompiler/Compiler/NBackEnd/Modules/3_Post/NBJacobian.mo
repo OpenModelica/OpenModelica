@@ -166,7 +166,7 @@ public
     JacobianType jacType;
     list<Pointer<Variable>> variables = {}, unknowns = {}, knowns = {}, auxiliaryVars = {}, aliasVars = {};
     list<Pointer<Variable>> diffVars = {}, dependencies = {}, resultVars = {}, tmpVars = {}, seedVars = {};
-    list<Pointer<Equation>> equations = {}, results = {}, temporary = {}, auxiliaries= {}, removed = {};
+    list<StrongComponent> comps = {};
     list<SparsityPatternCol> col_wise_pattern = {};
     list<SparsityPatternRow> row_wise_pattern = {};
     list<ComponentRef> seed_vars = {};
@@ -186,12 +186,11 @@ public
         _ := match jac
           local
             VarData tmpVarData;
-            EqData tmpEqData;
             SparsityPattern tmpPattern;
             Integer size1, size2;
             list<list<ComponentRef>> coloring1, coloring2;
 
-          case BackendDAE.JACOBIAN(varData = tmpVarData as VarData.VAR_DATA_JAC(), eqData = tmpEqData as EqData.EQ_DATA_JAC(), sparsityPattern = tmpPattern) algorithm
+          case BackendDAE.JACOBIAN(varData = tmpVarData as VarData.VAR_DATA_JAC(), sparsityPattern = tmpPattern) algorithm
             jacType       := jac.jacType;
             variables     := listAppend(VariablePointers.toList(tmpVarData.variables), variables);
             unknowns      := listAppend(VariablePointers.toList(tmpVarData.unknowns), unknowns);
@@ -204,11 +203,7 @@ public
             tmpVars       := listAppend(VariablePointers.toList(tmpVarData.tmpVars), tmpVars);
             seedVars      := listAppend(VariablePointers.toList(tmpVarData.seedVars), seedVars);
 
-            equations     := listAppend(EquationPointers.toList(tmpEqData.equations), equations);
-            results       := listAppend(EquationPointers.toList(tmpEqData.results), results);
-            temporary     := listAppend(EquationPointers.toList(tmpEqData.temporary), temporary);
-            auxiliaries   := listAppend(EquationPointers.toList(tmpEqData.auxiliaries), auxiliaries);
-            removed       := listAppend(EquationPointers.toList(tmpEqData.removed), removed);
+            comps         := listAppend(arrayList(jac.comps), comps);
 
             col_wise_pattern  := listAppend(tmpPattern.col_wise_pattern, col_wise_pattern);
             row_wise_pattern  := listAppend(tmpPattern.row_wise_pattern, row_wise_pattern);
@@ -250,15 +245,6 @@ public
         seedVars      = VariablePointers.fromList(seedVars)
       );
 
-      eqData := EqData.EQ_DATA_JAC(
-        uniqueIndex   = Pointer.create(0),
-        equations     = EquationPointers.fromList(equations),
-        results       = EquationPointers.fromList(results),
-        temporary     = EquationPointers.fromList(temporary),
-        auxiliaries   = EquationPointers.fromList(auxiliaries),
-        removed       = EquationPointers.fromList(removed)
-      );
-
       sparsityPattern := SPARSITY_PATTERN(
         col_wise_pattern  = col_wise_pattern,
         row_wise_pattern  = row_wise_pattern,
@@ -271,7 +257,7 @@ public
         name              = name,
         jacType           = jacType,
         varData           = varData,
-        eqData            = eqData,
+        comps             = listArray(comps),
         sparsityPattern   = sparsityPattern,
         sparsityColoring  = sparsityColoring
       );
@@ -295,22 +281,9 @@ public
 
   function toString
     input BackendDAE jacobian;
-    input output String str = "";
-    input Boolean compact = true;
+    input output String str;
   algorithm
-    if not compact then
-      str := BackendDAE.toString(jacobian, str);
-    else
-      str := match jacobian
-        case BackendDAE.JACOBIAN() then StringUtil.headline_2(jacobianTypeString(jacobian.jacType) + " Jacobian " + jacobian.name + ": " + str)
-                                        + "\n" + BVariable.VarData.toString(jacobian.varData, 1)
-                                        + "\n" + BEquation.EqData.toString(jacobian.eqData, 1)
-                                        + "\n" + SparsityPattern.toString(jacobian.sparsityPattern, jacobian.sparsityColoring);
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
-        then fail();
-      end match;
-    end if;
+    str := BackendDAE.toString(jacobian, str);
   end toString;
 
   function jacobianTypeString
@@ -512,15 +485,12 @@ protected
 
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
+    list<StrongComponent> comps, diffed_comps;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
     Pointer<UnorderedMap<ComponentRef,ComponentRef>> jacobianHT = Pointer.create(UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
     Option<UnorderedMap<ComponentRef,ComponentRef>> optHT;
     Differentiate.DifferentiationArguments diffArguments;
-
-    list<Pointer<Equation>> eqn_lst, diffed_eqn_lst;
-    EquationPointers diffedEquations;
-    BEquation.EqData eqDataJac;
     Pointer<Integer> idx = Pointer.create(0);
 
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars;
@@ -529,9 +499,13 @@ protected
     SparsityColoring sparsityColoring;
 
   algorithm
-    // ToDo: apply tearing to split residual/inner variables and equations
-    // add inner / tmp cref tuples to HT
-    //(seedCandidates, partialCandidates) := if isSome(daeUnknowns) then (Util.getOption(daeUnknowns), unknowns) else (unknowns, VariablePointers.empty());
+    if Util.isSome(strongComponents) then
+      // filter all discrete strong components and differentiate the others
+      // todo: mixed algebraic loops should be here without the discrete subsets
+      comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
+    end if;
 
     // create seed and pDer vars (also filters out discrete vars)
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
@@ -549,23 +523,9 @@ protected
       scalarized      = seedCandidates.scalarized
     );
 
-    // filter all discrete equations and differentiate the others
-    eqn_lst := list(eqn for eqn guard(not Equation.isDiscrete(eqn)) in EquationPointers.toList(equations));
-
-    (diffed_eqn_lst, diffArguments) := Differentiate.differentiateEquationPointerList(listReverse(eqn_lst), diffArguments, idx, name, getInstanceName());
-    diffedEquations := EquationPointers.fromList(diffed_eqn_lst);
+    // differentiate all strong components
+    (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
     funcTree := diffArguments.funcTree;
-
-    // create equation data for jacobian
-    // ToDo: split temporary and auxiliares once tearing is applied
-    eqDataJac := BEquation.EQ_DATA_JAC(
-      uniqueIndex   = idx,
-      equations     = diffedEquations,
-      results       = diffedEquations,
-      temporary     = EquationPointers.empty(),
-      auxiliaries   = EquationPointers.empty(),
-      removed       = EquationPointers.empty()
-    );
 
     // collect var data
     unknown_vars  := listReverse(Pointer.access(pDer_vars_ptr));
@@ -598,7 +558,7 @@ protected
       name              = name,
       jacType           = jacType,
       varData           = varDataJac,
-      eqData            = eqDataJac,
+      comps             = listArray(diffed_comps),
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring
     ));
@@ -617,7 +577,7 @@ protected
       name              = name,
       jacType           = jacType,
       varData           = BVariable.VAR_DATA_EMPTY(),
-      eqData            = BEquation.EQ_DATA_EMPTY(),
+      comps             = listArray({}),
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring
     ));
