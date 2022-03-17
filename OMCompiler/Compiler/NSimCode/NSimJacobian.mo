@@ -244,7 +244,7 @@ public
             name                = jacobian.name,
             jacobianIndex       = indices.jacobianIndex,
             partitionIndex      = 0,
-            numberOfResultVars  = listLength(columnVars),   // needs to be changed once tearing is implmented
+            numberOfResultVars  = listLength(columnVars),
             columnEqns          = listReverse(columnEqns),
             constantEqns        = {},
             columnVars          = columnVars,
