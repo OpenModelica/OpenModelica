@@ -659,7 +659,7 @@ protected
   algorithm
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
-      unknowns      = VariablePointers.fromList({}),
+      unknowns      = partialCandidates,
       knowns        = VariablePointers.fromList({}),
       auxiliaries   = VariablePointers.fromList({}),
       aliasVars     = VariablePointers.fromList({}),
@@ -667,7 +667,7 @@ protected
       dependencies  = VariablePointers.fromList({}),
       resultVars    = VariablePointers.fromList({}),
       tmpVars       = VariablePointers.fromList({}),
-      seedVars      = VariablePointers.fromList({})
+      seedVars      = seedCandidates
     );
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
