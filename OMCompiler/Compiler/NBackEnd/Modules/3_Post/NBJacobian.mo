@@ -331,7 +331,7 @@ public
       (sparsityPattern, map) := match strongComponents
         local
           array<StrongComponent> comps;
-          list<ComponentRef> seed_vars, seed_vars_array, partial_vars, tmp;
+          list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, tmp;
           UnorderedSet<ComponentRef> set;
           list<SparsityPatternCol> cols = {};
           list<SparsityPatternRow> rows = {};
@@ -346,18 +346,17 @@ public
           seed_vars         := VariablePointers.getVarNames(VariablePointers.scalarize(seedCandidates));
           // unscalarized seed vars are currently needed for sparsity pattern
           seed_vars_array  := VariablePointers.getVarNames(seedCandidates);
+          partial_vars_array  := VariablePointers.getVarNames(partialCandidates);
 
           // create a sufficiant big unordered map
           map := UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars) + listLength(partial_vars)));
           set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars_array)));
 
-          // save all seed_vars to know later on if a cref should be added
-          for cref in seed_vars loop
-            UnorderedMap.add(cref, {}, map);
-          end for;
-          for cref in seed_vars_array loop
-            UnorderedSet.add(cref, set);
-          end for;
+          // save all seed_vars and partial_vars to know later on if a cref should be added
+          for cref in seed_vars loop UnorderedMap.add(cref, {}, map); end for;
+          for cref in partial_vars loop UnorderedMap.add(cref, {}, map); end for;
+          for cref in seed_vars_array loop UnorderedSet.add(cref, set); end for;
+          for cref in partial_vars_array loop UnorderedSet.add(cref, set); end for;
 
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
