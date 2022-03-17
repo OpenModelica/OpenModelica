@@ -190,7 +190,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   }
   case S_ESDIRKMR:
   {
-    retVal = esdirkmr_midpoint_rule(data, threadData, solverInfo);
+    retVal = esdirkmr_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;

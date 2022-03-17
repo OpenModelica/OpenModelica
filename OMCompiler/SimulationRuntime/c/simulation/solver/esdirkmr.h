@@ -41,20 +41,40 @@
 
 #include <math.h>
 
+/* Butcher-Tableau ESDIRK2
+   Implementation of  multirate  DIRK method  ESDIRK2(1)3L[2]SA
+   (section 4.1.1 of the Carpenter & Kennedy NASA review) with
+   variable time step. Uses embedded a-stable method of order 1
+   for error estimation and Hermite interpolation for output on a fixed step mesh.
+
+   0  | 0
+   c2 | gam  gam
+   1  | b1   b2   b3
+   ---------------------
+      | b1   b2   b3
+      | bt1  bt2  bt3
+
+   gam=(2-sqrt(2))*0.5;
+   c2 = 2*gam;
+   b1 = sqrt(2)/4; b2 = b1; b3 = gam;
+
+   bt1 = 7/4-sqrt(2); bt2 = bt1; bt3 = 2*sqrt(2)-5/2;
+
+   for error estimation:
+   bh1=b1-bt1; bh2=b2-bt2; bh3=b3-bt3;
+*/
+
 typedef struct DATA_ESDIRKMR{
   DATA* data;
   threadData_t *threadData;
   void* solverData;
-  int order, ordersize;
   double *y0, *y05, *y1,*y2, *y3, *der_x0;
-  double *A, *c, *d, *Ainv;
   double *m, *n;
   double *radauVarsOld, *radauVars;
-  double *zeroCrossingValues;
-  double *zeroCrossingValuesOld;
   double radauTime;
   double radauTimeOld;
   double radauStepSize, radauStepSizeOld;
+  double gam, c2, b1, b2, b3, bt1, bt2, bt3, bh1, bh2, bh3;
   int firstStep;
   unsigned int stepsDone;
   unsigned int evalFunctionODE;
@@ -64,8 +84,11 @@ typedef struct DATA_ESDIRKMR{
 
 int allocateESDIRKMR(SOLVER_INFO* solverInfo, int size, int zcSize);
 int freeESDIRKMR(SOLVER_INFO* solverInfo);
-int ESDIRKMR_richardson(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-int esdirkmr_midpoint_rule(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+int esdirkmr_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+
+//auxiliary vector functions for better code structure
+
+void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
 
 
 #endif /* _ESDIRKMR_H_ */

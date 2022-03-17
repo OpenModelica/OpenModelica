@@ -64,7 +64,6 @@ typedef struct DATA_IRKSCO{
 
 int allocateIrksco(SOLVER_INFO* solverInfo, int size, int zcSize);
 int freeIrksco(SOLVER_INFO* solverInfo);
-int irksco_richardson(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int irksco_midpoint_rule(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 

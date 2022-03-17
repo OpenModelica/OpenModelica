@@ -224,7 +224,7 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     {
       for (j=0; j<n; j++)
       {
-        solverData->x[i*n+j] = userdata->radauVars[i];
+        solverData->x[i*n+j] = userdata->radauVars[j];
       }
     }
   }
