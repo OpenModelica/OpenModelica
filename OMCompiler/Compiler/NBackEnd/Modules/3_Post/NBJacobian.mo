@@ -252,16 +252,12 @@ public
   function getModule
     "Returns the module function that was chosen by the user."
     output Module.jacobianInterface func;
-  protected
-    String flag = "default"; //Flags.getConfigString(Flags.JACOBIAN)
   algorithm
-    (func) := match flag
-      case "default"  then (jacobianSymbolic);
-      case "symbolic" then (jacobianSymbolic);
-      case "numeric"  then (jacobianNumeric);
-      /* ... New jacobian modules have to be added here */
-      else fail();
-    end match;
+    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+      func := jacobianSymbolic;
+    else
+      func := jacobianNumeric;
+    end if;
   end getModule;
 
   function toString
@@ -615,7 +611,7 @@ protected
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
     funcTree := diffArguments.funcTree;
 
-    // collect var data
+    // collect var data (most of this can be removed)
     unknown_vars  := listReverse(Pointer.access(pDer_vars_ptr));
     all_vars      := unknown_vars; // add other vars later on
 
@@ -652,19 +648,33 @@ protected
     ));
   end jacobianSymbolic;
 
-  function jacobianNumeric extends Module.jacobianInterface;
+  function jacobianNumeric "still creates sparsity pattern"
+    extends Module.jacobianInterface;
   protected
+    VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
   protected
     Pointer<Integer> idx = Pointer.create(0);
   algorithm
+    varDataJac := BVariable.VAR_DATA_JAC(
+      variables     = VariablePointers.fromList({}),
+      unknowns      = VariablePointers.fromList({}),
+      knowns        = VariablePointers.fromList({}),
+      auxiliaries   = VariablePointers.fromList({}),
+      aliasVars     = VariablePointers.fromList({}),
+      diffVars      = VariablePointers.fromList({}),
+      dependencies  = VariablePointers.fromList({}),
+      resultVars    = VariablePointers.fromList({}),
+      tmpVars       = VariablePointers.fromList({}),
+      seedVars      = VariablePointers.fromList({})
+    );
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
       jacType           = jacType,
-      varData           = BVariable.VAR_DATA_EMPTY(),
+      varData           = varDataJac,
       comps             = listArray({}),
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring

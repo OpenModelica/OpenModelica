@@ -26,8 +26,9 @@ algorithm
 end f;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=debugDifferentiation"); getErrorString();
+setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=debugDifferentiation"); getErrorString();
 simulate(function_diff); getErrorString();
+
 // Result:
 // true
 // ""

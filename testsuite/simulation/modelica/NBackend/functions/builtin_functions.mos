@@ -26,7 +26,7 @@ end builtin_functions;
 
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=symjacdump"); getErrorString();
+setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=symjacdump"); getErrorString();
 simulate(builtin_functions); getErrorString();
 // Result:
 // true
