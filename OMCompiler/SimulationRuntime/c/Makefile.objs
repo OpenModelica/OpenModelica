@@ -156,6 +156,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               cvode_solver$(OBJ_EXT) \
               dae_mode$(OBJ_EXT) \
               dassl$(OBJ_EXT) \
+              esdirkmr$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
               irksco$(OBJ_EXT) \
               jacobianSymbolical$(OBJ_EXT) \

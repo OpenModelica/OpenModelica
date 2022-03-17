@@ -54,6 +54,7 @@
 #include "synchronous.h"
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
+#include "esdirkmr.h"
 #include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
@@ -187,6 +188,13 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   }
+  case S_ESDIRKMR:
+  {
+    retVal = esdirkmr_midpoint_rule(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+    return retVal;
+  }
 
   }
 
@@ -249,6 +257,11 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   case S_IRKSCO:
   {
     allocateIrksco(solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
+    break;
+  }
+  case S_ESDIRKMR:
+  {
+    allocateESDIRKMR(solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
     break;
   }
   case S_ERKSSC:
@@ -400,6 +413,10 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   else if (solverInfo->solverMethod == S_IRKSCO)
   {
     freeIrksco(solverInfo);
+  }
+  else if (solverInfo->solverMethod == S_ESDIRKMR)
+  {
+    freeESDIRKMR(solverInfo);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
   else if(solverInfo->solverMethod == S_DASSL)

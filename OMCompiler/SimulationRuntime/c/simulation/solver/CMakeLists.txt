@@ -16,6 +16,7 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     dassl.c
                     delay.c
                     events.c
+                    esdirkmr.c
                     external_input.c
                     irksco.c
                     kinsolSolver.c
@@ -46,6 +47,7 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     dassl.h
                     delay.h
                     epsilon.h
+                    esdirkmr.h
                     events.h
                     external_input.h
                     irksco.h
