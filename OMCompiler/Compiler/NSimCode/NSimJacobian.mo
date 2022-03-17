@@ -333,7 +333,7 @@ public
       list<ComponentRef> dependencies;
       list<Integer> dep_indices;
     algorithm
-      for col in listReverse(cols) loop
+      for col in cols loop
         (cref, dependencies) := col;
         try
           // this state derivative -> state transformation is for conversion to the old simcode
