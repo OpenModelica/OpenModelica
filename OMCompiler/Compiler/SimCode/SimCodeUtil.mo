@@ -15300,7 +15300,7 @@ algorithm
         str := "@echo off\n"
                 + "set PATH=" + locations + ";%PATH%;\n"
                 + "set ERRORLEVEL=\n"
-                + "call \"%CD%/" + code.fileNamePrefix + ".exe\"\n"
+                + "call \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
                 + "set RESULT=%ERRORLEVEL%\n"
                 + "\n"
                 + "exit /b %RESULT%\n";
