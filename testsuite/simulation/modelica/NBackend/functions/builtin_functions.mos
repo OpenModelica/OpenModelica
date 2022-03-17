@@ -284,7 +284,7 @@ simulate(builtin_functions); getErrorString();
 // 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[14] = y / y ^ 2.0 + x[1] ^ 2.0 * $SEED_ODE_JAC.x[1] - x[1] / y ^ 2.0 + x[1] ^ 2.0 * $pDER_ODE_JAC.y ($RES_ODE_JAC_14)
 //
 // ========================================
-// Sparsity Pattern (nnz: 1)
+// Sparsity Pattern (nnz: 15)
 // ========================================
 //
 // ### Columns ###
@@ -301,32 +301,36 @@ simulate(builtin_functions); getErrorString();
 // (x[5])	 affects:	{}
 // (x[4])	 affects:	{}
 // (x[3])	 affects:	{}
-// (x[2])	 affects:	{}
+// (x[2])	 affects:	{$DER.x[14],$DER.x[13],$DER.x[12],$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4],$DER.x[3],$DER.x[2],$DER.x[1]}
 // (x[1])	 affects:	{$DER.x[14]}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($DER.x[14])	 depends on:	{x[1]}
-// ($DER.x[13])	 depends on:	{}
-// ($DER.x[12])	 depends on:	{}
-// ($DER.x[11])	 depends on:	{}
-// ($DER.x[10])	 depends on:	{}
-// ($DER.x[9])	 depends on:	{}
-// ($DER.x[8])	 depends on:	{}
-// ($DER.x[7])	 depends on:	{}
-// ($DER.x[6])	 depends on:	{}
-// ($DER.x[5])	 depends on:	{}
-// ($DER.x[4])	 depends on:	{}
-// ($DER.x[3])	 depends on:	{}
-// ($DER.x[2])	 depends on:	{}
-// ($DER.x[1])	 depends on:	{}
+// ($DER.x[14])	 depends on:	{x[1],x[2]}
+// ($DER.x[13])	 depends on:	{x[2]}
+// ($DER.x[12])	 depends on:	{x[2]}
+// ($DER.x[11])	 depends on:	{x[2]}
+// ($DER.x[10])	 depends on:	{x[2]}
+// ($DER.x[9])	 depends on:	{x[2]}
+// ($DER.x[8])	 depends on:	{x[2]}
+// ($DER.x[7])	 depends on:	{x[2]}
+// ($DER.x[6])	 depends on:	{x[2]}
+// ($DER.x[5])	 depends on:	{x[2]}
+// ($DER.x[4])	 depends on:	{x[2]}
+// ($DER.x[3])	 depends on:	{x[2]}
+// ($DER.x[2])	 depends on:	{x[2]}
+// ($DER.x[1])	 depends on:	{x[2]}
 //
 // ========================================
 // Sparsity Coloring
 // ========================================
 // Color (1)
-//   - Column: {x[14],x[13],x[12],x[11],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[2],x[1]}
+//   - Column: {x[14],x[13],x[12],x[11],x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3],x[1]}
 //   - Row:    {$DER.x[14]}
+//
+// Color (2)
+//   - Column: {x[2]}
+//   - Row:    {$DER.x[14],$DER.x[13],$DER.x[12],$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4],$DER.x[3],$DER.x[2],$DER.x[1]}
 //
 //
 // record SimulationResult
