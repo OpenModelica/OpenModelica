@@ -528,7 +528,7 @@ public slots:
 #endif
   void runOMSensPlugin();
   void exportModelToOMNotebook();
-  void openInstallLibraryDialog();
+  bool openInstallLibraryDialog();
   void upgradeInstalledLibraries();
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
@@ -603,28 +603,6 @@ public slots:
   void showReportIssue();
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
-};
-
-class MSLVersionDialog : public QDialog
-{
-  Q_OBJECT
-public:
-  MSLVersionDialog(QWidget *parent = 0);
-private:
-  QRadioButton *mpMSL3RadioButton;
-  QRadioButton *mpMSL4RadioButton;
-  QRadioButton *mpNoMSLRadioButton;
-  QWidget *mpWidget;
-private slots:
-  void setMSLVersion();
-
-  // QDialog interface
-public slots:
-  virtual void reject() override;
-
-  // QWidget interface
-public:
-  virtual QSize sizeHint() const override;
 };
 
 #endif // MAINWINDOW_H

@@ -1417,13 +1417,13 @@ void LibraryTreeModel::addModelicaLibraries()
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pOMCProxy->loadSystemLibraries();
   QStringList systemLibs = pOMCProxy->getClassNames();
-  if (OptionsDialog::instance()->getLibrariesPage()->getLoadOpenModelicaLibraryCheckBox()->isChecked()) {
-    systemLibs.prepend("OpenModelica");
-  }
-  foreach (QString lib, systemLibs) {
-    SplashScreen::instance()->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
-    createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, true, true);
-    checkIfAnyNonExistingClassLoaded();
+  foreach (QString systemLib, systemLibs) {
+    LibraryTreeItem *pLibraryTreeItem = findLibraryTreeItem(systemLib);
+    if (!pLibraryTreeItem) {
+      SplashScreen::instance()->showMessage(QString("%1 %2").arg(Helper::loading, systemLib), Qt::AlignRight, Qt::white);
+      createLibraryTreeItem(systemLib, mpRootLibraryTreeItem, true, true, true);
+      checkIfAnyNonExistingClassLoaded();
+    }
   }
   // load Modelica User Libraries.
   pOMCProxy->loadUserLibraries();
@@ -4707,9 +4707,7 @@ void LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 void LibraryWidget::openLibraryTreeItem(QString nameStructure)
 {
   LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(nameStructure);
-  if (!pLibraryTreeItem) {
-    return;
-  } else {
+  if (pLibraryTreeItem) {
     mpLibraryTreeModel->showModelWidget(pLibraryTreeItem);
   }
 }

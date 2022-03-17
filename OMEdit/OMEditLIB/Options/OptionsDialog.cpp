@@ -180,7 +180,10 @@ void OptionsDialog::readGeneralSettings()
   }
   // read the working directory
   if (mpSettings->contains("workingDirectory")) {
-    mpGeneralSettingsPage->setWorkingDirectory(mpSettings->value("workingDirectory").toString());
+    const QString workingDirectory = mpSettings->value("workingDirectory").toString();
+    if (!MainWindow::instance()->getOMCProxy()->changeDirectory(workingDirectory).isEmpty()) {
+      mpGeneralSettingsPage->setWorkingDirectory(workingDirectory);
+    }
   }
   // read toolbar icon size
   if (mpSettings->contains("toolbarIconSize")) {
@@ -270,6 +273,13 @@ void OptionsDialog::readGeneralSettings()
 //! Reads the Libraries section settings from omedit.ini
 void OptionsDialog::readLibrariesSettings()
 {
+  // read ModelicaPath
+  if (mpSettings->contains("modelicaPath")) {
+    const QString modelicaPath = mpSettings->value("modelicaPath").toString();
+    if (MainWindow::instance()->getOMCProxy()->setModelicaPath(modelicaPath)) {
+      mpLibrariesPage->getModelicaPathTextBox()->setText(modelicaPath);
+    }
+  }
   // read the system libraries
   int i = 0;
   while(i < mpLibrariesPage->getSystemLibrariesTree()->topLevelItemCount()) {
@@ -286,14 +296,6 @@ void OptionsDialog::readLibrariesSettings()
     mpLibrariesPage->getSystemLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   }
   mpSettings->endGroup();
-  // read the forceModelicaLoad
-  if (mpSettings->contains("forceModelicaLoad")) {
-    mpLibrariesPage->getForceModelicaLoadCheckBox()->setChecked(mpSettings->value("forceModelicaLoad").toBool());
-  }
-  // read load OpenModelica library on startup
-  if (mpSettings->contains("loadOpenModelicaOnStartup")) {
-    mpLibrariesPage->getLoadOpenModelicaLibraryCheckBox()->setChecked(mpSettings->value("loadOpenModelicaOnStartup").toBool());
-  }
   // read user libraries
   i = 0;
   while(i < mpLibrariesPage->getUserLibrariesTree()->topLevelItemCount()) {
@@ -1026,9 +1028,12 @@ void OptionsDialog::saveGeneralSettings()
   }
   mpSettings->setValue("language", language);
   // save working directory
-  MainWindow::instance()->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
-  mpGeneralSettingsPage->setWorkingDirectory(MainWindow::instance()->getOMCProxy()->changeDirectory());
-  mpSettings->setValue("workingDirectory", mpGeneralSettingsPage->getWorkingDirectory());
+  const QString workingDirectory = mpGeneralSettingsPage->getWorkingDirectory();
+  if (!MainWindow::instance()->getOMCProxy()->changeDirectory(workingDirectory).isEmpty()) {
+    mpSettings->setValue("workingDirectory", workingDirectory);
+  } else {
+    mpGeneralSettingsPage->setWorkingDirectory(MainWindow::instance()->getOMCProxy()->changeDirectory());
+  }
   // save toolbar icon size
   mpSettings->setValue("toolbarIconSize", mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->value());
   // save user customizations
@@ -1109,6 +1114,13 @@ void OptionsDialog::saveNFAPISettings()
 //! Saves the Libraries section settings to omedit.ini
 void OptionsDialog::saveLibrariesSettings()
 {
+  // save ModelicaPath
+  const QString modelicaPath = mpLibrariesPage->getModelicaPathTextBox()->text();
+  if (MainWindow::instance()->getOMCProxy()->setModelicaPath(modelicaPath)) {
+    mpSettings->setValue("modelicaPath", modelicaPath);
+  } else {
+    mpLibrariesPage->getModelicaPathTextBox()->setText(MainWindow::instance()->getOMCProxy()->getModelicaPath());
+  }
   // read the settings and add system libraries
   mpSettings->beginGroup("libraries");
   foreach (QString lib, mpSettings->childKeys()) {
@@ -1121,8 +1133,6 @@ void OptionsDialog::saveLibrariesSettings()
     ++systemLibrariesIterator;
   }
   mpSettings->endGroup();
-  mpSettings->setValue("forceModelicaLoad", mpLibrariesPage->getForceModelicaLoadCheckBox()->isChecked());
-  mpSettings->setValue("loadOpenModelicaOnStartup", mpLibrariesPage->getLoadOpenModelicaLibraryCheckBox()->isChecked());
   // read the settings and add user libraries
   mpSettings->beginGroup("userlibraries");
   foreach (QString lib, mpSettings->childKeys()) {
@@ -2209,14 +2219,24 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
+  // MODELICAPATH
+  QGroupBox *pModelicaPathGroupBox = new QGroupBox(Helper::general);
+  mpModelicaPathLabel = new Label("MODELICAPATH");
+  mpModelicaPathTextBox = new QLineEdit(MainWindow::instance()->getOMCProxy()->getModelicaPath());
+  QString modelicaPathToolTip = tr("List of paths searched while loading a library. Paths are separated by native path separator.");
+  mpModelicaPathTextBox->setPlaceholderText(modelicaPathToolTip);
+  mpModelicaPathTextBox->setToolTip(modelicaPathToolTip);
+  // general groupbox layout
+  QGridLayout *pGeneralGroupBoxGridLayout = new QGridLayout;
+  pGeneralGroupBoxGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGeneralGroupBoxGridLayout->addWidget(mpModelicaPathLabel, 0, 0);
+  pGeneralGroupBoxGridLayout->addWidget(mpModelicaPathTextBox, 0, 1);
+  pModelicaPathGroupBox->setLayout(pGeneralGroupBoxGridLayout);
   // system libraries groupbox
-  mpSystemLibrariesGroupBox = new QGroupBox(tr("System Libraries *"));
+  mpSystemLibrariesGroupBox = new QGroupBox(tr("System libraries loaded automatically on startup *"));
   // system libraries note
   mpSystemLibrariesNoteLabel = new Label(tr("The system libraries are read from the MODELICAPATH and are always read-only."));
   mpSystemLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
-  // MODELICAPATH
-  mpModelicaPathLabel = new Label(QString("MODELICAPATH = ").append(Helper::OpenModelicaLibrary));
-  mpModelicaPathLabel->setElideMode(Qt::ElideMiddle);
   // system libraries tree
   mpSystemLibrariesTree = new QTreeWidget;
   mpSystemLibrariesTree->setItemDelegate(new ItemDelegate(mpSystemLibrariesTree));
@@ -2246,19 +2266,11 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   QGridLayout *pSystemLibrariesLayout = new QGridLayout;
   pSystemLibrariesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pSystemLibrariesLayout->addWidget(mpSystemLibrariesNoteLabel, 0, 0, 1, 2);
-  pSystemLibrariesLayout->addWidget(mpModelicaPathLabel, 1, 0);
-  pSystemLibrariesLayout->addWidget(mpSystemLibrariesTree, 2, 0);
-  pSystemLibrariesLayout->addWidget(mpSystemLibrariesButtonBox, 2, 1);
+  pSystemLibrariesLayout->addWidget(mpSystemLibrariesTree, 1, 0);
+  pSystemLibrariesLayout->addWidget(mpSystemLibrariesButtonBox, 1, 1);
   mpSystemLibrariesGroupBox->setLayout(pSystemLibrariesLayout);
-  // force Modelica load checkbox
-  mpForceModelicaLoadCheckBox = new QCheckBox(tr("Force loading of Modelica Standard Library"));
-  mpForceModelicaLoadCheckBox->setToolTip(tr("This will make sure that Modelica and ModelicaReference will always load even if user has removed them from the list of system libraries."));
-  mpForceModelicaLoadCheckBox->setChecked(true);
-  // force Modelica load checkbox
-  mpLoadOpenModelicaOnStartupCheckBox = new QCheckBox(tr("Load OpenModelica library on startup"));
-  mpLoadOpenModelicaOnStartupCheckBox->setChecked(true);
   // user libraries groupbox
-  mpUserLibrariesGroupBox = new QGroupBox(tr("User Libraries *"));
+  mpUserLibrariesGroupBox = new QGroupBox(tr("User libraries loaded automatically on startup *"));
   // user libraries tree
   mpUserLibrariesTree = new QTreeWidget;
   mpUserLibrariesTree->setItemDelegate(new ItemDelegate(mpUserLibrariesTree));
@@ -2291,13 +2303,12 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   pUserLibrariesLayout->addWidget(mpUserLibrariesButtonBox, 0, 1);
   mpUserLibrariesGroupBox->setLayout(pUserLibrariesLayout);
   // main layout
-  QVBoxLayout *layout = new QVBoxLayout;
-  layout->setContentsMargins(0, 0, 0, 0);
-  layout->addWidget(mpSystemLibrariesGroupBox);
-  layout->addWidget(mpForceModelicaLoadCheckBox);
-  layout->addWidget(mpLoadOpenModelicaOnStartupCheckBox);
-  layout->addWidget(mpUserLibrariesGroupBox);
-  setLayout(layout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(pModelicaPathGroupBox);
+  pMainLayout->addWidget(mpSystemLibrariesGroupBox);
+  pMainLayout->addWidget(mpUserLibrariesGroupBox);
+  setLayout(pMainLayout);
 }
 
 //! Slot activated when mpAddSystemLibraryButton clicked signal is raised.
@@ -2312,8 +2323,7 @@ void LibrariesPage::openAddSystemLibrary()
 //! Removes the selected tree item
 void LibrariesPage::removeSystemLibrary()
 {
-  if (mpSystemLibrariesTree->selectedItems().size() > 0)
-  {
+  if (mpSystemLibrariesTree->selectedItems().size() > 0) {
     mpSystemLibrariesTree->removeItemWidget(mpSystemLibrariesTree->selectedItems().at(0), 0);
     delete mpSystemLibrariesTree->selectedItems().at(0);
   }
@@ -2324,12 +2334,12 @@ void LibrariesPage::removeSystemLibrary()
 void LibrariesPage::openEditSystemLibrary()
 {
   if (mpSystemLibrariesTree->selectedItems().size() > 0) {
-    AddSystemLibraryDialog *pAddSystemLibraryWidget = new AddSystemLibraryDialog(this);
-    pAddSystemLibraryWidget->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Edit System Library")));
-    pAddSystemLibraryWidget->mEditFlag = true;
-    int currentIndex = pAddSystemLibraryWidget->mpNameComboBox->findText(mpSystemLibrariesTree->selectedItems().at(0)->text(0), Qt::MatchExactly);
-    pAddSystemLibraryWidget->mpNameComboBox->setCurrentIndex(currentIndex);
-    pAddSystemLibraryWidget->mpVersionTextBox->setText(mpSystemLibrariesTree->selectedItems().at(0)->text(1));
+    AddSystemLibraryDialog *pAddSystemLibraryWidget = new AddSystemLibraryDialog(this, true);
+    int currentIndex = pAddSystemLibraryWidget->getNameComboBox()->findText(mpSystemLibrariesTree->selectedItems().at(0)->text(0), Qt::MatchExactly);
+    if (currentIndex > -1) {
+      pAddSystemLibraryWidget->getNameComboBox()->setCurrentIndex(currentIndex);
+      pAddSystemLibraryWidget->getVersionsComboBox()->lineEdit()->setText(mpSystemLibrariesTree->selectedItems().at(0)->text(1));
+    }
     pAddSystemLibraryWidget->exec();
   }
 }
@@ -2346,8 +2356,7 @@ void LibrariesPage::openAddUserLibrary()
 //! Removes the selected tree item
 void LibrariesPage::removeUserLibrary()
 {
-  if (mpUserLibrariesTree->selectedItems().size() > 0)
-  {
+  if (mpUserLibrariesTree->selectedItems().size() > 0) {
     mpUserLibrariesTree->removeItemWidget(mpUserLibrariesTree->selectedItems().at(0), 0);
     delete mpUserLibrariesTree->selectedItems().at(0);
   }
@@ -2357,15 +2366,15 @@ void LibrariesPage::removeUserLibrary()
 //! Opens the AddLibraryWidget in edit mode and pass it the selected tree item.
 void LibrariesPage::openEditUserLibrary()
 {
-  if (mpUserLibrariesTree->selectedItems().size() > 0)
-  {
+  if (mpUserLibrariesTree->selectedItems().size() > 0) {
     AddUserLibraryDialog *pAddUserLibraryWidget = new AddUserLibraryDialog(this);
     pAddUserLibraryWidget->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Edit User Library")));
     pAddUserLibraryWidget->mEditFlag = true;
     pAddUserLibraryWidget->mpPathTextBox->setText(mpUserLibrariesTree->selectedItems().at(0)->text(0));
     int currentIndex = pAddUserLibraryWidget->mpEncodingComboBox->findData(mpUserLibrariesTree->selectedItems().at(0)->text(1));
-    if (currentIndex > -1)
+    if (currentIndex > -1) {
       pAddUserLibraryWidget->mpEncodingComboBox->setCurrentIndex(currentIndex);
+    }
     pAddUserLibraryWidget->exec();
   }
 }
@@ -2379,38 +2388,48 @@ void LibrariesPage::openEditUserLibrary()
  * \brief AddSystemLibraryDialog::AddSystemLibraryDialog
  * \param pLibrariesPage is the pointer to LibrariesPage
  */
-AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage)
-  : QDialog(pLibrariesPage), mEditFlag(false)
+AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage, bool editFlag)
+  : QDialog(pLibrariesPage), mpLibrariesPage(pLibrariesPage), mEditFlag(editFlag)
 {
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Add System Library")));
+  if (mEditFlag) {
+    setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Edit System Library")));
+  } else {
+    setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Add System Library")));
+  }
   setAttribute(Qt::WA_DeleteOnClose);
-  mpLibrariesPage = pLibrariesPage;
+  setMinimumWidth(300);
   mpNameLabel = new Label(Helper::name);
   mpNameComboBox = new QComboBox;
-  foreach (const QString &key, MainWindow::instance()->getOMCProxy()->getAvailableLibraries()) {
-    mpNameComboBox->addItem(key, key);
-  }
-
+  connect(mpNameComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(getLibraryVersions(QString)));
   mpValueLabel = new Label(Helper::version + ":");
-  mpVersionTextBox = new QLineEdit("default");
+  mpVersionsComboBox = new QComboBox;
+  mpVersionsComboBox->setEditable(true);
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addSystemLibrary()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // install library button
+  mpInstallLibraryButton = new QPushButton(Helper::installLibrary);
+  mpInstallLibraryButton->setAutoDefault(false);
+  connect(mpInstallLibraryButton, SIGNAL(clicked()), SLOT(openInstallLibraryDialog()));
   // add buttons
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // layout
   QGridLayout *mainLayout = new QGridLayout;
-  mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  mainLayout->setAlignment(Qt::AlignTop);
   mainLayout->addWidget(mpNameLabel, 0, 0);
   mainLayout->addWidget(mpNameComboBox, 0, 1);
   mainLayout->addWidget(mpValueLabel, 1, 0);
-  mainLayout->addWidget(mpVersionTextBox, 1, 1);
-  mainLayout->addWidget(mpButtonBox, 2, 0, 1, 2, Qt::AlignRight);
+  mainLayout->addWidget(mpVersionsComboBox, 1, 1);
+  mainLayout->addWidget(mpInstallLibraryButton, 2, 0, Qt::AlignLeft);
+  mainLayout->addWidget(mpButtonBox, 2, 1, Qt::AlignRight);
   setLayout(mainLayout);
+
+  getSystemLibraries();
 }
 
 /*!
@@ -2442,6 +2461,30 @@ bool AddSystemLibraryDialog::nameExists(QTreeWidgetItem *pItem)
 }
 
 /*!
+ * \brief AddSystemLibraryDialog::getSystemLibraries
+ * Gets the system libraries and add them to the combobox.
+ */
+void AddSystemLibraryDialog::getSystemLibraries()
+{
+  mpNameComboBox->clear();
+  mpNameComboBox->addItems(MainWindow::instance()->getOMCProxy()->getAvailableLibraries());
+  getLibraryVersions(mpNameComboBox->currentText());
+}
+
+/*!
+ * \brief AddSystemLibraryDialog::getLibraryVersions
+ * Gets the library versions and add them to the combobox.
+ * \param library
+ */
+void AddSystemLibraryDialog::getLibraryVersions(const QString &library)
+{
+  mpVersionsComboBox->clear();
+  if (!library.isEmpty()) {
+    mpVersionsComboBox->addItems(MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library));
+  }
+}
+
+/*!
  * \brief AddSystemLibraryDialog::addSystemLibrary
  * Slot activated when mpOkButton clicked signal is raised.
  *  Add/Edit the system library in the tree.
@@ -2454,7 +2497,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
     return;
   }
   // if value text box is empty show error and return
-  if (mpVersionTextBox->text().isEmpty()) {
+  if (mpVersionsComboBox->lineEdit()->text().isEmpty()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
     return;
   }
@@ -2465,7 +2508,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
       return;
     }
     QStringList values;
-    values << mpNameComboBox->currentText() << mpVersionTextBox->text();
+    values << mpNameComboBox->currentText() << mpVersionsComboBox->lineEdit()->text();
     mpLibrariesPage->getSystemLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   } else if (mEditFlag) { // if user is editing old library
     QTreeWidgetItem *pItem = mpLibrariesPage->getSystemLibrariesTree()->selectedItems().at(0);
@@ -2474,9 +2517,21 @@ void AddSystemLibraryDialog::addSystemLibrary()
       return;
     }
     pItem->setText(0, mpNameComboBox->currentText());
-    pItem->setText(1, mpVersionTextBox->text());
+    pItem->setText(1, mpVersionsComboBox->lineEdit()->text());
   }
   accept();
+}
+
+/*!
+ * \brief AddSystemLibraryDialog::openInstallLibraryDialog
+ * Opens the InstallLibraryDialog and allows the user to install a library.
+ * If the library is installed then reload the system libraries.
+ */
+void AddSystemLibraryDialog::openInstallLibraryDialog()
+{
+  if (MainWindow::instance()->openInstallLibraryDialog()) {
+    getSystemLibraries();
+  }
 }
 
 /*!
