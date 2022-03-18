@@ -36,7 +36,7 @@ install/lib/libantlr4-runtime.a: 3rdParty/antlr4/runtime/Cpp/CMakeLists.txt
 	mkdir -p 3rdParty/antlr4/runtime/Cpp/build
 	$(MAKE) 3rdParty/antlr4/runtime/Cpp/build/Makefile
 	$(MAKE) -C 3rdParty/antlr4/runtime/Cpp/build/ install
-	if test -d "./install/lib64"; then ln -sf ./install/lib64 ./install/lib; fi
+	if test -d "./install/lib64"; then ln -sf ./lib64 ./install/lib; fi
 
 $(CPP_FILES): runtool
 
