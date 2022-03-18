@@ -430,6 +430,7 @@ public:
   static QString translationFlags;
   static QString send;
   static QString installLibrary;
+  static QString updateInstalledLibraries;
   static QString dataReconciliation;
 };
 

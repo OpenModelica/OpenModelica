@@ -101,7 +101,7 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   // exact match checkbox
   mpExactMatchCheckBox = new QCheckBox(tr("Exact Match (Install only the specified version of dependencies)"));
   mpExactMatchCheckBox->setChecked(true);
-  // Progress label & bar
+  // Progress label
   mpProgressLabel = new Label(tr("<b>Installing library. Please wait.</b>"));
   mpProgressLabel->hide();
   // buttons
@@ -242,5 +242,71 @@ void InstallLibraryDialog::installLibrary()
                           tr("The library <b>%1</b> is not installed. See Messages Browser for any possible messages.").arg(library), Helper::ok);
     mpProgressLabel->hide();
     mpOkButton->setEnabled(true);
+  }
+}
+
+/*!
+ * \brief UpdateInstalledLibrariesDialog::UpdateInstalledLibrariesDialog
+ * \param parent
+ */
+UpdateInstalledLibrariesDialog::UpdateInstalledLibrariesDialog(QDialog *parent)
+  : QDialog(parent)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::updateInstalledLibraries));
+  setMinimumWidth(400);
+  Label *pHeadingLabel = Utilities::getHeadingLabel(Helper::updateInstalledLibraries);
+  pHeadingLabel->setElideMode(Qt::ElideMiddle);
+  // description label
+  mpDescriptLabel = new Label(tr("Click Update to upgrade the installed libraries that have been registered by the package manager."));
+  // installNewestVersions checkbox
+  mpInstallNewestVersionsCheckBox = new QCheckBox(tr("Install Newest Versions"));
+  mpInstallNewestVersionsCheckBox->setChecked(true);
+  // Progress label
+  mpProgressLabel = new Label(tr("<b>Updating installed libraries. Please wait.</b>"));
+  mpProgressLabel->hide();
+  // buttons
+  mpUpdateButton = new QPushButton(tr("Update"));
+  mpUpdateButton->setAutoDefault(true);
+  connect(mpUpdateButton, SIGNAL(clicked()), SLOT(updateInstalledLibraries()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpUpdateButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // layout
+  QGridLayout *pMainGridLayout = new QGridLayout;
+  int row = 0;
+  pMainGridLayout->setAlignment(Qt::AlignTop);
+  pMainGridLayout->addWidget(pHeadingLabel, row++, 0, 1, 2);
+  pMainGridLayout->addWidget(Utilities::getHeadingLine(), row++, 0, 1, 2);
+  pMainGridLayout->addWidget(mpDescriptLabel, row++, 0, 1, 2);
+  pMainGridLayout->addWidget(mpInstallNewestVersionsCheckBox, row++, 0, 1, 2);
+  pMainGridLayout->addWidget(mpProgressLabel, row, 0);
+  pMainGridLayout->addWidget(mpButtonBox, row++, 1, Qt::AlignRight);
+  setLayout(pMainGridLayout);
+}
+
+/*!
+ * \brief UpdateInstalledLibrariesDialog::updateInstalledLibraries
+ * Updates the installed libraries.
+ */
+void UpdateInstalledLibrariesDialog::updateInstalledLibraries()
+{
+  mpProgressLabel->show();
+  mpUpdateButton->setEnabled(false);
+  repaint(); // repaint the dialog so progresslabel is updated.
+
+  if (MainWindow::instance()->getOMCProxy()->upgradeInstalledPackages(mpInstallNewestVersionsCheckBox->isChecked())) {
+    MainWindow::instance()->getOMCProxy()->updatePackageIndex();
+    MainWindow::instance()->addSystemLibraries();
+    accept();
+  } else {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("Fail to update libraries. See Messages Browser for any possible messages."), Helper::ok);
+    mpProgressLabel->hide();
+    mpUpdateButton->setEnabled(true);
   }
 }

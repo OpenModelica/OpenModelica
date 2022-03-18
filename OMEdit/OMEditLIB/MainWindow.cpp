@@ -2513,15 +2513,13 @@ bool MainWindow::openInstallLibraryDialog()
 }
 
 /*!
- * \brief MainWindow::upgradeInstalledLibraries
- * Upgrades the installed libraries.
+ * \brief MainWindow::updateInstalledLibraries
+ * Opens the update installed libraries dialog.
  */
-void MainWindow::upgradeInstalledLibraries()
+void MainWindow::updateInstalledLibraries()
 {
-  if (mpOMCProxy->upgradeInstalledPackages(true)) {
-    mpOMCProxy->updatePackageIndex();
-    addSystemLibraries();
-  }
+  UpdateInstalledLibrariesDialog *pUpdateInstalledLibrariesDialog = new UpdateInstalledLibrariesDialog;
+  pUpdateInstalledLibrariesDialog->exec();
 }
 
 //! Imports the models from OMNotebook.
@@ -3467,10 +3465,10 @@ void MainWindow::createActions()
   mpInstallLibraryAction = new QAction(Helper::installLibrary, this);
   mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
   connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
-  // upgrade installed libraries action
-  mpUpgradeInstalledLibrariesAction = new QAction(tr("Upgrade Installed Libraries"), this);
-  mpUpgradeInstalledLibrariesAction->setStatusTip(tr("Upgrades the installed libraries"));
-  connect(mpUpgradeInstalledLibrariesAction, SIGNAL(triggered()), SLOT(upgradeInstalledLibraries()));
+  // updated installed libraries action
+  mpUpdateInstalledLibrariesAction = new QAction(Helper::updateInstalledLibraries, this);
+  mpUpdateInstalledLibrariesAction->setStatusTip(tr("Updates the installed libraries"));
+  connect(mpUpdateInstalledLibrariesAction, SIGNAL(triggered()), SLOT(updateInstalledLibraries()));
   // clear recent files action
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
@@ -3928,7 +3926,7 @@ void MainWindow::createMenus()
   addSystemLibraries();
   mpFileMenu->addMenu(mpLibrariesMenu);
   mpFileMenu->addAction(mpInstallLibraryAction);
-  mpFileMenu->addAction(mpUpgradeInstalledLibrariesAction);
+  mpFileMenu->addAction(mpUpdateInstalledLibrariesAction);
   mpFileMenu->addSeparator();
   mpRecentFilesMenu = new QMenu(menuBar());
   mpRecentFilesMenu->setObjectName("RecentFilesMenu");

@@ -336,7 +336,7 @@ private:
   QAction *mpExportFigaroAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpInstallLibraryAction;
-  QAction *mpUpgradeInstalledLibrariesAction;
+  QAction *mpUpdateInstalledLibrariesAction;
   QAction *mpClearRecentFilesAction;
   QAction *mpPrintModelAction;
   QAction *mpQuitAction;
@@ -529,7 +529,7 @@ public slots:
   void runOMSensPlugin();
   void exportModelToOMNotebook();
   bool openInstallLibraryDialog();
-  void upgradeInstalledLibraries();
+  void updateInstalledLibraries();
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
   void exportModelAsImage(bool copyToClipboard = false);

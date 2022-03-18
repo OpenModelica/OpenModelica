@@ -74,4 +74,20 @@ private slots:
   void installLibrary();
 };
 
+class UpdateInstalledLibrariesDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  explicit UpdateInstalledLibrariesDialog(QDialog *parent = nullptr);
+private:
+  Label *mpDescriptLabel;
+  QCheckBox *mpInstallNewestVersionsCheckBox;
+  Label *mpProgressLabel;
+  QPushButton *mpUpdateButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void updateInstalledLibraries();
+};
+
 #endif // INSTALLLIBRARYDIALOG_H
