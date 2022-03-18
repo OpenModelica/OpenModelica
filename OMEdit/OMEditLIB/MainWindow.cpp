@@ -1904,10 +1904,12 @@ void MainWindow::loadSystemLibrary(const QString &library, QString version)
       version = QString("default");
     }
 
-    if ((library.compare("OpenModelica") == 0) || (mpOMCProxy->loadModel(library, version))) {
+    mpLibraryWidget->setLoadingLibraries(true);
+    if (mpOMCProxy->loadModel(library, version)) {
       pLibraryTreeModel->createLibraryTreeItem(library, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
       pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     }
+    mpLibraryWidget->setLoadingLibraries(false);
     mpStatusBar->clearMessage();
     hideProgressBar();
   }
