@@ -69,11 +69,11 @@ typedef struct DATA_ESDIRKMR{
   threadData_t *threadData;
   void* solverData;
   double *y0, *y05, *y1,*y2, *y3, *der_x0;
-  double *m, *n;
-  double *radauVarsOld, *radauVars;
-  double radauTime;
-  double radauTimeOld;
-  double radauStepSize, radauStepSizeOld;
+  double *y, *yt, *yOld, *f, *fOld, *Jf;
+  double *k1, *k2, *k3;
+  double *errest, *errtol;
+  double time;
+  double stepSize;
   double gam, c2, b1, b2, b3, bt1, bt2, bt3, bh1, bh2, bh3;
   int firstStep;
   unsigned int stepsDone;
@@ -85,10 +85,5 @@ typedef struct DATA_ESDIRKMR{
 int allocateESDIRKMR(SOLVER_INFO* solverInfo, int size, int zcSize);
 int freeESDIRKMR(SOLVER_INFO* solverInfo);
 int esdirkmr_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-
-//auxiliary vector functions for better code structure
-
-void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
-
 
 #endif /* _ESDIRKMR_H_ */
