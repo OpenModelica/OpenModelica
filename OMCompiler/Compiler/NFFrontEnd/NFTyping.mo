@@ -116,7 +116,7 @@ algorithm
   typeClassType(cls, NFBinding.EMPTY_BINDING, NFInstContext.CLASS, cls);
   typeComponents(cls, NFInstContext.CLASS);
   execStat("NFTyping.typeComponents");
-  typeBindings(cls, cls, NFInstContext.CLASS);
+  typeBindings(cls, NFInstContext.CLASS);
   execStat("NFTyping.typeBindings");
   typeClassSections(cls, NFInstContext.CLASS);
   execStat("NFTyping.typeClassSections");
@@ -798,7 +798,6 @@ end getRecordElementBinding;
 
 function typeBindings
   input InstNode cls;
-  input InstNode component;
   input InstContext.Type context;
 protected
   Class c;
@@ -828,7 +827,7 @@ algorithm
 
     case Class.TYPED_DERIVED()
       algorithm
-        typeBindings(c.baseClass, component, context);
+        typeBindings(c.baseClass, context);
       then
         ();
 
@@ -901,7 +900,7 @@ algorithm
         InstNode.updateComponent(c, node);
 
         if typeChildren then
-          typeBindings(c.classInst, component, context);
+          typeBindings(c.classInst, context);
         end if;
       then
         ();
@@ -915,7 +914,7 @@ algorithm
         end if;
 
         if typeChildren then
-          typeBindings(c.classInst, component, context);
+          typeBindings(c.classInst, context);
         end if;
       then
         ();
