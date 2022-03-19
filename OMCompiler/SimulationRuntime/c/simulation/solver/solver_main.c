@@ -261,7 +261,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_ESDIRKMR:
   {
-    allocateESDIRKMR(solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
+    allocateESDIRKMR(data, threadData, solverInfo);
     break;
   }
   case S_ERKSSC:

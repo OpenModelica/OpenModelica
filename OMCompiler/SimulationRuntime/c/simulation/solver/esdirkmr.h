@@ -69,19 +69,20 @@ typedef struct DATA_ESDIRKMR{
   threadData_t *threadData;
   void* solverData;
   double *y, *yt, *yOld, *f, *fOld;
+  double *Jf;
   double *k1, *k2, *k3;
   double *errest, *errtol;
   double time;
   double stepSize, lastStepSize;
   double gam, c2, b1, b2, b3, bt1, bt2, bt3, bh1, bh2, bh3;
-  int firstStep;
+  int firstStep, symJac;
   unsigned int stepsDone;
   unsigned int evalFunctionODE;
   unsigned int evalJacobians;
 }DATA_ESDIRKMR;
 
 
-int allocateESDIRKMR(SOLVER_INFO* solverInfo, int size, int zcSize);
+int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int freeESDIRKMR(SOLVER_INFO* solverInfo);
 int esdirkmr_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 

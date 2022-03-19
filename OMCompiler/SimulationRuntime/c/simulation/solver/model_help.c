@@ -397,7 +397,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   /* Catch empty sparsePattern */
   if (sparsePattern == NULL || sizeRows <= 0 || sizeCols <= 0)
   {
-    infoStreamPrint(stream, 0, "No sparse strucutre available for \"%s\".", name);
+    infoStreamPrint(stream, 0, "No sparse structure available for \"%s\".", name);
     return;
   }
 
