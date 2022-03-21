@@ -93,7 +93,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   if(omc_flag[FLAG_RK])
     RK_method = ((int) *omc_flagValue[FLAG_RK]) - '0';
 
-  if (RK_method > 3 || !(omc_flag[FLAG_RK]))
+  if (RK_method > 4 || !(omc_flag[FLAG_RK]))
     RK_method = 0;
   switch(RK_method){
     case 0:
@@ -101,6 +101,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     // Reduced nonlinear system size
     // Systems solved in cascade
       userdata->stages = 3;
+      userdata->explicit = 0;
       userdata->nlSystemSize = size;
       userdata->step_fun = &(esdirkmr_imp_step);
 
@@ -146,6 +147,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     case 1:
     //ESDIRK2
       userdata->stages = 3;
+      userdata->explicit = 0;
       userdata->nlSystemSize = userdata->stages*size;
       userdata->step_fun = &(esdirkmr_impRK);
 
@@ -191,6 +193,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       case 2:
      //IRKSCO
       userdata->stages = 3;
+      userdata->explicit = 0;
       userdata->nlSystemSize = userdata->stages*size;
       userdata->step_fun = &(esdirkmr_impRK);
 
@@ -221,6 +224,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       case 3:
      //DOPRI
       userdata->stages = 7;
+      userdata->explicit = 1;
       userdata->nlSystemSize = userdata->stages*size;
       userdata->step_fun = &(esdirkmr_impRK);
 
@@ -253,7 +257,55 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       infoStreamPrint(LOG_SOLVER, 0, "DOPRI(4/5):");
       break;
 
+    case 4:
+     //DOPRI
+      userdata->stages = 4;
+      userdata->explicit = 0;
+      userdata->nlSystemSize = userdata->stages*size;
+      userdata->step_fun = &(esdirkmr_impRK);
 
+      /* Butcher Tableau */
+      userdata->order_b = 3;
+      userdata->order_bt = 2;
+      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+
+      userdata->c = malloc(sizeof(double)*userdata->stages);
+      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
+      userdata->b = malloc(sizeof(double)*userdata->stages);
+      userdata->bt = malloc(sizeof(double)*userdata->stages);
+
+      double gam=0.43586652150845899941601945;
+      double c3=3./5;
+      double a32=(c3*(c3-2*gam))/(4*gam);
+      double a31=c3-a32-gam;
+      double A=1-6*gam+6*gam*gam;
+      double b2=(-2+3*c3+6*gam*(1-c3))/(12*gam*(c3-2*gam));
+      double b3=A/(3*c3*(c3-2*gam));
+      double b4=gam;
+
+      double b1=1-b2-b3-b4;
+      double bt2=((c3*(-1+6*gam-24*gam*gam*gam+12*gam*gam*gam*gam-6*gam*gam*gam*gam*gam))/(4*gam*(2*gam-c3)*A)+
+                    (3-27*gam+68*gam*gam-55*gam*gam*gam+21*gam*gam*gam*gam-6*gam*gam*gam*gam*gam)/(2*(2*gam-c3)*A));
+      double bt3=((-gam*(-2+21*gam-68*gam*gam+79*gam*gam*gam-33*gam*gam*gam*gam+12*gam*gam*gam*gam*gam))/(c3*(c3-2*gam)*A));
+      double bt4=(-3*gam*gam*(-1+4*gam-2*gam*gam+gam*gam*gam))/A;
+      double bt1=1-bt2-bt3-bt4;
+
+      const double c_ESDIRK3[] = {0.0, 2*gam, c3, 1};
+	    const double A_ESDIRK3[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                gam, gam, 0.0, 0.0, 0.0, 0.0, 0.0,
+	 	                            a31, a32, gam, 0.0, 0.0, 0.0, 0.0,
+		                            b1, b2, b3, gam, 0.0, 0.0, 0.0
+     };
+      const double b_ESDIRK3[] = {b1, b2, b3, b4};
+      const double bt_ESDIRK3[] = {bt1, bt2, bt3, bt4};
+
+      memcpy(userdata->c, c_ESDIRK3, userdata->stages*sizeof(double));
+      memcpy(userdata->A, A_ESDIRK3, userdata->stages * userdata->stages * sizeof(double));
+      memcpy(userdata->b, b_ESDIRK3, userdata->stages*sizeof(double));
+      memcpy(userdata->bt, bt_ESDIRK3, userdata->stages*sizeof(double));
+
+      infoStreamPrint(LOG_SOLVER, 0, "ESDIRK3:");
+      break;
   }
 
   userdata->variant = 2;
@@ -739,7 +791,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
       }
     }
     //printMatrix_ESDIRKMR("Jacobian of solver", solverData->fjac, stages * n, ESDIRKMRData->time);
-    for (k=0; k<stages; k++)
+    for (k=0; k<stages && !ESDIRKMRData->explicit; k++)
     {
       // calculate Jf[k] and sweap over the stages
       sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->c[k] * ESDIRKMRData->stepSize;
@@ -1010,6 +1062,91 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
  *
  */
 int esdirkmr_impRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
+  int i, j, k, l, n=data->modelData->nStates;
+  double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
+
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
+  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*)solverInfo->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
+
+  userdata->data = (void*) data;
+  userdata->threadData = threadData;
+
+  sData->timeValue = userdata->time;
+  solverInfo->currentTime = sData->timeValue;
+
+  solverData->initialized = 1;
+  solverData->numberOfIterations = 0;
+  solverData->numberOfFunctionEvaluations = 0;
+  solverData->n = userdata->stages*n;
+
+  // set good starting values for the newton solver
+  for (k=0; k<userdata->stages; k++)
+    memcpy((solverData->x + k*n), userdata->yOld, n*sizeof(double));
+  // set newton strategy
+  solverData->newtonStrategy = NEWTON_DAMPED2;
+  _omc_newton(wrapper_RK, solverData, (void*)userdata);
+
+  /* if newton solver did not converge, do ??? */
+  if (solverData->info == -1)
+  {
+    userdata->convergenceFailures++;
+    // to be defined!
+    // reject and reduce time step would be an option
+    // or influence the calculation of the Jacobian during the newton steps
+    solverData->numberOfIterations = 0;
+    solverData->numberOfFunctionEvaluations = 0;
+    solverData->calculate_jacobian = 1;
+
+    warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
+    _omc_newton(wrapper_RK, solverData, (void*)userdata);
+
+    solverData->calculate_jacobian = -1;
+  }
+  for (i=0; i<n; i++)
+  {
+    userdata->y[i] = userdata->yOld[i];
+    userdata->yt[i] = userdata->yOld[i];
+  }
+
+  for (k=0; k<userdata->stages; k++)
+  {
+    // calculate f[k] and sweap over the stages
+    sData->timeValue = userdata->time + userdata->c[k] * userdata->stepSize;
+    memcpy(sData->realVars, (solverData->x + k * n), n*sizeof(double));
+    wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
+//    printVector_ESDIRKMR("yOld, y1g, y2g: ", sData->realVars, data->modelData->nStates, userdata->time);
+//    printVector_ESDIRKMR("k: ", fODE, data->modelData->nStates, userdata->time);
+
+    for (i=0; i<n; i++)
+    {
+      userdata->y[i] += userdata->stepSize * userdata->b[k] * fODE[i];
+      userdata->yt[i] += userdata->stepSize * userdata->bt[k] * fODE[i];
+    }
+  }
+//  printVector_ESDIRKMR("y ", userdata->y, n, userdata->time);
+//  printVector_ESDIRKMR("yt ", userdata->yt, n, userdata->time);
+// calculate corresponding values for error estimator and step size control
+  for (i=0; i<n; i++)
+  {
+    // userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
+    userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
+    userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
+  }
+
+  return 0;
+}
+
+/*!	\fn esdirkmr_expRK
+ *
+ *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
+ *  function omc_newton is used for solving nonlinear system
+ *  results will be saved in y and the embedded result in yt
+ *
+ */
+int esdirkmr_expRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   int i, j, k, l, n=data->modelData->nStates;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
