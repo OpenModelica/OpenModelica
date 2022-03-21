@@ -1405,7 +1405,7 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
   mpUsesLibrariesTreeWidget->setColumnCount(3);
   mpUsesLibrariesTreeWidget->setIndentation(0);
   QStringList headers;
-  headers << Helper::library << tr("From") << tr("To");
+  headers << Helper::library << tr("To") << tr("From");
   mpUsesLibrariesTreeWidget->setHeaderLabels(headers);
   QList<QList<QString > > usesAnnotation = MainWindow::instance()->getOMCProxy()->getUses(mpLibraryTreeItem->getNameStructure());
   for (int i = 0 ; i < usesAnnotation.size() ; i++) {
