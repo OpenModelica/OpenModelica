@@ -311,7 +311,7 @@ int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
       {
         sData->realVars[j] = irkscoData->y0[j] + x[n0*i+j];
       }
-
+      //printf("time point = %g \n",sData->timeValue);
 
       externalInputUpdate(data);
       data->callback->input_function(data, threadData);
@@ -486,6 +486,14 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
         diff = userdata->y2[i]-userdata->y1[i];
         err += (diff*diff)/(sc*sc);
       }
+                // printf("\ny = \n");
+                // for (int i=0;i<data->modelData->nStates;i++)
+                //   printf("%6g ", userdata->y2[i]);
+                // printf("\n");
+                // printf("yt = \n");
+                // for (int i=0;i<data->modelData->nStates;i++)
+                //   printf("%6g ", userdata->y1[i]);
+                // printf("\n");
 
       err /= data->modelData->nStates;
       err = sqrt(err);
@@ -503,12 +511,21 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       {
         userdata->radauStepSize = 1e-6;
       }
+      if (err>1)
+      {
+        infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
+                        userdata->radauTimeOld, userdata->radauTime, err, userdata->radauStepSize);
+      }
+
 
     } while  (err > 1.0 );
+
 
     userdata->radauTimeOld = userdata->radauTime;
 
     userdata->radauTime += userdata->radauStepSizeOld;
+    infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
+                    userdata->radauTimeOld, userdata->radauTime, err, userdata->radauStepSize);
 
     memcpy(userdata->radauVarsOld, userdata->radauVars, data->modelData->nStates*sizeof(double));
     memcpy(userdata->radauVars, userdata->y2, data->modelData->nStates*sizeof(double));

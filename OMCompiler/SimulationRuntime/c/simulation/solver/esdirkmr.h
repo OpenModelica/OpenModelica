@@ -78,12 +78,13 @@ typedef struct DATA_ESDIRKMR{
   int stages;
   double *A, *c, *b, *bt;
   int order_b, order_bt, error_order, variant;
-  int firstStep, symJac;
+  int firstStep, symJac, nlSystemSize;
   unsigned int stepsDone;
   unsigned int evalFunctionODE;
   unsigned int evalJacobians;
   unsigned int errorTestFailures;
   unsigned int convergenceFailures;
+  int (*step_fun)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 }DATA_ESDIRKMR;
 

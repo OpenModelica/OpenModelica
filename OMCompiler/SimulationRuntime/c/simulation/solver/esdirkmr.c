@@ -64,11 +64,17 @@
 #include "newtonIteration.h"
 #include "jacobianSymbolical.h"
 #include "esdirkmr.h"
+#include "simulation/options.h"
 
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void printVector_ESDIRKMR(char name[], double* a, int n, double time);
 void printMatrix_ESDIRKMR(char name[], double* a, int n, double time);
+
+// singlerate step function
+int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int esdirkmr_impRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+
 
 /*! \fn allocateESDIRKMR
  *
@@ -82,10 +88,177 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   solverInfo->solverData = (void*) userdata;
 
   int size = data->modelData->nStates;
-  userdata->variant = 2;
-  userdata->stages = 3;
+  /* only flags from 0 to 9 are supported */
+  int RK_method;
+  if(omc_flag[FLAG_RK])
+    RK_method = ((int) *omc_flagValue[FLAG_RK]) - '0';
 
-  allocateNewtonData(userdata->stages*size, &(userdata->solverData));
+  if (RK_method > 3 || !(omc_flag[FLAG_RK]))
+    RK_method = 0;
+  switch(RK_method){
+    case 0:
+    //ESDIRK2_OPT
+    // Reduced nonlinear system size
+    // Systems solved in cascade
+      userdata->stages = 3;
+      userdata->nlSystemSize = size;
+      userdata->step_fun = &(esdirkmr_imp_step);
+
+      /* Butcher Tableau */
+      userdata->order_b = 2;
+      userdata->order_bt = 1;
+      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+
+      userdata->c = malloc(sizeof(double)*userdata->stages);
+      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
+      userdata->b = malloc(sizeof(double)*userdata->stages);
+      userdata->bt = malloc(sizeof(double)*userdata->stages);
+
+      /* initialize values of the Butcher tableau */
+      userdata->gam = (2.0-sqrt(2.0))*0.5;
+      userdata->c2 = 2.0*userdata->gam;
+      userdata->b1 = sqrt(2.0)/4.0;
+      userdata->b2 = userdata->b1;
+      userdata->b3 = userdata->gam;
+      userdata->bt1 = 1.75-sqrt(2.0);
+      userdata->bt2 = userdata->bt1;
+      userdata->bt3 = 2.0*sqrt(2.0)-2.5;
+      userdata->bh1 = userdata->b1 - userdata->bt1;
+      userdata->bh2 = userdata->b2 - userdata->bt2;
+      userdata->bh3 = userdata->b3 - userdata->bt3;
+
+      const double c_ESDIRK2[] = {0.0 , userdata->c2, 1.0};
+      const double A_ESDIRK2[] = {
+                          0.0, 0.0, 0.0,
+                          userdata->gam, userdata->gam, 0.0,
+                          userdata->b1, userdata->b2, userdata->b3
+                        };
+      const double b_ESDIRK2[] = {userdata->b1, userdata->b2, userdata->b3};
+      const double bt_ESDIRK2[] = {userdata->bt1, userdata->bt2, userdata->bt3};
+      memcpy(userdata->c, c_ESDIRK2, userdata->stages*sizeof(double));
+      memcpy(userdata->A, A_ESDIRK2, userdata->stages * userdata->stages * sizeof(double));
+      memcpy(userdata->b, b_ESDIRK2, userdata->stages*sizeof(double));
+      memcpy(userdata->bt, bt_ESDIRK2, userdata->stages*sizeof(double));
+
+      infoStreamPrint(LOG_SOLVER, 0, "Optimized ESDIRK2 method:");
+      break;
+
+    case 1:
+    //ESDIRK2
+      userdata->stages = 3;
+      userdata->nlSystemSize = userdata->stages*size;
+      userdata->step_fun = &(esdirkmr_impRK);
+
+      /* Butcher Tableau */
+      userdata->order_b = 2;
+      userdata->order_bt = 1;
+      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+
+      userdata->c = malloc(sizeof(double)*userdata->stages);
+      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
+      userdata->b = malloc(sizeof(double)*userdata->stages);
+      userdata->bt = malloc(sizeof(double)*userdata->stages);
+
+      /* initialize values of the Butcher tableau */
+      userdata->gam = (2.0-sqrt(2.0))*0.5;
+      userdata->c2 = 2.0*userdata->gam;
+      userdata->b1 = sqrt(2.0)/4.0;
+      userdata->b2 = userdata->b1;
+      userdata->b3 = userdata->gam;
+      userdata->bt1 = 1.75-sqrt(2.0);
+      userdata->bt2 = userdata->bt1;
+      userdata->bt3 = 2.0*sqrt(2.0)-2.5;
+      userdata->bh1 = userdata->b1 - userdata->bt1;
+      userdata->bh2 = userdata->b2 - userdata->bt2;
+      userdata->bh3 = userdata->b3 - userdata->bt3;
+
+      const double c_ESDIRK2_N[] = {0.0 , userdata->c2, 1.0};
+      const double A_ESDIRK2_N[] = {
+                          0.0, 0.0, 0.0,
+                          userdata->gam, userdata->gam, 0.0,
+                          userdata->b1, userdata->b2, userdata->b3
+                        };
+      const double b_ESDIRK2_N[] = {userdata->b1, userdata->b2, userdata->b3};
+      const double bt_ESDIRK2_N[] = {userdata->bt1, userdata->bt2, userdata->bt3};
+      memcpy(userdata->c, c_ESDIRK2_N, userdata->stages*sizeof(double));
+      memcpy(userdata->A, A_ESDIRK2_N, userdata->stages * userdata->stages * sizeof(double));
+      memcpy(userdata->b, b_ESDIRK2_N, userdata->stages*sizeof(double));
+      memcpy(userdata->bt, bt_ESDIRK2_N, userdata->stages*sizeof(double));
+
+      infoStreamPrint(LOG_SOLVER, 0, "ESDIRK2 method as usual implicit RK method:");
+      break;
+
+      case 2:
+     //IRKSCO
+      userdata->stages = 3;
+      userdata->nlSystemSize = userdata->stages*size;
+      userdata->step_fun = &(esdirkmr_impRK);
+
+      /* Butcher Tableau */
+      userdata->order_b = 1;
+      userdata->order_bt = 2;
+      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+
+      userdata->c = malloc(sizeof(double)*userdata->stages);
+      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
+      userdata->b = malloc(sizeof(double)*userdata->stages);
+      userdata->bt = malloc(sizeof(double)*userdata->stages);
+
+      const double c_IRKSCO[] = {0.0, 0.5, 1.0};
+      const double A_IRKSCO[] = {0.0, 0.0, 0.0,
+                                 0.0, 0.5, 0.0,
+                                 0.0, 0.0, 1.0};
+      const double b_IRKSCO[] = {0,0,1};
+      const double bt_IRKSCO[] = {-1,2,0};
+      memcpy(userdata->c, c_IRKSCO, userdata->stages*sizeof(double));
+      memcpy(userdata->A, A_IRKSCO, userdata->stages * userdata->stages * sizeof(double));
+      memcpy(userdata->b, b_IRKSCO, userdata->stages*sizeof(double));
+      memcpy(userdata->bt, bt_IRKSCO, userdata->stages*sizeof(double));
+
+      infoStreamPrint(LOG_SOLVER, 0, "New realization of the IRKSCO method:");
+      break;
+
+      case 3:
+     //DOPRI
+      userdata->stages = 7;
+      userdata->nlSystemSize = userdata->stages*size;
+      userdata->step_fun = &(esdirkmr_impRK);
+
+      /* Butcher Tableau */
+      userdata->order_b = 5;
+      userdata->order_bt = 4;
+      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+
+      userdata->c = malloc(sizeof(double)*userdata->stages);
+      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
+      userdata->b = malloc(sizeof(double)*userdata->stages);
+      userdata->bt = malloc(sizeof(double)*userdata->stages);
+
+      const double c_DOPRI[] = {0.0, 1./5, 3./10, 4./5, 8./9, 1., 1.};
+	    const double A_DOPRI[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                1./5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+	 	                            3./40, 9./40, 0.0, 0.0, 0.0, 0.0, 0.0,
+		                            44./55, -56./15, 32./9, 0.0, 0.0, 0.0, 0.0,
+	 	                            19372./6561, -25360./2187, 64448./6561, -212./729, 0.0, 0.0, 0.0,
+                                9017./3168, -355./33, 46732./5247, 49./176, -5103./18656, 0.0, 0.0,
+                                35./384, 0.0, 500./1113, 125./192, -2187./6784, 11./84, 0.0
+     };
+      const double b_DOPRI[] = {35./384, 0.0, 500./1113, 125./192, -2187./6784, 11./84, 0.0};
+      const double bt_DOPRI[] = {5179./57600, 	0.0, 	7571./16695, 	393./640, 	-92097./339200, 	187./2100, 	1./40};
+      memcpy(userdata->c, c_DOPRI, userdata->stages*sizeof(double));
+      memcpy(userdata->A, A_DOPRI, userdata->stages * userdata->stages * sizeof(double));
+      memcpy(userdata->b, b_DOPRI, userdata->stages*sizeof(double));
+      memcpy(userdata->bt, bt_DOPRI, userdata->stages*sizeof(double));
+
+      infoStreamPrint(LOG_SOLVER, 0, "DOPRI(4/5):");
+      break;
+
+
+  }
+
+  userdata->variant = 2;
+
+  allocateNewtonData(userdata->nlSystemSize, &(userdata->solverData));
 
   userdata->firstStep = 1;
   userdata->y = malloc(sizeof(double)*size);
@@ -99,41 +272,6 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   userdata->errest = malloc(sizeof(double)*size);
   userdata->errtol = malloc(sizeof(double)*size);
 
-  /* Butcher Tableau */
-  userdata->order_b = 2;
-  userdata->order_bt = 1;
-  userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
-
-  userdata->c = malloc(sizeof(double)*userdata->stages);
-  userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
-  userdata->b = malloc(sizeof(double)*userdata->stages);
-  userdata->bt = malloc(sizeof(double)*userdata->stages);
-
-  /* initialize values of the Butcher tableau */
-  userdata->gam = (2.0-sqrt(2.0))*0.5;
-  userdata->c2 = 2.0*userdata->gam;
-  userdata->b1 = sqrt(2.0)/4.0;
-  userdata->b2 = userdata->b1;
-  userdata->b3 = userdata->gam;
-  userdata->bt1 = 1.75-sqrt(2.0);
-  userdata->bt2 = userdata->bt1;
-  userdata->bt3 = 2.0*sqrt(2.0)-2.5;
-  userdata->bh1 = userdata->b1 - userdata->bt1;
-  userdata->bh2 = userdata->b2 - userdata->bt2;
-  userdata->bh3 = userdata->b3 - userdata->bt3;
-
-  const double c[] = {0.0 , userdata->c2, 1.0};
-  const double A[] = {
-                       0.0, 0.0, 0.0,
-                       userdata->gam, userdata->gam, 0.0,
-                       userdata->b1, userdata->b2, userdata->b3
-                     };
-  const double b[] = {userdata->b1, userdata->b2, userdata->b3};
-  const double bt[] = {userdata->bt1, userdata->bt2, userdata->bt3};
-  memcpy(userdata->c, c, userdata->stages*sizeof(double));
-  memcpy(userdata->A, A, userdata->stages * userdata->stages * sizeof(double));
-  memcpy(userdata->b, b, userdata->stages*sizeof(double));
-  memcpy(userdata->bt, bt, userdata->stages*sizeof(double));
 
   char Butcher_row[1024];
   infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of ESDIRK-method:");
@@ -848,13 +986,14 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   {
     userdata->y[i] = userdata->yOld[i] + userdata->stepSize *
                      (userdata->b1 * userdata->k1[i] + userdata->b2 * userdata->k2[i] + userdata->b3 * userdata->k3[i]);
-    userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
-    userdata->errest[i] = userdata->stepSize *
-                     fabs(userdata->bh1 * userdata->k1[i] + userdata->bh2 * userdata->k2[i] + userdata->bh3 * userdata->k3[i]);
     // alternative calculation
+    // userdata->errest[i] = userdata->stepSize *
+    //                  fabs(userdata->bh1 * userdata->k1[i] + userdata->bh2 * userdata->k2[i] + userdata->bh3 * userdata->k3[i]);
     userdata->yt[i] = userdata->yOld[i] + userdata->stepSize *
                      (userdata->bt1 * userdata->k1[i] + userdata->bt2 * userdata->k2[i] + userdata->bt3 * userdata->k3[i]);
-    // userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
+    //userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
+    userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
+    userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
   }
   //printVector_ESDIRKMR("y ", userdata->y, n, userdata->time);
   //printVector_ESDIRKMR("yt ", userdata->yt, n, userdata->time);
@@ -940,7 +1079,8 @@ int esdirkmr_impRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 // calculate corresponding values for error estimator and step size control
   for (i=0; i<n; i++)
   {
-    userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
+    // userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
+    userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
     userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
   }
 
@@ -1014,13 +1154,10 @@ int esdirkmr_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         solverData->calculate_jacobian = 0;
 
       // calculate one step of the integrator
-      if (userdata->variant==1)
-        esdirk_imp_step_info = esdirkmr_imp_step(data, threadData, solverInfo);
-      else
-        esdirk_imp_step_info = esdirkmr_impRK(data, threadData, solverInfo);
+      esdirk_imp_step_info = userdata->step_fun(data, threadData, solverInfo);
 
-      //printVector_ESDIRKMR("y ", userdata->y, data->modelData->nStates, userdata->time);
-      //printVector_ESDIRKMR("yt ", userdata->yt, data->modelData->nStates;, userdata->time);
+      // printVector_ESDIRKMR("y ", userdata->y, data->modelData->nStates, userdata->time);
+      // printVector_ESDIRKMR("yt ", userdata->yt, data->modelData->nStates, userdata->time);
 
 
       /*** calculate error (infinity norm!)***/
