@@ -490,11 +490,12 @@ end languageStandardString;
 
 public function setLanguageStandardFromMSL
   input String inLibraryName;
+  input Boolean force = false "Set the standard even if it was already set";
 protected
   LanguageStandard current_std;
 algorithm
   current_std := getLanguageStandard();
-  if current_std <> LanguageStandard.latest then
+  if not force and current_std <> LanguageStandard.latest then
     // If we selected an MSL version manually, we respect that choice.
     return;
   end if;

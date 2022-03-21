@@ -8717,6 +8717,7 @@ protected
   SemanticVersion.Version lib_version, lib_version_used;
   list<tuple<String, Option<String>, Option<String>>> conversions;
   list<String> scripts;
+  String lib_name;
 algorithm
   try
     // Get the Absyn for the class and check which version of the library it's using.
@@ -8732,12 +8733,24 @@ algorithm
       fail();
     end if;
 
-    // Load the library that we want to convert the class to.
-    (lib_program, true) := CevalScript.loadModel(
-      {(libPath, AbsynUtil.pathFirstIdent(libPath), {libVersion}, false)},
-      Settings.getModelicaPath(Testsuite.isRunning()),
-      p, true, true, false, true);
-    SymbolTable.setAbsyn(lib_program);
+    lib_name := AbsynUtil.pathFirstIdent(libPath);
+    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, p));
+
+    // Check if the wanted version of the library is already loaded, otherwise
+    // we need to load it.
+    if SemanticVersion.compare(lib_version, SemanticVersion.parse(libVersion)) <> 0 then
+      // Try to set the language standard to the version needed to load the wanted library.
+      if lib_name == "Modelica" then
+        Config.setLanguageStandardFromMSL("Modelica " + libVersion, force = true);
+      end if;
+
+      // Load the library that we want to convert the class to.
+      (lib_program, true) := CevalScript.loadModel({(libPath, lib_name, {libVersion}, false)},
+        Settings.getModelicaPath(Testsuite.isRunning()), p, true, true, false, true);
+      SymbolTable.setAbsyn(lib_program);
+    else
+      lib_program := p;
+    end if;
 
     // Get the version of the library.
     lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, lib_program));
