@@ -3543,6 +3543,182 @@ algorithm
   end if;
 end callTranslateModel;
 
+protected function configureFMU_cmake
+"Configure and build binaries with CMake for target platform"
+  input String platform;
+  input String fmutmp;
+  input String fmuTargetName;
+  input String logfile;
+  input Boolean isWindows;
+protected
+  String fmuSourceDir;
+  String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
+  String quote, dquote, defaultFmiIncludeDirectoy;
+algorithm
+  fmuSourceDir := fmutmp+"/sources/";
+  quote := "'";
+  dquote := if isWindows then "\"" else "'";
+  defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
+
+  // Set build type
+  if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
+    CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=Release";
+  elseif Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+    CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=Debug";
+  else
+    CMAKE_BUILD_TYPE := "-DCMAKE_BUILD_TYPE=RelWithDebInfo";
+  end if;
+
+  // Remove old log file
+  if System.regularFileExists(logfile) then
+    System.removeFile(logfile);
+  end if;
+
+  _ := match Util.stringSplitAtChar(platform, " ")
+    local
+      String cmd;
+      String cmakeCall;
+      String crossTriple, buildDir, fmiTarget;
+      list<String> dockerImgArgs;
+      Integer uid;
+      String cidFile, volumeID, containerID, userID;
+      String dockerLogFile;
+    case {"dynamic"}
+      algorithm
+        if isWindows then
+          CMAKE_GENERATOR := "-G MSYS Makefiles ";
+        end if;
+        buildDir := "build_cmake_dynamic";
+        cmakeCall := "cmake " + CMAKE_GENERATOR +
+                              "-DFMI_INTERFACE_HEADER_FILES_DIRECTORY=" + defaultFmiIncludeDirectoy + " " +
+                              CMAKE_BUILD_TYPE +
+                              " ..";
+        cmd := "cd \"" + fmuSourceDir + "\" && " +
+               "mkdir " + buildDir + " && cd " + buildDir + " && " +
+               cmakeCall + " && " +
+               "cmake --build . --target install && " +
+               "cd .. && rm -rf " + buildDir;
+        if 0 <> System.systemCall(cmd, outFile=logfile) then
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          System.removeFile(logfile);
+          fail();
+        end if;
+        then();
+    case crossTriple::"docker"::"run"::dockerImgArgs
+      algorithm
+        uid := System.getuid();
+        cidFile := fmutmp+".cidfile";
+
+        // Temp log file outside of Docker volume
+        dockerLogFile := crossTriple + ".tmp.log";
+
+        // Create a docker volume for the FMU since we can't forward volumes
+        // to the docker run command depending on where the FMU was generated (inside another volume)
+        cmd := "docker volume create";
+        runDockerCmd(cmd, dockerLogFile);
+        volumeID := List.last(System.strtok(System.readFile(dockerLogFile), "\n"));
+
+        if System.regularFileExists(cidFile) then
+          System.removeFile(cidFile);
+        end if;
+        cmd := "docker run --cidfile " + cidFile + " -v " + volumeID + ":/data busybox true";
+        runDockerCmd(cmd, dockerLogFile, true, volumeID, "");
+
+        containerID := System.trim(System.readFile(cidFile));
+        System.removeFile(cidFile);
+
+        // Copy the FMU contents to the container
+        cmd := "docker cp " + fmutmp + " " + containerID + ":/data";
+        runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+
+        // Copy the FMI headers to the container
+        cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
+        runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+
+        // Build for target host
+        userID := (if uid<>0 then "--user " + String(uid) else "");
+        buildDir := "build_cmake_" + crossTriple;
+        if 0 <> System.regex(crossTriple, "mingw", 1) then
+          fmiTarget := " -DCMAKE_SYSTEM_NAME=Windows ";
+        elseif 0 <> System.regex(crossTriple, "apple", 1) then
+          fmiTarget := " -DCMAKE_SYSTEM_NAME=Darwin ";
+        else
+          fmiTarget := "";
+        end if;
+        cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+                            fmiTarget +
+                            CMAKE_BUILD_TYPE +
+                            " ..";
+        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu -e CROSS_TRIPLE=" + crossTriple + " " + stringDelimitList(dockerImgArgs," ") +
+               " sh -c " + dquote +
+                  "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
+                  "mkdir " + buildDir + " && cd " + buildDir + " && " +
+                  cmakeCall + " && " +
+                  "cmake --build . && make install && " +
+                  "cd .. && rm -rf " + buildDir +
+                dquote;
+        runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+
+        // Copy the files back from the volume (via the container) to the filesystem.
+        // Docker cp can't handle too long names on Windows.
+        // Workaround: Zip it in the container, copy it to host, unzip it
+        if isWindows then
+          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + stringDelimitList(dockerImgArgs," ") +
+                 " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
+          runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+
+          cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
+          runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
+          System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz");
+        else
+          cmd := "docker cp " + containerID + ":/data/" + fmutmp + "/ .";
+          runDockerCmd(cmd, dockerLogFile, cleanup=false, volumeID=volumeID, containerID=containerID);
+        end if;
+
+        // Cleanup
+        System.systemCall("docker rm " + containerID);
+        System.systemCall("docker volume rm " + volumeID);
+
+        // Copy log file into resources directory
+        System.copyFile(dockerLogFile, logfile);
+        System.removeFile(dockerLogFile);
+        then();
+    else
+      algorithm
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Unknown/unsupported platform \"" + platform + " \" for CMake FMU build"});
+      then fail();
+  end match;
+end configureFMU_cmake;
+
+protected function runDockerCmd
+  "Run a docker command. Can clean up volumen and container on failure."
+  input String cmd;
+  input String logfile;
+  input Boolean cleanup = false;
+  input String volumeID = "";
+  input String containerID = "";
+protected
+  Boolean verbose = false;
+algorithm
+  System.appendFile(logfile, cmd + "\n");
+  if 0 <> System.systemCall(cmd, outFile=logfile) then
+    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
+
+    if cleanup then
+      if not stringEqual(containerID, "") then
+        System.systemCall("docker rm " + containerID);
+      end if;
+      if not stringEqual(volumeID, "") then
+        System.systemCall("docker volume rm " + volumeID);
+      end if;
+    end if;
+
+    fail();
+  elseif verbose then
+      print(System.readFile(logfile) +"\n");
+  end if;
+end runDockerCmd;
+
 protected function configureFMU
 "Configures Makefile.in of FMU for traget configuration."
   input String platform;
@@ -3808,10 +3984,10 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   Boolean isWindows;
+  Boolean useCrossCompileCmake = false;
   list<String> fmiFlagsList;
   Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
-
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -3900,10 +4076,42 @@ algorithm
     needs3rdPartyLibs := false;
   end if;
 
+  // Use CMake on Windows when cross-compiling with docker
+  _ := match (Flags.getConfigString(Flags.FMU_CMAKE_BUILD), needs3rdPartyLibs)
+    case ("true", _) algorithm
+      useCrossCompileCmake := true;
+      then();
+    case ("false", _) algorithm
+      useCrossCompileCmake := false;
+      then();
+    case ("default", false) algorithm
+      if (listLength(platforms) > 1 and isWindows) then
+        Error.addCompilerNotification("OS is Windows and multiple platform detected. Using CMake to build FMU.");
+        useCrossCompileCmake := true;
+      else
+        for platform in platforms loop
+          if isWindows and 1 == System.regex(platform, " docker run ", 0, true, false) then
+            Error.addCompilerNotification("OS is Windows and docker platform detected. Using CMake to build FMU.");
+            useCrossCompileCmake := true;
+          end if;
+        end for;
+      end if;
+      then();
+    else
+      algorithm
+        useCrossCompileCmake := false;
+        then();
+  end match;
+
+
   // Configure the FMU Makefile
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
-    configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
+    if useCrossCompileCmake then
+      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, isWindows);
+    else
+      configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
+    end if;
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
@@ -8509,6 +8717,7 @@ protected
   SemanticVersion.Version lib_version, lib_version_used;
   list<tuple<String, Option<String>, Option<String>>> conversions;
   list<String> scripts;
+  String lib_name;
 algorithm
   try
     // Get the Absyn for the class and check which version of the library it's using.
@@ -8524,12 +8733,24 @@ algorithm
       fail();
     end if;
 
-    // Load the library that we want to convert the class to.
-    (lib_program, true) := CevalScript.loadModel(
-      {(libPath, AbsynUtil.pathFirstIdent(libPath), {libVersion}, false)},
-      Settings.getModelicaPath(Testsuite.isRunning()),
-      p, true, true, false, true);
-    SymbolTable.setAbsyn(lib_program);
+    lib_name := AbsynUtil.pathFirstIdent(libPath);
+    lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, p));
+
+    // Check if the wanted version of the library is already loaded, otherwise
+    // we need to load it.
+    if SemanticVersion.compare(lib_version, SemanticVersion.parse(libVersion)) <> 0 then
+      // Try to set the language standard to the version needed to load the wanted library.
+      if lib_name == "Modelica" then
+        Config.setLanguageStandardFromMSL("Modelica " + libVersion, force = true);
+      end if;
+
+      // Load the library that we want to convert the class to.
+      (lib_program, true) := CevalScript.loadModel({(libPath, lib_name, {libVersion}, false)},
+        Settings.getModelicaPath(Testsuite.isRunning()), p, true, true, false, true);
+      SymbolTable.setAbsyn(lib_program);
+    else
+      lib_program := p;
+    end if;
 
     // Get the version of the library.
     lib_version := SemanticVersion.parse(CevalScript.getPackageVersion(libPath, lib_program));

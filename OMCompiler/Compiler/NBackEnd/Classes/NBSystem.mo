@@ -112,7 +112,7 @@ public
 
       if level == 2 then
         if isSome(system.jacobian) then
-          str := str + BJacobian.toString(Util.getOption(system.jacobian)) + "\n";
+          str := str + BJacobian.toString(Util.getOption(system.jacobian), "SIM") + "\n";
         else
           str := str + StringUtil.headline_2("NO JACOBIAN") + "\n";
         end if;

@@ -1414,19 +1414,21 @@ QModelIndex LibraryTreeModel::libraryTreeItemIndex(const LibraryTreeItem *pLibra
 void LibraryTreeModel::addModelicaLibraries()
 {
   // load Modelica System Libraries.
+  mpLibraryWidget->setLoadingLibraries(true);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pOMCProxy->loadSystemLibraries();
   QStringList systemLibs = pOMCProxy->getClassNames();
-  if (OptionsDialog::instance()->getLibrariesPage()->getLoadOpenModelicaLibraryCheckBox()->isChecked()) {
-    systemLibs.prepend("OpenModelica");
-  }
-  foreach (QString lib, systemLibs) {
-    SplashScreen::instance()->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
-    createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, true, true);
-    checkIfAnyNonExistingClassLoaded();
+  foreach (QString systemLib, systemLibs) {
+    LibraryTreeItem *pLibraryTreeItem = findLibraryTreeItem(systemLib);
+    if (!pLibraryTreeItem) {
+      SplashScreen::instance()->showMessage(QString("%1 %2").arg(Helper::loading, systemLib), Qt::AlignRight, Qt::white);
+      createLibraryTreeItem(systemLib, mpRootLibraryTreeItem, true, true, true);
+      checkIfAnyNonExistingClassLoaded();
+    }
   }
   // load Modelica User Libraries.
   pOMCProxy->loadUserLibraries();
+  mpLibraryWidget->setLoadingLibraries(false);
 }
 
 /*!
@@ -3366,7 +3368,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           exportMenu.addAction(mpExportXMLAction);
           exportMenu.addAction(mpExportFigaroAction);
           menu.addMenu(&exportMenu);
-          if (pLibraryTreeItem->isTopLevel()) {
+          if (pLibraryTreeItem->isTopLevel() && !pLibraryTreeItem->isSystemLibrary()) {
             menu.addSeparator();
             menu.addAction(mpConvertClassUsesLibrariesAction);
           }
@@ -4057,6 +4059,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
 LibraryWidget::LibraryWidget(QWidget *pParent)
   : QWidget(pParent)
 {
+  setLoadingLibraries(false);
   mAutoLoadedLibrariesTimer.setSingleShot(true);
   connect(&mAutoLoadedLibrariesTimer, SIGNAL(timeout()), SLOT(handleAutoLoadedLibrary()));
   mAutoLoadedLibrariesList.clear();
@@ -4190,6 +4193,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
     } else { // if no conflicting model found then just load the file simply
+      setLoadingLibraries(true);
       // load the file in OMC
       if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding)) {
         // create library tree nodes for loaded models
@@ -4210,6 +4214,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
           MainWindow::instance()->hideProgressBar();
         }
       }
+      setLoadingLibraries(false);
     }
   }
   if (showProgress) {
@@ -4270,6 +4275,7 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
     } else { // if no conflicting model found then just load the file simply
+      setLoadingLibraries(true);
       // load the encrypted package in OMC
       // we pass true for skipUnzip as we have alredy extracted mol with parseEncryptedPackage earlier.
       if (MainWindow::instance()->getOMCProxy()->loadEncryptedPackage(fileName, tempDirectoryPath, true)) {
@@ -4291,6 +4297,7 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
           MainWindow::instance()->hideProgressBar();
         }
       }
+      setLoadingLibraries(false);
     }
   }
   if (showProgress) {
@@ -4524,6 +4531,7 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
     pMessageBox->setStandardButtons(QMessageBox::Ok);
     pMessageBox->exec();
   } else {  // if no conflicting model found then just load the file simply
+    setLoadingLibraries(true);
     // load the model text in OMC
     if (MainWindow::instance()->getOMCProxy()->loadString(modelText, className)) {
       QString modelName = StringHandler::getLastWordAfterDot(className);
@@ -4537,6 +4545,7 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
       mpLibraryTreeModel->createLibraryTreeItem(modelName, pParentLibraryTreeItem, false, false, true);
       mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     }
+    setLoadingLibraries(false);
   }
 }
 
@@ -4707,9 +4716,7 @@ void LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 void LibraryWidget::openLibraryTreeItem(QString nameStructure)
 {
   LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(nameStructure);
-  if (!pLibraryTreeItem) {
-    return;
-  } else {
+  if (pLibraryTreeItem) {
     mpLibraryTreeModel->showModelWidget(pLibraryTreeItem);
   }
 }
@@ -4722,9 +4729,7 @@ void LibraryWidget::openLibraryTreeItem(QString nameStructure)
 void LibraryWidget::loadAutoLoadedLibrary(const QString &modelName)
 {
   mAutoLoadedLibrariesList.append(modelName);
-  if (!mAutoLoadedLibrariesTimer.isActive()) {
-    mAutoLoadedLibrariesTimer.start();
-  }
+  mAutoLoadedLibrariesTimer.start();
 }
 
 /*!
@@ -5237,8 +5242,12 @@ void LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTree
  */
 void LibraryWidget::handleAutoLoadedLibrary()
 {
-  mpLibraryTreeModel->loadDependentLibraries(mAutoLoadedLibrariesList);
-  mAutoLoadedLibrariesList.clear();
+  if (isLoadingLibraries()) {
+    mAutoLoadedLibrariesTimer.start();
+  } else {
+    mpLibraryTreeModel->loadDependentLibraries(mAutoLoadedLibrariesList);
+    mAutoLoadedLibrariesList.clear();
+  }
 }
 
 /*!

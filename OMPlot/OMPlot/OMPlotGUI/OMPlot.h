@@ -51,6 +51,7 @@ class PlotGrid;
 class PlotZoomer;
 class PlotPanner;
 class PlotPicker;
+class LinearScaleEngine;
 class ScaleDraw;
 class PlotCurve;
 
@@ -61,6 +62,8 @@ private:
   PlotWindow *mpParentPlotWindow;
   Legend *mpLegend;
   PlotGrid *mpPlotGrid;
+  LinearScaleEngine *mpXLinearScaleEngine;
+  LinearScaleEngine *mpYLinearScaleEngine;
   ScaleDraw *mpXScaleDraw;
   ScaleDraw *mpYScaleDraw;
   PlotZoomer *mpPlotZoomer;
@@ -78,6 +81,8 @@ public:
   Legend* getLegend();
   PlotPicker *getPlotPicker();
   PlotGrid* getPlotGrid();
+  LinearScaleEngine* getXLinearScaleEngine() const {return mpXLinearScaleEngine;}
+  LinearScaleEngine* getYLinearScaleEngine() const {return mpYLinearScaleEngine;}
   ScaleDraw *getXScaleDraw() const {return mpXScaleDraw;}
   ScaleDraw *getYScaleDraw() const {return mpYScaleDraw;}
   PlotZoomer* getPlotZoomer();

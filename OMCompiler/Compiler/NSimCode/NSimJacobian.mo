@@ -39,6 +39,7 @@ public
   import ComponentRef = NFComponentRef;
   import NFInstNode.InstNode;
   import FunctionTree = NFFlatten.FunctionTree;
+  import Subscript = NFSubscript;
   import Type = NFType;
 
   // Backend imports
@@ -200,9 +201,12 @@ public
     algorithm
       simJacobian := match jacobian
         local
-          EqData eqData;
+          // dummy map for strong component creation (no alias possible here)
+          UnorderedMap<ComponentRef, SimVar> dummy_map = UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
+          SimStrongComponent.Block columnEqn;
           VarData varData;
-          Pointer<list<SimStrongComponent.Block>> columnEqns = Pointer.create({});
+          VariablePointers unknowns_scalar, seed_scalar;
+          list<SimStrongComponent.Block> columnEqns = {};
           Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(indices);
           Pointer<list<SimVar>> columnVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
@@ -213,12 +217,19 @@ public
           Integer numColors;
           SimJacobian jac;
 
-        case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC(), eqData = eqData as BEquation.EQ_DATA_JAC()) algorithm
-          EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr, systemType = NBSystem.SystemType.JAC, simcode_map = simcode_map));
+        case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC()) algorithm
+          for i in arrayLength(jacobian.comps):-1:1 loop
+            (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBSystem.SystemType.JAC, dummy_map);
+            columnEqns := columnEqn :: columnEqns;
+          end for;
+
+          // scalarize variables for sim code
+          unknowns_scalar := VariablePointers.scalarize(varData.unknowns);
+          seed_scalar := VariablePointers.scalarize(varData.seedVars);
 
           // use dummy simcode indices to always start at 0 for column and seed vars
-          VariablePointers.map(varData.unknowns, function SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
-          VariablePointers.map(varData.seedVars, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
+          VariablePointers.map(unknowns_scalar, function SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
+          VariablePointers.map(seed_scalar, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType =  VarType.SIMULATION));
           columnVars := listReverse(Pointer.access(columnVars_ptr));
           seedVars := listReverse(Pointer.access(seedVars_ptr));
 
@@ -233,8 +244,8 @@ public
             name                = jacobian.name,
             jacobianIndex       = indices.jacobianIndex,
             partitionIndex      = 0,
-            numberOfResultVars  = listLength(columnVars),   // needs to be changed once tearing is implmented
-            columnEqns          = listReverse(Pointer.access(columnEqns)),
+            numberOfResultVars  = listLength(columnVars),
+            columnEqns          = listReverse(columnEqns),
             constantEqns        = {},
             columnVars          = columnVars,
             seedVars            = seedVars,
@@ -322,7 +333,7 @@ public
       list<ComponentRef> dependencies;
       list<Integer> dep_indices;
     algorithm
-      for col in listReverse(cols) loop
+      for col in cols loop
         (cref, dependencies) := col;
         try
           // this state derivative -> state transformation is for conversion to the old simcode
@@ -349,7 +360,7 @@ public
     protected
       list<Integer> tmp;
     algorithm
-      for group in listReverse(coloring) loop
+      for group in listReverse(arrayList(coloring.cols)) loop
         try
           tmp := list(SimVar.getIndex(UnorderedMap.getSafe(cref, sim_map)) for cref in group);
         else
@@ -466,9 +477,13 @@ protected
     "returns the state of a derivative if it is one, otherwise it just returns the cref itself.
     used for getting jacobian dependencies in the sparsity pattern."
     input output ComponentRef cref;
+  protected
+    list<Subscript> subscripts;
   algorithm
     if BVariable.checkCref(cref, BVariable.isStateDerivative) then
-      cref := BVariable.getStateCref(cref);
+      subscripts := ComponentRef.subscriptsAllFlat(cref);
+      cref := BVariable.getStateCref(ComponentRef.stripSubscriptsAll(cref));
+      cref := ComponentRef.mergeSubscripts(subscripts, cref);
     end if;
   end derivativeToStateCref;
 

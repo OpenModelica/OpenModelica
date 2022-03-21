@@ -105,7 +105,7 @@ public
       str := str  + InnerEquation.toString(eqn, "\t") + "\n";
     end for;
     if Util.isSome(set.jac) then
-      str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS", true);
+      str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS");
     end if;
   end toString;
 
@@ -345,7 +345,6 @@ protected
       discreteVars    := VariablePointers.fromList(disc_lst);
       eqns            := EquationPointers.fromList(equations);
 
-      // make ARRAY possible
       (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.PSEUDO, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
       matching := Matching.regular(Matching.EMPTY_MATCHING(), adj, true, false);
       (_, _, _, residual_lst) := Matching.getMatches(matching, NONE(), discreteVars, eqns);
@@ -363,8 +362,8 @@ protected
 
     // inner equations are part of the jacobian
     (jacobian, funcTree) := BJacobian.nonlinear(
-      variables = VariablePointers.fromList(variables),
-      equations = EquationPointers.fromList(equations),
+      variables = VariablePointers.fromList(cont_lst),
+      equations = EquationPointers.fromList(list(Slice.getT(res) for res in residual_lst)),
       comps     = listArray(listAppend(inner_comps, residual_comps)),
       funcTree  = funcTree,
       name      = name + intString(index)

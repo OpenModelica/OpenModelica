@@ -43,7 +43,6 @@ QString Helper::application = "omedit"; /* case-sensitive string. Don't change i
 // Following four variables are set once we are connected to OMC......in OMCProxy::initializeOMC().
 QString Helper::OpenModelicaVersion = "";
 QString Helper::OpenModelicaHome = "";
-QString Helper::OpenModelicaLibrary = "";
 QString Helper::userHomeDirectory = "";
 QString Helper::OMCServerName = "OMEdit";
 QString Helper::omFileTypes = "All Files (*.mo *.mol *.ssp);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;System Structure and Parameterization Files (*.ssp)";
@@ -424,6 +423,7 @@ QString Helper::systemSimulationInformation;
 QString Helper::translationFlags;
 QString Helper::send;
 QString Helper::installLibrary;
+QString Helper::updateInstalledLibraries;
 QString Helper::dataReconciliation;
 
 void Helper::initHelperVariables()
@@ -726,6 +726,7 @@ void Helper::initHelperVariables()
   Helper::translationFlags = tr("Translation Flags");
   Helper::send = tr("Send");
   Helper::installLibrary = tr("Install Library");
+  Helper::updateInstalledLibraries = tr("Update Installed Libraries");
   Helper::dataReconciliation = tr("Data Reconciliation");
 }
 

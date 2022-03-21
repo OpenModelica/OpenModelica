@@ -1160,12 +1160,24 @@ void UnitParser::initSIUnits() {
 
   // More derived units
   addDerived("plane angle", "degree", "deg", "rad", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(31415926535897932, 1800000000000000000), Rational(0), true);
+#else // 32bit systems
+      Rational(3141592, 180000000), Rational(0), true);
+#endif
   addDerived("plane angle", "revolutions", "rev", "rad", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(31415926535897932, 5000000000000000), Rational(0), true);
+#else // 32bit systems
+      Rational(3141592, 500000), Rational(0), true);
+#endif
 
   addDerived("angular velocity", "revolutions per minute", "rpm", "rad/s", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(31415926535897932, 300000000000000000), Rational(0), true);
+#else // 32bit systems
+      Rational(3141592, 30000000), Rational(0), true);
+#endif
 
   addDerived("velocity", "knot", "kn", "m/s", Rational(0),
       Rational(1852, 3600), Rational(0), true);
@@ -1188,7 +1200,11 @@ void UnitParser::initSIUnits() {
 
   addDerived("pressure", "bar", "bar", "Pa", Rational(0), Rational(100000), Rational(0), true);
   addDerived("pressure", "millimeter of mercury", "mmHg", "Pa", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(133322387415, 1000000000), Rational(0), true);
+#else // 32bit
+      Rational(13332238, 100000), Rational(0), true);
+#endif
 
   addDerived("time", "minute", "min", "s", Rational(0), Rational(60), Rational(0), true);
   addDerived("time", "hour", "h", "s", Rational(0), Rational(60 * 60), Rational(0), true);
@@ -1207,9 +1223,17 @@ void UnitParser::initSIUnits() {
       Rational(45359237, 100000000), Rational(0), true);
 
   addDerived("pressure", "pound per square inch", "psi", "Pa", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(689475729, 100000), Rational(0), true);
+#else // 32bit systems
+      Rational(68947572, 10000), Rational(0), true);
+#endif
   addDerived("pressure", "inch water gauge", "inWG", "Pa", Rational(0),
+#if (MMC_SIZE_INT == 8) // 64bit systems
       Rational(249088908333, 1000000000), Rational(0), true);
+#else // 32bit systems
+      Rational(24908890, 100000), Rational(0), true);
+#endif
 
   commit();
 }

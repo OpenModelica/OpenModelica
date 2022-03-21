@@ -1,0 +1,36 @@
+// name:     IntegerTest.mos [#7354]
+// keywords: Test that Integer works fine
+// status:   correct
+// teardown_command: rm -rf IntegerTest_* IntegerTest.exe IntegerTest.bat IntegerTest.cpp IntegerTest.makefile IntegerTest.libs IntegerTest.log output.log
+
+
+loadFile("IntegerTest.mo"); getErrorString();
+simulate(IntegerTest, stopTime=0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IntegerTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'IntegerTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "z: 2147483647: 2147483647
+// z * 2: 4294967294
+// z: 2147483647: 2147483647
+// z + 10: 2147483657
+// div(z, 2): 1073741828
+// z: 2147483647: 2147483647
+// z * 2: 4294967294
+// z: 2147483647: 2147483647
+// z + 10: 2147483657
+// div(z, 2): 1073741828
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// z: 2147483647: 2147483647
+// z * 2: 4294967294
+// z: 2147483647: 2147483647
+// z + 10: 2147483657
+// div(z, 2): 1073741828
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

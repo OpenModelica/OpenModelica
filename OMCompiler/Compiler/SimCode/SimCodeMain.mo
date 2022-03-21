@@ -742,7 +742,8 @@ algorithm
       Boolean b;
       Boolean needSundials = false;
       String fileprefix;
-      String install_include_omc_dir, install_include_omc_c_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
+      String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
+      String cmakelistsStr;
       list<String> sourceFiles, model_desc_src_files;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
@@ -816,6 +817,7 @@ algorithm
 
         install_include_omc_dir := Settings.getInstallationDirectoryPath() + "/include/omc/";
         install_include_omc_c_dir := install_include_omc_dir + "c/";
+        install_share_buildproject_dir :=  Settings.getInstallationDirectoryPath() + "/share/omc/runtime/c/fmi/buildproject/";
         install_fmu_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir;
         fmu_tmp_sources_dir := fmutmp + "/sources/";
 
@@ -891,6 +893,13 @@ algorithm
         end if;
 
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
+
+        // Copy CMakeLists.txt.in and replace @FMU_NAME_IN@ with fmu name
+        System.copyFile(source = install_share_buildproject_dir + "CMakeLists.txt.in",
+                        destination = fmu_tmp_sources_dir + "CMakeLists.txt");
+        cmakelistsStr := System.readFile(fmu_tmp_sources_dir + "CMakeLists.txt");
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fileNamePrefix);
+        System.writeFile(fmu_tmp_sources_dir + "CMakeLists.txt", cmakelistsStr);
 
         Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));

@@ -1405,7 +1405,7 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
   mpUsesLibrariesTreeWidget->setColumnCount(3);
   mpUsesLibrariesTreeWidget->setIndentation(0);
   QStringList headers;
-  headers << Helper::library << tr("From") << tr("To");
+  headers << Helper::library << tr("To") << tr("From");
   mpUsesLibrariesTreeWidget->setHeaderLabels(headers);
   QList<QList<QString > > usesAnnotation = MainWindow::instance()->getOMCProxy()->getUses(mpLibraryTreeItem->getNameStructure());
   for (int i = 0 ; i < usesAnnotation.size() ; i++) {
@@ -1489,6 +1489,7 @@ void ConvertClassUsesAnnotationDialog::convert()
   mpProgressLabel->show();
   mpOkButton->setEnabled(false);
   repaint(); // repaint the dialog so progresslabel is updated.
+  const QString nameStructure = mpLibraryTreeItem->getNameStructure();
   bool reloadClass = false;
   bool updatePackageIndex = false;
   QTreeWidgetItemIterator usesLibrariesIterator(mpUsesLibrariesTreeWidget);
@@ -1505,7 +1506,7 @@ void ConvertClassUsesAnnotationDialog::convert()
         updatePackageIndex |= true;
       }
     }
-    if (MainWindow::instance()->getOMCProxy()->convertPackageToLibrary(mpLibraryTreeItem->getNameStructure(), libraryName, libraryVersion)) {
+    if (MainWindow::instance()->getOMCProxy()->convertPackageToLibrary(nameStructure, libraryName, libraryVersion)) {
       LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(libraryName);
       if (pLibraryTreeItem) {
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
@@ -1514,14 +1515,18 @@ void ConvertClassUsesAnnotationDialog::convert()
     }
     ++usesLibrariesIterator;
   }
-  // if reloadClass is set then unload the class and it will be reloaded as part of loadDependentLibraries
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  // if reloadClass is set then unload the class and create a LibraryTreeItem for it again.
   if (reloadClass) {
     if (mpLibraryTreeItem->isFilePathValid()) {
       saveLibraryTreeItem(mpLibraryTreeItem);
     }
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(mpLibraryTreeItem, false, false);
+    pLibraryTreeModel->createLibraryTreeItem(nameStructure, pLibraryTreeModel->getRootLibraryTreeItem(), true, false, true);
+    pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
   }
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
+  // load any dependent libraries
+  pLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
   // update the package index if needed
   if (updatePackageIndex) {
     MainWindow::instance()->getOMCProxy()->updatePackageIndex();

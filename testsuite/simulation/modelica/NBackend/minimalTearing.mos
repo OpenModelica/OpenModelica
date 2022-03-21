@@ -41,34 +41,46 @@ simulate(minimalTearing); getErrorString();
 // 	([DISC] (1) Boolean $SEV_0) [SCAL] (1) $SEV_0 = y > 0.0 ($RES_EVT_2)
 // 	([DISC] (1) Integer i) [SCAL] (1) i = if $SEV_0 then 1 else 2 ($RES_SIM_1)
 //
-// ========================================
-// [NLS] Jacobian INI_NLS_JAC_1: NLS
-// ========================================
+// ################################################################################
 //
-// Result Equations (1/1)
+// 	[NLS] Jacobian INI_NLS_JAC_1: NLS
+//
+// ################################################################################
+//
+// Partial Derivative Variables (1/1)
 // ****************************************
-// (1)       [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0 = -$SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_0)
+// (1)       [JACV] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
 //
+// Seed Variables (1/1)
+// ****************************************
+// (1)       [SEED] (1) Real $SEED_INI_NLS_JAC_1.y
+//
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0 = -$SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_0)
 //
 // ========================================
-// Sparsity Pattern (nnz: 8)
+// Sparsity Pattern (nnz: 1)
 // ========================================
 //
 // ### Columns ###
 // ----------------------------------------
-// ($SEV_0)	 affects:	{$RES_SIM_0,y,$SEV_0}
-// (i)	 affects:	{$RES_SIM_0,y,$SEV_0,i}
 // (y)	 affects:	{$RES_SIM_0}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_0)	 depends on:	{y,$SEV_0,i}
+// ($RES_SIM_0)	 depends on:	{y}
 //
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {y}
-// {i}
-// {$SEV_0}
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {y}
+//   - Row:    {$RES_SIM_0}
+//
 //
 // ################################################################################
 //
@@ -89,34 +101,46 @@ simulate(minimalTearing); getErrorString();
 // 	([DISC] (1) Boolean $SEV_0) [SCAL] (1) $SEV_0 = y > 0.0 ($RES_EVT_2)
 // 	([DISC] (1) Integer i) [SCAL] (1) i = if $SEV_0 then 1 else 2 ($RES_SIM_1)
 //
-// ========================================
-// [NLS] Jacobian ODE_NLS_JAC_1: NLS
-// ========================================
+// ################################################################################
 //
-// Result Equations (1/1)
+// 	[NLS] Jacobian ODE_NLS_JAC_1: NLS
+//
+// ################################################################################
+//
+// Partial Derivative Variables (1/1)
 // ****************************************
-// (1)       [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0 = -$SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_0)
+// (1)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
 //
+// Seed Variables (1/1)
+// ****************************************
+// (1)       [SEED] (1) Real $SEED_ODE_NLS_JAC_1.y
+//
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0 = -$SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_0)
 //
 // ========================================
-// Sparsity Pattern (nnz: 8)
+// Sparsity Pattern (nnz: 1)
 // ========================================
 //
 // ### Columns ###
 // ----------------------------------------
-// ($SEV_0)	 affects:	{$RES_SIM_0,y,$SEV_0}
-// (i)	 affects:	{$RES_SIM_0,y,$SEV_0,i}
 // (y)	 affects:	{$RES_SIM_0}
 //
 // ##### Rows #####
 // ----------------------------------------
-// ($RES_SIM_0)	 depends on:	{y,$SEV_0,i}
+// ($RES_SIM_0)	 depends on:	{y}
 //
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {y}
-// {i}
-// {$SEV_0}
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {y}
+//   - Row:    {$RES_SIM_0}
+//
 //
 // record SimulationResult
 //     resultFile = "minimalTearing_res.mat",

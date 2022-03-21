@@ -200,19 +200,17 @@ modelica_string modelica_real_to_modelica_string_format(modelica_real r,modelica
 }
 
 /* Convert a modelica_string to a modelica_string, used in String(s) */
-
 modelica_string modelica_string_to_modelica_string(modelica_string s)
 {
   return s;
 }
 
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
-
 modelica_string modelica_integer_to_modelica_string(modelica_integer i, modelica_integer minLen, modelica_boolean leftJustified)
 {
-  size_t sz = snprintf(NULL, 0, leftJustified ? "%-*ld" : "%*ld", (int) minLen, i);
+  size_t sz = snprintf(NULL, 0, leftJustified ? OMC_INT_FORMAT_LEFT_JUSTIFIED : OMC_INT_FORMAT, (int) minLen, i);
   void *res = alloc_modelica_string(sz);
-  sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*ld" : "%*ld", (int) minLen, i);
+  sprintf(MMC_STRINGDATA(res), leftJustified ? OMC_INT_FORMAT_LEFT_JUSTIFIED : OMC_INT_FORMAT, (int) minLen, i);
   return res;
 }
 

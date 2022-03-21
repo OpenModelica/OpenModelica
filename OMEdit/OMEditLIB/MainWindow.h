@@ -336,7 +336,7 @@ private:
   QAction *mpExportFigaroAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpInstallLibraryAction;
-  QAction *mpUpgradeInstalledLibrariesAction;
+  QAction *mpUpdateInstalledLibrariesAction;
   QAction *mpClearRecentFilesAction;
   QAction *mpPrintModelAction;
   QAction *mpQuitAction;
@@ -528,8 +528,8 @@ public slots:
 #endif
   void runOMSensPlugin();
   void exportModelToOMNotebook();
-  void openInstallLibraryDialog();
-  void upgradeInstalledLibraries();
+  bool openInstallLibraryDialog();
+  void updateInstalledLibraries();
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
   void exportModelAsImage(bool copyToClipboard = false);
@@ -603,28 +603,6 @@ public slots:
   void showReportIssue();
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
-};
-
-class MSLVersionDialog : public QDialog
-{
-  Q_OBJECT
-public:
-  MSLVersionDialog(QWidget *parent = 0);
-private:
-  QRadioButton *mpMSL3RadioButton;
-  QRadioButton *mpMSL4RadioButton;
-  QRadioButton *mpNoMSLRadioButton;
-  QWidget *mpWidget;
-private slots:
-  void setMSLVersion();
-
-  // QDialog interface
-public slots:
-  virtual void reject() override;
-
-  // QWidget interface
-public:
-  virtual QSize sizeHint() const override;
 };
 
 #endif // MAINWINDOW_H

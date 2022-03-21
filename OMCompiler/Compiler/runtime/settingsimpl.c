@@ -213,7 +213,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
     const char *path = runningTestsuite ? NULL : getenv("OPENMODELICALIBRARY");
     if (path != NULL)
     {
-        omc_modelicaPath = strdup(path);
+      omc_modelicaPath = strdup(path);
     }
     else
     {
@@ -234,7 +234,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
       } else {
         int lenHome = strlen(homePath);
         omc_modelicaPath = (char*)omc_alloc_interface.malloc_atomic(lenOmhome+lenHome+41);
-        snprintf(omc_modelicaPath, lenOmhome+lenHome+41,"%s/lib/omlibrary%s%s/.openmodelica/libraries/", omhome, OMC_GROUP_DELIMITER, homePath);
+        snprintf(omc_modelicaPath, lenHome+lenOmhome+41,"%s/.openmodelica/libraries/%s%s/lib/omlibrary", homePath, OMC_GROUP_DELIMITER, omhome);
       }
     }
 
@@ -347,10 +347,8 @@ extern const char* SettingsImpl__getTempDirectoryPath(void)
       fprintf(stderr, "Error setting temppath in Kernel\n");
       exit(1);
     } else {
-      // Must do replacement in two steps, since the _replace function can not have similar source as target.
-      char *str = _replace(tempDirectory, (char*)"\\", (char*)"/");
-      tempDirectoryPath = _replace(str, (char*)"/", (char*)"\\\\");
-      GC_free(str);
+      tempDirectoryPath = strdup(tempDirectory);
+      tempDirectoryPath = covertToForwardSlashesInPlace(tempDirectoryPath);
     }
   #else
     const char* str = getenv("TMPDIR");

@@ -1,0 +1,182 @@
+// name: simple_der_for
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model simple_der_for
+  parameter Integer p = 10;
+  Real[p+1] x;
+equation
+  for i in 1:p loop
+    der(x[i]) = der(x[i+1]) + x[i] + sin(i*time);
+  end for;
+  der(x[3]) = cos(time);
+end simple_der_for;
+
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=symjacdump");
+
+simulate(simple_der_for); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ################################################################################
+//
+// 	[symjacdump] Creating symbolic Jacobians:
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS 1 ODE System
+// ========================================
+//
+// --- Alias of INI[1 | 2] ---
+// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[3]
+// ### Equation:
+// 	[SCAL] (1) $DER.x[3] = cos(time) ($RES_SIM_0)
+//
+// --- Alias of INI[1 | 3] ---
+// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[i]
+// ### Equation:
+// 	[FOR-] (10) ($RES_SIM_1_1)
+// 	[----] for i in 2:(-1):1 loop
+// 	[----]   [SCAL] (1) $DER.x[i] = x[i] + $DER.x[1 + i] + sin(CAST(Real, i) * time)
+// 	[----] end for;
+//
+// BLOCK 3: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$DER.x[1 + i]
+// ### Equation:
+// 	[FOR-] (10) ($RES_SIM_1_1)
+// 	[----] for i in 3:1:10 loop
+// 	[----]   [SCAL] (1) $DER.x[1 + i] = -(x[i] + sin(CAST(Real, i) * time) - $DER.x[i])
+// 	[----] end for;
+//
+// ################################################################################
+//
+// 	[SIM] Jacobian ODE_JAC: SIM
+//
+// ################################################################################
+//
+// Partial Derivative Variables (1/11)
+// ****************************************
+// (1)       [JACV] (11) Real[11] $pDER_ODE_JAC.$DER.x
+//
+// Seed Variables (1/11)
+// ****************************************
+// (1)       [SEED] (11) Real[11] $SEED_ODE_JAC.x
+//
+// BLOCK 1: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[3]
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_JAC.$DER.x[3] = -0.0 ($RES_ODE_JAC_0)
+//
+// BLOCK 2: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[i]
+// ### Equation:
+// 	[FOR-] (10) ($RES_ODE_JAC_1)
+// 	[----] for i in 2:(-1):1 loop
+// 	[----]   [SCAL] (1) $pDER_ODE_JAC.$DER.x[i] = $SEED_ODE_JAC.x[i] + $pDER_ODE_JAC.$DER.x[1 + i]
+// 	[----] end for;
+//
+// BLOCK 3: Sliced Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	$pDER_ODE_JAC.$DER.x[1 + i]
+// ### Equation:
+// 	[FOR-] (10) ($RES_ODE_JAC_2)
+// 	[----] for i in 3:1:10 loop
+// 	[----]   [SCAL] (1) $pDER_ODE_JAC.$DER.x[1 + i] = -($SEED_ODE_JAC.x[i] - $pDER_ODE_JAC.$DER.x[i])
+// 	[----] end for;
+//
+// ========================================
+// Sparsity Pattern (nnz: 39)
+// ========================================
+//
+// ### Columns ###
+// ----------------------------------------
+// (x[11])	 affects:	{}
+// (x[10])	 affects:	{$DER.x[11]}
+// (x[9])	 affects:	{$DER.x[11],$DER.x[10]}
+// (x[8])	 affects:	{$DER.x[11],$DER.x[10],$DER.x[9]}
+// (x[7])	 affects:	{$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8]}
+// (x[6])	 affects:	{$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7]}
+// (x[5])	 affects:	{$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6]}
+// (x[4])	 affects:	{$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5]}
+// (x[3])	 affects:	{$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4]}
+// (x[2])	 affects:	{$DER.x[2],$DER.x[1]}
+// (x[1])	 affects:	{$DER.x[1]}
+//
+// ##### Rows #####
+// ----------------------------------------
+// ($DER.x[11])	 depends on:	{x[10],x[9],x[8],x[7],x[6],x[5],x[4],x[3]}
+// ($DER.x[10])	 depends on:	{x[9],x[8],x[7],x[6],x[5],x[4],x[3]}
+// ($DER.x[9])	 depends on:	{x[8],x[7],x[6],x[5],x[4],x[3]}
+// ($DER.x[8])	 depends on:	{x[7],x[6],x[5],x[4],x[3]}
+// ($DER.x[7])	 depends on:	{x[6],x[5],x[4],x[3]}
+// ($DER.x[6])	 depends on:	{x[5],x[4],x[3]}
+// ($DER.x[5])	 depends on:	{x[4],x[3]}
+// ($DER.x[4])	 depends on:	{x[3]}
+// ($DER.x[3])	 depends on:	{}
+// ($DER.x[2])	 depends on:	{x[2]}
+// ($DER.x[1])	 depends on:	{x[1],x[2]}
+//
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {x[11],x[3],x[1]}
+//   - Row:    {$DER.x[1],$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5],$DER.x[4]}
+//
+// Color (2)
+//   - Column: {x[4],x[2]}
+//   - Row:    {$DER.x[2],$DER.x[1],$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6],$DER.x[5]}
+//
+// Color (3)
+//   - Column: {x[5]}
+//   - Row:    {$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7],$DER.x[6]}
+//
+// Color (4)
+//   - Column: {x[6]}
+//   - Row:    {$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8],$DER.x[7]}
+//
+// Color (5)
+//   - Column: {x[7]}
+//   - Row:    {$DER.x[11],$DER.x[10],$DER.x[9],$DER.x[8]}
+//
+// Color (6)
+//   - Column: {x[8]}
+//   - Row:    {$DER.x[11],$DER.x[10],$DER.x[9]}
+//
+// Color (7)
+//   - Column: {x[9]}
+//   - Row:    {$DER.x[11],$DER.x[10]}
+//
+// Color (8)
+//   - Column: {x[10]}
+//   - Row:    {$DER.x[11]}
+//
+//
+// record SimulationResult
+//     resultFile = "simple_der_for_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_der_for', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
