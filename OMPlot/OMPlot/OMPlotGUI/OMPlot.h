@@ -81,8 +81,8 @@ public:
   Legend* getLegend();
   PlotPicker *getPlotPicker();
   PlotGrid* getPlotGrid();
-  LinearScaleEngine* getXLinearScaleEngine() const {mpXLinearScaleEngine;}
-  LinearScaleEngine* getYLinearScaleEngine() const {mpYLinearScaleEngine;}
+  LinearScaleEngine* getXLinearScaleEngine() const {return mpXLinearScaleEngine;}
+  LinearScaleEngine* getYLinearScaleEngine() const {return mpYLinearScaleEngine;}
   ScaleDraw *getXScaleDraw() const {return mpXScaleDraw;}
   ScaleDraw *getYScaleDraw() const {return mpYScaleDraw;}
   PlotZoomer* getPlotZoomer();
