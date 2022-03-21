@@ -3368,7 +3368,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           exportMenu.addAction(mpExportXMLAction);
           exportMenu.addAction(mpExportFigaroAction);
           menu.addMenu(&exportMenu);
-          if (pLibraryTreeItem->isTopLevel()) {
+          if (pLibraryTreeItem->isTopLevel() && !pLibraryTreeItem->isSystemLibrary()) {
             menu.addSeparator();
             menu.addAction(mpConvertClassUsesLibrariesAction);
           }
