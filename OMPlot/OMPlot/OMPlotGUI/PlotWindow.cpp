@@ -1736,7 +1736,7 @@ void PlotWindow::printPlot()
 
   printer.setDocName("OMPlot");
   printer.setCreator("Plot Window");
-  printer.setOrientation(QPrinter::Landscape);
+  printer.setPageOrientation(QPageLayout::Landscape);
 
   QPrintDialog dialog(&printer);
   if ( dialog.exec() )
