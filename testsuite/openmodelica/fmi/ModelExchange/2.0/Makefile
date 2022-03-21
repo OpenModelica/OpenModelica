@@ -1,9 +1,6 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-BooleanNetwork1.mos \
-BouncingBall.mos \
-EnumerationTest.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \
@@ -22,29 +19,17 @@ fmi_attributes_15.mos \
 fmi_attributes_16.mos \
 fmi_attributes_17.mos \
 fmi_attributes_18.mos \
-FMIExercise.mos \
 FMUResourceTest.mos \
-HelloFMIWorld.mos \
-HelloFMIWorldEvent.mos \
-IntegerNetwork1.mos \
-Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
-Modelica.Blocks.Sources.BooleanPulse.mos \
-Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
-testAssert.mos \
 testBug2764.mos \
 testBug2765.mos \
-testBug3034.mos \
 testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
 testBug5673.mos \
-testChangeParam.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
-testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
-ZeroStates.mos \
 ticket6262.mos \
 
 # test that currently fail. Move up when fixed.
@@ -52,6 +37,23 @@ ticket6262.mos \
 FAILINGTESTFILES= \
 Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
 testExperimentalFMU.mos \
+
+FAILING_FMI_IMPORT = \
+BooleanNetwork1.mos \
+BouncingBall.mos \
+EnumerationTest.mos \
+FMIExercise.mos \
+HelloFMIWorld.mos \
+HelloFMIWorldEvent.mos \
+IntegerNetwork1.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
+Modelica.Blocks.Sources.BooleanPulse.mos \
+Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
+testAssert.mos \
+testBug3034.mos \
+testChangeParam.mos \
+testInitialEquationsFMI.mos \
+ZeroStates.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
