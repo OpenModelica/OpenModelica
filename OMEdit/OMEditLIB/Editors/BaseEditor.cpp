@@ -35,6 +35,7 @@
 #include "Editors/BaseEditor.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/ModelWidgetContainer.h"
+#include "Modeling/DocumentationWidget.h"
 #include "Util/Helper.h"
 #include "Debugger/Breakpoints/BreakpointsWidget.h"
 #include "Util/ResourceCache.h"
@@ -43,6 +44,7 @@
 #include <QCompleter>
 #include <QMessageBox>
 #include <QTextDocumentFragment>
+#include <QDockWidget>
 
 /*!
  * \class TabSettings
@@ -1896,6 +1898,12 @@ void PlainTextEdit::insertFromMimeData(const QMimeData *source)
 void PlainTextEdit::focusInEvent(QFocusEvent *event)
 {
   MainWindow::instance()->getAutoSaveTimer()->stop();
+  // Issue #8723. If we are editing the documentation then save and close the documentation editing when focus moves to text view.
+  if (mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+      && MainWindow::instance()->getDocumentationDockWidget()->isVisible()
+      && MainWindow::instance()->getDocumentationWidget()->isEditingDocumentation()) {
+    MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpBaseEditor->getModelWidget()->getLibraryTreeItem());
+  }
   QPlainTextEdit::focusInEvent(event);
 }
 
