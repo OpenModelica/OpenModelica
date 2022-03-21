@@ -579,6 +579,8 @@ int wrapper_G2_ESDIRKMR(int* n_p, double* x, double* res, void* userdata, int fj
   }
   else
   {
+    if (solverData->calculate_jacobian>=0)
+    {
     /*!
      *  fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
      *  set correct time value and states of simulation system
@@ -609,6 +611,8 @@ int wrapper_G2_ESDIRKMR(int* n_p, double* x, double* res, void* userdata, int fj
         solverData->fjac[l] = ESDIRKMRData->gam * ESDIRKMRData->stepSize * ESDIRKMRData->Jf[l];
         if (i==j) solverData->fjac[l] -= 1;
       }
+    }
+    solverData->calculate_jacobian=-1;
     }
   }
   return 0;
@@ -658,6 +662,8 @@ int wrapper_G3_ESDIRKMR(int* n_p, double* x, double* res, void* userdata, int fj
   }
   else
   {
+    if (solverData->calculate_jacobian>=0)
+    {
     /*!
      *  fODE = f(tOld + h,x); x ~ yOld + h*(b1*k1+b2*k2+b3*k3)
      *  set correct time value and states of simulation system
@@ -688,6 +694,8 @@ int wrapper_G3_ESDIRKMR(int* n_p, double* x, double* res, void* userdata, int fj
         solverData->fjac[l] = ESDIRKMRData->stepSize * ESDIRKMRData->b3 * ESDIRKMRData->Jf[l];
         if (i==j) solverData->fjac[l] -= 1;
       }
+    }
+    solverData->calculate_jacobian=-1;
     }
   }
   return 0;
@@ -756,6 +764,8 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
   }
   else
   {
+    if (solverData->calculate_jacobian>=0)
+    {
     /*!
      *  fODE = f(tOld + h,x); x ~ yOld + h*(b1*k1+b2*k2+b3*k3)
      *  set correct time value and states of simulation system
@@ -815,6 +825,8 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
           }
         }
       }
+    }
+    solverData->calculate_jacobian=-1;
     }
   }
   return 0;
