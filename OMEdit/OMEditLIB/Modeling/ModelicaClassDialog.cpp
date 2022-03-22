@@ -1424,7 +1424,7 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
       QComboBox *pComboBox = new QComboBox;
       foreach (QString convertsToVersion, convertsToVersions) {
         bool installed = availableVersions.contains(convertsToVersion);
-        pComboBox->addItem(QString("%1 (%2installed)").arg(convertsToVersion, installed ? "" : "not "), QList<QVariant>() << convertsToVersion << installed);
+        pComboBox->addItem(convertsToVersion, QList<QVariant>() << convertsToVersion << installed);
       }
       mpUsesLibrariesTreeWidget->setItemWidget(pUsesLibraryTreeWidgetItem, 1, pComboBox);
       mpUsesLibrariesTreeWidget->resizeColumnToContents(1);
