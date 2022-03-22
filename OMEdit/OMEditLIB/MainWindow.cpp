@@ -1497,13 +1497,9 @@ void MainWindow::addSystemLibraries()
   mpLibrariesMenu->clear();
   // get the available libraries and versions.
   QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
-  libraries.append("OpenModelica");
   libraries.sort();
   foreach (QString library, libraries) {
-    QStringList versions;
-    if (library.compare(QStringLiteral("OpenModelica")) != 0) {
-      versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
-    }
+    QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
     if (versions.isEmpty()) {
       QAction *pAction = new QAction(library, this);
       pAction->setData(QStringList() << library << "");
