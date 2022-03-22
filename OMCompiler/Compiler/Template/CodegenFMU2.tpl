@@ -145,7 +145,7 @@ case SIMCODE(__) then
     canRunAsynchronuously = "false"
     canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="false"
-    canGetAndSetFMUstate="false"
+    canGetAndSetFMUstate="true"
     canSerializeFMUstate="false"
     <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"'%>>
     <%SourceFiles(sourceFiles)%>
