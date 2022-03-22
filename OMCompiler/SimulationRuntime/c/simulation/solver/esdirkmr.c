@@ -704,6 +704,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
       sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->c[k] * ESDIRKMRData->stepSize;
       memcpy(sData->realVars, (x + k * n), n*sizeof(double));
       wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
+      memcpy(ESDIRKMRData->k + k * n, fODE, n*sizeof(double));
       for (l=0; l<stages; l++)
       {
         //printf("A[%d,%d] = %g  ",l,k,ESDIRKMRData->A[l * stages + k]);
@@ -1037,33 +1038,19 @@ int esdirkmr_impRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
     solverData->calculate_jacobian = -1;
   }
+  // y       = yold+h*sum(b[i]*k[i], i=1..stages);
+  // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
+  // calculate corresponding values for error estimator and step size control
   for (i=0; i<n; i++)
   {
-    userdata->y[i] = userdata->yOld[i];
+    userdata->y[i]  = userdata->yOld[i];
     userdata->yt[i] = userdata->yOld[i];
-  }
-
-  for (k=0; k<userdata->stages; k++)
-  {
-    // calculate f[k] and sweap over the stages
-    sData->timeValue = userdata->time + userdata->c[k] * userdata->stepSize;
-    memcpy(sData->realVars, (solverData->x + k * n), n*sizeof(double));
-    wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
-//    printVector_ESDIRKMR("yOld, y1g, y2g: ", sData->realVars, data->modelData->nStates, userdata->time);
-//    printVector_ESDIRKMR("k: ", fODE, data->modelData->nStates, userdata->time);
-
-    for (i=0; i<n; i++)
+    for (l=0; l<userdata->stages; l++)
     {
-      userdata->y[i] += userdata->stepSize * userdata->b[k] * fODE[i];
-      userdata->yt[i] += userdata->stepSize * userdata->bt[k] * fODE[i];
+      userdata->y[i]  += userdata->stepSize * userdata->b[l]  * (userdata->k + l * n)[i];
+      userdata->yt[i] += userdata->stepSize * userdata->bt[l] * (userdata->k + l * n)[i];
     }
-  }
-//  printVector_ESDIRKMR("y ", userdata->y, n, userdata->time);
-//  printVector_ESDIRKMR("yt ", userdata->yt, n, userdata->time);
-// calculate corresponding values for error estimator and step size control
-  for (i=0; i<n; i++)
-  {
-    // userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
+    //userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
     userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
     userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
   }
