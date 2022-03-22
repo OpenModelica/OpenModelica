@@ -753,6 +753,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
     if (compiledInDAEMode)
     {
       simData->callback->functionDAE = evaluateDAEResiduals_wrapperEventUpdate;
+      simData->callback->function_ZeroCrossingsEquations = evaluateDAEResiduals_wrapperZeroCrossingsEquations;
     }
   }
 

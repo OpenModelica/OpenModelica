@@ -354,6 +354,18 @@ public
     end match;
   end isFalse;
 
+  function isTrivialCref
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() then true;
+      case Expression.UNARY(exp = Expression.CREF()) then true;
+      case Expression.LUNARY(exp = Expression.CREF()) then true;
+      else false;
+    end match;
+  end isTrivialCref;
+
   function isEqual
     "Returns true if the two expressions are equal, otherwise false."
     input Expression exp1;
@@ -2617,6 +2629,163 @@ public
       else exp;
     end match;
   end mapOpt;
+
+  function mapReverse
+    input output Expression exp;
+    input MapFunc func;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    exp := func(exp);
+    exp := match exp
+      local
+        Expression e1, e2, e3, e4;
+
+      case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
+      case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
+      case ARRAY() then ARRAY(exp.ty, Array.map(exp.elements, function mapReverse(func = func)), exp.literal);
+      case MATRIX() then MATRIX(list(list(mapReverse(e, func) for e in row) for row in exp.elements));
+
+      case RANGE(step = SOME(e2))
+        algorithm
+          e1 := mapReverse(exp.start, func);
+          e4 := mapReverse(e2, func);
+          e3 := mapReverse(exp.stop, func);
+        then
+          if referenceEq(exp.start, e1) and referenceEq(e2, e4) and
+            referenceEq(exp.stop, e3) then exp else RANGE(exp.ty, e1, SOME(e4), e3);
+
+      case RANGE()
+        algorithm
+          e1 := mapReverse(exp.start, func);
+          e3 := mapReverse(exp.stop, func);
+        then
+          if referenceEq(exp.start, e1) and referenceEq(exp.stop, e3)
+            then exp else RANGE(exp.ty, e1, NONE(), e3);
+
+      case TUPLE() then TUPLE(exp.ty, list(mapReverse(e, func) for e in exp.elements));
+
+      case RECORD()
+        then RECORD(exp.path, exp.ty, list(mapReverse(e, func) for e in exp.elements));
+
+      case CALL() then CALL(Call.mapExp(exp.call, func));
+
+      case SIZE(dimIndex = SOME(e2))
+        algorithm
+          e1 := mapReverse(exp.exp, func);
+          e3 := mapReverse(e2, func);
+        then
+          if referenceEq(exp.exp, e1) and referenceEq(e2, e3) then exp else SIZE(e1, SOME(e3));
+
+      case SIZE()
+        algorithm
+          e1 := mapReverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else SIZE(e1, NONE());
+
+      case BINARY()
+        algorithm
+          e1 := mapReverse(exp.exp1, func);
+          e2 := mapReverse(exp.exp2, func);
+        then
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
+            then exp else BINARY(e1, exp.operator, e2);
+
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          exp.arguments := list(mapReverse(arg, func) for arg in exp.arguments);
+          exp.inv_arguments := list(mapReverse(arg, func) for arg in exp.inv_arguments);
+        then exp;
+
+      case UNARY()
+        algorithm
+          e1 := mapReverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else UNARY(exp.operator, e1);
+
+      case LBINARY()
+        algorithm
+          e1 := mapReverse(exp.exp1, func);
+          e2 := mapReverse(exp.exp2, func);
+        then
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
+            then exp else LBINARY(e1, exp.operator, e2);
+
+      case LUNARY()
+        algorithm
+          e1 := mapReverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else LUNARY(exp.operator, e1);
+
+      case RELATION()
+        algorithm
+          e1 := mapReverse(exp.exp1, func);
+          e2 := mapReverse(exp.exp2, func);
+        then
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
+            then exp else RELATION(e1, exp.operator, e2);
+
+      case IF()
+        algorithm
+          e1 := mapReverse(exp.condition, func);
+          e2 := mapReverse(exp.trueBranch, func);
+          e3 := mapReverse(exp.falseBranch, func);
+        then
+          if referenceEq(exp.condition, e1) and referenceEq(exp.trueBranch, e2) and
+             referenceEq(exp.falseBranch, e3) then exp else IF(exp.ty, e1, e2, e3);
+
+      case CAST()
+        algorithm
+          e1 := mapReverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else CAST(exp.ty, e1);
+
+      case BOX()
+        algorithm
+          e1 := mapReverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else box(e1);
+
+      case UNBOX()
+        algorithm
+          e1 := mapReverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else unbox(e1);
+
+      case SUBSCRIPTED_EXP()
+        then SUBSCRIPTED_EXP(mapReverse(exp.exp, func),
+          list(Subscript.mapExp(s, func) for s in exp.subscripts), exp.ty, exp.split);
+
+      case TUPLE_ELEMENT()
+        algorithm
+          e1 := mapReverse(exp.tupleExp, func);
+        then
+          if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
+
+      case RECORD_ELEMENT()
+        algorithm
+          e1 := mapReverse(exp.recordExp, func);
+        then
+          if referenceEq(exp.recordExp, e1) then exp else RECORD_ELEMENT(e1, exp.index, exp.fieldName, exp.ty);
+
+      case MUTABLE()
+        algorithm
+          Mutable.update(exp.exp, mapReverse(Mutable.access(exp.exp), func));
+        then
+          exp;
+
+      case PARTIAL_FUNCTION_APPLICATION()
+        algorithm
+          exp.args := list(mapReverse(e, func) for e in exp.args);
+        then
+          exp;
+
+      else exp;
+    end match;
+  end mapReverse;
 
   function mapShallow
     input Expression exp;
@@ -5337,6 +5506,12 @@ public
     outExp := match exp
       case SUBSCRIPTED_EXP()
         then applySubscripts(Subscript.expandSplitIndices(exp.subscripts, {}), exp.exp);
+
+      case CREF()
+        algorithm
+          exp.cref := ComponentRef.expandSplitSubscripts(exp.cref);
+        then
+          exp;
 
       else exp;
     end match;

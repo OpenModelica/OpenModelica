@@ -101,15 +101,35 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	[SCAL] (1) $RES_SIM_0 = sin(x) - y ($RES_SIM_0) ;
 // ### Inner Equations:
 //
-// ========================================
-// [NLS] Jacobian ODE_NLS_JAC_1: NLS
-// ========================================
+// ################################################################################
 //
-// Result Equations (2/2)
+// 	[NLS] Jacobian ODE_NLS_JAC_1: NLS
+//
+// ################################################################################
+//
+// Partial Derivative Variables (2/2)
 // ****************************************
-// (1)       [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_ODE_NLS_JAC_1.x - $SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_0)
-// (2)       [SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_ODE_NLS_JAC_1.y - $SEED_ODE_NLS_JAC_1.x ($RES_ODE_NLS_JAC_1_1)
+// (1)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+// (2)       [JACV] (1) Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
 //
+// Seed Variables (2/2)
+// ****************************************
+// (1)       [SEED] (1) Real $SEED_ODE_NLS_JAC_1.x
+// (2)       [SEED] (1) Real $SEED_ODE_NLS_JAC_1.y
+//
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.$RES_SIM_1
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_ODE_NLS_JAC_1.y - $SEED_ODE_NLS_JAC_1.x ($RES_ODE_NLS_JAC_1_0)
+//
+// BLOCK 2: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $pDER_ODE_NLS_JAC_1.$RES_SIM_0
+// ### Equation:
+// 	[SCAL] (1) $pDER_ODE_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_ODE_NLS_JAC_1.x - $SEED_ODE_NLS_JAC_1.y ($RES_ODE_NLS_JAC_1_1)
 //
 // ========================================
 // Sparsity Pattern (nnz: 4)
@@ -125,10 +145,17 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ($RES_SIM_0)	 depends on:	{y,x}
 // ($RES_SIM_1)	 depends on:	{x,y}
 //
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {y}
-// {x}
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {y}
+//   - Row:    {$RES_SIM_0,$RES_SIM_1}
+//
+// Color (2)
+//   - Column: {x}
+//   - Row:    {$RES_SIM_0,$RES_SIM_1}
+//
 //
 // ################################################################################
 //
@@ -153,15 +180,35 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	[SCAL] (1) $RES_SIM_1 = y ^ 2.0 + sin(time) - x ($RES_SIM_1) ;
 // ### Inner Equations:
 //
-// ========================================
-// [NLS] Jacobian INI_NLS_JAC_1: NLS
-// ========================================
+// ################################################################################
 //
-// Result Equations (2/2)
+// 	[NLS] Jacobian INI_NLS_JAC_1: NLS
+//
+// ################################################################################
+//
+// Partial Derivative Variables (2/2)
 // ****************************************
-// (1)       [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_INI_NLS_JAC_1.y - $SEED_INI_NLS_JAC_1.x ($RES_INI_NLS_JAC_1_0)
-// (2)       [SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_INI_NLS_JAC_1.x - $SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_1)
+// (1)       [JACV] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
+// (2)       [JACV] (1) Real $pDER_INI_NLS_JAC_1.$RES_SIM_1
 //
+// Seed Variables (2/2)
+// ****************************************
+// (1)       [SEED] (1) Real $SEED_INI_NLS_JAC_1.y
+// (2)       [SEED] (1) Real $SEED_INI_NLS_JAC_1.x
+//
+// BLOCK 1: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_NLS_JAC_1.$RES_SIM_0
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_0 = cos(x) * $SEED_INI_NLS_JAC_1.x - $SEED_INI_NLS_JAC_1.y ($RES_INI_NLS_JAC_1_0)
+//
+// BLOCK 2: Single Equation (status = Solve.EXPLICIT)
+// ----------------------------------------
+// ### Variable:
+// 	Real $pDER_INI_NLS_JAC_1.$RES_SIM_1
+// ### Equation:
+// 	[SCAL] (1) $pDER_INI_NLS_JAC_1.$RES_SIM_1 = 2.0 * y * $SEED_INI_NLS_JAC_1.y - $SEED_INI_NLS_JAC_1.x ($RES_INI_NLS_JAC_1_1)
 //
 // ========================================
 // Sparsity Pattern (nnz: 4)
@@ -177,10 +224,17 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ($RES_SIM_1)	 depends on:	{x,y}
 // ($RES_SIM_0)	 depends on:	{y,x}
 //
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {x}
-// {y}
+// ========================================
+// Sparsity Coloring
+// ========================================
+// Color (1)
+//   - Column: {x}
+//   - Row:    {$RES_SIM_1,$RES_SIM_0}
+//
+// Color (2)
+//   - Column: {y}
+//   - Row:    {$RES_SIM_1,$RES_SIM_0}
+//
 //
 // record SimulationResult
 //     resultFile = "simpleNonlinearLoop_res.mat",

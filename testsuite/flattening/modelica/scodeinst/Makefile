@@ -725,6 +725,7 @@ InnerOuter6.mo \
 InnerOuter7.mo \
 InnerOuter8.mo \
 InnerOuter9.mo \
+InnerOuter10.mo \
 InnerOuterClass1.mo \
 InnerOuterDuplicate1.mo \
 InnerOuterInvalidMod1.mo \

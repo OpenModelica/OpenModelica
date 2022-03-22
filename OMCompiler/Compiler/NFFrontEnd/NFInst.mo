@@ -2079,7 +2079,7 @@ algorithm
     cty := ConnectorType.merge(cty, innerAttr.connectorType, node, isClass = true);
     var := Prefixes.variabilityMin(var, innerAttr.variability);
     dir := Prefixes.mergeDirection(dir, innerAttr.direction, node, allowSame = true);
-    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
+    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, fin, redecl, repl);
   end if;
 end mergeDerivedAttributes;
 

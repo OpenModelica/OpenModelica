@@ -7,8 +7,7 @@ OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/@host_short@/omc
 OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
 BOOST_HOME = @BOOSTHOME@
-OMC_TBB_ROOT = @OMC_TBB_ROOT@
-INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMC_TBB_ROOT)/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
+INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMCOMPILER_ROOT)/3rdParty/tbb/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
 
 CC=@CC@
 CXX=@CXX@
@@ -20,9 +19,9 @@ OS_SRCS = pm_posix_timer.cpp
 EXEEXT=
 DLLEXT=.so
 
-all: transfer
+all: install
 
-transfer: libParModelicaAuto.a
+install: libParModelicaAuto.a
 	$(COPY) libParModelicaAuto.a $(OPENMODELICA_LIB)
 	mkdir -p $(PARMODELICAAUTO_INC)
 	$(COPY) om_pm_interface.hpp $(PARMODELICAAUTO_INC)

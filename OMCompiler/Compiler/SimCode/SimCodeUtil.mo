@@ -8245,6 +8245,13 @@ protected
 algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
   if Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
+    // Make sure the array does not get expanded again. The check for existence is made by the caller
+    // of this function, extractVarsFromList. Which checks for the whole unxpanded array, which is never
+    // actually added by itslef. So add it here manually.
+    // We can do a check in extractVarFromVar2 for each expanded var as well.
+    // However that means we do the exapnsion of the array for nothing. So add it here so that it does
+    // not get expanded again (and every entry checked again).
+    Mutable.update(hs, BaseHashSet.add(dlowVar.varName, Mutable.access(hs)));
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
     for cref in scalar_crefs loop
       // extract the sim var
@@ -15311,7 +15318,7 @@ algorithm
         str := "@echo off\n"
                 + "set PATH=" + locations + ";%PATH%;\n"
                 + "set ERRORLEVEL=\n"
-                + "call \"%CD%/" + code.fileNamePrefix + ".exe\"\n"
+                + "call \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
                 + "set RESULT=%ERRORLEVEL%\n"
                 + "\n"
                 + "exit /b %RESULT%\n";

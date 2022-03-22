@@ -26,7 +26,8 @@ HEADERS += OMPlot.h \
     PlotApplication.h \
     PlotWindowContainer.h \
     PlotMainWindow.h \
-    ScaleDraw.h
+    ScaleDraw.h \
+    LinearScaleEngine.h
 
 win32 {
   _cxx = $$(CXX)

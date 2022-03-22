@@ -35,6 +35,14 @@ encapsulated package NBRemoveSimpleEquations
               module.
 "
 
+// ToDo: simple state rules
+// 1. state = state
+// 2. state = alg
+// 3. state = time
+// 4. state = const
+
+// trivial solution a = b; a = -b;
+
 public
   import Module = NBModule;
 protected
@@ -81,13 +89,6 @@ public
         BEquation.EqData eqData           "Data containing equation pointers";
 
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
-        algorithm
-          (varData, eqData) := func(varData, eqData);
-          bdae.varData := varData;
-          bdae.eqData := eqData;
-      then bdae;
-
-      case BackendDAE.JACOBIAN(varData = varData, eqData = eqData)
         algorithm
           (varData, eqData) := func(varData, eqData);
           bdae.varData := varData;
@@ -235,82 +236,6 @@ protected
           if not listEmpty(const_vars) then
             (varData, eqData) := removeSimpleEquationsDefault(varData, eqData);
           end if;
-      then (varData, eqData);
-
-      case (BVariable.VAR_DATA_JAC(), BEquation.EQ_DATA_JAC())
-        algorithm
-          // -----------------------------------
-          //            1. 2. 3.
-          // apply only on temporary equations,
-          // result equations cannot be removed!
-          // -----------------------------------
-          (replacements, newEquations) := removeSimpleEquationsCausalize(varData.unknowns, eqData.temporary);
-
-          // -----------------------------------
-          // 4. apply replacements
-          // 5. save replacements in bindings of alias variables
-          // -----------------------------------
-          (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
-          alias_vars := list(BVariable.getVarPointer(cref) for cref in UnorderedMap.keyList(replacements));
-
-          // save new equations and compress affected arrays(some might have been removed)
-          eqData.temporary := EquationPointers.compress(newEquations);
-          eqData.equations := EquationPointers.compress(eqData.equations);
-
-          // remove alias vars from all relevant arrays
-          varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
-          varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
-
-          // categorize alias vars and sort them to the correct arrays
-          // discard constants entirely for jacobians
-          (_, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
-          (non_trivial_alias, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasNonTrivialAliasBinding);
-
-          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
-          varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
-
-          // add non trivial alias to removed
-          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex) for var in non_trivial_alias);
-          eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
-          eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
-      then (varData, eqData);
-
-      case (BVariable.VAR_DATA_HES(), BEquation.EQ_DATA_HES())
-        algorithm
-          // -----------------------------------
-          //            1. 2. 3.
-          // apply only on temporary equations,
-          // result equation cannot be removed!
-          // -----------------------------------
-          (replacements, newEquations) := removeSimpleEquationsCausalize(varData.unknowns, eqData.temporary);
-
-          // -----------------------------------
-          // 4. apply replacements
-          // 5. save replacements in bindings of alias variables
-          // -----------------------------------
-          (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
-          alias_vars := list(BVariable.getVarPointer(cref) for cref in UnorderedMap.keyList(replacements));
-
-          // save new equations and compress affected arrays(some might have been removed)
-          eqData.temporary := EquationPointers.compress(newEquations);
-          eqData.equations := EquationPointers.compress(eqData.equations);
-
-          // remove alias vars from all relevant arrays
-          varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
-          varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
-
-          // categorize alias vars and sort them to the correct arrays
-          // discard constants entirely for jacobians and hessians
-          (_, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
-          (non_trivial_alias, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasNonTrivialAliasBinding);
-
-          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
-          varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
-
-          // add non trivial alias to removed
-          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex) for var in non_trivial_alias);
-          eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
-          eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
       then (varData, eqData);
 
       else algorithm

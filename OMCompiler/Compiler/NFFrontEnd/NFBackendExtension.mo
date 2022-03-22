@@ -136,7 +136,7 @@ public
       Boolean fixed                         "is fixed at first clock tick";
     end DISCRETE_STATE;
     record PREVIOUS
-      Pointer<Variable> disc                "Pointer to the corresponding discrete variable.";
+      Pointer<Variable> state               "Pointer to the corresponding discrete state.";
     end PREVIOUS;
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;

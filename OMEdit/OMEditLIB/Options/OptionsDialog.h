@@ -307,28 +307,26 @@ class LibrariesPage : public QWidget
   Q_OBJECT
 public:
   LibrariesPage(OptionsDialog *pOptionsDialog);
+  QLineEdit *getModelicaPathTextBox() const {return mpModelicaPathTextBox;}
   QTreeWidget* getSystemLibrariesTree() {return mpSystemLibrariesTree;}
-  QCheckBox* getForceModelicaLoadCheckBox() {return mpForceModelicaLoadCheckBox;}
-  QCheckBox* getLoadOpenModelicaLibraryCheckBox() {return mpLoadOpenModelicaOnStartupCheckBox;}
   QTreeWidget* getUserLibrariesTree() {return mpUserLibrariesTree;}
   OptionsDialog *mpOptionsDialog;
 private:
   QGroupBox *mpSystemLibrariesGroupBox;
+  Label *mpModelicaPathLabel;
+  QLineEdit *mpModelicaPathTextBox;
   Label *mpSystemLibrariesNoteLabel;
   QTreeWidget *mpSystemLibrariesTree;
   QPushButton *mpAddSystemLibraryButton;
   QPushButton *mpRemoveSystemLibraryButton;
   QPushButton *mpEditSystemLibraryButton;
   QDialogButtonBox *mpSystemLibrariesButtonBox;
-  QCheckBox *mpForceModelicaLoadCheckBox;
-  QCheckBox *mpLoadOpenModelicaOnStartupCheckBox;
   QGroupBox *mpUserLibrariesGroupBox;
   QTreeWidget *mpUserLibrariesTree;
   QPushButton *mpAddUserLibraryButton;
   QPushButton *mpRemoveUserLibraryButton;
   QPushButton *mpEditUserLibraryButton;
   QDialogButtonBox *mpUserLibrariesButtonBox;
-  Label *mpModelicaPathLabel;
 private slots:
   void openAddSystemLibrary();
   void removeSystemLibrary();
@@ -342,20 +340,27 @@ class AddSystemLibraryDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddSystemLibraryDialog(LibrariesPage *pLibrariesPage);
+  AddSystemLibraryDialog(LibrariesPage *pLibrariesPage, bool editFlag = false);
   bool nameExists(QTreeWidgetItem *pItem = 0);
-
+  QComboBox *getNameComboBox() const {return mpNameComboBox;}
+  QComboBox *getVersionsComboBox() const {return mpVersionsComboBox;}
+private:
   LibrariesPage *mpLibrariesPage;
   Label *mpNameLabel;
   QComboBox *mpNameComboBox;
   Label *mpValueLabel;
-  QLineEdit *mpVersionTextBox;
+  QComboBox *mpVersionsComboBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
+  QPushButton *mpInstallLibraryButton;
   QDialogButtonBox *mpButtonBox;
   bool mEditFlag;
+
+  void getSystemLibraries();
 private slots:
+  void getLibraryVersions(const QString &library);
   void addSystemLibrary();
+  void openInstallLibraryDialog();
 };
 
 class AddUserLibraryDialog : public QDialog
@@ -725,7 +730,6 @@ public:
   QCheckBox* getSaveModelForBitmapInsertionCheckBox() {return mpSaveModelForBitmapInsertionCheckBox;}
   QCheckBox* getAlwaysAskForDraggedComponentName() {return mpAlwaysAskForDraggedComponentName;}
   QCheckBox* getAlwaysAskForTextEditorErrorCheckBox() {return mpAlwaysAskForTextEditorErrorCheckBox;}
-  QComboBox* getOldFrontendComboBox() {return mpOldFrontendComboBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpNotificationsGroupBox;
@@ -736,8 +740,6 @@ private:
   QCheckBox *mpSaveModelForBitmapInsertionCheckBox;
   QCheckBox *mpAlwaysAskForDraggedComponentName;
   QCheckBox *mpAlwaysAskForTextEditorErrorCheckBox;
-  Label *mpOldFrontendLabel;
-  QComboBox *mpOldFrontendComboBox;
 };
 
 class LineStylePage : public QWidget

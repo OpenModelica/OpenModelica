@@ -91,7 +91,7 @@ typedef void (*PlotCallback)(void*, int externalWindow, const char* filename, co
     const char* curveWidth, const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
     const char* variables);
 
-typedef void (*LoadModelCallback)(void*);
+typedef void (*LoadModelCallback)(void*, const char* modelname);
 
 /* Thread-specific data passed around in most functions.
  * It is also possible to fetch it using pthread_getspecific (mostly for external functions that were not passed the pointer) */

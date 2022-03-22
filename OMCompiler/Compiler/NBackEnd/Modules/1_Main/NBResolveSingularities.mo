@@ -168,7 +168,7 @@ public
       constraint_ptrs := EquationPointers.fromList(sliced_constraints);
 
       // create adjacency matrix and match with transposed matrix to respect variable priority
-      set_adj := Adjacency.Matrix.create(candidate_ptrs, constraint_ptrs, matrixType, NBAdjacency.MatrixStrictness.STATE_SELECT);
+      set_adj := Adjacency.Matrix.create(candidate_ptrs, constraint_ptrs, matrixType, NBAdjacency.MatrixStrictness.LINEAR);
       set_matching := Matching.regular(Matching.EMPTY_MATCHING(), set_adj, true, true);
 
       if debug then
@@ -291,8 +291,16 @@ public
       for var in unmatched_vars loop
         var_ptr := Slice.getT(var);
         if BVariable.isFixable(var_ptr) then
-          var_ptr := BVariable.setFixed(var_ptr);
-          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
+          if BVariable.isDiscreteState(var_ptr) then
+            // create previous equations for discrete states
+            // d = $PRE.d
+            Initialization.createPreEquationSlice(var, ptr_start_eqns, idx);
+          else
+            // create start equations for everything else
+            // var = $START.var ($PRE.d = $START.d for previous vars)
+            var_ptr := BVariable.setFixed(var_ptr);
+            Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
+          end if;
         else
           failed_vars := var_ptr :: failed_vars;
         end if;

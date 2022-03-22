@@ -35,15 +35,17 @@ encapsulated uniontype NBackendDAE
               all data. It further contains the lower and solve main function.
 "
 public
-  import NBSystem;
-  import NBSystem.System;
   import BVariable = NBVariable;
   import BEquation = NBEquation;
-  import Jacobian = NBJacobian;
-  import Events = NBEvents;
-  import NFFlatten.FunctionTree;
   import NBEquation.{Equation, EquationPointers, EqData, Iterator};
   import NBVariable.{VariablePointers, VarData};
+  import Events = NBEvents;
+  import NFFlatten.FunctionTree;
+  import Jacobian = NBJacobian;
+  import NBJacobian.{SparsityPattern, SparsityColoring};
+  import StrongComponent = NBStrongComponent;
+  import NBSystem;
+  import NBSystem.System;
 
 protected
   // New Frontend imports
@@ -92,6 +94,7 @@ public
     list<System> alg_event            "Systems for algebraic event iteration";
     list<System> init                 "Systems for initialization";
     Option<list<System>> init_0       "Systems for lambda 0 (homotopy) Initialization";
+    // add init_1 for lambda = 1 (test for efficency)
     Option<list<System>> dae          "Systems for dae mode";
 
     VarData varData                   "Variable data.";
@@ -105,7 +108,7 @@ public
     String name                                 "unique matrix name";
     JacobianType jacType                        "type of jacobian";
     VarData varData                             "Variable data.";
-    EqData eqData                               "Equation data.";
+    array<StrongComponent> comps                "the sorted equations";
     Jacobian.SparsityPattern sparsityPattern    "Sparsity pattern for the jacobian";
     Jacobian.SparsityColoring sparsityColoring  "Coloring information";
   end JACOBIAN;
@@ -123,6 +126,7 @@ public
       local
         String tmp = "";
         list<System> dae;
+
       case MAIN()
         algorithm
           if (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event))
@@ -144,10 +148,14 @@ public
           tmp := tmp + Events.EventInfo.toString(bdae.eventInfo);
       then tmp;
 
-      case JACOBIAN() then StringUtil.headline_1("Jacobian " + bdae.name + ": " + str) + "\n" +
-                              VarData.toString(bdae.varData, 1) + "\n" +
-                              EqData.toString(bdae.eqData, 1) + "\n" +
-                              Jacobian.SparsityPattern.toString(bdae.sparsityPattern, bdae.sparsityColoring);
+      case JACOBIAN() algorithm
+        tmp := StringUtil.headline_1(Jacobian.jacobianTypeString(bdae.jacType) + " Jacobian " + bdae.name + ": " + str) + "\n";
+        tmp := tmp + BVariable.VarData.toString(bdae.varData, 1);
+        for i in 1:arrayLength(bdae.comps) loop
+          tmp := tmp + StrongComponent.toString(bdae.comps[i], i) + "\n";
+        end for;
+        tmp := tmp + SparsityPattern.toString(bdae.sparsityPattern) + "\n" + SparsityColoring.toString(bdae.sparsityColoring);
+      then tmp;
 
       case HESSIAN() then StringUtil.headline_1("Hessian: " + str) + "\n" +
                               VarData.toString(bdae.varData, 1) + "\n" +
@@ -171,20 +179,6 @@ public
       then fail();
     end match;
   end getVarData;
-
-  function getEqData
-    input BackendDAE bdae;
-    output EqData eqData;
-  algorithm
-    eqData := match bdae
-      case MAIN() then bdae.eqData;
-      case JACOBIAN() then bdae.eqData;
-      case HESSIAN() then bdae.eqData;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
-      then fail();
-    end match;
-  end getEqData;
 
   function getFunctionTree
     input BackendDAE bdae;
@@ -589,7 +583,7 @@ protected
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
-      BEquation.Equation.createName(eqn_ptr, idx, "SIM");
+      BEquation.Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
       iterators := listAppend(Equation.getForIterators(Pointer.access(eqn_ptr)), iterators);
     end for;
     iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);

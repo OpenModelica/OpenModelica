@@ -6410,9 +6410,9 @@ let &sub = buffer ""
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>");}<%\n%>'
-      /*ldiv not available in opencl c*/
+      /* ldiv not available in opencl c*/
     if isParallelFunctionContext(context) then '(modelica_integer)((<%var1%>) / <%tvar%>)'
-    else 'ldiv(<%var1%>,<%tvar%>).quot'
+    else 'modelica_div_integer(<%var1%>,<%tvar%>).quot'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

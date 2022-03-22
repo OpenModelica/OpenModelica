@@ -9,7 +9,6 @@ RSE.mos \
 RSE2.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \
-eventSystem.mos \
 minimalTearing.mos \
 underdetermined_init.mos \
 partitioning.mos \

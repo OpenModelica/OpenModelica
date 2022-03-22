@@ -1470,6 +1470,9 @@ algorithm
       markedEqns := markStateEquationsWork(indicesAlgebraic, adjMatrix, assigndVar, markedEqns);
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageAlgebraic);
 
+      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqSystem.removedEqs), 1);
+      eqSystem.removedEqs := setMarkedEqnsEvalStage(eqSystem.removedEqs, markedEqns, BackendEquation.setEvalStageDiscrete);
+
       /* For now avoid this and evaluate all the event update breaks right now
          quite a lot models.
       */
@@ -2505,12 +2508,13 @@ protected function filladjacencyMatrixT
   output BackendDAE.AdjacencyMatrixT outAdjacencyArrayT = inAdjacencyArrayT;
 protected
   BackendDAE.AdjacencyMatrixElement row;
-  list<Integer> ei;
+  list<Integer> ei, eqnsindxsNeg;
 algorithm
+  eqnsindxsNeg := list(intNeg(e) for e in eqnsindxs);
   for v in eqns loop
     if v < 0 then
       v := intAbs(v);
-      ei := list(intNeg(e) for e in eqnsindxs);
+      ei := eqnsindxsNeg;
     else
       ei := eqnsindxs;
     end if;

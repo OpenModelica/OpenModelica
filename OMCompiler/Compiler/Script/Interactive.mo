@@ -944,6 +944,7 @@ algorithm
          Absyn.CREF(componentRef = cr),
          Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} := args;
         (p, outResult) := setComponentModifier(class_, cr, mod, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -957,6 +958,7 @@ algorithm
           case Absyn.C_ELEMENT(element = el) then fail();
         end match;
         (p, outResult) := InteractiveUtil.setElementModifier(class_, cr, mod, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -964,6 +966,7 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = crident), exp} := args;
         (p, outResult) := setParameterValue(class_, crident, exp, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -973,6 +976,7 @@ algorithm
          Absyn.CREF(componentRef = cr),
          Absyn.ARRAY(dimensions)} := args;
         (p, outResult) := setComponentDimensions(class_, cr, dimensions, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -980,6 +984,7 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         p := createModel(cr, p);
+        SymbolTable.setAbsyn(p);
       then
         "true";
 
@@ -992,6 +997,7 @@ algorithm
           Absyn.PROGRAM({
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),AbsynUtil.dummyParts,AbsynUtil.dummyInfo)
           }, Absyn.WITHIN(path)), p);
+        SymbolTable.setAbsyn(p);
       then
         "true";
 
@@ -1000,6 +1006,7 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         (outResult, p) := deleteClass(cr, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -1010,6 +1017,7 @@ algorithm
          Absyn.CREF(componentRef = model_)} := args;
         nargs := getApiFunctionNamedArgs(inStatement);
         p := addComponent(name, tp, model_, nargs, p);
+        SymbolTable.setAbsyn(p);
         Print.clearBuf();
       then
         "true";
@@ -1021,6 +1029,7 @@ algorithm
          Absyn.CREF(componentRef = model_)} := args;
         nargs := getApiFunctionNamedArgs(inStatement);
         (p, outResult) := updateComponent(name, tp, model_, nargs, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -1030,6 +1039,7 @@ algorithm
          Absyn.CREF(componentRef = model_)} := args;
         {} := getApiFunctionNamedArgs(inStatement);
         p := deleteOrUpdateComponent(name, model_, p, NONE());
+        SymbolTable.setAbsyn(p);
         Print.clearBuf();
       then "true";
 
@@ -1180,6 +1190,7 @@ algorithm
          Absyn.CREF(componentRef = cr2),
          Absyn.STRING(value = cmt)} := args;
         (p, outResult) := setConnectionComment(cr, cr1, cr2, cmt, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -1190,6 +1201,7 @@ algorithm
          Absyn.CREF(componentRef = cr)} := args;
         nargs := getApiFunctionNamedArgs(inStatement);
         (outResult, p) := addConnection(cr, cr1, cr2, nargs, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -1199,6 +1211,7 @@ algorithm
          Absyn.CREF(componentRef = cr2),
          Absyn.CREF(componentRef = cr)} := args;
         (outResult, p) := deleteConnection(cr, cr1, cr2, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -1357,6 +1370,7 @@ algorithm
           cls := InteractiveUtil.getPathedClassInProgram(AbsynUtil.crefToPath(cr), p);
           cls := Refactor.refactorGraphicalAnnotation(p, cls);
           p := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, Absyn.TOP()), p);
+          SymbolTable.setAbsyn(p);
           outResult := Dump.unparseStr(Absyn.PROGRAM({cls}, Absyn.TOP()), false);
         else
           outResult := "Failed in translating " + Dump.printComponentRefStr(cr)
@@ -1458,6 +1472,7 @@ algorithm
         // For now, renaming a class clears all caches...
         // Substantial analysis required to find out what to keep in cache and what must be thrown out
         (outResult, p) := renameClass(p, old_cname, new_cname);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -1467,6 +1482,7 @@ algorithm
          Absyn.CREF(componentRef = old_cname),
          Absyn.CREF(componentRef = new_cname)} := args;
         (outResult, p) := renameComponent(p, cr, old_cname, new_cname);
+        SymbolTable.setAbsyn(p);
       then outResult;
 
     case "renameComponentInClass"
@@ -1475,6 +1491,7 @@ algorithm
          Absyn.CREF(componentRef = old_cname),
          Absyn.CREF(componentRef = new_cname)} := args;
         (outResult, p) := renameComponentOnlyInClass(p, cr, old_cname, new_cname);
+        SymbolTable.setAbsyn(p);
       then outResult;
 
     case "getCrefInfo"
@@ -1490,6 +1507,7 @@ algorithm
          Absyn.CREF(componentRef = subident),
          Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} := args;
         (p, outResult) := setExtendsModifierValue(class_, crident, subident, mod, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -1549,6 +1567,7 @@ algorithm
          Absyn.CREF(componentRef = cr),
          Absyn.STRING(value = cmt)} := args;
         (outResult, p) := setComponentComment(class_, cr, cmt, p);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -1580,6 +1599,7 @@ algorithm
         (outResult, p) := setComponentProperties(AbsynUtil.crefToPath(class_), cr,
             finalPrefix, flowPrefix, streamPrefix, protected_, repl,
             /*parallelism,*/ variability, {dref1,dref2}, causality, p/*, isField*/);
+        SymbolTable.setAbsyn(p);
       then
         outResult;
 
@@ -1631,8 +1651,6 @@ algorithm
         stringAppendList({"\"", outResult, "\""});
 
   end match;
-
-  SymbolTable.setAbsyn(p);
 end evaluateGraphicalApi_dispatch;
 
 protected function extractAllComponentreplacements
@@ -14824,7 +14842,6 @@ algorithm
   if updateProgram then
     SymbolTable.setAbsyn(InteractiveUtil.updateProgram(parsed, SymbolTable.getAbsyn()));
   end if;
-  System.loadModelCallBack();
 end parseFile;
 
 //he-mag begin

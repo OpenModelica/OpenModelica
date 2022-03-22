@@ -426,13 +426,13 @@ public
 
         case SOME(comps)
           algorithm
-            for i in 1:arrayLength(comps) loop
+            for i in arrayLength(comps):-1:1 loop
               (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, system.systemType, simcode_map);
-              // add it to the alias map (before creating because of index bump)
+              // add it to the alias map
               UnorderedMap.add(AliasInfo.ALIAS_INFO(system.systemType, system.partitionIndex, i), index, simCodeIndices.alias_map);
               result := tmp :: result;
             end for;
-        then listReverse(result);
+        then result;
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + System.System.toString(system)});
@@ -478,10 +478,7 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-          eqn := Pointer.access(Slice.getT(comp.eqn));
-          stmts := {Equation.toStatement(eqn)};
-          tmp := ALGORITHM(simCodeIndices.equationIndex, stmts, Equation.getAttributes(eqn));
-          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          (tmp, simCodeIndices) := createAlgorithm(Pointer.access(Slice.getT(comp.eqn)), simCodeIndices);
         then (tmp, getIndex(tmp));
 
         case StrongComponent.SLICED_EQUATION() algorithm
@@ -734,48 +731,21 @@ public
       simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
     end createWhenBody;
 
-    function traverseCreateEquation
-      "Only works, if the variable to solve for is already isolated in the LHS!"
-      input output Equation eqn;
-      input Pointer<list<Block>> acc;
-      input Pointer<SimCode.SimCodeIndices> indices_ptr;
-      input System.SystemType systemType;
-      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    function createAlgorithm
+      input Equation eqn;
+      output Block blck;
+      input output SimCode.SimCodeIndices indices;
     protected
-      Variable var;
-      Block blck;
-      SimCode.SimCodeIndices indices;
+      list<Statement> stmts;
     algorithm
-      try
-        var := BVariable.getVar(Expression.toCref(Equation.getLHS(eqn)));
-        (blck, indices) := createEquation(var, eqn, NBSolve.Status.EXPLICIT, Pointer.access(indices_ptr), systemType, simcode_map);
-        Pointer.update(acc, blck :: Pointer.access(acc));
-        Pointer.update(indices_ptr, indices);
-      else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.toString(eqn)});
-        fail();
-      end try;
-    end traverseCreateEquation;
+      stmts := match eqn
+        case Equation.ALGORITHM() then eqn.alg.statements;
+        else {Equation.toStatement(eqn)};
+      end match;
 
-    function traverseCreateResidual
-      "Only works, if the variable to solve for is saved in equation attributes!
-      used for dae mode jacobians."
-      input output Equation eqn;
-      input Pointer<list<Block>> acc;
-      input Pointer<SimCode.SimCodeIndices> indices_ptr;
-    protected
-      Block blck;
-      SimCode.SimCodeIndices indices;
-    algorithm
-      try
-        (blck, indices) := createResidual(eqn, Pointer.access(indices_ptr));
-        Pointer.update(acc, blck :: Pointer.access(acc));
-        Pointer.update(indices_ptr, indices);
-      else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.toString(eqn)});
-        fail();
-      end try;
-    end traverseCreateResidual;
+      blck := ALGORITHM(indices.equationIndex, stmts, Equation.getAttributes(eqn));
+      indices.equationIndex := indices.equationIndex + 1;
+    end createAlgorithm;
 
     function createAssignment
       "Creates an assignment equation."

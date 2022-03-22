@@ -874,11 +874,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
 
 int SystemImpl__plotCallBackDefined(threadData_t *threadData)
 {
-  if (threadData->plotClassPointer && threadData->plotCB) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return threadData->plotClassPointer && threadData->plotCB;
 }
 
 void SystemImpl__plotCallBack(threadData_t *threadData, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType,
@@ -886,7 +882,7 @@ void SystemImpl__plotCallBack(threadData_t *threadData, int externalWindow, cons
                               const char* y2, const char* curveWidth, const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
                               const char* variables)
 {
-  if (threadData->plotClassPointer && threadData->plotCB) {
+  if (SystemImpl__plotCallBackDefined(threadData)) {
     PlotCallback pcb = threadData->plotCB;
     pcb(threadData->plotClassPointer, externalWindow, filename, title, grid, plotType, logX, logY, xLabel, yLabel, x1, x2, y1, y2, curveWidth, curveStyle,
         legendPosition, footer, autoScale, variables);
@@ -898,11 +894,11 @@ int SystemImpl__loadModelCallBackDefined(threadData_t *threadData)
   return threadData->loadModelClassPointer && threadData->loadModelCB;
 }
 
-void SystemImpl__loadModelCallBack(threadData_t *threadData)
+void SystemImpl__loadModelCallBack(threadData_t *threadData, const char* modelname)
 {
   if (SystemImpl__loadModelCallBackDefined(threadData)) {
     LoadModelCallback cb = threadData->loadModelCB;
-    cb(threadData->loadModelClassPointer);
+    cb(threadData->loadModelClassPointer, modelname);
   }
 }
 

@@ -149,7 +149,7 @@ static inline void om_file_write_real(__OMC_FILE *file, double data, const char 
   }
 }
 
-#define OMC_ERROR_WRITE() ModelicaFormatError("File.writeEscape: Failed to write to file %s: %s error: %s\n", file->name, file->file, strerror(errno))
+#define OMC_ERROR_WRITE() ModelicaFormatError("File.writeEscape: Failed to write to file %s: %s error: %s\n", file->name, (char *)file->file, strerror(errno))
 
 static inline void om_file_write_escape(__OMC_FILE *file, const char *data, enum escape_t escape)
 {

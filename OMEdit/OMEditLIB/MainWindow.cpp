@@ -358,13 +358,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpCentralStackedWidget->addWidget(mpPlotWindowContainer);
   //Set the centralwidget
   setCentralWidget(mpCentralStackedWidget);
-  //! @todo Remove the following MSL verison block once we have fixed the MSL handling.
-  // set MSL version
-  QSettings *pSettings = Utilities::getApplicationSettings();
-  if (!isTestsuiteRunning() && (!pSettings->contains("MSLVersion") || !pSettings->value("MSLVersion").toBool())) {
-    MSLVersionDialog *pMSLVersionDialog = new MSLVersionDialog;
-    pMSLVersionDialog->exec();
-  }
   // Load and add user defined Modelica libraries into the Library Widget.
   mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
   // set command line options
@@ -374,6 +367,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   OptionsDialog::instance()->saveSimulationSettings();
   OptionsDialog::instance()->saveNFAPISettings();
   // restore OMEdit widgets state
+  QSettings *pSettings = Utilities::getApplicationSettings();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = !MessagesWidget::instance()->getAllMessageWidget()->getMessagesTextBrowser()->toPlainText().isEmpty();
@@ -1362,11 +1356,34 @@ void MainWindow::printStandardOutAndErrorFilesMessages()
   }
 }
 
+/*!
+ * \brief MainWindow::PlotCallbackFunction
+ * Callback function to handle the plot API calls.
+ * \param p
+ * \param externalWindow
+ * \param filename
+ * \param title
+ * \param grid
+ * \param plotType
+ * \param logX
+ * \param logY
+ * \param xLabel
+ * \param yLabel
+ * \param x1
+ * \param x2
+ * \param y1
+ * \param y2
+ * \param curveWidth
+ * \param curveStyle
+ * \param legendPosition
+ * \param footer
+ * \param autoScale
+ * \param variables
+ */
 void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
                                       const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
                                       const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
-                                      const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
-                                      const char *variables)
+                                      const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale, const char *variables)
 {
   MainWindow *pMainWindow = (MainWindow*)p;
   if (pMainWindow) {
@@ -1458,6 +1475,20 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
 }
 
 /*!
+ * \brief MainWindow::LoadModelCallbackFunction
+ * Callback function to handle automatically loaded libraries.
+ * \param p
+ * \param modelName
+ */
+void MainWindow::LoadModelCallbackFunction(void *p, const char *modelName)
+{
+  MainWindow *pMainWindow = (MainWindow*)p;
+  if (pMainWindow) {
+    pMainWindow->getLibraryWidget()->loadAutoLoadedLibrary(QString(modelName));
+  }
+}
+
+/*!
  * \brief MainWindow::addSystemLibraries
  * Add the system libraries to the menu.
  */
@@ -1466,13 +1497,9 @@ void MainWindow::addSystemLibraries()
   mpLibrariesMenu->clear();
   // get the available libraries and versions.
   QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
-  libraries.append("OpenModelica");
   libraries.sort();
   foreach (QString library, libraries) {
-    QStringList versions;
-    if (library.compare(QStringLiteral("OpenModelica")) != 0) {
-      versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
-    }
+    QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
     if (versions.isEmpty()) {
       QAction *pAction = new QAction(library, this);
       pAction->setData(QStringList() << library << "");
@@ -1873,12 +1900,12 @@ void MainWindow::loadSystemLibrary(const QString &library, QString version)
       version = QString("default");
     }
 
-    if (library.compare("OpenModelica") == 0) {
+    mpLibraryWidget->setLoadingLibraries(true);
+    if (mpOMCProxy->loadModel(library, version)) {
       pLibraryTreeModel->createLibraryTreeItem(library, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
       pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-    } else if (mpOMCProxy->loadModel(library, version)) {
-      mpLibraryWidget->getLibraryTreeModel()->loadDependentLibraries(mpOMCProxy->getClassNames());
     }
+    mpLibraryWidget->setLoadingLibraries(false);
     mpStatusBar->clearMessage();
     hideProgressBar();
   }
@@ -2477,22 +2504,20 @@ void MainWindow::exportModelToOMNotebook()
  * \brief MainWindow::openInstallLibraryDialog
  * Opens the install library dialog.
  */
-void MainWindow::openInstallLibraryDialog()
+bool MainWindow::openInstallLibraryDialog()
 {
   InstallLibraryDialog *pInstallLibraryDialog = new InstallLibraryDialog;
-  pInstallLibraryDialog->exec();
+  return pInstallLibraryDialog->exec();
 }
 
 /*!
- * \brief MainWindow::upgradeInstalledLibraries
- * Upgrades the installed libraries.
+ * \brief MainWindow::updateInstalledLibraries
+ * Opens the update installed libraries dialog.
  */
-void MainWindow::upgradeInstalledLibraries()
+void MainWindow::updateInstalledLibraries()
 {
-  if (mpOMCProxy->upgradeInstalledPackages(true)) {
-    mpOMCProxy->updatePackageIndex();
-    addSystemLibraries();
-  }
+  UpdateInstalledLibrariesDialog *pUpdateInstalledLibrariesDialog = new UpdateInstalledLibrariesDialog;
+  pUpdateInstalledLibrariesDialog->exec();
 }
 
 //! Imports the models from OMNotebook.
@@ -3435,13 +3460,13 @@ void MainWindow::createActions()
   mpExportToOMNotebookAction->setEnabled(false);
   connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
   // install library action
-  mpInstallLibraryAction = new QAction(tr("Install Library"), this);
+  mpInstallLibraryAction = new QAction(Helper::installLibrary, this);
   mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
   connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
-  // upgrade installed libraries action
-  mpUpgradeInstalledLibrariesAction = new QAction(tr("Upgrade Installed Libraries"), this);
-  mpUpgradeInstalledLibrariesAction->setStatusTip(tr("Upgrades the installed libraries"));
-  connect(mpUpgradeInstalledLibrariesAction, SIGNAL(triggered()), SLOT(upgradeInstalledLibraries()));
+  // updated installed libraries action
+  mpUpdateInstalledLibrariesAction = new QAction(Helper::updateInstalledLibraries, this);
+  mpUpdateInstalledLibrariesAction->setStatusTip(tr("Updates the installed libraries"));
+  connect(mpUpdateInstalledLibrariesAction, SIGNAL(triggered()), SLOT(updateInstalledLibraries()));
   // clear recent files action
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
@@ -3899,7 +3924,7 @@ void MainWindow::createMenus()
   addSystemLibraries();
   mpFileMenu->addMenu(mpLibrariesMenu);
   mpFileMenu->addAction(mpInstallLibraryAction);
-  mpFileMenu->addAction(mpUpgradeInstalledLibrariesAction);
+  mpFileMenu->addAction(mpUpdateInstalledLibrariesAction);
   mpFileMenu->addSeparator();
   mpRecentFilesMenu = new QMenu(menuBar());
   mpRecentFilesMenu->setObjectName("RecentFilesMenu");
@@ -4704,130 +4729,4 @@ void AboutOMEditDialog::showReportIssue()
   // show the CrashReportDialog
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog("", true);
   pCrashReportDialog->exec();
-}
-
-/*!
- * \brief MSLVersionDialog::MSLVersionDialog
- * \param parent
- */
-MSLVersionDialog::MSLVersionDialog(QWidget *parent)
-  : QDialog(parent)
-{
-  QString title = tr("Setup of Modelica Standard Library version");
-  setAttribute(Qt::WA_DeleteOnClose);
-  setWindowFlags(windowFlags() & ~Qt::WindowCloseButtonHint);
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, title));
-  // heading
-  Label *pHeadingLabel = Utilities::getHeadingLabel(title);
-  // horizontal line
-  QFrame *pHorizontalLine = Utilities::getHeadingLine();
-  // Information
-  const QString info = QString("OpenModelica 1.17.x supports both Modelica Standard Library (MSL) v3.2.3 and v4.0.0. Please note that synchronous components in Modelica.Clocked are still not fully reliable, while most other models work fine in both versions.<br /><br />"
-                               "MSL v3.2.3 and v4.0.0 are mutually incompatible, because of changes of class names and paths; for example, Modelica.SIunits became Modelica.Units.SI in v4.0.0 (​<a href=\"https://github.com/modelica/ModelicaStandardLibrary/releases/tag/v4.0.0\">further information</a>). Please note that conversion scripts are not yet available in OpenModelica 1.17.x, so you need to use other Modelica tools to upgrade existing libraries to use MSL v4.0.0. Conversion script support is planned in OpenModelica 1.18.0.<br /><br />"
-                               "On Windows, both versions of the MSL are installed automatically by the installer. On Linux, you need to install them manually, by following the instructions on the <a href=\"https://openmodelica.org/download/download-linux\">OpenModelica download page</a>. We suggest you do it immediately, otherwise OMEdit won't work correctly.<br /><br />"
-                               "You have three startup options:"
-                               "<ol>"
-                               "<li>Automatically load MSL v3.2.3. You can then load other models or packages that use MSL v3.2.3, or start new ones that will use it. If you then open a model or package that uses MSL v4.0.0, errors will occur. This option is recommended if you are not interested in MSL v4.0.0 and you would like to get the same behaviour as in OpenModelica 1.16.x.</li>"
-                               "<li>Automatically load MSL v4.0.0. You can then load other models or packages that use MSL v4.0.0, or start new ones that will use it. If you then open a model or package that uses MSL v3.2.3, errors will occur. This option is recommended if you exclusively use new libraries depending on MSL v4.0.0.</li>"
-                               "<li>Do not load MSL. When you open a model or library, the appropriate version of MSL will be loaded automatically, based on the uses() annotation of library being opened. This option is recommended if you work with different projects, some using MSL v3.2.3 and some others using MSL v4.0.0. It is also recommended if you are a developer of the Modelica Standard Library, so you want to load your own modified version instead of the pre-installed version customized for OpenModelica.</li>"
-                               "</ol>"
-                               "Please choose one startup option:");
-  Label *pInfoLabel = new Label(info);
-  pInfoLabel->setWordWrap(true);
-  pInfoLabel->setTextFormat(Qt::RichText);
-  pInfoLabel->setTextInteractionFlags(pInfoLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
-  pInfoLabel->setOpenExternalLinks(true);
-  pInfoLabel->setToolTip("");
-  // options
-  mpMSL3RadioButton = new QRadioButton("Load MSL v3.2.3");
-  mpMSL4RadioButton = new QRadioButton("Load MSL v4.0.0");
-  mpNoMSLRadioButton = new QRadioButton("Do not load MSL");
-  QButtonGroup *pButtonGroup = new QButtonGroup;
-  pButtonGroup->addButton(mpMSL3RadioButton);
-  pButtonGroup->addButton(mpMSL4RadioButton);
-  pButtonGroup->addButton(mpNoMSLRadioButton);
-  // radio buttons layout
-  QVBoxLayout *pRadioButtonsLayout = new QVBoxLayout;
-  pRadioButtonsLayout->setAlignment(Qt::AlignTop);
-  pRadioButtonsLayout->setSpacing(0);
-  pRadioButtonsLayout->addWidget(mpMSL3RadioButton);
-  pRadioButtonsLayout->addWidget(mpMSL4RadioButton);
-  pRadioButtonsLayout->addWidget(mpNoMSLRadioButton);
-  // more info
-  Label *pPostInfoLabel = new Label(QString("You can later change this setting by going to Tools | Options | Libraries, where you can add or remove the Modelica library from the list of automatically loaded system libraries, as well as specify which version of the library you want to load. Version tag \"default\" will load the latest installed version (i.e. v4.0.0 for MSL)"));
-  pPostInfoLabel->setWordWrap(true);
-  pPostInfoLabel->setToolTip("");
-  // Create the buttons
-  QPushButton *pOkButton = new QPushButton(Helper::ok);
-  connect(pOkButton, SIGNAL(clicked()), SLOT(setMSLVersion()));
-  // layout
-  QGridLayout *pMainGridLayout = new QGridLayout;
-  pMainGridLayout->setAlignment(Qt::AlignTop);
-  pMainGridLayout->addWidget(pHeadingLabel, 0, 0);
-  pMainGridLayout->addWidget(pHorizontalLine, 1, 0);
-  pMainGridLayout->addWidget(pInfoLabel, 2, 0);
-  pMainGridLayout->addLayout(pRadioButtonsLayout, 3, 0);
-  pMainGridLayout->addWidget(pPostInfoLabel, 4, 0);
-  pMainGridLayout->addWidget(pOkButton, 5, 0, Qt::AlignRight);
-  mpWidget = new QWidget;
-  mpWidget->setLayout(pMainGridLayout);
-  QScrollArea *pScrollArea = new QScrollArea;
-  pScrollArea->setWidgetResizable(true);
-  pScrollArea->setWidget(mpWidget);
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->addWidget(pScrollArea);
-  setLayout(pMainLayout);
-}
-
-/*!
- * \brief MSLVersionDialog::setMSLVersion
- */
-void MSLVersionDialog::setMSLVersion()
-{
-  // if no option is selected
-  if (!mpMSL3RadioButton->isChecked() && !mpMSL4RadioButton->isChecked() && !mpNoMSLRadioButton->isChecked()) {
-    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), "Please select an option.", Helper::ok);
-    return;
-  }
-  QSettings *pSettings = Utilities::getApplicationSettings();
-  // First clear any Modelica and ModelicaReference setting
-  pSettings->beginGroup("libraries");
-  QStringList libraries = pSettings->childKeys();
-  foreach (QString lib, libraries) {
-    if (lib.compare("Modelica") == 0 || lib.compare("ModelicaReference") == 0) {
-      pSettings->remove(lib);
-    }
-  }
-  pSettings->endGroup();
-  // set the Modelica version based on user setting.
-  if (mpMSL3RadioButton->isChecked()) {
-    pSettings->setValue("libraries/Modelica", "3.2.3");
-  } else if (mpMSL4RadioButton->isChecked()) {
-    pSettings->setValue("libraries/Modelica", "4.0.0");
-  } else { // mpNoMSLRadioButton->isChecked()
-    pSettings->setValue("forceModelicaLoad", false);
-  }
-  pSettings->setValue("MSLVersion", true);
-  accept();
-}
-
-/*!
- * \brief MSLVersionDialog::reject
- * Override QDialog::reject() so we can't close the dialog.
- */
-void MSLVersionDialog::reject()
-{
-  // do nothing here.
-}
-
-/*!
- * \brief MSLVersionDialog::sizeHint
- * \return
- */
-QSize MSLVersionDialog::sizeHint() const
-{
-  QSize size = QWidget::sizeHint();
-  size.rwidth() = mpWidget->width();
-  size.rheight() = mpWidget->height() + 50; // add 50 for dialog frame and title bar
-  return size;
 }

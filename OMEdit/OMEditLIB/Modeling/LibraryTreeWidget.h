@@ -495,7 +495,13 @@ public:
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void openLibraryTreeItem(QString nameStructure);
+  void loadAutoLoadedLibrary(const QString &modelName);
+  bool isLoadingLibraries() const {return mLoadingLibraries;}
+  void setLoadingLibraries(bool loadingLibraries) {mLoadingLibraries = loadingLibraries;}
 private:
+  bool mLoadingLibraries;
+  QTimer mAutoLoadedLibrariesTimer;
+  QStringList mAutoLoadedLibrariesList;
   TreeSearchFilters *mpTreeSearchFilters;
   LibraryTreeModel *mpLibraryTreeModel;
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
@@ -515,6 +521,8 @@ private:
   bool saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
+private slots:
+  void handleAutoLoadedLibrary();
 public slots:
   void scrollToActiveLibraryTreeItem();
   void searchClasses();

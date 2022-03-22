@@ -179,18 +179,30 @@ public
     subMod := SCode.NAMEMOD("derivative", mod);
   end toSubMod;
 
-  function getOrder
-    "returns the order of the given function derivative"
-    input FunctionDerivative funcDer;
-    output Integer order;
+  function perfectFit
+    "checks if the derivative is a perfect fit for specified interface map"
+    input FunctionDerivative fnDer;
+    input UnorderedMap<String, Boolean> interface_map;
+    output Boolean b = true;
+  protected
+    String name;
+    Condition cond;
   algorithm
-    order := match funcDer.order
-      case Expression.INTEGER(value = order) then order;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the order was not evaluated to be a constant: " + Expression.toString(funcDer.order)});
-      then fail();
-    end match;
-  end getOrder;
+    for condition in fnDer.conditions loop
+      (_, name, cond) := condition;
+      // if a zero derivative is required but the argument is not in the map
+      // this function derivative cannot be used
+      if cond == Condition.ZERO_DERIVATIVE and not UnorderedMap.contains(name, interface_map) then
+        b := false;
+        return;
+      end if;
+    end for;
+    // the function derivative is a perfect fit, add all conditions to the interface
+    for condition in fnDer.conditions loop
+      (_, name, _) := condition;
+      UnorderedMap.add(name, true, interface_map);
+    end for;
+  end perfectFit;
 
 protected
 

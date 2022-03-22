@@ -57,9 +57,10 @@ protected
   import Adjacency = NBAdjacency;
   import NBEquation.{Equation, EqData, EquationPointer, EquationPointers};
   import Module = NBModule;
+  import ResolveSingularities = NBResolveSingularities;
+  import System = NBSystem;
   import BVariable = NBVariable;
   import NBVariable.{VarData, VariablePointer, VariablePointers};
-  import ResolveSingularities = NBResolveSingularities;
 
   // OB import
   import BackendDAEEXT;
@@ -156,6 +157,7 @@ public
     input output FunctionTree funcTree;
     input output VarData varData;
     input output EqData eqData;
+    input System.SystemType systemType;
     input Boolean transposed = false        "transpose matching if true";
     input Boolean partially = false         "do not resolve singular systems and return partial matching if true";
     input Boolean clear = true              "start from scratch if true";
@@ -170,8 +172,8 @@ public
     (matching, marked_eqns, mapping, matrixType, matrixStrictness) := continue_(matching, adj, transposed, clear);
 
     // 2. Resolve singular systems if necessary
-    changed := match matrixStrictness
-      case NBAdjacency.MatrixStrictness.INIT algorithm
+    changed := match systemType
+      case NBSystem.SystemType.INI algorithm
         // ####### BALANCE INITIALIZATION #######
         (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, mapping, matrixType, matching);
       then changed;
@@ -186,7 +188,7 @@ public
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
       adj := Adjacency.Matrix.create(vars, eqns, matrixType, matrixStrictness);
-      (matching, adj, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING(), adj, vars, eqns, funcTree, varData, eqData, false, true);
+      (matching, adj, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING(), adj, vars, eqns, funcTree, varData, eqData, systemType, false, true);
     end if;
   end singular;
 
@@ -207,22 +209,14 @@ public
       // SCALAR
       case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
         (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
-        if not transposed then
-          (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
-        else
-          (eqn_to_var, var_to_eqn, marked_eqns) := PFPlusExternal(adj.mT, eqn_to_var, var_to_eqn, clear);
-        end if;
+        (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
         matching := SCALAR_MATCHING(var_to_eqn, eqn_to_var);
       then (matching, marked_eqns, NONE(), NBAdjacency.MatrixType.SCALAR, adj.st);
 
       // PSEUDO ARRAY
       case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
         (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
-        //if not transposed then
-          (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
-        //else
-          //(eqn_to_var, var_to_eqn, marked_eqns) := PFPlusExternal(adj.mT, eqn_to_var, var_to_eqn, clear);
-        //end if;
+        (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
         matching := SCALAR_MATCHING(var_to_eqn, eqn_to_var);
       then (matching, marked_eqns, SOME(adj.mapping), NBAdjacency.MatrixType.PSEUDO, adj.st);
 

@@ -70,17 +70,33 @@ public
   import BackendUtil = NBBackendUtil;
   import BaseHashTable;
   import ExpandableArray;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
 
-  type EquationPointer = Pointer<Equation>                                    "mainly used for mapping purposes";
-  type Frame = tuple<ComponentRef, Expression>                                "iterator-like tuple for array handling";
-  type FrameLocation = tuple<array<Integer>, Frame>                           "sliced frame at specific sub locations";
-  type SlicingStatus = enumeration(UNCHANGED, TRIVIAL, NONTRIVIAL, FAILURE);
+  constant String SIMULATION_STR  = "SIM";
+  constant String START_STR       = "SRT";
+  constant String PRE_STR         = "PRE";
+
+  type EquationPointer = Pointer<Equation> "mainly used for mapping purposes";
+
+  // used to process different outcomes of slicing from Util/Slice.mo
+  // have to be defined here and not in Util/Slice.mo because it is a uniontype and not a package
+  type Frame                = tuple<ComponentRef, Expression>                       "iterator-like tuple for array handling";
+  type FrameLocation        = tuple<array<Integer>, Frame>                          "sliced frame at specific sub locations";
+  type SlicingStatus        = enumeration(UNCHANGED, TRIVIAL, NONTRIVIAL, FAILURE)  "final result of slicing";
+  type RecollectStatus      = enumeration(SUCCESS, FAILURE)                         "result of sub-routine recollect";
+  type FrameOrderingStatus  = enumeration(UNCHANGED, CHANGED, FAILURE)              "result of sub-routine frame ordering";
 
   partial function MapFuncExp
     input output Expression e;
   end MapFuncExp;
+
+  partial function MapFuncExpWrapper
+    input output Expression e;
+    input MapFuncExp func;
+  end MapFuncExpWrapper;
+
   partial function MapFuncCref
     input output ComponentRef c;
   end MapFuncCref;
@@ -369,14 +385,15 @@ public
       "Traverses all expressions of the iterator range and applies a function to it."
       input output Iterator iter;
       input MapFuncExp funcExp;
+      input MapFuncExpWrapper mapFunc;
     algorithm
       iter := match iter
         case SINGLE() algorithm
-          iter.range := Expression.map(iter.range, funcExp);
+          iter.range := mapFunc(iter.range, funcExp);
         then iter;
         case NESTED() algorithm
           for i in 1:arrayLength(iter.ranges) loop
-            iter.ranges[i] := Expression.map(iter.ranges[i], funcExp);
+            iter.ranges[i] := mapFunc(iter.ranges[i], funcExp);
           end for;
         then iter;
         else algorithm
@@ -598,11 +615,12 @@ public
       end try;
     end getResidualVar;
 
-    function makeStartEq
+    function makeEq
       " x = $START.x"
       input ComponentRef lhs;
       input ComponentRef rhs;
       input Pointer<Integer> idx;
+      input String str;
       input list<Frame> frames = {};
       output Pointer<Equation> eq;
     protected
@@ -619,10 +637,10 @@ public
             recordSize  = NONE()
           ));
         else
-          eq := Pointer.create(SIMPLE_EQUATION(
+          eq := Pointer.create(SCALAR_EQUATION(
             ty      = ty,
-            lhs     = lhs,
-            rhs     = rhs,
+            lhs     = Expression.fromCref(lhs),
+            rhs     = Expression.fromCref(rhs),
             source  = DAE.emptyElementSource,
             attr    = EQ_ATTR_DEFAULT_INITIAL
           ));
@@ -631,24 +649,13 @@ public
         eq := Pointer.create(FOR_EQUATION(
           ty      = ComponentRef.nodeType(lhs),
           iter    = Iterator.fromFrames(frames),
-          body    = {SIMPLE_EQUATION(ty, lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL)}, // this can also be an array?
+          body    = {SCALAR_EQUATION(ty, Expression.fromCref(lhs), Expression.fromCref(rhs), DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL)}, // this can also be an array?
           source  = DAE.emptyElementSource,
           attr    = EQ_ATTR_DEFAULT_INITIAL
         ));
       end if;
-      Equation.createName(eq, idx, "SRT");
-    end makeStartEq;
-
-    function makePreEq
-      "$PRE.d = d"
-      input ComponentRef lhs;
-      input ComponentRef rhs;
-      input Pointer<Integer> idx;
-      output Pointer<Equation> eq;
-    algorithm
-      eq := Pointer.create(SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs, true), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
-      Equation.createName(eq, idx, "PRE");
-    end makePreEq;
+      Equation.createName(eq, idx, str);
+    end makeEq;
 
     function forEquationToString
       input Iterator iter             "the iterator variable(s)";
@@ -726,6 +733,7 @@ public
       input output Equation eq;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt = NONE();
+      input MapFuncExpWrapper mapFunc = Expression.map;
     algorithm
       eq := match eq
         local
@@ -739,100 +747,91 @@ public
           WhenEquationBody whenEqBody;
           Equation body, new_body;
 
-        case SCALAR_EQUATION()
-          algorithm
-            lhs := Expression.map(eq.lhs, funcExp);
-            rhs := Expression.map(eq.rhs, funcExp);
-            if not referenceEq(lhs, eq.lhs) then
-              eq.lhs := lhs;
-            end if;
-            if not referenceEq(rhs, eq.rhs) then
-              eq.rhs := rhs;
-            end if;
+        case SCALAR_EQUATION() algorithm
+          lhs := mapFunc(eq.lhs, funcExp);
+          rhs := mapFunc(eq.rhs, funcExp);
+          if not referenceEq(lhs, eq.lhs) then
+            eq.lhs := lhs;
+          end if;
+          if not referenceEq(rhs, eq.rhs) then
+            eq.rhs := rhs;
+          end if;
         then eq;
 
-        case ARRAY_EQUATION()
-          algorithm
-            lhs := Expression.map(eq.lhs, funcExp);
-            rhs := Expression.map(eq.rhs, funcExp);
-            if not referenceEq(lhs, eq.lhs) then
-              eq.lhs := lhs;
-            end if;
-            if not referenceEq(rhs, eq.rhs) then
-              eq.rhs := rhs;
-            end if;
+        case ARRAY_EQUATION() algorithm
+          lhs := mapFunc(eq.lhs, funcExp);
+          rhs := mapFunc(eq.rhs, funcExp);
+          if not referenceEq(lhs, eq.lhs) then
+            eq.lhs := lhs;
+          end if;
+          if not referenceEq(rhs, eq.rhs) then
+            eq.rhs := rhs;
+          end if;
         then eq;
 
-        case SIMPLE_EQUATION()
-          algorithm
-            if isSome(funcCrefOpt) then
-              SOME(funcCref) := funcCrefOpt;
-              lhs_cref := funcCref(eq.lhs);
-              rhs_cref := funcCref(eq.rhs);
-              if not referenceEq(lhs_cref, eq.lhs) then
-                eq.lhs := lhs_cref;
-              end if;
-              if not referenceEq(rhs_cref, eq.rhs) then
-                eq.rhs := rhs_cref;
-              end if;
+        case SIMPLE_EQUATION() algorithm
+          if isSome(funcCrefOpt) then
+            SOME(funcCref) := funcCrefOpt;
+            lhs_cref := funcCref(eq.lhs);
+            rhs_cref := funcCref(eq.rhs);
+            if not referenceEq(lhs_cref, eq.lhs) then
+              eq.lhs := lhs_cref;
             end if;
+            if not referenceEq(rhs_cref, eq.rhs) then
+              eq.rhs := rhs_cref;
+            end if;
+          end if;
         then eq;
 
-        case RECORD_EQUATION()
-          algorithm
-            lhs := Expression.map(eq.lhs, funcExp);
-            rhs := Expression.map(eq.rhs, funcExp);
-            if not referenceEq(lhs, eq.lhs) then
-              eq.lhs := lhs;
-            end if;
-            if not referenceEq(rhs, eq.rhs) then
-              eq.rhs := rhs;
-            end if;
+        case RECORD_EQUATION() algorithm
+          lhs := mapFunc(eq.lhs, funcExp);
+          rhs := mapFunc(eq.rhs, funcExp);
+          if not referenceEq(lhs, eq.lhs) then
+            eq.lhs := lhs;
+          end if;
+          if not referenceEq(rhs, eq.rhs) then
+            eq.rhs := rhs;
+          end if;
         then eq;
 
-        case ALGORITHM()
-          algorithm
-            alg := Algorithm.mapExp(eq.alg, funcExp);
-            if isSome(funcCrefOpt) then
-              SOME(funcCref) := funcCrefOpt;
-              // ToDo referenceEq for lists?
-              //alg.inputs := List.map(alg.inputs, funcCref);
-              alg.outputs := List.map(alg.outputs, funcCref);
-            end if;
-            eq.alg := alg;
+        case ALGORITHM() algorithm
+          alg := Algorithm.mapExp(eq.alg, funcExp); //ToDo: this has to use mapping func
+          if isSome(funcCrefOpt) then
+            SOME(funcCref) := funcCrefOpt;
+            // ToDo referenceEq for lists?
+            //alg.inputs := List.map(alg.inputs, funcCref);
+            alg.outputs := List.map(alg.outputs, funcCref);
+          end if;
+          eq.alg := alg;
         then eq;
 
-        case IF_EQUATION()
-          algorithm
-            ifEqBody := IfEquationBody.map(eq.body, funcExp, funcCrefOpt);
-            if not referenceEq(ifEqBody, eq.body) then
-              eq.body := ifEqBody;
-            end if;
+        case IF_EQUATION() algorithm
+          ifEqBody := IfEquationBody.map(eq.body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(ifEqBody, eq.body) then
+            eq.body := ifEqBody;
+          end if;
         then eq;
 
-        case FOR_EQUATION()
-          algorithm
-            iter := Iterator.map(eq.iter, funcExp);
-            if not referenceEq(iter, eq.iter) then
-              eq.iter := iter;
-            end if;
-            eq.body := list(map(body_eqn, funcExp, funcCrefOpt) for body_eqn in eq.body);
+        case FOR_EQUATION() algorithm
+          iter := Iterator.map(eq.iter, funcExp, mapFunc);
+          if not referenceEq(iter, eq.iter) then
+            eq.iter := iter;
+          end if;
+          eq.body := list(map(body_eqn, funcExp, funcCrefOpt) for body_eqn in eq.body);
         then eq;
 
-        case WHEN_EQUATION()
-          algorithm
-            whenEqBody := WhenEquationBody.map(eq.body, funcExp, funcCrefOpt);
-            if not referenceEq(whenEqBody, eq.body) then
-              eq.body := whenEqBody;
-            end if;
+        case WHEN_EQUATION() algorithm
+          whenEqBody := WhenEquationBody.map(eq.body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(whenEqBody, eq.body) then
+            eq.body := whenEqBody;
+          end if;
         then eq;
 
-        case AUX_EQUATION(body = SOME(body))
-          algorithm
-            new_body := map(body, funcExp, funcCrefOpt);
-            if not referenceEq(new_body, body) then
-              eq.body := SOME(new_body);
-            end if;
+        case AUX_EQUATION(body = SOME(body)) algorithm
+          new_body := map(body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(new_body, body) then
+            eq.body := SOME(new_body);
+          end if;
         then eq;
 
         case DUMMY_EQUATION() then eq;
@@ -850,40 +849,34 @@ public
       input Equation eq;
       input filterCref filter;
       output list<ComponentRef> cref_lst;
-
-      partial function filterCref
-        "partial function that needs to be provided.
-        decides if the the cref is added to the list pointer."
-        input output ComponentRef cref;
-        input Pointer<list<ComponentRef>> cref_lst_ptr;
-      end filterCref;
-
-      function filterExp
-        "wrapper function that applies filter cref to
-        a cref expression."
-        input output Expression exp;
-        input filterCref filter;
-        input Pointer<list<ComponentRef>> cref_lst_ptr;
-      algorithm
-        _ := match exp
-          local
-            ComponentRef cref;
-            filterCref func;
-          case Expression.CREF(cref = cref) algorithm
-            filter(cref, cref_lst_ptr);
-          then ();
-          else ();
-        end match;
-      end filterExp;
-
     protected
-      Pointer<list<ComponentRef>> cref_lst_ptr = Pointer.create({});
+      Pointer<list<ComponentRef>> acc = Pointer.create({});
     algorithm
       // map with the expression and cref filter functions
-      _ := map(eq, function filterExp(filter = filter, cref_lst_ptr = cref_lst_ptr),
-              SOME(function filter(cref_lst_ptr = cref_lst_ptr)));
-      cref_lst := Pointer.access(cref_lst_ptr);
+      _ := map(eq, function filterExp(filter = filter, acc = acc),
+              SOME(function filter(acc = acc)));
+      cref_lst := Pointer.access(acc);
     end collectCrefs;
+
+    partial function filterCref
+      "partial function that needs to be provided.
+      decides if the the cref is added to the list pointer."
+      input output ComponentRef cref;
+      input Pointer<list<ComponentRef>> acc;
+    end filterCref;
+
+    function filterExp
+      "wrapper function that applies filter cref to
+      a cref expression."
+      input output Expression exp;
+      input filterCref filter;
+      input Pointer<list<ComponentRef>> acc;
+    algorithm
+      _ := match exp
+        case Expression.CREF() algorithm filter(exp.cref, acc); then ();
+        else ();
+      end match;
+    end filterExp;
 
     function getLHS
       "gets the left hand side expression of an equation."
@@ -1012,12 +1005,11 @@ public
     end fromLHSandRHS;
 
     function updateLHSandRHS
-      input Pointer<Equation> eqn_ptr;
+      input output Equation eqn;
       input Expression lhs;
       input Expression rhs;
     protected
       Type ty;
-      Equation eqn = Pointer.access(eqn_ptr);
       EquationAttributes attr = getAttributes(eqn);
       DAE.ElementSource src = source(eqn);
     algorithm
@@ -1026,7 +1018,6 @@ public
         case Type.ARRAY() then ARRAY_EQUATION(ty, lhs, rhs, src, attr, NONE());
                           else SCALAR_EQUATION(ty, lhs, rhs, src, attr);
       end match;
-      Pointer.update(eqn_ptr, eqn);
     end updateLHSandRHS;
 
     function swapLHSandRHS
@@ -1566,7 +1557,7 @@ public
       list<array<Integer>> locations_T;
       list<FrameLocation> frame_locations;
       list<tuple<Integer, Integer, Integer>> ranges;
-      BackendUtil.FrameOrderingStatus frame_status;
+      FrameOrderingStatus frame_status;
     algorithm
       eqn := Pointer.access(eqn_ptr);
       (eqn_ptr, slicing_status, solve_status) := match eqn
@@ -1589,17 +1580,17 @@ public
           // trivial slices replace the original equation entirely
           slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
 
-          locations                                       := list(BackendUtil.indexToLocation(idx, sizes) for idx in indices);
-          locations_T                                     := BackendUtil.transposeLocations(locations, listLength(sizes));
+          locations                                       := list(Slice.indexToLocation(idx, sizes) for idx in indices);
+          locations_T                                     := Slice.transposeLocations(locations, listLength(sizes));
           frames                                          := listReverse(getForFrames(eqn));
           frame_locations                                 := List.zip(locations_T, frames);
-          (frame_locations, replacements, frame_status)   := BackendUtil.orderTransposedFrameLocations(frame_locations);
-          if frame_status == NBBackendUtil.FrameOrderingStatus.FAILURE then
+          (frame_locations, replacements, frame_status)   := Slice.orderTransposedFrameLocations(frame_locations);
+          if frame_status == FrameOrderingStatus.FAILURE then
             slicing_status  := SlicingStatus.FAILURE;
             solve_status    := NBSolve.Status.UNPROCESSED;
             return;
           end if;
-          (frames, removed_diagonals_opt)                 := BackendUtil.recollectRangesHeuristic(frame_locations);
+          (frames, removed_diagonals_opt)                 := Slice.recollectRangesHeuristic(frame_locations);
 
           // solve the body equation for the cref if needed
           // ToDo: act on solving status not equal to EXPLICIT ?
@@ -1673,7 +1664,7 @@ public
             (sliced_eqn, funcTree, _, _) := Solve.solveEquation(List.first(eqn.body), cref_to_solve, funcTree);
           end if;
           // get the frame location indices from single index
-          location := BackendUtil.indexToLocation(scal_idx, sizes);
+          location := Slice.indexToLocation(scal_idx, sizes);
           // create the replacement rules for this location
           Iterator.createSingleReplacements(eqn.iter, listArray(location), replacements);
           // replace iterators
@@ -1775,16 +1766,17 @@ public
       input output IfEquationBody ifBody;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
     algorithm
-      condition := Expression.map(ifBody.condition, funcExp);
+      condition := mapFunc(ifBody.condition, funcExp);
       if not referenceEq(condition, ifBody.condition) then
         ifBody.condition := condition;
       end if;
 
       // referenceEq for lists?
-      ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = function funcExp(), funcCrefOpt = function funcCrefOpt())));
+      ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)));
     end map;
 
     function toStatement
@@ -1859,16 +1851,17 @@ public
       input output WhenEquationBody whenBody;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
     algorithm
-      condition := Expression.map(whenBody.condition, funcExp);
+      condition := mapFunc(whenBody.condition, funcExp);
       if not referenceEq(condition, whenBody.condition) then
         whenBody.condition := condition;
       end if;
 
       // ToDo reference eq for lists?
-      whenBody.when_stmts := List.map(whenBody.when_stmts, function WhenStatement.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt));
+      whenBody.when_stmts := List.map(whenBody.when_stmts, function WhenStatement.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
     end map;
 /*
     function convert
@@ -1956,14 +1949,9 @@ public
 
     function map
       input output WhenStatement stmt;
-      input MapFunc funcExp;
+      input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt;
-      partial function MapFunc
-        input output Expression e;
-      end MapFunc;
-      partial function MapFuncCref
-        input output ComponentRef c;
-      end MapFuncCref;
+      input MapFuncExpWrapper mapFunc;
     algorithm
       stmt := match stmt
         local
@@ -1973,8 +1961,8 @@ public
 
         case ASSIGN()
           algorithm
-            lhs := Expression.map(stmt.lhs, funcExp);
-            rhs := Expression.map(stmt.rhs, funcExp);
+            lhs := mapFunc(stmt.lhs, funcExp);
+            rhs := mapFunc(stmt.rhs, funcExp);
             if not referenceEq(lhs, stmt.lhs) then
               stmt.lhs := lhs;
             end if;
@@ -1992,7 +1980,7 @@ public
                 stmt.stateVar := stateVar;
               end if;
             end if;
-            value := Expression.map(stmt.value, funcExp);
+            value := mapFunc(stmt.value, funcExp);
             if not referenceEq(value, stmt.value) then
               stmt.value := value;
             end if;
@@ -2000,7 +1988,7 @@ public
 
         case ASSERT()
           algorithm
-            condition := Expression.map(stmt.condition, funcExp);
+            condition := mapFunc(stmt.condition, funcExp);
             if not referenceEq(condition, stmt.condition) then
               stmt.condition := condition;
             end if;
@@ -2010,7 +1998,7 @@ public
 
         case NORETCALL()
           algorithm
-            value := Expression.map(stmt.exp, funcExp);
+            value := mapFunc(stmt.exp, funcExp);
             if not referenceEq(value, stmt.exp) then
               stmt.exp := value;
             end if;
@@ -2672,8 +2660,8 @@ public
             if level == 0 then
               tmp :=  EquationPointers.toString(eqData.equations, "Jacobian", false);
             else
-              tmp :=  EquationPointers.toString(eqData.results, "Result", false) +
-                      EquationPointers.toString(eqData.temporary, "Temporary Inner", false) +
+              tmp :=  EquationPointers.toString(eqData.results, "Residual", false) +
+                      EquationPointers.toString(eqData.temporary, "Inner", false) +
                       EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
             end if;
         then tmp;
@@ -2734,7 +2722,7 @@ public
         case (EQ_DATA_SIM(), EqType.CONTINUOUS) algorithm
           if newName then
             for eqn_ptr in eq_lst loop
-              Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
             end for;
           end if;
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
@@ -2745,7 +2733,7 @@ public
         case (EQ_DATA_SIM(), EqType.DISCRETE) algorithm
           if newName then
             for eqn_ptr in eq_lst loop
-              Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
             end for;
           end if;
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
@@ -2756,7 +2744,7 @@ public
         case (EQ_DATA_SIM(), EqType.INITIAL) algorithm
           if newName then
             for eqn_ptr in eq_lst loop
-              Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, SIMULATION_STR);
             end for;
           end if;
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);

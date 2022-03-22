@@ -44,6 +44,7 @@ encapsulated uniontype NFAlgorithm
   // Util imports
   import Error;
   import Flags;
+  import UnorderedSet;
 
 protected
   import Algorithm = NFAlgorithm;
@@ -171,17 +172,19 @@ public
     statement in the algorithm and an output is a variables belonging to the
     variables that are assigned a value in the algorithm. If a variable is an
     input and an output it will be treated as an output."
-    input list<Statement> statements "statements of the algorithm";
+    input list<Statement> statements;
     output list<ComponentRef> inputs_lst;
     output list<ComponentRef> outputs_lst;
   protected
-    HashSet.HashSet inputs_hs = HashSet.emptyHashSet();
-    HashSet.HashSet outputs_hs = HashSet.emptyHashSet();
+    UnorderedSet<ComponentRef> inputs_set  = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> outputs_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     try
-      (inputs_hs, outputs_hs) := List.fold(statements, function statementInputsOutputs(iters = HashSet.emptyHashSet()), (inputs_hs, outputs_hs));
-      inputs_lst := BaseHashSet.hashSetList(inputs_hs);
-      outputs_lst := BaseHashSet.hashSetList(outputs_hs);
+      for statement in statements loop
+        statementInputsOutputs(statement, inputs_set, outputs_set);
+      end for;
+      inputs_lst  := UnorderedSet.toList(inputs_set);
+      outputs_lst := UnorderedSet.toList(outputs_set);
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
     end try;
@@ -191,88 +194,76 @@ protected
   function statementInputsOutputs "Helper for getInputsOutputs.
     Traverse statements and find inputs and outputs"
     input Statement statement;
-    input HashSet.HashSet iters "iterators from FOR-loops";
-    input output tuple<HashSet.HashSet, HashSet.HashSet> hashSets "inputs and outputs";
+    input UnorderedSet<ComponentRef> inputs_set;
+    input UnorderedSet<ComponentRef> outputs_set;
   algorithm
-    hashSets := match statement
+    () := match statement
       local
-        HashSet.HashSet inputs_hs, outputs_hs;
         Expression lhs, rhs;
         list<Expression> elements;
         list<Statement> stmts;
         list<tuple<Expression, list<Statement>>> branches;
-        InstNode iterator;
-        HashSet.HashSet iters_;
 
       // a := expr;
-      case Statement.ASSIGNMENT(lhs = lhs as Expression.CREF(), rhs = rhs)
-        algorithm
-          (inputs_hs, outputs_hs) := hashSets;
-          // TODO extend for array, matrix?
-          // TODO has to be scalarized if scalarize
-          inputs_hs := Expression.fold(rhs, function expressionInputs(iters = iters, outputs_hs = outputs_hs), inputs_hs);
-      then expressionOutput(lhs, iters, (inputs_hs, outputs_hs));
+      case Statement.ASSIGNMENT(lhs = lhs as Expression.CREF(), rhs = rhs) algorithm
+        // TODO extend for array, matrix?
+        // TODO has to be scalarized if scalarize
+        Expression.apply(rhs, function expressionInputs(inputs_set = inputs_set, outputs_set = outputs_set));
+        expressionOutput(lhs, inputs_set, outputs_set);
+      then ();
 
       // (a, b, c, ...) := expr;
-      case Statement.ASSIGNMENT(lhs = Expression.TUPLE(elements = elements), rhs = rhs)
-        algorithm
-          (inputs_hs, outputs_hs) := hashSets;
-          // TODO extend for array, matrix?
-          inputs_hs := Expression.fold(rhs, function expressionInputs(iters = iters, outputs_hs = outputs_hs), inputs_hs);
-          hashSets := (inputs_hs, outputs_hs);
-          for exp in elements loop
-            hashSets := expressionOutput(exp, iters, hashSets);
-          end for;
-      then hashSets;
+      case Statement.ASSIGNMENT(lhs = Expression.TUPLE(elements = elements), rhs = rhs) algorithm
+        // TODO extend for array, matrix?
+        Expression.apply(rhs, function expressionInputs(inputs_set = inputs_set, outputs_set = outputs_set));
+        for exp in elements loop
+          expressionOutput(exp, inputs_set, outputs_set);
+        end for;
+      then ();
 
       // ToDo: Statement.ASSIGNMENT(lhs=lhs as Expression.RECORD_ELEMENT())
 
-      case Statement.FOR(body = stmts, iterator = iterator)
-        algorithm
-          iters_ := BaseHashSet.add(ComponentRef.makeIterator(iterator), iters);
+      case Statement.FOR(body = stmts) algorithm
+        for stmt in stmts loop
+          statementInputsOutputs(stmt, inputs_set, outputs_set);
+        end for;
+      then ();
+
+      case Statement.IF(branches = branches) algorithm
+        for branch in branches loop
+          (_, stmts) := branch;
+          // TODO warn about using unassigned outputs in condition -> const eval?
           for stmt in stmts loop
-            hashSets := statementInputsOutputs(stmt, iters_, hashSets);
+            statementInputsOutputs(stmt, inputs_set, outputs_set);
           end for;
-      then hashSets;
+        end for;
+        // TODO input in one branch can't be output in another etc...
+      then ();
 
-      case Statement.IF(branches = branches)
-        algorithm
-          for branch in branches loop
-            (_, stmts) := branch;
-            // what about using unassigned outputs in condition?
-            for stmt in stmts loop
-              hashSets := statementInputsOutputs(stmt, iters, hashSets);
-            end for;
-          end for;
-          // TODO input in one branch can't be output in another etc...
-      then hashSets;
-
-      case Statement.WHEN(branches = branches)
-        algorithm
-          for branch in branches loop
-            (_, stmts) := branch;
-            // what about using unassigned outputs in condition?
-            for stmt in stmts loop
-              hashSets := statementInputsOutputs(stmt, iters, hashSets);
-            end for;
-          end for;
-          // TODO input in one branch can't be output in another etc...
-      then hashSets;
-
-      case Statement.WHILE(body = stmts)
-        algorithm
+      case Statement.WHEN(branches = branches) algorithm
+        for branch in branches loop
+          (_, stmts) := branch;
           // what about using unassigned outputs in condition?
           for stmt in stmts loop
-            hashSets := statementInputsOutputs(stmt, iters, hashSets);
+            statementInputsOutputs(stmt, inputs_set, outputs_set);
           end for;
-      then hashSets;
+        end for;
+        // TODO input in one branch can't be output in another etc...
+      then ();
 
-      case Statement.ASSERT() then hashSets;
-      case Statement.TERMINATE() then hashSets;
-      case Statement.NORETCALL() then hashSets;
-      case Statement.RETURN() then hashSets;
-      case Statement.BREAK() then hashSets;
-      case Statement.FAILURE() then hashSets; // does this need to do sth ?
+      case Statement.WHILE(body = stmts) algorithm
+        // TODO warn about using unassigned outputs in condition -> const eval?
+        for stmt in stmts loop
+          statementInputsOutputs(stmt, inputs_set, outputs_set);
+        end for;
+      then ();
+
+      case Statement.ASSERT() then ();
+      case Statement.TERMINATE() then ();
+      case Statement.NORETCALL() then ();
+      case Statement.RETURN() then ();
+      case Statement.BREAK() then ();
+      case Statement.FAILURE() then ();
 
       case Statement.FUNCTION_ARRAY_INIT()
         algorithm
@@ -292,108 +283,84 @@ protected
   function expressionInputs
     "finds all inputs on the rhs of a statement"
     input Expression exp;
-    input HashSet.HashSet iters "iterators from FOR-loops";
-    input HashSet.HashSet outputs_hs "outputs from previous statements";
-    input output HashSet.HashSet inputs_hs;
+    input UnorderedSet<ComponentRef> inputs_set;
+    input UnorderedSet<ComponentRef> outputs_set "outputs from previous statements";
   algorithm
-    inputs_hs := match exp
+    () := match exp
       local
         ComponentRef cr;
         Type ty;
 
       // Skip time
-      case Expression.CREF(cref = cr) guard(ComponentRef.isTime(cr)) then inputs_hs;
-
-      // Skip external Objects
-      case Expression.CREF(ty = ty) guard(Type.isExternalObject(ty)) then inputs_hs;
+      case Expression.CREF(cref = cr) guard(ComponentRef.isTime(cr)) then ();
 
       // Skip iterators
-      case Expression.CREF(cref = cr)
-        guard ComponentRef.isIterator(cr) and BaseHashSet.has(cr, iters)
-      then inputs_hs;
+      case Expression.CREF(cref = cr) guard ComponentRef.isIterator(cr) then ();
 
-      // Skip iterators from list comprehensions
-      // FixMe: this currently skips all iterators blindly
-      case Expression.CREF(cref = cr)
-        guard ComponentRef.isIterator(cr)
-      then inputs_hs;
+      // Skip external Objects
+      case Expression.CREF(ty = ty) guard(Type.isExternalObject(ty)) then ();
 
-      case Expression.CREF(cref = cr)
-        algorithm
-          // since outputs get stripped, also strip inputs
-          cr := ComponentRef.stripSubscriptsExceptModel(cr);
-          if not BaseHashSet.has(cr, outputs_hs) then
-            inputs_hs := BaseHashSet.add(cr, inputs_hs);
-          end if;
-      then inputs_hs;
+      case Expression.CREF(cref = cr) algorithm
+        // since outputs get stripped, also strip inputs
+        // otherwise uninitialized output detection doesn't work properly
+        cr := ComponentRef.stripSubscriptsExceptModel(cr);
+        if not UnorderedSet.contains(cr, outputs_set) then
+          UnorderedSet.add(cr, inputs_set);
+        end if;
+      then ();
 
-      else inputs_hs;
+      else ();
     end match;
   end expressionInputs;
 
   function expressionOutput "author: Frenkel TUD 2012-06
     detects outputs by looking at crefs in the lhs of a statement"
     input Expression exp "should be a cref, otherwise fail";
-    input HashSet.HashSet iters "iterators from FOR-loops";
-    input output tuple<HashSet.HashSet, HashSet.HashSet> hashSets "inputs and outputs";
+    input UnorderedSet<ComponentRef> inputs_set;
+    input UnorderedSet<ComponentRef> outputs_set;
   algorithm
-    hashSets := match exp
+    () := match exp
       local
         ComponentRef cr;
         Type ty;
-        HashSet.HashSet inputs_hs, outputs_hs;
 
       // Skip wild
-      case Expression.CREF(cref = ComponentRef.WILD()) then hashSets;
+      case Expression.CREF(cref = ComponentRef.WILD()) then ();
 
       // time is not an output in algorithms
-      case Expression.CREF(cref = cr) guard(ComponentRef.isTime(cr))
-        algorithm
-          Error.addMessage(Error.COMPILER_ERROR, {"Trying to assign to time."});
+      case Expression.CREF(cref = cr) guard(ComponentRef.isTime(cr)) algorithm
+        Error.addMessage(Error.COMPILER_ERROR, {"Trying to assign to time."});
       then fail();
 
       // Iterators are not outputs in algorithms
-      case Expression.CREF(cref = cr)
-        guard ComponentRef.isIterator(cr) and BaseHashSet.has(cr, iters)
-        algorithm
-          Error.addMessage(Error.COMPILER_ERROR, {"Trying to assign to iterator " + ComponentRef.toString(cr) + "."});
+      case Expression.CREF(cref = cr) guard ComponentRef.isIterator(cr) algorithm
+        Error.addMessage(Error.COMPILER_ERROR, {"Trying to assign to iterator " + ComponentRef.toString(cr) + "."});
       then fail();
 
       // Skip external Objects
       // or error?
-      case Expression.CREF(ty = ty) guard(Type.isExternalObject(ty)) then hashSets;
+      case Expression.CREF(ty = ty) guard(Type.isExternalObject(ty)) then ();
 
-      case Expression.CREF(cref = cr)
-        algorithm
-          (inputs_hs, outputs_hs) := hashSets;
-          /* mahge:
-          Modelica spec 3.3 rev 11.1.2
-            "If at least one element of an array appears on the left hand side of
-             the assignment operator, then the complete array is initialized in
-             this algorithm section"
-          So we strip the all subs except for model subs and send the whole array to expansion. i.e. we consider the whole array as modified.
-          */
-          cr := ComponentRef.stripSubscriptsExceptModel(cr);
-
-          /* Modelica spec 3.4 11.1.2
-            "A non-discrete variable is initialized with its start value (i.e. the
-             value of the start-attribute)."
-          phannebohm: This is very weird behavior. TODO change the spec!
-          */
-          if BaseHashSet.has(cr, inputs_hs) then
-            if Flags.isSet(Flags.FAILTRACE) then
-              Error.addMessage(Error.COMPILER_WARNING, {"Using output variable in RHS before it is assigned (former occurences will be set to initial value): " + Expression.toString(exp)});
-            end if;
-            inputs_hs := BaseHashSet.delete(cr, inputs_hs);
-            outputs_hs := BaseHashSet.add(cr, outputs_hs);
-          else
-            outputs_hs := BaseHashSet.add(cr, outputs_hs);
+      case Expression.CREF(cref = cr) algorithm
+        /* mahge:
+        Modelica spec 3.3 rev 11.1.2
+          "If at least one element of an array appears on the left hand side of
+           the assignment operator, then the complete array is initialized in
+           this algorithm section"
+        So we strip the all subs except for model subs and send the whole array to expansion. i.e. we consider the whole array as modified.
+        */
+        cr := ComponentRef.stripSubscriptsExceptModel(cr);
+        if UnorderedSet.remove(cr, inputs_set) then
+          if Flags.isSet(Flags.FAILTRACE) then
+            Error.addMessage(Error.COMPILER_WARNING, {"Using output variable in RHS before it is assigned (former occurences will be set to initial value): " + Expression.toString(exp)});
           end if;
-      then (inputs_hs, outputs_hs);
+          // TODO add to outputs that need to be initialized / partially replaced by initial value?
+        end if;
+        UnorderedSet.add(cr, outputs_set);
+      then ();
 
-      else
-        algorithm
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed due to wrong expression type in LHS of algorithm statement: " + Expression.toString(exp)});
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed due to wrong expression type in LHS of algorithm statement: " + Expression.toString(exp)});
       then fail();
     end match;
   end expressionOutput;

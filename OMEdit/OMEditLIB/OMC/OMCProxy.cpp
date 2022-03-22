@@ -249,6 +249,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   omc_Main_init(threadData, args);
   threadData->plotClassPointer = MainWindow::instance();
   threadData->plotCB = MainWindow::PlotCallbackFunction;
+  threadData->loadModelClassPointer = MainWindow::instance();
+  threadData->loadModelCB = MainWindow::LoadModelCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
   connect(mpOMCInterface, SIGNAL(logCommand(QString)), this, SLOT(logCommand(QString)));
@@ -266,8 +268,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
 #endif
   /* set the tmp directory as the working directory */
   changeDirectory(tmpPath);
-  // set the OpenModelicaLibrary variable.
-  Helper::OpenModelicaLibrary = getModelicaPath();
+  // set the user home directory variable.
   Helper::userHomeDirectory = getHomeDirectoryPath();
   return true;
 }
@@ -720,27 +721,10 @@ void OMCProxy::loadSystemLibraries()
     loadModel("Modelica", "default");
     loadModel("ModelicaReference", "default");
   } else {
-    bool forceModelicaLoad = true;
     QSettings *pSettings = Utilities::getApplicationSettings();
-    if (pSettings->contains("forceModelicaLoad")) {
-      forceModelicaLoad = pSettings->value("forceModelicaLoad").toBool();
-    }
     pSettings->beginGroup("libraries");
     QStringList libraries = pSettings->childKeys();
     pSettings->endGroup();
-    /* Only force loading of Modelica & ModelicaReference if user is using OMEdit for the first time.
-     * Later user must use the libraries options dialog.
-     */
-    if (forceModelicaLoad) {
-      if (!pSettings->contains("libraries/Modelica")) {
-        pSettings->setValue("libraries/Modelica","default");
-        libraries.prepend("Modelica");
-      }
-      if (!pSettings->contains("libraries/ModelicaReference")) {
-        pSettings->setValue("libraries/ModelicaReference","default");
-        libraries.prepend("ModelicaReference");
-      }
-    }
     foreach (QString lib, libraries) {
       QString version = pSettings->value("libraries/" + lib).toString();
       loadModel(lib, version);
@@ -2372,7 +2356,6 @@ bool OMCProxy::translateModel(QString className, QString simualtionParameters)
   sendCommand("translateModel(" + className + "," + simualtionParameters + ")");
   bool res = StringHandler::unparseBool(getResult());
   printMessagesStringInternal();
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return res;
 }
 
@@ -2432,7 +2415,6 @@ QString OMCProxy::checkModel(QString className)
 {
   QString result = mpOMCInterface->checkModel(className);
   printMessagesStringInternal();
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2459,7 +2441,6 @@ QString OMCProxy::checkAllModelsRecursive(QString className)
 {
   QString result = mpOMCInterface->checkAllModelsRecursive(className, false);
   printMessagesStringInternal();
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2473,7 +2454,6 @@ QString OMCProxy::instantiateModel(QString className)
 {
   QString result = mpOMCInterface->instantiateModel(className);
   printMessagesStringInternal();
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2515,9 +2495,6 @@ QString OMCProxy::buildModelFMU(QString className, QString version, QString type
 {
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
   QString fmuFileName = mpOMCInterface->buildModelFMU(className, version, type, fileNamePrefix, platforms, includeResources);
-  if (!fmuFileName.isEmpty()) {
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
-  }
   printMessagesStringInternal();
   return fmuFileName;
 }
@@ -2532,9 +2509,6 @@ QString OMCProxy::translateModelXML(QString className)
 {
   sendCommand("translateModelXML(" + className + ")");
   QString xmlFileName = StringHandler::unparse(getResult());
-  if (!xmlFileName.isEmpty()) {
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
-  }
   printMessagesStringInternal();
   return xmlFileName;
 }
@@ -2779,6 +2753,18 @@ QString OMCProxy::uriToFilename(QString uri)
   } else {
     return "";
   }
+}
+
+/*!
+ * \brief OMCProxy::setModelicaPath
+ * Sets the Modelica library path.
+ * \param path
+ */
+bool OMCProxy::setModelicaPath(const QString &path)
+{
+  bool result = mpOMCInterface->setModelicaPath(path);
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
