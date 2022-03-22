@@ -10141,13 +10141,13 @@ algorithm
       e = DAEUtil.getStartAttrFail(dae_var_attr);
     then SOME(e);
 
-    /* Parameters with binding */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard Expression.isConst(e) and stringEq(Config.simCodeTarget(), "Cpp")
+    /* Parameters with constant binding */
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard Expression.isConst(e)
     then SOME(e);
 
-    /* Parameters without binding. Investigate if it has start value */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr, varType = tp)) equation
-      e = DAEUtil.getStartAttr(dae_var_attr, tp);
+    /* Parameters without constant binding. Investigate if it has start value */
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))
