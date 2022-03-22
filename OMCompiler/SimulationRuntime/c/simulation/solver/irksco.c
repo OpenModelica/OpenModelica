@@ -230,7 +230,6 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   }
 
   solverData->newtonStrategy = NEWTON_DAMPED2;
-  printf("newton1 :\n");
   _omc_newton(wrapper_fvec_irksco, solverData, (void*)userdata);
 
   /* if newton solver did not converge, do iteration again but calculate jacobian in every step */
@@ -248,7 +247,6 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     solverData->calculate_jacobian = 1;
 
     warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-    printf("newton2 :\n");
     _omc_newton(wrapper_fvec_irksco, solverData, (void*)userdata);
 
     solverData->calculate_jacobian = -1;
@@ -269,10 +267,6 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
       }
     }
   }
-  printf("y_new with stepSize  %g:        ",userdata->radauStepSize);
-  for (int i=0;i<data->modelData->nStates;i++)
-  printf("%6g ", y_new[j]);
-  printf("\n\n");
 
 
   return 0;
@@ -317,15 +311,7 @@ int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
       {
         sData->realVars[j] = irkscoData->y0[j] + x[n0*i+j];
       }
-      printf("sData->realVars at time %g:  ",sData->timeValue);
-      for (int i=0;i<data->modelData->nStates;i++)
-      printf("%6g ", sData->realVars[j]);
-      printf("\n");
-      printf("y0 with stepSize  %g:        ",irkscoData->radauStepSize);
-      for (int i=0;i<data->modelData->nStates;i++)
-      printf("%6g ", irkscoData->y0[j]);
-      printf("\n");
-
+      //printf("time point = %g \n",sData->timeValue);
 
       externalInputUpdate(data);
       data->callback->input_function(data, threadData);
@@ -363,7 +349,6 @@ int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
       x[i] += delta_hh;
       delta_hh = 1. / delta_hh;
 
-      printf("jacobian :\n");
       wrapper_fvec_irksco(n, x, solverData->rwork, userdata, 1);
       solverData->nfev++;
 
@@ -503,15 +488,11 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
                 // printf("\ny = \n");
                 // for (int i=0;i<data->modelData->nStates;i++)
-                //   printf("%6g ", userdata->y05[i]);
+                //   printf("%6g ", userdata->y2[i]);
                 // printf("\n");
                 // printf("yt = \n");
                 // for (int i=0;i<data->modelData->nStates;i++)
                 //   printf("%6g ", userdata->y1[i]);
-                // printf("\n");
-                // printf("\nydiff = \n");
-                // for (int i=0;i<data->modelData->nStates;i++)
-                //   printf("%6g ", userdata->y05[i]-userdata->y1[i]);
                 // printf("\n");
 
       err /= data->modelData->nStates;
