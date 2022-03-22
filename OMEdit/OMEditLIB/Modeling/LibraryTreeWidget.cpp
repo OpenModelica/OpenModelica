@@ -1418,6 +1418,8 @@ void LibraryTreeModel::addModelicaLibraries()
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pOMCProxy->loadSystemLibraries();
   QStringList systemLibs = pOMCProxy->getClassNames();
+  /*! @note OpenModelica is needed for the auto completion to work. Do not remove/move the following line. */
+  systemLibs.prepend("OpenModelica");
   foreach (QString systemLib, systemLibs) {
     LibraryTreeItem *pLibraryTreeItem = findLibraryTreeItem(systemLib);
     if (!pLibraryTreeItem) {
