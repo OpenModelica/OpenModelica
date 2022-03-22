@@ -563,12 +563,13 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
 
   int i, j, l, k;
 
+// index of diagonal element of A
   k = ESDIRKMRData->act_stage * ESDIRKMRData->stages + ESDIRKMRData->act_stage;
   if (fj)
   {
     // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
     // set correct time value and states of simulation system
-    sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->c2*ESDIRKMRData->stepSize;
+    sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->c[ESDIRKMRData->act_stage]*ESDIRKMRData->stepSize;
     memcpy(sData->realVars, x, n*sizeof(double));
     wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
 
@@ -883,110 +884,56 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   solverData->numberOfIterations = 0;
   solverData->numberOfFunctionEvaluations = 0;
   solverData->n = n;
-
-  // set actual stage of the Butcher tableau
-  userdata->act_stage = 0;
-  // k1 = f(tOld,yOld)
-  // set correct time value and states of simulation system
-  sData->timeValue = userdata->time;
-  memcpy(sData->realVars, userdata->yOld, n*sizeof(double));
-  wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
-  memcpy(userdata->k + userdata->act_stage*n, stateDer,  n*sizeof(double));
-  //printVector_ESDIRKMR("yOld: ", sData->realVars, data->modelData->nStates, userdata->time);
-  //printVector_ESDIRKMR("k1: ", userdata->k1, data->modelData->nStates, userdata->time);
-  // residual constant part res = yOld+gam*h*k1
-
-  // Start index of row in matrix A of the Butcher tableau
-  // set actual stage of the Butcher tableau
-  userdata->act_stage++;
-  k = userdata->act_stage * userdata->stages;
-  for (j=0; j<n; j++)
-  {
-    userdata->res_const[j] = userdata->yOld[j];
-    for (l=0; l<userdata->act_stage; l++)
-      userdata->res_const[j] += userdata->stepSize * userdata->A[k+l] * (userdata->k + l * n)[j];
-  }
-
-
-  // solve for y1g: 0 = yold-y1g+gam*h*(k1+f(tOld+2*gam*h,y1g))
-  // set good starting values for the newton solver
-  // set newton strategy
+  // setting the start vector for the newton step
   memcpy(solverData->x, userdata->yOld, n*sizeof(double));
-  solverData->newtonStrategy = NEWTON_DAMPED2;
-  _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
 
-  /* if newton solver did not converge, do ??? */
-  if (solverData->info == -1)
+  // sweep over the stages
+  for (userdata->act_stage = 0; userdata->act_stage < userdata->stages; userdata->act_stage++)
   {
-    userdata->convergenceFailures++;
-    // to be defined!
-    // reject and reduce time step would be an option
-    // or influence the calculation of the Jacobian during the newton steps
-    solverData->numberOfIterations = 0;
-    solverData->numberOfFunctionEvaluations = 0;
-    solverData->calculate_jacobian = 1;
+    // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
+    // residual constant part:
+    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
+    k = userdata->act_stage * userdata->stages;
+    for (j=0; j<n; j++)
+    {
+      userdata->res_const[j] = userdata->yOld[j];
+      for (l=0; l<userdata->act_stage; l++)
+        userdata->res_const[j] += userdata->stepSize * userdata->A[k+l] * (userdata->k + l * n)[j];
+    }
 
-    warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
+    // solve for x: 0 = yold-x + h*(sum(a[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
+    // set good starting values for the newton solver (solution of the last newton iteration!)
+    // set newton strategy
+    solverData->newtonStrategy = NEWTON_DAMPED2;
     _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
+    /* if newton solver did not converge, do ??? */
+    if (solverData->info == -1)
+    {
+      userdata->convergenceFailures++;
+      // to be defined!
+      // reject and reduce time step would be an option
+      // or influence the calculation of the Jacobian during the newton steps
+      solverData->numberOfIterations = 0;
+      solverData->numberOfFunctionEvaluations = 0;
+      solverData->calculate_jacobian = 1;
 
-    solverData->calculate_jacobian = -1;
+      warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
+      _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
+
+      solverData->calculate_jacobian = -1;
+    }
+
+    // k[i] = f(tOld + c[i]*h,x)
+    // set correct time value and states of simulation system
+    sData->timeValue = userdata->time + userdata->c[userdata->act_stage] * userdata->stepSize;
+    memcpy(sData->realVars, solverData->x, n*sizeof(double));
+    wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
+    memcpy(userdata->k + userdata->act_stage * n, stateDer, n*sizeof(double));
+    //printVector_ESDIRKMR("y2g: ", sData->realVars, data->modelData->nStates, userdata->time);
+    //printVector_ESDIRKMR("k3: ", userdata->k3, data->modelData->nStates, userdata->time);
   }
-
-  // set actual stage of the Butcher tableau
-  userdata->act_stage++;
-
-  // k2 = f(tOld + 2*gam*h,y1g)
-  // set correct time value and states of simulation system
-  sData->timeValue = userdata->time + userdata->c2 * userdata->stepSize;
-  memcpy(sData->realVars, solverData->x, n*sizeof(double));
-  wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
-  memcpy(userdata->k + n, stateDer, n*sizeof(double));
-  //printVector_ESDIRKMR("y1g: ", sData->realVars, data->modelData->nStates, userdata->time);
-  //printVector_ESDIRKMR("k2: ", userdata->k2, data->modelData->nStates, userdata->time);
-  // residual constant part res = yOld+h*(b1*k1+b2*k2)
-  k = userdata->act_stage * userdata->stages;
-  for (j=0; j<n; j++)
-  {
-    userdata->res_const[j] = userdata->yOld[j];
-    for (l=0; l<userdata->act_stage; l++)
-      userdata->res_const[j] += userdata->stepSize * userdata->A[k+l] * (userdata->k + l * n)[j];
-  }
-
-  // solve for y2g: 0 = yold-y2g+h*(b1*k1+b2*k2+b3*f(tOld+h,y2g))
-  // set good starting values for the newton solver (solution of the last newton iteration!)
-  // set newton strategy
-  solverData->newtonStrategy = NEWTON_DAMPED2;
-  _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
- /* if newton solver did not converge, do ??? */
-  if (solverData->info == -1)
-  {
-    userdata->convergenceFailures++;
-    // to be defined!
-    // reject and reduce time step would be an option
-    // or influence the calculation of the Jacobian during the newton steps
-    solverData->numberOfIterations = 0;
-    solverData->numberOfFunctionEvaluations = 0;
-    solverData->calculate_jacobian = 1;
-
-    warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-    _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
-
-    solverData->calculate_jacobian = -1;
-  }
-
-  // k3 = f(tOld + h,y2g)
-  // set correct time value and states of simulation system
-  sData->timeValue = userdata->time + userdata->stepSize;
-  memcpy(sData->realVars, solverData->x, n*sizeof(double));
-  wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
-  memcpy(userdata->k + 2*n, stateDer, n*sizeof(double));
-  //printVector_ESDIRKMR("y2g: ", sData->realVars, data->modelData->nStates, userdata->time);
-  //printVector_ESDIRKMR("k3: ", userdata->k3, data->modelData->nStates, userdata->time);
-
-  // y      = yold+h*(b1*k1 +b2*k2 +b3*k3);
-  // yt     = yold+h*(b1*k1 +b2*k2 +b3*k3);
-  // errest = dt*abs(bh1*k1+bh2*k2+bh3*k3) = abs(y-yt);
-  // errtol = rtol*abs(yold)+atol;
+  // y       = yold+h*sum(b[i]*k[i], i=1..stages);
+  // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
   // calculate corresponding values for error estimator and step size control
   for (i=0; i<n; i++)
   {
@@ -1004,7 +951,6 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   //printVector_ESDIRKMR("y ", userdata->y, n, userdata->time);
   //printVector_ESDIRKMR("yt ", userdata->yt, n, userdata->time);
-
 
   return 0;
 }
