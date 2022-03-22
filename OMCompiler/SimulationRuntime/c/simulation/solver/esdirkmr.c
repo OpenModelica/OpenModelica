@@ -93,7 +93,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   if(omc_flag[FLAG_RK])
     RK_method = ((int) *omc_flagValue[FLAG_RK]) - '0';
 
-  if (RK_method > 4 || !(omc_flag[FLAG_RK]))
+  if (!(RK_method >=0 && RK_method <= 5) || !(omc_flag[FLAG_RK]))
     RK_method = 0;
   switch(RK_method){
     case 0:
@@ -219,8 +219,8 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
      //DOPRI
       userdata->stages = 7;
       userdata->expl = 1;
-      userdata->nlSystemSize = userdata->stages*size;
-      userdata->step_fun = &(esdirkmr_impRK);
+      userdata->nlSystemSize = size;
+      userdata->step_fun = &(esdirkmr_imp_step);
 
       /* Butcher Tableau */
       userdata->order_b = 5;
@@ -252,7 +252,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       break;
 
     case 4:
-     //DOPRI
+     //ESDIRK3
       userdata->stages = 4;
       userdata->expl = 0;
       userdata->nlSystemSize = userdata->stages*size;
@@ -293,6 +293,41 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     //   const double b_ESDIRK3[] = {b1, b2, b3, b4};
     //   const double bt_ESDIRK3[] = {bt1, bt2, bt3, bt4};
 
+      const double c_ESDIRK3_N[]  = {0.0, 0.87173304301691799883203890238711368505858818587690, 3./5, 1.};
+
+      const double A_ESDIRK3_N[]  = {0, 0, 0, 0,
+                                  0.43586652150845899941601945119355684252929409293845, 0.43586652150845899941601945119355684252929409293845, 0.0, 0.0,
+                                  0.25764824606642724579999601628407970926431835216613, -0.093514767574886245216015467477636551793612445104585, 0.43586652150845899941601945119355684252929409293845, 0.0,
+                                  0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
+
+      const double b_ESDIRK3_N[]  = {0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
+      const double bt_ESDIRK3_N[] = {0.10889661761586445415613073807049608218243112728445, -0.91532581187071275348163809781681834549906345402560, 1.2712735973021521678447158941356428765353629368204, 0.53515559695269613148079146561067938678126938992075};
+
+      memcpy(userdata->c, c_ESDIRK3_N, userdata->stages*sizeof(double));
+      memcpy(userdata->A, A_ESDIRK3_N, userdata->stages * userdata->stages * sizeof(double));
+      memcpy(userdata->b, b_ESDIRK3_N, userdata->stages*sizeof(double));
+      memcpy(userdata->bt, bt_ESDIRK3_N, userdata->stages*sizeof(double));
+
+      infoStreamPrint(LOG_SOLVER, 0, "ESDIRK3_N:");
+      break;
+
+    case 5:
+     //ESDIRK3
+      userdata->stages = 4;
+      userdata->expl = 0;
+      userdata->nlSystemSize = size;
+      userdata->step_fun = &(esdirkmr_imp_step);
+
+      /* Butcher Tableau */
+      userdata->order_b = 3;
+      userdata->order_bt = 2;
+      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+
+      userdata->c = malloc(sizeof(double)*userdata->stages);
+      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
+      userdata->b = malloc(sizeof(double)*userdata->stages);
+      userdata->bt = malloc(sizeof(double)*userdata->stages);
+
       const double c_ESDIRK3[]  = {0.0, 0.87173304301691799883203890238711368505858818587690, 3./5, 1.};
 
       const double A_ESDIRK3[]  = {0, 0, 0, 0,
@@ -310,6 +345,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
       infoStreamPrint(LOG_SOLVER, 0, "ESDIRK3:");
       break;
+
   }
 
   allocateNewtonData(userdata->nlSystemSize, &(userdata->solverData));
@@ -884,6 +920,7 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   solverData->numberOfIterations = 0;
   solverData->numberOfFunctionEvaluations = 0;
   solverData->n = n;
+
   // setting the start vector for the newton step
   memcpy(solverData->x, userdata->yOld, n*sizeof(double));
 
@@ -898,7 +935,7 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     {
       userdata->res_const[j] = userdata->yOld[j];
       for (l=0; l<userdata->act_stage; l++)
-        userdata->res_const[j] += userdata->stepSize * userdata->A[k+l] * (userdata->k + l * n)[j];
+        userdata->res_const[j] += userdata->stepSize * userdata->A[k + l] * (userdata->k + l * n)[j];
     }
 
     // solve for x: 0 = yold-x + h*(sum(a[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
@@ -922,15 +959,9 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       solverData->calculate_jacobian = -1;
     }
-
-    // k[i] = f(tOld + c[i]*h,x)
-    // set correct time value and states of simulation system
-    sData->timeValue = userdata->time + userdata->c[userdata->act_stage] * userdata->stepSize;
-    memcpy(sData->realVars, solverData->x, n*sizeof(double));
-    wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
+    // copy last calculation of stateDer, which should coincide with k[i]
     memcpy(userdata->k + userdata->act_stage * n, stateDer, n*sizeof(double));
-    //printVector_ESDIRKMR("y2g: ", sData->realVars, data->modelData->nStates, userdata->time);
-    //printVector_ESDIRKMR("k3: ", userdata->k3, data->modelData->nStates, userdata->time);
+
   }
   // y       = yold+h*sum(b[i]*k[i], i=1..stages);
   // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
