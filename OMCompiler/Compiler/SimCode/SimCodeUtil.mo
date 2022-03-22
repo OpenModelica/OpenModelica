@@ -9882,7 +9882,7 @@ algorithm
     if isNone(start_value) then
       b := true;
     else
-      b := Expression.isEvaluatedConst(Util.getOption(start_value));
+      b := Expression.isConst(Util.getOption(start_value));
     end if;
     return;
   end if;
