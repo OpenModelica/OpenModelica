@@ -1899,7 +1899,8 @@ void PlainTextEdit::focusInEvent(QFocusEvent *event)
 {
   MainWindow::instance()->getAutoSaveTimer()->stop();
   // Issue #8723. If we are editing the documentation then save and close the documentation editing when focus moves to text view.
-  if (mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+  if (dynamic_cast<ModelicaEditor*>(mpBaseEditor)
+      && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
       && MainWindow::instance()->getDocumentationDockWidget()->isVisible()
       && MainWindow::instance()->getDocumentationWidget()->isEditingDocumentation()) {
     MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpBaseEditor->getModelWidget()->getLibraryTreeItem());
