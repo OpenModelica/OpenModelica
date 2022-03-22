@@ -10141,12 +10141,25 @@ algorithm
       e = DAEUtil.getStartAttrFail(dae_var_attr);
     then SOME(e);
 
-    /* Parameters with constant binding */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard Expression.isConst(e)
+    // C RUNTIME
+    // Parameters with binding
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard not stringEq(Config.simCodeTarget(), "Cpp")
     then SOME(e);
 
-    /* Parameters without constant binding. Investigate if it has start value */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr)) equation
+    // C RUNTIME
+    // Parameters without binding. Investigate if it has start value
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr, varType = tp)) guard not stringEq(Config.simCodeTarget(), "Cpp") equation
+      e = DAEUtil.getStartAttr(dae_var_attr, tp);
+    then SOME(e);
+
+    // CPP RUNTIME
+    // Parameters with constant binding
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard Expression.isConst(e) and stringEq(Config.simCodeTarget(), "Cpp")
+    then SOME(e);
+
+    // CPP RUNTIME
+    // Parameters without constant binding. Investigate if it has start value
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr)) guard stringEq(Config.simCodeTarget(), "Cpp") equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
     then SOME(e);
 
