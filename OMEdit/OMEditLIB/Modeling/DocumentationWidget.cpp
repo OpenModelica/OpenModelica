@@ -803,56 +803,55 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
     if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
       QList<QString> documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
       // old documentation annotation
-      QString oldDocAnnotationString = "annotate=Documentation(";
+      QList<QString> oldDocAnnotationList;
       if (!documentation.at(0).isEmpty()) {
-        oldDocAnnotationString.append("info=\"").append(StringHandler::escapeStringQuotes(documentation.at(0))).append("\"");
+        oldDocAnnotationList.append(QString("info=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(0))));
       }
       if (!documentation.at(1).isEmpty()) {
-        oldDocAnnotationString.append(", revisions=\"").append(StringHandler::escapeStringQuotes(documentation.at(1))).append("\"");
+        oldDocAnnotationList.append(QString("revisions=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(1))));
       }
       if (!documentation.at(2).isEmpty()) {
-        oldDocAnnotationString.append(", __OpenModelica_infoHeader=\"").append(StringHandler::escapeStringQuotes(documentation.at(2))).append("\"");
+        oldDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(2))));
       }
-      oldDocAnnotationString.append(")");
+      QString oldDocAnnotationString = QString("annotate=Documentation(%1)").arg(oldDocAnnotationList.join(","));
       // new documentation annotation
-      QString newDocAnnotationString = "annotate=Documentation(";
+      QList<QString> newDocAnnotationList;
       if (mEditType == EditType::Info) { // if editing the info section
         if (!mpHTMLSourceEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
-          newDocAnnotationString.append("info=\"").append(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())).append("\"");
+          newDocAnnotationList.append(QString("info=\"%1\"").arg(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())));
         }
         if (!documentation.at(1).isEmpty()) {
-          newDocAnnotationString.append(", revisions=\"").append(StringHandler::escapeStringQuotes(documentation.at(1))).append("\"");
+          newDocAnnotationList.append(QString("revisions=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(1))));
         }
         if (!documentation.at(2).isEmpty()) {
-          newDocAnnotationString.append(", __OpenModelica_infoHeader=\"").append(StringHandler::escapeStringQuotes(documentation.at(2))).append("\"");
+          newDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"").arg(StringHandler::escapeStringQuotes(documentation.at(2))));
         }
       } else if (mEditType == EditType::Revisions) { // if editing the revisions section
         if (!documentation.at(0).isEmpty()) {
-          newDocAnnotationString.append("info=\"").append(StringHandler::escapeStringQuotes(documentation.at(0))).append("\"");
+          newDocAnnotationList.append(QString("info=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(0))));
         }
         if (!mpHTMLSourceEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
-          newDocAnnotationString.append(", revisions=\"").append(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())).append("\"");
+          newDocAnnotationList.append(QString("revisions=\"%1\"").arg(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())));
         }
         if (!documentation.at(2).isEmpty()) {
-          newDocAnnotationString.append(", __OpenModelica_infoHeader=\"").append(StringHandler::escapeStringQuotes(documentation.at(2))).append("\"");
+          newDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(2))));
         }
       } else if (mEditType == EditType::InfoHeader) { // if editing the __OpenModelica_infoHeader section
         if (!documentation.at(0).isEmpty()) {
-          newDocAnnotationString.append("info=\"").append(StringHandler::escapeStringQuotes(documentation.at(0))).append("\"");
+          newDocAnnotationList.append(QString("info=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(0))));
         }
         if (!documentation.at(1).isEmpty()) {
-          newDocAnnotationString.append(", revisions=\"").append(StringHandler::escapeStringQuotes(documentation.at(1))).append("\"");
+          newDocAnnotationList.append(QString("revisions=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(1))));
         }
         if (!mpHTMLSourceEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
-          newDocAnnotationString.append(", __OpenModelica_infoHeader=\"").append(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())).append("\"");
+          newDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"%1\"").arg(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())));
         }
       }
-      newDocAnnotationString.append(")");
+      QString newDocAnnotationString = QString("annotate=Documentation(%1)").arg(newDocAnnotationList.join(","));
       // if we have ModelWidget for class then put the change on undo stack.
       if (pLibraryTreeItem->getModelWidget()) {
         UpdateClassAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
-        pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(pLibraryTreeItem, oldDocAnnotationString,
-                                                                                   newDocAnnotationString);
+        pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(pLibraryTreeItem, oldDocAnnotationString, newDocAnnotationString);
         pLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
         pLibraryTreeItem->getModelWidget()->updateModelText();
       } else {
