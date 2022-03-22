@@ -124,9 +124,6 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       userdata->bt1 = 1.75-sqrt(2.0);
       userdata->bt2 = userdata->bt1;
       userdata->bt3 = 2.0*sqrt(2.0)-2.5;
-      userdata->bh1 = userdata->b1 - userdata->bt1;
-      userdata->bh2 = userdata->b2 - userdata->bt2;
-      userdata->bh3 = userdata->b3 - userdata->bt3;
 
       const double c_ESDIRK2[] = {0.0 , userdata->c2, 1.0};
       const double A_ESDIRK2[] = {
@@ -170,9 +167,6 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       userdata->bt1 = 1.75-sqrt(2.0);
       userdata->bt2 = userdata->bt1;
       userdata->bt3 = 2.0*sqrt(2.0)-2.5;
-      userdata->bh1 = userdata->b1 - userdata->bt1;
-      userdata->bh2 = userdata->b2 - userdata->bt2;
-      userdata->bh3 = userdata->b3 - userdata->bt3;
 
       const double c_ESDIRK2_N[] = {0.0 , userdata->c2, 1.0};
       const double A_ESDIRK2_N[] = {
@@ -871,7 +865,7 @@ void ESDIRKMR_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
  */
 int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
-  int i, j, l, n=data->modelData->nStates;
+  int i, j, l, k, n=data->modelData->nStates;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
@@ -892,22 +886,25 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   // set actual stage of the Butcher tableau
   userdata->act_stage = 0;
-
   // k1 = f(tOld,yOld)
   // set correct time value and states of simulation system
   sData->timeValue = userdata->time;
   memcpy(sData->realVars, userdata->yOld, n*sizeof(double));
   wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
-  memcpy(userdata->k, stateDer,  n*sizeof(double));
+  memcpy(userdata->k + userdata->act_stage*n, stateDer,  n*sizeof(double));
   //printVector_ESDIRKMR("yOld: ", sData->realVars, data->modelData->nStates, userdata->time);
   //printVector_ESDIRKMR("k1: ", userdata->k1, data->modelData->nStates, userdata->time);
   // residual constant part res = yOld+gam*h*k1
 
   // Start index of row in matrix A of the Butcher tableau
-  l = userdata->act_stage * userdata->stages;
+  // set actual stage of the Butcher tableau
+  userdata->act_stage++;
+  k = userdata->act_stage * userdata->stages;
   for (j=0; j<n; j++)
   {
-    userdata->res_const[j] = userdata->yOld[j] + userdata->stepSize * userdata->A[l] * userdata->k[j];
+    userdata->res_const[j] = userdata->yOld[j];
+    for (l=0; l<userdata->act_stage; l++)
+      userdata->res_const[j] += userdata->stepSize * userdata->A[k+l] * (userdata->k + l * n)[j];
   }
 
 
@@ -936,7 +933,7 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   }
 
   // set actual stage of the Butcher tableau
-  userdata->act_stage = 1;
+  userdata->act_stage++;
 
   // k2 = f(tOld + 2*gam*h,y1g)
   // set correct time value and states of simulation system
@@ -947,10 +944,12 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   //printVector_ESDIRKMR("y1g: ", sData->realVars, data->modelData->nStates, userdata->time);
   //printVector_ESDIRKMR("k2: ", userdata->k2, data->modelData->nStates, userdata->time);
   // residual constant part res = yOld+h*(b1*k1+b2*k2)
-  l = userdata->act_stage * userdata->stages;
+  k = userdata->act_stage * userdata->stages;
   for (j=0; j<n; j++)
   {
-    userdata->res_const[j] = userdata->yOld[j] + userdata->stepSize * (userdata->A[l] * userdata->k[j] + userdata->A[l+1] * (userdata->k + n)[j]);
+    userdata->res_const[j] = userdata->yOld[j];
+    for (l=0; l<userdata->act_stage; l++)
+      userdata->res_const[j] += userdata->stepSize * userdata->A[k+l] * (userdata->k + l * n)[j];
   }
 
   // solve for y2g: 0 = yold-y2g+h*(b1*k1+b2*k2+b3*f(tOld+h,y2g))
@@ -991,17 +990,18 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // calculate corresponding values for error estimator and step size control
   for (i=0; i<n; i++)
   {
-    userdata->y[i] = userdata->yOld[i] + userdata->stepSize *
-                     (userdata->b1 * userdata->k[i] + userdata->b2 * (userdata->k+n)[i] + userdata->b3 * (userdata->k+2*n)[i]);
-    // alternative calculation
-    // userdata->errest[i] = userdata->stepSize *
-    //                  fabs(userdata->bh1 * userdata->k1[i] + userdata->bh2 * userdata->k2[i] + userdata->bh3 * userdata->k3[i]);
-    userdata->yt[i] = userdata->yOld[i] + userdata->stepSize *
-                     (userdata->bt1 * userdata->k[i] + userdata->bt2 * (userdata->k+n)[i] + userdata->bt3 * (userdata->k+2*n)[i]);
+    userdata->y[i]  = userdata->yOld[i];
+    userdata->yt[i] = userdata->yOld[i];
+    for (l=0; l<userdata->stages; l++)
+    {
+      userdata->y[i]  += userdata->stepSize * userdata->b[l]  * (userdata->k + l * n)[i];
+      userdata->yt[i] += userdata->stepSize * userdata->bt[l] * (userdata->k + l * n)[i];
+    }
     //userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
     userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
     userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
   }
+
   //printVector_ESDIRKMR("y ", userdata->y, n, userdata->time);
   //printVector_ESDIRKMR("yt ", userdata->yt, n, userdata->time);
 
