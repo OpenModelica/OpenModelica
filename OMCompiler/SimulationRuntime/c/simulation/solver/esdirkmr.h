@@ -70,14 +70,14 @@ typedef struct DATA_ESDIRKMR{
   void* solverData;
   double *y, *yt, *yOld, *f;
   double *Jf;
-  double *k1, *k2, *k3, *res_const;
+  double *k, *res_const;
   double *errest, *errtol;
   double time;
   double stepSize, lastStepSize;
   double gam, c2, b1, b2, b3, bt1, bt2, bt3, bh1, bh2, bh3;
   int stages, expl, act_stage;
   double *A, *c, *b, *bt;
-  int order_b, order_bt, error_order, variant;
+  int order_b, order_bt, error_order;
   int firstStep, symJac, nlSystemSize;
   unsigned int stepsDone;
   unsigned int evalFunctionODE;

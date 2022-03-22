@@ -318,8 +318,6 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       break;
   }
 
-  userdata->variant = 2;
-
   allocateNewtonData(userdata->nlSystemSize, &(userdata->solverData));
 
   userdata->firstStep = 1;
@@ -328,9 +326,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   userdata->yt = malloc(sizeof(double)*size);
   userdata->f = malloc(sizeof(double)*size);
   userdata->Jf = malloc(sizeof(double)*size*size);
-  userdata->k1 = malloc(sizeof(double)*size);
-  userdata->k2 = malloc(sizeof(double)*size);
-  userdata->k3 = malloc(sizeof(double)*size);
+  userdata->k = malloc(sizeof(double)*size*userdata->stages);
   userdata->res_const = malloc(sizeof(double)*size);
   userdata->errest = malloc(sizeof(double)*size);
   userdata->errtol = malloc(sizeof(double)*size);
@@ -401,9 +397,7 @@ int freeESDIRKMR(SOLVER_INFO* solverInfo)
   free(userdata->yt);
   free(userdata->f);
   free(userdata->Jf);
-  free(userdata->k1);
-  free(userdata->k2);
-  free(userdata->k3);
+  free(userdata->k);
   free(userdata->res_const);
   free(userdata->errest);
   free(userdata->errtol);
@@ -573,8 +567,9 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   int n = (*n_p);
 
-  int i, j, l;
+  int i, j, l, k;
 
+  k = ESDIRKMRData->act_stage * ESDIRKMRData->stages + ESDIRKMRData->act_stage;
   if (fj)
   {
     // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
@@ -584,10 +579,9 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
     wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
-    l = ESDIRKMRData->act_stage * ESDIRKMRData->stages + ESDIRKMRData->act_stage;
     for (j=0; j<n; j++)
     {
-      res[j] = ESDIRKMRData->res_const[j] - x[j] + ESDIRKMRData->stepSize * ESDIRKMRData->A[l]  * fODE[j];
+      res[j] = ESDIRKMRData->res_const[j] - x[j] + ESDIRKMRData->stepSize * ESDIRKMRData->A[k]  * fODE[j];
     }
   }
   else
@@ -621,7 +615,7 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
       for(j = 0; j < n; j++)
       {
         l = i * n + j;
-        solverData->fjac[l] = ESDIRKMRData->gam * ESDIRKMRData->stepSize * ESDIRKMRData->Jf[l];
+        solverData->fjac[l] = ESDIRKMRData->stepSize * ESDIRKMRData->A[k] * ESDIRKMRData->Jf[l];
         if (i==j) solverData->fjac[l] -= 1;
       }
     }
@@ -877,7 +871,7 @@ void ESDIRKMR_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
  */
 int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
-  int i, j, n=data->modelData->nStates;
+  int i, j, l, n=data->modelData->nStates;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
@@ -904,14 +898,16 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   sData->timeValue = userdata->time;
   memcpy(sData->realVars, userdata->yOld, n*sizeof(double));
   wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
-  memcpy(userdata->k1, stateDer,  n*sizeof(double));
+  memcpy(userdata->k, stateDer,  n*sizeof(double));
   //printVector_ESDIRKMR("yOld: ", sData->realVars, data->modelData->nStates, userdata->time);
   //printVector_ESDIRKMR("k1: ", userdata->k1, data->modelData->nStates, userdata->time);
   // residual constant part res = yOld+gam*h*k1
-  i = userdata->act_stage * userdata->stages;
+
+  // Start index of row in matrix A of the Butcher tableau
+  l = userdata->act_stage * userdata->stages;
   for (j=0; j<n; j++)
   {
-    userdata->res_const[j] = userdata->yOld[j] + userdata->stepSize * userdata->A[i] * stateDer[j];
+    userdata->res_const[j] = userdata->yOld[j] + userdata->stepSize * userdata->A[l] * userdata->k[j];
   }
 
 
@@ -947,14 +943,14 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   sData->timeValue = userdata->time + userdata->c2 * userdata->stepSize;
   memcpy(sData->realVars, solverData->x, n*sizeof(double));
   wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
-  memcpy(userdata->k2, stateDer, n*sizeof(double));
+  memcpy(userdata->k + n, stateDer, n*sizeof(double));
   //printVector_ESDIRKMR("y1g: ", sData->realVars, data->modelData->nStates, userdata->time);
   //printVector_ESDIRKMR("k2: ", userdata->k2, data->modelData->nStates, userdata->time);
   // residual constant part res = yOld+h*(b1*k1+b2*k2)
-  i = userdata->act_stage * userdata->stages;
+  l = userdata->act_stage * userdata->stages;
   for (j=0; j<n; j++)
   {
-    userdata->res_const[j] = userdata->yOld[j] + userdata->stepSize * (userdata->A[i] * userdata->k1[j] + userdata->A[i+1] * userdata->k2[j]);
+    userdata->res_const[j] = userdata->yOld[j] + userdata->stepSize * (userdata->A[l] * userdata->k[j] + userdata->A[l+1] * (userdata->k + n)[j]);
   }
 
   // solve for y2g: 0 = yold-y2g+h*(b1*k1+b2*k2+b3*f(tOld+h,y2g))
@@ -984,7 +980,7 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   sData->timeValue = userdata->time + userdata->stepSize;
   memcpy(sData->realVars, solverData->x, n*sizeof(double));
   wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
-  memcpy(userdata->k3, stateDer, n*sizeof(double));
+  memcpy(userdata->k + 2*n, stateDer, n*sizeof(double));
   //printVector_ESDIRKMR("y2g: ", sData->realVars, data->modelData->nStates, userdata->time);
   //printVector_ESDIRKMR("k3: ", userdata->k3, data->modelData->nStates, userdata->time);
 
@@ -996,12 +992,12 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   for (i=0; i<n; i++)
   {
     userdata->y[i] = userdata->yOld[i] + userdata->stepSize *
-                     (userdata->b1 * userdata->k1[i] + userdata->b2 * userdata->k2[i] + userdata->b3 * userdata->k3[i]);
+                     (userdata->b1 * userdata->k[i] + userdata->b2 * (userdata->k+n)[i] + userdata->b3 * (userdata->k+2*n)[i]);
     // alternative calculation
     // userdata->errest[i] = userdata->stepSize *
     //                  fabs(userdata->bh1 * userdata->k1[i] + userdata->bh2 * userdata->k2[i] + userdata->bh3 * userdata->k3[i]);
     userdata->yt[i] = userdata->yOld[i] + userdata->stepSize *
-                     (userdata->bt1 * userdata->k1[i] + userdata->bt2 * userdata->k2[i] + userdata->bt3 * userdata->k3[i]);
+                     (userdata->bt1 * userdata->k[i] + userdata->bt2 * (userdata->k+n)[i] + userdata->bt3 * (userdata->k+2*n)[i]);
     //userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
     userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
     userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
