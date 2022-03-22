@@ -10153,7 +10153,7 @@ algorithm
     then SOME(e);
 
     /* Parameters with binding */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e)))
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard Expression.isConst(e) and stringEq(Config.simCodeTarget(), "Cpp")
     then SOME(e);
 
     /* Parameters without binding. Investigate if it has start value */
