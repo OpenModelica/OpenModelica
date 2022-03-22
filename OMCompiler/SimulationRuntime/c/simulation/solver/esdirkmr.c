@@ -101,7 +101,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     // Reduced nonlinear system size
     // Systems solved in cascade
       userdata->stages = 3;
-      userdata->explicit = 0;
+      userdata->expl = 0;
       userdata->nlSystemSize = size;
       userdata->step_fun = &(esdirkmr_imp_step);
 
@@ -147,7 +147,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     case 1:
     //ESDIRK2
       userdata->stages = 3;
-      userdata->explicit = 0;
+      userdata->expl = 0;
       userdata->nlSystemSize = userdata->stages*size;
       userdata->step_fun = &(esdirkmr_impRK);
 
@@ -193,7 +193,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       case 2:
      //IRKSCO
       userdata->stages = 3;
-      userdata->explicit = 0;
+      userdata->expl = 0;
       userdata->nlSystemSize = userdata->stages*size;
       userdata->step_fun = &(esdirkmr_impRK);
 
@@ -224,7 +224,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       case 3:
      //DOPRI
       userdata->stages = 7;
-      userdata->explicit = 1;
+      userdata->expl = 1;
       userdata->nlSystemSize = userdata->stages*size;
       userdata->step_fun = &(esdirkmr_impRK);
 
@@ -260,7 +260,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     case 4:
      //DOPRI
       userdata->stages = 4;
-      userdata->explicit = 0;
+      userdata->expl = 0;
       userdata->nlSystemSize = userdata->stages*size;
       userdata->step_fun = &(esdirkmr_impRK);
 
@@ -331,6 +331,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   userdata->k1 = malloc(sizeof(double)*size);
   userdata->k2 = malloc(sizeof(double)*size);
   userdata->k3 = malloc(sizeof(double)*size);
+  userdata->res_const = malloc(sizeof(double)*size);
   userdata->errest = malloc(sizeof(double)*size);
   userdata->errtol = malloc(sizeof(double)*size);
 
@@ -403,6 +404,7 @@ int freeESDIRKMR(SOLVER_INFO* solverInfo)
   free(userdata->k1);
   free(userdata->k2);
   free(userdata->k3);
+  free(userdata->res_const);
   free(userdata->errest);
   free(userdata->errtol);
   free(userdata->A);
@@ -546,7 +548,7 @@ int wrapper_Jf_ESDIRKMR(int* n, double* x, double* fvec, void* userdata, double*
   return 0;
 }
 
-/*!	\fn wrapper_G2_ESDIRKMR
+/*!	\fn wrapper_DIRK
  *      residual function res = yOld-y+gam*h*(k1+f(tOld+c2*h,y)); c2=2*gam;
  *      i.e. solve for:
  *           y1g = yOld+gam*h*(k1+f(tOld+c2*h,y1g)) = yOld+gam*h*(k1+k2)
@@ -560,7 +562,7 @@ int wrapper_Jf_ESDIRKMR(int* n, double* x, double* fvec, void* userdata, double*
  *  \param [in]      fj             fj = 1 ==> calculate function values
  *                                  fj = 0 ==> calculate jacobian matrix
  */
-int wrapper_G2_ESDIRKMR(int* n_p, double* x, double* res, void* userdata, int fj)
+int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
 {
   DATA_ESDIRKMR* ESDIRKMRData = (DATA_ESDIRKMR*) userdata;
 
@@ -582,9 +584,10 @@ int wrapper_G2_ESDIRKMR(int* n_p, double* x, double* res, void* userdata, int fj
     wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
-     for (j=0; j<n; j++)
+    l = ESDIRKMRData->act_stage * ESDIRKMRData->stages + ESDIRKMRData->act_stage;
+    for (j=0; j<n; j++)
     {
-      res[j] = ESDIRKMRData->yOld[j] - x[j] + ESDIRKMRData->gam * ESDIRKMRData->stepSize * (ESDIRKMRData->k1[j] + fODE[j]);
+      res[j] = ESDIRKMRData->res_const[j] - x[j] + ESDIRKMRData->stepSize * ESDIRKMRData->A[l]  * fODE[j];
     }
   }
   else
@@ -627,90 +630,6 @@ int wrapper_G2_ESDIRKMR(int* n_p, double* x, double* res, void* userdata, int fj
   }
   return 0;
 }
-
-/*!	\fn wrapper_G3_ESDIRKMR
- *      residual function res = yOld-y+h*(b1*k1+b2*k2+b3*f(tk+h,y));
- *      i.e. solve for:
- *           y2g = yOld+h*(b1*k1+b2*k2+b3*f(tOld+h,y2g)) = yOld+h*(b1*k1+b2*k2+b3*f(tOld+h,y2g))
- *      <=>  k3  = f(tOld+h,yOld+h*(b1*k1+b2*k2+b3*k3))
- *
- *  calculate function values or jacobian matrix for Newton-solver
- *  \param [in]      n_p            pointer to number of states
- *  \param [in]      x              pointer to unknowns (BB: storage in DATA_NEWTON?)
- *  \param [in/out]  res            pointer to residual function (BB: storage in DATA_NEWTON?)
- *  \param [in/out]  userdata       data of the integrator (DATA_ESDIRKMR)
- *  \param [in]      fj             fj = 1 ==> calculate function values
- *                                  fj = 0 ==> calculate jacobian matrix
- */
-int wrapper_G3_ESDIRKMR(int* n_p, double* x, double* res, void* userdata, int fj)
-{
-  DATA_ESDIRKMR* ESDIRKMRData = (DATA_ESDIRKMR*) userdata;
-
-  DATA* data = ESDIRKMRData->data;
-  threadData_t* threadData = ESDIRKMRData->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)ESDIRKMRData->solverData;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  int n = (*n_p);
-
-  int i, j, l;
-
-  if (fj)
-  {
-    // fODE = f(tOld + h,x); x ~ yOld + h*(b1*k1+b2*k2+b3*k3)
-    // set correct time value and states of simulation system
-    sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->stepSize;
-    memcpy(sData->realVars, x, n*sizeof(double));
-    wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
-
-    // residual function res = yOld-x+h*(b1*k1+b2*k2+b3*f(tk+h,x))
-    for (j=0; j<n; j++)
-    {
-      res[j] = ESDIRKMRData->yOld[j] - x[j] + ESDIRKMRData->stepSize *
-               (ESDIRKMRData->b1 * ESDIRKMRData->k1[j] + ESDIRKMRData->b2 * ESDIRKMRData->k2[j] + ESDIRKMRData->b3 * fODE[j]);
-    }
-  }
-  else
-  {
-    if (solverData->calculate_jacobian>=0)
-    {
-    /*!
-     *  fODE = f(tOld + h,x); x ~ yOld + h*(b1*k1+b2*k2+b3*k3)
-     *  set correct time value and states of simulation system
-     *  this should not count on function evaluation, since
-     *  it belongs to the jacobian evaluation
-     *  \ToBeChecked: This calculation maybe not be necessary since f has already
-     *                just evaluated! works so far
-     */
-    // sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->stepSize;
-    // memcpy(sData->realVars, x, n*sizeof(double));
-    // wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
-    // ESDIRKMRData->evalFunctionODE--;
-
-    /* store values for finite differences scheme
-     * not necessary for analytic Jacobian */
-    memcpy(ESDIRKMRData->f, fODE, n*sizeof(double));
-
-    /* Calculate Jacobian of the ODE system, stored in  solverData->fjac */
-    wrapper_Jf_ESDIRKMR(n_p, x, ESDIRKMRData->f, userdata, fODE);
-
-    // residual function res = yOld-x+h*(b1*k1+b2*k2+b3*f(tk+h,x))
-    // jacobian          Jac = -E + gam*h*Jf(tk+c2*h,x))
-    for(i = 0; i < n; i++)
-    {
-      for(j = 0; j < n; j++)
-      {
-        l = i * n + j;
-        solverData->fjac[l] = ESDIRKMRData->stepSize * ESDIRKMRData->b3 * ESDIRKMRData->Jf[l];
-        if (i==j) solverData->fjac[l] -= 1;
-      }
-    }
-    solverData->calculate_jacobian=-1;
-    }
-  }
-  return 0;
-}
-
 /*!	\fn wrapper_RK_ESDIRKMR
  *      residual function res = yOld-y+h*(b1*k1+b2*k2+b3*f(tk+h,y));
  *      i.e. solve for:
@@ -811,7 +730,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
       }
     }
     //printMatrix_ESDIRKMR("Jacobian of solver", solverData->fjac, stages * n, ESDIRKMRData->time);
-    for (k=0; k<stages && !ESDIRKMRData->explicit; k++)
+    for (k=0; k<stages && !ESDIRKMRData->expl; k++)
     {
       // calculate Jf[k] and sweap over the stages
       sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->c[k] * ESDIRKMRData->stepSize;
@@ -977,14 +896,23 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   solverData->numberOfFunctionEvaluations = 0;
   solverData->n = n;
 
+  // set actual stage of the Butcher tableau
+  userdata->act_stage = 0;
+
   // k1 = f(tOld,yOld)
   // set correct time value and states of simulation system
   sData->timeValue = userdata->time;
   memcpy(sData->realVars, userdata->yOld, n*sizeof(double));
   wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
-  memcpy(userdata->k1, stateDer, n*sizeof(double));
+  memcpy(userdata->k1, stateDer,  n*sizeof(double));
   //printVector_ESDIRKMR("yOld: ", sData->realVars, data->modelData->nStates, userdata->time);
   //printVector_ESDIRKMR("k1: ", userdata->k1, data->modelData->nStates, userdata->time);
+  // residual constant part res = yOld+gam*h*k1
+  i = userdata->act_stage * userdata->stages;
+  for (j=0; j<n; j++)
+  {
+    userdata->res_const[j] = userdata->yOld[j] + userdata->stepSize * userdata->A[i] * stateDer[j];
+  }
 
 
   // solve for y1g: 0 = yold-y1g+gam*h*(k1+f(tOld+2*gam*h,y1g))
@@ -992,7 +920,7 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // set newton strategy
   memcpy(solverData->x, userdata->yOld, n*sizeof(double));
   solverData->newtonStrategy = NEWTON_DAMPED2;
-  _omc_newton(wrapper_G2_ESDIRKMR, solverData, (void*)userdata);
+  _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
 
   /* if newton solver did not converge, do ??? */
   if (solverData->info == -1)
@@ -1006,10 +934,13 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     solverData->calculate_jacobian = 1;
 
     warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-    _omc_newton(wrapper_G2_ESDIRKMR, solverData, (void*)userdata);
+    _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
 
     solverData->calculate_jacobian = -1;
   }
+
+  // set actual stage of the Butcher tableau
+  userdata->act_stage = 1;
 
   // k2 = f(tOld + 2*gam*h,y1g)
   // set correct time value and states of simulation system
@@ -1019,12 +950,18 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   memcpy(userdata->k2, stateDer, n*sizeof(double));
   //printVector_ESDIRKMR("y1g: ", sData->realVars, data->modelData->nStates, userdata->time);
   //printVector_ESDIRKMR("k2: ", userdata->k2, data->modelData->nStates, userdata->time);
+  // residual constant part res = yOld+h*(b1*k1+b2*k2)
+  i = userdata->act_stage * userdata->stages;
+  for (j=0; j<n; j++)
+  {
+    userdata->res_const[j] = userdata->yOld[j] + userdata->stepSize * (userdata->A[i] * userdata->k1[j] + userdata->A[i+1] * userdata->k2[j]);
+  }
 
   // solve for y2g: 0 = yold-y2g+h*(b1*k1+b2*k2+b3*f(tOld+h,y2g))
   // set good starting values for the newton solver (solution of the last newton iteration!)
   // set newton strategy
   solverData->newtonStrategy = NEWTON_DAMPED2;
-  _omc_newton(wrapper_G3_ESDIRKMR, solverData, (void*)userdata);
+  _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
  /* if newton solver did not converge, do ??? */
   if (solverData->info == -1)
   {
@@ -1037,7 +974,7 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     solverData->calculate_jacobian = 1;
 
     warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-    _omc_newton(wrapper_G3_ESDIRKMR, solverData, (void*)userdata);
+    _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
 
     solverData->calculate_jacobian = -1;
   }
