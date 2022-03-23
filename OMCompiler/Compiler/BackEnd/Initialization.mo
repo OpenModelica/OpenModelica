@@ -909,8 +909,8 @@ algorithm
     s := ExpressionDump.printExpStr(lhs);
     startValue := BackendVariable.varStartValue(var);
     str := ExpressionDump.printExpStr(startValue);
-    v := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
-    v := BackendVariable.setBindExp(v, SOME(startValue));
+    // v := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+    v := BackendVariable.setBindExp(var, SOME(startValue));
     v := BackendVariable.setVarFixed(v, true);
     info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(v));
     Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
@@ -2465,7 +2465,7 @@ algorithm
       // ty = Expression.typeof(e);
       // startExp = Expression.crefExp(ComponentReference.crefPrefixStart(cr));
 
-      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      // var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, SOME(startExp));
       var = BackendVariable.setVarFixed(var, true);
 
@@ -2479,7 +2479,7 @@ algorithm
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) equation
       true = intGt(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
-      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      // var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, NONE());
 
       s = ComponentReference.printComponentRefStr(cr);
@@ -2499,7 +2499,7 @@ algorithm
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) equation
       true = intLe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
-      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      // var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, NONE());
       NONE() = BackendVariable.varStartValueOption(var);
       var = BackendVariable.setVarStartValue(var, bindExp);
@@ -2518,7 +2518,7 @@ algorithm
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) equation
       true = intLe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
-      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      // var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, NONE());
       SOME(startExp) = BackendVariable.varStartValueOption(var);
 
@@ -2534,7 +2534,7 @@ algorithm
     // secondary parameter
     case (var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon)) equation
       //true = BackendVariable.varFixed(var);
-      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      // var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
     then (var, (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon));
 
