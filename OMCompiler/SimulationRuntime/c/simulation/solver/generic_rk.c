@@ -30,15 +30,18 @@
 
 /* BB: ToDo's
  *
+ * 0) Update comments for better readability, delete stuff no longer necessary
  * 1) Check pointer, especially, if there is no memory leak!
  * 2) Check necessary function evaluation and counting of it (use userdata->f, userdata->fOld)
  * 3) Use analytical Jacobian of the functionODE, if available
+ *    Check calculation for a highly nonlinear test problem (VDP, etc.)
  * 4) Use sparsity pattern and kinsol solver
  * 5) Optimize evaluation of the Jacobian (e.g. in case it is constant)
  * 6) Introduce generic multirate-method, that might also be used for higher order
  *    ESDIRK and explicit RK methods
  * 7) Implement other ESDIRK methods
- *
+ * 8) configure userdata->fac with respect to the accuracy prediction
+ * 9) ...
  *
 */
 
@@ -69,8 +72,8 @@ void printVector_genericRK(char name[], double* a, int n, double time);
 void printMatrix_genericRK(char name[], double* a, int n, double time);
 
 // singlerate step function
-int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-int esdirkmr_impRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 void setButcherTableau(DATA_GENERIC_RK* userdata, double *c_RK, double *A_RK, double *b_RK, double *bt_RK)
 {
@@ -297,21 +300,21 @@ void analyseButcherTableau(DATA_GENERIC_RK* userdata)
   {
     userdata->expl = 0;
     userdata->nlSystemSize = userdata->stages*userdata->nStates;
-    userdata->step_fun = &(esdirkmr_impRK);
+    userdata->step_fun = &(full_implicit_RK);
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is fully implicit");
   }
   else if (isDIRK)
   {
     userdata->expl = 0;
     userdata->nlSystemSize = userdata->nStates;
-    userdata->step_fun = &(esdirkmr_imp_step);
+    userdata->step_fun = &(expl_diag_impl_RK);
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method diagonally implicit");
   }
   else
   {
     userdata->expl = 1;
     userdata->nlSystemSize = userdata->nStates;
-    userdata->step_fun = &(esdirkmr_imp_step);
+    userdata->step_fun = &(expl_diag_impl_RK);
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is explicit");
   }
   // set order for error control!
@@ -370,8 +373,6 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     case RK_ESDIRK2_test:
       //ESDIRK2 not optimized (just for testing) solved with genericRK solver method
       getButcherTableau_ESDIRK2(userdata);
-      userdata->nlSystemSize = userdata->stages*userdata->nStates;
-      userdata->step_fun = &(esdirkmr_impRK);
       break;
 
     case RK_EXPL_EULER:
@@ -393,14 +394,14 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   }
 
-  // Check explicit, diagonally implicit or fully implicit status and set solver settings
+  // Check explicit, diagonally implicit or fully implicit status and fix solver settings
   analyseButcherTableau(userdata);
 
-  // correct decision for testing of the fully implicit implementation
+  // adapt decision for testing of the fully implicit implementation
   if (RK_method == RK_ESDIRK2_test || RK_method == RK_ESDIRK3_test)
   {
       userdata->nlSystemSize = userdata->stages*userdata->nStates;
-      userdata->step_fun = &(esdirkmr_impRK);
+      userdata->step_fun = &(full_implicit_RK);
   }
 
   // allocate memory for the nonlinear solver
@@ -427,7 +428,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   userdata->errorTestFailures = 0;
   userdata->convergenceFailures = 0;
 
-  /* initialize analytic Jacobian, if available */
+  /* initialize analytic Jacobian, if available and needed*/
   if (!userdata->expl)
   {
     ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -524,7 +525,7 @@ void setJacElementESDIRKSparse(int i, int j, int nth, double val, void* Jf,
  *  result of the Jacobian is stored in solverData->fjac (DATA_NEWTON) ???????
  *
  */
-int wrapper_Jf_genericRK(int* n, double* x, double* fvec, void* genericRKData, double* fODE)
+int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* genericRKData)
 {
   DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
 
@@ -572,10 +573,11 @@ int wrapper_Jf_genericRK(int* n, double* x, double* fvec, void* genericRKData, d
     }
     else
     {
-      for(i = 0; i < *n; i++)
+      memcpy(userdata->f, fODE, n * sizeof(double));
+      for(i = 0; i < n; i++)
       {
-        delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(fvec[i])), delta_h);
-        delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
+        delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(userdata->f[i])), delta_h);
+        delta_hh = ((userdata->f[i] >= 0) ? delta_hh : -delta_hh);
         delta_hh = x[i] + delta_hh - x[i];
         xsave = x[i];
         x[i] += delta_hh;
@@ -589,15 +591,15 @@ int wrapper_Jf_genericRK(int* n, double* x, double* fvec, void* genericRKData, d
         /* BB: Is this necessary for the statistics? */
         solverData->nfev++;
 
-        for(j = 0; j < *n; j++)
+        for(j = 0; j < n; j++)
         {
-          l = i * *n + j;
-          userdata->Jf[l] = (fODE[j] - fvec[j]) * delta_hh;
+          l = i * n + j;
+          userdata->Jf[l] = (fODE[j] - userdata->f[j]) * delta_hh;
         }
         x[i] = xsave;
       }
     }
-    // Has to be refacturede for general RK method
+    // Has to be refactured for general RK method
     if (solverData->calculate_jacobian==0)
       solverData->calculate_jacobian = 1;
   }
@@ -669,10 +671,10 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
 
     /* store values for finite differences scheme
      * not necessary for analytic Jacobian */
-    memcpy(userdata->f, fODE, n*sizeof(double));
+    //memcpy(userdata->f, fODE, n*sizeof(double));
 
     /* Calculate Jacobian of the ODE system, result is in solverData->fjac */
-    wrapper_Jf_genericRK(n_p, x, userdata->f, userdata, fODE);
+    wrapper_Jf_genericRK(n, sData->timeValue, sData->realVars, fODE, userdata);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     // jacobian          Jac = -E + gam*h*Jf(tk+c2*h,x))
@@ -690,6 +692,7 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
   }
   return 0;
 }
+
 /*!	\fn wrapper_RK_genericRK
  *      residual function res = yOld-y+h*(b1*k1+b2*k2+b3*f(tk+h,y));
  *      i.e. solve for:
@@ -798,7 +801,8 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
       memcpy(sData->realVars, (x + k * n), n*sizeof(double));
       // works only for analytical Jacobian!!!
       //printf("Hier: %d\n", k);
-      wrapper_Jf_genericRK(&n, (x + k * n), userdata->f, userdata, fODE);
+      // BB: needs to be verified, that for the numerical Jacobian fODE is actual!!
+      wrapper_Jf_genericRK(n, sData->timeValue, sData->realVars, fODE, userdata);
       //printMatrix_genericRK("Jacobian of system", userdata->Jf, n, sData->timeValue);
       //printMatrix_genericRK("Jacobian of solver", solverData->fjac, stages * n, sData->timeValue);
       for (l=0; l<stages; l++)
@@ -822,14 +826,14 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
   return 0;
 }
 
-/*!	\fn esdirkmr_imp_step
+/*!	\fn expl_diag_impl_RK
  *
  *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
  *  function omc_newton is used for solving nonlinear system
  *  results will be saved in y and the embedded result in yt
  *
  */
-int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   int i, j, l, k, n=data->modelData->nStates;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
@@ -909,14 +913,14 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   return 0;
 }
 
-/*!	\fn esdirkmr_impRK
+/*!	\fn full_implicit_RK
  *
  *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
  *  function omc_newton is used for solving nonlinear system
  *  results will be saved in y and the embedded result in yt
  *
  */
-int esdirkmr_impRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   int i, j, k, l, n=data->modelData->nStates;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
