@@ -900,26 +900,32 @@ algorithm
   end match;
 end setMinMax;
 
+public function getTypeDefaultStart
+
+end getTypeDefaultStart;
+
 public function getStartAttr "
   Return the start attribute."
-  input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  input Option<DAE.VariableAttributes> inAttributes;
   input DAE.Type inType;
   output DAE.Exp start;
+protected
+  DAE.Exp e;
 algorithm
-  start := match inVariableAttributesOption
-    local
-      DAE.Exp r;
-    case SOME(DAE.VAR_ATTR_REAL(start = SOME(r))) then r;
-    case SOME(DAE.VAR_ATTR_REAL(start = NONE())) then DAE.RCONST(0.0);
-    case SOME(DAE.VAR_ATTR_INT(start = SOME(r))) then r;
-    case SOME(DAE.VAR_ATTR_INT(start = NONE())) then DAE.ICONST(0);
-    case SOME(DAE.VAR_ATTR_BOOL(start = SOME(r))) then r;
-    case SOME(DAE.VAR_ATTR_BOOL(start = NONE())) then DAE.BCONST(false);
-    case SOME(DAE.VAR_ATTR_STRING(start = SOME(r))) then r;
-    case SOME(DAE.VAR_ATTR_STRING(start = NONE())) then DAE.SCONST("");
-    case SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r))) then r;
-    case SOME(DAE.VAR_ATTR_ENUMERATION(start = NONE())) then Types.getNthEnumLiteral(inType, 1);
-    else DAE.RCONST(0.0);
+  start := match inAttributes
+    case SOME(DAE.VAR_ATTR_REAL(start = SOME(e))) then e;
+    case SOME(DAE.VAR_ATTR_INT(start = SOME(e))) then e;
+    case SOME(DAE.VAR_ATTR_BOOL(start = SOME(e))) then e;
+    case SOME(DAE.VAR_ATTR_STRING(start = SOME(e))) then e;
+    case SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(e))) then e;
+    else
+      match Types.getBasicType(inType)
+        case DAE.Type.T_INTEGER() then DAE.ICONST(0);
+        case DAE.Type.T_STRING() then DAE.SCONST("");
+        case DAE.Type.T_BOOL() then DAE.BCONST(false);
+        case DAE.Type.T_ENUMERATION() then Types.getNthEnumLiteral(inType, 1);
+        else DAE.RCONST(0.0);
+      end match;
   end match;
 end getStartAttr;
 
