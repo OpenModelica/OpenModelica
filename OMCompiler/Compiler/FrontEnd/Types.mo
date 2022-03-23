@@ -8722,5 +8722,16 @@ algorithm
   end match;
 end isExpandableConnector;
 
+public function getBasicType
+  input DAE.Type ty;
+  output DAE.Type outType;
+algorithm
+  outType := match ty
+    case DAE.Type.T_ARRAY() then getBasicType(ty.ty);
+    case DAE.Type.T_SUBTYPE_BASIC() then getBasicType(ty.complexType);
+    else ty;
+  end match;
+end getBasicType;
+
 annotation(__OpenModelica_Interface="frontend");
 end Types;
