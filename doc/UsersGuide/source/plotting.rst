@@ -33,8 +33,7 @@ simulation data:
   :name: HelloWorld_res.csv
   :caption: HelloWorld_res.csv
 
-Diagrams are now created with the new OMPlot program by using the
-following plot command:
+Use `plot(x)` to plot the diagram using OMPlot.
 
 .. omc-gnuplot :: helloworld
   :caption: Simple 2D plot of the HelloWorld example.
