@@ -548,7 +548,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_BOUNDARY */
   "  Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
   /* FLAG_RK */
-  "  Value specifies the chosen Runge-Kutta method (default 0).",
+  "  Value specifies the chosen Runge-Kutta method (default dopri45).",
   /* FLAG_RT */
   "  Value specifies the scaling factor for real-time synchronization (0 disables).\n"
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
@@ -809,6 +809,26 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */                   FLAG_TYPE_OPTION,
   /* FLAG_W */                            FLAG_TYPE_FLAG
+};
+
+const char *RK_SINGLERATE_METHOD_NAME[RK_MAX] = {
+  /* RK_UNKNOWN = 0 */   "unknown",
+  /* RK_EXPL_EULER */    "expl_euler",
+  /* RK_ESDIRK2 */       "esdirk2",
+  /* RK_ESDIRK2_test */  "esdirk2_test",
+  /* RK_ESDIRK3 */       "esdirk3",
+  /* RK_ESDIRK3_test */  "esdirk3_test",
+  /* RK_DOPRI45 */       "dopri45"
+};
+
+const char *RK_SINGLERATE_METHOD_DESC[RK_MAX] = {
+  /* RK_UNKNOWN = 0 */   "unknown",
+  /* RK_EXPL_EULER */    "expl_euler",
+  /* RK_ESDIRK2 */       "esdirk2",
+  /* RK_ESDIRK2_test */  "esdirk2_test",
+  /* RK_ESDIRK3 */       "esdirk3",
+  /* RK_ESDIRK3_test */  "esdirk3_test",
+  /* RK_DOPRI45 */       "dopri45"
 };
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {

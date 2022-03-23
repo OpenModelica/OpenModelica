@@ -2818,6 +2818,11 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
         flagDesc = NLS_LS_METHOD_DESC;
         break;
 
+      case FLAG_RK:
+        numExtraFlags = RK_MAX;
+        flagName = NULL;
+        flagDesc = RK_SINGLERATE_METHOD_DESC;
+        break;
 
       case FLAG_S:
         numExtraFlags = S_MAX;

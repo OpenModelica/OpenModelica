@@ -190,6 +190,24 @@ extern const char *FLAG_DETAILED_DESC[FLAG_MAX+1];
 extern const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX];
 extern const int FLAG_TYPE[FLAG_MAX];
 
+enum RK_SINGLERATE_METHOD
+{
+  RK_UNKNOWN = 0,
+
+  RK_EXPL_EULER,
+  RK_ESDIRK2,
+  RK_ESDIRK2_test,
+  RK_ESDIRK3,
+  RK_ESDIRK3_test,
+  RK_DOPRI45,
+
+  RK_MAX
+};
+
+extern const char *RK_SINGLERATE_METHOD_NAME[RK_MAX];
+extern const char *RK_SINGLERATE_METHOD_DESC[RK_MAX];
+
+
 enum SOLVER_METHOD
 {
   S_UNKNOWN = 0,

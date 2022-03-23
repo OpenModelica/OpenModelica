@@ -242,6 +242,37 @@ void getButcherTableau_DOPRI45(DATA_ESDIRKMR* userdata)
       memcpy(userdata->bt, bt_DOPRI, userdata->stages*sizeof(double));
 }
 
+void printButcherTableau(DATA_ESDIRKMR* userdata)
+{
+  int i, j;
+  char Butcher_row[1024];
+  infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of RK-method:");
+  for (i = 0; i<userdata->stages; i++)
+  {
+    sprintf(Butcher_row, "%10g | ", userdata->c[i]);
+    for (j = 0; j<userdata->stages; j++)
+    {
+      sprintf(Butcher_row, "%s %10g", Butcher_row, userdata->A[i*userdata->stages + j]);
+    }
+    infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
+  }
+  infoStreamPrint(LOG_SOLVER, 0, "------------------------------------------------");
+  sprintf(Butcher_row, "%10s | ", "");
+  for (j = 0; j<userdata->stages; j++)
+  {
+    sprintf(Butcher_row, "%s %10g", Butcher_row, userdata->b[j]);
+  }
+  infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
+  sprintf(Butcher_row, "%10s | ", "");
+  for (j = 0; j<userdata->stages; j++)
+  {
+    sprintf(Butcher_row, "%s %10g", Butcher_row, userdata->bt[j]);
+  }
+  infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
+  messageClose(LOG_SOLVER);
+
+}
+
 /*! \fn allocateESDIRKMR
  *
  *   Function allocates memory needed for ESDIRK method.
@@ -255,60 +286,53 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
   userdata->nStates = data->modelData->nStates;
   /* only flags from 0 to 9 are supported */
-  int RK_method;
-  if(omc_flag[FLAG_RK])
-    RK_method = ((int) *omc_flagValue[FLAG_RK]) - '0';
+  enum RK_SINGLERATE_METHOD RK_method;
 
-  if (!(RK_method >=0 && RK_method <= 5) || !(omc_flag[FLAG_RK]))
-    RK_method = 0;
+  // int RK_method;
+
+  // if(omc_flag[FLAG_RK])
+  //   RK_method = ((int) *omc_flagValue[FLAG_RK]) - '0';
+
+  if (omc_flagValue[FLAG_RK]) {
+    RK_method = GC_strdup(omc_flagValue[FLAG_RK]);
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: %s [from command line]", GC_strdup(omc_flagValue[FLAG_RK]));
+  }
+  else
+  {
+    RK_method = RK_DOPRI45;
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: dopri45 [default]");
+  }
 
   switch(RK_method){
-    case 0:
-    //ESDIRK2_OPT
-    // Reduced nonlinear system userdata->nStates
-    // Systems solved in cascade
+    case RK_ESDIRK2:
       getButcherTableau_ESDIRK2(userdata);
-      infoStreamPrint(LOG_SOLVER, 0, "Optimized ESDIRK2 method:");
       break;
 
-    case 1:
-    //ESDIRK2
+    case RK_ESDIRK2_test:
+      //ESDIRK2 not optimized (just for testing)
       getButcherTableau_ESDIRK2(userdata);
       userdata->nlSystemSize = userdata->stages*userdata->nStates;
       userdata->step_fun = &(esdirkmr_impRK);
-
-      infoStreamPrint(LOG_SOLVER, 0, "ESDIRK2 method as usual implicit RK method:");
       break;
 
-      case 2:
-      // EXPLEULER
+      case RK_EXPL_EULER:
       getButcherTableau_EXPLEULER(userdata);
-
-      infoStreamPrint(LOG_SOLVER, 0, "New realization of the explicit Euler with Richardson extrapolation for step size control");
       break;
 
-      case 3:
+      case RK_DOPRI45:
       getButcherTableau_DOPRI45(userdata);
-
-      infoStreamPrint(LOG_SOLVER, 0, "DOPRI(4/5):");
       break;
 
-    case 4:
-     //ESDIRK3
-      getButcherTableau_ESDIRK3(userdata);
-     // solve with genericRK solver method
-      userdata->nlSystemSize = userdata->stages*userdata->nStates;
-      userdata->step_fun = &(esdirkmr_impRK);
-
-      infoStreamPrint(LOG_SOLVER, 0, "ESDIRK3_N:");
+      case RK_ESDIRK3_test:
+      //ESDIRK2 not optimized (just for testing) solved with genericRK solver method
+        getButcherTableau_ESDIRK3(userdata);
+        userdata->nlSystemSize = userdata->stages*userdata->nStates;
+        userdata->step_fun = &(esdirkmr_impRK);
       break;
 
-    case 5:
-      getButcherTableau_ESDIRK3(userdata);
-
-      infoStreamPrint(LOG_SOLVER, 0, "ESDIRK3:");
-      break;
-
+      case RK_ESDIRK3:
+        getButcherTableau_ESDIRK3(userdata);
+        break;
   }
 
   allocateNewtonData(userdata->nlSystemSize, &(userdata->solverData));
@@ -324,32 +348,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   userdata->errest = malloc(sizeof(double)*userdata->nStates);
   userdata->errtol = malloc(sizeof(double)*userdata->nStates);
 
-
-  char Butcher_row[1024];
-  infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of ESDIRK-method:");
-  for (int i = 0; i<userdata->stages; i++)
-  {
-    sprintf(Butcher_row, "%10g | ", userdata->c[i]);
-    for (int j = 0; j<userdata->stages; j++)
-    {
-      sprintf(Butcher_row, "%s %10g", Butcher_row, userdata->A[i*userdata->stages + j]);
-    }
-    infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
-  }
-  infoStreamPrint(LOG_SOLVER, 0, "------------------------------------------------");
-  sprintf(Butcher_row, "%10s | ", "");
-  for (int j = 0; j<userdata->stages; j++)
-  {
-    sprintf(Butcher_row, "%s %10g", Butcher_row, userdata->b[j]);
-  }
-  infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
-  sprintf(Butcher_row, "%10s | ", "");
-  for (int j = 0; j<userdata->stages; j++)
-  {
-    sprintf(Butcher_row, "%s %10g", Butcher_row, userdata->bt[j]);
-  }
-  infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
-  messageClose(LOG_SOLVER);
+  printButcherTableau(userdata);
 
   /* initialize stats */
   userdata->stepsDone = 0;
