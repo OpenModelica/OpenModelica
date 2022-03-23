@@ -54,7 +54,7 @@
 #include "synchronous.h"
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
-#include "esdirkmr.h"
+#include "generic_rk.h"
 #include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
@@ -190,7 +190,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   }
   case S_ESDIRKMR:
   {
-    retVal = esdirkmr_step(data, threadData, solverInfo);
+    retVal = genericRK_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
@@ -261,7 +261,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_ESDIRKMR:
   {
-    allocateESDIRKMR(data, threadData, solverInfo);
+    allocateDataGenericRK(data, threadData, solverInfo);
     break;
   }
   case S_ERKSSC:
@@ -416,7 +416,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
   else if (solverInfo->solverMethod == S_ESDIRKMR)
   {
-    freeESDIRKMR(solverInfo);
+    freeDataGenericRK(solverInfo);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
   else if(solverInfo->solverMethod == S_DASSL)
