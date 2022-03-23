@@ -88,6 +88,7 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   solverInfo->solverData = (void*) userdata;
 
   int size = data->modelData->nStates;
+
   /* only flags from 0 to 9 are supported */
   int RK_method;
   if(omc_flag[FLAG_RK])
@@ -95,6 +96,27 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
   if (!(RK_method >=0 && RK_method <= 5) || !(omc_flag[FLAG_RK]))
     RK_method = 0;
+
+  /* initialize values of the Butcher tableau */
+  double gam = (2.0-sqrt(2.0))*0.5;
+  double c2 = 2.0*gam;
+  double b1 = sqrt(2.0)/4.0;
+  double b2 = b1;
+  double b3 = gam;
+  double bt1 = 1.75-sqrt(2.0);
+  double bt2 = bt1;
+  double bt3 = 2.0*sqrt(2.0)-2.5;
+
+  const double c_ESDIRK2[] = {0.0 , c2, 1.0};
+  const double A_ESDIRK2[] = {
+                      0.0, 0.0, 0.0,
+                      gam, gam, 0.0,
+                      b1, b2, b3
+                    };
+  const double b_ESDIRK2[] = {b1, b2, b3};
+  const double bt_ESDIRK2[] = {bt1, bt2, bt3};
+
+
   switch(RK_method){
     case 0:
     //ESDIRK2_OPT
@@ -115,24 +137,6 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       userdata->b = malloc(sizeof(double)*userdata->stages);
       userdata->bt = malloc(sizeof(double)*userdata->stages);
 
-      /* initialize values of the Butcher tableau */
-      userdata->gam = (2.0-sqrt(2.0))*0.5;
-      userdata->c2 = 2.0*userdata->gam;
-      userdata->b1 = sqrt(2.0)/4.0;
-      userdata->b2 = userdata->b1;
-      userdata->b3 = userdata->gam;
-      userdata->bt1 = 1.75-sqrt(2.0);
-      userdata->bt2 = userdata->bt1;
-      userdata->bt3 = 2.0*sqrt(2.0)-2.5;
-
-      const double c_ESDIRK2[] = {0.0 , userdata->c2, 1.0};
-      const double A_ESDIRK2[] = {
-                          0.0, 0.0, 0.0,
-                          userdata->gam, userdata->gam, 0.0,
-                          userdata->b1, userdata->b2, userdata->b3
-                        };
-      const double b_ESDIRK2[] = {userdata->b1, userdata->b2, userdata->b3};
-      const double bt_ESDIRK2[] = {userdata->bt1, userdata->bt2, userdata->bt3};
       memcpy(userdata->c, c_ESDIRK2, userdata->stages*sizeof(double));
       memcpy(userdata->A, A_ESDIRK2, userdata->stages * userdata->stages * sizeof(double));
       memcpy(userdata->b, b_ESDIRK2, userdata->stages*sizeof(double));
@@ -159,27 +163,10 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       userdata->bt = malloc(sizeof(double)*userdata->stages);
 
       /* initialize values of the Butcher tableau */
-      userdata->gam = (2.0-sqrt(2.0))*0.5;
-      userdata->c2 = 2.0*userdata->gam;
-      userdata->b1 = sqrt(2.0)/4.0;
-      userdata->b2 = userdata->b1;
-      userdata->b3 = userdata->gam;
-      userdata->bt1 = 1.75-sqrt(2.0);
-      userdata->bt2 = userdata->bt1;
-      userdata->bt3 = 2.0*sqrt(2.0)-2.5;
-
-      const double c_ESDIRK2_N[] = {0.0 , userdata->c2, 1.0};
-      const double A_ESDIRK2_N[] = {
-                          0.0, 0.0, 0.0,
-                          userdata->gam, userdata->gam, 0.0,
-                          userdata->b1, userdata->b2, userdata->b3
-                        };
-      const double b_ESDIRK2_N[] = {userdata->b1, userdata->b2, userdata->b3};
-      const double bt_ESDIRK2_N[] = {userdata->bt1, userdata->bt2, userdata->bt3};
-      memcpy(userdata->c, c_ESDIRK2_N, userdata->stages*sizeof(double));
-      memcpy(userdata->A, A_ESDIRK2_N, userdata->stages * userdata->stages * sizeof(double));
-      memcpy(userdata->b, b_ESDIRK2_N, userdata->stages*sizeof(double));
-      memcpy(userdata->bt, bt_ESDIRK2_N, userdata->stages*sizeof(double));
+      memcpy(userdata->c, c_ESDIRK2, userdata->stages*sizeof(double));
+      memcpy(userdata->A, A_ESDIRK2, userdata->stages * userdata->stages * sizeof(double));
+      memcpy(userdata->b, b_ESDIRK2, userdata->stages*sizeof(double));
+      memcpy(userdata->bt, bt_ESDIRK2, userdata->stages*sizeof(double));
 
       infoStreamPrint(LOG_SOLVER, 0, "ESDIRK2 method as usual implicit RK method:");
       break;
@@ -446,15 +433,15 @@ int freeESDIRKMR(SOLVER_INFO* solverInfo)
  *  \param [in]      data           data of the underlying DAE
  *  \param [in]      threadData     data for error handling
  *  \param [in/out]  userdata       data of the integrator (DATA_ESDIRKMR)
- *  \param [out]     stateDer       pointer to state derivatives
+ *  \param [out]     fODE       pointer to state derivatives
  *
  */
-int wrapper_f_ESDIRKMR(DATA* data, threadData_t *threadData, void* genericRKData, modelica_real* stateDer)
+int wrapper_f_ESDIRKMR(DATA* data, threadData_t *threadData, void* genericRKData, modelica_real* fODE)
 {
   DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*) genericRKData;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  stateDer = sData->realVars + data->modelData->nStates;
+  fODE = sData->realVars + data->modelData->nStates;
 
   userdata->evalFunctionODE++;
 
@@ -800,7 +787,7 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*)solverInfo->solverData;
   DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
 
@@ -840,7 +827,7 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // set correct time value and states of simulation system
       sData->timeValue = userdata->time + userdata->c[userdata->act_stage]*userdata->stepSize;
       memcpy(sData->realVars, userdata->res_const, n*sizeof(double));
-      wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
+      wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
     }
     else
     {
@@ -866,8 +853,8 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         solverData->calculate_jacobian = -1;
       }
     }
-    // copy last calculation of stateDer, which should coincide with k[i]
-    memcpy(userdata->k + userdata->act_stage * n, stateDer, n*sizeof(double));
+    // copy last calculation of fODE, which should coincide with k[i]
+    memcpy(userdata->k + userdata->act_stage * n, fODE, n*sizeof(double));
 
   }
 
@@ -942,7 +929,7 @@ void ESDIRKMR_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*)solverInfo->solverData;
   const int n = data->modelData->nStates;
-  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
 
   double sc, d, d0 = 0.0, d1 = 0.0, d2 = 0.0, h0, h1, delta_ti, infNorm, sum = 0;
   double Atol = 1e-6, Rtol = 1e-3;
@@ -972,15 +959,15 @@ void ESDIRKMR_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   //printVector_ESDIRKMR("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
   //printVector_ESDIRKMR("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
   memcpy(userdata->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
-  wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
+  wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
   /* store values of the state derivatives at initial or event time */
-  memcpy(userdata->f, stateDer, data->modelData->nStates*sizeof(double));
+  memcpy(userdata->f, fODE, data->modelData->nStates*sizeof(double));
 
   for (i=0; i<data->modelData->nStates; i++)
   {
     sc = Atol + fabs(sDataOld->realVars[i])*Rtol;
     d0 += ((sDataOld->realVars[i] * sDataOld->realVars[i])/(sc*sc));
-    d1 += ((stateDer[i] * stateDer[i]) / (sc*sc));
+    d1 += ((fODE[i] * fODE[i]) / (sc*sc));
   }
   d0 /= data->modelData->nStates;
   d1 /= data->modelData->nStates;
@@ -1001,16 +988,16 @@ void ESDIRKMR_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
   for (i=0; i<data->modelData->nStates; i++)
   {
-    sData->realVars[i] = userdata->yOld[i] + stateDer[i] * h0;
+    sData->realVars[i] = userdata->yOld[i] + fODE[i] * h0;
   }
   sData->timeValue += h0;
 
-  wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
+  wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
 
   for (i=0; i<data->modelData->nStates; i++)
   {
     sc = Atol + fabs(userdata->yOld[i])*Rtol;
-    d2 += ((stateDer[i]-userdata->f[i])*(stateDer[i]-userdata->f[i])/(sc*sc));
+    d2 += ((fODE[i]-userdata->f[i])*(fODE[i]-userdata->f[i])/(sc*sc));
   }
 
   d2 /= h0;
@@ -1046,7 +1033,7 @@ int esdirkmr_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1]; // BB: Is this the ring buffer???
-  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*)solverInfo->solverData;
   DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->solverData;
 
@@ -1138,12 +1125,12 @@ int esdirkmr_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       // }
       // err = norm_errest/norm_errtol;
       /*** calculate error (euclidian norm) ***/
-      for (i=0, err=0.0; i<data->modelData->nStates; i++)
+      for (i=0, err=0.0; i<n; i++)
       {
         err += (userdata->errest[i]*userdata->errest[i])/(userdata->errtol[i]*userdata->errtol[i]);
       }
 
-      err /= data->modelData->nStates;
+      err /= n;
       err = sqrt(err);
 
       // Store performed stepSize for adjusting the time and interpolation purposes

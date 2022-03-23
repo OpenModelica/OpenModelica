@@ -74,7 +74,6 @@ typedef struct DATA_ESDIRKMR{
   double *errest, *errtol;
   double time;
   double stepSize, lastStepSize;
-  double gam, c2, b1, b2, b3, bt1, bt2, bt3, bh1, bh2, bh3;
   int stages, expl, act_stage;
   double *A, *c, *b, *bt;
   int order_b, order_bt, error_order;
