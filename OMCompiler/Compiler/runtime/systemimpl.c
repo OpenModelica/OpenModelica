@@ -306,7 +306,8 @@ extern char* SystemImpl__pwd(void)
     return NULL;
   }
 
-  WCHAR unicodePath[bufLen];
+  // WCHAR unicodePath[bufLen];
+  WCHAR* unicodePath = (WCHAR*)omc_alloc_interface.malloc_atomic(bufLen * sizeof(WCHAR));
   if (!GetCurrentDirectoryW(bufLen, unicodePath)) {
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("GetCurrentDirectoryW failed."),NULL,0);
     return NULL;
@@ -316,6 +317,7 @@ extern char* SystemImpl__pwd(void)
   SystemImpl__toWindowsSeperators(buffer, bufferLength);
   char *res = omc_alloc_interface.malloc_strdup(buffer);
   MULTIBYTE_OR_WIDECHAR_VAR_FREE(buffer);
+  GC_free(unicodePath);
   return res;
 #else
   char buf[MAXPATHLEN];

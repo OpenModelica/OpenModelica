@@ -62,7 +62,8 @@ void* ZeroMQ_initialize(const char *zeroMQFileSuffix, int listenToAll, int port)
   }
   // get the port number
   const size_t endPointBufSize = 30;
-  char endPointBuf[endPointBufSize];
+  // char endPointBuf[endPointBufSize];
+  char* endPointBuf = (char*)omc_alloc_interface.malloc_atomic(sizeof(char) * endPointBufSize);
   zmq_getsockopt(zmqSocket, ZMQ_LAST_ENDPOINT, &endPointBuf, (size_t *)&endPointBufSize);
   // create the file path
   const char* tempPath = SettingsImpl__getTempDirectoryPath();
@@ -82,6 +83,8 @@ void* ZeroMQ_initialize(const char *zeroMQFileSuffix, int listenToAll, int port)
   printf("Created ZeroMQ Server.\nDumped server port in file: %s", zeroMQFilePath);fflush(NULL);
 
   mmcZmqSocket = mmc_mk_some(zmqSocket);
+
+  GC_free(endPointBuf);
   return mmcZmqSocket;
 }
 
