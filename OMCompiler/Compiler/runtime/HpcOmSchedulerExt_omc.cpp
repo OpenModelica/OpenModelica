@@ -68,11 +68,14 @@ extern void* HpcOmSchedulerExt_scheduleMetis(modelica_metatype xadjIn, modelica_
   }
 
   return HpcOmSchedulerExtImpl__scheduleMetis(xadj, adjncy, vwgt, adjwgt, xadjNelts, adjncyNelts, nparts);
+#endif
 }
 
 extern void* HpcOmSchedulerExt_schedulehMetis(modelica_metatype xadjIn, modelica_metatype adjncyIn, modelica_metatype vwgtIn, modelica_metatype adjwgtIn, int npartsIn)
 {
-
+#if defined(_MSC_VER)
+  HPC_OM_VS();
+#else
   int vwgtsNelts = (int)MMC_HDRSLOTS(MMC_GETHDR(xadjIn)); //number of elements in xadj-array
   int eptrNelts = (int)MMC_HDRSLOTS(MMC_GETHDR(adjncyIn)); //number of elements in adjncy-array
   int eintNelts = (int)MMC_HDRSLOTS(MMC_GETHDR(vwgtIn)); //number of elements in vwgt-array
