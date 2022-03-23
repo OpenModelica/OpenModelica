@@ -181,6 +181,26 @@ void getButcherTableau_EXPLEULER(DATA_GENERIC_RK* userdata)
   setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
 }
 
+void getButcherTableau_IMPLEULER(DATA_GENERIC_RK* userdata)
+{
+  //explicit Euler with Richardson-Extrapolation for step size control
+  /* Butcher Tableau */
+  userdata->stages = 3;
+  userdata->order_b = 2;
+  userdata->order_bt = 1;
+  userdata->fac = 0.9;
+
+  const double c_RK[] = {1.0, 0.5, 1.0};
+  const double A_RK[] = {1.0, 0.0, 0.0,
+                         0.0, 0.5, 0.0,
+                         0.0, 0.5, 0.5};
+  const double bt_RK[]  = {1.0, 0.0, 0.0}; // implicit Euler step
+  //const double bt_RK[] = {0.0, 0.5, 0.5}; // explicit Euler step
+  const double b_RK[] = {-1.0, 1.0, 1.0}; // Richardson extrapolation
+
+  setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
+}
+
 void getButcherTableau_MERSON(DATA_GENERIC_RK* userdata)
 {
   //explicit Merson method
@@ -322,6 +342,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     else if (!strcmp(RK_method_string, "esdirk2_test")) RK_method = RK_ESDIRK2_test;
     else if (!strcmp(RK_method_string, "dopri45")) RK_method = RK_DOPRI45;
     else if (!strcmp(RK_method_string, "expl_euler")) RK_method = RK_EXPL_EULER;
+    else if (!strcmp(RK_method_string, "impl_euler")) RK_method = RK_IMPL_EULER;
     else if (!strcmp(RK_method_string, "merson")) RK_method = RK_MERSON;
   }
   else
@@ -355,6 +376,10 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
     case RK_EXPL_EULER:
       getButcherTableau_EXPLEULER(userdata);
+      break;
+
+    case RK_IMPL_EULER:
+      getButcherTableau_IMPLEULER(userdata);
       break;
 
     case RK_ESDIRK3_test:

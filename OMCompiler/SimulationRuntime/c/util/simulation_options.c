@@ -814,6 +814,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
 const char *RK_SINGLERATE_METHOD_NAME[RK_MAX] = {
   /* RK_UNKNOWN = 0 */   "unknown",
   /* RK_EXPL_EULER */    "expl_euler",
+  /* RK_IMPL_EULER */    "impl_euler",
   /* RK_ESDIRK2 */       "esdirk2",
   /* RK_ESDIRK2_test */  "esdirk2_test",
   /* RK_ESDIRK3 */       "esdirk3",
@@ -825,6 +826,7 @@ const char *RK_SINGLERATE_METHOD_NAME[RK_MAX] = {
 const char *RK_SINGLERATE_METHOD_DESC[RK_MAX] = {
   /* RK_UNKNOWN = 0 */   "unknown",
   /* RK_EXPL_EULER */    "expl_euler",
+  /* RK_IMPL_EULER */    "impl_euler",
   /* RK_ESDIRK2 */       "esdirk2",
   /* RK_ESDIRK2_test */  "esdirk2_test",
   /* RK_ESDIRK3 */       "esdirk3",
