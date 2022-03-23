@@ -75,28 +75,8 @@ void printMatrix_ESDIRKMR(char name[], double* a, int n, double time);
 int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int esdirkmr_impRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
-
-/*! \fn allocateESDIRKMR
- *
- *   Function allocates memory needed for ESDIRK method.
- *
- */
-
-int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+void getButcherTableau_ESDIRK2(DATA_ESDIRKMR* userdata)
 {
-  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*) malloc(sizeof(DATA_ESDIRKMR));
-  solverInfo->solverData = (void*) userdata;
-
-  int size = data->modelData->nStates;
-
-  /* only flags from 0 to 9 are supported */
-  int RK_method;
-  if(omc_flag[FLAG_RK])
-    RK_method = ((int) *omc_flagValue[FLAG_RK]) - '0';
-
-  if (!(RK_method >=0 && RK_method <= 5) || !(omc_flag[FLAG_RK]))
-    RK_method = 0;
-
   /* initialize values of the Butcher tableau */
   double gam = (2.0-sqrt(2.0))*0.5;
   double c2 = 2.0*gam;
@@ -116,97 +96,123 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   const double b_ESDIRK2[] = {b1, b2, b3};
   const double bt_ESDIRK2[] = {bt1, bt2, bt3};
 
+  userdata->stages = 3;
+  userdata->expl = 0;
+  userdata->nlSystemSize = userdata->nStates;
+  userdata->step_fun = &(esdirkmr_imp_step);
 
-  switch(RK_method){
-    case 0:
-    //ESDIRK2_OPT
-    // Reduced nonlinear system size
-    // Systems solved in cascade
-      userdata->stages = 3;
-      userdata->expl = 0;
-      userdata->nlSystemSize = size;
-      userdata->step_fun = &(esdirkmr_imp_step);
+  /* Butcher Tableau */
+  userdata->order_b = 2;
+  userdata->order_bt = 1;
+  userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
 
-      /* Butcher Tableau */
-      userdata->order_b = 2;
-      userdata->order_bt = 1;
-      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+  userdata->c = malloc(sizeof(double)*userdata->stages);
+  userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
+  userdata->b = malloc(sizeof(double)*userdata->stages);
+  userdata->bt = malloc(sizeof(double)*userdata->stages);
 
-      userdata->c = malloc(sizeof(double)*userdata->stages);
-      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
-      userdata->b = malloc(sizeof(double)*userdata->stages);
-      userdata->bt = malloc(sizeof(double)*userdata->stages);
+  memcpy(userdata->c, c_ESDIRK2, userdata->stages*sizeof(double));
+  memcpy(userdata->A, A_ESDIRK2, userdata->stages * userdata->stages * sizeof(double));
+  memcpy(userdata->b, b_ESDIRK2, userdata->stages*sizeof(double));
+  memcpy(userdata->bt, bt_ESDIRK2, userdata->stages*sizeof(double));
+}
 
-      memcpy(userdata->c, c_ESDIRK2, userdata->stages*sizeof(double));
-      memcpy(userdata->A, A_ESDIRK2, userdata->stages * userdata->stages * sizeof(double));
-      memcpy(userdata->b, b_ESDIRK2, userdata->stages*sizeof(double));
-      memcpy(userdata->bt, bt_ESDIRK2, userdata->stages*sizeof(double));
+void getButcherTableau_ESDIRK3(DATA_ESDIRKMR* userdata)
+{
+  //ESDIRK3
+  userdata->stages = 4;
+  userdata->expl = 0;
+  userdata->nlSystemSize = userdata->nStates;
+  userdata->step_fun = &(esdirkmr_imp_step);
 
-      infoStreamPrint(LOG_SOLVER, 0, "Optimized ESDIRK2 method:");
-      break;
+  /* Butcher Tableau */
+  userdata->order_b = 3;
+  userdata->order_bt = 2;
+  userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
 
-    case 1:
-    //ESDIRK2
-      userdata->stages = 3;
-      userdata->expl = 0;
-      userdata->nlSystemSize = userdata->stages*size;
-      userdata->step_fun = &(esdirkmr_impRK);
+  userdata->c = malloc(sizeof(double)*userdata->stages);
+  userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
+  userdata->b = malloc(sizeof(double)*userdata->stages);
+  userdata->bt = malloc(sizeof(double)*userdata->stages);
 
-      /* Butcher Tableau */
-      userdata->order_b = 2;
-      userdata->order_bt = 1;
-      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+//   double gam=0.43586652150845899941601945;
+//   double c3=3./5;
+//   double a32=(c3*(c3-2*gam))/(4*gam);
+//   double a31=c3-a32-gam;
+//   double A=1-6*gam+6*gam*gam;
+//   double b2=(-2+3*c3+6*gam*(1-c3))/(12*gam*(c3-2*gam));
+//   double b3=A/(3*c3*(c3-2*gam));
+//   double b4=gam;
 
-      userdata->c = malloc(sizeof(double)*userdata->stages);
-      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
-      userdata->b = malloc(sizeof(double)*userdata->stages);
-      userdata->bt = malloc(sizeof(double)*userdata->stages);
+//   double b1=1-b2-b3-b4;
+//   double bt2=((c3*(-1+6*gam-24*gam*gam*gam+12*gam*gam*gam*gam-6*gam*gam*gam*gam*gam))/(4*gam*(2*gam-c3)*A)+
+//                 (3-27*gam+68*gam*gam-55*gam*gam*gam+21*gam*gam*gam*gam-6*gam*gam*gam*gam*gam)/(2*(2*gam-c3)*A));
+//   double bt3=((-gam*(-2+21*gam-68*gam*gam+79*gam*gam*gam-33*gam*gam*gam*gam+12*gam*gam*gam*gam*gam))/(c3*(c3-2*gam)*A));
+//   double bt4=(-3*gam*gam*(-1+4*gam-2*gam*gam+gam*gam*gam))/A;
+//   double bt1=1-bt2-bt3-bt4;
 
-      /* initialize values of the Butcher tableau */
-      memcpy(userdata->c, c_ESDIRK2, userdata->stages*sizeof(double));
-      memcpy(userdata->A, A_ESDIRK2, userdata->stages * userdata->stages * sizeof(double));
-      memcpy(userdata->b, b_ESDIRK2, userdata->stages*sizeof(double));
-      memcpy(userdata->bt, bt_ESDIRK2, userdata->stages*sizeof(double));
+//   const double c_ESDIRK3[] = {0.0, 2*gam, c3, 1};
+//   const double A_ESDIRK3[] = {0.0, 0.0, 0.0, 0.0,
+//                               gam, gam, 0.0, 0.0,
+//                               a31, a32, gam, 0.0,
+//                               b1,  b2,  b3, gam
+//  };
+//   const double b_ESDIRK3[] = {b1, b2, b3, b4};
+//   const double bt_ESDIRK3[] = {bt1, bt2, bt3, bt4};
 
-      infoStreamPrint(LOG_SOLVER, 0, "ESDIRK2 method as usual implicit RK method:");
-      break;
+  const double c_ESDIRK3[]  = {0.0, 0.87173304301691799883203890238711368505858818587690, 3./5, 1.};
 
-      case 2:
-     //IRKSCO
-      userdata->stages = 3;
-      userdata->expl = 0;
-      userdata->nlSystemSize = userdata->stages*size;
-      userdata->step_fun = &(esdirkmr_impRK);
+  const double A_ESDIRK3[]  = {0, 0, 0, 0,
+                              0.43586652150845899941601945119355684252929409293845, 0.43586652150845899941601945119355684252929409293845, 0.0, 0.0,
+                              0.25764824606642724579999601628407970926431835216613, -0.093514767574886245216015467477636551793612445104585, 0.43586652150845899941601945119355684252929409293845, 0.0,
+                              0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
 
-      /* Butcher Tableau */
-      userdata->order_b = 1;
-      userdata->order_bt = 2;
-      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+  const double b_ESDIRK3[]  = {0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
+  const double bt_ESDIRK3[] = {0.10889661761586445415613073807049608218243112728445, -0.91532581187071275348163809781681834549906345402560, 1.2712735973021521678447158941356428765353629368204, 0.53515559695269613148079146561067938678126938992075};
 
-      userdata->c = malloc(sizeof(double)*userdata->stages);
-      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
-      userdata->b = malloc(sizeof(double)*userdata->stages);
-      userdata->bt = malloc(sizeof(double)*userdata->stages);
+  memcpy(userdata->c, c_ESDIRK3, userdata->stages*sizeof(double));
+  memcpy(userdata->A, A_ESDIRK3, userdata->stages * userdata->stages * sizeof(double));
+  memcpy(userdata->b, b_ESDIRK3, userdata->stages*sizeof(double));
+  memcpy(userdata->bt, bt_ESDIRK3, userdata->stages*sizeof(double));
 
-      const double c_IRKSCO[] = {0.0, 0.5, 1.0};
-      const double A_IRKSCO[] = {0.0, 0.0, 0.0,
-                                 0.0, 0.5, 0.0,
-                                 0.0, 0.0, 1.0};
-      const double b_IRKSCO[] = {0,0,1};
-      const double bt_IRKSCO[] = {-1,0,2};
-      memcpy(userdata->c, c_IRKSCO, userdata->stages*sizeof(double));
-      memcpy(userdata->A, A_IRKSCO, userdata->stages * userdata->stages * sizeof(double));
-      memcpy(userdata->b, b_IRKSCO, userdata->stages*sizeof(double));
-      memcpy(userdata->bt, bt_IRKSCO, userdata->stages*sizeof(double));
+}
 
-      infoStreamPrint(LOG_SOLVER, 0, "New realization of the IRKSCO method:");
-      break;
+void getButcherTableau_EXPLEULER(DATA_ESDIRKMR* userdata)
+{
+  //explicit Euler with Richardson-Extrapolation for step size control
+  userdata->stages = 2;
+  userdata->expl = 1;
+  userdata->nlSystemSize = userdata->nStates;
+  userdata->step_fun = &(esdirkmr_imp_step);
 
-      case 3:
+  /* Butcher Tableau */
+  userdata->order_b = 1;
+  userdata->order_bt = 2;
+  userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
+
+  userdata->c = malloc(sizeof(double)*userdata->stages);
+  userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
+  userdata->b = malloc(sizeof(double)*userdata->stages);
+  userdata->bt = malloc(sizeof(double)*userdata->stages);
+
+  const double c_EXPLEULER_SC[] = {0.0, 0.5};
+  const double A_EXPLEULER_SC[] = {0.0, 0.0,
+                                   0.5, 0.0};
+  const double bt_EXPLEULER_SC[] = {1,0};
+  const double b_EXPLEULER_SC[] = {0,1}; // explicit midpoint rule
+  memcpy(userdata->c, c_EXPLEULER_SC, userdata->stages*sizeof(double));
+  memcpy(userdata->A, A_EXPLEULER_SC, userdata->stages * userdata->stages * sizeof(double));
+  memcpy(userdata->b, b_EXPLEULER_SC, userdata->stages*sizeof(double));
+  memcpy(userdata->bt, bt_EXPLEULER_SC, userdata->stages*sizeof(double));
+
+}
+
+void getButcherTableau_DOPRI45(DATA_ESDIRKMR* userdata)
+{
      //DOPRI
       userdata->stages = 7;
       userdata->expl = 1;
-      userdata->nlSystemSize = size;
+      userdata->nlSystemSize = userdata->nStates;
       userdata->step_fun = &(esdirkmr_imp_step);
 
       /* Butcher Tableau */
@@ -234,101 +240,71 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       memcpy(userdata->A, A_DOPRI, userdata->stages * userdata->stages * sizeof(double));
       memcpy(userdata->b, b_DOPRI, userdata->stages*sizeof(double));
       memcpy(userdata->bt, bt_DOPRI, userdata->stages*sizeof(double));
+}
+
+/*! \fn allocateESDIRKMR
+ *
+ *   Function allocates memory needed for ESDIRK method.
+ *
+ */
+
+int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*) malloc(sizeof(DATA_ESDIRKMR));
+  solverInfo->solverData = (void*) userdata;
+
+  userdata->nStates = data->modelData->nStates;
+  /* only flags from 0 to 9 are supported */
+  int RK_method;
+  if(omc_flag[FLAG_RK])
+    RK_method = ((int) *omc_flagValue[FLAG_RK]) - '0';
+
+  if (!(RK_method >=0 && RK_method <= 5) || !(omc_flag[FLAG_RK]))
+    RK_method = 0;
+
+  switch(RK_method){
+    case 0:
+    //ESDIRK2_OPT
+    // Reduced nonlinear system userdata->nStates
+    // Systems solved in cascade
+      getButcherTableau_ESDIRK2(userdata);
+      infoStreamPrint(LOG_SOLVER, 0, "Optimized ESDIRK2 method:");
+      break;
+
+    case 1:
+    //ESDIRK2
+      getButcherTableau_ESDIRK2(userdata);
+      userdata->nlSystemSize = userdata->stages*userdata->nStates;
+      userdata->step_fun = &(esdirkmr_impRK);
+
+      infoStreamPrint(LOG_SOLVER, 0, "ESDIRK2 method as usual implicit RK method:");
+      break;
+
+      case 2:
+      // EXPLEULER
+      getButcherTableau_EXPLEULER(userdata);
+
+      infoStreamPrint(LOG_SOLVER, 0, "New realization of the explicit Euler with Richardson extrapolation for step size control");
+      break;
+
+      case 3:
+      getButcherTableau_DOPRI45(userdata);
 
       infoStreamPrint(LOG_SOLVER, 0, "DOPRI(4/5):");
       break;
 
     case 4:
      //ESDIRK3
-      userdata->stages = 4;
-      userdata->expl = 0;
-      userdata->nlSystemSize = userdata->stages*size;
+      getButcherTableau_ESDIRK3(userdata);
+     // solve with genericRK solver method
+      userdata->nlSystemSize = userdata->stages*userdata->nStates;
       userdata->step_fun = &(esdirkmr_impRK);
-
-      /* Butcher Tableau */
-      userdata->order_b = 3;
-      userdata->order_bt = 2;
-      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
-
-      userdata->c = malloc(sizeof(double)*userdata->stages);
-      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
-      userdata->b = malloc(sizeof(double)*userdata->stages);
-      userdata->bt = malloc(sizeof(double)*userdata->stages);
-
-    //   double gam=0.43586652150845899941601945;
-    //   double c3=3./5;
-    //   double a32=(c3*(c3-2*gam))/(4*gam);
-    //   double a31=c3-a32-gam;
-    //   double A=1-6*gam+6*gam*gam;
-    //   double b2=(-2+3*c3+6*gam*(1-c3))/(12*gam*(c3-2*gam));
-    //   double b3=A/(3*c3*(c3-2*gam));
-    //   double b4=gam;
-
-    //   double b1=1-b2-b3-b4;
-    //   double bt2=((c3*(-1+6*gam-24*gam*gam*gam+12*gam*gam*gam*gam-6*gam*gam*gam*gam*gam))/(4*gam*(2*gam-c3)*A)+
-    //                 (3-27*gam+68*gam*gam-55*gam*gam*gam+21*gam*gam*gam*gam-6*gam*gam*gam*gam*gam)/(2*(2*gam-c3)*A));
-    //   double bt3=((-gam*(-2+21*gam-68*gam*gam+79*gam*gam*gam-33*gam*gam*gam*gam+12*gam*gam*gam*gam*gam))/(c3*(c3-2*gam)*A));
-    //   double bt4=(-3*gam*gam*(-1+4*gam-2*gam*gam+gam*gam*gam))/A;
-    //   double bt1=1-bt2-bt3-bt4;
-
-    //   const double c_ESDIRK3[] = {0.0, 2*gam, c3, 1};
-	  //   const double A_ESDIRK3[] = {0.0, 0.0, 0.0, 0.0,
-    //                               gam, gam, 0.0, 0.0,
-	 	//                               a31, a32, gam, 0.0,
-		//                               b1,  b2,  b3, gam
-    //  };
-    //   const double b_ESDIRK3[] = {b1, b2, b3, b4};
-    //   const double bt_ESDIRK3[] = {bt1, bt2, bt3, bt4};
-
-      const double c_ESDIRK3_N[]  = {0.0, 0.87173304301691799883203890238711368505858818587690, 3./5, 1.};
-
-      const double A_ESDIRK3_N[]  = {0, 0, 0, 0,
-                                  0.43586652150845899941601945119355684252929409293845, 0.43586652150845899941601945119355684252929409293845, 0.0, 0.0,
-                                  0.25764824606642724579999601628407970926431835216613, -0.093514767574886245216015467477636551793612445104585, 0.43586652150845899941601945119355684252929409293845, 0.0,
-                                  0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
-
-      const double b_ESDIRK3_N[]  = {0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
-      const double bt_ESDIRK3_N[] = {0.10889661761586445415613073807049608218243112728445, -0.91532581187071275348163809781681834549906345402560, 1.2712735973021521678447158941356428765353629368204, 0.53515559695269613148079146561067938678126938992075};
-
-      memcpy(userdata->c, c_ESDIRK3_N, userdata->stages*sizeof(double));
-      memcpy(userdata->A, A_ESDIRK3_N, userdata->stages * userdata->stages * sizeof(double));
-      memcpy(userdata->b, b_ESDIRK3_N, userdata->stages*sizeof(double));
-      memcpy(userdata->bt, bt_ESDIRK3_N, userdata->stages*sizeof(double));
 
       infoStreamPrint(LOG_SOLVER, 0, "ESDIRK3_N:");
       break;
 
     case 5:
-     //ESDIRK3
-      userdata->stages = 4;
-      userdata->expl = 0;
-      userdata->nlSystemSize = size;
-      userdata->step_fun = &(esdirkmr_imp_step);
-
-      /* Butcher Tableau */
-      userdata->order_b = 3;
-      userdata->order_bt = 2;
-      userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
-
-      userdata->c = malloc(sizeof(double)*userdata->stages);
-      userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
-      userdata->b = malloc(sizeof(double)*userdata->stages);
-      userdata->bt = malloc(sizeof(double)*userdata->stages);
-
-      const double c_ESDIRK3[]  = {0.0, 0.87173304301691799883203890238711368505858818587690, 3./5, 1.};
-
-      const double A_ESDIRK3[]  = {0, 0, 0, 0,
-                                  0.43586652150845899941601945119355684252929409293845, 0.43586652150845899941601945119355684252929409293845, 0.0, 0.0,
-                                  0.25764824606642724579999601628407970926431835216613, -0.093514767574886245216015467477636551793612445104585, 0.43586652150845899941601945119355684252929409293845, 0.0,
-                                  0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
-
-      const double b_ESDIRK3[]  = {0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
-      const double bt_ESDIRK3[] = {0.10889661761586445415613073807049608218243112728445, -0.91532581187071275348163809781681834549906345402560, 1.2712735973021521678447158941356428765353629368204, 0.53515559695269613148079146561067938678126938992075};
-
-      memcpy(userdata->c, c_ESDIRK3, userdata->stages*sizeof(double));
-      memcpy(userdata->A, A_ESDIRK3, userdata->stages * userdata->stages * sizeof(double));
-      memcpy(userdata->b, b_ESDIRK3, userdata->stages*sizeof(double));
-      memcpy(userdata->bt, bt_ESDIRK3, userdata->stages*sizeof(double));
+      getButcherTableau_ESDIRK3(userdata);
 
       infoStreamPrint(LOG_SOLVER, 0, "ESDIRK3:");
       break;
@@ -338,15 +314,15 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   allocateNewtonData(userdata->nlSystemSize, &(userdata->solverData));
 
   userdata->firstStep = 1;
-  userdata->y = malloc(sizeof(double)*size);
-  userdata->yOld = malloc(sizeof(double)*size);
-  userdata->yt = malloc(sizeof(double)*size);
-  userdata->f = malloc(sizeof(double)*size);
-  userdata->Jf = malloc(sizeof(double)*size*size);
-  userdata->k = malloc(sizeof(double)*size*userdata->stages);
-  userdata->res_const = malloc(sizeof(double)*size);
-  userdata->errest = malloc(sizeof(double)*size);
-  userdata->errtol = malloc(sizeof(double)*size);
+  userdata->y = malloc(sizeof(double)*userdata->nStates);
+  userdata->yOld = malloc(sizeof(double)*userdata->nStates);
+  userdata->yt = malloc(sizeof(double)*userdata->nStates);
+  userdata->f = malloc(sizeof(double)*userdata->nStates);
+  userdata->Jf = malloc(sizeof(double)*userdata->nStates*userdata->nStates);
+  userdata->k = malloc(sizeof(double)*userdata->nStates*userdata->stages);
+  userdata->res_const = malloc(sizeof(double)*userdata->nStates);
+  userdata->errest = malloc(sizeof(double)*userdata->nStates);
+  userdata->errtol = malloc(sizeof(double)*userdata->nStates);
 
 
   char Butcher_row[1024];
