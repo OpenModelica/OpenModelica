@@ -65,6 +65,7 @@
 #include "jacobianSymbolical.h"
 #include "esdirkmr.h"
 #include "simulation/options.h"
+#include "../../util/simulation_options.h"
 
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
@@ -190,16 +191,16 @@ void getButcherTableau_EXPLEULER(DATA_ESDIRKMR* userdata)
   userdata->order_bt = 2;
   userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
 
-  userdata->c = malloc(sizeof(double)*userdata->stages);
-  userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
-  userdata->b = malloc(sizeof(double)*userdata->stages);
+  userdata->c  = malloc(sizeof(double)*userdata->stages);
+  userdata->A  = malloc(sizeof(double)*userdata->stages * userdata->stages);
+  userdata->b  = malloc(sizeof(double)*userdata->stages);
   userdata->bt = malloc(sizeof(double)*userdata->stages);
 
   const double c_EXPLEULER_SC[] = {0.0, 0.5};
   const double A_EXPLEULER_SC[] = {0.0, 0.0,
                                    0.5, 0.0};
   const double bt_EXPLEULER_SC[] = {1,0};
-  const double b_EXPLEULER_SC[] = {0,1}; // explicit midpoint rule
+  const double b_EXPLEULER_SC[]  = {0,1}; // explicit midpoint rule
   memcpy(userdata->c, c_EXPLEULER_SC, userdata->stages*sizeof(double));
   memcpy(userdata->A, A_EXPLEULER_SC, userdata->stages * userdata->stages * sizeof(double));
   memcpy(userdata->b, b_EXPLEULER_SC, userdata->stages*sizeof(double));
@@ -285,54 +286,60 @@ int allocateESDIRKMR(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   solverInfo->solverData = (void*) userdata;
 
   userdata->nStates = data->modelData->nStates;
-  /* only flags from 0 to 9 are supported */
+
   enum RK_SINGLERATE_METHOD RK_method;
 
-  // int RK_method;
-
-  // if(omc_flag[FLAG_RK])
-  //   RK_method = ((int) *omc_flagValue[FLAG_RK]) - '0';
-
   if (omc_flagValue[FLAG_RK]) {
-    RK_method = GC_strdup(omc_flagValue[FLAG_RK]);
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: %s [from command line]", GC_strdup(omc_flagValue[FLAG_RK]));
+    char* RK_method_string = GC_strdup(omc_flagValue[FLAG_RK]);
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: %s [from command line]", RK_method_string);
+    if (!strcmp(RK_method_string, "esdirk3")) RK_method = RK_ESDIRK3;
+    else if (!strcmp(RK_method_string, "esdirk3_test")) RK_method = RK_ESDIRK3_test;
+    else if (!strcmp(RK_method_string, "esdirk2")) RK_method = RK_ESDIRK2;
+    else if (!strcmp(RK_method_string, "esdirk2_test")) RK_method = RK_ESDIRK2_test;
+    else if (!strcmp(RK_method_string, "dopri45")) RK_method = RK_DOPRI45;
+    else if (!strcmp(RK_method_string, "expl_euler")) RK_method = RK_EXPL_EULER;
+    else RK_method = RK_ESDIRK3;
   }
   else
   {
-    RK_method = RK_DOPRI45;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: dopri45 [default]");
   }
 
-  switch(RK_method){
+  switch(RK_method)
+  {
+    case RK_UNKNOWN:
+    case RK_MAX:
+    case RK_DOPRI45:
+      // default Solver
+      getButcherTableau_DOPRI45(userdata);
+      break;
+
     case RK_ESDIRK2:
       getButcherTableau_ESDIRK2(userdata);
       break;
 
     case RK_ESDIRK2_test:
-      //ESDIRK2 not optimized (just for testing)
+      //ESDIRK2 not optimized (just for testing) solved with genericRK solver method
       getButcherTableau_ESDIRK2(userdata);
       userdata->nlSystemSize = userdata->stages*userdata->nStates;
       userdata->step_fun = &(esdirkmr_impRK);
       break;
 
-      case RK_EXPL_EULER:
+    case RK_EXPL_EULER:
       getButcherTableau_EXPLEULER(userdata);
       break;
 
-      case RK_DOPRI45:
-      getButcherTableau_DOPRI45(userdata);
+    case RK_ESDIRK3_test:
+    //ESDIRK3 not optimized (just for testing) solved with genericRK solver method
+      getButcherTableau_ESDIRK3(userdata);
+      userdata->nlSystemSize = userdata->stages*userdata->nStates;
+      userdata->step_fun = &(esdirkmr_impRK);
       break;
 
-      case RK_ESDIRK3_test:
-      //ESDIRK2 not optimized (just for testing) solved with genericRK solver method
-        getButcherTableau_ESDIRK3(userdata);
-        userdata->nlSystemSize = userdata->stages*userdata->nStates;
-        userdata->step_fun = &(esdirkmr_impRK);
+    case RK_ESDIRK3:
+      getButcherTableau_ESDIRK3(userdata);
       break;
 
-      case RK_ESDIRK3:
-        getButcherTableau_ESDIRK3(userdata);
-        break;
   }
 
   allocateNewtonData(userdata->nlSystemSize, &(userdata->solverData));
