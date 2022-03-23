@@ -1720,6 +1720,8 @@ MSL but if you really need to and understand the consequences then follow these 
 -  Add *$OPENMODELICAHOME/lib/omlibrary/Modelica X.X/package.mo* under user libraries.
 -  Restart OMEdit.
 
+.. _omedit-install-library :
+
 Install Library
 ---------------
 
@@ -1732,10 +1734,12 @@ that are available for installation through the package manager.
 
   Install Library.
 
-Upgrade Libraries using Conversion Scripts
+.. _omedit-convert-library :
+
+Convert Libraries using Conversion Scripts
 ------------------------------------------
 
-In order to upgrade the libraries used in the model/package right-click the model/package in the
+In order to convert the libraries right-click the model/package in the
 `Libraries Browser` and choose `Convert to newer versions of used libraries`. OMEdit will read the used
 libraries from the uses-annotation and list any new version of the library that provide the conversion
 using the conversion script.

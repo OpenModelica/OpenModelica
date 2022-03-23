@@ -68,7 +68,7 @@ own Modelica packages. It can be run both from the OMEdit GUI and from the comma
 
 Note that the Package Manager may install multiple builds of the same library version on your PC, if they are indexed on the
 OSMC servers. When this happens, they are distinguished among each other by means of
-`semver <https://https://semver.org/#semantic-versioning-specification-semver>`_-style pre- or post-release metadata in the
+`semver <https://semver.org/#semantic-versioning-specification-semver>`_-style pre- or post-release metadata in the
 top directory name on the file system. Post-release builds are denoted by a plus sign (e.g. ``2.0.0+build.02``)
 and have higher priority over the corresponding plain release
 (e.g. ``2.0.0``), while pre-release builds are denoted by a minus sign (e.g. ``2.0.0-dev.30``) and have a lower priority.
@@ -83,15 +83,18 @@ In any case, semver version semantics is only used to order the releases, while 
 is determined exclusively on the basis of ``noneFromVersion`` annotations.
 
 Package Management in OMEdit
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TBD: Show how to install new packages and manage installed ones
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:ref:`Installing a new library in OMEdit <omedit-install-library>`.
 
 Running Conversion Scripts in OMEdit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TBD: Show how to run conversion scripts in OMEdit
+
+:ref:`Converting a library in OMEdit <omedit-convert-library>`.
 
 Automatically Loaded Packages in OMEdit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 When you start OMEdit, some packages are automatically loaded into the environment, and shown in the Libraries
 Browser. You can configure which ones are loaded from the Tools|Options|Libraries menu.
 
@@ -124,23 +127,23 @@ Using the Package Manager from the Interactive Environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Package Manager can also be used from the Interactive Environment command line shell. Here is a list
-of examples of relevant commands; please type them followed by ``getErrorString()``,
-e.g., ``updatePackageIndex();getErrorString()``, in order to get additional information,
+of examples of relevant commands; please type them followed by ``:ref:`getErrorString```,
+e.g., ``:ref:`updatePackageIndex`;:ref:`getErrorString```, in order to get additional information,
 notifications and error messages.
 
-- ``updatePackageIndex()``: this command puts the Package Manager in contact with the OSMC servers and updates
-    the internally stored list of available packages;
-- ``getAvailablePackageVersions(Buildings, "")``: lists all available versions of the Buildings library on the OSMC server,
-   starting from the most recent one, in descending order of priority. Note that pre-release versions have lower priority
-   than all other versions;
-- ``getAvailablePackageVersions(Buildings, "7.0.0")``: lists all available versions of the Buildings library on
-   the OSMC server that are backwards-compatible with version ``7.0.0``, in descending order of priority;
-- ``installPackage(Buildings, "")``:install the most recent version of the Building libraries, *and all its dependencies*;
-- ``installPackage(Buildings, "7.0.0")``: install the most recent version of the Building libraries which is backwards-compatible
-    with version ``7.0.0``, *and all its dependencies*;
-- ``installPackage(Buildings, "7.0.0", exactMatch = true)``: install version ``7.0.0`` even if there are more recent
-    backwards-compatible versions available, *and all its dependencies*;
-- ``upgradeInstalledPackages(installNewestVersions = true)``: installs the latest available version of all installed packages.
+- ``:ref:`updatePackageIndex```: this command puts the Package Manager in contact with the OSMC servers and updates
+  the internally stored list of available packages;
+- ``:ref:`getAvailablePackageVersions`(Buildings, "")``: lists all available versions of the Buildings library on the OSMC server,
+  starting from the most recent one, in descending order of priority. Note that pre-release versions have lower priority
+  than all other versions;
+- ``:ref:`getAvailablePackageVersions`(Buildings, "7.0.0")``: lists all available versions of the Buildings library on
+  the OSMC server that are backwards-compatible with version ``7.0.0``, in descending order of priority;
+- ``:ref:`installPackage`(Buildings, "")``: install the most recent version of the Building libraries, *and all its dependencies*;
+- ``:ref:`installPackage`(Buildings, "7.0.0")``: install the most recent version of the Building libraries which is backwards-compatible
+  with version ``7.0.0``, *and all its dependencies*;
+- ``:ref:`installPackage`(Buildings, "7.0.0", exactMatch = true)``: install version ``7.0.0`` even if there are more recent
+  backwards-compatible versions available, *and all its dependencies*;
+- ``:ref:`upgradeInstalledPackages`(installNewestVersions = true)``: installs the latest available version of all installed packages.
 
 How the package index works
 ---------------------------
