@@ -1720,7 +1720,7 @@ MSL but if you really need to and understand the consequences then follow these 
 -  Add *$OPENMODELICAHOME/lib/omlibrary/Modelica X.X/package.mo* under user libraries.
 -  Restart OMEdit.
 
-.. _omedit-install-library :
+.. _omedit-install-library-label :
 
 Install Library
 ---------------
@@ -1734,7 +1734,7 @@ that are available for installation through the package manager.
 
   Install Library.
 
-.. _omedit-convert-library :
+.. _omedit-convert-library-label :
 
 Convert Libraries using Conversion Scripts
 ------------------------------------------
