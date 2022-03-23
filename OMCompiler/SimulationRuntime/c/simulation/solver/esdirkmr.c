@@ -449,14 +449,14 @@ int freeESDIRKMR(SOLVER_INFO* solverInfo)
  *  \param [out]     stateDer       pointer to state derivatives
  *
  */
-int wrapper_f_ESDIRKMR(DATA* data, threadData_t *threadData, void* userdata, modelica_real* stateDer)
+int wrapper_f_ESDIRKMR(DATA* data, threadData_t *threadData, void* genericRKData, modelica_real* stateDer)
 {
-  DATA_ESDIRKMR* ESDIRKMRData = (DATA_ESDIRKMR*) userdata;
+  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*) genericRKData;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   stateDer = sData->realVars + data->modelData->nStates;
 
-  ESDIRKMRData->evalFunctionODE++;
+  userdata->evalFunctionODE++;
 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
@@ -489,13 +489,13 @@ void setJacElementESDIRKSparse(int i, int j, int nth, double val, void* Jf,
  *  result of the Jacobian is stored in solverData->fjac (DATA_NEWTON) ???????
  *
  */
-int wrapper_Jf_ESDIRKMR(int* n, double* x, double* fvec, void* userdata, double* fODE)
+int wrapper_Jf_ESDIRKMR(int* n, double* x, double* fvec, void* genericRKData, double* fODE)
 {
-  DATA_ESDIRKMR* ESDIRKMRData = (DATA_ESDIRKMR*) userdata;
+  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*) genericRKData;
 
-  DATA* data = ESDIRKMRData->data;
-  threadData_t* threadData = ESDIRKMRData->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)ESDIRKMRData->solverData;
+  DATA* data = userdata->data;
+  threadData_t* threadData = userdata->threadData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->solverData;
 
   double delta_h = sqrt(solverData->epsfcn);
   double delta_hh;
@@ -508,9 +508,9 @@ int wrapper_Jf_ESDIRKMR(int* n, double* x, double* fvec, void* userdata, double*
 
   if (solverData->calculate_jacobian>=0)
   {
-    ESDIRKMRData->evalJacobians++;
+    userdata->evalJacobians++;
 
-    if (ESDIRKMRData->symJac)
+    if (userdata->symJac)
     {
       const int index = data->callback->INDEX_JAC_A;
       ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
@@ -532,7 +532,7 @@ int wrapper_Jf_ESDIRKMR(int* n, double* x, double* fvec, void* userdata, double*
        if (jac->constantEqns != NULL) {
          jac->constantEqns(data, threadData, jac, NULL);
        }
-       genericColoredSymbolicJacobianEvaluation(rows, columns, spp, ESDIRKMRData->Jf, t_jac,
+       genericColoredSymbolicJacobianEvaluation(rows, columns, spp, userdata->Jf, t_jac,
                                            data, threadData, &setJacElementESDIRKSparse);
     }
     else
@@ -549,7 +549,7 @@ int wrapper_Jf_ESDIRKMR(int* n, double* x, double* fvec, void* userdata, double*
         wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
         // this should not count on function evaluation, since
         // it belongs to jacobian evaluation
-        ESDIRKMRData->evalFunctionODE--;
+        userdata->evalFunctionODE--;
 
         /* BB: Is this necessary for the statistics? */
         solverData->nfev++;
@@ -557,7 +557,7 @@ int wrapper_Jf_ESDIRKMR(int* n, double* x, double* fvec, void* userdata, double*
         for(j = 0; j < *n; j++)
         {
           l = i * *n + j;
-          ESDIRKMRData->Jf[l] = (fODE[j] - fvec[j]) * delta_hh;
+          userdata->Jf[l] = (fODE[j] - fvec[j]) * delta_hh;
         }
         x[i] = xsave;
       }
@@ -586,13 +586,13 @@ int wrapper_Jf_ESDIRKMR(int* n, double* x, double* fvec, void* userdata, double*
  *  \param [in]      fj             fj = 1 ==> calculate function values
  *                                  fj = 0 ==> calculate jacobian matrix
  */
-int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
+int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
 {
-  DATA_ESDIRKMR* ESDIRKMRData = (DATA_ESDIRKMR*) userdata;
+  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*) genericRKData;
 
-  DATA* data = ESDIRKMRData->data;
-  threadData_t* threadData = ESDIRKMRData->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)ESDIRKMRData->solverData;
+  DATA* data = userdata->data;
+  threadData_t* threadData = userdata->threadData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->solverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   int n = (*n_p);
@@ -600,19 +600,19 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
   int i, j, l, k;
 
 // index of diagonal element of A
-  k = ESDIRKMRData->act_stage * ESDIRKMRData->stages + ESDIRKMRData->act_stage;
+  k = userdata->act_stage * userdata->stages + userdata->act_stage;
   if (fj)
   {
     // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
     // set correct time value and states of simulation system
-    sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->c[ESDIRKMRData->act_stage]*ESDIRKMRData->stepSize;
+    sData->timeValue = userdata->time + userdata->c[userdata->act_stage]*userdata->stepSize;
     memcpy(sData->realVars, x, n*sizeof(double));
     wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     for (j=0; j<n; j++)
     {
-      res[j] = ESDIRKMRData->res_const[j] - x[j] + ESDIRKMRData->stepSize * ESDIRKMRData->A[k]  * fODE[j];
+      res[j] = userdata->res_const[j] - x[j] + userdata->stepSize * userdata->A[k]  * fODE[j];
     }
   }
   else
@@ -627,17 +627,17 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
      *  \ToBeChecked: This calculation maybe not be necessary since f has already
      *                just evaluated!
      */
-    // sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->c2*ESDIRKMRData->stepSize;
+    // sData->timeValue = userdata->time + userdata->c2*userdata->stepSize;
     // memcpy(sData->realVars, x, n*sizeof(double));
     // wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
-    // ESDIRKMRData->evalFunctionODE--;
+    // userdata->evalFunctionODE--;
 
     /* store values for finite differences scheme
      * not necessary for analytic Jacobian */
-    memcpy(ESDIRKMRData->f, fODE, n*sizeof(double));
+    memcpy(userdata->f, fODE, n*sizeof(double));
 
     /* Calculate Jacobian of the ODE system, result is in solverData->fjac */
-    wrapper_Jf_ESDIRKMR(n_p, x, ESDIRKMRData->f, userdata, fODE);
+    wrapper_Jf_ESDIRKMR(n_p, x, userdata->f, userdata, fODE);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     // jacobian          Jac = -E + gam*h*Jf(tk+c2*h,x))
@@ -646,7 +646,7 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
       for(j = 0; j < n; j++)
       {
         l = i * n + j;
-        solverData->fjac[l] = ESDIRKMRData->stepSize * ESDIRKMRData->A[k] * ESDIRKMRData->Jf[l];
+        solverData->fjac[l] = userdata->stepSize * userdata->A[k] * userdata->Jf[l];
         if (i==j) solverData->fjac[l] -= 1;
       }
     }
@@ -669,18 +669,18 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* userdata, int fj)
  *  \param [in]      fj             fj = 1 ==> calculate function values
  *                                  fj = 0 ==> calculate jacobian matrix
  */
-int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
+int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
 {
-  DATA_ESDIRKMR* ESDIRKMRData = (DATA_ESDIRKMR*) userdata;
+  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*) genericRKData;
 
-  DATA* data = ESDIRKMRData->data;
-  threadData_t* threadData = ESDIRKMRData->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)ESDIRKMRData->solverData;
+  DATA* data = userdata->data;
+  threadData_t* threadData = userdata->threadData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->solverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   int n = data->modelData->nStates;
 
-  int i, j, k, l, ind, stages = ESDIRKMRData->stages;
+  int i, j, k, l, ind, stages = userdata->stages;
   double sum;
 
   if (fj)
@@ -694,23 +694,23 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
     {
       for (i=0; i<n; i++)
       {
-        res[l * n + i] = ESDIRKMRData->yOld[i] - x[l * n + i];
+        res[l * n + i] = userdata->yOld[i] - x[l * n + i];
       }
     }
     for (k=0; k<stages; k++)
     {
       // calculate f[k] and sweap over the stages
-      //printf("c[k] = %g\n",ESDIRKMRData->c[k]);
-      sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->c[k] * ESDIRKMRData->stepSize;
+      //printf("c[k] = %g\n",userdata->c[k]);
+      sData->timeValue = userdata->time + userdata->c[k] * userdata->stepSize;
       memcpy(sData->realVars, (x + k * n), n*sizeof(double));
       wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
-      memcpy(ESDIRKMRData->k + k * n, fODE, n*sizeof(double));
+      memcpy(userdata->k + k * n, fODE, n*sizeof(double));
       for (l=0; l<stages; l++)
       {
-        //printf("A[%d,%d] = %g  ",l,k,ESDIRKMRData->A[l * stages + k]);
+        //printf("A[%d,%d] = %g  ",l,k,userdata->A[l * stages + k]);
         for (i=0; i<n; i++)
         {
-          res[l * n + i] += ESDIRKMRData->stepSize * ESDIRKMRData->A[l * stages + k] * fODE[i];
+          res[l * n + i] += userdata->stepSize * userdata->A[l * stages + k] * fODE[i];
         }
       }
       //printf("\n");
@@ -729,17 +729,17 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
      *  \ToBeChecked: This calculation maybe not be necessary since f has already
      *                just evaluated! works so far
      */
-    // sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->stepSize;
+    // sData->timeValue = userdata->time + userdata->stepSize;
     // memcpy(sData->realVars, x, n*sizeof(double));
     // wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
-    // ESDIRKMRData->evalFunctionODE--;
+    // userdata->evalFunctionODE--;
 
     /* store values for finite differences scheme
      * not necessary for analytic Jacobian */
-    //memcpy(ESDIRKMRData->f, fODE, n*sizeof(double));
+    //memcpy(userdata->f, fODE, n*sizeof(double));
 
     /* Calculate Jacobian of the ODE system, stored in  solverData->fjac */
-    //wrapper_Jf_ESDIRKMR(&n, x, ESDIRKMRData->f, userdata, fODE);
+    //wrapper_Jf_ESDIRKMR(&n, x, userdata->f, userdata, fODE);
     // set correct time value and states of simulation system
 
     // residual function res = yOld-x[i]+h*(a[l][1]*k[1]+...+a[l][stages]*k[stages])
@@ -755,16 +755,16 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
           solverData->fjac[i * stages*n + j] = 0;
       }
     }
-    //printMatrix_ESDIRKMR("Jacobian of solver", solverData->fjac, stages * n, ESDIRKMRData->time);
-    for (k=0; k<stages && !ESDIRKMRData->expl; k++)
+    //printMatrix_ESDIRKMR("Jacobian of solver", solverData->fjac, stages * n, userdata->time);
+    for (k=0; k<stages && !userdata->expl; k++)
     {
       // calculate Jf[k] and sweap over the stages
-      sData->timeValue = ESDIRKMRData->time + ESDIRKMRData->c[k] * ESDIRKMRData->stepSize;
+      sData->timeValue = userdata->time + userdata->c[k] * userdata->stepSize;
       memcpy(sData->realVars, (x + k * n), n*sizeof(double));
       // works only for analytical Jacobian!!!
       //printf("Hier: %d\n", k);
-      wrapper_Jf_ESDIRKMR(&n, (x + k * n), ESDIRKMRData->f, userdata, fODE);
-      //printMatrix_ESDIRKMR("Jacobian of system", ESDIRKMRData->Jf, n, sData->timeValue);
+      wrapper_Jf_ESDIRKMR(&n, (x + k * n), userdata->f, userdata, fODE);
+      //printMatrix_ESDIRKMR("Jacobian of system", userdata->Jf, n, sData->timeValue);
       //printMatrix_ESDIRKMR("Jacobian of solver", solverData->fjac, stages * n, sData->timeValue);
       for (l=0; l<stages; l++)
       {
@@ -773,8 +773,8 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
           for (j=0; j<n; j++)
           {
             ind = l * stages * n * n + i * stages * n + j + k*n;
-            solverData->fjac[ind] += ESDIRKMRData->stepSize * ESDIRKMRData->A[l * stages + k] * ESDIRKMRData->Jf[i * n + j];
-            //solverData->fjac[ind] += ESDIRKMRData->Jf[i * n + j];
+            solverData->fjac[ind] += userdata->stepSize * userdata->A[l * stages + k] * userdata->Jf[i * n + j];
+            //solverData->fjac[ind] += userdata->Jf[i * n + j];
             //printf("Hier2: l=%d i=%d j=%d\n", l,i,j);
             //printMatrix_ESDIRKMR("Jacobian of solver", solverData->fjac, stages * n, ind);
           }
@@ -844,7 +844,7 @@ int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     }
     else
     {
-      // solve for x: 0 = yold-x + h*(sum(a[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
+      // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       // set good starting values for the newton solver (solution of the last newton iteration!)
       // set newton strategy
       solverData->newtonStrategy = NEWTON_DAMPED2;
