@@ -900,10 +900,6 @@ algorithm
   end match;
 end setMinMax;
 
-public function getTypeDefaultStart
-
-end getTypeDefaultStart;
-
 public function getStartAttr "
   Return the start attribute."
   input Option<DAE.VariableAttributes> inAttributes;
