@@ -787,6 +787,147 @@ int wrapper_RK(int* n_p, double* x, double* res, void* userdata, int fj)
   return 0;
 }
 
+/*!	\fn esdirkmr_imp_step
+ *
+ *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
+ *  function omc_newton is used for solving nonlinear system
+ *  results will be saved in y and the embedded result in yt
+ *
+ */
+int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
+  int i, j, l, k, n=data->modelData->nStates;
+  double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
+
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
+  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*)solverInfo->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
+
+  userdata->data = (void*) data;
+  userdata->threadData = threadData;
+
+  sData->timeValue = userdata->time;
+  solverInfo->currentTime = sData->timeValue;
+
+  solverData->initialized = 1;
+  solverData->numberOfIterations = 0;
+  solverData->numberOfFunctionEvaluations = 0;
+  solverData->n = n;
+
+  // setting the start vector for the newton step
+  memcpy(solverData->x, userdata->yOld, n*sizeof(double));
+
+  // sweep over the stages
+  for (userdata->act_stage = 0; userdata->act_stage < userdata->stages; userdata->act_stage++)
+  {
+    // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
+    // residual constant part:
+    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
+    k = userdata->act_stage * userdata->stages;
+    for (j=0; j<n; j++)
+    {
+      userdata->res_const[j] = userdata->yOld[j];
+      for (l=0; l<userdata->act_stage; l++)
+        userdata->res_const[j] += userdata->stepSize * userdata->A[k + l] * (userdata->k + l * n)[j];
+    }
+
+    // index of diagonal element of A
+    k = userdata->act_stage * userdata->stages + userdata->act_stage;
+    if (userdata->A[k] == 0)
+    {
+      // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
+      // set correct time value and states of simulation system
+      sData->timeValue = userdata->time + userdata->c[userdata->act_stage]*userdata->stepSize;
+      memcpy(sData->realVars, userdata->res_const, n*sizeof(double));
+      wrapper_f_ESDIRKMR(data, threadData, userdata, stateDer);
+    }
+    else
+    {
+      // solve for x: 0 = yold-x + h*(sum(a[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
+      // set good starting values for the newton solver (solution of the last newton iteration!)
+      // set newton strategy
+      solverData->newtonStrategy = NEWTON_DAMPED2;
+      _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
+      /* if newton solver did not converge, do ??? */
+      if (solverData->info == -1)
+      {
+        userdata->convergenceFailures++;
+        // to be defined!
+        // reject and reduce time step would be an option
+        // or influence the calculation of the Jacobian during the newton steps
+        solverData->numberOfIterations = 0;
+        solverData->numberOfFunctionEvaluations = 0;
+        solverData->calculate_jacobian = 1;
+
+        warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
+        _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
+
+        solverData->calculate_jacobian = -1;
+      }
+    }
+    // copy last calculation of stateDer, which should coincide with k[i]
+    memcpy(userdata->k + userdata->act_stage * n, stateDer, n*sizeof(double));
+
+  }
+
+  return 0;
+}
+
+/*!	\fn esdirkmr_impRK
+ *
+ *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
+ *  function omc_newton is used for solving nonlinear system
+ *  results will be saved in y and the embedded result in yt
+ *
+ */
+int esdirkmr_impRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
+  int i, j, k, l, n=data->modelData->nStates;
+  double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
+
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
+  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*)solverInfo->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
+
+  userdata->data = (void*) data;
+  userdata->threadData = threadData;
+
+  sData->timeValue = userdata->time;
+  solverInfo->currentTime = sData->timeValue;
+
+  solverData->initialized = 1;
+  solverData->numberOfIterations = 0;
+  solverData->numberOfFunctionEvaluations = 0;
+  solverData->n = userdata->stages*n;
+
+  // set good starting values for the newton solver
+  for (k=0; k<userdata->stages; k++)
+    memcpy((solverData->x + k*n), userdata->yOld, n*sizeof(double));
+  // set newton strategy
+  solverData->newtonStrategy = NEWTON_DAMPED2;
+  _omc_newton(wrapper_RK, solverData, (void*)userdata);
+
+  /* if newton solver did not converge, do ??? */
+  if (solverData->info == -1)
+  {
+    userdata->convergenceFailures++;
+    // to be defined!
+    // reject and reduce time step would be an option
+    // or influence the calculation of the Jacobian during the newton steps
+    solverData->numberOfIterations = 0;
+    solverData->numberOfFunctionEvaluations = 0;
+    solverData->calculate_jacobian = 1;
+
+    warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
+    _omc_newton(wrapper_RK, solverData, (void*)userdata);
+
+    solverData->calculate_jacobian = -1;
+  }
+
+  return 0;
+}
 
 /*! \fn ESDIRKMR_first_step
  *
@@ -894,255 +1035,6 @@ void ESDIRKMR_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   infoStreamPrint(LOG_SOLVER, 0, "initial step size = %e at time %g", userdata->stepSize, userdata->time);
 }
 
-/*!	\fn esdirkmr_imp_step
- *
- *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
- *  function omc_newton is used for solving nonlinear system
- *  results will be saved in y and the embedded result in yt
- *
- */
-int esdirkmr_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
-{
-  int i, j, l, k, n=data->modelData->nStates;
-  double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
-
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  modelica_real* stateDer = sData->realVars + data->modelData->nStates;
-  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*)solverInfo->solverData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
-
-  userdata->data = (void*) data;
-  userdata->threadData = threadData;
-
-  sData->timeValue = userdata->time;
-  solverInfo->currentTime = sData->timeValue;
-
-  solverData->initialized = 1;
-  solverData->numberOfIterations = 0;
-  solverData->numberOfFunctionEvaluations = 0;
-  solverData->n = n;
-
-  // setting the start vector for the newton step
-  memcpy(solverData->x, userdata->yOld, n*sizeof(double));
-
-  // sweep over the stages
-  for (userdata->act_stage = 0; userdata->act_stage < userdata->stages; userdata->act_stage++)
-  {
-    // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
-    // residual constant part:
-    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
-    k = userdata->act_stage * userdata->stages;
-    for (j=0; j<n; j++)
-    {
-      userdata->res_const[j] = userdata->yOld[j];
-      for (l=0; l<userdata->act_stage; l++)
-        userdata->res_const[j] += userdata->stepSize * userdata->A[k + l] * (userdata->k + l * n)[j];
-    }
-
-    // solve for x: 0 = yold-x + h*(sum(a[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-    // set good starting values for the newton solver (solution of the last newton iteration!)
-    // set newton strategy
-    solverData->newtonStrategy = NEWTON_DAMPED2;
-    _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
-    /* if newton solver did not converge, do ??? */
-    if (solverData->info == -1)
-    {
-      userdata->convergenceFailures++;
-      // to be defined!
-      // reject and reduce time step would be an option
-      // or influence the calculation of the Jacobian during the newton steps
-      solverData->numberOfIterations = 0;
-      solverData->numberOfFunctionEvaluations = 0;
-      solverData->calculate_jacobian = 1;
-
-      warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-      _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
-
-      solverData->calculate_jacobian = -1;
-    }
-    // copy last calculation of stateDer, which should coincide with k[i]
-    memcpy(userdata->k + userdata->act_stage * n, stateDer, n*sizeof(double));
-
-  }
-  // y       = yold+h*sum(b[i]*k[i], i=1..stages);
-  // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
-  // calculate corresponding values for error estimator and step size control
-  for (i=0; i<n; i++)
-  {
-    userdata->y[i]  = userdata->yOld[i];
-    userdata->yt[i] = userdata->yOld[i];
-    for (l=0; l<userdata->stages; l++)
-    {
-      userdata->y[i]  += userdata->stepSize * userdata->b[l]  * (userdata->k + l * n)[i];
-      userdata->yt[i] += userdata->stepSize * userdata->bt[l] * (userdata->k + l * n)[i];
-    }
-    //userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
-    userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
-    userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
-  }
-
-  //printVector_ESDIRKMR("y ", userdata->y, n, userdata->time);
-  //printVector_ESDIRKMR("yt ", userdata->yt, n, userdata->time);
-
-  return 0;
-}
-
-/*!	\fn esdirkmr_impRK
- *
- *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
- *  function omc_newton is used for solving nonlinear system
- *  results will be saved in y and the embedded result in yt
- *
- */
-int esdirkmr_impRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
-{
-  int i, j, k, l, n=data->modelData->nStates;
-  double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
-
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*)solverInfo->solverData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
-
-  userdata->data = (void*) data;
-  userdata->threadData = threadData;
-
-  sData->timeValue = userdata->time;
-  solverInfo->currentTime = sData->timeValue;
-
-  solverData->initialized = 1;
-  solverData->numberOfIterations = 0;
-  solverData->numberOfFunctionEvaluations = 0;
-  solverData->n = userdata->stages*n;
-
-  // set good starting values for the newton solver
-  for (k=0; k<userdata->stages; k++)
-    memcpy((solverData->x + k*n), userdata->yOld, n*sizeof(double));
-  // set newton strategy
-  solverData->newtonStrategy = NEWTON_DAMPED2;
-  _omc_newton(wrapper_RK, solverData, (void*)userdata);
-
-  /* if newton solver did not converge, do ??? */
-  if (solverData->info == -1)
-  {
-    userdata->convergenceFailures++;
-    // to be defined!
-    // reject and reduce time step would be an option
-    // or influence the calculation of the Jacobian during the newton steps
-    solverData->numberOfIterations = 0;
-    solverData->numberOfFunctionEvaluations = 0;
-    solverData->calculate_jacobian = 1;
-
-    warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-    _omc_newton(wrapper_RK, solverData, (void*)userdata);
-
-    solverData->calculate_jacobian = -1;
-  }
-  // y       = yold+h*sum(b[i]*k[i], i=1..stages);
-  // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
-  // calculate corresponding values for error estimator and step size control
-  for (i=0; i<n; i++)
-  {
-    userdata->y[i]  = userdata->yOld[i];
-    userdata->yt[i] = userdata->yOld[i];
-    for (l=0; l<userdata->stages; l++)
-    {
-      userdata->y[i]  += userdata->stepSize * userdata->b[l]  * (userdata->k + l * n)[i];
-      userdata->yt[i] += userdata->stepSize * userdata->bt[l] * (userdata->k + l * n)[i];
-    }
-    //userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
-    userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
-    userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
-  }
-
-  return 0;
-}
-
-/*!	\fn esdirkmr_expRK
- *
- *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
- *  function omc_newton is used for solving nonlinear system
- *  results will be saved in y and the embedded result in yt
- *
- */
-int esdirkmr_expRK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
-{
-  int i, j, k, l, n=data->modelData->nStates;
-  double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
-
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_ESDIRKMR* userdata = (DATA_ESDIRKMR*)solverInfo->solverData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
-
-  userdata->data = (void*) data;
-  userdata->threadData = threadData;
-
-  sData->timeValue = userdata->time;
-  solverInfo->currentTime = sData->timeValue;
-
-  solverData->initialized = 1;
-  solverData->numberOfIterations = 0;
-  solverData->numberOfFunctionEvaluations = 0;
-  solverData->n = userdata->stages*n;
-
-  // set good starting values for the newton solver
-  for (k=0; k<userdata->stages; k++)
-    memcpy((solverData->x + k*n), userdata->yOld, n*sizeof(double));
-  // set newton strategy
-  solverData->newtonStrategy = NEWTON_DAMPED2;
-  _omc_newton(wrapper_RK, solverData, (void*)userdata);
-
-  /* if newton solver did not converge, do ??? */
-  if (solverData->info == -1)
-  {
-    userdata->convergenceFailures++;
-    // to be defined!
-    // reject and reduce time step would be an option
-    // or influence the calculation of the Jacobian during the newton steps
-    solverData->numberOfIterations = 0;
-    solverData->numberOfFunctionEvaluations = 0;
-    solverData->calculate_jacobian = 1;
-
-    warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-    _omc_newton(wrapper_RK, solverData, (void*)userdata);
-
-    solverData->calculate_jacobian = -1;
-  }
-  for (i=0; i<n; i++)
-  {
-    userdata->y[i] = userdata->yOld[i];
-    userdata->yt[i] = userdata->yOld[i];
-  }
-
-  for (k=0; k<userdata->stages; k++)
-  {
-    // calculate f[k] and sweap over the stages
-    sData->timeValue = userdata->time + userdata->c[k] * userdata->stepSize;
-    memcpy(sData->realVars, (solverData->x + k * n), n*sizeof(double));
-    wrapper_f_ESDIRKMR(data, threadData, userdata, fODE);
-//    printVector_ESDIRKMR("yOld, y1g, y2g: ", sData->realVars, data->modelData->nStates, userdata->time);
-//    printVector_ESDIRKMR("k: ", fODE, data->modelData->nStates, userdata->time);
-
-    for (i=0; i<n; i++)
-    {
-      userdata->y[i] += userdata->stepSize * userdata->b[k] * fODE[i];
-      userdata->yt[i] += userdata->stepSize * userdata->bt[k] * fODE[i];
-    }
-  }
-//  printVector_ESDIRKMR("y ", userdata->y, n, userdata->time);
-//  printVector_ESDIRKMR("yt ", userdata->yt, n, userdata->time);
-// calculate corresponding values for error estimator and step size control
-  for (i=0; i<n; i++)
-  {
-    // userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
-    userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
-    userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
-  }
-
-  return 0;
-}
-
 /*! \fn esdirkmr_step
  *
  *  function does one integration step and calculates
@@ -1160,7 +1052,7 @@ int esdirkmr_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
   double err;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
-  int i;
+  int i, l, n=data->modelData->nStates;
   int esdirk_imp_step_info;
   double fac = 0.9;
   double facmax = 3.5;
@@ -1214,6 +1106,26 @@ int esdirkmr_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
       // printVector_ESDIRKMR("y ", userdata->y, data->modelData->nStates, userdata->time);
       // printVector_ESDIRKMR("yt ", userdata->yt, data->modelData->nStates, userdata->time);
+      // y       = yold+h*sum(b[i]*k[i], i=1..stages);
+      // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
+      // calculate corresponding values for error estimator and step size control
+      for (i=0; i<n; i++)
+      {
+        userdata->y[i]  = userdata->yOld[i];
+        userdata->yt[i] = userdata->yOld[i];
+        for (l=0; l<userdata->stages; l++)
+        {
+          userdata->y[i]  += userdata->stepSize * userdata->b[l]  * (userdata->k + l * n)[i];
+          userdata->yt[i] += userdata->stepSize * userdata->bt[l] * (userdata->k + l * n)[i];
+        }
+        //userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
+        userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
+        userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
+      }
+
+      //printVector_ESDIRKMR("y ", userdata->y, n, userdata->time);
+      //printVector_ESDIRKMR("yt ", userdata->yt, n, userdata->time);
+
 
 
       /*** calculate error (infinity norm!)***/
