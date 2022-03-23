@@ -818,6 +818,7 @@ const char *RK_SINGLERATE_METHOD_NAME[RK_MAX] = {
   /* RK_ESDIRK2_test */  "esdirk2_test",
   /* RK_ESDIRK3 */       "esdirk3",
   /* RK_ESDIRK3_test */  "esdirk3_test",
+  /* RK_MERSON */        "merson",
   /* RK_DOPRI45 */       "dopri45"
 };
 
@@ -828,6 +829,7 @@ const char *RK_SINGLERATE_METHOD_DESC[RK_MAX] = {
   /* RK_ESDIRK2_test */  "esdirk2_test",
   /* RK_ESDIRK3 */       "esdirk3",
   /* RK_ESDIRK3_test */  "esdirk3_test",
+  /* RK_MERSON */        "merson",
   /* RK_DOPRI45 */       "dopri45"
 };
 
