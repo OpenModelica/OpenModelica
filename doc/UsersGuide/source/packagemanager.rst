@@ -127,23 +127,23 @@ Using the Package Manager from the Interactive Environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Package Manager can also be used from the Interactive Environment command line shell. Here is a list
-of examples of relevant commands; please type them followed by :ref:`getErrorString`,
-e.g., :ref:`updatePackageIndex`;:ref:`getErrorString`, in order to get additional information,
+of examples of relevant commands; please type them followed by :ref:`getErrorString() <getErrorString>`,
+e.g., :ref:`updatePackageIndex() <updatePackageIndex>`; :ref:`getErrorString() <getErrorString>`, in order to get additional information,
 notifications and error messages.
 
-- *:ref:`updatePackageIndex`*: this command puts the Package Manager in contact with the OSMC servers and updates
+- :ref:`updatePackageIndex() <updatePackageIndex>` - this command puts the Package Manager in contact with the OSMC servers and updates
   the internally stored list of available packages;
-- *:ref:`getAvailablePackageVersions`(Buildings, "")*: lists all available versions of the Buildings library on the OSMC server,
+- :ref:`getAvailablePackageVersions(Building, "") <getAvailablePackageVersions>` - lists all available versions of the Buildings library on the OSMC server,
   starting from the most recent one, in descending order of priority. Note that pre-release versions have lower priority
   than all other versions;
-- *:ref:`getAvailablePackageVersions`(Buildings, "7.0.0")*: lists all available versions of the Buildings library on
+- :ref:`getAvailablePackageVersions(Building, "7.0.0") <getAvailablePackageVersions>` - lists all available versions of the Buildings library on
   the OSMC server that are backwards-compatible with version ``7.0.0``, in descending order of priority;
-- *:ref:`installPackage`(Buildings, "")*: install the most recent version of the Building libraries, *and all its dependencies*;
-- *:ref:`installPackage`(Buildings, "7.0.0")*: install the most recent version of the Building libraries which is backwards-compatible
+- :ref:`installPackage(Buildings, "") <installPackage>` - install the most recent version of the Building libraries, *and all its dependencies*;
+- :ref:`installPackage(Buildings, "7.0.0") <installPackage>` - install the most recent version of the Building libraries which is backwards-compatible
   with version ``7.0.0``, *and all its dependencies*;
-- *:ref:`installPackage`(Buildings, "7.0.0", exactMatch = true)*: install version ``7.0.0`` even if there are more recent
+- :ref:`installPackage(Buildings, "7.0.0", exactMatch = true) <installPackage>` - install version ``7.0.0`` even if there are more recent
   backwards-compatible versions available, *and all its dependencies*;
-- *:ref:`upgradeInstalledPackages`(installNewestVersions = true)*: installs the latest available version of all installed packages.
+- :ref:`upgradeInstalledPackages(installNewestVersions = true) <upgradeInstalledPackages>` - installs the latest available version of all installed packages.
 
 How the package index works
 ---------------------------
