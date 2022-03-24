@@ -66,7 +66,7 @@ int allocateIrksco(SOLVER_INFO* solverInfo, int size, int zcSize)
   userdata->order = 1;
   userdata->ordersize = 1;
 
-  allocateNewtonData(userdata->ordersize*size, &(userdata->solverData));
+  userdata->solverData = (void*) allocateNewtonData(userdata->ordersize*size);
   userdata->firstStep = 1;
   userdata->y0 = malloc(sizeof(double)*size);
   userdata->y05= malloc(sizeof(double)*size);
@@ -106,7 +106,7 @@ int allocateIrksco(SOLVER_INFO* solverInfo, int size, int zcSize)
 int freeIrksco(SOLVER_INFO* solverInfo)
 {
   DATA_IRKSCO* userdata = (DATA_IRKSCO*) solverInfo->solverData;
-  freeNewtonData(&(userdata->solverData));
+  freeNewtonData(userdata->solverData);
 
   free(userdata->y0);
   free(userdata->y05);

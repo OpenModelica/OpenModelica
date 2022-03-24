@@ -488,8 +488,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   switch (RK_NLS_method)
   {
   case RK_NLS_NEWTON:
-  // TODO AHeu: allocateNewtonData should not operate on EVERYTHING!
-    allocateNewtonData(userdata->nlSystemSize, &(userdata->nlsSolverData));
+    userdata->nlsSolverData = (void*) allocateNewtonData(userdata->nlSystemSize);
     break;
   case RK_NLS_KINSOL:
     userdata->nlsSolverData = (void*) nlsKinsolAllocate(userdata->nlSystemSize, NLS_LS_KLU);
@@ -553,7 +552,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 int freeDataGenericRK(SOLVER_INFO* solverInfo)
 {
   DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) solverInfo->solverData;
-  freeNewtonData(&(userdata->nlsSolverData));
+  freeNewtonData(userdata->nlsSolverData);
 
   free(userdata->y);
   free(userdata->yOld);

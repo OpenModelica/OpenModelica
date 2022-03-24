@@ -499,10 +499,10 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     case NLS_NEWTON:
       solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        allocateNewtonData(size-1, &(solverData->ordinaryData));
+        solverData->ordinaryData = (void*) allocateNewtonData(size-1);
         allocateHomotopyData(size-1, &(solverData->initHomotopyData));
       } else {
-        allocateNewtonData(size, &(solverData->ordinaryData));
+        solverData->ordinaryData = (void*) allocateNewtonData(size);
       }
       nonlinsys[i].solverData = (void*) solverData;
       break;
@@ -631,7 +631,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
       free(nonlinsys[i].solverData);
       break;
     case NLS_NEWTON:
-      freeNewtonData(&((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
+      freeNewtonData(((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
         freeHomotopyData(&((struct dataSolver*) nonlinsys[i].solverData)->initHomotopyData);
       }

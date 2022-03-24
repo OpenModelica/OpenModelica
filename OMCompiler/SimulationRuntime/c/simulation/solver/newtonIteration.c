@@ -79,14 +79,15 @@ extern void dgetrs_(char *trans, int *n, int *nrhs, doublereal *a, int *lda, int
 #endif
 
 
-/*! \fn allocateNewtonData
- * allocate memory for nonlinear system solver
+/**
+ * @brief Allocate memory for nonlinear system solver Newton.
+ *
+ * @param size            Size of non-linear system.
+ * @return DATA_NEWTON*   Pointer to allocated newton solver data.
  */
-int allocateNewtonData(int size, void** voiddata)
+DATA_NEWTON* allocateNewtonData(int size)
 {
   DATA_NEWTON* data = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
-
-  *voiddata = (void*)data;
   assertStreamPrint(NULL, NULL != data, "allocationNewtonData() failed!");
 
   data->resScaling = (double*) malloc(size*sizeof(double));
@@ -117,18 +118,16 @@ int allocateNewtonData(int size, void** voiddata)
   data->numberOfIterations = 0;
   data->numberOfFunctionEvaluations = 0;
 
-  return 0;
+  return data;
 }
 
-/*! \fn freeNewtonData
+/**
+ * @brief Free newton data allocated by allocateNewtonData
  *
- * free memory for nonlinear solver newton
- *
+ * @param data    Pointer to Newton solver data.
  */
-int freeNewtonData(void **voiddata)
+void freeNewtonData(DATA_NEWTON* data)
 {
-  DATA_NEWTON* data = (DATA_NEWTON*) *voiddata;
-
   free(data->resScaling);
   free(data->fvecScaled);
   free(data->x);
@@ -145,7 +144,7 @@ int freeNewtonData(void **voiddata)
   free(data->delta_f);
   free(data->delta_x_vec);
 
-  return 0;
+  return;
 }
 
 /**
