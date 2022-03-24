@@ -1,0 +1,47 @@
+// name: HybridSysPackage.mos
+//loadModel(Modelica);
+//getErrorString();
+
+//loadModel(ModelicaTest);
+//getErrorString();
+
+loadFile("ESDIRK_test01.mo");
+getErrorString();
+loadFile("TestEventsDaeMode.mo");
+getErrorString();
+loadFile("Burger_Equations.mo");
+getErrorString();
+
+loadString("
+model Burger_dassl
+  extends Burger_Equations.Burger_equation_03;
+equation
+end Burger_dassl;
+");
+
+loadString("
+model Burger_esdirkmr
+  extends Burger_Equations.Burger_equation_03;
+equation
+end Burger_esdirkmr;
+");
+
+cd("tmp");
+
+// esdirk2, esdirk2_test, esdirk3, esdirk3_test, dopri45, expl_euler, impl_euler,
+
+setCommandLineOptions("--generateSymbolicJacobian");
+
+simulate(ESDIRK_test01, stopTime=20, simflags = "-lv=LOG_SOLVER -s=genericRK -rkOpt=esdirk3");
+getErrorString();
+
+simulate(TestEventsDaeMode, stopTime=20, simflags = "-lv=LOG_SOLVER,LOG_EVENTS -s=genericRK");
+getErrorString();
+
+// simulate(Burger_dassl, stopTime=1, simflags = "-lv=LOG_STATS -s=dassl");
+// getErrorString();
+
+simulate(Burger_esdirkmr, stopTime=1, simflags = "-lv=LOG_STATS -s=genericRK");
+getErrorString();
+//plot({y[1],y[2]}, externalWindow=true);
+//getErrorString();

@@ -166,6 +166,39 @@ void getButcherTableau_ESDIRK3(DATA_GENERIC_RK* userdata)
   setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
 }
 
+void getButcherTableau_SDIRK3(DATA_GENERIC_RK* userdata)
+{
+  //SDIRK3
+  /* Butcher Tableau */
+  userdata->stages = 3;
+  userdata->order_b = 3;
+  userdata->order_bt = 2;
+  userdata->fac = 0.9;
+
+  double gam   = 0.43586652150845899941601945119355684252929409293845;
+  double alpha = 1.0 - 4.0*gam + 2.0*gam*gam;
+  double beta  = -1.0 + 6.0*gam - 9.0*gam*gam + 3.0*gam*gam*gam;
+  double c2    = (2.0-9*gam + 6*gam*gam)/(3*alpha);
+  double b1    = (-1.0 + 4*gam)/(4*beta);
+  double b2    = -(3*alpha*alpha)/(4*beta);
+  double b3    = gam;
+  double bt1   = 1./3;
+  double bt2   = 1./3;
+  double bt3   = 1./3;
+
+  const double c_RK[]  = {gam, c2, 1};
+
+  const double A_RK[]  = {gam,      0,   0,
+                          c2-gam, gam,   0,
+                          b1,     b2,  gam};
+
+  const double b_RK[]  = {b1, b2, b3};
+  const double bt_RK[] = {bt1, bt2, bt3};
+
+  setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
+}
+
+
 void getButcherTableau_EXPLEULER(DATA_GENERIC_RK* userdata)
 {
   //explicit Euler with Richardson-Extrapolation for step size control
@@ -198,7 +231,7 @@ void getButcherTableau_IMPLEULER(DATA_GENERIC_RK* userdata)
                          0.0, 0.5, 0.0,
                          0.0, 0.5, 0.5};
   const double bt_RK[]  = {1.0, 0.0, 0.0}; // implicit Euler step
-  //const double bt_RK[] = {0.0, 0.5, 0.5}; // explicit Euler step
+  //const double bt_RK[] = {0.0, 0.5, 0.5}; // implicit Euler step, with half step size
   const double b_RK[] = {-1.0, 1.0, 1.0}; // Richardson extrapolation
 
   setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
