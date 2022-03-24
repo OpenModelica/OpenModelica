@@ -33,16 +33,16 @@ cd("temp");
 
 setCommandLineOptions("--generateSymbolicJacobian");
 
-simulate(ESDIRK_test01, stopTime=20, simflags = "-lv=LOG_SOLVER -s=genericRK -rkOpt=esdirk3");
+simulate(ESDIRK_test01, stopTime=20, simflags = "-lv=LOG_SOLVER -s=genericRK -rkOpt=esdirk3 -rkNLS=kinsol");
 getErrorString();
 
-simulate(TestEventsDaeMode, stopTime=20, simflags = "-lv=LOG_SOLVER,LOG_EVENTS -s=genericRK");
-getErrorString();
+//simulate(TestEventsDaeMode, stopTime=20, simflags = "-lv=LOG_SOLVER,LOG_EVENTS -s=genericRK");
+//getErrorString();
 
 // simulate(Burger_dassl, stopTime=1, simflags = "-lv=LOG_STATS -s=dassl");
 // getErrorString();
 
-simulate(Burger_esdirkmr, stopTime=1, simflags = "-lv=LOG_STATS -s=genericRK");
-getErrorString();
+//simulate(Burger_esdirkmr, stopTime=1, simflags = "-lv=LOG_STATS -s=genericRK");
+//getErrorString();
 //plot({y[1],y[2]}, externalWindow=true);
 //getErrorString();

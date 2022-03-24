@@ -113,14 +113,14 @@ static void nlsKinsolConfigSetup(NLS_KINSOL_DATA *kinsolData) {
 /**
  * @brief (Re-) Initialize KINSOL data.
  *
- * Initialize KINSOL data. If the KINSOL memory block was alreay initialized
+ * Initialize KINSOL data. If the KINSOL memory block was already initialized
  * free it first and then reinitialize.
  *
- * @param kinsolData    KINSOL data.
- * @param nlsData       Nonliner system Data.
+ * @param kinsolData                KINSOL data.
+ * @param numberOfNonZeros          Number of non zero elements in Jacobian.
+ * @param analyticalJacobianColumn  Pointer to function evaluating analytic Jacobian.
  */
-static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
-                              NONLINEAR_SYSTEM_DATA *nlsData) {
+void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData, unsigned int numberOfNonZeros, analyticalJacobianColumn_func_ptr analyticalJacobianColumn) {
   int flag;
   int printLevel;
   int size = kinsolData->size;
@@ -169,7 +169,7 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
       kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
     kinsolData->J = SUNDenseMatrix(size, size);
   } else if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-    kinsolData->nnz = nlsData->sparsePattern->numberOfNonZeros;
+    kinsolData->nnz = numberOfNonZeros;
     kinsolData->J = SUNSparseMatrix(size, size, kinsolData->nnz, CSC_MAT);
   } else {
     kinsolData->J = NULL;
@@ -209,7 +209,7 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
 
   /* Set Jacobian for linear solver */
   if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-    if (nlsData->analyticalJacobianColumn != NULL) {
+    if (analyticalJacobianColumn != NULL) {
       flag = KINSetJacFn(kinsolData->kinsolMemory,
                          nlsSparseSymJac); /* Use symbolic Jacobian */
     } else {
@@ -224,18 +224,16 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
 }
 
 /**
- * @brief Allocate memory for kinsol solver data and initialize KINSOL solver
+ * @brief Allocate memory for kinsol solver data.
+ *
+ * To initialize KINSOL solver call resetKinsolMemory() afterwards.
  *
  * @param size                  Size of non-linear problem.
- * @param nlsData
  * @param linearSolverMethod    Type of linear solver method.
- * @return int
+ * @return NLS_KINSOL_DATA*     Newly allocated kinsol data struct.
  */
-int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, NLS_LS linearSolverMethod) {
+NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_LS linearSolverMethod) {
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)malloc(sizeof(NLS_KINSOL_DATA));
-
-  /* Allocate system data */
-  nlsData->solverData = (void *)kinsolData;
 
   kinsolData->size = size;
   kinsolData->linearSolverMethod = linearSolverMethod;
@@ -257,9 +255,7 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, NLS_LS linearSol
 
   kinsolData->kinsolMemory = NULL;
 
-  resetKinsolMemory(kinsolData, nlsData);
-
-  return 0;
+  return kinsolData;
 }
 
 /**

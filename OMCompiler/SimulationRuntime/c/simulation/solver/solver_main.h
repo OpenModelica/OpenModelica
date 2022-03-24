@@ -55,6 +55,9 @@ typedef struct SOLVERSTATS {
   unsigned int nConvergenveTestFailures;    /* Number of convergence test failures */
 } SOLVERSTATS;
 
+/**
+ * @brief Information and data needed by the ODE/DAE solver.
+ */
 typedef struct SOLVER_INFO
 {
   double currentTime;

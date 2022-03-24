@@ -490,7 +490,8 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
         // solverData->ordinaryData = nonlinsys[i].solverData;
         allocateHomotopyData(size-1, &(solverData->initHomotopyData));
       } else {
-        nlsKinsolAllocate(size, &nonlinsys[i], nonlinsys[i].nlsLinearSolver);
+        nonlinsys[i].solverData = (void*) nlsKinsolAllocate(size, nonlinsys[i].nlsLinearSolver);
+        resetKinsolMemory(nonlinsys[i].solverData, nonlinsys[i].sparsePattern->numberOfNonZeros, nonlinsys[i].analyticalJacobianColumn);
         solverData->ordinaryData = nonlinsys[i].solverData;
       }
       nonlinsys[i].solverData = (void*) solverData;

@@ -259,6 +259,8 @@ typedef struct STATIC_STRING_DATA
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 } STATIC_STRING_DATA;
 
+typedef int (*analyticalJacobianColumn_func_ptr)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
+
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 typedef struct NONLINEAR_SYSTEM_DATA
 {
@@ -280,7 +282,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
    *
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
-  int (*analyticalJacobianColumn)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
+  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
   modelica_integer jacobianIndex;
 
@@ -354,7 +356,7 @@ typedef struct LINEAR_SYSTEM_DATA
   void (*setAElement)(int row, int col, double value, int nth, void *data, threadData_t *threadData);
   void (*setBElement)(int row, double value, void *data, threadData_t *threadData);
 
-  int (*analyticalJacobianColumn)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
+  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
 
   void (*residualFunc)(void**, const double*, double*, const int*);
@@ -438,7 +440,7 @@ typedef struct STATE_SET_DATA
    *
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
-  int (*analyticalJacobianColumn)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
+  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
   modelica_integer jacobianIndex;
 } STATE_SET_DATA;

@@ -36,10 +36,6 @@
 
 #include "simulation_data.h"
 #include "solver_main.h"
-#include "omc_config.h"
-#include "nonlinearSystem.h"
-
-#include <math.h>
 
 /**
  * @brief Function to compute single Runge-Kutta step.
@@ -47,9 +43,9 @@
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 typedef struct DATA_GENERIC_RK{
-  DATA* data;
-  threadData_t *threadData;
-  void* solverData;
+  DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
+  threadData_t *threadData;     //            I'm afraid not...
+  void* nlsSolverData;          /* Nonlinear solver data */
   double *y, *yt, *yOld, *f;
   double *Jf;
   double *k, *res_const;

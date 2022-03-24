@@ -52,19 +52,22 @@
  *  \author bbachmann
  */
 
-#include <string.h>
-#include <float.h>
+#include "generic_rk.h"
 
+#include <float.h>
+#include <math.h>
+#include <string.h>
+
+#include "external_input.h"
+#include "jacobianSymbolical.h"
+#include "kinsolSolver.h"
+#include "model_help.h"
+#include "newtonIteration.h"
+#include "simulation/options.h"
 #include "simulation/results/simulation_result.h"
 #include "util/omc_error.h"
+#include "util/simulation_options.h"
 #include "util/varinfo.h"
-#include "model_help.h"
-#include "external_input.h"
-#include "newtonIteration.h"
-#include "jacobianSymbolical.h"
-#include "generic_rk.h"
-#include "simulation/options.h"
-#include "../../util/simulation_options.h"
 
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
@@ -401,7 +404,7 @@ enum RK_NLS_METHOD getRK_NLS_Method() {
 
   if (flag_value != NULL) {
     RK_NLS_method_string = GC_strdup(flag_value);
-    for (method=RK_UNKNOWN; method<RK_NLS_MAX; method++) {
+    for (method=RK_NLS_UNKNOWN; method<RK_NLS_MAX; method++) {
       if (strcmp(RK_NLS_method_string, RK_NLS_METHOD_NAME[method]) == 0){
         infoStreamPrint(LOG_SOLVER, 0, "Chosen RK NLS method: %s", RK_NLS_METHOD_NAME[method]);
         return method;
@@ -430,6 +433,9 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   solverInfo->solverData = (void*) userdata;
 
   userdata->nStates = data->modelData->nStates;
+
+  int nnz = 0;
+  analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
   enum RK_SINGLERATE_METHOD RK_method = getRK_Method();
 
@@ -482,8 +488,16 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   switch (RK_NLS_method)
   {
   case RK_NLS_NEWTON:
-    allocateNewtonData(userdata->nlSystemSize, &(userdata->solverData));
+  // TODO AHeu: allocateNewtonData should not operate on EVERYTHING!
+    allocateNewtonData(userdata->nlSystemSize, &(userdata->nlsSolverData));
     break;
+  case RK_NLS_KINSOL:
+    userdata->nlsSolverData = (void*) nlsKinsolAllocate(userdata->nlSystemSize, NLS_LS_KLU);
+    // TODO AHeu: Get NNZ and function for analytical Jacobian column
+    // Using sparse numeric Jacobian with NNZ = size² should be fine for now.
+    nnz = userdata->nlSystemSize*userdata->nlSystemSize;
+    resetKinsolMemory(userdata->nlsSolverData, nnz, analyticalJacobianColumn);
+    //break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[RK_NLS_method]);
     return -1;
@@ -539,7 +553,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 int freeDataGenericRK(SOLVER_INFO* solverInfo)
 {
   DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) solverInfo->solverData;
-  freeNewtonData(&(userdata->solverData));
+  freeNewtonData(&(userdata->nlsSolverData));
 
   free(userdata->y);
   free(userdata->yOld);
@@ -614,7 +628,7 @@ int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* generic
 
   DATA* data = userdata->data;
   threadData_t* threadData = userdata->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
 
   double delta_h = sqrt(solverData->epsfcn);
   double delta_hh;
@@ -712,7 +726,7 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
 
   DATA* data = userdata->data;
   threadData_t* threadData = userdata->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   int n = (*n_p);
@@ -796,7 +810,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
 
   DATA* data = userdata->data;
   threadData_t* threadData = userdata->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   int n = data->modelData->nStates;
@@ -924,7 +938,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*)solverInfo->solverData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->nlsSolverData;
 
   userdata->data = (void*) data;
   userdata->threadData = threadData;
@@ -1011,7 +1025,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*)solverInfo->solverData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->nlsSolverData;
 
   userdata->data = (void*) data;
   userdata->threadData = threadData;
@@ -1170,7 +1184,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1]; // BB: Is this the ring buffer???
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*)solverInfo->solverData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
 
   double err;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
