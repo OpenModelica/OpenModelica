@@ -261,7 +261,9 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_GENERIK_RK:
   {
-    allocateDataGenericRK(data, threadData, solverInfo);
+    if (allocateDataGenericRK(data, threadData, solverInfo) != 0) {
+      throwStreamPrint(threadData, "Failed to allocate memory for generic RK solver.");
+    }
     break;
   }
   case S_ERKSSC:

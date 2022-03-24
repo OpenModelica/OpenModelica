@@ -362,7 +362,7 @@ void analyseButcherTableau(DATA_GENERIC_RK* userdata)
  *
  * @return enum RK_SINGLERATE_METHOD    Runge-Kutta method.
  */
-enum RK_SINGLERATE_METHOD getRKMethod() {
+enum RK_SINGLERATE_METHOD getRK_Method() {
   enum RK_SINGLERATE_METHOD method;
   const char* flag_value;
   flag_value = omc_flagValue[FLAG_RK];
@@ -377,11 +377,42 @@ enum RK_SINGLERATE_METHOD getRKMethod() {
       }
     }
     errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge-Kutta method %s.", RK_method_string);
-    errorStreamPrint(LOG_STDOUT, 0, "Chooe RK method: %s [from command line]", RK_method_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Choose RK method: %s [from command line]", RK_method_string);
     return RK_UNKNOWN;
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: dopri45 [default]");
     return RK_DOPRI45;
+  }
+}
+
+/**
+ * @brief Get non-linear solver method for Runge-Kutta from flag FLAG_RK_NLS.
+ *
+ * Defaults to Newton if flag is not set.
+ * Returns RK_UNKNOWN if flag is not known.
+ *
+ * @return enum RK_NLS_METHOD   NLS method.
+ */
+enum RK_NLS_METHOD getRK_NLS_Method() {
+  enum RK_NLS_METHOD method;
+  const char* flag_value;
+  flag_value = omc_flagValue[FLAG_RK_NLS];
+  char* RK_NLS_method_string;
+
+  if (flag_value != NULL) {
+    RK_NLS_method_string = GC_strdup(flag_value);
+    for (method=RK_UNKNOWN; method<RK_NLS_MAX; method++) {
+      if (strcmp(RK_NLS_method_string, RK_NLS_METHOD_NAME[method]) == 0){
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK NLS method: %s", RK_NLS_METHOD_NAME[method]);
+        return method;
+      }
+    }
+    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow non-linear solver method %s for Runge-Kutta method.", RK_NLS_method_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Choose RK NLS method: %s [from command line]", RK_NLS_method_string);
+    return RK_NLS_UNKNOWN;
+  } else {
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: omc_newton [default]");
+    return RK_NLS_NEWTON;
   }
 }
 
@@ -400,7 +431,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   userdata->nStates = data->modelData->nStates;
 
-  enum RK_SINGLERATE_METHOD RK_method = getRKMethod();
+  enum RK_SINGLERATE_METHOD RK_method = getRK_Method();
 
   switch(RK_method)
   {
@@ -441,14 +472,23 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
 
   // adapt decision for testing of the fully implicit implementation
-  if (RK_method == RK_ESDIRK2_test || RK_method == RK_ESDIRK3_test)
-  {
-      userdata->nlSystemSize = userdata->stages*userdata->nStates;
-      userdata->step_fun = &(full_implicit_RK);
+  if (RK_method == RK_ESDIRK2_test || RK_method == RK_ESDIRK3_test) {
+    userdata->nlSystemSize = userdata->stages*userdata->nStates;
+    userdata->step_fun = &(full_implicit_RK);
   }
 
   // allocate memory for the nonlinear solver
-  allocateNewtonData(userdata->nlSystemSize, &(userdata->solverData));
+  enum RK_NLS_METHOD RK_NLS_method = getRK_NLS_Method();
+  switch (RK_NLS_method)
+  {
+  case RK_NLS_NEWTON:
+    allocateNewtonData(userdata->nlSystemSize, &(userdata->solverData));
+    break;
+  default:
+    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[RK_NLS_method]);
+    return -1;
+    break;
+  }
 
   // allocate memory for te generic RK method
   userdata->firstStep = 1;

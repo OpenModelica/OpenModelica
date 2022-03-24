@@ -41,6 +41,11 @@
 
 #include <math.h>
 
+/**
+ * @brief Function to compute single Runge-Kutta step.
+ */
+typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+
 typedef struct DATA_GENERIC_RK{
   DATA* data;
   threadData_t *threadData;
@@ -60,11 +65,11 @@ typedef struct DATA_GENERIC_RK{
   unsigned int evalJacobians;
   unsigned int errorTestFailures;
   unsigned int convergenceFailures;
-  int (*step_fun)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+  rk_step_function step_fun;
+} DATA_GENERIC_RK;
 
-}DATA_GENERIC_RK;
-
-
+enum RK_SINGLERATE_METHOD getRK_Method();
+enum RK_NLS_METHOD getRK_NLS_Method();
 int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int freeDataGenericRK(SOLVER_INFO* solverInfo);
 int genericRK_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
