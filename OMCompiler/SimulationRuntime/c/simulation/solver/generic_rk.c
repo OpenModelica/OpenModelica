@@ -199,10 +199,42 @@ void getButcherTableau_SDIRK3(DATA_GENERIC_RK* userdata)
                           0.366025403784438646763723170761, 0.422649730810374235490851219493, 0.211324865405187117745425609748};
 
   const double b_RK[]  = {0.366025403784438646763723170761, 0.422649730810374235490851219493, 0.211324865405187117745425609748};
-  const double bt_RK[] = {0.351869322027954749581941158535, 0.444978830179634461030230691032, 0.203151847792410789387828150409};
+  // //const double bt_RK[] = {0.351869322027954749581941158535, 0.444978830179634461030230691032, 0.203151847792410789387828150409};
+  // //const double bt_RK[] = {0.337713240271470852400159146338, 0.589316397477040902157517889986, 0.0729703622514882454423229451520};
+  const double bt_RK[] = {0.337713240271470852400159146338, 0.101282525764456039805887004958, 0.561004233964073107793953837265};
+
+// const double c_RK[]  = {         0.21132486540518711774,                             0.5,                               1};
+// const double A_RK[]  = {
+//                                   0.21132486540518711774,                                0,                                0,
+//                                   0.28867513459481288226,           0.21132486540518711774,                                0,
+//                                    0.3660254037844386468,           0.42264973081037423546,           0.21132486540518711774};
+// const double b_RK[]  = {          0.3660254037844386468,          0.42264973081037423546,          0.21132486540518711774};
+// const double bt_RK[]  = {          0.4226497308103742353,          0.33333333333333333351,          0.24401693585629243119};
+
+setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
+}
+
+void getButcherTableau_SDIRK2(DATA_GENERIC_RK* userdata)
+{
+  //SDIRK3
+  /* Butcher Tableau */
+  userdata->stages = 2;
+  userdata->order_b = 2;
+  userdata->order_bt = 1;
+  userdata->fac = 0.9;
+
+  const double c_RK[]  = {                            0.5,                               1};
+  const double A_RK[]  = {
+                                                      0.5,                                0,
+                                                      0.5,                              0.5};
+  const double b_RK[]  = {                            0.5,                             0.5};
+  const double bt_RK[]  = {                           0.25,                            0.75};
+
 
   setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
 }
+
+
 
 
 void getButcherTableau_EXPLEULER(DATA_GENERIC_RK* userdata)
@@ -415,8 +447,9 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
       break;
 
     case RK_ESDIRK2_test:
-      //ESDIRK2 not optimized (just for testing) solved with genericRK solver method
-      getButcherTableau_ESDIRK2(userdata);
+      getButcherTableau_SDIRK2(userdata);
+      // //ESDIRK2 not optimized (just for testing) solved with genericRK solver method
+      // getButcherTableau_ESDIRK2(userdata);
       break;
 
     case RK_EXPL_EULER:
