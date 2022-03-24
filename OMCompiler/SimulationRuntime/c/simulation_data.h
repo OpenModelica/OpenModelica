@@ -259,7 +259,7 @@ typedef struct STATIC_STRING_DATA
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 } STATIC_STRING_DATA;
 
-typedef int (*analyticalJacobianColumn_func_ptr)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
+typedef int (*analyticalJacobianColumn_func_ptr)(void* data, threadData_t* threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 typedef struct NONLINEAR_SYSTEM_DATA

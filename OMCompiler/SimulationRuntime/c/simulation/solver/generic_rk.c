@@ -334,21 +334,21 @@ void analyseButcherTableau(DATA_GENERIC_RK* userdata)
   }
   if (isGenericIRK)
   {
-    userdata->expl = 0;
+    userdata->isExplicit = FALSE;
     userdata->nlSystemSize = userdata->stages*userdata->nStates;
     userdata->step_fun = &(full_implicit_RK);
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is fully implicit");
   }
   else if (isDIRK)
   {
-    userdata->expl = 0;
+    userdata->isExplicit = FALSE;
     userdata->nlSystemSize = userdata->nStates;
     userdata->step_fun = &(expl_diag_impl_RK);
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method diagonally implicit");
   }
   else
   {
-    userdata->expl = 1;
+    userdata->isExplicit = TRUE;
     userdata->nlSystemSize = userdata->nStates;
     userdata->step_fun = &(expl_diag_impl_RK);
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is explicit");
@@ -434,7 +434,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   userdata->nStates = data->modelData->nStates;
 
-  int nnz = 0;
+  ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
   enum RK_SINGLERATE_METHOD RK_method = getRK_Method();
@@ -483,26 +483,6 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     userdata->step_fun = &(full_implicit_RK);
   }
 
-  // allocate memory for the nonlinear solver
-  enum RK_NLS_METHOD RK_NLS_method = getRK_NLS_Method();
-  switch (RK_NLS_method)
-  {
-  case RK_NLS_NEWTON:
-    userdata->nlsSolverData = (void*) allocateNewtonData(userdata->nlSystemSize);
-    break;
-  case RK_NLS_KINSOL:
-    userdata->nlsSolverData = (void*) nlsKinsolAllocate(userdata->nlSystemSize, NLS_LS_KLU);
-    // TODO AHeu: Get NNZ and function for analytical Jacobian column
-    // Using sparse numeric Jacobian with NNZ = size² should be fine for now.
-    nnz = userdata->nlSystemSize*userdata->nlSystemSize;
-    resetKinsolMemory(userdata->nlsSolverData, nnz, analyticalJacobianColumn);
-    //break;
-  default:
-    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[RK_NLS_method]);
-    return -1;
-    break;
-  }
-
   // allocate memory for te generic RK method
   userdata->firstStep = 1;
   userdata->y = malloc(sizeof(double)*userdata->nStates);
@@ -524,22 +504,45 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   userdata->errorTestFailures = 0;
   userdata->convergenceFailures = 0;
 
-  /* initialize analytic Jacobian, if available and needed*/
-  if (!userdata->expl)
+  /* initialize analytic Jacobian, if available and needed */
+  if (!userdata->isExplicit)
   {
-    ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
     {
-      userdata->symJac = 0;
+      userdata->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
     } else {
-      userdata->symJac = 1;
-      ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
+      userdata->symJacAvailable = TRUE;
+      // TODO AHeu: Is there a reason we get the jacobian again? Did data->callback->initialAnalyticJacobianA change the pointer?
+      // ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
-      infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jac->sizeCols, jac->sizeRows);
-      infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jac->sparsePattern->numberOfNonZeros, jac->sparsePattern->maxColors);
+      infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+      infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
       messageClose(LOG_SOLVER);
     }
+  }
+
+  /* Allocate memory for the nonlinear solver */
+  // TODO AHeu: Do we always need a NLS solver or only for implicit RK methods?
+  enum RK_NLS_METHOD RK_NLS_method = getRK_NLS_Method();
+  switch (RK_NLS_method)
+  {
+  case RK_NLS_NEWTON:
+    userdata->nlsSolverData = (void*) allocateNewtonData(userdata->nlSystemSize);
+    break;
+  case RK_NLS_KINSOL:
+    userdata->nlsSolverData = (void*) nlsKinsolAllocate(userdata->nlSystemSize, NLS_LS_KLU);
+    if (userdata->symJacAvailable) {
+      resetKinsolMemory(userdata->nlsSolverData, jacobian->sparsePattern->numberOfNonZeros, data->callback->functionJacA_column);
+    } else {
+      resetKinsolMemory(userdata->nlsSolverData, userdata->nlSystemSize*userdata->nlSystemSize, NULL);
+    }
+    break;
+  default:
+    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[RK_NLS_method]);
+    return -1;
+    break;
   }
 
   return 0;
@@ -642,7 +645,7 @@ int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* generic
   {
     userdata->evalJacobians++;
 
-    if (userdata->symJac)
+    if (userdata->symJacAvailable)
     {
       const int index = data->callback->INDEX_JAC_A;
       ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
@@ -890,7 +893,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
       }
     }
     //printMatrix_genericRK("Jacobian of solver", solverData->fjac, stages * n, userdata->time);
-    for (k=0; k<stages && !userdata->expl; k++)
+    for (k=0; k<stages && !userdata->isExplicit; k++)
     {
       // calculate Jf[k] and sweap over the stages
       sData->timeValue = userdata->time + userdata->c[k] * userdata->stepSize;

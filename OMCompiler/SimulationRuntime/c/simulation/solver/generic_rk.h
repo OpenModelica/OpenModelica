@@ -52,10 +52,12 @@ typedef struct DATA_GENERIC_RK{
   double *errest, *errtol, fac;
   double time;
   double stepSize, lastStepSize;
-  int stages, expl, act_stage;
+  int stages, act_stage;
+  modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   double *A, *c, *b, *bt;
   int nStates, order_b, order_bt, error_order;
-  int firstStep, symJac, nlSystemSize;
+  int firstStep, nlSystemSize;
+  modelica_boolean symJacAvailable;     /* Boolean stating if a symbolic Jacobian is available */
   unsigned int stepsDone;
   unsigned int evalFunctionODE;
   unsigned int evalJacobians;
