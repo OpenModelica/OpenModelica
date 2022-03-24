@@ -188,7 +188,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   }
-  case S_ESDIRKMR:
+  case S_GENERIK_RK:
   {
     retVal = genericRK_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -259,7 +259,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     allocateIrksco(solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
     break;
   }
-  case S_ESDIRKMR:
+  case S_GENERIK_RK:
   {
     allocateDataGenericRK(data, threadData, solverInfo);
     break;
@@ -414,7 +414,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     freeIrksco(solverInfo);
   }
-  else if (solverInfo->solverMethod == S_ESDIRKMR)
+  else if (solverInfo->solverMethod == S_GENERIK_RK)
   {
     freeDataGenericRK(solverInfo);
   }

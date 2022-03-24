@@ -26,7 +26,8 @@ equation
 end Burger_esdirkmr;
 ");
 
-cd("tmp");
+system("rm -rf temp/ && mkdir temp/");
+cd("temp");
 
 // esdirk2, esdirk2_test, esdirk3, esdirk3_test, dopri45, expl_euler, impl_euler,
 

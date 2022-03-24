@@ -354,12 +354,45 @@ void analyseButcherTableau(DATA_GENERIC_RK* userdata)
   userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
 }
 
-/*! \fn allocategenericRK
+/**
+ * @brief Get Runge-Kutta method from simulation flag FLAG_RK.
  *
- *   Function allocates memory needed for ESDIRK method.
+ * Defaults to RK_DOPRI45 if flag is not set.
+ * Returns RK_UNKNOWN if flag is not known.
  *
+ * @return enum RK_SINGLERATE_METHOD    Runge-Kutta method.
  */
+enum RK_SINGLERATE_METHOD getRKMethod() {
+  enum RK_SINGLERATE_METHOD method;
+  const char* flag_value;
+  flag_value = omc_flagValue[FLAG_RK];
+  char* RK_method_string;
 
+  if (flag_value != NULL) {
+    RK_method_string = GC_strdup(flag_value);
+    for (method=RK_UNKNOWN; method<RK_MAX; method++) {
+      if (strcmp(RK_method_string, RK_SINGLERATE_METHOD_NAME[method]) == 0){
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: %s", RK_SINGLERATE_METHOD_NAME[method]);
+        return method;
+      }
+    }
+    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge-Kutta method %s.", RK_method_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Chooe RK method: %s [from command line]", RK_method_string);
+    return RK_UNKNOWN;
+  } else {
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: dopri45 [default]");
+    return RK_DOPRI45;
+  }
+}
+
+/**
+ * @brief Function allocates memory needed for ESDIRK method.
+ *
+ * @param data          Runtime data struct.
+ * @param threadData    Thread data for error handling.
+ * @param solverInfo    Information about main solver.
+ * @return int          Return 0 on success, -1 on failure.
+ */
 int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) malloc(sizeof(DATA_GENERIC_RK));
@@ -367,64 +400,39 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   userdata->nStates = data->modelData->nStates;
 
-  enum RK_SINGLERATE_METHOD RK_method = RK_DOPRI45;
-
-  if (omc_flagValue[FLAG_RK]) {
-    char* RK_method_string = GC_strdup(omc_flagValue[FLAG_RK]);
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: %s [from command line]", RK_method_string);
-    if (!strcmp(RK_method_string, "esdirk3")) RK_method = RK_ESDIRK3;
-    else if (!strcmp(RK_method_string, "esdirk3_test")) RK_method = RK_ESDIRK3_test;
-    else if (!strcmp(RK_method_string, "esdirk2")) RK_method = RK_ESDIRK2;
-    else if (!strcmp(RK_method_string, "esdirk2_test")) RK_method = RK_ESDIRK2_test;
-    else if (!strcmp(RK_method_string, "dopri45")) RK_method = RK_DOPRI45;
-    else if (!strcmp(RK_method_string, "expl_euler")) RK_method = RK_EXPL_EULER;
-    else if (!strcmp(RK_method_string, "impl_euler")) RK_method = RK_IMPL_EULER;
-    else if (!strcmp(RK_method_string, "merson")) RK_method = RK_MERSON;
-  }
-  else
-  {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: dopri45 [default]");
-  }
+  enum RK_SINGLERATE_METHOD RK_method = getRKMethod();
 
   switch(RK_method)
   {
-    case RK_UNKNOWN:
-    case RK_MAX:
     case RK_DOPRI45:
-      // default Solver
       getButcherTableau_DOPRI45(userdata);
       break;
-
     case RK_MERSON:
       getButcherTableau_MERSON(userdata);
       break;
-
     case RK_ESDIRK2:
       getButcherTableau_ESDIRK2(userdata);
       break;
-
     case RK_ESDIRK2_test:
       //ESDIRK2 not optimized (just for testing) solved with genericRK solver method
       getButcherTableau_ESDIRK2(userdata);
       break;
-
     case RK_EXPL_EULER:
       getButcherTableau_EXPLEULER(userdata);
       break;
-
     case RK_IMPL_EULER:
       getButcherTableau_IMPLEULER(userdata);
       break;
-
     case RK_ESDIRK3_test:
-    //ESDIRK3 not optimized (just for testing) solved with genericRK solver method
+      //ESDIRK3 not optimized (just for testing) solved with genericRK solver method
       getButcherTableau_ESDIRK3(userdata);
       break;
-
     case RK_ESDIRK3:
       getButcherTableau_ESDIRK3(userdata);
       break;
-
+    default:
+      errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", RK_method);
+      return -1;
   }
 
   // Check explicit, diagonally implicit or fully implicit status and fix solver settings
