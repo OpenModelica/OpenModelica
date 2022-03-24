@@ -175,25 +175,31 @@ void getButcherTableau_SDIRK3(DATA_GENERIC_RK* userdata)
   userdata->order_bt = 2;
   userdata->fac = 0.9;
 
-  double gam   = 0.43586652150845899941601945119355684252929409293845;
-  double alpha = 1.0 - 4.0*gam + 2.0*gam*gam;
-  double beta  = -1.0 + 6.0*gam - 9.0*gam*gam + 3.0*gam*gam*gam;
-  double c2    = (2.0-9*gam + 6*gam*gam)/(3*alpha);
-  double b1    = (-1.0 + 4*gam)/(4*beta);
-  double b2    = -(3*alpha*alpha)/(4*beta);
-  double b3    = gam;
-  double bt1   = 1./3;
-  double bt2   = 1./3;
-  double bt3   = 1./3;
+  //double gam = 4./5;
+  //double c2 = (6*gam*gam - 9*gam + 2)/(3*(2*gam*gam - 4*gam + 1));
+  //double b1 = (4*gam - 1)/(4*(3*gam*gam*gam - 9*gam*gam + 6*gam - 1));
+  //double b2 = 1 - b1 - gam;
 
-  const double c_RK[]  = {gam, c2, 1};
+  //const double c_RK[]  = {gam, c2, 1};
 
-  const double A_RK[]  = {gam,      0,   0,
-                          c2-gam, gam,   0,
-                          b1,     b2,  gam};
+  //const double A_RK[]  = {gam,      0,   0,
+  //                        c2-gam, gam,   0,
+  //                        b1, b2,  gam};
 
-  const double b_RK[]  = {b1, b2, b3};
-  const double bt_RK[] = {bt1, bt2, bt3};
+  //const double b_RK[]  = {b1, b2, gam};
+  // const double bt_RK[] = {-2741./4876, 6399./5300, 204./575};  gam = 4/5, lim = -2/5
+  //const double bt_RK[] = {-9909./4876 , 9471./5300, 716./575}; //  gam = 4/5, lim = 2/5
+  // const double bt_RK[] = {3./37, 34./37, 0.0}; gam = 5/6, lim = -17/25
+  // const double bt_RK[] = {105./629, 33./37, -1./17}; gam = 5/6, lim = -91/125
+  // Stability of the embedded RK method is larger than the main RK method
+  const double c_RK[]  = {0.211324865405187117745425609748, 0.5, 1.};
+
+  const double A_RK[]  = {0.211324865405187117745425609748,0.,0.,
+                          0.288675134594812882254574390252, 0.211324865405187117745425609748, 0.,
+                          0.366025403784438646763723170761, 0.422649730810374235490851219493, 0.211324865405187117745425609748};
+
+  const double b_RK[]  = {0.366025403784438646763723170761, 0.422649730810374235490851219493, 0.211324865405187117745425609748};
+  const double bt_RK[] = {0.351869322027954749581941158535, 0.444978830179634461030230691032, 0.203151847792410789387828150409};
 
   setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
 }
@@ -376,6 +382,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     else if (!strcmp(RK_method_string, "esdirk3_test")) RK_method = RK_ESDIRK3_test;
     else if (!strcmp(RK_method_string, "esdirk2")) RK_method = RK_ESDIRK2;
     else if (!strcmp(RK_method_string, "esdirk2_test")) RK_method = RK_ESDIRK2_test;
+    else if (!strcmp(RK_method_string, "sdirk3")) RK_method = RK_SDIRK3;
     else if (!strcmp(RK_method_string, "dopri45")) RK_method = RK_DOPRI45;
     else if (!strcmp(RK_method_string, "expl_euler")) RK_method = RK_EXPL_EULER;
     else if (!strcmp(RK_method_string, "impl_euler")) RK_method = RK_IMPL_EULER;
@@ -397,6 +404,10 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
     case RK_MERSON:
       getButcherTableau_MERSON(userdata);
+      break;
+
+    case RK_SDIRK3:
+      getButcherTableau_SDIRK3(userdata);
       break;
 
     case RK_ESDIRK2:
