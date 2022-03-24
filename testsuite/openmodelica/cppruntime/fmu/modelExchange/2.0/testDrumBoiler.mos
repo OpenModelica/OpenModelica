@@ -615,8 +615,8 @@ val(evaporator_qm_S, 100);
 //     name=\"sink.medium.T_degC\"
 //     valueReference=\"170\"
 //     description=\"Temperature of medium in [degC]\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"degC\"/>
+//     >
+//     <Real unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"55\" -->
 //   <ScalarVariable
@@ -639,8 +639,8 @@ val(evaporator_qm_S, 100);
 //     name=\"sink.medium.p_bar\"
 //     valueReference=\"173\"
 //     description=\"Absolute pressure of medium in [bar]\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"bar\"/>
+//     >
+//     <Real unit=\"bar\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"58\" -->
 //   <ScalarVariable
