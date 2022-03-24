@@ -118,6 +118,9 @@ int freeIrksco(SOLVER_INFO* solverInfo)
   free(userdata->zeroCrossingValues);
   free(userdata->zeroCrossingValuesOld);
 
+  free(userdata);
+  userdata = NULL;
+
   return 0;
 }
 

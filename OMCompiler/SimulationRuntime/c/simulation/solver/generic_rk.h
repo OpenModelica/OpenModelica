@@ -45,7 +45,9 @@ typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INF
 typedef struct DATA_GENERIC_RK{
   DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
   threadData_t *threadData;     //            I'm afraid not...
-  void* nlsSolverData;          /* Nonlinear solver data */
+  enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
+  enum RK_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
+  void* nlsSolverData;                  /* Nonlinear solver data */
   double *y, *yt, *yOld, *f;
   double *Jf;
   double *k, *res_const;
@@ -69,7 +71,7 @@ typedef struct DATA_GENERIC_RK{
 enum RK_SINGLERATE_METHOD getRK_Method();
 enum RK_NLS_METHOD getRK_NLS_Method();
 int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-int freeDataGenericRK(SOLVER_INFO* solverInfo);
+void freeDataGenericRK(DATA_GENERIC_RK* data);
 int genericRK_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 #endif /* _DATA_GENERIC_RK_H_ */

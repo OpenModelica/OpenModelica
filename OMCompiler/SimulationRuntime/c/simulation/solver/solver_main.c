@@ -418,7 +418,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
   else if (solverInfo->solverMethod == S_GENERIK_RK)
   {
-    freeDataGenericRK(solverInfo);
+    freeDataGenericRK(solverInfo->solverData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
   else if(solverInfo->solverMethod == S_DASSL)

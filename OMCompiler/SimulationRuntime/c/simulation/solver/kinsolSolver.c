@@ -263,15 +263,12 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_LS linearSolverMethod) {
  *
  * Free memory that was allocated with `nlsKinsolAllocate`.
  *
- * @param solverData
- * @return int
+ * @param kinsolData    Pointer to struct with KINSOL data.
  */
-int nlsKinsolFree(void **solverData) {
-  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)*solverData;
-
+void nlsKinsolFree(NLS_KINSOL_DATA *kinsolData) {
   KINFree((void *)&kinsolData->kinsolMemory);
 
-  N_VDestroy_Serial(kinsolData->initialGuess);   /* TODO: Or was N_VDestroy_Serial correct? It won't free internal data */
+  N_VDestroy_Serial(kinsolData->initialGuess);
   N_VDestroy_Serial(kinsolData->xScale);
   N_VDestroy_Serial(kinsolData->fScale);
   N_VDestroy_Serial(kinsolData->fRes);
@@ -283,8 +280,9 @@ int nlsKinsolFree(void **solverData) {
   N_VDestroy_Serial(kinsolData->y);
 
   free(kinsolData);
+  kinsolData = NULL;
 
-  return 0;
+  return;
 }
 
 /**

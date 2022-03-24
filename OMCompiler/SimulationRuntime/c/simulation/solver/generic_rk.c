@@ -437,9 +437,8 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  enum RK_SINGLERATE_METHOD RK_method = getRK_Method();
-
-  switch(RK_method)
+  userdata->RK_method = getRK_Method();
+  switch(userdata->RK_method)
   {
     case RK_DOPRI45:
       getButcherTableau_DOPRI45(userdata);
@@ -468,7 +467,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
       getButcherTableau_ESDIRK3(userdata);
       break;
     default:
-      errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", RK_method);
+      errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", userdata->RK_method);
       return -1;
   }
 
@@ -478,7 +477,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
 
   // adapt decision for testing of the fully implicit implementation
-  if (RK_method == RK_ESDIRK2_test || RK_method == RK_ESDIRK3_test) {
+  if (userdata->RK_method == RK_ESDIRK2_test || userdata->RK_method == RK_ESDIRK3_test) {
     userdata->nlSystemSize = userdata->stages*userdata->nStates;
     userdata->step_fun = &(full_implicit_RK);
   }
@@ -505,11 +504,9 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   userdata->convergenceFailures = 0;
 
   /* initialize analytic Jacobian, if available and needed */
-  if (!userdata->isExplicit)
-  {
+  if (!userdata->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
-    {
+    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
       userdata->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
     } else {
@@ -525,9 +522,8 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   /* Allocate memory for the nonlinear solver */
   // TODO AHeu: Do we always need a NLS solver or only for implicit RK methods?
-  enum RK_NLS_METHOD RK_NLS_method = getRK_NLS_Method();
-  switch (RK_NLS_method)
-  {
+  userdata->nlsSolverMethod = getRK_NLS_Method();
+  switch (userdata->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     userdata->nlsSolverData = (void*) allocateNewtonData(userdata->nlSystemSize);
     break;
@@ -540,7 +536,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     }
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[RK_NLS_method]);
+    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[userdata->RK_method]);
     return -1;
     break;
   }
@@ -548,30 +544,43 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   return 0;
 }
 
-/*! \fn freeDataGenericRK
+/**
+ * @brief Free generic RK data.
  *
- *   Memory needed for solver is set free.
+ * @param data    Pointer to generik Runge-Kutta data struct.
  */
-int freeDataGenericRK(SOLVER_INFO* solverInfo)
-{
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) solverInfo->solverData;
-  freeNewtonData(userdata->nlsSolverData);
+void freeDataGenericRK(DATA_GENERIC_RK* data) {
+  switch (data->nlsSolverMethod)
+  {
+  case RK_NLS_NEWTON:
+    freeNewtonData(data->nlsSolverData);
+    break;
+  case RK_NLS_KINSOL:
+    nlsKinsolFree(data->nlsSolverData);
+    break;
+  default:
+    warningStreamPrint(LOG_SOLVER, 0, "Not handled RK_NLS_METHOD in freeDataGenericRK. Are we leaking memroy?");
+    break;
+  }
 
-  free(userdata->y);
-  free(userdata->yOld);
-  free(userdata->yt);
-  free(userdata->f);
-  free(userdata->Jf);
-  free(userdata->k);
-  free(userdata->res_const);
-  free(userdata->errest);
-  free(userdata->errtol);
-  free(userdata->A);
-  free(userdata->b);
-  free(userdata->bt);
-  free(userdata->c);
+  free(data->y);
+  free(data->yOld);
+  free(data->yt);
+  free(data->f);
+  free(data->Jf);
+  free(data->k);
+  free(data->res_const);
+  free(data->errest);
+  free(data->errtol);
+  free(data->A);
+  free(data->b);
+  free(data->bt);
+  free(data->c);
 
-  return 0;
+  free(data);
+  data = NULL;
+
+  return;
 }
 
 /*!	\fn wrapper_f_genericRK

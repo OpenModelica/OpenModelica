@@ -626,7 +626,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
         freeHomotopyData(&((struct dataSolver*) nonlinsys[i].solverData)->initHomotopyData);
       } else {
-        nlsKinsolFree(&((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
+        nlsKinsolFree(((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
       }
       free(nonlinsys[i].solverData);
       break;
