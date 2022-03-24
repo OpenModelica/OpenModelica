@@ -166,7 +166,7 @@ public
       //DelayedExpression delayedExps;
       list<SimJacobian> jacobians       "List of symbolic jacobians";
       Option<OldSimCode.SimulationSettings> simulationSettingsOpt; // replace this with new struct
-      //String fileNamePrefix, fullPathPrefix "Used in FMI where files are generated in a special directory";
+      String fileNamePrefix;//, fullPathPrefix "Used in FMI where files are generated in a special directory";
       //String fmuTargetName;
       //HpcOmSimCode.HpcOmData hpcomData;
       //AvlTreeCRToInt.Tree valueReferences "Used in FMI";
@@ -193,7 +193,7 @@ public
     protected
       Integer idx = 1;
     algorithm
-      str := StringUtil.headline_1("SimCode " + str + "(" + AbsynUtil.pathString(simCode.modelInfo.name) + ")");
+      str := StringUtil.headline_1("SimCode " + str + "(" + simCode.fileNamePrefix + ")");
       str := str + ModelInfo.toString(simCode.modelInfo);
       str := str + SimStrongComponent.Block.listToString(simCode.init, "  ", "INIT") + "\n";
       for blck_lst in simCode.ode loop
@@ -218,6 +218,7 @@ public
     function create
       input BackendDAE bdae;
       input Absyn.Path name;
+      input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
       output SimCode simCode;
     algorithm
@@ -371,6 +372,7 @@ public
               makefileParams            = makefileParams,
               jacobians                 = jacobians,
               simulationSettingsOpt     = simSettingsOpt,
+              fileNamePrefix            = fileNamePrefix,
               simcode_map               = simcode_map,
               eventInfo                 = bdae.eventInfo,
               daeModeData               = daeModeData,
@@ -453,7 +455,7 @@ public
         spatialInfo                   = OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0),
         jacobianMatrixes              = jacobians,
         simulationSettingsOpt         = simCode.simulationSettingsOpt, // replace with new struct later on
-        fileNamePrefix                = AbsynUtil.pathString(simCode.modelInfo.name),
+        fileNamePrefix                = simCode.fileNamePrefix,
         fullPathPrefix                = "", // FMI stuff
         fmuTargetName                 = "", // FMI stuff
         hpcomData                     = HpcOmSimCode.emptyHpcomData,

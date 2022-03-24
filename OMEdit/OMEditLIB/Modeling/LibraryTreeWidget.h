@@ -496,9 +496,11 @@ public:
   void saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void openLibraryTreeItem(QString nameStructure);
   void loadAutoLoadedLibrary(const QString &modelName);
-
-  QTimer mAutoLoadedLibrariesTimer;
+  bool isLoadingLibraries() const {return mLoadingLibraries;}
+  void setLoadingLibraries(bool loadingLibraries) {mLoadingLibraries = loadingLibraries;}
 private:
+  bool mLoadingLibraries;
+  QTimer mAutoLoadedLibrariesTimer;
   QStringList mAutoLoadedLibrariesList;
   TreeSearchFilters *mpTreeSearchFilters;
   LibraryTreeModel *mpLibraryTreeModel;

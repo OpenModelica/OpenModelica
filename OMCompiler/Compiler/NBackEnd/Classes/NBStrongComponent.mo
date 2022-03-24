@@ -138,12 +138,13 @@ public
   end SLICED_EQUATION;
 
   record ENTWINED_EQUATION
-    "intermediate type, cannot be passed to SimCode!"
+    "intermediate type, cannot be passed to SimCode! Will be resolved by the Solve Module."
     list<StrongComponent> entwined_slices                     "has to be SLICED_EQUATION()";
     list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst  "equation with scalar idx (0 based) - fallback scalarization";
   end ENTWINED_EQUATION;
 
   record ALGEBRAIC_LOOP
+     "intermediate type, cannot be passed to SimCode! Will be resolved by the Tearing Module."
     list<Pointer<Variable>> vars;
     list<Pointer<Equation>> eqns;
     Option<BackendDAE> jac;
@@ -599,7 +600,7 @@ public
       then comp;
 
       else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
     end match;
   end addLoopJacobian;
@@ -613,6 +614,33 @@ public
                         else {};
     end match;
   end getLoopResiduals;
+
+  function isDiscrete
+    "checks if all equations are discrete"
+    input StrongComponent comp;
+    output Boolean b;
+  protected
+    function bool_ident "just for usage in List.all"
+      input output Boolean b;
+    end bool_ident;
+  algorithm
+    b := match comp
+      case SINGLE_EQUATION()        then Equation.isDiscrete(comp.eqn);
+      case SINGLE_ARRAY()           then Equation.isDiscrete(comp.eqn);
+      case SINGLE_ALGORITHM()       then Equation.isDiscrete(comp.eqn);
+      case SINGLE_RECORD_EQUATION() then Equation.isDiscrete(comp.eqn);
+      case SINGLE_WHEN_EQUATION()   then Equation.isDiscrete(comp.eqn);
+      case SINGLE_IF_EQUATION()     then Equation.isDiscrete(comp.eqn);
+      case SLICED_EQUATION()        then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case ENTWINED_EQUATION()      then List.all(list(isDiscrete(c) for c in comp.entwined_slices), bool_ident);
+      case ALGEBRAIC_LOOP()         then not comp.mixed;
+      case TORN_LOOP()              then not comp.mixed;
+      case ALIAS()                  then isDiscrete(comp.original);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+      then fail();
+    end match;
+  end isDiscrete;
 
   // ############################################################
   //                Protected Functions and Types

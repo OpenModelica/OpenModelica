@@ -68,6 +68,42 @@ static string array2string(double* array, int row, int col)
   return retVal.str();
 }
 
+static string array2PythonString(double* array, int row, int col)
+{
+  int i=0;
+  int j=0;
+  ostringstream retVal(ostringstream::out);
+  if (row == 0 || col == 0)
+  {
+    retVal << "[]\n";
+    return retVal.str();
+  }
+
+  retVal.precision(16);
+  retVal << "[";
+  for(i=0; i<row; i++)
+  {
+    int k = i;
+    retVal << "[";
+    for(j=0; j<col-1; j++)
+    {
+      retVal << array[k] << ", ";
+      k += row;
+    }
+    if(col > 0)
+    {
+      retVal << array[k];
+    }
+    if((i+1 != row) && (col != 0))
+    {
+      retVal << "],\n\t";
+    }
+  }
+  retVal << "]]\n";
+
+  return retVal.str();
+}
+
 extern "C" {
 
 int functionODE_residual(DATA* data, threadData_t *threadData, double *dx, double *dy, double *dz)
@@ -552,28 +588,57 @@ int linearize(DATA* data, threadData_t *threadData)
             assertStreamPrint(threadData,0==functionJacD(data, threadData, matrixD),"Error, can not get Matrix D ");
         }
     }
+    if (data->modelData->linearizationDumpLanguage != 3)
+    {
 
-    strA = array2string(matrixA,size_A,size_A);
-    strB = array2string(matrixB,size_A,size_Inputs);
-    strC = array2string(matrixC,size_Outputs,size_A);
-    strD = array2string(matrixD,size_Outputs,size_Inputs);
-    if(do_data_recovery > 0){
-        strCz = array2string(matrixCz,size_z,size_A);
-        strDz = array2string(matrixDz,size_z,size_Inputs);
+      strA = array2string(matrixA, size_A, size_A);
+      strB = array2string(matrixB, size_A, size_Inputs);
+      strC = array2string(matrixC, size_Outputs, size_A);
+      strD = array2string(matrixD, size_Outputs, size_Inputs);
+      if (do_data_recovery > 0)
+      {
+        strCz = array2string(matrixCz, size_z, size_A);
+        strDz = array2string(matrixDz, size_z, size_Inputs);
+      }
+
+      // The empty array {} is not valid modelica, so we need to put something
+      //   inside the curly braces for x0 and u0. {for i in in 1:0} will create an
+      //   empty array if needed.
+      if (size_A)
+        strX = "{" + array2string(data->localData[0]->realVars, 1, size_A) + "}";
+      else
+        strX = "zeros(0)";
+
+      if (size_Inputs)
+        strU = "{" + array2string(data->simulationInfo->inputVars, 1, size_Inputs) + "}";
+      else
+        strU = "zeros(0)";
     }
-
-    // The empty array {} is not valid modelica, so we need to put something
-    //   inside the curly braces for x0 and u0. {for i in in 1:0} will create an
-    //   empty array if needed.
-    if(size_A)
-      strX = "{" + array2string(data->localData[0]->realVars, 1, size_A) + "}";
     else
-      strX = "zeros(0)";
+    {
+      // convert the matrices to Python format
+      //infoStreamPrint(LOG_STDOUT, 0, "Python selected");
+      strA = array2PythonString(matrixA, size_A, size_A);
+      strB = array2PythonString(matrixB, size_A, size_Inputs);
+      strC = array2PythonString(matrixC, size_Outputs, size_A);
+      strD = array2PythonString(matrixD, size_Outputs, size_Inputs);
+      if (do_data_recovery > 0)
+      {
+        strCz = array2PythonString(matrixCz, size_z, size_A);
+        strDz = array2PythonString(matrixDz, size_z, size_Inputs);
+      }
+      // strA = "[[-2.887152375617477, -1.62655852935388], [-2.380918056675567, -2.388394731625707]]";
+      //infoStreamPrint(LOG_STDOUT, 0, strA.c_str());
+      if (size_A)
+        strX = "[" + array2string(data->localData[0]->realVars, 1, size_A) + "]";
+      else
+        strX = "[0]";
 
-    if(size_Inputs)
-      strU = "{" + array2string(data->simulationInfo->inputVars, 1, size_Inputs) + "}";
-    else
-      strU = "zeros(0)";
+      if (size_Inputs)
+        strU = "[" + array2string(data->simulationInfo->inputVars, 1, size_Inputs) + "]";
+      else
+        strU = "[0]";
+    }
 
     free(matrixA);
     free(matrixB);

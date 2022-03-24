@@ -26,19 +26,16 @@ algorithm
 end f;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=debugDifferentiation"); getErrorString();
+setCommandLineOptions("--newBackend --generateSymbolicJacobian -d=debugDifferentiation"); getErrorString();
 simulate(function_diff); getErrorString();
+
 // Result:
 // true
 // ""
 // true
 // ""
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) y = sin(x) ($RES_SIM_2)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x ($RES_SIM_2)
-//
-// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $DER.x = f(y) ($RES_SIM_1)
+// [BEFORE] [SCAL] (1) $DER.z = f(x) ($RES_SIM_0)
 //
 // [BEFORE] function 'f'
 //   input Real 'a';
@@ -69,11 +66,15 @@ simulate(function_diff); getErrorString();
 //   annotation(Inline = false);
 // end '$fDER0.f'
 //
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.x = $fDER0.f(y, $pDER_ODE_JAC.y) ($RES_SIM_1)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.z = $fDER0.f(x, $SEED_ODE_JAC.x) ($RES_SIM_0)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $DER.z = f(x) ($RES_SIM_0)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.z = $fDER0.f(x, $SEED_ODE_JAC.x) ($RES_SIM_0)
+// [BEFORE] [SCAL] (1) y = sin(x) ($RES_SIM_2)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x ($RES_SIM_2)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.x = f(y) ($RES_SIM_1)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.x = $fDER0.f(y, $pDER_ODE_JAC.y) ($RES_SIM_1)
 //
 // record SimulationResult
 //     resultFile = "function_diff_res.mat",

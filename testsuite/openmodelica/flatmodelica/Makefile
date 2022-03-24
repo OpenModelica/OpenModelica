@@ -11,6 +11,7 @@ endif
 TESTFILES = DoublePendulum.mos \
   Tables.mos \
 	SD.mo \
+	SimpleCoolingCycle.mo \
 	Comments.mo
 
 

@@ -865,7 +865,7 @@ algorithm
 
   (_, _, cls_node) := frontEndFront_dispatch(SymbolTable.getAbsyn(), classPath);
   Typing.typeComponents(cls_node, context);
-  Typing.typeBindings(cls_node, cls_node, context);
+  Typing.typeBindings(cls_node, context);
 
   json := dumpJSONClass(cls_node);
   res := Values.STRING(JSON.toString(json, prettyPrint));
