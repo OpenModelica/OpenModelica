@@ -53,14 +53,14 @@
 #define CONFIG_GCC_DUMPMACHINE "i686-w64-mingw32"
 #define CONFIG_GCC_VERSION __VERSION__
 
-#elif defined(_MSV_VER) && defined(_M_IX86)
+#elif defined(_MSC_VER) && defined(_M_IX86)
 
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "msvc32"
 #define CONFIG_GCC_DUMPMACHINE ""
 #define CONFIG_GCC_VERSION ""
 
-#elif defined(_MSV_VER) && defined(_M_X64)
+#elif defined(_MSC_VER) && defined(_M_X64)
 
 #define CONFIG_MODELICA_SPEC_PLATFORM "win64"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "msvc64"
