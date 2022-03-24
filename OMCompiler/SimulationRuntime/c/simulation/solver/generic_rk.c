@@ -396,6 +396,8 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   // Check explicit, diagonally implicit or fully implicit status and fix solver settings
   analyseButcherTableau(userdata);
+  infoStreamPrint(LOG_STATS, 0, "Step control factor is set to %g", userdata->fac);
+
 
   // adapt decision for testing of the fully implicit implementation
   if (RK_method == RK_ESDIRK2_test || RK_method == RK_ESDIRK3_test)
