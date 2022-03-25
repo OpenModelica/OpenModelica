@@ -37,6 +37,8 @@
 #include "simulation_data.h"
 #include "solver_main.h"
 
+#include "rk_butcher.h"
+
 /**
  * @brief Function to compute single Runge-Kutta step.
  */
@@ -51,15 +53,16 @@ typedef struct DATA_GENERIC_RK{
   double *y, *yt, *yOld, *f;
   double *Jf;
   double *k, *res_const;
-  double *errest, *errtol, fac;
+  double *errest, *errtol;
   double time;
   double stepSize, lastStepSize;
-  int stages, act_stage;
+  int act_stage;
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
-  double *A, *c, *b, *bt;
-  int nStates, order_b, order_bt, error_order;
-  int firstStep, nlSystemSize;
-  modelica_boolean symJacAvailable;     /* Boolean stating if a symbolic Jacobian is available */
+  BUTCHER_TABLEAU* tableau;
+  int nStates;
+  int firstStep;
+  unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
+  modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
   unsigned int stepsDone;
   unsigned int evalFunctionODE;
   unsigned int evalJacobians;

@@ -78,285 +78,6 @@ void printMatrix_genericRK(char name[], double* a, int n, double time);
 int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
-void setButcherTableau(DATA_GENERIC_RK* userdata, double *c_RK, double *A_RK, double *b_RK, double *bt_RK)
-{
-  userdata->c = malloc(sizeof(double)*userdata->stages);
-  userdata->A = malloc(sizeof(double)*userdata->stages * userdata->stages);
-  userdata->b = malloc(sizeof(double)*userdata->stages);
-  userdata->bt = malloc(sizeof(double)*userdata->stages);
-
-  memcpy(userdata->c, c_RK, userdata->stages*sizeof(double));
-  memcpy(userdata->A, A_RK, userdata->stages * userdata->stages * sizeof(double));
-  memcpy(userdata->b, b_RK, userdata->stages*sizeof(double));
-  memcpy(userdata->bt, bt_RK, userdata->stages*sizeof(double));
-
-}
-
-void getButcherTableau_ESDIRK2(DATA_GENERIC_RK* userdata)
-{
-  // ESDIRK2 method
-  /* Butcher Tableau */
-  userdata->stages = 3;
-  userdata->order_b = 2;
-  userdata->order_bt = 1;
-  userdata->fac = 0.9;
-
-  /* initialize values of the Butcher tableau */
-  double gam = (2.0-sqrt(2.0))*0.5;
-  double c2 = 2.0*gam;
-  double b1 = sqrt(2.0)/4.0;
-  double b2 = b1;
-  double b3 = gam;
-  double bt1 = 1.75-sqrt(2.0);
-  double bt2 = bt1;
-  double bt3 = 2.0*sqrt(2.0)-2.5;
-
-  const double c_RK[] = {0.0 , c2, 1.0};
-  const double A_RK[] = {0.0, 0.0, 0.0,
-                              gam, gam, 0.0,
-                              b1, b2, b3
-                             };
-  const double b_RK[]  = {b1, b2, b3};
-  const double bt_RK[] = {bt1, bt2, bt3};
-
-  setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
-}
-
-void getButcherTableau_ESDIRK3(DATA_GENERIC_RK* userdata)
-{
-  //ESDIRK3
-  /* Butcher Tableau */
-  userdata->stages = 4;
-  userdata->order_b = 3;
-  userdata->order_bt = 2;
-  userdata->fac = 0.9;
-
-//   double gam=0.43586652150845899941601945;
-//   double c3=3./5;
-//   double a32=(c3*(c3-2*gam))/(4*gam);
-//   double a31=c3-a32-gam;
-//   double A=1-6*gam+6*gam*gam;
-//   double b2=(-2+3*c3+6*gam*(1-c3))/(12*gam*(c3-2*gam));
-//   double b3=A/(3*c3*(c3-2*gam));
-//   double b4=gam;
-
-//   double b1=1-b2-b3-b4;
-//   double bt2=((c3*(-1+6*gam-24*gam*gam*gam+12*gam*gam*gam*gam-6*gam*gam*gam*gam*gam))/(4*gam*(2*gam-c3)*A)+
-//                 (3-27*gam+68*gam*gam-55*gam*gam*gam+21*gam*gam*gam*gam-6*gam*gam*gam*gam*gam)/(2*(2*gam-c3)*A));
-//   double bt3=((-gam*(-2+21*gam-68*gam*gam+79*gam*gam*gam-33*gam*gam*gam*gam+12*gam*gam*gam*gam*gam))/(c3*(c3-2*gam)*A));
-//   double bt4=(-3*gam*gam*(-1+4*gam-2*gam*gam+gam*gam*gam))/A;
-//   double bt1=1-bt2-bt3-bt4;
-
-//   const double c_ESDIRK3[] = {0.0, 2*gam, c3, 1};
-//   const double A_ESDIRK3[] = {0.0, 0.0, 0.0, 0.0,
-//                               gam, gam, 0.0, 0.0,
-//                               a31, a32, gam, 0.0,
-//                               b1,  b2,  b3, gam
-//  };
-//   const double b_ESDIRK3[] = {b1, b2, b3, b4};
-//   const double bt_ESDIRK3[] = {bt1, bt2, bt3, bt4};
-
-  const double c_RK[]  = {0.0, 0.87173304301691799883203890238711368505858818587690, 3./5, 1.};
-
-  const double A_RK[]  = {0, 0, 0, 0,
-                              0.43586652150845899941601945119355684252929409293845, 0.43586652150845899941601945119355684252929409293845, 0.0, 0.0,
-                              0.25764824606642724579999601628407970926431835216613, -0.093514767574886245216015467477636551793612445104585, 0.43586652150845899941601945119355684252929409293845, 0.0,
-                              0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
-
-  const double b_RK[]  = {0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
-  const double bt_RK[] = {0.10889661761586445415613073807049608218243112728445, -0.91532581187071275348163809781681834549906345402560, 1.2712735973021521678447158941356428765353629368204, 0.53515559695269613148079146561067938678126938992075};
-
-  setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
-}
-
-void getButcherTableau_SDIRK3(DATA_GENERIC_RK* userdata)
-{
-  //SDIRK3
-  /* Butcher Tableau */
-  userdata->stages = 3;
-  userdata->order_b = 3;
-  userdata->order_bt = 2;
-  userdata->fac = 0.9;
-
-  double gam   = 0.43586652150845899941601945119355684252929409293845;
-  double alpha = 1.0 - 4.0*gam + 2.0*gam*gam;
-  double beta  = -1.0 + 6.0*gam - 9.0*gam*gam + 3.0*gam*gam*gam;
-  double c2    = (2.0-9*gam + 6*gam*gam)/(3*alpha);
-  double b1    = (-1.0 + 4*gam)/(4*beta);
-  double b2    = -(3*alpha*alpha)/(4*beta);
-  double b3    = gam;
-  double bt1   = 1./3;
-  double bt2   = 1./3;
-  double bt3   = 1./3;
-
-  const double c_RK[]  = {gam, c2, 1};
-
-  const double A_RK[]  = {gam,      0,   0,
-                          c2-gam, gam,   0,
-                          b1,     b2,  gam};
-
-  const double b_RK[]  = {b1, b2, b3};
-  const double bt_RK[] = {bt1, bt2, bt3};
-
-  setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
-}
-
-
-void getButcherTableau_EXPLEULER(DATA_GENERIC_RK* userdata)
-{
-  //explicit Euler with Richardson-Extrapolation for step size control
-  /* Butcher Tableau */
-  userdata->stages = 2;
-  userdata->order_b = 1;
-  userdata->order_bt = 2;
-  userdata->fac = 0.9;
-
-  const double c_RK[] = {0.0, 0.5};
-  const double A_RK[] = {0.0, 0.0,
-                                   0.5, 0.0};
-  const double b_RK[]  = {0,1}; // explicit midpoint rule
-  const double bt_RK[] = {1,0}; // explicit Euler step
-
-  setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
-}
-
-void getButcherTableau_IMPLEULER(DATA_GENERIC_RK* userdata)
-{
-  //explicit Euler with Richardson-Extrapolation for step size control
-  /* Butcher Tableau */
-  userdata->stages = 3;
-  userdata->order_b = 2;
-  userdata->order_bt = 1;
-  userdata->fac = 0.9;
-
-  const double c_RK[] = {1.0, 0.5, 1.0};
-  const double A_RK[] = {1.0, 0.0, 0.0,
-                         0.0, 0.5, 0.0,
-                         0.0, 0.5, 0.5};
-  const double bt_RK[]  = {1.0, 0.0, 0.0}; // implicit Euler step
-  //const double bt_RK[] = {0.0, 0.5, 0.5}; // implicit Euler step, with half step size
-  const double b_RK[] = {-1.0, 1.0, 1.0}; // Richardson extrapolation
-
-  setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
-}
-
-void getButcherTableau_MERSON(DATA_GENERIC_RK* userdata)
-{
-  //explicit Merson method
-  /* Butcher Tableau */
-  userdata->stages = 5;
-  userdata->order_b = 4;
-  userdata->order_bt = 3;
-  userdata->fac = 0.9;
-
-  const double c_RK[] = {0.0, 1./3, 1./3, 1./2, 1.0};
-  const double A_RK[] = { 0.0,  0.0,   0.0, 0.0, 0.0,
-                                   1./3,  0.0,   0.0, 0.0, 0.0,
-                                   1./6, 1./6,   0.0, 0.0, 0.0,
-                                   1./8,  0.0,  3./8, 0.0, 0.0,
-                                   1./2,  0.0, -3./2, 2.0, 0.0
-                                  };
-  const double b_RK[] = {1./6, 0.0,   0.0, 2./3, 1./6}; // 4th order???
-  // const double bt_EXPLEULER_SC[]  = {1./2, 0.0, -3./2,  2.0,  0.0}; // 3th order???
-  const double bt_RK[]  = {1./10, 0.0, 3./10,  2./5,  1./5}; // 3th order???
-
-  setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
-
-}
-
-void getButcherTableau_DOPRI45(DATA_GENERIC_RK* userdata)
-{
-  //DOPRI
-  /* Butcher Tableau */
-  userdata->stages = 7;
-  // order of the embedded RK method, main: order_b, embedded: order_bt
-  userdata->order_b = 5;
-  userdata->order_bt = 4;
-  // security factor for step size control
-  userdata->fac = 0.5;
-
-  const double c_RK[] = {0.0, 1./5, 3./10, 4./5, 8./9, 1., 1.};
-  const double A_RK[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                            1./5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                            3./40, 9./40, 0.0, 0.0, 0.0, 0.0, 0.0,
-                            44./45, -56./15, 32./9, 0.0, 0.0, 0.0, 0.0,
-                            19372./6561, -25360./2187, 64448./6561, -212./729, 0.0, 0.0, 0.0,
-                            9017./3168, -355./33, 46732./5247, 49./176, -5103./18656, 0.0, 0.0,
-                            35./384, 0.0, 500./1113, 125./192, -2187./6784, 11./84, 0.0
-  };
-  const double b_RK[] = {35./384, 0.0, 500./1113, 125./192, -2187./6784, 11./84, 0.0};
-  const double bt_RK[] = {5179./57600, 	0.0, 	7571./16695, 	393./640, 	-92097./339200, 	187./2100, 	1./40};
-
-  setButcherTableau(userdata, (double *)c_RK, (double *)A_RK, (double *)b_RK, (double *)bt_RK);
-
-}
-
-void printButcherTableau(DATA_GENERIC_RK* userdata)
-{
-  int i, j;
-  char Butcher_row[1024];
-  infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of RK-method:");
-  for (i = 0; i<userdata->stages; i++)
-  {
-    sprintf(Butcher_row, "%10g | ", userdata->c[i]);
-    for (j = 0; j<userdata->stages; j++)
-    {
-      sprintf(Butcher_row, "%s %10g", Butcher_row, userdata->A[i*userdata->stages + j]);
-    }
-    infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
-  }
-  infoStreamPrint(LOG_SOLVER, 0, "------------------------------------------------");
-  sprintf(Butcher_row, "%10s | ", "");
-  for (j = 0; j<userdata->stages; j++)
-  {
-    sprintf(Butcher_row, "%s %10g", Butcher_row, userdata->b[j]);
-  }
-  infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
-  sprintf(Butcher_row, "%10s | ", "");
-  for (j = 0; j<userdata->stages; j++)
-  {
-    sprintf(Butcher_row, "%s %10g", Butcher_row, userdata->bt[j]);
-  }
-  infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
-  messageClose(LOG_SOLVER);
-
-}
-
-void analyseButcherTableau(DATA_GENERIC_RK* userdata)
-{
-  int isGenericIRK = 0, isDIRK = 0, i, j, l;
-
-  for (i=0; i<userdata->stages;i++)
-  {
-    if (fabs(userdata->A[i*userdata->stages + i])>0) isDIRK = 1;
-    for (j=i+1; j<userdata->stages;j++)
-      if (fabs(userdata->A[i * userdata->stages + j])>0) isGenericIRK = 1;
-  }
-  if (isGenericIRK)
-  {
-    userdata->isExplicit = FALSE;
-    userdata->nlSystemSize = userdata->stages*userdata->nStates;
-    userdata->step_fun = &(full_implicit_RK);
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is fully implicit");
-  }
-  else if (isDIRK)
-  {
-    userdata->isExplicit = FALSE;
-    userdata->nlSystemSize = userdata->nStates;
-    userdata->step_fun = &(expl_diag_impl_RK);
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method diagonally implicit");
-  }
-  else
-  {
-    userdata->isExplicit = TRUE;
-    userdata->nlSystemSize = userdata->nStates;
-    userdata->step_fun = &(expl_diag_impl_RK);
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is explicit");
-  }
-  // set order for error control!
-  userdata->error_order = fmin(userdata->order_b, userdata->order_bt) + 1;
-}
-
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_RK.
  *
@@ -438,47 +159,41 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
   userdata->RK_method = getRK_Method();
-  switch(userdata->RK_method)
-  {
-    case RK_DOPRI45:
-      getButcherTableau_DOPRI45(userdata);
-      break;
-    case RK_MERSON:
-      getButcherTableau_MERSON(userdata);
-      break;
-    case RK_ESDIRK2:
-      getButcherTableau_ESDIRK2(userdata);
-      break;
-    case RK_ESDIRK2_test:
-      //ESDIRK2 not optimized (just for testing) solved with genericRK solver method
-      getButcherTableau_ESDIRK2(userdata);
-      break;
-    case RK_EXPL_EULER:
-      getButcherTableau_EXPLEULER(userdata);
-      break;
-    case RK_IMPL_EULER:
-      getButcherTableau_IMPLEULER(userdata);
-      break;
-    case RK_ESDIRK3_test:
-      //ESDIRK3 not optimized (just for testing) solved with genericRK solver method
-      getButcherTableau_ESDIRK3(userdata);
-      break;
-    case RK_ESDIRK3:
-      getButcherTableau_ESDIRK3(userdata);
-      break;
-    default:
-      errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", userdata->RK_method);
-      return -1;
+  userdata->tableau = initButcherTableau(userdata->RK_method);
+  if (userdata->tableau == NULL){
+    // ERROR
+    return -1;
   }
 
   // Check explicit, diagonally implicit or fully implicit status and fix solver settings
-  analyseButcherTableau(userdata);
-  infoStreamPrint(LOG_STATS, 0, "Step control factor is set to %g", userdata->fac);
+  enum RK_type expl;
+  analyseButcherTableau(userdata->tableau, userdata->nStates, &userdata->nlSystemSize, &expl);
+
+  switch (expl)
+  {
+  case RK_TYPE_EXPLICIT:
+    userdata->isExplicit = TRUE;
+    userdata->step_fun = &(expl_diag_impl_RK);
+    break;
+  case RK_TYPE_DIRK:
+    userdata->isExplicit = FALSE;
+    userdata->step_fun = &(expl_diag_impl_RK);
+    break;
+  case RK_TYPE_IMPLICIT:
+    userdata->isExplicit = FALSE;
+    userdata->step_fun = &(full_implicit_RK);
+    break;
+  default:
+    // Error
+    break;
+  }
+
+  infoStreamPrint(LOG_STATS, 0, "Step control factor is set to %g", userdata->tableau->fac);
 
 
   // adapt decision for testing of the fully implicit implementation
   if (userdata->RK_method == RK_ESDIRK2_test || userdata->RK_method == RK_ESDIRK3_test) {
-    userdata->nlSystemSize = userdata->stages*userdata->nStates;
+    userdata->nlSystemSize = userdata->tableau->stages*userdata->nStates;
     userdata->step_fun = &(full_implicit_RK);
   }
 
@@ -489,14 +204,15 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   userdata->yt = malloc(sizeof(double)*userdata->nStates);
   userdata->f = malloc(sizeof(double)*userdata->nStates);
   userdata->Jf = malloc(sizeof(double)*userdata->nStates*userdata->nStates);
-  userdata->k = malloc(sizeof(double)*userdata->nStates*userdata->stages);
+  userdata->k = malloc(sizeof(double)*userdata->nStates*userdata->tableau->stages);
   userdata->res_const = malloc(sizeof(double)*userdata->nStates);
   userdata->errest = malloc(sizeof(double)*userdata->nStates);
   userdata->errtol = malloc(sizeof(double)*userdata->nStates);
 
-  printButcherTableau(userdata);
+  printButcherTableau(userdata->tableau);
 
   /* initialize statistic counter */
+  // TODO AHeu: Use calloc instead?
   userdata->stepsDone = 0;
   userdata->evalFunctionODE = 0;
   userdata->evalJacobians = 0;
@@ -563,6 +279,8 @@ void freeDataGenericRK(DATA_GENERIC_RK* data) {
     break;
   }
 
+  freeButcherTableau(data->tableau);
+
   free(data->y);
   free(data->yOld);
   free(data->yt);
@@ -572,10 +290,6 @@ void freeDataGenericRK(DATA_GENERIC_RK* data) {
   free(data->res_const);
   free(data->errest);
   free(data->errtol);
-  free(data->A);
-  free(data->b);
-  free(data->bt);
-  free(data->c);
 
   free(data);
   data = NULL;
@@ -744,20 +458,20 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
 
   int i, j, l, k;
 
-// index of diagonal element of A
-  k = userdata->act_stage * userdata->stages + userdata->act_stage;
+  // index of diagonal element of A
+  k = userdata->act_stage * userdata->tableau->stages + userdata->act_stage;
   if (fj)
   {
     // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
     // set correct time value and states of simulation system
-    sData->timeValue = userdata->time + userdata->c[userdata->act_stage]*userdata->stepSize;
+    sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
     memcpy(sData->realVars, x, n*sizeof(double));
     wrapper_f_genericRK(data, threadData, userdata, fODE);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     for (j=0; j<n; j++)
     {
-      res[j] = userdata->res_const[j] - x[j] + userdata->stepSize * userdata->A[k]  * fODE[j];
+      res[j] = userdata->res_const[j] - x[j] + userdata->stepSize * userdata->tableau->A[k]  * fODE[j];
     }
   }
   else
@@ -791,7 +505,7 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
       for(j = 0; j < n; j++)
       {
         l = i * n + j;
-        solverData->fjac[l] = userdata->stepSize * userdata->A[k] * userdata->Jf[l];
+        solverData->fjac[l] = userdata->stepSize * userdata->tableau->A[k] * userdata->Jf[l];
         if (i==j) solverData->fjac[l] -= 1;
       }
     }
@@ -826,7 +540,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   int n = data->modelData->nStates;
 
-  int i, j, k, l, ind, stages = userdata->stages;
+  int i, j, k, l, ind, stages = userdata->tableau->stages;
   double sum;
 
   if (fj)
@@ -847,7 +561,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
     {
       // calculate f[k] and sweap over the stages
       //printf("c[k] = %g\n",userdata->c[k]);
-      sData->timeValue = userdata->time + userdata->c[k] * userdata->stepSize;
+      sData->timeValue = userdata->time + userdata->tableau->c[k] * userdata->stepSize;
       memcpy(sData->realVars, (x + k * n), n*sizeof(double));
       wrapper_f_genericRK(data, threadData, userdata, fODE);
       memcpy(userdata->k + k * n, fODE, n*sizeof(double));
@@ -856,7 +570,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
         //printf("A[%d,%d] = %g  ",l,k,userdata->A[l * stages + k]);
         for (i=0; i<n; i++)
         {
-          res[l * n + i] += userdata->stepSize * userdata->A[l * stages + k] * fODE[i];
+          res[l * n + i] += userdata->stepSize * userdata->tableau->A[l * stages + k] * fODE[i];
         }
       }
       //printf("\n");
@@ -905,7 +619,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
     for (k=0; k<stages && !userdata->isExplicit; k++)
     {
       // calculate Jf[k] and sweap over the stages
-      sData->timeValue = userdata->time + userdata->c[k] * userdata->stepSize;
+      sData->timeValue = userdata->time + userdata->tableau->c[k] * userdata->stepSize;
       memcpy(sData->realVars, (x + k * n), n*sizeof(double));
       // works only for analytical Jacobian!!!
       //printf("Hier: %d\n", k);
@@ -920,7 +634,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
           for (j=0; j<n; j++)
           {
             ind = l * stages * n * n + i * stages * n + j + k*n;
-            solverData->fjac[ind] += userdata->stepSize * userdata->A[l * stages + k] * userdata->Jf[i * n + j];
+            solverData->fjac[ind] += userdata->stepSize * userdata->tableau->A[l * stages + k] * userdata->Jf[i * n + j];
             //solverData->fjac[ind] += userdata->Jf[i * n + j];
             //printf("Hier2: l=%d i=%d j=%d\n", l,i,j);
             //printMatrix_genericRK("Jacobian of solver", solverData->fjac, stages * n, ind);
@@ -966,26 +680,26 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   memcpy(solverData->x, userdata->yOld, n*sizeof(double));
 
   // sweep over the stages
-  for (userdata->act_stage = 0; userdata->act_stage < userdata->stages; userdata->act_stage++)
+  for (userdata->act_stage = 0; userdata->act_stage < userdata->tableau->stages; userdata->act_stage++)
   {
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // residual constant part:
     // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
-    k = userdata->act_stage * userdata->stages;
+    k = userdata->act_stage * userdata->tableau->stages;
     for (j=0; j<n; j++)
     {
       userdata->res_const[j] = userdata->yOld[j];
       for (l=0; l<userdata->act_stage; l++)
-        userdata->res_const[j] += userdata->stepSize * userdata->A[k + l] * (userdata->k + l * n)[j];
+        userdata->res_const[j] += userdata->stepSize * userdata->tableau->A[k + l] * (userdata->k + l * n)[j];
     }
 
     // index of diagonal element of A
-    k = userdata->act_stage * userdata->stages + userdata->act_stage;
-    if (userdata->A[k] == 0)
+    k = userdata->act_stage * userdata->tableau->stages + userdata->act_stage;
+    if (userdata->tableau->A[k] == 0)
     {
       // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
       // set correct time value and states of simulation system
-      sData->timeValue = userdata->time + userdata->c[userdata->act_stage]*userdata->stepSize;
+      sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
       memcpy(sData->realVars, userdata->res_const, n*sizeof(double));
       wrapper_f_genericRK(data, threadData, userdata, fODE);
     }
@@ -1047,10 +761,10 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   solverData->initialized = 1;
   solverData->numberOfIterations = 0;
   solverData->numberOfFunctionEvaluations = 0;
-  solverData->n = userdata->stages*n;
+  solverData->n = userdata->tableau->stages*n;
 
   // set good starting values for the newton solver
-  for (k=0; k<userdata->stages; k++)
+  for (k=0; k<userdata->tableau->stages; k++)
     memcpy((solverData->x + k*n), userdata->yOld, n*sizeof(double));
   // set newton strategy
   solverData->newtonStrategy = NEWTON_DAMPED2;
@@ -1261,10 +975,10 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       {
         userdata->y[i]  = userdata->yOld[i];
         userdata->yt[i] = userdata->yOld[i];
-        for (l=0; l<userdata->stages; l++)
+        for (l=0; l<userdata->tableau->stages; l++)
         {
-          userdata->y[i]  += userdata->stepSize * userdata->b[l]  * (userdata->k + l * n)[i];
-          userdata->yt[i] += userdata->stepSize * userdata->bt[l] * (userdata->k + l * n)[i];
+          userdata->y[i]  += userdata->stepSize * userdata->tableau->b[l]  * (userdata->k + l * n)[i];
+          userdata->yt[i] += userdata->stepSize * userdata->tableau->bt[l] * (userdata->k + l * n)[i];
         }
         //userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
         userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
@@ -1296,7 +1010,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
       // Store performed stepSize for adjusting the time and interpolation purposes
       userdata->lastStepSize = userdata->stepSize;
-      userdata->stepSize *= fmin(facmax, fmax(facmin, userdata->fac*pow(1.0/err, 1./userdata->error_order)));
+      userdata->stepSize *= fmin(facmax, fmax(facmin, userdata->tableau->fac*pow(1.0/err, 1./userdata->tableau->error_order)));
       /*
        * step size control from Luca, etc.:
        * stepSize = seccoeff*sqrt(norm_errtol/fmax(norm_errest,errmin));
@@ -1386,6 +1100,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   return 0;
 }
 
+
+// TODO AHeu: For sure ther is already a linear interpolation function somewhere
 //auxiliary vector functions for better code structure
 void linear_interpolation(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
 {

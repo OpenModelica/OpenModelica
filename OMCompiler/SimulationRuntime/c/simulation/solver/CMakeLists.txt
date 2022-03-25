@@ -35,6 +35,7 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     nonlinearSystem.c
                     omc_math.c
                     radau.c
+                    rk_butcher.c
                     sample.c
                     solver_main.c
                     spatialDistribution.c
@@ -67,6 +68,7 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     nonlinearSystem.h
                     omc_math.h
                     radau.h
+                    rk_butcher.h
                     solver_main.h
                     spatialDistribution.h
                     stateset.h

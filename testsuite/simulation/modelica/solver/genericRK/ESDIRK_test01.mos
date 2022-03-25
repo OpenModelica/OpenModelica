@@ -33,7 +33,7 @@ cd("temp");
 
 setCommandLineOptions("--generateSymbolicJacobian");
 
-simulate(ESDIRK_test01, stopTime=20, simflags = "-lv=LOG_SOLVER -s=genericRK -rkOpt=esdirk3 -rkNLS=kinsol");
+simulate(ESDIRK_test01, stopTime=20, simflags = "-lv=LOG_SOLVER -s=genericRK -rkOpt=esdirk3 -rkNLS=newton");
 getErrorString();
 
 //simulate(TestEventsDaeMode, stopTime=20, simflags = "-lv=LOG_SOLVER,LOG_EVENTS -s=genericRK");
