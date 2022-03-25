@@ -769,7 +769,7 @@ extern const char* System_realpath(const char *path)
     MMC_THROW();
   }
 
-  WCHAR unicodeFullPath[bufLen];
+  WCHAR* unicodeFullPath = (WCHAR*)omc_alloc_interface.malloc_atomic(sizeof(WCHAR) * bufLen);
   if (!GetFullPathNameW(unicodePath, bufLen, unicodeFullPath, NULL)) {
     MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
     fprintf(stderr, "GetFullPathNameW failed. %lu\n", GetLastError());
@@ -782,6 +782,8 @@ extern const char* System_realpath(const char *path)
   SystemImpl__toWindowsSeperators(buffer, bufferLength);
   char *res = omc_alloc_interface.malloc_strdup(buffer);
   MULTIBYTE_OR_WIDECHAR_VAR_FREE(buffer);
+
+  GC_free(unicodeFullPath);
   return res;
 #else
   char buf[PATH_MAX];
