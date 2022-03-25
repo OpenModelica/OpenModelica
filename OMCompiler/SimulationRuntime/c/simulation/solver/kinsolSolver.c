@@ -225,7 +225,7 @@ static void resetKinsolMemory(DATA *data,
                             kinsolData->J);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
 
-  /* Set Jacobian for linear solver */
+  /* Set Jacobian for non-linear solver */
   if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
     if (nlsData->analyticalJacobianColumn != NULL && nlsData->sparsePattern != NULL) {
       flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseSymJac); /* Use symbolic Jacobian with sparsity pattern*/
@@ -254,19 +254,17 @@ static void resetKinsolMemory(DATA *data,
  *                              Initialized KINSOL memory in nlsData->solverData on exit.
  * @param analyticJacobian      Pointer to analytic Jacobian.
  * @param linearSolverMethod    Linear solver method.
- * @return int                  Return 0 on success.
+ * @return NLS_KINSOL_DATA*     Pointer to allocated KINSOL data.
  */
-int nlsKinsolAllocate(DATA *data,
-                      threadData_t *threadData,
-                      int size,
-                      int sysNumber,
-                      NONLINEAR_SYSTEM_DATA *nlsData,
-                      ANALYTIC_JACOBIAN* analyticJacobian,
-                      NLS_LS linearSolverMethod) {
-  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)malloc(sizeof(NLS_KINSOL_DATA));
-
+NLS_KINSOL_DATA* nlsKinsolAllocate(DATA *data,
+                                   threadData_t *threadData,
+                                   int size,
+                                   int sysNumber,
+                                   NONLINEAR_SYSTEM_DATA *nlsData,
+                                   ANALYTIC_JACOBIAN* analyticJacobian,
+                                   NLS_LS linearSolverMethod) {
   /* Allocate system data */
-  nlsData->solverData = (void *)kinsolData;
+  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)malloc(sizeof(NLS_KINSOL_DATA));
 
   kinsolData->size = size;
   kinsolData->linearSolverMethod = linearSolverMethod;
@@ -290,7 +288,7 @@ int nlsKinsolAllocate(DATA *data,
 
   resetKinsolMemory(data, threadData, kinsolData, sysNumber, nlsData, analyticJacobian);
 
-  return 0;
+  return kinsolData;
 }
 
 /**
@@ -298,12 +296,9 @@ int nlsKinsolAllocate(DATA *data,
  *
  * Free memory that was allocated with `nlsKinsolAllocate`.
  *
- * @param solverData
- * @return int
+ * @param kinsolData    Pointer to KINSOL data.
  */
-int nlsKinsolFree(void **solverData) {
-  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)*solverData;
-
+void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData) {
   KINFree((void *)&kinsolData->kinsolMemory);
 
   N_VDestroy_Serial(kinsolData->initialGuess);   /* TODO: Or was N_VDestroy_Serial correct? It won't free internal data */
@@ -319,7 +314,7 @@ int nlsKinsolFree(void **solverData) {
 
   free(kinsolData);
 
-  return 0;
+  return;
 }
 
 /**
@@ -340,7 +335,6 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData) {
   void *dataAndThreadData[2] = {data, threadData};
   NONLINEAR_SYSTEM_DATA *nlsData = kinsolUserData->nlsData;
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
-  long eqSystemNumber = nlsData->equationIndex;
   int iflag = 1 /* recoverable error */;
 
   /* Update statistics */
@@ -1194,8 +1188,7 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
 int nlsKinsolSolve(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
 
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
-  long eqSystemNumber = nlsData->equationIndex;
-  int indexes[2] = {1, eqSystemNumber};
+  int indexes[2] = {1, nlsData->equationIndex};
 
   int flag;
   long nFEval;
