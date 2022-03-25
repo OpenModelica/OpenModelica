@@ -597,19 +597,14 @@ extern void* System_regex(const char* str, const char* re, int maxn, int extende
 {
   void *res;
   int i = 0;
-#if !defined(_MSC_VER)
-  void *matches[maxn];
-#else
   void **matches = omc_alloc_interface.malloc(sizeof(void*)*maxn);
-#endif
-  *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)&matches);
+  *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)matches);
   res = mmc_mk_nil();
   for (i=maxn-1; i>=0; i--) {
     res = mmc_mk_cons(matches[i],res);
   }
-#if defined(_MSC_VER)
+
   GC_free(matches);
-#endif
   return res;
 }
 
