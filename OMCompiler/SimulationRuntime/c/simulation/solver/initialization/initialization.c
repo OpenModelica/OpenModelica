@@ -74,7 +74,7 @@
 #include <math.h>
 #include <string.h>
 
-extern int init_lambda_steps = 3;
+int init_lambda_steps = 3;
 
 /*! \fn void dumpInitializationStatus(DATA *data)
  *

@@ -923,7 +923,7 @@ static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO
   modelica_real* stateDerOld = sDataOld->realVars + nx;
   double t = sDataOld->timeValue;
   const double targetTime = t + solverInfo->currentStepSize;
-  const short isMaxStepSizeSet = (short) omc_flagValue[FLAG_MAX_STEP_SIZE];
+  const short isMaxStepSizeSet = omc_flagValue[FLAG_MAX_STEP_SIZE] != NULL;
   const double maxStepSize = isMaxStepSizeSet ? atof(omc_flagValue[FLAG_MAX_STEP_SIZE]) : -1;
 #if defined(_MSC_VER)
   /* handle stupid compilers */
