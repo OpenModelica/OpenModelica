@@ -877,19 +877,21 @@ static void* System_launchParallelTasksSerial(threadData_t *threadData, void *da
 
 extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads, void *dataLst, modelica_metatype (*fn)(threadData_t *,modelica_metatype))
 {
-  int len = listLength(dataLst), i;
+  int i;
+  size_t len = listLength(dataLst);
   void *result = mmc_mk_nil();
   thread_data data = {0};
-#if !defined(_MSC_VER)
-  void *commands[len];
-  void *status[len];
-  pthread_t th[numThreads];
   int isInteger = 0;
+  pthread_attr_t* attr_addr = NULL;
+
+  void **commands = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  void **status = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  pthread_t *th = (pthread_t*) omc_alloc_interface.malloc(sizeof(pthread_t)*numThreads);
 
 #if defined(__MINGW32__)
-  /* adrpo: set thread stack size on Windows to 4MB */
   pthread_attr_t attr;
-  if (pthread_attr_init(&attr))
+  attr_addr = &attr;
+  if (pthread_attr_init(attr_addr))
   {
     const char *tok[1] = {strerror(errno)};
     data.fail = 1;
@@ -897,38 +899,30 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
       ErrorType_scripting,
       ErrorLevel_internal,
       gettext("System.launchParallelTasks: failed to initialize the pthread attributes: %s"),
-      NULL,
-      0);
+      tok,
+      1);
     MMC_THROW_INTERNAL();
   }
-  /* try to set a stack size of 4MB */
-  if (pthread_attr_setstacksize(&attr, 4194304))
+
+  /* adrpo: set thread stack size on Windows to 4MB */
+  /* try to set a stack size of 4MB, if not then 2MB, if not then 1MB, if not then fail */
+  /* Rely on left to right Short Circuit Evaluation, i.e, shorts on the first true. */
+  if (pthread_attr_setstacksize(attr_addr, 4194304) ||
+      pthread_attr_setstacksize(attr_addr, 2097152) ||
+      pthread_attr_setstacksize(attr_addr, 1048576))
   {
-    /* did not work, try half 2MB */
-    if (pthread_attr_setstacksize(&attr, 2097152))
-    {
-      /* did not work, try half 1MB */
-      if (pthread_attr_setstacksize(&attr, 1048576))
-      {
         const char *tok[1] = {strerror(errno)};
         data.fail = 1;
         c_add_message(NULL,5999,
           ErrorType_scripting,
           ErrorLevel_internal,
           gettext("System.launchParallelTasks: failed to set the pthread stack size to 1MB: %s"),
-          NULL,
-          0);
+          tok,
+          1);
         MMC_THROW_INTERNAL();
-      }
-    }
   }
 #endif
 
-#else /* MSVC */
-  void **commands = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
-  void **status = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
-  pthread_t *th = (pthread_t*) omc_alloc_interface.malloc(sizeof(pthread_t)*numThreads);
-#endif
   if (len == 0) {
     return mmc_mk_nil();
   } else if (numThreads == 1 || len == 1) {
@@ -953,14 +947,9 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
     status[i] = 0; /* just in case */
   }
   numThreads = numThreads > len ? len : numThreads;
-  for (i=0; i<numThreads; i++) {
-    if (GC_pthread_create(&th[i],
-#if defined(__MINGW32__)
-    &attr,
-#else
-    NULL,
-#endif
-    System_launchParallelTasksThread,&data)) {
+  unsigned int live_threads = 0;
+  for (i=0; i < numThreads; i++) {
+    if (GC_pthread_create(&th[i], attr_addr, System_launchParallelTasksThread,&data)) {
       /* GC_pthread_create failed. We need to join already created threads though... */
       const char *tok[1] = {strerror(errno)};
       data.fail = 1;
@@ -968,21 +957,27 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
         ErrorType_scripting,
         ErrorLevel_internal,
         gettext("System.launchParallelTasks: Failed to create thread: %s"),
-        NULL,
-        0);
+        tok,
+        1);
       break;
     }
+    live_threads++;
   }
-  for (i=0; i<numThreads; i++) {
-    if (th[i] && GC_pthread_join(th[i], NULL)) {
+
+#if defined(__MINGW32__)
+  pthread_attr_destroy(attr_addr);
+#endif
+
+  for (i=0; i < live_threads; i++) {
+    if (GC_pthread_join(th[i], NULL)) {
       const char *tok[1] = {strerror(errno)};
       data.fail = 1;
       c_add_message(NULL,5999,
         ErrorType_scripting,
         ErrorLevel_internal,
         gettext("System.launchParallelTasks: Failed to join thread: %s"),
-        NULL,
-        0);
+        tok,
+        1);
     }
   }
   if (data.fail) {
