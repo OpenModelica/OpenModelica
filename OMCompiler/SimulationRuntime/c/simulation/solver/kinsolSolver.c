@@ -207,7 +207,7 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData, unsigned int numberOfNonZero
                             kinsolData->J);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
 
-  /* Set Jacobian for linear solver */
+  /* Set Jacobian for non-linear solver */
   if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
     if (analyticalJacobianColumn != NULL) {
       flag = KINSetJacFn(kinsolData->kinsolMemory,
@@ -305,7 +305,6 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData) {
   NONLINEAR_SYSTEM_DATA *nlsData =
       &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
-  long eqSystemNumber = nlsData->equationIndex;
   int iflag = 1 /* recoverable error */;
 
   /* Update statistics */
@@ -1162,8 +1161,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
   NONLINEAR_SYSTEM_DATA *nlsData =
       &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
-  long eqSystemNumber = nlsData->equationIndex;
-  int indexes[2] = {1, eqSystemNumber};
+  int indexes[2] = {1, nlsData->equationIndex};
 
   int flag;
   long nFEval;
