@@ -4197,23 +4197,78 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
     } else { // if no conflicting model found then just load the file simply
       setLoadingLibraries(true);
       // load the file in OMC
+      QStringList loadedClassesList1, loadedClassesList2;
+      LibraryTreeItem *pLibraryTreeItem = 0;
+      loadedClassesList1 = MainWindow::instance()->getOMCProxy()->getClassNames();
       if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding)) {
-        // create library tree nodes for loaded models
-        int progressvalue = 0;
-        if (showProgress) {
-          MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
-          MainWindow::instance()->showProgressBar();
-        }
-        foreach (QString model, classesList) {
-          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1);
-          mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-          if (showProgress) {
-            MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
+        /* Issue #8183
+         * If the library required is already loaded with some other version.
+         * Then allow the user to cancel the operation or unload everything and reload the class again.
+         */
+        if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+          // clear loadModelCallback classes
+          mAutoLoadedLibrariesList.clear();
+
+          QMessageBox *pMessageBox = new QMessageBox;
+          pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::error));
+          pMessageBox->setIcon(QMessageBox::Critical);
+          pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+          pMessageBox->setText(tr("The loaded class(es) <b>%1</b> uses versions of already loaded libraries which are not compatible with the required ones.<br /><br />"
+                                  "Cancel the operation i.e., do not load anything.<br />"
+                                  "Unload everything and reload %1 from the start (the correct dependent libraries will be loaded due to uses annotations). "
+                                  "Makesure to save your work.")
+                               .arg(classesList.join(",")));
+          pMessageBox->addButton(tr("Cancel Operation"), QMessageBox::ActionRole);
+          pMessageBox->addButton(tr("Unload all && Reload %1").arg(classesList.join(",")), QMessageBox::ActionRole);
+          int answer = pMessageBox->exec();
+          switch (answer) {
+            case 0: // cancel operation
+            default:
+              loadedClassesList2 = MainWindow::instance()->getOMCProxy()->getClassNames();
+              if (loadedClassesList2.size() > loadedClassesList1.size()) {
+                foreach (QString loadedClass, loadedClassesList2) {
+                  if (!loadedClassesList1.contains(loadedClass)) {
+                    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(loadedClass);
+                    if (pLibraryTreeItem) {
+                      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, true);
+                    } else {
+                      MainWindow::instance()->getOMCProxy()->deleteClass(loadedClass);
+                    }
+                  }
+                }
+              }
+              break;
+            case 1: // unload all and reload
+              loadedClassesList2 = MainWindow::instance()->getOMCProxy()->getClassNames();
+              foreach (QString loadedClass, loadedClassesList2) {
+                pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(loadedClass);
+                if (pLibraryTreeItem) {
+                  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, true);
+                } else {
+                  MainWindow::instance()->getOMCProxy()->deleteClass(loadedClass);
+                }
+              }
+              openModelicaFile(fileName, encoding, showProgress);
+              break;
           }
-        }
-        MainWindow::instance()->addRecentFile(fileName, encoding);
-        if (showProgress) {
-          MainWindow::instance()->hideProgressBar();
+        } else {
+          // create library tree nodes for loaded models
+          int progressvalue = 0;
+          if (showProgress) {
+            MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
+            MainWindow::instance()->showProgressBar();
+          }
+          foreach (QString model, classesList) {
+            mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1);
+            mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+            if (showProgress) {
+              MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
+            }
+          }
+          MainWindow::instance()->addRecentFile(fileName, encoding);
+          if (showProgress) {
+            MainWindow::instance()->hideProgressBar();
+          }
         }
       }
       setLoadingLibraries(false);
