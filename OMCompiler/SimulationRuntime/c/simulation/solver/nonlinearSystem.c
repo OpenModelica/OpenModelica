@@ -347,8 +347,8 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
 
-  modelica_boolean someSmallDensity = FALSE;  /* pretty dumping of flag info */
-  modelica_boolean someBigSize = FALSE;       /* analogous to someSmallDensity */
+  modelica_boolean someSmallDensity = 0;  /* pretty dumping of flag info */
+  modelica_boolean someBigSize = 0;       /* analogous to someSmallDensity */
 
   size = nonlinsys->size;
   nonlinsys->numberOfFEval = 0;
