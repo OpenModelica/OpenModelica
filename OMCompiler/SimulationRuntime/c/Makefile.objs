@@ -167,6 +167,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               newtonIteration$(OBJ_EXT) \
               nonlinearSolverNewton$(OBJ_EXT) \
               radau$(OBJ_EXT) \
+              rk_butcher$(OBJ_EXT) \
               sundials_error$(OBJ_EXT) \
               sym_solver_ssc$(OBJ_EXT)
 else
