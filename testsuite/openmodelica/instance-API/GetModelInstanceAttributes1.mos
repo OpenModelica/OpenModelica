@@ -1,0 +1,64 @@
+// name: GetModelInstanceAttributes1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    type Angle = Real(final quantity = \"Angle\");
+    parameter Real pi = 3;
+    Angle deg(start = pi);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"components\": {
+//     \"deg\": {
+//       \"type\": \"Real\",
+//       \"modifier\": \"(start = pi)\",
+//       \"prefixes\": {
+//         \"public\": true,
+//         \"final\": false,
+//         \"inner\": false,
+//         \"outer\": false,
+//         \"replaceable\": false,
+//         \"redeclare\": false,
+//         \"connector\": \"\",
+//         \"variability\": \"\",
+//         \"direction\": \"\"
+//       }
+//     },
+//     \"pi\": {
+//       \"type\": \"Real\",
+//       \"modifier\": \" = 3\",
+//       \"value\": {
+//         \"binding\": \"3.0\"
+//       },
+//       \"prefixes\": {
+//         \"public\": true,
+//         \"final\": false,
+//         \"inner\": false,
+//         \"outer\": false,
+//         \"replaceable\": false,
+//         \"redeclare\": false,
+//         \"connector\": \"\",
+//         \"variability\": \"parameter\",
+//         \"direction\": \"\"
+//       }
+//     }
+//   },
+//   \"connections\": [
+//
+//   ],
+//   \"replaceable\": [
+//
+//   ]
+// }"
+// endResult

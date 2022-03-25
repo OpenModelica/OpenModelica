@@ -206,6 +206,7 @@ uniontype InstNode
 
   record COMPONENT_NODE
     String name;
+    Option<SCode.Element> definition;
     Visibility visibility;
     Pointer<Component> component;
     InstNode parent "The instance that this component is part of.";
@@ -279,7 +280,7 @@ uniontype InstNode
     SCode.Visibility vis;
   algorithm
     SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
-    node := COMPONENT_NODE(name, Prefixes.visibilityFromSCode(vis),
+    node := COMPONENT_NODE(name, SOME(definition), Prefixes.visibilityFromSCode(vis),
       Pointer.create(Component.new(definition)), parent, InstNodeType.NORMAL_COMP());
   end newComponent;
 
@@ -323,7 +324,7 @@ uniontype InstNode
     input InstNode parent;
     output InstNode node;
   algorithm
-    node := COMPONENT_NODE(name, Visibility.PUBLIC, Pointer.create(component),
+    node := COMPONENT_NODE(name, NONE(), Visibility.PUBLIC, Pointer.create(component),
                            parent, InstNodeType.NORMAL_COMP());
   end fromComponent;
 
@@ -899,7 +900,7 @@ uniontype InstNode
   algorithm
     definition := match node
       case CLASS_NODE() then node.definition;
-      case COMPONENT_NODE() then Component.definition(Pointer.access(node.component));
+      case COMPONENT_NODE(definition = SOME(definition)) then definition;
     end match;
   end definition;
 
@@ -1459,6 +1460,19 @@ uniontype InstNode
       else false;
     end match;
   end isRedeclared;
+
+  function isReplaceable
+    input InstNode node;
+    output Boolean repl;
+  protected
+    SCode.Element elem;
+  algorithm
+    repl := match node
+      case CLASS_NODE() then SCodeUtil.isElementReplaceable(node.definition);
+      case COMPONENT_NODE(definition = SOME(elem)) then SCodeUtil.isElementReplaceable(elem);
+      else false;
+    end match;
+  end isReplaceable;
 
   function isProtectedBaseClass
     input InstNode node;

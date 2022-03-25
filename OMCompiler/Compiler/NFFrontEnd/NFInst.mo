@@ -123,37 +123,19 @@ protected
   InstContext.Type context;
   Integer var_count, eq_count;
 algorithm
-  // gather here all the flags to disable expansion
-  // and scalarization if -d=-nfScalarize is on
-  if not Flags.isSet(Flags.NF_SCALARIZE) then
-    // make sure we don't expand anything
-    FlagsUtil.set(Flags.NF_EXPAND_OPERATIONS, false);
-    FlagsUtil.set(Flags.NF_EXPAND_FUNC_ARGS, false);
-  end if;
-
-  System.setUsesCardinality(false);
-  System.setHasOverconstrainedConnectors(false);
-  System.setHasStreamConnectors(false);
-
+  resetGlobalFlags();
   context := if Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
     NFInstContext.RELAXED else NFInstContext.NO_CONTEXT;
 
-  // Create a root node from the given top-level classes.
+  // Create a top scope from the given top-level classes.
   top := makeTopNode(program);
   name := AbsynUtil.pathString(classPath);
 
-  // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED,
-           AbsynUtil.dummyInfo, checkAccessViolations = false);
-  cls := InstUtil.mergeScalars(cls, classPath);
-  checkInstanceRestriction(cls, classPath, context);
-  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
+  // Look up the class to instantiate.
+  cls := lookupRootClass(classPath, top, context);
 
   // Instantiate the class.
-  inst_cls := instantiate(cls, context = context);
-  checkPartialClass(cls, context);
-
-  insertGeneratedInners(inst_cls, top, context);
+  inst_cls := instantiateRootClass(cls, context);
   execStat("NFInst.instantiate(" + name + ")");
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
@@ -225,6 +207,46 @@ algorithm
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
   //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
 end instClassInProgram;
+
+function resetGlobalFlags
+  "Resets the global flags that the frontend uses."
+algorithm
+  // gather here all the flags to disable expansion
+  // and scalarization if -d=-nfScalarize is on
+  if not Flags.isSet(Flags.NF_SCALARIZE) then
+    // make sure we don't expand anything
+    FlagsUtil.set(Flags.NF_EXPAND_OPERATIONS, false);
+    FlagsUtil.set(Flags.NF_EXPAND_FUNC_ARGS, false);
+  end if;
+
+  System.setUsesCardinality(false);
+  System.setHasOverconstrainedConnectors(false);
+  System.setHasStreamConnectors(false);
+end resetGlobalFlags;
+
+function lookupRootClass
+  "Looks up the class to instantiate and marks it as a root node."
+  input Absyn.Path path;
+  input InstNode topScope;
+  input InstContext.Type context;
+  output InstNode clsNode;
+algorithm
+  clsNode := Lookup.lookupClassName(path, topScope, NFInstContext.RELAXED,
+    AbsynUtil.dummyInfo, checkAccessViolations = false);
+  clsNode := InstUtil.mergeScalars(clsNode, path);
+  checkInstanceRestriction(clsNode, path, context);
+  clsNode := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), clsNode);
+end lookupRootClass;
+
+function instantiateRootClass
+  input output InstNode clsNode;
+  input InstContext.Type context;
+algorithm
+  clsNode := instantiate(clsNode, context = context);
+  checkPartialClass(clsNode, context);
+
+  insertGeneratedInners(clsNode, InstNode.topScope(clsNode), context);
+end instantiateRootClass;
 
 function instantiate
   input output InstNode node;
