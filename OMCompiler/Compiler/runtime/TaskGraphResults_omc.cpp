@@ -13,7 +13,7 @@ extern "C" {
 
 #include "TaskGraphResultsCmp.cpp"
 #else
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include "errorext.h"
 #define TASKGRAPH_VS() c_add_message(NULL, -1, ErrorType_scripting, ErrorLevel_error, "TaskGraphResults not supported on Visual Studio.", NULL, 0);MMC_THROW();
 #endif
