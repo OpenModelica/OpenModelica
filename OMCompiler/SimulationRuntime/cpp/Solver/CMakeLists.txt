@@ -66,7 +66,7 @@ add_library(omc::simrt::cpp::solver::dgesvsolver::static ALIAS OMCppDgesvSolver_
 
 target_sources(OMCppDgesvSolver_static PRIVATE ${OMC_SIMRT_CPP_SOLVER_DGESV_SOURCES})
 
-target_compile_definitions(OMCppDgesvSolver_static PRIVATE -DRUNTIME_STATIC_LINKING)
+target_compile_definitions(OMCppDgesvSolver_static PRIVATE RUNTIME_STATIC_LINKING)
 
 target_link_libraries(OMCppDgesvSolver_static PUBLIC omc::simrt::cpp::core::modelica)
 
@@ -140,7 +140,7 @@ add_library(omc::simrt::cpp::solver::newton::static ALIAS OMCppNewton_static)
 
 target_sources(OMCppNewton_static PRIVATE ${OMC_SIMRT_CPP_SOLVER_NEWTON_SOURCES})
 
-target_compile_definitions(OMCppNewton_static PRIVATE -DRUNTIME_STATIC_LINKING)
+target_compile_definitions(OMCppNewton_static PRIVATE RUNTIME_STATIC_LINKING)
 
 target_link_libraries(OMCppNewton_static PUBLIC omc::simrt::cpp::core::modelica)
 
