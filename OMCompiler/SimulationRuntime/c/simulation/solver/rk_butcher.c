@@ -330,6 +330,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method) {
     case RK_MERSON:
       getButcherTableau_MERSON(tableau);
       break;
+    case RK_SDIRK2:
+      getButcherTableau_SDIRK2(tableau);
+      break;
     case RK_SDIRK3:
       getButcherTableau_SDIRK3(tableau);
       break;
