@@ -782,6 +782,7 @@ MergeComponents4.mo \
 MergeComponents5.mo \
 MergeComponents6.mo \
 MergeComponents7.mo \
+MergeComponents8.mo \
 MissingRedeclare1.mo \
 mod1.mo \
 mod10.mo \

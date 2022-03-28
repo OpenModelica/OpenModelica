@@ -546,6 +546,10 @@ public
           has_submods := not listEmpty(mod.subModLst);
 
           if has_binding then
+            if stringEmpty(name) then
+              strl := Dump.printExpStr(Util.getOption(mod.binding)) :: strl;
+            end if;
+
             strl := "=" :: strl;
           end if;
 
