@@ -812,6 +812,7 @@ public constant ErrorTypes.Message DER_OF_NONDIFFERENTIABLE_EXP = ErrorTypes.MES
   Gettext.gettext("Argument ‘%s‘ of der is not differentiable."));
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_WITHOUT_CONVERSION = ErrorTypes.MESSAGE(370, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("%1 requested package %2 of version %3. %2 %4 is used instead which states that it is fully compatible without conversion script needed."));
+// The following errors (371, 372, 373) are used by OMEdit. Do not change them.
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_WITH_CONVERSION = ErrorTypes.MESSAGE(371, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("%1 requested package %2 of version %3. %2 %4 is used instead which states that it is only compatible with a conversion script. Use convertPackageToLibrary(%1, %2, \"%4\") to run the conversion script or proceed with potential issues as a result."));
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_OLDER = ErrorTypes.MESSAGE(372, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
