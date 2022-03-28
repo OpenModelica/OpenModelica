@@ -20,7 +20,7 @@ add_library(omc::simrt::cpp::fmu::static ALIAS OMCppFMU_static)
 
 target_sources(OMCppFMU_static PRIVATE ${OMC_SIMRT_CPP_FMU_SOURCES})
 
-target_compile_definitions(OMCppFMU_static PRIVATE -DRUNTIME_STATIC_LINKING)
+target_compile_definitions(OMCppFMU_static PRIVATE RUNTIME_STATIC_LINKING)
 
 target_link_libraries(OMCppFMU_static PUBLIC omc::simrt::cpp::config)
 
