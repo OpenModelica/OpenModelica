@@ -1503,7 +1503,7 @@ void MainWindow::addSystemLibraries()
     if (versions.isEmpty()) {
       QAction *pAction = new QAction(library, this);
       pAction->setData(QStringList() << library << "");
-      connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
+      connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
       mpLibrariesMenu->addAction(pAction);
     } else {
       QMenu *pLibraryMenu = new QMenu(library);
@@ -1513,7 +1513,7 @@ void MainWindow::addSystemLibraries()
         if ((library.compare(QStringLiteral("Modelica")) == 0) && (version.compare(QStringLiteral("4.0.0")) == 0)) {
           pAction->setShortcut(QKeySequence("Ctrl+m"));
         }
-        connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
+        connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
         pLibraryMenu->addAction(pAction);
       }
       mpLibrariesMenu->addMenu(pLibraryMenu);
@@ -1857,69 +1857,13 @@ void MainWindow::openDirectory()
 }
 
 /*!
- * \brief MainWindow::loadSystemLibrary
- * Loads a system library.
- */
-void MainWindow::loadSystemLibrary()
-{
-  QAction *pAction = qobject_cast<QAction*>(sender());
-  if (pAction) {
-    QStringList actionData = pAction->data().toStringList();
-    if (actionData.size() > 1) {
-      loadSystemLibrary(actionData.at(0), actionData.at(1));
-    }
-  }
-}
-
-/*!
- * \brief MainWindow::loadSystemLibrary
- * Loads a system library.
- * \param library
- * \param version
- */
-void MainWindow::loadSystemLibrary(const QString &library, QString version)
-{
-  /* check if library is already loaded. */
-  LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-  if (pLibraryTreeModel->findLibraryTreeItemOneLevel(library)) {
-    QMessageBox *pMessageBox = new QMessageBox(this);
-    pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::information));
-    pMessageBox->setIcon(QMessageBox::Information);
-    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(library)));
-    pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES)).arg(library).append("\n")
-                                    .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(library)));
-    pMessageBox->setStandardButtons(QMessageBox::Ok);
-    pMessageBox->exec();
-  } else {  /* if library is not loaded then load it. */
-    mpProgressBar->setRange(0, 0);
-    showProgressBar();
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(library));
-
-    if (version.isEmpty()) {
-      version = QString("default");
-    }
-
-    mpLibraryWidget->setLoadingLibraries(true);
-    if (mpOMCProxy->loadModel(library, version)) {
-      pLibraryTreeModel->createLibraryTreeItem(library, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
-      pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-    }
-    mpLibraryWidget->setLoadingLibraries(false);
-    mpStatusBar->clearMessage();
-    hideProgressBar();
-  }
-}
-
-/*!
  * \brief MainWindow::writeOutputFileData
  * Writes the output data from stdout file and adds it to MessagesWidget.
  * \param data
  */
 void MainWindow::writeOutputFileData(QString data)
 {
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, data,
-                                                        Helper::scriptingKind, Helper::notificationLevel));
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 
 /*!
