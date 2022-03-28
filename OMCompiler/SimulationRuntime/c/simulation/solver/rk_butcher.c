@@ -38,6 +38,9 @@
 #include <string.h>
 
 #include "util/omc_error.h"
+#include "util/simulation_options.h"
+#include "simulation/options.h"
+
 
 #ifndef FALSE
 #define FALSE 0
@@ -60,22 +63,50 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b
 }
 
 void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
-  // ESDIRK2 method
-  tableau->stages = 3;
-  tableau->order_b = 2;
-  tableau->order_bt = 1;
-  tableau->fac = 0.9;
+  const char* flag_value = omc_flagValue[FLAG_RK_PAR];
+  double lim;
 
+  // ESDIRK2 method
+  if (flag_value != NULL) {
+    lim = atof(omc_flagValue[FLAG_RK_PAR]);
+    printf("embedded method yields R(\u221e) =  %.19g\n", lim);
+  } else
+  {
+    lim = 1;
+    tableau->order_b = 2;
+    tableau->order_bt = 1;
+  }
   /* initialize values of the Butcher tableau */
   double gam = (2.0-sqrt(2.0))*0.5;
   double c2 = 2.0*gam;
   double b1 = sqrt(2.0)/4.0;
   double b2 = b1;
   double b3 = gam;
-  double bt1 = 1.75-sqrt(2.0);
-  double bt2 = bt1;
-  double bt3 = 2.0*sqrt(2.0)-2.5;
 
+  double bt1;
+  double bt2;
+  double bt3;
+
+  tableau->stages = 3;
+  tableau->fac = 0.9;
+  tableau->order_b = 2;
+
+  if (lim<100)
+  {
+    tableau->order_bt = 1;
+
+    bt1 = 1.0/4.0*(-3.0*lim+1.0)*sqrt(2.0)+lim;
+    bt2 = -1.0/4.0*(3.0*sqrt(2.0)-4.0)*(-2.0*sqrt(2.0)+lim-3.0);
+    bt3 = 1.0/2.0*(3.0*sqrt(2.0)-4.0)*(1.0+lim+sqrt(2.0));
+  }
+  else
+  {
+    tableau->order_bt = 3;
+
+    bt1 = 1.0/3.0-(sqrt(2.0))/12.0;
+    bt2 = 1.0/3.0+(sqrt(2.0))/4.0;
+    bt3 = -(sqrt(2.0))/6.0+1.0/3.0;
+  }
   /* Butcher Tableau */
   const double c[] = {0.0, c2, 1.0};
   const double A[] = {0.0, 0.0, 0.0,
@@ -88,47 +119,33 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
 }
 
 void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
+  const char* flag_value = omc_flagValue[FLAG_RK_PAR];
+  double lim;
+
+  // ESDIRK2 method
+  if (flag_value != NULL) {
+    lim = atof(omc_flagValue[FLAG_RK_PAR]);
+    printf("embedded method yields R(\u221e) =  %.19g\n", lim);
+  } else
+  {
+    lim = 1;
+  }
+
   //ESDIRK3
   tableau->stages = 4;
   tableau->order_b = 3;
   tableau->order_bt = 2;
   tableau->fac = 0.9;
 
-//   double gam=0.43586652150845899941601945;
-//   double c3=3./5;
-//   double a32=(c3*(c3-2*gam))/(4*gam);
-//   double a31=c3-a32-gam;
-//   double A=1-6*gam+6*gam*gam;
-//   double b2=(-2+3*c3+6*gam*(1-c3))/(12*gam*(c3-2*gam));
-//   double b3=A/(3*c3*(c3-2*gam));
-//   double b4=gam;
-
-//   double b1=1-b2-b3-b4;
-//   double bt2=((c3*(-1+6*gam-24*gam*gam*gam+12*gam*gam*gam*gam-6*gam*gam*gam*gam*gam))/(4*gam*(2*gam-c3)*A)+
-//                 (3-27*gam+68*gam*gam-55*gam*gam*gam+21*gam*gam*gam*gam-6*gam*gam*gam*gam*gam)/(2*(2*gam-c3)*A));
-//   double bt3=((-gam*(-2+21*gam-68*gam*gam+79*gam*gam*gam-33*gam*gam*gam*gam+12*gam*gam*gam*gam*gam))/(c3*(c3-2*gam)*A));
-//   double bt4=(-3*gam*gam*(-1+4*gam-2*gam*gam+gam*gam*gam))/A;
-//   double bt1=1-bt2-bt3-bt4;
-
-//   const double c_ESDIRK3[] = {0.0, 2*gam, c3, 1};
-//   const double A_ESDIRK3[] = {0.0, 0.0, 0.0, 0.0,
-//                               gam, gam, 0.0, 0.0,
-//                               a31, a32, gam, 0.0,
-//                               b1,  b2,  b3, gam
-//  };
-//   const double b_ESDIRK3[] = {b1, b2, b3, b4};
-//   const double bt_ESDIRK3[] = {bt1, bt2, bt3, bt4};
-
   /* Butcher Tableau */
-  const double c[]  = {0.0, 0.87173304301691799883203890238711368505858818587690, 3./5, 1.};
-
-  const double A[]  = {0, 0, 0, 0,
-                          0.43586652150845899941601945119355684252929409293845, 0.43586652150845899941601945119355684252929409293845, 0.0, 0.0,
-                          0.25764824606642724579999601628407970926431835216613, -0.093514767574886245216015467477636551793612445104585, 0.43586652150845899941601945119355684252929409293845, 0.0,
-                          0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
-
-  const double b[]  = {0.18764102434672382516129214416680439137952555421072, -0.59529747357695494804782302758588517377818522805180, 0.97178992772177212347051143222552393986936558090263, 0.43586652150845899941601945119355684252929409293845};
-  const double  bt[] = {0.10889661761586445415613073807049608218243112728445, -0.91532581187071275348163809781681834549906345402560, 1.2712735973021521678447158941356428765353629368204, 0.53515559695269613148079146561067938678126938992075};
+  const double c[]  = {0.0, .871733043016917998832038902388, 3./5., 1.0};
+  const double A[]  = {
+                          0.0, 0.0, 0.0, 0.0,
+                          .435866521508458999416019451194, .435866521508458999416019451194, 0.0, 0.0,
+                          .257648246066427245799996016284, -.935147675748862452160154674779e-1, .435866521508458999416019451194, 0.0,
+                          .187641024346723825161292144158, -.595297473576954948047823027584, .971789927721772123470511432228, .435866521508458999416019451194};
+  const double b[]  = {.187641024346723825161292144158, -.595297473576954948047823027584, .971789927721772123470511432228, .435866521508458999416019451194};
+  const double bt[]  = {.187641024346723825161292144140-.36132349168887087099928261975*lim, -1.46846946256021140302557262326*lim-.595297473576954948047823027622, 1.37419900268512763072398740524*lim+.971789927721772123470511432300, .455593951563954643300867837766*lim+.435866521508458999416019451180};
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
@@ -140,45 +157,73 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau) {
   tableau->order_bt = 2;
   tableau->fac = 0.9;
 
-  //double gam = 4./5;
-  //double c2 = (6*gam*gam - 9*gam + 2)/(3*(2*gam*gam - 4*gam + 1));
-  //double b1 = (4*gam - 1)/(4*(3*gam*gam*gam - 9*gam*gam + 6*gam - 1));
-  //double b2 = 1 - b1 - gam;
+  const char* flag_value = omc_flagValue[FLAG_RK_PAR];
+  double gam;
 
-  //const double c[]  = {gam, c2, 1};
+  gam = 1.0/2.0 + sqrt(3.0)/6.0;
+  const double c[]  = {gam, (3.0*gam - 2.0)/(6.0*gam - 3.0), 1.0};
+  const double A[]  = {
+                        gam, 0, 0,
+                        (-6*gam*gam+6*gam-2)/(6*gam-3), gam, 0,
+                          0, 1-gam, gam};
+  const double b[]  = {1.0/(12.0*gam*gam - 12.0*gam + 4.0), 3.0*(2.0*gam - 1.0)*(2.0*gam - 1.0)/(12.0*gam*gam - 12.0*gam + 4.0), 0.0};
+  const double bt[]  = {(2.0*sqrt(3.0) + 1.0)/(-3.0 + sqrt(3.0)), 1.0 + 1.0/3.0*sqrt(3.0), (-6.0 - 3.0*sqrt(3.0))/(-9.0 + 3.0*sqrt(3.0))};
+  // ESDIRK2 method
+  if (flag_value != NULL) {
+    gam = 1.0/2.0 - sqrt(3.0)/6.0;
+    const double c1[]  = {gam, (3.0*gam - 2.0)/(6.0*gam - 3.0), 1.0};
+    const double A1[]  = {
+                          gam, 0, 0,
+                          (-6*gam*gam+6*gam-2)/(6*gam-3), gam, 0,
+                           0, 1-gam, gam};
+    const double b1[]  = {1.0/(12.0*gam*gam - 12.0*gam + 4.0), 3.0*(2.0*gam - 1.0)*(2.0*gam - 1.0)/(12.0*gam*gam - 12.0*gam + 4.0), 0.0};
+    const double bt1[]  = {(2.0*sqrt(3.0) - 1.0)/(sqrt(3.0) + 3.0), 1.0 - 1.0/3.0*sqrt(3.0), sqrt(3.0)*(2*sqrt(3.0) - 3.0)/(3.0*sqrt(3.0) + 9.0)};
+    setButcherTableau(tableau, (double *)c1, (double *)A1, (double *)b1, (double *) bt1);
 
-  //const double A[]  = {gam,      0,   0,
-  //                        c2-gam, gam,   0,
-  //                        b1, b2,  gam};
-
-  //const double b[]  = {b1, b2, gam};
-  // const double bt[] = {-2741./4876, 6399./5300, 204./575};  gam = 4/5, lim = -2/5
-  //const double bt[] = {-9909./4876 , 9471./5300, 716./575}; //  gam = 4/5, lim = 2/5
-  // const double bt[] = {3./37, 34./37, 0.0}; gam = 5/6, lim = -17/25
-  // const double bt[] = {105./629, 33./37, -1./17}; gam = 5/6, lim = -91/125
-  // Stability of the embedded RK method is larger than the main RK method
-  /* Butcher Tableau */
-  const double c[]  = {0.211324865405187117745425609748, 0.5, 1.};
-
-  const double A[]  = {0.211324865405187117745425609748,0.,0.,
-                          0.288675134594812882254574390252, 0.211324865405187117745425609748, 0.,
-                          0.366025403784438646763723170761, 0.422649730810374235490851219493, 0.211324865405187117745425609748};
-
-  const double b[]  = {0.366025403784438646763723170761, 0.422649730810374235490851219493, 0.211324865405187117745425609748};
-  // //const double bt[] = {0.351869322027954749581941158535, 0.444978830179634461030230691032, 0.203151847792410789387828150409};
-  // //const double bt[] = {0.337713240271470852400159146338, 0.589316397477040902157517889986, 0.0729703622514882454423229451520};
-  const double bt[] = {0.337713240271470852400159146338, 0.101282525764456039805887004958, 0.561004233964073107793953837265};
-
-// const double c[]  = {         0.21132486540518711774,                             0.5,                               1};
-// const double A[]  = {
-//                                   0.21132486540518711774,                                0,                                0,
-//                                   0.28867513459481288226,           0.21132486540518711774,                                0,
-//                                    0.3660254037844386468,           0.42264973081037423546,           0.21132486540518711774};
-// const double b[]  = {          0.3660254037844386468,          0.42264973081037423546,          0.21132486540518711774};
-// const double bt[]  = {          0.4226497308103742353,          0.33333333333333333351,          0.24401693585629243119};
+    printf("Main routine is not A-stable\n");
+  } else
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+//   //double gam = 4./5;
+//   //double c2 = (6*gam*gam - 9*gam + 2)/(3*(2*gam*gam - 4*gam + 1));
+//   //double b1 = (4*gam - 1)/(4*(3*gam*gam*gam - 9*gam*gam + 6*gam - 1));
+//   //double b2 = 1 - b1 - gam;
+
+//   //const double c[]  = {gam, c2, 1};
+
+//   //const double A[]  = {gam,      0,   0,
+//   //                        c2-gam, gam,   0,
+//   //                        b1, b2,  gam};
+
+//   //const double b[]  = {b1, b2, gam};
+//   // const double bt[] = {-2741./4876, 6399./5300, 204./575};  gam = 4/5, lim = -2/5
+//   //const double bt[] = {-9909./4876 , 9471./5300, 716./575}; //  gam = 4/5, lim = 2/5
+//   // const double bt[] = {3./37, 34./37, 0.0}; gam = 5/6, lim = -17/25
+//   // const double bt[] = {105./629, 33./37, -1./17}; gam = 5/6, lim = -91/125
+//   // Stability of the embedded RK method is larger than the main RK method
+//   /* Butcher Tableau */
+//   const double c[]  = {0.211324865405187117745425609748, 0.5, 1.};
+
+//   const double A[]  = {0.211324865405187117745425609748,0.,0.,
+//                        0.288675134594812882254574390252, 0.211324865405187117745425609748, 0.,
+//                        0.366025403784438646763723170761, 0.422649730810374235490851219493, 0.211324865405187117745425609748};
+
+//   const double b[]  = {0.366025403784438646763723170761, 0.422649730810374235490851219493, 0.211324865405187117745425609748};
+//   // //const double bt[] = {0.351869322027954749581941158535, 0.444978830179634461030230691032, 0.203151847792410789387828150409};
+//   // //const double bt[] = {0.337713240271470852400159146338, 0.589316397477040902157517889986, 0.0729703622514882454423229451520};
+//   const double bt[] = {0.337713240271470852400159146338, 0.101282525764456039805887004958, 0.561004233964073107793953837265};
+
+// // const double c[]  = {         0.21132486540518711774,                             0.5,                               1};
+// // const double A[]  = {
+// //                                   0.21132486540518711774,                                0,                                0,
+// //                                   0.28867513459481288226,           0.21132486540518711774,                                0,
+// //                                    0.3660254037844386468,           0.42264973081037423546,           0.21132486540518711774};
+// // const double b[]  = {          0.3660254037844386468,          0.42264973081037423546,          0.21132486540518711774};
+// // const double bt[]  = {          0.4226497308103742353,          0.33333333333333333351,          0.24401693585629243119};
+
+
+//  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
 void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
@@ -191,12 +236,11 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->fac = 0.9;
 
   /* Butcher Tableau */
-  const double c[]  = {                            0.5,                               1};
-  const double A[]  = {
-                                                      0.5,                                0,
-                                                      0.5,                              0.5};
-  const double b[]  = {                            0.5,                             0.5};
-  const double bt[]  = {                           0.25,                            0.75};
+  const double c[]   = {0.5, 1.0};
+  const double A[]   = {0.5, 0.0,
+                        0.5, 0.5};
+  const double b[]   = { 0.5,  0.5};
+  const double bt[]  = {0.25, 0.75};
 
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
@@ -221,7 +265,7 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
 }
 
 void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
-  //explicit Euler with Richardson-Extrapolation for step size control
+  //implicit Euler with Richardson-Extrapolation for step size control
   tableau->stages = 3;
   tableau->order_b = 2;
   tableau->order_bt = 1;
@@ -232,9 +276,19 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
   const double A[] = {1.0, 0.0, 0.0,
                          0.0, 0.5, 0.0,
                          0.0, 0.5, 0.5};
-  const double  bt[] = {1.0, 0.0, 0.0}; // implicit Euler step
-  //const double  bt[] = {0.0, 0.5, 0.5}; // implicit Euler step, with half step size
-  const double b[] = {-1.0, 1.0, 1.0}; // Richardson extrapolation
+  const double bt[] = {1.0, 0.0, 0.0}; // implicit Euler step
+  const double b[]  = {-1.0, 1.0, 1.0}; // Richardson extrapolation for error estimator
+  // tableau->stages = 2;
+  // tableau->order_b = 1;
+  // tableau->order_bt = 2;
+  // tableau->fac = 0.9;
+
+  // /* Butcher Tableau */
+  // const double c[] = {0.0, 1.0};
+  // const double A[] = {0.0, 0.0,
+  //                     0.0, 1.0};
+  // const double  b[] = {0.0, 1.0}; // implicit Euler step
+  // const double  bt[] = {0.5, 0.5}; // trapezoidal rule for error estimator
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }

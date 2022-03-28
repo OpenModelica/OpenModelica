@@ -137,7 +137,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_R */                            "r",
   /* FLAG_DATA_RECONCILE  */              "reconcile",
   /* FLAG_DATA_RECONCILE_BOUNDARY */      "reconcileBoundaryConditions",
-  /* FLAG_RK */                           "rkOpt",
+  /* FLAG_RK */                           "genericRKOpt",
+  /* FLAG_RK_PAR */                       "embeddedRKLim",
   /* FLAG_RK_NLS */                       "rkNLS",
   /* FLAG_RT */                           "rt",
   /* FLAG_S */                            "s",
@@ -260,6 +261,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE */               "Run the Data Reconciliation numerical computation algorithm for constrained equations",
   /* FLAG_DATA_RECONCILE_BOUNDARY */      "Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
   /* FLAG_RK */                           "value specifies the chosen Runge-Kutta scheme (default 0)",
+  /* FLAG_RK_PAR */                       "tune embedded method",
   /* FLAG_RK_NLS */                       "non-linear solver method used by solver genericRK",
   /* FLAG_RT */                           "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                            "value specifies the integration method",
@@ -551,6 +553,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
   /* FLAG_RK */
   "  Value specifies the chosen Runge-Kutta method (default dopri45).",
+  /* FLAG_RK_PAR */
+  "tune embedded formula",
   /* FLAG_RK_NLS */
   "  Non-linear solver method used in implicit runge-kutta methods: Valid values:\n\n"
   "  * newton [default]\n"
@@ -686,6 +690,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE  */              FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_DATA_RECONCILE_BOUNDARY */      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RK */                           FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_RK_PAR */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RK_NLS */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RT */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_S */                            FLAG_REPEAT_POLICY_FORBID,
@@ -807,6 +812,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE */               FLAG_TYPE_FLAG,
   /* FLAG_DATA_RECONCILE_BOUNDARY */      FLAG_TYPE_FLAG,
   /* FLAG_RK */                           FLAG_TYPE_OPTION,
+  /* FLAG_RK_PAR */                       FLAG_TYPE_OPTION,
   /* FLAG_RK_NLS */                       FLAG_TYPE_OPTION,
   /* FLAG_RT */                           FLAG_TYPE_OPTION,
   /* FLAG_S */                            FLAG_TYPE_OPTION,
