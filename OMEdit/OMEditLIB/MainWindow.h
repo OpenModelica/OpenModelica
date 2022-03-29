@@ -253,6 +253,7 @@ public:
                                    const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale, const char* variables);
   static void LoadModelCallbackFunction(void *p, const char* modelName);
   void addSystemLibraries();
+  QString getLibraryIndexFilePath() const;
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
@@ -336,7 +337,8 @@ private:
   QAction *mpExportFigaroAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpInstallLibraryAction;
-  QAction *mpUpdateInstalledLibrariesAction;
+  QAction *mpUpgradeInstalledLibrariesAction;
+  QAction *mpUpdateLibraryIndexAction;
   QAction *mpClearRecentFilesAction;
   QAction *mpPrintModelAction;
   QAction *mpQuitAction;
@@ -529,7 +531,9 @@ public slots:
   void runOMSensPlugin();
   void exportModelToOMNotebook();
   bool openInstallLibraryDialog();
-  void updateInstalledLibraries();
+  void upgradeInstalledLibraries();
+  void updateLibraryIndex();
+  void updateLibraryIndex(bool forceUpdate);
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
   void exportModelAsImage(bool copyToClipboard = false);
