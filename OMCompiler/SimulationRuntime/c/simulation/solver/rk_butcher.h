@@ -61,18 +61,21 @@ typedef struct BUTCHER_TABLEAU {
   double *b;                /* Weights vector */
   double *bt;
   double *c;                /* Nodes vector */
-  unsigned int stages;      /* Number of stages */
+  unsigned int nStages;     /* Number of stages */
   unsigned int order_b;     /* Order of the Runge-Kutta method */
   unsigned int order_bt;    /* Order of the embeddet Runge-Kutta method */
   unsigned int error_order;
   double fac;               /* Security factor for step size control */
 } BUTCHER_TABLEAU;
 
+/**
+ * @brief Type of Runge-Kutta method
+ */
 enum RK_type {
-  RK_TYPE_UNDEF = 0,
-  RK_TYPE_EXPLICIT,
-  RK_TYPE_DIRK,
-  RK_TYPE_IMPLICIT
+  RK_TYPE_UNDEF = 0,    /* Undefined type */
+  RK_TYPE_EXPLICIT,     /* Explicit: A is lower triangular matrix */
+  RK_TYPE_DIRK,         /* Directional implicit: A is triangular matrix */
+  RK_TYPE_IMPLICIT      /* Implicit: A has elements above diagonal */
 };
 
 /* Function prototypes */

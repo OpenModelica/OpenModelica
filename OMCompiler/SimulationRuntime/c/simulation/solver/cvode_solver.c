@@ -524,7 +524,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
 /**
  * @brief Allocate memory, initialize and set configurations for CVODE solver
  *
- * @param data              Runtime data struckt
+ * @param data              Runtime data struct
  * @param threadData        Thread data for error handling
  * @param solverInfo        Information about main solver. Unused at the moment.
  * @param cvodeData         CVODE solver data struckt.
@@ -724,7 +724,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
  * Provide required problem specifications and reinitialize CVODE.
  * If scaling is used y will be scaled accordingly.
  *
- * @param data              Runtime data struckt.
+ * @param data              Runtime data struct.
  * @param threadData        Thread data for error handling.
  * @param solverInfo        Information about main solver. Unused at the moment.
  * @param cvodeData         CVODE solver data struckt.
@@ -857,7 +857,7 @@ void cvode_save_statistics(void *cvode_mem, unsigned int *solverStatsTmp, thread
  *
  * Integrates on current time intervall.
  *
- * @param data              Runtime data struckt
+ * @param data              Runtime data struct
  * @param threadData        Thread data for error handling
  * @param cvodeData         CVODE solver data struckt.
  * @return int              Returns 0 on success and return flag from CVode else.
@@ -1004,7 +1004,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 /**
  * @brief Integration step with CVODE for fmi2DoStep
  *
- * @param data              Runtime data struckt
+ * @param data              Runtime data struct
  * @param threadData        Thread data for error handling.
  * @param solverInfo        CVODE solver data struckt.
  * @param tNext             Next desired time step for integrator to end.

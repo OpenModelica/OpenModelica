@@ -53,12 +53,14 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData);
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData);
 int freeNonlinearSystems(DATA *data, threadData_t *threadData);
 void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
+int solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, int sysNumber);
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);
 int print_csvLineIterStats(void* csvData, int size, int num,
                            int iteration, double* x, double* f, double error_f,
                            double error_fs, double delta_x, double delta_xs,
                            double lambda);
+void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum);
 
 extern void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, int n, int m, int* indRow, int* indCol);
 extern void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int m);

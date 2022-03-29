@@ -45,30 +45,43 @@
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 typedef struct DATA_GENERIC_RK{
-  DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
-  threadData_t *threadData;     //            I'm afraid not...
+  //DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
+  //threadData_t *threadData;     //            I'm afraid not...
   enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
+  enum RK_type type;                    /* Type of RK method */
   enum RK_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
-  void* nlsSolverData;                  /* Nonlinear solver data */
-  double *y, *yt, *yOld, *f;
+  NONLINEAR_SYSTEM_DATA* nlsData;       /* Non-linear system
+                                         * Something like
+                                         *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
+                                         * */
+  void* nlsSolverData;                  /* Nonlinear solver data
+                                         * TODO: Move into nlsData */
+  double *y;                /* Result vector of RK stp */
+  double *yt;               /* Result vector of embedded RK step */
+  modelica_real* yOld;
+  double* f;
   double *Jf;
   double *k, *res_const;
   double *errest, *errtol;
   double time;
   double stepSize, lastStepSize;
-  int act_stage;
+  int act_stage;                      /* Current stage of Runge-Kutta method. */
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;
   int nStates;
-  int firstStep;
+  modelica_boolean isFirstStep;       /* True during first Runge-Kutta integrator step, false otherwise */
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
-  unsigned int stepsDone;
-  unsigned int evalFunctionODE;
-  unsigned int evalJacobians;
-  unsigned int errorTestFailures;
-  unsigned int convergenceFailures;
+
   rk_step_function step_fun;
+
+  /* statistics */
+  // TODO AHeu: Duplicate of SOLVERSTATS
+  unsigned int stepsDone;             /* Total number of integrator steps */
+  unsigned int evalFunctionODE;       /* Total number of functionODE() calls */
+  unsigned int evalJacobians;         /* Total number of Jacobian evaluations */
+  unsigned int errorTestFailures;     /* Total number of error test failures */
+  unsigned int convergenceFailures;   /* Total number of convergence failures */
 } DATA_GENERIC_RK;
 
 enum RK_SINGLERATE_METHOD getRK_Method();

@@ -48,6 +48,7 @@
 #include "openmodelica_func.h"
 #include "util/read_matlab4.h"
 #include "util/varinfo.h"
+#include "generic_rk.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -301,9 +302,17 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData) {
   DATA *data = kinsolUserData->data;
   threadData_t *threadData = kinsolUserData->threadData;
   int sysNumber = kinsolUserData->sysNumber;
-  void *dataAndThreadData[2] = {data, threadData};
-  NONLINEAR_SYSTEM_DATA *nlsData =
-      &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  void *dataAndThreadData[3] = {data, threadData, NULL};
+
+  // TODO AHeu: This is quiet the hack
+  NONLINEAR_SYSTEM_DATA *nlsData;
+  if(sysNumber>=0) {
+    nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  } else {
+    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    nlsData = rk_data->nlsData;
+    dataAndThreadData[2] = rk_data;
+  }
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   int iflag = 1 /* recoverable error */;
 
@@ -315,8 +324,7 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData) {
 #endif
 
   /* call residual function */
-  data->simulationInfo->nonlinearSystemData[sysNumber].residualFunc(
-      dataAndThreadData, xdata, fdata, (const int *)&iflag);
+  nlsData->residualFunc(dataAndThreadData, xdata, fdata, (const int *)&iflag);
   iflag = 0 /* success */;
 
 #ifndef OMC_EMCC
@@ -335,8 +343,15 @@ static int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   DATA *data = kinsolUserData->data;
   threadData_t *threadData = kinsolUserData->threadData;
   int sysNumber = kinsolUserData->sysNumber;
-  NONLINEAR_SYSTEM_DATA *nlsData =
-      &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  NONLINEAR_SYSTEM_DATA *nlsData;
+
+  // TODO AHeu: This is quiet the hack
+  if(sysNumber>=0) {
+    nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  } else {
+    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    nlsData = rk_data->nlsData;
+  }
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
 
   /* prepare variables */
@@ -485,7 +500,13 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   data = kinsolUserData->data;
   threadData = kinsolUserData->threadData;
   sysNumber = kinsolUserData->sysNumber;
-  nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  // TODO AHeu: This is quiet the hack
+  if(sysNumber>=0) {
+    nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  } else {
+    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    nlsData = rk_data->nlsData;
+  }
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;
 
@@ -1070,6 +1091,10 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
         "kinsols runs into issues retry with different configuration.\n");
     retValue = 1;
     break;
+  case KIN_LINIT_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KINSOL: The linear solver's initialization function failed.\n");
+    return errorCode;
   case KIN_LSETUP_FAIL:
     /* In case something goes wrong with the symbolic jacobian try the numerical */
     if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
@@ -1157,15 +1182,22 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
   return retValue + retValue2;
 }
 
-int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
-  NONLINEAR_SYSTEM_DATA *nlsData =
-      &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+/**
+ * @brief Solve non-linear system with KINSol
+ *
+ * @param data          Runtime data struct.
+ * @param threadData    Thread data for error handling.
+ * @param nlsData       Pointer to non-linear system data.
+ * @param sysNumber     Non-linear system number.
+ * @return int          Return 1 (true) on success and 0 (false) otherwise.
+ */
+modelica_boolean nlsKinsolSolve(DATA *data, threadData_t *threadData,  NONLINEAR_SYSTEM_DATA *nlsData, int sysNumber) {
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   int indexes[2] = {1, nlsData->equationIndex};
 
   int flag;
   long nFEval;
-  int success = 0;
+  modelica_boolean success = 0;
   int retry = 0;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double fNormValue;
@@ -1275,7 +1307,7 @@ int nlsKinsolFree(void **solverData) {
   return 0;
 }
 
-int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
+int nlsKinsolSolve(DATA *data, threadData_t *threadData,  NONLINEAR_SYSTEM_DATA *nlsData, int sysNumber) {
 
   throwStreamPrint(threadData, "No sundials/kinsol support activated.");
   return 0;

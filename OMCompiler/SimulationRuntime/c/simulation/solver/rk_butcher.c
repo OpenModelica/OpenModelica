@@ -48,20 +48,20 @@
 #endif
 
 void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b, double * bt) {
-  tableau->c = malloc(sizeof(double)*tableau->stages);
-  tableau->A = malloc(sizeof(double)*tableau->stages * tableau->stages);
-  tableau->b = malloc(sizeof(double)*tableau->stages);
-  tableau->bt = malloc(sizeof(double)*tableau->stages);
+  tableau->c = malloc(sizeof(double)*tableau->nStages);
+  tableau->A = malloc(sizeof(double)*tableau->nStages * tableau->nStages);
+  tableau->b = malloc(sizeof(double)*tableau->nStages);
+  tableau->bt = malloc(sizeof(double)*tableau->nStages);
 
-  memcpy(tableau->c, c, tableau->stages*sizeof(double));
-  memcpy(tableau->A, A, tableau->stages * tableau->stages * sizeof(double));
-  memcpy(tableau->b, b, tableau->stages*sizeof(double));
-  memcpy(tableau->bt, bt, tableau->stages*sizeof(double));
+  memcpy(tableau->c, c, tableau->nStages*sizeof(double));
+  memcpy(tableau->A, A, tableau->nStages * tableau->nStages * sizeof(double));
+  memcpy(tableau->b, b, tableau->nStages*sizeof(double));
+  memcpy(tableau->bt, bt, tableau->nStages*sizeof(double));
 }
 
 void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
   // ESDIRK2 method
-  tableau->stages = 3;
+  tableau->nStages = 3;
   tableau->order_b = 2;
   tableau->order_bt = 1;
   tableau->fac = 0.9;
@@ -89,7 +89,7 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
 
 void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
   //ESDIRK3
-  tableau->stages = 4;
+  tableau->nStages = 4;
   tableau->order_b = 3;
   tableau->order_bt = 2;
   tableau->fac = 0.9;
@@ -135,7 +135,7 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
 
 void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau) {
   //SDIRK3
-  tableau->stages = 3;
+  tableau->nStages = 3;
   tableau->order_b = 3;
   tableau->order_bt = 2;
   tableau->fac = 0.9;
@@ -185,7 +185,7 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 {
   //SDIRK3
 
-  tableau->stages = 2;
+  tableau->nStages = 2;
   tableau->order_b = 2;
   tableau->order_bt = 1;
   tableau->fac = 0.9;
@@ -205,7 +205,7 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
   //explicit Euler with Richardson-Extrapolation for step size control
 
-  tableau->stages = 2;
+  tableau->nStages = 2;
   tableau->order_b = 1;
   tableau->order_bt = 2;
   tableau->fac = 0.9;
@@ -222,7 +222,7 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
 
 void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
   //explicit Euler with Richardson-Extrapolation for step size control
-  tableau->stages = 3;
+  tableau->nStages = 3;
   tableau->order_b = 2;
   tableau->order_bt = 1;
   tableau->fac = 0.9;
@@ -241,7 +241,7 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
 
 void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
   //explicit Merson method
-  tableau->stages = 5;
+  tableau->nStages = 5;
   tableau->order_b = 4;
   tableau->order_bt = 3;
   tableau->fac = 0.9;
@@ -264,7 +264,7 @@ void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
 void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
   //DOPRI45
 
-  tableau->stages = 7;
+  tableau->nStages = 7;
   tableau->order_b = 5;
   tableau->order_bt = 4;
   tableau->fac = 0.5;
@@ -290,21 +290,21 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
   modelica_boolean isDIRK = FALSE;        /* diagonal something something Runge-Kutta method */
   int i, j, l;
 
-  for (i=0; i<tableau->stages; i++) {
+  for (i=0; i<tableau->nStages; i++) {
     /* Check if values on diagonal are non-zero (= dirk method) */
-    if (fabs(tableau->A[i*tableau->stages + i])>0) {    // TODO: This assumes that A is saved in row major format
+    if (fabs(tableau->A[i*tableau->nStages + i])>0) {    // TODO: This assumes that A is saved in row major format
       isDIRK = TRUE;
     }
     /* Check if values above diagonal are non-zero (= implicit method) */
-    for (j=i+1; j<tableau->stages; j++) {
-      if (fabs(tableau->A[i * tableau->stages + j])>0) {    // TODO: This assumes that A is saved in row major format
+    for (j=i+1; j<tableau->nStages; j++) {
+      if (fabs(tableau->A[i * tableau->nStages + j])>0) {    // TODO: This assumes that A is saved in row major format
         isGenericIRK = TRUE;
       }
     }
   }
   if (isGenericIRK) {
     *expl = RK_TYPE_IMPLICIT;
-    *nlSystemSize = tableau->stages*nStates;
+    *nlSystemSize = tableau->nStages*nStates;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is fully implicit");
   } else if (isDIRK) {
     *expl = RK_TYPE_DIRK;
@@ -377,22 +377,22 @@ void printButcherTableau(BUTCHER_TABLEAU* tableau) {
   int i, j;
   char Butcher_row[1024];
   infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of RK-method:");
-  for (i = 0; i<tableau->stages; i++) {
+  for (i = 0; i<tableau->nStages; i++) {
     // TODO AHeu: Use snprintf instead of sprintf
     sprintf(Butcher_row, "%10g | ", tableau->c[i]);
-    for (j = 0; j<tableau->stages; j++) {
-      sprintf(Butcher_row, "%s %10g", Butcher_row, tableau->A[i*tableau->stages + j]);
+    for (j = 0; j<tableau->nStages; j++) {
+      sprintf(Butcher_row, "%s %10g", Butcher_row, tableau->A[i*tableau->nStages + j]);
     }
     infoStreamPrint(LOG_SOLVER, 0, "%s", Butcher_row);
   }
   infoStreamPrint(LOG_SOLVER, 0, "------------------------------------------------");
   sprintf(Butcher_row, "%10s | ", "");
-  for (j = 0; j<tableau->stages; j++) {
+  for (j = 0; j<tableau->nStages; j++) {
     sprintf(Butcher_row, "%s %10g", Butcher_row, tableau->b[j]);
   }
   infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
   sprintf(Butcher_row, "%10s | ", "");
-  for (j = 0; j<tableau->stages; j++) {
+  for (j = 0; j<tableau->nStages; j++) {
     sprintf(Butcher_row, "%s %10g", Butcher_row, tableau->bt[j]);
   }
   infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
