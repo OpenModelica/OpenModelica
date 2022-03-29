@@ -2714,6 +2714,7 @@ void MainWindow::runOMSensPlugin()
 #ifdef Q_OS_MAC
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("OMSens is not supported on MacOS"), Helper::scriptingKind, Helper::errorLevel));
     return;
+  }
 #else
 #ifdef Q_OS_WIN
     QPluginLoader loader(QString("%1/lib/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome));
