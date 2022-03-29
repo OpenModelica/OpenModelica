@@ -486,8 +486,6 @@ public slots:
   void openCompositeModelFile();
   void loadExternalModels();
   void openDirectory();
-  void loadSystemLibrary();
-  void loadSystemLibrary(const QString &library, QString version = QString("default"));
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
   void openRecentFile();

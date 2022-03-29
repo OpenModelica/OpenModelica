@@ -4196,24 +4196,31 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
       pMessageBox->exec();
     } else { // if no conflicting model found then just load the file simply
       setLoadingLibraries(true);
+      QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
       // load the file in OMC
       if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding)) {
-        // create library tree nodes for loaded models
-        int progressvalue = 0;
-        if (showProgress) {
-          MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
-          MainWindow::instance()->showProgressBar();
-        }
-        foreach (QString model, classesList) {
-          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1);
-          mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-          if (showProgress) {
-            MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
+        if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+          if (resolveConflictWithLoadedLibraries(classesList.join(","), classes)) {
+            openModelicaFile(fileName, encoding, showProgress);
           }
-        }
-        MainWindow::instance()->addRecentFile(fileName, encoding);
-        if (showProgress) {
-          MainWindow::instance()->hideProgressBar();
+        } else {
+          // create library tree nodes for loaded models
+          int progressvalue = 0;
+          if (showProgress) {
+            MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
+            MainWindow::instance()->showProgressBar();
+          }
+          foreach (QString model, classesList) {
+            mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1);
+            mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+            if (showProgress) {
+              MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
+            }
+          }
+          MainWindow::instance()->addRecentFile(fileName, encoding);
+          if (showProgress) {
+            MainWindow::instance()->hideProgressBar();
+          }
         }
       }
       setLoadingLibraries(false);
@@ -5239,6 +5246,67 @@ void LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTree
 }
 
 /*!
+ * \brief LibraryWidget::resolveConflictWithLoadedLibraries
+ * Check if the library loaded is compatiable with the already loaded libraries.
+ * \param library
+ * \param classes
+ * \return
+ */
+bool LibraryWidget::resolveConflictWithLoadedLibraries(const QString &library, const QStringList classes)
+{
+  /* Issue #8183
+   * If the library required is already loaded with some other version.
+   * Then allow the user to cancel the operation or unload everything and reload the class again.
+   */
+  QStringList classes1;
+  LibraryTreeItem *pLibraryTreeItem = 0;
+  // clear loadModelCallback classes
+  mAutoLoadedLibrariesList.clear();
+
+  QMessageBox *pMessageBox = new QMessageBox;
+  pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::error));
+  pMessageBox->setIcon(QMessageBox::Critical);
+  pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+  pMessageBox->setText(tr("The loaded class(es) <b>%1</b> uses versions of already loaded libraries which are not compatible with the required ones.<br /><br />"
+                          "<b>Cancel Operation</b> does not load class <b>%1</b> and its dependencies.<br />"
+                          "<b>Unload All & Reload %1</b> unloads all previously loaded classes and loads <b>%1</b> starting from a clean environment. "
+                          "Make sure to save your work.").arg(library));
+  pMessageBox->addButton(tr("Cancel Operation"), QMessageBox::ActionRole);
+  pMessageBox->addButton(tr("Unload all && Reload %1").arg(library), QMessageBox::ActionRole);
+  int answer = pMessageBox->exec();
+  switch (answer) {
+    case 0: // cancel operation
+    default:
+      classes1 = MainWindow::instance()->getOMCProxy()->getClassNames();
+      if (classes1.size() > classes.size()) {
+        foreach (QString loadedClass, classes1) {
+          if (!classes.contains(loadedClass)) {
+            pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(loadedClass);
+            if (pLibraryTreeItem) {
+              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, true);
+            } else {
+              MainWindow::instance()->getOMCProxy()->deleteClass(loadedClass);
+            }
+          }
+        }
+      }
+      return false;
+    case 1: // unload all and reload
+      classes1 = MainWindow::instance()->getOMCProxy()->getClassNames();
+      foreach (QString loadedClass, classes1) {
+        pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(loadedClass);
+        if (pLibraryTreeItem) {
+          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, true);
+        } else {
+          MainWindow::instance()->getOMCProxy()->deleteClass(loadedClass);
+        }
+      }
+      // Just return true and the calling function will load the library.
+      return true;
+  }
+}
+
+/*!
  * \brief LibraryWidget::handleAutoLoadedLibrary
  * Slot activated when auto load library timer is timeout.
  */
@@ -5249,6 +5317,67 @@ void LibraryWidget::handleAutoLoadedLibrary()
   } else {
     mpLibraryTreeModel->loadDependentLibraries(mAutoLoadedLibrariesList);
     mAutoLoadedLibrariesList.clear();
+  }
+}
+
+/*!
+ * \brief LibraryWidget::loadSystemLibrary
+ * Loads a system library.
+ */
+void LibraryWidget::loadSystemLibrary()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction) {
+    QStringList actionData = pAction->data().toStringList();
+    if (actionData.size() > 1) {
+      loadSystemLibrary(actionData.at(0), actionData.at(1));
+    }
+  }
+}
+
+/*!
+ * \brief LibraryWidget::loadSystemLibrary
+ * Loads a system library.
+ * \param library
+ * \param version
+ */
+void LibraryWidget::loadSystemLibrary(const QString &library, QString version)
+{
+  /* check if library is already loaded. */
+  if (mpLibraryTreeModel->findLibraryTreeItemOneLevel(library)) {
+    QMessageBox *pMessageBox = new QMessageBox(this);
+    pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::information));
+    pMessageBox->setIcon(QMessageBox::Information);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(library)));
+    pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES)).arg(library).append("\n")
+                                    .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(library)));
+    pMessageBox->setStandardButtons(QMessageBox::Ok);
+    pMessageBox->exec();
+  } else {  /* if library is not loaded then load it. */
+    MainWindow::instance()->getProgressBar()->setRange(0, 0);
+    MainWindow::instance()->showProgressBar();
+    MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(library));
+
+    if (version.isEmpty()) {
+      version = QString("default");
+    }
+
+    setLoadingLibraries(true);
+    QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
+    if (MainWindow::instance()->getOMCProxy()->loadModel(library, version)) {
+      if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
+        if (resolveConflictWithLoadedLibraries(library, classes)) {
+          loadSystemLibrary(library, version);
+        }
+      } else {
+        mpLibraryTreeModel->createLibraryTreeItem(library, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
+        mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+      }
+    }
+    setLoadingLibraries(false);
+    MainWindow::instance()->getStatusBar()->clearMessage();
+    MainWindow::instance()->hideProgressBar();
   }
 }
 

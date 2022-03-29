@@ -82,6 +82,7 @@ private:
   bool mIsLoggingEnabled;
   QStringList mLibrariesBrowserAdditionCommandsList;
   QStringList mLibrariesBrowserDeletionCommandsList;
+  bool mLoadModelError;
 public:
   OMCProxy(threadData_t *threadData, QWidget *pParent = 0);
   ~OMCProxy();
@@ -97,6 +98,7 @@ public:
   void removeObjectRefFile();
   void setLoggingEnabled(bool enable) {mIsLoggingEnabled = enable;}
   bool isLoggingEnabled() {return mIsLoggingEnabled;}
+  bool isLoadModelError() const {return mLoadModelError;}
   QString getErrorString(bool warningsAsErrors = false);
   bool printMessagesStringInternal();
   int getMessagesStringInternal();
@@ -110,6 +112,7 @@ public:
   QString getErrorMessage();
   QString getErrorKind();
   QString getErrorLevel();
+  int getErrorId();
   QString getVersion(QString className = QString("OpenModelica"));
   void loadSystemLibraries();
   void loadUserLibraries();
