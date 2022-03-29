@@ -15,7 +15,7 @@
  */
 
 #include <cstdlib>
-#include <winsock.h>
+#include <winsock2.h>
 #include <io.h>
 #include <iostream>
 #include <stdio.h>
