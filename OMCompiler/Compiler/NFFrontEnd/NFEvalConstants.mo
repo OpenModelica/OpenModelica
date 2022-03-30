@@ -187,6 +187,9 @@ algorithm
       then
         outExp;
 
+    case Expression.ARRAY(literal = true)
+      then exp;
+
     case Expression.IF()
       algorithm
         (outExp, outChanged) := evaluateIfExp(exp, info);

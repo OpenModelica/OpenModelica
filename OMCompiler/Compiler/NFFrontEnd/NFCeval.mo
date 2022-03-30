@@ -501,8 +501,7 @@ algorithm
   end if;
 
   exp := Expression.applySubscripts(subs, exp);
-  exp := Expression.mapFold(exp,
-    function subscriptBinding2(cref = cref, evalSubscripts = evalSubscripts), NONE());
+  exp := subscriptBinding2(exp, cref, evalSubscripts, NONE());
 end subscriptBinding;
 
 function subscriptBinding2
@@ -514,20 +513,25 @@ protected
   type SubscriptList = list<Subscript>;
   UnorderedMap<InstNode, list<Subscript>> sub_map;
   list<Subscript> subs;
+  list<ComponentRef> cref_parts;
+  Expression e;
 algorithm
-  exp := match exp
+  (exp, subMap) := match exp
     case Expression.SUBSCRIPTED_EXP(subscripts = subs)
       algorithm
         if isSome(subMap) then
           SOME(sub_map) := subMap;
         else
-          // Create a map that maps each part of the cref to the subscripts on that part.
-          sub_map := UnorderedMap.new<SubscriptList>(InstNode.hash, InstNode.refEqual);
-
           // If the cref hasn't been flattened then subscripts that reference
           // the scope parts of the cref should be kept as they are, so the
           // scope isn't added to the map in that case.
-          for cr in ComponentRef.toListReverse(cref, includeScope = isFlatCref(cref)) loop
+          cref_parts := ComponentRef.toListReverse(cref, includeScope = isFlatCref(cref));
+
+          // Create a map that maps each part of the cref to the subscripts on that part.
+          sub_map := UnorderedMap.new<SubscriptList>(InstNode.hash,
+            InstNode.refEqual, Util.nextPrime(listLength(cref_parts)));
+
+          for cr in cref_parts loop
             UnorderedMap.addUnique(ComponentRef.node(cr), ComponentRef.getSubscripts(cr), sub_map);
           end for;
 
@@ -541,10 +545,17 @@ algorithm
         if evalSubscripts then
           subs := list(Subscript.eval(s) for s in subs);
         end if;
-      then
-        Expression.applySubscripts(subs, exp.exp);
 
-    else exp;
+        e := Expression.applySubscripts(subs, exp.exp);
+      then
+        Expression.mapFoldShallow(e,
+          function subscriptBinding2(cref = cref, evalSubscripts = evalSubscripts), subMap);
+
+    case Expression.ARRAY(literal = true) then (exp, subMap);
+
+    else Expression.mapFoldShallow(exp,
+      function subscriptBinding2(cref = cref, evalSubscripts = evalSubscripts), subMap);
+
   end match;
 end subscriptBinding2;
 
