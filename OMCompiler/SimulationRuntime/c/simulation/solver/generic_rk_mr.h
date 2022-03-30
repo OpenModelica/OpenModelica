@@ -28,18 +28,17 @@
  *
  */
 
-/*! \file DATA_GENERIC_RK.h
+/*! \file DATA_GENERIC_RK_MR.h
  */
 
-#ifndef _DATA_GENERIC_RK_H_
-#define _DATA_GENERIC_RK_H_
+#ifndef _DATA_GENERIC_RK_MR_H_
+#define _DATA_GENERIC_RK_MR_H_
 
 #include "simulation_data.h"
 #include "solver_main.h"
 
 #include "rk_butcher.h"
-#include "generic_rk_mr.h"
-
+#include "generic_rk.h"
 
 /**
  * @brief Function to compute single Runge-Kutta step.
@@ -47,9 +46,8 @@
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 typedef double (*rk_stepSize_control_function)(void* genericRKData);
 
-typedef struct DATA_GENERIC_RK{
-  DATA* data;
-  DATA_GENERIC_RK_MR* dataRKmr;           // TODO AHeu: Can we get around having data and threadData inside this struct?
+typedef struct DATA_GENERIC_RK_MR{
+  DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
   threadData_t *threadData;     //            I'm afraid not...
   enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
   enum RK_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
@@ -57,7 +55,7 @@ typedef struct DATA_GENERIC_RK{
   double *y, *yt, *yOld, *f;
   double *Jf;
   double *k, *res_const;
-  double *errest, *errtol, *err, percentage, err_new, err_old;
+  double *errest, *errtol, *err, err_new, err_old;
   double time;
   double stepSize, lastStepSize, stepSize_old;
   int act_stage;
@@ -74,12 +72,11 @@ typedef struct DATA_GENERIC_RK{
   unsigned int convergenceFailures;
   rk_step_function step_fun;
   rk_stepSize_control_function stepSize_control;
-} DATA_GENERIC_RK;
+} DATA_GENERIC_RK_MR;
 
-enum RK_SINGLERATE_METHOD getRK_Method();
-enum RK_NLS_METHOD getRK_NLS_Method();
-int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-void freeDataGenericRK(DATA_GENERIC_RK* data);
-int genericRK_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+enum RK_SINGLERATE_METHOD getRK_Method_MR();
+enum RK_NLS_METHOD getRK_NLS_Method_MR();
+void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data);
+int genericRK_MR_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
-#endif /* _DATA_GENERIC_RK_H_ */
+#endif /* _DATA_GENERIC_RK_MR_H_ */

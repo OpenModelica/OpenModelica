@@ -70,19 +70,17 @@
 #include "util/varinfo.h"
 
 //auxiliary vector functions
-void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
-void printVector_genericRK(char name[], double* a, int n, double time);
-void printMatrix_genericRK(char name[], double* a, int n, double time);
+void linear_interpolation_MR(double a, double* fa, double b, double* fb, double t, double *f, int n);
+void printVector_genericRK_MR(char name[], double* a, int n, double time);
+void printMatrix_genericRK_MR(char name[], double* a, int n, double time);
 
 // singlerate step function
-int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 // step size control function
-double IController(void* genericRKData);
-double PIController(void* genericRKData);
-
-int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_RK* genericRKData);
+double IController_MR(void* genericRKData);
+double PIController_MR(void* genericRKData);
 
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_RK.
@@ -92,7 +90,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
  *
  * @return enum RK_SINGLERATE_METHOD    Runge-Kutta method.
  */
-enum RK_SINGLERATE_METHOD getRK_Method() {
+enum RK_SINGLERATE_METHOD getRK_Method_MR() {
   enum RK_SINGLERATE_METHOD method;
   const char* flag_value;
   flag_value = omc_flagValue[FLAG_RK];
@@ -123,7 +121,7 @@ enum RK_SINGLERATE_METHOD getRK_Method() {
  *
  * @return enum RK_NLS_METHOD   NLS method.
  */
-enum RK_NLS_METHOD getRK_NLS_Method() {
+enum RK_NLS_METHOD getRK_NLS_Method_MR() {
   enum RK_NLS_METHOD method;
   const char* flag_value;
   flag_value = omc_flagValue[FLAG_RK_NLS];
@@ -154,23 +152,22 @@ enum RK_NLS_METHOD getRK_NLS_Method() {
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_RK* genericRKData)
 {
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) malloc(sizeof(DATA_GENERIC_RK));
-  solverInfo->solverData = (void*) userdata;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) malloc(sizeof(DATA_GENERIC_RK_MR));
+  genericRKData->dataRKmr = userdata;
 
-  userdata->nStates = data->modelData->nStates;
+  userdata->nStates = genericRKData->nStates;
 
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  userdata->RK_method = getRK_Method();
+  userdata->RK_method = getRK_Method_MR();
   userdata->tableau = initButcherTableau(userdata->RK_method);
   if (userdata->tableau == NULL){
     // ERROR
     return -1;
   }
-
   // Check explicit, diagonally implicit or fully implicit status and fix solver settings
   enum RK_type expl;
   analyseButcherTableau(userdata->tableau, userdata->nStates, &userdata->nlSystemSize, &expl);
@@ -179,15 +176,15 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   {
   case RK_TYPE_EXPLICIT:
     userdata->isExplicit = TRUE;
-    userdata->step_fun = &(expl_diag_impl_RK);
+    userdata->step_fun = &(expl_diag_impl_RK_MR);
     break;
   case RK_TYPE_DIRK:
     userdata->isExplicit = FALSE;
-    userdata->step_fun = &(expl_diag_impl_RK);
+    userdata->step_fun = &(expl_diag_impl_RK_MR);
     break;
   case RK_TYPE_IMPLICIT:
     userdata->isExplicit = FALSE;
-    userdata->step_fun = &(full_implicit_RK);
+    userdata->step_fun = &(full_implicit_RK_MR);
     break;
   default:
     // Error
@@ -200,22 +197,21 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   // adapt decision for testing of the fully implicit implementation
   if (userdata->RK_method == RK_ESDIRK2_test || userdata->RK_method == RK_ESDIRK3_test) {
     userdata->nlSystemSize = userdata->tableau->stages*userdata->nStates;
-    userdata->step_fun = &(full_implicit_RK);
+    userdata->step_fun = &(full_implicit_RK_MR);
   }
 
   const char* flag_StepSize_ctrl = omc_flagValue[FLAG_RK_STEPSIZE_CTRL];
 
   if (flag_StepSize_ctrl != NULL) {
-    userdata->stepSize_control = &(PIController);
+    userdata->stepSize_control = &(PIController_MR);
     printf("PIController is used\n");
   } else
   {
-    userdata->stepSize_control = &(IController);
+    userdata->stepSize_control = &(IController_MR);
     printf("IController is used\n");
   }
 
-
-  // allocate memory for te generic RK method
+  // allocate memory for the generic RK method
   userdata->firstStep = 1;
   userdata->y = malloc(sizeof(double)*userdata->nStates);
   userdata->yOld = malloc(sizeof(double)*userdata->nStates);
@@ -227,6 +223,11 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   userdata->errest = malloc(sizeof(double)*userdata->nStates);
   userdata->errtol = malloc(sizeof(double)*userdata->nStates);
   userdata->err = malloc(sizeof(double)*userdata->nStates);
+  userdata->fastStates = malloc(sizeof(int)*userdata->nStates);
+  userdata->slowStates = malloc(sizeof(int)*userdata->nStates);
+
+  userdata->nFastStates = userdata->nStates;
+  userdata->nSlowStates = 0;
 
   printButcherTableau(userdata->tableau);
 
@@ -240,26 +241,26 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   userdata->err_new = -1;
 
-  /* initialize analytic Jacobian, if available and needed */
-  if (!userdata->isExplicit) {
-    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
-      userdata->symJacAvailable = FALSE;
-      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
-    } else {
-      userdata->symJacAvailable = TRUE;
-      // TODO AHeu: Is there a reason we get the jacobian again? Did data->callback->initialAnalyticJacobianA change the pointer?
-      // ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
-      infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
-      infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
-      infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
-      messageClose(LOG_SOLVER);
-    }
-  }
+  // /* initialize analytic Jacobian, if available and needed */
+  // if (!userdata->isExplicit) {
+  //   jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  //   if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
+  //     userdata->symJacAvailable = FALSE;
+  //     infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
+  //   } else {
+  //     userdata->symJacAvailable = TRUE;
+  //     // TODO AHeu: Is there a reason we get the jacobian again? Did data->callback->initialAnalyticJacobianA change the pointer?
+  //     // ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
+  //     infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
+  //     infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+  //     infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
+  //     messageClose(LOG_SOLVER);
+  //   }
+  // }
 
   /* Allocate memory for the nonlinear solver */
   // TODO AHeu: Do we always need a NLS solver or only for implicit RK methods?
-  userdata->nlsSolverMethod = getRK_NLS_Method();
+  userdata->nlsSolverMethod = getRK_NLS_Method_MR();
   switch (userdata->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     userdata->nlsSolverData = (void*) allocateNewtonData(userdata->nlSystemSize);
@@ -277,16 +278,6 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     return -1;
     break;
   }
-
-  userdata->fastStates = malloc(sizeof(int)*userdata->nStates);
-  userdata->slowStates = malloc(sizeof(int)*userdata->nStates);
-
-  userdata->nFastStates = 0;
-  userdata->nSlowStates = userdata->nStates;
-  userdata->percentage = 1;
-
-  allocateDataGenericRK_MR(data, threadData, userdata);
-
   return 0;
 }
 
@@ -295,7 +286,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
  *
  * @param data    Pointer to generik Runge-Kutta data struct.
  */
-void freeDataGenericRK(DATA_GENERIC_RK* data) {
+void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data) {
   switch (data->nlsSolverMethod)
   {
   case RK_NLS_NEWTON:
@@ -309,7 +300,6 @@ void freeDataGenericRK(DATA_GENERIC_RK* data) {
     break;
   }
 
-  freeDataGenericRK_MR(data->dataRKmr);
   freeButcherTableau(data->tableau);
 
   free(data->y);
@@ -337,13 +327,13 @@ void freeDataGenericRK(DATA_GENERIC_RK* data) {
  *  IMPORTANT: assuming the correct values of the time value and the states are set
  *  \param [in]      data           data of the underlying DAE
  *  \param [in]      threadData     data for error handling
- *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK)
+ *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK_MR)
  *  \param [out]     fODE       pointer to state derivatives
  *
  */
-int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* genericRKData, modelica_real* fODE)
+int wrapper_f_genericRK_MR(DATA* data, threadData_t *threadData, void* genericRKData, modelica_real* fODE)
 {
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   fODE = sData->realVars + data->modelData->nStates;
@@ -360,7 +350,7 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* genericRKDat
 /*
  * Sets element (i,j) in matrixA to given value val.
  */
-void setJacElementESDIRKSparse(int i, int j, int nth, double val, void* Jf,
+void setJacElementESDIRKSparse_MR(int i, int j, int nth, double val, void* Jf,
                               int rows)
 {
   int l  = j*rows + i;
@@ -375,15 +365,15 @@ void setJacElementESDIRKSparse(int i, int j, int nth, double val, void* Jf,
  *  \param [in]      x              pointer to state vector
  *  \param [in]      fvec           pointer to corresponding fODE-values usually
  *                                  stored in userdata->f (verify before calling)
- *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK)
+ *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK_MR)
  *  \param [out]     fODE           pointer to state derivatives
  *
  *  result of the Jacobian is stored in solverData->fjac (DATA_NEWTON) ???????
  *
  */
-int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* genericRKData)
+int wrapper_Jf_genericRK_MR(int n, double t, double* x, double* fODE, void* genericRKData)
 {
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
 
   DATA* data = userdata->data;
   threadData_t* threadData = userdata->threadData;
@@ -425,7 +415,7 @@ int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* generic
           jac->constantEqns(data, threadData, jac, NULL);
         }
         genericColoredSymbolicJacobianEvaluation(rows, columns, spp, userdata->Jf, t_jac,
-                                            data, threadData, &setJacElementESDIRKSparse);
+                                            data, threadData, &setJacElementESDIRKSparse_MR);
     }
     else
     {
@@ -439,7 +429,7 @@ int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* generic
         x[i] += delta_hh;
         delta_hh = 1. / delta_hh;
 
-        wrapper_f_genericRK(data, threadData, userdata, fODE);
+        wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
         // this should not count on function evaluation, since
         // it belongs to jacobian evaluation
         userdata->evalFunctionODE--;
@@ -472,13 +462,13 @@ int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* generic
  *  \param [in]      n_p            pointer to number of states
  *  \param [in]      x              pointer to unknowns (BB: storage in DATA_NEWTON?)
  *  \param [in/out]  res            pointer to residual function (BB: storage in DATA_NEWTON?)
- *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK)
+ *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK_MR)
  *  \param [in]      fj             fj = 1 ==> calculate function values
  *                                  fj = 0 ==> calculate jacobian matrix
  */
-int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
+int wrapper_DIRK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
 {
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
 
   DATA* data = userdata->data;
   threadData_t* threadData = userdata->threadData;
@@ -497,7 +487,7 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
     // set correct time value and states of simulation system
     sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
     memcpy(sData->realVars, x, n*sizeof(double));
-    wrapper_f_genericRK(data, threadData, userdata, fODE);
+    wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     for (j=0; j<n; j++)
@@ -525,7 +515,7 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
     //memcpy(userdata->f, fODE, n*sizeof(double));
 
     /* Calculate Jacobian of the ODE system, result is in solverData->fjac */
-    wrapper_Jf_genericRK(n, sData->timeValue, sData->realVars, fODE, userdata);
+    wrapper_Jf_genericRK_MR(n, sData->timeValue, sData->realVars, fODE, userdata);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     // jacobian          Jac = -E + gam*h*Jf(tk+c2*h,x))
@@ -552,13 +542,13 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
  *  \param [in]      n_p            pointer to number of states
  *  \param [in]      x              pointer to unknowns (BB: storage in DATA_NEWTON?)
  *  \param [in/out]  res            pointer to residual function (BB: storage in DATA_NEWTON?)
- *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK)
+ *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK_MR)
  *  \param [in]      fj             fj = 1 ==> calculate function values
  *                                  fj = 0 ==> calculate jacobian matrix
  */
-int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
+int wrapper_RK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
 {
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
 
   DATA* data = userdata->data;
   threadData_t* threadData = userdata->threadData;
@@ -590,7 +580,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
       //printf("c[k] = %g\n",userdata->c[k]);
       sData->timeValue = userdata->time + userdata->tableau->c[k] * userdata->stepSize;
       memcpy(sData->realVars, (x + k * n), n*sizeof(double));
-      wrapper_f_genericRK(data, threadData, userdata, fODE);
+      wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
       memcpy(userdata->k + k * n, fODE, n*sizeof(double));
       for (l=0; l<stages; l++)
       {
@@ -649,7 +639,7 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
       // works only for analytical Jacobian!!!
       //printf("Hier: %d\n", k);
       // BB: needs to be verified, that for the numerical Jacobian fODE is actual!!
-      wrapper_Jf_genericRK(n, sData->timeValue, sData->realVars, fODE, userdata);
+      wrapper_Jf_genericRK_MR(n, sData->timeValue, sData->realVars, fODE, userdata);
       //printMatrix_genericRK("Jacobian of system", userdata->Jf, n, sData->timeValue);
       //printMatrix_genericRK("Jacobian of solver", solverData->fjac, stages * n, sData->timeValue);
       for (l=0; l<stages; l++)
@@ -678,14 +668,14 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
  *  results will be saved in y and the embedded result in yt
  *
  */
-int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   int i, j, l, k, n=data->modelData->nStates;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*)solverInfo->solverData;
   DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->nlsSolverData;
 
   userdata->data = (void*) data;
@@ -724,7 +714,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // set correct time value and states of simulation system
       sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
       memcpy(sData->realVars, userdata->res_const, n*sizeof(double));
-      wrapper_f_genericRK(data, threadData, userdata, fODE);
+      wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
     }
     else
     {
@@ -732,7 +722,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // set good starting values for the newton solver (solution of the last newton iteration!)
       // set newton strategy
       solverData->newtonStrategy = NEWTON_DAMPED2;
-      _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
+      _omc_newton(wrapper_DIRK_MR, solverData, (void*)userdata);
       /* if newton solver did not converge, do ??? */
       if (solverData->info == -1)
       {
@@ -745,7 +735,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         solverData->calculate_jacobian = 1;
 
         warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-        _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
+        _omc_newton(wrapper_DIRK_MR, solverData, (void*)userdata);
 
         solverData->calculate_jacobian = -1;
       }
@@ -765,14 +755,14 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
  *  results will be saved in y and the embedded result in yt
  *
  */
-int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   int i, j, k, l, n=data->modelData->nStates;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*)solverInfo->solverData;
   DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->nlsSolverData;
 
   userdata->data = (void*) data;
@@ -791,7 +781,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     memcpy((solverData->x + k*n), userdata->yOld, n*sizeof(double));
   // set newton strategy
   solverData->newtonStrategy = NEWTON_DAMPED2;
-  _omc_newton(wrapper_RK, solverData, (void*)userdata);
+  _omc_newton(wrapper_RK_MR, solverData, (void*)userdata);
 
   /* if newton solver did not converge, do ??? */
   if (solverData->info == -1)
@@ -805,7 +795,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     solverData->calculate_jacobian = 1;
 
     warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
-    _omc_newton(wrapper_RK, solverData, (void*)userdata);
+    _omc_newton(wrapper_RK_MR, solverData, (void*)userdata);
 
     solverData->calculate_jacobian = -1;
   }
@@ -820,11 +810,11 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
  *  BB: ToDo: lookup the reference in Hairers book
  *
  */
-void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+void genericRK_first_step_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*)solverInfo->solverData;
   const int n = data->modelData->nStates;
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
 
@@ -856,7 +846,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   //printVector_genericRK("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
   //printVector_genericRK("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
   memcpy(userdata->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, userdata, fODE);
+  wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
   /* store values of the state derivatives at initial or event time */
   memcpy(userdata->f, fODE, data->modelData->nStates*sizeof(double));
 
@@ -889,7 +879,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   }
   sData->timeValue += h0;
 
-  wrapper_f_genericRK(data, threadData, userdata, fODE);
+  wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
 
   for (i=0; i<data->modelData->nStates; i++)
   {
@@ -920,9 +910,9 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   infoStreamPrint(LOG_SOLVER, 0, "initial step size = %e at time %g", userdata->stepSize, userdata->time);
 }
 
-double IController(void* genericRKData)
+double IController_MR(void* genericRKData)
 {
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
 
   double fac = 0.9;
   double facmax = 3.5;
@@ -933,9 +923,9 @@ double IController(void* genericRKData)
 
 }
 
-double PIController(void* genericRKData)
+double PIController_MR(void* genericRKData)
 {
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
 
   double fac = 0.9;
   double facmax = 3.5;
@@ -954,15 +944,15 @@ double PIController(void* genericRKData)
  *
  *  used for solver 'genericRK'
  */
-int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1]; // BB: Is this the ring buffer???
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*)solverInfo->solverData;
   DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
 
-  double err;
+  double err, percentage = 0.1;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
   int i, l, n=data->modelData->nStates;
   int esdirk_imp_step_info;
@@ -989,7 +979,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   if (userdata->firstStep  || solverInfo->didEventStep == 1)
   {
-    genericRK_first_step(data, threadData, solverInfo);
+    genericRK_first_step_MR(data, threadData, solverInfo);
     // side effect:
     //    sData->realVars, userdata->yOld, and userdata->f are consistent
     //    userdata->time and userdata->stepSize are defined
@@ -1050,7 +1040,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       userdata->nSlowStates = 0;
       for (i=0; i<userdata->nStates; i++)
       {
-        if (userdata->err[i] > userdata->percentage * err)
+        if (userdata->err[i] > percentage * err)
         {
           userdata->fastStates[userdata->nFastStates] = i;
           userdata->nFastStates += 1;
@@ -1139,7 +1129,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
     sData->timeValue = solverInfo->currentTime;
-    linear_interpolation(userdata->time-userdata->lastStepSize, userdata->yt, userdata->time, userdata->y, sData->timeValue, sData->realVars, data->modelData->nStates);
+    linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt, userdata->time, userdata->y, sData->timeValue, sData->realVars, data->modelData->nStates);
     // printVector_genericRK("yOld: ", userdata->yt, data->modelData->nStates, userdata->time-userdata->lastStepSize);
     // printVector_genericRK("y:    ", userdata->y, data->modelData->nStates, userdata->time);
     // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
@@ -1156,7 +1146,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   if(ACTIVE_STREAM(LOG_SOLVER))
   {
-    infoStreamPrint(LOG_SOLVER, 1, "genericRK call statistics: ");
+    infoStreamPrint(LOG_SOLVER, 1, "genericRKmr call statistics: ");
     infoStreamPrint(LOG_SOLVER, 0, "current time value: %0.4g", solverInfo->currentTime);
     infoStreamPrint(LOG_SOLVER, 0, "current integration time value: %0.4g", userdata->time);
     infoStreamPrint(LOG_SOLVER, 0, "step size h to be attempted on next step: %0.4g", userdata->stepSize);
@@ -1183,7 +1173,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
 // TODO AHeu: For sure ther is already a linear interpolation function somewhere
 //auxiliary vector functions for better code structure
-void linear_interpolation(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
+void linear_interpolation_MR(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
 {
   double lambda, h0, h1;
 
@@ -1197,7 +1187,7 @@ void linear_interpolation(double ta, double* fa, double tb, double* fb, double t
   }
 }
 
-void printVector_genericRK(char name[], double* a, int n, double time)
+void printVector_genericRK_MR(char name[], double* a, int n, double time)
 {
   printf("\n%s at time: %g: \n", name, time);
   for (int i=0;i<n;i++)
@@ -1205,7 +1195,7 @@ void printVector_genericRK(char name[], double* a, int n, double time)
   printf("\n");
 }
 
-void printMatrix_genericRK(char name[], double* a, int n, double time)
+void printMatrix_genericRK_MR(char name[], double* a, int n, double time)
 {
   printf("\n%s at time: %g: \n ", name, time);
   for (int i=0;i<n;i++)

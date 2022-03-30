@@ -128,7 +128,7 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
     printf("embedded method yields R(\u221e) =  %.19g\n", lim);
   } else
   {
-    lim = 1;
+    lim = 0.3;
   }
 
   //ESDIRK3

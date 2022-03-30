@@ -55,6 +55,7 @@
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
 #include "generic_rk.h"
+#include "generic_rk_mr.h"
 #include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
@@ -188,16 +189,15 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   }
-  case S_GENERIK_RK:
+  case S_GENERIC_RK_MR:
+  case S_GENERIC_RK:
   {
     retVal = genericRK_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   }
-
   }
-
   TRACE_POP
   return 1;
 }
@@ -259,7 +259,8 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     allocateIrksco(solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
     break;
   }
-  case S_GENERIK_RK:
+  case S_GENERIC_RK_MR:
+  case S_GENERIC_RK:
   {
     if (allocateDataGenericRK(data, threadData, solverInfo) != 0) {
       throwStreamPrint(threadData, "Failed to allocate memory for generic RK solver.");
@@ -416,7 +417,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     freeIrksco(solverInfo);
   }
-  else if (solverInfo->solverMethod == S_GENERIK_RK)
+  else if ((solverInfo->solverMethod == S_GENERIC_RK) || (solverInfo->solverMethod == S_GENERIC_RK_MR))
   {
     freeDataGenericRK(solverInfo->solverData);
   }
