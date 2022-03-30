@@ -78,6 +78,10 @@ void printMatrix_genericRK(char name[], double* a, int n, double time);
 int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
+// step size control function
+double IController(void* genericRKData);
+double PIController(void* genericRKData);
+
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_RK.
  *
@@ -197,6 +201,18 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     userdata->step_fun = &(full_implicit_RK);
   }
 
+  const char* flag_StepSize_ctrl = omc_flagValue[FLAG_RK_STEPSIZE_CTRL];
+
+  if (flag_StepSize_ctrl != NULL) {
+    userdata->stepSize_control = &(PIController);
+    printf("PIController is used\n");
+  } else
+  {
+    userdata->stepSize_control = &(IController);
+    printf("IController is used\n");
+  }
+
+
   // allocate memory for te generic RK method
   userdata->firstStep = 1;
   userdata->y = malloc(sizeof(double)*userdata->nStates);
@@ -218,6 +234,8 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   userdata->evalJacobians = 0;
   userdata->errorTestFailures = 0;
   userdata->convergenceFailures = 0;
+
+  userdata->err_new = -1;
 
   /* initialize analytic Jacobian, if available and needed */
   if (!userdata->isExplicit) {
@@ -890,11 +908,39 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   }
 
   userdata->stepSize = 0.5*fmin(100*h0,h1);
+  userdata->lastStepSize = userdata->stepSize;
 
   /* end calculation new step size */
 
   infoStreamPrint(LOG_SOLVER, 0, "initial step size = %e at time %g", userdata->stepSize, userdata->time);
 }
+
+double IController(void* genericRKData)
+{
+  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
+
+  double fac = 0.9;
+  double facmax = 3.5;
+  double facmin = 0.5;
+  double beta = -1./userdata->tableau->error_order;
+
+  return fmin(facmax, fmax(facmin, fac*pow(userdata->err_new, beta)));
+
+}
+
+double PIController(void* genericRKData)
+{
+  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
+
+  double fac = 0.9;
+  double facmax = 3.5;
+  double facmin = 0.5;
+  double beta1=-1./2./userdata->tableau->error_order, beta2=beta1;
+
+  return fmin(facmax, fmax(facmin, fac*pow(userdata->err_new, beta1)*pow(userdata->err_old, beta2)));
+
+}
+
 
 /*! \fn esdirkmr_step
  *
@@ -915,13 +961,11 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
   int i, l, n=data->modelData->nStates;
   int esdirk_imp_step_info;
-  // find appropriate value using the TestAnalytic.mo example
-  //double fac = 0.9;
-  double facmax = 3.5;
-  double facmin = 0.3;
+
   double norm_errtol;
   double norm_errest;
   double targetTime;
+  double stopTime = data->simulationInfo->stopTime;
 
   /* Calculate steps until targetTime is reached */
   if (solverInfo->integratorSteps) // 1 => stepSizeControl; 0 => equidistant grid
@@ -980,8 +1024,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
           userdata->y[i]  += userdata->stepSize * userdata->tableau->b[l]  * (userdata->k + l * n)[i];
           userdata->yt[i] += userdata->stepSize * userdata->tableau->bt[l] * (userdata->k + l * n)[i];
         }
-        //userdata->errtol[i] = Rtol*fabs(userdata->yOld[i]) + Atol;
-        userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yt[i])) + Atol;
+        userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yOld[i])) + Atol;
+        //userdata->errtol[i] = Rtol*(fabs(userdata->y[i]) + fabs(userdata->stepSize*fODE[i])) + Atol*1e-3;
         userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
       }
 
@@ -1008,9 +1052,22 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       err /= n;
       err = sqrt(err);
 
+      if (userdata->err_new == -1) userdata->err_new = err;
+      userdata->err_old = userdata->err_new;
+      userdata->err_new = err;
+
       // Store performed stepSize for adjusting the time and interpolation purposes
+      userdata->stepSize_old = userdata->lastStepSize;
       userdata->lastStepSize = userdata->stepSize;
-      userdata->stepSize *= fmin(facmax, fmax(facmin, userdata->tableau->fac*pow(1.0/err, 1./userdata->tableau->error_order)));
+
+      userdata->stepSize *= userdata->stepSize_control((void*) userdata);
+      userdata->stepSize = fmin(userdata->stepSize, stopTime - (userdata->time + userdata->lastStepSize));
+
+      // printf("Stepsize: old: %g, last: %g, act: %g\n", userdata->stepSize_old, userdata->lastStepSize, userdata->stepSize);
+      // printf("Error:    old: %g, new: %g\n", userdata->err_old, userdata->err_new);
+
+
+      //userdata->stepSize *= fmin(facmax, fmax(facmin, userdata->tableau->fac*pow(1.0/err, 1./userdata->tableau->error_order)));
       /*
        * step size control from Luca, etc.:
        * stepSize = seccoeff*sqrt(norm_errtol/fmax(norm_errest,errmin));
@@ -1136,4 +1193,6 @@ void printMatrix_genericRK(char name[], double* a, int n, double time)
   }
   printf("\n");
 }
+
+
 

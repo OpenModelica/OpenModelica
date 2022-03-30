@@ -43,6 +43,7 @@
  * @brief Function to compute single Runge-Kutta step.
  */
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+typedef double (*rk_stepSize_control_function)(void* genericRKData);
 
 typedef struct DATA_GENERIC_RK{
   DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
@@ -53,9 +54,9 @@ typedef struct DATA_GENERIC_RK{
   double *y, *yt, *yOld, *f;
   double *Jf;
   double *k, *res_const;
-  double *errest, *errtol;
+  double *errest, *errtol, err_new, err_old;
   double time;
-  double stepSize, lastStepSize;
+  double stepSize, lastStepSize, stepSize_old;
   int act_stage;
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;
@@ -69,6 +70,7 @@ typedef struct DATA_GENERIC_RK{
   unsigned int errorTestFailures;
   unsigned int convergenceFailures;
   rk_step_function step_fun;
+  rk_stepSize_control_function stepSize_control;
 } DATA_GENERIC_RK;
 
 enum RK_SINGLERATE_METHOD getRK_Method();
