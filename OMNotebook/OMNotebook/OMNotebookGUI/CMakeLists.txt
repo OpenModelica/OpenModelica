@@ -107,7 +107,8 @@ target_link_libraries(OMNotebook PUBLIC OpenModelicaCompiler)
 # target_link_libraries(OMNotebook PRIVATE OMNotebookLib)
 
 # install(TARGETS OMNotebookLib)
-install(TARGETS OMNotebook)
+install(TARGETS OMNotebook
+        BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(FILES stylesheet.xml
               commands.xml
