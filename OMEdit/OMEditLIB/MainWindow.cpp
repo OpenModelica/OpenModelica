@@ -3700,13 +3700,13 @@ void MainWindow::createActions()
   connect(mpRunOMSensAction, SIGNAL(triggered()), SLOT(runOMSensPlugin()));
   // Help Menu
   // users guide action
-  mpUsersGuideAction = new QAction(tr("OpenModelica Users Guide"), this);
-  mpUsersGuideAction->setStatusTip(tr("Opens the OpenModelica Users Guide"));
+  mpUsersGuideAction = new QAction(tr("OpenModelica User's Guide"), this);
+  mpUsersGuideAction->setStatusTip(tr("Opens the OpenModelica User's Guide"));
   mpUsersGuideAction->setShortcut(QKeySequence(Qt::Key_F1));
   connect(mpUsersGuideAction, SIGNAL(triggered()), SLOT(openUsersGuide()));
   // users guide new pdf action
-  mpUsersGuidePdfAction = new QAction(tr("OpenModelica Users Guide (PDF)"), this);
-  mpUsersGuidePdfAction->setStatusTip(tr("Opens the OpenModelica Users Guide (PDF)"));
+  mpUsersGuidePdfAction = new QAction(tr("OpenModelica User's Guide (PDF)"), this);
+  mpUsersGuidePdfAction->setStatusTip(tr("Opens the OpenModelica User's Guide (PDF)"));
   connect(mpUsersGuidePdfAction, SIGNAL(triggered()), SLOT(openUsersGuidePdf()));
   // system documentation action
   mpSystemDocumentationAction = new QAction(tr("OpenModelica System Documentation"), this);
@@ -3729,8 +3729,8 @@ void MainWindow::createActions()
   mpModelicaWebReferenceAction->setStatusTip(tr("Opens the Modelica Web Reference"));
   connect(mpModelicaWebReferenceAction, SIGNAL(triggered()), SLOT(openModelicaWebReference()));
   // OMSimulator users guide action
-  mpOMSimulatorUsersGuideAction = new QAction(tr("OMSimulator Users Guide"), this);
-  mpOMSimulatorUsersGuideAction->setStatusTip(tr("Opens the OMSimulator Users Guide"));
+  mpOMSimulatorUsersGuideAction = new QAction(tr("OMSimulator User's Guide"), this);
+  mpOMSimulatorUsersGuideAction->setStatusTip(tr("Opens the OMSimulator User's Guide"));
   connect(mpOMSimulatorUsersGuideAction, SIGNAL(triggered()), SLOT(openOMSimulatorUsersGuide()));
   // OMTLMSimulator documenatation action
   mpOpenModelicaTLMSimulatorDocumentationAction = new QAction(tr("OpenModelica TLM Simulator Documentation"), this);
