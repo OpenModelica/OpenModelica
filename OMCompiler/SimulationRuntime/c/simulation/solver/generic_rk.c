@@ -379,11 +379,11 @@ int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* generic
 
   int i,j,l;
 
-  /* profiling */
-  rt_tick(SIM_TIMER_JACOBIAN);
-
-  if (solverData->calculate_jacobian>=0)
+  if ((solverData->calculate_jacobian == 0) && (userdata->evalJacobians==0))
   {
+    /* profiling */
+    rt_tick(SIM_TIMER_JACOBIAN);
+
     userdata->evalJacobians++;
 
     if (userdata->symJacAvailable)
@@ -391,25 +391,25 @@ int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* generic
       const int index = data->callback->INDEX_JAC_A;
       ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
-#ifdef USE_PARJAC
+  #ifdef USE_PARJAC
       //ANALYTIC_JACOBIAN* t_jac = (dasslData->jacColumns);
       ANALYTIC_JACOBIAN* t_jac = jac;
-#else
+  #else
       ANALYTIC_JACOBIAN* t_jac = jac;
-#endif
+  #endif
 
       unsigned int columns = jac->sizeCols;
       unsigned int rows = jac->sizeRows;
       unsigned int sizeTmpVars = jac->sizeTmpVars;
       SPARSE_PATTERN* spp = jac->sparsePattern;
 
-       /* Evaluate constant equations if available */
-       // BB: Do I need this?
-       if (jac->constantEqns != NULL) {
-         jac->constantEqns(data, threadData, jac, NULL);
-       }
-       genericColoredSymbolicJacobianEvaluation(rows, columns, spp, userdata->Jf, t_jac,
-                                           data, threadData, &setJacElementESDIRKSparse);
+        /* Evaluate constant equations if available */
+        // BB: Do I need this?
+        if (jac->constantEqns != NULL) {
+          jac->constantEqns(data, threadData, jac, NULL);
+        }
+        genericColoredSymbolicJacobianEvaluation(rows, columns, spp, userdata->Jf, t_jac,
+                                            data, threadData, &setJacElementESDIRKSparse);
     }
     else
     {
@@ -439,13 +439,10 @@ int wrapper_Jf_genericRK(int n, double t, double* x, double* fODE, void* generic
         x[i] = xsave;
       }
     }
-    // Has to be refactured for general RK method
-    if (solverData->calculate_jacobian==0)
-      solverData->calculate_jacobian = 1;
-  }
 
-  /* profiling */
-  rt_accumulate(SIM_TIMER_JACOBIAN);
+    /* profiling */
+    rt_accumulate(SIM_TIMER_JACOBIAN);
+  }
   return 0;
 }
 
@@ -494,8 +491,6 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
   }
   else
   {
-    if (solverData->calculate_jacobian>=0)
-    {
     /*!
      *  fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
      *  set correct time value and states of simulation system
@@ -526,8 +521,6 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
         solverData->fjac[l] = userdata->stepSize * userdata->tableau->A[k] * userdata->Jf[l];
         if (i==j) solverData->fjac[l] -= 1;
       }
-    }
-    solverData->calculate_jacobian=-1;
     }
   }
   return 0;
@@ -597,8 +590,6 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
   }
   else
   {
-    if (solverData->calculate_jacobian>=0)
-    {
     /*!
      *  fODE = f(tOld + h,x); x ~ yOld + h*(b1*k1+b2*k2+b3*k3)
      *  set correct time value and states of simulation system
@@ -659,8 +650,6 @@ int wrapper_RK(int* n_p, double* x, double* res, void* genericRKData, int fj)
           }
         }
       }
-    }
-    solverData->calculate_jacobian=-1;
     }
   }
   return 0;
