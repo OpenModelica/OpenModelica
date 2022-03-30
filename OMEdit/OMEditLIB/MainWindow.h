@@ -402,8 +402,6 @@ private:
   QAction *mpSystemDocumentationAction;
   QAction *mpOpenModelicaScriptingAction;
   QAction *mpModelicaDocumentationAction;
-  QAction *mpModelicaByExampleAction;
-  QAction *mpModelicaWebReferenceAction;
   QAction *mpOMSimulatorUsersGuideAction;
   QAction *mpOpenModelicaTLMSimulatorDocumentationAction;
   QAction *mpAboutOMEditAction;
@@ -547,8 +545,6 @@ public slots:
   void openSystemDocumentation();
   void openOpenModelicaScriptingDocumentation();
   void openModelicaDocumentation();
-  void openModelicaByExample();
-  void openModelicaWebReference();
   void openOMSimulatorUsersGuide();
   void openOpenModelicaTLMSimulatorDocumentation();
   void openAboutOMEdit();
