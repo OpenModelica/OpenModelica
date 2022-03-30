@@ -371,12 +371,12 @@ Tools Menu
 Help Menu
 ---------
 
--  *OpenModelica Users Guide* - Opens the OpenModelica Users Guide.
--  *OpenModelica Users Guide (PDF)* - Opens the OpenModelica Users Guide (PDF).
+-  *OpenModelica User's Guide* - Opens the OpenModelica User's Guide.
+-  *OpenModelica User's Guide (PDF)* - Opens the OpenModelica User's Guide (PDF).
 -  *OpenModelica System Documentation* - Opens the OpenModelica System Documentation.
 -  *OpenModelica Scripting Documentation* - Opens the OpenModelica Scripting Documentation.
 -  *Modelica Documentation* - Opens the Modelica Documentation.
--  *OMSimulator Users Guide* - Opens the OMSimulator Users Guide.
+-  *OMSimulator User's Guide* - Opens the OMSimulator User's Guide.
 -  *OpenModelica TLM Simulator Documentation* - Opens the OpenModelica TLM Simulator Documentation.
 -  *About OMEdit* - Shows the information about OpenModelica Connection Editor.
 
