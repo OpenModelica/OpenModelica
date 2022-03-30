@@ -26,6 +26,7 @@ libOMParser.a: $(OBJS)
 	$(AR) -s -r $@ $(OBJS)
 	mkdir -p $(OMBUILDDIR)/lib/$(host_short)/omc/ $(OMBUILDDIR)/include/omc/
 	cp -pR $@ $(OMBUILDDIR)/lib/$(host_short)/omc/
+	cp install/lib/libantlr4-runtime.a $(OMBUILDDIR)/lib/$(host_short)/omc/
 
 $(OBJS): $(CPP_FILES) install/lib/libantlr4-runtime.a
 
