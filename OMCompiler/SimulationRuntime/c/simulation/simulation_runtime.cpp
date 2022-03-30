@@ -544,13 +544,25 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   if(omc_flag[FLAG_IIF]) {
     if (omc_flag[FLAG_INPUT_PATH]) {
       const char *tmp_filename;
-      if (0 > GC_asprintf(&tmp_filename, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], omc_flagValue[FLAG_IIF])) {
-        throwStreamPrint(NULL, "simulation_runtime.cpp: Error: can not allocate memory.");
+      struct stat attrib;
+
+      if (omc_stat(omc_flagValue[FLAG_IIF], &attrib ) == 0) {
+        if (0 > GC_asprintf(&tmp_filename, "%s", omc_flagValue[FLAG_IIF] )) {
+          throwStreamPrint(NULL, "simulation_runtime.cpp: Error: can not allocate memory.");
+        }
+      }
+      else {
+        if (0 > GC_asprintf(&tmp_filename, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], omc_flagValue[FLAG_IIF])) {
+          throwStreamPrint(NULL, "simulation_runtime.cpp: Error: can not allocate memory.");
+        }
       }
       init_file = tmp_filename;
     }
     else {
       init_file = omc_flagValue[FLAG_IIF];
+    }
+    if (stat(init_file.c_str(), &attrib ) != 0) {
+      throwStreamPrint(NULL, "Initialization file \"%s\" doesn't exist.", init_file.c_str());
     }
   }
   if(omc_flag[FLAG_IIT]) {
