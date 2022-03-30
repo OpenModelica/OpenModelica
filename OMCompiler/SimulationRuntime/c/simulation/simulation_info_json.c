@@ -467,22 +467,15 @@ FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)
 
 FUNCTION_INFO modelInfoGetDummyFunction(MODEL_DATA_XML* xml)
 {
-  xml->functionNames = (FUNCTION_INFO*) calloc(1, sizeof(FUNCTION_INFO));
-  FILE_INFO fileInfo = omc_dummyFileInfo;
-  xml->functionNames[0].id = 0;
-  xml->functionNames[0].name = "";
-  xml->functionNames[0].info = fileInfo;
-  return xml->functionNames[0];
+  FUNCTION_INFO functionInfo = omc_dummyFunctionInfo;
+  return functionInfo;
 }
 
 EQUATION_INFO modelInfoGetDummyEquation(MODEL_DATA_XML* xml)
 {
-  xml->equationInfo = (EQUATION_INFO*) calloc(1, sizeof(EQUATION_INFO));
-  xml->equationInfo[0].id = 0;
-  xml->equationInfo[0].profileBlockIndex = 0;
-  xml->equationInfo[0].numVar = 0;
-  xml->equationInfo[0].vars = "";
-  return xml->equationInfo[0];
+  const char * var = "";
+  EQUATION_INFO equationInfo = {-1, 0, 0, -1, &var}; // omc_dummyEquationInfo is not working in mingw
+  return equationInfo;
 }
 
 EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
