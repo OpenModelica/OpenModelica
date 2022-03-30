@@ -1522,6 +1522,16 @@ void MainWindow::addSystemLibraries()
 }
 
 /*!
+ * \brief MainWindow::getLibraryIndexFilePath
+ * Returns the library index file path.
+ * \return
+ */
+QString MainWindow::getLibraryIndexFilePath() const
+{
+  return QString("%1/.openmodelica/libraries/index.json").arg(Helper::userHomeDirectory);
+}
+
+/*!
  * \brief MainWindow::showMessagesBrowser
  * Slot activated when MessagesWidget::MessageAdded signal is raised.\n
  * Shows the Messages Browser.
@@ -2450,18 +2460,67 @@ void MainWindow::exportModelToOMNotebook()
  */
 bool MainWindow::openInstallLibraryDialog()
 {
-  InstallLibraryDialog *pInstallLibraryDialog = new InstallLibraryDialog;
-  return pInstallLibraryDialog->exec();
+  updateLibraryIndex(false);
+  bool returnValue = false;
+  QString indexFilePath = getLibraryIndexFilePath();
+  if (QFile::exists(indexFilePath)) {
+    InstallLibraryDialog *pInstallLibraryDialog = new InstallLibraryDialog;
+    returnValue = pInstallLibraryDialog->exec();
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::LIBRARY_INDEX_FILE_NOT_FOUND).arg(indexFilePath),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+  return returnValue;
 }
 
 /*!
  * \brief MainWindow::updateInstalledLibraries
- * Opens the update installed libraries dialog.
+ * Opens the upgrade installed libraries dialog.
  */
-void MainWindow::updateInstalledLibraries()
+void MainWindow::upgradeInstalledLibraries()
 {
-  UpdateInstalledLibrariesDialog *pUpdateInstalledLibrariesDialog = new UpdateInstalledLibrariesDialog;
-  pUpdateInstalledLibrariesDialog->exec();
+  updateLibraryIndex(false);
+  QString indexFilePath = getLibraryIndexFilePath();
+  if (QFile::exists(indexFilePath)) {
+    UpgradeInstalledLibrariesDialog *pUpdateInstalledLibrariesDialog = new UpgradeInstalledLibrariesDialog;
+    pUpdateInstalledLibrariesDialog->exec();
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::LIBRARY_INDEX_FILE_NOT_FOUND).arg(indexFilePath),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::updateLibraryIndex
+ * Slot activated when Update Library Index menu item is triggered.
+ */
+void MainWindow::updateLibraryIndex()
+{
+  updateLibraryIndex(true);
+}
+
+/*!
+ * \brief MainWindow::updateLibraryIndex
+ * Calls OMCProxy::updatePackageIndex() once per OMEdit session.
+ * \param forceUpdate
+ */
+void MainWindow::updateLibraryIndex(bool forceUpdate)
+{
+  static int init = 0;
+  if (forceUpdate || !init) {
+    init = 1;
+    // show the progressbar and set the message in status bar
+    mpStatusBar->showMessage(tr("Updating library index"));
+    mpProgressBar->setRange(0, 0);
+    showProgressBar();
+    if (!MainWindow::instance()->getOMCProxy()->updatePackageIndex()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to update the library index. This could be because of bad internet connection."),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+    // hide the progressbar and clear the message in status bar
+    mpStatusBar->clearMessage();
+    hideProgressBar();
+  }
 }
 
 //! Imports the models from OMNotebook.
@@ -3407,10 +3466,14 @@ void MainWindow::createActions()
   mpInstallLibraryAction = new QAction(Helper::installLibrary, this);
   mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
   connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
-  // updated installed libraries action
-  mpUpdateInstalledLibrariesAction = new QAction(Helper::updateInstalledLibraries, this);
-  mpUpdateInstalledLibrariesAction->setStatusTip(tr("Updates the installed libraries"));
-  connect(mpUpdateInstalledLibrariesAction, SIGNAL(triggered()), SLOT(updateInstalledLibraries()));
+  // upgrade installed libraries action
+  mpUpgradeInstalledLibrariesAction = new QAction(Helper::upgradeInstalledLibraries, this);
+  mpUpgradeInstalledLibrariesAction->setStatusTip(tr("Upgrades the installed libraries"));
+  connect(mpUpgradeInstalledLibrariesAction, SIGNAL(triggered()), SLOT(upgradeInstalledLibraries()));
+  // update library index action
+  mpUpdateLibraryIndexAction = new QAction(Helper::updateLibraryIndex, this);
+  mpUpdateLibraryIndexAction->setStatusTip(tr("Updates the library index"));
+  connect(mpUpdateLibraryIndexAction, SIGNAL(triggered()), SLOT(updateLibraryIndex()));
   // clear recent files action
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
@@ -3863,12 +3926,19 @@ void MainWindow::createMenus()
   mpFileMenu->addSeparator();
   // System libraries menu
   mpLibrariesMenu = new QMenu(menuBar());
-  mpLibrariesMenu->setObjectName("LibrariesMenu");
+  mpLibrariesMenu->setObjectName("SystemLibrariesMenu");
   mpLibrariesMenu->setTitle(tr("&System Libraries"));
   addSystemLibraries();
   mpFileMenu->addMenu(mpLibrariesMenu);
-  mpFileMenu->addAction(mpInstallLibraryAction);
-  mpFileMenu->addAction(mpUpdateInstalledLibrariesAction);
+  // manage libraries menu
+  QMenu *pManageLibrariesMenu = new QMenu(menuBar());
+  pManageLibrariesMenu->setObjectName("ManageLibrariesMenu");
+  pManageLibrariesMenu->setTitle(tr("&Manage Libraries"));
+  // add actions to manage libraries
+  pManageLibrariesMenu->addAction(mpInstallLibraryAction);
+  pManageLibrariesMenu->addAction(mpUpgradeInstalledLibrariesAction);
+  pManageLibrariesMenu->addAction(mpUpdateLibraryIndexAction);
+  mpFileMenu->addMenu(pManageLibrariesMenu);
   mpFileMenu->addSeparator();
   mpRecentFilesMenu = new QMenu(menuBar());
   mpRecentFilesMenu->setObjectName("RecentFilesMenu");

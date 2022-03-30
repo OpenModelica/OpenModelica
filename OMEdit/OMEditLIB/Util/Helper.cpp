@@ -423,7 +423,8 @@ QString Helper::systemSimulationInformation;
 QString Helper::translationFlags;
 QString Helper::send;
 QString Helper::installLibrary;
-QString Helper::updateInstalledLibraries;
+QString Helper::upgradeInstalledLibraries;
+QString Helper::updateLibraryIndex;
 QString Helper::dataReconciliation;
 
 void Helper::initHelperVariables()
@@ -726,7 +727,8 @@ void Helper::initHelperVariables()
   Helper::translationFlags = tr("Translation Flags");
   Helper::send = tr("Send");
   Helper::installLibrary = tr("Install Library");
-  Helper::updateInstalledLibraries = tr("Update Installed Libraries");
+  Helper::upgradeInstalledLibraries = tr("Upgrade Installed Libraries");
+  Helper::updateLibraryIndex = tr("Update Library Index");
   Helper::dataReconciliation = tr("Data Reconciliation");
 }
 
@@ -876,6 +878,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Name <b>%1</b> is not a valid identifier.<br />A name must start with a letter, and all characters must be letters or digits. It may not be a reserved word.");
     case ENTER_SCRIPT:
       return tr("Please enter a script file.");
+    case LIBRARY_INDEX_FILE_NOT_FOUND:
+      return tr("Library index file <b>%1</b> doesn't exist.");
     default:
       return "";
   }
