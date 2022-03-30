@@ -1,11 +1,22 @@
 cmake_minimum_required(VERSION 3.14)
-project(OMCompiler C CXX Fortran)
+project(OMCompiler C CXX)
 
 ## OPTIONS #################################################################################################
 
-omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
+omc_option(OM_OMC_ENABLE_FORTRAN "Enable Fortran support. Fortran is required if you enable IPOPT support." ON)
+if(OM_OMC_ENABLE_FORTRAN)
+  enable_language(Fortran)
+endif()
+
 
 omc_option(WITH_IPOPT "Should we enable dynamic optimization support with Ipopt." ON)
+if(WITH_IPOPT AND NOT OM_OMC_ENABLE_FORTRAN)
+message(FATAL_ERROR "Ipopt support requires Fortran support to be enabled.
+    ***Note: currently it is not possible to disable IPOPT from OpenModelica. This Option is here as a placeholder. ")
+endif()
+
+omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
+
 omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LPSOLVE "Should we use lpsolve." OFF)

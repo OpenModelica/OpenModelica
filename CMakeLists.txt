@@ -1,6 +1,6 @@
 
 cmake_minimum_required(VERSION 3.14)
-project(OpenModelica C CXX Fortran)
+project(OpenModelica C CXX)
 
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
