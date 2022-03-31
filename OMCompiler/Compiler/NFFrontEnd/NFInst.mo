@@ -2673,7 +2673,7 @@ algorithm
         arr := Array.mapList(absynExp.arrayExp,
           function instExp(scope = scope, context = context, info = info));
       then
-        Expression.makeArray(Type.UNKNOWN(), arr, Array.all(arr, Expression.isLiteral));
+        Expression.makeArrayCheckLiteral(Type.UNKNOWN(), arr);
 
     case Absyn.Exp.MATRIX()
       algorithm

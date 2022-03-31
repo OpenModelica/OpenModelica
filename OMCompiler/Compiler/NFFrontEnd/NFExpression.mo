@@ -939,6 +939,15 @@ public
     annotation(__OpenModelica_EarlyInline = true);
   end makeArray;
 
+  function makeArrayCheckLiteral
+    input Type ty;
+    input array<Expression> expl;
+    output Expression outExp;
+  algorithm
+    outExp := ARRAY(ty, expl, Array.all(expl, isLiteral));
+    annotation(__OpenModelica_EarlyInline = true);
+  end makeArrayCheckLiteral;
+
   function makeEmptyArray
     input Type ty;
     output Expression outExp;

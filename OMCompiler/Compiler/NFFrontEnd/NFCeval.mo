@@ -190,9 +190,8 @@ algorithm
     case Expression.ARRAY()
       then if exp.literal then exp
            else
-             Expression.makeArray(exp.ty,
-               Array.map(exp.elements, function evalExp(target = target)),
-               literal = true);
+             Expression.makeArrayCheckLiteral(exp.ty,
+               Array.map(exp.elements, function evalExp(target = target)));
 
     case Expression.RANGE() then evalRange(exp, target);
 

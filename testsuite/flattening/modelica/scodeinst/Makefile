@@ -112,6 +112,7 @@ CevalBinding4.mo \
 CevalBinding5.mo \
 CevalBinding6.mo \
 CevalBinding7.mo \
+CevalBinding8.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
