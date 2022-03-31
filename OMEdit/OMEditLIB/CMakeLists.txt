@@ -295,6 +295,3 @@ endif()
 
 target_include_directories(OMEditLib PRIVATE
   ${OMCompiler_SOURCE_DIR}/Compiler/Script)
-
-target_link_options(OMEditLib PRIVATE -Wl,--no-undefined)
-

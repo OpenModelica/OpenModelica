@@ -33,8 +33,6 @@ target_sources(OMCppDataExchange PRIVATE ${OMC_SIMRT_CPP_CORE_DATAEXCHANGE_SOURC
 
 target_link_libraries(OMCppDataExchange PUBLIC omc::simrt::cpp::config)
 
-target_link_options(OMCppDataExchange PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppDataExchange)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -54,8 +52,6 @@ add_library(omc::simrt::cpp::core::modelica ALIAS OMCppModelica)
 target_sources(OMCppModelica PRIVATE ${OMC_SIMRT_CPP_CORE_MODELICA_SOURCES})
 
 target_link_libraries(OMCppModelica PUBLIC omc::simrt::cpp::config)
-
-target_link_options(OMCppModelica PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppModelica)
 
@@ -81,8 +77,6 @@ add_library(omc::simrt::cpp::core::math ALIAS OMCppMath)
 target_sources(OMCppMath PRIVATE ${OMC_SIMRT_CPP_CORE_MATH_SOURCES})
 
 target_link_libraries(OMCppMath PUBLIC omc::simrt::cpp::config)
-
-target_link_options(OMCppMath PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppMath)
 
@@ -123,8 +117,6 @@ target_sources(OMCppSolver PRIVATE ${OMC_SIMRT_CPP_CORE_SOLVER_SOURCES})
 target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::core::math)
 
-target_link_options(OMCppSolver PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppSolver)
 
 # OMCppSolver_static
@@ -162,8 +154,6 @@ target_sources(OMCppExtensionUtilities PRIVATE ${OMC_SIMRT_CPP_CORE_UTILS_EXTENS
 
 target_link_libraries(OMCppExtensionUtilities PUBLIC omc::simrt::cpp::config)
 
-target_link_options(OMCppExtensionUtilities PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppExtensionUtilities)
 
 # OMCppExtensionUtilities_static
@@ -198,8 +188,6 @@ add_library(omc::simrt::cpp::core::utils::modelica ALIAS OMCppModelicaUtilities)
 target_sources(OMCppModelicaUtilities PRIVATE ${OMC_SIMRT_CPP_CORE_UTILS_MODELICA_SOURCES})
 
 target_link_libraries(OMCppModelicaUtilities PUBLIC omc::simrt::cpp::config)
-
-target_link_options(OMCppModelicaUtilities PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppModelicaUtilities)
 
@@ -241,8 +229,6 @@ target_link_libraries(OMCppSimController PUBLIC omc::simrt::cpp::simcorefactory:
 target_link_libraries(OMCppSimController PUBLIC omc::simrt::cpp::core::utils::modelica)
 target_link_libraries(OMCppSimController PUBLIC Boost::filesystem)
 
-target_link_options(OMCppSimController PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppSimController)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -268,8 +254,6 @@ target_sources(OMCppSimulationSettings PRIVATE ${OMC_SIMRT_CPP_CORE_SIM_SETTINGS
 target_link_libraries(OMCppSimulationSettings PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppSimulationSettings PUBLIC omc::simrt::cpp::simcorefactory::omcfactory)
 target_link_libraries(OMCppSimulationSettings PUBLIC Boost::filesystem)
-
-target_link_options(OMCppSimulationSettings PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppSimulationSettings)
 
@@ -301,8 +285,6 @@ target_sources(OMCppSystem PRIVATE ${OMC_SIMRT_CPP_CORE_SYSTEM_SOURCES})
 target_link_libraries(OMCppSystem PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppSystem PUBLIC omc::simrt::cpp::simcorefactory::omcfactory)
 target_link_libraries(OMCppSystem PUBLIC Boost::filesystem)
-
-target_link_options(OMCppSystem PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppSystem)
 

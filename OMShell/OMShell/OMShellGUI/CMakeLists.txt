@@ -19,8 +19,6 @@ target_link_libraries(OMShellLib PUBLIC Qt5::PrintSupport)
 target_link_libraries(OMShellLib PUBLIC Qt5::WebKitWidgets)
 target_link_libraries(OMShellLib PUBLIC OpenModelicaCompiler)
 
-target_link_options(OMShellLib PRIVATE -Wl,--no-undefined)
-
 
 add_executable(OMShell WIN32 MACOSX_BUNDLE main.cpp rc_omshell.rc)
 target_link_libraries(OMShell PRIVATE OMShellLib)

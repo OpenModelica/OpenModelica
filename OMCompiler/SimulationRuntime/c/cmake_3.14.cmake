@@ -92,8 +92,6 @@ endif()
 # Fix me. Make an interface (header only library) out of 3rdParty/dgesv
 target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
 
-# target_link_options(SimulationRuntimeC PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS SimulationRuntimeC)
 
 
