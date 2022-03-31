@@ -1,48 +1,36 @@
-// name: HybridSysPackage.mos
-//loadModel(Modelica);
-//getErrorString();
-
-//loadModel(ModelicaTest);
-//getErrorString();
 
 loadFile("ESDIRK_test01.mo");
 getErrorString();
-loadFile("TestEventsDaeMode.mo");
-getErrorString();
-loadFile("Burger_Equations.mo");
-getErrorString();
-
-loadString("
-model Burger_dassl
-  extends Burger_Equations.Burger_equation_03;
-equation
-end Burger_dassl;
-");
-
-loadString("
-model Burger_esdirkmr
-  extends Burger_Equations.Burger_equation_03;
-equation
-end Burger_esdirkmr;
-");
 
 system("rm -rf temp/ && mkdir temp/");
 cd("temp");
 
-// esdirk2, esdirk2_test, esdirk3, esdirk3_test, dopri45, expl_euler, impl_euler,
+rkMethods := {"expl_euler",
+             "impl_euler",
+             "sdirk3",
+             "esdirk2",
+             "esdirk2_test",
+             "esdirk3",
+             "esdirk3_test",
+             "merson",
+             "dopri45"};
 
-setCommandLineOptions("--generateSymbolicJacobian");
+nlsMethods := {"newton", "kinsol"};
 
-simulate(ESDIRK_test01, stopTime=20, simflags = "-lv=LOG_SOLVER -s=genericRK -rkOpt=esdirk3 -rkNLS=newton");
+setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+
+buildModel(ESDIRK_test01);
 getErrorString();
 
-//simulate(TestEventsDaeMode, stopTime=20, simflags = "-lv=LOG_SOLVER,LOG_EVENTS -s=genericRK");
-//getErrorString();
+for rkMethod in rkMethods loop
+  for nlsMethod in nlsMethods loop
+    print("Running RK " + rkMethod + " with NLS " + nlsMethod + "\n");
+    logFile := "ESDIRK_test01_"+ rkMethod + "_" + nlsMethod+ ".log";
+    system("./ESDIRK_test01 -override=stopTime=20 -s=genericRK -rkOpt=" + rkMethod + " -rkNLS=" + nlsMethod, logFile);
 
-// simulate(Burger_dassl, stopTime=1, simflags = "-lv=LOG_STATS -s=dassl");
-// getErrorString();
+    //res := compareSimulationResults("ESDIRK_test01_res.mat", "ESDIRK_test_01_ref.mat", {"der(y)[1]", "der(y)[2]"});
+    //print(res + getErrorString());
 
-//simulate(Burger_esdirkmr, stopTime=1, simflags = "-lv=LOG_STATS -s=genericRK");
-//getErrorString();
-//plot({y[1],y[2]}, externalWindow=true);
-//getErrorString();
+    print(readFile(logFile) + "\n--------------------------------------------------------\n");
+  end for;
+end for;

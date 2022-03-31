@@ -54,10 +54,10 @@ typedef struct DATA_GENERIC_RK{
                                          * Something like
                                          *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
                                          * */
-  double *y;                /* Result vector of RK stp */
+  double *y;                /* Result vector of RK step */
   double *yt;               /* Result vector of embedded RK step */
-  modelica_real* yOld;
-  double* f;
+  modelica_real* yOld;      /* Result vector of last RK step ???? */
+  double* f;                /* state derivatives of ODE */
   double *Jf;
   double *k, *res_const;
   double *errest, *errtol;
