@@ -287,7 +287,9 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    nlsData->nlsLinearSolver = NLS_LS_KLU;
+    //nlsData->nlsLinearSolver = NLS_LS_KLU;  // Error in Kinsol.c L1290
+                                              // TODO AHeu: It seems that the Jacobian is sparse but should be dense (or vice versa)
+    nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
@@ -431,10 +433,9 @@ void freeDataGenericRK(DATA_GENERIC_RK* data) {
     freeNewtonData(data->nlsSolverData);
     break;
   case RK_NLS_KINSOL:
-    // TODO AHeu: This dataSolver struct is a nightmare.
-    dataSolver = (struct dataSolver*)data->nlsData;
-    kinsolData = (NLS_KINSOL_DATA*) dataSolver->ordinaryData;
-    nlsKinsolFree(kinsolData);
+    // TODO AHeu: There is a problem with freeing memory
+    kinsolData = (NLS_KINSOL_DATA*) data->nlsData->solverData;
+    //nlsKinsolFree(kinsolData);
     break;
   default:
     warningStreamPrint(LOG_SOLVER, 0, "Not handled RK_NLS_METHOD in freeDataGenericRK. Are we leaking memroy?");
@@ -980,6 +981,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // Set start vector
       memcpy(nlsData->nlsx, rk_data->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, rk_data->yOld, nStates*sizeof(modelica_real));
+      memcpy(nlsData->nlsxExtrapolation, rk_data->yOld, nStates*sizeof(modelica_real));
       solved = solveNLS(data, threadData, nlsData, -1);
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "expl_diag_impl_RK: Failed to solve NLS in expl_diag_impl_RK");

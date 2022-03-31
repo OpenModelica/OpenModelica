@@ -623,8 +623,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;
-  analyticJacobian =
-      &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
+  analyticJacobian = &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
 
   /* Access N_Vector variables */
   x = N_VGetArrayPointer(vecX);
