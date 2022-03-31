@@ -25,8 +25,6 @@ if(WIN32)
   target_link_libraries(OMCppOMCFactory PUBLIC ws2_32)
 endif()
 
-target_link_options(OMCppOMCFactory PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppOMCFactory)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

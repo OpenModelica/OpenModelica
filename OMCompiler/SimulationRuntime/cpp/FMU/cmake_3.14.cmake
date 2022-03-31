@@ -10,8 +10,6 @@ target_sources(OMCppFMU PRIVATE ${OMC_SIMRT_CPP_FMU_SOURCES})
 target_link_libraries(OMCppFMU PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppFMU PUBLIC omc::simrt::cpp::core::utils::extension)
 
-target_link_options(OMCppFMU PRIVATE  -Wl,--no-undefined)
-
 install(TARGETS OMCppFMU)
 
 # OMCppFMU_static
