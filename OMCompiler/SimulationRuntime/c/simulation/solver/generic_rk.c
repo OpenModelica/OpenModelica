@@ -282,8 +282,10 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   case RK_NLS_NEWTON:
     nlsData->nlsMethod = NLS_NEWTON;
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
-    // TODO: Change to nlsData
-    rk_data->nlsSolverData = (void*) allocateNewtonData(rk_data->nlSystemSize);
+    nlsData->jacobianIndex = -1;
+    solverData->ordinaryData =(void*) allocateNewtonData(nlsData->size);
+    solverData->initHomotopyData = NULL;
+    nlsData->solverData = solverData;
     break;
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
@@ -426,14 +428,15 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
  */
 void freeDataGenericRK(DATA_GENERIC_RK* data) {
   struct dataSolver* dataSolver;
-  NLS_KINSOL_DATA* kinsolData;;
+  NLS_KINSOL_DATA* kinsolData;
+
+  // TODO AHeu: There is a problem with freeing memory
   switch (data->nlsSolverMethod)
   {
   case RK_NLS_NEWTON:
-    freeNewtonData(data->nlsSolverData);
+    //freeNewtonData(data->nlsData->solverData);
     break;
   case RK_NLS_KINSOL:
-    // TODO AHeu: There is a problem with freeing memory
     kinsolData = (NLS_KINSOL_DATA*) data->nlsData->solverData;
     //nlsKinsolFree(kinsolData);
     break;
@@ -464,15 +467,16 @@ void freeDataGenericRK(DATA_GENERIC_RK* data) {
   return;
 }
 
-/*!	\fn wrapper_f_genericRK
+/**
+ * @brief Calculate function values of function ODE f(t,y).
  *
- *  calculate function values of function ODE f(t,y)
- *  IMPORTANT: assuming the correct values of the time value and the states are set
- *  \param [in]      data           data of the underlying DAE
- *  \param [in]      threadData     data for error handling
- *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK)
- *  \param [out]     fODE       pointer to state derivatives
+ * Assuming the correct values for time value and states are set.
  *
+ * @param data            Runtime data struct.
+ * @param threadData      Thread data for error handling.
+ * @param genericRKData   Runge-Kutta solver data.
+ * @param fODE            Array of state derivatives.
+ * @return int            Returns 0 on success.
  */
 int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* genericRKData, modelica_real* fODE)
 {
@@ -484,6 +488,7 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* genericRKDat
   // TODO AHeu: We don't need userdata in this function when we count evalFunctionODE somewhere in data.
   userdata->evalFunctionODE++;
 
+  /* Evaluate ODE */
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   data->callback->functionODE(data, threadData);
@@ -494,15 +499,16 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* genericRKDat
 /*
  * Sets element (i,j) in matrixA to given value val.
  */
+// TODO: Rename, its no longer ESDIRK and this is a dense matrix JF.
 void setJacElementESDIRKSparse(int i, int j, int nth, double val, void* Jf,
                               int rows)
 {
-  int l  = j*rows + i;
+  int l = j*rows + i;
   ((double*) Jf)[l]=val;
 }
 
 /**
- * @brief Calculate Jacobian of functionODE with respect to the states
+ * @brief Calculate symbolic Jacobian of functionODE with respect to the states.
  *
  * @param data          Runtime data struct.
  * @param threadData    Thread data for error handling.
@@ -511,10 +517,6 @@ void setJacElementESDIRKSparse(int i, int j, int nth, double val, void* Jf,
  */
 int wrapper_Jf_symbolic_genericRK(DATA* data, threadData_t *threadData, DATA_GENERIC_RK* rk_Data)
 {
-  int i,j,l;
-  int nStates = data->modelData->nStates;
-  double timeValue;
-
   /* profiling */
   rt_tick(SIM_TIMER_JACOBIAN);
 
@@ -536,7 +538,7 @@ int wrapper_Jf_symbolic_genericRK(DATA* data, threadData_t *threadData, DATA_GEN
     jac->constantEqns(data, threadData, jac, NULL);
   }
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, rk_Data->Jf, t_jac,
-                                          data, threadData, &setJacElementESDIRKSparse);
+                                           data, threadData, &setJacElementESDIRKSparse);
 
   /* profiling */
   rt_accumulate(SIM_TIMER_JACOBIAN);
@@ -545,7 +547,7 @@ int wrapper_Jf_symbolic_genericRK(DATA* data, threadData_t *threadData, DATA_GEN
 }
 
 /**
- * @brief Calculate Jacobian of functionODE with respect to the states
+ * @brief Calculate numeric Jacobian of functionODE with respect to the states.
  *
  * @param data          Runtime data struct.
  * @param threadData    Thread data for error handling.
@@ -554,10 +556,6 @@ int wrapper_Jf_symbolic_genericRK(DATA* data, threadData_t *threadData, DATA_GEN
  */
 int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GENERIC_RK* rk_Data)
 {
-  errorStreamPrint(LOG_STDOUT, 0, "wrapper_Jf_numeric_genericRK not finished.");
-  return -1;
-
-#if 0
   int i,j,l;
   int nStates = data->modelData->nStates;
   double timeValue;
@@ -568,9 +566,12 @@ int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GENE
 
   timeValue = sData->timeValue;
 
-
-  // TODO AHeu: Use newton or KLU
-  //DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
+  // Only implemented for non-linear solver Newton
+  if (rk_Data->nlsSolverMethod != RK_NLS_NEWTON) {
+    errorStreamPrint(LOG_STDOUT, 0, "wrapper_Jf_numeric_genericRK only implemented for Newton solver");
+    return -1;
+  }
+  DATA_NEWTON* solverData = (DATA_NEWTON*)rk_Data->nlsData;
 
   double delta_h = sqrt(solverData->epsfcn);
   double delta_hh;
@@ -587,11 +588,11 @@ int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GENE
   memcpy(rk_Data->f, stateDerivatives, nStates * sizeof(double));
   for(i = 0; i < nStates; i++)
   {
-    delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(rk_Data->f[i])), delta_h);
+    delta_hh = fmax(delta_h * fmax(fabs(states[i]), fabs(rk_Data->f[i])), delta_h);
     delta_hh = ((rk_Data->f[i] >= 0) ? delta_hh : -delta_hh);
-    delta_hh = x[i] + delta_hh - x[i];
-    xsave = x[i];
-    x[i] += delta_hh;
+    delta_hh = states[i] + delta_hh - states[i];
+    xsave = states[i];
+    states[i] += delta_hh;
     delta_hh = 1. / delta_hh;
 
     wrapper_f_genericRK(data, threadData, rk_Data, stateDerivatives);
@@ -607,7 +608,7 @@ int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GENE
       l = i * nStates + j;
       rk_Data->Jf[l] = (stateDerivatives[j] - rk_Data->f[j]) * delta_hh;
     }
-    x[i] = xsave;
+    states[i] = xsave;
   }
 
 
@@ -615,7 +616,6 @@ int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GENE
   rt_accumulate(SIM_TIMER_JACOBIAN);
 
   return 0;
-#endif
 }
 
 #if 0
@@ -760,16 +760,16 @@ int jacobian_DIRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jac
   int nStates = data->modelData->nStates;
   int diagIdx = genericRKData->act_stage * genericRKData->tableau->nStages + genericRKData->act_stage;
 
-  // TODO AHeu: Only compute once
+  // TODO AHeu: Only compute once?
 
-  // Evaluate Jacobian of ODE
+  /* Evaluate Jacobian of ODE */
   if (genericRKData->symJacAvailable) {
     wrapper_Jf_symbolic_genericRK(data, threadData, genericRKData);
   } else {
     wrapper_Jf_numeric_genericRK(data, threadData, genericRKData);
   }
 
-  // Compute NLS Jacobian
+  /* Compute Jacobian of non-linear system */
   for (i = 0; i < nStates; i++)
   {
     for (j = 0; j < nStates; j++)
@@ -1221,7 +1221,6 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     targetTime = sDataOld->timeValue + solverInfo->currentStepSize;
   }
 
-  // TODO: Isn't didEventStep always true after initialization?
   // (Re-)initialize after events or at first call of genericRK_step
   if (solverInfo->didEventStep == 1 || rkData->isFirstStep)
   {
@@ -1425,4 +1424,3 @@ void printMatrix_genericRK(char name[], double* a, int n, double time)
   }
   printf("\n");
 }
-

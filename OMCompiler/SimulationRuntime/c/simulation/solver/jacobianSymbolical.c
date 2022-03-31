@@ -99,9 +99,9 @@ void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns)
  * \param columns             Number of columns of jacobian.
  * \param spp                 Pointer to sparse pattern.
  * \param matrixA             Internal data of solvers to store jacobian.
- * \param jacColumns          Number of colors (=number of columns for compressed structure) of jacobian.
- * @param data                Runtime data struct.
- * @param threadData          Thread data for error handling
+ * \param jacColumns          Analytic Jacobian.
+ * \param data                Runtime data struct.
+ * \param threadData          Thread data for error handling
  * \param setJacElementFunc   Function to set element (i,j) in matrix A.
  */
 void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,

@@ -87,7 +87,7 @@ extern void dgetrs_(char *trans, int *n, int *nrhs, doublereal *a, int *lda, int
  */
 DATA_NEWTON* allocateNewtonData(int size)
 {
-  DATA_NEWTON* data = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
+  DATA_NEWTON* data = (DATA_NEWTON*) calloc(1,sizeof(DATA_NEWTON));
   assertStreamPrint(NULL, NULL != data, "allocationNewtonData() failed!");
 
   data->resScaling = (double*) malloc(size*sizeof(double));

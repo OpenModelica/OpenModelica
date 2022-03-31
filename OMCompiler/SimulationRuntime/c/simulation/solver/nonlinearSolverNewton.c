@@ -43,6 +43,7 @@ extern "C" {
 #include "util/omc_error.h"
 #include "util/varinfo.h"
 #include "model_help.h"
+#include "generic_rk.h"
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverNewton.h"
@@ -78,11 +79,23 @@ extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doubler
  */
 int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
 {
-  int i,j,k,l,ii,currentSys = sysNumber;
-  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->nonlinearSystemData[currentSys]);
+  int i,j,k,l,ii;
+  NONLINEAR_SYSTEM_DATA *systemData;
+  if(sysNumber>=0) {
+    systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  } else {
+    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    systemData = rk_data->nlsData;
+  }
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
-  const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+  int index;
+  // TODO AHeu: Do we have analytic Jacobian available?
+  if(sysNumber>=0) {
+    index = systemData->jacobianIndex;
+  } else {
+    index = data->callback->INDEX_JAC_A;
+  }
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
 
@@ -130,21 +143,29 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
 {
   DATA_USER* uData = (DATA_USER*) userdata;
   DATA* data = (DATA*)(uData->data);
-  void *dataAndThreadData[2] = {data, uData->threadData};
-  int currentSys = ((DATA_USER*)userdata)->sysNumber;
-  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[currentSys]);
+  void *dataAndThreadData[3] = {data, uData->threadData, NULL};
+  int sysNumber = ((DATA_USER*)userdata)->sysNumber;
+  // TODO AHeu: This is quiet the hack
+  NONLINEAR_SYSTEM_DATA *systemData;
+  if(sysNumber>=0) {
+    systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  } else {
+    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    systemData = rk_data->nlsData;
+    dataAndThreadData[2] = rk_data;
+  }
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   int flag = 1;
   int *iflag=&flag;
 
   if (fj) {
-    (data->simulationInfo->nonlinearSystemData[currentSys].residualFunc)(dataAndThreadData, x, fvec, iflag);
+    (systemData->residualFunc)(dataAndThreadData, x, fvec, iflag);
   } else {
     /* performance measurement */
     rt_ext_tp_tick(&systemData->jacobianTimeClock);
 
     if(systemData->jacobianIndex != -1) {
-      getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, currentSys);
+      getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, sysNumber);
     } else {
       double delta_h = sqrt(solverData->epsfcn);
       double delta_hh;
@@ -186,8 +207,18 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
  */
 int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
 {
-  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  // TODO AHeu: This is quiet the hack
+  NONLINEAR_SYSTEM_DATA *systemData;
+  if(sysNumber>=0) {
+    systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  } else {
+    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    systemData = rk_data->nlsData;
+  }
+
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+  assertStreamPrint(threadData, solverData != NULL, "Something went horribly wrong in solveNewton!");
+
   int eqSystemNumber = 0;
   int i;
   double xerror = -1, xerror_scaled = -1;
@@ -201,7 +232,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
   int retries2 = 0;
   int nonContinuousCase = 0;
   modelica_boolean *relationsPreBackup = NULL;
-  int casualTearingSet = data->simulationInfo->nonlinearSystemData[sysNumber].strictTearingFunctionCall != NULL;
+  int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
 
   DATA_USER userdata = {.data = (void*)data, .threadData = threadData, .sysNumber = sysNumber};
 
@@ -219,7 +250,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
   solverData->calculate_jacobian = 0;
 
   // Initialize lambda variable
-  if (data->simulationInfo->nonlinearSystemData[sysNumber].homotopySupport) {
+  if (systemData->homotopySupport) {
     solverData->x[solverData->n] = 1.0;
     solverData->x_new[solverData->n] = 1.0;
   }
