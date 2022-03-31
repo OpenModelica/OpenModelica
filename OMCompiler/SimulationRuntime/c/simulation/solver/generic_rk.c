@@ -72,7 +72,9 @@
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void printVector_genericRK(char name[], double* a, int n, double time);
+void printVector_genericRK_MR_fs(char name[], double* a, int n, double time, int nIndx, int* indx);
 void printMatrix_genericRK(char name[], double* a, int n, double time);
+void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx);
 
 // singlerate step function
 int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
@@ -283,7 +285,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   userdata->nFastStates = 0;
   userdata->nSlowStates = userdata->nStates;
-  userdata->percentage = 1;
+  userdata->percentage = 0.01;
 
   allocateDataGenericRK_MR(data, threadData, userdata);
 
@@ -1044,27 +1046,28 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
          userdata->err[i] = userdata->errest[i]/userdata->errtol[i];
          err = fmax(err, userdata->err[i]);
       }
+      //printVector_genericRK("Error: ", userdata->err, userdata->nStates, userdata->time);
 
       //Find fast and slow states based on
       userdata->nFastStates = 0;
       userdata->nSlowStates = 0;
+      userdata->err_slow = 0;
+      userdata->err_fast = 0;
       for (i=0; i<userdata->nStates; i++)
       {
         if (userdata->err[i] > userdata->percentage * err)
         {
           userdata->fastStates[userdata->nFastStates] = i;
           userdata->nFastStates += 1;
+          userdata->err_fast = fmax(userdata->err_fast, userdata->err[i]);
         }
         else
         {
           userdata->slowStates[userdata->nSlowStates] = i;
           userdata->nSlowStates += 1;
+          userdata->err_slow = fmax(userdata->err_slow, userdata->err[i]);
         }
       }
-      printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
-          userdata->nSlowStates, userdata->nFastStates,
-          userdata->nFastStates + userdata->nSlowStates - userdata->nStates);
-
       /*** calculate error (euclidian norm) ***/
       // for (i=0, err=0.0; i<n; i++)
       // {
@@ -1073,6 +1076,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
       // err /= n;
       // err = sqrt(err);
+
+      err = userdata->err_slow;
 
       if (userdata->err_new == -1) userdata->err_new = err;
       userdata->err_old = userdata->err_new;
@@ -1084,7 +1089,19 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
       // Call the step size control
       userdata->stepSize *= userdata->stepSize_control((void*) userdata);
-      userdata->stepSize = fmin(userdata->stepSize, stopTime - (userdata->time + userdata->lastStepSize));
+
+      printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
+          userdata->nSlowStates, userdata->nFastStates,
+          userdata->nFastStates + userdata->nSlowStates - userdata->nStates);
+      if (userdata->nFastStates>0)
+      {
+         genericRK_MR_step(data, threadData, solverInfo);
+         copyVector_genericRK_MR(userdata->y, userdata->dataRKmr->y, userdata->nFastStates, userdata->fastStates);
+         copyVector_genericRK_MR(userdata->yt, userdata->dataRKmr->yt, userdata->nFastStates, userdata->fastStates);
+        //  printVector_genericRK_MR_fs("y ", userdata->y, n, userdata->time, userdata->nFastStates, userdata->fastStates);
+        //  printVector_genericRK_MR_fs("yt ", userdata->yt, n, userdata->time, userdata->nFastStates, userdata->fastStates);
+      }
+
 
       // printf("Stepsize: old: %g, last: %g, act: %g\n", userdata->stepSize_old, userdata->lastStepSize, userdata->stepSize);
       // printf("Error:    old: %g, new: %g\n", userdata->err_old, userdata->err_new);
@@ -1102,6 +1119,10 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
                         userdata->time, userdata->time + userdata->lastStepSize, err, userdata->stepSize);
       }
+      else
+        // BB ToDo: maybe better to set userdata->stepSize to zero, if err<1 (last step!!!)
+        userdata->stepSize = fmin(userdata->stepSize, stopTime - (userdata->time + userdata->lastStepSize));
+
       userdata->stepsDone += 1;
     } while  (err>1);
 
@@ -1204,6 +1225,21 @@ void printVector_genericRK(char name[], double* a, int n, double time)
     printf("%6g ", a[i]);
   printf("\n");
 }
+
+void printVector_genericRK_MR_fs(char name[], double* a, int n, double time, int nIndx, int* indx)
+{
+  printf("\n%s at time: %g: \n", name, time);
+  for (int i=0;i<nIndx;i++)
+    printf("%6g ", a[indx[i]]);
+  printf("\n");
+}
+
+void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx)
+{
+  for (int i=0;i<nIndx;i++)
+    a[indx[i]] = b[indx[i]];
+}
+
 
 void printMatrix_genericRK(char name[], double* a, int n, double time)
 {

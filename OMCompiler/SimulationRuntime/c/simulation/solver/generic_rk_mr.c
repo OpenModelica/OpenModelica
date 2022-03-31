@@ -70,8 +70,9 @@
 #include "util/varinfo.h"
 
 //auxiliary vector functions
-void linear_interpolation_MR(double a, double* fa, double b, double* fb, double t, double *f, int n);
-void printVector_genericRK_MR(char name[], double* a, int n, double time);
+void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
+void linear_interpolation_MR(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
+void printVector_genericRK_MR(char name[], double* a, int n, double time, int nIndx, int* indx);
 void printMatrix_genericRK_MR(char name[], double* a, int n, double time);
 
 // singlerate step function
@@ -145,7 +146,7 @@ enum RK_NLS_METHOD getRK_NLS_Method_MR() {
 }
 
 /**
- * @brief Function allocates memory needed for ESDIRK method.
+ * @brief Function allocates memory needed for chosen RK method.
  *
  * @param data          Runtime data struct.
  * @param threadData    Thread data for error handling.
@@ -215,6 +216,8 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   userdata->firstStep = 1;
   userdata->y = malloc(sizeof(double)*userdata->nStates);
   userdata->yOld = malloc(sizeof(double)*userdata->nStates);
+  userdata->yStart = malloc(sizeof(double)*userdata->nStates);
+  userdata->yEnd = malloc(sizeof(double)*userdata->nStates);
   userdata->yt = malloc(sizeof(double)*userdata->nStates);
   userdata->f = malloc(sizeof(double)*userdata->nStates);
   userdata->Jf = malloc(sizeof(double)*userdata->nStates*userdata->nStates);
@@ -304,6 +307,8 @@ void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data) {
 
   free(data->y);
   free(data->yOld);
+  free(data->yStart);
+  free(data->yEnd);
   free(data->yt);
   free(data->f);
   free(data->Jf);
@@ -475,9 +480,12 @@ int wrapper_DIRK_MR(int* n_p, double* x, double* res, void* genericRKData, int f
   DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  int n = (*n_p);
+  int nStates = userdata->nStates;
+  int n = userdata->nFastStates;
 
-  int i, j, l, k;
+  //printf("Dimensionen nFastStates = %d, n_nonlinear = %d\n", n, *n_p);
+
+  int i, ii, j, l, ll, k;
 
   // index of diagonal element of A
   k = userdata->act_stage * userdata->tableau->stages + userdata->act_stage;
@@ -486,13 +494,16 @@ int wrapper_DIRK_MR(int* n_p, double* x, double* res, void* genericRKData, int f
     // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
     // set correct time value and states of simulation system
     sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
-    memcpy(sData->realVars, x, n*sizeof(double));
+    for (j=0; j<n;j++)
+      sData->realVars[userdata->fastStates[j]] = x[j];
+    // BB ToDo: Need to have the interpolated values in sData->realVars!!!!
     wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     for (j=0; j<n; j++)
     {
-      res[j] = userdata->res_const[j] - x[j] + userdata->stepSize * userdata->tableau->A[k]  * fODE[j];
+      ii = userdata->fastStates[j];
+      res[j] = userdata->res_const[ii] - x[j] + userdata->stepSize * userdata->tableau->A[k]  * fODE[ii];
     }
   }
   else
@@ -515,7 +526,7 @@ int wrapper_DIRK_MR(int* n_p, double* x, double* res, void* genericRKData, int f
     //memcpy(userdata->f, fODE, n*sizeof(double));
 
     /* Calculate Jacobian of the ODE system, result is in solverData->fjac */
-    wrapper_Jf_genericRK_MR(n, sData->timeValue, sData->realVars, fODE, userdata);
+    wrapper_Jf_genericRK_MR(userdata->nStates, sData->timeValue, sData->realVars, fODE, userdata);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     // jacobian          Jac = -E + gam*h*Jf(tk+c2*h,x))
@@ -524,7 +535,8 @@ int wrapper_DIRK_MR(int* n_p, double* x, double* res, void* genericRKData, int f
       for(j = 0; j < n; j++)
       {
         l = i * n + j;
-        solverData->fjac[l] = userdata->stepSize * userdata->tableau->A[k] * userdata->Jf[l];
+        ll = userdata->fastStates[i] * userdata->nStates + userdata->fastStates[j];
+        solverData->fjac[l] = userdata->stepSize * userdata->tableau->A[k] * userdata->Jf[ll];
         if (i==j) solverData->fjac[l] -= 1;
       }
     }
@@ -546,6 +558,7 @@ int wrapper_DIRK_MR(int* n_p, double* x, double* res, void* genericRKData, int f
  *  \param [in]      fj             fj = 1 ==> calculate function values
  *                                  fj = 0 ==> calculate jacobian matrix
  */
+// BB ToDo: Will not work yet, needs to be adapted to the multirate concept
 int wrapper_RK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
 {
   DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
@@ -670,12 +683,13 @@ int wrapper_RK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
  */
 int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
-  int i, j, l, k, n=data->modelData->nStates;
+  int i, ii, j, jj, l, k, n=data->modelData->nStates;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*)solverInfo->solverData;
+  DATA_GENERIC_RK* genericRKData = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GENERIC_RK_MR* userdata = genericRKData->dataRKmr;
   DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->nlsSolverData;
 
   userdata->data = (void*) data;
@@ -687,10 +701,12 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   solverData->initialized = 1;
   solverData->numberOfIterations = 0;
   solverData->numberOfFunctionEvaluations = 0;
-  solverData->n = n;
+  solverData->n = userdata->nFastStates;
 
   // setting the start vector for the newton step
-  memcpy(solverData->x, userdata->yOld, n*sizeof(double));
+  //memcpy(solverData->x, userdata->yOld, n*sizeof(double));
+  for (i=0; i<userdata->nFastStates; i++)
+    solverData->x[i] = userdata->yOld[userdata->fastStates[i]];
 
   // sweep over the stages
   for (userdata->act_stage = 0; userdata->act_stage < userdata->tableau->stages; userdata->act_stage++)
@@ -699,6 +715,15 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     // residual constant part:
     // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
     k = userdata->act_stage * userdata->tableau->stages;
+    sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
+    linear_interpolation_MR(userdata->startTime, userdata->yStart,
+                            userdata->endTime,   userdata->yEnd,
+                            sData->timeValue, userdata->yOld, userdata->nSlowStates, userdata->slowStates);
+    // printVector_genericRK_MR("yStart ", userdata->yStart, n, userdata->time, userdata->nSlowStates, userdata->slowStates);
+    // printVector_genericRK_MR("yOld ", userdata->yOld, n, sData->timeValue, userdata->nSlowStates, userdata->slowStates);
+    // printVector_genericRK_MR("yEnd ", userdata->yEnd, n, userdata->time+userdata->stepSize, userdata->nSlowStates, userdata->slowStates);
+
+    // BB ToDo: Eventually correct yOld for the fastStates or interpolation only for the slowStates!!!
     for (j=0; j<n; j++)
     {
       userdata->res_const[j] = userdata->yOld[j];
@@ -748,6 +773,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   return 0;
 }
 
+// BB ToDo: Will not work yet, needs to be adapted to the multirate concept
 /*!	\fn full_implicit_RK
  *
  *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
@@ -814,14 +840,11 @@ void genericRK_first_step_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* 
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*)solverInfo->solverData;
+  DATA_GENERIC_RK* genericRKData = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GENERIC_RK_MR* userdata = genericRKData->dataRKmr;
+
   const int n = data->modelData->nStates;
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-
-  double sc, d, d0 = 0.0, d1 = 0.0, d2 = 0.0, h0, h1, delta_ti, infNorm, sum = 0;
-  double Atol = 1e-6, Rtol = 1e-3;
-
-  int i,j;
 
   /* store Startime of the simulation */
   userdata->time = sDataOld->timeValue;
@@ -850,59 +873,6 @@ void genericRK_first_step_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* 
   /* store values of the state derivatives at initial or event time */
   memcpy(userdata->f, fODE, data->modelData->nStates*sizeof(double));
 
-  for (i=0; i<data->modelData->nStates; i++)
-  {
-    sc = Atol + fabs(sDataOld->realVars[i])*Rtol;
-    d0 += ((sDataOld->realVars[i] * sDataOld->realVars[i])/(sc*sc));
-    d1 += ((fODE[i] * fODE[i]) / (sc*sc));
-  }
-  d0 /= data->modelData->nStates;
-  d1 /= data->modelData->nStates;
-
-  d0 = sqrt(d0);
-  d1 = sqrt(d1);
-
-  /* calculate first guess of the initial step size */
-  if (d0 < 1e-5 || d1 < 1e-5)
-  {
-    h0 = 1e-6;
-  }
-  else
-  {
-    h0 = 0.01 * d0/d1;
-  }
-
-
-  for (i=0; i<data->modelData->nStates; i++)
-  {
-    sData->realVars[i] = userdata->yOld[i] + fODE[i] * h0;
-  }
-  sData->timeValue += h0;
-
-  wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
-
-  for (i=0; i<data->modelData->nStates; i++)
-  {
-    sc = Atol + fabs(userdata->yOld[i])*Rtol;
-    d2 += ((fODE[i]-userdata->f[i])*(fODE[i]-userdata->f[i])/(sc*sc));
-  }
-
-  d2 /= h0;
-  d2 = sqrt(d2);
-
-
-  d = fmax(d1,d2);
-
-  if (d > 1e-15)
-  {
-    h1 = sqrt(0.01/d);
-  }
-  else
-  {
-    h1 = fmax(1e-6, h0*1e-3);
-  }
-
-  userdata->stepSize = 0.5*fmin(100*h0,h1);
   userdata->lastStepSize = userdata->stepSize;
 
   /* end calculation new step size */
@@ -937,7 +907,7 @@ double PIController_MR(void* genericRKData)
 }
 
 
-/*! \fn esdirkmr_step
+/*! \fn genericRK_MR_step
  *
  *  function does one integration step and calculates
  *  next step size by the implicit midpoint rule
@@ -949,42 +919,57 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1]; // BB: Is this the ring buffer???
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*)solverInfo->solverData;
+  DATA_GENERIC_RK* genericRKData = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GENERIC_RK_MR* userdata = genericRKData->dataRKmr;
   DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
 
   double err, percentage = 0.1;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
-  int i, l, n=data->modelData->nStates;
+  int i, ii, l, n=data->modelData->nStates;
   int esdirk_imp_step_info;
 
-  double targetTime;
+  double targetTime=genericRKData->time + genericRKData->stepSize;
   double stopTime = data->simulationInfo->stopTime;
 
-  /* Calculate steps until targetTime is reached */
-  if (solverInfo->integratorSteps) // 1 => stepSizeControl; 0 => equidistant grid
-  {
-    if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
-    {
-      targetTime = data->simulationInfo->nextSampleEvent;
-    }
-    else
-    {
-      targetTime = data->simulationInfo->stopTime;
-    }
-  }
-  else
-  {
-    targetTime = sDataOld->timeValue + solverInfo->currentStepSize;
-  }
+  // /* Calculate steps until targetTime is reached */
+  // if (solverInfo->integratorSteps) // 1 => stepSizeControl; 0 => equidistant grid
+  // {
+  //   if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
+  //   {
+  //     targetTime = data->simulationInfo->nextSampleEvent;
+  //   }
+  //   else
+  //   {
+  //     targetTime = data->simulationInfo->stopTime;
+  //   }
+  // }
+  // else
+  // {
+  //   targetTime = sDataOld->timeValue + solverInfo->currentStepSize;
+  // }
 
-  if (userdata->firstStep  || solverInfo->didEventStep == 1)
-  {
-    genericRK_first_step_MR(data, threadData, solverInfo);
-    // side effect:
-    //    sData->realVars, userdata->yOld, and userdata->f are consistent
-    //    userdata->time and userdata->stepSize are defined
-  }
+  // if (userdata->firstStep  || solverInfo->didEventStep == 1)
+  // {
+  //   genericRK_first_step_MR(data, threadData, solverInfo);
+  //   // side effect:
+  //   //    sData->realVars, userdata->yOld, and userdata->f are consistent
+  //   //    userdata->time and userdata->stepSize are defined
+  // }
 
+  // Set userdata->yStart, userdata->yEnd, userdata->time, userdata->stepTimeLast, targetTime
+
+  userdata->time = genericRKData->time;
+  userdata->stepSize = genericRKData->stepSize/4;
+  userdata->startTime = genericRKData->time;
+  userdata->endTime = genericRKData->time + genericRKData->stepSize;
+  memcpy(userdata->yOld, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
+  memcpy(userdata->yStart, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
+  memcpy(userdata->yEnd, genericRKData->y, sizeof(double)*genericRKData->nStates);
+  memcpy(userdata->fastStates, genericRKData->fastStates, sizeof(double)*genericRKData->nFastStates);
+  memcpy(userdata->slowStates, genericRKData->slowStates, sizeof(double)*genericRKData->nSlowStates);
+  userdata->nFastStates = genericRKData->nFastStates;
+  userdata->nSlowStates = genericRKData->nSlowStates;
+  printf("userdata->time: %g, userdata->stepSize: %g, targetTime: %g\n", userdata->time, userdata->stepSize, targetTime);
   while (userdata->time < targetTime)
   {
     do
@@ -1008,52 +993,32 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // y       = yold+h*sum(b[i]*k[i], i=1..stages);
       // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
       // calculate corresponding values for error estimator and step size control
-      for (i=0; i<n; i++)
+      for (i=0; i<userdata->nFastStates; i++)
       {
-        userdata->y[i]  = userdata->yOld[i];
-        userdata->yt[i] = userdata->yOld[i];
+        ii = userdata->fastStates[i];
+        userdata->y[ii]  = userdata->yOld[ii];
+        userdata->yt[ii] = userdata->yOld[ii];
         for (l=0; l<userdata->tableau->stages; l++)
         {
-          userdata->y[i]  += userdata->stepSize * userdata->tableau->b[l]  * (userdata->k + l * n)[i];
-          userdata->yt[i] += userdata->stepSize * userdata->tableau->bt[l] * (userdata->k + l * n)[i];
+          userdata->y[ii]  += userdata->stepSize * userdata->tableau->b[l]  * (userdata->k + l * n)[ii];
+          userdata->yt[ii] += userdata->stepSize * userdata->tableau->bt[l] * (userdata->k + l * n)[ii];
         }
-        userdata->errtol[i] = Rtol*fmax(fabs(userdata->y[i]),fabs(userdata->yOld[i])) + Atol;
-        //userdata->errtol[i] = Rtol*(fabs(userdata->y[i]) + fabs(userdata->stepSize*fODE[i])) + Atol*1e-3;
-        userdata->errest[i] = fabs(userdata->y[i] - userdata->yt[i]);
+        userdata->errtol[ii] = Rtol*fmax(fabs(userdata->y[ii]),fabs(userdata->yOld[ii])) + Atol;
+        userdata->errest[ii] = fabs(userdata->y[ii] - userdata->yt[ii]);
       }
 
-      //printVector_genericRK("y ", userdata->y, n, userdata->time);
-      //printVector_genericRK("yt ", userdata->yt, n, userdata->time);
-
-
+      printVector_genericRK_MR("y ", userdata->y, n, userdata->time, userdata->nFastStates, userdata->fastStates);
+      printVector_genericRK_MR("yt ", userdata->yt, n, userdata->time, userdata->nFastStates, userdata->fastStates);
 
       /*** calculate error (infinity norm!)***/
       err = 0;
-      for (i=0; i<data->modelData->nStates; i++)
+      for (i=0; i < userdata->nFastStates; i++)
       {
-         userdata->err[i] = userdata->errest[i]/userdata->errtol[i];
-         err = fmax(err, userdata->err[i]);
-      }
+        ii = userdata->fastStates[i];
 
-      //Find fast and slow states based on
-      userdata->nFastStates = 0;
-      userdata->nSlowStates = 0;
-      for (i=0; i<userdata->nStates; i++)
-      {
-        if (userdata->err[i] > percentage * err)
-        {
-          userdata->fastStates[userdata->nFastStates] = i;
-          userdata->nFastStates += 1;
-        }
-        else
-        {
-          userdata->slowStates[userdata->nSlowStates] = i;
-          userdata->nSlowStates += 1;
-        }
+        userdata->err[ii] = userdata->errest[ii]/userdata->errtol[ii];
+        err = fmax(err, userdata->err[ii]);
       }
-      printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
-          userdata->nSlowStates, userdata->nFastStates,
-          userdata->nFastStates + userdata->nSlowStates - userdata->nStates);
 
       /*** calculate error (euclidian norm) ***/
       // for (i=0, err=0.0; i<n; i++)
@@ -1074,7 +1039,8 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       // Call the step size control
       userdata->stepSize *= userdata->stepSize_control((void*) userdata);
-      userdata->stepSize = fmin(userdata->stepSize, stopTime - (userdata->time + userdata->lastStepSize));
+      // No asynchronous step size allowd!! (stopTime vs targetTime)
+      userdata->stepSize = fmin(userdata->stepSize, targetTime - (userdata->time + userdata->lastStepSize));
 
       // printf("Stepsize: old: %g, last: %g, act: %g\n", userdata->stepSize_old, userdata->lastStepSize, userdata->stepSize);
       // printf("Error:    old: %g, new: %g\n", userdata->err_old, userdata->err_new);
@@ -1098,38 +1064,37 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     /* update time with performed stepSize */
     userdata->time += userdata->lastStepSize;
 
-    /* store yOld in yt for interpolation purposes, if necessary
-     * BB: Check condition
-     */
-    if (userdata->time > targetTime )
-      memcpy(userdata->yt, userdata->yOld, data->modelData->nStates*sizeof(double));
-
     /* step is accepted and yOld needs to be updated */
-    memcpy(userdata->yOld, userdata->y, data->modelData->nStates*sizeof(double));
+    for (i=0; i < userdata->nFastStates; i++)
+    {
+      ii = userdata->fastStates[i];
+      userdata->yOld[ii] = userdata->y[ii];
+    }
     infoStreamPrint(LOG_SOLVER, 1, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     userdata->time- userdata->lastStepSize, userdata->time, err, userdata->stepSize);
 
-    /* emit step, if integratorSteps is selected */
-    if (solverInfo->integratorSteps)
-    {
-      sData->timeValue = userdata->time;
-      memcpy(sData->realVars, userdata->y, data->modelData->nStates*sizeof(double));
-      /*
-       * to emit consistent value we need to update the whole
-       * continuous system with algebraic variables.
-       */
-      data->callback->updateContinuousSystem(data, threadData);
-      sim_result.emit(&sim_result, data, threadData);
-    }
+    // /* emit step, if integratorSteps is selected */
+    // if (solverInfo->integratorSteps)
+    // {
+    //   sData->timeValue = userdata->time;
+    //   memcpy(sData->realVars, userdata->y, data->modelData->nStates*sizeof(double));
+    //   /*
+    //    * to emit consistent value we need to update the whole
+    //    * continuous system with algebraic variables.
+    //    */
+    //   data->callback->updateContinuousSystem(data, threadData);
+    //   sim_result.emit(&sim_result, data, threadData);
+    // }
     messageClose(LOG_SOLVER);
   }
 
   if (!solverInfo->integratorSteps)
   {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
+    // BB ToDo: Might be not necessary, Depends on the strategy, if the inner loop is allowed to make assynchronous steps
     solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
     sData->timeValue = solverInfo->currentTime;
-    linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt, userdata->time, userdata->y, sData->timeValue, sData->realVars, data->modelData->nStates);
+    linear_interpolation(userdata->time-userdata->lastStepSize, userdata->yt, userdata->time, userdata->y, sData->timeValue, sData->realVars, data->modelData->nStates);
     // printVector_genericRK("yOld: ", userdata->yt, data->modelData->nStates, userdata->time-userdata->lastStepSize);
     // printVector_genericRK("y:    ", userdata->y, data->modelData->nStates, userdata->time);
     // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
@@ -1138,11 +1103,11 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     solverInfo->currentTime = userdata->time;
   }
 
-  /* if a state event occurs than no sample event does need to be activated  */
-  if (data->simulationInfo->sampleActivated && solverInfo->currentTime < data->simulationInfo->nextSampleEvent)
-  {
-    data->simulationInfo->sampleActivated = 0;
-  }
+  // /* if a state event occurs than no sample event does need to be activated  */
+  // if (data->simulationInfo->sampleActivated && solverInfo->currentTime < data->simulationInfo->nextSampleEvent)
+  // {
+  //   data->simulationInfo->sampleActivated = 0;
+  // }
 
   if(ACTIVE_STREAM(LOG_SOLVER))
   {
@@ -1173,25 +1138,27 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
 // TODO AHeu: For sure ther is already a linear interpolation function somewhere
 //auxiliary vector functions for better code structure
-void linear_interpolation_MR(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
+void linear_interpolation_MR(double ta, double* fa, double tb, double* fb, double t, double* f, int nIdx, int* idx)
 {
   double lambda, h0, h1;
+  int ii;
 
   lambda = (t-ta)/(tb-ta);
   h0 = 1-lambda;
   h1 = lambda;
 
-  for (int i=0; i<n; i++)
+  for (int i=0; i<nIdx; i++)
   {
-    f[i] = h0*fa[i] + h1*fb[i];
+    ii = idx[i];
+    f[ii] = h0*fa[ii] + h1*fb[ii];
   }
 }
 
-void printVector_genericRK_MR(char name[], double* a, int n, double time)
+void printVector_genericRK_MR(char name[], double* a, int n, double time, int nIndx, int* indx)
 {
   printf("\n%s at time: %g: \n", name, time);
-  for (int i=0;i<n;i++)
-    printf("%6g ", a[i]);
+  for (int i=0;i<nIndx;i++)
+    printf("%6g ", a[indx[i]]);
   printf("\n");
 }
 

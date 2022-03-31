@@ -57,9 +57,9 @@ typedef struct DATA_GENERIC_RK{
   double *y, *yt, *yOld, *f;
   double *Jf;
   double *k, *res_const;
-  double *errest, *errtol, *err, percentage, err_new, err_old;
+  double *errest, *errtol, *err, err_slow, err_fast, percentage, err_new, err_old;
   double time;
-  double stepSize, lastStepSize, stepSize_old;
+  double stepSize, lastStepSize, stepSize_old, stepSize_fast;
   int act_stage;
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;

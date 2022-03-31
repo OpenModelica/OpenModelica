@@ -52,11 +52,11 @@ typedef struct DATA_GENERIC_RK_MR{
   enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
   enum RK_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
   void* nlsSolverData;                  /* Nonlinear solver data */
-  double *y, *yt, *yOld, *f;
+  double *y, *yt, *yOld, *f, *yStart, *yEnd;
   double *Jf;
   double *k, *res_const;
   double *errest, *errtol, *err, err_new, err_old;
-  double time;
+  double time, startTime, endTime;
   double stepSize, lastStepSize, stepSize_old;
   int act_stage;
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
