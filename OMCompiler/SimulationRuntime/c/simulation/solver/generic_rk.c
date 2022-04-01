@@ -280,7 +280,6 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     break;
   }
 
-  printf("HAHA: %d %d\n", solverInfo->solverMethod, S_GENERIC_RK_MR);
   if (solverInfo->solverMethod == S_GENERIC_RK_MR)
   {
     userdata->multi_rate = 1;
@@ -296,7 +295,6 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   userdata->nFastStates = 0;
   userdata->nSlowStates = userdata->nStates;
-  //userdata->percentage = 0.01;
 
   allocateDataGenericRK_MR(data, threadData, userdata);
 
