@@ -924,7 +924,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   DATA_GENERIC_RK_MR* userdata = genericRKData->dataRKmr;
   DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
 
-  double err, percentage = 0.1;
+  double err;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
   int i, ii, l, n=data->modelData->nStates;
   int integrator_step_info;

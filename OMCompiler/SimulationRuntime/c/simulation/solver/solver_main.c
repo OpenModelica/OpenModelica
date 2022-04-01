@@ -190,6 +190,12 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
   }
   case S_GENERIC_RK_MR:
+  {
+    retVal = genericRK_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+    return retVal;
+  }
   case S_GENERIC_RK:
   {
     retVal = genericRK_step(data, threadData, solverInfo);
@@ -260,6 +266,12 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     break;
   }
   case S_GENERIC_RK_MR:
+  {
+    if (allocateDataGenericRK(data, threadData, solverInfo) != 0) {
+      throwStreamPrint(threadData, "Failed to allocate memory for generic RK solver.");
+    }
+    break;
+  }
   case S_GENERIC_RK:
   {
     if (allocateDataGenericRK(data, threadData, solverInfo) != 0) {
