@@ -74,6 +74,7 @@ void linear_interpolation(double a, double* fa, double b, double* fb, double t, 
 void linear_interpolation_MR(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
 void printVector_genericRK_MR(char name[], double* a, int n, double time, int nIndx, int* indx);
 void printMatrix_genericRK_MR(char name[], double* a, int n, double time);
+void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx);
 
 // singlerate step function
 int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
@@ -926,42 +927,18 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   double err, percentage = 0.1;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
   int i, ii, l, n=data->modelData->nStates;
-  int esdirk_imp_step_info;
+  int integrator_step_info;
 
-  double targetTime=genericRKData->time + genericRKData->stepSize;
+  // This is the target time of the main integrator
+  double targetTime = genericRKData->time + genericRKData->lastStepSize;
+
+  // BB ToDo: Use this to handel last step of the embedded integrator
   double stopTime = data->simulationInfo->stopTime;
 
-  // /* Calculate steps until targetTime is reached */
-  // if (solverInfo->integratorSteps) // 1 => stepSizeControl; 0 => equidistant grid
-  // {
-  //   if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
-  //   {
-  //     targetTime = data->simulationInfo->nextSampleEvent;
-  //   }
-  //   else
-  //   {
-  //     targetTime = data->simulationInfo->stopTime;
-  //   }
-  // }
-  // else
-  // {
-  //   targetTime = sDataOld->timeValue + solverInfo->currentStepSize;
-  // }
-
-  // if (userdata->firstStep  || solverInfo->didEventStep == 1)
-  // {
-  //   genericRK_first_step_MR(data, threadData, solverInfo);
-  //   // side effect:
-  //   //    sData->realVars, userdata->yOld, and userdata->f are consistent
-  //   //    userdata->time and userdata->stepSize are defined
-  // }
-
-  // Set userdata->yStart, userdata->yEnd, userdata->time, userdata->stepTimeLast, targetTime
-
-  userdata->time = genericRKData->time;
-  userdata->stepSize = genericRKData->stepSize/4;
+  //userdata->time = genericRKData->time;
+  //userdata->stepSize = genericRKData->lastStepSize;
   userdata->startTime = genericRKData->time;
-  userdata->endTime = genericRKData->time + genericRKData->stepSize;
+  userdata->endTime = genericRKData->time + genericRKData->lastStepSize;
   memcpy(userdata->yOld, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
   memcpy(userdata->yStart, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
   memcpy(userdata->yEnd, genericRKData->y, sizeof(double)*genericRKData->nStates);
@@ -974,22 +951,11 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   {
     do
     {
-      /* calculate jacobian:
-       *    once for the first iteration after initial or an event
-       *    solverData->calculate_jacobian = 0
-       *    always
-       *    solverData->calculate_jacobian = 1
-       *
-       * BB: How does this actually works in combination with the Newton method?
-       */
       if (userdata->stepsDone == 0)
         solverData->calculate_jacobian = 0;
+    // calculate one step of the integrator
+      integrator_step_info = userdata->step_fun(data, threadData, solverInfo);
 
-      // calculate one step of the integrator
-      esdirk_imp_step_info = userdata->step_fun(data, threadData, solverInfo);
-
-      // printVector_genericRK("y ", userdata->y, data->modelData->nStates, userdata->time);
-      // printVector_genericRK("yt ", userdata->yt, data->modelData->nStates, userdata->time);
       // y       = yold+h*sum(b[i]*k[i], i=1..stages);
       // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
       // calculate corresponding values for error estimator and step size control
@@ -1007,28 +973,16 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         userdata->errest[ii] = fabs(userdata->y[ii] - userdata->yt[ii]);
       }
 
-      printVector_genericRK_MR("y ", userdata->y, n, userdata->time, userdata->nFastStates, userdata->fastStates);
-      printVector_genericRK_MR("yt ", userdata->yt, n, userdata->time, userdata->nFastStates, userdata->fastStates);
-
       /*** calculate error (infinity norm!)***/
       err = 0;
       for (i=0; i < userdata->nFastStates; i++)
       {
         ii = userdata->fastStates[i];
-
         userdata->err[ii] = userdata->errest[ii]/userdata->errtol[ii];
         err = fmax(err, userdata->err[ii]);
       }
 
-      /*** calculate error (euclidian norm) ***/
-      // for (i=0, err=0.0; i<n; i++)
-      // {
-      //   err += (userdata->errest[i]*userdata->errest[i])/(userdata->errtol[i]*userdata->errtol[i]);
-      // }
-
-      // err /= n;
-      // err = sqrt(err);
-
+      // BB ToDo: Needs to be initialized for the embedded integrator
       if (userdata->err_new == -1) userdata->err_new = err;
       userdata->err_old = userdata->err_new;
       userdata->err_new = err;
@@ -1040,7 +994,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // Call the step size control
       userdata->stepSize *= userdata->stepSize_control((void*) userdata);
       // No asynchronous step size allowd!! (stopTime vs targetTime)
-      userdata->stepSize = fmin(userdata->stepSize, targetTime - (userdata->time + userdata->lastStepSize));
+      //userdata->stepSize = fmin(userdata->stepSize, targetTime - (userdata->time + userdata->lastStepSize));
 
       // printf("Stepsize: old: %g, last: %g, act: %g\n", userdata->stepSize_old, userdata->lastStepSize, userdata->stepSize);
       // printf("Error:    old: %g, new: %g\n", userdata->err_old, userdata->err_new);
@@ -1057,7 +1011,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         userdata->errorTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
                         userdata->time, userdata->time + userdata->lastStepSize, err, userdata->stepSize);
-      }
+      } else
+        // BB ToDo: maybe better to set userdata->stepSize to zero, if err<1 (last step!!!)
+        userdata->stepSize = fmin(userdata->stepSize, stopTime - (userdata->time + userdata->lastStepSize));
+
       userdata->stepsDone += 1;
     } while  (err>1);
 
@@ -1065,11 +1022,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     userdata->time += userdata->lastStepSize;
 
     /* step is accepted and yOld needs to be updated */
-    for (i=0; i < userdata->nFastStates; i++)
-    {
-      ii = userdata->fastStates[i];
-      userdata->yOld[ii] = userdata->y[ii];
-    }
+    copyVector_genericRK_MR(userdata->yOld, userdata->y, userdata->nFastStates, userdata->fastStates);
     infoStreamPrint(LOG_SOLVER, 1, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     userdata->time- userdata->lastStepSize, userdata->time, err, userdata->stepSize);
 
@@ -1088,26 +1041,14 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     messageClose(LOG_SOLVER);
   }
 
-  if (!solverInfo->integratorSteps)
-  {
-    /* Integrator does large steps and needs to interpolate results with respect to the output grid */
-    // BB ToDo: Might be not necessary, Depends on the strategy, if the inner loop is allowed to make assynchronous steps
-    solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
-    sData->timeValue = solverInfo->currentTime;
-    linear_interpolation(userdata->time-userdata->lastStepSize, userdata->yt, userdata->time, userdata->y, sData->timeValue, sData->realVars, data->modelData->nStates);
-    // printVector_genericRK("yOld: ", userdata->yt, data->modelData->nStates, userdata->time-userdata->lastStepSize);
-    // printVector_genericRK("y:    ", userdata->y, data->modelData->nStates, userdata->time);
-    // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
-  }else{
-    // Integrator emits result on the simulation grid
-    solverInfo->currentTime = userdata->time;
-  }
+  //copyVector_genericRK_MR(genericRKData->y, userdata->y, userdata->nFastStates, userdata->fastStates);
+  copyVector_genericRK_MR(genericRKData->err, userdata->err, userdata->nFastStates, userdata->fastStates);
 
-  // /* if a state event occurs than no sample event does need to be activated  */
-  // if (data->simulationInfo->sampleActivated && solverInfo->currentTime < data->simulationInfo->nextSampleEvent)
-  // {
-  //   data->simulationInfo->sampleActivated = 0;
-  // }
+  // interpolate the values on the time grid of the outer integration
+  linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt,
+                          userdata->time, userdata->y,
+                          genericRKData->time + genericRKData->lastStepSize, genericRKData->y,
+                          userdata->nFastStates, userdata->fastStates);
 
   if(ACTIVE_STREAM(LOG_SOLVER))
   {

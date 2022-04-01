@@ -916,6 +916,9 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
 
   userdata->stepSize = 0.5*fmin(100*h0,h1);
   userdata->lastStepSize = userdata->stepSize;
+  userdata->dataRKmr->stepSize = userdata->stepSize;
+  userdata->dataRKmr->lastStepSize = userdata->lastStepSize;
+  userdata->dataRKmr->time = sDataOld->timeValue;
 
   /* end calculation new step size */
 
@@ -1096,10 +1099,18 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       if (userdata->nFastStates>0)
       {
          genericRK_MR_step(data, threadData, solverInfo);
-         copyVector_genericRK_MR(userdata->y, userdata->dataRKmr->y, userdata->nFastStates, userdata->fastStates);
-         copyVector_genericRK_MR(userdata->yt, userdata->dataRKmr->yt, userdata->nFastStates, userdata->fastStates);
+        //  copyVector_genericRK_MR(userdata->y, userdata->dataRKmr->y, userdata->nFastStates, userdata->fastStates);
+        //  copyVector_genericRK_MR(userdata->yt, userdata->dataRKmr->yt, userdata->nFastStates, userdata->fastStates);
+        //  copyVector_genericRK_MR(userdata->err, userdata->dataRKmr->err, userdata->nFastStates, userdata->fastStates);
         //  printVector_genericRK_MR_fs("y ", userdata->y, n, userdata->time, userdata->nFastStates, userdata->fastStates);
         //  printVector_genericRK_MR_fs("yt ", userdata->yt, n, userdata->time, userdata->nFastStates, userdata->fastStates);
+  /*** calculate error (infinity norm!)***/
+        err = 0;
+        for (i=0; i<data->modelData->nStates; i++)
+        {
+          err = fmax(err, userdata->err[i]);
+        }
+        //printVector_genericRK("Error: ", userdata->err, userdata->nStates, userdata->time);
       }
 
 
