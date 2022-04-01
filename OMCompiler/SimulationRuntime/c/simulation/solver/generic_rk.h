@@ -37,16 +37,18 @@
 #include "simulation_data.h"
 #include "solver_main.h"
 
+#include "generic_rk_mr.h"
 #include "rk_butcher.h"
+
 
 /**
  * @brief Function to compute single Runge-Kutta step.
  */
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+typedef double (*rk_stepSize_control_function)(void* genericRKData);
 
 typedef struct DATA_GENERIC_RK{
-  //DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
-  //threadData_t *threadData;     //            I'm afraid not...
+  DATA_GENERIC_RK_MR* dataRKmr;
   enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
   enum RK_type type;                    /* Type of RK method */
   enum RK_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
@@ -54,26 +56,34 @@ typedef struct DATA_GENERIC_RK{
                                          * Something like
                                          *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
                                          * */
-  double *y;                          /* Result vector of RK step */
-  double *yt;                         /* Result vector of embedded RK step */
-  modelica_real* yOld;                /* Result vector of last RK step ???? */
-  double* f;                          /* State derivatives of ODE */
+  double *y;                            /* Result vector of RK step */
+  double *yt;                           /* Result vector of embedded RK step */
+  modelica_real* yOld;                  /* Result vector of last RK step ???? */
+  double* f;                            /* State derivatives of ODE */
   double *Jf;
-  double *k;                          /* Vector k with result of intermediate steps of Runge-Kutta method */
-                                      // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
-  double *res_const;                  /* Constant parts of residual for non-linear system of implicit RK method. */
+  double *k;                            /* Vector k with result of intermediate steps of Runge-Kutta method */
+                                        // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
+  double *res_const;                    /* Constant parts of residual for non-linear system of implicit RK method. */
   double *errest, *errtol;
+  double *err;
+  double err_slow, err_fast, percentage, err_new, err_old;
   double time;
   double stepSize, lastStepSize;
+  double stepSize_old, stepSize_fast;
   int act_stage;                      /* Current stage of Runge-Kutta method. */
+  int multi_rate;
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;
   int nStates;
+  int nFastStates, nSlowStates;
+  int *fastStates;
+  int *slowStates;
   modelica_boolean isFirstStep;       /* True during first Runge-Kutta integrator step, false otherwise */
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
 
   rk_step_function step_fun;
+  rk_stepSize_control_function stepSize_control;
 
   /* statistics */
   // TODO AHeu: Duplicate of SOLVERSTATS

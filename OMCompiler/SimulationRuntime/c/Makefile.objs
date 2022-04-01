@@ -157,6 +157,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               dae_mode$(OBJ_EXT) \
               dassl$(OBJ_EXT) \
               generic_rk$(OBJ_EXT) \
+              generic_rk_mr$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
               irksco$(OBJ_EXT) \
               jacobianSymbolical$(OBJ_EXT) \
@@ -167,6 +168,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               newtonIteration$(OBJ_EXT) \
               nonlinearSolverNewton$(OBJ_EXT) \
               radau$(OBJ_EXT) \
+              rk_butcher$(OBJ_EXT) \
               sundials_error$(OBJ_EXT) \
               sym_solver_ssc$(OBJ_EXT)
 else
