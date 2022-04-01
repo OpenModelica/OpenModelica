@@ -1285,7 +1285,15 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
     appendRingData(internal_state->simulationData, &tmpSimData);
   }
 
-  //infoRingBuffer(fmudata->simulationData);
+  // copy real parameter variables
+  internal_state->realParameters = (modelica_real*) calloc(fmudata->modelData->nParametersReal, sizeof(modelica_real));
+  for(int i=0; i<fmudata->modelData->nParametersReal; ++i)
+  {
+    internal_state->realParameters[i] = fmudata->modelData->realParameterData[i].attribute.start;
+    //infoStreamPrint(LOG_STDOUT, 0, "Copy Real parameter %s = %g", fmudata->modelData->realParameterData[i].info.name, internal_state->realParameters[i]);
+  }
+
+  //infoRingBuffer( fmudata->simulationData);
   //printRingBufferSimulationData(fmudata->simulationData, fmudata); // original ringBuffer data
   //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
 
@@ -1315,6 +1323,14 @@ fmi2Status fmi2SetFMUstate(fmi2Component c, fmi2FMUstate FMUstate)
     fmudata->localData[i]->realVars = sdata->realVars;
     // TODO other SIMULATION_DATA variable types
   }
+
+  // override realParameters data
+  for (int i = 0; i < fmudata->modelData->nParametersReal; i++)
+  {
+    fmudata->simulationInfo->realParameter[i] = internal_state->realParameters[i];
+  }
+  //TODO other parameters variable types
+
   return fmi2OK;
 }
 
