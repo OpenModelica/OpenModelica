@@ -75,8 +75,6 @@ typedef struct DATA_GENERIC_RK_MR{
   rk_stepSize_control_function stepSize_control;
 } DATA_GENERIC_RK_MR;
 
-enum RK_SINGLERATE_METHOD getRK_Method_MR();
-enum RK_NLS_METHOD getRK_NLS_Method_MR();
 void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data);
 int genericRK_MR_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, struct DATA_GENERIC_RK* genericRKData);

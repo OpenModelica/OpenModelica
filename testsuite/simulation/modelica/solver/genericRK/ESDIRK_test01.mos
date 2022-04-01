@@ -40,7 +40,7 @@ for rkMethod in rkMethods loop
     print("\n--------------------------------------------------------\n");
     print("Running RK " + rkMethod + " with NLS " + nlsMethod + ":\n");
     logFile := "ESDIRK_test01_"+ rkMethod + "_" + nlsMethod + ".log";
-    system("./ESDIRK_test01 -override=stopTime=20 -s=genericRK -rkOpt=" + rkMethod + " -rkNLS=" + nlsMethod, logFile);
+    system("./ESDIRK_test01 -override=stopTime=20 -s=genericRK -genericRKOpt=" + rkMethod + " -rkNLS=" + nlsMethod, logFile);
     print(readFile(logFile) + "\n");
 
     (success, failVars) := diffSimulationResults(actualFile = "ESDIRK_test01_res.mat",

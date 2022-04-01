@@ -84,6 +84,7 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 double IController_MR(void* genericRKData);
 double PIController_MR(void* genericRKData);
 
+#if 0
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_RK.
  *
@@ -145,6 +146,8 @@ enum RK_NLS_METHOD getRK_NLS_Method_MR() {
     return RK_NLS_NEWTON;
   }
 }
+#endif
+
 
 /**
  * @brief Function allocates memory needed for chosen RK method.
@@ -164,7 +167,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  userdata->RK_method = getRK_Method_MR();
+  userdata->RK_method = getRK_Method();
   userdata->tableau = initButcherTableau(userdata->RK_method);
   if (userdata->tableau == NULL){
     // ERROR
@@ -264,7 +267,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
 
   /* Allocate memory for the nonlinear solver */
   // TODO AHeu: Do we always need a NLS solver or only for implicit RK methods?
-  userdata->nlsSolverMethod = getRK_NLS_Method_MR();
+  userdata->nlsSolverMethod = getRK_NLS_Method();
   switch (userdata->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     userdata->nlsSolverData = (void*) allocateNewtonData(userdata->nlSystemSize);

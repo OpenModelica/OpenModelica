@@ -620,10 +620,19 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   data = kinsolUserData->data;
   threadData = kinsolUserData->threadData;
   sysNumber = kinsolUserData->sysNumber;
-  nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  // TODO AHeu: Hack me
+  if(sysNumber>=0) {
+    nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+    analyticJacobian = &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
+  } else {
+    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    nlsData = rk_data->nlsData;
+    analyticJacobian = rk_data->jacobian;
+    // &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
+  }
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;
-  analyticJacobian = &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
+
 
   /* Access N_Vector variables */
   x = N_VGetArrayPointer(vecX);

@@ -167,38 +167,105 @@ enum RK_NLS_METHOD getRK_NLS_Method() {
   }
 }
 
+/**
+ * @brief Initialize sparsity pattern for non-linear system of diagonal implicit Runge-Kutta methods.
+ *
+ * Get sparsity pattern of ODE Jacobian and edit to be non-zero on diagonal elements.
+ * Coloring of ODE Jacobian will be used, if it had non-zero elements on all diagonal entries.
+ * Use trivial coloring (new color for each column) otherwise.
+ *
+ * @param data                Runtime data struct.
+ * @param sysData             Non-linear system.
+ * @return SPARSE_PATTERN*    Pointer to sparsity pattern of non-linear system.
+ */
+SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* sysData)
+{
+  unsigned int i,j;
+  unsigned int row, col;
+  unsigned int missingZeros = 0;
+  unsigned int nDiags = 0;
+  unsigned int shift = 0;
+  modelica_boolean diagElemNonZero;
+  SPARSE_PATTERN* sparsePattern_DIRK;
 
-// TODO: Not working yet!
-void initializeSparsePattern_DIRK(NONLINEAR_SYSTEM_DATA* sysData) {
-  int i = 0;
+  /* Get Sparsity of ODE Jacobian */
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
 
-  // TODO: Get sparsity pattern of DIRK in CSC format
-  const unsigned int length_column_indices = 1;
-  const unsigned int length_row_indices = 1;
+  int sizeRows = jacobian->sizeRows;
 
-  const unsigned int colIndex[length_column_indices] = {0};
-  const unsigned int rowIndex[length_row_indices] = {0};
-  const unsigned int maxColor = 1;
-  const unsigned int colorCols[maxColor] = {1};
+  /* Compute size of new sparsitiy pattern
+   * Increase the size to contain non-zero elements on diagonal. */
+  i = 0;
+  for(row=0; row < sizeRows; row++) {
+    for(; i < sparsePattern_ODE->leadindex[row+1];) {
+      if(sparsePattern_ODE->index[i++] == row) {
+        nDiags++;
+      }
+    }
+  }
+  int missingDiags = jacobian->sizeRows - nDiags;
+  int length_column_indices = jacobian->sizeRows+1;
+  int length_index = jacobian->sparsePattern->numberOfNonZeros + missingDiags;
 
-  /* sparsity pattern available */
-  sysData->isPatternAvailable = TRUE;
-  sysData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-  sysData->sparsePattern->leadindex = (unsigned int*) malloc((length_column_indices)*sizeof(unsigned int));
-  sysData->sparsePattern->index = (unsigned int*) malloc(1*sizeof(unsigned int));
-  sysData->sparsePattern->numberOfNonZeros = 1;
-  sysData->sparsePattern->colorCols = (unsigned int*) malloc(1*sizeof(unsigned int));
-  sysData->sparsePattern->maxColors = 1;
-  // TODO: Free sparsity pattern with freeSparsePattern or when freeing Jacobian with freeAnalyticJacobian
+  // Allocate memory for new sparsity pattern
+  sparsePattern_DIRK = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
+  sparsePattern_DIRK->leadindex = (unsigned int*) malloc((length_column_indices)*sizeof(unsigned int));
+  sparsePattern_DIRK->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
+  sparsePattern_DIRK->numberOfNonZeros = length_index;
+  sparsePattern_DIRK->colorCols = (unsigned int*) malloc(jacobian->sizeCols*sizeof(unsigned int));
+  sparsePattern_DIRK->maxColors = jacobian->sizeCols;
 
-  /* write lead index of compressed sparse column */
-  memcpy(sysData->sparsePattern->leadindex, colIndex, length_column_indices*sizeof(unsigned int));
+  /* Set diagonal elements of sparsitiy pattern to non-zero */
+  // Basically magic.
+  i = 0;
+  j = 0;
+  sparsePattern_DIRK->leadindex[0] = sparsePattern_ODE->leadindex[0];
+  for(row=0; row < sizeRows; row++) {
+    diagElemNonZero = FALSE;
+    int leadIdx = sparsePattern_ODE->leadindex[row+1];
+    for(; j < leadIdx;) {
+      if(sparsePattern_ODE->index[j] == row) {
+        diagElemNonZero = TRUE;
+        sparsePattern_DIRK->leadindex[row+1] = sparsePattern_ODE->leadindex[row+1] + shift;
+      }
+      if(sparsePattern_ODE->index[j] > row && !diagElemNonZero) {
+        sparsePattern_DIRK->index[i] = row;
+        shift++;
+        sparsePattern_DIRK->leadindex[row+1] = sparsePattern_ODE->leadindex[row+1] + shift;
+        i++;
+        diagElemNonZero = TRUE;
+      }
+      sparsePattern_DIRK->index[i] = sparsePattern_ODE->index[j];
+      i++;
+      j++;
+    }
+    if (!diagElemNonZero) {
+      sparsePattern_DIRK->index[i] = row;
+      shift++;
+      sparsePattern_DIRK->leadindex[row+1] = sparsePattern_ODE->leadindex[row+1] + shift;
+      i++;
+    }
+  }
 
-  /* call sparse index */
-  memcpy(sysData->sparsePattern->index, rowIndex, length_row_indices*sizeof(unsigned int));
+  // TODO: Re-compute coloring from sparsityPattern
+  // If missingDiags=0 we can re-use coloring (and everything else), otherwise we'll use the trivial coloring
+  if (missingDiags == 0) {
+    memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, sparsePattern_ODE->maxColors*sizeof(unsigned int));
+  } else {
+    for (int color=0; color<sparsePattern_DIRK->maxColors; color++) {
+      sparsePattern_DIRK->colorCols[color] = color+1;
+    }
+  }
 
-  /* write color array */
-  memcpy(sysData->sparsePattern->colorCols, colorCols, maxColor*sizeof(unsigned int));
+  /* Debug print */
+  printSparseStructure(sparsePattern_DIRK,
+                       jacobian->sizeRows,
+                       jacobian->sizeCols,
+                       LOG_SOLVER_V,
+                       "Diagonal implicit Runge-Kutta NLS Jacobian");
+
+  return sparsePattern_DIRK;
 }
 
 /**
@@ -219,10 +286,8 @@ void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEA
   }
 
   /* Initialize sparsity pattern */
-  nonlinsys->isPatternAvailable = FALSE;
-  nonlinsys->sparsePattern = NULL;
-  //initializeSparsePattern_DIRK(nlsData);
-
+  nonlinsys->sparsePattern = initializeSparsePattern_DIRK(data, nonlinsys);
+  nonlinsys->isPatternAvailable = TRUE;
   return;
 }
 
@@ -256,21 +321,9 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   nlsData->initHomotopy = FALSE;
   nlsData->mixedSystem = FALSE;
 
-  // TODO Set min, max, nominal
   nlsData->min = NULL;
   nlsData->max = NULL;
   nlsData->nominal = NULL;
-
-  // TODO: Check if jacobian of DIRK is initialized
-  nlsData->initialAnalyticalJacobian = data->callback->initialAnalyticJacobianA;
-  nlsData->jacobianIndex = data->callback->INDEX_JAC_A;
-
-  jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  // TODO: Do we need to initialize the Jacobian or is it already initialized?
-  data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-
-  nlsData->sparsePattern = jacobian->sparsePattern;
-  nlsData->isPatternAvailable = TRUE;
 
   switch (rk_data->type)
   {
@@ -286,7 +339,8 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   case RK_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
     nlsData->analyticalJacobianColumn = jacobian_IRK;
-    nlsData->initializeStaticNLSData = initializeStaticNLSData_DIRK;
+    //nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
+    nlsData->initializeStaticNLSData = NULL;
     nlsData->getIterationVars = NULL;
 
     //TODO AHeu: Only for testing. Remove
@@ -308,8 +362,23 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   nlsData->nominal = (double*) malloc(nlsData->size*sizeof(double));
   nlsData->min = (double*) malloc(nlsData->size*sizeof(double));
   nlsData->max = (double*) malloc(nlsData->size*sizeof(double));
+
+  // TODO: Do we need to initialize the Jacobian or is it already initialized?
+  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  data->callback->initialAnalyticJacobianA(data, threadData, jacobian_ODE);
   nlsData->initializeStaticNLSData(data, threadData, nlsData);
 
+  // TODO: Set callback to initialize Jacobian
+  //       Write said function...
+  // TODO: Free memory
+  //jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
+  // TODO Alloc memory!
+  //rk_data->jacobian = jacobian;
+  rk_data->jacobian = NULL;
+  nlsData->initialAnalyticalJacobian = NULL;
+  nlsData->jacobianIndex = -1;
+
+  /* Initialize NLS method */
   switch (rk_data->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     nlsData->nlsMethod = NLS_NEWTON;
@@ -322,7 +391,7 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
     //nlsData->nlsLinearSolver = NLS_LS_KLU;  // Error in Kinsol.c L1290
-                                              // TODO AHeu: It seems that the Jacobian is sparse but should be dense (or vice versa)
+    //                                        // TODO AHeu: It seems that the Jacobian is sparse but should be dense (or vice versa)
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
     solverData->initHomotopyData = NULL;
@@ -756,6 +825,9 @@ int jacobian_DIRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jac
 
   // TODO AHeu: Only compute once?
 
+  // TODO: Make sure x, and time are already set
+  // Will be done in residual_DIRK
+
   /* Evaluate Jacobian of ODE */
   if (rk_data->symJacAvailable) {
     wrapper_Jf_symbolic_genericRK(data, threadData, rk_data);
@@ -833,123 +905,24 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
   return;
 }
 
-
+/**
+ * @brief Jacobian for non-linear system of implicit Runge-Kutta methods.
+ *
+ * @param inData            Void pointer to DATA* data.
+ * @param threadData        Thread data for error handling.
+ * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
+ * @param parentJacobian    Unused
+ * @return int              Return 0 on success.
+ */
 int jacobian_IRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
-
-  assertStreamPrint(threadData, 0, "jacobian_IRK not yet implemented!");
-
   DATA* data = (DATA*) inData;
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
-  int i,j;
+  int i,j,k,l;
+  int idx;
   int nStages = rk_data->tableau->nStages;
   int nStates = data->modelData->nStates;
-
-#if 0
-  assertStreamPrint(threadData, rk_data->nlsSolverMethod == RK_NLS_NEWTON, "full_implicit_RK only implemented for Newton solver");
-  DATA_NEWTON* solverData = (DATA_NEWTON*)rk_data->nlsData;
-  /*!
-    *  fODE = f(tOld + h,x); x ~ yOld + h*(b1*k1+b2*k2+b3*k3)
-    *  set correct time value and states of simulation system
-    *  this should not count on function evaluation, since
-    *  it belongs to the jacobian evaluation
-    *  \ToBeChecked: This calculation maybe not be necessary since f has already
-    *                just evaluated! works so far
-    */
-  // sData->timeValue = userdata->time + userdata->stepSize;
-  // memcpy(sData->realVars, x, n*sizeof(double));
-  // wrapper_f_genericRK(data, threadData, userdata, fODE);
-  // userdata->evalFunctionODE--;
-
-  /* store values for finite differences scheme
-    * not necessary for analytic Jacobian */
-  //memcpy(userdata->f, fODE, n*sizeof(double));
-
-  /* Calculate Jacobian of the ODE system, stored in  solverData->fjac */
-  //wrapper_Jf_genericRK(&n, x, userdata->f, userdata, fODE);
-  // set correct time value and states of simulation system
-
-  // residual function res = yOld-x[i]+h*(a[l][1]*k[1]+...+a[l][stages]*k[stages])
-  // residual function res = yOld-x[i]+h*(a[l][1]*f(t[1],x[1])+...+a[l][stages]*f(t[stages],x[stages]))
-  // jacobian          Jac = -E + h*(a[l][1]*Jf(t[1],x[1])+...+a[l][stages]*Jf(t[stages],x[stages]))
-  for (i=0; i < nStages * nStates; i++)
-  {
-    /*!
-     *  fODE = f(tOld + h,x); x ~ yOld + h*(b1*k1+b2*k2+b3*k3)
-     *  set correct time value and states of simulation system
-     *  this should not count on function evaluation, since
-     *  it belongs to the jacobian evaluation
-     *  \ToBeChecked: This calculation maybe not be necessary since f has already
-     *                just evaluated! works so far
-     */
-    // sData->timeValue = userdata->time + userdata->stepSize;
-    // memcpy(sData->realVars, x, n*sizeof(double));
-    // wrapper_f_genericRK(data, threadData, userdata, fODE);
-    // userdata->evalFunctionODE--;
-
-    /* store values for finite differences scheme
-     * not necessary for analytic Jacobian */
-    //memcpy(userdata->f, fODE, n*sizeof(double));
-
-    /* Calculate Jacobian of the ODE system, stored in  solverData->fjac */
-    //wrapper_Jf_genericRK(&n, x, userdata->f, userdata, fODE);
-    // set correct time value and states of simulation system
-
-    // residual function res = yOld-x[i]+h*(a[l][1]*k[1]+...+a[l][stages]*k[stages])
-    // residual function res = yOld-x[i]+h*(a[l][1]*f(t[1],x[1])+...+a[l][stages]*f(t[stages],x[stages]))
-    // jacobian          Jac = -E + h*(a[l][1]*Jf(t[1],x[1])+...+a[l][stages]*Jf(t[stages],x[stages]))
-    for (i=0; i < stages * n; i++)
-    {
-      for (j=0; j < stages * n; j++)
-      {
-        if (i==j)
-          solverData->fjac[i * stages*n + j] = -1;
-        else
-          solverData->fjac[i * stages*n + j] = 0;
-      }
-    }
-  }
-  //printMatrix_genericRK("Jacobian of solver", solverData->fjac, stages * n, userdata->time);
-  for (k=0; k<nStages && !rk_data->isExplicit; k++)
-  {
-    // calculate Jf[k] and sweap over the stages
-    sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
-    memcpy(sData->realVars, (x + k * nStates), nStates*sizeof(double));
-    // works only for analytical Jacobian!!!
-    //printf("Hier: %d\n", k);
-    // BB: needs to be verified, that for the numerical Jacobian fODE is actual!!
-    wrapper_Jf_symbolic_genericRK(data, threadData, rk_data);
-    //wrapper_Jf_genericRK(n, sData->timeValue, sData->realVars, fODE, rk_data);
-    //printMatrix_genericRK("Jacobian of system", userdata->Jf, n, sData->timeValue);
-    //printMatrix_genericRK("Jacobian of solver", solverData->fjac, stages * n, sData->timeValue);
-    for (l=0; l<nStages; l++)
-    {
-      for (i=0; i<nStates; i++)
-      {
-        for (j=0; j<nStates; j++)
-        {
-          ind = l * nStages * nStates * nStates + i * nStages * nStates + j + k*nStates;
-          solverData->fjac[ind] += rk_data->stepSize * rk_data->tableau->A[l * nStages + k] * rk_data->Jf[i * nStates + j];
-          //solverData->fjac[ind] += userdata->Jf[i * n + j];
-          //printf("Hier2: l=%d i=%d j=%d\n", l,i,j);
-          //printMatrix_genericRK("Jacobian of solver", solverData->fjac, stages * n, ind);
-        }
-      }
-    }
-  }
-
-  return 0;
-#else
-
-  // TODO AHeu: How to evaluate the jacobian?
-
-  /* Evaluate Jacobian of ODE */
-  if (rk_data->symJacAvailable) {
-    wrapper_Jf_symbolic_genericRK(data, threadData, rk_data);
-  } else {
-    wrapper_Jf_numeric_genericRK(data, threadData, rk_data);
-  }
 
   /* Compute Jacobian of non-linear system */
   for (i = 0; i < nStages * nStates; i++)
@@ -962,7 +935,32 @@ int jacobian_IRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jaco
         jacobian->resultVars[i * nStages * nStates + j] = 0;
     }
   }
-#endif
+
+  for (k=0; k<nStages && !rk_data->isExplicit; k++)
+  {
+    /* Evaluate Jacobian of ODE */
+    sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
+    memcpy(sData->realVars, &rk_data->nlsData->nlsx[k*nStates], nStates*sizeof(double));
+    if (rk_data->symJacAvailable) {
+      wrapper_Jf_symbolic_genericRK(data, threadData, rk_data);
+    } else {
+      wrapper_Jf_numeric_genericRK(data, threadData, rk_data);
+    }
+
+    for (l=0; l<nStages; l++)
+    {
+      for (i=0; i<nStates; i++)
+      {
+        for (j=0; j<nStates; j++)
+        {
+          idx = l * nStages * nStates * nStates + i * nStages * nStates + j + k*nStates;
+          jacobian->resultVars[idx] += rk_data->stepSize * rk_data->tableau->A[l * nStages + k] * rk_data->Jf[i * nStates + j];
+        }
+      }
+    }
+  }
+
+  return 0;
 }
 
 /**

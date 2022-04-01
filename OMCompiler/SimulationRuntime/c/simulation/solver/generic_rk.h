@@ -56,6 +56,7 @@ typedef struct DATA_GENERIC_RK{
                                          * Something like
                                          *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
                                          * */
+  ANALYTIC_JACOBIAN* jacobian;
   double *y;                            /* Result vector of RK step */
   double *yt;                           /* Result vector of embedded RK step */
   modelica_real* yOld;                  /* Result vector of last RK step ???? */
