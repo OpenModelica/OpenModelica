@@ -54,12 +54,14 @@ typedef struct DATA_GENERIC_RK{
                                          * Something like
                                          *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
                                          * */
-  double *y;                /* Result vector of RK step */
-  double *yt;               /* Result vector of embedded RK step */
-  modelica_real* yOld;      /* Result vector of last RK step ???? */
-  double* f;                /* state derivatives of ODE */
+  double *y;                          /* Result vector of RK step */
+  double *yt;                         /* Result vector of embedded RK step */
+  modelica_real* yOld;                /* Result vector of last RK step ???? */
+  double* f;                          /* State derivatives of ODE */
   double *Jf;
-  double *k, *res_const;
+  double *k;                          /* Vector k with result of intermediate steps of Runge-Kutta method */
+                                      // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
+  double *res_const;                  /* Constant parts of residual for non-linear system of implicit RK method. */
   double *errest, *errtol;
   double time;
   double stepSize, lastStepSize;
@@ -68,7 +70,7 @@ typedef struct DATA_GENERIC_RK{
   BUTCHER_TABLEAU* tableau;
   int nStates;
   modelica_boolean isFirstStep;       /* True during first Runge-Kutta integrator step, false otherwise */
-  unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
+  unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
 
   rk_step_function step_fun;

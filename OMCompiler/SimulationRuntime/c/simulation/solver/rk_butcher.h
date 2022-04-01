@@ -74,7 +74,7 @@ typedef struct BUTCHER_TABLEAU {
 enum RK_type {
   RK_TYPE_UNDEF = 0,    /* Undefined type */
   RK_TYPE_EXPLICIT,     /* Explicit: A is lower triangular matrix */
-  RK_TYPE_DIRK,         /* Directional implicit: A is triangular matrix */
+  RK_TYPE_DIRK,         /* Diagonal implicit: A is triangular matrix */
   RK_TYPE_IMPLICIT      /* Implicit: A has elements above diagonal */
 };
 

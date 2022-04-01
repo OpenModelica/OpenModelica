@@ -285,7 +285,17 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum RK_type* expl) {
+/**
+ * @brief Analyse Butcher tableau and return size and if the method is explicit.
+ *
+ * Sets error_order
+ *
+ * @param tableau       Butcher tableau. error_order will be set after return.
+ * @param nStates       Number of states of ODE/DAE system.
+ * @param nlSystemSize  Contains size of internal non-linear system on return.
+ * @param rk_type        Contains Runge-Kutta method type on return.
+ */
+void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum RK_type* rk_type) {
   modelica_boolean isGenericIRK = FALSE;  /* generic implicit Runge-Kutta method */
   modelica_boolean isDIRK = FALSE;        /* diagonal something something Runge-Kutta method */
   int i, j, l;
@@ -303,22 +313,28 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     }
   }
   if (isGenericIRK) {
-    *expl = RK_TYPE_IMPLICIT;
+    *rk_type = RK_TYPE_IMPLICIT;
     *nlSystemSize = tableau->nStages*nStates;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is fully implicit");
   } else if (isDIRK) {
-    *expl = RK_TYPE_DIRK;
+    *rk_type = RK_TYPE_DIRK;
     *nlSystemSize = nStates;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method diagonally implicit");
   } else {
-    *expl = RK_TYPE_EXPLICIT;
-    *nlSystemSize = nStates;
+    *rk_type = RK_TYPE_EXPLICIT;
+    *nlSystemSize = 0;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is explicit");
   }
   // set order for error control!
   tableau->error_order = fmin(tableau->order_b, tableau->order_bt) + 1;
 }
 
+/**
+ * @brief Allocate memory and initialize Butcher tableau for given method.
+ *
+ * @param RK_method           Runge-Kutta method.
+ * @return BUTCHER_TABLEAU*   Return pointer to Butcher tableau on success, NULL on failure.
+ */
 BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method) {
   BUTCHER_TABLEAU* tableau = (BUTCHER_TABLEAU*) malloc(sizeof(BUTCHER_TABLEAU));
 
@@ -363,6 +379,11 @@ BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method) {
   return tableau;
 }
 
+/**
+ * @brief Free Butcher Tableau memory.
+ *
+ * @param tableau   Butcher tableau.
+ */
 void freeButcherTableau(BUTCHER_TABLEAU* tableau) {
   free(tableau->c);
   free(tableau->A);
@@ -373,6 +394,11 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau) {
   tableau = NULL;
 }
 
+/**
+ * @brief Print given Butcher tableau
+ *
+ * @param tableau   Butcher tableau.
+ */
 void printButcherTableau(BUTCHER_TABLEAU* tableau) {
   int i, j;
   char Butcher_row[1024];
