@@ -1354,6 +1354,7 @@ fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
       free(sdata->realVars);
     }
     freeRingBuffer(internal_state->simulationData);
+    free(internal_state->realParameters);
     functions->freeMemory(*FMUstate);
     *FMUstate = NULL;
   }
