@@ -825,7 +825,7 @@ public
           arr := Array.map(arr, function typeCast(ty = ety));
           t := Type.setArrayElementType(t, ety);
         then
-          ARRAY(t, arr, exp.literal);
+          makeArray(t, arr, exp.literal);
 
       case RANGE(ty = t)
         algorithm
@@ -2478,7 +2478,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
+      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
       case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2654,7 +2654,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, Array.map(exp.elements, function mapReverse(func = func)), exp.literal);
+      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, function mapReverse(func = func)), exp.literal);
       case MATRIX() then MATRIX(list(list(mapReverse(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2811,7 +2811,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExpShallow(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExpShallow(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, Array.map(exp.elements, func), exp.literal);
+      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, func), exp.literal);
       case MATRIX() then MATRIX(list(list(func(e) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -3492,7 +3492,7 @@ public
         algorithm
           (arr, arg) := Array.mapFold(exp.elements, function mapFold(func = func), arg);
         then
-          ARRAY(exp.ty, arr, exp.literal);
+          makeArray(exp.ty, arr, exp.literal);
 
       case MATRIX()
         algorithm
@@ -3731,7 +3731,7 @@ public
         algorithm
           (arr, arg) := Array.mapFold(exp.elements, func, arg);
         then
-          ARRAY(exp.ty, arr, exp.literal);
+          makeArray(exp.ty, arr, exp.literal);
 
       case MATRIX()
         algorithm
@@ -5658,7 +5658,7 @@ public
       end for;
 
       ty := typeOf(if arrayEmpty(expl) then exp else arrayGet(expl, 1));
-      outExp := makeExpArray(expl, ty, isLiteral = true);
+      outExp := makeExpArray(expl, ty, Array.all(expl, isLiteral));
     end if;
   end mapSplitExpressions2;
 

@@ -545,10 +545,10 @@ algorithm
           subs := list(Subscript.eval(s) for s in subs);
         end if;
 
-        e := Expression.applySubscripts(subs, exp.exp);
+        (e, subMap) := subscriptBinding2(exp.exp, cref, evalSubscripts, subMap);
+        e := Expression.applySubscripts(subs, e);
       then
-        Expression.mapFoldShallow(e,
-          function subscriptBinding2(cref = cref, evalSubscripts = evalSubscripts), subMap);
+        (e, subMap);
 
     case Expression.ARRAY(literal = true) then (exp, subMap);
 
