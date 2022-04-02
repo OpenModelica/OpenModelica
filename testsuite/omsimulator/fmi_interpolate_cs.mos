@@ -56,9 +56,6 @@ readFile("fmi_interpolate_cs_systemCall.log");
 // true
 // ""
 // 0
-// "warning: Not all components support \"canGetAndSetState\"; an explicit master algorithm will be used
-// info:    Result file: fmi_interpolate_cs_res.mat (bufferSize=10)
-// info:    1 warnings
-// info:    0 errors
+// "info:    Result file: fmi_interpolate_cs_res.mat (bufferSize=10)
 // "
 // endResult
