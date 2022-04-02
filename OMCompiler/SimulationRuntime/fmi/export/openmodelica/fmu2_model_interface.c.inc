@@ -1347,12 +1347,12 @@ fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   if (*FMUstate)
   {
     INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) *FMUstate;
-    // free the SIMULATION_DATA variable buffers
-    for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
-    {
-      SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
-      free(sdata->realVars);
-    }
+    // // free the SIMULATION_DATA variable buffers
+    // for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
+    // {
+    //   SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
+    //   free(sdata->realVars);
+    // }
     freeRingBuffer(internal_state->simulationData);
     free(internal_state->realParameters);
     functions->freeMemory(*FMUstate);
