@@ -109,7 +109,10 @@ typedef struct {
 
 typedef struct {
   RINGBUFFER* simulationData;
-  modelica_real* realParameters;
+  modelica_real* realParameter;
+  modelica_integer* integerParameter;
+  modelica_boolean* booleanParameter;
+  modelica_string* stringParameter;
 } INTERNAL_FMU_STATE;
 
 
