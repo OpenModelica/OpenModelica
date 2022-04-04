@@ -575,6 +575,44 @@ void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATI
   TRACE_POP
 }
 
+/*
+* print information about ring buffer simulation data
+*/
+void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
+{
+  TRACE_PUSH
+
+  for (int i = 0; i < ringBufferLength(rb); i++)
+  {
+    messageClose(LOG_STDOUT);
+    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(rb, i);
+    infoStreamPrint(LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
+
+    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Real Variable");
+    for (int j = 0; j < data->modelData->nVariablesReal; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
+    }
+    messageClose(LOG_STDOUT);
+
+    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Integer Variable");
+    for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %i ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
+    }
+    messageClose(LOG_STDOUT);
+
+    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Boolean Variable");
+    for(int j = 0; j < data->modelData->nVariablesBoolean; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
+    }
+    messageClose(LOG_STDOUT);
+  }
+
+  TRACE_POP
+}
+
 /* \fn restoreExtrapolationDataOld
  *
  *  Restores variables (states, derivatives and algebraic).

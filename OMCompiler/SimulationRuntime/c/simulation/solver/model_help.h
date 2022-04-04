@@ -91,6 +91,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
 
 void overwriteOldSimulationData(DATA *data);
 void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATION_DATA **destData, RINGBUFFER* destRing);
+void printRingBufferSimulationData(RINGBUFFER* rb, DATA* data);
 
 void restoreExtrapolationDataOld(DATA *data);
 

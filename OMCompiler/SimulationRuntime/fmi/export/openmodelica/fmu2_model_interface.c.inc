@@ -1237,41 +1237,6 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
   return fmi2OK;
 }
 
-/*
-* print information about ring buffer simulation data
-*/
-void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
-{
-
-  for (int i = 0; i < ringBufferLength(rb); i++)
-  {
-    messageClose(LOG_STDOUT);
-    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(rb, i);
-    infoStreamPrint(LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
-
-    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Real Variable");
-    for (int j = 0; j < data->modelData->nVariablesReal; ++j)
-    {
-      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
-    }
-    messageClose(LOG_STDOUT);
-
-    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Integer Variable");
-    for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
-    {
-      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %i ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
-    }
-    messageClose(LOG_STDOUT);
-
-    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Boolean Variable");
-    for(int j = 0; j < data->modelData->nVariablesBoolean; ++j)
-    {
-      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
-    }
-    messageClose(LOG_STDOUT);
-  }
-}
-
 fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
