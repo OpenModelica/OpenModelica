@@ -1417,9 +1417,9 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       //    rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
       if (rk_data->multi_rate == 1)
       {
-        printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
-            rk_data->nSlowStates, rk_data->nFastStates,
-            rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
+        // printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
+        //     rk_data->nSlowStates, rk_data->nFastStates,
+        //     rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
         if (rk_data->nFastStates>0)
         {
           genericRK_MR_step(data, threadData, solverInfo);

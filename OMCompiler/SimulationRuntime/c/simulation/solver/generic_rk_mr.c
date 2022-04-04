@@ -145,11 +145,11 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
 
   if (flag_StepSize_ctrl != NULL) {
     userdata->stepSize_control = &(PIController);
-    printf("PIController is used\n");
+    //printf("PIController is used\n");
   } else
   {
     userdata->stepSize_control = &(IController);
-    printf("IController is used\n");
+    //printf("IController is used\n");
   }
 
   // allocate memory for the generic RK method
@@ -204,6 +204,8 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   /* Allocate memory for the nonlinear solver */
   // TODO AHeu: Do we always need a NLS solver or only for implicit RK methods?
   userdata->nlsSolverMethod = getRK_NLS_Method();
+  // BB: Fix nls solver for multirate part
+  userdata->nlsSolverMethod = RK_NLS_NEWTON;
   switch (userdata->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     userdata->nlsSolverData = (void*) allocateNewtonData(userdata->nlSystemSize);
@@ -827,7 +829,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   userdata->slowStates  = genericRKData->slowStates;
   userdata->nFastStates = genericRKData->nFastStates;
   userdata->nSlowStates = genericRKData->nSlowStates;
-  printf("userdata->time: %g, userdata->stepSize: %g, targetTime: %g\n", userdata->time, userdata->stepSize, targetTime);
+  //printf("userdata->time: %g, userdata->stepSize: %g, targetTime: %g\n", userdata->time, userdata->stepSize, targetTime);
   while (userdata->time < targetTime)
   {
     do
