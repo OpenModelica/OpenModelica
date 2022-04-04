@@ -90,6 +90,9 @@ ANALYTIC_JACOBIAN* copyAnalyticJacobian(ANALYTIC_JACOBIAN* source) {
  * @param jac   Pointer to Jacobian.
  */
 void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
+  if (jac == NULL) {
+    return;
+  }
   free(jac->seedVars); jac->seedVars = NULL;
   free(jac->tmpVars); jac->tmpVars = NULL;
   free(jac->resultVars); jac->resultVars = NULL;

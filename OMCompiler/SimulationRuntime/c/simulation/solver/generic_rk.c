@@ -84,7 +84,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
 // Residuum and Jacobian functions for diagonal implicit (DIRK) and implicit (IRK) Runge-Kutta methods.
 void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *iflag);
-int jacobian_DIRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
 void residual_IRK(void **dataIn, const double *xloc, double *res, const int *iflag);
@@ -297,6 +296,30 @@ void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEA
 }
 
 /**
+ * @brief Initialize static data of non-linear system for IRK.
+ *
+ * Initialize for implicit Runge-Kutta (IRK) method.
+ * Sets min, max, nominal values and sparsity pattern.
+ *
+ * @param data              Runtime data struct
+ * @param threadData        Thread data for error handling
+ * @param nonlinsys         Non-linear system data.
+ */
+void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
+  for(int i=0; i<nonlinsys->size; i++) {
+    nonlinsys->nominal[i] = 1.0;
+    nonlinsys->min[i]     = DBL_MIN;
+    nonlinsys->max[i]     = DBL_MAX;
+  }
+
+  /* Initialize sparsity pattern */
+  //nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
+  nonlinsys->sparsePattern = NULL;
+  nonlinsys->isPatternAvailable = FALSE;
+  return;
+}
+
+/**
  * @brief Allocate and initialize non-linear system data for Runge-Kutta method.
  *
  * Runge-Kutta method has to be implicit or diagonal implicit.
@@ -334,19 +357,16 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   {
   case RK_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK;
-    //nlsData->analyticalJacobianColumn = jacobian_DIRK;
     nlsData->analyticalJacobianColumn = jacobian_DIRK_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_DIRK;
     nlsData->getIterationVars = NULL;
 
-    //TODO AHeu: Only for testing. Remove
     rk_data->symJacAvailable = TRUE;
     break;
   case RK_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
     nlsData->analyticalJacobianColumn = jacobian_IRK;
-    //nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
-    nlsData->initializeStaticNLSData = NULL;
+    nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
     nlsData->getIterationVars = NULL;
 
     //TODO AHeu: Only for testing. Remove
@@ -393,9 +413,11 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    nlsData->nlsLinearSolver = NLS_LS_KLU;  // Error in Kinsol.c L1290
-                                            // TODO AHeu: It seems that the Jacobian is sparse but should be dense (or vice versa)
-    //nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
+    if (rk_data->symJacAvailable) {
+      nlsData->nlsLinearSolver = NLS_LS_KLU;
+    } else {
+      nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
+    }
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
@@ -540,6 +562,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     rk_data->symJacAvailable = FALSE;
     rk_data->nlsSolverMethod = RK_NLS_UNKNOWN;  // TODO AHeu: Add a no-solver option?
     rk_data->nlsData = NULL;
+    rk_data->jacobian = NULL;
   }
 
   // Set backup in simulationInfo
@@ -808,58 +831,6 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
 
   return;
 }
-
-/**
- * @brief Jacobian for non-linear system given by residual_DIRK.
- *
- * TODO AHeu: Remove this function, use jacobian_DIRK_column
- *
- * @param inData            Void pointer to runtime data struct.
- * @param threadData        Thread data for error handling.
- * @param genericRKData     Runge-Kutta method.
- * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
- * @param parentJacobian    Unused
- * @return int              Return 0 on success.
- */
-int jacobian_DIRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
-
-  DATA* data = (DATA*) inData;
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
-
-  int i,j,l;
-  int nStates = data->modelData->nStates;
-  int diagIdx = rk_data->act_stage * rk_data->tableau->nStages + rk_data->act_stage;
-
-  // TODO AHeu: Only compute once?
-
-  // TODO: Make sure x, and time are already set
-  // Will be done in residual_DIRK
-
-  /* Evaluate Jacobian of ODE */
-  // TODO: Only evaluate column
-  if (rk_data->symJacAvailable) {
-    wrapper_Jf_symbolic_genericRK(data, threadData, rk_data);
-  } else {
-    wrapper_Jf_numeric_genericRK(data, threadData, rk_data);
-  }
-
-  /* Compute Jacobian of non-linear system */
-  for (i = 0; i < nStates; i++)
-  {
-    for (j = 0; j < nStates; j++)
-    {
-      l = i * nStates + j;
-      jacobian->resultVars[l] = rk_data->stepSize * rk_data->tableau->A[diagIdx] * rk_data->Jf[l];
-      if (i == j)
-      {
-        jacobian->resultVars[l] -= 1;
-      }
-    }
-  }
-
-  return 0;
-}
-
 
 /**
  * @brief Evaluat column of DIRK Jacobian.
