@@ -91,9 +91,11 @@ int jacobian_IRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jaco
 
 void initializeStaticNLSData(void* nlsDataVoid, threadData_t *threadData, void* rk_data_void);
 
+void allocateDataGenericRK_MR(DATA* data, threadData_t* threadData, DATA_GENERIC_RK* rk_data);
+
 // step size control function
-double IController(void* genericRKData);
-double PIController(void* genericRKData);
+double IController(double* err_values, double err_order);
+double PIController(double* err_values, double err_order);
 
 struct RK_USER_DATA {
   DATA* data;
@@ -263,11 +265,11 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
   }
 
   /* Debug print */
-  printSparseStructure(sparsePattern_DIRK,
-                       jacobian->sizeRows,
-                       jacobian->sizeCols,
-                       LOG_SOLVER,
-                       "Diagonal implicit Runge-Kutta NLS Jacobian");
+  // printSparseStructure(sparsePattern_DIRK,
+  //                      jacobian->sizeRows,
+  //                      jacobian->sizeCols,
+  //                      LOG_SOLVER,
+  //                      "Diagonal implicit Runge-Kutta NLS Jacobian");
 
   return sparsePattern_DIRK;
 }
@@ -591,7 +593,6 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     rk_data->dataRKmr = NULL;
   }
 
-
   return 0;
 }
 
@@ -626,8 +627,10 @@ void freeDataGenericRK(DATA_GENERIC_RK* rk_data) {
   /* Free Butcher tableau */
   freeButcherTableau(rk_data->tableau);
 
+  if (rk_data->multi_rate == 1) {
+    freeDataGenericRK_MR(rk_data->dataRKmr);
+  }
   /* Free multi-rade date */
-  freeDataGenericRK_MR(rk_data->dataRKmr);
   free(rk_data->err);
   free(rk_data->fastStates);
   free(rk_data->slowStates);
@@ -1221,16 +1224,14 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
  * @param genericRKData
  * @return double
  */
-double IController(void* genericRKData)
+double IController(double* err_values, double err_order)
 {
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
-
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta = -1./userdata->tableau->error_order;
+  double beta = -1./err_order;
 
-  return fmin(facmax, fmax(facmin, fac*pow(userdata->err_new, beta)));
+  return fmin(facmax, fmax(facmin, fac*pow(err_values[0], beta)));
 
 }
 
@@ -1240,16 +1241,14 @@ double IController(void* genericRKData)
  * @param genericRKData
  * @return double
  */
-double PIController(void* genericRKData)
+double PIController(double* err_values, double err_order)
 {
-  DATA_GENERIC_RK* userdata = (DATA_GENERIC_RK*) genericRKData;
-
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta1=-1./2./userdata->tableau->error_order, beta2=beta1;
+  double beta1=-1./2./err_order, beta2=beta1;
 
-  return fmin(facmax, fmax(facmin, fac*pow(userdata->err_new, beta1)*pow(userdata->err_old, beta2)));
+  return fmin(facmax, fmax(facmin, fac*pow(err_values[0], beta1)*pow(err_values[0], beta2)));
 
 }
 
@@ -1271,7 +1270,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)solverInfo->solverData;
 
-  double err;
+  double err, err_values[2];
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
   int i, l;
@@ -1366,27 +1365,31 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       }
       //printVector_genericRK("Error: ", rkData->err, rkData->nStates, rkData->time);
 
-      //Find fast and slow states based on
-      rk_data->nFastStates = 0;
-      rk_data->nSlowStates = 0;
-      rk_data->err_slow = 0;
-      rk_data->err_fast = 0;
-      for (i=0; i<rk_data->nStates; i++)
+      if (rk_data->multi_rate == 1)
       {
-        if (rk_data->err[i] > rk_data->percentage * err)
+        //Find fast and slow states based on
+        rk_data->nFastStates = 0;
+        rk_data->nSlowStates = 0;
+        rk_data->err_slow = 0;
+        rk_data->err_fast = 0;
+        for (i=0; i<rk_data->nStates; i++)
         {
-          rk_data->fastStates[rk_data->nFastStates] = i;
-          rk_data->nFastStates += 1;
-          rk_data->err_fast = fmax(rk_data->err_fast, rk_data->err[i]);
+          if (rk_data->err[i] > rk_data->percentage * err)
+          {
+            rk_data->fastStates[rk_data->nFastStates] = i;
+            rk_data->nFastStates += 1;
+            rk_data->err_fast = fmax(rk_data->err_fast, rk_data->err[i]);
+          }
+          else
+          {
+            rk_data->slowStates[rk_data->nSlowStates] = i;
+            rk_data->nSlowStates += 1;
+            rk_data->err_slow = fmax(rk_data->err_slow, rk_data->err[i]);
+          }
         }
-        else
-        {
-          rk_data->slowStates[rk_data->nSlowStates] = i;
-          rk_data->nSlowStates += 1;
-          rk_data->err_slow = fmax(rk_data->err_slow, rk_data->err[i]);
-        }
+        err = rk_data->err_slow;
       }
-      /*** calculate error (euclidian norm) ***/
+        /*** calculate error (euclidian norm) ***/
       // for (i=0, err=0.0; i<n; i++)
       // {
       //   err += (userdata->errest[i]*userdata->errest[i])/(userdata->errtol[i]*userdata->errtol[i]);
@@ -1395,39 +1398,45 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       // err /= n;
       // err = sqrt(err);
 
-      err = rk_data->err_slow;
-
       if (rk_data->err_new == -1) rk_data->err_new = err;
       rk_data->err_old = rk_data->err_new;
       rk_data->err_new = err;
+
+      err_values[0] = rk_data->err_new;
+      err_values[1] = rk_data->err_old;
 
       // Store performed stepSize for adjusting the time and interpolation purposes
       rk_data->stepSize_old = rk_data->lastStepSize;
       rk_data->lastStepSize = rk_data->stepSize;
 
       // Call the step size control
-      rk_data->stepSize *= rk_data->stepSize_control((void*) rk_data);
+      rk_data->stepSize *= rk_data->stepSize_control(err_values, rk_data->tableau->error_order);
 
       //printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
       //    rk_data->nSlowStates, rk_data->nFastStates,
       //    rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
-      if (rk_data->nFastStates>0)
+      if (rk_data->multi_rate == 1)
       {
-         genericRK_MR_step(data, threadData, solverInfo);
-        //  copyVector_genericRK_MR(rkData->y, rkData->dataRKmr->y, rkData->nFastStates, rkData->fastStates);
-        //  copyVector_genericRK_MR(rkData->yt, rkData->dataRKmr->yt, rkData->nFastStates, rkData->fastStates);
-        //  copyVector_genericRK_MR(rkData->err, rkData->dataRKmr->err, rkData->nFastStates, rkData->fastStates);
-        //  printVector_genericRK_MR_fs("y ", rkData->y, n, rkData->time, rkData->nFastStates, rkData->fastStates);
-        //  printVector_genericRK_MR_fs("yt ", rkData->yt, n, rkData->time, rkData->nFastStates, rkData->fastStates);
-  /*** calculate error (infinity norm!)***/
-        err = 0;
-        for (i=0; i<data->modelData->nStates; i++)
+        printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
+            rk_data->nSlowStates, rk_data->nFastStates,
+            rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
+        if (rk_data->nFastStates>0)
         {
-          err = fmax(err, rk_data->err[i]);
+          genericRK_MR_step(data, threadData, solverInfo);
+          //  copyVector_genericRK_MR(rkData->y, rkData->dataRKmr->y, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_genericRK_MR(rkData->yt, rkData->dataRKmr->yt, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_genericRK_MR(rkData->err, rkData->dataRKmr->err, rkData->nFastStates, rkData->fastStates);
+          //  printVector_genericRK_MR_fs("y ", rkData->y, n, rkData->time, rkData->nFastStates, rkData->fastStates);
+          //  printVector_genericRK_MR_fs("yt ", rkData->yt, n, rkData->time, rkData->nFastStates, rkData->fastStates);
+    /*** calculate error (infinity norm!)***/
+          err = 0;
+          for (i=0; i<data->modelData->nStates; i++)
+          {
+            err = fmax(err, rk_data->err[i]);
+          }
+          //printVector_genericRK("Error: ", rkData->err, rkData->nStates, rkData->time);
         }
-        //printVector_genericRK("Error: ", rkData->err, rkData->nStates, rkData->time);
       }
-
 
       // printf("Stepsize: old: %g, last: %g, act: %g\n", rkData->stepSize_old, rkData->lastStepSize, rkData->stepSize);
       // printf("Error:    old: %g, new: %g\n", rkData->err_old, rkData->err_new);

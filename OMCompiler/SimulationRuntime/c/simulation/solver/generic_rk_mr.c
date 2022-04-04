@@ -81,73 +81,8 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 // step size control function
-double IController_MR(void* genericRKData);
-double PIController_MR(void* genericRKData);
-
-#if 0
-/**
- * @brief Get Runge-Kutta method from simulation flag FLAG_RK.
- *
- * Defaults to RK_DOPRI45 if flag is not set.
- * Returns RK_UNKNOWN if flag is not known.
- *
- * @return enum RK_SINGLERATE_METHOD    Runge-Kutta method.
- */
-enum RK_SINGLERATE_METHOD getRK_Method_MR() {
-  enum RK_SINGLERATE_METHOD method;
-  const char* flag_value;
-  flag_value = omc_flagValue[FLAG_RK];
-  char* RK_method_string;
-
-  if (flag_value != NULL) {
-    RK_method_string = GC_strdup(flag_value);
-    for (method=RK_UNKNOWN; method<RK_MAX; method++) {
-      if (strcmp(RK_method_string, RK_SINGLERATE_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: %s", RK_SINGLERATE_METHOD_NAME[method]);
-        return method;
-      }
-    }
-    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge-Kutta method %s.", RK_method_string);
-    errorStreamPrint(LOG_STDOUT, 0, "Choose RK method: %s [from command line]", RK_method_string);
-    return RK_UNKNOWN;
-  } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: dopri45 [default]");
-    return RK_DOPRI45;
-  }
-}
-
-/**
- * @brief Get non-linear solver method for Runge-Kutta from flag FLAG_RK_NLS.
- *
- * Defaults to Newton if flag is not set.
- * Returns RK_UNKNOWN if flag is not known.
- *
- * @return enum RK_NLS_METHOD   NLS method.
- */
-enum RK_NLS_METHOD getRK_NLS_Method_MR() {
-  enum RK_NLS_METHOD method;
-  const char* flag_value;
-  flag_value = omc_flagValue[FLAG_RK_NLS];
-  char* RK_NLS_method_string;
-
-  if (flag_value != NULL) {
-    RK_NLS_method_string = GC_strdup(flag_value);
-    for (method=RK_NLS_UNKNOWN; method<RK_NLS_MAX; method++) {
-      if (strcmp(RK_NLS_method_string, RK_NLS_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK NLS method: %s", RK_NLS_METHOD_NAME[method]);
-        return method;
-      }
-    }
-    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow non-linear solver method %s for Runge-Kutta method.", RK_NLS_method_string);
-    errorStreamPrint(LOG_STDOUT, 0, "Choose RK NLS method: %s [from command line]", RK_NLS_method_string);
-    return RK_NLS_UNKNOWN;
-  } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: omc_newton [default]");
-    return RK_NLS_NEWTON;
-  }
-}
-#endif
-
+double IController(double* err_values, double err_order);
+double PIController(double* err_values, double err_order);
 
 /**
  * @brief Function allocates memory needed for chosen RK method.
@@ -196,23 +131,24 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
     break;
   }
 
-  infoStreamPrint(LOG_STATS, 0, "Step control factor is set to %g", userdata->tableau->fac);
-
-
   // adapt decision for testing of the fully implicit implementation
   if (userdata->RK_method == RK_ESDIRK2_test || userdata->RK_method == RK_ESDIRK3_test) {
     userdata->nlSystemSize = userdata->tableau->nStages*userdata->nStates;
     userdata->step_fun = &(full_implicit_RK_MR);
+    userdata->type = RK_TYPE_IMPLICIT;
   }
+
+
+  infoStreamPrint(LOG_STATS, 0, "Step control factor is set to %g", userdata->tableau->fac);
 
   const char* flag_StepSize_ctrl = omc_flagValue[FLAG_RK_STEPSIZE_CTRL];
 
   if (flag_StepSize_ctrl != NULL) {
-    userdata->stepSize_control = &(PIController_MR);
+    userdata->stepSize_control = &(PIController);
     printf("PIController is used\n");
   } else
   {
-    userdata->stepSize_control = &(IController_MR);
+    userdata->stepSize_control = &(IController);
     printf("IController is used\n");
   }
 
@@ -220,8 +156,8 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   userdata->firstStep = 1;
   userdata->y = malloc(sizeof(double)*userdata->nStates);
   userdata->yOld = malloc(sizeof(double)*userdata->nStates);
-  userdata->yStart = malloc(sizeof(double)*userdata->nStates);
-  userdata->yEnd = malloc(sizeof(double)*userdata->nStates);
+  //userdata->yStart = malloc(sizeof(double)*userdata->nStates);
+  //userdata->yEnd = malloc(sizeof(double)*userdata->nStates);
   userdata->yt = malloc(sizeof(double)*userdata->nStates);
   userdata->f = malloc(sizeof(double)*userdata->nStates);
   userdata->Jf = malloc(sizeof(double)*userdata->nStates*userdata->nStates);
@@ -230,8 +166,8 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   userdata->errest = malloc(sizeof(double)*userdata->nStates);
   userdata->errtol = malloc(sizeof(double)*userdata->nStates);
   userdata->err = malloc(sizeof(double)*userdata->nStates);
-  userdata->fastStates = malloc(sizeof(int)*userdata->nStates);
-  userdata->slowStates = malloc(sizeof(int)*userdata->nStates);
+  //userdata->fastStates = malloc(sizeof(int)*userdata->nStates);
+  //userdata->slowStates = malloc(sizeof(int)*userdata->nStates);
 
   userdata->nFastStates = userdata->nStates;
   userdata->nSlowStates = 0;
@@ -294,10 +230,6 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
  * @param data    Pointer to generik Runge-Kutta data struct.
  */
 void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data) {
-  if (data == NULL) {
-    return;
-  }
-
   switch (data->nlsSolverMethod)
   {
   case RK_NLS_NEWTON:
@@ -315,8 +247,8 @@ void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data) {
 
   free(data->y);
   free(data->yOld);
-  free(data->yStart);
-  free(data->yEnd);
+  //free(data->yStart);
+  //free(data->yEnd);
   free(data->yt);
   free(data->f);
   free(data->Jf);
@@ -325,8 +257,8 @@ void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data) {
   free(data->errest);
   free(data->errtol);
   free(data->err);
-  free(data->fastStates);
-  free(data->slowStates);
+  //free(data->fastStates);
+  //free(data->slowStates);
 
   free(data);
   data = NULL;
@@ -576,9 +508,10 @@ int wrapper_RK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
   DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  int n = data->modelData->nStates;
+  int nStates = userdata->nStates;
+  int n = userdata->nFastStates;
 
-  int i, j, k, l, ind, stages = userdata->tableau->nStages;
+  int i, ii, j, k, l, ll, ind, stages = userdata->tableau->nStages;
   double sum;
 
   if (fj)
@@ -592,7 +525,7 @@ int wrapper_RK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
     {
       for (i=0; i<n; i++)
       {
-        res[l * n + i] = userdata->yOld[i] - x[l * n + i];
+        res[l * n + i] = userdata->yOld[userdata->fastStates[i]] - x[l * n + i];
       }
     }
     for (k=0; k<stages; k++)
@@ -600,15 +533,22 @@ int wrapper_RK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
       // calculate f[k] and sweap over the stages
       //printf("c[k] = %g\n",userdata->c[k]);
       sData->timeValue = userdata->time + userdata->tableau->c[k] * userdata->stepSize;
-      memcpy(sData->realVars, (x + k * n), n*sizeof(double));
+      for (j=0; j<n;j++)
+        sData->realVars[userdata->fastStates[j]] = (x + k * n)[j];
+
+      linear_interpolation_MR(userdata->startTime, userdata->yStart,
+                              userdata->endTime,   userdata->yEnd,
+                              sData->timeValue, sData->realVars, userdata->nSlowStates, userdata->slowStates);
       wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
-      memcpy(userdata->k + k * n, fODE, n*sizeof(double));
+
+      memcpy(userdata->k + k * nStates, fODE, nStates*sizeof(double));
       for (l=0; l<stages; l++)
       {
         //printf("A[%d,%d] = %g  ",l,k,userdata->A[l * stages + k]);
         for (i=0; i<n; i++)
         {
-          res[l * n + i] += userdata->stepSize * userdata->tableau->A[l * stages + k] * fODE[i];
+          ii = userdata->fastStates[i];
+          res[l * n + i] += userdata->stepSize * userdata->tableau->A[l * stages + k] * fODE[ii];
         }
       }
       //printf("\n");
@@ -656,7 +596,11 @@ int wrapper_RK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
     {
       // calculate Jf[k] and sweap over the stages
       sData->timeValue = userdata->time + userdata->tableau->c[k] * userdata->stepSize;
-      memcpy(sData->realVars, (x + k * n), n*sizeof(double));
+      for (j=0; j<n;j++)
+        sData->realVars[userdata->fastStates[j]] = (x + k * n)[j];
+      linear_interpolation_MR(userdata->startTime, userdata->yStart,
+                              userdata->endTime,   userdata->yEnd,
+                              sData->timeValue, sData->realVars, userdata->nSlowStates, userdata->slowStates);
       // works only for analytical Jacobian!!!
       //printf("Hier: %d\n", k);
       // BB: needs to be verified, that for the numerical Jacobian fODE is actual!!
@@ -670,7 +614,8 @@ int wrapper_RK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
           for (j=0; j<n; j++)
           {
             ind = l * stages * n * n + i * stages * n + j + k*n;
-            solverData->fjac[ind] += userdata->stepSize * userdata->tableau->A[l * stages + k] * userdata->Jf[i * n + j];
+            ll = userdata->fastStates[i] * userdata->nStates + userdata->fastStates[j];
+            solverData->fjac[ind] += userdata->stepSize * userdata->tableau->A[l * stages + k] * userdata->Jf[ll];
             //solverData->fjac[ind] += userdata->Jf[i * n + j];
             //printf("Hier2: l=%d i=%d j=%d\n", l,i,j);
             //printMatrix_genericRK("Jacobian of solver", solverData->fjac, stages * n, ind);
@@ -796,7 +741,8 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*)solverInfo->solverData;
+  DATA_GENERIC_RK* genericRKData = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GENERIC_RK_MR* userdata = genericRKData->dataRKmr;
   DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->nlsSolverData;
 
   userdata->data = (void*) data;
@@ -808,11 +754,14 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   solverData->initialized = 1;
   solverData->numberOfIterations = 0;
   solverData->numberOfFunctionEvaluations = 0;
-  solverData->n = userdata->tableau->nStages*n;
+  solverData->n = userdata->tableau->nStages*userdata->nFastStates;
 
   // set good starting values for the newton solver
   for (k=0; k<userdata->tableau->nStages; k++)
-    memcpy((solverData->x + k*n), userdata->yOld, n*sizeof(double));
+    for (i=0; i<userdata->nFastStates; i++)
+        (solverData->x + k*userdata->nFastStates)[i] = userdata->yOld[userdata->fastStates[i]];
+
+  //  memcpy((solverData->x + k*n), userdata->yOld, n*sizeof(double));
   // set newton strategy
   solverData->newtonStrategy = NEWTON_DAMPED2;
   _omc_newton(wrapper_RK_MR, solverData, (void*)userdata);
@@ -837,84 +786,6 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   return 0;
 }
 
-/*! \fn genericRK_first_step
- *
- *  function initializes values and calculates
- *  initial step size at the beginning or after an event
- *  BB: ToDo: lookup the reference in Hairers book
- *
- */
-void genericRK_first_step_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
-{
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  DATA_GENERIC_RK* genericRKData = (DATA_GENERIC_RK*)solverInfo->solverData;
-  DATA_GENERIC_RK_MR* userdata = genericRKData->dataRKmr;
-
-  const int n = data->modelData->nStates;
-  modelica_real* fODE = sData->realVars + data->modelData->nStates;
-
-  /* store Startime of the simulation */
-  userdata->time = sDataOld->timeValue;
-
-  /* set correct flags in order to calculate initial step size */
-  userdata->firstStep = 0;
-  solverInfo->didEventStep = 0;
-
- /* reset statistics because it is accumulated in solver_main.c */
-  userdata->stepsDone = 0;
-  userdata->evalFunctionODE = 0;
-  userdata->evalJacobians = 0;
-  userdata->errorTestFailures = 0;
-  userdata->convergenceFailures = 0;
-
-  /* calculate starting step size 1st Version */
-  /* BB: What is the difference between sData and sDataOld at this time instance?
-         Is this important for the restart after an event?
-         And should this also been copied to userdata->old (see above?)
-  */
-  /* initialize start values of the integrator and calculate ODE function*/
-  //printVector_genericRK("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
-  //printVector_genericRK("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
-  memcpy(userdata->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
-  wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
-  /* store values of the state derivatives at initial or event time */
-  memcpy(userdata->f, fODE, data->modelData->nStates*sizeof(double));
-
-  userdata->lastStepSize = userdata->stepSize;
-
-  /* end calculation new step size */
-
-  infoStreamPrint(LOG_SOLVER, 0, "initial step size = %e at time %g", userdata->stepSize, userdata->time);
-}
-
-double IController_MR(void* genericRKData)
-{
-  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
-
-  double fac = 0.9;
-  double facmax = 3.5;
-  double facmin = 0.5;
-  double beta = -1./userdata->tableau->error_order;
-
-  return fmin(facmax, fmax(facmin, fac*pow(userdata->err_new, beta)));
-
-}
-
-double PIController_MR(void* genericRKData)
-{
-  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
-
-  double fac = 0.9;
-  double facmax = 3.5;
-  double facmin = 0.5;
-  double beta1=-1./2./userdata->tableau->error_order, beta2=beta1;
-
-  return fmin(facmax, fmax(facmin, fac*pow(userdata->err_new, beta1)*pow(userdata->err_old, beta2)));
-
-}
-
-
 /*! \fn genericRK_MR_step
  *
  *  function does one integration step and calculates
@@ -931,7 +802,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   DATA_GENERIC_RK_MR* userdata = genericRKData->dataRKmr;
   DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
 
-  double err;
+  double err, err_values[2];
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
   int i, ii, l, n=data->modelData->nStates;
   int integrator_step_info;
@@ -942,15 +813,18 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // BB ToDo: Use this to handel last step of the embedded integrator
   double stopTime = data->simulationInfo->stopTime;
 
-  //userdata->time = genericRKData->time;
-  //userdata->stepSize = genericRKData->lastStepSize;
   userdata->startTime = genericRKData->time;
   userdata->endTime = genericRKData->time + genericRKData->lastStepSize;
-  memcpy(userdata->yOld, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
-  memcpy(userdata->yStart, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
-  memcpy(userdata->yEnd, genericRKData->y, sizeof(double)*genericRKData->nStates);
-  memcpy(userdata->fastStates, genericRKData->fastStates, sizeof(double)*genericRKData->nFastStates);
-  memcpy(userdata->slowStates, genericRKData->slowStates, sizeof(double)*genericRKData->nSlowStates);
+  if (userdata->stepsDone == 0  || userdata->time < genericRKData->time)
+  {
+    userdata->time = genericRKData->time;
+    userdata->stepSize = genericRKData->lastStepSize*0.5;
+    memcpy(userdata->yOld, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
+  }
+  userdata->yStart      = genericRKData->yOld;
+  userdata->yEnd        = genericRKData->y;
+  userdata->fastStates  = genericRKData->fastStates;
+  userdata->slowStates  = genericRKData->slowStates;
   userdata->nFastStates = genericRKData->nFastStates;
   userdata->nSlowStates = genericRKData->nSlowStates;
   printf("userdata->time: %g, userdata->stepSize: %g, targetTime: %g\n", userdata->time, userdata->stepSize, targetTime);
@@ -963,12 +837,11 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     // calculate one step of the integrator
       integrator_step_info = userdata->step_fun(data, threadData, solverInfo);
 
-      // y       = yold+h*sum(b[i]*k[i], i=1..stages);
-      // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
-      // calculate corresponding values for error estimator and step size control
       for (i=0; i<userdata->nFastStates; i++)
       {
         ii = userdata->fastStates[i];
+        // y   is the new approximation
+        // yt  is the approximation of the embedded method for error estimation
         userdata->y[ii]  = userdata->yOld[ii];
         userdata->yt[ii] = userdata->yOld[ii];
         for (l=0; l<userdata->tableau->nStages; l++)
@@ -976,6 +849,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
           userdata->y[ii]  += userdata->stepSize * userdata->tableau->b[l]  * (userdata->k + l * n)[ii];
           userdata->yt[ii] += userdata->stepSize * userdata->tableau->bt[l] * (userdata->k + l * n)[ii];
         }
+        // calculate corresponding values for the error estimator and step size control
         userdata->errtol[ii] = Rtol*fmax(fabs(userdata->y[ii]),fabs(userdata->yOld[ii])) + Atol;
         userdata->errest[ii] = fabs(userdata->y[ii] - userdata->yt[ii]);
       }
@@ -989,41 +863,35 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         err = fmax(err, userdata->err[ii]);
       }
 
-      // BB ToDo: Needs to be initialized for the embedded integrator
+      //Store error history for the different stepSize controller
       if (userdata->err_new == -1) userdata->err_new = err;
       userdata->err_old = userdata->err_new;
       userdata->err_new = err;
+
+      err_values[0] = userdata->err_new;
+      err_values[1] = userdata->err_old;
 
       // Store performed stepSize for adjusting the time and interpolation purposes
       userdata->stepSize_old = userdata->lastStepSize;
       userdata->lastStepSize = userdata->stepSize;
 
       // Call the step size control
-      userdata->stepSize *= userdata->stepSize_control((void*) userdata);
-      // No asynchronous step size allowd!! (stopTime vs targetTime)
-      //userdata->stepSize = fmin(userdata->stepSize, targetTime - (userdata->time + userdata->lastStepSize));
+      // Asynchronous step size allowed!!!
+      userdata->stepSize *= userdata->stepSize_control(err_values, userdata->tableau->error_order);
 
-      // printf("Stepsize: old: %g, last: %g, act: %g\n", userdata->stepSize_old, userdata->lastStepSize, userdata->stepSize);
-      // printf("Error:    old: %g, new: %g\n", userdata->err_old, userdata->err_new);
-
-
-      //userdata->stepSize *= fmin(facmax, fmax(facmin, userdata->tableau->fac*pow(1.0/err, 1./userdata->tableau->error_order)));
-      /*
-       * step size control from Luca, etc.:
-       * stepSize = seccoeff*sqrt(norm_errtol/fmax(norm_errest,errmin));
-       * printf("Error:  %g, New stepSize: %g from %g to  %g\n", err, userdata->stepSize, userdata->time, userdata->time+stepSize);
-       */
+      // Re-do step, if error is larger than requested
       if (err>1)
       {
         userdata->errorTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
                         userdata->time, userdata->time + userdata->lastStepSize, err, userdata->stepSize);
       } else
-        // BB ToDo: maybe better to set userdata->stepSize to zero, if err<1 (last step!!!)
+        // Last step is limited by the simulation stopTime
         userdata->stepSize = fmin(userdata->stepSize, stopTime - (userdata->time + userdata->lastStepSize));
-
-      userdata->stepsDone += 1;
     } while  (err>1);
+
+    // Count succesful integration steps
+    userdata->stepsDone += 1;
 
     /* update time with performed stepSize */
     userdata->time += userdata->lastStepSize;
@@ -1033,22 +901,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     infoStreamPrint(LOG_SOLVER, 1, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     userdata->time- userdata->lastStepSize, userdata->time, err, userdata->stepSize);
 
-    // /* emit step, if integratorSteps is selected */
-    // if (solverInfo->integratorSteps)
-    // {
-    //   sData->timeValue = userdata->time;
-    //   memcpy(sData->realVars, userdata->y, data->modelData->nStates*sizeof(double));
-    //   /*
-    //    * to emit consistent value we need to update the whole
-    //    * continuous system with algebraic variables.
-    //    */
-    //   data->callback->updateContinuousSystem(data, threadData);
-    //   sim_result.emit(&sim_result, data, threadData);
-    // }
-    messageClose(LOG_SOLVER);
+      messageClose(LOG_SOLVER);
   }
 
-  //copyVector_genericRK_MR(genericRKData->y, userdata->y, userdata->nFastStates, userdata->fastStates);
+  // copy error of the fastStates to the outer integrator routine
   copyVector_genericRK_MR(genericRKData->err, userdata->err, userdata->nFastStates, userdata->fastStates);
 
   // interpolate the values on the time grid of the outer integration

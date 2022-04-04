@@ -45,7 +45,7 @@
  * @brief Function to compute single Runge-Kutta step.
  */
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-typedef double (*rk_stepSize_control_function)(void* genericRKData);
+typedef double (*rk_stepSize_control_function)(double* err_values, double err_order);
 
 typedef struct DATA_GENERIC_RK{
   DATA_GENERIC_RK_MR* dataRKmr;
