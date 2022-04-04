@@ -377,11 +377,11 @@ void printParameters(DATA *data, int stream)
  * Use to print e.g. sparse Jacobian matrix.
  * Only prints if stream is active and sparse pattern is non NULL and of size > 0.
  *
- * @param [in]  sparsePattern   Matrix to print.
- * @param [in]  sizeRows        Number of rows of matrix.
- * @param [in]  sizeCols        Number of columns of matrix.
- * @param [in]  stream          Steam to print to.
- * @param [in]  name            Name of matrix.
+ * @param sparsePattern   Matrix to print.
+ * @param sizeRows        Number of rows of matrix.
+ * @param sizeCols        Number of columns of matrix.
+ * @param stream          Steam to print to.
+ * @param name            Name of matrix.
  */
 void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeCols, int stream, const char* name)
 {

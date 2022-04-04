@@ -126,6 +126,8 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       for (j=0; j<maxNumberThreads; ++j)
       {
         // ToDo Simplify this. Only have one location for jacobian
+        // TODO AHeu: Use copy function
+        // linsys[i].parDynamicData[j].jacobian = copyAnalyticJacobian(jacobian);
         linsys[i].parDynamicData[j].jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
         linsys[i].parDynamicData[j].jacobian->sizeCols = jacobian->sizeCols;
         linsys[i].parDynamicData[j].jacobian->sizeRows = jacobian->sizeRows;

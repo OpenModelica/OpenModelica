@@ -58,6 +58,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "analytic_jacobian.h"
 #include "external_input.h"
 #include "jacobianSymbolical.h"
 #include "kinsolSolver.h"
@@ -84,6 +85,8 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 // Residuum and Jacobian functions for diagonal implicit (DIRK) and implicit (IRK) Runge-Kutta methods.
 void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *iflag);
 int jacobian_DIRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
+
 void residual_IRK(void **dataIn, const double *xloc, double *res, const int *iflag);
 int jacobian_IRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);;
 
@@ -212,6 +215,7 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
   sparsePattern_DIRK = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
   sparsePattern_DIRK->leadindex = (unsigned int*) malloc((length_column_indices)*sizeof(unsigned int));
   sparsePattern_DIRK->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
+  sparsePattern_DIRK->sizeofIndex = length_index;
   sparsePattern_DIRK->numberOfNonZeros = length_index;
   sparsePattern_DIRK->colorCols = (unsigned int*) malloc(jacobian->sizeCols*sizeof(unsigned int));
   sparsePattern_DIRK->maxColors = jacobian->sizeCols;
@@ -251,7 +255,8 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
   // TODO: Re-compute coloring from sparsityPattern
   // If missingDiags=0 we can re-use coloring (and everything else), otherwise we'll use the trivial coloring
   if (missingDiags == 0) {
-    memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, sparsePattern_ODE->maxColors*sizeof(unsigned int));
+    sparsePattern_DIRK->maxColors = sparsePattern_ODE->maxColors;
+    memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, jacobian->sizeCols*sizeof(unsigned int));
   } else {
     for (int color=0; color<sparsePattern_DIRK->maxColors; color++) {
       sparsePattern_DIRK->colorCols[color] = color+1;
@@ -262,7 +267,7 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
   printSparseStructure(sparsePattern_DIRK,
                        jacobian->sizeRows,
                        jacobian->sizeCols,
-                       LOG_SOLVER_V,
+                       LOG_SOLVER,
                        "Diagonal implicit Runge-Kutta NLS Jacobian");
 
   return sparsePattern_DIRK;
@@ -329,12 +334,13 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   {
   case RK_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK;
-    nlsData->analyticalJacobianColumn = jacobian_DIRK;
+    //nlsData->analyticalJacobianColumn = jacobian_DIRK;
+    nlsData->analyticalJacobianColumn = jacobian_DIRK_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_DIRK;
     nlsData->getIterationVars = NULL;
 
     //TODO AHeu: Only for testing. Remove
-    rk_data->symJacAvailable = FALSE;
+    rk_data->symJacAvailable = TRUE;
     break;
   case RK_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
@@ -371,10 +377,7 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
   // TODO: Free memory
-  //jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
-  // TODO Alloc memory!
-  //rk_data->jacobian = jacobian;
-  rk_data->jacobian = NULL;
+  rk_data->jacobian = initAnalyticJacobian(jacobian_ODE->sizeCols, jacobian_ODE->sizeRows, jacobian_ODE->sizeTmpVars, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -390,9 +393,9 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    //nlsData->nlsLinearSolver = NLS_LS_KLU;  // Error in Kinsol.c L1290
-    //                                        // TODO AHeu: It seems that the Jacobian is sparse but should be dense (or vice versa)
-    nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
+    nlsData->nlsLinearSolver = NLS_LS_KLU;  // Error in Kinsol.c L1290
+                                            // TODO AHeu: It seems that the Jacobian is sparse but should be dense (or vice versa)
+    //nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
@@ -594,6 +597,8 @@ void freeDataGenericRK(DATA_GENERIC_RK* rk_data) {
     free(dataSolver);
     free(rk_data->nlsData);
   }
+  /* Free Jacobian */
+  freeAnalyticJacobian(rk_data->jacobian);
 
   /* Free Butcher tableau */
   freeButcherTableau(rk_data->tableau);
@@ -848,6 +853,52 @@ int jacobian_DIRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jac
       }
     }
   }
+
+  return 0;
+}
+
+
+/**
+ * @brief
+ *
+ * @param inData            Void pointer to runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param genericRKData     Runge-Kutta method.
+ * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
+ * @param parentJacobian    Unused
+ * @return int              Return 0 on success.
+ */
+int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+
+  DATA* data = (DATA*) inData;
+  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
+
+  int i,j,l;
+  int nStates = data->modelData->nStates;
+  int diagIdx = rk_data->act_stage * rk_data->tableau->nStages + rk_data->act_stage;
+
+  // TODO AHeu: Only compute once?
+
+  // TODO: Make sure x, and time are already set
+  // Will be done in residual_DIRK
+
+  /* Evaluate column of Jacobian ODE */
+  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
+  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+
+  /* Update resultVars array */
+  for (i = 0; i < jacobian->sizeCols; i++) {
+    jacobian->resultVars[i] = rk_data->stepSize * rk_data->tableau->A[diagIdx] * jacobian_ODE->resultVars[i];
+    /* -1 on diagonal elements */
+    if (jacobian->seedVars[i] == 1) {
+      jacobian->resultVars[i] -= 1;
+    }
+  }
+
+  memcpy(jacobian->resultVars, jacobian_ODE->resultVars, sizeof(modelica_real)*jacobian->sizeRows);
+
+  printVector_genericRK("jacobian->resultVars", jacobian->resultVars, jacobian->sizeRows, -1.);
 
   return 0;
 }

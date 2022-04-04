@@ -646,6 +646,8 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   /* reset matrix */
   SUNMatZero(Jac);
+  printf("AHeu zeros\n\n");
+  SUNSparseMatrix_Print(Jac, stdout);
 
   /* Evaluate constant equations of Jacobian */
   if (analyticJacobian->constantEqns != NULL) {
@@ -684,6 +686,22 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
       }
     }
   }
+
+
+
+  printSparseStructure(sparsePattern,
+                       analyticJacobian->sizeRows,
+                       analyticJacobian->sizeCols,
+                       LOG_STDOUT,
+                       "Diagonal implicit Runge-Kutta NLS Jacobian in kinsolSOlver.c");
+
+  printf("AHeu\n\n");
+  SUNSparseMatrix_Print(Jac, stdout);
+  //throwStreamPrint(NULL, "STOP STOP STOP");
+  //_omc_scalar* jacData = SM_DATA_D(Jac);
+  //_omc_matrix* dumpJac = _omc_createMatrix(analyticJacobian->sizeCols, analyticJacobian->sizeRows, jacData);
+  //_omc_printMatrix(dumpJac, "IDA-Solver: Matrix A", LOG_STDOUT);
+  //_omc_destroyMatrix(dumpJac);
 
   /* Finish sparse matrix and do a cheap check for singularity */
   finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);

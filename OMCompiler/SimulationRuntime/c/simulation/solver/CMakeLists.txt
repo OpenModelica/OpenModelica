@@ -13,6 +13,7 @@ INCLUDE_DIRECTORIES(
 SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     ../../../../3rdParty/Cdaskr/solver/ddaskr.c
                     ../../../../3rdParty/Cdaskr/solver/dlinpk.c
+                    analytic_jacobian.c
                     dassl.c
                     delay.c
                     events.c
@@ -46,6 +47,7 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
 
 # Headers
 SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
+                    analytic_jacobian.h
                     dassl.h
                     delay.h
                     epsilon.h

@@ -153,6 +153,7 @@ else
 endif
 ifeq ($(OMC_MINIMAL_RUNTIME),)
   SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) \
+              analytic_jacobian$(OBJ_EXT) \
               cvode_solver$(OBJ_EXT) \
               dae_mode$(OBJ_EXT) \
               dassl$(OBJ_EXT) \
