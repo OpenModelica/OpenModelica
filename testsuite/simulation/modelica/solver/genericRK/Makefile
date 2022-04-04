@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+Burger-mos \
 ESDIRK_test01.mos \
 
 FAILINGTESTFILES = \

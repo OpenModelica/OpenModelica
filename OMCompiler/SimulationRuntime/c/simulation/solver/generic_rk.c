@@ -812,6 +812,8 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
 /**
  * @brief Jacobian for non-linear system given by residual_DIRK.
  *
+ * TODO AHeu: Remove this function, use jacobian_DIRK_column
+ *
  * @param inData            Void pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
  * @param genericRKData     Runge-Kutta method.
@@ -834,6 +836,7 @@ int jacobian_DIRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jac
   // Will be done in residual_DIRK
 
   /* Evaluate Jacobian of ODE */
+  // TODO: Only evaluate column
   if (rk_data->symJacAvailable) {
     wrapper_Jf_symbolic_genericRK(data, threadData, rk_data);
   } else {
@@ -859,7 +862,7 @@ int jacobian_DIRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jac
 
 
 /**
- * @brief
+ * @brief Evaluat column of DIRK Jacobian.
  *
  * @param inData            Void pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
@@ -877,11 +880,6 @@ int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBI
   int nStates = data->modelData->nStates;
   int diagIdx = rk_data->act_stage * rk_data->tableau->nStages + rk_data->act_stage;
 
-  // TODO AHeu: Only compute once?
-
-  // TODO: Make sure x, and time are already set
-  // Will be done in residual_DIRK
-
   /* Evaluate column of Jacobian ODE */
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
@@ -895,10 +893,6 @@ int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBI
       jacobian->resultVars[i] -= 1;
     }
   }
-
-  memcpy(jacobian->resultVars, jacobian_ODE->resultVars, sizeof(modelica_real)*jacobian->sizeRows);
-
-  printVector_genericRK("jacobian->resultVars", jacobian->resultVars, jacobian->sizeRows, -1.);
 
   return 0;
 }
@@ -970,6 +964,9 @@ int jacobian_IRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jaco
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
+  throwStreamPrint(NULL, "jacobian_IRK: Not finished yet");
+
+#if 0
   int i,j,k,l;
   int idx;
   int nStages = rk_data->tableau->nStages;
@@ -1012,6 +1009,7 @@ int jacobian_IRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jaco
   }
 
   return 0;
+#endif
 }
 
 /**

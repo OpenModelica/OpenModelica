@@ -46,6 +46,8 @@ ANALYTIC_JACOBIAN* copyAnalyticJacobian(ANALYTIC_JACOBIAN* source);
 void freeAnalyticJacobian(ANALYTIC_JACOBIAN* jac);
 void freeSparsePattern(SPARSE_PATTERN *spp);
 
+void printSparseJacobian(ANALYTIC_JACOBIAN *jac, SPARSE_PATTERN *sparsePattern, double* jacobianData, int stream, const char* name);
+
 #ifdef __cplusplus
 }
 #endif

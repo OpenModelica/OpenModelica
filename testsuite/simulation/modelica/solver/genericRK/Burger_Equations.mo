@@ -104,8 +104,8 @@ package Burger_Equations
     parameter Real Au[N-1]  = fill(   ni/dx^2, N-1);
     parameter Real Al[N-1]  = fill(   ni/dx^2, N-1);
     parameter Real Cd[N]    = zeros(N);
-    parameter Real Cu[N-1]  = fill( 1/dx, N-1);
-    parameter Real Cl[N-1]  = fill(-1/dx, N-1);
+    parameter Real Cu[N-1]  = fill(-1/dx, N-1);
+    parameter Real Cl[N-1]  = fill( 1/dx, N-1);
 
     // der(y) = A*y +y.*(C*y)
     // A*y = Ad.*y + {Au.*y[2:N],0} + {0,Al.*y[1:N-1]}
