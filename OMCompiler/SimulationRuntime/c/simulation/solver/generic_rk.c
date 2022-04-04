@@ -58,7 +58,6 @@
 #include <math.h>
 #include <string.h>
 
-#include "analytic_jacobian.h"
 #include "external_input.h"
 #include "jacobianSymbolical.h"
 #include "kinsolSolver.h"
@@ -67,6 +66,7 @@
 #include "nonlinearSystem.h"
 #include "simulation/options.h"
 #include "simulation/results/simulation_result.h"
+#include "util/jacobian_util.h"
 #include "util/omc_error.h"
 #include "util/simulation_options.h"
 #include "util/varinfo.h"

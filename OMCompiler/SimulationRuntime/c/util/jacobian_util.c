@@ -33,6 +33,62 @@
 
 #include "jacobian_util.h"
 
+/**
+ * @brief Allocate and initialize analytic jacobian.
+ *
+ * @param sizeCols                  Number of columns of Jacobian
+ * @param sizeRows                  Number of rows of Jacobian
+ * @param sizeTmpVars               Size of tmp vars array.
+ * @param constantEqns              Function pointer for constant equations of Jacobian.
+ *                                  NULL if not available.
+ * @param sparsePattern             Pointer to sparsity pattern of Jacobian.
+ * @return ANALYTIC_JACOBIAN*       Return initialized analytic jacobian.
+ */
+ANALYTIC_JACOBIAN* initAnalyticJacobian(unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian), SPARSE_PATTERN* sparsePattern) {
+  ANALYTIC_JACOBIAN* jacobian;
+  jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
+  jacobian->sizeCols = sizeCols;
+  jacobian->sizeRows = sizeRows;
+  jacobian->sizeTmpVars = sizeTmpVars;
+  jacobian->seedVars = (modelica_real*) calloc(sizeCols, sizeof(modelica_real));
+  jacobian->resultVars = (modelica_real*) calloc(sizeRows, sizeof(modelica_real));
+  jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+  jacobian->constantEqns = constantEqns;
+  jacobian->sparsePattern = sparsePattern;
+
+  return jacobian;
+}
+
+/**
+ * @brief Copy analytic Jacobian.
+ *
+ * Sparsity pattern is not copied, only the pointer to it.
+ *
+ * @param source                  Jacobian that should be copied.
+ * @return ANALYTIC_JACOBIAN*     Copy of source.
+ */
+ANALYTIC_JACOBIAN* copyAnalyticJacobian(ANALYTIC_JACOBIAN* source) {
+  ANALYTIC_JACOBIAN* jacobian;
+  jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
+  jacobian->sizeCols = source->sizeCols;
+  jacobian->sizeRows = source->sizeRows;
+  jacobian->sizeTmpVars = source->sizeTmpVars;
+  jacobian->seedVars = (modelica_real*) calloc(source->sizeCols, sizeof(modelica_real));
+  jacobian->resultVars = (modelica_real*) calloc(source->sizeRows, sizeof(modelica_real));
+  jacobian->tmpVars = (modelica_real*) calloc(source->sizeTmpVars, sizeof(modelica_real));
+  jacobian->constantEqns = source->constantEqns;
+  jacobian->sparsePattern = source->sparsePattern;
+
+  return jacobian;
+}
+
+/**
+ * @brief Free memory of analytic Jacobian.
+ *
+ * Also frees sparse pattern.
+ *
+ * @param jac   Pointer to Jacobian.
+ */
 void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
   free(jac->seedVars); jac->seedVars = NULL;
   free(jac->tmpVars); jac->tmpVars = NULL;
@@ -41,6 +97,11 @@ void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
   free(jac->sparsePattern); jac->sparsePattern = NULL;
 }
 
+/**
+ * @brief Free sparsity pattern
+ *
+ * @param spp   Pointer to sparsity pattern
+ */
 void freeSparsePattern(SPARSE_PATTERN *spp) {
   if (spp != NULL) {
     free(spp->index); spp->index = NULL;
