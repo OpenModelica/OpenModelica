@@ -1,15 +1,24 @@
-// name: ESDIRK_test01
+// name: singleRate_01
 // status: correct
-// teardown_command: rm -rf temp_ESDIRK_01/
+// teardown_command: rm -rf temp_singleRate_01/
 //
 // Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
 
-loadFile("ESDIRK_test01.mo");
+loadString("
+model SlowFastDynamics
+  parameter Real epsilon = 3;
+  parameter Real corr = 0.01;
+  parameter Real fast = 7;
+  parameter Real slow = 0.1;
+  Real y[2](start = {1,1}, each fixed=true);
+equation
+  der(y) = {-y[1] - corr*y[2] + fast*sin(fast*time), corr*y[1] - epsilon*y[2] - cos(slow*time)};
+end SlowFastDynamics;");
 getErrorString();
 
 echo(false);
-system("rm -rf temp_ESDIRK_01/ && mkdir temp_ESDIRK_01/");
-cd("temp_ESDIRK_01");
+system("rm -rf temp_singleRate_01/ && mkdir temp_singleRate_01/");
+cd("temp_singleRate_01");
 echo(true);
 
 rkMethods := {"expl_euler",
@@ -27,11 +36,11 @@ nlsMethods := {"newton", "kinsol"};
 setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
 
 // Build model
-buildModel(ESDIRK_test01);
+buildModel(SlowFastDynamics);
 getErrorString();
 
 // Create reference results
-system("./ESDIRK_test01 -override=stopTime=20 -s=dassl -r ESDIRK_test_01_ref.mat ", "refSimulation.log");
+system("./SlowFastDynamics -override=stopTime=20 -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
 print(readFile("refSimulation.log"));
 
 // Test all RK methods
@@ -39,12 +48,12 @@ for rkMethod in rkMethods loop
   for nlsMethod in nlsMethods loop
     print("\n--------------------------------------------------------\n");
     print("Running RK " + rkMethod + " with NLS " + nlsMethod + ":\n");
-    logFile := "ESDIRK_test01_"+ rkMethod + "_" + nlsMethod + ".log";
-    system("rm -f ESDIRK_test01_res.mat && ./ESDIRK_test01 -override=stopTime=20 -s=genericRK -genericRKOpt=" + rkMethod + " -rkNLS=" + nlsMethod, logFile);
+    logFile := "SlowFastDynamics_"+ rkMethod + "_" + nlsMethod + ".log";
+    system("rm -f SlowFastDynamics_res.mat && ./SlowFastDynamics -override=stopTime=20 -s=genericRK -genericRKOpt=" + rkMethod + " -rkNLS=" + nlsMethod, logFile);
     print(readFile(logFile) + "\n");
 
-    (success, failVars) := diffSimulationResults(actualFile = "ESDIRK_test01_res.mat",
-                                 expectedFile = "ESDIRK_test_01_ref.mat",
+    (success, failVars) := diffSimulationResults(actualFile = "SlowFastDynamics_res.mat",
+                                 expectedFile = "SlowFastDynamics_ref.mat",
                                  diffPrefix = "diff_" + rkMethod + "_" + nlsMethod,
                                  vars = {"der(y[1])", "der(y[2])"});
     print("Failed vars:\n");
@@ -66,7 +75,7 @@ end for;
 // {"newton","kinsol"}
 // true
 // ""
-// {"ESDIRK_test01","ESDIRK_test01_init.xml"}
+// {"SlowFastDynamics","SlowFastDynamics_init.xml"}
 // ""
 // 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.

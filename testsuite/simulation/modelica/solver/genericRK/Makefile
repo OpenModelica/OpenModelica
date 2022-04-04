@@ -2,9 +2,10 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 Burger.mos \
-ESDIRK_test01.mos \
+singleRate_01.mos \
 
 FAILINGTESTFILES = \
+multiRate_01.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
