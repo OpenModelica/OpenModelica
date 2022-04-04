@@ -72,6 +72,7 @@ struct dataMixedSolver
 
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "../../util/write_csv.h"
+
 /*! \fn int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
  *
  *  This function initializes csv files for analysis propose.
@@ -340,7 +341,14 @@ int print_csvLineIterStats(void* voidCsvData, int size, int num,
 }
 #endif
 
-
+/**
+ * @brief Initialize internal structure of non-linear system.
+ *
+ * @param data          Runtime data struct.
+ * @param threadData    Thread data for error handling.
+ * @param nonlinsys     Pointer to non-linear system.
+ * @param sysNum        Number of non-linear system.
+ */
 void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum) {
   modelica_integer size;
   unsigned int nnz;
@@ -418,14 +426,14 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
       if (size > nonlinearSparseSolverMinSize) {
         someBigSize = 1;
         infoStreamPrint(LOG_STDOUT, 0,
-                        "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                        "Using sparse solver kinsol for nonlinear system %d (%ld),\n"
                         "because density of %.2f remains under threshold of %.2f\n"
-                        "and size of %d exceeds threshold of %d.",
+                        "and size of %ld exceeds threshold of %d.",
                         sysNum, nonlinsys->equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity,
                         size, nonlinearSparseSolverMinSize);
       } else {
         infoStreamPrint(LOG_STDOUT, 0,
-                        "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                        "Using sparse solver kinsol for nonlinear system %d (%ld),\n"
                         "because density of %.2f remains under threshold of %.2f.",
                         sysNum, nonlinsys->equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity);
       }
@@ -434,8 +442,8 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
       nonlinsys->nlsLinearSolver = NLS_LS_KLU;
       someBigSize = 1;
       infoStreamPrint(LOG_STDOUT, 0,
-                      "Using sparse solver kinsol for nonlinear system %d (%d),\n"
-                      "because size of %d exceeds threshold of %d.",
+                      "Using sparse solver kinsol for nonlinear system %d (%ld),\n"
+                      "because size of %ld exceeds threshold of %d.",
                       sysNum, nonlinsys->equationIndex, size, nonlinearSparseSolverMinSize);
     }
   }
@@ -505,13 +513,15 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   return;
 }
 
-
-
-/*! \fn int initializeNonlinearSystems(DATA *data)
+/**
+ * @brief Initialize all non-linear systems.
  *
- *  This function allocates memory for all nonlinear systems.
+ * Loop over all non-linear systems and call initializeNonlinearSystemData.
+ * Memory for data->simulationInfo->nonlinearSystemData is already allocated.
  *
- *  \param [ref] [data]
+ * @param data          Runtime data struct.
+ * @param threadData    Thread data for error handling.
+ * @return int          Return 0 on success.
  */
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
@@ -868,11 +878,19 @@ int updateInnerEquation(void **dataIn, int sysNumber, int discrete)
   return success;
 }
 
-
-int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
+/**
+ * @brief Solve given non-linear system.
+ *
+ * @param data          Runtime data struct.
+ * @param threadData    Thread data for error handling.
+ * @param nonlinsys     Pointer to non-linear system.
+ * @param sysNumber     Number of non-linear system.
+ * @return int          ??????
+ */
+int solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, int sysNumber)
 {
-  int success = 0, constraintsSatisfied = 1;
-  NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  modelica_boolean success = 0;
+  int constraintsSatisfied = 1;
   int casualTearingSet = nonlinsys->strictTearingFunctionCall != NULL;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
@@ -902,7 +920,7 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
     #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
     #endif
-    success = nlsKinsolSolve(data, threadData, sysNumber);
+    success = nlsKinsolSolve(data, threadData, nonlinsys, sysNumber);
     /*catch */
     #ifndef OMC_EMCC
       MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -951,7 +969,7 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
       debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
       success = nonlinsys->strictTearingFunctionCall(data, threadData);
       if (success){
-        success=2;
+        success = 2; // TODO AHeu: success should be a boolean...
       }
     }
 
@@ -1025,13 +1043,13 @@ int solveWithInitHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   return success;
 }
 
-/*! \fn solve non-linear systems
+/*! \fn Solve all non-linear systems in data->simulationInfo->nonlinearSystemData.
  *
- *  \param [in]  [data]
- *  \param [in]  [threadData]
- *  \param [in]  [sysNumber] index of corresponding non-linear system
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param sysNumber    Index of corresponding non-linear system
  *
- *  \author ptaeuber
+ * @author ptaeuber
  */
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
@@ -1124,7 +1142,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
         infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Try to solve nonlinear initial system %d without homotopy first.", sysNumber);
 
       /* SOLVE! */
-      nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+      nonlinsys->solved = solveNLS(data, threadData, &(data->simulationInfo->nonlinearSystemData[sysNumber]), sysNumber);
     }
   }
 
@@ -1144,7 +1162,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solve lambda0-system");
       nonlinsys->homotopySupport = 0;
       if (!kinsol) {
-        nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+        nonlinsys->solved = solveNLS(data, threadData, &(data->simulationInfo->nonlinearSystemData[sysNumber]), sysNumber);
       } else {
         nlsLs = data->simulationInfo->nlsLinearSolver;
         data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
@@ -1194,7 +1212,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "[system %d] homotopy parameter lambda = %g", sysNumber, data->simulationInfo->lambda);
       /* SOLVE! */
-      nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+      nonlinsys->solved = solveNLS(data, threadData, &(data->simulationInfo->nonlinearSystemData[sysNumber]), sysNumber);
       if (!nonlinsys->solved) break;
 
 #if !defined(OMC_NO_FILESYSTEM)

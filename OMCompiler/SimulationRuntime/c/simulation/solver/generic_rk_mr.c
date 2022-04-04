@@ -84,6 +84,7 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 double IController_MR(void* genericRKData);
 double PIController_MR(void* genericRKData);
 
+#if 0
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_RK.
  *
@@ -145,6 +146,8 @@ enum RK_NLS_METHOD getRK_NLS_Method_MR() {
     return RK_NLS_NEWTON;
   }
 }
+#endif
+
 
 /**
  * @brief Function allocates memory needed for chosen RK method.
@@ -164,7 +167,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  userdata->RK_method = getRK_Method_MR();
+  userdata->RK_method = getRK_Method();
   userdata->tableau = initButcherTableau(userdata->RK_method);
   if (userdata->tableau == NULL){
     // ERROR
@@ -198,7 +201,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
 
   // adapt decision for testing of the fully implicit implementation
   if (userdata->RK_method == RK_ESDIRK2_test || userdata->RK_method == RK_ESDIRK3_test) {
-    userdata->nlSystemSize = userdata->tableau->stages*userdata->nStates;
+    userdata->nlSystemSize = userdata->tableau->nStages*userdata->nStates;
     userdata->step_fun = &(full_implicit_RK_MR);
   }
 
@@ -222,7 +225,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   userdata->yt = malloc(sizeof(double)*userdata->nStates);
   userdata->f = malloc(sizeof(double)*userdata->nStates);
   userdata->Jf = malloc(sizeof(double)*userdata->nStates*userdata->nStates);
-  userdata->k = malloc(sizeof(double)*userdata->nStates*userdata->tableau->stages);
+  userdata->k = malloc(sizeof(double)*userdata->nStates*userdata->tableau->nStages);
   userdata->res_const = malloc(sizeof(double)*userdata->nStates);
   userdata->errest = malloc(sizeof(double)*userdata->nStates);
   userdata->errtol = malloc(sizeof(double)*userdata->nStates);
@@ -264,7 +267,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
 
   /* Allocate memory for the nonlinear solver */
   // TODO AHeu: Do we always need a NLS solver or only for implicit RK methods?
-  userdata->nlsSolverMethod = getRK_NLS_Method_MR();
+  userdata->nlsSolverMethod = getRK_NLS_Method();
   switch (userdata->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     userdata->nlsSolverData = (void*) allocateNewtonData(userdata->nlSystemSize);
@@ -291,6 +294,10 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
  * @param data    Pointer to generik Runge-Kutta data struct.
  */
 void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data) {
+  if (data == NULL) {
+    return;
+  }
+
   switch (data->nlsSolverMethod)
   {
   case RK_NLS_NEWTON:
@@ -489,7 +496,7 @@ int wrapper_DIRK_MR(int* n_p, double* x, double* res, void* genericRKData, int f
   int i, ii, j, l, ll, k;
 
   // index of diagonal element of A
-  k = userdata->act_stage * userdata->tableau->stages + userdata->act_stage;
+  k = userdata->act_stage * userdata->tableau->nStages + userdata->act_stage;
   if (fj)
   {
     // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
@@ -571,7 +578,7 @@ int wrapper_RK_MR(int* n_p, double* x, double* res, void* genericRKData, int fj)
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   int n = data->modelData->nStates;
 
-  int i, j, k, l, ind, stages = userdata->tableau->stages;
+  int i, j, k, l, ind, stages = userdata->tableau->nStages;
   double sum;
 
   if (fj)
@@ -710,12 +717,12 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     solverData->x[i] = userdata->yOld[userdata->fastStates[i]];
 
   // sweep over the stages
-  for (userdata->act_stage = 0; userdata->act_stage < userdata->tableau->stages; userdata->act_stage++)
+  for (userdata->act_stage = 0; userdata->act_stage < userdata->tableau->nStages; userdata->act_stage++)
   {
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // residual constant part:
     // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
-    k = userdata->act_stage * userdata->tableau->stages;
+    k = userdata->act_stage * userdata->tableau->nStages;
     sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
     linear_interpolation_MR(userdata->startTime, userdata->yStart,
                             userdata->endTime,   userdata->yEnd,
@@ -733,7 +740,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     }
 
     // index of diagonal element of A
-    k = userdata->act_stage * userdata->tableau->stages + userdata->act_stage;
+    k = userdata->act_stage * userdata->tableau->nStages + userdata->act_stage;
     if (userdata->tableau->A[k] == 0)
     {
       // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
@@ -801,10 +808,10 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   solverData->initialized = 1;
   solverData->numberOfIterations = 0;
   solverData->numberOfFunctionEvaluations = 0;
-  solverData->n = userdata->tableau->stages*n;
+  solverData->n = userdata->tableau->nStages*n;
 
   // set good starting values for the newton solver
-  for (k=0; k<userdata->tableau->stages; k++)
+  for (k=0; k<userdata->tableau->nStages; k++)
     memcpy((solverData->x + k*n), userdata->yOld, n*sizeof(double));
   // set newton strategy
   solverData->newtonStrategy = NEWTON_DAMPED2;
@@ -964,7 +971,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         ii = userdata->fastStates[i];
         userdata->y[ii]  = userdata->yOld[ii];
         userdata->yt[ii] = userdata->yOld[ii];
-        for (l=0; l<userdata->tableau->stages; l++)
+        for (l=0; l<userdata->tableau->nStages; l++)
         {
           userdata->y[ii]  += userdata->stepSize * userdata->tableau->b[l]  * (userdata->k + l * n)[ii];
           userdata->yt[ii] += userdata->stepSize * userdata->tableau->bt[l] * (userdata->k + l * n)[ii];

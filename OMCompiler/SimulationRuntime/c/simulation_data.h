@@ -37,12 +37,12 @@
 #define SIMULATION_DATA_H
 
 #include "openmodelica.h"
-#include "util/ringbuffer.h"
-#include "util/omc_error.h"
-#include "util/rtclock.h"
-#include "util/rational.h"
-#include "util/list.h"
 #include "util/doubleEndedList.h"
+#include "util/list.h"
+#include "util/omc_error.h"
+#include "util/rational.h"
+#include "util/ringbuffer.h"
+#include "util/rtclock.h"
 #include "util/simulation_options.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo}
@@ -119,50 +119,35 @@ typedef struct CALL_STATISTICS
 
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} EQUATION_SYSTEM_ERROR;
 
-/* SPARSE_PATTERN
+/**
+ * @brief Sparse pattern for Jacobian matrix.
  *
- * sparse pattern struct used by jacobians
- * leadindex points to an index where to corresponding
- * index of an row or column is noted in index.
- * sizeofIndex contain number of elements in index
- * colorsCols contain color of colored columns
- *
- * Use freeSparsePattern(SPARSE_PATTERM *spp) for "destruction" (see util/jacobian_util.c/h).
- *
+ * Using compressed sparse column (CSC) format.
  */
 typedef struct SPARSE_PATTERN
 {
-  unsigned int* leadindex;
-  unsigned int* index;
-  unsigned int sizeofIndex;
-  unsigned int* colorCols;
-  unsigned int numberOfNonZeros;
-  unsigned int maxColors;
+  unsigned int* leadindex;        /* Array with column indices, size rows+1 */
+  unsigned int* index;            /* Array with row indices */
+  unsigned int sizeofIndex;       /* Length of array index, equal to numberOfNonZeros */
+  unsigned int* colorCols;        /* Color coding of columns. First color is `1`, second is `2`, ... */
+  unsigned int numberOfNonZeros;  /* Number of non-zero elements in matrix */
+  unsigned int maxColors;         /* Number of colors */
 } SPARSE_PATTERN;
 
-/* ANALYTIC_JACOBIAN
+/**
+ * @brief Analytic jacobian struct
  *
- * analytic jacobian struct used for dassl and linearization.
- * jacobianName contain "A" || "B" etc.
- * sizeCols contain size of column
- * sizeRows contain size of rows
- * sparsePattern contain the sparse pattern include colors
- * seedVars contain seed vector to the corresponding jacobian
- * resultVars contain result of one column to the corresponding jacobian
- * jacobian contains dense jacobian elements
- *
- * Use freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) for "destruction" (see util/jacobian_util.c/h).
  */
 typedef struct ANALYTIC_JACOBIAN
 {
-  unsigned int sizeCols;
-  unsigned int sizeRows;
-  unsigned int sizeTmpVars;
-  SPARSE_PATTERN* sparsePattern;
-  modelica_real* seedVars;
+  unsigned int sizeCols;          /* Number of columns of Jacobian */
+  unsigned int sizeRows;          /* Number of rows of Jacobian */
+  unsigned int sizeTmpVars;       /* Length of vector tmpVars */
+  SPARSE_PATTERN* sparsePattern;  /* Contain sparse pattern including coloring */
+  modelica_real* seedVars;        /* Seed vector for specifying which columns to evaluate */
   modelica_real* tmpVars;
-  modelica_real* resultVars;
-  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);
+  modelica_real* resultVars;      /* Result column for given seed vector */
+  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independed of seed vector */
 } ANALYTIC_JACOBIAN;
 
 /* EXTERNAL_INPUT
@@ -289,10 +274,10 @@ typedef struct NONLINEAR_SYSTEM_DATA
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
   modelica_boolean isPatternAvailable;
 
-  void (*residualFunc)(void**, const double*, double*, const int*);
+  void (*residualFunc)(void** data, const double* x, double* res, const int* flag);
   int (*residualFuncConstraints)(void**, const double*, double*, const int*);
-  void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*);
-  int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
+  void (*initializeStaticNLSData)(struct DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys);
+  int (*strictTearingFunctionCall)(struct DATA* data, threadData_t *threadData);
   void (*getIterationVars)(struct DATA*, double*);
   int (*checkConstraints)(struct DATA*, threadData_t *threadData);
 
@@ -753,6 +738,9 @@ typedef struct SIMULATION_INFO
   DAEMODE_DATA* daeModeData;
 
   INLINE_DATA* inlineData;
+
+  void* backupSolverData;    // TODO AHeu: Only used for generik RK Methods, because we need access to some solver details in some callbacks.
+                             // Improve this.
 
   /* delay vars */
   RINGBUFFER **delayStructure;        /* Array of ring buffers for delay expressions */

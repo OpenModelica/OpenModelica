@@ -46,6 +46,7 @@
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 typedef double (*rk_stepSize_control_function)(void* genericRKData);
 
+struct DATA_GENERIC_RK;
 typedef struct DATA_GENERIC_RK_MR{
   DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
   threadData_t *threadData;     //            I'm afraid not...
@@ -74,9 +75,8 @@ typedef struct DATA_GENERIC_RK_MR{
   rk_stepSize_control_function stepSize_control;
 } DATA_GENERIC_RK_MR;
 
-enum RK_SINGLERATE_METHOD getRK_Method_MR();
-enum RK_NLS_METHOD getRK_NLS_Method_MR();
 void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data);
 int genericRK_MR_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, struct DATA_GENERIC_RK* genericRKData);
 
 #endif /* _DATA_GENERIC_RK_MR_H_ */

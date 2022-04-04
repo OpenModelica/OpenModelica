@@ -1,0 +1,61 @@
+// name: Burger
+// status: correct
+// teardown_command: rm -rf temp_Burger/
+//
+// Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
+
+loadFile("Burger_Equations.mo");
+getErrorString();
+
+loadString("
+model burgerEq
+  extends Burger_Equations.Burger_equation_03(N=20);
+end burgerEq;
+"); getErrorString();
+
+echo(false);
+system("rm -rf temp_ESDIRK_01/ && mkdir temp_ESDIRK_01/");
+cd("temp_ESDIRK_01");
+echo(true);
+
+setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+
+// Build model
+buildModel(burgerEq); getErrorString();
+
+// Create reference results
+system("./burgerEq -s=dassl -r burgerEq_ref.mat ", "refSimulation.log");
+print(readFile("refSimulation.log"));
+
+// Simulate with ESDIRK3 and KINSOL+KLU
+system("./burgerEq -s=genericRK -genericRKOpt=esdirk3 -rkNLS=kinsol", "burgerEq_esdirk3.log");
+print(readFile("burgerEq_esdirk3.log"));
+
+diffSimulationResults(actualFile = "burgerEq_res.mat",
+                      expectedFile = "burgerEq_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"y[1]", "y[2]", "y[3]", "y[4]", "y[5]", "y[6]", "y[7]", "y[8]", "y[9]", "y[10]",
+                              "y[11]", "y[12]", "y[13]", "y[14]", "y[15]", "y[16]", "y[17]", "y[18]", "y[19]", "y[20]"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// ""
+// {"burgerEq","burgerEq_init.xml"}
+// ""
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true,{})
+// ""
+// endResult
