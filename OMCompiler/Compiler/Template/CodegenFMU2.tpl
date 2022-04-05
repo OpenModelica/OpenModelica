@@ -145,9 +145,9 @@ case SIMCODE(__) then
     canRunAsynchronuously = "false"
     canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="false"
-    canGetAndSetFMUstate="true"
+    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUstate="true"' else 'canGetAndSetFMUstate="false"'%>
     canSerializeFMUstate="false"
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"'%>>
+    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>
     <%SourceFiles(sourceFiles)%>
   </CoSimulation>
   >>
