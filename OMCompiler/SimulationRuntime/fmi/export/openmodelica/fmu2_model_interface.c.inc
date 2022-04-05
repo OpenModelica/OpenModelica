@@ -1241,8 +1241,10 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
   fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*) comp->functions;
-  int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
-  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+
   if (invalidState(comp, "fmi2GetFMUstate", meStates, csStates))
     return fmi2Error;
 
@@ -1319,8 +1321,10 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 fmi2Status fmi2SetFMUstate(fmi2Component c, fmi2FMUstate FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
-  int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
-  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+
   if (invalidState(comp, "fmi2GetFMUstate", meStates, csStates))
     return fmi2Error;
 
@@ -1369,8 +1373,9 @@ fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   ModelInstance *comp = (ModelInstance *) c;
   fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*) comp->functions;
 
-  int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
-  int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+
   if (invalidState(comp, "fmi2FreeFMUstate", meStates, csStates))
     return fmi2Error;
 
