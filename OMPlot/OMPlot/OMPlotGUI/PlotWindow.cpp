@@ -521,13 +521,15 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader))) {
       throw PlotException(msg);
     }
-    //Read in timevector
-    double startTime = omc_matlab4_startTime(&reader);
-    double stopTime =  omc_matlab4_stopTime(&reader);
+
     if (reader.nvar < 1) {
       omc_free_matlab4_reader(&reader);
       throw NoVariableException("Variable doesnt exist: time");
     }
+
+    double startTime = omc_matlab4_startTime(&reader);
+    double stopTime =  omc_matlab4_stopTime(&reader);
+    //Read in timevector
     double *timeVals = omc_matlab4_read_vals(&reader,1);
     if (!timeVals) {
       omc_free_matlab4_reader(&reader);
