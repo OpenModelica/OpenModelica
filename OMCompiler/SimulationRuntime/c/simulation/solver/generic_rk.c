@@ -286,7 +286,8 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
  */
 void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
   for(int i=0; i<nonlinsys->size; i++) {
-    nonlinsys->nominal[i] = 1.0;
+    // Get the nominal values of the states
+    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
     nonlinsys->min[i]     = DBL_MIN;
     nonlinsys->max[i]     = DBL_MAX;
   }
@@ -309,7 +310,8 @@ void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEA
  */
 void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
   for(int i=0; i<nonlinsys->size; i++) {
-    nonlinsys->nominal[i] = 1.0;
+    // Get the nominal values of the states
+    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
     nonlinsys->min[i]     = DBL_MIN;
     nonlinsys->max[i]     = DBL_MAX;
   }
@@ -331,7 +333,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
  * @param rk_data                     Runge-Kutta method.
  * @return NONLINEAR_SYSTEM_DATA*     Pointer to initialized non-linear system data.
  */
-NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GENERIC_RK* rk_data) {
+NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GENERIC_RK* rk_data) {
   assertStreamPrint(threadData, rk_data->type != RK_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
   // TODO AHeu: Free solverData again
@@ -367,7 +369,7 @@ NONLINEAR_SYSTEM_DATA* intiRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case RK_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
-    nlsData->analyticalJacobianColumn = jacobian_IRK;
+    nlsData->analyticalJacobianColumn = NULL;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
     nlsData->getIterationVars = NULL;
 
@@ -554,7 +556,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   /* Allocate memory for the nonlinear solver */
     rk_data->nlsSolverMethod = getRK_NLS_Method();
-    rk_data->nlsData = intiRK_NLS_DATA(data, threadData, rk_data);
+    rk_data->nlsData = initRK_NLS_DATA(data, threadData, rk_data);
     if (!rk_data->nlsData) {
       return -1;
     }
@@ -630,7 +632,7 @@ void freeDataGenericRK(DATA_GENERIC_RK* rk_data) {
   if (rk_data->multi_rate == 1) {
     freeDataGenericRK_MR(rk_data->dataRKmr);
   }
-  /* Free multi-rade date */
+  /* Free multi-rate data */
   free(rk_data->err);
   free(rk_data->fastStates);
   free(rk_data->slowStates);
@@ -836,7 +838,7 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
 }
 
 /**
- * @brief Evaluat column of DIRK Jacobian.
+ * @brief Evaluate column of DIRK Jacobian.
  *
  * @param inData            Void pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
@@ -1084,7 +1086,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   /* Set start values for non-linear solver */
   for (k=0; k<rk_data->tableau->nStages; k++) {
-    //memcpy((solverData->x + k*n), rk_data->yOld, n*sizeof(double));
     memcpy(&rk_data->nlsData->nlsx[k*n], rk_data->yOld, n*sizeof(double));
     memcpy(&rk_data->nlsData->nlsxOld[k*n], rk_data->yOld, n*sizeof(double));
     memcpy(&rk_data->nlsData->nlsxExtrapolation[k*n], rk_data->yOld, n*sizeof(double));
@@ -1208,18 +1209,12 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   rk_data->stepSize = 0.5*fmin(100*h0,h1);
   rk_data->lastStepSize = rk_data->stepSize;
 
-  //rk_data->dataRKmr->stepSize = rk_data->stepSize;
-  //rk_data->dataRKmr->lastStepSize = rk_data->lastStepSize;
-  //rk_data->dataRKmr->time = sDataOld->timeValue;
-
-  /* end calculation new step size */
-
   infoStreamPrint(LOG_SOLVER, 0, "initial step size = %e at time %g", rk_data->stepSize, rk_data->time);
 }
 
 
 /**
- * @brief
+ * @brief simple step size control (see Hairer, etc.)
  *
  * @param genericRKData
  * @return double
@@ -1236,7 +1231,7 @@ double IController(double* err_values, double err_order)
 }
 
 /**
- * @brief
+ * @brief PI controller for step size control (see Hairer)
  *
  * @param genericRKData
  * @return double
@@ -1248,7 +1243,7 @@ double PIController(double* err_values, double err_order)
   double facmin = 0.5;
   double beta1=-1./2./err_order, beta2=beta1;
 
-  return fmin(facmax, fmax(facmin, fac*pow(err_values[0], beta1)*pow(err_values[0], beta2)));
+  return fmin(facmax, fmax(facmin, fac*pow(err_values[0], beta1)*pow(err_values[1], beta2)));
 
 }
 
@@ -1256,7 +1251,7 @@ double PIController(double* err_values, double err_order)
  * @brief Generic Runge-Kutta step.
  *
  * Do one Runge-Kutta integration step.
- * Has step-size controll and event handling.
+ * has step-size control and event handling.
  *
  * @param data          Runtime data struct.
  * @param threadData    Thread data for error handling.
@@ -1275,7 +1270,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   double Rtol = data->simulationInfo->tolerance;
   int i, l;
   int nStates = (int) data->modelData->nStates;
-  int esdirk_imp_step_info;
+  int rk_step_info;
 
   double targetTime;
   double stopTime = data->simulationInfo->stopTime;
@@ -1326,17 +1321,16 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       //  solverData->calculate_jacobian = 0;
 
       // calculate one step of the integrator
-      esdirk_imp_step_info = rk_data->step_fun(data, threadData, solverInfo);
-      if (esdirk_imp_step_info != 0) {
+      rk_step_info = rk_data->step_fun(data, threadData, solverInfo);
+      if (rk_step_info != 0) {
         errorStreamPrint(LOG_STDOUT, 0, "genericRK_step: Failed to calculate step.");
         return -1;
       }
 
-      // printVector_genericRK("y ", userdata->y, data->modelData->nStates, userdata->time);
-      // printVector_genericRK("yt ", userdata->yt, data->modelData->nStates, userdata->time);
+      // Apply RK-scheme for determining the approximation at (time + stepsize)
       // y       = yold+h*sum(b[i]*k[i], i=1..stages);
       // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
-      // calculate corresponding values for error estimator and step size control
+      // Furthermore, calculate corresponding values for error estimator and step size control
       for (i=0; i<nStates; i++)
       {
         rk_data->y[i]  = rk_data->yOld[i];
@@ -1346,15 +1340,11 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
           rk_data->y[i]  += rk_data->stepSize * rk_data->tableau->b[l]  * (rk_data->k + l * nStates)[i];
           rk_data->yt[i] += rk_data->stepSize * rk_data->tableau->bt[l] * (rk_data->k + l * nStates)[i];
         }
-        //userdata->errtol[i] = Rtol*(fabs(userdata->y[i]) + fabs(userdata->stepSize*fODE[i])) + Atol*1e-3;
+        // BB ToDo: Investigate error estimator with respect for global accuracy
+        // userdata->errtol[i] = Rtol*(fabs(userdata->y[i]) + fabs(userdata->stepSize*fODE[i])) + Atol*1e-3;
         rk_data->errtol[i] = Rtol*fmax(fabs(rk_data->y[i]),fabs(rk_data->yt[i])) + Atol;
         rk_data->errest[i] = fabs(rk_data->y[i] - rk_data->yt[i]);
       }
-
-      //printVector_genericRK("y ", userdata->y, n, userdata->time);
-      //printVector_genericRK("yt ", userdata->yt, n, userdata->time);
-
-
 
       /*** calculate error (infinity norm!)***/
       err = 0;
@@ -1363,7 +1353,6 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
          rk_data->err[i] = rk_data->errest[i]/rk_data->errtol[i];
          err = fmax(err, rk_data->err[i]);
       }
-      //printVector_genericRK("Error: ", rkData->err, rkData->nStates, rkData->time);
 
       if (rk_data->multi_rate == 1)
       {
@@ -1377,27 +1366,20 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
           if (rk_data->err[i] > rk_data->percentage * err)
           {
             rk_data->fastStates[rk_data->nFastStates] = i;
-            rk_data->nFastStates += 1;
+            rk_data->nFastStates++;
             rk_data->err_fast = fmax(rk_data->err_fast, rk_data->err[i]);
           }
           else
           {
             rk_data->slowStates[rk_data->nSlowStates] = i;
-            rk_data->nSlowStates += 1;
+            rk_data->nSlowStates++;
             rk_data->err_slow = fmax(rk_data->err_slow, rk_data->err[i]);
           }
         }
         err = rk_data->err_slow;
       }
-        /*** calculate error (euclidian norm) ***/
-      // for (i=0, err=0.0; i<n; i++)
-      // {
-      //   err += (userdata->errest[i]*userdata->errest[i])/(userdata->errtol[i]*userdata->errtol[i]);
-      // }
 
-      // err /= n;
-      // err = sqrt(err);
-
+      // Monitor error propagation for better step size control (PIController)
       if (rk_data->err_new == -1) rk_data->err_new = err;
       rk_data->err_old = rk_data->err_new;
       rk_data->err_new = err;

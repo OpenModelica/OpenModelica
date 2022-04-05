@@ -89,13 +89,15 @@ int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* ja
   }
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   int index;
-  // TODO AHeu: Do we have analytic Jacobian available?
+  ANALYTIC_JACOBIAN* jacobian ;
+
   if(sysNumber>=0) {
     index = systemData->jacobianIndex;
+    jacobian = &(data->simulationInfo->analyticJacobians[index]);
   } else {
-    index = data->callback->INDEX_JAC_A;
+    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    jacobian = rk_data->jacobian;
   }
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
 
@@ -164,7 +166,10 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
     /* performance measurement */
     rt_ext_tp_tick(&systemData->jacobianTimeClock);
 
-    if(systemData->jacobianIndex != -1) {
+    if ((systemData->jacobianIndex == -1) && (sysNumber<0)  && (systemData->analyticalJacobianColumn != NULL)) {
+      getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, sysNumber);
+    }
+    else if(systemData->jacobianIndex != -1) {
       getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, sysNumber);
     } else {
       double delta_h = sqrt(solverData->epsfcn);
