@@ -61,7 +61,7 @@ DLLExport
 modelica_metatype boxptr_ParserExt_parsestring(threadData_t *threadData, modelica_metatype _str, modelica_metatype _infoFilename, modelica_metatype _acceptedGram, modelica_metatype _languageStandardInt, modelica_metatype _runningTestsuite);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ParserExt_parsestring,2,0) {(void*) boxptr_ParserExt_parsestring,0}};
 #define boxvar_ParserExt_parsestring MMC_REFSTRUCTLIT(boxvar_lit_ParserExt_parsestring)
-extern modelica_metatype ParserExt_parsestring(const char* /*_str*/, const char* /*_infoFilename*/, int /*_acceptedGram*/, int /*_languageStandardInt*/, int /*_runningTestsuite*/);
+extern modelica_metatype ParserExt_parsestring(const char* /*_str*/, const char* /*_infoFilename*/, int /*_acceptedGram*/, int /*_languageStandardInt*/, int /*strict*/, int /*_runningTestsuite*/);
 DLLExport
 modelica_metatype omc_ParserExt_parseexp(threadData_t *threadData, modelica_string _filename, modelica_string _infoFilename, modelica_integer _acceptedGram, modelica_integer _languageStandardInt, modelica_boolean _runningTestsuite);
 DLLExport
@@ -75,7 +75,7 @@ DLLExport
 modelica_metatype boxptr_ParserExt_parse(threadData_t *threadData, modelica_metatype _filename, modelica_metatype _infoFilename, modelica_metatype _acceptedGram, modelica_metatype _encoding, modelica_metatype _languageStandardInt, modelica_metatype _runningTestsuite, modelica_metatype _libraryPath, modelica_metatype _lveInstance);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ParserExt_parse,2,0) {(void*) boxptr_ParserExt_parse,0}};
 #define boxvar_ParserExt_parse MMC_REFSTRUCTLIT(boxvar_lit_ParserExt_parse)
-extern modelica_metatype ParserExt_parse(const char* /*_filename*/, const char* /*_infoFilename*/, int /*_acceptedGram*/, int /*_languageStandardInt*/, const char* /*_encoding*/, int /*_runningTestsuite*/, const char* /*_libraryPath*/, modelica_metatype /*_lveInstance*/);
+extern modelica_metatype ParserExt_parse(const char* /*_filename*/, const char* /*_infoFilename*/, int /*_acceptedGram*/, int /*_languageStandardInt*/, int /*strict*/, const char* /*_encoding*/, int /*_runningTestsuite*/, const char* /*_libraryPath*/, modelica_metatype /*_lveInstance*/);
 #ifdef __cplusplus
 }
 #endif

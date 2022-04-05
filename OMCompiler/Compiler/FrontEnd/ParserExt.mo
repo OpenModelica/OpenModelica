@@ -48,12 +48,13 @@ public function parse "Parse a mo-file"
   input Integer acceptedGram;
   input String encoding;
   input Integer languageStandardInt;
+  input Boolean strict;
   input Boolean runningTestsuite;
   input String libraryPath;
   input Option<Integer> lveInstance;
   output Absyn.Program outProgram;
 
-  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, languageStandardInt, encoding, runningTestsuite, libraryPath, lveInstance) annotation(Library = {"omparse","omantlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, languageStandardInt, strict, encoding, runningTestsuite, libraryPath, lveInstance) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end parse;
 
 public function parseexp "Parse a mos-file"
@@ -72,9 +73,10 @@ public function parsestring "Parse a string as if it were a stored definition"
   input String infoFilename = "<interactive>";
   input Integer acceptedGram;
   input Integer languageStandardInt;
+  input Boolean strict;
   input Boolean runningTestsuite;
   output Absyn.Program outProgram;
-  external "C" outProgram=ParserExt_parsestring(str,infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parsestring(str,infoFilename, acceptedGram, languageStandardInt, strict, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end parsestring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"

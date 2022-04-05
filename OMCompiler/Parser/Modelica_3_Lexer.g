@@ -58,5 +58,5 @@ POWER_EW : '.^'; /* Modelica 3.0 */
 /* Modelica 3.1 */
 STREAM : 'stream' { if (ModelicaParser_langStd < 31) $type = IDENT; }; /* for Modelica 3.1 stream connectors */
 /* Modelica 3.3 */
-PURE : 'pure' { if (ModelicaParser_langStd < 33) $type = IDENT; }; /* for Modelica 3.3 pure functions */
-IMPURE : 'impure' { if (ModelicaParser_langStd < 33) $type = IDENT; }; /* for Modelica 3.3 impure functions */
+PURE : 'pure' { if (ModelicaParser_langStd < 33 && ModelicaParser_strict) $type = IDENT; }; /* for Modelica 3.3 pure functions */
+IMPURE : 'impure' { if (ModelicaParser_langStd < 33 && ModelicaParser_strict) $type = IDENT; }; /* for Modelica 3.3 impure functions */
