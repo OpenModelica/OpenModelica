@@ -1,6 +1,7 @@
 // keywords: fmu export
 // status: correct
 // teardown_command: rm -rf fmi_interpolate_cs.lua fmi_interpolate_cs_res.mat fmu1.fmu fmu2.fmu fmi_interpolate_cs_fmu1.log fmi_interpolate_cs_fmu2.log fmi_interpolate_cs_systemCall.log temp-fmi_interpolate_cs/
+// cflags: -d=fmuExperimental
 
 loadString("
 model fmu1
