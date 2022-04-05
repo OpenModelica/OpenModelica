@@ -457,7 +457,8 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['origin'] = [float(g[1]), float(g[2])]
             graphicsObj['rotation'] = float(g[3])
             graphicsObj['extent'] = [[float(g[4]), float(g[5])], [float(g[6]), float(g[7])]]
-            if g[9] is not None:
+
+            if not g[9]:
                 graphicsObj['href'] = "data:image;base64,"+g[9].strip('"')
             else:
                 fname = ask_omc('uriToFilename', g[8], parsed=False).strip().strip('"')
@@ -465,7 +466,7 @@ def getGraphicsForClass(modelicaClass):
                     fname = os.path.join(baseDir, g[8].strip('"'))
                 if os.path.exists(fname):
                     with open(fname, "rb") as f_p:
-                        graphicsObj['href'] = "data:image;base64,"+str(base64.b64encode(f_p.read()))
+                        graphicsObj['href'] = "data:image;base64,"+base64.b64encode(f_p.read()).decode()
                 else:
                     logger.error("Could not find bitmap file {0}".format(g[8]))
                     graphicsObj['href'] = g[8].strip('"')
@@ -809,10 +810,6 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
                 x = x0
             else:
                 x = x1
-            if y0 < y1:
-                y = y0
-            else:
-                y = y1
         elif graphics['horizontalAlignment'] == "TextAlignment.Center":
             extra['text_anchor'] = "middle"
         elif graphics['horizontalAlignment'] == "TextAlignment.Right":
@@ -821,11 +818,6 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
                 x = x1
             else:
                 x = x0
-            if y0 < y1:
-                y = y1
-            else:
-                y = y0
-
 
         shape = dwg.text(graphics['textString'].replace('%', ''), None, [x], [y], **extra)
 
