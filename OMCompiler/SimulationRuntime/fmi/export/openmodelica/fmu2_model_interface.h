@@ -107,6 +107,15 @@ typedef struct {
   fmi2Real* input_real_derivative;
 } ModelInstance;
 
+typedef struct {
+  RINGBUFFER* simulationData;
+  modelica_real* realParameter;
+  modelica_integer* integerParameter;
+  modelica_boolean* booleanParameter;
+  modelica_string* stringParameter;
+} INTERNAL_FMU_STATE;
+
+
 /* reset alignment policy to the one set before reading this file */
 #if defined _MSC_VER || defined __GNUC__
 #pragma pack(pop)

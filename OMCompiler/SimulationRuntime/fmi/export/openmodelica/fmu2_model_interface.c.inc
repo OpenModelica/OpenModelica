@@ -1239,17 +1239,167 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
 
 fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
-  return unsupportedFunction((ModelInstance *)c, "fmi2GetFMUstate");
+  ModelInstance *comp = (ModelInstance *) c;
+  fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*) comp->functions;
+
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+
+  if (invalidState(comp, "fmi2GetFMUstate", meStates, csStates))
+    return fmi2Error;
+
+  INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) functions->allocateMemory(1, sizeof(INTERNAL_FMU_STATE));
+  internal_state->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
+
+  DATA* fmudata = (DATA *) comp->fmuData;
+
+  /* prepare RingBuffer, by allocating memory for real Vars
+   * copy the ring buffer data to INTERNAL_FMU_STATE
+  */
+  SIMULATION_DATA tmpSimData = {0};
+  for (int i = 0; i < ringBufferLength(fmudata->simulationData); i++)
+  {
+    tmpSimData.timeValue = fmudata->localData[i]->timeValue;
+    /* allocate memory for all Real variables */
+    tmpSimData.realVars = (modelica_real *)functions->allocateMemory(fmudata->modelData->nVariablesReal, sizeof(modelica_real));
+    memcpy(tmpSimData.realVars, fmudata->localData[i]->realVars, sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
+    /* allocate memory for all Integer variables */
+    tmpSimData.integerVars = (modelica_integer*)functions->allocateMemory(fmudata->modelData->nVariablesInteger, sizeof(modelica_integer));
+    memcpy(tmpSimData.integerVars, fmudata->localData[i]->integerVars, sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
+    /* allocate memory for all boolean variables */
+    tmpSimData.booleanVars = (modelica_boolean*)functions->allocateMemory(fmudata->modelData->nVariablesBoolean, sizeof(modelica_boolean));
+    memcpy(tmpSimData.booleanVars, fmudata->localData[i]->booleanVars, sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
+    /* allocate memory for all string variables */
+    #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
+      tmpSimData.stringVars = (modelica_string*) omc_alloc_interface.malloc_uncollectable(fmudata->modelData->nVariablesString * sizeof(modelica_string));
+      memcpy(tmpSimData.stringVars, fmudata->localData[i]->stringVars, sizeof(modelica_string)*fmudata->modelData->nVariablesString);
+    #endif
+    appendRingData(internal_state->simulationData, &tmpSimData);
+  }
+
+  // copy real parameter variables
+  internal_state->realParameter = (modelica_real*)functions->allocateMemory(fmudata->modelData->nParametersReal, sizeof(modelica_real));
+  for (int i = 0; i < fmudata->modelData->nParametersReal; ++i)
+  {
+    internal_state->realParameter[i] = fmudata->modelData->realParameterData[i].attribute.start;
+    // infoStreamPrint(LOG_STDOUT, 0, "Copy Real parameter %s = %g", fmudata->modelData->realParameterData[i].info.name, internal_state->realParameters[i]);
+  }
+
+  // copy Integer parameter variables
+  internal_state->integerParameter = (modelica_integer*)functions->allocateMemory(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
+  for (int i = 0; i < fmudata->modelData->nParametersInteger; ++i)
+  {
+    internal_state->integerParameter[i] = fmudata->modelData->integerParameterData[i].attribute.start;
+    // infoStreamPrint(LOG_STDOUT, 0, "Copy Integer parameter %s = %ld", fmudata->modelData->integerParameterData[i].info.name, internal_state->integerParameters[i]);
+  }
+
+  // copy Boolean parameter variables
+  internal_state->booleanParameter = (modelica_boolean*)functions->allocateMemory(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
+  for (int i = 0; i < fmudata->modelData->nParametersBoolean; ++i)
+  {
+    internal_state->booleanParameter[i] = fmudata->modelData->booleanParameterData[i].attribute.start;
+    //infoStreamPrint(LOG_STDOUT, 0, "copy Boolean parameter %s = %s", fmudata->modelData->booleanParameterData[i].info.name, internal_state->booleanParameters[i] ? "true" : "false");
+  }
+
+  // copy String parameter variables
+  internal_state->stringParameter = (modelica_string*) omc_alloc_interface.malloc_uncollectable(fmudata->modelData->nParametersString * sizeof(modelica_string));
+  for (int i = 0; i < fmudata->modelData->nParametersString; ++i)
+  {
+    internal_state->stringParameter[i] = fmudata->modelData->stringParameterData[i].attribute.start;
+    //infoStreamPrint(LOG_STDOUT, 0, "copy String parameter %s = %s", fmudata->modelData->stringParameterData[i].info.name, MMC_STRINGDATA(internal_state->stringParameters[i]));
+  }
+
+  //infoRingBuffer( fmudata->simulationData);
+  //printRingBufferSimulationData(fmudata->simulationData, fmudata); // original ringBuffer data
+  //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
+
+  // return the fmu state
+  *FMUstate = (fmi2FMUstate) internal_state;
+  return fmi2OK;
 }
 
 fmi2Status fmi2SetFMUstate(fmi2Component c, fmi2FMUstate FMUstate)
 {
-  return unsupportedFunction((ModelInstance *)c, "fmi2SetFMUstate");
+  ModelInstance *comp = (ModelInstance *) c;
+
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+
+  if (invalidState(comp, "fmi2GetFMUstate", meStates, csStates))
+    return fmi2Error;
+
+  INTERNAL_FMU_STATE * internal_state = (INTERNAL_FMU_STATE *) FMUstate;
+  DATA* fmudata = (DATA *) comp->fmuData;
+
+  //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
+
+  // override the SIMULATION_DATA with INTERNAL_FMU_STATE
+  for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
+  {
+    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
+    fmudata->localData[i]->timeValue = sdata->timeValue;
+    memcpy(fmudata->localData[i]->realVars, sdata->realVars, sizeof(modelica_real)*fmudata->modelData->nVariablesReal);
+    memcpy(fmudata->localData[i]->integerVars, sdata->integerVars, sizeof(modelica_integer)*fmudata->modelData->nVariablesInteger);
+    memcpy(fmudata->localData[i]->booleanVars, sdata->booleanVars, sizeof(modelica_boolean)*fmudata->modelData->nVariablesBoolean);
+    memcpy(fmudata->localData[i]->stringVars, sdata->stringVars, sizeof(modelica_string)*fmudata->modelData->nVariablesString);
+  }
+
+  // override realParameter data
+  for (int i = 0; i < fmudata->modelData->nParametersReal; i++)
+  {
+    fmudata->simulationInfo->realParameter[i] = internal_state->realParameter[i];
+  }
+  // override integerParameter data
+  for (int i = 0; i < fmudata->modelData->nParametersInteger; i++)
+  {
+    fmudata->simulationInfo->integerParameter[i] = internal_state->integerParameter[i];
+  }
+  // override booleanParameter data
+  for (int i = 0; i < fmudata->modelData->nParametersBoolean; i++)
+  {
+    fmudata->simulationInfo->booleanParameter[i] = internal_state->booleanParameter[i];
+  }
+  // override stringParameter data
+  for (int i = 0; i < fmudata->modelData->nParametersString; i++)
+  {
+    fmudata->simulationInfo->stringParameter[i] = internal_state->stringParameter[i];
+  }
+
+  return fmi2OK;
 }
 
 fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
 {
-  return unsupportedFunction((ModelInstance *)c, "fmi2FreeFMUstate");
+  ModelInstance *comp = (ModelInstance *) c;
+  fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*) comp->functions;
+
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+
+  if (invalidState(comp, "fmi2FreeFMUstate", meStates, csStates))
+    return fmi2Error;
+
+  if (*FMUstate)
+  {
+    INTERNAL_FMU_STATE* internal_state = (INTERNAL_FMU_STATE*) *FMUstate;
+    // free the SIMULATION_DATA variable buffers
+    for (int i = 0; i < ringBufferLength(internal_state->simulationData); i++)
+    {
+      SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(internal_state->simulationData, i);
+      free(sdata->realVars);
+      free(sdata->integerVars);
+      free(sdata->booleanVars);
+      free(sdata->stringVars);
+    }
+    freeRingBuffer(internal_state->simulationData);
+    free(internal_state->realParameter);
+    free(internal_state->integerParameter);
+    free(internal_state->booleanParameter);
+    free(internal_state->stringParameter);
+    functions->freeMemory(*FMUstate);
+    *FMUstate = NULL;
+  }
+  return fmi2OK;
 }
 
 fmi2Status fmi2SerializedFMUstateSize(fmi2Component c, fmi2FMUstate FMUstate, size_t *size)
