@@ -801,7 +801,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars,
   <<
   fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value) {
     // set start value attribute for all variable that has start value, till initialization mode
-    if (vr < <%ixFirstParam%> && (comp->state == modelInstantiated || comp->state == modelInitializationMode)) {
+    if (vr < <%ixFirstParam%> && (comp->state == model_state_instantiated || comp->state == model_state_initialization_mode)) {
       comp->fmuData->modelData->realVarsData[vr].attribute.start = value;
     }
     if (vr < <%ixFirstParam%>) {
@@ -883,7 +883,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, nu
   <<
   fmi2Status setInteger(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Integer value) {
     // set start value attribute for all variable that has start value, till initialization mode
-    if (vr < <%ixFirstParam%> && (comp->state == modelInstantiated || comp->state == modelInitializationMode)) {
+    if (vr < <%ixFirstParam%> && (comp->state == model_state_instantiated || comp->state == model_state_initialization_mode)) {
       comp->fmuData->modelData->integerVarsData[vr].attribute.start = value;
     }
     if (vr < <%ixFirstParam%>) {
