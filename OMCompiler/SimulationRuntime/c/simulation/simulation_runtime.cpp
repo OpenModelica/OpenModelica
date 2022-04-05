@@ -542,9 +542,13 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     init_initMethod = omc_flagValue[FLAG_IIM];
   }
   if(omc_flag[FLAG_IIF]) {
+      #if defined(__MINGW32__) || defined(_MSC_VER)
+        struct _stat attrib;
+      #else
+        struct stat attrib;
+      #endif
     if (omc_flag[FLAG_INPUT_PATH]) {
       const char *tmp_filename;
-      struct stat attrib;
 
       if (omc_stat(omc_flagValue[FLAG_IIF], &attrib ) == 0) {
         if (0 > GC_asprintf(&tmp_filename, "%s", omc_flagValue[FLAG_IIF] )) {
@@ -561,7 +565,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     else {
       init_file = omc_flagValue[FLAG_IIF];
     }
-    if (stat(init_file.c_str(), &attrib ) != 0) {
+    if (omc_stat(init_file.c_str(), &attrib ) != 0) {
       throwStreamPrint(NULL, "Initialization file \"%s\" doesn't exist.", init_file.c_str());
     }
   }
