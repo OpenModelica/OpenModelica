@@ -445,14 +445,14 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
         if (size > nonlinearSparseSolverMinSize) {
           someBigSize = 1;
           infoStreamPrint(LOG_STDOUT, 0,
-                          "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                          "Using sparse solver kinsol for nonlinear system %d (%ld),\n"
                           "because density of %.2f remains under threshold of %.2f\n"
                           "and size of %d exceeds threshold of %d.",
                           i, nonlinsys[i].equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity,
                           size, nonlinearSparseSolverMinSize);
         } else {
           infoStreamPrint(LOG_STDOUT, 0,
-                          "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                          "Using sparse solver kinsol for nonlinear system %d (%ld),\n"
                           "because density of %.2f remains under threshold of %.2f.",
                           i, nonlinsys[i].equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity);
         }
@@ -461,7 +461,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
         nonlinsys[i].nlsLinearSolver = NLS_LS_KLU;
         someBigSize = 1;
         infoStreamPrint(LOG_STDOUT, 0,
-                        "Using sparse solver kinsol for nonlinear system %d (%d),\n"
+                        "Using sparse solver kinsol for nonlinear system %d (%ld),\n"
                         "because size of %d exceeds threshold of %d.",
                         i, nonlinsys[i].equationIndex, size, nonlinearSparseSolverMinSize);
       }

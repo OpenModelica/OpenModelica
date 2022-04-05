@@ -915,12 +915,10 @@ protected
     Type arg_ty;
     Function fn;
     list<Dimension> dims;
-    Boolean evaluated;
     Integer index = 1;
   algorithm
     ty_args := {fillArg};
     dims := {};
-    evaluated := true;
 
     // Type the dimension arguments.
     for arg in dimensionArgs loop
@@ -939,8 +937,6 @@ protected
           arg := Ceval.evalExp(arg);
           arg_ty := Expression.typeOf(arg);
         end if;
-      else
-        evaluated := false;
       end if;
 
       // Each dimension argument must be an Integer expression.
@@ -950,16 +946,11 @@ protected
           Expression.toString(arg), Type.toString(arg_ty), "Integer"}, info);
       end if;
 
-      if not Expression.isInteger(arg) then
-        // Argument might be a binding expression that needs to be flattened
-        // before we can evaluate the fill call.
-        evaluated := false;
-      end if;
-
       variability := Prefixes.variabilityMax(variability, arg_var);
       purity := Prefixes.purityMin(purity, arg_pur);
       ty_args := arg :: ty_args;
       dims := Dimension.fromExp(arg, arg_var) :: dims;
+      index := index + 1;
     end for;
 
     ty_args := listReverseInPlace(ty_args);
@@ -968,12 +959,8 @@ protected
     {fn} := Function.typeRefCache(fnRef);
     ty := Type.liftArrayLeftList(fillType, dims);
 
-    if evaluated then
-      callExp := Ceval.evalBuiltinFill(ty_args);
-    else
-      callExp := Expression.CALL(
-        Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, purity, ty));
-    end if;
+    callExp := Expression.CALL(
+      Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, purity, ty));
   end typeFillCall2;
 
   function typeZerosOnesCall

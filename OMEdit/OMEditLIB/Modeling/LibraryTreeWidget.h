@@ -521,9 +521,12 @@ private:
   bool saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
+  bool resolveConflictWithLoadedLibraries(const QString &library, const QStringList classes);
 private slots:
   void handleAutoLoadedLibrary();
 public slots:
+  void loadSystemLibrary();
+  void loadSystemLibrary(const QString &library, QString version = QString("default"));
   void scrollToActiveLibraryTreeItem();
   void searchClasses();
 };

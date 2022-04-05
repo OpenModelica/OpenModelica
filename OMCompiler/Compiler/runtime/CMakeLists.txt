@@ -20,7 +20,7 @@ endif()
 # systems we need to link explicitly to uuid. However, there is no FindUUID yet. We can add one later. Instead we use
 # find library for now. It should be okay for now since I am guessing uuid headers should be in the default include dirs
 # anyway.
-if(NOT WIN32)
+if(UNIX AND NOT APPLE)
   find_library(UUID_LIB NAMES uuid REQUIRED)
 endif()
 
@@ -94,7 +94,7 @@ target_include_directories(omcruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # uuid is one of the default libs that cmake adds to any target on Win32. On non-Win systems we look for the library and
 # explicitly use it.
-if(NOT WIN32)
+if(UNIX AND NOT APPLE)
   target_link_libraries(omcruntime PUBLIC ${UUID_LIB})
 endif()
 
@@ -265,18 +265,18 @@ if(WIN32)
   set(CONFIG_OS "Windows_NT")
 
   set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lopenblas -lm -lpthread")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lopenblas -lm -lpthread -lgfortran -lstdc++ -Wl,--no-undefined")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lopenblas -lm -lpthread -Wl,--no-undefined")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -lopenblas -lm -lpthread -lgfortran -lstdc++ -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lopenblas -lm -lpthread ")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
 
 
 else()
   set(CONFIG_OS ${OMC_TARGET_SYSTEM_NAME})
 
   set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -llapack -lblas -lm -lpthread -rdynamic")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm -lpthread -rdynamic -Wl,--no-undefined")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic ")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm -lpthread -rdynamic ")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic ")
 
 
 endif()

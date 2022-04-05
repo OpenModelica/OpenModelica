@@ -94,7 +94,7 @@ add_library(ModelicaStandardTables STATIC ${ModelicaStandardTables_SOURCES})
 add_library(omc::simrt::Modelica::StandardTables ALIAS ModelicaStandardTables)
 
 # This seems to be needed. Otherwise we get undefined references to function 'usertab'
-target_compile_definitions(ModelicaStandardTables PRIVATE -DDUMMY_FUNCTION_USERTAB)
+target_compile_definitions(ModelicaStandardTables PRIVATE DUMMY_FUNCTION_USERTAB)
 
 target_link_libraries(ModelicaStandardTables PUBLIC ModelicaIO)
 target_link_libraries(ModelicaStandardTables PUBLIC m)
@@ -106,7 +106,7 @@ set_target_properties(ModelicaStandardTables_shared
                       PROPERTIES OUTPUT_NAME ModelicaStandardTables CLEAN_DIRECT_OUTPUT 1)
 
 # This seems to be needed. Otherwise we get undefined references to function 'usertab'
-target_compile_definitions(ModelicaStandardTables_shared PRIVATE -DDUMMY_FUNCTION_USERTAB)
+target_compile_definitions(ModelicaStandardTables_shared PRIVATE DUMMY_FUNCTION_USERTAB)
 
 target_link_libraries(ModelicaStandardTables_shared PUBLIC ModelicaIO_shared)
 target_link_libraries(ModelicaStandardTables_shared PUBLIC m)

@@ -189,6 +189,25 @@ char* Settings_getHomeDir(int runningTestsuite)
   if (omc_userHome == NULL) {
     omc_userHome = getenv("HOME");
   }
+  /* detect special chars in the path and is so convert to short name paths */
+  if (omc_userHome != NULL) {
+    int i, len = strlen(omc_userHome);
+    for (i = 0; i < len; i++)
+      if (!isascii(omc_userHome[i])) { break; }
+    /* we found a special char */
+    if (i < len) {
+      int length = GetShortPathName(omc_userHome, NULL, 0);
+      if (length != 0) {
+        /* no error, convert */
+        char* buff = (char*)omc_alloc_interface.malloc_atomic(length*sizeof(char));
+        length = GetShortPathName(omc_userHome, buff, length);
+        /* no error, all good */
+        if (length != 0) {
+          omc_userHome = buff;
+        }
+      }
+    }
+  }
 #endif
   if (omc_userHome == NULL || runningTestsuite) {
     return omc_alloc_interface.malloc_strdup("");

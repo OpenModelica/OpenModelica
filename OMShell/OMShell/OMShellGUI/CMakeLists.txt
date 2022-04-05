@@ -19,13 +19,12 @@ target_link_libraries(OMShellLib PUBLIC Qt5::PrintSupport)
 target_link_libraries(OMShellLib PUBLIC Qt5::WebKitWidgets)
 target_link_libraries(OMShellLib PUBLIC OpenModelicaCompiler)
 
-target_link_options(OMShellLib PRIVATE -Wl,--no-undefined)
-
 
 add_executable(OMShell WIN32 MACOSX_BUNDLE main.cpp rc_omshell.rc)
 target_link_libraries(OMShell PRIVATE OMShellLib)
 
-install(TARGETS OMShell)
+install(TARGETS OMShell
+        BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(FILES commands.xml
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omshell)

@@ -1173,7 +1173,7 @@ algorithm
       then
         (exp, exp.ty, Variability.CONSTANT, Purity.PURE);
 
-    case Expression.ARRAY()  then typeArray(exp.elements, context, info);
+    case Expression.ARRAY()  then typeArray(exp.elements, exp.literal, context, info);
     case Expression.MATRIX() then typeMatrix(exp.elements, context, info);
     case Expression.RANGE()  then typeRange(exp, context, info);
     case Expression.TUPLE()  then typeTuple(exp.elements, context, info);
@@ -1485,7 +1485,7 @@ algorithm
 
         expl := listReverseInPlace(expl);
         ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
-        outExp := Expression.makeArray(ty, listArray(expl));
+        outExp := Expression.makeArray(ty, listArray(expl), exp.literal);
       then
         (outExp, ty, variability, purity);
 
@@ -1985,6 +1985,7 @@ end typeSubscript;
 
 function typeArray
   input array<Expression> elements;
+  input Boolean isLiteral;
   input InstContext.Type context;
   input SourceInfo info;
   output Expression arrayExp;
@@ -2038,7 +2039,7 @@ algorithm
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
-  arrayExp := Expression.makeArray(arrayType, listArray(expl2));
+  arrayExp := Expression.makeArray(arrayType, listArray(expl2), isLiteral);
 end typeArray;
 
 function typeMatrix "The array concatenation operator"

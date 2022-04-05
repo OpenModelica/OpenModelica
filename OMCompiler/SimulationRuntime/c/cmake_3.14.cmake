@@ -85,14 +85,12 @@ if(WITH_IPOPT)
   target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
   ## disable for now to avoid duplicate definition warnings. The define is hardcoded in
   ## omc_config.h. Until we remove that this just results in warnings.
-  # target_compile_definitions(SimulationRuntimeC PRIVATE -DWITH_IPOPT)
+  # target_compile_definitions(SimulationRuntimeC PRIVATE WITH_IPOPT)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
 endif()
 
 # Fix me. Make an interface (header only library) out of 3rdParty/dgesv
 target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
-
-# target_link_options(SimulationRuntimeC PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS SimulationRuntimeC)
 

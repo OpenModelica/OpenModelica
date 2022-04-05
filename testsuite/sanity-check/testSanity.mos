@@ -303,9 +303,8 @@ end M_total;
 
 saveTotalSCode("m.mo", M); getErrorString();
 
-// build and FMU out of the model
+// build an FMU out of the model
 buildModelFMU(M); getErrorString();
 
 // build an simulation executable out of the model
 buildModel(M); getErrorString();
-

@@ -393,7 +393,10 @@ void modelInfoInit(MODEL_DATA_XML* xml)
   }
 
   if (fileStatus != 0)
+  {
+    xml->fileName = NULL;
     return;
+  }
 
 #if !defined(OMC_NO_FILESYSTEM)
   omc_mmap_read mmap_reader = {0};
@@ -447,6 +450,13 @@ void modelInfoDeinit(MODEL_DATA_XML* xml)
 
 FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)
 {
+  /* check for xml->fileName == NULL for --fmiFilter=blackBox and protected
+   * and return dummy function info to make the fmu's simulation work, as
+   * the _json.info will not be exported for the above --fmiFilter combinations
+  */
+  if (xml->fileName == NULL)
+    return modelInfoGetDummyFunction(xml);
+
   if(xml->functionNames == NULL)
   {
     modelInfoInit(xml);
@@ -455,8 +465,28 @@ FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)
   return xml->functionNames[ix];
 }
 
+FUNCTION_INFO modelInfoGetDummyFunction(MODEL_DATA_XML* xml)
+{
+  FUNCTION_INFO functionInfo = omc_dummyFunctionInfo;
+  return functionInfo;
+}
+
+EQUATION_INFO modelInfoGetDummyEquation(MODEL_DATA_XML* xml)
+{
+  const char * var = "";
+  EQUATION_INFO equationInfo = {-1, 0, 0, -1, &var}; // omc_dummyEquationInfo is not working in mingw
+  return equationInfo;
+}
+
 EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
 {
+  /* check for xml->fileName == NULL for --fmiFilter=blackBox and protected
+   * and return dummy equation info to make the fmu's simulation work, as
+   * the _json.info will not be exported for the above --fmiFilter combinations
+  */
+  if (xml->fileName == NULL)
+    return modelInfoGetDummyEquation(xml);
+
   if (xml->equationInfo == NULL) {
     modelInfoInit(xml);
   }
@@ -466,6 +496,13 @@ EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix)
 
 EQUATION_INFO modelInfoGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix)
 {
+  /* check for xml->fileName == NULL for --fmiFilter=blackBox and protected
+   * and return dummy equation info to make the fmu's simulation work, as
+   * the _json.info will not be exported for the above --fmiFilter combinations
+  */
+  if (xml->fileName == NULL)
+    return modelInfoGetDummyEquation(xml);
+
   int i;
   if(xml->equationInfo == NULL)
   {

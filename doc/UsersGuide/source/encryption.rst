@@ -36,5 +36,5 @@ Notes
   version with encryption support can encrypt or decrypt files.
 
 - OpenModelica encryption is based on
-  SEMLA (Safe/Superiour/Super Encryption of Modelica Libraries and Artifacts)
+  `SEMLA (Standardized Encryption of Modelica Libraries and Artifacts) <https://github.com/modelon-community/SEMLA>`_
   module from Modelon AB.

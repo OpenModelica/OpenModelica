@@ -61,9 +61,11 @@ void* ZeroMQ_initialize(const char *zeroMQFileSuffix, int listenToAll, int port)
     return mmcZmqSocket;
   }
   // get the port number
-  const size_t endPointBufSize = 30;
-  char endPointBuf[endPointBufSize];
-  zmq_getsockopt(zmqSocket, ZMQ_LAST_ENDPOINT, &endPointBuf, (size_t *)&endPointBufSize);
+  char endPointBuf[30];
+  size_t endPointBufSize = sizeof(endPointBuf);
+  zmq_getsockopt(zmqSocket, ZMQ_LAST_ENDPOINT, endPointBuf, &endPointBufSize);
+  assert(endPointBufSize > 0);
+
   // create the file path
   const char* tempPath = SettingsImpl__getTempDirectoryPath();
 #if defined(__MINGW32__) || defined(_MSC_VER)

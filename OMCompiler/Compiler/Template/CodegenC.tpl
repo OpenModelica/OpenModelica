@@ -5045,34 +5045,33 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
 ::=
   match modelInfo
   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
-    let matrixA = genMatrixMatlab("A", "n", "n", varInfo.numStateVars, varInfo.numStateVars)
-    let matrixB = genMatrixMatlab("B", "n", "m", varInfo.numStateVars, varInfo.numInVars)
-    let matrixC = genMatrixMatlab("C", "p", "n", varInfo.numOutVars, varInfo.numStateVars)
-    let matrixD = genMatrixMatlab("D", "p", "m", varInfo.numOutVars, varInfo.numInVars)
-    let matrixCz = genMatrixMatlab("Cz", "nz", "n", varInfo.numAlgVars, varInfo.numStateVars)
-    let matrixDz = genMatrixMatlab("Dz", "nz", "m", varInfo.numAlgVars, varInfo.numInVars)
+    let matrixA = genMatrixPython("A", "n", "n", varInfo.numStateVars, varInfo.numStateVars)
+    let matrixB = genMatrixPython("B", "n", "m", varInfo.numStateVars, varInfo.numInVars)
+    let matrixC = genMatrixPython("C", "p", "n", varInfo.numOutVars, varInfo.numStateVars)
+    let matrixD = genMatrixPython("D", "p", "m", varInfo.numOutVars, varInfo.numInVars)
+    let matrixCz = genMatrixPython("Cz", "nz", "n", varInfo.numAlgVars, varInfo.numStateVars)
+    let matrixDz = genMatrixPython("Dz", "nz", "m", varInfo.numAlgVars, varInfo.numInVars)
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0);\n  output Real y[<%varInfo.numOutVars%>];\n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "def linearized_model()\n"
-      "# <%modelNamePrefix%>\n"
-      "# der(x) = A * x + B * u \n# y = C * x + D * u \n"
-      "  n = <%varInfo.numStateVars%> # number of states\n  m = <%varInfo.numInVars%> # number of inputs\n  p = <%varInfo.numOutVars%> # number of outputs\n"
+      return "def linearized_model():\n"
+      "    # <%modelNamePrefix%>\n"
+      "    # der(x) = A * x + B * u \n    # y = C * x + D * u \n"
+      "    n = <%varInfo.numStateVars%> # number of states\n    m = <%varInfo.numInVars%> # number of inputs\n    p = <%varInfo.numOutVars%> # number of outputs\n"
       "\n"
-      "  x0 = %s\n"
-      "  u0 = %s\n"
+      "    x0 = %s\n"
+      "    u0 = %s\n"
       "\n"
       <%matrixA%>
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
-      <%getVarNameJulia(vars.stateVars, "x")%>
-      <%getVarNameJulia(vars.inputVars, "u")%>
-      <%getVarNameJulia(vars.outputVars, "y")%>
+      "    stateVars  = [<%getVarNamePython(vars.stateVars, "x0")%>]\n"
+      "    inputVars  = [<%getVarNamePython(vars.inputVars, "u0")%>]\n"
+      "    outputVars = [<%getVarNamePython(vars.outputVars, "y0")%>]\n"
       "\n"
-      "  return (n, m, p, x0, u0, A, B, C, D)\n"
-      "end";
+      "    return (n, m, p, x0, u0, A, B, C, D, stateVars, inputVars, outputVars)\n";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
@@ -5102,6 +5101,17 @@ template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getV
     end match) ;separator=","%>
 >>
 end getVarNameMatlab;
+
+template getVarNamePython(list<SimVar> simVars, String arrayName) "template getVarName
+  Generates name for a variables."
+::=
+<<
+<%simVars |> var hasindex arrindex fromindex 0 => (match var
+    case SIMVAR(__) then
+      <<'<%crefStrMatlabSafe(name)%>'>>
+    end match) ;separator=","%>
+>>
+end getVarNamePython;
 
 template getVarNameJulia(list<SimVar> simVars, String arrayName) "template getVarName
   Generates name for a varables."
@@ -5145,6 +5155,22 @@ template genMatrixMatlab(String name, String row, String col, Integer rowI, Inte
     end match
   end match
 end genMatrixMatlab;
+
+template genMatrixPython(String name, String row, String col, Integer rowI, Integer colI) "template genMatrixPython
+  Generates Matrix for linear model in python code"
+::=
+  match rowI
+  case 0 then
+    <<"    <%name%> = %s\n\n">>
+  case _ then
+    match colI
+    case 0 then
+      <<"    <%name%> = %s\n\n">>
+    case _ then
+      <<"    <%name%> = %s\n\n">>
+    end match
+  end match
+end genMatrixPython;
 
 template genMatrixJulia(String name, String row, String col, Integer rowI, Integer colI) "template genMatrixJulia
   Generates Matrix for linear model in Julia code"

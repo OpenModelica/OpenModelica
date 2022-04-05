@@ -385,6 +385,7 @@ end createSimCode;
 function generateModelCodeNewBackend
   input NBackendDAE.BackendDAE bdae;
   input Absyn.Path className;
+  input String fileNamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   output list<String> libs;
   output String fileDir;
@@ -399,7 +400,7 @@ algorithm
   StackOverflow.clearStacktraceMessages();
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-    simCode := NSimCode.SimCode.create(bdae, className, simSettingsOpt);
+    simCode := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
     (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
@@ -1078,7 +1079,7 @@ algorithm
         // ================================
         //             SIMCODE
         // ================================
-        (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, className, inSimSettingsOpt);
+        (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, className, filenameprefix, inSimSettingsOpt);
     then (true, libs, file_dir);
 
     // old backend

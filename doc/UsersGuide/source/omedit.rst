@@ -277,6 +277,10 @@ File Menu
   -  *Figaro* - Exports the current model to Figaro.
   -  *To OMNotebook* - Exports the current model to a OMNotebook file.
 -  *System Libraries* - Contains a list of system libraries.
+-  *Manage Libraries*
+  -  *Install Library* - Opens a dialog to select and install a new library. see :ref:`omedit-install-library-label`
+  -  *Upgrade Installed Libraries* - Opens a dialog to upgrade the installed libraries.
+  -  *Update Library Index* - Updates the library index.
 -  *Recent Files* - Contains a list of recent files.
 -  *Clear Recent Files* - Clears the list of recent files.
 -  *Print* - Prints the current model.
@@ -307,6 +311,18 @@ View Menu
 -  *Reset Zoom* - Resets the zoom of the current model.
 -  *Zoom In* - Zoom in the current model.
 -  *Zoom Out* - Zoom out the current model.
+-  *Fit to Diagram* - Fit the current model diagram in the view.
+
+SSP Menu
+--------
+
+-  *Add System* - Adds the system to a model.
+-  *Add/Edit Icon* - Add/Edit the system/submodel icon.
+-  *Delete Icon* - Deletes the system/submodel icon.
+-  *Add Connector* - Adds a connector to a system/submodel.
+-  *Add Bus* - Adds a bus to a system/submodel.
+-  *Add TLM Bus* - Adds a TLM bus to a system/submodel.
+-  *Add SubModel* - Adds a submodel to a system.
 
 Simulation Menu
 ---------------
@@ -324,27 +340,21 @@ Simulation Menu
 -  *Archived Simulations* - Shows the list of simulations already finished or running.
    Double clicking on any of them opens the simulation output window.
 
-Debug Menu
-----------
+Data Reconciliation
+-------------------
 
--  *Debug Configurations* - Opens the debug configurations window.
--  *Attach to Running Process* - Attaches the algorithmic debugger to a running process.
-
-SSP Menu
---------
-
--  *Add System* - Adds the system to a model.
--  *Add/Edit Icon* - Add/Edit the system/submodel icon.
--  *Delete Icon* - Deletes the system/submodel icon.
--  *Add Connector* - Adds a connector to a system/submodel.
--  *Add Bus* - Adds a bus to a system/submodel.
--  *Add TLM Bus* - Adds a TLM bus to a system/submodel.
--  *Add SubModel* - Adds a submodel to a system.
+-  *Calculate Data Reconciliation* - Opens the dialog to run the data reconciliation algorithm.
 
 Sensitivity Optimization Menu
 -----------------------------
 
 - *Run Sensitivity Analysis and Optimization* - Runs the sensitivity analysis and optimization.
+
+Debug Menu
+----------
+
+-  *Debug Configurations* - Opens the debug configurations window.
+-  *Attach to Running Process* - Attaches the algorithmic debugger to a running process.
 
 Tools Menu
 ----------
@@ -353,6 +363,7 @@ Tools Menu
    interface window.
 -  *OpenModelica Command Prompt* - Opens the OpenModelica Command Prompt (Only
    available on Windows).
+-  *Open Temporary Directory* - Opens the current temporary directory.
 -  *Open Working Directory* - Opens the current working directory.
 -  *Open Terminal* - Runs the terminal command set in :ref:`omedit-options-general`.
 -  *Options* - Opens the options window.
@@ -360,12 +371,12 @@ Tools Menu
 Help Menu
 ---------
 
--  *OpenModelica Users Guide* - Opens the OpenModelica Users Guide.
--  *OpenModelica Users Guide (PDF)* - Opens the OpenModelica Users Guide (PDF).
+-  *OpenModelica User's Guide* - Opens the OpenModelica User's Guide.
+-  *OpenModelica User's Guide (PDF)* - Opens the OpenModelica User's Guide (PDF).
 -  *OpenModelica System Documentation* - Opens the OpenModelica System Documentation.
 -  *OpenModelica Scripting Documentation* - Opens the OpenModelica Scripting Documentation.
 -  *Modelica Documentation* - Opens the Modelica Documentation.
--  *OMSimulator Users Guide* - Opens the OMSimulator Users Guide.
+-  *OMSimulator User's Guide* - Opens the OMSimulator User's Guide.
 -  *OpenModelica TLM Simulator Documentation* - Opens the OpenModelica TLM Simulator Documentation.
 -  *About OMEdit* - Shows the information about OpenModelica Connection Editor.
 
@@ -1720,11 +1731,13 @@ MSL but if you really need to and understand the consequences then follow these 
 -  Add *$OPENMODELICAHOME/lib/omlibrary/Modelica X.X/package.mo* under user libraries.
 -  Restart OMEdit.
 
+.. _omedit-install-library-label :
+
 Install Library
 ---------------
 
 A new library can be installed with the help of the :ref:`package manager <packagemanagement>`.
-Click `File->Install Library` to open the install library dialog. OMEdit lists the libraries
+Click `File->Manage Libraries->Install Library` to open the install library dialog. OMEdit lists the libraries
 that are available for installation through the package manager.
 
 .. figure :: media/omedit_install_library.png
@@ -1732,10 +1745,12 @@ that are available for installation through the package manager.
 
   Install Library.
 
-Upgrade Libraries using Conversion Scripts
+.. _omedit-convert-library-label :
+
+Convert Libraries using Conversion Scripts
 ------------------------------------------
 
-In order to upgrade the libraries used in the model/package right-click the model/package in the
+In order to convert the libraries right-click the model/package in the
 `Libraries Browser` and choose `Convert to newer versions of used libraries`. OMEdit will read the used
 libraries from the uses-annotation and list any new version of the library that provide the conversion
 using the conversion script.

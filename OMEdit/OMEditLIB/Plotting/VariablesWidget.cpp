@@ -908,17 +908,17 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       variableData << type <<  StringHandler::unparse(QString("\"").append(value).append("\""));
       /* set the variable unit */
       variableData << StringHandler::unparse(QString("\"").append(unit).append("\""));
+      unit = variableData.at(VariableItemData::UNIT).toString();
       /* set the variable displayUnit */
       variableData << StringHandler::unparse(QString("\"").append(displayUnit).append("\""));
       /* set the variable displayUnits */
-      if ((variableData.at(VariableItemData::TYPE).toString().compare(QStringLiteral("String")) != 0) && !variableData.at(VariableItemData::UNIT).toString().isEmpty()) {
+      if ((variableData.at(VariableItemData::TYPE).toString().compare(QStringLiteral("String")) != 0) && !unit.isEmpty()) {
         QStringList displayUnits, displayUnitOptions;
-        displayUnits << variableData.at(VariableItemData::UNIT).toString();
+        displayUnits << unit;
         if (!variableData.at(VariableItemData::DISPLAYUNIT).toString().isEmpty()) {
           displayUnitOptions << variableData.at(VariableItemData::DISPLAYUNIT).toString();
           /* convert value to displayUnit */
-          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(variableData.at(VariableItemData::UNIT).toString(),
-                                                                                                           variableData.at(VariableItemData::DISPLAYUNIT).toString());
+          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(unit, variableData.at(VariableItemData::DISPLAYUNIT).toString());
           if (convertUnit.unitsCompatible) {
             bool ok = true;
             qreal realValue = variableData.at(VariableItemData::VALUE).toDouble(&ok);
@@ -928,8 +928,18 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
             }
           }
         } else { /* use unit as displayUnit */
-          variableData[VariableItemData::DISPLAYUNIT] = variableData.at(VariableItemData::UNIT);
+          variableData[VariableItemData::DISPLAYUNIT] = unit;
         }
+        /* Issue #5447
+         * For angular speeds always add in the menu in the unit column, in addition to the standard "rad/s" also "rpm"
+         * For energies always add in the menu in the Display Unit column, in addition to standard "J", also "Wh" (prefixes such as kWh, MWh, GWh will be obtained automatically)
+         */
+        if (unit.compare(QStringLiteral("rad/s")) == 0) {
+          displayUnitOptions << "rpm";
+        } else if (unit.compare(QStringLiteral("J")) == 0) {
+          displayUnitOptions << "Wh";
+        }
+        displayUnitOptions.removeDuplicates();
         displayUnits << displayUnitOptions;
         variableData << displayUnits;
       } else {

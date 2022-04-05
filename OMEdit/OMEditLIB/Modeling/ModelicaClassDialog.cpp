@@ -1424,7 +1424,7 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
       QComboBox *pComboBox = new QComboBox;
       foreach (QString convertsToVersion, convertsToVersions) {
         bool installed = availableVersions.contains(convertsToVersion);
-        pComboBox->addItem(QString("%1 (%2installed)").arg(convertsToVersion, installed ? "" : "not "), QList<QVariant>() << convertsToVersion << installed);
+        pComboBox->addItem(convertsToVersion, QList<QVariant>() << convertsToVersion << installed);
       }
       mpUsesLibrariesTreeWidget->setItemWidget(pUsesLibraryTreeWidgetItem, 1, pComboBox);
       mpUsesLibrariesTreeWidget->resizeColumnToContents(1);
@@ -1491,7 +1491,7 @@ void ConvertClassUsesAnnotationDialog::convert()
   repaint(); // repaint the dialog so progresslabel is updated.
   const QString nameStructure = mpLibraryTreeItem->getNameStructure();
   bool reloadClass = false;
-  bool updatePackageIndex = false;
+  bool updateSystemLibraries = false;
   QTreeWidgetItemIterator usesLibrariesIterator(mpUsesLibrariesTreeWidget);
   while (*usesLibrariesIterator) {
     QTreeWidgetItem *pUsesLibraryTreeWidgetItem = dynamic_cast<QTreeWidgetItem*>(*usesLibrariesIterator);
@@ -1503,7 +1503,7 @@ void ConvertClassUsesAnnotationDialog::convert()
     // install the library if needed.
     if (!installed) {
       if (MainWindow::instance()->getOMCProxy()->installPackage(libraryName, libraryVersion, true)) {
-        updatePackageIndex |= true;
+        updateSystemLibraries |= true;
       }
     }
     if (MainWindow::instance()->getOMCProxy()->convertPackageToLibrary(nameStructure, libraryName, libraryVersion)) {
@@ -1527,9 +1527,8 @@ void ConvertClassUsesAnnotationDialog::convert()
   }
   // load any dependent libraries
   pLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
-  // update the package index if needed
-  if (updatePackageIndex) {
-    MainWindow::instance()->getOMCProxy()->updatePackageIndex();
+  // update system libraries if needed
+  if (updateSystemLibraries) {
     MainWindow::instance()->addSystemLibraries();
   }
   accept();

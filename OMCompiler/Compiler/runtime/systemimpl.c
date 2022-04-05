@@ -306,7 +306,7 @@ extern char* SystemImpl__pwd(void)
     return NULL;
   }
 
-  WCHAR unicodePath[bufLen];
+  WCHAR* unicodePath = (WCHAR*)omc_alloc_interface.malloc_atomic(bufLen * sizeof(WCHAR));
   if (!GetCurrentDirectoryW(bufLen, unicodePath)) {
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("GetCurrentDirectoryW failed."),NULL,0);
     return NULL;
@@ -316,6 +316,7 @@ extern char* SystemImpl__pwd(void)
   SystemImpl__toWindowsSeperators(buffer, bufferLength);
   char *res = omc_alloc_interface.malloc_strdup(buffer);
   MULTIBYTE_OR_WIDECHAR_VAR_FREE(buffer);
+  GC_free(unicodePath);
   return res;
 #else
   char buf[MAXPATHLEN];
@@ -918,7 +919,11 @@ extern int SystemImpl__directoryExists(const char *str)
   char* path = strdup(str);
   int last = strlen(path)-1;
   /* adrpo: RTFM! the path cannot end in a slash??!! https://msdn.microsoft.com/en-us/library/windows/desktop/aa364418(v=vs.85).aspx */
-  if (last > 0 && (path[last] == '\\' || path[last] == '/')) path[last] = '\0';
+  while (last > 0 && (path[last] == '\\' || path[last] == '/'))
+      last--;
+
+  path[last + 1] = '\0';
+
   sh = FindFirstFile(path, &FileData);
   free(path);
   if (sh == INVALID_HANDLE_VALUE)

@@ -1,6 +1,6 @@
 
 cmake_minimum_required(VERSION 3.14)
-project(OpenModelica C CXX Fortran)
+project(OpenModelica C CXX)
 
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
@@ -116,7 +116,11 @@ set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/omc/)
 ## This is useful for those binaries that end up in bin/ directory but not for
 ## others as it is a relative path to the lib dir from <build_dir>/<some_dir>.
 ## Maybe there is a better way to do this but it should suffice for now.
-set(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+if(APPLE)
+  set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}")
+else()
+  set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+endif()
 
 ## Do not print unnecessary install messages when nothing has actually changed.
 set(CMAKE_INSTALL_MESSAGE LAZY)
