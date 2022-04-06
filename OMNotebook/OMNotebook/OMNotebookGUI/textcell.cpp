@@ -449,7 +449,7 @@ namespace IAEX
     else if( 0 <= text.indexOf( expressionTag ))
     {
       qDebug( "Possible HTML tag in text:" );
-      qDebug( text.toStdString().c_str() );
+      qDebug( "%s", text.toStdString().c_str() );
 
       text_->setPlainText( text );
       setStyle( style_ );

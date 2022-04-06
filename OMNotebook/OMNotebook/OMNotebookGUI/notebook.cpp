@@ -137,7 +137,7 @@ NotebookWindow::NotebookWindow(Document *subject,
     findForm_( 0 )          //AF
 {
   if( !filename_.isNull() )
-    qDebug( filename_.toStdString().c_str() );
+    qDebug( "%s", filename_.toStdString().c_str() );
 
   //    subject_->attach(this);
   //    setMinimumSize( 150, 220 );    //AF
@@ -3546,7 +3546,7 @@ void NotebookWindow::insertLink()
 void NotebookWindow::indent()
 {
   GraphCell* g;
-  if(g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell()))
+  if((g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell())))
   {
     g->input_->indentText();
   }
