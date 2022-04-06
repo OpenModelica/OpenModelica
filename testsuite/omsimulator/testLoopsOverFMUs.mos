@@ -123,24 +123,24 @@ val(D.x_out, 0.1, "loopsOverFMUs.mat");
 // ""
 // 0
 // ""
-// "info:    Alg. loop (size 3)
+// "info:    Alg. loop (size 3/7)
 //            loopsOverFMUs.root.B
 //            loopsOverFMUs.root.A
-// info:    Alg. loop (size 2)
+// info:    Alg. loop (size 2/4)
 //            loopsOverFMUs.root.D
 //            loopsOverFMUs.root.C
 // info:    maximum step size for 'loopsOverFMUs.root': 0.001000
 // info:    Result file: loopsOverFMUs.mat (bufferSize=1)
-// info:    Alg. loop (size 3)
+// info:    Alg. loop (size 3/7)
 //            loopsOverFMUs.root.B
 //            loopsOverFMUs.root.A
-// info:    Alg. loop (size 2)
+// info:    Alg. loop (size 2/4)
 //            loopsOverFMUs.root.D
 //            loopsOverFMUs.root.C
-// info:    Alg. loop (size 3)
+// info:    Alg. loop (size 3/7)
 //            loopsOverFMUs.root.B
 //            loopsOverFMUs.root.A
-// info:    Alg. loop (size 2)
+// info:    Alg. loop (size 2/4)
 //            loopsOverFMUs.root.D
 //            loopsOverFMUs.root.C
 // info:    Final Statistics for 'loopsOverFMUs.root':
