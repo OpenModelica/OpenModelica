@@ -253,12 +253,12 @@ namespace IAEX
     void setState(int);
 
   protected:
-    void mousePressEvent(QMouseEvent *event);      // Added 2005-11-01 AF
-    void wheelEvent(QWheelEvent *event);        // Added 2005-11-28 AF
-    void keyPressEvent(QKeyEvent *event );        // Added 2005-12-15 AF
-    void insertFromMimeData(const QMimeData *source);  // Added 2006-01-23 AF
-    void focusInEvent(QFocusEvent* event);
-    void focusOutEvent(QFocusEvent* event);
+    void mousePressEvent(QMouseEvent *event) override;      // Added 2005-11-01 AF
+    void wheelEvent(QWheelEvent *event) override;        // Added 2005-11-28 AF
+    void keyPressEvent(QKeyEvent *event ) override;        // Added 2005-12-15 AF
+    void insertFromMimeData(const QMimeData *source) override;  // Added 2006-01-23 AF
+    void focusInEvent(QFocusEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
     void resizeEvent(QResizeEvent *event) override;
 
   private:
