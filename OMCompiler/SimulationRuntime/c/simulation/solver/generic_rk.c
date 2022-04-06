@@ -171,6 +171,94 @@ enum RK_NLS_METHOD getRK_NLS_Method() {
   }
 }
 
+void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePattern, SPARSE_PATTERN* sparsePatternT)
+{
+  int leadindex[sizeCols];
+  unsigned int i, j=0, loc;
+
+  for (i=0; i < sizeCols; i++)
+    leadindex[i] = 0;
+  for (i=0; i < sparsePattern->numberOfNonZeros; i++)
+    leadindex[sparsePattern->index[i]]++;
+  sparsePatternT->leadindex[0] = 0;
+  for(i=1;i<sizeCols+1;i++)
+    sparsePatternT->leadindex[i] = sparsePatternT->leadindex[i-1] + leadindex[i-1];
+  memcpy(leadindex, sparsePatternT->leadindex, sizeof(unsigned int)*sizeCols);
+  for (i=0;i<sizeRows;i++)
+  {
+    for(; j < sparsePattern->leadindex[i+1];) {
+      loc = leadindex[sparsePattern->index[j]];
+      sparsePatternT->index[loc] = i;
+      leadindex[sparsePattern->index[j]]++;
+      j++;
+    }
+  }
+  printSparseStructure(sparsePattern,
+                        sizeRows,
+                        sizeCols,
+                        LOG_SOLVER,
+                        "sparsePattern");
+  printSparseStructure(sparsePatternT,
+                        sizeRows,
+                        sizeCols,
+                        LOG_SOLVER,
+                        "sparsePatternT");
+}
+
+void ColoringAlg(ANALYTIC_JACOBIAN* jacobian)
+{
+  SPARSE_PATTERN* sparsePattern = jacobian->sparsePattern;
+  SPARSE_PATTERN* sparsePatternT;
+  int sizeRows = jacobian->sizeRows, sizeCols = jacobian->sizeCols, row, col, nCols, leadIdx;
+  int i, j, maxColors = 0;
+
+  int length_column_indices = jacobian->sizeCols+1;
+  int length_index = sparsePattern->numberOfNonZeros;
+  // initialize array to zeros
+  int tabu[sizeCols][sizeCols];
+
+  for (i=0; i<sizeCols; i++)
+     for (j=0; j<sizeCols; j++)
+        tabu[i][j]=0;
+
+    // Allocate memory for new sparsity pattern
+  sparsePatternT = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
+  sparsePatternT->leadindex = (unsigned int*) malloc((length_column_indices)*sizeof(unsigned int));
+  sparsePatternT->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
+  sparsePatternT->sizeofIndex = length_index;
+  sparsePatternT->numberOfNonZeros = length_index;
+  //sparsePatternT->colorCols = (unsigned int*) malloc(jacobian->sizeCols*sizeof(unsigned int));
+  //sparsePatternT->maxColors = jacobian->sizeCols;
+
+  sparsePatternTranspose(sizeRows, sizeCols, sparsePattern, sparsePatternT);
+
+  for (col=0; col<sizeCols; col++)
+  {
+    for (i=0; i<sizeCols ; i++)
+    {
+      if (tabu[col][i] == 0)
+      {
+        sparsePattern->colorCols[col] = i+1;
+        maxColors = fmax(maxColors, i+1);
+        for (row=sparsePattern->leadindex[col]; row<sparsePattern->leadindex[col+1]; row++)
+        {
+          int rowIdx = sparsePattern->index[row];
+          for (j=sparsePatternT->leadindex[rowIdx]; j<sparsePatternT->leadindex[rowIdx+1]; j++)
+          {
+            tabu[sparsePatternT->index[j]][i]=1;
+          }
+        }
+        break;
+      }
+    }
+  }
+  sparsePattern->maxColors = maxColors;
+
+  free(sparsePattern->leadindex);
+  free(sparsePattern->index);
+  free(sparsePatternT);
+}
+
 /**
  * @brief Initialize sparsity pattern for non-linear system of diagonal implicit Runge-Kutta methods.
  *
@@ -259,17 +347,9 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
     sparsePattern_DIRK->maxColors = sparsePattern_ODE->maxColors;
     memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, jacobian->sizeCols*sizeof(unsigned int));
   } else {
-    for (int color=0; color<sparsePattern_DIRK->maxColors; color++) {
-      sparsePattern_DIRK->colorCols[color] = color+1;
-    }
+    // Calculate new coloring, because of additional nonZeroDiagonals
+    ColoringAlg(jacobian);
   }
-
-  /* Debug print */
-  // printSparseStructure(sparsePattern_DIRK,
-  //                      jacobian->sizeRows,
-  //                      jacobian->sizeCols,
-  //                      LOG_SOLVER,
-  //                      "Diagonal implicit Runge-Kutta NLS Jacobian");
 
   return sparsePattern_DIRK;
 }
