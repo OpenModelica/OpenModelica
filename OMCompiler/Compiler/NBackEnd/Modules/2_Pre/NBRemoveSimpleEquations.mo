@@ -228,7 +228,7 @@ protected
           varData.nonTrivialAlias := VariablePointers.addList(non_trivial_alias, varData.nonTrivialAlias);
 
           // add non trivial alias to removed
-          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex) for var in non_trivial_alias);
+          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex, false) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
           //eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
 

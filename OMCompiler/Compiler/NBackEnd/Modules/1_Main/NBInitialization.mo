@@ -232,7 +232,7 @@ public
         initial_param_vars := var :: initial_param_vars;
         // generate equation only if variable is fixed
         if BVariable.isFixed(var) then
-          parameter_eqs := BEquation.Equation.generateBindingEquation(var, idx) :: parameter_eqs;
+          parameter_eqs := BEquation.Equation.generateBindingEquation(var, idx, true) :: parameter_eqs;
         end if;
       end if;
     end for;

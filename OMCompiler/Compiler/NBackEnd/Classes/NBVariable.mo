@@ -1142,6 +1142,18 @@ public
     end match;
   end isTimeDependent;
 
+  function isBound
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    b := match var.binding
+      case Binding.TYPED_BINDING() then true;
+      else false;
+    end match;
+  end isBound;
+
   // ==========================================================================
   //                        Other type wrappers
   //

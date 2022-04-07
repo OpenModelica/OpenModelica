@@ -722,6 +722,8 @@ public
               end if;
             end while;
           end if;
+          // use max/min dim instead of start and stop because the start or end
+          // could be missing (missing diagonals)
           min_dim := min(d for d in dim);
           max_dim := max(d for d in dim);
           if fail_ then
