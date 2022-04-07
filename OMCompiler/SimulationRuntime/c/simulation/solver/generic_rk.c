@@ -390,8 +390,9 @@ void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEA
  */
 void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
   for(int i=0; i<nonlinsys->size; i++) {
-    // Get the nominal values of the states
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    // Get the nominal values of the states, the non-linear system has size stages*nStates
+    int ii = nonlinsys->size % data->modelData->nStates;
+    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[ii].attribute.nominal), 1e-32);
     nonlinsys->min[i]     = DBL_MIN;
     nonlinsys->max[i]     = DBL_MAX;
   }
@@ -978,14 +979,6 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
   int nStages = rk_data->tableau->nStages;
   int nStates = data->modelData->nStates;
 
-  // Set res to previous result of RK step - xloc
-  for (l = 0; l < nStages; l++)
-  {
-    for (i = 0; i < nStates; i++)
-    {
-      res[l * nStates + i] = rk_data->yOld[i] - xloc[l * nStates + i];
-    }
-  }
 
   for (k=0; k<nStages; k++)
   {
@@ -994,15 +987,83 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
     memcpy(sData->realVars, &xloc[k*nStates], nStates*sizeof(double));
     wrapper_f_genericRK(data, threadData, rk_data, fODE);
     memcpy(&rk_data->k[k*nStates], fODE, nStates*sizeof(double));
-    for (l=0; l<nStages; l++)
+  }
+
+  // Set res to previous result of RK step - xloc
+  for (l=0; l<nStages; l++)
+  {
+    for (i=0; i<nStates; i++)
     {
-      for (i=0; i<nStates; i++)
+      res[l * nStates + i] = rk_data->yOld[i] - xloc[l * nStates + i];
+      for (k=0; k<nStages; k++)
       {
-        res[l * nStates + i] += rk_data->stepSize * rk_data->tableau->A[l * nStages + k] * fODE[i];
+        res[l * nStates + i] += rk_data->stepSize * rk_data->tableau->A[l * nStages + k] * (rk_data->k + k*nStates)[i];
       }
     }
   }
 
+  return;
+}
+
+
+/**
+ * @brief Evaluate residual for non-linear system of implicit Runge-Kutta method.
+ *
+ * TODO: Describe how the residual is computed.
+ *
+ * @param dataIn  Userdata provided to non-linear system solver.
+ * @param xloc    Input vector for non-linear system.
+ * @param res     Residuum vector for given input xloc.
+ * @param iflag   Unused.
+ */
+void jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+
+  DATA* data = (DATA*) inData;
+  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+
+  int i,j,k,l,idx;
+  int nStages = rk_data->tableau->nStages;
+  int nStates = data->modelData->nStates;
+  int diagIdx = rk_data->act_stage * rk_data->tableau->nStages + rk_data->act_stage;
+
+  /* Evaluate column of Jacobian ODE */
+  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+
+  /* Compute Jacobian of non-linear system */
+  for (i = 0; i < nStages * nStates; i++)
+  {
+    for (j = 0; j < nStages * nStates; j++)
+    {
+      if (i == j)
+        jacobian->resultVars[i * nStages * nStates + j] = -1;
+      else
+        jacobian->resultVars[i * nStages * nStates + j] = 0;
+    }
+  }
+  for (k=0; k<nStages; k++)
+  {
+    /* Evaluate Jacobian of ODE */
+    sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
+    memcpy(sData->realVars, &rk_data->nlsData->nlsx[k*nStates], nStates*sizeof(double));
+    if (rk_data->symJacAvailable) {
+      wrapper_Jf_symbolic_genericRK(data, threadData, rk_data);
+    } else {
+      wrapper_Jf_numeric_genericRK(data, threadData, rk_data);
+    }
+
+    for (l=0; l<nStages; l++)
+    {
+      for (i=0; i<nStates; i++)
+      {
+        for (j=0; j<nStates; j++)
+        {
+          idx = l * nStages * nStates * nStates + i * nStages * nStates + j + k*nStates;
+          jacobian->resultVars[idx] += rk_data->stepSize * rk_data->tableau->A[l * nStages + k] * rk_data->Jf[i * nStates + j];
+        }
+      }
+    }
+  }
   return;
 }
 
@@ -1104,6 +1165,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     k = stage * nStages;    // Index of A[stage,0]
     for (stateIdx = 0; stateIdx < nStates; stateIdx++)
     {
+      // BB ToDo: check the formula with respect to rk_data->k[]
       rk_data->res_const[stateIdx] = rk_data->yOld[stateIdx];
       for (l = 0; l < stage; l++)
       {
