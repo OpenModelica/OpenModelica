@@ -173,12 +173,19 @@ This can be useful if you want to redirect output to a file for example.
 ## 4.4. Enabling Verbose Output
 Sometimes you might want to get a verbose output to see what CMake is actually doing and what exact commands it is issuing.
 
+If you are using CMake itself to issue builds (recommended) instead of invoking the generator directly, you can specify `-v` to the build command
+
+```sh
+cmake --build build_cmake -v
+```
+
 For Makefile generators (which, probably, is by far the most common usage), you can tell GNU Make itself to give you verbose output at compile time
 ```sh
 make VERBOSE=1
 ```
 
-This has the advantage of allowing you to get verbose output only when you want it.
+The above two approaches have the advantage of allowing you to get verbose output only when you want it.
+
 
 If you instead want to see verbose output every time you compile any change then you can tell CMake at configure time to always do that
 
