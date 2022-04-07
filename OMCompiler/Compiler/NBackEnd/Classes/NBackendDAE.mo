@@ -66,6 +66,7 @@ protected
 
   // New Backend imports
   import BackendDAE = NBackendDAE;
+  import Bindings = NBBindings;
   import Causalize = NBCausalize;
   import DetectStates = NBDetectStates;
   import DAEMode = NBDAEMode;
@@ -220,6 +221,7 @@ public
     // Pre-Partitioning Modules
     // (do not change order SIMPLIFY -> RSE -> EVENTS -> DETECTSTATES)
     preOptModules := {
+      (Bindings.main,               "Bindings"),
       (simplify,                    "simplify"),
       (RemoveSimpleEquations.main,  "RemoveSimpleEquations"),
       (Events.main,                 "Events"),

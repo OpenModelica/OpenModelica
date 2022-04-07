@@ -42,6 +42,7 @@ public
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
+  import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;
@@ -1408,10 +1409,12 @@ public
     function generateBindingEquation
       input Pointer<Variable> var_ptr;
       input Pointer<Integer> idx;
+      input Boolean initial_;
       output Pointer<Equation> eqn;
     protected
       Variable var;
       Expression lhs, rhs;
+      EquationAttributes eqnAttr;
     algorithm
       var := Pointer.access(var_ptr);
       lhs := Expression.fromCref(var.name);
@@ -1424,7 +1427,16 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
         then fail();
       end match;
-      eqn := Equation.fromLHSandRHS(lhs, rhs, idx, "BND", EQ_ATTR_DEFAULT_INITIAL);
+
+      if initial_ then
+        eqnAttr := EQ_ATTR_DEFAULT_INITIAL;
+      elseif BVariable.isContinuous(var_ptr) then
+        eqnAttr := EQ_ATTR_DEFAULT_DYNAMIC;
+      else
+        eqnAttr := EQ_ATTR_DEFAULT_DISCRETE;
+      end if;
+
+      eqn := Equation.fromLHSandRHS(lhs, rhs, idx, "BND", eqnAttr);
     end generateBindingEquation;
 
     function mergeIterators

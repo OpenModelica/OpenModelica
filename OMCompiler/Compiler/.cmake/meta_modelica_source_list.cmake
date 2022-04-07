@@ -297,6 +297,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBPartitioning.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBResolveSingularities.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBSorting.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBBindings.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBDetectStates.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBEvents.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBRemoveSimpleEquations.mo
