@@ -113,11 +113,11 @@ set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/o
 set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/omc/)
 
 ## Set the adjusted installation lib directory as an rpath for all installed binaries.
-## This is useful for those binaries that end up in bin/ directory but not for
-## others as it is a relative path to the lib dir from <build_dir>/<some_dir>.
-## Maybe there is a better way to do this but it should suffice for now.
+## Assumes binaries end up in either 'bin' or 'lib' AND also assumes that 'bin' and 'lib' are sibling directories.
 if(APPLE)
-  set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}")
+  ## MacOS Bundles end up in bin/<BundleName>.app/Contents/MacOS/
+  ## So make sure that the lib dir is referenced from that location as well
+  set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path/../../../../${CMAKE_INSTALL_LIBDIR}")
 else()
   set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
 endif()
