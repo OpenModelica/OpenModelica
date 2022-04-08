@@ -87,7 +87,7 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
 int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
 void residual_IRK(void **dataIn, const double *xloc, double *res, const int *iflag);
-int jacobian_IRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);;
+int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
 void initializeStaticNLSData(void* nlsDataVoid, threadData_t *threadData, void* rk_data_void);
 
@@ -205,14 +205,13 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
                         "sparsePatternT");
 }
 
-void ColoringAlg(ANALYTIC_JACOBIAN* jacobian)
+void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols)
 {
-  SPARSE_PATTERN* sparsePattern = jacobian->sparsePattern;
   SPARSE_PATTERN* sparsePatternT;
-  int sizeRows = jacobian->sizeRows, sizeCols = jacobian->sizeCols, row, col, nCols, leadIdx;
+  int row, col, nCols, leadIdx;
   int i, j, maxColors = 0;
 
-  int length_column_indices = jacobian->sizeCols+1;
+  int length_column_indices = sizeCols+1;
   int length_index = sparsePattern->numberOfNonZeros;
   // initialize array to zeros
   int tabu[sizeCols][sizeCols];
@@ -285,6 +284,7 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
   SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
 
   int sizeRows = jacobian->sizeRows;
+  int sizeCols = jacobian->sizeCols;
 
   /* Compute size of new sparsitiy pattern
    * Increase the size to contain non-zero elements on diagonal. */
@@ -348,7 +348,7 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
     memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, jacobian->sizeCols*sizeof(unsigned int));
   } else {
     // Calculate new coloring, because of additional nonZeroDiagonals
-    ColoringAlg(jacobian);
+    ColoringAlg(sparsePattern_DIRK, sizeRows, sizeCols);
   }
 
   return sparsePattern_DIRK;
@@ -380,12 +380,6 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   /* Get Sparsity of ODE Jacobian */
   ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
-
-  printSparseStructure(sparsePattern_ODE,
-                      jacobian->sizeRows,
-                      jacobian->sizeCols,
-                      LOG_SOLVER,
-                      "sparsePattern");
 
   int sizeRows = jacobian->sizeRows;
   int sizeCols = jacobian->sizeCols;
@@ -473,13 +467,8 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
     sparsePattern_IRK->leadindex[i + 1] += sparsePattern_IRK->leadindex[i];
   }
 
-  printSparseStructure(sparsePattern_IRK,
-                      sizeRows*nStages,
-                      sizeCols*nStages,
-                      LOG_SOLVER,
-                      "sparsePattern");
-
-  ColoringAlg(jacobian);
+  // BB ToDo: Important that different stages get different colors!!!
+  ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages);
 
   return sparsePattern_IRK;
 }
@@ -529,7 +518,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
 
   /* Initialize sparsity pattern */
   //nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
-  nonlinsys->sparsePattern = NULL; //initializeSparsePattern_IRK(data, nonlinsys);
+  nonlinsys->sparsePattern = NULL;//initializeSparsePattern_IRK(data, nonlinsys);
   nonlinsys->isPatternAvailable = FALSE;
   return;
 }
@@ -580,11 +569,11 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case RK_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
-    nlsData->analyticalJacobianColumn = NULL;
+    nlsData->analyticalJacobianColumn = NULL;//jacobian_IRK_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
     nlsData->getIterationVars = NULL;
 
-    //TODO AHeu: Only for testing. Remove
+    // BB ToDo: needs to be finally corrected
     rk_data->symJacAvailable = FALSE;
     break;
   default:
@@ -1147,7 +1136,7 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
  * @param res     Residuum vector for given input xloc.
  * @param iflag   Unused.
  */
-void jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
   DATA* data = (DATA*) inData;
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
@@ -1195,7 +1184,7 @@ void jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBI
       }
     }
   }
-  return;
+  return 0;
 }
 
 /**
