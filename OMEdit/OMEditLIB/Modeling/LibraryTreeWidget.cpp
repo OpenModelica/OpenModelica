@@ -3299,7 +3299,9 @@ void LibraryTreeView::showContextMenu(QPoint point)
             }
             menu.addSeparator();
             menu.addAction(mpSaveAction);
-            menu.addAction(mpSaveAsAction);
+            if (pLibraryTreeItem->isTopLevel()) {
+              menu.addAction(mpSaveAsAction);
+            }
             menu.addAction(mpSaveTotalAction);
           } else {
             menu.addSeparator();
@@ -3714,8 +3716,8 @@ void LibraryTreeView::duplicateClass()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    DuplicateClassDialog *pCopyClassDialog = new DuplicateClassDialog(false, pLibraryTreeItem, MainWindow::instance());
-    pCopyClassDialog->exec();
+    DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(pLibraryTreeItem, MainWindow::instance());
+    pDuplicateClassDialog->exec();
   }
 }
 
@@ -4636,7 +4638,7 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return false;
     }
-    result = saveModelicaLibraryTreeItem(pLibraryTreeItem);
+    result = saveModelicaLibraryTreeItem(pLibraryTreeItem, false);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
     result = saveCompositeModelLibraryTreeItem(pLibraryTreeItem);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
@@ -4686,8 +4688,11 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     return;
   }
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-    DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(true, pLibraryTreeItem, MainWindow::instance());
-    pDuplicateClassDialog->exec();
+    if (pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("It is not possible to save as a Modelica package saved in a directory hierarchy Mapping."), Helper::ok);
+    } else {
+      saveModelicaLibraryTreeItem(pLibraryTreeItem, true);
+    }
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
     saveAsCompositeModelLibraryTreeItem(pLibraryTreeItem);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
@@ -4697,7 +4702,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
       saveAsLibraryTreeItem(pLibraryTreeItem->parent());
     }
   } else {
-    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                              .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
   }
 }
@@ -4774,19 +4779,20 @@ bool LibraryWidget::multipleTopLevelClasses(const QStringList &classesList, cons
  * \brief LibraryWidget::saveModelicaLibraryTreeItem
  * Saves a Modelica LibraryTreeItem.
  * \param pLibraryTreeItem
+ * \param saveAs
  * \return
  */
-bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs)
 {
   bool result = false;
   // if some file within folder structure package is changed and has valid file path then we should only save it.
   pLibraryTreeItem = mpLibraryTreeModel->getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
   if (pLibraryTreeItem->isFilePathValid() && mpLibraryTreeModel->getContainingFileParentLibraryTreeItem(pLibraryTreeItem) == pLibraryTreeItem) {
-    result = saveModelicaLibraryTreeItemHelper(pLibraryTreeItem);
+    result = saveModelicaLibraryTreeItemHelper(pLibraryTreeItem, saveAs);
   } else {
     QString topLevelClassName = StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure());
     LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(topLevelClassName);
-    result = saveModelicaLibraryTreeItemHelper(pTopLevelLibraryTreeItem);
+    result = saveModelicaLibraryTreeItemHelper(pTopLevelLibraryTreeItem, saveAs);
   }
   return result;
 }
@@ -4795,13 +4801,14 @@ bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeIte
  * \brief LibraryWidget::saveModelicaLibraryTreeItemHelper
  * Helper function for LibraryWidget::saveModelicaLibraryTreeItem()
  * \param pLibraryTreeItem
+ * \param saveAs
  * \return
  */
-bool LibraryWidget::saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryWidget::saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, bool saveAs)
 {
   bool result = false;
   if (pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
-    result = saveModelicaLibraryTreeItemOneFile(pLibraryTreeItem);
+    result = saveModelicaLibraryTreeItemOneFile(pLibraryTreeItem, saveAs);
     if (result) {
       saveChildLibraryTreeItemsOneFile(pLibraryTreeItem);
     }
@@ -4818,7 +4825,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryT
           saveChildLibraryTreeItemsOneFileHelper(pChildLibraryTreeItem);
           saveChildLibraryTreeItemsOneFile(pChildLibraryTreeItem);
         } else {
-          saveModelicaLibraryTreeItemHelper(pChildLibraryTreeItem);
+          saveModelicaLibraryTreeItemHelper(pChildLibraryTreeItem, saveAs);
         }
       }
     }
@@ -4830,59 +4837,59 @@ bool LibraryWidget::saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryT
  * \brief LibraryWidget::saveModelicaLibraryTreeItemOneFile
  * Saves a Modelica LibraryTreeItem in one file.
  * \param pLibraryTreeItem
+ * \param saveAs
  * \return
  */
-bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem, bool saveAs)
 {
-  if (pLibraryTreeItem->isSaved()) {
-    return true;
-  }
-  MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
-  QString fileName;
-  if (pLibraryTreeItem->isTopLevel() && !pLibraryTreeItem->isFilePathValid()) {
-    QString name = pLibraryTreeItem->getName();
-    fileName = StringHandler::getSaveFileName(this, tr("%1 - Save %2 %3 as Modelica File").arg(Helper::applicationName)
-                                              .arg(pLibraryTreeItem->mClassInformation.restriction).arg(pLibraryTreeItem->getName()), NULL,
-                                              Helper::omFileTypes, NULL, "mo", &name);
-    if (fileName.isEmpty()) { // if user press ESC
+  if (!pLibraryTreeItem->isSaved() || saveAs) {
+    MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
+    QString fileName;
+    if (pLibraryTreeItem->isTopLevel() && (!pLibraryTreeItem->isFilePathValid() || saveAs)) {
+      QString name = pLibraryTreeItem->getName();
+      fileName = StringHandler::getSaveFileName(this, tr("%1 - Save %2 %3 as Modelica File").arg(Helper::applicationName)
+                                                .arg(pLibraryTreeItem->mClassInformation.restriction).arg(pLibraryTreeItem->getName()), NULL,
+                                                Helper::omFileTypes, NULL, "mo", &name);
+      if (fileName.isEmpty()) { // if user press ESC
+        return false;
+      }
+    } else if (pLibraryTreeItem->isFilePathValid()
+               && pLibraryTreeItem->parent()
+               && pLibraryTreeItem->parent()->getSaveContentsType() != LibraryTreeItem::SaveFolderStructure) {
+      fileName = pLibraryTreeItem->getFileName();
+    } else {
+      QFileInfo fileInfo(pLibraryTreeItem->parent()->getFileName());
+      fileName = QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(pLibraryTreeItem->getName());
+    }
+    /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+    if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return false;
     }
-  } else if (pLibraryTreeItem->isFilePathValid()
-             && pLibraryTreeItem->parent()
-             && pLibraryTreeItem->parent()->getSaveContentsType() != LibraryTreeItem::SaveFolderStructure) {
-    fileName = pLibraryTreeItem->getFileName();
-  } else {
-    QFileInfo fileInfo(pLibraryTreeItem->parent()->getFileName());
-    fileName = QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(pLibraryTreeItem->getName());
-  }
-  /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-  if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-    return false;
-  }
-  // save the class
-  QString contents;
-  if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
-    contents = pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
-  } else {
-    contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
-  }
-  if (saveFile(fileName, contents)) {
-    /* mark the file as saved and update the labels. */
-    pLibraryTreeItem->setIsSaved(true);
-    pLibraryTreeItem->setFileName(fileName);
-    pLibraryTreeItem->mClassInformation.fileName = fileName;
-    MainWindow::instance()->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
-    if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
-      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
-      pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
+    // save the class
+    QString contents;
+    if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
+      contents = pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
+    } else {
+      contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
     }
-    mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
-    /* Save the traceabiliy information and send to Daemon. */
-    if(GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName()) && OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() ){
-      MainWindow::instance()->getCommitChangesDialog()->commitAndGenerateTraceabilityURI(pLibraryTreeItem->getFileName());
+    if (saveFile(fileName, contents)) {
+      /* mark the file as saved and update the labels. */
+      pLibraryTreeItem->setIsSaved(true);
+      pLibraryTreeItem->setFileName(fileName);
+      pLibraryTreeItem->mClassInformation.fileName = fileName;
+      MainWindow::instance()->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
+      if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
+        pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
+        pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
+      }
+      mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
+      /* Save the traceabiliy information and send to Daemon. */
+      if(GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName()) && OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() ){
+        MainWindow::instance()->getCommitChangesDialog()->commitAndGenerateTraceabilityURI(pLibraryTreeItem->getFileName());
+      }
+    } else {
+      return false;
     }
-  } else {
-     return false;
   }
   return true;
 }
@@ -5017,8 +5024,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
   // create a package.order file
   QString contents = "";
   /* Ticket #4152. package.order should contain constants and classes.*/
-  QStringList childClasses = MainWindow::instance()->getOMCProxy()->getClassNames(pLibraryTreeItem->getNameStructure(), false,
-                                                                                  false, false, false, true, true);
+  QStringList childClasses = MainWindow::instance()->getOMCProxy()->getClassNames(pLibraryTreeItem->getNameStructure(), false, false, false, false, true, true);
   for (int i = 0; i < childClasses.size(); i++) {
     contents.append(childClasses.at(i)).append("\n");
   }

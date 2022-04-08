@@ -734,22 +734,19 @@ void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
 
 /*!
  * \class DuplicateClassDialog
- * \brief Creates a dialog to allow users to duplicate/save as the Modelica class.
+ * \brief Creates a dialog to allow users to duplicate the Modelica class.
  */
 /*!
  * \brief DuplicateClassDialog::DuplicateClassDialog
- * \param saveAs
  * \param pLibraryTreeItem
  * \param pParent
  */
-DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
+DuplicateClassDialog::DuplicateClassDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
   : QDialog(pParent), mpLibraryTreeItem(pLibraryTreeItem)
 {
   setMinimumWidth(400);
   setAttribute(Qt::WA_DeleteOnClose);
-  mSaveAs = saveAs;
-  QString heading = mSaveAs ? Helper::saveAs : Helper::duplicate;
-  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(heading).arg(mpLibraryTreeItem->getNameStructure()));
+  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName, Helper::duplicate, mpLibraryTreeItem->getNameStructure()));
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(mpLibraryTreeItem->getName());
   mpNameTextBox->selectAll();
@@ -1165,9 +1162,6 @@ void DuplicateClassDialog::duplicateClass()
     syncDuplicatedModelWithOMC(pLibraryTreeItem);
     pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
-    if (mSaveAs) {
-      MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
-    }
     accept();
   } else {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
