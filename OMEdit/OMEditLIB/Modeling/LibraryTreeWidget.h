@@ -513,7 +513,7 @@ private:
   void saveChildLibraryTreeItemsOneFile(LibraryTreeItem *pLibraryTreeItem);
   void saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
-  bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   bool saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveOMSLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
