@@ -729,7 +729,7 @@ protected
   SCode.Mod smod;
 algorithm
   // Type the class.
-  Typing.typeClass(inst_cls);
+  Typing.typeClass(inst_cls, NFInstContext.RELAXED);
 
   // Flatten and simplify the model.
   flat_model := Flatten.flatten(inst_cls, name);

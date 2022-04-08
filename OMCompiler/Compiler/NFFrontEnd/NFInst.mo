@@ -167,7 +167,7 @@ algorithm
   execStat("NFInst.updateImplicitVariability");
 
   // Type the class.
-  Typing.typeClass(inst_cls);
+  Typing.typeClass(inst_cls, context);
 
   // Flatten the model and evaluate constants in it.
   flatModel := Flatten.flatten(inst_cls, name);
