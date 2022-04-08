@@ -354,6 +354,136 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
   return sparsePattern_DIRK;
 }
 
+
+/**
+ * @brief Initialize sparsity pattern for non-linear system of diagonal implicit Runge-Kutta methods.
+ *
+ * Get sparsity pattern of ODE Jacobian and edit to be non-zero on diagonal elements.
+ * Coloring of ODE Jacobian will be used, if it had non-zero elements on all diagonal entries.
+ * Use trivial coloring (new color for each column) otherwise.
+ *
+ * @param data                Runtime data struct.
+ * @param sysData             Non-linear system.
+ * @return SPARSE_PATTERN*    Pointer to sparsity pattern of non-linear system.
+ */
+SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* sysData)
+{
+  unsigned int i,j,k,l;
+  unsigned int row, col;
+  unsigned int missingZeros = 0;
+  unsigned int nDiags = 0, nDiags_A, nnz_A;
+  unsigned int shift = 0;
+  modelica_boolean diagElemNonZero;
+  SPARSE_PATTERN* sparsePattern_IRK;
+  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
+
+  /* Get Sparsity of ODE Jacobian */
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
+
+  printSparseStructure(sparsePattern_ODE,
+                      jacobian->sizeRows,
+                      jacobian->sizeCols,
+                      LOG_SOLVER,
+                      "sparsePattern");
+
+  int sizeRows = jacobian->sizeRows;
+  int sizeCols = jacobian->sizeCols;
+  int nStages  = rk_data->tableau->nStages;
+  int nStates  = rk_data->nStates;
+  double* A    = rk_data->tableau->A;
+
+  nnz_A = 0;
+  nDiags_A = 0;
+  for (i=0; i<nStages; i++) {
+     if (A[i*nStages + i] != 0) nDiags_A++;
+     for (j=0; j<nStages; j++) {
+       if (A[i*nStages + j] != 0) nnz_A++;
+     }
+  }
+
+  i = 0;
+  for(col=0; col < sizeRows; col++) {
+    for(; i < sparsePattern_ODE->leadindex[col+1];) {
+      if(sparsePattern_ODE->index[i++] == col) {
+        nDiags++;
+      }
+    }
+  }
+  int missingDiags = jacobian->sizeRows - nDiags;
+  int numberOfNonZeros = nnz_A*sparsePattern_ODE->numberOfNonZeros + nDiags_A*missingDiags + (nStages-nDiags_A)*nStates;
+
+  int coo_col[numberOfNonZeros];
+  int coo_row[numberOfNonZeros];
+
+  i = 0;
+  for (k=0; k<nStages; k++)
+  {
+    for (col=0; col < nStates; col++)
+    {
+      diagElemNonZero = FALSE;
+      for (l=0; l<nStages; l++)
+      {
+        for (j=sparsePattern_ODE->leadindex[col]; j<sparsePattern_ODE->leadindex[col+1]; j++)
+        {
+          if (((col + k*nStates) < (sparsePattern_ODE->index[j] + l*nStates)) && !diagElemNonZero)
+          {
+            coo_col[i] = col + k*nStates;
+            coo_row[i] = col + k*nStates;
+            i++;
+            diagElemNonZero = TRUE;
+          }
+          if (A[l*nStages + k] != 0)
+          {
+            if ((col + k*nStates) == (sparsePattern_ODE->index[j] + l*nStates))
+              diagElemNonZero = TRUE;
+            coo_col[i] = col + k*nStates;
+            coo_row[i] = sparsePattern_ODE->index[j] + l*nStates;
+            i++;
+          }
+        }
+      }
+    }
+  }
+
+  int length_row_indices = jacobian->sizeCols*nStages+1;
+  int length_index = numberOfNonZeros;
+
+  // Allocate memory for new sparsity pattern
+  sparsePattern_IRK = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
+  sparsePattern_IRK->leadindex = (unsigned int*) malloc((length_row_indices)*sizeof(unsigned int));
+  sparsePattern_IRK->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
+  sparsePattern_IRK->sizeofIndex = length_index;
+  sparsePattern_IRK->numberOfNonZeros = length_index;
+  sparsePattern_IRK->colorCols = (unsigned int*) malloc(jacobian->sizeCols*sizeof(unsigned int));
+  sparsePattern_IRK->maxColors = jacobian->sizeCols*nStages;
+
+  /* Set diagonal elements of sparsitiy pattern to non-zero */
+  // Basically magic.
+  for (i=0; i<length_row_indices; i++)
+    sparsePattern_IRK->leadindex[i] = 0;
+
+  for (int i = 0; i < numberOfNonZeros; i++)
+  {
+    sparsePattern_IRK->index[i] = coo_row[i];
+    sparsePattern_IRK->leadindex[coo_col[i] + 1]++;
+  }
+  for (int i = 0; i < sizeCols*nStates; i++)
+  {
+    sparsePattern_IRK->leadindex[i + 1] += sparsePattern_IRK->leadindex[i];
+  }
+
+  printSparseStructure(sparsePattern_IRK,
+                      sizeRows*nStages,
+                      sizeCols*nStages,
+                      LOG_SOLVER,
+                      "sparsePattern");
+
+  ColoringAlg(jacobian);
+
+  return sparsePattern_IRK;
+}
+
 /**
  * @brief Initialize static data of non-linear system for DIRK.
  *
@@ -399,7 +529,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
 
   /* Initialize sparsity pattern */
   //nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
-  nonlinsys->sparsePattern = NULL;
+  nonlinsys->sparsePattern = NULL; //initializeSparsePattern_IRK(data, nonlinsys);
   nonlinsys->isPatternAvailable = FALSE;
   return;
 }
@@ -533,6 +663,10 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
  */
 int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo) {
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) malloc(sizeof(DATA_GENERIC_RK));
+
+  // Set backup in simulationInfo
+  data->simulationInfo->backupSolverData = (void*) rk_data;
+
   solverInfo->solverData = (void*) rk_data;
 
   rk_data->nStates = data->modelData->nStates;
@@ -649,9 +783,6 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     rk_data->nlsData = NULL;
     rk_data->jacobian = NULL;
   }
-
-  // Set backup in simulationInfo
-  data->simulationInfo->backupSolverData = (void*) rk_data;
 
   if (solverInfo->solverMethod == S_GENERIC_RK_MR)
   {
