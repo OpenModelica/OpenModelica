@@ -112,13 +112,17 @@ end TypingError;
 public
 function typeClass
   input InstNode cls;
+  input InstContext.Type context;
+protected
+  InstContext.Type next_context;
 algorithm
-  typeClassType(cls, NFBinding.EMPTY_BINDING, NFInstContext.CLASS, cls);
-  typeComponents(cls, NFInstContext.CLASS);
+  next_context := InstContext.set(context, NFInstContext.CLASS);
+  typeClassType(cls, NFBinding.EMPTY_BINDING, next_context, cls);
+  typeComponents(cls, next_context);
   execStat("NFTyping.typeComponents");
-  typeBindings(cls, NFInstContext.CLASS);
+  typeBindings(cls, next_context);
   execStat("NFTyping.typeBindings");
-  typeClassSections(cls, NFInstContext.CLASS);
+  typeClassSections(cls, next_context);
   execStat("NFTyping.typeClassSections");
 end typeClass;
 
