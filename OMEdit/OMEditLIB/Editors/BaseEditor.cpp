@@ -2282,6 +2282,17 @@ QMenu* BaseEditor::createStandardContextMenu()
 }
 
 /*!
+ * \brief BaseEditor::contentsChanged
+ * Updates the ModelWidget title and mark the LibraryTreeItem as unsaved.
+ */
+void BaseEditor::contentsChanged()
+{
+  mpModelWidget->setWindowTitle(QString("%1*").arg(mpModelWidget->getLibraryTreeItem()->getName()));
+  mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
+}
+
+/*!
  * \brief BaseEditor::showFindReplaceWidget
  * Shows the FindReplaceWidget
  */

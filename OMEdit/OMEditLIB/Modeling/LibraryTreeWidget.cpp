@@ -4642,7 +4642,7 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
     result = saveCompositeModelLibraryTreeItem(pLibraryTreeItem);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
-    result = saveTextLibraryTreeItem(pLibraryTreeItem);
+    result = saveTextLibraryTreeItem(pLibraryTreeItem, false);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     if (pLibraryTreeItem->isTopLevel()) {
       /* if user has done some changes in the OMSimulator text view then save & validate it before saving it to file. */
@@ -4701,6 +4701,8 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     } else {
       saveAsLibraryTreeItem(pLibraryTreeItem->parent());
     }
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+    saveTextLibraryTreeItem(pLibraryTreeItem, true);
   } else {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                              .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
@@ -5039,10 +5041,10 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
  * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs)
 {
   QString fileName;
-  if (pLibraryTreeItem->getFileName().isEmpty()) {
+  if (pLibraryTreeItem->getFileName().isEmpty() || saveAs) {
     QString name = pLibraryTreeItem->getName();
     fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::txtFileTypes, NULL, "txt", &name);
     if (fileName.isEmpty()) { // if user press ESC

@@ -5633,7 +5633,7 @@ void ModelWidget::updateModelText()
       }
     }
     if (pModelLibraryTreeItem != mpLibraryTreeItem) {
-      setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
+      setWindowTitle(QString("%1*").arg(mpLibraryTreeItem->getName()));
       setModelFilePathLabel(mpLibraryTreeItem->getFileName());
     }
   } else {

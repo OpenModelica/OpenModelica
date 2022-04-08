@@ -356,6 +356,7 @@ protected:
   bool mForceSetPlainText;
 
   QMenu* createStandardContextMenu();
+  void contentsChanged();
 private slots:
   virtual void showContextMenu(QPoint point) = 0;
 public slots:
