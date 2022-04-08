@@ -1,0 +1,103 @@
+// name: GetModelInstanceConnection1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  connector C
+    Real e;
+    flow Real f;
+  end C;
+
+  model A
+    C c1, c2;
+  equation
+    connect(c1, c2);
+  end A;
+
+  model M
+    extends A;
+    C c3;
+  equation
+    connect(c1, c3) annotation(Line(points = {{-25, 30}, {10, 30}, {10, -20}, {40, -20}}));
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"extends\": [
+//     {
+//       \"name\": \"A\",
+//       \"components\": {
+//         \"c2\": {
+//           \"type\": \"C\",
+//           \"modifier\": \"\",
+//           \"prefixes\": {
+//             \"public\": true,
+//             \"final\": false,
+//             \"inner\": false,
+//             \"outer\": false,
+//             \"replaceable\": false,
+//             \"redeclare\": false,
+//             \"connector\": \"\",
+//             \"variability\": \"\",
+//             \"direction\": \"\"
+//           }
+//         },
+//         \"c1\": {
+//           \"type\": \"C\",
+//           \"modifier\": \"\",
+//           \"prefixes\": {
+//             \"public\": true,
+//             \"final\": false,
+//             \"inner\": false,
+//             \"outer\": false,
+//             \"replaceable\": false,
+//             \"redeclare\": false,
+//             \"connector\": \"\",
+//             \"variability\": \"\",
+//             \"direction\": \"\"
+//           }
+//         }
+//       }
+//     }
+//   ],
+//   \"components\": {
+//     \"c3\": {
+//       \"type\": \"C\",
+//       \"modifier\": \"\",
+//       \"prefixes\": {
+//         \"public\": true,
+//         \"final\": false,
+//         \"inner\": false,
+//         \"outer\": false,
+//         \"replaceable\": false,
+//         \"redeclare\": false,
+//         \"connector\": \"\",
+//         \"variability\": \"\",
+//         \"direction\": \"\"
+//       }
+//     }
+//   },
+//   \"connections\": [
+//     {
+//       \"lhs\": \"c1\",
+//       \"rhs\": \"c3\",
+//       \"annotation\": \"(Line(points = {{-25, 30}, {10, 30}, {10, -20}, {40, -20}}))\"
+//     },
+//     {
+//       \"lhs\": \"c1\",
+//       \"rhs\": \"c2\"
+//     }
+//   ],
+//   \"replaceable\": [
+//
+//   ]
+// }"
+// endResult

@@ -2535,9 +2535,7 @@ protected
             exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim));
 
             // Create the iterator.
-            iter := InstNode.fromComponent("$i" + intString(i),
-              Component.ITERATOR(Type.INTEGER(), Variability.CONSTANT, info), scope);
-
+            iter := InstNode.newIterator("$i" + intString(i), Type.INTEGER(), info);
             iters := (iter, exp) :: iters;
 
             // Now that iterator is ready apply it, as a subscript, to each argument that is supposed to be vectorized
