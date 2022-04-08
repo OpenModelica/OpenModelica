@@ -165,9 +165,8 @@ public:
     Directories,
     KeepStructure
   };
-  DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
+  DuplicateClassDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
 private:
-  bool mSaveAs;
   LibraryTreeItem *mpLibraryTreeItem;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;

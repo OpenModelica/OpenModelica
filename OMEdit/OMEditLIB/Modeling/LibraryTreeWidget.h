@@ -507,9 +507,9 @@ private:
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
   LibraryTreeView *mpLibraryTreeView;
   bool multipleTopLevelClasses(const QStringList &classesList, const QString &fileName);
-  bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
-  bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem);
+  bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
+  bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
+  bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   void saveChildLibraryTreeItemsOneFile(LibraryTreeItem *pLibraryTreeItem);
   void saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);

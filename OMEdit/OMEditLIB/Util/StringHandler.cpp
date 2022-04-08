@@ -1285,7 +1285,7 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
   }
   else
   {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   /* Add the extension with purposedName because if the directory with the same name exists then
@@ -1317,14 +1317,12 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
 #else
     Q_UNUSED(defaultSuffix);
 #endif
-    mLastOpenDir = fileInfo.absolutePath();
-    return fileName;
+    StringHandler::setLastOpenDirectory(fileInfo.absolutePath());
   }
-  return "";
+  return fileName;
 }
 
-QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption, QString * dir, const QString &filter,
-                                         QString * selectedFilter, const QString *proposedName)
+QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter, const QString *proposedName)
 {
   QString dir_str;
   QString folderName;
@@ -1332,7 +1330,7 @@ QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption
   if (dir) {
     dir_str = *dir;
   } else {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   QString proposedFileName = *proposedName;
@@ -1340,6 +1338,9 @@ QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption
     folderName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(proposedFileName), filter, selectedFilter);
   } else {
     folderName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
+  }
+  if (!folderName.isEmpty()) {
+    StringHandler::setLastOpenDirectory(folderName);
   }
   return folderName;
 }
@@ -1351,7 +1352,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
   if (dir) {
     dir_str = *dir;
   } else {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   QString fileName = "";
@@ -1372,7 +1373,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
 #endif
   if (!fileName.isEmpty()) {
     QFileInfo fileInfo(fileName);
-    mLastOpenDir = fileInfo.absolutePath();
+    StringHandler::setLastOpenDirectory(fileInfo.absolutePath());
   }
   return fileName;
 }
@@ -1384,7 +1385,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   if (dir) {
     dir_str = *dir;
   } else {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   QStringList fileNames;
@@ -1405,7 +1406,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
 #endif
   if (!fileNames.isEmpty()) {
     QFileInfo fileInfo(fileNames.at(0));
-    mLastOpenDir = fileInfo.absolutePath();
+    StringHandler::setLastOpenDirectory(fileInfo.absolutePath());
   }
   return fileNames;
 }
@@ -1417,15 +1418,14 @@ QString StringHandler::getExistingDirectory(QWidget *parent, const QString &capt
   if (dir) {
     dir_str = *dir;
   } else {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    dir_str = StringHandler::getLastOpenDirectory();
   }
 
   QString dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
   if (!dirName.isEmpty()) {
-    mLastOpenDir = dirName;
-    return dirName;
+    StringHandler::setLastOpenDirectory(dirName);
   }
-  return "";
+  return dirName;
 }
 
 void StringHandler::setLastOpenDirectory(QString lastOpenDirectory)
@@ -1435,7 +1435,7 @@ void StringHandler::setLastOpenDirectory(QString lastOpenDirectory)
 
 QString StringHandler::getLastOpenDirectory()
 {
-  return mLastOpenDir;
+  return mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
 }
 
 QStringList StringHandler::getAnnotation(QString componentAnnotation, QString annotationName)
