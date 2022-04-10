@@ -854,6 +854,14 @@ public
           expandRows(m, eqn_scal_idx, m_part);
         then ();
 
+        case (Equation.IF_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
+          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+          row := Slice.getDependentCrefIndices(unique_dependencies, map); //prb worng
+          // duplicate row to if equation size
+          m_part := arrayCreate(eqn_size, row);
+          expandRows(m, eqn_scal_idx, m_part);
+        then ();
+
         case (_, SOME(mapping)) guard(pseudo) algorithm
           (eqn_scal_idx, _) := mapping.eqn_AtS[eqn_arr_idx];
           row := Slice.getDependentCrefIndicesPseudoScalar(unique_dependencies, map, mapping);

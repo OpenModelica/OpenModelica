@@ -37,7 +37,7 @@ encapsulated uniontype NBackendDAE
 public
   import BVariable = NBVariable;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData, Iterator};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, IfEquationBody, Iterator};
   import NBVariable.{VariablePointers, VarData};
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
@@ -585,7 +585,7 @@ protected
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
-      BEquation.Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
+      Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
       iterators := listAppend(Equation.getForIterators(Pointer.access(eqn_ptr)), iterators);
     end for;
     iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);
@@ -701,7 +701,7 @@ protected
         DAE.ElementSource source;
         ComponentRef iterator;
         list<FEquation.Branch> branches;
-        BEquation.EquationAttributes attr;
+        EquationAttributes attr;
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty))
@@ -790,15 +790,15 @@ protected
       local
         list<FEquation.Branch> branches;
         DAE.ElementSource source;
-        BEquation.IfEquationBody ifEqBody;
-        BEquation.EquationAttributes attr;
+        IfEquationBody ifEqBody;
+        EquationAttributes attr;
 
       case FEquation.IF(branches = branches, source = source)
         algorithm
           attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(ifEqBody) := lowerIfEquationBody(branches, init);
           // ToDo: compute correct size
-      then BEquation.IF_EQUATION(0, ifEqBody, source, attr);
+      then BEquation.IF_EQUATION(IfEquationBody.size(ifEqBody), ifEqBody, source, attr);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + FEquation.toString(frontend_equation)});
@@ -810,7 +810,7 @@ protected
   function lowerIfEquationBody
     input list<FEquation.Branch> branches;
     input Boolean init;
-    output Option<BEquation.IfEquationBody> ifEq;
+    output Option<IfEquationBody> ifEq;
   algorithm
     ifEq := match branches
       local
@@ -818,7 +818,7 @@ protected
         list<FEquation.Branch> rest;
         list<Pointer<Equation>> eqns;
         Expression condition;
-        Option<BEquation.IfEquationBody> result;
+        Option<IfEquationBody> result;
 
       // lower current branch
       case branch::rest
@@ -905,7 +905,7 @@ protected
         DAE.ElementSource source;
         Expression condition, message, level;
         BEquation.WhenEquationBody whenEqBody;
-        BEquation.EquationAttributes attr;
+        EquationAttributes attr;
 
       case FEquation.WHEN(branches = branches, source = source)
         algorithm
@@ -1047,7 +1047,7 @@ protected
   protected
     Integer size;
     list<ComponentRef> inputs, outputs;
-    BEquation.EquationAttributes attr;
+    EquationAttributes attr;
   algorithm
     // ToDo! check if always DAE.EXPAND() can be used
     // ToDo! export inputs
@@ -1062,7 +1062,7 @@ protected
   function lowerEquationAttributes
     input Type ty;
     input Boolean init;
-    output BEquation.EquationAttributes attr;
+    output EquationAttributes attr;
   algorithm
     attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
             elseif Type.isDiscrete(ty) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE

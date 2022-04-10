@@ -160,10 +160,10 @@ public
       then StrongComponent.SINGLE_ALGORITHM(new_vars, new_eqn);
 
       case StrongComponent.SINGLE_RECORD_EQUATION() algorithm
-        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
+        new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
         new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
         Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_RECORD_EQUATION(new_vars, new_eqn, comp.status);
+      then StrongComponent.SINGLE_RECORD_EQUATION(new_var, new_eqn, comp.status);
 
       // is this needed? when equations should never be differentiated
       case StrongComponent.SINGLE_WHEN_EQUATION() algorithm
