@@ -1129,6 +1129,7 @@ public
 
         case IF_EQUATION() algorithm
           eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+          IfEquationBody.createNames(eqn.body, idx, context);
         then eqn;
 
         case FOR_EQUATION() algorithm
@@ -1359,6 +1360,16 @@ public
       end match;
     end isWhenEquation;
 
+    function isIfEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.IF_EQUATION() then true;
+        else false;
+      end match;
+    end isIfEquation;
+
     function isForEquation
       input Pointer<Equation> eqn;
       output Boolean b;
@@ -1368,6 +1379,36 @@ public
         else false;
       end match;
     end isForEquation;
+
+    function isArrayEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.ARRAY_EQUATION() then true;
+        else false;
+      end match;
+    end isArrayEquation;
+
+    function isRecordEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.RECORD_EQUATION() then true;
+        else false;
+      end match;
+    end isRecordEquation;
+
+    function isAlgorithm
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.ALGORITHM() then true;
+        else false;
+      end match;
+    end isAlgorithm;
 
     function isParameterEquation
       input Equation eqn;
@@ -1781,6 +1822,7 @@ public
       input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
+      IfEquationBody else_if;
     algorithm
       condition := mapFunc(ifBody.condition, funcExp);
       if not referenceEq(condition, ifBody.condition) then
@@ -1789,7 +1831,30 @@ public
 
       // referenceEq for lists?
       ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)));
+
+      if Util.isSome(ifBody.else_if) then
+        else_if := map(Util.getOption(ifBody.else_if), funcExp, funcCrefOpt, mapFunc);
+      end if;
     end map;
+
+    function size
+      "only considers first branch"
+      input IfEquationBody body;
+      output Integer size = sum(Equation.size(eqn) for eqn in body.then_eqns);
+    end size;
+
+    function createNames
+      input IfEquationBody body;
+      input Pointer<Integer> idx;
+      input String context;
+    algorithm
+      for eqn in body.then_eqns loop
+        Equation.createName(eqn, idx, context);
+      end for;
+      if Util.isSome(body.else_if) then
+        createNames(Util.getOption(body.else_if), idx, context);
+      end if;
+    end createNames;
 
     function toStatement
       input IfEquationBody body;

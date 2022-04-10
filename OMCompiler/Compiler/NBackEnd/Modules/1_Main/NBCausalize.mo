@@ -55,17 +55,13 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import Differentiate = NBDifferentiate;
-  import NBEquation.EqData;
-  import NBEquation.Equation;
-  import NBEquation.EquationAttributes;
-  import NBEquation.EquationPointers;
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes};
   import Matching = NBMatching;
   import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import BVariable = NBVariable;
-  import NBVariable.VarData;
-  import NBVariable.VariablePointers;
+  import NBVariable.{VariablePointers, VarData};
 
   // util imports
   import BackendUtil = NBBackendUtil;
@@ -147,7 +143,7 @@ public
 
   function simple
     input VariablePointers vars;
-    input BEquation.EquationPointers eqs;
+    input EquationPointers eqs;
     input Adjacency.MatrixType matrixType = NBAdjacency.MatrixType.PSEUDO;
     output list<StrongComponent> comps;
   protected

@@ -175,7 +175,7 @@ public
       case StrongComponent.SINGLE_RECORD_EQUATION()
       then tearingNoneWork(
           name      = System.System.systemTypeString(systemType) + "_IMP_JAC_",
-          variables = comp.vars,
+          variables = {comp.var},
           equations = {comp.eqn},
           mixed     = false,
           funcTree  = funcTree,

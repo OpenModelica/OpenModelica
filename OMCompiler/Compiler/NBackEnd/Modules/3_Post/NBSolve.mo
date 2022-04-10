@@ -51,9 +51,10 @@ public
 
   // backend imports
   import BackendDAE = NBackendDAE;
+  import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, SlicingStatus};
-  import NBVariable.VarData;
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, SlicingStatus};
+  import NBVariable.{VariablePointers, VarData};
   import Replacements = NBReplacements;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
@@ -194,15 +195,14 @@ public
           (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcTree);
         then ({StrongComponent.SINGLE_ARRAY(comp.var, Pointer.create(eqn), solve_status)}, solve_status);
 
-        // ToDo: solve inner branch systems for WHEN and IF
         case StrongComponent.SINGLE_WHEN_EQUATION() algorithm
           (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(List.first(comp.vars)), funcTree);
         then ({StrongComponent.SINGLE_WHEN_EQUATION(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
 
-        // ToDo
-        //case StrongComponent.SINGLE_IF_EQUATION() algorithm
-        //  (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(List.first(comp.vars)), funcTree);
-        //then ({StrongComponent.SINGLE_IF_EQUATION(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
+        // ToDo solve inner branch systems for IF
+        case StrongComponent.SINGLE_IF_EQUATION() algorithm
+          (eqn, funcTree, solve_status, implicit_index) := solveIfStrongComponent(Pointer.access(comp.eqn), VariablePointers.fromList(comp.vars), funcTree, systemType, implicit_index, slicing_map);
+        then ({StrongComponent.SINGLE_IF_EQUATION(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
 
         case StrongComponent.TORN_LOOP() algorithm
           // do we need to do smth here? e.g. solve inner equations? call tearing from here?
@@ -319,7 +319,6 @@ public
         + " while trying to solve following strong component:\n" + StrongComponent.toString(comp) + "\n"});
       fail();
     end if;
-
   end solveStrongComponent;
 
   function solveTrivialStrongComponent
@@ -330,11 +329,67 @@ public
   algorithm
     if ComponentRef.isEmpty(var.name) then
       // empty variable name implies equation without return value
-      (eqn, status) := (eqn, NBSolve.Status.EXPLICIT);
+      (eqn, status) := (eqn, Status.EXPLICIT);
     else
       (eqn, funcTree, status, _) := solveEquation(eqn, var.name, funcTree);
     end if;
   end solveTrivialStrongComponent;
+
+  function solveIfStrongComponent
+    input output Equation eqn;
+    input VariablePointers vars;
+    input output FunctionTree funcTree;
+    output Status status;
+    input SystemType systemType;
+    input output Integer implicit_index;
+    input UnorderedMap<ComponentRef, EquationPointerList> slicing_map;
+  protected
+    IfEquationBody body;
+  algorithm
+    (eqn, funcTree, status) := match eqn
+      case Equation.IF_EQUATION() algorithm
+        (body, funcTree, status, implicit_index) := solveIfBody(eqn.body, vars, funcTree, systemType, implicit_index, slicing_map);
+        eqn.body := body;
+      then (eqn, funcTree, status);
+
+      else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " equation is not a for equation:\n" + Equation.toString(eqn)});
+      then fail();
+    end match;
+  end solveIfStrongComponent;
+
+  function solveIfBody
+    input output IfEquationBody body;
+    input VariablePointers vars;
+    input output FunctionTree funcTree;
+    output Status status;
+    input SystemType systemType;
+    input output Integer implicit_index;
+    input UnorderedMap<ComponentRef, EquationPointerList> slicing_map;
+  protected
+    IfEquationBody else_if;
+    list<StrongComponent> comps, solved_comps;
+    list<Pointer<Equation>> new_then_eqns = {};
+  algorithm
+    // causalize this branch equations for the unknowns
+    comps := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns));
+    // solve each strong component explicitely and save equations to branch
+    for comp in comps loop
+      (solved_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, systemType, implicit_index, slicing_map);
+      for solved_comp in solved_comps loop
+        new_then_eqns := StrongComponent.toSolvedEquation(solved_comp) :: new_then_eqns;
+      end for;
+    end for;
+    body.then_eqns := listReverse(new_then_eqns);
+    // if there is an else branch -> go deeper
+    if Util.isSome(body.else_if) then
+      (else_if, funcTree, status, implicit_index) := solveIfBody(Util.getOption(body.else_if), vars, funcTree, systemType, implicit_index, slicing_map);
+      body.else_if := SOME(else_if);
+    else
+      // StrongComponent.toSolvedEquation fails for everything that is not explicitely solvable so at this point one can assume it is
+      status := Status.EXPLICIT;
+    end if;
+  end solveIfBody;
 
   function solveEquation
     input output Equation eqn;
