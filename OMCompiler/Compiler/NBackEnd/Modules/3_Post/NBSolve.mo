@@ -199,15 +199,19 @@ public
           (eqn, funcTree, solve_status) := solveTrivialStrongComponent(Pointer.access(comp.eqn), Pointer.access(List.first(comp.vars)), funcTree);
         then ({StrongComponent.SINGLE_WHEN_EQUATION(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
 
-        // ToDo solve inner branch systems for IF
         case StrongComponent.SINGLE_IF_EQUATION() algorithm
           (eqn, funcTree, solve_status, implicit_index) := solveIfStrongComponent(Pointer.access(comp.eqn), VariablePointers.fromList(comp.vars), funcTree, systemType, implicit_index, slicing_map);
         then ({StrongComponent.SINGLE_IF_EQUATION(comp.vars, Pointer.create(eqn), solve_status)}, solve_status);
 
+        // ToDo: inverse algorithms
+        case StrongComponent.SINGLE_ALGORITHM() algorithm
+          comp.status := Status.EXPLICIT;
+        then ({comp}, Status.EXPLICIT);
+
         case StrongComponent.TORN_LOOP() algorithm
           // do we need to do smth here? e.g. solve inner equations? call tearing from here?
           comp.status := Status.IMPLICIT;
-       then ({comp}, Status.IMPLICIT);
+        then ({comp}, Status.IMPLICIT);
 
         case StrongComponent.SLICED_EQUATION(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
           eqn_ptr := Slice.getT(eqn_slice);
@@ -336,6 +340,10 @@ public
   end solveTrivialStrongComponent;
 
   function solveIfStrongComponent
+    "solve a strong component that is a single if equation
+    look at each branch individually and create an equation system of
+    branch equations <-> unknown variables
+    perform matching and sorting on it and solve each body equation."
     input output Equation eqn;
     input VariablePointers vars;
     input output FunctionTree funcTree;

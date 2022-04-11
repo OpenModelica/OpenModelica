@@ -157,7 +157,7 @@ public
         new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
         new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
         Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_ALGORITHM(new_vars, new_eqn);
+      then StrongComponent.SINGLE_ALGORITHM(new_vars, new_eqn, comp.status);
 
       case StrongComponent.SINGLE_RECORD_EQUATION() algorithm
         new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);

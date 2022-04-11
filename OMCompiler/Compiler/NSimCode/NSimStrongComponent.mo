@@ -493,6 +493,10 @@ public
           (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
         then (tmp, getIndex(tmp));
 
+        case StrongComponent.SINGLE_ALGORITHM() algorithm
+          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
+        then (tmp, getIndex(tmp));
+
         case StrongComponent.SLICED_EQUATION() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
           (tmp, simCodeIndices) := createAlgorithm(Pointer.access(Slice.getT(comp.eqn)), simCodeIndices);
         then (tmp, getIndex(tmp));
@@ -690,6 +694,11 @@ public
         case (BEquation.IF_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
           (branches, simCodeIndices) := createIfBody(eqn.body, {}, simCodeIndices, systemType, simcode_map);
           tmp := IF(simCodeIndices.equationIndex, listReverse(branches), eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        case (BEquation.ALGORITHM(), NBSolve.Status.EXPLICIT) algorithm
+          tmp := ALGORITHM(simCodeIndices.equationIndex, eqn.alg.statements, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
