@@ -1625,6 +1625,24 @@ public
         // empty index list indicates no slicing and no rearranging
         case _ guard(listEmpty(indices)) then (Pointer.create(eqn), SlicingStatus.UNCHANGED, NBSolve.Status.EXPLICIT);
 
+        case RECORD_EQUATION() algorithm
+          slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
+          if Util.isSome(cref_opt) then
+            (eqn, funcTree, solve_status, _) := Solve.solveEquation(Pointer.access(eqn_ptr), Util.getOption(cref_opt), funcTree);
+          else
+            solve_status := NBSolve.Status.EXPLICIT;
+          end if;
+        then (Pointer.create(eqn), slicing_status, solve_status);
+
+        case ARRAY_EQUATION() algorithm
+          slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
+          if Util.isSome(cref_opt) then
+            (eqn, funcTree, solve_status, _) := Solve.solveEquation(Pointer.access(eqn_ptr), Util.getOption(cref_opt), funcTree);
+          else
+            solve_status := NBSolve.Status.EXPLICIT;
+          end if;
+        then (Pointer.create(eqn), slicing_status, solve_status);
+
         case FOR_EQUATION() algorithm
           // get the sizes of the 'return value' of the equation
           dims      := Type.arrayDims(Equation.getType(eqn));

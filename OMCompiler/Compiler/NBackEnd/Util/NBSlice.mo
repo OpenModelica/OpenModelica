@@ -319,9 +319,8 @@ public
       idx := 1;
       for var_scal_idx in listReverse(scal_lst) loop
         mode_to_var_row := mode_to_var[idx];
-        mode_to_var_row[mode] := var_scal_idx;
         arrayUpdate(mode_to_var_row, mode, var_scal_idx);
-        var_scal_idx := -var_scal_idx;
+        arrayUpdate(mode_to_var, idx, mode_to_var_row);
         indices[idx] := var_scal_idx :: indices[idx];
         idx := idx + 1;
       end for;

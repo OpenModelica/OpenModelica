@@ -842,9 +842,19 @@ public
         then ();
 
         case (Equation.RECORD_EQUATION(), SOME(mapping)) guard(pseudo) algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because record equations are not yet supported:\n"
-            + Equation.toString(eqn)});
-        then fail();
+          (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
+          (m_part, mode_to_var_part) := Slice.getDependentCrefIndicesPseudoArray(
+            dependencies  = unique_dependencies,
+            map           = map,
+            mapping       = mapping,
+            eqn_arr_idx   = eqn_arr_idx
+          );
+          // check for arrayLength(m_part) == eqn_size ?
+
+          // add matrix rows to correct locations and update causalize modes
+          expandRows(m, eqn_scal_idx, m_part);
+          CausalizeModes.update(modes, eqn_scal_idx, eqn_arr_idx, mode_to_var_part, unique_dependencies);
+        then ();
 
         case (Equation.ALGORITHM(), SOME(mapping)) guard(pseudo) algorithm
           (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
