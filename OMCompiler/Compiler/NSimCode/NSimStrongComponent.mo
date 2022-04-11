@@ -489,6 +489,10 @@ public
           (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
         then (tmp, getIndex(tmp));
 
+        case StrongComponent.SINGLE_WHEN_EQUATION() algorithm
+          (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
+        then (tmp, getIndex(tmp));
+
         case StrongComponent.SINGLE_IF_EQUATION() algorithm
           (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
         then (tmp, getIndex(tmp));
