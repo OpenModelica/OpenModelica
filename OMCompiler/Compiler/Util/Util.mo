@@ -90,7 +90,7 @@ public function linuxDotSlash "If operating system is Linux/Unix, return a './',
   output String str;
 algorithm
   str := Autoconf.os;
-  str := if str == "linux" or str == "OSX" then "./" else "";
+  str := if str == "linux" or str == "darwin" then "./" else "";
 end linuxDotSlash;
 
 public function flagValue "author: x02lucpo
