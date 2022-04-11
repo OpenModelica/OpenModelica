@@ -307,7 +307,7 @@ public
 
     function toString
       input VariableAttributes attr;
-      output String str;
+      output String str = "";
     algorithm
       str := match attr
         case VAR_ATTR_REAL()
@@ -329,13 +329,25 @@ public
         then attributesToString({("fixed", attr.fixed), ("start", attr.start), ("min", attr.min), ("max", attr.max)}, NONE(), NONE());
 
         case VAR_ATTR_RECORD()
-        then "Attribute string for RECORD not supported yet";
+        then List.toString(UnorderedMap.toList(attr.indexMap), function recordString(childrenAttr = attr.childrenAttr), "", "" ,", " , "");
 
         else getInstanceName() + " failed. Attribute string could not be created.";
       end match;
       // put the string in parentheses only if it is not empty
       str := if "" == str then "" else "(" + str + ")";
     end toString;
+
+    function recordString
+      input tuple<String, Integer> attr_tpl;
+      input array<VariableAttributes> childrenAttr;
+      output String str;
+    protected
+      String name;
+      Integer index;
+    algorithm
+      (name, index) := attr_tpl;
+      str := name + toString(childrenAttr[index]);
+    end recordString;
 
     function create
       input list<tuple<String, Binding>> attrs;
