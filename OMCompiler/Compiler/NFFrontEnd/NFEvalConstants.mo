@@ -63,8 +63,9 @@ import Flatten = NFFlatten;
 public
 function evaluate
   input output FlatModel flatModel;
+  input InstContext.Type context;
 algorithm
-  flatModel.variables := list(evaluateVariable(v) for v in flatModel.variables);
+  flatModel.variables := list(evaluateVariable(v, context) for v in flatModel.variables);
   flatModel.equations := evaluateEquations(flatModel.equations);
   flatModel.initialEquations := evaluateEquations(flatModel.initialEquations);
   flatModel.algorithms := evaluateAlgorithms(flatModel.algorithms);
@@ -75,24 +76,26 @@ end evaluate;
 
 function evaluateVariable
   input output Variable var;
+  input InstContext.Type context;
 protected
   Binding binding;
 algorithm
   binding := evaluateBinding(var.binding, var.name,
-    Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER);
+    Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER, context);
 
   if not referenceEq(binding, var.binding) then
     var.binding := binding;
   end if;
 
-  var.typeAttributes := list(evaluateTypeAttribute(a, var.name) for a in var.typeAttributes);
-  var.children := list(evaluateVariable(v) for v in var.children);
+  var.typeAttributes := list(evaluateTypeAttribute(a, var.name, context) for a in var.typeAttributes);
+  var.children := list(evaluateVariable(v, context) for v in var.children);
 end evaluateVariable;
 
 function evaluateBinding
   input output Binding binding;
   input ComponentRef prefix;
   input Boolean structural;
+  input InstContext.Type context;
 protected
   Expression exp, eexp;
   SourceInfo info;
@@ -101,7 +104,12 @@ algorithm
     exp := Binding.getTypedExp(binding);
 
     if structural then
-      eexp := Ceval.evalExp(exp, Ceval.EvalTarget.ATTRIBUTE(binding));
+      if InstContext.inRelaxed(context) then
+        eexp := Ceval.tryEvalExp(exp);
+      else
+        eexp := Ceval.evalExp(exp, Ceval.EvalTarget.ATTRIBUTE(binding));
+      end if;
+
       eexp := Flatten.flattenExp(eexp, prefix);
     else
       info := Binding.getInfo(binding);
@@ -117,6 +125,7 @@ end evaluateBinding;
 function evaluateTypeAttribute
   input output tuple<String, Binding> attribute;
   input ComponentRef prefix;
+  input InstContext.Type context;
 protected
   String name;
   Binding binding, sbinding;
@@ -124,7 +133,7 @@ protected
 algorithm
   (name, binding) := attribute;
   structural := name == "fixed" or name == "stateSelect";
-  sbinding := evaluateBinding(binding, prefix, structural);
+  sbinding := evaluateBinding(binding, prefix, structural, context);
 
   if not referenceEq(binding, sbinding) then
     attribute := (name, sbinding);

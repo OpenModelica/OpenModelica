@@ -722,7 +722,7 @@ algorithm
 
   // Flatten and simplify the model.
   flat_model := Flatten.flatten(inst_cls, name);
-  flat_model := EvalConstants.evaluate(flat_model);
+  flat_model := EvalConstants.evaluate(flat_model, NFInstContext.RELAXED);
   flat_model := UnitCheck.checkUnits(flat_model);
   flat_model := SimplifyModel.simplify(flat_model);
   flat_model := Package.collectConstants(flat_model);

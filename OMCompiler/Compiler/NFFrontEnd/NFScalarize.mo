@@ -104,7 +104,7 @@ protected
   Binding.Source bind_src;
   Boolean force_scalar_attributes = false;
 algorithm
-  if Type.isArray(var.ty) then
+  if Type.isArray(var.ty) and Type.hasKnownSize(var.ty) then
     try
       Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, _, cmt, info, binfo) := var;
       crefs := ComponentRef.scalarize(name);
