@@ -117,6 +117,8 @@ import ValuesUtil;
 import VisualXML;
 import ZeroCrossings;
 import ReduceDAE;
+import Settings;
+
 protected constant String UNDERLINE = "========================================";
 
 protected function compareEqSystems
@@ -15317,6 +15319,7 @@ algorithm
         File.open(file,fileName,File.Mode.Write);
 
         locations := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
+        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/";
         str := "@echo off\n"
                 + "set PATH=" + locations + ";%PATH%;\n"
                 + "set ERRORLEVEL=\n"
