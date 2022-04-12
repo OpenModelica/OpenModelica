@@ -1809,7 +1809,7 @@ void PlotWindow::setLogX(bool on)
   }
   else
   {
-    mpPlot->setAxisScaleEngine(QwtPlot::xBottom, mpPlot->getXLinearScaleEngine());
+    mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new LinearScaleEngine);
   }
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
   mpLogXCheckBox->blockSignals(true);
@@ -1830,7 +1830,7 @@ void PlotWindow::setLogY(bool on)
   }
   else
   {
-    mpPlot->setAxisScaleEngine(QwtPlot::yLeft, mpPlot->getYLinearScaleEngine());
+    mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new LinearScaleEngine);
   }
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
   mpLogYCheckBox->blockSignals(true);
