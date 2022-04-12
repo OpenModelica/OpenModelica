@@ -977,7 +977,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       readPLTArray(mpTextStream, currentVariable, alpha, intervalSize, it, arrLst);
       for (int i = 0; i < arrLst.length(); i++)
       {
-        pPlotCurve->addXAxisValue(i);
+        pPlotCurve->addXAxisValue(i+1);
         pPlotCurve->addYAxisValue(arrLst[i]);
       }
       pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
@@ -1037,7 +1037,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       pPlotCurve->clearXAxisVector();
       pPlotCurve->clearYAxisVector();
       for (int j = 0; j < res.count(); j++){
-        pPlotCurve->addXAxisValue(j);
+        pPlotCurve->addXAxisValue(j+1);
         pPlotCurve->addYAxisValue(res[j]);
       }
       pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
@@ -1098,7 +1098,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         pPlotCurve->clearXAxisVector();
         pPlotCurve->clearYAxisVector();
         for (int i = 0; i < vars.count(); i++){
-          pPlotCurve->addXAxisValue(i);
+          pPlotCurve->addXAxisValue(i+1);
           pPlotCurve->addYAxisValue(res[i]);
         }
         pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
