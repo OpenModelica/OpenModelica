@@ -530,6 +530,7 @@ algorithm
       Type ty;
       TypingError ty_err;
       Integer parent_dims, dim_index;
+      Boolean evaluated;
 
     // A dimension that we're already trying to type.
     case Dimension.UNTYPED(isProcessing = true)
@@ -553,11 +554,17 @@ algorithm
 
         (exp, ty, var) := typeExp(dimension.dimension, InstContext.set(context, NFInstContext.DIMENSION), info);
         TypeCheck.checkDimensionType(exp, ty, info);
+        evaluated := true;
 
         if not InstContext.inFunction(context) then
           // Dimensions must be parameter expressions in a non-function class.
           if var <= Variability.PARAMETER then
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+            if InstContext.inRelaxed(context) then
+              exp := Ceval.tryEvalExp(exp);
+              evaluated := Expression.isLiteral(exp);
+            else
+              exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+            end if;
           else
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
             fail();
@@ -602,6 +609,7 @@ algorithm
         (dim, ty_err) := match b
           // Print an error if there's no binding.
           case Binding.UNBOUND()
+            guard not InstContext.inRelaxed(context)
             algorithm
               Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,
                 {String(index), InstNode.name(component)}, info);
@@ -662,6 +670,7 @@ algorithm
               Dimension.fromExp(exp, dim.var);
 
           case Dimension.UNKNOWN()
+            guard not InstContext.inRelaxed(context)
             algorithm
               Error.addInternalError(getInstanceName() + " returned unknown dimension in a non-function context", info);
             then

@@ -153,7 +153,8 @@ algorithm
 
   // Flatten the model and evaluate constants in it.
   flatModel := Flatten.flatten(inst_cls, name);
-  flatModel := EvalConstants.evaluate(flatModel);
+  flatModel := EvalConstants.evaluate(flatModel, context);
+
   InstUtil.dumpFlatModelDebug("eval", flatModel);
 
   // Do unit checking
