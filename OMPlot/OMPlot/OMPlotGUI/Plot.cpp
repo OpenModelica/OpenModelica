@@ -315,13 +315,14 @@ void Plot::replot()
     QString timeUnit = mpParentPlotWindow->getTimeUnit();
     if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOT
         || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTALL
-        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE
-        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
       if (mpXScaleDraw->getUnitPrefix().isEmpty()) {
         setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
       } else {
         setAxisTitle(QwtPlot::xBottom, QString("%1 (%2%3)").arg(mpParentPlotWindow->getXLabel(), mpXScaleDraw->getUnitPrefix(), timeUnit));
       }
+    } else if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+      setAxisTitle(QwtPlot::xBottom, mpParentPlotWindow->getXLabel());
     } else {
       setAxisTitle(QwtPlot::xBottom, "");
     }

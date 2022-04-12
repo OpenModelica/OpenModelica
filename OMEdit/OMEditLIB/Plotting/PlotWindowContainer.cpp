@@ -347,7 +347,7 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
         }
     }
     pPlotWindow->setTimeUnit(unitComboBox->currentText());
-    pPlotWindow->setXLabel(QString("index"));
+    pPlotWindow->setXLabel(QString("array element index"));
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
