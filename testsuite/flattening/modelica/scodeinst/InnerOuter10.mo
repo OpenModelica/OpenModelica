@@ -5,7 +5,7 @@
 //
 
 model InnerOuter10
-  connector R = Real;
+  connector R = input Real;
   inner R r;
 
   model B
@@ -17,6 +17,6 @@ end InnerOuter10;
 
 // Result:
 // class InnerOuter10
-//   Real r;
+//   input Real r;
 // end InnerOuter10;
 // endResult

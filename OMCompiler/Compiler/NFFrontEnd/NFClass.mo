@@ -224,6 +224,23 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     (node, isImport) := ClassTree.lookupElement(name, classTree(cls));
   end lookupElement;
 
+  function tryLookupElement
+    input String name;
+    input Class cls;
+    output Option<InstNode> node;
+    output Boolean isImport;
+  protected
+    InstNode n;
+  algorithm
+    try
+      (n, isImport) := ClassTree.lookupElement(name, classTree(cls));
+      node := SOME(n);
+    else
+      node := NONE();
+      isImport := false;
+    end try;
+  end tryLookupElement;
+
   function lookupComponentIndex
     input String name;
     input Class cls;
