@@ -1508,11 +1508,8 @@ void MainWindow::addSystemLibraries()
     } else {
       QMenu *pLibraryMenu = new QMenu(library);
       foreach (QString version, versions) {
-        QAction *pAction = new QAction(version, this);
+        QAction *pAction = new QAction(StringHandler::convertSemVertoReadableString(version), this);
         pAction->setData(QStringList() << library << version);
-        if ((library.compare(QStringLiteral("Modelica")) == 0) && (version.compare(QStringLiteral("4.0.0")) == 0)) {
-          pAction->setShortcut(QKeySequence("Ctrl+m"));
-        }
         connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
         pLibraryMenu->addAction(pAction);
       }

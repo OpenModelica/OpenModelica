@@ -51,6 +51,9 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   setMinimumWidth(400);
   Label *pHeadingLabel = Utilities::getHeadingLabel(Helper::installLibrary);
   pHeadingLabel->setElideMode(Qt::ElideMiddle);
+  Label *pPackageManagerText = new Label(tr("The library will be installed using the <u><a href=\"https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/packagemanager.html#the-package-manager\">package manager</a></u>."));
+  pPackageManagerText->setOpenExternalLinks(true);
+  pPackageManagerText->setTextInteractionFlags(Qt::TextBrowserInteraction);
   // support levels
   mpFullSupportCheckBox = new QCheckBox(tr("Full"));
   mpFullSupportCheckBox->setChecked(true);
@@ -122,6 +125,7 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   pMainGridLayout->setAlignment(Qt::AlignTop);
   pMainGridLayout->addWidget(pHeadingLabel, row++, 0, 1, 2);
   pMainGridLayout->addWidget(Utilities::getHeadingLine(), row++, 0, 1, 2);
+  pMainGridLayout->addWidget(pPackageManagerText, row++, 0, 1, 2);
   pMainGridLayout->addWidget(pSupportLevelsGroupBox, row++, 0, 1, 2);
   pMainGridLayout->addWidget(new Label(Helper::name), row, 0);
   pMainGridLayout->addWidget(mpNameComboBox, row++, 1);
@@ -214,7 +218,9 @@ void InstallLibraryDialog::libraryIndexChanged(const QString &text)
   } else {
     FilteredLibrary filteredLibrary = mFilteredLibrariesMap[text];
     mpSourceLabel->setText(QString("<a href=\"%1\">%1</a>").arg(filteredLibrary.source));
-    mpVersionComboBox->addItems(filteredLibrary.versions);
+    foreach (QString version, filteredLibrary.versions) {
+      mpVersionComboBox->addItem(StringHandler::convertSemVertoReadableString(version), version);
+    }
     mpOkButton->setEnabled(true);
   }
 }
@@ -229,7 +235,7 @@ void InstallLibraryDialog::installLibrary()
   mpOkButton->setEnabled(false);
   repaint(); // repaint the dialog so progresslabel is updated.
   QString library = mpNameComboBox->currentText();
-  QString version = mpVersionComboBox->currentText();
+  QString version = mpVersionComboBox->itemData(mpVersionComboBox->currentIndex()).toString();
   bool exactMatch = mpExactMatchCheckBox->isChecked();
 
   if (MainWindow::instance()->getOMCProxy()->installPackage(library, version, exactMatch)) {

@@ -1417,8 +1417,10 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
       QList<QString> availableVersions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(libraryName);
       QComboBox *pComboBox = new QComboBox;
       foreach (QString convertsToVersion, convertsToVersions) {
-        bool installed = availableVersions.contains(convertsToVersion);
-        pComboBox->addItem(QString("(%1installed) %2").arg(installed ? "" : "not ", convertsToVersion), QList<QVariant>() << convertsToVersion << installed);
+        // show only the installed versions
+        if (availableVersions.contains(convertsToVersion)) {
+          pComboBox->addItem(StringHandler::convertSemVertoReadableString(convertsToVersion), convertsToVersion);
+        }
       }
       pComboBox->model()->sort(0);
       pComboBox->setCurrentIndex(0);
@@ -1451,7 +1453,6 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
   }
   pMainLayout->addWidget(mpUsesLibrariesTreeWidget);
   pMainLayout->addWidget(new Label(tr("Note: The converted class and used library might be reloaded.")));
-  pMainLayout->addWidget(new Label(tr("If the new version of used library is not installed then it will be installed automatically.")));
   pMainLayout->addWidget(new Label(tr("This operation can take sometime depending on the conversions.")));
   pMainLayout->addWidget(new Label(tr("Backup your work before starting the conversion.")));
   QHBoxLayout *pHBoxLayout = new QHBoxLayout;
@@ -1487,22 +1488,13 @@ void ConvertClassUsesAnnotationDialog::convert()
   repaint(); // repaint the dialog so progresslabel is updated.
   const QString nameStructure = mpLibraryTreeItem->getNameStructure();
   bool reloadClass = false;
-  bool updateSystemLibraries = false;
   QTreeWidgetItemIterator usesLibrariesIterator(mpUsesLibrariesTreeWidget);
   while (*usesLibrariesIterator) {
     QTreeWidgetItem *pUsesLibraryTreeWidgetItem = dynamic_cast<QTreeWidgetItem*>(*usesLibrariesIterator);
     QComboBox *pComboBox = qobject_cast<QComboBox*>(mpUsesLibrariesTreeWidget->itemWidget(pUsesLibraryTreeWidgetItem, 1));
-    QList<QVariant> comboBoxItemData = pComboBox->itemData(pComboBox->currentIndex()).toList();
-    const QString libraryName = pUsesLibraryTreeWidgetItem->text(0);
-    if (comboBoxItemData.size() > 1) {
-      const QString libraryVersion = comboBoxItemData.at(0).toString();
-      const bool installed = comboBoxItemData.at(1).toBool();
-      // install the library if needed.
-      if (!installed) {
-        if (MainWindow::instance()->getOMCProxy()->installPackage(libraryName, libraryVersion, true)) {
-          updateSystemLibraries |= true;
-        }
-      }
+    const QString libraryVersion = pComboBox->itemData(pComboBox->currentIndex()).toString();
+    if (!libraryVersion.isEmpty()) {
+      const QString libraryName = pUsesLibraryTreeWidgetItem->text(0);
       if (MainWindow::instance()->getOMCProxy()->convertPackageToLibrary(nameStructure, libraryName, libraryVersion)) {
         LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(libraryName);
         if (pLibraryTreeItem) {
@@ -1525,10 +1517,6 @@ void ConvertClassUsesAnnotationDialog::convert()
   }
   // load any dependent libraries
   pLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
-  // update system libraries if needed
-  if (updateSystemLibraries) {
-    MainWindow::instance()->addSystemLibraries();
-  }
   accept();
 }
 
