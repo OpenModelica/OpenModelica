@@ -51,7 +51,6 @@ protected
 import Error;
 import List;
 import FGraph;
-import FGraphStream;
 import Config;
 import Flags;
 import SCodeUtil;
@@ -345,7 +344,6 @@ algorithm
   c := RefTree.add(c, inName, inChildRef,
     if checkDuplicate then printElementConflictError else RefTree.addConflictReplace);
   parent := updateRef(inParentRef, FCore.N(n, i, p, c, d));
-  FGraphStream.edge(inName, fromRef(parent), fromRef(inChildRef));
 end addChildRef;
 
 protected function printElementConflictError

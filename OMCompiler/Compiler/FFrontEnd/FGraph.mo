@@ -53,7 +53,6 @@ import List;
 import Util;
 import System;
 import Debug;
-import FGraphStream;
 import FGraphBuildEnv;
 import Global;
 import Config;
@@ -207,7 +206,6 @@ algorithm
   outGraph := FCore.G(top,s);
   // Creates a cycle, but faster to get the initial environment
   arrayUpdate(ag, 1, FCore.G(top, {nr}));
-  FGraphStream.node(n);
 end new;
 
 public function node
@@ -231,7 +229,6 @@ algorithm
       equation
         i = System.tmpTickIndex(Global.fgraph_nextId);
         n = FNode.new(inName, i, inParents, inData);
-        FGraphStream.node(n);
         // uncomment this if unique node id's are not unique!
         /*
         b = (id == i);

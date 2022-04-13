@@ -34,7 +34,6 @@ target_include_directories(bomc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../Util)
 
 target_link_libraries(bomc PRIVATE omc::parser)
 target_link_libraries(bomc PRIVATE omc::compiler::runtime)
-target_link_libraries(bomc PRIVATE omc::compiler::graphstream)
 
 
 # Set up for proper usage of the bootstrap omc (bomc).

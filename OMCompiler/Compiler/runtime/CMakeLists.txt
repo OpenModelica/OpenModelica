@@ -160,22 +160,6 @@ target_link_libraries(omcbackendruntime PUBLIC omc::3rd::zlib)
 target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-# ######################################################################################################################
-# Library: omcgraphstream
-add_library(omcgraphstream STATIC)
-add_library(omc::compiler::graphstream ALIAS omcgraphstream)
-
-set(OMC_GRAPH_STREAM_SOURCES GraphStreamExt_omc.cpp)
-target_sources(omcgraphstream PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
-
-target_link_libraries(omcgraphstream PUBLIC omc::simrt::runtime)
-target_link_libraries(omcgraphstream PUBLIC omc::3rd::netstream)
-
-
-
-
-
-
 
 ################################################################################
 # This is a lazy approach to generating OMCompiler/omc_config.unix.h and Compiler/Util/Autoconf.mo
