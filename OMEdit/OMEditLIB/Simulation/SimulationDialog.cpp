@@ -2046,7 +2046,7 @@ void SimulationDialog::enableDasslIdaOptions(QString method)
  */
 void SimulationDialog::showIntegrationHelp()
 {
-  QUrl integrationAlgorithmsPath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html#integration-methods").arg(Helper::OpenModelicaHome));
+  QUrl integrationAlgorithmsPath ("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/simulationflags.html#integration-methods");
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString()), Helper::ok);
@@ -2112,7 +2112,7 @@ void SimulationDialog::browseEquationSystemInitializationFile()
  */
 void SimulationDialog::showSimulationFlagsHelp()
 {
-  QUrl simulationflagsPath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html").arg(Helper::OpenModelicaHome));
+  QUrl simulationflagsPath ("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/simulationflags.html");
   if (!QDesktopServices::openUrl(simulationflagsPath)) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(simulationflagsPath.toString()), Helper::ok);
