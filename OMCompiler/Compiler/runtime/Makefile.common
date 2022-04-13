@@ -124,7 +124,6 @@ HpcOmBenchmarkExt_omc$(OBJEXT) : HpcOmBenchmarkExt.cpp $(BOOTH)
 HpcOmSchedulerExt_omc$(OBJEXT) : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp $(BOOTH)
 ptolemyio_omc$(OBJEXT) : ptolemyio.cpp errorext.h $(RML_COMPAT) $(BOOTH)
 FMI_omc$(OBJEXT) : FMIImpl.c $(BOOTH)
-GraphStreamExt_omc$(OBJEXT) : $(BOOTH) GraphStreamExt_impl.cpp $(RML_COMPAT)
 Settings_omc$(OBJEXT) : Settings_omc.cpp settingsimpl.c $(configUnix) $(BOOTH) $(OMC_CONFIG_INC)/omc_config.h
 
 %.boot.o: %.c
