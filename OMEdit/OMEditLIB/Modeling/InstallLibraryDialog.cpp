@@ -214,7 +214,9 @@ void InstallLibraryDialog::libraryIndexChanged(const QString &text)
   } else {
     FilteredLibrary filteredLibrary = mFilteredLibrariesMap[text];
     mpSourceLabel->setText(QString("<a href=\"%1\">%1</a>").arg(filteredLibrary.source));
-    mpVersionComboBox->addItems(filteredLibrary.versions);
+    foreach (QString version, filteredLibrary.versions) {
+      mpVersionComboBox->addItem(StringHandler::convertSemVertoReadableString(version), version);
+    }
     mpOkButton->setEnabled(true);
   }
 }
@@ -229,7 +231,7 @@ void InstallLibraryDialog::installLibrary()
   mpOkButton->setEnabled(false);
   repaint(); // repaint the dialog so progresslabel is updated.
   QString library = mpNameComboBox->currentText();
-  QString version = mpVersionComboBox->currentText();
+  QString version = mpVersionComboBox->itemData(mpVersionComboBox->currentIndex()).toString();
   bool exactMatch = mpExactMatchCheckBox->isChecked();
 
   if (MainWindow::instance()->getOMCProxy()->installPackage(library, version, exactMatch)) {

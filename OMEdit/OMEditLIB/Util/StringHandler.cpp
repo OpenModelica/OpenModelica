@@ -2000,3 +2000,35 @@ QString StringHandler::getModelicaComment(QString element)
   }
   return element;
 }
+
+/*!
+ * \brief StringHandler::convertSemVertoReadableString
+ * Converts the semver to user friendly string.
+ * https://semver.org/#semantic-versioning-specification-semver
+ * For example, "4.0.0+maint.om" becomes "4.0.0 (post-release build maint.om)"
+ * \param semver
+ * \return
+ */
+QString StringHandler::convertSemVertoReadableString(const QString &semver)
+{
+  QStringList vars;
+  QString release;
+  QString version = semver;
+  if (semver.contains('+')) {
+    vars = semver.split('+');
+    release = "post-release";
+  } else {
+    vars = semver.split('-');
+    release = "pre-release";
+  }
+
+  if (!vars.isEmpty()) {
+    version = vars.at(0);
+    if (vars.length() > 1) {
+      vars.removeFirst();
+      version = QString("%1 (%2 build %3)").arg(version, release, vars.join(""));
+    }
+  }
+
+  return version;
+}
