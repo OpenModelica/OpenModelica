@@ -222,7 +222,6 @@ add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::graphstream)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
 
 # On Windows we need explicitly tell the dll to export all symbols. It is not so good

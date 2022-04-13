@@ -154,8 +154,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GCExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Gettext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Graph.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphStream.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphStreamExt.mo
   # Remember: Only files needed for compiling MetaModelica
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashSetExp.mo
@@ -250,7 +248,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/ZeroCrossings.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/FFrontEnd/FGraphDump.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FFrontEnd/FGraphStream.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FFrontEnd/FInst.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/CheckModel.mo

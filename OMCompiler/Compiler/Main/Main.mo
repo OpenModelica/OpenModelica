@@ -64,7 +64,6 @@ import ErrorExt;
 import ExecStat.{execStat,execStatReset};
 import FCore;
 import FGraph;
-import FGraphStream;
 import Flags;
 import FlagsUtil;
 import GCExt;
@@ -879,9 +878,7 @@ algorithm
     elseif interactiveMode == "zmq" then
       interactivemodeZMQ();
     else // No interactive flag given, try to flatten the file.
-      FGraphStream.start();
       translateFile(args);
-      FGraphStream.finish();
     end if;
   else // Something went wrong, print an appropriate error.
     // OMC called with no arguments, print usage information and quit.
@@ -899,7 +896,6 @@ algorithm
       Print.printBuf("\n\n----\n\nError buffer:\n\n");
       print(Print.getErrorString());
       print(ErrorExt.printMessagesStr(false)); print("\n");
-      FGraphStream.finish();
     else
       print("Error: OPENMODELICAHOME was not set.\n");
       print("  Read the documentation for instructions on how to set it properly.\n");

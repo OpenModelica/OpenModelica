@@ -136,7 +136,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.GRAPH_INST,
   Flags.GRAPH_INST_RUN_DEP,
   Flags.GRAPH_INST_GEN_GRAPH,
-  Flags.GRAPH_INST_SHOW_GRAPH,
   Flags.DUMP_CONST_REPL,
   Flags.SHOW_EQUATION_SOURCE,
   Flags.LS_ANALYTIC_JACOBIAN,

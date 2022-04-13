@@ -113,7 +113,7 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables graphstream boehm-gc idl antlr-copy libffi $(MINGW_EXTRA_LIBS)
+interactive-common: .testvariables boehm-gc idl antlr-copy libffi $(MINGW_EXTRA_LIBS)
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
@@ -505,7 +505,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean ipopt-clean ModelicaExternalC-clean zlib-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean ipopt-clean ModelicaExternalC-clean zlib-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
@@ -584,14 +584,6 @@ endif
 msgpack-clean:
 	test ! -f 3rdParty/msgpack-0.5.8/Makefile || $(MAKE) -C 3rdParty/msgpack-0.5.8 distclean || true
 	rm -f 3rdParty/msgpack-0.5.8/Makefile
-
-graphstream: 3rdParty/graphstream/gs-netstream/c++/libnetstream.a $(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar
-3rdParty/graphstream/gs-netstream/c++/libnetstream.a:
-	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(CXXFLAGS)" -C 3rdParty/graphstream/; fi
-$(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar:
-	if test -f 3rdParty/graphstream/org.omc.graphstream.jar; then cp -p 3rdParty/graphstream/org.omc.graphstream.jar $(OMBUILDDIR)/share/omc/java/.; fi
-graphstream-clean:
-	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) -C 3rdParty/graphstream/ clean; fi
 
 # build lpsolve
 lpsolve: $(builddir_lib_omc)/liblpsolve55.a
