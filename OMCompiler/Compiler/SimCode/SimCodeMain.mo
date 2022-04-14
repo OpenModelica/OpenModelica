@@ -875,7 +875,6 @@ algorithm
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
 
         model_gen_files := list(simCode.fileNamePrefix + f for f in RuntimeSources.defaultFileSuffixes);
-        model_all_gen_files := listAppend(model_gen_files, SimCodeUtil.getFunctionIndex());
 
         // I need to see some tests failing or something not working to make sense of what to add here
         shared_source_files := List.flatten({RuntimeSources.simrt_c_sources,
@@ -890,10 +889,21 @@ algorithm
         if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
           model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
-          model_desc_src_files := listAppend(model_all_gen_files, shared_source_files);
+          model_desc_src_files := listAppend(model_gen_files, shared_source_files);
         end if;
 
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
+
+        // Add the _part*.c files to the list of source files. We do not know how many of them there are until
+        // we have called CodegenFMU.translateModel. Which means the list of source files passed to
+        // CodegenFMU.translateModel above does not include them. Which means they are not listed in the
+        // modelDescription.xml file. The way to fix that is to separate the generation of modelDescrition.xml
+        // from CodegenFMU.translateModel. However, modelDescrition.xml wants to use the same GUID as the model code.
+        // Which means the transateModel call should make its created GUID available outside of it. We can not simply
+        // return the GUID from it (?) so there needs to be some more restructure needed. However, modelDescrition.xml
+        // at the moment does does not list all the extra files anyway. So for now we leave it like this and make sure
+        // the makefile gets them properly at least.
+        model_all_gen_files := listAppend(model_gen_files, SimCodeUtil.getFunctionIndex());
 
         // Copy CMakeLists.txt.in and replace @FMU_NAME_IN@ with fmu name
         System.copyFile(source = install_share_buildproject_dir + "CMakeLists.txt.in",
