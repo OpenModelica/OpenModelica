@@ -332,6 +332,21 @@ public
     end match;
   end append;
 
+  function prepend
+    input ComponentRef restCref;
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      case CREF()
+        algorithm
+          cref.restCref := restCref;
+        then
+          cref;
+
+      case EMPTY() then restCref;
+    end match;
+  end prepend;
+
   function getComponentType
     "Returns the type of the component the given cref refers to, without taking
      subscripts into account."

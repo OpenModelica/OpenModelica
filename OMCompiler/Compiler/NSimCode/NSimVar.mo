@@ -381,7 +381,8 @@ public
         then ();
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the BackendInfo could not be parsed."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the BackendInfo could not be parsed:\n"
+            + BackendExtension.BackendInfo.toString(backendInfo)});
         then fail();
       end match;
       isDiscrete := match varKind
@@ -391,7 +392,7 @@ public
         case BackendExtension.PARAMETER()       then true;
         case BackendExtension.CONSTANT()        then true;
         case BackendExtension.START()           then true;
-                                                else false;
+                                                else isDiscrete;
       end match;
     end parseAttributes;
 

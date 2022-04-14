@@ -309,11 +309,14 @@ public
       // build range in reverse, it will be flipped anyway
       scal_lst := Mapping.getVarScalIndices(var_arr_idx, mapping, true);
 
-      if listLength(scal_lst) <> eqn_size then
+      if intMod(eqn_size, listLength(scal_lst)) <> 0 then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-          + " failed because number of flattened indices " + intString(listLength(scal_lst))
-          + " differ from equation size " + intString(eqn_size) + "."});
+          + " failed because flattened indices " + intString(listLength(scal_lst))
+          + " could not be repeated to fit equation size " + intString(eqn_size) + ". lst: " + List.toString(scal_lst, intString)});
         fail();
+      else
+        // fill the equation with repeated scalar lists
+        scal_lst := List.repeat(scal_lst, realInt(eqn_size/listLength(scal_lst)));
       end if;
 
       idx := 1;

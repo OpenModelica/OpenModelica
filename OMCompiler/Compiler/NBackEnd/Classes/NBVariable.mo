@@ -1568,28 +1568,37 @@ public
       input output VariablePointers variables;
     protected
       list<Pointer<Variable>> vars, new_vars = {};
-      list<Variable> scalar_vars;
+      list<Variable> scalar_vars, element_vars;
       Variable var;
-      Boolean anyArr;
+      Boolean flattened = false;
     algorithm
       vars := toList(variables);
       for var_ptr in vars loop
         var := Pointer.access(var_ptr);
+        // flatten potential arrays
         if Type.isArray(var.ty) then
-          anyArr := true;
+          flattened := true;
           scalar_vars := Scalarize.scalarizeVariable(var);
-          for scalar_var in listReverse(scalar_vars) loop
-            // create new pointers for the scalar variables
-            new_vars := Pointer.create(scalar_var) :: new_vars;
-          end for;
         else
-          // preserve original variable pointers
-          new_vars := var_ptr :: new_vars;
+          scalar_vars := {Pointer.access(var_ptr)};
         end if;
+
+        // flatten potential records
+        for var in listReverse(scalar_vars) loop
+          if Type.isComplex(var.ty) then
+            flattened := true;
+            element_vars := Scalarize.scalarizeComplexVariable(var);
+            for elem_var in listReverse(element_vars) loop
+              new_vars := Pointer.create(elem_var) :: new_vars;
+            end for;
+          else
+            new_vars := Pointer.create(var) :: new_vars;
+          end if;
+        end for;
       end for;
 
-      // only change variables if any of them was an array
-      if anyArr then
+      // only change variables if any of them have been flattened
+      if flattened then
         variables := fromList(listReverse(new_vars), true);
       end if;
     end scalarize;

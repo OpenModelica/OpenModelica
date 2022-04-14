@@ -489,6 +489,10 @@ public
           (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
         then (tmp, getIndex(tmp));
 
+        case StrongComponent.SINGLE_RECORD_EQUATION() algorithm
+          (tmp, simCodeIndices) := createAlgorithm(Pointer.access(comp.eqn), simCodeIndices);
+        then (tmp, getIndex(tmp));
+
         case StrongComponent.SINGLE_WHEN_EQUATION() algorithm
           (tmp, simCodeIndices) := createEquation(NBVariable.DUMMY_VARIABLE, Pointer.access(comp.eqn), comp.status, simCodeIndices, systemType, simcode_map);
         then (tmp, getIndex(tmp));
@@ -667,28 +671,34 @@ public
           Block tmp;
           list<tuple<Expression, list<Block>>> branches;
 
-        case (BEquation.SCALAR_EQUATION(), NBSolve.Status.EXPLICIT)
-          algorithm
-            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, eqn.rhs, eqn.source, eqn.attr);
-            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        case (BEquation.SCALAR_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
+          tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, eqn.rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT)
-          algorithm
-            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), eqn.rhs, eqn.source, eqn.attr);
-            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
+          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), eqn.rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
+          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), eqn.rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        case (BEquation.RECORD_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
+          (tmp, simCodeIndices) := createAlgorithm(eqn, simCodeIndices);
         then tmp;
 
         // remove simple equations should remove this, but if it is not activated we need this
-        case (BEquation.SIMPLE_EQUATION(), NBSolve.Status.EXPLICIT)
-          algorithm
-            ty := ComponentRef.getComponentType(eqn.lhs);
-            if Type.isArray(ty) then
-              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.fromCref(eqn.rhs), eqn.source, eqn.attr);
-            else
-              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.fromCref(eqn.rhs), eqn.source, eqn.attr);
-            end if;
-            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        case (BEquation.SIMPLE_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
+          ty := ComponentRef.getComponentType(eqn.lhs);
+          if Type.isArray(ty) then
+            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.fromCref(eqn.rhs), eqn.source, eqn.attr);
+          else
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.fromCref(eqn.rhs), eqn.source, eqn.attr);
+          end if;
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case (BEquation.WHEN_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
@@ -709,9 +719,8 @@ public
         // ToDo: add all other cases!
 
         // fallback implicit solving
-        case (_, NBSolve.Status.IMPLICIT)
-          algorithm
-            (tmp, simCodeIndices) := createImplicitEquation(var, eqn, simCodeIndices, systemType, simcode_map);
+        case (_, NBSolve.Status.IMPLICIT) algorithm
+          (tmp, simCodeIndices) := createImplicitEquation(var, eqn, simCodeIndices, systemType, simcode_map);
          then tmp;
 
         else algorithm
