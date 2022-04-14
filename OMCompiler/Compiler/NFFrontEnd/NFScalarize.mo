@@ -35,7 +35,7 @@ import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 
 protected
-import BackendInfo = NFBackendExtension.BackendInfo;
+import NFBackendExtension.{BackendInfo, VariableAttributes};
 import ExecStat.execStat;
 import ComponentRef = NFComponentRef;
 import Type = NFType;
@@ -166,6 +166,36 @@ algorithm
     vars := var :: vars;
   end if;
 end scalarizeVariable;
+
+function scalarizeComplexVariable
+  "Scalarizes a complex variable to its elements. Assumes potential arrays
+  have already been resolved with scalarizeVariable()."
+  input Variable var;
+  input output list<Variable> vars = {};
+algorithm
+  vars := match var.backendinfo.attributes
+      local
+        VariableAttributes attr;
+        String name;
+        Integer index;
+        Variable elem_var;
+
+    case attr as VariableAttributes.VAR_ATTR_RECORD() algorithm
+      for tpl in UnorderedMap.toList(attr.indexMap) loop
+        (name, index) := tpl;
+        elem_var := var;
+        elem_var.name := ComponentRef.prepend(elem_var.name, ComponentRef.rename(name, elem_var.name));
+        elem_var.backendinfo := BackendInfo.setAttributes(elem_var.backendinfo, attr.childrenAttr[index]);
+        // update the types accordingly
+        elem_var.ty := VariableAttributes.elemType(attr.childrenAttr[index]);
+        elem_var.name := ComponentRef.setNodeType(elem_var.ty, elem_var.name);
+        vars := elem_var :: vars;
+      end for;
+    then listReverse(vars);
+
+    else {var};
+  end match;
+end scalarizeComplexVariable;
 
 protected
 function scalarizeTypeAttributes

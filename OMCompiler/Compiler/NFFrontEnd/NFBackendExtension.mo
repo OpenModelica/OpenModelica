@@ -792,6 +792,23 @@ public
       end match;
     end scalarize;
 
+    function elemType
+      input VariableAttributes attr;
+      output Type ty;
+    algorithm
+      ty := match attr
+        case VAR_ATTR_REAL()    then Type.REAL();
+        case VAR_ATTR_INT()     then Type.INTEGER();
+        case VAR_ATTR_BOOL()    then Type.BOOLEAN();
+        case VAR_ATTR_CLOCK()   then Type.CLOCK();
+        case VAR_ATTR_STRING()  then Type.STRING();
+        // should probably add enumeration but currently the needed info is not stored here
+        else algorithm
+          Error.assertion(false, getInstanceName() + " cannot create type from attributes: " + toString(attr), sourceInfo());
+        then fail();
+      end match;
+    end elemType;
+
   protected
     function attributesToString
       input list<tuple<String, Option<Expression>>> tpl_list;
@@ -1170,7 +1187,6 @@ public
             fail();
       end match;
     end lookupTearingSelectMember;
-
   end VariableAttributes;
 
   constant VariableAttributes EMPTY_VAR_ATTR_REAL         = VAR_ATTR_REAL(NONE(),NONE(),NONE(), NONE(), NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
