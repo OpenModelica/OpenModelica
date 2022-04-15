@@ -648,15 +648,28 @@ Output
 
 -  *Result File (Optional)* - the simulation result file name.
 
--  *Variable Filter (Optional)*
+-  *Variable Filter (Optional)* - only output variables with names fully matching the regular expression
 
--  *Protected Variables –* adds the protected variables in result file.
+-  *Protected Variables * - adds the protected variables in result file.
 
 -  *Equidistant Time Grid –* output the internal steps given by dassl instead of interpolating results into an equidistant time grid as given by stepSize or numberOfIntervals
 
 -  *Store Variables at Events –* adds the variables at time events.
 
 -  *Show Generated File* – displays the generated files in a dialog box.
+
+The Variable Filter takes a regular expression input and only saves the variables whose names fully match it.
+Here are some simple examples:
+
+- ``.*`` matches any variable (default choice)
+- ``xy.*`` matches variables starting with ``xy``
+- ``.*yz`` matches variables ending with ``yz``
+- ``abc\.def.*`` matches variables starting with ``abc.def``. Note that the ``.`` character is a regex metacharacter, so it must be escaped by a ``\``
+- ``.*body\.a_0\[1\]`` matches variables ending with ``body.a_0[1]``. Note that ``.``, ``[``, and ``]`` must be escaped
+- ``x\[.*\]`` matches all elements of array ``x``
+- ``x\[[2-4]\]`` matches elements 2, 3, and 4 of array ``x``
+- ``abc.*|def.*`` matches variables starting with ``abc`` or ``def``
+- ``.*der\(.*\)`` matches all derivatives in the model. Note that ``(`` and ``)`` must be escaped
 
 .. _omedit-2d-plotting :
 
