@@ -1524,6 +1524,7 @@ public
   function makeSubscriptedExp
     input list<Subscript> subscripts;
     input Expression exp;
+    input Boolean backend = false;
     output Expression outExp;
   protected
     Expression e;
@@ -1544,7 +1545,7 @@ public
     end if;
 
     dim_count := Type.dimensionCount(ty);
-    (subs, extra_subs) := Subscript.mergeList(subscripts, subs, dim_count);
+    (subs, extra_subs) := Subscript.mergeList(subscripts, subs, dim_count, backend);
 
     // Check that the expression has enough dimensions to be subscripted.
     if not listEmpty(extra_subs) then

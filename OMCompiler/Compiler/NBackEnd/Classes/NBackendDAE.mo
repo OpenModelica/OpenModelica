@@ -364,6 +364,7 @@ protected
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, previous;
     VariablePointers parameters, constants;
+    Pointer<list<Pointer<Variable>>> binding_iter_lst = Pointer.create({});
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
   algorithm
     // instantiate variable data (with one more space for time variable);
@@ -458,8 +459,11 @@ protected
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
 
-    /* lower the variable bindings */
-    VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
+    /* lower the variable bindings and add binding iterators */
+    variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+    variables       := VariablePointers.addList(Pointer.access(binding_iter_lst), variables);
+    knowns          := VariablePointers.addList(Pointer.access(binding_iter_lst), knowns);
+    variables       := VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
@@ -549,6 +553,22 @@ protected
     end match;
   end lowerVariableKind;
 
+  function collectVariableBindingIterators
+    input output Variable var;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+  algorithm
+    _ := match var
+      local
+        Binding binding;
+      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
+        // collect all iterators (only locally known) so that they have a respective variable
+        Expression.map(binding.bindingExp, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+      then ();
+      else ();
+    end match;
+  end collectVariableBindingIterators;
+
   function lowerVariableBinding
     input output Variable var;
     input VariablePointers variables;
@@ -556,10 +576,9 @@ protected
     var := match var
       local
         Binding binding;
-      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING())
-        algorithm
-          binding.bindingExp := Expression.map(binding.bindingExp, function lowerComponentReferenceExp(variables = variables));
-          var.binding := binding;
+      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
+        binding.bindingExp := Expression.map(binding.bindingExp, function lowerComponentReferenceExp(variables = variables));
+        var.binding := binding;
       then var;
       else var;
     end match;
@@ -1106,6 +1125,23 @@ protected
     end try;
   end lowerComponentReference;
 
+  function collectBindingIterators
+    "collects all iterators in bindings and creates variables for them.
+    in bindings they are only known locally but they still need a respective variable"
+    input output Expression exp;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+  algorithm
+    _ := match exp
+      local
+        ComponentRef cref;
+      case Expression.CREF(cref = cref) guard(not VariablePointers.containsCref(cref, variables)) algorithm
+        Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+      then ();
+      else ();
+    end match;
+  end collectBindingIterators;
+
 public
   function lowerComponentReferenceInstNode
     "Adds the pointer to a variable to a component reference. This function needs
@@ -1126,8 +1162,6 @@ public
       else cref;
     end match;
   end lowerComponentReferenceInstNode;
-
-protected
 
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

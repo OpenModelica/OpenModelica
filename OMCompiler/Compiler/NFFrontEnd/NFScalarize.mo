@@ -167,6 +167,42 @@ algorithm
   end if;
 end scalarizeVariable;
 
+function scalarizeBackendVariable
+  input Variable var;
+  input output list<Variable> vars = {};
+protected
+  list<ComponentRef> crefs;
+  ExpressionIterator binding_iter;
+  Binding binding;
+  Variability bind_var;
+  Binding.Source bind_src;
+  Expression exp;
+  Type elem_ty;
+  BackendInfo binfo;
+  list<BackendInfo> backend_attributes;
+algorithm
+  crefs               := ComponentRef.scalarizeAll(var.name);
+  elem_ty             := Type.arrayElementType(var.ty);
+  backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
+  if Binding.isBound(var.binding) then
+    binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding));
+    bind_var          := Binding.variability(var.binding);
+    bind_src          := Binding.source(var.binding);
+    for cr in crefs loop
+      (binding_iter, exp) := ExpressionIterator.next(binding_iter);
+      binding := Binding.makeFlat(exp, bind_var, bind_src);
+      binfo :: backend_attributes := backend_attributes;
+      vars := Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
+    end for;
+  else
+    for cr in crefs loop
+      binfo :: backend_attributes := backend_attributes;
+      vars := Variable.VARIABLE(cr, elem_ty, var.binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
+    end for;
+  end if;
+  vars := listReverse(vars);
+end scalarizeBackendVariable;
+
 function scalarizeComplexVariable
   "Scalarizes a complex variable to its elements. Assumes potential arrays
   have already been resolved with scalarizeVariable()."

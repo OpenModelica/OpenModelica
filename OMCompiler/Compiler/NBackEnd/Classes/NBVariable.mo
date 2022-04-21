@@ -1475,8 +1475,15 @@ public
       "Returns true if the variable is in the variable pointer array."
       input Pointer<Variable> var;
       input VariablePointers variables;
-      output Boolean b = getVarIndex(variables, getVarName(var)) > 0;
+      output Boolean b = containsCref(getVarName(var), variables);
     end contains;
+
+    function containsCref
+      "Returns true if a variable with this name is in the variable pointer array."
+      input ComponentRef cref;
+      input VariablePointers variables;
+      output Boolean b = getVarIndex(variables, cref) > 0;
+    end containsCref;
 
     function getVarNames
       "returns a list of crefs representing the names of all variables"
@@ -1578,7 +1585,7 @@ public
         // flatten potential arrays
         if Type.isArray(var.ty) then
           flattened := true;
-          scalar_vars := Scalarize.scalarizeVariable(var);
+          scalar_vars := Scalarize.scalarizeBackendVariable(var);
         else
           scalar_vars := {Pointer.access(var_ptr)};
         end if;

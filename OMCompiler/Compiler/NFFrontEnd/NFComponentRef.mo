@@ -476,17 +476,33 @@ public
   end addSubscript;
 
   function mergeSubscripts
+    "merges subscripts to a cref while respecting the dimension
+    sizes of the types and previous subscripts.
+    if backend = true it discards one subscript for scalars if
+    it is exactly INTEGER(1). (needed for slicing)"
     input list<Subscript> subscripts;
     input output ComponentRef cref;
     input Boolean applyToScope = false;
+    input Boolean backend = false;
+  protected
+    ComponentRef old_cref = cref;
+    list<Subscript> new_subscripts;
   algorithm
-    ({}, cref) := mergeSubscripts2(subscripts, cref, applyToScope);
+    (new_subscripts, cref) := mergeSubscripts2(subscripts, cref, applyToScope, backend);
+    if not listEmpty(new_subscripts) then
+      Error.assertion(false, getInstanceName() + " failed because the subscripts "
+        + List.toString(subscripts, Subscript.toString) + " could not be fully merged onto "
+        + ComponentRef.toString(old_cref) + ".\nResult: " + ComponentRef.toString(cref)
+        + " with leftover: " + List.toString(new_subscripts, Subscript.toString) + ".", sourceInfo());
+      fail();
+    end if;
   end mergeSubscripts;
 
   function mergeSubscripts2
     input output list<Subscript> subscripts;
     input output ComponentRef cref;
     input Boolean applyToScope;
+    input Boolean backend;
   algorithm
     (subscripts, cref) := match cref
       local
@@ -496,11 +512,11 @@ public
       case CREF(subscripts = cref_subs)
         guard applyToScope or cref.origin == Origin.CREF
         algorithm
-          (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope);
+          (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend);
 
           if not listEmpty(subscripts) then
             (cref_subs, subscripts) :=
-              Subscript.mergeList(subscripts, cref_subs, Type.dimensionCount(cref.ty));
+              Subscript.mergeList(subscripts, cref_subs, Type.dimensionCount(cref.ty), backend);
           end if;
         then
           (subscripts, CREF(cref.node, cref_subs, cref.ty, cref.origin, rest_cref));
@@ -1210,6 +1226,50 @@ public
     end match;
   end scalarize;
 
+  function scalarizeAll
+    input ComponentRef cref;
+    output list<ComponentRef> crefs;
+  protected
+    ComponentRef next = cref;
+    list<list<ComponentRef>> nested_crefs = {};
+  algorithm
+    while not isEmpty(next) loop
+      nested_crefs := scalarize(next) :: nested_crefs;
+      CREF(restCref = next) := next;
+    end while;
+    crefs := scalarizeAll_Nesting(nested_crefs);
+  end scalarizeAll;
+
+  function scalarizeAll_Nesting
+    input list<list<ComponentRef>> nested_crefs;
+    input ComponentRef cref = EMPTY();
+    input output list<ComponentRef> crefs = {};
+  algorithm
+    crefs := match nested_crefs
+      local
+        list<ComponentRef> head;
+        list<list<ComponentRef>> tail;
+        Boolean empty;
+
+      case head :: tail algorithm
+        empty := listEmpty(tail);
+        for head_cref in head loop
+          crefs := match head_cref
+            case CREF() algorithm
+              head_cref.restCref := cref;
+              if empty then
+                crefs := head_cref :: crefs;
+              else
+                crefs := scalarizeAll_Nesting(tail, head_cref, crefs);
+              end if;
+            then crefs;
+          end match;
+        end for;
+      then crefs;
+
+    end match;
+  end scalarizeAll_Nesting;
+
   function isPackageConstant
     input ComponentRef cref;
     output Boolean isPkgConst;
@@ -1386,19 +1446,49 @@ public
 
   function sizes
     input ComponentRef cref;
-    output list<Integer> s_lst;
+    input output list<Integer> s_lst = {};
   algorithm
-    s_lst := list(Dimension.size(dim) for dim in Type.arrayDims(getSubscriptedType(cref)));
-    s_lst := if listEmpty(s_lst) then {1} else s_lst;
+    s_lst := match cref
+      local
+        list<Integer> local_lst = {};
+      case EMPTY() then listReverse(s_lst);
+      case CREF() algorithm
+        local_lst := list(Dimension.size(dim) for dim in Type.arrayDims(cref.ty));
+        local_lst := if listEmpty(local_lst) then {1} else local_lst;
+        s_lst := listAppend(local_lst, s_lst);
+      then sizes(cref.restCref, s_lst);
+    end match;
   end sizes;
 
   function subscriptsToInteger
     input ComponentRef cref;
-    output list<Integer> subs;
+    output list<Integer> s_lst = {};
   algorithm
-    subs := list(Expression.integerValue(Subscript.toExp(sub)) for sub in subscriptsAllFlat(cref));
-    subs := if listEmpty(subs) then {1} else subs;
+    for subs_tmp in subscriptsAll(cref) loop
+      if listEmpty(subs_tmp) then
+        s_lst := 1 :: s_lst;
+      else
+        for sub in subs_tmp loop
+          s_lst := Expression.integerValue(Subscript.toExp(sub)) :: s_lst;
+        end for;
+      end if;
+    end for;
   end subscriptsToInteger;
+
+  function subscriptsToExpression
+    input ComponentRef cref;
+    output list<Expression> e_lst = {};
+  algorithm
+    for subs_tmp in subscriptsAll(cref) loop
+      if listEmpty(subs_tmp) then
+        e_lst := Expression.INTEGER(1) :: e_lst;
+      else
+        for sub in subs_tmp loop
+          e_lst := Subscript.toExp(sub) :: e_lst;
+        end for;
+      end if;
+    end for;
+  end subscriptsToExpression;
 
   function isEmptyArray
     "Returns whether any node in the cref has a dimension that's 0."

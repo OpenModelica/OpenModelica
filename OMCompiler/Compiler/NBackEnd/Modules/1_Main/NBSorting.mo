@@ -60,6 +60,12 @@ public
       Integer mode          "solve mode index";
     end PSEUDO_BUCKET_KEY;
 
+    function toString
+      input PseudoBucketKey key;
+      output String str = "key: (start[s]: " + intString(key.eqn_start_idx)
+        + ", index[a]:" + intString(key.eqn_arr_idx) + ", mode: " + intString(key.mode) + ")";
+    end toString;
+
     function hash
       input PseudoBucketKey key   "the key to hash";
       input Integer modulo        "modulo value";
@@ -90,6 +96,26 @@ public
       array<list<Integer>> entwined_arr;
     end PSEUDO_BUCKET_ENTWINED;
 
+    function toString
+      input PseudoBucketValue val;
+      output String str;
+    algorithm
+      str := match val
+        local
+          PseudoBucketKey k;
+          PseudoBucketValue v;
+        case PSEUDO_BUCKET_SINGLE() then "\n\tval: (" + ComponentRef.toString(val.cref_to_solve)
+          + ", [" + intString(val.first_comp) + ":" + intString(val.last_comp) +"]" + ")";
+        case PSEUDO_BUCKET_ENTWINED() algorithm
+           str := "\n\tentwined:";
+           for tpl in val.entwined_lst loop
+            (k, v) := tpl;
+            str := str + "\n\t" + PseudoBucketKey.toString(k) + " :: " + PseudoBucketValue.toString(v);
+           end for;
+        then str;
+      end match;
+    end toString;
+
     function addIndices
       input output PseudoBucketValue val;
       input Integer eqn_scal_idx;
@@ -112,6 +138,11 @@ public
       UnorderedMap<PseudoBucketKey, PseudoBucketValue> bucket;
       array<Boolean> marks;
     end PSEUDO_BUCKET;
+
+    function toString
+      input PseudoBucket bucket;
+      output String str = UnorderedMap.toString(bucket.bucket, PseudoBucketKey.toString, PseudoBucketValue.toString);
+    end toString;
 
     function create
       "recollects subsets of multi-dimensional equations that have to be solved in the same way.
@@ -317,6 +348,11 @@ public
 
         // recollect array information
         bucket := PseudoBucket.create(comps_indices, matching.eqn_to_var, adj.mapping, adj.modes);
+
+        if Flags.isSet(Flags.DUMP_SLICE) then
+          print("--- BUCKETS:\n" + PseudoBucket.toString(bucket) + "\n\n");
+        end if;
+
         for idx_lst in comps_indices loop
           comp_opt := StrongComponent.createPseudo(idx_lst, matching.eqn_to_var, vars, eqns, adj.mapping, adj.modes, bucket);
           if Util.isSome(comp_opt) then
