@@ -1355,7 +1355,17 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe4_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Failed to build model: NewDataReconciliationSimpleTests.TSP_Pipe4"
 // end SimulationResult;
-// "Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
+// "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SourcePQ.mo:29:3-30:52:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/Sink.mo:17:3-19:16:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Volumes/VolumeB.mo:30:3-32:42:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Volumes/VolumeB.mo:33:3-35:37:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Volumes/VolumeB.mo:36:3-38:37:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Volumes/VolumeB.mo:39:3-41:43:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
 // Error: Internal error : Condition 3-Failed: The number of auxiliary conditions must be strictly less than the number of variables to be reconciled. The data reconciliation problem is ill-posed
 // Error: pre-optimization module dataReconciliation (simulation) failed.
 // "

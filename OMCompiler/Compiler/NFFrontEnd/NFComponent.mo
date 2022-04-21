@@ -51,6 +51,7 @@ import SCodeUtil;
 import Restriction = NFRestriction;
 import Component = NFComponent;
 import IOStream;
+import NFFunction.Function;
 
 public
   constant Attributes DEFAULT_ATTR =
@@ -1098,6 +1099,74 @@ public
   algorithm
     isModifiable := not isFinal(component) and not (isConst(component) and hasBinding(component));
   end isModifiable;
+
+  function countConnectorVars
+    "Returns the number of potential (neither constant, parameter, input, nor
+     output), flow, and stream variables in the given connector.
+
+     If includeDimensions is true then the amounts will be multiplied by the
+     array dimensions of the component, otherwise not. Array dimensions of
+     subcomponents are always counted."
+    input Component component;
+    input Boolean includeDimensions = false;
+    output Integer potentials = 0;
+    output Integer flows = 0;
+    output Integer streams = 0;
+  protected
+    Type ty;
+    ConnectorType.Type cty;
+    Class cls;
+    Option<InstNode> eq_node_opt;
+    InstNode eq_node;
+    Integer comp_size = 0, p, f, s;
+    Function fn;
+  algorithm
+    cls := InstNode.getClass(classInstance(component));
+    eq_node_opt := Class.tryLookupElement("equalityConstraint", cls);
+
+    if isSome(eq_node_opt) and
+       SCodeUtil.isFunction(InstNode.definition(Util.getOption(eq_node_opt))) then
+      // If the type contains an equalityConstraint function then the size is
+      // determined by the return type of it.
+      SOME(eq_node) := eq_node_opt;
+      Function.instFunctionNode(eq_node, NFInstContext.NO_CONTEXT, info(component));
+      fn := listHead(Function.typeNodeCache(eq_node));
+      comp_size := Type.sizeOf(Function.returnType(fn));
+    else
+      ty := getType(component);
+
+      if includeDimensions then
+        comp_size := Dimension.sizesProduct(Type.arrayDims(ty));
+      else
+        comp_size := 1;
+      end if;
+
+      if Type.isComplex(Type.arrayElementType(ty)) then
+        // If the type is complex then each subcomponent is counted individually.
+        for c in ClassTree.getComponents(Class.classTree(cls)) loop
+          (p, f, s) := countConnectorVars(InstNode.component(c), true);
+          potentials := potentials + p * comp_size;
+          flows := flows + f * comp_size;
+          streams := streams + s * comp_size;
+        end for;
+
+        comp_size := 0;
+      end if;
+    end if;
+
+    if comp_size > 0 then
+      cty := connectorType(component);
+
+      if ConnectorType.isFlow(cty) then
+        flows := flows + comp_size;
+      elseif ConnectorType.isStream(cty) then
+        streams := streams + comp_size;
+      elseif variability(component) >= Variability.DISCRETE and
+             direction(component) == Direction.NONE then
+        potentials := potentials + comp_size;
+      end if;
+    end if;
+  end countConnectorVars;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponent;

@@ -335,6 +335,44 @@ algorithm
   end if;
 end makeConnectorType;
 
+function checkConnectorTypeBalance
+  input InstNode component;
+protected
+  Integer pots, flows, streams;
+  Component comp;
+  InstNode parent;
+algorithm
+  comp := InstNode.component(component);
+
+  if not Component.isConnector(comp) or Component.isExpandableConnector(comp) then
+    return;
+  end if;
+
+  parent := InstNode.parent(component);
+  if InstNode.isComponent(parent) and Component.isConnector(InstNode.component(parent)) then
+    return;
+  end if;
+
+  (pots, flows, streams) := Component.countConnectorVars(comp);
+
+  // Modelica 3.2 section 9.3.1:
+  // For each non-partial connector class the number of flow variables shall
+  // be equal to the number of variables that are neither parameter, constant,
+  // input, output, stream nor flow.
+  if pots <> flows then
+    Error.addStrictMessage(Error.UNBALANCED_CONNECTOR,
+      {InstNode.name(component), String(pots), String(flows)}, InstNode.info(component));
+  end if;
+
+  // Modelica 3.2 section 15.1:
+  // A stream connector must have exactly one scalar variable with the flow prefix.
+  if streams > 0 and flows <> 1 then
+    Error.addSourceMessage(Error.MISMATCHED_FLOW_IN_STREAM_CONNECTOR,
+      {InstNode.name(component), String(flows)}, InstNode.info(component));
+    fail();
+  end if;
+end checkConnectorTypeBalance;
+
 function makeRecordType
   input InstNode constructor;
   output ComplexType recordTy;
@@ -403,6 +441,8 @@ algorithm
 
           // Type the component's children.
           typeComponents(c.classInst, context);
+
+          checkConnectorTypeBalance(node);
         end if;
       then
         ty;
