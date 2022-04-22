@@ -35,6 +35,7 @@ import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 
 protected
+import Attributes = NFAttributes;
 import NFBackendExtension.{BackendInfo, VariableAttributes};
 import ExecStat.execStat;
 import ComponentRef = NFComponentRef;
@@ -89,7 +90,7 @@ protected
   Binding binding;
   Type ty, elem_ty;
   Visibility vis;
-  Component.Attributes attr;
+  Attributes attr;
   list<tuple<String, Binding>> ty_attr;
   Option<SCode.Comment> cmt;
   SourceInfo info;

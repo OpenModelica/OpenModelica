@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFClass
 
+import Attributes = NFAttributes;
 import Component = NFComponent;
 import Dimension = NFDimension;
 import Expression = NFExpression;
@@ -119,7 +120,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     Modifier ccMod;
     array<Dimension> dims;
     Prefixes prefixes;
-    Component.Attributes attributes;
+    Attributes attributes;
     Restriction restriction;
   end EXPANDED_DERIVED;
 
@@ -494,11 +495,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
 
   function getAttributes
     input Class cls;
-    output Component.Attributes attr;
+    output Attributes attr;
   algorithm
     attr := match cls
       case EXPANDED_DERIVED() then cls.attributes;
-      else NFComponent.DEFAULT_ATTR;
+      else NFAttributes.DEFAULT_ATTR;
     end match;
   end getAttributes;
 

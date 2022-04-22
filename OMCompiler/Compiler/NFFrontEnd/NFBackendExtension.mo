@@ -44,6 +44,7 @@ protected
   import SCodeUtil;
 
   //NF imports
+  import Attributes = NFAttributes;
   import NFBinding.Binding;
   import ComplexType = NFComplexType;
   import NFComponent.Component;
@@ -352,7 +353,7 @@ public
     function create
       input list<tuple<String, Binding>> attrs;
       input Type ty;
-      input Component.Attributes compAttrs;
+      input Attributes compAttrs;
       input list<Variable> children;
       input Option<SCode.Comment> comment;
       output VariableAttributes attributes;

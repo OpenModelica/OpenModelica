@@ -32,6 +32,7 @@
 encapsulated package NFStructural
   "Contains utility functions for handling structural parameters."
 
+  import Attributes = NFAttributes;
   import Component = NFComponent;
   import Binding = NFBinding;
   import NFInstNode.InstNode;
@@ -49,7 +50,7 @@ protected
 public
   function isStructuralComponent
     input Component component;
-    input Component.Attributes compAttrs;
+    input Attributes compAttrs;
     input Binding compBinding;
     input InstNode compNode;
     input Boolean compEval "If the component has an Evaluate=true annotation";
