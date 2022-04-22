@@ -1102,13 +1102,9 @@ public
 
   function countConnectorVars
     "Returns the number of potential (neither constant, parameter, input, nor
-     output), flow, and stream variables in the given connector.
-
-     If includeDimensions is true then the amounts will be multiplied by the
-     array dimensions of the component, otherwise not. Array dimensions of
-     subcomponents are always counted."
+     output), flow, and stream variables in the given connector."
     input Component component;
-    input Boolean includeDimensions = false;
+    input Boolean isRoot = true;
     output Integer potentials = 0;
     output Integer flows = 0;
     output Integer streams = 0;
@@ -1135,21 +1131,28 @@ public
     else
       ty := getType(component);
 
-      if includeDimensions then
-        comp_size := Dimension.sizesProduct(Type.arrayDims(ty));
-      else
+      // Ignore dimensions for the root connector, i.e. an array of connectors
+      // is treated as a scalar when balance checking it.
+      if isRoot then
         comp_size := 1;
+      else
+        comp_size := Dimension.sizesProduct(Type.arrayDims(ty));
       end if;
 
-      if Type.isComplex(Type.arrayElementType(ty)) then
-        // If the type is complex then each subcomponent is counted individually.
-        for c in ClassTree.getComponents(Class.classTree(cls)) loop
-          (p, f, s) := countConnectorVars(InstNode.component(c), true);
-          potentials := potentials + p * comp_size;
-          flows := flows + f * comp_size;
-          streams := streams + s * comp_size;
-        end for;
+      ty := Type.arrayElementType(ty);
+      if Type.isComplex(ty) then
+        // For complex types we only count elements in records, not in e.g. connectors.
+        // (unless it's the connector that we're trying to count the variables in).
+        if Type.isRecord(ty) or isRoot then
+          for c in ClassTree.getComponents(Class.classTree(cls)) loop
+            (p, f, s) := countConnectorVars(InstNode.component(c), false);
+            potentials := potentials + p * comp_size;
+            flows := flows + f * comp_size;
+            streams := streams + s * comp_size;
+          end for;
+        end if;
 
+        // Complex elements are not counted themselves.
         comp_size := 0;
       end if;
     end if;
