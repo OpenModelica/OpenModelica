@@ -41,6 +41,7 @@ ConnectorBalance3.mo \
 ConnectorBalance4.mo \
 ConnectorBalance5.mo \
 ConnectorBalance6.mo \
+ConnectorBalance7.mo \
 ConnectorComponents.mo \
 ConnectorCompOrder.mo \
 ConnectorIllegal.mo \
