@@ -43,6 +43,7 @@ import Restriction = NFRestriction;
 protected
 
 import Algorithm = NFAlgorithm;
+import Attributes = NFAttributes;
 import ComponentReference;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
@@ -145,7 +146,7 @@ function makeDAEVar
   input ComponentRef cref;
   input Type ty;
   input Option<DAE.Exp> binding;
-  input Component.Attributes attr;
+  input Attributes attr;
   input Visibility vis;
   input Option<DAE.VariableAttributes> vattr;
   input Option<SCode.Comment> comment;
@@ -167,7 +168,7 @@ algorithm
   end if;
 
   var := match attr
-    case Component.Attributes.ATTRIBUTES()
+    case Attributes.ATTRIBUTES()
       algorithm
         // Strip input/output from non top-level components unless
         // --useLocalDirection=true has been set.
@@ -238,7 +239,7 @@ end getComponentDirection;
 function convertVarAttributes
   input list<tuple<String, Binding>> attrs;
   input Type ty;
-  input Component.Attributes compAttrs;
+  input Attributes compAttrs;
   output Option<DAE.VariableAttributes> attributes;
 protected
   Boolean is_final;
@@ -1122,7 +1123,7 @@ protected
   SourceInfo info;
   Option<DAE.VariableAttributes> var_attr;
   ComponentRef cref;
-  Component.Attributes attr;
+  Attributes attr;
   Type ty;
   Option<DAE.Exp> binding;
   list<tuple<String, Binding>> ty_attr;
@@ -1241,14 +1242,14 @@ function makeTypeVar
   output DAE.Var typeVar;
 protected
   Component comp;
-  Component.Attributes attr;
+  Attributes attr;
 algorithm
   comp := InstNode.component(InstNode.resolveOuter(component));
   attr := Component.getAttributes(comp);
 
   typeVar := DAE.TYPES_VAR(
     InstNode.name(component),
-    Component.Attributes.toDAE(attr, InstNode.visibility(component)),
+    Attributes.toDAE(attr, InstNode.visibility(component)),
     Type.toDAE(Component.getType(comp)),
     Binding.toDAE(Component.getBinding(comp)),
     false,
@@ -1261,7 +1262,7 @@ function makeTypeRecordVar
   output DAE.Var typeVar;
 protected
   Component comp;
-  Component.Attributes attr;
+  Attributes attr;
   Visibility vis;
   Binding binding;
   Boolean bind_from_outside;
@@ -1286,7 +1287,7 @@ algorithm
 
   typeVar := DAE.TYPES_VAR(
     InstNode.name(component),
-    Component.Attributes.toDAE(attr, vis),
+    Attributes.toDAE(attr, vis),
     Type.toDAE(ty),
     Binding.toDAE(binding),
     bind_from_outside,

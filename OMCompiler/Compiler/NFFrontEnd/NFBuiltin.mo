@@ -43,6 +43,7 @@ encapsulated package NFBuiltin
 public
 import Absyn;
 import AbsynUtil;
+import Attributes = NFAttributes;
 import SCode;
 import NFBinding;
 import Class = NFClass;
@@ -412,7 +413,7 @@ constant InstNode TIME =
       Type.REAL(),
       NFBinding.EMPTY_BINDING,
       NFBinding.EMPTY_BINDING,
-      NFComponent.INPUT_ATTR,
+      NFAttributes.INPUT_ATTR,
       NONE(),
       NONE(),
       AbsynUtil.dummyInfo)),

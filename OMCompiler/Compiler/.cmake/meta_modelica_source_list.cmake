@@ -311,6 +311,7 @@ set(OMC_MM_BACKEND_SOURCES
     # "NFFrontEnd";
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFArrayConnections.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFAttributes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBackendExtension.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBinding.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBuiltinCall.mo

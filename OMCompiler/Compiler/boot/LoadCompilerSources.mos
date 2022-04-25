@@ -351,6 +351,7 @@ if true then /* Suppress output */
   // "NFFrontEnd";
     "../NFFrontEnd/NFAlgorithm.mo",
     "../NFFrontEnd/NFArrayConnections.mo",
+    "../NFFrontEnd/NFAttributes.mo",
     "../NFFrontEnd/NFBackendExtension.mo",
     "../NFFrontEnd/NFBinding.mo",
     "../NFFrontEnd/NFBuiltinCall.mo",

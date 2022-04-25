@@ -31,7 +31,6 @@
 
 encapsulated uniontype NFComponent
 
-import DAE;
 import Binding = NFBinding;
 import Class = NFClass;
 import NFClassTree.ClassTree;
@@ -43,6 +42,7 @@ import SCode;
 import Type = NFType;
 import Expression = NFExpression;
 import NFPrefixes.*;
+import Attributes = NFAttributes;
 
 protected
 import List;
@@ -54,127 +54,6 @@ import IOStream;
 import NFFunction.Function;
 
 public
-  constant Attributes DEFAULT_ATTR =
-    Attributes.ATTRIBUTES(
-      ConnectorType.NON_CONNECTOR,
-      Parallelism.NON_PARALLEL,
-      Variability.CONTINUOUS,
-      Direction.NONE,
-      InnerOuter.NOT_INNER_OUTER,
-      false,
-      false,
-      Replaceable.NOT_REPLACEABLE()
-    );
-
-  constant Attributes INPUT_ATTR =
-    Attributes.ATTRIBUTES(
-      ConnectorType.NON_CONNECTOR,
-      Parallelism.NON_PARALLEL,
-      Variability.CONTINUOUS,
-      Direction.INPUT,
-      InnerOuter.NOT_INNER_OUTER,
-      false,
-      false,
-      Replaceable.NOT_REPLACEABLE()
-    );
-
-  constant Attributes OUTPUT_ATTR =
-    Attributes.ATTRIBUTES(
-      ConnectorType.NON_CONNECTOR,
-      Parallelism.NON_PARALLEL,
-      Variability.CONTINUOUS,
-      Direction.OUTPUT,
-      InnerOuter.NOT_INNER_OUTER,
-      false,
-      false,
-      Replaceable.NOT_REPLACEABLE()
-    );
-
-  constant Attributes CONSTANT_ATTR =
-    Attributes.ATTRIBUTES(
-      ConnectorType.NON_CONNECTOR,
-      Parallelism.NON_PARALLEL,
-      Variability.CONSTANT,
-      Direction.NONE,
-      InnerOuter.NOT_INNER_OUTER,
-      false,
-      false,
-      Replaceable.NOT_REPLACEABLE()
-    );
-
-  constant Attributes IMPL_DISCRETE_ATTR =
-    Attributes.ATTRIBUTES(
-      ConnectorType.NON_CONNECTOR,
-      Parallelism.NON_PARALLEL,
-      Variability.IMPLICITLY_DISCRETE,
-      Direction.NONE,
-      InnerOuter.NOT_INNER_OUTER,
-      false,
-      false,
-      Replaceable.NOT_REPLACEABLE()
-    );
-
-  uniontype Attributes
-    record ATTRIBUTES
-      // adrpo: keep the order in DAE.ATTR
-      ConnectorType.Type connectorType;
-      Parallelism parallelism;
-      Variability variability;
-      Direction direction;
-      InnerOuter innerOuter;
-      Boolean isFinal;
-      Boolean isRedeclare;
-      Replaceable isReplaceable;
-    end ATTRIBUTES;
-
-    function toDAE
-      input Attributes ina;
-      input Visibility vis;
-      output DAE.Attributes outa;
-    algorithm
-      outa := DAE.ATTR(
-        ConnectorType.toDAE(ina.connectorType),
-        parallelismToSCode(ina.parallelism),
-        variabilityToSCode(ina.variability),
-        directionToAbsyn(ina.direction),
-        innerOuterToAbsyn(ina.innerOuter),
-        visibilityToSCode(vis)
-      );
-    end toDAE;
-
-    function toString
-      input Attributes attr;
-      input Type ty;
-      output String str;
-    algorithm
-      str := (if attr.isRedeclare then "redeclare " else "") +
-             (if attr.isFinal then "final " else "") +
-             Prefixes.unparseInnerOuter(attr.innerOuter) +
-             Prefixes.unparseReplaceable(attr.isReplaceable) +
-             Prefixes.unparseParallelism(attr.parallelism) +
-             ConnectorType.unparse(attr.connectorType) +
-             Prefixes.unparseVariability(attr.variability, ty) +
-             Prefixes.unparseDirection(attr.direction);
-    end toString;
-
-    function toFlatStream
-      input Attributes attr;
-      input Type ty;
-      input output IOStream.IOStream s;
-      input Boolean isTopLevel = true;
-    algorithm
-      if attr.isFinal then
-        s := IOStream.append(s, "final ");
-      end if;
-
-      s := IOStream.append(s, Prefixes.unparseVariability(attr.variability, ty));
-
-      if isTopLevel then
-        s := IOStream.append(s, Prefixes.unparseDirection(attr.direction));
-      end if;
-    end toFlatStream;
-  end Attributes;
-
   record COMPONENT_DEF
     SCode.Element definition;
     Modifier modifier;
@@ -185,7 +64,7 @@ public
     array<Dimension> dimensions;
     Binding binding;
     Binding condition;
-    Component.Attributes attributes;
+    Attributes attributes;
     Option<SCode.Comment> comment;
     Boolean instantiated;
     SourceInfo info;
@@ -196,7 +75,7 @@ public
     Type ty;
     Binding binding;
     Binding condition;
-    Component.Attributes attributes;
+    Attributes attributes;
     Option<Modifier> ann "the annotation from SCode.Comment as a modifier";
     Option<SCode.Comment> comment;
     SourceInfo info;
@@ -432,17 +311,17 @@ public
 
   function getAttributes
     input Component component;
-    output Component.Attributes attr;
+    output Attributes attr;
   algorithm
     attr := match component
       case UNTYPED_COMPONENT() then component.attributes;
       case TYPED_COMPONENT() then component.attributes;
-      else DEFAULT_ATTR;
+      else NFAttributes.DEFAULT_ATTR;
     end match;
   end getAttributes;
 
   function setAttributes
-    input Component.Attributes attr;
+    input Attributes attr;
     input output Component component;
   algorithm
     () := match component
@@ -597,8 +476,8 @@ public
   end isInput;
 
   function setDirection
-    input output Component component;
     input Direction direction;
+    input output Component component;
   protected
     Attributes attr;
   algorithm
@@ -631,8 +510,8 @@ public
     output Parallelism parallelism;
   algorithm
     parallelism := match component
-      case TYPED_COMPONENT(attributes = ATTRIBUTES(parallelism = parallelism)) then parallelism;
-      case UNTYPED_COMPONENT(attributes = ATTRIBUTES(parallelism = parallelism)) then parallelism;
+      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(parallelism = parallelism)) then parallelism;
+      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(parallelism = parallelism)) then parallelism;
       else Parallelism.NON_PARALLEL;
     end match;
   end parallelism;

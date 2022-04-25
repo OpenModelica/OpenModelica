@@ -48,6 +48,7 @@ import Algorithm = NFAlgorithm;
 import CardinalityTable = NFCardinalityTable;
 
 protected
+import Attributes = NFAttributes;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import ExecStat.execStat;
@@ -442,7 +443,7 @@ protected
   Type ty;
   Option<SCode.Comment> cmt;
   SourceInfo info;
-  Component.Attributes comp_attr;
+  Attributes comp_attr;
   Visibility vis;
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;

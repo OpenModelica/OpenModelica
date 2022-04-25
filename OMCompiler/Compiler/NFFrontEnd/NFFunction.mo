@@ -53,7 +53,7 @@ import Error;
 import InstUtil;
 import Class = NFClass;
 import Component = NFComponent;
-import NFComponent.Attributes;
+import Attributes = NFAttributes;
 import Typing = NFTyping;
 import TypeCheck = NFTypeCheck;
 import Util;
@@ -2092,7 +2092,7 @@ protected
     Visibility vis;
     Variability var;
   algorithm
-    Component.Attributes.ATTRIBUTES(
+    Attributes.ATTRIBUTES(
       connectorType = cty,
       direction = direction,
       innerOuter = io) := Component.getAttributes(InstNode.component(component));

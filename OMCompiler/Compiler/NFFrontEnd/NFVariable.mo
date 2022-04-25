@@ -30,6 +30,7 @@
  */
 
 encapsulated uniontype NFVariable
+  import Attributes = NFAttributes;
   import Binding = NFBinding;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
@@ -57,7 +58,7 @@ public
     Type ty;
     Binding binding;
     Visibility visibility;
-    Component.Attributes attributes;
+    Attributes attributes;
     list<tuple<String, Binding>> typeAttributes;
     list<Variable> children;
     Option<SCode.Comment> comment;
@@ -75,7 +76,7 @@ public
     Type ty;
     Binding binding;
     Visibility vis;
-    Component.Attributes attr;
+    Attributes attr;
     Option<SCode.Comment> cmt;
     SourceInfo info;
   algorithm
@@ -301,7 +302,7 @@ public
       s := IOStream.append(s, "protected ");
     end if;
 
-    s := IOStream.append(s, Component.Attributes.toString(var.attributes, var.ty));
+    s := IOStream.append(s, Attributes.toString(var.attributes, var.ty));
     s := IOStream.append(s, Type.toString(var.ty));
     s := IOStream.append(s, " ");
     s := IOStream.append(s, ComponentRef.toString(var.name));
@@ -356,7 +357,7 @@ public
   algorithm
     s := IOStream.append(s, indent);
 
-    s := Component.Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
+    s := Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
     s := IOStream.append(s, Type.toFlatString(var.ty));
     s := IOStream.append(s, " ");
     s := IOStream.append(s, ComponentRef.toFlatString(var.name));
