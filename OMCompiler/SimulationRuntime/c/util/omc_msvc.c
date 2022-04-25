@@ -279,6 +279,30 @@ int omc_dladdr(void *addr, Dl_info *info)
 {
   return 0;
 }
+
+
+void* dlopen(const char *filename, int flag) {
+  return omc_dlopen(filename, flag);
+}
+
+char* dlerror() {
+  return omc_dlerror();
+}
+
+void* dlsym(void *handle, const char *symbol) {
+  return omc_dlsym(handle, symbol);
+}
+
+int dlclose(void *handle) {
+  return omc_dlclose(handle);
+}
+
+int dladdr(void *addr, Dl_info *info) {
+  return omc_dladdr(addr, info);
+}
+
+
+
 #else /* MINGW */
 
 /*

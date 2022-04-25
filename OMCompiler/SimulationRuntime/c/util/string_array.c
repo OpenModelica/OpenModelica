@@ -51,6 +51,32 @@ static inline void string_set(string_array_t *a, size_t i, modelica_string r)
     ((modelica_string *) a->data)[i] = r;
 }
 
+modelica_string string_get(const string_array_t a, size_t i)
+{
+    return ((modelica_string *) a.data)[i];
+}
+
+modelica_string string_get_2D(const string_array_t a, size_t i, size_t j)
+{
+  return string_get(a, getIndex_2D(a.dim_size,i,j));
+}
+
+modelica_string string_get_3D(const string_array_t a, size_t i, size_t j, size_t k)
+{
+  return string_get(a, getIndex_3D(a.dim_size,i,j,k));
+}
+
+modelica_string string_get_4D(const string_array_t a, size_t i, size_t j, size_t k, size_t l)
+{
+  return string_get(a, getIndex_4D(a.dim_size,i,j,k,l));
+}
+
+modelica_string string_get_5D(const string_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m)
+{
+  return string_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
+}
+
+
 /** function: string_array_create
  **
  ** sets all fields in a string_array, i.e. data, ndims and dim_size.

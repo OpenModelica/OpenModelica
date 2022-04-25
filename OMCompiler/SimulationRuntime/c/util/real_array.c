@@ -53,6 +53,32 @@ static inline void real_set(real_array_t *a, size_t i, modelica_real r)
     ((modelica_real *) a->data)[i] = r;
 }
 
+
+modelica_real real_get(const real_array_t a, size_t i)
+{
+  return ((modelica_real *) a.data)[i];
+}
+
+modelica_real real_get_2D(const real_array_t a, size_t i, size_t j)
+{
+  return real_get(a, getIndex_2D(a.dim_size,i,j));
+}
+
+modelica_real real_get_3D(const real_array_t a, size_t i, size_t j, size_t k)
+{
+  return real_get(a, getIndex_3D(a.dim_size,i,j,k));
+}
+
+modelica_real real_get_4D(const real_array_t a, size_t i, size_t j, size_t k, size_t l)
+{
+  return real_get(a, getIndex_4D(a.dim_size,i,j,k,l));
+}
+
+modelica_real real_get_5D(const real_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m)
+{
+  return real_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
+}
+
 /** function: real_array_create
  **
  ** sets all fields in a real_array, i.e. data, ndims and dim_size.
