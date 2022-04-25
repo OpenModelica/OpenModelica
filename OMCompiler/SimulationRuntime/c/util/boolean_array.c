@@ -40,6 +40,33 @@
 #include <assert.h>
 #include <stdarg.h>
 
+
+modelica_boolean boolean_get(const boolean_array_t a, size_t i)
+{
+    return ((modelica_boolean *) a.data)[i];
+}
+
+modelica_boolean boolean_get_2D(const boolean_array_t a, size_t i, size_t j)
+{
+    return boolean_get(a, getIndex_2D(a.dim_size,i,j));
+}
+
+modelica_boolean boolean_get_3D(const boolean_array_t a, size_t i, size_t j, size_t k)
+{
+    return boolean_get(a, getIndex_3D(a.dim_size,i,j,k));
+}
+
+modelica_boolean boolean_get_4D(const boolean_array_t a, size_t i, size_t j, size_t k, size_t l)
+{
+    return boolean_get(a, getIndex_4D(a.dim_size,i,j,k,l));
+}
+
+modelica_boolean boolean_get_5D(const boolean_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m)
+{
+    return boolean_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
+}
+
+
 static inline modelica_boolean *boolean_ptrget(const boolean_array_t *a, size_t i)
 {
     return ((modelica_boolean *) a->data) + i;

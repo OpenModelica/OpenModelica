@@ -40,30 +40,11 @@
 #include "omc_msvc.h"
 #include <stdarg.h>
 
-static OMC_INLINE modelica_real real_get(const real_array_t a, size_t i)
-{
-  return ((modelica_real *) a.data)[i];
-}
-
-static OMC_INLINE modelica_real real_get_2D(const real_array_t a, size_t i, size_t j)
-{
-  return real_get(a, getIndex_2D(a.dim_size,i,j));
-}
-
-static OMC_INLINE modelica_real real_get_3D(const real_array_t a, size_t i, size_t j, size_t k)
-{
-  return real_get(a, getIndex_3D(a.dim_size,i,j,k));
-}
-
-static OMC_INLINE modelica_real real_get_4D(const real_array_t a, size_t i, size_t j, size_t k, size_t l)
-{
-  return real_get(a, getIndex_4D(a.dim_size,i,j,k,l));
-}
-
-static OMC_INLINE modelica_real real_get_5D(const real_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m)
-{
-  return real_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
-}
+modelica_real real_get(const real_array_t a, size_t i);
+modelica_real real_get_2D(const real_array_t a, size_t i, size_t j);
+modelica_real real_get_3D(const real_array_t a, size_t i, size_t j, size_t k);
+modelica_real real_get_4D(const real_array_t a, size_t i, size_t j, size_t k, size_t l);
+modelica_real real_get_5D(const real_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m);
 
 /* Setting the fields of a real_array */
 extern void real_array_create(real_array_t *dest, modelica_real *data, int ndims, ...);

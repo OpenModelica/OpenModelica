@@ -53,6 +53,31 @@ static OMC_INLINE void integer_set(integer_array_t *a, size_t i, modelica_intege
   ((modelica_integer *) a->data)[i] = r;
 }
 
+modelica_integer integer_get(const integer_array_t a, size_t i)
+{
+  return ((modelica_integer *) a.data)[i];
+}
+
+modelica_integer integer_get_2D(const integer_array_t a, size_t i, size_t j)
+{
+  return integer_get(a, getIndex_2D(a.dim_size,i,j));
+}
+
+modelica_integer integer_get_3D(const integer_array_t a, size_t i, size_t j, size_t k)
+{
+  return integer_get(a, getIndex_3D(a.dim_size,i,j,k));
+}
+
+modelica_integer integer_get_4D(const integer_array_t a, size_t i, size_t j, size_t k, size_t l)
+{
+  return integer_get(a, getIndex_4D(a.dim_size,i,j,k,l));
+}
+
+modelica_integer integer_get_5D(const integer_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m)
+{
+  return integer_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
+}
+
 /** function: integer_array_create
  **
  ** sets all fields in a integer_array, i.e. data, ndims and dim_size.
