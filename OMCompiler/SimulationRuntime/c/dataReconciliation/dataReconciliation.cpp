@@ -1174,10 +1174,12 @@ void solveSystemFstar(int n, int nhrs, double *tmpMatrixD, double *tmpMatrixC, o
   int NRHS = nhrs;  // number of columns of Matrix B
   int LDA = N;
   int LDB = N;
-  int ipiv[N];
+  int* ipiv = new int[N];
   int info;
   // call the external function
   dgesv_(&N, &NRHS, tmpMatrixD, &LDA, ipiv, tmpMatrixC, &LDB, &info);
+  delete[] ipiv;
+
   if (info > 0)
   {
     //cout << "The solution could not be computed, The info satus is : " << info;
@@ -2165,7 +2167,7 @@ void checkExpensiveMatrixInverse()
   int N = 3;
   int LDA = N;
   int LDB = N;
-  int ipiv[N];
+  int ipiv[3];
   int info = 1;
   int LWORK = N;
   double *WORK = (double*) calloc(LWORK, sizeof(double));
