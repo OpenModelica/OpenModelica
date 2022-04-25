@@ -22,10 +22,9 @@ instantiateModel(unitCheckTests.ticket3631); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {x,{1.0 * s^(1)}}
-// {y,{1.0 * s^(1)}}
-// {jhagemann,{MASTER()}}
+// (x, 1.0 * s^(1))
+// (y, 1.0 * s^(1))
+// (jhagemann, MASTER())
 // ######## UnitCheck COMPLETED ########
 // "class unitCheckTests.ticket3631
 //   Real x(unit = \"\");

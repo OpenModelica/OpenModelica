@@ -46,20 +46,19 @@ instantiateModel(unitCheckTests.UnitCheck1); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {S,{1.0 * m^(1)}}
-// {V,{1.0 * m^(1) * s^(-1)}}
-// {A,{1.0 * m^(1) * s^(-2)}}
-// {C,{1.0 * m^(1) * s^(-1)}}
-// {X,{1.0 * m^(1)}}
-// {X2,{1.0 * m^(1)}}
-// {D,{MASTER(D)}}
-// {F,{1.0 * m^(1) * s^(-1)}}
-// {F1,{1.0 * m^(1)}}
-// {G,{1.0 * m^(1) * s^(-1)}}
-// {H,{1.0 * m^(1)}}
-// {I,{1.0 * m^(1) * s^(-1)}}
-// {jhagemann,{MASTER()}}
+// (S, 1.0 * m^(1))
+// (V, 1.0 * m^(1) * s^(-1))
+// (A, 1.0 * m^(1) * s^(-2))
+// (C, 1.0 * m^(1) * s^(-1))
+// (X, 1.0 * m^(1))
+// (X2, 1.0 * m^(1))
+// (D, MASTER(D))
+// (F, 1.0 * m^(1) * s^(-1))
+// (F1, 1.0 * m^(1))
+// (G, 1.0 * m^(1) * s^(-1))
+// (H, 1.0 * m^(1))
+// (I, 1.0 * m^(1) * s^(-1))
+// (jhagemann, MASTER())
 // ######## UnitCheck COMPLETED ########
 // "function unitCheckTests.UnitCheck1.f1
 //   input Real V(unit = \"m/s\");

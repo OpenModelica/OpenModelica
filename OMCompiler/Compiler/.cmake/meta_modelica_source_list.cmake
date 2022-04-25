@@ -351,15 +351,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionDerivative.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionInverse.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunction.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashSet.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable3.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCG.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCrToExp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCrToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableStringToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableUnitToString.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFImport.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInline.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstContext.mo

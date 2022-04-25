@@ -19,9 +19,8 @@ instantiateModel(UnitCheck16); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {x,{1.0 * s^(2)}}
-// {jhagemann,{MASTER()}}
+// (x, 1.0 * s^(2))
+// (jhagemann, MASTER())
 // ######## UnitCheck COMPLETED ########
 // "class UnitCheck16
 //   Real x(unit = \"s2\", start = 1.0, fixed = true);

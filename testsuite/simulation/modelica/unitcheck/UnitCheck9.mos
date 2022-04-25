@@ -27,13 +27,12 @@ instantiateModel(unitCheckTests.UnitCheck9); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {V,{1.0 * m^(2) * s^(-2)}}
-// {A,{1.0 * m^(1) * s^(-1)}}
-// {S,{1.0 * m^(1) * s^(-1)}}
-// {C,{MASTER(C)}}
-// {E,{MASTER(E)}}
-// {jhagemann,{MASTER()}}
+// (V, 1.0 * m^(2) * s^(-2))
+// (A, 1.0 * m^(1) * s^(-1))
+// (S, 1.0 * m^(1) * s^(-1))
+// (C, MASTER(C))
+// (E, MASTER(E))
+// (jhagemann, MASTER())
 // ######## UnitCheck COMPLETED ########
 // "class unitCheckTests.UnitCheck9
 //   Real V(unit = \"m2/s2\");
