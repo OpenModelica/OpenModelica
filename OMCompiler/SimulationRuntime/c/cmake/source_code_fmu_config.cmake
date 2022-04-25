@@ -144,6 +144,8 @@ target_sources(SimulationRuntimeFMI PRIVATE ${SOURCE_FMU_COMMON_FILES_LIST}
 
 target_compile_definitions(SimulationRuntimeFMI PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL)
 
+target_include_directories(SimulationRuntimeFMI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 install(TARGETS SimulationRuntimeFMI)
 
 

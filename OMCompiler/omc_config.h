@@ -131,7 +131,9 @@
 /* On Windows (with OMDev) assume we have lapack*/
 #define HAVE_LAPACK
 /* On Windows (with OMDev) assume we have deprecated lapack functions*/
+#if !defined(_MSC_VER)
 #define HAVE_LAPACK_DEPRECATED
+#endif
 
 #else /* Unix */ /* #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) */
 

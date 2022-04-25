@@ -26,6 +26,8 @@ endif()
 # than that.
 if(MINGW)
   target_link_options(bomc PRIVATE -Wl,--stack,33554432)
+elseif(MSVC)
+  target_link_options(bomc PRIVATE /STACK:33554432)
 endif()
 
 

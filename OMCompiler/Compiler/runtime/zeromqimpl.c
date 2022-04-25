@@ -30,8 +30,13 @@
 
 #include <zmq.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "meta/meta_modelica.h"
 #include "util/modelica_string.h"

@@ -2501,7 +2501,11 @@ const char* SystemImpl__iconv__ascii(const char * str)
 
 static int isUtf8Encoding(const char *str)
 {
+#if defined(_MSC_VER)
+  return _stricmp(str, "UTF-8") || _stricmp(str, "UTF8");
+#else
   return strcasecmp(str, "UTF-8") || strcasecmp(str, "UTF8");
+#endif
 }
 
 extern const char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError)
@@ -2968,10 +2972,16 @@ char* SystemImpl__ctime(double time)
 {
   char buf[64] = {0}; /* needs to be >=26 char */
   time_t t = (time_t) time;
-  return omc_alloc_interface.malloc_strdup(ctime_r(&t,buf));
+#if defined(_MSC_VER)
+  errno_t e = ctime_s(buf, 64, t);
+  assert(e == 0 && "ctime_s returned an error");
+  return omc_alloc_interface.malloc_strdup(buf);
+#else
+  return omc_alloc_interface.malloc_strdup(ctime_r(&t, buf));
+#endif
 }
 
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 /*
  * strtok_r implementation
  */
