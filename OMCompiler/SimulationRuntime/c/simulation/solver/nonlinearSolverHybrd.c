@@ -231,7 +231,10 @@ static int getNumericalJacobian(struct dataAndSys* dataAndSysNum, double* jac, c
     deltaInv = 1. / delta_hh;
     solverData->xSave[i] = x[i] + delta_hh;
 
-    infoStreamPrint(LOG_NLS_JAC, 0, "%d. %s = %f (delta_hh = %f)", i+1, modelInfoGetEquation(&dataSys->data->modelData->modelDataXml,systemData->equationIndex).vars[i], solverData->xSave[i], delta_hh);
+    if(ACTIVE_STREAM(LOG_NLS_JAC))
+    {
+      infoStreamPrint(LOG_NLS_JAC, 0, "%d. %s = %f (delta_hh = %f)", i+1, modelInfoGetEquation(&dataSys->data->modelData->modelDataXml,systemData->equationIndex).vars[i], solverData->xSave[i], delta_hh);
+    }
     wrapper_fvec_hybrj(&solverData->n, (const double*) solverData->xSave, solverData->fvecSave, solverData->fjacobian, &solverData->ldfjac, &iflag, dataSys);
 
     for(j = 0; j < solverData->n; ++j)
