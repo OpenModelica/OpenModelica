@@ -272,15 +272,6 @@ int omc_dlclose(void *handle)
   return FreeLibrary(handle);
 }
 
-
-#if defined(_MSC_VER)
-/* no dladdr on MSVC */
-int omc_dladdr(void *addr, Dl_info *info)
-{
-  return 0;
-}
-
-
 void* dlopen(const char *filename, int flag) {
   return omc_dlopen(filename, flag);
 }
@@ -303,6 +294,12 @@ int dladdr(void *addr, Dl_info *info) {
 
 
 
+#if defined(_MSC_VER)
+/* no dladdr on MSVC */
+int omc_dladdr(void *addr, Dl_info *info)
+{
+  return 0;
+}
 #else /* MINGW */
 
 /*
