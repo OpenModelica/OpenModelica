@@ -280,6 +280,10 @@ static void getIdent(const char *str, char *this, const char **next)
 
 extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData, modelica_string uri_om, const char *resourcesDir)
 {
+#if defined(_MSC_VER)
+#define strncasecmp _strnicmp
+#endif
+
   FILE_INFO info = omc_dummyFileInfo;
   char buf[PATH_MAX];
   const char *uri = MMC_STRINGDATA(uri_om);
