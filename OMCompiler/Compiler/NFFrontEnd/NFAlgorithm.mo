@@ -36,7 +36,6 @@ encapsulated uniontype NFAlgorithm
   // NF imports
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import HashSet = NFHashSet;
   import NFInstNode.InstNode;
   import Statement = NFStatement;
   import Type = NFType;

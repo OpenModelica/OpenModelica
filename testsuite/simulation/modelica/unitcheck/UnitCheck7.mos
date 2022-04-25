@@ -25,11 +25,10 @@ instantiateModel(unitCheckTests.UnitCheck7); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {S,{1.0 * m^(1) * s^(-1)}}
-// {V,{1.0 * m^(1) * s^(-1)}}
-// {A,{1.0 * m^(1) * s^(-1)}}
-// {jhagemann,{MASTER()}}
+// (S, 1.0 * m^(1) * s^(-1))
+// (V, 1.0 * m^(1) * s^(-1))
+// (A, 1.0 * m^(1) * s^(-1))
+// (jhagemann, MASTER())
 // ######## UnitCheck COMPLETED ########
 // "class unitCheckTests.UnitCheck7
 //   Real S(unit = \"m/s\");

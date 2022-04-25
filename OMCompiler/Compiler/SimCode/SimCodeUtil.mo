@@ -110,8 +110,6 @@ import SimCodeFunctionUtil;
 import SimCodeFunctionUtil.varName;
 import SymbolicJacobian;
 import System;
-import HashTableUnitToString = NFHashTableUnitToString;
-import HashTableStringToUnit = NFHashTableStringToUnit;
 import Util;
 import ValuesUtil;
 import VisualXML;
