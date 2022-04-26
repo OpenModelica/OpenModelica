@@ -205,7 +205,7 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
                         "sparsePatternT");
 }
 
-void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols)
+void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages)
 {
   SPARSE_PATTERN* sparsePatternT;
   int row, col, nCols, leadIdx;
@@ -231,6 +231,9 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols)
 
   sparsePatternTranspose(sizeRows, sizeCols, sparsePattern, sparsePatternT);
 
+  int sizeCols_ODE = sizeCols/nStages;
+  int act_stage;
+
   for (col=0; col<sizeCols; col++)
   {
     for (i=0; i<sizeCols ; i++)
@@ -246,6 +249,11 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols)
           {
             tabu[sparsePatternT->index[j]][i]=1;
           }
+        }
+        act_stage = i/sizeCols_ODE;
+        for (j=(act_stage+1)*sizeCols_ODE; j<sizeCols; j++)
+        {
+          tabu[j][i]=1;
         }
         break;
       }
@@ -348,7 +356,7 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
     memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, jacobian->sizeCols*sizeof(unsigned int));
   } else {
     // Calculate new coloring, because of additional nonZeroDiagonals
-    ColoringAlg(sparsePattern_DIRK, sizeRows, sizeCols);
+    ColoringAlg(sparsePattern_DIRK, sizeRows, sizeCols, 1);
   }
 
   return sparsePattern_DIRK;
@@ -474,7 +482,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   }
 
   // BB ToDo: Important that different stages get different colors!!!
-  ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages);
+  ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages);
 
   return sparsePattern_IRK;
 }
@@ -524,7 +532,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
 
   /* Initialize sparsity pattern */
   nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
-  nonlinsys->isPatternAvailable = FALSE;
+  nonlinsys->isPatternAvailable = TRUE;
   return;
 }
 
@@ -606,7 +614,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
   // TODO: Free memory
-  rk_data->jacobian = initAnalyticJacobian(jacobian_ODE->sizeCols, jacobian_ODE->sizeRows, jacobian_ODE->sizeTmpVars, NULL, nlsData->sparsePattern);
+  rk_data->jacobian = initAnalyticJacobian(rk_data->nlSystemSize, rk_data->nlSystemSize, rk_data->nlSystemSize, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -1146,6 +1154,8 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
+  const double* xloc = rk_data->nlsData->nlsx;
+
   int i,j,k,l,idx;
   int nStages = rk_data->tableau->nStages;
   int nStates = data->modelData->nStates;
@@ -1156,44 +1166,43 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
 
   printVector_genericRK("jacobian->seedVars: ", jacobian->seedVars, jacobian->sizeCols, 0);
 
+  // Map the jacobian->seedVars to the jacobian_ODE->seedVars
+  // and find out which stage is active
+  for (i=0; i<jacobian_ODE->sizeCols; i++)
+    jacobian_ODE->seedVars[i] = 0;
+  for (i=0, k=0; i<jacobian->sizeCols; i++)
+  {
+    if (jacobian->seedVars[i])
+    {
+      k = i;
+      jacobian_ODE->seedVars[i%jacobian_ODE->sizeCols] = 1;
+    }
+    k = k/jacobian_ODE->sizeCols;
+  }
+  printf("Actual stage %d", k);
+  printVector_genericRK("jacobian_ODE->seedVars: ", jacobian_ODE->seedVars, jacobian_ODE->sizeCols, 0);
 
-  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
+  // update timeValue and unknown vector
+  sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
+  // BB ToDo: ist xloc das gleiche wie rk_data->nlsData->nlsx
+  memcpy(sData->realVars, &(xloc[k*nStates]), nStates*sizeof(double));
+  // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
-  /* Compute Jacobian of non-linear system */
-  for (i = 0; i < nStages * nStates; i++)
+  // Set res to previous result of RK step - xloc
+  /* Update resultVars array */
+  for (l=0; l<nStages; l++)
   {
-    for (j = 0; j < nStages * nStates; j++)
+    for (i=0; i<nStates; i++)
     {
-      if (i == j)
-        jacobian->resultVars[i * nStages * nStates + j] = -1;
-      else
-        jacobian->resultVars[i * nStages * nStates + j] = 0;
+      jacobian->resultVars[l * nStates + i] = rk_data->stepSize * rk_data->tableau->A[l * nStages + k]  * jacobian_ODE->resultVars[i];
+    /* -1 on diagonal elements */
+      if (jacobian->seedVars[l * nStates + i] == 1) {
+        jacobian->resultVars[l * nStates + i] -= 1;
+    }
     }
   }
-  for (k=0; k<nStages; k++)
-  {
-    /* Evaluate Jacobian of ODE */
-    sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
-    memcpy(sData->realVars, &rk_data->nlsData->nlsx[k*nStates], nStates*sizeof(double));
-    if (rk_data->symJacAvailable) {
-      wrapper_Jf_symbolic_genericRK(data, threadData, rk_data);
-    } else {
-      wrapper_Jf_numeric_genericRK(data, threadData, rk_data);
-    }
 
-    for (l=0; l<nStages; l++)
-    {
-      for (i=0; i<nStates; i++)
-      {
-        for (j=0; j<nStates; j++)
-        {
-          idx = l * nStages * nStates * nStates + i * nStages * nStates + j + k*nStates;
-          jacobian->resultVars[idx] += rk_data->stepSize * rk_data->tableau->A[l * nStages + k] * rk_data->Jf[i * nStates + j];
-        }
-      }
-    }
-  }
   return 0;
 }
 
