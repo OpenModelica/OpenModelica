@@ -30,49 +30,21 @@
  */
 
 encapsulated package NFCardinalityTable
-  import BaseHashTable;
   import System;
   import Connections = NFConnections;
   import Connection = NFConnection;
   import Connector = NFConnector;
   import Expression = NFExpression;
+  import UnorderedMap;
   import Util;
 
-  type Key = String;
-  type Value = Integer;
-  type Table = tuple<
-    array<list<tuple<Key, Integer>>>,
-    tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
-    Integer,
-    tuple<FuncHash, FuncEq, FuncKeyStr, FuncValueStr>>;
-
-  partial function FuncHash
-    input Key key;
-    input Integer mod;
-    output Integer res;
-  end FuncHash;
-
-  partial function FuncEq
-    input Key key1;
-    input Key key2;
-    output Boolean res;
-  end FuncEq;
-
-  partial function FuncKeyStr
-    input Key key;
-    output String res;
-  end FuncKeyStr;
-
-  partial function FuncValueStr
-    input Value value;
-    output String res;
-  end FuncValueStr;
+  type Table = UnorderedMap<String, Integer>;
 
   function emptyCardinalityTable
     input Integer size;
     output Table table;
   algorithm
-    table := BaseHashTable.emptyHashTableWork(size, (stringHashDjb2Mod, stringEq, Util.id, intString));
+    table := UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq, size);
   end emptyCardinalityTable;
 
   function fromConnections
@@ -87,8 +59,8 @@ encapsulated package NFCardinalityTable
       table := emptyCardinalityTable(max(1, Util.nextPrime(listLength(conns.connections))));
 
       for conn in conns.connections loop
-        table := addConnector(conn.lhs, table);
-        table := addConnector(conn.rhs, table);
+        addConnector(conn.lhs, table);
+        addConnector(conn.rhs, table);
       end for;
     else
       table := emptyCardinalityTable(1);
@@ -97,19 +69,22 @@ encapsulated package NFCardinalityTable
 
   function addConnector
     input Connector conn;
-    input output Table table;
+    input Table table;
   protected
     String conn_str;
-    Integer count;
+
+    function update
+      input Option<Integer> count;
+      output Integer outCount;
+    algorithm
+      outCount := match count
+        case SOME(outCount) then outCount + 1;
+        else 1;
+      end match;
+    end update;
   algorithm
     conn_str := Connector.toString(conn);
-
-    try
-      count := BaseHashTable.get(conn_str, table);
-      BaseHashTable.update((conn_str, count + 1), table);
-    else
-      table := BaseHashTable.add((conn_str, 1), table);
-    end try;
+    UnorderedMap.addUpdate(conn_str, update, table);
   end addConnector;
 
   function evaluateCardinality
@@ -119,19 +94,14 @@ encapsulated package NFCardinalityTable
   protected
     Integer count;
   algorithm
-    try
-      count := BaseHashTable.get(Expression.toString(arg), table);
-    else
-      count := 0;
-    end try;
-
+    count := UnorderedMap.getOrDefault(Expression.toString(arg), table, 0);
     res := Expression.INTEGER(count);
   end evaluateCardinality;
 
   function print
     input Table table;
   algorithm
-    for e in BaseHashTable.hashTableList(table) loop
+    for e in UnorderedMap.toList(table) loop
       print(Util.tuple21(e) + ": " + String(Util.tuple22(e)) + "\n");
     end for;
   end print;
