@@ -274,10 +274,8 @@ public
             rest2 := intersectRest(iter2.name, start2, step2, stop2, start_max-step2, stop_min+step2);
         then (intersection, rest1, rest2);
 
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because only single iterators with equal step can be intersected:\n"
-            + Iterator.toString(iter1) + "\n" + Iterator.toString(iter2) + "\n"});
-        then fail();
+        // cannot intersect
+        else (EMPTY(), (iter1, EMPTY()), (EMPTY(), iter2));
       end match;
     end intersect;
 
@@ -1536,12 +1534,18 @@ public
 
     function entwine
       input list<Equation> eqn_lst        "has to be for-loops with combinable ranges";
+      input Integer nesting_level = 0;
       output list<Equation> entwined = {} "returns a single for-loop on top level if it is possible";
     protected
       Equation eqn1, eqn2, next;
       list<Equation> rest, tmp;
       Iterator intersection, rest1_left, rest1_right, rest2_left, rest2_right;
+      String shift = StringUtil.repeat("  ", nesting_level);
     algorithm
+      if Flags.isSet(Flags.DUMP_SLICE) then
+        print(shift + "[" + intString(nesting_level) + "] ### Entwining following equations:\n"
+          + List.toString(eqn_lst, function Equation.toString(str = shift + "  "), "", "", "\n", "\n\n"));
+      end if;
       eqn1 :: rest := eqn_lst;
       while not listEmpty(rest) loop
         eqn2 :: rest := rest;
@@ -1549,7 +1553,7 @@ public
 
           // entwine body if possible - equal iterator -> no intersecting
           case (FOR_EQUATION(), FOR_EQUATION()) guard(Iterator.isEqual(eqn1.iter, eqn2.iter)) algorithm
-            eqn1.body := entwine(listAppend(eqn1.body, eqn2.body));
+            eqn1.body := entwine(listAppend(eqn1.body, eqn2.body), nesting_level + 1);
           then eqn1;
 
           // if the iterators are not equal, they have to be intersected and the respective rests have to be handled
@@ -1566,7 +1570,7 @@ public
               tmp := FOR_EQUATION(
                 ty      = eqn1.ty,
                 iter    = intersection,
-                body    = entwine(listAppend(eqn1.body, eqn2.body)),
+                body    = entwine(listAppend(eqn1.body, eqn2.body), nesting_level + 1),
                 source  = eqn1.source,
                 attr    = eqn1.attr
               ) :: tmp;
@@ -1589,6 +1593,10 @@ public
         end match;
       end while;
       entwined := listReverse(eqn1 :: entwined);
+      if Flags.isSet(Flags.DUMP_SLICE) then
+        print(shift + "[" + intString(nesting_level) + "] +++ Result of entwining:\n"
+          + List.toString(entwined, function Equation.toString(str = shift  + "  "), "", "", "\n", "\n\n"));
+      end if;
     end entwine;
 
     function slice

@@ -373,7 +373,7 @@ public
       var_arr_idx     := UnorderedMap.getSafe(stripped, map);
       (var_start, _)  := mapping.var_AtS[var_arr_idx];
       sizes           := ComponentRef.sizes(stripped);
-      subs            := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(cref));
+      subs            := ComponentRef.subscriptsToExpression(cref);
       scal_lst        := combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
 
       if listLength(scal_lst) <> eqn_size then
@@ -413,6 +413,7 @@ public
     list<ComponentRef> names;
     list<Expression> ranges, subs;
     list<list<Expression>> new_subs, new_row_cref_subs;
+    list<Subscript> evaluated_subs;
     list<tuple<ComponentRef, Expression>> frames;
     list<ComponentRef> new_row_crefs = {}, new_dep_crefs;
     list<list<ComponentRef>> scalar_dependenciesT = {};
@@ -422,19 +423,22 @@ public
     frames := List.zip(names, ranges);
 
     // get new subscripts for row cref
-    subs := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(row_cref));
+    subs := ComponentRef.subscriptsToExpression(row_cref);
+    //subs := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(row_cref));
     new_row_cref_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
 
     // reapply new subscripts for each frame location
     stripped := ComponentRef.stripSubscriptsAll(row_cref);
     for new_subs_single in new_row_cref_subs loop
-      new_row_crefs := ComponentRef.mergeSubscripts(list(Subscript.fromTypedExp(exp) for exp in new_subs_single), stripped) :: new_row_crefs;
+      evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
+      new_row_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, false, true) :: new_row_crefs;
     end for;
 
     // get the scalar crefs for each cref
     if not listEmpty(dependencies) then
       for cref in dependencies loop
-        subs     := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(cref));
+        subs := ComponentRef.subscriptsToExpression(cref);
+        //subs     := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllWithWholeFlat(cref));
         new_subs := combineFrames2Exp(subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual));
 
         if listLength(new_subs) <> listLength(new_row_crefs) then
@@ -448,7 +452,8 @@ public
         new_dep_crefs := {};
         stripped := ComponentRef.stripSubscriptsAll(cref);
         for new_subs_single in new_subs loop
-          new_dep_crefs := ComponentRef.mergeSubscripts(list(Subscript.fromTypedExp(exp) for exp in new_subs_single), stripped) :: new_dep_crefs;
+          evaluated_subs := list(Subscript.fromTypedExp(exp) for exp in new_subs_single);
+          new_dep_crefs := ComponentRef.mergeSubscripts(evaluated_subs, stripped, false, true) :: new_dep_crefs;
         end for;
         scalar_dependenciesT := new_dep_crefs :: scalar_dependenciesT;
       end for;
@@ -848,6 +853,7 @@ protected
         ComponentRef iterator;
         Expression range;
         Integer start, step, stop;
+        list<Expression> local_subs;
 
       // only occurs for non-for-loop equations (no frames to replace)
       case {} then {subs};
@@ -860,7 +866,8 @@ protected
           UnorderedMap.add(iterator, Expression.INTEGER(index), replacements);
           if listEmpty(rest) then
             // bottom line, resolve current configuration and create index for it
-            new_subs := list(SimplifyExp.simplify(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements))) for sub in subs) :: new_subs;
+            local_subs := list(SimplifyExp.simplify(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements))) for sub in subs);
+            new_subs := listReverse(local_subs) :: new_subs;
           else
             // not last frame, go deeper
             new_subs := combineFrames2Exp(subs, rest, replacements, new_subs);
