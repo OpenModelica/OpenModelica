@@ -975,7 +975,6 @@ algorithm
         ();
 /*    case(cr::rest,_,_,_,_)
       equation
-        i = BaseHashTable.get(cr, rooted);
         print("- NFOCConnectionGraph.setRootDistance: found " +
            ComponentRef.toString(cr) + " twice, value is " + intString(i) + "\n");
       then
@@ -1067,10 +1066,8 @@ algorithm
         List.map1_0(connections, addConnectionsRooted, table);
         // get distance to root
         //  print("Roots: " + stringDelimitList(List.map(inRoots,ComponentRef.toString),"\n") + "\n");
-        //  BaseHashTable.dumpHashTable(table);
         rooted = newCrefIndexTable();
         setRootDistance(inRoots, table, 0, {}, rooted);
-        //  BaseHashTable.dumpHashTable(rooted);
         outEquations = list(Equation.mapExp(eq,
             function evaluateOperators(rooted = rooted, roots = inRoots, graph = graph, info = Equation.info(eq)))
           for eq in inEquations);

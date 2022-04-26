@@ -168,7 +168,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToExpOption.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableExpToIndex.mo
-    #${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTablePathToFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableStringToPath.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableStringToProgram.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/IOStreamExt.mo
@@ -469,11 +468,9 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FMIExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/JSONExt.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTable4.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableExpToExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrIntToExp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableExpToIndexExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToExpSourceTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToCrEqLst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSimCodeEqCache.mo
