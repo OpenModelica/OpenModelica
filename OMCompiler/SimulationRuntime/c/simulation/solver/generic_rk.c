@@ -253,8 +253,8 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols)
   }
   sparsePattern->maxColors = maxColors;
 
-  free(sparsePattern->leadindex);
-  free(sparsePattern->index);
+  free(sparsePatternT->leadindex);
+  free(sparsePatternT->index);
   free(sparsePatternT);
 }
 
@@ -387,6 +387,12 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   int nStates  = rk_data->nStates;
   double* A    = rk_data->tableau->A;
 
+  printSparseStructure(sparsePattern_ODE,
+                      sizeRows,
+                      sizeCols,
+                      LOG_SOLVER,
+                      "sparsePatternODE");
+
   nnz_A = 0;
   nDiags_A = 0;
   for (i=0; i<nStages; i++) {
@@ -449,8 +455,8 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   sparsePattern_IRK->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
   sparsePattern_IRK->sizeofIndex = length_index;
   sparsePattern_IRK->numberOfNonZeros = length_index;
-  sparsePattern_IRK->colorCols = (unsigned int*) malloc(jacobian->sizeCols*sizeof(unsigned int));
   sparsePattern_IRK->maxColors = jacobian->sizeCols*nStages;
+  sparsePattern_IRK->colorCols = (unsigned int*) malloc(sparsePattern_IRK->maxColors*sizeof(unsigned int));
 
   /* Set diagonal elements of sparsitiy pattern to non-zero */
   // Basically magic.
@@ -517,8 +523,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
   }
 
   /* Initialize sparsity pattern */
-  //nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
-  nonlinsys->sparsePattern = NULL;//initializeSparsePattern_IRK(data, nonlinsys);
+  nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
   nonlinsys->isPatternAvailable = FALSE;
   return;
 }
@@ -569,12 +574,12 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case RK_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
-    nlsData->analyticalJacobianColumn = NULL;//jacobian_IRK_column;
+    nlsData->analyticalJacobianColumn = jacobian_IRK_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
     nlsData->getIterationVars = NULL;
 
     // BB ToDo: needs to be finally corrected
-    rk_data->symJacAvailable = FALSE;
+    rk_data->symJacAvailable = TRUE;
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", rk_data->type);
@@ -1099,7 +1104,6 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
   int nStages = rk_data->tableau->nStages;
   int nStates = data->modelData->nStates;
 
-
   for (k=0; k<nStages; k++)
   {
     /* Evaluate ODE and compute res for each stage */
@@ -1149,6 +1153,12 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
 
   /* Evaluate column of Jacobian ODE */
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+
+  printVector_genericRK("jacobian->seedVars: ", jacobian->seedVars, jacobian->sizeCols, 0);
+
+
+  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
+  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Compute Jacobian of non-linear system */
   for (i = 0; i < nStages * nStates; i++)
