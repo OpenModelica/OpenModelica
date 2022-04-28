@@ -2720,27 +2720,6 @@ function instEquation
   input InstNode scope;
   input InstContext.Type context;
   output Equation instEq;
-protected
-  SCode.EEquation eq;
-algorithm
-  SCode.EQUATION(eEquation = eq) := scodeEq;
-  instEq := instEEquation(eq, scope, context);
-end instEquation;
-
-function instEEquations
-  input list<SCode.EEquation> scodeEql;
-  input InstNode scope;
-  input InstContext.Type context;
-  output list<Equation> instEql;
-algorithm
-  instEql := list(instEEquation(eq, scope, context) for eq in scodeEql);
-end instEEquations;
-
-function instEEquation
-  input SCode.EEquation scodeEq;
-  input InstNode scope;
-  input InstContext.Type context;
-  output Equation instEq;
 algorithm
   instEq := match scodeEq
     local
@@ -2754,14 +2733,14 @@ algorithm
       ComponentRef lhs_cr, rhs_cr;
       InstContext.Type next_origin;
 
-    case SCode.EEquation.EQ_EQUALS(info = info)
+    case SCode.Equation.EQ_EQUALS(info = info)
       algorithm
         exp1 := instExp(scodeEq.expLeft, scope, context, info);
         exp2 := instExp(scodeEq.expRight, scope, context, info);
       then
         Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_CONNECT(info = info)
+    case SCode.Equation.EQ_CONNECT(info = info)
       algorithm
         if InstContext.inWhen(context) then
           Error.addSourceMessage(Error.CONNECT_IN_WHEN,
@@ -2775,17 +2754,17 @@ algorithm
       then
         Equation.CONNECT(exp1, exp2, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_FOR(info = info)
+    case SCode.Equation.EQ_FOR(info = info)
       algorithm
         oexp := instExpOpt(scodeEq.range, scope, context, info);
         checkIteratorShadowing(scodeEq.index, scope, scodeEq.info);
         (for_scope, iter) := addIteratorToScope(scodeEq.index, scope, scodeEq.info);
         next_origin := InstContext.set(context, NFInstContext.FOR);
-        eql := instEEquations(scodeEq.eEquationLst, for_scope, next_origin);
+        eql := instEquations(scodeEq.eEquationLst, for_scope, next_origin);
       then
         Equation.FOR(iter, oexp, eql, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_IF(info = info)
+    case SCode.Equation.EQ_IF(info = info)
       algorithm
         // Instantiate the conditions.
         expl := list(instExp(c, scope, context, info) for c in scodeEq.condition);
@@ -2794,7 +2773,7 @@ algorithm
         next_origin := InstContext.set(context, NFInstContext.IF);
         branches := {};
         for branch in scodeEq.thenBranch loop
-          eql := instEEquations(branch, scope, next_origin);
+          eql := instEquations(branch, scope, next_origin);
           exp1 :: expl := expl;
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
@@ -2802,13 +2781,13 @@ algorithm
         // Instantiate the else-branch, if there is one, and make it a branch
         // with condition true (so we only need a simple list of branches).
         if not listEmpty(scodeEq.elseBranch) then
-          eql := instEEquations(scodeEq.elseBranch, scope, next_origin);
+          eql := instEquations(scodeEq.elseBranch, scope, next_origin);
           branches := Equation.makeBranch(Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
         Equation.IF(listReverse(branches), makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_WHEN(info = info)
+    case SCode.Equation.EQ_WHEN(info = info)
       algorithm
         if InstContext.inWhen(context) then
           Error.addSourceMessageAndFail(Error.NESTED_WHEN, {}, info);
@@ -2818,18 +2797,18 @@ algorithm
 
         next_origin := InstContext.set(context, NFInstContext.WHEN);
         exp1 := instExp(scodeEq.condition, scope, context, info);
-        eql := instEEquations(scodeEq.eEquationLst, scope, next_origin);
+        eql := instEquations(scodeEq.eEquationLst, scope, next_origin);
         branches := {Equation.makeBranch(exp1, eql)};
 
         for branch in scodeEq.elseBranches loop
           exp1 := instExp(Util.tuple21(branch), scope, context, info);
-          eql := instEEquations(Util.tuple22(branch), scope, next_origin);
+          eql := instEquations(Util.tuple22(branch), scope, next_origin);
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
       then
         Equation.WHEN(listReverse(branches), makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_ASSERT(info = info)
+    case SCode.Equation.EQ_ASSERT(info = info)
       algorithm
         exp1 := instExp(scodeEq.condition, scope, context, info);
         exp2 := instExp(scodeEq.message, scope, context, info);
@@ -2837,13 +2816,13 @@ algorithm
       then
         Equation.ASSERT(exp1, exp2, exp3, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_TERMINATE(info = info)
+    case SCode.Equation.EQ_TERMINATE(info = info)
       algorithm
         exp1 := instExp(scodeEq.message, scope, context, info);
       then
         Equation.TERMINATE(exp1, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_REINIT(info = info)
+    case SCode.Equation.EQ_REINIT(info = info)
       algorithm
         if not InstContext.inWhen(context) then
           Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
@@ -2855,7 +2834,7 @@ algorithm
       then
         Equation.REINIT(exp1, exp2, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_NORETCALL(info = info)
+    case SCode.Equation.EQ_NORETCALL(info = info)
       algorithm
         exp1 := instExp(scodeEq.exp, scope, context, info);
       then
@@ -2868,7 +2847,7 @@ algorithm
         fail();
 
   end match;
-end instEEquation;
+end instEquation;
 
 function instConnectorCref
   input Absyn.ComponentRef absynCref;

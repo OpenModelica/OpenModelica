@@ -947,8 +947,8 @@ algorithm
     local
       String name;
 
-    case SCode.EQUATION(eEquation = SCode.EQ_NORETCALL(exp = Absyn.CALL(function_ =
-        Absyn.CREF_IDENT(name = name))))
+    case SCode.EQ_NORETCALL(exp = Absyn.CALL(function_ =
+        Absyn.CREF_IDENT(name = name)))
       then (name == "transition" or name == "initialState") and
            Config.synchronousFeaturesAllowed();
 
@@ -1079,11 +1079,11 @@ algorithm
   outElement := match (inElement)
     local
       Absyn.ComponentRef cref1;
-    case SCode.EQUATION(eEquation=SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
+    case SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
       Absyn.CREF_IDENT(name="initialState"),
       functionArgs = Absyn.FUNCTIONARGS(args =
         {Absyn.CREF(componentRef = cref1)}
-        ))))
+        )))
       then cref1;
   end match;
 end extractInitialSMStates;
@@ -1099,18 +1099,18 @@ algorithm
   outElement := match (inElement)
     local
       Absyn.ComponentRef cref1, cref2;
-    case SCode.EQUATION(eEquation=SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
+    case SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
       Absyn.CREF_IDENT(name="transition"),
       functionArgs = Absyn.FUNCTIONARGS(args =
         {Absyn.CREF(componentRef = cref1),
         Absyn.CREF(componentRef = cref2),_}
-        ))))
+        )))
       then {cref1, cref2};
-    case SCode.EQUATION(eEquation=SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
+    case SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
       Absyn.CREF_IDENT(name="initialState"),
       functionArgs = Absyn.FUNCTIONARGS(args =
         {Absyn.CREF(componentRef = cref1)}
-        ))))
+        )))
       then {cref1};
     else {};
   end match;

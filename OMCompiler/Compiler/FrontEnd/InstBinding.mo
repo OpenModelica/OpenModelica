@@ -526,7 +526,7 @@ algorithm
       DAE.Properties prop2;
       Boolean impl;
       Absyn.Exp aexp1,aexp2;
-      SCode.EEquation scode;
+      SCode.Equation scode;
       Absyn.ComponentRef acr;
       SourceInfo info;
       DAE.ElementSource source;
