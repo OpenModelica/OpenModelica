@@ -1117,39 +1117,11 @@ protected function fixEquation
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input array<FCore.Cache> inCache;
-  input FCore.Graph inEnv;
-  input SCode.Equation inEq;
-  input AvlSetString.Tree tree;
-  output SCode.Equation outEq;
-algorithm
-  outEq := match inEq
-    local
-      SCode.EEquation eeq1,eeq2;
-
-    case SCode.EQUATION(eeq1)
-      algorithm
-        eeq2 := fixEEquation(inCache, inEnv, eeq1, tree);
-      then if referenceEq(eeq1,eeq2) then inEq else SCode.EQUATION(eeq2);
-
-    case SCode.EQUATION(eeq1)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.fixEquation failed: " + SCodeDump.equationStr(eeq1));
-      then fail();
-  end match;
-end fixEquation;
-
-protected function fixEEquation
-" All of the fix functions do the following:
-  Analyzes the SCode datastructure and replace paths with a new path (from
-  local lookup or fully qualified in the environment.
-"
   input array<FCore.Cache> cache;
   input FCore.Graph inEnv;
-  input SCode.EEquation inEeq;
+  input SCode.Equation inEeq;
   input AvlSetString.Tree tree;
-  output SCode.EEquation outEeq;
+  output SCode.Equation outEeq;
 algorithm
   outEeq := match inEeq
     local
@@ -1157,9 +1129,9 @@ algorithm
       Absyn.ComponentRef cref,cref1,cref2;
       Absyn.Exp exp,exp1,exp2,exp3;
       list<Absyn.Exp> expl;
-      list<SCode.EEquation> eql;
-      list<list<SCode.EEquation>> eqll;
-      list<tuple<Absyn.Exp, list<SCode.EEquation>>> whenlst;
+      list<SCode.Equation> eql;
+      list<list<SCode.Equation>> eqll;
+      list<tuple<Absyn.Exp, list<SCode.Equation>>> whenlst;
       SCode.Comment comment;
       Option<Absyn.Exp> optExp;
       SourceInfo info;
@@ -1167,8 +1139,8 @@ algorithm
     case SCode.EQ_IF(expl,eqll,eql,comment,info)
       equation
         expl = fixList(cache,inEnv,expl,tree,fixExp);
-        eqll = fixListList(cache,inEnv,eqll,tree,fixEEquation);
-        eql = fixList(cache,inEnv,eql,tree,fixEEquation);
+        eqll = fixListList(cache,inEnv,eqll,tree,fixEquation);
+        eql = fixList(cache,inEnv,eql,tree,fixEquation);
       then (SCode.EQ_IF(expl,eqll,eql,comment,info));
     case SCode.EQ_EQUALS(exp1,exp2,comment,info)
       equation
@@ -1189,13 +1161,13 @@ algorithm
     case SCode.EQ_FOR(id,optExp,eql,comment,info)
       equation
         optExp = fixOption(cache,inEnv,optExp,tree,fixExp);
-        eql = fixList(cache,inEnv,eql,tree,fixEEquation);
+        eql = fixList(cache,inEnv,eql,tree,fixEquation);
       then (SCode.EQ_FOR(id,optExp,eql,comment,info));
     case SCode.EQ_WHEN(exp,eql,whenlst,comment,info)
       equation
         exp = fixExp(cache,inEnv,exp,tree);
-        eql = fixList(cache,inEnv,eql,tree,fixEEquation);
-        whenlst = fixListTuple2(cache,inEnv,whenlst,tree,fixExp,fixListEEquation);
+        eql = fixList(cache,inEnv,eql,tree,fixEquation);
+        whenlst = fixListTuple2(cache,inEnv,whenlst,tree,fixExp,fixListEquation);
       then (SCode.EQ_WHEN(exp,eql,whenlst,comment,info));
     case SCode.EQ_ASSERT(exp1,exp2,exp3,comment,info)
       equation
@@ -1217,21 +1189,21 @@ algorithm
         exp = fixExp(cache,inEnv,exp,tree);
       then (SCode.EQ_NORETCALL(exp,comment,info));
   end match;
-end fixEEquation;
+end fixEquation;
 
-protected function fixListEEquation
+protected function fixListEquation
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
   input array<FCore.Cache> cache;
   input FCore.Graph env;
-  input list<SCode.EEquation> eeq;
+  input list<SCode.Equation> eeq;
   input AvlSetString.Tree tree;
-  output list<SCode.EEquation> outEeq;
+  output list<SCode.Equation> outEeq;
 algorithm
-  outEeq := fixList(cache,env,eeq,tree,fixEEquation);
-end fixListEEquation;
+  outEeq := fixList(cache,env,eeq,tree,fixEquation);
+end fixListEquation;
 
 protected function fixAlgorithm
 " All of the fix functions do the following:

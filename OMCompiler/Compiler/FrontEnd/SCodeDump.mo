@@ -103,11 +103,11 @@ algorithm
 end statementStr;
 
 public function equationStr
-  input SCode.EEquation inEEquation;
+  input SCode.Equation inEquation;
   input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
-  outString := Tpl.tplString2(SCodeDumpTpl.dumpEEquation, inEEquation, options);
+  outString := Tpl.tplString2(SCodeDumpTpl.dumpEquation, inEquation, options);
 end equationStr;
 
 public function printModStr
@@ -342,18 +342,6 @@ algorithm
     case (SCode.CONST()) then "constant";
   end match;
 end unparseVariability;
-
-public function equationStr2
-"Takes a SCode.Equation rather then SCode.EEquation as equationStr does."
-  input SCode.Equation eqns;
-  input SCodeDumpOptions options;
-  output String s;
-algorithm
-  s := match(eqns,options)
-    local SCode.EEquation e;
-    case(SCode.EQUATION(eEquation=e),_) then equationStr(e,options);
-  end match;
-end equationStr2;
 
 public function printInitialStr
 "prints SCode.Initial to a string"

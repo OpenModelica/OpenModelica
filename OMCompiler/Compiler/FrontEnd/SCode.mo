@@ -248,22 +248,14 @@ uniontype ExternalDecl "Declaration of an external function call - ExternalDecl"
 end ExternalDecl;
 
 public
-uniontype Equation "- Equations"
-  record EQUATION "an equation"
-    EEquation eEquation "an equation";
-  end EQUATION;
-
-end Equation;
-
-public
-uniontype EEquation
+uniontype Equation
 "These represent equations and are almost identical to their Absyn versions.
  In EQ_IF the elseif branches are represented as normal else branches with
  a single if statement in them."
   record EQ_IF
     list<Absyn.Exp> condition "conditional" ;
-    list<list<EEquation>> thenBranch "the true (then) branch" ;
-    list<EEquation>       elseBranch "the false (else) branch" ;
+    list<list<Equation>> thenBranch "the true (then) branch" ;
+    list<Equation>       elseBranch "the false (else) branch" ;
     Comment comment;
     SourceInfo info;
   end EQ_IF;
@@ -293,15 +285,15 @@ uniontype EEquation
   record EQ_FOR "the for equation"
     Ident index "the index name";
     Option<Absyn.Exp> range "the range of the index";
-    list<EEquation> eEquationLst "the equation list";
+    list<Equation> eEquationLst "the equation list";
     Comment comment;
     SourceInfo info;
   end EQ_FOR;
 
   record EQ_WHEN "the when equation"
     Absyn.Exp        condition "the when condition";
-    list<EEquation>  eEquationLst "the equation list";
-    list<tuple<Absyn.Exp, list<EEquation>>> elseBranches "the elsewhen expression and equation list";
+    list<Equation>  eEquationLst "the equation list";
+    list<tuple<Absyn.Exp, list<Equation>>> elseBranches "the elsewhen expression and equation list";
     Comment comment;
     SourceInfo info;
   end EQ_WHEN;
@@ -333,7 +325,7 @@ uniontype EEquation
     SourceInfo info;
   end EQ_NORETCALL;
 
-end EEquation;
+end Equation;
 
 public uniontype AlgorithmSection "- Algorithms
   The Absyn module uses the terminology from the
