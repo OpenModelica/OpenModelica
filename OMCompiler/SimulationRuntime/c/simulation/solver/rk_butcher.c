@@ -257,12 +257,57 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
   /* Butcher Tableau */
   const double c[] = {0.0, 0.5};
   const double A[] = {0.0, 0.0,
-                                   0.5, 0.0};
+                      0.5, 0.0};
   const double b[]  = {0,1}; // explicit midpoint rule
   const double  bt[] = {1,0}; // explicit Euler step
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
+
+void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau) {
+  //implicit Gauss-Legendre with Richardson-Extrapolation for step size control
+
+  tableau->nStages = 2;
+  tableau->order_b = 4;
+  tableau->order_bt = 1;
+  tableau->fac = 0.9;
+
+  const double sqrt3 = sqrt(3);
+  const double c1 = 1./2. - sqrt3/6.;
+  const double c2 = 1./2. + sqrt3/6.;
+  const double a11 = 1./4.;
+  const double a12 = 1./4. - sqrt3/6.;
+  const double a21 = 1./4. + sqrt3/6.;
+  const double a22 = 1./4.;
+  const double b1 = 1./2.;
+  const double b2 = 1./2.;
+  const double bt1 = 1./2. - sqrt3/2.;
+  const double bt2 = 1./2. + sqrt3/2.;
+
+
+  /* Butcher Tableau */
+  // const double c[] = {c1, c2, c1/2., c2/2., 1./2. + c1/2., 1./2. + c2/2.};
+  // const double A[] = {a11, a12, 0.0, 0.0, 0.0, 0.0,
+  //                     a21, a22, 0.0, 0.0, 0.0, 0.0,
+  //                     0.0, 0.0, a11, a12, 0.0, 0.0,
+  //                     0.0, 0.0, a21, a22, 0.0, 0.0,
+  //                     0.0, 0.0, b1/2., b2/2., a11, a12,
+  //                     0.0, 0.0, b1/2., b2/2., a21, a22,
+  //                     };
+  // const double b[]  = {b1, b2, 0.0, 0.0, 0.0, 0.0}; // implicit Gauss-Legendre rule
+  // const double  bt[] = {-b1, -b2, 4./7.*b1, 4./7.*b2, 4./7.*b1, 4./7.*b2}; // Richardson-Extrapolation
+
+  const double c[] = {c1, c2};
+  const double A[] = {a11, a12,
+                      a21, a22
+                      };
+  const double b[]  = {b1, b2}; // implicit Gauss-Legendre rule
+  const double  bt[] = {bt1, bt2}; // Embedded method
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+}
+
+
 
 void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
   // Implicit Euler with Richardson-Extrapolation for step size control
@@ -274,14 +319,10 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
   /* Butcher Tableau */
   const double c[] = {1.0, 0.5, 1.0};
   const double A[] = {1.0, 0.0, 0.0,
-                         0.0, 0.5, 0.0,
-                         0.0, 0.5, 0.5};
+                      0.0, 0.5, 0.0,
+                      0.0, 0.5, 0.5};
   const double bt[] = {1.0, 0.0, 0.0}; // implicit Euler step
   const double b[]  = {-1.0, 1.0, 1.0}; // Richardson extrapolation for error estimator
-  // tableau->stages = 2;
-  // tableau->order_b = 1;
-  // tableau->order_bt = 2;
-  // tableau->fac = 0.9;
 
   // /* Butcher Tableau */
   // const double c[] = {0.0, 1.0};
@@ -426,6 +467,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method) {
       break;
     case RK_ESDIRK3:
       getButcherTableau_ESDIRK3(tableau);
+      break;
+    case RK_GAUSS2:
+      getButcherTableau_GAUSS2(tableau);
       break;
     default:
       errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", RK_method);

@@ -490,7 +490,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages);
 
   // for (int k=0; k<nStages; k++)
-  //    printIntVector_genericRK("colorCols: ", &sparsePattern_IRK->colorCols[k*nStates], sizeCols, 0);
+  //   printIntVector_genericRK("colorCols: ", &sparsePattern_IRK->colorCols[k*nStates], sizeCols, 0);
 
   return sparsePattern_IRK;
 }
