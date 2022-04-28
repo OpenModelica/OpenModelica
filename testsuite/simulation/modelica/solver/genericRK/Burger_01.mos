@@ -1,6 +1,6 @@
-// name: Burger
+// name: Burger_01
 // status: correct
-// teardown_command: rm -rf temp_Burger/
+// teardown_command: rm -rf temp_Burger_01/
 //
 // Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
 
@@ -9,13 +9,13 @@ getErrorString();
 
 loadString("
 model burgerEq
-  extends Burger_Equations.Burger_equation_03(N=20);
+  extends Burger_Equations.Burger_equation_03(N=600);
 end burgerEq;
 "); getErrorString();
 
 echo(false);
-system("rm -rf temp_ESDIRK_01/ && mkdir temp_ESDIRK_01/");
-cd("temp_ESDIRK_01");
+system("rm -rf temp_Burger_01/ && mkdir temp_Burger_01/");
+cd("temp_Burger_01");
 echo(true);
 
 setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
@@ -34,8 +34,19 @@ print(readFile("burgerEq_esdirk3.log"));
 diffSimulationResults(actualFile = "burgerEq_res.mat",
                       expectedFile = "burgerEq_ref.mat",
                       diffPrefix = "diff",
-                      vars = {"y[1]", "y[2]", "y[3]", "y[4]", "y[5]", "y[6]", "y[7]", "y[8]", "y[9]", "y[10]",
-                              "y[11]", "y[12]", "y[13]", "y[14]", "y[15]", "y[16]", "y[17]", "y[18]", "y[19]", "y[20]"});
+                      vars = {"y[291]", "y[292]", "y[293]", "y[294]", "y[295]", "y[296]", "y[297]", "y[298]", "y[299]", "y[300]",
+                              "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
+getErrorString();
+
+// Simulate with ESDIRK3 and KINSOL+KLU
+system("./burgerEq -s=genericRK -genericRKOpt=esdirk3_test -rkNLS=kinsol", "burgerEq_esdirk3_test.log");
+print(readFile("burgerEq_esdirk3_test.log"));
+
+diffSimulationResults(actualFile = "burgerEq_res.mat",
+                      expectedFile = "burgerEq_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"y[291]", "y[292]", "y[293]", "y[294]", "y[295]", "y[296]", "y[297]", "y[298]", "y[299]", "y[300]",
+                              "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
 getErrorString();
 
 // Result:
@@ -52,6 +63,12 @@ getErrorString();
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true,{})
+// ""
 // 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

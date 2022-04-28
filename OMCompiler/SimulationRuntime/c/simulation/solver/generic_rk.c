@@ -33,21 +33,17 @@
  * 0) Update comments for better readability, delete stuff no longer necessary
  * 1) Check pointer, especially, if there is no memory leak!
  * 2) Check necessary function evaluation and counting of it (use userdata->f, userdata->fOld)
- * 3) Use analytical Jacobian of the functionODE, if available
- *    Check calculation for a highly nonlinear test problem (VDP, etc.)
- * 4) Use sparsity pattern and kinsol solver
- * 5) Optimize evaluation of the Jacobian (e.g. in case it is constant)
- * 6) Introduce generic multirate-method, that might also be used for higher order
+ * 3) Optimize evaluation of the Jacobian (e.g. in case it is constant)
+ * 4) Introduce generic multirate-method, that might also be used for higher order
  *    ESDIRK and explicit RK methods
- * 7) Implement other ESDIRK methods
- * 8) configure userdata->fac with respect to the accuracy prediction
- * 9) ...
+ * 5) Check accuracy and decide on the Left-limit of the implicit embedded RK method, if possible...
  *
 */
 
 /*! \file genericRK.c
  *  Implementation of a generic (implicit and explicit) Runge Kutta solver, which works for any
- *  order and stage based on a provided Butcher tableau.
+ *  order and stage based on a provided Butcher tableau. Utilizes the sparsity pattern of the ODE
+ *  together with the KINSOL (KLU) solver
  *
  *  \author bbachmann
  */
@@ -197,12 +193,12 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
   printSparseStructure(sparsePattern,
                         sizeRows,
                         sizeCols,
-                        LOG_SOLVER,
+                        LOG_SOLVER_V,
                         "sparsePattern");
   printSparseStructure(sparsePatternT,
                         sizeRows,
                         sizeCols,
-                        LOG_SOLVER,
+                        LOG_SOLVER_V,
                         "sparsePatternT");
 }
 
@@ -215,10 +211,9 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
   int length_column_indices = sizeCols+1;
   int length_index = sparsePattern->numberOfNonZeros;
   // initialize array to zeros
-  //int tabu[sizeCols][sizeCols];
+
   int* tabu;
   tabu = (int*) malloc(sizeCols*sizeCols*sizeof(int));
-
   for (i=0; i<sizeCols; i++)
      for (j=0; j<sizeCols; j++)
         tabu[i*sizeCols + j]=0;
@@ -229,8 +224,6 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
   sparsePatternT->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
   sparsePatternT->sizeofIndex = length_index;
   sparsePatternT->numberOfNonZeros = length_index;
-  //sparsePatternT->colorCols = (unsigned int*) malloc(jacobian->sizeCols*sizeof(unsigned int));
-  //sparsePatternT->maxColors = jacobian->sizeCols;
 
   sparsePatternTranspose(sizeRows, sizeCols, sparsePattern, sparsePatternT);
 
@@ -239,12 +232,15 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
 
   for (col=0; col<sizeCols; col++)
   {
+    // Look for the next free color, based on the tabu list
     for (i=0; i<sizeCols ; i++)
     {
       if (tabu[col*sizeCols + i] == 0)
       {
         sparsePattern->colorCols[col] = i+1;
         maxColors = fmax(maxColors, i+1);
+
+        // set tabu for columns that have entries in the same row!
         for (row=sparsePattern->leadindex[col]; row<sparsePattern->leadindex[col+1]; row++)
         {
           int rowIdx = sparsePattern->index[row];
@@ -253,17 +249,22 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
             tabu[sparsePatternT->index[j]*sizeCols + i]=1;
           }
         }
+
+        // each stage has different colors, due to the columnwise jacobian calculation
+        // only important and utilized, if a fully implicit RK-method is used
         act_stage = col/sizeCols_ODE;
         for (j=(act_stage+1)*sizeCols_ODE; j<sizeCols; j++)
         {
           tabu[j*sizeCols + i]=1;
         }
+
         break;
       }
     }
   }
   sparsePattern->maxColors = maxColors;
 
+  // free memory allocation for the transposed sprasity pattern
   free(sparsePatternT->leadindex);
   free(sparsePatternT->index);
   free(sparsePatternT);
@@ -275,7 +276,7 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
  *
  * Get sparsity pattern of ODE Jacobian and edit to be non-zero on diagonal elements.
  * Coloring of ODE Jacobian will be used, if it had non-zero elements on all diagonal entries.
- * Use trivial coloring (new color for each column) otherwise.
+ * Calculate coloring otherwise.
  *
  * @param data                Runtime data struct.
  * @param sysData             Non-linear system.
@@ -322,7 +323,6 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
   sparsePattern_DIRK->maxColors = jacobian->sizeCols;
 
   /* Set diagonal elements of sparsitiy pattern to non-zero */
-  // Basically magic.
   i = 0;
   j = 0;
   sparsePattern_DIRK->leadindex[0] = sparsePattern_ODE->leadindex[0];
@@ -353,9 +353,8 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
     }
   }
 
-  // TODO: Re-compute coloring from sparsityPattern
-  // If missingDiags=0 we can re-use coloring (and everything else), otherwise we'll use the trivial coloring
   if (missingDiags == 0) {
+    // If missingDiags=0 we can re-use coloring (and everything else)
     sparsePattern_DIRK->maxColors = sparsePattern_ODE->maxColors;
     memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, jacobian->sizeCols*sizeof(unsigned int));
   } else {
@@ -368,11 +367,12 @@ SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* 
 
 
 /**
- * @brief Initialize sparsity pattern for non-linear system of diagonal implicit Runge-Kutta methods.
+ * @brief Initialize sparsity pattern for non-linear system of full implicit Runge-Kutta methods.
  *
- * Get sparsity pattern of ODE Jacobian and edit to be non-zero on diagonal elements.
- * Coloring of ODE Jacobian will be used, if it had non-zero elements on all diagonal entries.
- * Use trivial coloring (new color for each column) otherwise.
+ * Get sparsity pattern of ODE Jacobian and map it on the different stages taking into account
+ * the non-zero elements of the A matrix in the Butcher-tableau
+ * Coloring will be calculated, whereby different stages will have different colors, due to the
+ * column-wise calculation of the Jacobian
  *
  * @param data                Runtime data struct.
  * @param sysData             Non-linear system.
@@ -402,7 +402,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   printSparseStructure(sparsePattern_ODE,
                       sizeRows,
                       sizeCols,
-                      LOG_SOLVER,
+                      LOG_SOLVER_V,
                       "sparsePatternODE");
 
   nnz_A = 0;
@@ -425,6 +425,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   int missingDiags = jacobian->sizeRows - nDiags;
   int numberOfNonZeros = nnz_A*sparsePattern_ODE->numberOfNonZeros + nDiags_A*missingDiags + (nStages-nDiags_A)*nStates;
 
+  // first generated a coordinate format and transform this later to Column pressed format
   int coo_col[numberOfNonZeros];
   int coo_row[numberOfNonZeros];
 
@@ -445,6 +446,8 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
             i++;
             diagElemNonZero = TRUE;
           }
+          // if the entry in A is non-zero, the sparsity pattern of the ODE-Jacobian will be inserted,
+          // respectively
           if (A[l*nStages + k] != 0)
           {
             if ((col + k*nStates) == (sparsePattern_ODE->index[j] + l*nStates))
@@ -457,10 +460,6 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
       }
     }
   }
-
-  //printf("\nHI:\ncalculated numberOfNonZeros = %d, real number = %d\n\n", numberOfNonZeros,i);
-  // printIntVector_genericRK("coo_row: ", coo_row, numberOfNonZeros, 0);
-  // printIntVector_genericRK("coo_col: ", coo_col, numberOfNonZeros, 0);
 
   int length_row_indices = jacobian->sizeCols*nStages+1;
   int length_index = numberOfNonZeros;
@@ -475,7 +474,6 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   sparsePattern_IRK->colorCols = (unsigned int*) malloc(sparsePattern_IRK->maxColors*sizeof(unsigned int));
 
   /* Set diagonal elements of sparsitiy pattern to non-zero */
-  // Basically magic.
   for (i=0; i<length_row_indices; i++)
     sparsePattern_IRK->leadindex[i] = 0;
 
@@ -489,7 +487,6 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
     sparsePattern_IRK->leadindex[i + 1] += sparsePattern_IRK->leadindex[i];
   }
 
-  // BB ToDo: Important that different stages get different colors!!!
   ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages);
 
   // for (int k=0; k<nStages; k++)
@@ -597,7 +594,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
     nlsData->getIterationVars = NULL;
 
-    // BB ToDo: needs to be finally corrected
     rk_data->symJacAvailable = TRUE;
     break;
   default:
@@ -667,7 +663,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 }
 
 /**
- * @brief Function allocates memory needed for ESDIRK method.
+ * @brief Function allocates memory needed for generic RK method.
  *
  * @param data          Runtime data struct.
  * @param threadData    Thread data for error handling.
@@ -726,15 +722,12 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   if (flag_StepSize_ctrl != NULL) {
     rk_data->stepSize_control = &(PIController);
-    infoStreamPrint(LOG_SOLVER, 0, "Stepsize controll using PIController");
+    infoStreamPrint(LOG_SOLVER, 0, "Stepsize control using PIController");
   } else
   {
     rk_data->stepSize_control = &(IController);
-    infoStreamPrint(LOG_SOLVER, 0, "Stepsize controll using IController");
+    infoStreamPrint(LOG_SOLVER, 0, "Stepsize control using IController");
   }
-
-  // TODO: Move this log message. Has nothing to do with memory allocation.
-  infoStreamPrint(LOG_SOLVER, 0, "Step control factor is set to %g", rk_data->tableau->fac);
 
   /* Allocate internal memory */
   rk_data->isFirstStep = TRUE;
@@ -826,7 +819,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 /**
  * @brief Free generic RK data.
  *
- * @param data    Pointer to generik Runge-Kutta data struct.
+ * @param rk_data    Pointer to generik Runge-Kutta data struct.
  */
 void freeDataGenericRK(DATA_GENERIC_RK* rk_data) {
   /* Free non-linear system data */
@@ -908,124 +901,73 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* genericRKDat
   return 0;
 }
 
-/*
- * Sets element (i,j) in matrixA to given value val.
- */
-// TODO: Rename, its no longer ESDIRK and this is a dense matrix JF.
-// Don't we already have such a function somewhere in the runtime?
-void setJacElementESDIRKSparse(int i, int j, int nth, double val, void* Jf,
-                              int rows)
-{
-  int l = j*rows + i;
-  ((double*) Jf)[l]=val;
-}
+// /**
+//  * @brief Calculate numeric Jacobian of functionODE with respect to the states.
+//  *
+//  * @param data          Runtime data struct.
+//  * @param threadData    Thread data for error handling.
+//  * @param rk_data       Runge-Kutta method.
+//  * @return int          Return 0 on success.
+//  */
+// int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GENERIC_RK* rk_data)
+// {
+//   int i,j,l;
+//   int nStates = data->modelData->nStates;
+//   double timeValue;
 
-/**
- * @brief Calculate symbolic Jacobian of functionODE with respect to the states.
- *
- * @param data          Runtime data struct.
- * @param threadData    Thread data for error handling.
- * @param rk_data       Runge-Kutta method.
- * @return int          Return 0 on success.
- */
-int wrapper_Jf_symbolic_genericRK(DATA* data, threadData_t *threadData, DATA_GENERIC_RK* rk_data)
-{
-  /* profiling */
-  rt_tick(SIM_TIMER_JACOBIAN);
+//   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
+//   modelica_real *states = sData->realVars;
+//   modelica_real *stateDerivatives = &sData->realVars[nStates];
 
-  /* statisitcs */
-  rk_data->evalJacobians++;
+//   timeValue = sData->timeValue;
 
-  /* Evaluate symbolic Jacobian */
-  const int index = data->callback->INDEX_JAC_A;
-  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
-  ANALYTIC_JACOBIAN* t_jac = jac;
+//   // Only implemented for non-linear solver Newton
+//   assertStreamPrint(threadData, rk_data->nlsSolverMethod == RK_NLS_NEWTON, "wrapper_Jf_numeric_genericRK only implemented for Newton solver");
+//   DATA_NEWTON* solverData = (DATA_NEWTON*)rk_data->nlsData;
 
-  unsigned int columns = jac->sizeCols;
-  unsigned int rows = jac->sizeRows;
-  unsigned int sizeTmpVars = jac->sizeTmpVars;
-  SPARSE_PATTERN* spp = jac->sparsePattern;
+//   double delta_h = sqrt(solverData->epsfcn);
+//   double delta_hh;
+//   double xsave;
 
-  /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-    jac->constantEqns(data, threadData, jac, NULL);
-  }
-  genericColoredSymbolicJacobianEvaluation(rows, columns, spp, rk_data->Jf, t_jac,
-                                           data, threadData, &setJacElementESDIRKSparse);
+//   /* profiling */
+//   rt_tick(SIM_TIMER_JACOBIAN);
 
-  /* profiling */
-  rt_accumulate(SIM_TIMER_JACOBIAN);
+//   /* statisitcs */
+//   rk_data->evalJacobians++;
 
-  return 0;
-}
+//   /* Evaluate symbolic Jacobian */
+//   // TODO: Use a generic numeric Jacobian evaluation
+//   memcpy(rk_data->f, stateDerivatives, nStates * sizeof(double));
+//   for(i = 0; i < nStates; i++)
+//   {
+//     delta_hh = fmax(delta_h * fmax(fabs(states[i]), fabs(rk_data->f[i])), delta_h);
+//     delta_hh = ((rk_data->f[i] >= 0) ? delta_hh : -delta_hh);
+//     delta_hh = states[i] + delta_hh - states[i];
+//     xsave = states[i];
+//     states[i] += delta_hh;
+//     delta_hh = 1. / delta_hh;
 
-/**
- * @brief Calculate numeric Jacobian of functionODE with respect to the states.
- *
- * @param data          Runtime data struct.
- * @param threadData    Thread data for error handling.
- * @param rk_data       Runge-Kutta method.
- * @return int          Return 0 on success.
- */
-int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GENERIC_RK* rk_data)
-{
-  int i,j,l;
-  int nStates = data->modelData->nStates;
-  double timeValue;
+//     wrapper_f_genericRK(data, threadData, rk_data, stateDerivatives);
+//     // this should not count on function evaluation, since
+//     // it belongs to jacobian evaluation
+//     rk_data->evalFunctionODE--;
 
-  SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
-  modelica_real *states = sData->realVars;
-  modelica_real *stateDerivatives = &sData->realVars[nStates];
+//     /* BB: Is this necessary for the statistics? */
+//     solverData->nfev++;
 
-  timeValue = sData->timeValue;
+//     for(j = 0; j < nStates; j++)
+//     {
+//       l = i * nStates + j;
+//       rk_data->Jf[l] = (stateDerivatives[j] - rk_data->f[j]) * delta_hh;
+//     }
+//     states[i] = xsave;
+//   }
 
-  // Only implemented for non-linear solver Newton
-  assertStreamPrint(threadData, rk_data->nlsSolverMethod == RK_NLS_NEWTON, "wrapper_Jf_numeric_genericRK only implemented for Newton solver");
-  DATA_NEWTON* solverData = (DATA_NEWTON*)rk_data->nlsData;
+//   /* profiling */
+//   rt_accumulate(SIM_TIMER_JACOBIAN);
 
-  double delta_h = sqrt(solverData->epsfcn);
-  double delta_hh;
-  double xsave;
-
-  /* profiling */
-  rt_tick(SIM_TIMER_JACOBIAN);
-
-  /* statisitcs */
-  rk_data->evalJacobians++;
-
-  /* Evaluate symbolic Jacobian */
-  // TODO: Use a generic numeric Jacobian evaluation
-  memcpy(rk_data->f, stateDerivatives, nStates * sizeof(double));
-  for(i = 0; i < nStates; i++)
-  {
-    delta_hh = fmax(delta_h * fmax(fabs(states[i]), fabs(rk_data->f[i])), delta_h);
-    delta_hh = ((rk_data->f[i] >= 0) ? delta_hh : -delta_hh);
-    delta_hh = states[i] + delta_hh - states[i];
-    xsave = states[i];
-    states[i] += delta_hh;
-    delta_hh = 1. / delta_hh;
-
-    wrapper_f_genericRK(data, threadData, rk_data, stateDerivatives);
-    // this should not count on function evaluation, since
-    // it belongs to jacobian evaluation
-    rk_data->evalFunctionODE--;
-
-    /* BB: Is this necessary for the statistics? */
-    solverData->nfev++;
-
-    for(j = 0; j < nStates; j++)
-    {
-      l = i * nStates + j;
-      rk_data->Jf[l] = (stateDerivatives[j] - rk_data->f[j]) * delta_hh;
-    }
-    states[i] = xsave;
-  }
-
-  /* profiling */
-  rt_accumulate(SIM_TIMER_JACOBIAN);
-
-  return 0;
-}
+//   return 0;
+// }
 
 /**
  * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
@@ -1132,7 +1074,7 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
     memcpy(&rk_data->k[k*nStates], fODE, nStates*sizeof(double));
   }
 
-  // Set res to previous result of RK step - xloc
+  // Calculate residuum for the full implicit RK method based on stages and A matrix
   for (l=0; l<nStages; l++)
   {
     for (i=0; i<nStates; i++)
@@ -1150,14 +1092,14 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
 
 
 /**
- * @brief Evaluate residual for non-linear system of implicit Runge-Kutta method.
+ * @brief Evaluate column of IRK Jacobian.
  *
- * TODO: Describe how the residual is computed.
- *
- * @param dataIn  Userdata provided to non-linear system solver.
- * @param xloc    Input vector for non-linear system.
- * @param res     Residuum vector for given input xloc.
- * @param iflag   Unused.
+ * @param inData            Void pointer to runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param genericRKData     Runge-Kutta method.
+ * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
+ * @param parentJacobian    Unused
+ * @return int              Return 0 on success.
  */
 int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
@@ -1175,12 +1117,12 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
   /* Evaluate column of Jacobian ODE */
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
-  //printVector_genericRK("jacobian->seedVars: ", jacobian->seedVars, jacobian->sizeCols, 0);
-
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
-  // and find out which stage is active
+  // and find out which stage is active; different stages have different colors
+  // reset jacobian_ODE->seedVars
   for (i=0; i<jacobian_ODE->sizeCols; i++)
     jacobian_ODE->seedVars[i] = 0;
+  // Map the jacobian->seedVars to the jacobian_ODE->seedVars
   for (i=0, k=0; i<jacobian->sizeCols; i++)
   {
     if (jacobian->seedVars[i])
@@ -1188,10 +1130,9 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
       k = i;
       jacobian_ODE->seedVars[i%jacobian_ODE->sizeCols] = 1;
     }
-    k = k/jacobian_ODE->sizeCols;
   }
-  //printf("Actual stage %d", k);
-  //printVector_genericRK("jacobian_ODE->seedVars: ", jacobian_ODE->seedVars, jacobian_ODE->sizeCols, 0);
+  // Determine active stage
+  k = k/jacobian_ODE->sizeCols;
 
   // update timeValue and unknown vector
   sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
@@ -1200,83 +1141,20 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
   // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
-  // Set res to previous result of RK step - xloc
-  /* Update resultVars array */
+  /* Update resultVars array for corresponding jacobian->seedVars*/
   for (l=0; l<nStages; l++)
   {
     for (i=0; i<nStates; i++)
     {
       jacobian->resultVars[l * nStates + i] = rk_data->stepSize * rk_data->tableau->A[l * nStages + k]  * jacobian_ODE->resultVars[i];
-    /* -1 on diagonal elements */
+      /* -1 on diagonal elements */
       if (jacobian->seedVars[l * nStates + i] == 1) {
         jacobian->resultVars[l * nStates + i] -= 1;
-    }
-    }
-  }
-
-  return 0;
-}
-
-/**
- * @brief Jacobian for non-linear system of implicit Runge-Kutta methods.
- *
- * @param inData            Void pointer to DATA* data.
- * @param threadData        Thread data for error handling.
- * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
- * @param parentJacobian    Unused
- * @return int              Return 0 on success.
- */
-int jacobian_IRK(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
-  DATA* data = (DATA*) inData;
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-
-  throwStreamPrint(NULL, "jacobian_IRK: Not finished yet");
-
-#if 0
-  int i,j,k,l;
-  int idx;
-  int nStages = rk_data->tableau->nStages;
-  int nStates = data->modelData->nStates;
-
-  /* Compute Jacobian of non-linear system */
-  for (i = 0; i < nStages * nStates; i++)
-  {
-    for (j = 0; j < nStages * nStates; j++)
-    {
-      if (i == j)
-        jacobian->resultVars[i * nStages * nStates + j] = -1;
-      else
-        jacobian->resultVars[i * nStages * nStates + j] = 0;
-    }
-  }
-
-  for (k=0; k<nStages && !rk_data->isExplicit; k++)
-  {
-    /* Evaluate Jacobian of ODE */
-    sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
-    memcpy(sData->realVars, &rk_data->nlsData->nlsx[k*nStates], nStates*sizeof(double));
-    if (rk_data->symJacAvailable) {
-      wrapper_Jf_symbolic_genericRK(data, threadData, rk_data);
-    } else {
-      wrapper_Jf_numeric_genericRK(data, threadData, rk_data);
-    }
-
-    for (l=0; l<nStages; l++)
-    {
-      for (i=0; i<nStates; i++)
-      {
-        for (j=0; j<nStates; j++)
-        {
-          idx = l * nStages * nStates * nStates + i * nStages * nStates + j + k*nStates;
-          jacobian->resultVars[idx] += rk_data->stepSize * rk_data->tableau->A[l * nStages + k] * rk_data->Jf[i * nStates + j];
-        }
       }
     }
   }
 
   return 0;
-#endif
 }
 
 /**
@@ -1811,7 +1689,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 }
 
 
-// TODO AHeu: For sure ther is already a linear interpolation function somewhere
+// TODO AHeu: For sure there is already a linear interpolation function somewhere
 //auxiliary vector functions for better code structure
 void linear_interpolation(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
 {

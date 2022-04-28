@@ -1,7 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-Burger.mos \
+Burger_01.mos \
 singleRate_01.mos \
 singleRate_02.mos \
 
