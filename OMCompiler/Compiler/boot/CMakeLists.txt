@@ -28,6 +28,10 @@ if(MINGW)
   target_link_options(bomc PRIVATE -Wl,--stack,33554432)
 elseif(MSVC)
   target_link_options(bomc PRIVATE /STACK:33554432)
+  target_compile_options(bomc PRIVATE /wd4101) # unreferenced local variable
+  target_compile_options(bomc PRIVATE /wd4102) # unreferenced label
+  target_compile_options(bomc PRIVATE /wd4267) # conversion from 'size_t' to 'int', possible loss of data
+  target_compile_options(bomc PRIVATE /wd4244) # conversion from '' to '', possible loss of data
 endif()
 
 

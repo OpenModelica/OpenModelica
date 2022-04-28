@@ -138,7 +138,7 @@ install(TARGETS ModelicaExternalC
 
 # Install the shared libs to a directory 'ffi' within the lib dir.
 # This is so that they are not on the normal link path of simulation executables.
-# We do not want to have them for anything other than FFI based for constant
+# We do not want to have them for anything other than FFI based constant
 # evaluation by omc (They are only loaded never linked)
 install(TARGETS ModelicaExternalC_shared
                 ModelicaMatIO_shared
