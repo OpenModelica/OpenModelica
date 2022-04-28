@@ -447,7 +447,7 @@ public constant ErrorTypes.Message REPLACEABLE_BASE_CLASS_SIMPLE = ErrorTypes.ME
 public constant ErrorTypes.Message INVALID_SIZE_INDEX = ErrorTypes.MESSAGE(186, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid index %s in call to size of %s, valid index interval is [1,%s]."));
 public constant ErrorTypes.Message ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Algorithm section is not allowed in %s."));
+  Gettext.gettext("Algorithm sections are not allowed in %s."));
 public constant ErrorTypes.Message FAILURE_TO_DEDUCE_DIMS_NO_MOD = ErrorTypes.MESSAGE(188, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to deduce dimension %s of %s due to missing binding equation."));
 public constant ErrorTypes.Message FUNCTION_MULTIPLE_ALGORITHM = ErrorTypes.MESSAGE(189, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
@@ -867,6 +867,12 @@ public constant ErrorTypes.Message UNEXPECTED_COMPONENT_IN_COMPOSITE_NAME = Erro
   Gettext.gettext("Found component ‘%s‘ in composite name ‘%s‘, expected class."));
 public constant ErrorTypes.Message NF_MODIFY_PROTECTED = ErrorTypes.MESSAGE(396, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Protected element ‘%s‘ may not be modified, got ‘%s‘."));
+public constant ErrorTypes.Message PROTECTED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Protected sections are not allowed in %s."));
+public constant ErrorTypes.Message DEPRECATED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("%s are deprecated in %s."));
+public constant ErrorTypes.Message INITIAL_ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Initial algorithm sections are not allowed in %s."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

@@ -857,7 +857,6 @@ protected
   Restriction res;
   Type ty;
   Attributes attrs;
-  SCode.Element elem;
 algorithm
   () := match cls
     case Class.EXPANDED_CLASS(restriction = res)
@@ -917,6 +916,7 @@ algorithm
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
         ClassTree.checkDuplicates(cls_tree);
         InstNode.updateClass(Class.setClassTree(cls_tree, inst_cls), node);
+        Restriction.checkClass(node, res, context);
       then
         ();
 

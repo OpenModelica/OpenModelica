@@ -81,7 +81,6 @@ FunctionReturn.mo \
 FunctionSimple.mo \
 FunctionSimplex.mo \
 FunctionVariability.mo \
-FunctionWithEquation.mo \
 IfExpression1.mo \
 InvalidFunctionBinding.mo \
 JoinThreeVectors2.mo \

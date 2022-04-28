@@ -192,7 +192,7 @@ algorithm
       algorithm
         failure(_ := ClassInf.trans(inState,ClassInf.FOUND_EQUATION()));
         s := ClassInf.printStateStr(inState);
-        Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCodeUtil.equationFileInfo(inEquation));
+        Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCodeUtil.getEquationInfo(inEquation));
       then
         fail();
 
@@ -202,7 +202,7 @@ algorithm
       algorithm
         true := errorCount == Error.getNumErrorMessages();
         s := "\n" + SCodeDump.equationStr(inEquation);
-        Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCodeUtil.equationFileInfo(inEquation));
+        Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCodeUtil.getEquationInfo(inEquation));
       then
         fail();
 

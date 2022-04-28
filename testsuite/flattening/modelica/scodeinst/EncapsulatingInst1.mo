@@ -4,8 +4,8 @@
 // cflags: -d=newInst, -i=EncapsulatingInst1.M
 //
 
-class EncapsulatingInst1
-  class M
+model EncapsulatingInst1
+  model M
     EncapsulatingInst1 x(i = 1);
   end M;
 

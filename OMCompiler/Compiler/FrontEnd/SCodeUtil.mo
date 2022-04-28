@@ -1550,24 +1550,6 @@ algorithm
   end match;
 end statementToAlgorithmItem;
 
-public function equationFileInfo
-  input SCode.Equation eq;
-  output SourceInfo info;
-algorithm
-  info := match eq
-    case SCode.EQ_IF(info=info) then info;
-    case SCode.EQ_EQUALS(info=info) then info;
-    case SCode.EQ_PDE(info=info) then info;
-    case SCode.EQ_CONNECT(info=info) then info;
-    case SCode.EQ_FOR(info=info) then info;
-    case SCode.EQ_WHEN(info=info) then info;
-    case SCode.EQ_ASSERT(info=info) then info;
-    case SCode.EQ_TERMINATE(info=info) then info;
-    case SCode.EQ_REINIT(info=info) then info;
-    case SCode.EQ_NORETCALL(info=info) then info;
-  end match;
-end equationFileInfo;
-
 public function emptyModOrEquality
 "Checks if a Mod is empty (or only an equality binding is present)"
   input SCode.Mod mod;
@@ -2552,22 +2534,19 @@ end isBuiltinFunction;
 public function getEquationInfo
   "Extracts the SourceInfo from an SCode.Equation."
   input SCode.Equation inEquation;
-  output SourceInfo outInfo;
+  output SourceInfo info;
 algorithm
-  outInfo := match(inEquation)
-    local
-      SourceInfo info;
-
-    case SCode.EQ_IF(info = info) then info;
-    case SCode.EQ_EQUALS(info = info) then info;
-    case SCode.EQ_PDE(info = info) then info;
-    case SCode.EQ_CONNECT(info = info) then info;
-    case SCode.EQ_FOR(info = info) then info;
-    case SCode.EQ_WHEN(info = info) then info;
-    case SCode.EQ_ASSERT(info = info) then info;
-    case SCode.EQ_TERMINATE(info = info) then info;
-    case SCode.EQ_REINIT(info = info) then info;
-    case SCode.EQ_NORETCALL(info = info) then info;
+  info := match inEquation
+    case SCode.EQ_IF()        then inEquation.info;
+    case SCode.EQ_EQUALS()    then inEquation.info;
+    case SCode.EQ_PDE()       then inEquation.info;
+    case SCode.EQ_CONNECT()   then inEquation.info;
+    case SCode.EQ_FOR()       then inEquation.info;
+    case SCode.EQ_WHEN()      then inEquation.info;
+    case SCode.EQ_ASSERT()    then inEquation.info;
+    case SCode.EQ_TERMINATE() then inEquation.info;
+    case SCode.EQ_REINIT()    then inEquation.info;
+    case SCode.EQ_NORETCALL() then inEquation.info;
   end match;
 end getEquationInfo;
 
@@ -3603,14 +3582,14 @@ public function isElementPublic
   input SCode.Element inElement;
   output Boolean outIsPublic;
 algorithm
-  outIsPublic := visibilityBool(prefixesVisibility(elementPrefixes(inElement)));
+  outIsPublic := visibilityBool(elementVisibility(inElement));
 end isElementPublic;
 
 public function isElementProtected
   input SCode.Element inElement;
   output Boolean outIsProtected;
 algorithm
-  outIsProtected := not visibilityBool(prefixesVisibility(elementPrefixes(inElement)));
+  outIsProtected := not visibilityBool(elementVisibility(inElement));
 end isElementProtected;
 
 public function isElementEncapsulated
@@ -4095,6 +4074,20 @@ algorithm
   end match;
 end getClassDef;
 
+public function getClassBody
+  "Returns the body of a class, which for a class extends is the definition it
+   contains and otherwise just the immediate definition of the class."
+  input SCode.Element inClass;
+  output SCode.ClassDef outCdef;
+algorithm
+  outCdef := getClassDef(inClass);
+
+  outCdef := match outCdef
+    case SCode.ClassDef.CLASS_EXTENDS() then outCdef.composition;
+    else outCdef;
+  end match;
+end getClassBody;
+
 public function equationsContainReinit
 "@author:
  returns true if equations contains reinit"
@@ -4450,6 +4443,30 @@ algorithm
     else false;
   end match;
 end isRestrictionImpure;
+
+public function elementInnerOuter
+  input SCode.Element element;
+  output Absyn.InnerOuter io;
+algorithm
+  io := match element
+    case SCode.Element.CLASS() then prefixesInnerOuter(element.prefixes);
+    case SCode.Element.COMPONENT() then prefixesInnerOuter(element.prefixes);
+    else Absyn.InnerOuter.NOT_INNER_OUTER();
+  end match;
+end elementInnerOuter;
+
+public function elementVisibility
+  input SCode.Element element;
+  output SCode.Visibility visibility;
+algorithm
+  visibility := match element
+    case SCode.Element.IMPORT() then element.visibility;
+    case SCode.Element.EXTENDS() then element.visibility;
+    case SCode.Element.CLASS() then prefixesVisibility(element.prefixes);
+    case SCode.Element.COMPONENT() then prefixesVisibility(element.prefixes);
+    case SCode.Element.DEFINEUNIT() then element.visibility;
+  end match;
+end elementVisibility;
 
 public function setElementVisibility
   input SCode.Element inElement;
@@ -6086,6 +6103,11 @@ algorithm
     else SCode.Mod.NOMOD();
   end match;
 end lookupModInMod;
+
+function isNonEmptyAlgorithm
+  input SCode.AlgorithmSection alg;
+  output Boolean res = not listEmpty(alg.statements);
+end isNonEmptyAlgorithm;
 
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;
