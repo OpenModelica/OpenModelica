@@ -74,6 +74,7 @@
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void printVector_genericRK(char name[], double* a, int n, double time);
+void printIntVector_genericRK(char name[], int* a, int n, double time);
 void printVector_genericRK_MR_fs(char name[], double* a, int n, double time, int nIndx, int* indx);
 void printMatrix_genericRK(char name[], double* a, int n, double time);
 void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx);
@@ -174,7 +175,7 @@ enum RK_NLS_METHOD getRK_NLS_Method() {
 void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePattern, SPARSE_PATTERN* sparsePatternT)
 {
   int leadindex[sizeCols];
-  unsigned int i, j=0, loc;
+  unsigned int i, j, loc;
 
   for (i=0; i < sizeCols; i++)
     leadindex[i] = 0;
@@ -184,7 +185,7 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
   for(i=1;i<sizeCols+1;i++)
     sparsePatternT->leadindex[i] = sparsePatternT->leadindex[i-1] + leadindex[i-1];
   memcpy(leadindex, sparsePatternT->leadindex, sizeof(unsigned int)*sizeCols);
-  for (i=0;i<sizeRows;i++)
+  for (i=0,j=0;i<sizeRows;i++)
   {
     for(; j < sparsePattern->leadindex[i+1];) {
       loc = leadindex[sparsePattern->index[j]];
@@ -214,11 +215,13 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
   int length_column_indices = sizeCols+1;
   int length_index = sparsePattern->numberOfNonZeros;
   // initialize array to zeros
-  int tabu[sizeCols][sizeCols];
+  //int tabu[sizeCols][sizeCols];
+  int* tabu;
+  tabu = (int*) malloc(sizeCols*sizeCols*sizeof(int));
 
   for (i=0; i<sizeCols; i++)
      for (j=0; j<sizeCols; j++)
-        tabu[i][j]=0;
+        tabu[i*sizeCols + j]=0;
 
     // Allocate memory for new sparsity pattern
   sparsePatternT = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
@@ -238,7 +241,7 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
   {
     for (i=0; i<sizeCols ; i++)
     {
-      if (tabu[col][i] == 0)
+      if (tabu[col*sizeCols + i] == 0)
       {
         sparsePattern->colorCols[col] = i+1;
         maxColors = fmax(maxColors, i+1);
@@ -247,13 +250,13 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
           int rowIdx = sparsePattern->index[row];
           for (j=sparsePatternT->leadindex[rowIdx]; j<sparsePatternT->leadindex[rowIdx+1]; j++)
           {
-            tabu[sparsePatternT->index[j]][i]=1;
+            tabu[sparsePatternT->index[j]*sizeCols + i]=1;
           }
         }
-        act_stage = i/sizeCols_ODE;
+        act_stage = col/sizeCols_ODE;
         for (j=(act_stage+1)*sizeCols_ODE; j<sizeCols; j++)
         {
-          tabu[j][i]=1;
+          tabu[j*sizeCols + i]=1;
         }
         break;
       }
@@ -264,6 +267,7 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
   free(sparsePatternT->leadindex);
   free(sparsePatternT->index);
   free(sparsePatternT);
+  free(tabu);
 }
 
 /**
@@ -454,6 +458,10 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
     }
   }
 
+  //printf("\nHI:\ncalculated numberOfNonZeros = %d, real number = %d\n\n", numberOfNonZeros,i);
+  // printIntVector_genericRK("coo_row: ", coo_row, numberOfNonZeros, 0);
+  // printIntVector_genericRK("coo_col: ", coo_col, numberOfNonZeros, 0);
+
   int length_row_indices = jacobian->sizeCols*nStages+1;
   int length_index = numberOfNonZeros;
 
@@ -476,13 +484,16 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
     sparsePattern_IRK->index[i] = coo_row[i];
     sparsePattern_IRK->leadindex[coo_col[i] + 1]++;
   }
-  for (int i = 0; i < sizeCols*nStates; i++)
+  for (int i = 0; i < sizeCols*nStages; i++)
   {
     sparsePattern_IRK->leadindex[i + 1] += sparsePattern_IRK->leadindex[i];
   }
 
   // BB ToDo: Important that different stages get different colors!!!
   ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages);
+
+  // for (int k=0; k<nStages; k++)
+  //    printIntVector_genericRK("colorCols: ", &sparsePattern_IRK->colorCols[k*nStates], sizeCols, 0);
 
   return sparsePattern_IRK;
 }
@@ -1164,7 +1175,7 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
   /* Evaluate column of Jacobian ODE */
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
-  printVector_genericRK("jacobian->seedVars: ", jacobian->seedVars, jacobian->sizeCols, 0);
+  //printVector_genericRK("jacobian->seedVars: ", jacobian->seedVars, jacobian->sizeCols, 0);
 
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
   // and find out which stage is active
@@ -1179,8 +1190,8 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
     }
     k = k/jacobian_ODE->sizeCols;
   }
-  printf("Actual stage %d", k);
-  printVector_genericRK("jacobian_ODE->seedVars: ", jacobian_ODE->seedVars, jacobian_ODE->sizeCols, 0);
+  //printf("Actual stage %d", k);
+  //printVector_genericRK("jacobian_ODE->seedVars: ", jacobian_ODE->seedVars, jacobian_ODE->sizeCols, 0);
 
   // update timeValue and unknown vector
   sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
@@ -1821,6 +1832,14 @@ void printVector_genericRK(char name[], double* a, int n, double time)
   printf("\n%s at time: %g: \n", name, time);
   for (int i=0;i<n;i++)
     printf("%6g ", a[i]);
+  printf("\n");
+}
+
+void printIntVector_genericRK(char name[], int* a, int n, double time)
+{
+  printf("\n%s at time: %g: \n", name, time);
+  for (int i=0;i<n;i++)
+    printf("%d ", a[i]);
   printf("\n");
 }
 

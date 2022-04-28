@@ -25,9 +25,7 @@ rkMethods := {"expl_euler",
              "impl_euler",
              "sdirk3",
              "esdirk2",
-             "esdirk2_test",
              "esdirk3",
-             "esdirk3_test",
              "merson",
              "dopri45"};
 
@@ -71,7 +69,7 @@ end for;
 // true
 // ""
 // true
-// {"expl_euler","impl_euler","sdirk3","esdirk2","esdirk2_test","esdirk3","esdirk3_test","merson","dopri45"}
+// {"expl_euler","impl_euler","sdirk3","esdirk2","esdirk3","merson","dopri45"}
 // {"newton","kinsol"}
 // true
 // ""
@@ -139,20 +137,6 @@ end for;
 // Failed vars:
 //
 // --------------------------------------------------------
-// Running RK esdirk2_test with NLS newton:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-// Failed vars:
-//
-// --------------------------------------------------------
-// Running RK esdirk2_test with NLS kinsol:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-// Failed vars:
-//
-// --------------------------------------------------------
 // Running RK esdirk3 with NLS newton:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -161,20 +145,6 @@ end for;
 //
 // --------------------------------------------------------
 // Running RK esdirk3 with NLS kinsol:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-// Failed vars:
-//
-// --------------------------------------------------------
-// Running RK esdirk3_test with NLS newton:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-// Failed vars:
-//
-// --------------------------------------------------------
-// Running RK esdirk3_test with NLS kinsol:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //

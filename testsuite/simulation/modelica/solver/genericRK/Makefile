@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 Burger.mos \
 singleRate_01.mos \
+singleRate_02.mos \
 
 FAILINGTESTFILES = \
 multiRate_01.mos \
