@@ -114,10 +114,10 @@ struct dataSolver
  *
  * @return enum RK_SINGLERATE_METHOD    Runge-Kutta method.
  */
-enum RK_SINGLERATE_METHOD getRK_Method() {
+enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_RK_METHOD) {
   enum RK_SINGLERATE_METHOD method;
   const char* flag_value;
-  flag_value = omc_flagValue[FLAG_RK];
+  flag_value = omc_flagValue[FLAG_RK_METHOD];
   char* RK_method_string;
 
   if (flag_value != NULL) {
@@ -132,8 +132,8 @@ enum RK_SINGLERATE_METHOD getRK_Method() {
     errorStreamPrint(LOG_STDOUT, 0, "Choose RK method: %s [from command line]", RK_method_string);
     return RK_UNKNOWN;
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: dopri45 [default]");
-    return RK_DOPRI45;
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: esdirk3 [default]");
+    return RK_ESDIRK3;
   }
 }
 
@@ -683,7 +683,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  rk_data->RK_method = getRK_Method();
+  rk_data->RK_method = getRK_Method(FLAG_RK);
   rk_data->tableau = initButcherTableau(rk_data->RK_method);
   if (rk_data->tableau == NULL){
     errorStreamPrint(LOG_STDOUT, 0, "allocateDataGenericRK: Failed to initialize butcher tableau for Runge-Kutta method %s", RK_SINGLERATE_METHOD_NAME[rk_data->RK_method]);
@@ -1445,6 +1445,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   double targetTime;
   double stopTime = data->simulationInfo->stopTime;
 
+  infoStreamPrint(LOG_SOLVER, 1, "generic Runge-Kutta method:");
+
   // TODO AHeu: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
   // Also instead of solverInfo->integratorSteps we should set and use solverInfo->solverNoEquidistantGrid
   /* Calculate steps until targetTime is reached */
@@ -1533,7 +1535,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         rk_data->err_fast = 0;
         for (i=0; i<rk_data->nStates; i++)
         {
-          if (rk_data->err[i] > rk_data->percentage * err)
+          // step of outer integration will always be accepted (rk_data->err[i]<1)
+          if (rk_data->err[i] > rk_data->percentage * err || rk_data->err[i]>1)
           {
             rk_data->fastStates[rk_data->nFastStates] = i;
             rk_data->nFastStates++;
@@ -1624,7 +1627,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
     /* step is accepted and yOld needs to be updated */
     memcpy(rk_data->yOld, rk_data->y, data->modelData->nStates*sizeof(double));
-    infoStreamPrint(LOG_SOLVER, 1, "accept step from %10g to %10g, error %10g, new stepsize %10g",
+    infoStreamPrint(LOG_SOLVER, 0, "accept step from %.5g to %.5g, error %.5g, new stepsize %.5g",
                     rk_data->time- rk_data->lastStepSize, rk_data->time, err, rk_data->stepSize);
 
     /* emit step, if integratorSteps is selected */
@@ -1639,7 +1642,6 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       data->callback->updateContinuousSystem(data, threadData);
       sim_result.emit(&sim_result, data, threadData);
     }
-    messageClose(LOG_SOLVER);
   }
 
   if (!solverInfo->integratorSteps)
@@ -1663,18 +1665,18 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
 
   /* Solver statistics */
-  if(ACTIVE_STREAM(LOG_SOLVER))
+  if(ACTIVE_STREAM(LOG_SOLVER_V))
   {
-    infoStreamPrint(LOG_SOLVER, 1, "genericRK call statistics: ");
-    infoStreamPrint(LOG_SOLVER, 0, "current time value: %0.4g", solverInfo->currentTime);
-    infoStreamPrint(LOG_SOLVER, 0, "current integration time value: %0.4g", rk_data->time);
-    infoStreamPrint(LOG_SOLVER, 0, "step size h to be attempted on next step: %0.4g", rk_data->stepSize);
-    infoStreamPrint(LOG_SOLVER, 0, "number of steps taken so far: %d", rk_data->stepsDone);
-    infoStreamPrint(LOG_SOLVER, 0, "number of calls of functionODE() : %d", rk_data->evalFunctionODE);
-    infoStreamPrint(LOG_SOLVER, 0, "number of calculation of jacobian : %d", rk_data->evalJacobians);
-    infoStreamPrint(LOG_SOLVER, 0, "error test failure : %d", rk_data->errorTestFailures);
-    infoStreamPrint(LOG_SOLVER, 0, "convergence failure : %d", rk_data->convergenceFailures);
-    messageClose(LOG_SOLVER);
+    infoStreamPrint(LOG_SOLVER_V, 1, "genericRK call statistics: ");
+    infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
+    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", rk_data->time);
+    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", rk_data->stepSize);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", rk_data->stepsDone);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", rk_data->evalFunctionODE);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", rk_data->evalJacobians);
+    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", rk_data->errorTestFailures);
+    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", rk_data->convergenceFailures);
+    messageClose(LOG_SOLVER_V);
   }
 
   /* write statistics to the solverInfo data structure */
@@ -1684,7 +1686,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   solverInfo->solverStatsTmp[3] = rk_data->errorTestFailures;
   solverInfo->solverStatsTmp[4] = rk_data->convergenceFailures;
 
-  infoStreamPrint(LOG_SOLVER, 0, "Finished genericRK step.");
+  infoStreamPrint(LOG_SOLVER_V, 0, "finished genericRK step.");
+  messageClose(LOG_SOLVER);
   return 0;
 }
 
