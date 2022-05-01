@@ -137,7 +137,11 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   //userdata->yEnd = malloc(sizeof(double)*userdata->nStates);
   userdata->yt = malloc(sizeof(double)*userdata->nStates);
   userdata->f = malloc(sizeof(double)*userdata->nStates);
-  userdata->Jf = malloc(sizeof(double)*userdata->nStates*userdata->nStates);
+  if (!userdata->isExplicit) {
+    userdata->Jf = malloc(sizeof(double)*userdata->nStates*userdata->nStates);
+  } else {
+    userdata->Jf = NULL;
+  }
   userdata->k = malloc(sizeof(double)*userdata->nStates*userdata->tableau->nStages);
   userdata->res_const = malloc(sizeof(double)*userdata->nStates);
   userdata->errest = malloc(sizeof(double)*userdata->nStates);
@@ -245,32 +249,6 @@ void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data) {
   return;
 }
 
-/*!	\fn wrapper_f_genericRK
- *
- *  calculate function values of function ODE f(t,y)
- *  IMPORTANT: assuming the correct values of the time value and the states are set
- *  \param [in]      data           data of the underlying DAE
- *  \param [in]      threadData     data for error handling
- *  \param [in/out]  userdata       data of the integrator (DATA_GENERIC_RK_MR)
- *  \param [out]     fODE       pointer to state derivatives
- *
- */
-int wrapper_f_genericRK_MR(DATA* data, threadData_t *threadData, void* genericRKData, modelica_real* fODE)
-{
-  DATA_GENERIC_RK_MR* userdata = (DATA_GENERIC_RK_MR*) genericRKData;
-
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  fODE = sData->realVars + data->modelData->nStates;
-
-  userdata->evalFunctionODE++;
-
-  externalInputUpdate(data);
-  data->callback->input_function(data, threadData);
-  data->callback->functionODE(data, threadData);
-
-  return 0;
-}
-
 /*
  * Sets element (i,j) in matrixA to given value val.
  */
@@ -353,7 +331,7 @@ int wrapper_Jf_genericRK_MR(int n, double t, double* x, double* fODE, void* gene
         x[i] += delta_hh;
         delta_hh = 1. / delta_hh;
 
-        wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
+        wrapper_f_genericRK(data, threadData, &(userdata->evalFunctionODE), fODE);
         // this should not count on function evaluation, since
         // it belongs to jacobian evaluation
         userdata->evalFunctionODE--;
@@ -416,7 +394,7 @@ int wrapper_DIRK_MR(int* n_p, double* x, double* res, void* genericRKData, int f
     for (j=0; j<n;j++)
       sData->realVars[userdata->fastStates[j]] = x[j];
     // BB ToDo: Need to have the interpolated values in sData->realVars!!!!
-    wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
+    wrapper_f_genericRK(data, threadData, &(userdata->evalFunctionODE), fODE);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     for (j=0; j<n; j++)
@@ -462,6 +440,8 @@ int wrapper_DIRK_MR(int* n_p, double* x, double* res, void* genericRKData, int f
   }
   return 0;
 }
+
+
 
 /*!	\fn expl_diag_impl_RK
  *
@@ -528,7 +508,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       // set correct time value and states of simulation system
       sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
       memcpy(sData->realVars, userdata->res_const, n*sizeof(double));
-      wrapper_f_genericRK_MR(data, threadData, userdata, fODE);
+      wrapper_f_genericRK(data, threadData, &(userdata->evalFunctionODE), fODE);
     }
     else
     {

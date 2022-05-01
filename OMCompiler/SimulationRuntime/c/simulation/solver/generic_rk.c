@@ -877,23 +877,21 @@ void freeDataGenericRK(DATA_GENERIC_RK* rk_data) {
  *
  * Assuming the correct values for time value and states are set.
  *
- * @param data            Runtime data struct.
- * @param threadData      Thread data for error handling.
- * @param genericRKData   Runge-Kutta solver data.
- * @param fODE            Array of state derivatives.
- * @return int            Returns 0 on success.
+ * @param data               Runtime data struct.
+ * @param threadData         Thread data for error handling.
+ * @param evalFunctionsODE   Counter for function calls.
+ * @param fODE               Array of state derivatives.
+ * @return int               Returns 0 on success.
  */
-int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* genericRKData, modelica_real* fODE)
+int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE)
 {
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) genericRKData;
+  unsigned int* counter = (unsigned int*) evalFunctionODE;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   fODE = sData->realVars + data->modelData->nStates;
 
-  // TODO AHeu: We don't need userdata in this function when we count evalFunctionODE somewhere in data.
-  rk_data->evalFunctionODE++;
+  (*counter)++;
 
-  /* Evaluate ODE */
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   data->callback->functionODE(data, threadData);
@@ -947,7 +945,7 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* genericRKDat
 //     states[i] += delta_hh;
 //     delta_hh = 1. / delta_hh;
 
-//     wrapper_f_genericRK(data, threadData, rk_data, stateDerivatives);
+//     wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), stateDerivatives);
 //     // this should not count on function evaluation, since
 //     // it belongs to jacobian evaluation
 //     rk_data->evalFunctionODE--;
@@ -994,7 +992,7 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
   // Evaluate right hand side of ODE
   sData->timeValue = rk_data->time + rk_data->tableau->c[rk_data->act_stage] * rk_data->stepSize;
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, rk_data, fODE);
+  wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
 
   // Evaluate residual
   for (int i=0; i<nStates; i++) {
@@ -1070,7 +1068,7 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
     /* Evaluate ODE and compute res for each stage */
     sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
     memcpy(sData->realVars, &xloc[k*nStates], nStates*sizeof(double));
-    wrapper_f_genericRK(data, threadData, rk_data, fODE);
+    wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
     memcpy(&rk_data->k[k*nStates], fODE, nStates*sizeof(double));
   }
 
@@ -1211,7 +1209,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       sData->timeValue = rk_data->time + rk_data->tableau->c[stage]*rk_data->stepSize;
       memcpy(sData->realVars, rk_data->res_const, nStates*sizeof(double));
       rk_data->act_stage = stage;
-      wrapper_f_genericRK(data, threadData, rk_data, fODE);
+      wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
     }
     else
     {
@@ -1320,7 +1318,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   //printVector_genericRK("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
   //printVector_genericRK("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
   memcpy(rk_data->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, rk_data, fODE);
+  wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
   /* store values of the state derivatives at initial or event time */
   memcpy(rk_data->f, fODE, data->modelData->nStates*sizeof(double));
 
@@ -1353,7 +1351,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   }
   sData->timeValue += h0;
 
-  wrapper_f_genericRK(data, threadData, rk_data, fODE);
+  wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
 
   for (i=0; i<data->modelData->nStates; i++)
   {
