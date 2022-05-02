@@ -658,7 +658,7 @@ Output
 
 -  *Show Generated File* – displays the generated files in a dialog box.
 
-The Variable Filter takes a regular expression input and only saves the variables whose names fully match it.
+The Variable Filter takes a regular expression input and only saves in the simulation results file those variables whose names fully match it.
 Here are some simple examples:
 
 - ``.*`` matches any variable (default choice)
@@ -671,7 +671,8 @@ Here are some simple examples:
 - ``abc.*|def.*`` matches variables starting with ``abc`` or ``def``
 - ``.*der\(.*\)`` matches all derivatives in the model. Note that ``(`` and ``)`` must be escaped
 
-.. _omedit-2d-plotting :
+Please note that all the model variables will still be shown in the Variables Browser tree; however, only those for which results were actually saved
+will have a checkbox to plot them.
 
 Data Reconciliation
 ~~~~~~~~~~~~~~~~~~~
@@ -683,6 +684,8 @@ Data Reconciliation
 -  *Correlation Matrix Input File* – correlation matrix file.
 
 -  *Epsilon*
+
+.. _omedit-2d-plotting :
 
 2D Plotting
 -----------
