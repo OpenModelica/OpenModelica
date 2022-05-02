@@ -357,7 +357,7 @@ algorithm
         // print(if_(impl, "impl crap\n", "no impl\n"));
         if not (impl and listMember(pre, {DAE.NOPRE()})) and not Config.getGraphicsExpMode() then
           s1 = ComponentReference.printComponentRefStr(crefOuter);
-          s2 = Dump.unparseInnerouterStr(io);
+          s2 = AbsynUtil.innerOuterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
           s1 = AbsynUtil.pathString(typePath) + " " + s1;
           Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
@@ -391,7 +391,7 @@ algorithm
         // adrpo: do NOT! display an error message if impl = true and prefix is DAE.NOPRE()
         if not (impl and listMember(pre, {DAE.NOPRE()})) and not Config.getGraphicsExpMode() then
           s1 = ComponentReference.printComponentRefStr(crefOuter);
-          s2 = Dump.unparseInnerouterStr(io);
+          s2 = AbsynUtil.innerOuterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
           s1 = AbsynUtil.pathString(typePath) + " " + s1;
           Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);

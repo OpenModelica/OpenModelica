@@ -849,8 +849,8 @@ algorithm
 
         if not Config.getGraphicsExpMode() then
           s1 = n;
-          s2 = Dump.unparseInnerouterStr(io);
-          Error.addSourceMessage(Error.MISSING_INNER_CLASS,{s1, s2}, info);
+          s2 = AbsynUtil.innerOuterStr(io);
+          Error.addSourceMessage(Error.MISSING_INNER_CLASS,{s1, s2, ""}, info);
         end if;
 
         (cache,env,ih,store,ci_state,graph,csets,dae,tys,bc,oDA,equalityConstraint) =

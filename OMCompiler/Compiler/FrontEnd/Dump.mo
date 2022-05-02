@@ -958,20 +958,18 @@ algorithm
   end match;
 end printInnerouter;
 
-public function unparseInnerouterStr "
-  Prettyprints the inner or outer keyword to a string.
-"
+public function unparseInnerOuterStr
+  "Prettyprints the inner or outer keyword to a string."
   input Absyn.InnerOuter inInnerOuter;
   output String outString;
 algorithm
-  outString:=
-  match (inInnerOuter)
-    case (Absyn.INNER()) then "inner ";
-    case (Absyn.OUTER()) then "outer ";
-    case (Absyn.INNER_OUTER()) then "inner outer ";
-    case (Absyn.NOT_INNER_OUTER()) then "";
+  outString:= match inInnerOuter
+    case Absyn.INNER() then "inner ";
+    case Absyn.OUTER() then "outer ";
+    case Absyn.INNER_OUTER() then "inner outer ";
+    case Absyn.NOT_INNER_OUTER() then "";
   end match;
-end unparseInnerouterStr;
+end unparseInnerOuterStr;
 
 public function printElementspec
 "Prints the ElementSpec to the Print buffer."

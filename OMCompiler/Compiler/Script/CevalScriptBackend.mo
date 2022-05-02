@@ -8249,7 +8249,7 @@ algorithm
 
         dims1 := list(Dump.printSubscriptStr(sub) for sub in attr.arrayDim);
         r_1 := Interactive.keywordReplaceable(comp.redeclareKeywords);
-        inout_str := innerOuterStr(comp.innerOuter);
+        inout_str := AbsynUtil.innerOuterStr(comp.innerOuter);
         variability_str := attrVariabilityStr(attr);
         dir_str := attrDirectionStr(attr);
 
@@ -8305,21 +8305,6 @@ algorithm
     -1
   );
 end makeGetComponentsRecord;
-
-function innerOuterStr
-"Helper function to getComponentInfo, retrieve the inner outer string."
-  input Absyn.InnerOuter inInnerOuter;
-  output String outString;
-algorithm
-  outString:=
-  match (inInnerOuter)
-    case Absyn.INNER() then "inner";
-    case Absyn.OUTER() then "outer";
-    case Absyn.NOT_INNER_OUTER() then "";
-    case Absyn.INNER_OUTER() then "inner outer";
-  end match;
-end innerOuterStr;
-
 
 function attrVariabilityStr
 "Helper function to get_component_info,
