@@ -254,7 +254,7 @@ algorithm
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.CLASS_EXTENDS())
       equation
-        ioStr = Dump.unparseInnerouterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
+        ioStr = Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
         res = stringAppendList({ioStr, "class extends ",n,";"});
       then
         res;
@@ -262,14 +262,14 @@ algorithm
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.ENUMERATION())
       equation
-        ioStr = Dump.unparseInnerouterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
+        ioStr = Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
         res = stringAppendList({ioStr, "class ",n," enumeration;"});
       then
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp))
       equation
-        ioStr = Dump.unparseInnerouterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
+        ioStr = Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
         res = stringAppendList({ioStr, "class ",n,";"});
       then
         res;
@@ -482,7 +482,7 @@ algorithm
         s = visibilityStr(v) +
             redeclareStr(rd) +
             finalStr(f) +
-            AbsynUtil.innerOuterStr(io) +
+            Dump.unparseInnerOuterStr(io) +
             replaceablePrefixStr(rpl);
       then
         s;

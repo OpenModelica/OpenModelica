@@ -3301,9 +3301,9 @@ public function innerOuterStr
   output String str;
 algorithm
   str := match io
-    case Absyn.INNER_OUTER() then "inner outer ";
-    case Absyn.INNER() then "inner ";
-    case Absyn.OUTER() then "outer ";
+    case Absyn.INNER_OUTER() then "inner outer";
+    case Absyn.INNER() then "inner";
+    case Absyn.OUTER() then "outer";
     case Absyn.NOT_INNER_OUTER() then "";
   end match;
 end innerOuterStr;

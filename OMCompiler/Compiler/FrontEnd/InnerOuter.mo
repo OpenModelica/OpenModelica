@@ -49,20 +49,16 @@ protected import ComponentReference;
 protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;
-protected import Dump;
 protected import ElementSource;
 protected import Error;
 protected import ErrorExt;
-protected import Expression;
 protected import Flags;
 protected import InstSection;
 protected import List;
 protected import Lookup;
 protected import Mod;
 protected import PrefixUtil;
-protected import System;
 protected import Util;
-protected import VarTransform;
 protected import BaseHashSet;
 protected import FGraph;
 
@@ -188,7 +184,7 @@ algorithm
   sets.outerConnects := List.map(sets.outerConnects, changeInnerOuterInOuterConnect2);
 end changeInnerOuterInOuterConnect;
 
-public function changeInnerOuterInOuterConnect2
+protected function changeInnerOuterInOuterConnect2
 "@author: adrpo
   changes inner to outer and outer to inner where needed"
   input Connect.OuterConnect inOC;
@@ -228,164 +224,6 @@ algorithm
     else inOC;
   end matchcontinue;
 end changeInnerOuterInOuterConnect2;
-
-protected function buildInnerOuterRepl
-"Builds replacement rules for changing outer references
- to the inner variable"
-  input list<DAE.Element> innerVars;
-  input list<DAE.Element> outerVars;
-  input VarTransform.VariableReplacements inRepl;
-  output VarTransform.VariableReplacements outRepl;
-algorithm
-  outRepl := match(innerVars,outerVars,inRepl)
-    local
-      VarTransform.VariableReplacements repl;
-      DAE.Element v;
-      list<DAE.Element> rest;
-    case({},_,repl) then repl;
-    case(v::rest,_,repl)
-      equation
-      repl = buildInnerOuterReplVar(v,outerVars,repl);
-      repl = buildInnerOuterRepl(rest,outerVars,repl);
-    then repl;
-  end match;
-end buildInnerOuterRepl;
-
-protected function buildInnerOuterReplVar
-"Help function to buildInnerOuterRepl"
-  input DAE.Element innerVar;
-  input list<DAE.Element> outerVars;
-  input VarTransform.VariableReplacements inRepl;
-  output VarTransform.VariableReplacements outRepl;
-algorithm
-  outRepl := matchcontinue(innerVar,outerVars,inRepl)
-    local
-        list<DAE.ComponentRef> outerCrs,ourOuterCrs;
-      DAE.ComponentRef cr; VarTransform.VariableReplacements repl;
-    case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNER_OUTER()),_,repl)
-      equation
-        outerCrs = List.map(outerVars,DAEUtil.varCref);
-        ourOuterCrs = List.select1(outerCrs,isInnerOuterMatch,cr);
-        cr = DAEUtil.nameInnerouterUniqueCref(cr);
-        repl = List.fold1r(ourOuterCrs,VarTransform.addReplacement,Expression.crefExp(cr),repl);
-      then repl;
-    case(DAE.VAR(componentRef = cr),_,repl)
-      equation
-        outerCrs = List.map(outerVars,DAEUtil.varCref);
-        ourOuterCrs = List.select1(outerCrs,isInnerOuterMatch,cr);
-        repl = List.fold1r(ourOuterCrs,VarTransform.addReplacement,Expression.crefExp(cr),repl);
-      then repl;
-  end matchcontinue;
-end buildInnerOuterReplVar;
-
-protected function isInnerOuterMatch
-"Returns true if an inner element matches an outer, i.e.
-the outer reference should be translated to the inner reference"
-  input DAE.ComponentRef outerCr " e.g. a.b.x";
-  input DAE.ComponentRef innerCr " e.g. x";
-  output Boolean res;
-algorithm
-  res := matchcontinue(outerCr,innerCr)
-    local
-      DAE.ComponentRef innerCr1,outerCr1;
-      DAE.Ident id1, id2;
-    // try a simple comparison first.
-    // adrpo: this case is just to speed up the checking!
-    case(_,_)
-      equation
-        // try to compare last ident first!
-        false = ComponentReference.crefLastIdentEqual(outerCr,innerCr);
-      then false;
-    // try the hard and expensive case.
-    else
-      equation
-        // Strip the common part of inner outer cr.
-        // For instance, innerCr = e.f.T1, outerCr = e.f.g.h.a.b.c.d.T1 results in
-        // innerCr1 = T1, outerCr = g.h.a.b.c.d.T1
-        (outerCr1,innerCr1) = stripCommonCrefPart(outerCr,innerCr);
-        res = ComponentReference.crefContainedIn(outerCr1,innerCr1);
-      then res;
-  end matchcontinue;
-end isInnerOuterMatch;
-
-protected function stripCommonCrefPart
-"Help function to isInnerOuterMatch"
-  input DAE.ComponentRef outerCr;
-  input DAE.ComponentRef innerCr;
-  output DAE.ComponentRef outOuterCr;
-  output DAE.ComponentRef outInnerCr;
-algorithm
-  (outOuterCr,outInnerCr) := matchcontinue(outerCr,innerCr)
-    local
-      DAE.Ident id1,id2;
-      list<DAE.Subscript> subs1,subs2;
-      DAE.ComponentRef cr1,cr2,cr11,cr22;
-
-    case(DAE.CREF_QUAL(id1,_,_,cr1),DAE.CREF_QUAL(id2,_,_,cr2))
-      equation
-        true = stringEq(id1, id2);
-        (cr11,cr22) = stripCommonCrefPart(cr1,cr2);
-      then
-        (cr11,cr22);
-
-    case(cr1,cr2) then (cr1,cr2);
-  end matchcontinue;
-end stripCommonCrefPart;
-
-protected function extractCommonPart "
-Author: BZ, 2008-12
-Compares two crefs ex:
-model1.model2.connector vs model2.connector.variable
-would become: model2.connector"
-  input DAE.ComponentRef prefixedCref;
-  input DAE.ComponentRef innerCref;
-  output DAE.ComponentRef cr3;
-algorithm
-  cr3 := matchcontinue(prefixedCref,innerCref)
-    local
-      DAE.Type ty,ty2;
-      DAE.ComponentRef c1,c2,c3;
-
-    case (_,_)
-      equation
-        c1 = ComponentReference.crefLastCref(prefixedCref);
-        c2 = ComponentReference.crefLastCref(innerCref);
-        true = ComponentReference.crefEqual(c1,c2);
-        c3 = ComponentReference.crefSetLastType(innerCref,ComponentReference.crefLastType(prefixedCref));
-      then
-        c3;
-
-    else
-      equation
-        c2 = ComponentReference.crefStripLastIdent(innerCref);
-        cr3 = extractCommonPart(prefixedCref,c2);
-      then
-        cr3;
-  end matchcontinue;
-end extractCommonPart;
-
-public function renameUniqueVarsInTopScope
-"Author: BZ, 2008-09
- Helper function for instClass.
- If top scope, traverse DAE and change any uniqnamed vars back to original.
- This is a work around for innerouter declarations."
-  input Boolean isTopScope;
-  input DAE.DAElist dae;
-  output DAE.DAElist odae;
-algorithm
-  odae := matchcontinue(isTopScope,dae)
-    // adrpo: don't do anything if there are no inner/outer declarations in the model!
-    case (_, _)
-      equation
-        false = System.getHasInnerOuterDefinitions();
-      then dae;
-    // we are in top level scope (isTopScope=true) and we need to rename
-    case (true,_)
-      then DAEUtil.renameUniqueOuterVars(dae);
-    // we are NOT in top level scope (isTopScope=false) and we need to rename
-    case (false,_) then dae;
-  end matchcontinue;
-end renameUniqueVarsInTopScope;
 
 public function retrieveOuterConnections
 "Moves outerConnections to connection sets
@@ -626,94 +464,6 @@ algorithm
   end match;
 end addOuterConnectIfEmpty;
 
-protected function addOuterConnectIfEmptyNoEnv
-"help function to retrieveOuterConnections2
- author BZ.
- Adds a new connectionset if inner component found but
- no connection set refering to the inner component.
- In that case the outer connection (from inside
- sub-components) forms a connection set of their own.
- 2008-12: This is an extension of addOuterConnectIfEmpty,
-          with the difference that we only need to find
-          one variable in the enviroment."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InstHierarchy inIH;
-  input DAE.Prefix inPre;
-  input Connect.Sets inSets;
-  input Boolean added "if true, this function does nothing";
-  input DAE.ComponentRef cr1;
-  input Absyn.InnerOuter iio1;
-  input Connect.Face f1;
-  input DAE.ComponentRef cr2;
-  input Absyn.InnerOuter iio2;
-  input Connect.Face f2;
-  input SourceInfo info;
-  output Connect.Sets outSets;
-algorithm
-  outSets := matchcontinue(inCache,inEnv,inIH,inPre,inSets,added,cr1,iio1,f1,cr2,iio2,f2,info)
-     local
-       SCode.Variability vt1,vt2;
-       DAE.Type t1,t2;
-       DAE.ConnectorType ct;
-       DAE.DAElist dae;
-       InstHierarchy ih;
-       Connect.SetTrie sets;
-       Integer sc;
-       list<Connect.SetConnection> cl;
-       list<Connect.OuterConnect> oc;
-       FCore.Cache cache;
-       FCore.Graph env;
-       Absyn.InnerOuter io1,io2;
-       DAE.Prefix pre;
-
-    // if it was added, return the same
-    case(_,_,_,_,_,true,_,_,_,_,_,_,_) then inSets;
-
-    // if it was not added, add it (first component found: cr1)
-    case(cache,env,ih,_, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
-      equation
-        (cache,DAE.ATTR(connectorType = ct,variability=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-        pre = DAE.NOPRE();
-        t2 = t1;
-        vt2 = vt1;
-        io1 = removeOuter(io1);
-        io2 = removeOuter(io2);
-        (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),_,_) =
-        InstSection.connectComponents(
-          cache,env,ih,
-          Connect.SETS(sets, sc, cl, {}),
-          pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,io1,io2,ConnectionGraph.EMPTY,info);
-        // TODO: take care of dae, can contain asserts from connections
-      then
-        Connect.SETS(sets, sc, cl, oc);
-
-    // if it was not added, add it (first component found: cr2)
-    case(cache,env,ih,_, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
-      equation
-        pre = DAE.NOPRE();
-        (cache,DAE.ATTR(connectorType = ct,variability=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
-        t1 = t2;
-        vt1 = vt2;
-        io1 = removeOuter(io1);
-        io2 = removeOuter(io2);
-        (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),_,_) =
-        InstSection.connectComponents(
-          cache,env,ih,
-          Connect.SETS(sets, sc, cl, {}),
-          pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,
-          io1,io2,ConnectionGraph.EMPTY,info);
-        // TODO: take care of dae, can contain asserts from connections
-      then
-        Connect.SETS(sets, sc, cl, oc);
-
-    // fail
-    else
-      equation print("failure in: addOuterConnectIfEmptyNOENV\n");
-        then fail();
-  end matchcontinue;
-end addOuterConnectIfEmptyNoEnv;
-
 protected function removeOuter
 "Removes outer attribute, keeping inner"
   input Absyn.InnerOuter io;
@@ -780,91 +530,7 @@ algorithm
   end matchcontinue;
 end lookupVarInnerOuterAttr;
 
-public function checkMissingInnerDecl
-"Checks that outer declarations has a
- corresponding inner declaration.
- This can only be done at the top scope"
-  input DAE.DAElist inDae;
-  input Boolean callScope "only done if true";
-protected
-  list<DAE.Element> innerVars,outerVars,allVars;
-  VarTransform.VariableReplacements repl;
-  list<DAE.ComponentRef> srcs,targets;
-algorithm
-  _ := matchcontinue(inDae,callScope)
-    // adrpo, do nothing if we have no inner/outer components
-    case (_,_)
-      equation
-        false = System.getHasInnerOuterDefinitions();
-      then ();
-    // if call scope is TOP level (true) do the checking
-    case (_,true)
-      equation
-        //print("DAE has :" + intString(listLength(inDae)) + " elements\n");
-        (DAE.DAE(innerVars),DAE.DAE(outerVars)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
-        checkMissingInnerDecl1(DAE.DAE(innerVars),DAE.DAE(outerVars));
-      then ();
-    // if call scope is NOT TOP level (false) do nothing
-    case (_,false) then ();
-   end matchcontinue;
-end checkMissingInnerDecl;
-
-protected function checkMissingInnerDecl1
-"checks that the 'inner' prefix is used
- when an corresponding 'outer' variable
- found"
-  input DAE.DAElist innerVarsDae;
-  input DAE.DAElist outerVarsDae;
-algorithm
-  List.map1_0(DAEUtil.daeElements(outerVarsDae),checkMissingInnerDecl2,DAEUtil.daeElements(innerVarsDae));
-end checkMissingInnerDecl1;
-
-protected function checkMissingInnerDecl2
-"help function to checkMissingInnerDecl"
-  input DAE.Element outerVar;
-  input list<DAE.Element> innerVars;
-algorithm
-  _ := match(outerVar,innerVars)
-    local
-      String str,str2; DAE.ComponentRef cr; DAE.Element v;
-      list<DAE.ComponentRef> crs, res;
-      Absyn.InnerOuter io;
-      DAE.ElementSource source;
-      SourceInfo info;
-
-    case(DAE.VAR(componentRef=cr, innerOuter = io, source = source),_)
-      equation
-        crs = List.map(innerVars, DAEUtil.varCref);
-        res = List.select1(crs, isInnerOuterMatch, cr);
-        if listEmpty(res)
-        then
-          if not Flags.getConfigBool(Flags.CHECK_MODEL)
-          then
-            str2 = Dump.unparseInnerouterStr(io);
-            str = ComponentReference.printComponentRefStr(cr);
-            info = ElementSource.getElementSourceFileInfo(source);
-            Error.addSourceMessage(Error.MISSING_INNER_PREFIX, {str,str2}, info);
-            fail();
-          end if;
-        end if;
-      then
-        ();
-
-  end match;
-end checkMissingInnerDecl2;
-
-public function failExceptForCheck
-"function that fails if checkModel option is not set, otherwise it succeeds.
- It should be used for the cases when normal instantiation should fail but
- a instantiation for performing checkModel call should not fail"
-algorithm
-  _ := match()
-    case() equation true = Flags.getConfigBool(Flags.CHECK_MODEL); then ();
-    case() equation /* false = Flags.getConfigBool(Flags.CHECK_MODEL); */ then fail();
-  end match;
-end failExceptForCheck;
-
-public function innerOuterBooleans
+protected function innerOuterBooleans
 "Returns inner outer information as two booleans"
   input Absyn.InnerOuter io;
   output Boolean inner1;
@@ -877,33 +543,6 @@ algorithm
     case(Absyn.NOT_INNER_OUTER()) then (false,false);
   end match;
 end innerOuterBooleans;
-
-public function referOuter "
-Author: BZ, 2008-12
-determin the innerouter attributes for 2 connections.
-Special cases:
-  if (innerouter , unspecified) -> do NOT prefix firstelement refers to outer elem
-  if (innerouter , outer) -> DO prefix
-  else
-    use normal function( innerOuterBooleans)
-"
-  input Absyn.InnerOuter io1;
-  input Absyn.InnerOuter io2;
-  output Boolean prefix1;
-  output Boolean prefix2;
-algorithm
-  (prefix1,prefix2) := match(io1,io2)
-    local Boolean b1,b2;
-    case(Absyn.INNER_OUTER(),Absyn.NOT_INNER_OUTER()) then (true,false);
-    case(Absyn.INNER_OUTER(),Absyn.OUTER()) then (false,true);
-    else
-      equation
-        (_,b1) = innerOuterBooleans(io1);
-        (_,b2) = innerOuterBooleans(io2);
-      then
-        (b1,b2);
-  end match;
-end referOuter;
 
 public function outerConnection "Returns true if either Absyn.InnerOuter is OUTER."
   input Absyn.InnerOuter io1;
@@ -1044,150 +683,9 @@ algorithm
   end matchcontinue;
 end modificationOnOuter;
 
-public function switchInnerToOuterAndPrefix
-"switches the inner to outer attributes of a component in the dae."
-  input list<DAE.Element> inDae;
-  input Absyn.InnerOuter io;
-  input DAE.Prefix pre;
-  output list<DAE.Element> outDae;
- algorithm
-  outDae := matchcontinue (inDae,io,pre)
-    local
-      list<DAE.Element> lst,r_1,r,lst_1;
-      DAE.Element v;
-      DAE.ComponentRef cr;
-      DAE.VarKind vk;
-      DAE.Type t;
-      Option<DAE.Exp> e;
-      list<DAE.Dimension> id;
-      DAE.ConnectorType ct;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      String s1,s2;
-      DAE.Element x;
-      DAE.VarVisibility prot;
-      String idName;
-      DAE.ElementSource source "the origin of the element";
-
-    // Component that is unspecified does not change inner/outer on subcomponents
-    case (lst,Absyn.NOT_INNER_OUTER(),_) then lst;
-
-    case ({},_,_) then {};
-
-    // unspecified variables are changed to inner/outer if component has such prefix.
-    case ((DAE.VAR(componentRef = cr,
-                   kind = vk,
-                   direction = dir,
-                   parallelism = prl,
-                   protection=prot,
-                   ty = t,
-                   binding = e,
-                   dims = id,
-                   connectorType = ct,
-                   source = source,
-                   variableAttributesOption = dae_var_attr,
-                   comment = comment,
-                   innerOuter=Absyn.INNER()) :: r),_,_)
-      equation
-        (_,cr) = PrefixUtil.prefixCref(FCore.emptyCache(),FGraph.empty(),emptyInstHierarchy,pre, cr);
-        r_1 = switchInnerToOuterAndPrefix(r, io, pre);
-      then
-        (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,ct,source,dae_var_attr,comment,io) :: r_1);
-
-    // If var already have inner/outer, keep it.
-    case ( (v as DAE.VAR()) :: r,_,_)
-      equation
-        r_1 = switchInnerToOuterAndPrefix(r, io, pre);
-      then
-        v :: r_1;
-
-    // Traverse components
-    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),_,_)
-      equation
-        lst_1 = switchInnerToOuterAndPrefix(lst, io, pre);
-        r_1 = switchInnerToOuterAndPrefix(r, io, pre);
-      then
-        (DAE.COMP(idName,lst_1,source,comment) :: r_1);
-
-    case ((x :: r),_,_)
-      equation
-        r_1 = switchInnerToOuterAndPrefix(r, io, pre);
-      then
-        (x :: r_1);
-  end matchcontinue;
-end switchInnerToOuterAndPrefix;
-
-public function prefixOuterDaeVars
-"prefixes all the outer variables in the DAE with the given prefix."
-  input list<DAE.Element> inDae;
-  input DAE.Prefix crefPrefix;
-  output list<DAE.Element> outDae;
- algorithm
-  outDae := matchcontinue (inDae,crefPrefix)
-    local
-      list<DAE.Element> lst,r_1,r,lst_1;
-      DAE.Element v;
-      DAE.ComponentRef cr;
-      DAE.VarKind vk;
-      DAE.Type t;
-      Option<DAE.Exp> e;
-      list<DAE.Dimension> id;
-      DAE.ConnectorType ct;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      String s1,s2;
-      DAE.Element x;
-      Absyn.InnerOuter io;
-      DAE.VarVisibility prot;
-      String idName;
-      DAE.ElementSource source "the origin of the element";
-
-
-    case ({},_) then {};
-
-    // prefix variables.
-    case ((DAE.VAR(componentRef = cr,
-                   kind = vk,
-                   direction = dir,
-                   parallelism = prl,
-                   protection=prot,
-                   ty = t,
-                   binding = e,
-                   dims = id,
-                   connectorType = ct,
-                   source = source,
-                   variableAttributesOption = dae_var_attr,
-                   comment = comment,
-                   innerOuter=io) :: r),_)
-      equation
-        (_,cr) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, crefPrefix, cr);
-        r_1 = prefixOuterDaeVars(r, crefPrefix);
-      then
-        (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,ct,source,dae_var_attr,comment,io) :: r_1);
-
-    // Traverse components
-    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),_)
-      equation
-        lst_1 = prefixOuterDaeVars(lst, crefPrefix);
-        r_1 = prefixOuterDaeVars(r, crefPrefix);
-      then
-        (DAE.COMP(idName,lst_1,source,comment) :: r_1);
-
-    case ((x :: r),_)
-      equation
-        r_1 = prefixOuterDaeVars(r, crefPrefix);
-      then
-        (x :: r_1);
-  end matchcontinue;
-end prefixOuterDaeVars;
-
-public function switchInnerToOuterInGraph "
-function switchInnerToOuterInGraph
-  switches the inner to outer attributes of a component in the Env."
+public function switchInnerToOuterInGraph
+  "function switchInnerToOuterInGraph switches the inner to outer attributes of
+   a component in the Env."
   input FCore.Graph inEnv;
   input DAE.ComponentRef inCr;
   output FCore.Graph outEnv;
@@ -1312,7 +810,7 @@ end switchInnerToOuterInChildrenValue;
 ///////////////////////////////////////////////////
 
 
-public function emptyInstInner
+protected function emptyInstInner
   input DAE.Prefix innerPrefix;
   input String name;
   output InstInner outInstInner;
@@ -1698,7 +1196,7 @@ algorithm
   fail();
 end searchForInnerPrefix;
 
-public function printInnerDefStr
+protected function printInnerDefStr
   input InstInner inInstInner;
   output String outStr;
 algorithm
@@ -1759,7 +1257,7 @@ algorithm
   end match;
 end getExistingInnerDeclarations;
 
-public function getInnersFromInstHierarchyHashTable
+protected function getInnersFromInstHierarchyHashTable
 "@author: adrpo
   Returns all the inners defined in the hashtable."
   input InstHierarchyHashTable t;
@@ -1768,7 +1266,7 @@ algorithm
   inners := List.map(hashTableList(t),getValue);
 end getInnersFromInstHierarchyHashTable;
 
-public function getValue
+protected function getValue
   input tuple<Key,Value> tpl;
   output InstInner v;
 algorithm
@@ -1781,7 +1279,7 @@ end getValue;
 // hash table implementation for InnerOuter instance hierarchy //
 /////////////////////////////////////////////////////////////////
 
-public function hashFunc
+protected function hashFunc
 "author: PA
   Calculates a hash value for DAE.ComponentRef"
   input Key k;
@@ -1790,7 +1288,7 @@ algorithm
   res := stringHashDjb2(ComponentReference.printComponentRefStr(k));
 end hashFunc;
 
-public function keyEqual
+protected function keyEqual
   input Key key1;
   input Key key2;
   output Boolean res;
@@ -1798,7 +1296,7 @@ algorithm
      res := ComponentReference.crefEqualNoStringCompare(key1,key2);
 end keyEqual;
 
-public function dumpInstHierarchyHashTable ""
+protected function dumpInstHierarchyHashTable ""
   input InstHierarchyHashTable t;
 algorithm
   print("InstHierarchyHashTable:\n");
@@ -1806,7 +1304,7 @@ algorithm
   print("\n");
 end dumpInstHierarchyHashTable;
 
-public function dumpTuple
+protected function dumpTuple
   input tuple<Key,Value> tpl;
   output String str;
 algorithm
@@ -1844,29 +1342,7 @@ uniontype ValueArray
   end VALUE_ARRAY;
 end ValueArray;
 
-public function cloneInstHierarchyHashTable
-"Author BZ 2008-06
- Make a stand-alone-copy of hashtable."
-input InstHierarchyHashTable inHash;
-output InstHierarchyHashTable outHash;
-algorithm outHash := match(inHash)
-  local
-    array<list<tuple<Key,Integer>>> arg1,arg1_2;
-    Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2;
-    array<Option<tuple<Key,Value>>> arg22,arg22_2;
-  case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22),arg3,arg4))
-    equation
-      arg1_2 = arrayCopy(arg1);
-      arg21_2 = arg21;
-      arg22_2 = arrayCopy(arg22);
-      arg3_2 = arg3;
-      arg4_2 = arg4;
-      then
-        HASHTABLE(arg1_2,VALUE_ARRAY(arg21_2,arg22_2),arg3_2,arg4_2);
-end match;
-end cloneInstHierarchyHashTable;
-
-public function emptyInstHierarchyHashTable
+protected function emptyInstHierarchyHashTable
 "author: PA
   Returns an empty InstHierarchyHashTable.
   Using the bucketsize 100 and array size 10."
@@ -1881,17 +1357,7 @@ algorithm
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,emptyarr),1000,0);
 end emptyInstHierarchyHashTable;
 
-public function isEmpty "Returns true if hashtable is empty"
-  input InstHierarchyHashTable hashTable;
-  output Boolean res;
-algorithm
-  res := match(hashTable)
-    case(HASHTABLE(_,_,_,0)) then true;
-    else false;
-  end match;
-end isEmpty;
-
-public function add
+protected function add
 "author: PA
   Add a Key-Value tuple to hashtable.
   If the Key-Value tuple already exists, the function updates the Value."
@@ -1939,75 +1405,6 @@ algorithm
   end matchcontinue;
 end add;
 
-public function addNoUpdCheck
-"author: PA
-  Add a Key-Value tuple to hashtable.
-  If the Key-Value tuple already exists, the function updates the Value."
-  input tuple<Key,Value> entry;
-  input InstHierarchyHashTable hashTable;
-  output InstHierarchyHashTable outHashTable;
-algorithm
-  outHashTable := matchcontinue (entry,hashTable)
-    local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
-      ValueArray varr_1,varr;
-      list<tuple<Key,Integer>> indexes;
-      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      String name_str;
-      tuple<Key,Value> v,newv;
-      Key key;
-      Value value;
-    // Adding when not existing previously
-    case ((v as (key,_)),HASHTABLE(hashvec,varr,bsize,_))
-      equation
-        hval = hashFunc(key);
-        indx = intMod(hval, bsize);
-        newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, v);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
-      then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
-    else
-      equation
-        print("- InnerOuter.addNoUpdCheck failed\n");
-      then fail();
-  end matchcontinue;
-end addNoUpdCheck;
-
-public function delete
-"author: PA
-  delete the Value associatied with Key from the InstHierarchyHashTable.
-  Note: This function does not delete from the index table, only from the ValueArray.
-  This means that a lot of deletions will not make the InstHierarchyHashTable more compact, it
-  will still contain a lot of incices information."
-  input Key key;
-  input InstHierarchyHashTable hashTable;
-  output InstHierarchyHashTable outHashTable;
-algorithm
-  outHashTable := matchcontinue (key,hashTable)
-    local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
-      ValueArray varr_1,varr;
-      list<tuple<Key,Integer>> indexes;
-      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      String name_str;
-      tuple<Key,Value> v,newv;
-      Value value;
-    // adding when already present => Updating value
-    case (_,HASHTABLE(hashvec,varr,bsize,n))
-      equation
-        (_,indx) = get1(key, hashTable);
-        varr_1 = valueArrayClearnth(varr, indx);
-      then HASHTABLE(hashvec,varr_1,bsize,n);
-    else
-      equation
-        print("-InstHierarchyHashTable.delete failed\n");
-        print("content:"); dumpInstHierarchyHashTable(hashTable);
-      then fail();
-  end matchcontinue;
-end delete;
-
 public function get
 "author: PA
   Returns a Value given a Key and a InstHierarchyHashTable."
@@ -2018,7 +1415,7 @@ algorithm
   (value,_):= get1(key,hashTable);
 end get;
 
-public function get1 "help function to get"
+protected function get1 "help function to get"
   input Key key;
   input InstHierarchyHashTable hashTable;
   output Value value;
@@ -2046,7 +1443,7 @@ algorithm
   end match;
 end get1;
 
-public function get2
+protected function get2
 "author: PA
   Helper function to get"
   input Key key;
@@ -2070,21 +1467,7 @@ algorithm
   end matchcontinue;
 end get2;
 
-public function hashTableValueList "return the Value entries as a list of Values"
-  input InstHierarchyHashTable hashTable;
-  output list<Value> valLst;
-algorithm
-   valLst := List.map(hashTableList(hashTable),Util.tuple22);
-end hashTableValueList;
-
-public function hashTableKeyList "return the Key entries as a list of Keys"
-  input InstHierarchyHashTable hashTable;
-  output list<Key> valLst;
-algorithm
-   valLst := List.map(hashTableList(hashTable),Util.tuple21);
-end hashTableKeyList;
-
-public function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"
+protected function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"
   input InstHierarchyHashTable hashTable;
   output list<tuple<Key,Value>> tplLst;
 algorithm
@@ -2096,7 +1479,7 @@ algorithm
   end match;
 end hashTableList;
 
-public function valueArrayList
+protected function valueArrayList
 "author: PA
   Transforms a ValueArray to a tuple<Key,Value> list"
   input ValueArray valueArray;
@@ -2123,7 +1506,7 @@ algorithm
   end matchcontinue;
 end valueArrayList;
 
-public function valueArrayList2 "Helper function to valueArrayList"
+protected function valueArrayList2 "Helper function to valueArrayList"
   input array<Option<tuple<Key,Value>>> inVarOptionArray1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -2158,7 +1541,7 @@ algorithm
   end matchcontinue;
 end valueArrayList2;
 
-public function valueArrayLength
+protected function valueArrayLength
 "author: PA
   Returns the number of elements in the ValueArray"
   input ValueArray valueArray;
@@ -2169,7 +1552,7 @@ algorithm
   end match;
 end valueArrayLength;
 
-public function valueArrayAdd
+protected function valueArrayAdd
 "author: PA
   Adds an entry last to the ValueArray, increasing
   array size if no space left by factor 1.4"
@@ -2211,7 +1594,7 @@ algorithm
   end matchcontinue;
 end valueArrayAdd;
 
-public function valueArraySetnth
+protected function valueArraySetnth
 "author: PA
   Set the n:th variable in the ValueArray to value."
   input ValueArray valueArray;
@@ -2237,7 +1620,7 @@ algorithm
   end matchcontinue;
 end valueArraySetnth;
 
-public function valueArrayClearnth
+protected function valueArrayClearnth
 "author: PA
   Clears the n:th variable in the ValueArray (set to NONE())."
   input ValueArray valueArray;
@@ -2262,7 +1645,7 @@ algorithm
   end matchcontinue;
 end valueArrayClearnth;
 
-public function valueArrayNth
+protected function valueArrayNth
 "author: PA
   Retrieve the n:th Vale from ValueArray, index from 0..n-1."
   input ValueArray valueArray;
