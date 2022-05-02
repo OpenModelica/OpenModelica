@@ -2704,64 +2704,66 @@ algorithm
       list<Absyn.Annotation> ann;
 
     // a class with parts - we can find the element in the public list
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt),info = file_info))
+    case (c1,outClass as Absyn.CLASS(body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt)))
       equation
         publst = getPublicList(parts);
         (publst2, true) = replaceClassInElementitemlist(publst, c1, mergeAST);
         parts2 = replacePublicList(parts, publst2);
+        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+        outClass;
 
     // a class with parts - we can find the element in the protected list
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
+    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                          body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt),info = file_info))
       equation
         prolst = getProtectedList(parts);
         (prolst2, true) = replaceClassInElementitemlist(prolst, c1, mergeAST);
         parts2 = replaceProtectedList(parts, prolst2);
+        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+        outClass;
 
     // a class with parts - we cannot find the element in the public or protected list, add it to the public list
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
+    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                          body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt),info = file_info))
       equation
         publst = getPublicList(parts);
         publst = addClassInElementitemlist(publst, c1);
         parts2 = replacePublicList(parts, publst);
+        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+        outClass;
 
     // an extended class with parts: model extends M end M; - we can find the element in the public list
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt),info = file_info))
+    case (c1,outClass as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt)))
       equation
         publst = getPublicList(parts);
         (publst2, true) = replaceClassInElementitemlist(publst, c1, mergeAST);
         parts2 = replacePublicList(parts, publst2);
+        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+        outClass;
 
     // an extended class with parts: model extends M end M; - we can find the element in the protected list
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt),info = file_info))
+    case (c1,outClass as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt)))
       equation
         prolst = getProtectedList(parts);
         (prolst2, true) = replaceClassInElementitemlist(prolst, c1, mergeAST);
         parts2 = replaceProtectedList(parts, prolst2);
+        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+        outClass;
 
     // an extended class with parts: model extends M end M; - we cannot find the element in the public or protected list, add it to the public list
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt),info = file_info))
+    case (c1,outClass as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt)))
       equation
         publst = getPublicList(parts);
         publst = addClassInElementitemlist(publst, c1);
         parts2 = replacePublicList(parts, publst);
+        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+        outClass;
 
     else
       equation
@@ -3826,7 +3828,7 @@ algorithm
 
     // if cNew and cOld has parts, get the foreign elements (loaded from other file) from cOld
     // and append them to the public list of cNew
-    case (Absyn.CLASS(n, p, f, e, r, Absyn.PARTS(typeVars1,classAttrs1,partsC1,ann1,cmt1), i),
+    case (c as Absyn.CLASS(body=Absyn.PARTS(typeVars1,classAttrs1,partsC1,ann1,cmt1)),
           Absyn.CLASS(body = Absyn.PARTS(classParts = partsC2), info = SOURCEINFO(fileName = file)))
       equation
         pubElementsC2 = getPublicList(partsC2);
@@ -3834,7 +3836,7 @@ algorithm
         pubElementsC1 = getPublicList(partsC1);
         pubElementsC1 = mergeElements(pubElementsC1, pubElementsC2);
         partsC1 = replacePublicList(partsC1, pubElementsC1);
-        c = Absyn.CLASS(n, p, f, e, r, Absyn.PARTS(typeVars1,classAttrs1,partsC1,ann1,cmt1), i);
+        c.body = Absyn.PARTS(typeVars1,classAttrs1,partsC1,ann1,cmt1);
       then c;
 
     // TODO! FIXME! handle also CLASS_EXTENDS!
@@ -4023,23 +4025,23 @@ algorithm
       String from, to;
       Absyn.Annotation annotation_;
     /* a class with parts */
-    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),info = file_info),from,to,annotation_)
+    case (outClass as Absyn.CLASS(body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt)),from,to,annotation_)
       equation
         eqlst = getEquationList(parts);
         eqlst_1 = updateConnectionAnnotationInEqList(eqlst, from, to, annotation_);
         parts2 = replaceEquationList(parts, eqlst_1);
+        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+        outClass;
     /* an extended class with parts: model extends M end M;  */
-    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),from,to,annotation_)
+    case (outClass as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)),from,to,annotation_)
       equation
         eqlst = getEquationList(parts);
         eqlst_1 = updateConnectionAnnotationInEqList(eqlst, from, to, annotation_);
         parts2 = replaceEquationList(parts, eqlst_1);
+        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+        outClass;
   end match;
 end updateConnectionAnnotationInClass;
 
@@ -4149,23 +4151,23 @@ algorithm
       list<Absyn.Annotation> ann;
       String from, to, fromNew, toNew;
     /* a class with parts */
-    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),info = file_info),from,to,fromNew,toNew)
+    case (outClass as Absyn.CLASS(body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt)),from,to,fromNew,toNew)
       equation
         eqlst = getEquationList(parts);
         eqlst_1 = updateConnectionNamesInEqList(eqlst, from, to, fromNew, toNew);
         parts2 = replaceEquationList(parts, eqlst_1);
+        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+        outClass;
     /* an extended class with parts: model extends M end M;  */
-    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),from,to,fromNew,toNew)
+    case (outClass as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)),from,to,fromNew,toNew)
       equation
         eqlst = getEquationList(parts);
         eqlst_1 = updateConnectionNamesInEqList(eqlst, from, to, fromNew, toNew);
         parts2 = replaceEquationList(parts, eqlst_1);
+        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+        outClass;
   end match;
 end updateConnectionNamesInClass;
 
@@ -4421,44 +4423,48 @@ algorithm
       list<Absyn.Annotation> ann;
 
     // a class with parts - class found in public
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
+    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                          body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann, comment = cmt),info = file_info))
       equation
         publst = getPublicList(parts);
         publst2 = removeClassInElementitemlist(publst, c1);
         parts2 = replacePublicList(parts, publst2);
+        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+        outClass;
 
     // a class with parts - class found in protected
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
+    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                          body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann, comment = cmt),info = file_info))
       equation
         prolst = getProtectedList(parts);
         prolst2 = removeClassInElementitemlist(prolst, c1);
         parts2 = replaceProtectedList(parts, prolst2);
+        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+        outClass;
 
     // an extended class with parts: model extends M end M; - class found in public
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
+    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                          body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt,ann = ann),info = file_info))
       equation
         publst = getPublicList(parts);
         publst2 = removeClassInElementitemlist(publst, c1);
         parts2 = replacePublicList(parts, publst2);
+        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+        outClass;
 
     // an extended class with parts: model extends M end M; - class found in protected
-    case (c1,Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
+    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                          body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt,ann = ann),info = file_info))
       equation
         prolst = getProtectedList(parts);
         prolst2 = removeClassInElementitemlist(prolst, c1);
         parts2 = replaceProtectedList(parts, prolst2);
+        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then
-        Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+        outClass;
 
     // class not found anywhere!
     case (Absyn.CLASS(name = n),Absyn.CLASS(name = a, info = file_info))

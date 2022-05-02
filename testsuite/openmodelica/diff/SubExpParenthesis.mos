@@ -20,7 +20,7 @@ diffModelicaFileListings(a, b, OpenModelica.Scripting.DiffFormat.color);getError
 // "
 // model M
 // equation
-//   a =  0/[9;31m(1+A(x))[0m[4;32m(1+B(x))[0m;
+//   a =  0/[9;31m(1+A(x))[0m[4;32m (1+B(x))[0m;
 // end M;"
 // ""
 // endResult

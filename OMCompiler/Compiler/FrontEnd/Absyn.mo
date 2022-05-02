@@ -121,6 +121,8 @@ uniontype Class
     Boolean     encapsulatedPrefix "true if encapsulated" ;
     Restriction restriction  "Restriction" ;
     ClassDef    body;
+    list<String> commentsBeforeEnd;
+    list<String> commentsAfterEnd;
     Info       info    "Information: FileName is the class is defined in +
                isReadOnly bool + start line no + start column no +
                end line no + end column no";
@@ -605,6 +607,10 @@ uniontype ElementArg "Wrapper for things that modify elements, modifications and
     Info info "needed because ElementSpec does not contain this info; Element does";
   end REDECLARATION;
 
+  record ELEMENTARGCOMMENT "A lexer comment"
+    String comment;
+  end ELEMENTARGCOMMENT;
+
 end ElementArg;
 
 public
@@ -809,6 +815,12 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Exp exp;
     Exp index;
   end DOT;
+
+  record EXPRESSIONCOMMENT
+    list<String> commentsBefore;
+    Exp exp;
+    list<String> commentsAfter;
+  end EXPRESSIONCOMMENT;
 
 end Exp;
 

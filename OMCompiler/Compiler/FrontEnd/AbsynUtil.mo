@@ -323,6 +323,12 @@ algorithm
       then
         (if referenceEq(exp.exp,e1) and referenceEq(exp.index,e2) then exp else Absyn.DOT(e1, e2), arg);
 
+    case Absyn.EXPRESSIONCOMMENT()
+      equation
+        (e1, arg) = traverseExpBidir(exp.exp, enterFunc, exitFunc, arg);
+      then
+        (if referenceEq(exp.exp,e1) then exp else Absyn.EXPRESSIONCOMMENT(exp.commentsBefore, e1, exp.commentsAfter), arg);
+
     else
       algorithm
         (,,enterName) := System.dladdr(enterFunc);
@@ -661,6 +667,8 @@ algorithm
         equationItem.equation_ := eq;
       then
         ();
+
+    case Absyn.EQUATIONITEMCOMMENT() then ();
 
   end match;
 end traverseEquationItemBidir;
@@ -1908,6 +1916,9 @@ algorithm
       // inExp.index is only allowed to contain names to index the function call; not crefs that are evaluated in any way
       then getCrefFromExp(inExp.exp,includeSubs,includeFunctions);
 
+    case (Absyn.EXPRESSIONCOMMENT(),_,_)
+      then getCrefFromExp(inExp.exp,includeSubs,includeFunctions);
+
     else
       equation
         Error.addInternalError(getInstanceName() + " failed " + Dump.printExpStr(inExp), sourceInfo());
@@ -2407,6 +2418,33 @@ algorithm
         subscripts;
   end match;
 end getSubsFromCref;
+
+public function getString
+  input Absyn.Exp exp;
+  output String str;
+algorithm
+  str := match exp
+    case Absyn.EXPRESSIONCOMMENT() then getString(exp.exp);
+    case Absyn.STRING(str) then str;
+  end match;
+end getString;
+
+public function stripCommentExpressions
+  input output Absyn.Exp exp;
+algorithm
+  (exp,_) := traverseExp(exp, stripCommentExpressionsHelper, true);
+end stripCommentExpressions;
+
+protected function stripCommentExpressionsHelper<T>
+  input output Absyn.Exp exp;
+  input output T extra;
+algorithm
+  exp := match exp
+    case Absyn.TUPLE({exp}) then exp;
+    case Absyn.EXPRESSIONCOMMENT() then exp.exp;
+    else exp;
+  end match;
+end stripCommentExpressionsHelper;
 
 public function crefGetLastIdent
   "Gets the last ident in a Absyn.ComponentRef"
@@ -3694,7 +3732,7 @@ algorithm
   outExternal := List.find(class_parts, isExternalPart);
 end getExternalDecl;
 
-protected function isExternalPart
+public function isExternalPart
   input Absyn.ClassPart inClassPart;
   output Boolean outFound;
 algorithm
@@ -5607,6 +5645,13 @@ public function makeCall
 algorithm
   callExp := Absyn.Exp.CALL(name, Absyn.FunctionArgs.FUNCTIONARGS(posArgs, namedArgs), {});
 end makeCall;
+
+public function setClassCommentsAfterEnd
+  input output Absyn.Class cl;
+  input list<String> comments;
+algorithm
+  cl.commentsAfterEnd := comments;
+end setClassCommentsAfterEnd;
 
 public function pathReplaceFirst
   "Replaces the first identifier of a path with another path. Ex:

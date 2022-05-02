@@ -310,6 +310,11 @@ algorithm
         (cache,patternTail) = elabPattern(cache,env,tail,tyTail,info);
       then (cache,DAE.PAT_CONS(patternHead,patternTail));
 
+    case (cache,_,Absyn.TUPLE({exp}),_,_,_)
+      algorithm
+        (cache,pattern) := elabPattern2(cache,env,exp,ty,info,numError);
+      then (cache,pattern);
+
     case (cache,_,Absyn.TUPLE(exps),DAE.T_METATUPLE(types = tys),_,_)
       equation
         tys = List.map(tys, Types.boxIfUnboxedType);
@@ -397,6 +402,11 @@ algorithm
       then fail();
 
     case (cache,_,Absyn.CREF(Absyn.WILD()),_,_,_) then (cache,DAE.PAT_WILD());
+
+    case (cache,_,Absyn.EXPRESSIONCOMMENT(),_,_,_)
+      equation
+        (cache,pattern) = elabPattern2(cache,env,inLhs.exp,ty,info,numError);
+      then (cache,pattern);
 
     case (_,_,lhs,_,_,_)
       equation
@@ -2133,7 +2143,7 @@ protected function elabResultExp
   output Option<DAE.Type> resType;
 algorithm
   (outCache,outBody,resExp,resultInfo,resType) :=
-  matchcontinue (inCache,inEnv,inBody,exp)
+  matchcontinue (inCache,inEnv,inBody,AbsynUtil.stripCommentExpressions(exp))
     local
       DAE.Exp elabExp;
       DAE.Properties prop;
@@ -3086,6 +3096,10 @@ protected function convertExpToPatterns
   output list<Absyn.Exp> outInputs;
 algorithm
   outInputs := match inExp
+    local
+      Absyn.Exp exp;
+    case Absyn.EXPRESSIONCOMMENT(exp=exp) then convertExpToPatterns(exp);
+    case Absyn.TUPLE({exp}) then convertExpToPatterns(exp);
     case Absyn.TUPLE() then inExp.expressions;
     else {inExp};
   end match;

@@ -337,24 +337,9 @@ protected function containsExternalFuncDecl
 algorithm
   outBoolean := match (inClass)
     local
-      Boolean res,b,c,d;
-      String a;
-      Absyn.Restriction e;
-      list<Absyn.ClassPart> rest;
-      Option<String> cmt;
-      SourceInfo file_info;
-      list<Absyn.Annotation> ann;
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.EXTERNAL() :: _)))) then true;
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (_ :: rest),comment = cmt,ann=ann),info = file_info))
-      then containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info));
-    /* adrpo: handling also the case model extends X external ... end X; */
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.EXTERNAL() :: _)))) then true;
-    /* adrpo: handling also the case model extends X external ... end X; */
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (_ :: rest),comment = cmt,ann=ann),
-                      info = file_info))
-      then containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info));
+      list<Absyn.ClassPart> parts;
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts))) then List.exist(parts,AbsynUtil.isExternalPart);
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))) then List.exist(parts,AbsynUtil.isExternalPart);
     else false;
   end match;
 end containsExternalFuncDecl;
@@ -1776,6 +1761,7 @@ algorithm
               elem));
         then
           sub :: subMods;
+      case Absyn.ELEMENTARGCOMMENT() then subMods;
     end match;
   end for;
 

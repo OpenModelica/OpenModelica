@@ -1055,6 +1055,9 @@ protected
         then
           ();
 
+      case Absyn.ElementArg.ELEMENTARGCOMMENT()
+        then ();
+
     end match;
   end convertElementArg;
 
@@ -2026,6 +2029,12 @@ protected
       case Absyn.Exp.TUPLE()
         algorithm
           exp.expressions := convertExps(exp.expressions, localRules, rules, env, info);
+        then
+          ();
+
+      case Absyn.Exp.EXPRESSIONCOMMENT()
+        algorithm
+          exp.exp := convertExp(exp.exp, localRules, rules, env, info);
         then
           ();
 

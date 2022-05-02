@@ -2245,7 +2245,7 @@ algorithm
 
         System.freeLibrary(libHandle, print_debug);
         // update the build time in the class!
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,info) := InteractiveUtil.getPathedClassInProgram(funcpath, p);
+        Absyn.CLASS(restriction=Absyn.R_FUNCTION(_),info=info) := InteractiveUtil.getPathedClassInProgram(funcpath, p);
 
         w := InteractiveUtil.buildWithin(funcpath);
 
