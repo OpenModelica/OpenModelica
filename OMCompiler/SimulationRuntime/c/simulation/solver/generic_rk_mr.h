@@ -76,6 +76,14 @@ typedef struct DATA_GENERIC_RK_MR{
 } DATA_GENERIC_RK_MR;
 
 void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data);
-int genericRK_MR_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+int genericRK_MR_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
+//auxiliary vector functions
+void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
+void linear_interpolation_MR(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
+void printVector_genericRK_MR(char name[], double* a, int n, double time, int nIndx, int* indx);
+void printMatrix_genericRK_MR(char name[], double* a, int n, double time);
+void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx);
+
+
 
 #endif /* _DATA_GENERIC_RK_MR_H_ */

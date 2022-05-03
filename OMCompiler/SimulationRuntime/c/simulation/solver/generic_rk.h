@@ -59,8 +59,9 @@ typedef struct DATA_GENERIC_RK{
   ANALYTIC_JACOBIAN* jacobian;
   double *y;                            /* Result vector of RK step */
   double *yt;                           /* Result vector of embedded RK step */
-  modelica_real* yOld;                  /* Result vector of last RK step ???? */
-  double* f;                            /* State derivatives of ODE */
+  double *yLeft;
+  double *yOld;                         /* Result vector of last RK step ???? */
+  double *f;                            /* State derivatives of ODE */
   double *Jf;
   double *k;                            /* Vector k with result of intermediate steps of Runge-Kutta method */
                                         // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
@@ -68,7 +69,7 @@ typedef struct DATA_GENERIC_RK{
   double *errest, *errtol;
   double *err;
   double err_slow, err_fast, percentage, err_new, err_old;
-  double time;
+  double time, timeLeft, timeRight;
   double stepSize, lastStepSize;
   double stepSize_old, stepSize_fast;
   int act_stage;                      /* Current stage of Runge-Kutta method. */
