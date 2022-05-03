@@ -665,6 +665,9 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     /* update time with performed stepSize */
     userdata->time += userdata->lastStepSize;
 
+    /* step is accepted and yOld needs to be updated, store yOld for later interpolation... */
+    copyVector_genericRK_MR(userdata->yt, userdata->yOld, userdata->nFastStates, userdata->fastStates);
+
     /* step is accepted and yOld needs to be updated */
     copyVector_genericRK_MR(userdata->yOld, userdata->y, userdata->nFastStates, userdata->fastStates);
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
@@ -675,9 +678,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   copyVector_genericRK_MR(genericRKData->err, userdata->err, userdata->nFastStates, userdata->fastStates);
 
   // interpolate the values on the time grid of the outer integration
+
   linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt,
                           userdata->time, userdata->y,
-                          targetTime, genericRKData->y,
+                          genericRKData->time + genericRKData->lastStepSize, genericRKData->y,
                           userdata->nFastStates, userdata->fastStates);
 
   if (!solverInfo->integratorSteps)
@@ -685,7 +689,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt,
                             userdata->time, userdata->y,
-                            sDataOld->timeValue + solverInfo->currentStepSize, sData->realVars,
+                            targetTime, sData->realVars,
                             userdata->nFastStates, userdata->fastStates);
     // printVector_genericRK("yOld: ", userdata->yt, data->modelData->nStates, userdata->time-userdata->lastStepSize);
     // printVector_genericRK("y:    ", userdata->y, data->modelData->nStates, userdata->time);

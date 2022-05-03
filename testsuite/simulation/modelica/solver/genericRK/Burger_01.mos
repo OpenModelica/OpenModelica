@@ -49,6 +49,17 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
                               "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
 getErrorString();
 
+// Simulate with ESDIRK3 and KINSOL+KLU
+system("./burgerEq -s=genericRKmr -embeddedRKLim=0.3 -rkNLS=kinsol", "burgerEq_esdirk3_mr.log");
+print(readFile("burgerEq_esdirk3_mr.log"));
+
+diffSimulationResults(actualFile = "burgerEq_res.mat",
+                      expectedFile = "burgerEq_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"y[291]", "y[292]", "y[293]", "y[294]", "y[295]", "y[296]", "y[297]", "y[298]", "y[299]", "y[300]",
+                              "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
+getErrorString();
+
 // Result:
 // true
 // ""
@@ -63,6 +74,12 @@ getErrorString();
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true,{})
+// ""
 // 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

@@ -806,6 +806,8 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   rk_data->nFastStates = 0;
   rk_data->nSlowStates = rk_data->nStates;
+  for (int i=0; i<rk_data->nStates; i++)
+    rk_data->slowStates[i] = i;
   //rk_data->percentage = 0.01;
 
   if (solverInfo->solverMethod == S_GENERIC_RK_MR) {
@@ -1547,7 +1549,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         for (i=0; i<rk_data->nStates; i++)
         {
           // step of outer integration will always be accepted (rk_data->err[i]<1)
-          if (rk_data->err[i] > rk_data->percentage || rk_data->err[i]>1)
+          if (rk_data->err[i] > rk_data->percentage*err || rk_data->err[i]>1)
           {
             rk_data->fastStates[rk_data->nFastStates] = i;
             rk_data->nFastStates++;
@@ -1649,8 +1651,9 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       sim_result.emit(&sim_result, data, threadData);
     }
   }
-//  if (rk_data->multi_rate && rk_data->dataRKmr->time < targetTime)
-//    genericRK_MR_step(data, threadData, solverInfo, targetTime);
+  // Check if multirate step is necessary, otherwise the correct values are already stored in sData
+  if (rk_data->multi_rate)
+    genericRK_MR_step(data, threadData, solverInfo, targetTime);
 
 
   if (!solverInfo->integratorSteps)

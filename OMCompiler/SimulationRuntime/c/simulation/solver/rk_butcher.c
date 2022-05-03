@@ -69,7 +69,7 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
   // ESDIRK2 method
   if (flag_value != NULL) {
     lim = atof(omc_flagValue[FLAG_RK_PAR]);
-    printf("embedded method yields R(\u221e) =  %.19g\n", lim);
+    //printf("embedded method yields R(\u221e) =  %.19g\n", lim);
   } else
   {
     lim = 1;
@@ -125,7 +125,7 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
   // ESDIRK2 method
   if (flag_value != NULL) {
     lim = atof(omc_flagValue[FLAG_RK_PAR]);
-    printf("embedded method yields R(\u221e) =  %.19g\n", lim);
+    //printf("embedded method yields R(\u221e) =  %.19g\n", lim);
   } else
   {
     lim = 0.3;
