@@ -591,7 +591,7 @@ QString SimulationOutputWidget::getPathsFromBatFile(QString fileName) {
   // Second line is where the PATH is set. We want that.
   line = batFile.readLine();
 
-  if (!line.startsWith("set PATH=")) {
+  if (!line.toLower().startsWith("set path=")) {
     QString warnMessage = "Failed to read the neccesary PATH values from '" + fileName + "'\n"
                           + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
     writeSimulationOutput(warnMessage, StringHandler::Error, true);

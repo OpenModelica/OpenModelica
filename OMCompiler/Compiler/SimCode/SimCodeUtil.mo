@@ -15319,12 +15319,12 @@ algorithm
         locations := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
         locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/";
         str := "@echo off\n"
-                + "set PATH=" + locations + ";%PATH%;\n"
-                + "set ERRORLEVEL=\n"
-                + "call \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
-                + "set RESULT=%ERRORLEVEL%\n"
+                + "SET PATH=" + locations + ";%PATH%;\n"
+                + "SET ERRORLEVEL=\n"
+                + "CALL \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
+                + "SET RESULT=%ERRORLEVEL%\n"
                 + "\n"
-                + "exit /b %RESULT%\n";
+                + "EXIT /b %RESULT%\n";
         File.write(file, str);
       then (fileName);
     else
