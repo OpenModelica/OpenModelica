@@ -48,6 +48,8 @@ target_link_libraries(ModelicaExternalC_shared PUBLIC omc::simrt::runtime)
 
 if(MINGW)
   target_link_options(ModelicaExternalC_shared PRIVATE -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(ModelicaExternalC_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
@@ -74,6 +76,8 @@ target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
 
 if(MINGW)
   target_link_options(ModelicaMatIO_shared PRIVATE -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(ModelicaMatIO_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
@@ -95,6 +99,8 @@ target_link_libraries(ModelicaIO_shared PUBLIC ModelicaMatIO_shared)
 
 if(MINGW)
   target_link_options(ModelicaIO_shared PRIVATE -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(ModelicaIO_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
@@ -131,6 +137,8 @@ endif()
 
 if(MINGW)
   target_link_options(ModelicaStandardTables_shared PRIVATE -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(ModelicaStandardTables_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 

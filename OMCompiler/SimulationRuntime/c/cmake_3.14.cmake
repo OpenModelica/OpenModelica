@@ -43,6 +43,8 @@ if(WIN32)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC wsock32)
   target_link_options(OpenModelicaRuntimeC PRIVATE  -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(OpenModelicaRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif(WIN32)
 
 
@@ -79,6 +81,8 @@ target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
 
 if(WIN32)
   target_link_options(SimulationRuntimeC PRIVATE  -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif(WIN32)
 
 if(WITH_IPOPT)

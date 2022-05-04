@@ -229,6 +229,8 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
 # lib directly and we have no way of marking specific MetaModelica functions for exporting.
 if(MINGW)
   target_link_options(OpenModelicaCompiler PRIVATE  -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(OpenModelicaCompiler PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 # OMC Executable.
