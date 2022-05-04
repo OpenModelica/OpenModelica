@@ -292,7 +292,8 @@ algorithm
   userLibraries := getUserLibraryPath();
   packageIndex := userLibraries + "index.json";
   obj := JSON.emptyObject();
-  if not listMember(userLibraries, mps) then
+  // User library path ends with forward slash so compare the path with and without leading forward slash
+  if not listMember(userLibraries, mps) and not listMember(Util.removeLastNChar(userLibraries, 1), mps) then
     if printError then
       Error.addMessage(Error.ERROR_PKG_INDEX_NOT_ON_PATH, {mp, userLibraries});
     end if;
