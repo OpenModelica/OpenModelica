@@ -58,17 +58,17 @@ bool Equation::depends_on(const TaskNode& other_b) const {
     // True dependency
     found_dep = utility::has_intersection(this->rhs.begin(), this->rhs.end(), other.lhs.begin(), other.lhs.end());
     // Anti-dependency
-    if (!found_dep) {
-        found_dep = utility::has_intersection(this->lhs.begin(), this->lhs.end(), other.rhs.begin(), other.rhs.end());
-        if (found_dep)
-            std::cout << "found anti-dep" << this->index << " and " << other.index << std::endl;
-    }
-    // output-dependency
-    if (!found_dep) {
-        found_dep = utility::has_intersection(this->lhs.begin(), this->lhs.end(), other.lhs.begin(), other.lhs.end());
-        if (found_dep)
-            std::cout << "found output-dep" << this->index << " and " << other.index << std::endl;
-    }
+    // if (!found_dep) {
+    //     found_dep = utility::has_intersection(this->lhs.begin(), this->lhs.end(), other.rhs.begin(), other.rhs.end());
+    //     if (found_dep)
+    //         std::cout << "found anti-dep" << this->index << " and " << other.index << std::endl;
+    // }
+    // // output-dependency
+    // if (!found_dep) {
+    //     found_dep = utility::has_intersection(this->lhs.begin(), this->lhs.end(), other.lhs.begin(), other.lhs.end());
+    //     if (found_dep)
+    //         std::cout << "found output-dep" << this->index << " and " << other.index << std::endl;
+    // }
 
     return found_dep;
 }
