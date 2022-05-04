@@ -1,7 +1,7 @@
 OMEdit – OpenModelica Connection Editor
 =======================================
 
-OMEdit – OpenModelica Connection Editor is the new Graphical User
+OMEdit – OpenModelica Connection Editor is the new Graphical User 
 Interface for graphical model editing in OpenModelica. It is implemented
 in C++ using the Qt graphical user interface library and supports
 the Modelica Standard Library that is included in the latest
