@@ -250,6 +250,7 @@ algorithm
       then
         exp;
 
+    case "der"       then simplifyDer(listHead(args), call);
     case "fill"      then simplifyFill(listHead(args), listRest(args), call);
     case "homotopy"  then simplifyHomotopy(args, call);
     case "max"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
@@ -389,6 +390,18 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyHomotopy;
+
+function simplifyDer
+  input Expression arg;
+  input Call call;
+  output Expression exp;
+algorithm
+  if Call.variability(call) < Variability.DISCRETE then
+    exp := Expression.makeZero(Expression.typeOf(arg));
+  else
+    exp := Expression.CALL(call);
+  end if;
+end simplifyDer;
 
 function simplifyArrayConstructor
   input Call call;
