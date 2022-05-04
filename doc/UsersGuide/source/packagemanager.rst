@@ -56,18 +56,22 @@ the dependencies declared in the uses annotation.
 The Package Manager
 -------------------
 
-The Open Source Modelica Consortium (OSMC) maintains a collection of publicly available, open-source Modelica packages
-on its servers. They are routinely tested with past released versions of OpenModelica, as well as with the current development
-version on the master branch, see the `overview report <https://libraries.openmodelica.org/branches/overview-combined.html>`_.
+The Open Source Modelica Consortium (OSMC) maintains a collection of publicly available, open-source Modelica libraries
+on its servers, see https://github.com/OpenModelica/OMPackageManager. These libraries are routinely tested with past
+released versions of OpenModelica, as well as with the current development version on the master branch, see 
+the `overview report <https://libraries.openmodelica.org/branches/overview-combined.html>`_.
 Based on the testing results and on information gathered from the library developers, these packages are classified
 in terms of level of support in OpenModelica. Backwards-compatibility information is also collected from the
 conversion annotations.
 
 The OpenModelica Package Manager relies on this information to install the best versions of the library dependencies of your
-own Modelica packages. It can be run both from the OMEdit GUI and from the command-line interactive environment.
+own, locally developed Modelica packages and models. It can be run both from the OMEdit GUI and from the command-line interactive environment. The libraries
+and their ``index.json`` index file with all the library metadata are installed in the ``~/.openmodelica/libraries`` directory under
+Linux and in the ``%AppData%\.openmodelica\libraries`` directory on Windows. Note that these directories are user-specific, so if there are
+multiple users on the same computer, each of them will install and manage his/her own set of libraries independently from the others.
 
-Note that the Package Manager may install multiple builds of the same library version on your PC, if they are indexed on the
-OSMC servers. When this happens, they are distinguished among each other by means of
+The Package Manager may install multiple builds of the same library version in your own package manager directory,
+if they are indexed on the OSMC servers. When this happens, they are distinguished among each other by means of
 `semver <https://semver.org/#semantic-versioning-specification-semver>`_-style pre- or post-release metadata in the
 top directory name on the file system. Post-release builds are denoted by a plus sign (e.g. ``2.0.0+build.02``)
 and have higher priority over the corresponding plain release
@@ -95,27 +99,34 @@ Running Conversion Scripts in OMEdit
 Automatically Loaded Packages in OMEdit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When you start OMEdit, some packages are automatically loaded into the environment, and shown in the Libraries
+When you start OMEdit, some packages can be automatically loaded into the environment, and shown in the Libraries
 Browser. You can configure which ones are loaded from the Tools|Options|Libraries menu.
 
 Please note that automatically loaded libraries may be in conflict with the dependencies of packages that you may
-then load from the File menu. For example, if you automatically load MSL ``4.0.0``, and then open a library that
-uses MSL ``3.2.3``, you get a conflict, because the former is not backwards-compatible with the latter. In this
-case you have three options:
+later load from the File menu. For example, if you automatically load Modelica ``4.0.0``, and then load a library XYZ that
+still uses MSL ``3.2.3``, you get a conflict, because Modelica ``4.0.0`` is not backwards-compatible with Modelica ``3.2.3``,
+so XYZ cannot be used.
 
-- cancel the operation;
-- unload the conflicting library, i.e., MSL ``4.0.0``, and load the most recent one compatible with the one
-  declared in the uses annotation of the opened library, i.e., MSL ``3.2.3``;
-- upgrade the library you just opened to use the already loaded one, i.e. MSL ``4.0.0``, by running the automatic
-  conversion script; note that this operation is irreversible and must be carefully planned, considering all the
-  users of the library that is undergoing automatic conversion.
+In this case you have two options:
+
+- Cancel Operation: this means XYZ is not actually loaded, and all previously loaded libraries remain in place.
+- Unload all and Reload XYZ: in this case, all previously loaded libraries, that may generate conflicts, are unloaded first;
+  then XYZ is loaded, and finally the right versions of the libraries XYZ uses, as declared in its ``uses`` annotation,
+  will be loaded automatically.
+  
+If you are normally working with only one version of the Modelica standard library, you can set it to be automatically loaded
+from the Tools|Options|Libraries menu; in case you need to work with a library that uses a previous, non-backwards compatible
+version, the Unload all and Reload option comes handy. Otherwise, you can avoid loading the Modelica library automatically
+upon starting OMEdit, and let the right version of the Modelica library be loaded automatically when you open the library you
+want to work with. In this case, if you want to get the Modelica library into the Package Browser to start developing a new library,
+you can do so easily from the Welcome tab, by clicking on the System Libraries button and selecting the version that you want to load.
 
 Manually Loading Packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you want to maintain full control over which libraries are opened, you can use the File | Open Model/Library Files(s)
+If you want to maintain full control over which library dependencies are loaded, you can use the File | Open Model/Library Files(s)
 menu command in OMEdit to open the libraries one by one from specific locations in your file system. Note,
-however, that whenever a library is loaded, its dependencies as declared in the uses annotation will automatically
+however, that whenever a library is loaded, its dependencies, that are declared in its ``uses`` annotation, will automatically
 be loaded. If you want to avoid that, you need to load the library dependencies in reverse order, so that the
 intended library dependencies are already loaded when you open the library that needs them.
 
