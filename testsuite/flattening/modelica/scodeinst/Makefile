@@ -504,6 +504,7 @@ FuncBuiltinCross.mo \
 FuncBuiltinDelay.mo \
 FuncBuiltinDer.mo \
 FuncBuiltinDerInvalid1.mo \
+FuncBuiltinDerInvalid2.mo \
 FuncBuiltinDiagonal.mo \
 FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \

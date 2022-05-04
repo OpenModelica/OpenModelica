@@ -624,7 +624,8 @@ protected
 
     // The argument must be differentiable, i.e. not discrete, unless where in a
     // scope where everything is discrete (like an initial equation).
-    if variability == Variability.DISCRETE and not InstContext.inDiscreteScope(context) then
+    if Prefixes.effectiveVariability(variability) == Variability.DISCRETE and
+       not InstContext.inDiscreteScope(context) then
       Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
         {Expression.toString(arg)}, info);
     end if;
