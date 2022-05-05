@@ -429,7 +429,7 @@ void* System_moFiles(const char *directory)
 {
   int i,count;
   void *res;
-  struct dirent **files;
+  struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_mo, NULL);
   res = mmc_mk_nil();
@@ -438,6 +438,7 @@ void* System_moFiles(const char *directory)
     res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
     free(files[i]);
   }
+  free(files);
   return res;
 }
 #endif
@@ -470,7 +471,7 @@ void* System_mocFiles(const char *directory)
 {
   int i,count;
   void *res;
-  struct dirent **files;
+  struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_moc, NULL);
   res = mmc_mk_nil();
@@ -479,6 +480,7 @@ void* System_mocFiles(const char *directory)
     res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
     free(files[i]);
   }
+  free(files);
   return res;
 }
 #endif
@@ -580,7 +582,7 @@ void* System_subDirectories(const char *directory)
 {
   int i,count;
   void *res;
-  struct dirent **files;
+  struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_directories, NULL);
   res = mmc_mk_nil();
@@ -589,6 +591,7 @@ void* System_subDirectories(const char *directory)
     res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
     free(files[i]);
   }
+  free(files);
   return res;
 }
 #endif

@@ -335,9 +335,9 @@ extern void ErrorImpl__freeMessages(threadData_t *threadData, void *handles)
 {
   errorext_members *members = getMembers(threadData);
   while (!listEmpty(handles)) {
-    char *handle = (char*) MMC_CAR(handles);
+    ErrorMessage *handle = static_cast<ErrorMessage*>(MMC_CAR(handles));
     handles = MMC_CDR(handles);
-    free((ErrorMessage*) handle);
+    delete handle;
   }
 }
 
