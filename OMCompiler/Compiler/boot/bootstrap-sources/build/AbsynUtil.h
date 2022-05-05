@@ -852,6 +852,11 @@ modelica_metatype omc_AbsynUtil_crefStripLastSubs(threadData_t *threadData, mode
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefStripLastSubs,2,0) {(void*) boxptr_AbsynUtil_crefStripLastSubs,0}};
 #define boxvar_AbsynUtil_crefStripLastSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefStripLastSubs)
 DLLExport
+modelica_metatype omc_AbsynUtil_crefGetLastSubs(threadData_t *threadData, modelica_metatype _cref);
+#define boxptr_AbsynUtil_crefGetLastSubs omc_AbsynUtil_crefGetLastSubs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefGetLastSubs,2,0) {(void*) boxptr_AbsynUtil_crefGetLastSubs,0}};
+#define boxvar_AbsynUtil_crefGetLastSubs MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_crefGetLastSubs)
+DLLExport
 modelica_metatype omc_AbsynUtil_crefGetLastIdent(threadData_t *threadData, modelica_metatype _inComponentRef);
 #define boxptr_AbsynUtil_crefGetLastIdent omc_AbsynUtil_crefGetLastIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_crefGetLastIdent,2,0) {(void*) boxptr_AbsynUtil_crefGetLastIdent,0}};
