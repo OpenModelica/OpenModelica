@@ -110,17 +110,17 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
     break;
   }
 
-  infoStreamPrint(LOG_STATS, 0, "Step control factor is set to %g", userdata->tableau->fac);
+  infoStreamPrint(LOG_SOLVER, 0, "Step control factor is set to %g", userdata->tableau->fac);
 
   const char* flag_StepSize_ctrl = omc_flagValue[FLAG_RK_STEPSIZE_CTRL];
 
-  if (flag_StepSize_ctrl != NULL) {
+  if (flag_StepSize_ctrl == NULL) {
     userdata->stepSize_control = &(PIController);
-    //printf("PIController is used\n");
+    infoStreamPrint(LOG_SOLVER, 0, "PIController is use for step size control");
   } else
   {
     userdata->stepSize_control = &(IController);
-    //printf("IController is used\n");
+    infoStreamPrint(LOG_SOLVER, 0, "IController is use for step size control");
   }
 
   // allocate memory for the generic RK method
@@ -265,10 +265,6 @@ int wrapper_Jf_genericRK_MR(int n, double t, double* x, double* fODE, void* gene
   threadData_t* threadData = userdata->threadData;
   DATA_NEWTON* solverData = (DATA_NEWTON*)userdata->nlsSolverData;
 
-  double delta_h = sqrt(solverData->epsfcn);
-  double delta_hh;
-  double xsave;
-
   int i,ii,j,jj,l,callJacColumns;
 
   if ((solverData->calculate_jacobian == 0) && (userdata->evalJacobians==0))
@@ -334,6 +330,12 @@ int wrapper_Jf_genericRK_MR(int n, double t, double* x, double* fODE, void* gene
     }
     else
     {
+      warningStreamPrint(LOG_STDOUT, 0, "Numerical Jacobian is used");
+
+      double delta_h = sqrt(solverData->epsfcn);
+      double delta_hh;
+      double xsave;
+
       memcpy(userdata->f, fODE, n * sizeof(double));
       for(ii = 0; ii < userdata->nFastStates; ii++)
       {
@@ -392,29 +394,30 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   int nStates = userdata->nStates;
-  int n = userdata->nFastStates;
+  int nFastStates = userdata->nFastStates;
 
   //printf("Dimensionen nFastStates = %d, n_nonlinear = %d\n", n, *n_p);
 
-  int i, ii, j, l, ll, k;
+  int i, ii, j, jj, l, ll, k;
 
   // index of diagonal element of A
   k = userdata->act_stage * userdata->tableau->nStages + userdata->act_stage;
   if (fj)
   {
-    // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
-    // set correct time value and states of simulation system
-    // sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
-    for (j=0; j<n;j++)
+    for (j=0; j<nFastStates;j++)
       sData->realVars[userdata->fastStates[j]] = x[j];
-    // BB ToDo: Need to have the interpolated values in sData->realVars!!!!
+    // fODE = f(tOld + c2*h,x); x ~ yOld + h*(ai1*k1+ai2*k2+...+aii*ki)
+    // res_const = yOld + h*(ai1*k1+ai2*k2+...+ai{i-1}*k{i-1})
+    // set correct time value and states of simulation system
+    // BB: Need to have the interpolated values in sData->realVars!!!! check,check,check
+    // sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
     wrapper_f_genericRK(data, threadData, &(userdata->evalFunctionODE), fODE);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
-    for (j=0; j<n; j++)
+    for (j=0; j<nFastStates; j++)
     {
-      ii = userdata->fastStates[j];
-      res[j] = userdata->res_const[ii] - x[j] + userdata->stepSize * userdata->tableau->A[k]  * fODE[ii];
+      jj = userdata->fastStates[j];
+      res[j] = userdata->res_const[jj] - x[j] + userdata->stepSize * userdata->tableau->A[k]  * fODE[jj];
     }
   }
   else
@@ -437,16 +440,22 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
     //memcpy(userdata->f, fODE, n*sizeof(double));
 
     /* Calculate Jacobian of the ODE system, result is in solverData->fjac */
+    // set correct time value and states of simulation system
+    // BB: Need to have the interpolated values in sData->realVars!!!! check,check,check
+    // sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
+    // fODE correct?
     wrapper_Jf_genericRK_MR(userdata->nStates, sData->timeValue, sData->realVars, fODE, userdata);
 
     // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
     // jacobian          Jac = -E + gam*h*Jf(tk+c2*h,x))
-    for(i = 0; i < n; i++)
+    for(i = 0; i < nFastStates; i++)
     {
-      for(j = 0; j < n; j++)
+      for(j = 0; j < nFastStates; j++)
       {
-        l = i * n + j;
-        ll = userdata->fastStates[i] * userdata->nStates + userdata->fastStates[j];
+        l = i * nFastStates + j;
+        ii = userdata->fastStates[i];
+        jj = userdata->fastStates[j];
+        ll = ii * userdata->nStates + jj;
         solverData->fjac[l] = userdata->stepSize * userdata->tableau->A[k] * userdata->Jf[ll];
         if (i==j) solverData->fjac[l] -= 1;
       }
@@ -464,7 +473,7 @@ int wrapper_DIRK(int* n_p, double* x, double* res, void* genericRKData, int fj)
  */
 int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
-  int i, ii, j, jj, l, k, n=data->modelData->nStates;
+  int i, ii, j, jj, l, k, nStates = data->modelData->nStates;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
@@ -479,37 +488,38 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   sData->timeValue = userdata->time;
   solverInfo->currentTime = sData->timeValue;
 
-  // sweep over the stages
+  // interpolate the slow states on the current time of userdata->yOld for correct evaluation of userdata->res_const
+  linear_interpolation_MR(userdata->startTime, userdata->yStart,
+                          userdata->endTime,   userdata->yEnd,
+                          userdata->time, userdata->yOld, userdata->nSlowStates, userdata->slowStates);
+
   for (userdata->act_stage = 0; userdata->act_stage < userdata->tableau->nStages; userdata->act_stage++)
   {
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // residual constant part:
     // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
     k = userdata->act_stage * userdata->tableau->nStages;
-    sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
-    linear_interpolation_MR(userdata->startTime, userdata->yStart,
-                            userdata->endTime,   userdata->yEnd,
-                            sData->timeValue, userdata->yOld, userdata->nSlowStates, userdata->slowStates);
-    // printVector_genericRK_MR("yStart ", userdata->yStart, n, userdata->time, userdata->nSlowStates, userdata->slowStates);
-    // printVector_genericRK_MR("yOld ", userdata->yOld, n, sData->timeValue, userdata->nSlowStates, userdata->slowStates);
-    // printVector_genericRK_MR("yEnd ", userdata->yEnd, n, userdata->time+userdata->stepSize, userdata->nSlowStates, userdata->slowStates);
 
-    // BB ToDo: Eventually correct yOld for the fastStates or interpolation only for the slowStates!!!
-    for (j=0; j<n; j++)
+    // set simulation time with respect to the current stage
+    sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
+
+    // yOld from integrator is correct for the fast states
+    // BB ToDo: k[i] should be correct for the previous stages! Check!!
+    for (j=0; j<nStates; j++)
     {
       userdata->res_const[j] = userdata->yOld[j];
       for (l=0; l<userdata->act_stage; l++)
-        userdata->res_const[j] += userdata->stepSize * userdata->tableau->A[k + l] * (userdata->k + l * n)[j];
+        userdata->res_const[j] += userdata->stepSize * userdata->tableau->A[k + l] * (userdata->k + l * nStates)[j];
     }
 
     // index of diagonal element of A
     k = userdata->act_stage * userdata->tableau->nStages + userdata->act_stage;
+
     if (userdata->tableau->A[k] == 0)
     {
       // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
       // set correct time value and states of simulation system
-      // sData->timeValue = userdata->time + userdata->tableau->c[userdata->act_stage]*userdata->stepSize;
-      memcpy(sData->realVars, userdata->res_const, n*sizeof(double));
+      memcpy(sData->realVars, userdata->res_const, nStates*sizeof(double));
       wrapper_f_genericRK(data, threadData, &(userdata->evalFunctionODE), fODE);
     }
     else
@@ -519,15 +529,21 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       solverData->numberOfFunctionEvaluations = 0;
       solverData->n = userdata->nFastStates;
 
+      // interpolate the slow states on the time of the current stage
+      linear_interpolation_MR(userdata->startTime, userdata->yStart,
+                              userdata->endTime,   userdata->yEnd,
+                              sData->timeValue, sData->realVars, userdata->nSlowStates, userdata->slowStates);
+
+      // BB ToDo: set good starting values for the newton solver (solution of the last newton iteration!)
       // setting the start vector for the newton step
-      //memcpy(solverData->x, userdata->yOld, n*sizeof(double));
       for (i=0; i<userdata->nFastStates; i++)
         solverData->x[i] = userdata->yOld[userdata->fastStates[i]];
+
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-      // set good starting values for the newton solver (solution of the last newton iteration!)
       // set newton strategy
       solverData->newtonStrategy = NEWTON_DAMPED2;
       _omc_newton(wrapper_DIRK, solverData, (void*)userdata);
+
       /* if newton solver did not converge, do ??? */
       if (solverData->info == -1)
       {
@@ -546,7 +562,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
     }
     // copy last calculation of fODE, which should coincide with k[i]
-    memcpy(userdata->k + userdata->act_stage * n, fODE, n*sizeof(double));
+    memcpy(userdata->k + userdata->act_stage * nStates, fODE, nStates*sizeof(double));
 
   }
 
@@ -571,7 +587,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   double err, err_values[2];
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
-  int i, ii, l, n=data->modelData->nStates;
+  int i, ii, l, nStates = data->modelData->nStates;
   int integrator_step_info;
 
   // This is the target time of the main integrator
@@ -582,7 +598,8 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // BB ToDo: Use this to handel last step of the embedded integrator
   double stopTime = data->simulationInfo->stopTime;
 
-  if (userdata->stepsDone == 0)
+  // BB ToDo: needs to be performed also after an event!!!
+  if (solverInfo->didEventStep == 1 || userdata->stepsDone == 0)
   {
     userdata->time = genericRKData->time;
     userdata->stepSize = genericRKData->lastStepSize*0.5;
@@ -615,8 +632,8 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         userdata->yt[ii] = userdata->yOld[ii];
         for (l=0; l<userdata->tableau->nStages; l++)
         {
-          userdata->y[ii]  += userdata->stepSize * userdata->tableau->b[l]  * (userdata->k + l * n)[ii];
-          userdata->yt[ii] += userdata->stepSize * userdata->tableau->bt[l] * (userdata->k + l * n)[ii];
+          userdata->y[ii]  += userdata->stepSize * userdata->tableau->b[l]  * (userdata->k + l * nStates)[ii];
+          userdata->yt[ii] += userdata->stepSize * userdata->tableau->bt[l] * (userdata->k + l * nStates)[ii];
         }
         // calculate corresponding values for the error estimator and step size control
         userdata->errtol[ii] = Rtol*fmax(fabs(userdata->y[ii]),fabs(userdata->yOld[ii])) + Atol;
@@ -654,9 +671,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         userdata->errorTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
                         userdata->time, userdata->time + userdata->lastStepSize, err, userdata->stepSize);
-      } else
+      } else {
         // Last step is limited by the simulation stopTime
         userdata->stepSize = fmin(userdata->stepSize, stopTime - (userdata->time + userdata->lastStepSize));
+      }
     } while  (err>1);
 
     // Count succesful integration steps
@@ -678,12 +696,12 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   copyVector_genericRK_MR(genericRKData->err, userdata->err, userdata->nFastStates, userdata->fastStates);
 
   // interpolate the values on the time grid of the outer integration
-
-  linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt,
-                          userdata->time, userdata->y,
-                          genericRKData->time + genericRKData->lastStepSize, genericRKData->y,
-                          userdata->nFastStates, userdata->fastStates);
-
+  // if (userdata->time >= genericRKData->time + genericRKData->lastStepSize) {
+    linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt,
+                            userdata->time, userdata->y,
+                            genericRKData->time + genericRKData->lastStepSize, genericRKData->y,
+                            userdata->nFastStates, userdata->fastStates);
+  // }
   if (!solverInfo->integratorSteps)
   {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */

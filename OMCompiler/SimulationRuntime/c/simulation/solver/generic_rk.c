@@ -1221,9 +1221,11 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = rk_data->nlsData;
       // Set start vector
-      memcpy(nlsData->nlsx, rk_data->yOld, nStates*sizeof(modelica_real));
-      memcpy(nlsData->nlsxOld, rk_data->yOld, nStates*sizeof(modelica_real));
-      memcpy(nlsData->nlsxExtrapolation, rk_data->yOld, nStates*sizeof(modelica_real));
+      for (int i=0; i<rk_data->nStates; i++)
+        nlsData->nlsx[i] = rk_data->yOld[i] + rk_data->tableau->c[stage] * rk_data->stepSize * rk_data->k[i];
+      //memcpy(nlsData->nlsx, rk_data->yOld, nStates*sizeof(modelica_real));
+      memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
+      memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
       solved = solveNLS(data, threadData, nlsData, -1);
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "expl_diag_impl_RK: Failed to solve NLS in expl_diag_impl_RK");
@@ -1413,7 +1415,7 @@ double PIController(double* err_values, double err_order)
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta1=-1./2./err_order, beta2=beta1;
+  double beta1=-5./8./err_order, beta2=-3./8./err_order;
 
   return fmin(facmax, fmax(facmin, fac*pow(err_values[0], beta1)*pow(err_values[1], beta2)));
 
@@ -1508,8 +1510,11 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       // calculate one step of the integrator
       rk_step_info = rk_data->step_fun(data, threadData, solverInfo);
       if (rk_step_info != 0) {
-        errorStreamPrint(LOG_STDOUT, 0, "genericRK_step: Failed to calculate step.");
-        return -1;
+        errorStreamPrint(LOG_STDOUT, 0, "genericRK_step: Failed to calculate step at time = %5g.", rk_data->time);
+        errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
+        rk_data->stepSize = rk_data->stepSize/2.;
+        continue;
+        //return -1;
       }
 
       // Apply RK-scheme for determining the approximation at (time + stepsize)
@@ -1549,7 +1554,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         for (i=0; i<rk_data->nStates; i++)
         {
           // step of outer integration will always be accepted (rk_data->err[i]<1)
-          if (rk_data->err[i] > rk_data->percentage*err || rk_data->err[i]>1)
+          if (rk_data->err[i] > rk_data->percentage || rk_data->err[i]>1)
           {
             rk_data->fastStates[rk_data->nFastStates] = i;
             rk_data->nFastStates++;
@@ -1666,8 +1671,13 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
                             sData->timeValue, sData->realVars,
                             rk_data->nSlowStates, rk_data->slowStates);
     // printVector_genericRK("yOld: ", userdata->yt, data->modelData->nStates, userdata->time-userdata->lastStepSize);
-    // printVector_genericRK("y:    ", userdata->y, data->modelData->nStates, userdata->time);
-    // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+    //printVector_genericRK("y:    ", rk_data->y, data->modelData->nStates, rk_data->time);
+    if(ACTIVE_STREAM(LOG_SOLVER))
+    {
+      printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
+      printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+      messageClose(LOG_SOLVER);
+    }
   }else{
     // Integrator emits result on the simulation grid
     solverInfo->currentTime = rk_data->time;

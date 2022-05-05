@@ -50,8 +50,8 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
 getErrorString();
 
 // Simulate with ESDIRK3 and KINSOL+KLU
-system("./burgerEq -s=genericRKmr -embeddedRKLim=0.3 -rkNLS=kinsol", "burgerEq_esdirk3_mr.log");
-print(readFile("burgerEq_esdirk3_mr.log"));
+system("./burgerEq -s=genericRK -genericRKOpt=sdirk2 -rkNLS=kinsol", "burgerEq_esdirk2.log");
+print(readFile("burgerEq_esdirk2.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",
                       expectedFile = "burgerEq_ref.mat",
