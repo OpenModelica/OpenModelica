@@ -346,7 +346,7 @@ std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
     cJSON *root;
     cJSON *profileBlocks;
 
-    fp = fopen ( filePath.c_str() , "rb" );
+    fp = omc_fopen ( filePath.c_str() , "rb" );
     if( !fp ) perror(filePath.c_str()),exit(1);
 
     fseek( fp , 0L , SEEK_END);

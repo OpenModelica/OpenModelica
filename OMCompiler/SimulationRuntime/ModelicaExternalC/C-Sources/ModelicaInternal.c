@@ -139,6 +139,8 @@
 #include "ModelicaInternal.h"
 #include "ModelicaUtilities.h"
 
+#include "util/omc_file.h"
+
 MODELICA_NORETURN static void ModelicaNotExistError(const char* name) MODELICA_NORETURNATTR;
 static void ModelicaNotExistError(const char* name) {
   /* Print error message if a function is not implemented */
@@ -459,12 +461,12 @@ void ModelicaInternal_copyFile(_In_z_ const char* oldFile,
     }
 
     /* Copy file */
-    fpOld = fopen(oldFile, modeOld);
+    fpOld = omc_fopen(oldFile, modeOld);
     if ( fpOld == NULL ) {
         ModelicaFormatError("\"%s\" cannot be copied:\n%s", oldFile, strerror(errno));
         return;
     }
-    fpNew = fopen(newFile, modeNew);
+    fpNew = omc_fopen(newFile, modeNew);
     if ( fpNew == NULL ) {
         fclose(fpOld);
         ModelicaFormatError("\"%s\" cannot be copied to \"%s\":\n%s",
@@ -861,7 +863,7 @@ static FILE* ModelicaStreams_openFileForReading(const char* fileName, int lineNu
     }
     MUTEX_UNLOCK();
     if (fp == NULL) {
-        fp = fopen(fileName, "r");
+        fp = omc_fopen(fileName, "r");
         if ( fp == NULL ) {
             ModelicaFormatError("Not possible to open file \"%s\" for reading:\n"
                 "%s\n", fileName, strerror(errno));
@@ -887,7 +889,7 @@ static FILE* ModelicaStreams_openFileForWriting(const char* fileName) {
 
     /* Open file */
     ModelicaStreams_closeFile(fileName);
-    fp = fopen(fileName, "a");
+    fp = omc_fopen(fileName, "a");
     if ( fp == NULL ) {
         ModelicaFormatError("Not possible to open file \"%s\" for writing:\n"
             "%s\n", fileName, strerror(errno));

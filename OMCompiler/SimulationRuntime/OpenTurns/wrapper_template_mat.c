@@ -407,7 +407,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   const int matrixTypes[6]={51,51,51,20,0,0};
   int i;
   char binTrans = 1;
-  reader->file = fopen(filename, "rb");
+  reader->file = omc_fopen(filename, "rb");
   if (!reader->file) return strerror(errno);
   reader->fileName = strdup(filename);
   for (i=0; i<nMatrix;i++) {

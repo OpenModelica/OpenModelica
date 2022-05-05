@@ -45,7 +45,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include "../util/read_matlab4.h"
-#include "util/omc_file.h"
+#include "../util/omc_file.h"
 
 /* UNDEF to debug the gnuplot file */
 #define NO_PIPE
