@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "libcsv.h"
+#include "omc_file.h"
 #include "write_csv.h"
 
 #define CSV_BUFFER_SIZE 1024
@@ -49,7 +50,7 @@ OMC_WRITE_CSV* omc_write_csv_init(char filename[], char seperator, char quote){
   csvData->seperator = seperator;
   csvData->quote = '"';
 
-  csvData->handle = fopen(csvData->filename,"w");
+  csvData->handle = omc_fopen(csvData->filename,"w");
 
   return csvData;
 }

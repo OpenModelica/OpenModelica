@@ -36,6 +36,7 @@
 
 #include "../omc_inline.h"
 #include "../ModelicaUtilities.h"
+#include "omc_file.h"
 #ifdef _MSC_VER
 #include "omc_msvc.h"
 #endif
@@ -341,7 +342,7 @@ static TEXT_FILE *Text_open(const char *filename)
       for(i=0;i<=l;i++) {
         f->filename[i] = filename[i];
       }
-      f->fp = fopen(filename,"r");
+      f->fp = omc_fopen(filename,"r");
       if (!f->fp) {
         ModelicaFormatError("Cannot open File %s",filename);
       }
@@ -576,7 +577,7 @@ static MAT_FILE *Mat_open(const char *filename)
   {
     f->filename[i] = filename[i];
   }
-  f->fp = fopen(filename,"rb");
+  f->fp = omc_fopen(filename,"rb");
   if (!f->fp) {
     ModelicaFormatError("Cannot open File %s",filename);
   }
@@ -771,7 +772,7 @@ static CSV_FILE *csv_open(const char *filename)
       for(i=0;i<=l;i++) {
         f->filename[i] = filename[i];
       }
-      f->fp = fopen(filename,"r");
+      f->fp = omc_fopen(filename,"r");
       if (!f->fp) {
         ModelicaFormatError("Cannot open File %s",filename);
       }

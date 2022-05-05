@@ -37,6 +37,8 @@
 #include <errno.h>
 #include "ModelicaUtilities.h"
 
+#include "util/omc_file.h"
+
 typedef struct {
   FILE* file /* the file */;
   mmc_sint_t cnt /* reference count */;
@@ -102,10 +104,10 @@ static inline void om_file_open(__OMC_FILE *file, const char *filename, int mode
   }
 #if defined(__APPLE_CC__)||defined(__MINGW32__)||defined(__MINGW64__)
   if (mode == 1) {
-    file->file = fopen(filename, "rb");
+    file->file = omc_fopen(filename, "rb");
   } else {
-    unlink(filename);
-    file->file = fopen(filename, "wb");
+    omc_unlink(filename);
+    file->file = omc_fopen(filename, "wb");
   }
 #else
   file->file = fopen(filename, mode == 1 ? "rb" : "wb");

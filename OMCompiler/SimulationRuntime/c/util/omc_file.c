@@ -78,6 +78,20 @@ FILE* omc_fopen(const char *filename, const char *mode)
 /// EOF before reading the specified amount. Set it to 1 if you do not exactly know how much to read
 /// and would not mind if the file ends before 'count' elements are read from it.
 /// If you are not sure what to do start by passing 0.
+
+/**
+ * @brief Read data from stream.
+ *
+ * @param buffer            Pointer to block of memory with a minimum size of `size`.
+ * @param size              Size in bytes of each element to read.
+ * @param count             Number of elements to read, each with size `size` bytes.
+ * @param stream            Pointer to FILE object with input stream.
+ * @param allow_early_eof   Specifies wheather the call is okay or not with reaching
+ *                          EOF before reading the specified amount. Set it to 1 if you do not exactly know how much to read
+ *                          and would not mind if the file ends before 'count' elements are read from it.
+ *                          If you are not sure what to do start by passing 0.
+ * @return size_t           Total number of elements read.
+ */
 size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allow_early_eof) {
   size_t read_len = fread(buffer, size, count, stream);
   if(read_len != count)  {
