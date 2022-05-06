@@ -8468,10 +8468,6 @@ tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 3));
 _exp2 = tmpMeta[0];
 _sub_ty = tmpMeta[2];
 _const2 = tmpMeta[3];
-tmpMeta[0] = stringAppend(omc_Dump_printComponentRefStr(threadData, _cref),_OMC_LIT115);
-tmpMeta[1] = stringAppend(tmpMeta[0],omc_Types_unparseType(threadData, _sub_ty));
-tmpMeta[2] = stringAppend(tmpMeta[1],_OMC_LIT93);
-fputs(MMC_STRINGDATA(tmpMeta[2]),stdout);
 if(omc_Types_isMetaBoxedType(threadData, _sub_ty))
 {
 _sub_ty = omc_Types_unboxedType(threadData, _sub_ty);
