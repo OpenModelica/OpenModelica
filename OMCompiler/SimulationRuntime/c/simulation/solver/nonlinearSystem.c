@@ -50,6 +50,7 @@
 #include "../simulation_info_json.h"
 #include "../simulation_runtime.h"
 #include "model_help.h"
+#include "../../util/jacobian_util.h"
 
 /* for try and catch simulationJumpBuffer */
 #include "../../meta/meta_modelica.h"
@@ -410,6 +411,17 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     nonlinsys[i].min = (double*) malloc(size*sizeof(double));
     nonlinsys[i].max = (double*) malloc(size*sizeof(double));
     nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
+
+    modelica_boolean useSparsityPattern = sparsitySanityCheck(nonlinsys[i].sparsePattern, nonlinsys[i].size, LOG_NLS);
+    if (!useSparsityPattern) {
+      // free sparsity pattern and don
+      warningStreamPrint(LOG_STDOUT, 0, "Sparsity pattern for system %d is fishy, removing it. Disabeling scaling as well. "
+                                        "This indicates that the NLS isn't solvable or something went wrong during sparsity pattern generation.", i);
+      freeSparsePattern(nonlinsys[i].sparsePattern);
+      nonlinsys[i].sparsePattern = NULL;
+      nonlinsys[i].isPatternAvailable = 0 /* FALSE */;
+      omc_flag[FLAG_NO_SCALING] = 1 /* TRUE */;
+    }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     /* csv data call stats*/

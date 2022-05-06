@@ -57,6 +57,15 @@
   #include <omp.h>
 #endif
 
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = DEFAULT_FLAG_LSS_MAX_DENSITY;
 int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;
@@ -397,7 +406,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   /* Catch empty sparsePattern */
   if (sparsePattern == NULL || sizeRows <= 0 || sizeCols <= 0)
   {
-    infoStreamPrint(stream, 0, "No sparse strucutre available for \"%s\".", name);
+    infoStreamPrint(stream, 0, "No sparse structure available for \"%s\".", name);
     return;
   }
 
@@ -430,6 +439,52 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   messageClose(stream);
   messageClose(stream);
 }
+
+/**
+ * @brief Check if sparsity pattern describes regular matrix.
+ *
+ * @param sparsePattern       Sparsity pattern.
+ * @param nlsSize             size of non-linear loop / size of square matrix.
+ * @param stream              Stream for logging.
+ * @return modelica_boolean   False if sparsity pattern can't describe regular matrix, true otherwise.
+ */
+modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize, int stream) {
+
+  int row, col;
+  int i,j;
+  modelica_boolean col_singular = TRUE;
+
+  if (sparsePattern == NULL || nlsSize <= 0)
+  {
+    warningStreamPrint(stream, 0, "No sparse structure available.");
+    return FALSE;
+  }
+
+  if (sparsePattern->numberOfNonZeros < nlsSize) {
+    warningStreamPrint(stream, 0, "Sparsity pattern of %dx%d has ony %d non-zero elements.", nlsSize,nlsSize, sparsePattern->numberOfNonZeros);
+    return FALSE;
+  }
+
+  for(row=0; row < nlsSize; row++)
+  {
+    modelica_boolean row_singular = TRUE;
+    j=0;
+    for(col=0; i < sparsePattern->leadindex[row+1]; col++)
+    {
+      if(sparsePattern->index[i] == col)
+      {
+        row_singular = FALSE;
+        ++i;
+      }
+    }
+    if (row_singular) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
 
 #ifdef USE_DEBUG_OUTPUT
 /*! \fn printRelationsDebug
