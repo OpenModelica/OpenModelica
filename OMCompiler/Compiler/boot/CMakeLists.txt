@@ -28,6 +28,10 @@ if(MINGW)
   target_link_options(bomc PRIVATE -Wl,--stack,33554432)
 elseif(MSVC)
   target_link_options(bomc PRIVATE /STACK:33554432)
+endif()
+
+# For now disable some warnings for MSVC. These should of course be fixed properly.
+if(MSVC)
   target_compile_options(bomc PRIVATE /wd4101) # unreferenced local variable
   target_compile_options(bomc PRIVATE /wd4102) # unreferenced label
   target_compile_options(bomc PRIVATE /wd4267) # conversion from 'size_t' to 'int', possible loss of data
@@ -58,6 +62,13 @@ target_link_libraries(bomc PRIVATE omc::compiler::runtime)
 set_target_properties(bomc
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    # We need to specify these explicitly for multi-config generators like MSVC and Xcode.
+    # Otherwise they will still add the release/, debug/ ... directories within the
+    # RUNTIME_OUTPUT_DIRECTORY specified above.
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
 )
 
 # It also wants to have these builtin files in ../lib/ relative to its location.
