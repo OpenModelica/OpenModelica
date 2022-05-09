@@ -406,10 +406,10 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 
     nonlinsys[i].lastTimeSolved = 0.0;
 
+    /* Allocate nomianl, min and max */
     nonlinsys[i].nominal = (double*) malloc(size*sizeof(double));
     nonlinsys[i].min = (double*) malloc(size*sizeof(double));
     nonlinsys[i].max = (double*) malloc(size*sizeof(double));
-    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     /* csv data call stats*/
@@ -549,11 +549,15 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   return 0;
 }
 
-/*! \fn int updateStaticDataOfNonlinearSystems(DATA *data)
+/**
+ * @brief Initialize min, max, nominal and sparsity pattern of non-linear system.
  *
- *  This function allocates memory for all nonlinear systems.
+ * This function allocates memory for sparsity pattern and
+ * initialized nominal, min, max and spsarsity pattern.
  *
- *  \param [ref] [data]
+ * @param data          Pointer to data.
+ * @param threadData    Thread data for error handling.
+ * @return int          Return 0.
  */
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 {

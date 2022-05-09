@@ -167,12 +167,10 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
                         i, size, linearSparseSolverMinSize);
     }
 
-    /* allocate more system data */
+    /* Allocate nomianl, min and max */
     linsys[i].nominal = (double*) malloc(size*sizeof(double));
     linsys[i].min = (double*) malloc(size*sizeof(double));
     linsys[i].max = (double*) malloc(size*sizeof(double));
-
-    linsys[i].initializeStaticLSData(data, threadData, &linsys[i]);
 
     /* allocate solver data */
     /* the implementation of matrix A is solver-specific */
@@ -354,11 +352,15 @@ void freeLinSystThreadData(LINEAR_SYSTEM_DATA *linsys)
   free(linsys->parDynamicData);
 }
 
-/*! \fn int updateStaticDataOfLinearSystems(DATA *data)
+/**
+ * @brief Initialize min, max, nominal and sparsity pattern of linear system.
  *
- *  This function allocates memory for all linear systems.
+ * This function allocates memory for sparsity pattern and
+ * initialized nominal, min, max and spsarsity pattern.
  *
- *  \param [ref] [data]
+ * @param data          Pointer to data.
+ * @param threadData    Thread data for error handling.
+ * @return int          Return 0.
  */
 int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
 {
