@@ -85,11 +85,9 @@ elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif(WIN32)
 
-if(WITH_IPOPT)
+if(OM_OMC_ENABLE_IPOPT)
   target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
-  ## disable for now to avoid duplicate definition warnings. The define is hardcoded in
-  ## omc_config.h. Until we remove that this just results in warnings.
-  # target_compile_definitions(SimulationRuntimeC PRIVATE WITH_IPOPT)
+  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_IPOPT)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
 endif()
 
