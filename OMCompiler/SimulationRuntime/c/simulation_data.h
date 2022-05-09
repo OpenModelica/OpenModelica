@@ -289,7 +289,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   void (*residualFunc)(void**, const double*, double*, const int*);
   int (*residualFuncConstraints)(void**, const double*, double*, const int*);
-  void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*);
+  void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*, modelica_boolean);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
   void (*getIterationVars)(struct DATA*, double*);
   int (*checkConstraints)(struct DATA*, threadData_t *threadData);
@@ -358,7 +358,7 @@ typedef struct LINEAR_SYSTEM_DATA
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
 
   void (*residualFunc)(void**, const double*, double*, const int*);
-  void (*initializeStaticLSData)(void*, threadData_t *threadData, void*);
+  void (*initializeStaticLSData)(void*, threadData_t *threadData, void*, modelica_boolean);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
   int (*checkConstraints)(struct DATA*, threadData_t *threadData);
 
