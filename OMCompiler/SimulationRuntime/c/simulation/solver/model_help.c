@@ -441,18 +441,17 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
 }
 
 /**
- * @brief Check if sparsity pattern describes regular matrix.
+ * @brief Check if sparsity pattern can describe regular matrix.
  *
  * @param sparsePattern       Sparsity pattern.
  * @param nlsSize             size of non-linear loop / size of square matrix.
  * @param stream              Stream for logging.
  * @return modelica_boolean   False if sparsity pattern can't describe regular matrix, true otherwise.
  */
-modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize, int stream) {
-
-  int row, col;
-  int i,j;
-  modelica_boolean col_singular = TRUE;
+modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize, int stream)
+{
+  int i;
+  char *colCheck;
 
   if (sparsePattern == NULL || nlsSize <= 0)
   {
@@ -465,23 +464,33 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
     return FALSE;
   }
 
-  for(row=0; row < nlsSize; row++)
+  /* check rows (or cols?) */
+  for(i=1; i < nlsSize; i++)
   {
-    modelica_boolean row_singular = TRUE;
-    j=0;
-    for(col=0; i < sparsePattern->leadindex[row+1]; col++)
-    {
-      if(sparsePattern->index[i] == col)
-      {
-        row_singular = FALSE;
-        ++i;
-      }
-    }
-    if (row_singular) {
+    if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
+      warningStreamPrint(stream, 0, "Sparsity pattern row %d has no non-zero elements.", i);
       return FALSE;
     }
   }
 
+  /* check cols (or rows?) */
+  colCheck = (char*) calloc(nlsSize, sizeof(char));
+
+  for(i=0; i < sparsePattern->leadindex[nlsSize]; i++)
+  {
+    colCheck[sparsePattern->index[i]] = TRUE;
+  }
+
+  for(i=0; i < nlsSize; i++)
+  {
+    if(!colCheck[i]) {
+      warningStreamPrint(stream, 0, "Sparsity pattern column %d has no non-zero elements.", i);
+      free(colCheck);
+      return FALSE;
+    }
+  }
+
+  free(colCheck);
   return TRUE;
 }
 
@@ -646,21 +655,21 @@ void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
     infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Real Variable");
     for (int j = 0; j < data->modelData->nVariablesReal; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
     }
     messageClose(LOG_STDOUT);
 
     infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Integer Variable");
     for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %i ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
     }
     messageClose(LOG_STDOUT);
 
     infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Boolean Variable");
     for(int j = 0; j < data->modelData->nVariablesBoolean; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%ld: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
     }
     messageClose(LOG_STDOUT);
   }

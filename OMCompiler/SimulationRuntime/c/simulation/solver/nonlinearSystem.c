@@ -414,10 +414,10 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 
     modelica_boolean useSparsityPattern = sparsitySanityCheck(nonlinsys[i].sparsePattern, nonlinsys[i].size, LOG_NLS);
     if (!useSparsityPattern) {
-      // free sparsity pattern and don
+      // free sparsity pattern and don't use scaling
       warningStreamPrint(LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d is not regular. "
                                         "This indicates that something went wrong during sparsity pattern generation. "
-                                        "Removing sparsity pattern and disabeling NLS scaling.", i);
+                                        "Removing sparsity pattern and disabling NLS scaling.", i);
       freeSparsePattern(nonlinsys[i].sparsePattern);
       nonlinsys[i].sparsePattern = NULL;
       nonlinsys[i].isPatternAvailable = 0 /* FALSE */;

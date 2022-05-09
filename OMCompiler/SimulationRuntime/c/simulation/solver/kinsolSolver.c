@@ -693,7 +693,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
  * Compute absolute sum for each column and print the result.
  * Report a warning if it is zero, since the matrix is singular in that case.
  *
- * @param A       Dense matrix stored columnvice
+ * @param A       Dense matrix stored columnwise
  */
 static void nlsKinsolJacSumDense(SUNMatrix A) {
   /* Variables */
