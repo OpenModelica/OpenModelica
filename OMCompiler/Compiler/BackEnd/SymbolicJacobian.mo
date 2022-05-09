@@ -2696,6 +2696,7 @@ try
   reqns := BackendEquation.getList(inResidualequations, inEqns);
   reqns := BackendEquation.replaceDerOpInEquationList(reqns);
   outResidualEqns := BackendEquation.listEquation(reqns);
+
   // create  residual equations
   (_, reqns) := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, (funcTree, {}));
   reqns := listReverse(reqns);
@@ -3112,7 +3113,7 @@ protected
 algorithm
   (outExp, (expList, cont, _)) := Expression.traverseExpTopDown(inExp, hasEqnNonDiffParts, inTpl);
   if Flags.isSet(Flags.DUMP_EXCLUDED_EXP) and not cont then
-    print("Traverser for catching functions, that should not differentiated\n");
+    print("Traverser for catching functions, that should not be differentiated\n");
     print(stringDelimitList(List.map(expList, ExpressionDump.printExpStr), "\n"));
     print("\n\n");
   end if;
@@ -3132,6 +3133,7 @@ algorithm
     list<DAE.Exp> expLst, expLst1;
     Boolean b, insideCall;
     DAE.Type ty;
+
     case (DAE.CALL(path=Absyn.IDENT("delay")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
 
 // For now exclude all not built in calls
