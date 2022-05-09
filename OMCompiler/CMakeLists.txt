@@ -9,8 +9,8 @@ if(OM_OMC_ENABLE_FORTRAN)
 endif()
 
 
-omc_option(WITH_IPOPT "Should we enable dynamic optimization support with Ipopt." ON)
-if(WITH_IPOPT AND NOT OM_OMC_ENABLE_FORTRAN)
+omc_option(OM_OMC_ENABLE_IPOPT "Should we enable dynamic optimization support with Ipopt." ON)
+if(OM_OMC_ENABLE_IPOPT AND NOT OM_OMC_ENABLE_FORTRAN)
 message(FATAL_ERROR "Ipopt support requires Fortran support to be enabled.
     ***Note: currently it is not possible to disable IPOPT from OpenModelica. This Option is here as a placeholder. ")
 endif()
