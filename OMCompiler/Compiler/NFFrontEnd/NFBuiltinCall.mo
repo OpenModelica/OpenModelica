@@ -689,6 +689,36 @@ protected
     Variability var1, var2;
     Purity pur1, pur2;
     TypeCheck.MatchKind mk;
+
+    function is_valid_type
+      input Type ty;
+      output Boolean res;
+    algorithm
+      res := match ty
+        case Type.REAL() then true;
+        case Type.INTEGER() then true;
+        case Type.BOOLEAN() then true;
+        case Type.ENUMERATION() then true;
+        else false;
+      end match;
+    end is_valid_type;
+
+    function invalid_args_error
+      input Call call;
+      input String name;
+      input SourceInfo info;
+    algorithm
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {Call.toString(call),
+         name + "(Real, Real) => Real\n  " +
+         name + "(Integer, Integer) => Integer\n  " +
+         name + "(Boolean, Boolean) => Boolean\n  " +
+         name + "(enumeration(:), enumeration(:)) => enumeration(:)\n  " +
+         name + "(Real[:, ...]) => Real\n  " +
+         name + "(Integer[:, ...]) => Integer\n  " +
+         name + "(Boolean[:, ...]) => Boolean\n  " +
+         name + "(enumeration(:)[:, ...]) => enumeration(:)"}, info);
+    end invalid_args_error;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams(name, named_args, info);
@@ -699,9 +729,8 @@ protected
           (arg1, ty1, var, purity) := Typing.typeExp(arg1, context, info);
           ty := Type.arrayElementType(ty1);
 
-          if not (Type.isArray(ty1) and Type.isBasic(ty)) then
-            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
-              {"1", name, "", Expression.toString(arg1), Type.toString(ty1), "Any[:, ...]"}, info);
+          if not (Type.isArray(ty1) and is_valid_type(ty)) then
+            invalid_args_error(call, name, info);
           end if;
 
           // If the argument is an array with a single element we can just
@@ -718,29 +747,21 @@ protected
           (arg1, ty1, var1, pur1) := Typing.typeExp(arg1, context, info);
           (arg2, ty2, var2, pur2) := Typing.typeExp(arg2, context, info);
 
-          if not Type.isBasic(ty1) then
-            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
-              {"1", name, "", Expression.toString(arg1), Type.toString(ty1), "Any"}, info);
-          end if;
-
-          if not Type.isBasic(ty2) then
-            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
-              {"2", name, "", Expression.toString(arg2), Type.toString(ty2), "Any"}, info);
+          if not (is_valid_type(ty1) and is_valid_type(ty2)) then
+            invalid_args_error(call, name, info);
           end if;
 
           (arg1, arg2, ty, mk) := TypeCheck.matchExpressions(arg1, ty1, arg2, ty2);
 
           if not TypeCheck.isValidArgumentMatch(mk) then
-            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-              {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+            invalid_args_error(call, name, info);
           end if;
         then
           ({arg1, arg2}, ty, Prefixes.variabilityMax(var1, var2), Purity.purityMin(pur1, pur2));
 
       else
         algorithm
-          Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-            {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+          invalid_args_error(call, name, info);
         then
           fail();
     end match;
