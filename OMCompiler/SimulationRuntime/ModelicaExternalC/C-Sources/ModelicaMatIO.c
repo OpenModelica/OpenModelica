@@ -65,7 +65,6 @@
 #endif
 #include <stdarg.h>
 #include "ModelicaUtilities.h"
-#include "util/omc_file.h"
 
 /* -------------------------------
  * ---------- endian.c
@@ -2867,11 +2866,11 @@ Mat_Open(const char *matname, int mode)
     size_t bytesread = 0;
 
     if ( (mode & 0x01) == MAT_ACC_RDONLY ) {
-        fp = omc_fopen(matname, "rb");
+        fp = fopen(matname, "rb");
         if ( !fp )
             return NULL;
     } else if ( (mode & 0x01) == MAT_ACC_RDWR ) {
-        fp = omc_fopen(matname, "rb");
+        fp = fopen(matname, "rb");
         if ( !fp ) {
             mat = Mat_CreateVer(matname, NULL, (enum mat_ft)(mode & 0xfffffffe));
             return mat;
@@ -3633,13 +3632,13 @@ Mat_CopyFile(const char *src, const char *dst)
     FILE *in = NULL;
     FILE *out = NULL;
 
-    in = omc_fopen(src, "rb");
+    in = fopen(src, "rb");
     if ( in == NULL ) {
         Mat_Critical("Cannot open file \"%s\" for reading.", src);
         return MATIO_E_FILESYSTEM_COULD_NOT_OPEN;
     }
 
-    out = omc_fopen(dst, "wb");
+    out = fopen(dst, "wb");
     if ( out == NULL ) {
         fclose(in);
         Mat_Critical("Cannot open file \"%s\" for writing.", dst);
@@ -5347,7 +5346,7 @@ Mat_Create4(const char *matname)
     FILE *fp = NULL;
     mat_t *mat = NULL;
 
-    fp = omc_fopen(matname, "w+b");
+    fp = fopen(matname, "w+b");
     if ( !fp )
         return NULL;
 
@@ -6954,7 +6953,7 @@ Mat_Create5(const char *matname, const char *hdr_str)
     size_t err;
     time_t t;
 
-    fp = omc_fopen(matname, "w+b");
+    fp = fopen(matname, "w+b");
     if ( !fp )
         return NULL;
 
@@ -14298,7 +14297,7 @@ Mat_Create73(const char *matname, const char *hdr_str)
     H5Fclose(fid);
     H5Pclose(plist_id);
 
-    fp = omc_fopen(matname, "r+b");
+    fp = fopen(matname, "r+b");
     if ( !fp ) {
         H5Pclose(plist_ap);
         return NULL;

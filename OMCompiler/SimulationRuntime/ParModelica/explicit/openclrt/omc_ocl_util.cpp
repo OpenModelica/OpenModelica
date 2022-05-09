@@ -79,7 +79,7 @@ char* load_source_file(const char* file_name){
     FILE* f;
     struct stat statbuf;
 
-    f = omc_fopen(file_name, "rb");
+    f = fopen(file_name, "rb");
     if (!f){
         printf("OpenCL kernel file \"%s\" not found!", file_name);
         ocl_clean_up();

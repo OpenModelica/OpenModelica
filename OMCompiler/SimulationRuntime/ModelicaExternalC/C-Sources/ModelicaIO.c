@@ -89,7 +89,6 @@
 #include "ModelicaIO.h"
 #include <string.h>
 #include "ModelicaUtilities.h"
-#include "util/omc_file.h"
 
 #ifdef NO_FILE_SYSTEM
 MODELICA_NORETURN static void ModelicaNotExistError(const char* name) MODELICA_NORETURNATTR;
@@ -716,7 +715,7 @@ static double* readCsvTable(_In_z_ const char* fileName, _In_z_ const char* tabl
         strncat(delimTable, delimiter, 1);
     }
 
-    fp = omc_fopen(fileName, "r");
+    fp = fopen(fileName, "r");
     if (NULL == fp) {
         ModelicaFormatError("Not possible to open file \"%s\": "
             "No such file or directory\n", fileName);
@@ -926,7 +925,7 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
     char* dec;
 #endif
 
-    fp = omc_fopen(fileName, "r");
+    fp = fopen(fileName, "r");
     if (NULL == fp) {
         ModelicaFormatError("Not possible to open file \"%s\": "
             "No such file or directory\n", fileName);

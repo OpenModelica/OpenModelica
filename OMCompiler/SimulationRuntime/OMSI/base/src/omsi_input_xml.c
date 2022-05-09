@@ -96,7 +96,7 @@ omsi_status omsu_process_input_xml(omsi_t*                         osu_data,
             "fmi2Instantiate: Process XML file %s.", filename);
 
     /* open xml file */
-    file = omc_fopen(filename, "r");
+    file = fopen(filename, "r");
     if(!file) {
         filtered_base_logger(global_logCategories, log_statuserror, omsi_error,
                 "fmi2Instantiate: Can not read input file %s.", filename);

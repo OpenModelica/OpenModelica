@@ -328,7 +328,7 @@ omsi_string omsi_get_model_name(omsi_string fmuResourceLocation) {
     sprintf(fileName, "%s/../modelDescription.xml", fmuResourceLocation);
 
     /* open xml file */
-    file = omc_fopen(fileName, "r");
+    file = fopen(fileName, "r");
     if(!file) {
         filtered_base_logger(global_logCategories, log_statuserror, omsi_error,
                 "fmi2Instantiate: Can not read input file %s.", fileName);

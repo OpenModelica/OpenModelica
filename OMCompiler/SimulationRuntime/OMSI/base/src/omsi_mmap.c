@@ -104,7 +104,7 @@ void omc_mmap_close_write_unix(omc_mmap_write_unix map)
 
 static FILE* omc_mmap_common(omsi_string fileName, omsi_string mode, omsi_unsigned_int *size, omsi_char **data)
 {
-  FILE *file = omc_fopen(fileName, mode);
+  FILE *file = fopen(fileName, mode);
   omsi_unsigned_int fileSize;
   if (!file) {
     /*throwStreamPrint(NULL, "Failed to open file %s for reading: %s\n", fileName, strerror(errno)); */
