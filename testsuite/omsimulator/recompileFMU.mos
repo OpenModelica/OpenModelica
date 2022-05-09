@@ -46,9 +46,7 @@ readFile("simpleLoop_me_systemCall.log");
 // 0
 // ""
 // 0
-// "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// info:    model doesn't contain any continuous state
+// "info:    model doesn't contain any continuous state
 // info:    Result file: model_res.mat (bufferSize=10)
 // "
 // endResult
