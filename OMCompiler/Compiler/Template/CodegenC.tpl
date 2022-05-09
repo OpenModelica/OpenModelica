@@ -2353,7 +2353,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
+       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
@@ -2406,7 +2406,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
+       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
@@ -2494,7 +2494,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
+       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
@@ -2525,7 +2525,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData)
+       void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
@@ -2602,7 +2602,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
+       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
@@ -2632,7 +2632,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb2%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData)
+       void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
@@ -2884,7 +2884,7 @@ template getNLSPrototypes(Integer index)
 ::=
   <<
   void residualFunc<%index%>(void** dataIn, const double* xloc, double* res, const int* iflag);
-  void initializeStaticDataNLS<%index%>(void *inData, threadData_t *threadData, void *inSystemData);
+  void initializeStaticDataNLS<%index%>(void *inData, threadData_t *threadData, void *inSystemData, modelica_boolean initSparsPattern);
   void getIterationVarsNLS<%index%>(struct DATA *inData, double *array);
   >>
 end getNLSPrototypes;
@@ -3172,14 +3172,16 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   <<
 
   OMC_DISABLE_OPT
-  void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData)
+  void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData, modelica_boolean initSparsPattern)
   {
     DATA* data = (DATA*) inData;
     <%systemType%>* sysData = (<%systemType%>*) inSystemData;
     int i=0;
     <%bodyStaticData%>
     /* initial sparse pattern */
-    initializeSparsePattern<%indexName%>(sysData);
+    if (initSparsPattern) {
+      initializeSparsePattern<%indexName%>(sysData);
+    }
   }
   >>
 end generateStaticInitialData;

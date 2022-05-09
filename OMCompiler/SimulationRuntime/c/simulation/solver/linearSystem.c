@@ -172,6 +172,9 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
     linsys[i].min = (double*) malloc(size*sizeof(double));
     linsys[i].max = (double*) malloc(size*sizeof(double));
 
+    /* Init sparsitiy pattern */
+    linsys[i].initializeStaticLSData(data, threadData, &linsys[i], 1 /* true */);
+
     /* allocate solver data */
     /* the implementation of matrix A is solver-specific */
     if(linsys[i].useSparseSolver == 1)
@@ -353,7 +356,7 @@ void freeLinSystThreadData(LINEAR_SYSTEM_DATA *linsys)
 }
 
 /**
- * @brief Initialize min, max, nominal and sparsity pattern of linear system.
+ * @brief Set min, max, nominal for linear systems.
  *
  * This function allocates memory for sparsity pattern and
  * initialized nominal, min, max and spsarsity pattern.
@@ -378,7 +381,7 @@ int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
     {
       throwStreamPrint(threadData, "Static data of Linear system not initialized for linear system %i",i);
     }
-    linsys[i].initializeStaticLSData(data, threadData, &linsys[i]);
+    linsys[i].initializeStaticLSData(data, threadData, &linsys[i], 0 /* false */);
   }
 
   messageClose(LOG_LS_V);
