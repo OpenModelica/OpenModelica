@@ -20,7 +20,9 @@ val(y,10.0);
 // record SimulationResult
 //     resultFile = "testDummyDerMatching_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'testDummyDerMatching', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
+//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 // stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

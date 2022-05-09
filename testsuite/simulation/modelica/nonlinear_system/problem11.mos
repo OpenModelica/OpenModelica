@@ -32,7 +32,9 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem11_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -77,7 +79,9 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem11_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -131,7 +135,9 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem11_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

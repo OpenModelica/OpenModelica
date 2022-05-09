@@ -31,7 +31,14 @@ runScript(modelTesting);getErrorString();
 // {"pipe1.T","pipe2.T","pipe3.T","heatCapacitor1.T","heatCapacitor2.T"}
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling', options = '', outputFormat = 'mat', variableFilter = 'time|pipe1.T|pipe2.T|pipe3.T|heatCapacitor1.T|heatCapacitor2.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling_res.mat
-// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// Messages: stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 2 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 3 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 4 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 5 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 6 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!

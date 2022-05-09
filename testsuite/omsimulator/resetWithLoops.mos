@@ -53,10 +53,22 @@ readFile("resetWithLoops_systemCall.log");
 // ""
 // 0
 // "Instantiate
+// stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 2 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 3 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 4 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 5 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
 // Initialize
 // info:    maximum step size for 'model.root': 0.001000
 // info:    Result file: model_res.mat (bufferSize=10)
 // Reset
+// stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 2 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 3 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 4 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 5 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
 // info:    Final Statistics for 'model.root':
 //          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
 //          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0

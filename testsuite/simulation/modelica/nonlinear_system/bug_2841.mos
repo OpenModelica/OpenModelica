@@ -33,6 +33,8 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // |                 | |       | | 0 mixed systems
 // LOG_NLS           | info    | initialize non-linear system solvers
 // |                 | |       | | 2 non-linear systems
+// stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
 // LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
