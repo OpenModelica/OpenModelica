@@ -189,6 +189,7 @@ add_dependencies(DEPENDENCY_UPDATE DEPENDENCY_SCAN)
 
 
 add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES} .cmake/omc_entry_point.c)
+add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
@@ -216,7 +217,14 @@ target_include_directories(OpenModelicaCompiler INTERFACE ${CMAKE_CURRENT_BINARY
 #   target_link_options(OpenModelicaCompiler PUBLIC -Wl,--stack,33554432)
 # endif()
 
-add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
+# For now disable some warnings for MSVC. These should of course be fixed properly.
+if(MSVC)
+  target_compile_options(OpenModelicaCompiler PRIVATE /wd4101) # unreferenced local variable
+  target_compile_options(OpenModelicaCompiler PRIVATE /wd4102) # unreferenced label
+  target_compile_options(OpenModelicaCompiler PRIVATE /wd4267) # conversion from 'size_t' to 'int', possible loss of data
+  target_compile_options(OpenModelicaCompiler PRIVATE /wd4244) # conversion from '' to '', possible loss of data
+endif()
+
 
 
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)

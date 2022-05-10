@@ -2415,8 +2415,7 @@ algorithm
         result := Expression.fold(e1, evalBuiltinMax2, Expression.EMPTY(ty));
 
         if Expression.isEmpty(result) then
-          result := Expression.CALL(Call.makeTypedCall(fn,
-            {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Purity.PURE, Type.arrayElementType(ty)));
+          result := Expression.makeMinValue(Type.arrayElementType(ty));
         end if;
       then
         result;
@@ -2463,8 +2462,7 @@ algorithm
         result := Expression.fold(e1, evalBuiltinMin2, Expression.EMPTY(ty));
 
         if Expression.isEmpty(result) then
-          result := Expression.CALL(Call.makeTypedCall(fn,
-            {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Purity.PURE, Type.arrayElementType(ty)));
+          result := Expression.makeMaxValue(Type.arrayElementType(ty));
         end if;
       then
         result;

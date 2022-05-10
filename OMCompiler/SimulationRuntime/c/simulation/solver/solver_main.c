@@ -93,7 +93,7 @@ static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
 static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 #endif
 
@@ -129,7 +129,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
 #endif
 
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
     if ((int)(data->modelData->nStates + data->modelData->nInputVars) > 0){
       retVal = ipopt_step(data, threadData, solverInfo);
@@ -300,7 +300,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     break;
   }
 #endif
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
   {
     infoStreamPrint(LOG_SOLVER, 0, "Initializing optimizer");
@@ -408,7 +408,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     dassl_deinitial(solverInfo->solverData);
   }
 #endif
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
   else if(solverInfo->solverMethod == S_OPTIMIZATION)
   {
     /* free  work arrays */
@@ -720,7 +720,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     return 1;
 #endif
 
-#ifndef WITH_IPOPT
+#ifndef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
     warningStreamPrint(LOG_STDOUT, 0, "Ipopt is needed but not available.");
     TRACE_POP
@@ -1146,7 +1146,7 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 }
 
 /***************************************    Run Ipopt for optimization     ***********************************/
-#if defined(WITH_IPOPT)
+#if defined(OMC_HAVE_IPOPT)
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int cJ, res;

@@ -40,9 +40,10 @@ extern "C" {
  */
 #if !defined(_MSC_VER)
 #include <libgen.h>
-#include <dirent.h>
 #include <unistd.h>
 #endif
+
+#include <dirent.h>
 
 #include "meta/meta_modelica.h"
 #include <limits.h>

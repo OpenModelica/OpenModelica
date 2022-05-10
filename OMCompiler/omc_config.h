@@ -119,7 +119,7 @@
 #define WITH_SUNDIALS
 
 #if defined(__MINGW32__)
-#define WITH_IPOPT
+#define OMC_HAVE_IPOPT
 #else
 /* Without IPOPT for MSVC */
 #endif

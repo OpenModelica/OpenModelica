@@ -735,6 +735,10 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
 
   data->callback->function_initSpatialDistribution(data, threadData);
 
+  /* Update nominal, min and max values of linear/non-linear system solvers */
+  updateStaticDataOfLinearSystems(data, threadData);
+  updateStaticDataOfNonlinearSystems(data, threadData);
+
   /* if there are user-specified options, use them! */
   if (pInitMethod && (strcmp(pInitMethod, "") && strcmp(pInitMethod, "fmi"))) {
     initMethod = IIM_UNKNOWN;

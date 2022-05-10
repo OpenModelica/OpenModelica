@@ -56,6 +56,7 @@ AC_SUBST(MAKE)
 AC_SUBST(HAVE_LAPACK)
 AC_SUBST(HAVE_LAPACK_DEPRECATED)
 AC_SUBST(LD_LAPACK)
+AC_SUBST(OMC_HAVE_IPOPT)
 AC_SUBST(WITH_SUITESPARSE)
 AC_SUBST(SUITESPARSE_TARGET)
 AC_SUBST(SUITESPARSE_LDFLAGS)
@@ -725,8 +726,10 @@ AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation with IPOP
 AS_IF([test "x$with_ipopt" = xyes],
 [
   IPOPT_TARGET="ipopt";
+  OMC_HAVE_IPOPT="#define OMC_HAVE_IPOPT"
 ],[
   IPOPT_TARGET=""
+  OMC_HAVE_IPOPT="/* #define OMC_HAVE_IPOPT */ /* Without Ipopt*/"
 ])
 
 m4_include([common/m4/corba.m4])

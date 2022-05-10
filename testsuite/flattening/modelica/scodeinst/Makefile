@@ -525,7 +525,9 @@ FuncBuiltinMath.mo \
 FuncBuiltinMatrix.mo \
 FuncBuiltinMatrixWrongType1.mo \
 FuncBuiltinMax.mo \
+FuncBuiltinMax2.mo \
 FuncBuiltinMin.mo \
+FuncBuiltinMin2.mo \
 FuncBuiltinMod.mo \
 FuncBuiltinNdims.mo \
 FuncBuiltinNoClock1.mo \
@@ -777,6 +779,9 @@ LookupLibrary1.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \
+MaxInvalidArg1.mo \
+MaxInvalidArg2.mo \
+MaxInvalidArg3.mo \
 MergeComponents1.mo \
 MergeComponents2.mo \
 MergeComponents3.mo \
@@ -785,6 +790,9 @@ MergeComponents5.mo \
 MergeComponents6.mo \
 MergeComponents7.mo \
 MergeComponents8.mo \
+MinInvalidArg1.mo \
+MinInvalidArg2.mo \
+MinInvalidArg3.mo \
 MissingRedeclare1.mo \
 mod1.mo \
 mod10.mo \

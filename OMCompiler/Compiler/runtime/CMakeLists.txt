@@ -218,6 +218,8 @@ else()
   set(CONFIG_WITH_OPENMP 0)
 endif()
 
+set(OMC_HAVE_IPOPT "/* OMC_HAVE_IPOPT Not needed for CMake build. Availability and use of ipopt is handled by the CMakefiles.*/")
+
 set(WITH_SUITESPARSE "#define WITH_SUITESPARSE")
 set(WITH_HWLOC 0)
 set(WITH_UUID "#define WITH_LIBUUID 1")

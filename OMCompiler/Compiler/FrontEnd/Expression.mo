@@ -3406,6 +3406,8 @@ algorithm
       Type ty1,ty2;
       list<DAE.Subscript> subs;
 
+    case DAE.WILD() then DAE.CREF(cr, DAE.T_UNKNOWN());
+
     case _
       equation
         ty1 = ComponentReference.crefLastType(cr);
