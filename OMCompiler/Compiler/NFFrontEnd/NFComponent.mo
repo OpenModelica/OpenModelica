@@ -168,6 +168,7 @@ public
       case TYPED_COMPONENT()    then component.classInst;
       case ITERATOR(ty = Type.COMPLEX(cls = classInst)) then classInst;
       case ITERATOR()           then InstNode.ITERATOR_NODE(Expression.EMPTY(component.ty));
+      else InstNode.EMPTY_NODE();
     end match;
   end classInstance;
 
@@ -611,6 +612,13 @@ public
       else InnerOuter.NOT_INNER_OUTER;
     end match;
   end innerOuter;
+
+  function isInnerOuter
+    input Component component;
+    output Boolean isInnerOuter;
+  algorithm
+    isInnerOuter := innerOuter(component) <> InnerOuter.NOT_INNER_OUTER;
+  end isInnerOuter;
 
   function isInner
     input Component component;

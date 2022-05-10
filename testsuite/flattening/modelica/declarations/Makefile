@@ -47,6 +47,7 @@ FlowDeclConnector.mo \
 FlowDeclRecord.mo \
 FlowDeclRecord2.mo \
 FlowDeclType.mo \
+FunctionRestriction6.mo \
 InputDeclConnector.mo \
 InputDeclRecord.mo \
 InputDeclType.mo \

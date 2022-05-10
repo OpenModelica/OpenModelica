@@ -1767,6 +1767,7 @@ uniontype InstNode
     isRec := match node
       case CLASS_NODE() then Restriction.isRecord(Class.restriction(Pointer.access(node.cls)));
       case COMPONENT_NODE() then isRecord(Component.classInstance(Pointer.access(node.component)));
+      else false;
     end match;
   end isRecord;
 
