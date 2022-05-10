@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
+find_package(LAPACK REQUIRED)
+
 file(GLOB OMC_SIMRT_UTIL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
 file(GLOB OMC_SIMRT_UTIL_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/util/*.h)
 
@@ -48,7 +50,6 @@ elseif(MSVC)
   set_target_properties(OpenModelicaRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
-
 install(TARGETS OpenModelicaRuntimeC)
 
 
@@ -79,10 +80,12 @@ target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::config)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cminpack)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cdaskr)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
+target_link_libraries(SimulationRuntimeC PUBLIC ${LAPACK_LIBRARIES})
 
-if(WIN32)
+if(MINGW)
   target_link_options(SimulationRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
+  target_link_libraries(SimulationRuntimeC PUBLIC wsock32)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif(WIN32)
 
@@ -91,9 +94,6 @@ if(OM_OMC_ENABLE_IPOPT)
   target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_IPOPT)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
 endif()
-
-# Fix me. Make an interface (header only library) out of 3rdParty/dgesv
-target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
 
 install(TARGETS SimulationRuntimeC)
 
