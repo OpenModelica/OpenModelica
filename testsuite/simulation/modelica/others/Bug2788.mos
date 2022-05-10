@@ -23,9 +23,7 @@ val(y1, 1.0); getErrorString();
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
-//     messages = "tdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_INIT          | info    | ### START INITIALIZATION ###
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
 // LOG_INIT          | info    | updating min-values
 // LOG_INIT          | info    | updating max-values
 // LOG_INIT          | info    | updating nominal-values
@@ -42,8 +40,8 @@ val(y1, 1.0); getErrorString();
 // "
 // end SimulationResult;
 // ""
-// 5.000000000000001
+// 5.0
 // ""
-// 4.000000000000001
+// 4.0
 // ""
 // endResult

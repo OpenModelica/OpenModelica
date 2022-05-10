@@ -414,18 +414,21 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     /* Init sparsitiy pattern */
     nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i], 1 /* true */);
 
-    modelica_boolean useSparsityPattern = sparsitySanityCheck(nonlinsys[i].sparsePattern, nonlinsys[i].size, LOG_NLS);
-    if (!useSparsityPattern) {
-      // free sparsity pattern and don't use scaling
-      warningStreamPrint(LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d is not regular. "
-                                        "This indicates that something went wrong during sparsity pattern generation. "
-                                        "Removing sparsity pattern and disabling NLS scaling.", i);
-      /* DEBUG */
-      printSparseStructure(nonlinsys[i].sparsePattern, nonlinsys[i].size, nonlinsys[i].size, LOG_NLS, "NLS sparse pattern");
-      freeSparsePattern(nonlinsys[i].sparsePattern);
-      nonlinsys[i].sparsePattern = NULL;
-      nonlinsys[i].isPatternAvailable = 0 /* FALSE */;
-      omc_flag[FLAG_NO_SCALING] = 1 /* TRUE */;
+    if(nonlinsys[i].isPatternAvailable) {
+      /* only test for singularity if sparsity pattern is supposed to be there */
+      modelica_boolean useSparsityPattern = sparsitySanityCheck(nonlinsys[i].sparsePattern, nonlinsys[i].size, LOG_NLS);
+      if (!useSparsityPattern) {
+        // free sparsity pattern and don't use scaling
+        warningStreamPrint(LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d is not regular. "
+                                          "This indicates that something went wrong during sparsity pattern generation. "
+                                          "Removing sparsity pattern and disabling NLS scaling.", i);
+        /* DEBUG */
+        //printSparseStructure(nonlinsys[i].sparsePattern, nonlinsys[i].size, nonlinsys[i].size, LOG_NLS, "NLS sparse pattern");
+        freeSparsePattern(nonlinsys[i].sparsePattern);
+        nonlinsys[i].sparsePattern = NULL;
+        nonlinsys[i].isPatternAvailable = 0 /* FALSE */;
+        omc_flag[FLAG_NO_SCALING] = 1 /* TRUE */;
+      }
     }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
