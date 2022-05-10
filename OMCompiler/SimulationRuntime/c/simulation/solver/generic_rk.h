@@ -80,6 +80,7 @@ typedef struct DATA_GENERIC_RK{
   int nFastStates, nSlowStates;
   int *fastStates;
   int *slowStates;
+  int *sortedStates;
   modelica_boolean isFirstStep;       /* True during first Runge-Kutta integrator step, false otherwise */
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
