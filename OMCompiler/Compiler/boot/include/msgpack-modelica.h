@@ -211,7 +211,7 @@ MSGPACK_MODELICA_STATIC void* msgpack_modelica_new_deserialiser(const char *file
   sz = ftell(fin);
   fseek(fin, 0, SEEK_SET);
   mapped = (char*) malloc(sz + 1);
-  if (1 != fread(mapped, sz, 1, fin)) {
+  if (1 != omc_fread(mapped, sz, 1, fin)) {
     free(mapped);
     fclose(fin);
     ModelicaFormatError("Failed to read contents of size %ld in %s\n", (long) sz, file);
