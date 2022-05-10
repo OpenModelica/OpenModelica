@@ -144,6 +144,14 @@ protected
   Boolean isDir, impactOK;
   Option<Absyn.Class> cl;
   list<String> versionsThatProvideTheWanted, commands, versions;
+  list<String> exact_versions, compatible_versions;
+
+  function isExactVersion
+    input String version;
+    input String requestedVersion;
+    output Boolean exact = Util.stringStartsWith(requestedVersion, version) and
+                           not Util.stringContainsChar(version, "-");
+  end isExactVersion;
 algorithm
   if not requireExactVersion then
     if listEmpty(prios) then
@@ -155,12 +163,20 @@ algorithm
         versionsThatProvideTheWanted :=
           PackageManagement.versionsThatProvideTheWanted(id, v, printError = false);
 
+        (exact_versions, compatible_versions) :=
+          List.splitOnTrue(versionsThatProvideTheWanted, function isExactVersion(requestedVersion = v));
+        versionsThatProvideTheWanted := listAppend(exact_versions, compatible_versions);
+
         if listEmpty(versionsThatProvideTheWanted) then
           versions := v :: versions;
         else
           versions := listAppend(versionsThatProvideTheWanted, versions);
         end if;
       end for;
+
+      if listEmpty(versions) then
+        versions := prios;
+      end if;
     end if;
   else
     versions := prios;
