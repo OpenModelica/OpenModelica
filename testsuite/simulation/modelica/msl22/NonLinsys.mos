@@ -20,9 +20,9 @@ val(x1,15.0);
 val(x2,15.0);
 
 // TODO: Does not work since DASSL calls residual function for negative values when
-//it calculates numerical jacobian. 
+//it calculates numerical jacobian.
 loadFile("NonLinsys2.mo");
-simulate(NonLinSys2, tolerance=1e-5, numberOfIntervals=100); 
+simulate(NonLinSys2, tolerance=1e-5, numberOfIntervals=100);
 val(x,0.0);
 val(x,0.5);
 val(x,1.0);
@@ -31,7 +31,7 @@ val(y,0.5);
 val(y,1.0);
 
 loadFile("NonLinsys3.mo");
-simulate(NonLinSys3, tolerance=1e-10, numberOfIntervals=100); 
+simulate(NonLinSys3, tolerance=1e-10, numberOfIntervals=100);
 val(x,0.0);
 val(x,0.5);
 val(x,1.0);
@@ -51,15 +51,14 @@ readSimulationResult("NonLinSys4_res.mat",{psii,delta},size);
 // record SimulationResult
 //     resultFile = "NonLinSys_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'NonLinSys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 1.0
-// 0.8808835556627793
-// 0.8540238507992969
+// 0.8808835556645844
+// 0.8540238507997485
 // record SimulationResult
 //     resultFile = "dae1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 15.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'dae1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -72,46 +71,41 @@ readSimulationResult("NonLinSys4_res.mat",{psii,delta},size);
 // record SimulationResult
 //     resultFile = "dae2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 15.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'dae2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 0.6666646597348026
-// 0.5000014650126133
+// 0.6666646597347681
+// 0.5000014650126356
 // true
 // record SimulationResult
 //     resultFile = "NonLinSys2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'NonLinSys2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// stdout            | warning | Sparsity pattern for non-linear system 2 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// stdout            | warning | Sparsity pattern for non-linear system 3 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
+//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 3 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 1.0
-// 0.8809010960681859
-// 0.8540385357824058
+// 0.8809010960699305
+// 0.8540385357829453
 // 2.0
-// 1.898157829842241
-// 1.872090436957631
+// 1.898157829838671
+// 1.872090436952921
 // true
 // record SimulationResult
 //     resultFile = "NonLinSys3_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'NonLinSys3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// stdout            | warning | Sparsity pattern for non-linear system 1 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabeling NLS scaling.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 1.0
 // 1.214729713594297
-// 1.64262701861007
+// 1.642627018610069
 // 2.0
 // 2.268768406068996
-// 2.925731326392949
+// 2.925731326392948
 // endResult

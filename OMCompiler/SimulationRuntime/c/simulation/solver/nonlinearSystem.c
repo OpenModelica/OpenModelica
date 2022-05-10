@@ -420,6 +420,8 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       warningStreamPrint(LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d is not regular. "
                                         "This indicates that something went wrong during sparsity pattern generation. "
                                         "Removing sparsity pattern and disabling NLS scaling.", i);
+      /* DEBUG */
+      printSparseStructure(nonlinsys[i].sparsePattern, nonlinsys[i].size, nonlinsys[i].size, LOG_NLS, "NLS sparse pattern");
       freeSparsePattern(nonlinsys[i].sparsePattern);
       nonlinsys[i].sparsePattern = NULL;
       nonlinsys[i].isPatternAvailable = 0 /* FALSE */;
