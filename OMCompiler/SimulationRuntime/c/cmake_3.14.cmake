@@ -37,15 +37,16 @@ target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
 
 target_include_directories(OpenModelicaRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+target_link_libraries(OpenModelicaRuntimeC PUBLIC OMCPThreads::OMCPThreads)
 
-if(WIN32)
+if(MINGW)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC dbghelp)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC wsock32)
   target_link_options(OpenModelicaRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
   set_target_properties(OpenModelicaRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
-endif(WIN32)
+endif()
 
 
 install(TARGETS OpenModelicaRuntimeC)
