@@ -23,6 +23,11 @@ include(cmake/omc_utils.cmake)
 include(cmake/omc_target_info.cmake)
 include(cmake/omc_check_exists.cmake)
 
+# Include the small thread library setup we have. This provides the library
+# OMCPThreads::OMCPThreads which gives us a PThreads library on Windows as
+# well as linux. See the file for more info.
+include(cmake/OMCPThreads.cmake)
+
 # Add the compiler ids to the report for convenience.
 omc_add_to_report(CMAKE_C_COMPILER_ID)
 omc_add_to_report(CMAKE_CXX_COMPILER_ID)

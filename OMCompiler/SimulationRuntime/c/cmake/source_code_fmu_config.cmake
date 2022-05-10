@@ -146,6 +146,8 @@ target_compile_definitions(SimulationRuntimeFMI PRIVATE OMC_MINIMAL_RUNTIME=1;OM
 
 target_include_directories(SimulationRuntimeFMI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+target_link_libraries(SimulationRuntimeFMI PUBLIC OMCPThreads::OMCPThreads)
+
 install(TARGETS SimulationRuntimeFMI)
 
 
