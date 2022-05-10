@@ -2087,18 +2087,30 @@ protected
     input InstNode component;
     output Direction direction;
   protected
+    Component comp;
     ConnectorType.Type cty;
     InnerOuter io;
     Visibility vis;
     Variability var;
   algorithm
+    comp := InstNode.component(InstNode.resolveOuter(component));
+
+    // Outer components are not instantiated, so check this first to make sure
+    // it's safe to e.g. fetch the attributes of the component.
+    io := Component.innerOuter(comp);
+
+    // Function components may not be inner/outer.
+    if io <> InnerOuter.NOT_INNER_OUTER then
+      Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
+        {Prefixes.innerOuterString(io), InstNode.name(component)},
+        InstNode.info(InstNode.resolveOuter(component)));
+      fail();
+    end if;
+
     Attributes.ATTRIBUTES(
       connectorType = cty,
       direction = direction,
-      innerOuter = io) := Component.getAttributes(InstNode.component(component));
-
-    vis := InstNode.visibility(component);
-    var := Component.variability(InstNode.component(component));
+      variability = var) := Component.getAttributes(comp);
 
     // Function components may not be connectors.
     if ConnectorType.isFlowOrStream(cty) then
@@ -2108,15 +2120,9 @@ protected
       fail();
     end if;
 
-    // Function components may not be inner/outer.
-    if io <> InnerOuter.NOT_INNER_OUTER then
-      Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
-        {Prefixes.innerOuterString(io), InstNode.name(component)},
-        InstNode.info(component));
-      fail();
-    end if;
-
     // Formal parameters must be public, other function variables must be protected.
+    vis := InstNode.visibility(component);
+
     if direction <> Direction.NONE then
       if vis == Visibility.PROTECTED then
         Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
