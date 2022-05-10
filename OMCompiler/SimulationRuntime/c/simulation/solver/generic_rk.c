@@ -95,6 +95,8 @@ void allocateDataGenericRK_MR(DATA* data, threadData_t* threadData, DATA_GENERIC
 double IController(double* err_values, double err_order);
 double PIController(double* err_values, double err_order);
 
+int checkForStateEvent(DATA* data, LIST *eventList);
+
 struct RK_USER_DATA {
   DATA* data;
   threadData_t* threadData;
@@ -1663,6 +1665,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       rk_data->stepsDone += 1;
     } while  (err>1);
 
+
     /* update time with performed stepSize */
     rk_data->time += rk_data->lastStepSize;
 
@@ -1672,6 +1675,28 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     memcpy(rk_data->yOld, rk_data->y, data->modelData->nStates*sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     rk_data->time- rk_data->lastStepSize, rk_data->time, err, rk_data->stepSize);
+
+    sData->timeValue = rk_data->time;
+    solverInfo->currentTime = sData->timeValue;
+    memcpy(sData->realVars, rk_data->y, data->modelData->nStates*sizeof(double));
+    /*calculates Values dependents on new states*/
+    /* read input vars */
+    externalInputUpdate(data);
+    data->callback->input_function(data, threadData);
+    /* eval needed equations*/
+    data->callback->function_ZeroCrossingsEquations(data, threadData);
+    data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
+
+    if (checkForStateEvent(data, solverInfo->eventLst))
+    {
+      if(ACTIVE_STREAM(LOG_SOLVER))
+      {
+        // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
+        // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+        messageClose(LOG_SOLVER);
+      }
+      return 0;
+    }
 
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps)
