@@ -121,7 +121,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   simresglob->curFormat = format;
   simresglob->curFileName = strdup(filename);
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
-  stat(filename, &buf);
+  omc_stat(filename, &buf);
   simresglob->mtime = buf.st_mtime;
 #endif
   // fprintf(stderr, "SimulationResultsImpl__openFile(%s) => %s\n", filename, PlotFormatStr[curFormat]);
@@ -470,7 +470,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
           vals[i] = omc_matlab4_read_vals(&simresglob.matReader, mat_var[i]->index);
         }
       }
-      fout = fopen(outFile, "w");
+      fout = omc_fopen(outFile, "w");
       fprintf(fout, "time");
       for (i=1; i<numToFilter; i++) {
         fprintf(fout, ",\"%s\"", mat_var[i]->name);
@@ -530,7 +530,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       /* indexes becomes the lookup table from old index to new index */
       parameter_indexes[i] = j;
     }
-    fout = fopen(outFile, "wb");
+    fout = omc_fopen(outFile, "wb");
     if (fout == NULL) {
       return failedToWriteToFile(outFile);
     }

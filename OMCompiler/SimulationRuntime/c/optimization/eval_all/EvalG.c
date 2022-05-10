@@ -172,7 +172,7 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
       int i;
       FILE *pFile;
       char buffer[4096];
-      pFile = fopen("jac_struct.m", "wt");
+      pFile = omc_fopen("jac_struct.m", "wt");
       if(pFile == NULL)
         printf("\n\nError");
       fprintf(pFile, "%s", "clear J\n");

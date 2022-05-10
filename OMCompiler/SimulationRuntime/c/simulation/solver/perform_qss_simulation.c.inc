@@ -207,7 +207,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
 
 #ifdef D
   FILE* fid=NULL;
-  fid = fopen("log_qss.txt","w");
+  fid = omc_fopen("log_qss.txt","w");
 #endif
 
 /* *********************************************************************************** */

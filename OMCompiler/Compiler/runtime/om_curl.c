@@ -31,7 +31,7 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result)
   void *rest = MMC_CDR(urlPathList);
   const char *url = MMC_STRINGDATA(MMC_CAR(first));
   const char *file = MMC_STRINGDATA(MMC_CDR(first));
-  FILE *fout = fopen(file, "wb");
+  FILE *fout = omc_fopen(file, "wb");
 
   if (fout == NULL) {
     c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "Failed to open file for writing: %s", &file, 1);

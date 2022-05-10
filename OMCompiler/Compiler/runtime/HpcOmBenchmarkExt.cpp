@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <fstream>
 #include "cJSON.h"
+#include "util/omc_file.h"
 
 struct Equation {
   int id;
@@ -296,13 +297,13 @@ public:
         std::list<std::list<double> >();
     ParserUserData userData = ParserUserData(&errMsg, 0, 0, &eqList);
 
-    xmlFile = fopen(filePath.c_str(), "r");
+    xmlFile = omc_fopen(filePath.c_str(), "r");
     parser = XML_ParserCreate(NULL);
     XML_SetUserData(parser, &userData);
     XML_SetElementHandler(parser, StartElement, EndElement);
     do {
       //Read the graphml-file piece by piece
-      len = fread(buffer, sizeof(char), bufferSize, xmlFile);
+      len = omc_fread(buffer, sizeof(char), bufferSize, xmlFile, 0);
 
       if (len < bufferSize)
         done = true;
@@ -345,7 +346,7 @@ std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
     cJSON *root;
     cJSON *profileBlocks;
 
-    fp = fopen ( filePath.c_str() , "rb" );
+    fp = omc_fopen ( filePath.c_str() , "rb" );
     if( !fp ) perror(filePath.c_str()),exit(1);
 
     fseek( fp , 0L , SEEK_END);
@@ -361,7 +362,7 @@ std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
     }
 
     /* copy the file into the buffer */
-    if( 1!=fread( buffer , lSize, 1 , fp) )
+    if( 1!=omc_fread( buffer , lSize, 1 , fp, 0) )
     {
       fclose(fp),free(buffer),fputs("entire read fails\n",stderr);
       return resultList;
