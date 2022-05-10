@@ -64,7 +64,7 @@ int vasprintf(char **strp, const char *fmt, va_list ap) {
 
 #if !defined(OMC_MINIMAL_RUNTIME)
 
-#include <windows.h>
+#include <winsock2.h>
 #include <tlhelp32.h>
 #include <time.h>
 
@@ -226,7 +226,7 @@ void* omc_dlopen(const char *filename, int flag)
   return (void*) LoadLibrary(filename);
 }
 
-#include <windows.h>
+#include <winsock2.h>
 #include <imagehlp.h>
 
 static const char* GetLastErrorAsString()
@@ -389,7 +389,7 @@ This file has no copyright assigned and is placed in the Public Domain.
 Written by Nach M. S. September 8, 2005
 */
 
-#include <windows.h>
+#include <winsock2.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <errno.h>
