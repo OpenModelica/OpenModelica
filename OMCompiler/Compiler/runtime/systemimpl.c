@@ -2131,7 +2131,12 @@ int splitVersion(const char *version, long *versionNum, char **versionExtra)
     buf = next;
   } while (cont && ++i < MODELICAPATH_LEVELS);
   if (*buf == ' ') buf++;
-  *versionExtra = omc_alloc_interface.malloc_strdup(buf);
+
+  if (*buf == '+') {
+    *versionExtra = omc_alloc_interface.malloc_strdup("");
+  } else {
+    *versionExtra = omc_alloc_interface.malloc_strdup(buf);
+  }
   len = strlen(*versionExtra);
   /* fprintf(stderr, "have len %ld versionExtra %s\n", len, *versionExtra); */
   if (len >= 2 && 0==strcmp("mo", *versionExtra+len-2)) {
