@@ -41,7 +41,7 @@ extern "C" {
 #include <sys/types.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-#include <windows.h>
+#include <winsock2.h>
 #else
 #include <unistd.h>
 #endif

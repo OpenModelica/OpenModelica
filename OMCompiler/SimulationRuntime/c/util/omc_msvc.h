@@ -174,7 +174,7 @@ int dladdr(void *addr, Dl_info *info);
 
 #if defined(_MSC_VER)
 
-#include <windows.h>
+#include <winsock2.h>
 #if !defined(PATH_MAX)
 #define PATH_MAX MAX_PATH
 #endif
