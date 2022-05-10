@@ -360,7 +360,7 @@ extern int SystemImpl__regularFileExists(const char* str)
 #else
   struct stat buf;
   /* adrpo: TODO: check if str leads to a path > PATH_MAX, maybe use realpath impl. from below */
-  if (stat(str, &buf)) return 0;
+  if (omc_stat(str, &buf)) return 0;
   return (buf.st_mode & S_IFREG) != 0;
 #endif
 }
@@ -505,7 +505,7 @@ int SystemImpl__writeFile(const char* filename, const char* data)
 int SystemImpl__appendFile(const char* filename, const char *data)
 {
   FILE *file = NULL;
-  file = fopen(filename, "a");
+  file = omc_fopen(filename, "a");
 
   if(file == NULL) {
     const char *c_tokens[1] = {filename};
@@ -933,7 +933,7 @@ extern int SystemImpl__directoryExists(const char *str)
   return (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 #else
   struct stat buf;
-  if (stat(str, &buf))
+  if (omc_stat(str, &buf))
     return 0;
   return (buf.st_mode & S_IFDIR) != 0;
 #endif
@@ -965,7 +965,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
   char buf[8192];
   FILE *source, *target;
 
-  source = fopen(str_1, "r");
+  source = omc_fopen(str_1, "r");
   if (source==0) {
     const char *msg[2] = {strerror(errno), str_1};
     c_add_message(NULL,85,
@@ -976,7 +976,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
       2);
     return 0;
   }
-  target = fopen(str_2, "w");
+  target = omc_fopen(str_2, "w");
   if (target==0) {
     const char *msg[2] = {strerror(errno), str_2};
     c_add_message(NULL,85,
@@ -1058,10 +1058,14 @@ static int SystemImpl__removeDirectoryItem(const char *path)
       buf = (char *)omc_alloc_interface.malloc_atomic(len);
       if (buf != NULL)
       {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+        struct _stat statbuf;
+#else /* unix */
         struct stat statbuf;
+#endif
 
         snprintf(buf, len, "%s/%s", path, p->d_name);
-        if (stat(buf, &statbuf) == 0)
+        if (omc_stat(buf, &statbuf) == 0)
         {
           if (S_ISDIR(statbuf.st_mode))
           {
@@ -1069,7 +1073,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
           }
           else
           {
-            r2 = unlink(buf);
+            r2 = omc_unlink(buf);
           }
         }
       }
@@ -1086,7 +1090,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
   else
   {
     /* Could not open path as dir, try to handle as file */
-    retval = unlink(path);
+    retval = omc_unlink(path);
   }
 
   return retval;
@@ -1191,13 +1195,17 @@ extern int SystemImpl__removeDirectory(const char *path)
           if (strcmp(p->d_name+(len-len_post), pat_post) == 0)
           {
             /* pre and post pattern do match */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+            struct _stat statbuf;
+#else /* unix */
             struct stat statbuf;
+#endif
             char * newdir = (char *)omc_alloc_interface.malloc_atomic(len_base+len+len_sub+3);
 
             strcpy(newdir, basepath);
             strcat(newdir, "/");
             strcat(newdir, p->d_name);
-            if (stat(newdir, &statbuf) == 0)
+            if (omc_stat(newdir, &statbuf) == 0)
             {
               if (S_ISDIR(statbuf.st_mode))
               {
@@ -1212,7 +1220,7 @@ extern int SystemImpl__removeDirectory(const char *path)
               {
                 if (sub == NULL)
                 {
-                  unlink(newdir);
+                  omc_unlink(newdir);
                 }
                 else
                 {
@@ -1517,7 +1525,7 @@ int file_select_directories(direntry entry)
     return (0);
   } else {
     sprintf(fileName,"%s/%s",select_from_dir,entry->d_name);
-    res = stat(fileName,&fileStatus);
+    res = omc_stat(fileName,&fileStatus);
     if (res!=0) return 0;
     if ((fileStatus.st_mode & _IFDIR))
       return (1);
@@ -2888,8 +2896,12 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
   FindClose(sh2);
   return ((LARGE_INTEGER*)&ftWrite1)->QuadPart - ((LARGE_INTEGER*)&ftWrite2)->QuadPart > 0 ? 1 : 0;
 #else
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  struct _stat buf1, buf2;
+#else /* unix */
   struct stat buf1, buf2;
-  if (stat(file1, &buf1)) {
+#endif
+  if (omc_stat(file1, &buf1)) {
     const char *c_tokens[2]={strerror(errno),file1};
     c_add_message(NULL,85,
         ErrorType_scripting,
@@ -2899,7 +2911,7 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
         2);
     return -1;
   }
-  if (stat(file2, &buf2)) {
+  if (omc_stat(file2, &buf2)) {
     const char *c_tokens[2]={strerror(errno),file2};
     c_add_message(NULL,85,
         ErrorType_scripting,
@@ -2935,15 +2947,15 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 #if !defined(_MSC_VER)
   struct stat stbuf1;
   struct stat stbuf2;
-  if (stat(file1, &stbuf1)) return 0;
-  if (stat(file2, &stbuf2)) return 0;
+  if (omc_stat(file1, &stbuf1)) return 0;
+  if (omc_stat(file2, &stbuf2)) return 0;
   if (stbuf1.st_size != stbuf2.st_size) return 0;
 #endif
-  f1 = fopen(file1,"rb");
+  f1 = omc_fopen(file1,"rb");
   if (f1 == NULL) {
     return 0;
   }
-  f2 = fopen(file2,"rb");
+  f2 = omc_fopen(file2,"rb");
   if (f2 == NULL) {
     fclose(f1);
     return 0;
@@ -3024,7 +3036,7 @@ typedef enum {
 int SystemImpl__stat(const char *filename, double *size, double *mtime, int *fileType)
 {
   struct stat stats;
-  if (0 != stat(filename, &stats)) {
+  if (0 != omc_stat(filename, &stats)) {
     *size = 0;
     *mtime = 0;
     *fileType = FileType_NoFile;
@@ -3086,15 +3098,15 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
   int result = 0, n, i, j, k, isMSVC = !strcmp(target, "msvc");
   char buffer[512];
   char obuffer[1024];
-  fin = fopen(textFile, "r");
+  fin = omc_fopen(textFile, "r");
   if (!fin) {
     goto done;
   }
   errno = 0;
 #if defined(__APPLE_CC__)||defined(__MINGW32__)||defined(__MINGW64__)
-  unlink(outFile);
+  omc_unlink(outFile);
 #endif
-  fout = fopen(outFile, "w");
+  fout = omc_fopen(outFile, "w");
   if (!fout) {
     const char *c_token[1]={strerror(errno)};
     c_add_message(NULL,85,

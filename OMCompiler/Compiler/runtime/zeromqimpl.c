@@ -40,6 +40,7 @@
 
 #include "meta/meta_modelica.h"
 #include "util/modelica_string.h"
+#include "util/omc_file.h"
 
 #include "settingsimpl.h"
 #include "systemimpl.h"
@@ -83,7 +84,7 @@ void* ZeroMQ_initialize(const char *zeroMQFileSuffix, int listenToAll, int port)
 #endif
   // Create the file with port number
   FILE *fp;
-  fp = fopen(zeroMQFilePath, "w");
+  fp = omc_fopen(zeroMQFilePath, "w");
   fputs(endPointBuf, fp);
   fclose(fp);
   printf("Created ZeroMQ Server.\nDumped server port in file: %s", zeroMQFilePath);fflush(NULL);

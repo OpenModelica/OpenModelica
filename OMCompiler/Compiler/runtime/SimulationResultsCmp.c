@@ -228,7 +228,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
   if (!isResultCmp) {
     fname = (char*) malloc(25 + strlen(prefix) + strlen(varname));
     sprintf(fname, "%s.%s.csv", prefix, varname);
-    fout = fopen(fname,"w");
+    fout = omc_fopen(fname,"w");
     if (fout) {
       fprintf(fout, "time,reference,actual,err,relerr,threshold\n");
     }
@@ -549,7 +549,7 @@ static int writeLogFile(const char *filename,DiffDataField *ddf,const char *f,co
   FILE* fout;
   unsigned int i;
   /* fprintf(stderr, "writeLogFile: %s\n",filename); */
-  fout = fopen(filename, "w");
+  fout = omc_fopen(filename, "w");
   if (!fout)
     return -1;
 

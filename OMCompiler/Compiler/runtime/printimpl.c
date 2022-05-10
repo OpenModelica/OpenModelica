@@ -36,6 +36,8 @@
 #include "systemimpl.h"
 #include "meta/meta_modelica.h"
 
+#include "util/omc_file.h"
+
 /* this is defined in systemimplmisc.h/cpp */
 extern char* _replace(const char* source_str, const char* search_str, const char* replace_str);
 
@@ -340,9 +342,9 @@ static int PrintImpl__writeBuf(threadData_t *threadData,const char* filename)
   /* open the file */
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
 #if defined(__APPLE_CC__)||defined(__MINGW32__)||defined(__MINGW64__)
-  unlink(filename);
+  omc_unlink(filename);
 #endif
-  file = fopen(filename,fileOpenMode);
+  file = omc_fopen(filename, fileOpenMode);
   if (file == NULL) {
     const char *c_tokens[1]={filename};
     c_add_message(NULL,21, /* WRITING_FILE_ERROR */
@@ -431,9 +433,9 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
   /* open the file */
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
 #if defined(__APPLE_CC__)||defined(__MINGW32__)||defined(__MINGW64__)
-  unlink(filename);
+  omc_unlink(filename);
 #endif
-  file = fopen(filename,fileOpenMode);
+  file = omc_fopen(filename,fileOpenMode);
   if (file == NULL) {
     const char *c_tokens[1]={filename};
     c_add_message(NULL,21, /* WRITING_FILE_ERROR */

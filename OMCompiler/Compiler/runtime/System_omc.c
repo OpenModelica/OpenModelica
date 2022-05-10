@@ -390,11 +390,15 @@ extern double System_getVariableValue(double _timeStamp, void* _timeValues, void
 
 extern void* System_getFileModificationTime(const char *fileName)
 {
-  struct stat attrib;   // create a file attribute structure
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  struct _stat attrib;
+#else /* unix */
+  struct stat attrib;
+#endif
   double elapsedTime;    // the time elapsed as double
   int result;            // the result of the function call
 
-  if (stat( fileName, &attrib ) != 0) {
+  if (omc_stat( fileName, &attrib ) != 0) {
     return mmc_mk_none();
   } else {
     return mmc_mk_some(mmc_mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time

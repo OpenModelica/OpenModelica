@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include "../../3rdParty/FMIL/ThirdParty/Minizip/minizip/unzip.h"
 #include "util/modelica_string.h"
+#include "util/omc_file.h"
 #include "errorext.h"
 #include "systemimpl.h"
 
@@ -98,7 +99,7 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
         return 0;
       }
 
-      FILE *fout = fopen(renamedPrefix, "wb");
+      FILE *fout = omc_fopen(renamedPrefix, "wb");
       if (fout == NULL) {
         c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "Failed to open file for writing %s", &renamedPrefix, 1);
         unzCloseCurrentFile(zipfile);
