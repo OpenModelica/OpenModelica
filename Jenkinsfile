@@ -480,37 +480,6 @@ pipeline {
           }
         }
 
-        stage('testsuite-compliance-newinst') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
-              label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            LIBRARIES = "/cache/omlibrary"
-            COMPLIANCEEXTRAFLAGS = "-d=newInst"
-            COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance-newinst.failures"
-            COMPLIANCEPREFIX = "compliance-newinst"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          steps {
-            script { common.compliance() }
-          }
-        }
-
         stage('build-gui-clang-qt5') {
           agent {
             docker {
@@ -797,7 +766,6 @@ pipeline {
           }
           steps {
             unstash 'compliance'
-            unstash 'compliance-newinst'
             echo "${env.NODE_NAME}"
             sshPublisher(publishers: [sshPublisherDesc(configName: 'ModelicaComplianceReports', transfers: [sshTransfer(sourceFiles: 'compliance-*html')])])
           }
