@@ -97,6 +97,32 @@ double PIController(double* err_values, double err_order);
 
 int checkForStateEvent(DATA* data, LIST *eventList);
 
+int checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double time, double* realVars)
+{
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+
+  int eventHappend;
+
+  memcpy(data->simulationInfo->zeroCrossingsPre, data->simulationInfo->zeroCrossings, data->modelData->nZeroCrossings * sizeof(modelica_real));
+
+  sData->timeValue = time;
+  memcpy(sData->realVars, realVars, data->modelData->nStates*sizeof(double));
+
+  /*calculates Values dependents on new states*/
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data, threadData);
+  /* eval needed equations*/
+  data->callback->function_ZeroCrossingsEquations(data, threadData);
+  data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
+
+  eventHappend = checkForStateEvent(data, solverInfo->eventLst);
+
+  memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsPre, data->modelData->nZeroCrossings * sizeof(modelica_real));
+
+  return eventHappend;
+}
+
 struct RK_USER_DATA {
   DATA* data;
   threadData_t* threadData;
@@ -1621,7 +1647,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         //     rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
         if (rk_data->nFastStates>0  && rk_data->err_fast > 1)
         {
-          genericRK_MR_step(data, threadData, solverInfo, targetTime);
+          if (genericRK_MR_step(data, threadData, solverInfo, targetTime)==2)
+            return 0;
           // rk_data->lastStepSize = rk_data->dataRKmr->lastStepSize;
           // rk_data->stepSize = rk_data->dataRKmr->stepSize;
           //  copyVector_genericRK_MR(rkData->y, rkData->dataRKmr->y, rkData->nFastStates, rkData->fastStates);
@@ -1676,18 +1703,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     rk_data->time- rk_data->lastStepSize, rk_data->time, err, rk_data->stepSize);
 
-    sData->timeValue = rk_data->time;
-    solverInfo->currentTime = sData->timeValue;
-    memcpy(sData->realVars, rk_data->y, data->modelData->nStates*sizeof(double));
-    /*calculates Values dependents on new states*/
-    /* read input vars */
-    externalInputUpdate(data);
-    data->callback->input_function(data, threadData);
-    /* eval needed equations*/
-    data->callback->function_ZeroCrossingsEquations(data, threadData);
-    data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
-
-    if (checkForStateEvent(data, solverInfo->eventLst))
+    if (checkForEvents(data, threadData, solverInfo, rk_data->time, rk_data->y))
     {
       if(ACTIVE_STREAM(LOG_SOLVER))
       {

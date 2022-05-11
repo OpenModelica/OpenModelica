@@ -423,18 +423,6 @@ double bisection(DATA* data, threadData_t *threadData, double* a, double* b, dou
 
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to %e and maximum number of intersections %d.", TTOL, n);
-  for(i=0; i < data->modelData->nStates; i++)
-  {
-    data->localData[0]->realVars[i] = states_a[i];
-  }
-  /*calculates Values dependents on new states*/
-  /* read input vars */
-  externalInputUpdate(data);
-  data->callback->input_function(data, threadData);
-  /* eval needed equations*/
-  data->callback->function_ZeroCrossingsEquations(data, threadData);
-  data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
-  memcpy(data->simulationInfo->zeroCrossingsPre, data->simulationInfo->zeroCrossings, data->modelData->nZeroCrossings * sizeof(modelica_real));
 
   while(fabs(*b - *a) > MINIMAL_STEP_SIZE && n-- > 0)
   {
