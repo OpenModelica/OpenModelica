@@ -96,17 +96,21 @@ double IController(double* err_values, double err_order);
 double PIController(double* err_values, double err_order);
 
 int checkForStateEvent(DATA* data, LIST *eventList);
+double bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList);
 
-int checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double time, double* realVars)
+double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
   int eventHappend;
+  double eventTime = -1;
+
+  static LIST *tmpEventList = NULL;
 
   memcpy(data->simulationInfo->zeroCrossingsPre, data->simulationInfo->zeroCrossings, data->modelData->nZeroCrossings * sizeof(modelica_real));
 
-  sData->timeValue = time;
-  memcpy(sData->realVars, realVars, data->modelData->nStates*sizeof(double));
+  sData->timeValue = timeRight;
+  memcpy(sData->realVars, rightValues, data->modelData->nStates*sizeof(double));
 
   /*calculates Values dependents on new states*/
   /* read input vars */
@@ -118,9 +122,26 @@ int checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   eventHappend = checkForStateEvent(data, solverInfo->eventLst);
 
+  if (eventHappend) {
+    double *states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
+    double *states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
+
+    tmpEventList = allocList(sizeof(long));
+
+    /* write states to work arrays */
+    memcpy(states_left,  leftValues, data->modelData->nStates * sizeof(double));
+    memcpy(states_right, rightValues, data->modelData->nStates * sizeof(double));
+
+    eventTime = bisection(data, threadData, &timeLeft, &timeRight, states_left, states_right, tmpEventList, solverInfo->eventLst);
+    printf("Event time: %20.16g\n", eventTime);
+
+    free(states_left);
+    free(states_right);
+  }
+
   memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsPre, data->modelData->nZeroCrossings * sizeof(modelica_real));
 
-  return eventHappend;
+  return eventTime;
 }
 
 struct RK_USER_DATA {
@@ -1504,6 +1525,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   int rk_step_info;
 
   double targetTime;
+  double eventTime;
   double stopTime = data->simulationInfo->stopTime;
 
   infoStreamPrint(LOG_SOLVER, 1, "generic Runge-Kutta method:");
@@ -1710,19 +1732,15 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       rk_data->stepsDone += 1;
     } while  (err>1);
 
-
-    /* update time with performed stepSize */
-    rk_data->time += rk_data->lastStepSize;
-
-    // printVector_genericRK("yOld", rk_data->yOld, rk_data->nStates, rk_data->time - rk_data->lastStepSize);
-    // printVector_genericRK("y   ", rk_data->y, rk_data->nStates, rk_data->time);
-    /* step is accepted and yOld needs to be updated */
-    memcpy(rk_data->yOld, rk_data->y, data->modelData->nStates*sizeof(double));
-    infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
-                    rk_data->time- rk_data->lastStepSize, rk_data->time, err, rk_data->stepSize);
-
-    if (checkForEvents(data, threadData, solverInfo, rk_data->time, rk_data->y))
+    eventTime = checkForEvents(data, threadData, solverInfo, rk_data->time, rk_data->yOld, rk_data->time + rk_data->lastStepSize, rk_data->y);
+    if (eventTime > 0)
     {
+      linear_interpolation(rk_data->time, rk_data->yOld,
+                           rk_data->time + rk_data->lastStepSize, rk_data->y,
+                           eventTime, rk_data->y, nStates);
+
+      rk_data->time = eventTime;
+
       if(ACTIVE_STREAM(LOG_SOLVER))
       {
         // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
@@ -1730,6 +1748,16 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         messageClose(LOG_SOLVER);
       }
       return 0;
+    } else {
+      /* update time with performed stepSize */
+      rk_data->time += rk_data->lastStepSize;
+
+      // printVector_genericRK("yOld", rk_data->yOld, rk_data->nStates, rk_data->time - rk_data->lastStepSize);
+      // printVector_genericRK("y   ", rk_data->y, rk_data->nStates, rk_data->time);
+      /* step is accepted and yOld needs to be updated */
+      memcpy(rk_data->yOld, rk_data->y, data->modelData->nStates*sizeof(double));
+      infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
+                      rk_data->time- rk_data->lastStepSize, rk_data->time, err, rk_data->stepSize);
     }
 
     /* emit step, if integratorSteps is selected */
