@@ -140,6 +140,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_RK */                           "genericRKOpt",
   /* FLAG_RK_MR */                        "genericRKMROpt",
   /* FLAG_RK_PAR */                       "embeddedRKLim",
+  /* FLAG_RK_MR_PAR */                    "rkmrFac",
   /* FLAG_RK_STEPSIZE_CTRL */             "controlRKStep",
   /* FLAG_RK_NLS */                       "rkNLS",
   /* FLAG_RT */                           "rt",
@@ -265,6 +266,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_RK */                           "value specifies the chosen Runge-Kutta scheme (default 0)",
   /* FLAG_RK_MR */                        "value specifies the chosen (multirate) Runge-Kutta scheme (default 0)",
   /* FLAG_RK_PAR */                       "tune embedded method",
+  /* FLAG_RK_MR_PAR */                    "define percentage of states for the fast states selection",
   /* FLAG_RK_STEPSIZE_CTRL */             "controlRKStep",
   /* FLAG_RK_NLS */                       "non-linear solver method used by solver genericRK",
   /* FLAG_RT */                           "value specifies the scaling factor for real-time synchronization (0 disables)",
@@ -561,6 +563,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the chosen Runge-Kutta method for the fast states (default esdirk3).",
   /* FLAG_RK_PAR */
   "  tune embedded formula",
+  /* FLAG_RK_MR_PAR */
+  "  define percentage of states for the fast states selection",
   /* FLAG_RK_STEPSIZE_CTRL */
   "  step size controller (IController, PIController, etc.)",
   /* FLAG_RK_NLS */
@@ -700,6 +704,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_RK */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RK_MR */                        FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RK_PAR */                       FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_RK_MR_PAR */                    FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RK_STEPSIZE_CTRL */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RK_NLS */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RT */                           FLAG_REPEAT_POLICY_FORBID,
@@ -822,8 +827,9 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE */               FLAG_TYPE_FLAG,
   /* FLAG_DATA_RECONCILE_BOUNDARY */      FLAG_TYPE_FLAG,
   /* FLAG_RK */                           FLAG_TYPE_OPTION,
-  /* FLAG_RK_MR */                           FLAG_TYPE_OPTION,
+  /* FLAG_RK_MR */                        FLAG_TYPE_OPTION,
   /* FLAG_RK_PAR */                       FLAG_TYPE_OPTION,
+  /* FLAG_RK_MR_PAR */                    FLAG_TYPE_OPTION,
   /* FLAG_RK_STEPSIZE_CTRL */             FLAG_TYPE_OPTION,
   /* FLAG_RK_NLS */                       FLAG_TYPE_OPTION,
   /* FLAG_RT */                           FLAG_TYPE_OPTION,

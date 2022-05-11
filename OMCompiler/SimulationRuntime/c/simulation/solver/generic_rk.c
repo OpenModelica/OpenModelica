@@ -827,11 +827,17 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   if (solverInfo->solverMethod == S_GENERIC_RK_MR)
   {
     rk_data->multi_rate = 1;
-    rk_data->percentage = 0.1;
+    const char* flag_value = omc_flagValue[FLAG_RK_MR_PAR];
+    if (flag_value != NULL) {
+      rk_data->percentage = atof(omc_flagValue[FLAG_RK_MR_PAR]);
+    } else
+    {
+      rk_data->percentage = 0.3;
+    }
   } else
   {
     rk_data->multi_rate = 0;
-    rk_data->percentage = 2;
+//    rk_data->percentage = 2;
   }
 
   rk_data->fastStates = malloc(sizeof(int)*rk_data->nStates);
@@ -1610,16 +1616,15 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         rk_data->err_fast = 0;
         for (i=0; i<rk_data->nStates; i++)
         {
-          if (i < rk_data->nStates*0.1)
+          ii = rk_data->sortedStates[i];
+          if (i < rk_data->nStates * rk_data->percentage || rk_data->err[ii]>=1)
           {
-            ii = rk_data->sortedStates[i];
             rk_data->fastStates[rk_data->nFastStates] = ii;
             rk_data->nFastStates++;
             rk_data->err_fast = fmax(rk_data->err_fast, rk_data->err[ii]);
           }
           else
           {
-            ii = rk_data->sortedStates[i];
             rk_data->slowStates[rk_data->nSlowStates] = ii;
             rk_data->nSlowStates++;
             rk_data->err_slow = fmax(rk_data->err_slow, rk_data->err[ii]);
@@ -1742,7 +1747,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
   // Check if multirate step is necessary, otherwise the correct values are already stored in sData
   if (rk_data->multi_rate && rk_data->nFastStates>0)
-    genericRK_MR_step(data, threadData, solverInfo, targetTime);
+    if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
+            return 0;
 
 
   if (!solverInfo->integratorSteps)

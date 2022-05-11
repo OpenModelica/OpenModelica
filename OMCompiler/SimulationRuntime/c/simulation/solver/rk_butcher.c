@@ -72,9 +72,7 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
     //printf("embedded method yields R(\u221e) =  %.19g\n", lim);
   } else
   {
-    lim = 1;
-    tableau->order_b = 2;
-    tableau->order_bt = 1;
+    lim = 0.7;
   }
   /* initialize values of the Butcher tableau */
   double gam = (2.0-sqrt(2.0))*0.5;
