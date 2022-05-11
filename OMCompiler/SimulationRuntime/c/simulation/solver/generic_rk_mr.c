@@ -470,6 +470,8 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   DATA_GENERIC_RK_MR* userdata = genericRKData->dataRKmr;
   DATA_NEWTON* solverData = (DATA_NEWTON*) userdata->nlsSolverData;
 
+  int nStages = userdata->tableau->nStages;
+
   userdata->data = (void*) data;
   userdata->threadData = threadData;
 
@@ -526,9 +528,13 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
       // BB ToDo: set good starting values for the newton solver (solution of the last newton iteration!)
       // setting the start vector for the newton step
-      for (i=0; i<userdata->nFastStates; i++)
-        solverData->x[i] = userdata->yOld[userdata->fastStates[i]];
+      // for (i=0; i<userdata->nFastStates; i++)
+      //   solverData->x[i] = userdata->yOld[userdata->fastStates[i]];
 
+      for (i=0; i<userdata->nFastStates; i++) {
+        ii = userdata->fastStates[i];
+        solverData->x[i] = userdata->yOld[ii] + userdata->tableau->c[userdata->act_stage] * userdata->stepSize * (userdata->k + (nStages-1)*nStates)[ii];
+      }
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       // set newton strategy
       solverData->newtonStrategy = NEWTON_DAMPED2;

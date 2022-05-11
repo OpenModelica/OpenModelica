@@ -766,6 +766,8 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   rk_data->yt = malloc(sizeof(double)*rk_data->nStates);
   rk_data->f = malloc(sizeof(double)*rk_data->nStates);
   rk_data->k = malloc(sizeof(double)*rk_data->nStates*rk_data->tableau->nStages);
+  for (int i=0; i<rk_data->nStates*rk_data->tableau->nStages; i++)
+    rk_data->k[i] = 0;
   rk_data->res_const = malloc(sizeof(double)*rk_data->nStates);
   rk_data->errest = malloc(sizeof(double)*rk_data->nStates);
   rk_data->errtol = malloc(sizeof(double)*rk_data->nStates);
@@ -1258,9 +1260,9 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       rk_data->act_stage = stage;
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = rk_data->nlsData;
-      // Set start vector
+      // Set start vector, BB ToDo: Ommit extrapolation after event!!!
       for (int i=0; i<rk_data->nStates; i++)
-        nlsData->nlsx[i] = rk_data->yOld[i] + rk_data->tableau->c[stage] * rk_data->stepSize * rk_data->k[i];
+        nlsData->nlsx[i] = rk_data->yOld[i] + rk_data->tableau->c[stage] * rk_data->stepSize * (rk_data->k + (nStages-1)*nStates)[i];
       //memcpy(nlsData->nlsx, rk_data->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
@@ -1287,20 +1289,31 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
  */
 int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
-  int i, j, k, l, n=data->modelData->nStates;
-  double Atol = data->simulationInfo->tolerance;
-  double Rtol = data->simulationInfo->tolerance;
-  modelica_boolean solved = FALSE;
-
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)solverInfo->solverData;
 
+  NONLINEAR_SYSTEM_DATA* nlsData = rk_data->nlsData;
+
+  int i, j, k, l;
+  int stage;
+  int nStates = data->modelData->nStates;
+  int nStages = rk_data->tableau->nStages;
+
+  double Atol = data->simulationInfo->tolerance;
+  double Rtol = data->simulationInfo->tolerance;
+  modelica_boolean solved = FALSE;
+
+
   /* Set start values for non-linear solver */
-  for (k=0; k<rk_data->tableau->nStages; k++) {
-    memcpy(&rk_data->nlsData->nlsx[k*n], rk_data->yOld, n*sizeof(double));
-    memcpy(&rk_data->nlsData->nlsxOld[k*n], rk_data->yOld, n*sizeof(double));
-    memcpy(&rk_data->nlsData->nlsxExtrapolation[k*n], rk_data->yOld, n*sizeof(double));
+  for (stage=0; stage<rk_data->tableau->nStages; stage++) {
+    // BB ToDo: Ommit extrapolation after event!!!
+    for (int i=0; i<rk_data->nStates; i++)
+      nlsData->nlsx[stage*nStates +i] = rk_data->yOld[i] + rk_data->tableau->c[stage] * rk_data->stepSize * (rk_data->k + (nStages-1)*nStates)[i];
+
+    // memcpy(&nlsData->nlsx[stage*nStates], rk_data->yOld, nStates*sizeof(double));
+    memcpy(&nlsData->nlsxOld[stage*nStates], &nlsData->nlsx[stage*nStates], nStates*sizeof(double));
+    memcpy(&nlsData->nlsxExtrapolation[stage*nStates], &nlsData->nlsx[stage*nStates], nStates*sizeof(double));
   }
 
   solved = solveNLS(data, threadData, rk_data->nlsData, -1);
@@ -1647,7 +1660,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         //     rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
         if (rk_data->nFastStates>0  && rk_data->err_fast > 1)
         {
-          if (genericRK_MR_step(data, threadData, solverInfo, targetTime)==2)
+          if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
             return 0;
           // rk_data->lastStepSize = rk_data->dataRKmr->lastStepSize;
           // rk_data->stepSize = rk_data->dataRKmr->stepSize;
