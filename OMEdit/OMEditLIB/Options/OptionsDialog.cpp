@@ -274,9 +274,9 @@ void OptionsDialog::readGeneralSettings()
 void OptionsDialog::readLibrariesSettings()
 {
   // read ModelicaPath
-  if (mpSettings->contains("modelicaPath")) {
-    const QString modelicaPath = mpSettings->value("modelicaPath").toString();
-    if (MainWindow::instance()->getOMCProxy()->setModelicaPath(modelicaPath)) {
+  if (mpSettings->contains("modelicaPath-1")) {
+    const QString modelicaPath = mpSettings->value("modelicaPath-1").toString();
+    if (!modelicaPath.isEmpty() && MainWindow::instance()->getOMCProxy()->setModelicaPath(modelicaPath)) {
       mpLibrariesPage->getModelicaPathTextBox()->setText(modelicaPath);
     }
   }
@@ -1116,10 +1116,12 @@ void OptionsDialog::saveLibrariesSettings()
 {
   // save ModelicaPath
   const QString modelicaPath = mpLibrariesPage->getModelicaPathTextBox()->text();
-  if (MainWindow::instance()->getOMCProxy()->setModelicaPath(modelicaPath)) {
-    mpSettings->setValue("modelicaPath", modelicaPath);
+  if (!modelicaPath.isEmpty() && MainWindow::instance()->getOMCProxy()->setModelicaPath(modelicaPath)) {
+    mpSettings->setValue("modelicaPath-1", modelicaPath);
   } else {
-    mpLibrariesPage->getModelicaPathTextBox()->setText(MainWindow::instance()->getOMCProxy()->getModelicaPath());
+    MainWindow::instance()->getOMCProxy()->setModelicaPath(Helper::ModelicaPath);
+    mpLibrariesPage->getModelicaPathTextBox()->setPlaceholderText(Helper::ModelicaPath);
+    mpSettings->setValue("modelicaPath-1", "");
   }
   // read the settings and add system libraries
   mpSettings->beginGroup("libraries");
@@ -2222,9 +2224,9 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   // MODELICAPATH
   QGroupBox *pModelicaPathGroupBox = new QGroupBox(Helper::general);
   mpModelicaPathLabel = new Label("MODELICAPATH");
-  mpModelicaPathTextBox = new QLineEdit(MainWindow::instance()->getOMCProxy()->getModelicaPath());
+  mpModelicaPathTextBox = new QLineEdit;
   QString modelicaPathToolTip = tr("List of paths searched while loading a library. Paths are separated by native path separator.");
-  mpModelicaPathTextBox->setPlaceholderText(modelicaPathToolTip);
+  mpModelicaPathTextBox->setPlaceholderText(Helper::ModelicaPath);
   mpModelicaPathTextBox->setToolTip(modelicaPathToolTip);
   // general groupbox layout
   QGridLayout *pGeneralGroupBoxGridLayout = new QGridLayout;
@@ -4932,8 +4934,7 @@ QString DebuggerPage::getGDBPath()
  */
 void DebuggerPage::browseGDBPath()
 {
-  QString GDBPath = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                   NULL, "", NULL);
+  QString GDBPath = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile), NULL, "", NULL);
   if (GDBPath.isEmpty()) {
     return;
   }
