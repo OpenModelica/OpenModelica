@@ -177,6 +177,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // create an object of OMSProxy
   OMSProxy::create();
   // Create an object of OptionsDialog
+  mpLibrariesMenu = 0;
   OptionsDialog::create();
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // apply MessagesWidget settings
@@ -1494,26 +1495,28 @@ void MainWindow::LoadModelCallbackFunction(void *p, const char *modelName)
  */
 void MainWindow::addSystemLibraries()
 {
-  mpLibrariesMenu->clear();
-  // get the available libraries and versions.
-  QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
-  libraries.sort();
-  foreach (QString library, libraries) {
-    QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
-    if (versions.isEmpty()) {
-      QAction *pAction = new QAction(library, this);
-      pAction->setData(QStringList() << library << "");
-      connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
-      mpLibrariesMenu->addAction(pAction);
-    } else {
-      QMenu *pLibraryMenu = new QMenu(library);
-      foreach (QString version, versions) {
-        QAction *pAction = new QAction(StringHandler::convertSemVertoReadableString(version), this);
-        pAction->setData(QStringList() << library << version);
+  if (mpLibrariesMenu) {
+    mpLibrariesMenu->clear();
+    // get the available libraries and versions.
+    QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
+    libraries.sort();
+    foreach (QString library, libraries) {
+      QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
+      if (versions.isEmpty()) {
+        QAction *pAction = new QAction(library, this);
+        pAction->setData(QStringList() << library << "");
         connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
-        pLibraryMenu->addAction(pAction);
+        mpLibrariesMenu->addAction(pAction);
+      } else {
+        QMenu *pLibraryMenu = new QMenu(library);
+        foreach (QString version, versions) {
+          QAction *pAction = new QAction(StringHandler::convertSemVertoReadableString(version), this);
+          pAction->setData(QStringList() << library << version);
+          connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
+          pLibraryMenu->addAction(pAction);
+        }
+        mpLibrariesMenu->addMenu(pLibraryMenu);
       }
-      mpLibrariesMenu->addMenu(pLibraryMenu);
     }
   }
 }

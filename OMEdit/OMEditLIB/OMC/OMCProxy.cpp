@@ -262,6 +262,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   Helper::OpenModelicaVersion = getVersion();
   // set OpenModelicaHome variable
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath().replace("\\", "/");
+  // set ModelicaPath variale
+  Helper::ModelicaPath = getModelicaPath();
 #if defined(_WIN32)
   MMC_TRY_TOP_INTERNAL()
   omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toUtf8().constData()));
@@ -2783,6 +2785,7 @@ bool OMCProxy::setModelicaPath(const QString &path)
 {
   bool result = mpOMCInterface->setModelicaPath(path);
   printMessagesStringInternal();
+  MainWindow::instance()->addSystemLibraries();
   return result;
 }
 
