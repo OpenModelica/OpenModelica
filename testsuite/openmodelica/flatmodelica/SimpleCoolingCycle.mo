@@ -54,7 +54,7 @@ model SimpleCoolingCycle
 end SimpleCoolingCycle;
 
 // Result:
-// class 'SimpleCoolingCycle'
+// model 'SimpleCoolingCycle'
 // function 'SimpleCoolingCycle.heatExchange_CounterFlowNTU.MediumA.specificHeatCapacityCp'
 //   input 'heatExchange_CounterFlowNTU.MediumA.ThermodynamicState' 'state';
 //   output Real 'cp';

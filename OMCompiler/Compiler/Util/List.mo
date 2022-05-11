@@ -6127,6 +6127,28 @@ algorithm
   fail();
 end find;
 
+public function findOption<T>
+  "Returns the first element of a list for which the predicate function return
+   true as an Option, or NONE() if no element is found."
+  input list<T> lst;
+  input Predicate fn;
+  output Option<T> result;
+
+  partial function Predicate
+    input T e;
+    output Boolean matching;
+  end Predicate;
+algorithm
+  for e in lst loop
+    if fn(e) then
+      result := SOME(e);
+      return;
+    end if;
+  end for;
+
+  result := NONE();
+end findOption;
+
 public function find1<T, ArgT1>
   "This function retrieves the first element of a list for which the passed
    function evaluates to true."

@@ -5,10 +5,10 @@
 //
 
 package P
-  class A
+  model A
     constant Integer j = 2;
 
-    class B
+    model B
       constant Integer i = j;
     end B;
   end A;

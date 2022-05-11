@@ -4,7 +4,7 @@
 // cflags: -d=newInst
 //
 
-class ReinitInvalid1
+model ReinitInvalid1
   discrete Real x = 1.0;
 equation
   when time > 1.0 then

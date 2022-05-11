@@ -217,7 +217,7 @@ public
     FlatModel flat_model = flatModel;
     Visibility visibility = Visibility.PUBLIC;
   algorithm
-    s := IOStream.append(s, "class '" + flat_model.name + "'");
+    s := IOStream.append(s, "model '" + flat_model.name + "'");
     s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
     s := IOStream.append(s, "\n");
 

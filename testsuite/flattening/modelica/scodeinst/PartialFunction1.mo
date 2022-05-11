@@ -9,7 +9,7 @@ partial function f
   output Real y;
 end f;
 
-class PartialFunction1
+model PartialFunction1
   Real x = f(time);
 end PartialFunction1;
 

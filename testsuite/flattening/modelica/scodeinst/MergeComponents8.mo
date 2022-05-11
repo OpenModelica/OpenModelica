@@ -1,6 +1,7 @@
 // name: MergeComponents8
 // keywords:
 // status: correct
+// teardown_command: rm MergeComponents8_merged_table.json
 // cflags: -d=newInst,mergeComponents,-nfScalarize
 //
 
