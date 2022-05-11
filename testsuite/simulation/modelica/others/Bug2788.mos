@@ -40,8 +40,8 @@ val(y1, 1.0); getErrorString();
 // "
 // end SimulationResult;
 // ""
-// 5.000000000000001
+// 5.0
 // ""
-// 4.000000000000001
+// 4.0
 // ""
 // endResult

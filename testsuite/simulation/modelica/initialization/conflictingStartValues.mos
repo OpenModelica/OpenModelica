@@ -27,7 +27,7 @@ end conflictingStartValues;
 
 setCommandLineOptions("-d=aliasConflicts"); getErrorString();
 simulate(conflictingStartValues, stopTime=0.0, simflags="-output=x,a"); getErrorString();
-  
+
 // Result:
 // true
 // ""

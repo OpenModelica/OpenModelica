@@ -20,9 +20,9 @@ val(x1,15.0);
 val(x2,15.0);
 
 // TODO: Does not work since DASSL calls residual function for negative values when
-//it calculates numerical jacobian. 
+//it calculates numerical jacobian.
 loadFile("NonLinsys2.mo");
-simulate(NonLinSys2, tolerance=1e-5, numberOfIntervals=100); 
+simulate(NonLinSys2, tolerance=1e-5, numberOfIntervals=100);
 val(x,0.0);
 val(x,0.5);
 val(x,1.0);
@@ -31,7 +31,7 @@ val(y,0.5);
 val(y,1.0);
 
 loadFile("NonLinsys3.mo");
-simulate(NonLinSys3, tolerance=1e-10, numberOfIntervals=100); 
+simulate(NonLinSys3, tolerance=1e-10, numberOfIntervals=100);
 val(x,0.0);
 val(x,0.5);
 val(x,1.0);

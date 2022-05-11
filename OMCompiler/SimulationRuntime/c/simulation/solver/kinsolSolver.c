@@ -113,7 +113,7 @@ static void nlsKinsolConfigSetup(NLS_KINSOL_DATA *kinsolData) {
 /**
  * @brief (Re-) Initialize KINSOL data.
  *
- * Initialize KINSOL data. If the KINSOL memory block was alreay initialized
+ * Initialize KINSOL data. If the KINSOL memory block was already initialized
  * free it first and then reinitialize.
  *
  * @param kinsolData    KINSOL data.
@@ -134,7 +134,7 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
   kinsolData->kinsolMemory = KINCreate();
   if (kinsolData->kinsolMemory == NULL) {
     errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function KINCreate: An error occured.");
+                     "##KINSOL## In function KINCreate: An error occurred.");
   }
 
   /* Set error handler and print level */
@@ -169,7 +169,11 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
       kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
     kinsolData->J = SUNDenseMatrix(size, size);
   } else if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-    kinsolData->nnz = nlsData->sparsePattern->numberOfNonZeros;
+    if (!nlsData->sparsePattern) {
+      kinsolData->nnz = size*size;
+    } else {
+      kinsolData->nnz = nlsData->sparsePattern->numberOfNonZeros;
+    }
     kinsolData->J = SUNSparseMatrix(size, size, kinsolData->nnz, CSC_MAT);
   } else {
     kinsolData->J = NULL;
@@ -201,6 +205,8 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
   } else {
     errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## Unknown linear solver method.");
   }
+  /* Log used solver */
+  infoStreamPrint(LOG_NLS, 0, "##KINSOL## Using linear solver method %s", NLS_LS_METHOD[kinsolData->linearSolverMethod]);
 
   /* Set linear solver */
   flag = KINSetLinearSolver(kinsolData->kinsolMemory, kinsolData->linSol,
@@ -209,12 +215,12 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
 
   /* Set Jacobian for linear solver */
   if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-    if (nlsData->analyticalJacobianColumn != NULL) {
-      flag = KINSetJacFn(kinsolData->kinsolMemory,
-                         nlsSparseSymJac); /* Use symbolic Jacobian */
+    if (nlsData->analyticalJacobianColumn != NULL && nlsData->sparsePattern != NULL) {
+      flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseSymJac); /* Use symbolic Jacobian with sparsity pattern*/
+    } else if (nlsData->sparsePattern != NULL) {
+      flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac); /* Use numeric Jacobian with sparsity pattern */
     } else {
-      flag = KINSetJacFn(kinsolData->kinsolMemory,
-                         nlsSparseJac); /* Use numeric Jacobian */
+      flag = KINSetJacFn(kinsolData->kinsolMemory, NULL); /* Use internal difference quotient for Jacobian */
     }
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
   }
@@ -609,8 +615,8 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;
-  analyticJacobian =
-      &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
+  assertStreamPrint(threadData, nlsData->jacobianIndex >= 0, "Jacobian index of non-linear system %d is negative.", sysNumber);
+  analyticJacobian = &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
 
   /* Access N_Vector variables */
   x = N_VGetArrayPointer(vecX);
@@ -684,10 +690,10 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 /**
  * @brief Check for zero columns of matrix and print absolute sums.
  *
- * Compute absoute sum for each column and print the result.
+ * Compute absolute sum for each column and print the result.
  * Report a warning if it is zero, since the matrix is singular in that case.
  *
- * @param A       Dense matrix stored columnwice
+ * @param A       Dense matrix stored columnwise
  */
 static void nlsKinsolJacSumDense(SUNMatrix A) {
   /* Variables */
@@ -714,7 +720,7 @@ static void nlsKinsolJacSumDense(SUNMatrix A) {
 /**
  * @brief Check for zero columns of matrix and print absolute sums.
  *
- * Compute absoute sum for each column and print the result.
+ * Compute absolute sum for each column and print the result.
  * Report a warning if it is zero, since the matrix is singular in that case.
  *
  * @param A       CSC matrix
@@ -892,16 +898,12 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
 
     /* Calculate the scaled Jacobian */
-    if (nlsData->isPatternAvailable &&
-        kinsolData->linearSolverMethod == NLS_LS_KLU) {
-      spJac = SUNSparseMatrix(kinsolData->size, kinsolData->size,
-                              kinsolData->nnz, CSC_MAT);
+    if (nlsData->isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
+      spJac = SUNSparseMatrix(kinsolData->size, kinsolData->size,kinsolData->nnz, CSC_MAT);
       if (nlsData->analyticalJacobianColumn != NULL) {
-        nlsSparseSymJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1,
-                        tmp2);
+        nlsSparseSymJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
       } else {
-        nlsSparseJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1,
-                     tmp2);
+        nlsSparseJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
       }
     } else {
       denseJac = SUNDenseMatrix(kinsolData->size, kinsolData->size);
