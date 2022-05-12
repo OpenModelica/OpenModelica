@@ -123,21 +123,21 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   eventHappend = checkForStateEvent(data, solverInfo->eventLst);
 
   if (eventHappend) {
-    // double *states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
-    // double *states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
+    double *states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
+    double *states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
 
-    // tmpEventList = allocList(sizeof(long));
+    tmpEventList = allocList(sizeof(long));
 
-    // /* write states to work arrays */
-    // memcpy(states_left,  leftValues, data->modelData->nStates * sizeof(double));
-    // memcpy(states_right, rightValues, data->modelData->nStates * sizeof(double));
+    /* write states to work arrays */
+    memcpy(states_left,  leftValues, data->modelData->nStates * sizeof(double));
+    memcpy(states_right, rightValues, data->modelData->nStates * sizeof(double));
 
-    // eventTime = bisection(data, threadData, &timeLeft, &timeRight, states_left, states_right, tmpEventList, solverInfo->eventLst);
-    eventTime = 1;
-    //printf("Event time: %20.16g\n", eventTime);
+    eventTime = bisection(data, threadData, &timeLeft, &timeRight, states_left, states_right, tmpEventList, solverInfo->eventLst);
+    // eventTime = timeRight;
+    // printf("Event time: %20.16g\n", eventTime);
 
-    // free(states_left);
-    // free(states_right);
+    free(states_left);
+    free(states_right);
   }
 
   memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsPre, data->modelData->nZeroCrossings * sizeof(modelica_real));
@@ -1529,6 +1529,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   double eventTime;
   double stopTime = data->simulationInfo->stopTime;
 
+  solverInfo->solverRootFinding = 1;
+
   infoStreamPrint(LOG_SOLVER, 1, "generic Runge-Kutta method:");
 
   // TODO AHeu: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
@@ -1734,15 +1736,15 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     eventTime = checkForEvents(data, threadData, solverInfo, rk_data->time, rk_data->yOld, rk_data->time + rk_data->lastStepSize, rk_data->y);
     if (eventTime > 0)
     {
-
       linear_interpolation(rk_data->time, rk_data->yOld,
                            rk_data->time + rk_data->lastStepSize, rk_data->y,
                            eventTime, rk_data->y, nStates);
 
       rk_data->lastStepSize = eventTime-rk_data->time;
-      // printVector_genericRK("yOld: ", rk_data->yOld, nStates, rk_data->time);
+      // // printVector_genericRK("yOld: ", rk_data->yOld, nStates, rk_data->time);
 
       rk_data->time = eventTime;
+      solverInfo->currentTime = eventTime;
       // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
       if(ACTIVE_STREAM(LOG_SOLVER))
       {
@@ -1767,6 +1769,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     if (solverInfo->integratorSteps)
     {
       sData->timeValue = rk_data->time;
+      solverInfo->currentTime = sData->timeValue;
       memcpy(sData->realVars, rk_data->y, data->modelData->nStates*sizeof(double));
       /*
        * to emit consistent value we need to update the whole
@@ -1785,8 +1788,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   if (!solverInfo->integratorSteps)
   {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
-    solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
-    sData->timeValue = solverInfo->currentTime;
+    sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
+    solverInfo->currentTime = sData->timeValue;
     linear_interpolation_MR(rk_data->timeLeft, rk_data->yLeft,
                             rk_data->timeRight, rk_data->y,
                             sData->timeValue, sData->realVars,
