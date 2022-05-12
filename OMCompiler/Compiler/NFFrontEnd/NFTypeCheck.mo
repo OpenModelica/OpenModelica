@@ -1890,6 +1890,10 @@ algorithm
         ();
 
   end match;
+
+  if Type.isRecord(expectedType) then
+    expression := Expression.typeCast(expression, expectedType);
+  end if;
 end matchComplexTypes;
 
 function matchComponentList
