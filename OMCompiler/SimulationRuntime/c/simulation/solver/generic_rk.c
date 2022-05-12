@@ -97,6 +97,7 @@ double PIController(double* err_values, double err_order);
 
 int checkForStateEvent(DATA* data, LIST *eventList);
 double bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList);
+double findRoot(DATA* data, threadData_t *threadData, LIST *eventList);
 
 double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues)
 {
@@ -107,11 +108,12 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   static LIST *tmpEventList = NULL;
 
+  // store the pre values of the zeroCrossings for comparison
   memcpy(data->simulationInfo->zeroCrossingsPre, data->simulationInfo->zeroCrossings, data->modelData->nZeroCrossings * sizeof(modelica_real));
 
+  // set simulation data to the current time
   sData->timeValue = timeRight;
   memcpy(sData->realVars, rightValues, data->modelData->nStates*sizeof(double));
-
   /*calculates Values dependents on new states*/
   /* read input vars */
   externalInputUpdate(data);
@@ -123,23 +125,10 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   eventHappend = checkForStateEvent(data, solverInfo->eventLst);
 
   if (eventHappend) {
-    double *states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
-    double *states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
-
-    tmpEventList = allocList(sizeof(long));
-
-    /* write states to work arrays */
-    memcpy(states_left,  leftValues, data->modelData->nStates * sizeof(double));
-    memcpy(states_right, rightValues, data->modelData->nStates * sizeof(double));
-
-    eventTime = bisection(data, threadData, &timeLeft, &timeRight, states_left, states_right, tmpEventList, solverInfo->eventLst);
-    // eventTime = timeRight;
-    // printf("Event time: %20.16g\n", eventTime);
-
-    free(states_left);
-    free(states_right);
+    eventTime = findRoot(data, threadData, solverInfo->eventLst);
   }
 
+  // re-store the pre values of the zeroCrossings for comparison
   memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsPre, data->modelData->nZeroCrossings * sizeof(modelica_real));
 
   return eventTime;
@@ -1745,6 +1734,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
       rk_data->time = eventTime;
       solverInfo->currentTime = eventTime;
+      sData->timeValue = solverInfo->currentTime;
       // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
       if(ACTIVE_STREAM(LOG_SOLVER))
       {

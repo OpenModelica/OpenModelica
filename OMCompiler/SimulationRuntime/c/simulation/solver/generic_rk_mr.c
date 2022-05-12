@@ -688,10 +688,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
     linear_interpolation_MR(userdata->startTime, userdata->yStart,
                             userdata->endTime,   userdata->yEnd,
-                            userdata->time + userdata->lastStepSize, userdata->y, userdata->nSlowStates, userdata->slowStates);
+                            userdata->time, userdata->yOld, userdata->nSlowStates, userdata->slowStates);
     linear_interpolation_MR(userdata->startTime, userdata->yStart,
                             userdata->endTime,   userdata->yEnd,
-                            userdata->time, userdata->yOld, userdata->nSlowStates, userdata->slowStates);
+                            userdata->time + userdata->lastStepSize, userdata->y, userdata->nSlowStates, userdata->slowStates);
     eventTime = checkForEvents(data, threadData, solverInfo, userdata->time, userdata->yOld, userdata->time + userdata->lastStepSize, userdata->y);
     if (eventTime > 0)
     {
@@ -707,7 +707,9 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       genericRKData->lastStepSize = eventTime - genericRKData->time;
       genericRKData->time = eventTime;
-      solverInfo->currentTime = sData->timeValue;
+      solverInfo->currentTime = eventTime;
+      sData->timeValue = solverInfo->currentTime;
+
 
       memcpy(genericRKData->y, userdata->y, userdata->nStates * sizeof(double));
 
