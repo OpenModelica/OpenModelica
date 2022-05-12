@@ -123,20 +123,21 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   eventHappend = checkForStateEvent(data, solverInfo->eventLst);
 
   if (eventHappend) {
-    double *states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
-    double *states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
+    // double *states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
+    // double *states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
 
-    tmpEventList = allocList(sizeof(long));
+    // tmpEventList = allocList(sizeof(long));
 
-    /* write states to work arrays */
-    memcpy(states_left,  leftValues, data->modelData->nStates * sizeof(double));
-    memcpy(states_right, rightValues, data->modelData->nStates * sizeof(double));
+    // /* write states to work arrays */
+    // memcpy(states_left,  leftValues, data->modelData->nStates * sizeof(double));
+    // memcpy(states_right, rightValues, data->modelData->nStates * sizeof(double));
 
-    eventTime = bisection(data, threadData, &timeLeft, &timeRight, states_left, states_right, tmpEventList, solverInfo->eventLst);
-    printf("Event time: %20.16g\n", eventTime);
+    // eventTime = bisection(data, threadData, &timeLeft, &timeRight, states_left, states_right, tmpEventList, solverInfo->eventLst);
+    eventTime = 1;
+    //printf("Event time: %20.16g\n", eventTime);
 
-    free(states_left);
-    free(states_right);
+    // free(states_left);
+    // free(states_right);
   }
 
   memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsPre, data->modelData->nZeroCrossings * sizeof(modelica_real));
@@ -1554,10 +1555,6 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   {
     genericRK_first_step(data, threadData, solverInfo);
 
-    // Store yOld for interpolation, especially for the multirate part
-    rk_data->timeLeft = rk_data->time;
-    memcpy(rk_data->yLeft, rk_data->yOld, data->modelData->nStates*sizeof(double));
-
     // side effect:
     //    sData->realVars, userdata->yOld, and userdata->f are consistent
     //    userdata->time and userdata->stepSize are defined
@@ -1568,6 +1565,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   {
     do
     {
+      // printVector_genericRK("yOld: ", rk_data->yOld, nStates, rk_data->time);
+      // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
       /* store yOld in yLeft for interpolation purposes, if necessary
       * BB: Check condition
       */
@@ -1625,12 +1624,12 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
       // printVector_genericRK("Error before sorting:", rk_data->err, rk_data->nStates, rk_data->time);
       // printIntVector_genericRK("Indices before sorting:", rk_data->sortedStates, rk_data->nStates, rk_data->time);
-      sortErrorIndices(rk_data);
       // printIntVector_genericRK("Indices after sorting:", rk_data->sortedStates, rk_data->nStates, rk_data->time);
       // printVector_genericRK_MR("Error after sorting:", rk_data->err, rk_data->nStates, rk_data->time,  rk_data->nStates, rk_data->sortedStates);
 
       if (rk_data->multi_rate == 1)
       {
+        sortErrorIndices(rk_data);
         //Find fast and slow states based on
         rk_data->nFastStates = 0;
         rk_data->nSlowStates = 0;
@@ -1664,7 +1663,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       err_values[1] = rk_data->err_old;
 
       // Store performed stepSize for adjusting the time and interpolation purposes
-      rk_data->stepSize_old = rk_data->lastStepSize;
+      // rk_data->stepSize_old = rk_data->lastStepSize;
       rk_data->lastStepSize = rk_data->stepSize;
       rk_data->timeRight    = rk_data->time + rk_data->stepSize;
 
@@ -1729,18 +1728,22 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         rk_data->stepSize = fmin(rk_data->stepSize, stopTime - (rk_data->time + rk_data->lastStepSize));
       }
 
-      rk_data->stepsDone += 1;
     } while  (err>1);
+    rk_data->stepsDone += 1;
 
     eventTime = checkForEvents(data, threadData, solverInfo, rk_data->time, rk_data->yOld, rk_data->time + rk_data->lastStepSize, rk_data->y);
     if (eventTime > 0)
     {
-      linear_interpolation(rk_data->time, rk_data->yOld,
-                           rk_data->time + rk_data->lastStepSize, rk_data->y,
-                           eventTime, rk_data->y, nStates);
 
-      rk_data->time = eventTime;
+      // linear_interpolation(rk_data->time, rk_data->yOld,
+      //                      rk_data->time + rk_data->lastStepSize, rk_data->y,
+      //                      eventTime, rk_data->y, nStates);
 
+      // rk_data->lastStepSize = eventTime-rk_data->time;
+      // printVector_genericRK("yOld: ", rk_data->yOld, nStates, rk_data->time);
+
+      // rk_data->time = eventTime;
+      // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
       if(ACTIVE_STREAM(LOG_SOLVER))
       {
         // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
@@ -1788,7 +1791,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
                             rk_data->timeRight, rk_data->y,
                             sData->timeValue, sData->realVars,
                             rk_data->nSlowStates, rk_data->slowStates);
-    // printVector_genericRK("yOld: ", userdata->yt, data->modelData->nStates, userdata->time-userdata->lastStepSize);
+    //printVector_genericRK("yOld: ", userdata->yt, data->modelData->nStates, userdata->time-userdata->lastStepSize);
     //printVector_genericRK("y:    ", rk_data->y, data->modelData->nStates, rk_data->time);
     if(ACTIVE_STREAM(LOG_SOLVER))
     {

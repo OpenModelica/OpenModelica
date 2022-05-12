@@ -686,34 +686,36 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     // Count succesful integration steps
     // userdata->stepsDone += 1;
 
-    linear_interpolation_MR(userdata->startTime, userdata->yStart,
-                            userdata->endTime,   userdata->yEnd,
-                            userdata->time + userdata->lastStepSize, userdata->y, userdata->nSlowStates, userdata->slowStates);
-    linear_interpolation_MR(userdata->startTime, userdata->yStart,
-                            userdata->endTime,   userdata->yEnd,
-                            userdata->time, userdata->yOld, userdata->nSlowStates, userdata->slowStates);
-    eventTime = checkForEvents(data, threadData, solverInfo, userdata->time, userdata->yOld, userdata->time + userdata->lastStepSize, userdata->y);
-    if (eventTime > 0)
-    {
-      linear_interpolation_MR(userdata->startTime, userdata->yStart,
-                              userdata->endTime,   userdata->yEnd,
-                              eventTime, userdata->y, userdata->nSlowStates, userdata->slowStates);
-      linear_interpolation_MR(userdata->time, userdata->yOld,
-                              userdata->time + userdata->lastStepSize, userdata->y,
-                              eventTime, userdata->y, userdata->nFastStates, userdata->fastStates);
+    // linear_interpolation_MR(userdata->startTime, userdata->yStart,
+    //                         userdata->endTime,   userdata->yEnd,
+    //                         userdata->time + userdata->lastStepSize, userdata->y, userdata->nSlowStates, userdata->slowStates);
+    // linear_interpolation_MR(userdata->startTime, userdata->yStart,
+    //                         userdata->endTime,   userdata->yEnd,
+    //                         userdata->time, userdata->yOld, userdata->nSlowStates, userdata->slowStates);
+    // eventTime = checkForEvents(data, threadData, solverInfo, userdata->time, userdata->yOld, userdata->time + userdata->lastStepSize, userdata->y);
+    // if (eventTime > 0)
+    // {
+    //   // linear_interpolation_MR(userdata->startTime, userdata->yStart,
+    //   //                         userdata->endTime,   userdata->yEnd,
+    //   //                         eventTime, userdata->y, userdata->nSlowStates, userdata->slowStates);
+    //   // linear_interpolation_MR(userdata->time, userdata->yOld,
+    //   //                         userdata->time + userdata->lastStepSize, userdata->y,
+    //   //                         eventTime, userdata->y, userdata->nFastStates, userdata->fastStates);
 
-      userdata->time = eventTime;
-      genericRKData->time = eventTime;
-      memcpy(genericRKData->y, userdata->y, userdata->nStates * sizeof(double));
+    //   // userdata->time = eventTime;
+    //   // genericRKData->time = eventTime;
 
-      if(ACTIVE_STREAM(LOG_SOLVER))
-      {
-        // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
-        // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
-        messageClose(LOG_SOLVER);
-      }
-      return 1;
-    }
+    //   //genericRKData->time = userdata->time;
+    //   //memcpy(genericRKData->y, userdata->y, userdata->nStates * sizeof(double));
+
+    //   if(ACTIVE_STREAM(LOG_SOLVER))
+    //   {
+    //     // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
+    //     // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+    //     messageClose(LOG_SOLVER);
+    //   }
+    //   return 1;
+    // }
     /* update time with performed stepSize */
     userdata->time += userdata->lastStepSize;
 
