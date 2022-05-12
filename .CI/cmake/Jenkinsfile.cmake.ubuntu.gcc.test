@@ -86,8 +86,7 @@ pipeline {
             }
           }
         }
-      }
-      stage('testsuite-cmake-gcc 2/3') {
+        stage('testsuite-cmake-gcc 2/3') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
@@ -112,8 +111,7 @@ pipeline {
             }
           }
         }
-      }
-      stage('testsuite-cmake-gcc 3/3') {
+        stage('testsuite-cmake-gcc 3/3') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
