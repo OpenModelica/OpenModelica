@@ -67,7 +67,6 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 double IController(double* err_values, double err_order);
 double PIController(double* err_values, double err_order);
 
-//int checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double time, double* realVars);
 double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues);
 
 /**
@@ -684,7 +683,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     } while  (err>1);
 
     // Count succesful integration steps
-    // userdata->stepsDone += 1;
+    userdata->stepsDone += 1;
 
     // linear_interpolation_MR(userdata->startTime, userdata->yStart,
     //                         userdata->endTime,   userdata->yEnd,
@@ -730,9 +729,6 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     copyVector_genericRK_MR(userdata->yOld, userdata->y, userdata->nFastStates, userdata->fastStates);
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     userdata->time- userdata->lastStepSize, userdata->time, err, userdata->stepSize);
-
-
-
   }
 
   userdata->stepSize = userdata->stepSize_old;

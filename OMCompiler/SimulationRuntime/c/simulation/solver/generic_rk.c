@@ -1735,14 +1735,14 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     if (eventTime > 0)
     {
 
-      // linear_interpolation(rk_data->time, rk_data->yOld,
-      //                      rk_data->time + rk_data->lastStepSize, rk_data->y,
-      //                      eventTime, rk_data->y, nStates);
+      linear_interpolation(rk_data->time, rk_data->yOld,
+                           rk_data->time + rk_data->lastStepSize, rk_data->y,
+                           eventTime, rk_data->y, nStates);
 
-      // rk_data->lastStepSize = eventTime-rk_data->time;
+      rk_data->lastStepSize = eventTime-rk_data->time;
       // printVector_genericRK("yOld: ", rk_data->yOld, nStates, rk_data->time);
 
-      // rk_data->time = eventTime;
+      rk_data->time = eventTime;
       // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
       if(ACTIVE_STREAM(LOG_SOLVER))
       {
