@@ -586,14 +586,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   int i, ii, l, nStates = data->modelData->nStates;
   int integrator_step_info;
   double outerStopTime = genericRKData->time + genericRKData->lastStepSize;
-  int outerIntStepSynchronize = 0;
-
   // This is the target time of the main integrator
-  if (targetTime > outerStopTime)
-  {
-    targetTime = outerStopTime;
-    outerIntStepSynchronize = 1;
-  }
+  targetTime = fmin(targetTime, outerStopTime);
+  //  targetTime = genericRKData->time + genericRKData->lastStepSize;
+
   // BB ToDo: Use this to handel last step of the embedded integrator
   double stopTime = data->simulationInfo->stopTime;
 
@@ -617,9 +613,6 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   //printf("userdata->time: %g, userdata->stepSize: %g, targetTime: %g\n", userdata->time, userdata->stepSize, targetTime);
 
   infoStreamPrint(LOG_SOLVER, 1, "generic Runge-Kutta method (fast states):");
-  infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (outer simulation time %10g)",
-                  genericRKData->timeLeft, genericRKData->timeRight, genericRKData->time);
-
   //printIntVector_genericRK("fast states:", userdata->fastStates, userdata->nFastStates, userdata->time);
   while (userdata->time < targetTime)
   {
@@ -746,13 +739,11 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   userdata->stepSize = userdata->stepSize_old;
   // copy error of the fastStates to the outer integrator routine
+  copyVector_genericRK_MR(genericRKData->err, userdata->err, userdata->nFastStates, userdata->fastStates);
   genericRKData->err_fast = err;
-  if (outerIntStepSynchronize)
-  {
-    copyVector_genericRK_MR(genericRKData->err, userdata->err, userdata->nFastStates, userdata->fastStates);
-    copyVector_genericRK_MR(genericRKData->y, userdata->y, userdata->nFastStates, userdata->fastStates);
-//    copyVector_genericRK_MR(genericRKData->yOld, userdata->yOld, userdata->nFastStates, userdata->fastStates);
-  }
+  copyVector_genericRK_MR(genericRKData->y, userdata->y, userdata->nFastStates, userdata->fastStates);
+  copyVector_genericRK_MR(genericRKData->yOld, userdata->yOld, userdata->nFastStates, userdata->fastStates);
+
   // interpolate the values on the time grid of the outer integration
   // if (userdata->time >= genericRKData->time + genericRKData->lastStepSize) {
     // linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt,
