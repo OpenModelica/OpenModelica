@@ -585,10 +585,15 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
   int i, ii, l, nStates = data->modelData->nStates;
   int integrator_step_info;
-  double outerStopTime = genericRKData->time + genericRKData->lastStepSize;
+  double outerStopTime = fmin(genericRKData->time + genericRKData->lastStepSize, genericRKData->timeRight);
+  int outerIntStepSynchronize = 0;
+
   // This is the target time of the main integrator
-  targetTime = fmin(targetTime, outerStopTime);
-  //  targetTime = genericRKData->time + genericRKData->lastStepSize;
+  if (targetTime > outerStopTime)
+  {
+    targetTime = outerStopTime;
+    outerIntStepSynchronize = 1;
+  }
 
   // BB ToDo: Use this to handel last step of the embedded integrator
   double stopTime = data->simulationInfo->stopTime;
@@ -598,10 +603,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   {
     userdata->time = genericRKData->time;
     userdata->stepSize = genericRKData->lastStepSize*0.5;
+    memcpy(userdata->yOld, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
+    memcpy(userdata->y, genericRKData->y, sizeof(double)*genericRKData->nStates);
   }
   userdata->stepSize = fmin(userdata->stepSize, outerStopTime - userdata->time);
-  memcpy(userdata->yOld, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
-  memcpy(userdata->y, genericRKData->y, sizeof(double)*genericRKData->nStates);
   userdata->startTime   = genericRKData->timeLeft;
   userdata->endTime     = genericRKData->timeRight;
   userdata->yStart      = genericRKData->yLeft;
@@ -613,14 +618,17 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   //printf("userdata->time: %g, userdata->stepSize: %g, targetTime: %g\n", userdata->time, userdata->stepSize, targetTime);
 
   infoStreamPrint(LOG_SOLVER, 1, "generic Runge-Kutta method (fast states):");
+  infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (outer simulation time %10g)",
+                  genericRKData->timeLeft, genericRKData->timeRight, outerStopTime);
+
   //printIntVector_genericRK("fast states:", userdata->fastStates, userdata->nFastStates, userdata->time);
   while (userdata->time < targetTime)
   {
     do
     {
-      if (userdata->stepsDone == 0)
-        solverData->calculate_jacobian = 1;
-    // calculate one step of the integrator
+    //   if (userdata->stepsDone == 0)
+    //     solverData->calculate_jacobian = 1;
+    // // calculate one step of the integrator
       integrator_step_info = userdata->step_fun(data, threadData, solverInfo);
 
       for (i=0; i<userdata->nFastStates; i++)
@@ -695,12 +703,9 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     eventTime = checkForEvents(data, threadData, solverInfo, userdata->time, userdata->yOld, userdata->time + userdata->lastStepSize, userdata->y);
     if (eventTime > 0)
     {
-      linear_interpolation_MR(userdata->startTime, userdata->yStart,
-                              userdata->endTime,   userdata->yEnd,
-                              eventTime, userdata->y, userdata->nSlowStates, userdata->slowStates);
-      linear_interpolation_MR(userdata->time, userdata->yOld,
-                              userdata->time + userdata->lastStepSize, userdata->y,
-                              eventTime, userdata->y, userdata->nFastStates, userdata->fastStates);
+      // sData->realVars are the "numerical" values on the right hand side of the event
+      memcpy(genericRKData->yOld, sData->realVars, userdata->nStates * sizeof(double));
+      memcpy(userdata->yOld, sData->realVars, userdata->nStates * sizeof(double));
 
       userdata->lastStepSize = eventTime - userdata->time;
       userdata->time = eventTime;
@@ -709,9 +714,6 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       genericRKData->time = eventTime;
       solverInfo->currentTime = eventTime;
       sData->timeValue = solverInfo->currentTime;
-
-
-      memcpy(genericRKData->y, userdata->y, userdata->nStates * sizeof(double));
 
       if(ACTIVE_STREAM(LOG_SOLVER))
       {
@@ -738,29 +740,13 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   }
 
   userdata->stepSize = userdata->stepSize_old;
-  // copy error of the fastStates to the outer integrator routine
-  copyVector_genericRK_MR(genericRKData->err, userdata->err, userdata->nFastStates, userdata->fastStates);
-  genericRKData->err_fast = err;
-  copyVector_genericRK_MR(genericRKData->y, userdata->y, userdata->nFastStates, userdata->fastStates);
-  copyVector_genericRK_MR(genericRKData->yOld, userdata->yOld, userdata->nFastStates, userdata->fastStates);
 
-  // interpolate the values on the time grid of the outer integration
-  // if (userdata->time >= genericRKData->time + genericRKData->lastStepSize) {
-    // linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt,
-    //                         userdata->time, userdata->y,
-    //                         genericRKData->time + genericRKData->lastStepSize, genericRKData->y,
-    //                         userdata->nFastStates, userdata->fastStates);
-  // }
-  if (!solverInfo->integratorSteps)
+  // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
+  genericRKData->err_fast = userdata->err_new;
+  if (outerIntStepSynchronize)
   {
-    /* Integrator does large steps and needs to interpolate results with respect to the output grid */
-    linear_interpolation_MR(userdata->time-userdata->lastStepSize, userdata->yt,
-                            userdata->time, userdata->y,
-                            targetTime, sData->realVars,
-                            userdata->nFastStates, userdata->fastStates);
-    // printVector_genericRK("yOld: ", userdata->yt, data->modelData->nStates, userdata->time-userdata->lastStepSize);
-    // printVector_genericRK("y:    ", userdata->y, data->modelData->nStates, userdata->time);
-    // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+    copyVector_genericRK_MR(genericRKData->err, userdata->err, userdata->nFastStates, userdata->fastStates);
+    copyVector_genericRK_MR(genericRKData->y, userdata->y, userdata->nFastStates, userdata->fastStates);
   }
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))

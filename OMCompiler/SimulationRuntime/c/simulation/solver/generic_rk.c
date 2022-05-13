@@ -1664,6 +1664,12 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     //    userdata->time and userdata->stepSize are defined
   }
 
+  // Check if multirate step is necessary, otherwise the correct values are already stored in sData
+  if (rk_data->multi_rate && rk_data->nFastStates>0)
+    if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
+            return 0;
+
+
   /* Main integration loop */
   while (rk_data->time < targetTime)
   {
@@ -1838,16 +1844,15 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     eventTime = checkForEvents(data, threadData, solverInfo, rk_data->time, rk_data->yOld, rk_data->time + rk_data->lastStepSize, rk_data->y);
     if (eventTime > 0)
     {
-      linear_interpolation(rk_data->time, rk_data->yOld,
-                           rk_data->time + rk_data->lastStepSize, rk_data->y,
-                           eventTime, rk_data->y, nStates);
+      // sData->realVars are the "numerical" values on the right hand side of the event
+      memcpy(rk_data->yOld, sData->realVars, rk_data->nStates * sizeof(double));
 
       rk_data->lastStepSize = eventTime-rk_data->time;
-      // // printVector_genericRK("yOld: ", rk_data->yOld, nStates, rk_data->time);
-
       rk_data->time = eventTime;
+
       solverInfo->currentTime = eventTime;
-      sData->timeValue = solverInfo->currentTime;
+      sData->timeValue = eventTime;
+
       // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
       if(ACTIVE_STREAM(LOG_SOLVER))
       {
@@ -1866,6 +1871,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       memcpy(rk_data->yOld, rk_data->y, data->modelData->nStates*sizeof(double));
       infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                       rk_data->time- rk_data->lastStepSize, rk_data->time, err, rk_data->stepSize);
+      rk_data->time = rk_data->time;
     }
 
     /* emit step, if integratorSteps is selected */
@@ -1882,10 +1888,10 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       sim_result.emit(&sim_result, data, threadData);
     }
   }
-  // Check if multirate step is necessary, otherwise the correct values are already stored in sData
-  if (rk_data->multi_rate && rk_data->nFastStates>0)
-    if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
-            return 0;
+  // // Check if multirate step is necessary, otherwise the correct values are already stored in sData
+  // if (rk_data->multi_rate && rk_data->nFastStates>0)
+  //   if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
+  //           return 0;
 
 
   if (!solverInfo->integratorSteps)
@@ -1893,6 +1899,12 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;
+    if (rk_data->multi_rate)
+      linear_interpolation_MR(rk_data->dataRKmr->time-rk_data->dataRKmr->lastStepSize, rk_data->dataRKmr->yt,
+                              rk_data->dataRKmr->time, rk_data->dataRKmr->y,
+                              sData->timeValue, sData->realVars,
+                              rk_data->nFastStates, rk_data->fastStates);
+
     linear_interpolation_MR(rk_data->timeLeft, rk_data->yLeft,
                             rk_data->timeRight, rk_data->y,
                             sData->timeValue, sData->realVars,
