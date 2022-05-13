@@ -35,14 +35,6 @@ string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}
 string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
 string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 
-## Set position independent code OMCompiler/ wide. We will take some performance hit from this.
-## However it allows us to build all static libs and combine them later to single shared libs
-## for easy configuration. Instead of having dozens of shared libs.
-## This can of course be turned of if we do not care about memory and are happy to sacrifice a
-## bunch of memory for some performance gain. If so disable this and change the few libraries
-## we build as shared to static (see SimulationRuntime/c, which contains the only shared libs to come).
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
 ## Add a config library for OMC. They will provide access to common config headres such as
 ## config.h, version.h ... These headers, right now for us, are in 'OMCompiler' directory. So
 ## by linking to this library you get the include directories.

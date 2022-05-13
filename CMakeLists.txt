@@ -66,6 +66,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
 
+## Set position independent code for everything built in OpenModelica.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 if(OM_USE_CCACHE)
   find_program(CCACHE_PROGRAM ccache)
   if(CCACHE_PROGRAM)
