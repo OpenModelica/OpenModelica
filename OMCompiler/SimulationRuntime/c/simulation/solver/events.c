@@ -51,11 +51,9 @@ extern "C" {
 #endif
 
 int maxBisectionIterations = 0;
-double bisection(DATA* data, threadData_t *threadData, double*, double*, double*, double*, LIST*, LIST*);
+void bisection(DATA* data, threadData_t *threadData, double*, double*, double*, double*, LIST*, LIST*);
 int checkZeroCrossings(DATA *data, LIST *list, LIST*);
 void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
-
-int checkForStateEvent(DATA* data, LIST *eventList);
 
 /*! \fn checkForSampleEvent
  *
@@ -296,19 +294,16 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
 {
   TRACE_PUSH
 
-  double eventTime;
-  long event_id;
   LIST_NODE* it;
   fortran_integer i=0;
-  static LIST *tmpEventList = NULL;
+  static LIST tmpEventList = (LIST){NULL, NULL, sizeof(long), 0};
 
+  /* FIXME stop allocating all the time */
   double *states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
   double *states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
 
   double time_left = data->simulationInfo->timeValueOld;
   double time_right = data->localData[0]->timeValue;
-
-  tmpEventList = allocList(sizeof(long));
 
   assert(states_right);
   assert(states_left);
@@ -320,12 +315,13 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
 
   /* write states to work arrays */
   memcpy(states_left,  data->simulationInfo->realVarsOld, data->modelData->nStates * sizeof(double));
-  memcpy(states_right, data->localData[0]->realVars    , data->modelData->nStates * sizeof(double));
+  memcpy(states_right, data->localData[0]->realVars     , data->modelData->nStates * sizeof(double));
 
   /* Search for event time and event_id with bisection method */
-  eventTime = bisection(data, threadData, &time_left, &time_right, states_left, states_right, tmpEventList, eventList);
+  bisection(data, threadData, &time_left, &time_right, states_left, states_right, &tmpEventList, eventList);
 
-  if(listLen(tmpEventList) == 0)
+  /* what happens here? */
+  if(listLen(&tmpEventList) == 0)
   {
     double value = fabs(data->simulationInfo->zeroCrossings[*((long*) listFirstData(eventList))]);
     for(it = listFirstNode(eventList); it; it = listNextNode(it))
@@ -341,7 +337,7 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
     {
       if(value == fabs(data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))]))
       {
-        listPushBack(tmpEventList, listNodeData(it));
+        listPushBack(&tmpEventList, listNodeData(it));
         infoStreamPrint(LOG_ZEROCROSSINGS, 0, "added tmp event : %ld", *((long*) listNodeData(it)));
       }
     }
@@ -349,29 +345,17 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
 
   listClear(eventList);
 
-  if(ACTIVE_STREAM(LOG_EVENTS))
+  debugStreamPrint(LOG_EVENTS, 0, (listLen(&tmpEventList) == 1) ? "found event: " : "found events: ");
+  while(listLen(&tmpEventList) > 0)
   {
-    if(listLen(tmpEventList) > 0)
-    {
-      debugStreamPrint(LOG_EVENTS, 0, "found events: ");
-    }
-    else
-    {
-      debugStreamPrint(LOG_EVENTS, 0, "found event: ");
-    }
-  }
-  while(listLen(tmpEventList) > 0)
-  {
-    event_id = *((long*)listFirstData(tmpEventList));
-    listPopFront(tmpEventList);
-
-    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Event id: %ld ", event_id);
-
+    long event_id = *((long*)listFirstData(&tmpEventList));
+    listPopFront(&tmpEventList);
     listPushFront(eventList, &event_id);
+
+    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
   }
 
-  eventTime = time_right;
-  debugStreamPrint(LOG_EVENTS, 0, "time: %.10e", eventTime);
+  debugStreamPrint(LOG_EVENTS, 0, "time: %.10e", time_right);
 
   data->localData[0]->timeValue = time_left;
   for(i=0; i < data->modelData->nStates; i++) {
@@ -383,7 +367,7 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
   updateRelationsPre(data);
   /*sim_result_emit(data);*/
 
-  data->localData[0]->timeValue = eventTime;
+  data->localData[0]->timeValue = time_right;
   for(i=0; i < data->modelData->nStates; i++)
   {
     data->localData[0]->realVars[i] = states_right[i];
@@ -393,7 +377,7 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
   free(states_right);
 
   TRACE_POP
-  return eventTime;
+  return time_right;
 }
 
 /*! \fn bisection
@@ -405,11 +389,10 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
  *  \param [ref] [states_b]
  *  \param [ref] [eventListTmp]
  *  \param [in]  [eventList]
- *  \return Founded event time
  *
  *  Method to find root in interval [oldTime, timeValue]
  */
-double bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
+void bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
 {
   TRACE_PUSH
 
@@ -458,10 +441,8 @@ double bisection(DATA* data, threadData_t *threadData, double* a, double* b, dou
       memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsBackup, data->modelData->nZeroCrossings * sizeof(modelica_real));
     }
   }
-  c = 0.5*(*a + *b);
 
   TRACE_POP
-  return c;
 }
 
 /*! \fn checkZeroCrossings
