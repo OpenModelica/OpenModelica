@@ -97,7 +97,117 @@ double PIController(double* err_values, double err_order);
 
 int checkForStateEvent(DATA* data, LIST *eventList);
 double bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList);
-double findRoot(DATA* data, threadData_t *threadData, LIST *eventList);
+
+/*! \fn findRootLocal
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [threadData]
+ *  \param [ref] [eventList]
+ *  \return: first event of interval [oldTime, timeValue]
+ *
+ *  This function perform a root finding for interval = [oldTime, timeValue]
+ */
+double findRootLocal(DATA* data, threadData_t *threadData, LIST *eventList, double timeLeft, double* leftValues, double timeRight, double* rightValues)
+{
+  TRACE_PUSH
+
+  double eventTime;
+  long event_id;
+  LIST_NODE* it;
+  fortran_integer i=0;
+  static LIST *tmpEventList = NULL;
+
+  double *states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
+  double *states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
+
+  tmpEventList = allocList(sizeof(long));
+
+  assert(states_right);
+  assert(states_left);
+
+  for(it=listFirstNode(eventList); it; it=listNextNode(it))
+  {
+    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
+  }
+
+  /* write states to work arrays */
+  memcpy(states_left,  leftValues, data->modelData->nStates * sizeof(double));
+  memcpy(states_right, rightValues, data->modelData->nStates * sizeof(double));
+
+  /* Search for event time and event_id with bisection method */
+  eventTime = bisection(data, threadData, &timeLeft, &timeRight, states_left, states_right, tmpEventList, eventList);
+
+  if(listLen(tmpEventList) == 0)
+  {
+    double value = fabs(data->simulationInfo->zeroCrossings[*((long*) listFirstData(eventList))]);
+    for(it = listFirstNode(eventList); it; it = listNextNode(it))
+    {
+      double fvalue = fabs(data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))]);
+      if(value > fvalue)
+      {
+        value = fvalue;
+      }
+    }
+    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Minimum value: %e", value);
+    for(it = listFirstNode(eventList); it; it = listNextNode(it))
+    {
+      if(value == fabs(data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))]))
+      {
+        listPushBack(tmpEventList, listNodeData(it));
+        infoStreamPrint(LOG_ZEROCROSSINGS, 0, "added tmp event : %ld", *((long*) listNodeData(it)));
+      }
+    }
+  }
+
+  listClear(eventList);
+
+  if(ACTIVE_STREAM(LOG_EVENTS))
+  {
+    if(listLen(tmpEventList) > 0)
+    {
+      debugStreamPrint(LOG_EVENTS, 0, "found events: ");
+    }
+    else
+    {
+      debugStreamPrint(LOG_EVENTS, 0, "found event: ");
+    }
+  }
+  while(listLen(tmpEventList) > 0)
+  {
+    event_id = *((long*)listFirstData(tmpEventList));
+    listPopFront(tmpEventList);
+
+    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Event id: %ld ", event_id);
+
+    listPushFront(eventList, &event_id);
+  }
+
+  eventTime = timeRight;
+  debugStreamPrint(LOG_EVENTS, 0, "time: %.10e", eventTime);
+
+  data->localData[0]->timeValue = timeLeft;
+  for(i=0; i < data->modelData->nStates; i++) {
+    data->localData[0]->realVars[i] = states_left[i];
+  }
+
+  /* determined continuous system */
+  data->callback->updateContinuousSystem(data, threadData);
+  updateRelationsPre(data);
+  /*sim_result_emit(data);*/
+
+  data->localData[0]->timeValue = eventTime;
+  for(i=0; i < data->modelData->nStates; i++)
+  {
+    data->localData[0]->realVars[i] = states_right[i];
+  }
+
+  free(states_left);
+  free(states_right);
+  freeList(tmpEventList);
+
+  TRACE_POP
+  return eventTime;
+}
 
 double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues)
 {
@@ -125,7 +235,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   eventHappend = checkForStateEvent(data, solverInfo->eventLst);
 
   if (eventHappend) {
-    eventTime = findRoot(data, threadData, solverInfo->eventLst);
+    eventTime = findRootLocal(data, threadData, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues);
   }
 
   // re-store the pre values of the zeroCrossings for comparison
@@ -1371,10 +1481,13 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
 
   /* store Startime of the simulation */
   rk_data->time = sDataOld->timeValue;
-
+  if (rk_data->multi_rate)
+      rk_data->dataRKmr->time = rk_data->time;
+    rk_data->timeLeft = rk_data->time;
+    rk_data->timeRight = rk_data->time;
   /* set correct flags in order to calculate initial step size */
   rk_data->isFirstStep = FALSE;
-  //solverInfo->didEventStep = 0;
+  solverInfo->didEventStep = 0;
 
  /* reset statistics because it is accumulated in solver_main.c */
   rk_data->stepsDone = 0;
