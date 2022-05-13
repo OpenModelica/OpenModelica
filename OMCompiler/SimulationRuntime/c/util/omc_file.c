@@ -200,7 +200,7 @@ wchar_t* longabspath(wchar_t* unicodePath) {
     printf("GetFullPathName failed for %ls with error code %d\n", unicodePath, GetLastError());
     return NULL;
   }
-  if (wcslen(unicodeAbsPath) > MAX_PATH) {
+  if (wcslen(unicodeAbsPath) >= MAX_PATH) {
     printf("Warning: Maximum path length limitation reached while opening\n"
            "\t%ls\n"
            "Consider changing the working directory, "
