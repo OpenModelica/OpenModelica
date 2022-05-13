@@ -1900,17 +1900,17 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;
     if (rk_data->multi_rate)
+      // interpolating fast states if multirate method is used
       linear_interpolation_MR(rk_data->dataRKmr->time-rk_data->dataRKmr->lastStepSize, rk_data->dataRKmr->yt,
                               rk_data->dataRKmr->time, rk_data->dataRKmr->y,
                               sData->timeValue, sData->realVars,
                               rk_data->nFastStates, rk_data->fastStates);
 
+    // interpolating slow states if multirate method is used, otherwise all states are slow states
     linear_interpolation_MR(rk_data->timeLeft, rk_data->yLeft,
                             rk_data->timeRight, rk_data->y,
                             sData->timeValue, sData->realVars,
                             rk_data->nSlowStates, rk_data->slowStates);
-    //printVector_genericRK("yOld: ", userdata->yt, data->modelData->nStates, userdata->time-userdata->lastStepSize);
-    //printVector_genericRK("y:    ", rk_data->y, data->modelData->nStates, rk_data->time);
     if(ACTIVE_STREAM(LOG_SOLVER))
     {
       // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
