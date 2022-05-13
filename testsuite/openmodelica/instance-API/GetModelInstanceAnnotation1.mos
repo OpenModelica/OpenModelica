@@ -1,0 +1,30 @@
+// name: GetModelInstanceAnnotation1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    annotation (
+      Icon(graphics={Rectangle(extent={{-66,78},{70,-56}}, lineColor={28,108,200})}),
+      Diagram(graphics={Ellipse(extent={{-62,68},{56,-60}}, lineColor={28,108,200})}));
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"annotation\": \"(Icon(graphics = {Rectangle(extent = {{-66, 78}, {70, -56}}, lineColor = {28, 108, 200})}), Diagram(graphics = {Ellipse(extent = {{-62, 68}, {56, -60}}, lineColor = {28, 108, 200})}))\",
+//   \"connections\": [
+//
+//   ],
+//   \"replaceable\": [
+//
+//   ]
+// }"
+// endResult

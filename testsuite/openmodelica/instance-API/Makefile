@@ -1,6 +1,8 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+GetModelInstanceAnnotation1.mos \
+GetModelInstanceComment1.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceConnection1.mos \
 GetModelInstanceDuplicate1.mos \

@@ -917,14 +917,18 @@ protected
   InstNode node;
   list<InstanceTree> comps, exts;
   Sections sections;
+  Option<SCode.Comment> cmt;
 algorithm
   InstanceTree.CLASS(node = node, exts = exts, components = comps) := tree;
+  cmt := SCodeUtil.getElementComment(InstNode.definition(node));
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtends(exts), json);
   end if;
+
+  json := dumpJSONCommentOpt(cmt, json);
 
   if not listEmpty(comps) then
     json := JSON.addPair("components", dumpJSONComponents(comps), json);
