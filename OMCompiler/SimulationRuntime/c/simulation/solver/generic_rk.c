@@ -958,7 +958,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   } else
   {
     rk_data->multi_rate = 0;
-//    rk_data->percentage = 2;
+    rk_data->percentage = 1;
   }
 
   rk_data->fastStates = malloc(sizeof(int)*rk_data->nStates);
@@ -1665,9 +1665,10 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
 
   // Check if multirate step is necessary, otherwise the correct values are already stored in sData
-  if (rk_data->multi_rate && rk_data->nFastStates>0)
-    if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
-            return 0;
+  if (rk_data->multi_rate)
+    if (rk_data->nFastStates > 0 && rk_data->dataRKmr->time < rk_data->time)
+      if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
+              return 0;
 
 
   /* Main integration loop */
@@ -1737,7 +1738,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       // printIntVector_genericRK("Indices after sorting:", rk_data->sortedStates, rk_data->nStates, rk_data->time);
       // printVector_genericRK_MR("Error after sorting:", rk_data->err, rk_data->nStates, rk_data->time,  rk_data->nStates, rk_data->sortedStates);
 
-      if (rk_data->multi_rate == 1)
+      if (rk_data->multi_rate && rk_data->percentage > 0)
       {
         sortErrorIndices(rk_data);
         //Find fast and slow states based on
@@ -1789,12 +1790,12 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       //printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
       //    rk_data->nSlowStates, rk_data->nFastStates,
       //    rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
-      if (rk_data->multi_rate == 1)
+      if (rk_data->multi_rate)
       {
         // printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
         //     rk_data->nSlowStates, rk_data->nFastStates,
         //     rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
-        if (rk_data->nFastStates>0  && rk_data->err_fast > 1)
+        if (rk_data->nFastStates>0)
         {
           if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
             return 0;
@@ -1841,38 +1842,40 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     } while  (err>1);
     rk_data->stepsDone += 1;
 
-    eventTime = checkForEvents(data, threadData, solverInfo, rk_data->time, rk_data->yOld, rk_data->time + rk_data->lastStepSize, rk_data->y);
-    if (eventTime > 0)
+    if (!rk_data->multi_rate || !rk_data->percentage)
     {
-      // sData->realVars are the "numerical" values on the right hand side of the event
-      memcpy(rk_data->yOld, sData->realVars, rk_data->nStates * sizeof(double));
-
-      rk_data->lastStepSize = eventTime-rk_data->time;
-      rk_data->time = eventTime;
-
-      solverInfo->currentTime = eventTime;
-      sData->timeValue = eventTime;
-
-      // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
-      if(ACTIVE_STREAM(LOG_SOLVER))
+      eventTime = checkForEvents(data, threadData, solverInfo, rk_data->time, rk_data->yOld, rk_data->time + rk_data->lastStepSize, rk_data->y);
+      if (eventTime > 0)
       {
-        // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
-        // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
-        messageClose(LOG_SOLVER);
-      }
-      return 0;
-    } else {
-      /* update time with performed stepSize */
-      rk_data->time += rk_data->lastStepSize;
+        // sData->realVars are the "numerical" values on the right hand side of the event
+        memcpy(rk_data->yOld, sData->realVars, rk_data->nStates * sizeof(double));
 
-      // printVector_genericRK("yOld", rk_data->yOld, rk_data->nStates, rk_data->time - rk_data->lastStepSize);
-      // printVector_genericRK("y   ", rk_data->y, rk_data->nStates, rk_data->time);
-      /* step is accepted and yOld needs to be updated */
-      memcpy(rk_data->yOld, rk_data->y, data->modelData->nStates*sizeof(double));
-      infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
-                      rk_data->time- rk_data->lastStepSize, rk_data->time, err, rk_data->stepSize);
-      rk_data->time = rk_data->time;
+//        rk_data->lastStepSize = eventTime-rk_data->time;
+        rk_data->time = eventTime;
+
+        solverInfo->currentTime = eventTime;
+        sData->timeValue = eventTime;
+
+        // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
+        if(ACTIVE_STREAM(LOG_SOLVER))
+        {
+          // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
+          // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+          messageClose(LOG_SOLVER);
+        }
+        return 0;
+      }
     }
+    /* update time with performed stepSize */
+    rk_data->time += rk_data->lastStepSize;
+
+    // printVector_genericRK("yOld", rk_data->yOld, rk_data->nStates, rk_data->time - rk_data->lastStepSize);
+    // printVector_genericRK("y   ", rk_data->y, rk_data->nStates, rk_data->time);
+    /* step is accepted and yOld needs to be updated */
+    memcpy(rk_data->yOld, rk_data->y, data->modelData->nStates*sizeof(double));
+    infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
+                    rk_data->time- rk_data->lastStepSize, rk_data->time, err, rk_data->stepSize);
+    rk_data->time = rk_data->time;
 
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps)
@@ -1888,11 +1891,6 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       sim_result.emit(&sim_result, data, threadData);
     }
   }
-  // // Check if multirate step is necessary, otherwise the correct values are already stored in sData
-  // if (rk_data->multi_rate && rk_data->nFastStates>0)
-  //   if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
-  //           return 0;
-
 
   if (!solverInfo->integratorSteps)
   {

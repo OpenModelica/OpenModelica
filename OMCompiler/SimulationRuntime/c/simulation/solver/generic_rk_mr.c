@@ -583,13 +583,12 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
   int i, ii, l, nStates = data->modelData->nStates;
   int integrator_step_info;
-  double outerStopTime = fmin(genericRKData->time + genericRKData->lastStepSize, genericRKData->timeRight);
   int outerIntStepSynchronize = 0;
 
   // This is the target time of the main integrator
-  if (targetTime > outerStopTime)
+  if (targetTime > genericRKData->timeRight)
   {
-    targetTime = outerStopTime;
+    targetTime = genericRKData->timeRight;
     outerIntStepSynchronize = 1;
   }
 
@@ -600,10 +599,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   if (solverInfo->didEventStep == 1 || userdata->stepsDone == 0)
   {
     userdata->time = genericRKData->time;
-    userdata->stepSize = genericRKData->lastStepSize*0.5;
+    userdata->stepSize = genericRKData->lastStepSize;//*0.5;
     memcpy(userdata->yOld, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
   }
-  userdata->stepSize    = fmin(userdata->stepSize, outerStopTime - userdata->time);
+  userdata->stepSize    = fmin(userdata->stepSize, genericRKData->timeRight - userdata->time);
   userdata->startTime   = genericRKData->timeLeft;
   userdata->endTime     = genericRKData->timeRight;
   userdata->yStart      = genericRKData->yLeft;
@@ -616,7 +615,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // print informations on the calling details
   infoStreamPrint(LOG_SOLVER, 1, "generic Runge-Kutta method (fast states):");
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (outer simulation time %10g)",
-                  genericRKData->timeLeft, genericRKData->timeRight, outerStopTime);
+                  genericRKData->timeLeft, genericRKData->timeRight, genericRKData->time);
 
   while (userdata->time < targetTime)
   {
@@ -673,9 +672,9 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
                         userdata->time, userdata->time + userdata->lastStepSize, err, userdata->stepSize);
       } else {
-        // Last step is limited by the stopTime of the outer integration routine
-        userdata->stepSize_old = userdata->stepSize;
-        userdata->stepSize = fmin(userdata->stepSize, outerStopTime - (userdata->time + userdata->lastStepSize));
+        // // Last step is limited by the stopTime of the outer integration routine
+        // userdata->stepSize_old = userdata->stepSize;
+        // userdata->stepSize = fmin(userdata->stepSize, genericRKData->timeRight - (userdata->time + userdata->lastStepSize));
       }
 
     } while  (err>1);
@@ -697,10 +696,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(genericRKData->yOld, sData->realVars, userdata->nStates * sizeof(double));
       memcpy(userdata->yOld, sData->realVars, userdata->nStates * sizeof(double));
 
-      userdata->lastStepSize = eventTime - userdata->time;
+//      userdata->lastStepSize = eventTime - userdata->time;
       userdata->time = eventTime;
 
-      genericRKData->lastStepSize = eventTime - genericRKData->time;
+//      genericRKData->lastStepSize = eventTime - genericRKData->time;
       genericRKData->time = eventTime;
 
       solverInfo->currentTime = eventTime;
@@ -724,17 +723,34 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     copyVector_genericRK_MR(userdata->yOld, userdata->y, userdata->nFastStates, userdata->fastStates);
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     userdata->time- userdata->lastStepSize, userdata->time, err, userdata->stepSize);
+
+    // Dont disturb the inner step size control!!
+    if (userdata->time + userdata->stepSize > genericRKData->timeRight)
+      break;
   }
 
   // restore the last predicted step size, only necessary if last step size has been reduced to reach the target time
-  userdata->stepSize = userdata->stepSize_old;
+  // userdata->stepSize = userdata->stepSize_old;
 
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
   genericRKData->err_fast = userdata->err_new;
   if (outerIntStepSynchronize)
   {
+    memcpy(genericRKData->yOld, userdata->y, userdata->nStates * sizeof(double));
+    memcpy(genericRKData->y, userdata->y, userdata->nStates * sizeof(double));
+
+    genericRKData->lastStepSize = userdata->time - genericRKData->timeLeft;
+    genericRKData->timeRight = userdata->time;
+    if (genericRKData->time > genericRKData->timeLeft)
+      genericRKData->time = userdata->time;
+    else
+      genericRKData->time = genericRKData->timeLeft;
+
+    // solverInfo->currentTime = eventTime;
+    // sData->timeValue = solverInfo->currentTime;
     copyVector_genericRK_MR(genericRKData->err, userdata->err, userdata->nFastStates, userdata->fastStates);
-    copyVector_genericRK_MR(genericRKData->y, userdata->y, userdata->nFastStates, userdata->fastStates);
+    // copyVector_genericRK_MR(genericRKData->y, userdata->y, userdata->nFastStates, userdata->fastStates);
+    // copyVector_genericRK_MR(genericRKData->yOld, userdata->y, userdata->nFastStates, userdata->fastStates);
   }
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))
