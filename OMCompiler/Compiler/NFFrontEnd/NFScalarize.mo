@@ -63,17 +63,17 @@ function scalarize
   input output FlatModel flatModel;
 protected
   list<Variable> vars = {};
-  list<Equation> eql = {}, ieql = {};
+  list<Equation> eql = {}, ieql = {}, neql = {};
   list<Algorithm> alg = {}, ialg = {};
 algorithm
   for c in flatModel.variables loop
-    vars := scalarizeVariable(c, vars);
+    (vars, neql) := scalarizeVariable(c, vars, neql);
   end for;
 
   flatModel.variables := listReverseInPlace(vars);
   flatModel.equations := Equation.mapExpList(flatModel.equations, expandComplexCref);
   flatModel.equations := scalarizeEquations(flatModel.equations);
-  flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, expandComplexCref);
+  flatModel.initialEquations := Equation.mapExpList(listAppend(flatModel.initialEquations, neql), expandComplexCref);
   flatModel.initialEquations := scalarizeEquations(flatModel.initialEquations);
   flatModel.algorithms := list(scalarizeAlgorithm(a) for a in flatModel.algorithms);
   flatModel.initialAlgorithms := list(scalarizeAlgorithm(a) for a in flatModel.initialAlgorithms);
@@ -84,6 +84,7 @@ end scalarize;
 function scalarizeVariable
   input Variable var;
   input output list<Variable> vars = {};
+  input output list<Equation> eqns = {};
 protected
   ComponentRef name;
   Binding binding;

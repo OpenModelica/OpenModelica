@@ -2797,12 +2797,11 @@ algorithm
     local
       BackendDAE.Var var;
       DAE.ComponentRef cr;
-      DAE.Type ty, basic_ty;
+      DAE.Type ty;
       BackendDAE.EquationArray eqns, reeqns;
       DAE.Exp bindExp, crefExp;
       DAE.ElementSource source;
       BackendDAE.Equation eqn;
-      Option<Integer> record_size;
 
     // no binding
     case (var as BackendDAE.VAR(bindExp=NONE()), _) equation
@@ -2817,13 +2816,7 @@ algorithm
     // binding
     case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty, source=source), (eqns, reeqns)) equation
       crefExp = DAE.CREF(cr, ty);
-      if Types.isArray(ty) then
-        basic_ty = Types.getBasicType(ty);
-        record_size = if Types.isRecord(basic_ty) then SOME(Types.getDimensionProduct(basic_ty)) else NONE();
-        eqn = BackendDAE.ARRAY_EQUATION(Types.getDimensionSizes(ty), crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL, record_size);
-      else
-        eqn = BackendDAE.EQUATION(crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      end if;
+      eqn = BackendDAE.EQUATION(crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
       eqns = BackendEquation.add(eqn, eqns);
     then (var, (eqns, reeqns));
 
