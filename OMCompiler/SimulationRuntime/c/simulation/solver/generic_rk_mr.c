@@ -656,7 +656,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       //Store error history for the different step size controller
       if (userdata->err_new == -1) userdata->err_new = err;
       userdata->err_old = userdata->err_new;
-      userdata->err_new = err;
+      userdata->err_new = userdata->tableau->fac * err;
 
       err_values[0] = userdata->err_new;
       err_values[1] = userdata->err_old;

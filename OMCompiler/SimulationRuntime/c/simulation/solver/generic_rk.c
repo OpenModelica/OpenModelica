@@ -909,8 +909,6 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   rk_data->errorTestFailures = 0;
   rk_data->convergenceFailures = 0;
 
-  rk_data->err_new = -1;
-
   /* initialize analytic Jacobian, if available and needed */
   if (!rk_data->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -1497,6 +1495,8 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   rk_data->isFirstStep = FALSE;
   solverInfo->didEventStep = 0;
 
+  rk_data->err_new = -1;
+
  /* reset statistics because it is accumulated in solver_main.c */
   rk_data->stepsDone = 0;
   rk_data->evalFunctionODE = 0;
@@ -1608,9 +1608,9 @@ double PIController(double* err_values, double err_order)
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta1=-5./8./err_order, beta2=-3./8./err_order;
+  double beta1=-1./err_order, beta2=-1./err_order;
 
-  return fmin(facmax, fmax(facmin, fac*pow(err_values[0], beta1)*pow(err_values[1], beta2)));
+  return fmin(facmax, fmax(facmin, fac*pow(err_values[0], beta1)*pow(err_values[1]/err_values[0], beta2)));
 
 }
 
@@ -1632,7 +1632,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)solverInfo->solverData;
 
-  double err, err_values[2];
+  double err, err_values[2], step_values[2];
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
   int i, ii, l;
@@ -1780,10 +1780,14 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       // Monitor error propagation for better step size control (PIController)
       if (rk_data->err_new == -1) rk_data->err_new = err;
       rk_data->err_old = rk_data->err_new;
-      rk_data->err_new = err;
+      rk_data->err_new = rk_data->tableau->fac * err;
 
       err_values[0] = rk_data->err_new;
       err_values[1] = rk_data->err_old;
+
+      // see Hairer book II, Seite 124 ....
+      // step_values[0] =
+      // step_values[1] =
 
       // Store performed stepSize for adjusting the time and interpolation purposes
       // rk_data->stepSize_old = rk_data->lastStepSize;

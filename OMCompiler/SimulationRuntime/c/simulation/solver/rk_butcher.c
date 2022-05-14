@@ -86,7 +86,7 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
   double bt3;
 
   tableau->nStages = 3;
-  tableau->fac = 0.9;
+  tableau->fac = 1.0;
   tableau->order_b = 2;
 
   if (lim<100)
@@ -133,7 +133,7 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
   tableau->nStages = 4;
   tableau->order_b = 3;
   tableau->order_bt = 2;
-  tableau->fac = 0.9;
+  tableau->fac = 1.0;
 
   /* Butcher Tableau */
   const double c[]  = {0.0, .871733043016917998832038902388, 3./5., 1.0};
@@ -153,7 +153,7 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau) {
   tableau->nStages = 3;
   tableau->order_b = 3;
   tableau->order_bt = 2;
-  tableau->fac = 0.9;
+  tableau->fac = 1.0;
 
   const char* flag_value = omc_flagValue[FLAG_RK_PAR];
   double gam;
@@ -231,7 +231,7 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 2;
   tableau->order_b = 2;
   tableau->order_bt = 1;
-  tableau->fac = 0.9;
+  tableau->fac = 1.0;
 
   /* Butcher Tableau */
   const double c[]   = {0.5, 1.0};
@@ -250,7 +250,7 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
   tableau->nStages = 2;
   tableau->order_b = 1;
   tableau->order_bt = 2;
-  tableau->fac = 0.9;
+  tableau->fac = 1.0;
 
   /* Butcher Tableau */
   const double c[] = {0.0, 0.5};
@@ -268,7 +268,7 @@ void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau) {
   tableau->nStages = 2;
   tableau->order_b = 4;
   tableau->order_bt = 1;
-  tableau->fac = 0.9;
+  tableau->fac = 1.0;
 
   const double sqrt3 = sqrt(3);
   const double c1 = 1./2. - sqrt3/6.;
@@ -312,7 +312,7 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
   tableau->nStages = 3;
   tableau->order_b = 2;
   tableau->order_bt = 1;
-  tableau->fac = 0.9;
+  tableau->fac = 1.0;
 
   /* Butcher Tableau */
   const double c[] = {1.0, 0.5, 1.0};
@@ -337,7 +337,7 @@ void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
   tableau->nStages = 5;
   tableau->order_b = 4;
   tableau->order_bt = 3;
-  tableau->fac = 0.9;
+  tableau->fac = 1.e7;
 
   /* Butcher Tableau */
   const double c[] = {0.0, 1./3, 1./3, 1./2, 1.0};
@@ -360,7 +360,7 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
   tableau->nStages = 7;
   tableau->order_b = 5;
   tableau->order_bt = 4;
-  tableau->fac = 0.5;
+  tableau->fac = 1e7;
 
   /* Butcher Tableau */
   const double c[] = {0.0, 1./5, 3./10, 4./5, 8./9, 1., 1.};
