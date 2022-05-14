@@ -887,8 +887,6 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   rk_data->yt = malloc(sizeof(double)*rk_data->nStates);
   rk_data->f = malloc(sizeof(double)*rk_data->nStates);
   rk_data->k = malloc(sizeof(double)*rk_data->nStates*rk_data->tableau->nStages);
-  for (int i=0; i<rk_data->nStates*rk_data->tableau->nStages; i++)
-    rk_data->k[i] = 0;
   rk_data->res_const = malloc(sizeof(double)*rk_data->nStates);
   rk_data->errest = malloc(sizeof(double)*rk_data->nStates);
   rk_data->errtol = malloc(sizeof(double)*rk_data->nStates);
@@ -1354,6 +1352,11 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   sData->timeValue = rk_data->time;
   solverInfo->currentTime = sData->timeValue;
 
+  // // First try for better starting values!!!
+  // memcpy(sData->realVars, rk_data->yOld, nStates*sizeof(double));
+  // wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
+  // memcpy(rk_data->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
+
   /* Runge-Kutta step */
   for (stage = 0; stage < nStages; stage++)
   {
@@ -1388,6 +1391,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = rk_data->nlsData;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
+
       for (int i=0; i<rk_data->nStates; i++)
         nlsData->nlsx[i] = rk_data->yOld[i] + rk_data->tableau->c[stage] * rk_data->stepSize * (rk_data->k + (nStages-1)*nStates)[i];
       //memcpy(nlsData->nlsx, rk_data->yOld, nStates*sizeof(modelica_real));
@@ -1431,6 +1435,10 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   double Rtol = data->simulationInfo->tolerance;
   modelica_boolean solved = FALSE;
 
+  // // First try for better starting values!!!
+  // memcpy(sData->realVars, rk_data->yOld, nStates*sizeof(double));
+  // wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
+  // memcpy(rk_data->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
 
   /* Set start values for non-linear solver */
   for (stage=0; stage<rk_data->tableau->nStages; stage++) {
@@ -1508,6 +1516,10 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
   /* store values of the state derivatives at initial or event time */
   memcpy(rk_data->f, fODE, data->modelData->nStates*sizeof(double));
+
+  for (int i=0; i<rk_data->nStates*rk_data->tableau->nStages; i++)
+    rk_data->k[i] = 0;
+
 
   for (i=0; i<data->modelData->nStates; i++)
   {

@@ -599,8 +599,11 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   if (solverInfo->didEventStep == 1 || userdata->stepsDone == 0)
   {
     userdata->time = genericRKData->time;
-    userdata->stepSize = genericRKData->lastStepSize;//*0.5;
+    userdata->stepSize = genericRKData->lastStepSize*0.5;
     memcpy(userdata->yOld, genericRKData->yOld, sizeof(double)*genericRKData->nStates);
+    for (int i=0; i<userdata->nStates*userdata->tableau->nStages; i++)
+      userdata->k[i] = 0;
+
   }
   userdata->stepSize    = fmin(userdata->stepSize, genericRKData->timeRight - userdata->time);
   userdata->startTime   = genericRKData->timeLeft;
