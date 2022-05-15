@@ -244,6 +244,27 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
 }
 
+void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
+{
+  //SDIRK3
+
+  tableau->nStages = 4;
+  tableau->order_b = 3;
+  tableau->order_bt = 2;
+  tableau->fac = 1.0;
+
+  /* Butcher Tableau */
+  const double c[]   = {0.0, 0.0, -1.0, 1.0};
+  const double A[]   = {0.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 0.0};
+  const double b[]   = { 0.0,  -1./12., 8./12., 5./12.};
+  const double bt[]  = {5./12., -16./12., 23./12., 0.0};
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
+}
+
 void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
   //explicit Euler with Richardson-Extrapolation for step size control
 
@@ -418,6 +439,7 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     *nlSystemSize = 0;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is explicit");
   }
+
   // set order for error control!
   tableau->error_order = fmin(tableau->order_b, tableau->order_bt) + 1;
 }
@@ -433,6 +455,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method) {
 
   switch(RK_method)
   {
+    case MS_ADAMS_MOULTON:
+      getButcherTableau_MS(tableau);
+      break;
     case RK_DOPRI45:
       getButcherTableau_DOPRI45(tableau);
       break;

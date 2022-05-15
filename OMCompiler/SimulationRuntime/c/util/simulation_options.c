@@ -857,6 +857,7 @@ const char *RK_NLS_METHOD_DESC[RK_NLS_MAX] = {
 
 const char *RK_SINGLERATE_METHOD_NAME[RK_MAX] = {
   /* RK_UNKNOWN = 0 */   "unknown",
+  /* MS_ADAMS_MOULTON */ "adams",
   /* RK_EXPL_EULER */    "expl_euler",
   /* RK_IMPL_EULER */    "impl_euler",
   /* RK_SDIRK2 */        "sdirk2",
@@ -872,6 +873,7 @@ const char *RK_SINGLERATE_METHOD_NAME[RK_MAX] = {
 
 const char *RK_SINGLERATE_METHOD_DESC[RK_MAX] = {
   /* RK_UNKNOWN = 0 */   "unknown",
+  /* MS_ADAMS_MOULTON */ "adams",
   /* RK_EXPL_EULER */    "expl_euler",
   /* RK_IMPL_EULER */    "impl_euler",
   /* RK_SDIRK2 */        "sdirk2",

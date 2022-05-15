@@ -79,8 +79,12 @@ void sortErrorIndices(DATA_GSRI* gsriData);
 // singlerate step function
 int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 // Residuum and Jacobian functions for diagonal implicit (DIRK) and implicit (IRK) Runge-Kutta methods.
+void residual_MS(void **dataIn, const double *xloc, double *res, const int *iflag);
+int jacobian_MS_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
+
 void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *iflag);
 int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
@@ -670,6 +674,31 @@ void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEA
 }
 
 /**
+ * @brief Initialize static data of non-linear system for DIRK.
+ *
+ * Initialize for diagoanl implicit Runge-Kutta (DIRK) method.
+ * Sets min, max, nominal values and sparsity pattern.
+ *
+ * @param data              Runtime data struct
+ * @param threadData        Thread data for error handling
+ * @param nonlinsys         Non-linear system data.
+ */
+void initializeStaticNLSData_MS(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
+  for(int i=0; i<nonlinsys->size; i++) {
+    // Get the nominal values of the states
+    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    nonlinsys->min[i]     = DBL_MIN;
+    nonlinsys->max[i]     = DBL_MAX;
+  }
+
+  /* Initialize sparsity pattern */
+  nonlinsys->sparsePattern = initializeSparsePattern_DIRK(data, nonlinsys); // BB ToDo: is this correct
+  nonlinsys->isPatternAvailable = TRUE;
+  return;
+}
+
+
+/**
  * @brief Initialize static data of non-linear system for IRK.
  *
  * Initialize for implicit Runge-Kutta (IRK) method.
@@ -742,6 +771,14 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     nlsData->residualFunc = residual_IRK;
     nlsData->analyticalJacobianColumn = jacobian_IRK_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
+    nlsData->getIterationVars = NULL;
+
+    gsriData->symJacAvailable = TRUE;
+    break;
+  case MS_TYPE_IMPLICIT:
+    nlsData->residualFunc = residual_MS;
+    nlsData->analyticalJacobianColumn = jacobian_MS_column;
+    nlsData->initializeStaticNLSData = initializeStaticNLSData_MS;
     nlsData->getIterationVars = NULL;
 
     gsriData->symJacAvailable = TRUE;
@@ -857,6 +894,10 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     gsriData->isExplicit = FALSE;
     gsriData->step_fun = &(full_implicit_RK);
     break;
+  case MS_TYPE_IMPLICIT:
+    gsriData->isExplicit = FALSE;
+    gsriData->step_fun = &(full_implicit_MS);
+    break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "allocateDataGenericRK: Unknown Runge-Kutta type %i", gsriData->type);
     return -1;
@@ -867,6 +908,14 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     gsriData->step_fun = &(full_implicit_RK);
     gsriData->type = RK_TYPE_IMPLICIT;
   }
+  if (gsriData->RK_method == MS_ADAMS_MOULTON) {
+    gsriData->nlSystemSize = gsriData->nStates;
+    gsriData->step_fun = &(full_implicit_MS);
+    gsriData->type = MS_TYPE_IMPLICIT;
+    gsriData->isExplicit = FALSE;
+  }
+
+  // test of multistep method
 
   const char* flag_StepSize_ctrl = omc_flagValue[FLAG_RK_STEPSIZE_CTRL];
 
@@ -887,6 +936,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   gsriData->yt = malloc(sizeof(double)*gsriData->nStates);
   gsriData->f = malloc(sizeof(double)*gsriData->nStates);
   gsriData->k = malloc(sizeof(double)*gsriData->nStates*gsriData->tableau->nStages);
+  gsriData->x = malloc(sizeof(double)*gsriData->nStates*gsriData->tableau->nStages);
   gsriData->res_const = malloc(sizeof(double)*gsriData->nStates);
   gsriData->errest = malloc(sizeof(double)*gsriData->nStates);
   gsriData->errtol = malloc(sizeof(double)*gsriData->nStates);
@@ -1030,6 +1080,7 @@ void freeDataGenericRK(DATA_GSRI* gsriData) {
   free(gsriData->f);
   free(gsriData->Jf);
   free(gsriData->k);
+  free(gsriData->x);
   free(gsriData->res_const);
   free(gsriData->errest);
   free(gsriData->errtol);
@@ -1066,6 +1117,81 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunction
 
   return 0;
 }
+
+/**
+ * @brief Residual function for non-linear system of generic multistep methods.
+ *
+ * TODO: Describe what the residual means.
+ *
+ * @param dataIn  Userdata provided to non-linear system solver.
+ * @param xloc    Input vector for non-linear system.
+ * @param res     Residuum vector for given input xloc.
+ * @param iflag   Unused.
+ */
+void residual_MS(void **dataIn, const double *xloc, double *res, const int *iflag)
+{
+  DATA *data = (DATA *)((void **)dataIn[0]);
+  threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
+  DATA_GSRI *gsriData = (DATA_GSRI *)((void **)dataIn[2]);
+
+  SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
+  modelica_real *fODE = &sData->realVars[data->modelData->nStates];
+
+  int i;
+  int nStates = data->modelData->nStates;
+  int nStages = gsriData->tableau->nStages;
+  int stage_   = gsriData->act_stage;
+
+  // Evaluate right hand side of ODE
+  memcpy(sData->realVars, xloc, nStates*sizeof(double));
+  wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
+
+  // Evaluate residual
+  for (i=0; i<nStates; i++) {
+    res[i] = gsriData->res_const[i] - xloc[i] * gsriData->tableau->c[nStages-1] +
+                                      fODE[i] * gsriData->tableau->b[nStages-1] * gsriData->stepSize;
+  }
+
+  return;
+}
+
+/**
+ * @brief Evaluate column of DIRK Jacobian.
+ *
+ * @param inData            Void pointer to runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param gsriData     Runge-Kutta method.
+ * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
+ * @param parentJacobian    Unused
+ * @return int              Return 0 on success.
+ */
+int jacobian_MS_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+
+  DATA* data = (DATA*) inData;
+  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
+
+  int i;
+  int nStates = data->modelData->nStates;
+  int nStages = gsriData->tableau->nStages;
+  int stage = gsriData->act_stage;
+
+  /* Evaluate column of Jacobian ODE */
+  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
+  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+
+  /* Update resultVars array */
+  for (i = 0; i < jacobian->sizeCols; i++) {
+    jacobian->resultVars[i] = gsriData->tableau->b[nStages-1] * gsriData->stepSize * jacobian_ODE->resultVars[i];
+    /* -1 on diagonal elements */
+    if (jacobian->seedVars[i] == 1) {
+      jacobian->resultVars[i] -= gsriData->tableau->c[nStages-1];
+    }
+  }
+
+  return 0;
+}
+
 
 /**
  * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
@@ -1258,6 +1384,83 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
 }
 
 /**
+ * @brief Generic multistep function.
+ *
+ * Internal non-linear equation system will be solved with non-linear solver specified during setup.
+ * Results will be saved in y and embedded results saved in yt.
+ *
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param solverInfo        Storing Runge-Kutta solver data.
+ * @return int              Return 0 on success, -1 on failure.
+ */
+int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
+  DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
+
+  int i;
+  int stage, stage_;
+  int nStates = data->modelData->nStates;
+  int nStages = gsriData->tableau->nStages;
+  modelica_boolean solved = FALSE;
+
+  /* Predictor Schritt */
+  for (i = 0; i < nStates; i++)
+  {
+    // BB ToDo: check the formula with respect to gsriData->k[]
+    gsriData->yt[i] = 0;
+    for (stage_ = 0; stage_ < nStages-1; stage_++)
+    {
+      printf("%d\n",nStages-2-stage_);
+      gsriData->yt[i] += -gsriData->x[stage_ * nStates + i] * gsriData->tableau->c[stage_] +
+                                 gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] * gsriData->stepSizeValues[nStages-2-stage_];
+    }
+    gsriData->yt[i] /= gsriData->tableau->c[nStages - 1];
+  }
+
+
+  /* Constant part of the multistep method */
+  for (i = 0; i < nStates; i++)
+  {
+    // BB ToDo: check the formula with respect to gsriData->k[]
+    gsriData->res_const[i] = 0;
+    for (stage_ = 0; stage_ < nStages-1; stage_++)
+    {
+      printf("%d\n",nStages-2-stage_);
+      gsriData->res_const[i] += -gsriData->x[stage_ * nStates + i] * gsriData->tableau->c[stage_] +
+                                 gsriData->k[stage_ * nStates + i] * gsriData->tableau->b[stage_] * gsriData->stepSizeValues[nStages-2-stage_];
+    }
+  }
+
+  /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
+    * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
+  // here, it yields:   stage == stage_, and stage * nStages + stage_ is index of the diagonal element
+
+  // set simulation time with respect to the current stage
+  sData->timeValue = gsriData->time + gsriData->stepSize;
+
+  // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
+  NONLINEAR_SYSTEM_DATA* nlsData = gsriData->nlsData;
+  // Set start vector, BB ToDo: Ommit extrapolation after event!!!
+
+  memcpy(nlsData->nlsx, gsriData->yt, nStates*sizeof(modelica_real));
+  memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
+  memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
+  solved = solveNLS(data, threadData, nlsData, -1);
+  if (!solved) {
+    errorStreamPrint(LOG_STDOUT, 0, "full_implicit_MS: Failed to solve NLS in full_implicit_MS");
+    return -1;
+  }
+  // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
+  memcpy(gsriData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+  memcpy(gsriData->y, gsriData->x + stage_ * nStates, nStates*sizeof(double));
+
+  return 0;
+}
+
+/**
  * @brief Generic diagonal implicit Runge-Kutta step function.
  *
  * Internal non-linear equation system will be solved with non-linear solver specified during setup.
@@ -1391,7 +1594,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     memcpy(gsriData->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
     gsriData->didEventStep = FALSE;
   }
-
 
   /* Set start values for non-linear solver */
   for (stage_=0; stage_<nStages; stage_++) {
@@ -1823,6 +2025,13 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     for (i=0; i<(gsriData->ringBufferSize-1); i++) {
       gsriData->errValues[i+1] = gsriData->errValues[i];
       gsriData->stepSizeValues[i+1] = gsriData->stepSizeValues[i];
+    }
+
+    if (gsriData->type == MS_TYPE_IMPLICIT) {
+      for (int stage_=0; stage_< (gsriData->tableau->nStages-1); stage_++) {
+        memcpy(gsriData->k + stage_ * nStates, gsriData->k + (stage_+1) * nStates, nStates*sizeof(double));
+        memcpy(gsriData->x + stage_ * nStates, gsriData->x + (stage_+1) * nStates, nStates*sizeof(double));
+      }
     }
 
 
