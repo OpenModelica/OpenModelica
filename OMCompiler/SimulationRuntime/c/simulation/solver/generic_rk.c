@@ -1067,74 +1067,6 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunction
   return 0;
 }
 
-// /**
-//  * @brief Calculate numeric Jacobian of functionODE with respect to the states.
-//  *
-//  * @param data          Runtime data struct.
-//  * @param threadData    Thread data for error handling.
-//  * @param gsriData       Runge-Kutta method.
-//  * @return int          Return 0 on success.
-//  */
-// int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GSRI* gsriData)
-// {
-//   int i,j,l;
-//   int nStates = data->modelData->nStates;
-//   double timeValue;
-
-//   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
-//   modelica_real *states = sData->realVars;
-//   modelica_real *stateDerivatives = &sData->realVars[nStates];
-
-//   timeValue = sData->timeValue;
-
-//   // Only implemented for non-linear solver Newton
-//   assertStreamPrint(threadData, gsriData->nlsSolverMethod == RK_NLS_NEWTON, "wrapper_Jf_numeric_genericRK only implemented for Newton solver");
-//   DATA_NEWTON* solverData = (DATA_NEWTON*)gsriData->nlsData;
-
-//   double delta_h = sqrt(solverData->epsfcn);
-//   double delta_hh;
-//   double xsave;
-
-//   /* profiling */
-//   rt_tick(SIM_TIMER_JACOBIAN);
-
-//   /* statisitcs */
-//   gsriData->evalJacobians++;
-
-//   /* Evaluate symbolic Jacobian */
-//   // TODO: Use a generic numeric Jacobian evaluation
-//   memcpy(gsriData->f, stateDerivatives, nStates * sizeof(double));
-//   for(i = 0; i < nStates; i++)
-//   {
-//     delta_hh = fmax(delta_h * fmax(fabs(states[i]), fabs(gsriData->f[i])), delta_h);
-//     delta_hh = ((gsriData->f[i] >= 0) ? delta_hh : -delta_hh);
-//     delta_hh = states[i] + delta_hh - states[i];
-//     xsave = states[i];
-//     states[i] += delta_hh;
-//     delta_hh = 1. / delta_hh;
-
-//     wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), stateDerivatives);
-//     // this should not count on function evaluation, since
-//     // it belongs to jacobian evaluation
-//     gsriData->evalFunctionODE--;
-
-//     /* BB: Is this necessary for the statistics? */
-//     solverData->nfev++;
-
-//     for(j = 0; j < nStates; j++)
-//     {
-//       l = i * nStates + j;
-//       gsriData->Jf[l] = (stateDerivatives[j] - gsriData->f[j]) * delta_hh;
-//     }
-//     states[i] = xsave;
-//   }
-
-//   /* profiling */
-//   rt_accumulate(SIM_TIMER_JACOBIAN);
-
-//   return 0;
-// }
-
 /**
  * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
  *
@@ -1160,7 +1092,6 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
   int stage_   = gsriData->act_stage;
 
   // Evaluate right hand side of ODE
-  sData->timeValue = gsriData->time + gsriData->tableau->c[stage_] * gsriData->stepSize;
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
   wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
 
@@ -1168,10 +1099,6 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
   for (i=0; i<nStates; i++) {
     res[i] = gsriData->res_const[i] - xloc[i] + gsriData->stepSize * gsriData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
-  // printVector_genericRK("sData->realVars", sData->realVars, gsriData->nStates, sData->timeValue);
-  // printVector_genericRK("fODE           ", fODE, gsriData->nStates, sData->timeValue);
-  // printVector_genericRK("res_const      ", gsriData->res_const, gsriData->nStates, sData->timeValue);
-  // printVector_genericRK("res            ", res, gsriData->nStates, sData->timeValue);
 
   return;
 }
@@ -1351,16 +1278,12 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   int stage, stage_;
   int nStates = data->modelData->nStates;
   int nStages = gsriData->tableau->nStages;
-  double Atol = data->simulationInfo->tolerance;
-  double Rtol = data->simulationInfo->tolerance;
   modelica_boolean solved = FALSE;
-
-  sData->timeValue = gsriData->time;
-  solverInfo->currentTime = sData->timeValue;
 
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
   if (gsriData->didEventStep) {
+    sData->timeValue = gsriData->time;
     memcpy(sData->realVars, gsriData->yOld, nStates*sizeof(double));
     wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
     memcpy(gsriData->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
@@ -1373,6 +1296,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     gsriData->act_stage = stage;
     /* Set constant parts or residual input
      * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..stage-1)) */
+
     for (i = 0; i < nStates; i++)
     {
       // BB ToDo: check the formula with respect to gsriData->k[]
@@ -1386,11 +1310,13 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
      * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
     // here, it yields:   stage == stage_, and stage * nStages + stage_ is index of the diagonal element
+
+    // set simulation time with respect to the current stage
+    sData->timeValue = gsriData->time + gsriData->tableau->c[stage_]*gsriData->stepSize;
+
+
     if (gsriData->tableau->A[stage * nStages + stage_] == 0)
     {
-      // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
-      // set correct time value and states of simulation system
-      sData->timeValue = gsriData->time + gsriData->tableau->c[stage_]*gsriData->stepSize;
       memcpy(sData->realVars, gsriData->res_const, nStates*sizeof(double));
       wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
     }
@@ -1783,6 +1709,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
          gsriData->err[i] = gsriData->errest[i]/gsriData->errtol[i];
          err = fmax(err, gsriData->err[i]);
       }
+      err = gsriData->tableau->fac * err;
 
       // printVector_genericRK("Error before sorting:", gsriData->err, gsriData->nStates, gsriData->time);
       // printIntVector_genericRK("Indices before sorting:", gsriData->sortedStates, gsriData->nStates, gsriData->time);
@@ -1816,7 +1743,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         err = gsriData->err_slow;
       }
 
-      gsriData->errValues[0] = gsriData->tableau->fac * err;
+      gsriData->errValues[0]      =  err;
       gsriData->stepSizeValues[0] = gsriData->stepSize;
 
       // see Hairer book II, Seite 124 ....
