@@ -246,21 +246,33 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 
 void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
 {
-  //SDIRK3
+  //ADAMS-MOULTON
 
-  tableau->nStages = 4;
-  tableau->order_b = 3;
-  tableau->order_bt = 2;
-  tableau->fac = 1.0;
+  // tableau->nStages = 4;
+  // tableau->order_b = 3;
+  // tableau->order_bt = 2;
+  // tableau->fac = 1.0;
+
+  // /* Butcher Tableau */
+  // const double c[]   = {0.0, 0.0, -1.0, 1.0};
+  // const double A[]   = {0.0, 0.0, 0.0, 0.0,
+  //                       0.0, 0.0, 0.0, 0.0,
+  //                       0.0, 0.0, 0.0, 0.0,
+  //                       0.0, 0.0, 0.0, 0.0};
+  // const double b[]   = { 0.0,  -1./12., 8./12., 5./12.};
+  // const double bt[]  = {5./12., -16./12., 23./12., 0.0};
+
+  tableau->nStages = 2;
+  tableau->order_b = 1;
+  tableau->order_bt = 1;
+  tableau->fac = 0.05;
 
   /* Butcher Tableau */
-  const double c[]   = {0.0, 0.0, -1.0, 1.0};
-  const double A[]   = {0.0, 0.0, 0.0, 0.0,
-                        0.0, 0.0, 0.0, 0.0,
-                        0.0, 0.0, 0.0, 0.0,
-                        0.0, 0.0, 0.0, 0.0};
-  const double b[]   = { 0.0,  -1./12., 8./12., 5./12.};
-  const double bt[]  = {5./12., -16./12., 23./12., 0.0};
+  const double c[]   = {-1.0, 1.0};
+  const double A[]   = {0.0, 0.0,
+                        0.0, 0.0};
+  const double b[]   = {0.0, 1.0};
+  const double bt[]  = {1.0, 0.0};
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
 }

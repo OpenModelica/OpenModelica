@@ -1406,6 +1406,8 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   int nStages = gsriData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
+  // printVector_genericRK("k:  ", gsriData->k + (nStages-1) * nStates, nStates, gsriData->time);
+
   /* Predictor Schritt */
   for (i = 0; i < nStates; i++)
   {
@@ -1413,11 +1415,11 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     gsriData->yt[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      printf("%d\n",nStages-2-stage_);
       gsriData->yt[i] += -gsriData->x[stage_ * nStates + i] * gsriData->tableau->c[stage_] +
-                                 gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] * gsriData->stepSizeValues[nStages-2-stage_];
+                          gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] * gsriData->stepSizeValues[nStages-2-stage_];
     }
-    gsriData->yt[i] /= gsriData->tableau->c[nStages - 1];
+    gsriData->yt[i] += gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] * gsriData->stepSize;
+    gsriData->yt[i] /= gsriData->tableau->c[stage_];
   }
 
 
@@ -1428,11 +1430,11 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     gsriData->res_const[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      printf("%d\n",nStages-2-stage_);
       gsriData->res_const[i] += -gsriData->x[stage_ * nStates + i] * gsriData->tableau->c[stage_] +
                                  gsriData->k[stage_ * nStates + i] * gsriData->tableau->b[stage_] * gsriData->stepSizeValues[nStages-2-stage_];
     }
   }
+  // printVector_genericRK("res_const:  ", gsriData->res_const, nStates, gsriData->time);
 
   /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
     * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
@@ -1455,7 +1457,11 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
   // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
   memcpy(gsriData->k + stage_ * nStates, fODE, nStates*sizeof(double));
-  memcpy(gsriData->y, gsriData->x + stage_ * nStates, nStates*sizeof(double));
+  memcpy(gsriData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
+  memcpy(gsriData->y, nlsData->nlsx, nStates*sizeof(double));
+
+  // printVector_genericRK("yt: ", gsriData->yt, nStates, gsriData->time);
+  // printVector_genericRK("y:  ", gsriData->y, nStates, gsriData->time);
 
   return 0;
 }
@@ -1645,7 +1651,8 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
-  const int nStates = data->modelData->nStates;
+  int nStates = data->modelData->nStates;
+  int nStages = gsriData->tableau->nStages;
   modelica_real* fODE = &sData->realVars[nStates];
 
   double sc, d, d0 = 0.0, d1 = 0.0, d2 = 0.0, h0, h1, delta_ti, infNorm, sum = 0;
@@ -1691,10 +1698,11 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
   /* store values of the state derivatives at initial or event time */
   memcpy(gsriData->f, fODE, data->modelData->nStates*sizeof(double));
+  memcpy(gsriData->k + (nStages-2) * nStates, fODE, nStates*sizeof(double));
 
-  for (int i=0; i<gsriData->nStates*gsriData->tableau->nStages; i++)
-    gsriData->k[i] = 0;
-
+  if (gsriData->type == MS_TYPE_IMPLICIT) {
+      memcpy(gsriData->x + (nStages-2) * nStates, gsriData->yOld, nStates*sizeof(double));
+  }
 
   for (i=0; i<data->modelData->nStates; i++)
   {
@@ -2032,6 +2040,12 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         memcpy(gsriData->k + stage_ * nStates, gsriData->k + (stage_+1) * nStates, nStates*sizeof(double));
         memcpy(gsriData->x + stage_ * nStates, gsriData->x + (stage_+1) * nStates, nStates*sizeof(double));
       }
+      // for (int stage_=0; stage_< (gsriData->tableau->nStages); stage_++) {
+      //   printVector_genericRK("gsriData->k + stage_ * nStates    ", gsriData->k + stage_ * nStates, nStates, gsriData->time);
+      // }
+      // for (int stage_=0; stage_< (gsriData->tableau->nStages); stage_++) {
+      //   printVector_genericRK("gsriData->x + stage_ * nStates    ", gsriData->x + stage_ * nStates, nStates, gsriData->time);
+      // }
     }
 
 
