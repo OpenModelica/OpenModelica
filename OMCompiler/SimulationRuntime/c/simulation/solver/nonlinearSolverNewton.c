@@ -84,7 +84,7 @@ int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* ja
   if(sysNumber>=0) {
     systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    DATA_GSRI* rk_data = (DATA_GSRI*)data->simulationInfo->backupSolverData;
     systemData = rk_data->nlsData;
   }
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
@@ -95,7 +95,7 @@ int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* ja
     index = systemData->jacobianIndex;
     jacobian = &(data->simulationInfo->analyticJacobians[index]);
   } else {
-    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    DATA_GSRI* rk_data = (DATA_GSRI*)data->simulationInfo->backupSolverData;
     jacobian = rk_data->jacobian;
   }
 
@@ -152,7 +152,7 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
   if(sysNumber>=0) {
     systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    DATA_GSRI* rk_data = (DATA_GSRI*)data->simulationInfo->backupSolverData;
     systemData = rk_data->nlsData;
     dataAndThreadData[2] = rk_data;
   }
@@ -217,7 +217,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
   if(sysNumber>=0) {
     systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    DATA_GSRI* rk_data = (DATA_GSRI*)data->simulationInfo->backupSolverData;
     systemData = rk_data->nlsData;
   }
 

@@ -28,11 +28,11 @@
  *
  */
 
-/*! \file DATA_GENERIC_RK.h
+/*! \file DATA_GSRI.h
  */
 
-#ifndef _DATA_GENERIC_RK_H_
-#define _DATA_GENERIC_RK_H_
+#ifndef _DATA_GSRI_H_
+#define _DATA_GSRI_H_
 
 #include "simulation_data.h"
 #include "solver_main.h"
@@ -47,8 +47,8 @@
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 typedef double (*rk_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
 
-typedef struct DATA_GENERIC_RK{
-  DATA_GENERIC_RK_MR* dataRKmr;
+typedef struct DATA_GSRI{
+  DATA_GMRI* gmriData;
   enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
   enum RK_type type;                    /* Type of RK method */
   enum RK_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
@@ -99,14 +99,14 @@ typedef struct DATA_GENERIC_RK{
   unsigned int evalJacobians;         /* Total number of Jacobian evaluations */
   unsigned int errorTestFailures;     /* Total number of error test failures */
   unsigned int convergenceFailures;   /* Total number of convergence failures */
-} DATA_GENERIC_RK;
+} DATA_GSRI;
 
 enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_RK_METHOD);
 enum RK_NLS_METHOD getRK_NLS_Method();
 int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-void freeDataGenericRK(DATA_GENERIC_RK* data);
+void freeDataGenericRK(DATA_GSRI* data);
 int genericRK_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
 
 
-#endif /* _DATA_GENERIC_RK_H_ */
+#endif /* _DATA_GSRI_H_ */

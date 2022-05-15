@@ -309,7 +309,7 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData) {
   if(sysNumber>=0) {
     nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    DATA_GSRI* rk_data = (DATA_GSRI*)data->simulationInfo->backupSolverData;
     nlsData = rk_data->nlsData;
     dataAndThreadData[2] = rk_data;
   }
@@ -349,7 +349,7 @@ static int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   if(sysNumber>=0) {
     nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    DATA_GSRI* rk_data = (DATA_GSRI*)data->simulationInfo->backupSolverData;
     nlsData = rk_data->nlsData;
   }
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
@@ -504,7 +504,7 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   if(sysNumber>=0) {
     nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    DATA_GSRI* rk_data = (DATA_GSRI*)data->simulationInfo->backupSolverData;
     nlsData = rk_data->nlsData;
   }
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
@@ -625,7 +625,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
     nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
     analyticJacobian = &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
   } else {
-    DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)data->simulationInfo->backupSolverData;
+    DATA_GSRI* rk_data = (DATA_GSRI*)data->simulationInfo->backupSolverData;
     nlsData = rk_data->nlsData;
     analyticJacobian = rk_data->jacobian;
     // &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];

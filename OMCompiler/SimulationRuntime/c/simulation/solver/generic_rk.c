@@ -74,7 +74,7 @@ void printIntVector_genericRK(char name[], int* a, int n, double time);
 void printVector_genericRK_MR_fs(char name[], double* a, int n, double time, int nIndx, int* indx);
 void printMatrix_genericRK(char name[], double* a, int n, double time);
 void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx);
-void sortErrorIndices(DATA_GENERIC_RK* rk_data);
+void sortErrorIndices(DATA_GSRI* gsriData);
 
 // singlerate step function
 int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
@@ -87,9 +87,9 @@ int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBI
 void residual_IRK(void **dataIn, const double *xloc, double *res, const int *iflag);
 int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
-void initializeStaticNLSData(void* nlsDataVoid, threadData_t *threadData, void* rk_data_void);
+void initializeStaticNLSData(void* nlsDataVoid, threadData_t *threadData, void* gsriData_void);
 
-void allocateDataGenericRK_MR(DATA* data, threadData_t* threadData, DATA_GENERIC_RK* rk_data);
+void allocateDataGenericRK_MR(DATA* data, threadData_t* threadData, DATA_GSRI* gsriData);
 
 // step size control function
 double IController(double* err_values, double* stepSize_values, double err_order);
@@ -247,7 +247,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 struct RK_USER_DATA {
   DATA* data;
   threadData_t* threadData;
-  DATA_GENERIC_RK* rk_data;
+  DATA_GSRI* gsriData;
 };
 
 struct dataSolver
@@ -537,7 +537,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   unsigned int shift = 0;
   modelica_boolean diagElemNonZero;
   SPARSE_PATTERN* sparsePattern_IRK;
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
+  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
 
   /* Get Sparsity of ODE Jacobian */
   ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -545,9 +545,9 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
 
   int sizeRows = jacobian->sizeRows;
   int sizeCols = jacobian->sizeCols;
-  int nStages  = rk_data->tableau->nStages;
-  int nStates  = rk_data->nStates;
-  double* A    = rk_data->tableau->A;
+  int nStages  = gsriData->tableau->nStages;
+  int nStates  = gsriData->nStates;
+  double* A    = gsriData->tableau->A;
 
   printSparseStructure(sparsePattern_ODE,
                       sizeRows,
@@ -701,11 +701,11 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
  *
  * @param data                        Runtime data struct.
  * @param threadData                  Thread data for error handling.
- * @param rk_data                     Runge-Kutta method.
+ * @param gsriData                     Runge-Kutta method.
  * @return NONLINEAR_SYSTEM_DATA*     Pointer to initialized non-linear system data.
  */
-NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GENERIC_RK* rk_data) {
-  assertStreamPrint(threadData, rk_data->type != RK_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
+NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GSRI* gsriData) {
+  assertStreamPrint(threadData, gsriData->type != RK_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
   // TODO AHeu: Free solverData again
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
@@ -717,7 +717,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
 
-  nlsData->size = rk_data->nlSystemSize;
+  nlsData->size = gsriData->nlSystemSize;
   nlsData->equationIndex = -1;
 
   nlsData->homotopySupport = FALSE;
@@ -728,7 +728,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   nlsData->max = NULL;
   nlsData->nominal = NULL;
 
-  switch (rk_data->type)
+  switch (gsriData->type)
   {
   case RK_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK;
@@ -736,7 +736,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     nlsData->initializeStaticNLSData = initializeStaticNLSData_DIRK;
     nlsData->getIterationVars = NULL;
 
-    rk_data->symJacAvailable = TRUE;
+    gsriData->symJacAvailable = TRUE;
     break;
   case RK_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
@@ -744,10 +744,10 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
     nlsData->getIterationVars = NULL;
 
-    rk_data->symJacAvailable = TRUE;
+    gsriData->symJacAvailable = TRUE;
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", rk_data->type);
+    errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gsriData->type);
     break;
   }
 
@@ -771,12 +771,12 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
   // TODO: Free memory
-  rk_data->jacobian = initAnalyticJacobian(rk_data->nlSystemSize, rk_data->nlSystemSize, rk_data->nlSystemSize, NULL, nlsData->sparsePattern);
+  gsriData->jacobian = initAnalyticJacobian(gsriData->nlSystemSize, gsriData->nlSystemSize, gsriData->nlSystemSize, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
   /* Initialize NLS method */
-  switch (rk_data->nlsSolverMethod) {
+  switch (gsriData->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     nlsData->nlsMethod = NLS_NEWTON;
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
@@ -787,7 +787,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    if (rk_data->symJacAvailable) {
+    if (gsriData->symJacAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
@@ -795,7 +795,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
-    if (rk_data->symJacAvailable) {
+    if (gsriData->symJacAvailable) {
       resetKinsolMemory(solverData->ordinaryData, nlsData->sparsePattern->numberOfNonZeros, nlsData->analyticalJacobianColumn);
     } else {
       resetKinsolMemory(solverData->ordinaryData, nlsData->size*nlsData->size, NULL);
@@ -804,7 +804,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     }
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[rk_data->nlsSolverMethod]);
+    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gsriData->nlsSolverMethod]);
     return NULL;
     break;
   }
@@ -821,106 +821,106 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
  * @return int          Return 0 on success, -1 on failure.
  */
 int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo) {
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) malloc(sizeof(DATA_GENERIC_RK));
+  DATA_GSRI* gsriData = (DATA_GSRI*) malloc(sizeof(DATA_GSRI));
 
   // Set backup in simulationInfo
-  data->simulationInfo->backupSolverData = (void*) rk_data;
+  data->simulationInfo->backupSolverData = (void*) gsriData;
 
-  solverInfo->solverData = (void*) rk_data;
+  solverInfo->solverData = (void*) gsriData;
 
-  rk_data->nStates = data->modelData->nStates;
+  gsriData->nStates = data->modelData->nStates;
 
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  rk_data->RK_method = getRK_Method(FLAG_RK);
-  rk_data->tableau = initButcherTableau(rk_data->RK_method);
-  if (rk_data->tableau == NULL){
-    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGenericRK: Failed to initialize butcher tableau for Runge-Kutta method %s", RK_SINGLERATE_METHOD_NAME[rk_data->RK_method]);
+  gsriData->RK_method = getRK_Method(FLAG_RK);
+  gsriData->tableau = initButcherTableau(gsriData->RK_method);
+  if (gsriData->tableau == NULL){
+    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGenericRK: Failed to initialize butcher tableau for Runge-Kutta method %s", RK_SINGLERATE_METHOD_NAME[gsriData->RK_method]);
     return -1;
   }
 
   // Get size of non-linear system
-  analyseButcherTableau(rk_data->tableau, rk_data->nStates, &rk_data->nlSystemSize, &rk_data->type);
+  analyseButcherTableau(gsriData->tableau, gsriData->nStates, &gsriData->nlSystemSize, &gsriData->type);
 
-  switch (rk_data->type)
+  switch (gsriData->type)
   {
   case RK_TYPE_EXPLICIT:
-    rk_data->isExplicit = TRUE;
-    rk_data->step_fun = &(expl_diag_impl_RK);
+    gsriData->isExplicit = TRUE;
+    gsriData->step_fun = &(expl_diag_impl_RK);
     break;
   case RK_TYPE_DIRK:
-    rk_data->isExplicit = FALSE;
-    rk_data->step_fun = &(expl_diag_impl_RK);
+    gsriData->isExplicit = FALSE;
+    gsriData->step_fun = &(expl_diag_impl_RK);
     break;
   case RK_TYPE_IMPLICIT:
-    rk_data->isExplicit = FALSE;
-    rk_data->step_fun = &(full_implicit_RK);
+    gsriData->isExplicit = FALSE;
+    gsriData->step_fun = &(full_implicit_RK);
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGenericRK: Unknown Runge-Kutta type %i", rk_data->type);
+    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGenericRK: Unknown Runge-Kutta type %i", gsriData->type);
     return -1;
   }
   // adapt decision for testing of the fully implicit implementation
-  if (rk_data->RK_method == RK_ESDIRK2_test || rk_data->RK_method == RK_ESDIRK3_test) {
-    rk_data->nlSystemSize = rk_data->tableau->nStages*rk_data->nStates;
-    rk_data->step_fun = &(full_implicit_RK);
-    rk_data->type = RK_TYPE_IMPLICIT;
+  if (gsriData->RK_method == RK_ESDIRK2_test || gsriData->RK_method == RK_ESDIRK3_test) {
+    gsriData->nlSystemSize = gsriData->tableau->nStages*gsriData->nStates;
+    gsriData->step_fun = &(full_implicit_RK);
+    gsriData->type = RK_TYPE_IMPLICIT;
   }
 
   const char* flag_StepSize_ctrl = omc_flagValue[FLAG_RK_STEPSIZE_CTRL];
 
   if (flag_StepSize_ctrl != NULL) {
-    rk_data->stepSize_control = &(PIController);
+    gsriData->stepSize_control = &(PIController);
     infoStreamPrint(LOG_SOLVER, 0, "Stepsize control using PIController");
   } else
   {
-    rk_data->stepSize_control = &(IController);
+    gsriData->stepSize_control = &(IController);
     infoStreamPrint(LOG_SOLVER, 0, "Stepsize control using IController");
   }
 
   /* Allocate internal memory */
-  rk_data->isFirstStep = TRUE;
-  rk_data->y = malloc(sizeof(double)*rk_data->nStates);
-  rk_data->yOld = malloc(sizeof(double)*rk_data->nStates);
-  rk_data->yLeft = malloc(sizeof(double)*rk_data->nStates);
-  rk_data->yt = malloc(sizeof(double)*rk_data->nStates);
-  rk_data->f = malloc(sizeof(double)*rk_data->nStates);
-  rk_data->k = malloc(sizeof(double)*rk_data->nStates*rk_data->tableau->nStages);
-  rk_data->res_const = malloc(sizeof(double)*rk_data->nStates);
-  rk_data->errest = malloc(sizeof(double)*rk_data->nStates);
-  rk_data->errtol = malloc(sizeof(double)*rk_data->nStates);
-  rk_data->err = malloc(sizeof(double)*rk_data->nStates);
-  rk_data->ringBufferSize = 5;
-  rk_data->errValues = malloc(sizeof(double)* rk_data->ringBufferSize);
-  rk_data->stepSizeValues = malloc(sizeof(double)* rk_data->ringBufferSize);
-  if (!rk_data->isExplicit) {
-    rk_data->Jf = malloc(sizeof(double)*rk_data->nStates*rk_data->nStates);
-    for (int i=0; i<rk_data->nStates*rk_data->nStates; i++)
-      rk_data->Jf[i] = 0;
+  gsriData->isFirstStep = TRUE;
+  gsriData->y = malloc(sizeof(double)*gsriData->nStates);
+  gsriData->yOld = malloc(sizeof(double)*gsriData->nStates);
+  gsriData->yLeft = malloc(sizeof(double)*gsriData->nStates);
+  gsriData->yt = malloc(sizeof(double)*gsriData->nStates);
+  gsriData->f = malloc(sizeof(double)*gsriData->nStates);
+  gsriData->k = malloc(sizeof(double)*gsriData->nStates*gsriData->tableau->nStages);
+  gsriData->res_const = malloc(sizeof(double)*gsriData->nStates);
+  gsriData->errest = malloc(sizeof(double)*gsriData->nStates);
+  gsriData->errtol = malloc(sizeof(double)*gsriData->nStates);
+  gsriData->err = malloc(sizeof(double)*gsriData->nStates);
+  gsriData->ringBufferSize = 5;
+  gsriData->errValues = malloc(sizeof(double)* gsriData->ringBufferSize);
+  gsriData->stepSizeValues = malloc(sizeof(double)* gsriData->ringBufferSize);
+  if (!gsriData->isExplicit) {
+    gsriData->Jf = malloc(sizeof(double)*gsriData->nStates*gsriData->nStates);
+    for (int i=0; i<gsriData->nStates*gsriData->nStates; i++)
+      gsriData->Jf[i] = 0;
   } else {
-    rk_data->Jf = NULL;
+    gsriData->Jf = NULL;
   }
 
-  printButcherTableau(rk_data->tableau);
+  printButcherTableau(gsriData->tableau);
 
   /* initialize statistic counter */
   // TODO AHeu: Use calloc instead?
-  rk_data->stepsDone = 0;
-  rk_data->evalFunctionODE = 0;
-  rk_data->evalJacobians = 0;
-  rk_data->errorTestFailures = 0;
-  rk_data->convergenceFailures = 0;
+  gsriData->stepsDone = 0;
+  gsriData->evalFunctionODE = 0;
+  gsriData->evalJacobians = 0;
+  gsriData->errorTestFailures = 0;
+  gsriData->convergenceFailures = 0;
 
   /* initialize analytic Jacobian, if available and needed */
-  if (!rk_data->isExplicit) {
+  if (!gsriData->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     // TODO: Do we need to initialize the Jacobian or is it already initialized?
     if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
-      rk_data->symJacAvailable = FALSE;
+      gsriData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
-      rk_data->symJacAvailable = TRUE;
+      gsriData->symJacAvailable = TRUE;
       // TODO AHeu: Is there a reason we get the jacobian again? Did data->callback->initialAnalyticJacobianA change the pointer?
       // ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
@@ -930,52 +930,52 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     }
 
   /* Allocate memory for the nonlinear solver */
-    rk_data->nlsSolverMethod = getRK_NLS_Method();
-    rk_data->nlsData = initRK_NLS_DATA(data, threadData, rk_data);
-    if (!rk_data->nlsData) {
+    gsriData->nlsSolverMethod = getRK_NLS_Method();
+    gsriData->nlsData = initRK_NLS_DATA(data, threadData, gsriData);
+    if (!gsriData->nlsData) {
       return -1;
     }
   }
   else
   {
-    rk_data->symJacAvailable = FALSE;
-    rk_data->nlsSolverMethod = RK_NLS_UNKNOWN;  // TODO AHeu: Add a no-solver option?
-    rk_data->nlsData = NULL;
-    rk_data->jacobian = NULL;
+    gsriData->symJacAvailable = FALSE;
+    gsriData->nlsSolverMethod = RK_NLS_UNKNOWN;  // TODO AHeu: Add a no-solver option?
+    gsriData->nlsData = NULL;
+    gsriData->jacobian = NULL;
   }
 
   if (solverInfo->solverMethod == S_GENERIC_RK_MR)
   {
-    rk_data->multi_rate = 1;
+    gsriData->multi_rate = 1;
     const char* flag_value = omc_flagValue[FLAG_RK_MR_PAR];
     if (flag_value != NULL) {
-      rk_data->percentage = atof(omc_flagValue[FLAG_RK_MR_PAR]);
+      gsriData->percentage = atof(omc_flagValue[FLAG_RK_MR_PAR]);
     } else
     {
-      rk_data->percentage = 0.3;
+      gsriData->percentage = 0.3;
     }
   } else
   {
-    rk_data->multi_rate = 0;
-    rk_data->percentage = 1;
+    gsriData->multi_rate = 0;
+    gsriData->percentage = 1;
   }
 
-  rk_data->fastStates = malloc(sizeof(int)*rk_data->nStates);
-  rk_data->slowStates = malloc(sizeof(int)*rk_data->nStates);
-  rk_data->sortedStates = malloc(sizeof(int)*rk_data->nStates);
+  gsriData->fastStates = malloc(sizeof(int)*gsriData->nStates);
+  gsriData->slowStates = malloc(sizeof(int)*gsriData->nStates);
+  gsriData->sortedStates = malloc(sizeof(int)*gsriData->nStates);
 
-  rk_data->nFastStates = 0;
-  rk_data->nSlowStates = rk_data->nStates;
-  for (int i=0; i<rk_data->nStates; i++)
+  gsriData->nFastStates = 0;
+  gsriData->nSlowStates = gsriData->nStates;
+  for (int i=0; i<gsriData->nStates; i++)
   {
-    rk_data->slowStates[i] = i;
-    rk_data->sortedStates[i] = i;
+    gsriData->slowStates[i] = i;
+    gsriData->sortedStates[i] = i;
   }
 
   if (solverInfo->solverMethod == S_GENERIC_RK_MR) {
-    allocateDataGenericRK_MR(data, threadData, rk_data);
+    allocateDataGenericRK_MR(data, threadData, gsriData);
   } else {
-    rk_data->dataRKmr = NULL;
+    gsriData->gmriData = NULL;
   }
 
   return 0;
@@ -984,19 +984,19 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 /**
  * @brief Free generic RK data.
  *
- * @param rk_data    Pointer to generik Runge-Kutta data struct.
+ * @param gsriData    Pointer to generik Runge-Kutta data struct.
  */
-void freeDataGenericRK(DATA_GENERIC_RK* rk_data) {
+void freeDataGenericRK(DATA_GSRI* gsriData) {
   /* Free non-linear system data */
-  if(rk_data->nlsData != NULL) {
-    struct dataSolver* dataSolver = rk_data->nlsData->solverData;
-    switch (rk_data->nlsSolverMethod)
+  if(gsriData->nlsData != NULL) {
+    struct dataSolver* dataSolver = gsriData->nlsData->solverData;
+    switch (gsriData->nlsSolverMethod)
     {
     case RK_NLS_NEWTON:
       freeNewtonData(dataSolver->ordinaryData);
       break;
     case RK_NLS_KINSOL:
-      //kinsolData = (NLS_KINSOL_DATA*) rk_data->nlsData->solverData;
+      //kinsolData = (NLS_KINSOL_DATA*) gsriData->nlsData->solverData;
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
@@ -1004,38 +1004,38 @@ void freeDataGenericRK(DATA_GENERIC_RK* rk_data) {
       break;
     }
     free(dataSolver);
-    free(rk_data->nlsData);
+    free(gsriData->nlsData);
   }
   /* Free Jacobian */
-  freeAnalyticJacobian(rk_data->jacobian);
+  freeAnalyticJacobian(gsriData->jacobian);
 
   /* Free Butcher tableau */
-  freeButcherTableau(rk_data->tableau);
+  freeButcherTableau(gsriData->tableau);
 
-  if (rk_data->multi_rate == 1) {
-    freeDataGenericRK_MR(rk_data->dataRKmr);
+  if (gsriData->multi_rate == 1) {
+    freeDataGenericRK_MR(gsriData->gmriData);
   }
   /* Free multi-rate data */
-  free(rk_data->err);
-  free(rk_data->errValues);
-  free(rk_data->stepSizeValues);
-  free(rk_data->fastStates);
-  free(rk_data->slowStates);
+  free(gsriData->err);
+  free(gsriData->errValues);
+  free(gsriData->stepSizeValues);
+  free(gsriData->fastStates);
+  free(gsriData->slowStates);
 
   /* Free remaining arrays */
-  free(rk_data->y);
-  free(rk_data->yOld);
-  free(rk_data->yLeft);
-  free(rk_data->yt);
-  free(rk_data->f);
-  free(rk_data->Jf);
-  free(rk_data->k);
-  free(rk_data->res_const);
-  free(rk_data->errest);
-  free(rk_data->errtol);
+  free(gsriData->y);
+  free(gsriData->yOld);
+  free(gsriData->yLeft);
+  free(gsriData->yt);
+  free(gsriData->f);
+  free(gsriData->Jf);
+  free(gsriData->k);
+  free(gsriData->res_const);
+  free(gsriData->errest);
+  free(gsriData->errtol);
 
-  free(rk_data);
-  rk_data = NULL;
+  free(gsriData);
+  gsriData = NULL;
 
   return;
 }
@@ -1072,10 +1072,10 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunction
 //  *
 //  * @param data          Runtime data struct.
 //  * @param threadData    Thread data for error handling.
-//  * @param rk_data       Runge-Kutta method.
+//  * @param gsriData       Runge-Kutta method.
 //  * @return int          Return 0 on success.
 //  */
-// int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GENERIC_RK* rk_data)
+// int wrapper_Jf_numeric_genericRK(DATA* data, threadData_t *threadData, DATA_GSRI* gsriData)
 // {
 //   int i,j,l;
 //   int nStates = data->modelData->nStates;
@@ -1088,8 +1088,8 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunction
 //   timeValue = sData->timeValue;
 
 //   // Only implemented for non-linear solver Newton
-//   assertStreamPrint(threadData, rk_data->nlsSolverMethod == RK_NLS_NEWTON, "wrapper_Jf_numeric_genericRK only implemented for Newton solver");
-//   DATA_NEWTON* solverData = (DATA_NEWTON*)rk_data->nlsData;
+//   assertStreamPrint(threadData, gsriData->nlsSolverMethod == RK_NLS_NEWTON, "wrapper_Jf_numeric_genericRK only implemented for Newton solver");
+//   DATA_NEWTON* solverData = (DATA_NEWTON*)gsriData->nlsData;
 
 //   double delta_h = sqrt(solverData->epsfcn);
 //   double delta_hh;
@@ -1099,24 +1099,24 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunction
 //   rt_tick(SIM_TIMER_JACOBIAN);
 
 //   /* statisitcs */
-//   rk_data->evalJacobians++;
+//   gsriData->evalJacobians++;
 
 //   /* Evaluate symbolic Jacobian */
 //   // TODO: Use a generic numeric Jacobian evaluation
-//   memcpy(rk_data->f, stateDerivatives, nStates * sizeof(double));
+//   memcpy(gsriData->f, stateDerivatives, nStates * sizeof(double));
 //   for(i = 0; i < nStates; i++)
 //   {
-//     delta_hh = fmax(delta_h * fmax(fabs(states[i]), fabs(rk_data->f[i])), delta_h);
-//     delta_hh = ((rk_data->f[i] >= 0) ? delta_hh : -delta_hh);
+//     delta_hh = fmax(delta_h * fmax(fabs(states[i]), fabs(gsriData->f[i])), delta_h);
+//     delta_hh = ((gsriData->f[i] >= 0) ? delta_hh : -delta_hh);
 //     delta_hh = states[i] + delta_hh - states[i];
 //     xsave = states[i];
 //     states[i] += delta_hh;
 //     delta_hh = 1. / delta_hh;
 
-//     wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), stateDerivatives);
+//     wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), stateDerivatives);
 //     // this should not count on function evaluation, since
 //     // it belongs to jacobian evaluation
-//     rk_data->evalFunctionODE--;
+//     gsriData->evalFunctionODE--;
 
 //     /* BB: Is this necessary for the statistics? */
 //     solverData->nfev++;
@@ -1124,7 +1124,7 @@ int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunction
 //     for(j = 0; j < nStates; j++)
 //     {
 //       l = i * nStates + j;
-//       rk_data->Jf[l] = (stateDerivatives[j] - rk_data->f[j]) * delta_hh;
+//       gsriData->Jf[l] = (stateDerivatives[j] - gsriData->f[j]) * delta_hh;
 //     }
 //     states[i] = xsave;
 //   }
@@ -1149,29 +1149,29 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
 {
   DATA *data = (DATA *)((void **)dataIn[0]);
   threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GENERIC_RK *rk_data = (DATA_GENERIC_RK *)((void **)dataIn[2]);
+  DATA_GSRI *gsriData = (DATA_GSRI *)((void **)dataIn[2]);
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
 
   int i;
   int nStates = data->modelData->nStates;
-  int nStages = rk_data->tableau->nStages;
-  int stage_   = rk_data->act_stage;
+  int nStages = gsriData->tableau->nStages;
+  int stage_   = gsriData->act_stage;
 
   // Evaluate right hand side of ODE
-  sData->timeValue = rk_data->time + rk_data->tableau->c[stage_] * rk_data->stepSize;
+  sData->timeValue = gsriData->time + gsriData->tableau->c[stage_] * gsriData->stepSize;
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
+  wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
 
   // Evaluate residual
   for (i=0; i<nStates; i++) {
-    res[i] = rk_data->res_const[i] - xloc[i] + rk_data->stepSize * rk_data->tableau->A[stage_ * nStages + stage_] * fODE[i];
+    res[i] = gsriData->res_const[i] - xloc[i] + gsriData->stepSize * gsriData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
-  // printVector_genericRK("sData->realVars", sData->realVars, rk_data->nStates, sData->timeValue);
-  // printVector_genericRK("fODE           ", fODE, rk_data->nStates, sData->timeValue);
-  // printVector_genericRK("res_const      ", rk_data->res_const, rk_data->nStates, sData->timeValue);
-  // printVector_genericRK("res            ", res, rk_data->nStates, sData->timeValue);
+  // printVector_genericRK("sData->realVars", sData->realVars, gsriData->nStates, sData->timeValue);
+  // printVector_genericRK("fODE           ", fODE, gsriData->nStates, sData->timeValue);
+  // printVector_genericRK("res_const      ", gsriData->res_const, gsriData->nStates, sData->timeValue);
+  // printVector_genericRK("res            ", res, gsriData->nStates, sData->timeValue);
 
   return;
 }
@@ -1181,7 +1181,7 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
  *
  * @param inData            Void pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
- * @param genericRKData     Runge-Kutta method.
+ * @param gsriData     Runge-Kutta method.
  * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
@@ -1189,12 +1189,12 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
 int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
   DATA* data = (DATA*) inData;
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
+  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
 
   int i;
   int nStates = data->modelData->nStates;
-  int nStages = rk_data->tableau->nStages;
-  int stage = rk_data->act_stage;
+  int nStages = gsriData->tableau->nStages;
+  int stage = gsriData->act_stage;
 
   /* Evaluate column of Jacobian ODE */
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -1203,7 +1203,7 @@ int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBI
 
   /* Update resultVars array */
   for (i = 0; i < jacobian->sizeCols; i++) {
-    jacobian->resultVars[i] = rk_data->stepSize * rk_data->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
+    jacobian->resultVars[i] = gsriData->stepSize * gsriData->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
     /* -1 on diagonal elements */
     if (jacobian->seedVars[i] == 1) {
       jacobian->resultVars[i] -= 1;
@@ -1228,23 +1228,23 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
 
   DATA *data = (DATA *)((void **)dataIn[0]);
   threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GENERIC_RK *rk_data = (DATA_GENERIC_RK *)((void **)dataIn[2]);
+  DATA_GSRI *gsriData = (DATA_GSRI *)((void **)dataIn[2]);
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
 
   int i;
-  int nStages = rk_data->tableau->nStages;
+  int nStages = gsriData->tableau->nStages;
   int nStates = data->modelData->nStates;
   int stage, stage_;
 
   for (stage_=0; stage_<nStages; stage_++)
   {
     /* Evaluate ODE and compute res for each stage_ */
-    sData->timeValue = rk_data->time + rk_data->tableau->c[stage_] * rk_data->stepSize;
+    sData->timeValue = gsriData->time + gsriData->tableau->c[stage_] * gsriData->stepSize;
     memcpy(sData->realVars, &xloc[stage_*nStates], nStates*sizeof(double));
-    wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
-    memcpy(&rk_data->k[stage_*nStates], fODE, nStates*sizeof(double));
+    wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
+    memcpy(&gsriData->k[stage_*nStates], fODE, nStates*sizeof(double));
   }
 
   // Calculate residuum for the full implicit RK method based on stages and A matrix
@@ -1252,10 +1252,10 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
   {
     for (i=0; i<nStates; i++)
     {
-      res[stage * nStates + i] = rk_data->yOld[i] - xloc[stage * nStates + i];
+      res[stage * nStates + i] = gsriData->yOld[i] - xloc[stage * nStates + i];
       for (stage_=0; stage_<nStages; stage_++)
       {
-        res[stage * nStates + i] += rk_data->stepSize * rk_data->tableau->A[stage * nStages + stage_] * (rk_data->k + stage_*nStates)[i];
+        res[stage * nStates + i] += gsriData->stepSize * gsriData->tableau->A[stage * nStages + stage_] * (gsriData->k + stage_*nStates)[i];
       }
     }
   }
@@ -1269,7 +1269,7 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
  *
  * @param inData            Void pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
- * @param genericRKData     Runge-Kutta method.
+ * @param gsriData     Runge-Kutta method.
  * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
@@ -1277,14 +1277,14 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
 int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
   DATA* data = (DATA*) inData;
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
+  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
-  const double* xloc = rk_data->nlsData->nlsx;
+  const double* xloc = gsriData->nlsData->nlsx;
 
   int i;
   int stage, stage_;
-  int nStages = rk_data->tableau->nStages;
+  int nStages = gsriData->tableau->nStages;
   int nStates = data->modelData->nStates;
 
   /* Evaluate column of Jacobian ODE */
@@ -1308,8 +1308,8 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
   stage_ = stage_/jacobian_ODE->sizeCols;
 
   // update timeValue and unknown vector based on the active column "stage_"
-  sData->timeValue = rk_data->time + rk_data->tableau->c[stage_] * rk_data->stepSize;
-  // BB ToDo: ist xloc das gleiche wie rk_data->nlsData->nlsx
+  sData->timeValue = gsriData->time + gsriData->tableau->c[stage_] * gsriData->stepSize;
+  // BB ToDo: ist xloc das gleiche wie gsriData->nlsData->nlsx
   memcpy(sData->realVars, &(xloc[stage_*nStates]), nStates*sizeof(double));
   // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
@@ -1319,7 +1319,7 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
   {
     for (i=0; i<nStates; i++)
     {
-      jacobian->resultVars[stage * nStates + i] = rk_data->stepSize * rk_data->tableau->A[stage * nStages + stage_]  * jacobian_ODE->resultVars[i];
+      jacobian->resultVars[stage * nStates + i] = gsriData->stepSize * gsriData->tableau->A[stage * nStages + stage_]  * jacobian_ODE->resultVars[i];
       /* -1 on diagonal elements */
       if (jacobian->seedVars[stage * nStates + i] == 1) {
         jacobian->resultVars[stage * nStates + i] -= 1;
@@ -1345,64 +1345,64 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
 
   int i;
   int stage, stage_;
   int nStates = data->modelData->nStates;
-  int nStages = rk_data->tableau->nStages;
+  int nStages = gsriData->tableau->nStages;
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
   modelica_boolean solved = FALSE;
 
-  sData->timeValue = rk_data->time;
+  sData->timeValue = gsriData->time;
   solverInfo->currentTime = sData->timeValue;
 
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  if (rk_data->didEventStep) {
-    memcpy(sData->realVars, rk_data->yOld, nStates*sizeof(double));
-    wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
-    memcpy(rk_data->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
-    rk_data->didEventStep = FALSE;
+  if (gsriData->didEventStep) {
+    memcpy(sData->realVars, gsriData->yOld, nStates*sizeof(double));
+    wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
+    memcpy(gsriData->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
+    gsriData->didEventStep = FALSE;
   }
 
   /* Runge-Kutta step */
   for (stage = 0; stage < nStages; stage++)
   {
-    rk_data->act_stage = stage;
+    gsriData->act_stage = stage;
     /* Set constant parts or residual input
      * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..stage-1)) */
     for (i = 0; i < nStates; i++)
     {
-      // BB ToDo: check the formula with respect to rk_data->k[]
-      rk_data->res_const[i] = rk_data->yOld[i];
+      // BB ToDo: check the formula with respect to gsriData->k[]
+      gsriData->res_const[i] = gsriData->yOld[i];
       for (stage_ = 0; stage_ < stage; stage_++)
       {
-        rk_data->res_const[i] += rk_data->stepSize * rk_data->tableau->A[stage * nStages + stage_] * rk_data->k[stage_ * nStates + i];
+        gsriData->res_const[i] += gsriData->stepSize * gsriData->tableau->A[stage * nStages + stage_] * gsriData->k[stage_ * nStates + i];
       }
     }
 
     /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
      * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
     // here, it yields:   stage == stage_, and stage * nStages + stage_ is index of the diagonal element
-    if (rk_data->tableau->A[stage * nStages + stage_] == 0)
+    if (gsriData->tableau->A[stage * nStages + stage_] == 0)
     {
       // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
       // set correct time value and states of simulation system
-      sData->timeValue = rk_data->time + rk_data->tableau->c[stage_]*rk_data->stepSize;
-      memcpy(sData->realVars, rk_data->res_const, nStates*sizeof(double));
-      wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
+      sData->timeValue = gsriData->time + gsriData->tableau->c[stage_]*gsriData->stepSize;
+      memcpy(sData->realVars, gsriData->res_const, nStates*sizeof(double));
+      wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
     }
     else
     {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-      NONLINEAR_SYSTEM_DATA* nlsData = rk_data->nlsData;
+      NONLINEAR_SYSTEM_DATA* nlsData = gsriData->nlsData;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
 
       for (i=0; i<nStates; i++)
-        nlsData->nlsx[i] = rk_data->yOld[i] + rk_data->tableau->c[stage_] * rk_data->stepSize * (rk_data->k + (nStages-1)*nStates)[i];
-      //memcpy(nlsData->nlsx, rk_data->yOld, nStates*sizeof(modelica_real));
+        nlsData->nlsx[i] = gsriData->yOld[i] + gsriData->tableau->c[stage_] * gsriData->stepSize * (gsriData->k + (nStages-1)*nStates)[i];
+      //memcpy(nlsData->nlsx, gsriData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
       solved = solveNLS(data, threadData, nlsData, -1);
@@ -1412,20 +1412,20 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       }
     }
     // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
-    memcpy(rk_data->k + stage_ * nStates, fODE, nStates*sizeof(double));
+    memcpy(gsriData->k + stage_ * nStates, fODE, nStates*sizeof(double));
   }
 
-  // Apply RK-scheme for determining the approximations at (rk_data->time + rk_data->stepSize)
+  // Apply RK-scheme for determining the approximations at (gsriData->time + gsriData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
   for (i=0; i<nStates; i++)
   {
-    rk_data->y[i]  = rk_data->yOld[i];
-    rk_data->yt[i] = rk_data->yOld[i];
+    gsriData->y[i]  = gsriData->yOld[i];
+    gsriData->yt[i] = gsriData->yOld[i];
     for (stage_=0; stage_<nStages; stage_++)
     {
-      rk_data->y[i]  += rk_data->stepSize * rk_data->tableau->b[stage_]  * (rk_data->k + stage_ * nStates)[i];
-      rk_data->yt[i] += rk_data->stepSize * rk_data->tableau->bt[stage_] * (rk_data->k + stage_ * nStates)[i];
+      gsriData->y[i]  += gsriData->stepSize * gsriData->tableau->b[stage_]  * (gsriData->k + stage_ * nStates)[i];
+      gsriData->yt[i] += gsriData->stepSize * gsriData->tableau->bt[stage_] * (gsriData->k + stage_ * nStates)[i];
     }
   }
 
@@ -1444,14 +1444,14 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
 
-  NONLINEAR_SYSTEM_DATA* nlsData = rk_data->nlsData;
+  NONLINEAR_SYSTEM_DATA* nlsData = gsriData->nlsData;
 
   int i;
   int stage_;
   int nStates = data->modelData->nStates;
-  int nStages = rk_data->tableau->nStages;
+  int nStages = gsriData->tableau->nStages;
 
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
@@ -1459,11 +1459,11 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  if (rk_data->didEventStep) {
-    memcpy(sData->realVars, rk_data->yOld, nStates*sizeof(double));
-    wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
-    memcpy(rk_data->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
-    rk_data->didEventStep = FALSE;
+  if (gsriData->didEventStep) {
+    memcpy(sData->realVars, gsriData->yOld, nStates*sizeof(double));
+    wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
+    memcpy(gsriData->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
+    gsriData->didEventStep = FALSE;
   }
 
 
@@ -1471,30 +1471,30 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   for (stage_=0; stage_<nStages; stage_++) {
     // BB ToDo: Ommit extrapolation after event!!!
     for (i=0; i<nStates; i++)
-      nlsData->nlsx[stage_*nStates +i] = rk_data->yOld[i] + rk_data->tableau->c[stage_] * rk_data->stepSize * (rk_data->k + (nStages-1)*nStates)[i];
+      nlsData->nlsx[stage_*nStates +i] = gsriData->yOld[i] + gsriData->tableau->c[stage_] * gsriData->stepSize * (gsriData->k + (nStages-1)*nStates)[i];
 
-    // memcpy(&nlsData->nlsx[stage_*nStates], rk_data->yOld, nStates*sizeof(double));
+    // memcpy(&nlsData->nlsx[stage_*nStates], gsriData->yOld, nStates*sizeof(double));
     memcpy(&nlsData->nlsxOld[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
     memcpy(&nlsData->nlsxExtrapolation[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
   }
 
-  solved = solveNLS(data, threadData, rk_data->nlsData, -1);
+  solved = solveNLS(data, threadData, gsriData->nlsData, -1);
   if (!solved) {
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_RK: Failed to solve NLS in full_implicit_RK");
     return -1;
   }
 
-  // Apply RK-scheme for determining the approximations at (rk_data->time + rk_data->stepSize)
+  // Apply RK-scheme for determining the approximations at (gsriData->time + gsriData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
   for (i=0; i<nStates; i++)
   {
-    rk_data->y[i]  = rk_data->yOld[i];
-    rk_data->yt[i] = rk_data->yOld[i];
+    gsriData->y[i]  = gsriData->yOld[i];
+    gsriData->yt[i] = gsriData->yOld[i];
     for (stage_=0; stage_<nStages; stage_++)
     {
-      rk_data->y[i]  += rk_data->stepSize * rk_data->tableau->b[stage_]  * (rk_data->k + stage_ * nStates)[i];
-      rk_data->yt[i] += rk_data->stepSize * rk_data->tableau->bt[stage_] * (rk_data->k + stage_ * nStates)[i];
+      gsriData->y[i]  += gsriData->stepSize * gsriData->tableau->b[stage_]  * (gsriData->k + stage_ * nStates)[i];
+      gsriData->yt[i] += gsriData->stepSize * gsriData->tableau->bt[stage_] * (gsriData->k + stage_ * nStates)[i];
     }
   }
 
@@ -1516,7 +1516,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
   const int nStates = data->modelData->nStates;
   modelica_real* fODE = &sData->realVars[nStates];
 
@@ -1529,27 +1529,27 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   int i,j;
 
   /* store Startime of the simulation */
-  rk_data->time = sDataOld->timeValue;
-  if (rk_data->multi_rate)
-      rk_data->dataRKmr->time = rk_data->time;
-    rk_data->timeLeft = rk_data->time;
-    rk_data->timeRight = rk_data->time;
+  gsriData->time = sDataOld->timeValue;
+  if (gsriData->multi_rate)
+      gsriData->gmriData->time = gsriData->time;
+    gsriData->timeLeft = gsriData->time;
+    gsriData->timeRight = gsriData->time;
   /* set correct flags in order to calculate initial step size */
-  rk_data->isFirstStep = FALSE;
-  rk_data->didEventStep = TRUE;
+  gsriData->isFirstStep = FALSE;
+  gsriData->didEventStep = TRUE;
   solverInfo->didEventStep = FALSE;
 
-  for (int i=0; i<rk_data->ringBufferSize; i++) {
-    rk_data->errValues[i] = 0;
-    rk_data->stepSizeValues[i] = 0;
+  for (int i=0; i<gsriData->ringBufferSize; i++) {
+    gsriData->errValues[i] = 0;
+    gsriData->stepSizeValues[i] = 0;
   }
 
  /* reset statistics because it is accumulated in solver_main.c */
-  rk_data->stepsDone = 0;
-  rk_data->evalFunctionODE = 0;
-  rk_data->evalJacobians = 0;
-  rk_data->errorTestFailures = 0;
-  rk_data->convergenceFailures = 0;
+  gsriData->stepsDone = 0;
+  gsriData->evalFunctionODE = 0;
+  gsriData->evalJacobians = 0;
+  gsriData->errorTestFailures = 0;
+  gsriData->convergenceFailures = 0;
 
   /* calculate starting step size 1st Version */
   /* BB: What is the difference between sData and sDataOld at this time instance?
@@ -1559,13 +1559,13 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   /* initialize start values of the integrator and calculate ODE function*/
   //printVector_genericRK("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
   //printVector_genericRK("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
-  memcpy(rk_data->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
+  memcpy(gsriData->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
+  wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
   /* store values of the state derivatives at initial or event time */
-  memcpy(rk_data->f, fODE, data->modelData->nStates*sizeof(double));
+  memcpy(gsriData->f, fODE, data->modelData->nStates*sizeof(double));
 
-  for (int i=0; i<rk_data->nStates*rk_data->tableau->nStages; i++)
-    rk_data->k[i] = 0;
+  for (int i=0; i<gsriData->nStates*gsriData->tableau->nStages; i++)
+    gsriData->k[i] = 0;
 
 
   for (i=0; i<data->modelData->nStates; i++)
@@ -1593,16 +1593,16 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
 
   for (i=0; i<data->modelData->nStates; i++)
   {
-    sData->realVars[i] = rk_data->yOld[i] + fODE[i] * h0;
+    sData->realVars[i] = gsriData->yOld[i] + fODE[i] * h0;
   }
   sData->timeValue += h0;
 
-  wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
+  wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
 
   for (i=0; i<data->modelData->nStates; i++)
   {
-    sc = Atol + fabs(rk_data->yOld[i])*Rtol;
-    d2 += ((fODE[i]-rk_data->f[i])*(fODE[i]-rk_data->f[i])/(sc*sc));
+    sc = Atol + fabs(gsriData->yOld[i])*Rtol;
+    d2 += ((fODE[i]-gsriData->f[i])*(fODE[i]-gsriData->f[i])/(sc*sc));
   }
 
   d2 /= h0;
@@ -1620,17 +1620,17 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
     h1 = fmax(1e-6, h0*1e-3);
   }
 
-  rk_data->stepSize = 0.5*fmin(100*h0,h1);
-  rk_data->lastStepSize = rk_data->stepSize;
+  gsriData->stepSize = 0.5*fmin(100*h0,h1);
+  gsriData->lastStepSize = gsriData->stepSize;
 
-  infoStreamPrint(LOG_SOLVER, 0, "initial step size = %e at time %g", rk_data->stepSize, rk_data->time);
+  infoStreamPrint(LOG_SOLVER, 0, "initial step size = %e at time %g", gsriData->stepSize, gsriData->time);
 }
 
 
 /**
  * @brief simple step size control (see Hairer, etc.)
  *
- * @param genericRKData
+ * @param gsriData
  * @return double
  */
 double IController(double* err_values, double* stepSize_values, double err_order)
@@ -1647,7 +1647,7 @@ double IController(double* err_values, double* stepSize_values, double err_order
 /**
  * @brief PI controller for step size control (see Hairer)
  *
- * @param genericRKData
+ * @param gsriData
  * @return double
  */
 double PIController(double* err_values, double* stepSize_values, double err_order)
@@ -1677,7 +1677,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1]; // BB: Is this the ring buffer???
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)solverInfo->solverData;
+  DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
 
   double err;
   double Atol = data->simulationInfo->tolerance;
@@ -1714,7 +1714,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
 
   // (Re-)initialize after events or at first call of genericRK_step
-  if (solverInfo->didEventStep == 1 || rk_data->isFirstStep)
+  if (solverInfo->didEventStep == 1 || gsriData->isFirstStep)
   {
     genericRK_first_step(data, threadData, solverInfo);
 
@@ -1724,24 +1724,24 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
 
   // Check if multirate step is necessary, otherwise the correct values are already stored in sData
-  if (rk_data->multi_rate)
-    if (rk_data->nFastStates > 0 && rk_data->dataRKmr->time < rk_data->time)
+  if (gsriData->multi_rate)
+    if (gsriData->nFastStates > 0 && gsriData->gmriData->time < gsriData->time)
       if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
               return 0;
 
 
   /* Main integration loop */
-  while (rk_data->time < targetTime)
+  while (gsriData->time < targetTime)
   {
     do
     {
-      // printVector_genericRK("yOld: ", rk_data->yOld, nStates, rk_data->time);
-      // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
+      // printVector_genericRK("yOld: ", gsriData->yOld, nStates, gsriData->time);
+      // printVector_genericRK("y:    ", gsriData->y, nStates, gsriData->time);
       /* store yOld in yLeft for interpolation purposes, if necessary
       * BB: Check condition
       */
-      memcpy(rk_data->yLeft, rk_data->yOld, data->modelData->nStates*sizeof(double));
-      rk_data->timeLeft = rk_data->time;
+      memcpy(gsriData->yLeft, gsriData->yOld, data->modelData->nStates*sizeof(double));
+      gsriData->timeLeft = gsriData->time;
 
       /* calculate jacobian:
        *    once for the first iteration after initial or an event
@@ -1756,13 +1756,13 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       //  solverData->calculate_jacobian = 0;
 
       // calculate one step of the integrator
-      rk_step_info = rk_data->step_fun(data, threadData, solverInfo);
+      rk_step_info = gsriData->step_fun(data, threadData, solverInfo);
 
       // error handling: try half of the step size!
       if (rk_step_info != 0) {
-        errorStreamPrint(LOG_STDOUT, 0, "genericRK_step: Failed to calculate step at time = %5g.", rk_data->time);
+        errorStreamPrint(LOG_STDOUT, 0, "genericRK_step: Failed to calculate step at time = %5g.", gsriData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
-        rk_data->stepSize = rk_data->stepSize/2.;
+        gsriData->stepSize = gsriData->stepSize/2.;
         continue;
         //return -1;
       }
@@ -1772,98 +1772,98 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       // userdata->errtol[i] = Rtol*(fabs(userdata->y[i]) + fabs(userdata->stepSize*fODE[i])) + Atol*1e-3;
       for (i=0; i<nStates; i++)
       {
-        rk_data->errtol[i] = Rtol*fmax(fabs(rk_data->y[i]),fabs(rk_data->yt[i])) + Atol;
-        rk_data->errest[i] = fabs(rk_data->y[i] - rk_data->yt[i]);
+        gsriData->errtol[i] = Rtol*fmax(fabs(gsriData->y[i]),fabs(gsriData->yt[i])) + Atol;
+        gsriData->errest[i] = fabs(gsriData->y[i] - gsriData->yt[i]);
       }
 
       /*** calculate error (infinity norm!)***/
       err = 0;
       for (i=0; i<nStates; i++)
       {
-         rk_data->err[i] = rk_data->errest[i]/rk_data->errtol[i];
-         err = fmax(err, rk_data->err[i]);
+         gsriData->err[i] = gsriData->errest[i]/gsriData->errtol[i];
+         err = fmax(err, gsriData->err[i]);
       }
 
-      // printVector_genericRK("Error before sorting:", rk_data->err, rk_data->nStates, rk_data->time);
-      // printIntVector_genericRK("Indices before sorting:", rk_data->sortedStates, rk_data->nStates, rk_data->time);
-      // printIntVector_genericRK("Indices after sorting:", rk_data->sortedStates, rk_data->nStates, rk_data->time);
-      // printVector_genericRK_MR("Error after sorting:", rk_data->err, rk_data->nStates, rk_data->time,  rk_data->nStates, rk_data->sortedStates);
+      // printVector_genericRK("Error before sorting:", gsriData->err, gsriData->nStates, gsriData->time);
+      // printIntVector_genericRK("Indices before sorting:", gsriData->sortedStates, gsriData->nStates, gsriData->time);
+      // printIntVector_genericRK("Indices after sorting:", gsriData->sortedStates, gsriData->nStates, gsriData->time);
+      // printVector_genericRK_MR("Error after sorting:", gsriData->err, gsriData->nStates, gsriData->time,  gsriData->nStates, gsriData->sortedStates);
 
-      if (rk_data->multi_rate && rk_data->percentage > 0)
+      if (gsriData->multi_rate && gsriData->percentage > 0)
       {
-        sortErrorIndices(rk_data);
+        sortErrorIndices(gsriData);
         //Find fast and slow states based on
-        rk_data->nFastStates = 0;
-        rk_data->nSlowStates = 0;
-        rk_data->err_slow = 0;
-        rk_data->err_fast = 0;
-        for (i=0; i<rk_data->nStates; i++)
+        gsriData->nFastStates = 0;
+        gsriData->nSlowStates = 0;
+        gsriData->err_slow = 0;
+        gsriData->err_fast = 0;
+        for (i=0; i<gsriData->nStates; i++)
         {
-          ii = rk_data->sortedStates[i];
-          if (i < rk_data->nStates * rk_data->percentage || rk_data->err[ii]>=1)
+          ii = gsriData->sortedStates[i];
+          if (i < gsriData->nStates * gsriData->percentage || gsriData->err[ii]>=1)
           {
-            rk_data->fastStates[rk_data->nFastStates] = ii;
-            rk_data->nFastStates++;
-            rk_data->err_fast = fmax(rk_data->err_fast, rk_data->err[ii]);
+            gsriData->fastStates[gsriData->nFastStates] = ii;
+            gsriData->nFastStates++;
+            gsriData->err_fast = fmax(gsriData->err_fast, gsriData->err[ii]);
           }
           else
           {
-            rk_data->slowStates[rk_data->nSlowStates] = ii;
-            rk_data->nSlowStates++;
-            rk_data->err_slow = fmax(rk_data->err_slow, rk_data->err[ii]);
+            gsriData->slowStates[gsriData->nSlowStates] = ii;
+            gsriData->nSlowStates++;
+            gsriData->err_slow = fmax(gsriData->err_slow, gsriData->err[ii]);
           }
         }
-        err = rk_data->err_slow;
+        err = gsriData->err_slow;
       }
 
-      rk_data->errValues[0] = rk_data->tableau->fac * err;
-      rk_data->stepSizeValues[0] = rk_data->stepSize;
+      gsriData->errValues[0] = gsriData->tableau->fac * err;
+      gsriData->stepSizeValues[0] = gsriData->stepSize;
 
       // see Hairer book II, Seite 124 ....
       // step_values[0] =
       // step_values[1] =
 
       // Store performed stepSize for adjusting the time and interpolation purposes
-      // rk_data->stepSize_old = rk_data->lastStepSize;
-      rk_data->lastStepSize = rk_data->stepSize;
-      rk_data->timeRight    = rk_data->time + rk_data->stepSize;
+      // gsriData->stepSize_old = gsriData->lastStepSize;
+      gsriData->lastStepSize = gsriData->stepSize;
+      gsriData->timeRight    = gsriData->time + gsriData->stepSize;
 
       // Call the step size control
-      rk_data->stepSize *= rk_data->stepSize_control(rk_data->errValues, rk_data->stepSizeValues, rk_data->tableau->error_order);
-      // printVector_genericRK("y     ", rk_data->y, rk_data->nStates, sData->timeValue);
-      // printVector_genericRK("yt    ", rk_data->yt, rk_data->nStates, sData->timeValue);
-      // printVector_genericRK("errest", rk_data->errest, rk_data->nStates, sData->timeValue);
-      // printVector_genericRK("errtol", rk_data->errtol, rk_data->nStates, sData->timeValue);
-      // printVector_genericRK("err   ", rk_data->err, rk_data->nStates, sData->timeValue);
+      gsriData->stepSize *= gsriData->stepSize_control(gsriData->errValues, gsriData->stepSizeValues, gsriData->tableau->error_order);
+      // printVector_genericRK("y     ", gsriData->y, gsriData->nStates, sData->timeValue);
+      // printVector_genericRK("yt    ", gsriData->yt, gsriData->nStates, sData->timeValue);
+      // printVector_genericRK("errest", gsriData->errest, gsriData->nStates, sData->timeValue);
+      // printVector_genericRK("errtol", gsriData->errtol, gsriData->nStates, sData->timeValue);
+      // printVector_genericRK("err   ", gsriData->err, gsriData->nStates, sData->timeValue);
 
 
       //printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
-      //    rk_data->nSlowStates, rk_data->nFastStates,
-      //    rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
-      if (rk_data->multi_rate)
+      //    gsriData->nSlowStates, gsriData->nFastStates,
+      //    gsriData->nFastStates + gsriData->nSlowStates - gsriData->nStates);
+      if (gsriData->multi_rate)
       {
         // printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
-        //     rk_data->nSlowStates, rk_data->nFastStates,
-        //     rk_data->nFastStates + rk_data->nSlowStates - rk_data->nStates);
-        if (rk_data->nFastStates>0)
+        //     gsriData->nSlowStates, gsriData->nFastStates,
+        //     gsriData->nFastStates + gsriData->nSlowStates - gsriData->nStates);
+        if (gsriData->nFastStates>0)
         {
           if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
             return 0;
-          // rk_data->lastStepSize = rk_data->dataRKmr->lastStepSize;
-          // rk_data->stepSize = rk_data->dataRKmr->stepSize;
-          //  copyVector_genericRK_MR(rkData->y, rkData->dataRKmr->y, rkData->nFastStates, rkData->fastStates);
-          //  copyVector_genericRK_MR(rkData->yt, rkData->dataRKmr->yt, rkData->nFastStates, rkData->fastStates);
-          //  copyVector_genericRK_MR(rkData->err, rkData->dataRKmr->err, rkData->nFastStates, rkData->fastStates);
+          // gsriData->lastStepSize = gsriData->gmriData->lastStepSize;
+          // gsriData->stepSize = gsriData->gmriData->stepSize;
+          //  copyVector_genericRK_MR(rkData->y, rkData->gmriData->y, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_genericRK_MR(rkData->yt, rkData->gmriData->yt, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_genericRK_MR(rkData->err, rkData->gmriData->err, rkData->nFastStates, rkData->fastStates);
           //  printVector_genericRK_MR_fs("y ", rkData->y, n, rkData->time, rkData->nFastStates, rkData->fastStates);
           //  printVector_genericRK_MR_fs("yt ", rkData->yt, n, rkData->time, rkData->nFastStates, rkData->fastStates);
           /*** calculate error (infinity norm!)***/
           // err = 0;
           // for (i=0; i<data->modelData->nStates; i++)
           // {
-          //   err = fmax(err, rk_data->err[i]);
+          //   err = fmax(err, gsriData->err[i]);
           // }
           //printVector_genericRK("Error: ", rkData->err, rkData->nStates, rkData->time);
-          err = rk_data->err_fast;
+          err = gsriData->err_fast;
         }
       }
 
@@ -1879,44 +1879,44 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
        */
       if (err>1)
       {
-        rk_data->errorTestFailures++;
+        gsriData->errorTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
-                        rk_data->time, rk_data->time + rk_data->lastStepSize, err, rk_data->stepSize);
+                        gsriData->time, gsriData->time + gsriData->lastStepSize, err, gsriData->stepSize);
       }
       else
       {
         // BB ToDo: maybe better to set userdata->stepSize to zero, if err<1 (last step!!!)
-        rk_data->stepSize = fmin(rk_data->stepSize, stopTime - (rk_data->time + rk_data->lastStepSize));
+        gsriData->stepSize = fmin(gsriData->stepSize, stopTime - (gsriData->time + gsriData->lastStepSize));
       }
 
     } while  (err>1);
-    rk_data->stepsDone += 1;
+    gsriData->stepsDone += 1;
 
     // Rotate ring buffer
-    for (i=0; i<(rk_data->ringBufferSize-1); i++) {
-      rk_data->errValues[i+1] = rk_data->errValues[i];
-      rk_data->stepSizeValues[i+1] = rk_data->stepSizeValues[i];
+    for (i=0; i<(gsriData->ringBufferSize-1); i++) {
+      gsriData->errValues[i+1] = gsriData->errValues[i];
+      gsriData->stepSizeValues[i+1] = gsriData->stepSizeValues[i];
     }
 
 
-    if (!rk_data->multi_rate || !rk_data->percentage)
+    if (!gsriData->multi_rate || !gsriData->percentage)
     {
-      eventTime = checkForEvents(data, threadData, solverInfo, rk_data->time, rk_data->yOld, rk_data->time + rk_data->lastStepSize, rk_data->y);
+      eventTime = checkForEvents(data, threadData, solverInfo, gsriData->time, gsriData->yOld, gsriData->time + gsriData->lastStepSize, gsriData->y);
       if (eventTime > 0)
       {
         // sData->realVars are the "numerical" values on the right hand side of the event
-        memcpy(rk_data->yOld, sData->realVars, rk_data->nStates * sizeof(double));
+        memcpy(gsriData->yOld, sData->realVars, gsriData->nStates * sizeof(double));
 
-//        rk_data->lastStepSize = eventTime-rk_data->time;
-        rk_data->time = eventTime;
+//        gsriData->lastStepSize = eventTime-gsriData->time;
+        gsriData->time = eventTime;
 
         solverInfo->currentTime = eventTime;
         sData->timeValue = eventTime;
 
-        // printVector_genericRK("y:    ", rk_data->y, nStates, rk_data->time);
+        // printVector_genericRK("y:    ", gsriData->y, nStates, gsriData->time);
         if(ACTIVE_STREAM(LOG_SOLVER))
         {
-          // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
+          // printIntVector_genericRK("fast states:", gsriData->fastStates, gsriData->nFastStates, solverInfo->currentTime);
           // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
           messageClose(LOG_SOLVER);
         }
@@ -1924,22 +1924,22 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       }
     }
     /* update time with performed stepSize */
-    rk_data->time += rk_data->lastStepSize;
+    gsriData->time += gsriData->lastStepSize;
 
-    // printVector_genericRK("yOld", rk_data->yOld, rk_data->nStates, rk_data->time - rk_data->lastStepSize);
-    // printVector_genericRK("y   ", rk_data->y, rk_data->nStates, rk_data->time);
+    // printVector_genericRK("yOld", gsriData->yOld, gsriData->nStates, gsriData->time - gsriData->lastStepSize);
+    // printVector_genericRK("y   ", gsriData->y, gsriData->nStates, gsriData->time);
     /* step is accepted and yOld needs to be updated */
-    memcpy(rk_data->yOld, rk_data->y, data->modelData->nStates*sizeof(double));
+    memcpy(gsriData->yOld, gsriData->y, data->modelData->nStates*sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
-                    rk_data->time- rk_data->lastStepSize, rk_data->time, err, rk_data->stepSize);
-    rk_data->time = rk_data->time;
+                    gsriData->time- gsriData->lastStepSize, gsriData->time, err, gsriData->stepSize);
+    gsriData->time = gsriData->time;
 
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps)
     {
-      sData->timeValue = rk_data->time;
+      sData->timeValue = gsriData->time;
       solverInfo->currentTime = sData->timeValue;
-      memcpy(sData->realVars, rk_data->y, data->modelData->nStates*sizeof(double));
+      memcpy(sData->realVars, gsriData->y, data->modelData->nStates*sizeof(double));
       /*
        * to emit consistent value we need to update the whole
        * continuous system with algebraic variables.
@@ -1954,27 +1954,27 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;
-    if (rk_data->multi_rate)
+    if (gsriData->multi_rate)
       // interpolating fast states if multirate method is used
-      linear_interpolation_MR(rk_data->dataRKmr->time-rk_data->dataRKmr->lastStepSize, rk_data->dataRKmr->yt,
-                              rk_data->dataRKmr->time, rk_data->dataRKmr->y,
+      linear_interpolation_MR(gsriData->gmriData->time-gsriData->gmriData->lastStepSize, gsriData->gmriData->yt,
+                              gsriData->gmriData->time, gsriData->gmriData->y,
                               sData->timeValue, sData->realVars,
-                              rk_data->nFastStates, rk_data->fastStates);
+                              gsriData->nFastStates, gsriData->fastStates);
 
     // interpolating slow states if multirate method is used, otherwise all states are slow states
-    linear_interpolation_MR(rk_data->timeLeft, rk_data->yLeft,
-                            rk_data->timeRight, rk_data->y,
+    linear_interpolation_MR(gsriData->timeLeft, gsriData->yLeft,
+                            gsriData->timeRight, gsriData->y,
                             sData->timeValue, sData->realVars,
-                            rk_data->nSlowStates, rk_data->slowStates);
+                            gsriData->nSlowStates, gsriData->slowStates);
     if(ACTIVE_STREAM(LOG_SOLVER))
     {
-      // printIntVector_genericRK("fast states:", rk_data->fastStates, rk_data->nFastStates, solverInfo->currentTime);
+      // printIntVector_genericRK("fast states:", gsriData->fastStates, gsriData->nFastStates, solverInfo->currentTime);
       // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
       messageClose(LOG_SOLVER);
     }
   }else{
     // Integrator emits result on the simulation grid
-    solverInfo->currentTime = rk_data->time;
+    solverInfo->currentTime = gsriData->time;
   }
 
   /* if a state event occurs than no sample event does need to be activated  */
@@ -1988,41 +1988,41 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   {
     infoStreamPrint(LOG_SOLVER_V, 1, "genericRK call statistics: ");
     infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
-    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", rk_data->time);
-    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", rk_data->stepSize);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", rk_data->stepsDone);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", rk_data->evalFunctionODE);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", rk_data->evalJacobians);
-    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", rk_data->errorTestFailures);
-    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", rk_data->convergenceFailures);
+    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gsriData->time);
+    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gsriData->stepSize);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", gsriData->stepsDone);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", gsriData->evalFunctionODE);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", gsriData->evalJacobians);
+    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", gsriData->errorTestFailures);
+    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", gsriData->convergenceFailures);
     messageClose(LOG_SOLVER_V);
   }
 
   /* write statistics to the solverInfo data structure */
-  solverInfo->solverStatsTmp[0] = rk_data->stepsDone;
-  solverInfo->solverStatsTmp[1] = rk_data->evalFunctionODE;
-  solverInfo->solverStatsTmp[2] = rk_data->evalJacobians;
-  solverInfo->solverStatsTmp[3] = rk_data->errorTestFailures;
-  solverInfo->solverStatsTmp[4] = rk_data->convergenceFailures;
+  solverInfo->solverStatsTmp[0] = gsriData->stepsDone;
+  solverInfo->solverStatsTmp[1] = gsriData->evalFunctionODE;
+  solverInfo->solverStatsTmp[2] = gsriData->evalJacobians;
+  solverInfo->solverStatsTmp[3] = gsriData->errorTestFailures;
+  solverInfo->solverStatsTmp[4] = gsriData->convergenceFailures;
 
   infoStreamPrint(LOG_SOLVER_V, 0, "finished genericRK step.");
   messageClose(LOG_SOLVER);
   return 0;
 }
 
-void sortErrorIndices(DATA_GENERIC_RK* rk_data)
+void sortErrorIndices(DATA_GSRI* gsriData)
 {
   int i, j, temp;
 
-  for (i = 0;  i < rk_data->nStates - 1; i++)
+  for (i = 0;  i < gsriData->nStates - 1; i++)
   {
-    for (j = 0; j < rk_data->nStates - i - 1; j++)
+    for (j = 0; j < gsriData->nStates - i - 1; j++)
     {
-      if (rk_data->err[rk_data->sortedStates[j]] < rk_data->err[rk_data->sortedStates[j+1]])
+      if (gsriData->err[gsriData->sortedStates[j]] < gsriData->err[gsriData->sortedStates[j+1]])
       {
-        temp = rk_data->sortedStates[j];
-        rk_data->sortedStates[j] = rk_data->sortedStates[j+1];
-        rk_data->sortedStates[j+1] = temp;
+        temp = gsriData->sortedStates[j];
+        gsriData->sortedStates[j] = gsriData->sortedStates[j+1];
+        gsriData->sortedStates[j+1] = temp;
       }
     }
   }
