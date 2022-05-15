@@ -1416,7 +1416,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
       gsriData->yt[i] += -gsriData->x[stage_ * nStates + i] * gsriData->tableau->c[stage_] +
-                          gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] * gsriData->stepSizeValues[nStages-2-stage_];
+                          gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] *  gsriData->stepSize;//gsriData->stepSizeValues[nStages-2-stage_];
     }
     gsriData->yt[i] += gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] * gsriData->stepSize;
     gsriData->yt[i] /= gsriData->tableau->c[stage_];
@@ -1431,7 +1431,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
       gsriData->res_const[i] += -gsriData->x[stage_ * nStates + i] * gsriData->tableau->c[stage_] +
-                                 gsriData->k[stage_ * nStates + i] * gsriData->tableau->b[stage_] * gsriData->stepSizeValues[nStages-2-stage_];
+                                 gsriData->k[stage_ * nStates + i] * gsriData->tableau->b[stage_] *  gsriData->stepSize;//gsriData->stepSizeValues[nStages-2-stage_];
     }
   }
   // printVector_genericRK("res_const:  ", gsriData->res_const, nStates, gsriData->time);

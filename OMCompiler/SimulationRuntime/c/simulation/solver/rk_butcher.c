@@ -265,7 +265,7 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 2;
   tableau->order_b = 1;
   tableau->order_bt = 1;
-  tableau->fac = 0.05;
+  tableau->fac = 5.0;
 
   /* Butcher Tableau */
   const double c[]   = {-1.0, 1.0};
