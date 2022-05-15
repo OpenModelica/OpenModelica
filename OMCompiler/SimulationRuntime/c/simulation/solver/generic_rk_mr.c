@@ -64,8 +64,8 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 // step size control function
-double IController(double* err_values, double err_order);
-double PIController(double* err_values, double err_order);
+double IController(double* err_values, double* stepSize_values, double err_order);
+double PIController(double* err_values, double* stepSize_values, double err_order);
 
 double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues);
 
@@ -151,8 +151,9 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   userdata->errest = malloc(sizeof(double)*userdata->nStates);
   userdata->errtol = malloc(sizeof(double)*userdata->nStates);
   userdata->err = malloc(sizeof(double)*userdata->nStates);
-  //userdata->fastStates = malloc(sizeof(int)*userdata->nStates);
-  //userdata->slowStates = malloc(sizeof(int)*userdata->nStates);
+  userdata->ringBufferSize = 5;
+  userdata->errValues = malloc(sizeof(double)*userdata->ringBufferSize);
+  userdata->stepSizeValues = malloc(sizeof(double)*userdata->ringBufferSize);
 
   userdata->nFastStates = userdata->nStates;
   userdata->nSlowStates = 0;
@@ -167,7 +168,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GENERIC_
   userdata->errorTestFailures = 0;
   userdata->convergenceFailures = 0;
 
-  userdata->err_new = -1;
+
 
   /* initialize analytic Jacobian, if available and needed */
   if (!userdata->isExplicit) {
@@ -204,8 +205,6 @@ void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data) {
 
   free(data->y);
   free(data->yOld);
-  //free(data->yStart);
-  //free(data->yEnd);
   free(data->yt);
   free(data->f);
   free(data->Jf);
@@ -214,8 +213,8 @@ void freeDataGenericRK_MR(DATA_GENERIC_RK_MR* data) {
   free(data->errest);
   free(data->errtol);
   free(data->err);
-  //free(data->fastStates);
-  //free(data->slowStates);
+  free(data->errValues);
+  free(data->stepSizeValues);
 
   free(data);
   data = NULL;
@@ -653,20 +652,15 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         err = fmax(err, userdata->err[ii]);
       }
 
-      //Store error history for the different step size controller
-      if (userdata->err_new == -1) userdata->err_new = err;
-      userdata->err_old = userdata->err_new;
-      userdata->err_new = userdata->tableau->fac * err;
-
-      err_values[0] = userdata->err_new;
-      err_values[1] = userdata->err_old;
+      userdata->errValues[0] = userdata->tableau->fac * err;
+      userdata->stepSizeValues[0] = userdata->stepSize;
 
       // Store performed stepSize for adjusting the time in case of latter interpolation
       userdata->lastStepSize = userdata->stepSize;
 
       // Call the step size control
       // Asynchronous step size allowed!!!
-      userdata->stepSize *= userdata->stepSize_control(err_values, userdata->tableau->error_order);
+      userdata->stepSize *= userdata->stepSize_control(userdata->errValues, userdata->stepSizeValues, userdata->tableau->error_order);
 
       // Re-do step, if error is larger than requested
       if (err>1)
@@ -684,6 +678,13 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
     // Count succesful integration steps
     userdata->stepsDone += 1;
+
+    // Rotate ring buffer
+    for (i=0; i<(userdata->ringBufferSize-1); i++) {
+      userdata->errValues[i+1] = userdata->errValues[i];
+      userdata->stepSizeValues[i+1] = userdata->stepSizeValues[i];
+    }
+
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
     linear_interpolation_MR(userdata->startTime, userdata->yStart,
@@ -736,7 +737,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // userdata->stepSize = userdata->stepSize_old;
 
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
-  genericRKData->err_fast = userdata->err_new;
+  genericRKData->err_fast = userdata->errValues[0];
   if (outerIntStepSynchronize)
   {
     memcpy(genericRKData->yOld, userdata->y, userdata->nStates * sizeof(double));

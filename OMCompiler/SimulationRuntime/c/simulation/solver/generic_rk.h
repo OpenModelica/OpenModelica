@@ -45,7 +45,7 @@
  * @brief Function to compute single Runge-Kutta step.
  */
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-typedef double (*rk_stepSize_control_function)(double* err_values, double err_order);
+typedef double (*rk_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
 
 typedef struct DATA_GENERIC_RK{
   DATA_GENERIC_RK_MR* dataRKmr;
@@ -68,14 +68,15 @@ typedef struct DATA_GENERIC_RK{
   double *res_const;                    /* Constant parts of residual for non-linear system of implicit RK method. */
   double *errest, *errtol;
   double *err;
-  // double *errValues;                    /* ring buffer for step size control */
-  // double *stepSizeValues;               /* ring buffer for step size control */
-  double err_slow, err_fast, percentage, err_new, err_old;
+  double *errValues;                    /* ring buffer for step size control */
+  double *stepSizeValues;               /* ring buffer for step size control */
+  double err_slow, err_fast, percentage;
   double time, timeLeft, timeRight;
   double stepSize, lastStepSize;
   double stepSize_old, stepSize_fast;
   int act_stage;                      /* Current stage of Runge-Kutta method. */
   int didEventStep;                   /* Will be used for updating the derivatives */
+  int ringBufferSize;
   int multi_rate;
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;

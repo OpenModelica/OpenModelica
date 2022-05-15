@@ -44,7 +44,7 @@
  * @brief Function to compute single Runge-Kutta step.
  */
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-typedef double (*rk_stepSize_control_function)(double* err_values, double err_order);
+typedef double (*rk_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
 
 typedef struct DATA_GENERIC_RK_MR{
   DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
@@ -56,7 +56,9 @@ typedef struct DATA_GENERIC_RK_MR{
   double *y, *yt, *yOld, *f, *yStart, *yEnd;
   double *Jf;
   double *k, *res_const;
-  double *errest, *errtol, *err, err_new, err_old;
+  double *errest, *errtol, *err;
+  double *errValues;                    /* ring buffer for step size control */
+  double *stepSizeValues;               /* ring buffer for step size control */
   double time, startTime, endTime;
   double stepSize, lastStepSize, stepSize_old;
   int act_stage;
@@ -64,6 +66,8 @@ typedef struct DATA_GENERIC_RK_MR{
   BUTCHER_TABLEAU* tableau;
   int nStates, nFastStates, nSlowStates, *fastStates, *slowStates;
   int firstStep;
+  int didEventStep;                   /* Will be used for updating the derivatives */
+  int ringBufferSize;
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
   unsigned int stepsDone;

@@ -92,8 +92,8 @@ void initializeStaticNLSData(void* nlsDataVoid, threadData_t *threadData, void* 
 void allocateDataGenericRK_MR(DATA* data, threadData_t* threadData, DATA_GENERIC_RK* rk_data);
 
 // step size control function
-double IController(double* err_values, double err_order);
-double PIController(double* err_values, double err_order);
+double IController(double* err_values, double* stepSize_values, double err_order);
+double PIController(double* err_values, double* stepSize_values, double err_order);
 
 int checkForStateEvent(DATA* data, LIST *eventList);
 double bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList);
@@ -891,6 +891,9 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   rk_data->errest = malloc(sizeof(double)*rk_data->nStates);
   rk_data->errtol = malloc(sizeof(double)*rk_data->nStates);
   rk_data->err = malloc(sizeof(double)*rk_data->nStates);
+  rk_data->ringBufferSize = 5;
+  rk_data->errValues = malloc(sizeof(double)* rk_data->ringBufferSize);
+  rk_data->stepSizeValues = malloc(sizeof(double)* rk_data->ringBufferSize);
   if (!rk_data->isExplicit) {
     rk_data->Jf = malloc(sizeof(double)*rk_data->nStates*rk_data->nStates);
     for (int i=0; i<rk_data->nStates*rk_data->nStates; i++)
@@ -1014,6 +1017,8 @@ void freeDataGenericRK(DATA_GENERIC_RK* rk_data) {
   }
   /* Free multi-rate data */
   free(rk_data->err);
+  free(rk_data->errValues);
+  free(rk_data->stepSizeValues);
   free(rk_data->fastStates);
   free(rk_data->slowStates);
 
@@ -1353,10 +1358,14 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   sData->timeValue = rk_data->time;
   solverInfo->currentTime = sData->timeValue;
 
-  // // First try for better starting values!!!
-  // memcpy(sData->realVars, rk_data->yOld, nStates*sizeof(double));
-  // wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
-  // memcpy(rk_data->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
+  // First try for better starting values, only necessary after restart
+  // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
+  if (rk_data->didEventStep) {
+    memcpy(sData->realVars, rk_data->yOld, nStates*sizeof(double));
+    wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
+    memcpy(rk_data->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
+    rk_data->didEventStep = FALSE;
+  }
 
   /* Runge-Kutta step */
   for (stage = 0; stage < nStages; stage++)
@@ -1448,10 +1457,15 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   double Rtol = data->simulationInfo->tolerance;
   modelica_boolean solved = FALSE;
 
-  // // First try for better starting values!!!
-  // memcpy(sData->realVars, rk_data->yOld, nStates*sizeof(double));
-  // wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
-  // memcpy(rk_data->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
+  // First try for better starting values, only necessary after restart
+  // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
+  if (rk_data->didEventStep) {
+    memcpy(sData->realVars, rk_data->yOld, nStates*sizeof(double));
+    wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
+    memcpy(rk_data->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
+    rk_data->didEventStep = FALSE;
+  }
+
 
   /* Set start values for non-linear solver */
   for (stage_=0; stage_<nStages; stage_++) {
@@ -1522,9 +1536,13 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
     rk_data->timeRight = rk_data->time;
   /* set correct flags in order to calculate initial step size */
   rk_data->isFirstStep = FALSE;
-  solverInfo->didEventStep = 0;
+  rk_data->didEventStep = TRUE;
+  solverInfo->didEventStep = FALSE;
 
-  rk_data->err_new = -1;
+  for (int i=0; i<rk_data->ringBufferSize; i++) {
+    rk_data->errValues[i] = 0;
+    rk_data->stepSizeValues[i] = 0;
+  }
 
  /* reset statistics because it is accumulated in solver_main.c */
   rk_data->stepsDone = 0;
@@ -1615,7 +1633,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
  * @param genericRKData
  * @return double
  */
-double IController(double* err_values, double err_order)
+double IController(double* err_values, double* stepSize_values, double err_order)
 {
   double fac = 0.9;
   double facmax = 3.5;
@@ -1632,7 +1650,7 @@ double IController(double* err_values, double err_order)
  * @param genericRKData
  * @return double
  */
-double PIController(double* err_values, double err_order)
+double PIController(double* err_values, double* stepSize_values, double err_order)
 {
   double fac = 0.9;
   double facmax = 3.5;
@@ -1661,7 +1679,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)solverInfo->solverData;
 
-  double err, err_values[2], step_values[2];
+  double err;
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
   int i, ii, l;
@@ -1798,13 +1816,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         err = rk_data->err_slow;
       }
 
-      // Monitor error propagation for better step size control (PIController)
-      if (rk_data->err_new == -1) rk_data->err_new = err;
-      rk_data->err_old = rk_data->err_new;
-      rk_data->err_new = rk_data->tableau->fac * err;
-
-      err_values[0] = rk_data->err_new;
-      err_values[1] = rk_data->err_old;
+      rk_data->errValues[0] = rk_data->tableau->fac * err;
+      rk_data->stepSizeValues[0] = rk_data->stepSize;
 
       // see Hairer book II, Seite 124 ....
       // step_values[0] =
@@ -1816,7 +1829,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       rk_data->timeRight    = rk_data->time + rk_data->stepSize;
 
       // Call the step size control
-      rk_data->stepSize *= rk_data->stepSize_control(err_values, rk_data->tableau->error_order);
+      rk_data->stepSize *= rk_data->stepSize_control(rk_data->errValues, rk_data->stepSizeValues, rk_data->tableau->error_order);
       // printVector_genericRK("y     ", rk_data->y, rk_data->nStates, sData->timeValue);
       // printVector_genericRK("yt    ", rk_data->yt, rk_data->nStates, sData->timeValue);
       // printVector_genericRK("errest", rk_data->errest, rk_data->nStates, sData->timeValue);
@@ -1878,6 +1891,13 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
     } while  (err>1);
     rk_data->stepsDone += 1;
+
+    // Rotate ring buffer
+    for (i=0; i<(rk_data->ringBufferSize-1); i++) {
+      rk_data->errValues[i+1] = rk_data->errValues[i];
+      rk_data->stepSizeValues[i+1] = rk_data->stepSizeValues[i];
+    }
+
 
     if (!rk_data->multi_rate || !rk_data->percentage)
     {
