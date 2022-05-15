@@ -327,7 +327,7 @@ copycppmsvcheader_old: getMSVCversion
 omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) $(SEMLA_LIB) OMSI parmodauto ModelicaExternalC
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped OMBUILDDIR=$(OMBUILDDIR))
 
-boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
+boehm-gc-lib: $(builddir_bin)/libomcgc-1.dll
 
 
 zlib_msvc: $(LIBMODELICAZLIB_MSVC)
