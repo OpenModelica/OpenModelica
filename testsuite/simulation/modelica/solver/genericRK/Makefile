@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 Burger_01.mos \
+HeatingSystem.mos \
 singleRate_01.mos \
 singleRate_02.mos \
 

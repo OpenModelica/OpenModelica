@@ -1149,17 +1149,19 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
 
+  int i;
   int nStates = data->modelData->nStates;
-  int diagIdx = rk_data->act_stage * rk_data->tableau->nStages + rk_data->act_stage;
+  int nStages = rk_data->tableau->nStages;
+  int stage_   = rk_data->act_stage;
 
   // Evaluate right hand side of ODE
-  sData->timeValue = rk_data->time + rk_data->tableau->c[rk_data->act_stage] * rk_data->stepSize;
+  sData->timeValue = rk_data->time + rk_data->tableau->c[stage_] * rk_data->stepSize;
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
   wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
 
   // Evaluate residual
-  for (int i=0; i<nStates; i++) {
-    res[i] = rk_data->res_const[i] - xloc[i] + rk_data->stepSize * rk_data->tableau->A[diagIdx] * fODE[i];
+  for (i=0; i<nStates; i++) {
+    res[i] = rk_data->res_const[i] - xloc[i] + rk_data->stepSize * rk_data->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
   // printVector_genericRK("sData->realVars", sData->realVars, rk_data->nStates, sData->timeValue);
   // printVector_genericRK("fODE           ", fODE, rk_data->nStates, sData->timeValue);
@@ -1184,9 +1186,10 @@ int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBI
   DATA* data = (DATA*) inData;
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*) data->simulationInfo->backupSolverData;
 
-  int i,j,l;
+  int i;
   int nStates = data->modelData->nStates;
-  int diagIdx = rk_data->act_stage * rk_data->tableau->nStages + rk_data->act_stage;
+  int nStages = rk_data->tableau->nStages;
+  int stage = rk_data->act_stage;
 
   /* Evaluate column of Jacobian ODE */
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -1195,7 +1198,7 @@ int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBI
 
   /* Update resultVars array */
   for (i = 0; i < jacobian->sizeCols; i++) {
-    jacobian->resultVars[i] = rk_data->stepSize * rk_data->tableau->A[diagIdx] * jacobian_ODE->resultVars[i];
+    jacobian->resultVars[i] = rk_data->stepSize * rk_data->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
     /* -1 on diagonal elements */
     if (jacobian->seedVars[i] == 1) {
       jacobian->resultVars[i] -= 1;
@@ -1226,28 +1229,28 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
 
   int i;
-  int k,l;
   int nStages = rk_data->tableau->nStages;
   int nStates = data->modelData->nStates;
+  int stage, stage_;
 
-  for (k=0; k<nStages; k++)
+  for (stage_=0; stage_<nStages; stage_++)
   {
-    /* Evaluate ODE and compute res for each stage */
-    sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
-    memcpy(sData->realVars, &xloc[k*nStates], nStates*sizeof(double));
+    /* Evaluate ODE and compute res for each stage_ */
+    sData->timeValue = rk_data->time + rk_data->tableau->c[stage_] * rk_data->stepSize;
+    memcpy(sData->realVars, &xloc[stage_*nStates], nStates*sizeof(double));
     wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
-    memcpy(&rk_data->k[k*nStates], fODE, nStates*sizeof(double));
+    memcpy(&rk_data->k[stage_*nStates], fODE, nStates*sizeof(double));
   }
 
   // Calculate residuum for the full implicit RK method based on stages and A matrix
-  for (l=0; l<nStages; l++)
+  for (stage=0; stage<nStages; stage++)
   {
     for (i=0; i<nStates; i++)
     {
-      res[l * nStates + i] = rk_data->yOld[i] - xloc[l * nStates + i];
-      for (k=0; k<nStages; k++)
+      res[stage * nStates + i] = rk_data->yOld[i] - xloc[stage * nStates + i];
+      for (stage_=0; stage_<nStages; stage_++)
       {
-        res[l * nStates + i] += rk_data->stepSize * rk_data->tableau->A[l * nStages + k] * (rk_data->k + k*nStates)[i];
+        res[stage * nStates + i] += rk_data->stepSize * rk_data->tableau->A[stage * nStages + stage_] * (rk_data->k + stage_*nStates)[i];
       }
     }
   }
@@ -1274,10 +1277,10 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
 
   const double* xloc = rk_data->nlsData->nlsx;
 
-  int i,j,k,l,idx;
+  int i;
+  int stage, stage_;
   int nStages = rk_data->tableau->nStages;
   int nStates = data->modelData->nStates;
-  int diagIdx = rk_data->act_stage * rk_data->tableau->nStages + rk_data->act_stage;
 
   /* Evaluate column of Jacobian ODE */
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -1288,33 +1291,33 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
   for (i=0; i<jacobian_ODE->sizeCols; i++)
     jacobian_ODE->seedVars[i] = 0;
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
-  for (i=0, k=0; i<jacobian->sizeCols; i++)
+  for (i=0, stage_=0; i<jacobian->sizeCols; i++)
   {
     if (jacobian->seedVars[i])
     {
-      k = i;
+      stage_ = i;
       jacobian_ODE->seedVars[i%jacobian_ODE->sizeCols] = 1;
     }
   }
   // Determine active stage
-  k = k/jacobian_ODE->sizeCols;
+  stage_ = stage_/jacobian_ODE->sizeCols;
 
-  // update timeValue and unknown vector
-  sData->timeValue = rk_data->time + rk_data->tableau->c[k] * rk_data->stepSize;
+  // update timeValue and unknown vector based on the active column "stage_"
+  sData->timeValue = rk_data->time + rk_data->tableau->c[stage_] * rk_data->stepSize;
   // BB ToDo: ist xloc das gleiche wie rk_data->nlsData->nlsx
-  memcpy(sData->realVars, &(xloc[k*nStates]), nStates*sizeof(double));
+  memcpy(sData->realVars, &(xloc[stage_*nStates]), nStates*sizeof(double));
   // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Update resultVars array for corresponding jacobian->seedVars*/
-  for (l=0; l<nStages; l++)
+  for (stage=0; stage<nStages; stage++)
   {
     for (i=0; i<nStates; i++)
     {
-      jacobian->resultVars[l * nStates + i] = rk_data->stepSize * rk_data->tableau->A[l * nStages + k]  * jacobian_ODE->resultVars[i];
+      jacobian->resultVars[stage * nStates + i] = rk_data->stepSize * rk_data->tableau->A[stage * nStages + stage_]  * jacobian_ODE->resultVars[i];
       /* -1 on diagonal elements */
-      if (jacobian->seedVars[l * nStates + i] == 1) {
-        jacobian->resultVars[l * nStates + i] -= 1;
+      if (jacobian->seedVars[stage * nStates + i] == 1) {
+        jacobian->resultVars[stage * nStates + i] -= 1;
       }
     }
   }
@@ -1339,8 +1342,8 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GENERIC_RK* rk_data = (DATA_GENERIC_RK*)solverInfo->solverData;
 
-  int stateIdx, k, l;
-  int stage;
+  int i;
+  int stage, stage_;
   int nStates = data->modelData->nStates;
   int nStages = rk_data->tableau->nStages;
   double Atol = data->simulationInfo->tolerance;
@@ -1358,51 +1361,63 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   /* Runge-Kutta step */
   for (stage = 0; stage < nStages; stage++)
   {
+    rk_data->act_stage = stage;
     /* Set constant parts or residual input
      * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..stage-1)) */
-    k = stage * nStages;    // Index of A[stage,0]
-    for (stateIdx = 0; stateIdx < nStates; stateIdx++)
+    for (i = 0; i < nStates; i++)
     {
       // BB ToDo: check the formula with respect to rk_data->k[]
-      rk_data->res_const[stateIdx] = rk_data->yOld[stateIdx];
-      for (l = 0; l < stage; l++)
+      rk_data->res_const[i] = rk_data->yOld[i];
+      for (stage_ = 0; stage_ < stage; stage_++)
       {
-        rk_data->res_const[stateIdx] += rk_data->stepSize * rk_data->tableau->A[k + l] * rk_data->k[l * nStates + stateIdx];
+        rk_data->res_const[i] += rk_data->stepSize * rk_data->tableau->A[stage * nStages + stage_] * rk_data->k[stage_ * nStates + i];
       }
     }
 
-    /* Compute intermediate step k
+    /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
      * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
-    k = stage * nStages + stage;    // Index of A[stage,stage]
-    if (rk_data->tableau->A[k] == 0)
+    // here, it yields:   stage == stage_, and stage * nStages + stage_ is index of the diagonal element
+    if (rk_data->tableau->A[stage * nStages + stage_] == 0)
     {
       // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
       // set correct time value and states of simulation system
-      sData->timeValue = rk_data->time + rk_data->tableau->c[stage]*rk_data->stepSize;
+      sData->timeValue = rk_data->time + rk_data->tableau->c[stage_]*rk_data->stepSize;
       memcpy(sData->realVars, rk_data->res_const, nStates*sizeof(double));
-      rk_data->act_stage = stage;
       wrapper_f_genericRK(data, threadData, &(rk_data->evalFunctionODE), fODE);
     }
     else
     {
-      rk_data->act_stage = stage;
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = rk_data->nlsData;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
 
-      for (int i=0; i<rk_data->nStates; i++)
-        nlsData->nlsx[i] = rk_data->yOld[i] + rk_data->tableau->c[stage] * rk_data->stepSize * (rk_data->k + (nStages-1)*nStates)[i];
+      for (i=0; i<nStates; i++)
+        nlsData->nlsx[i] = rk_data->yOld[i] + rk_data->tableau->c[stage_] * rk_data->stepSize * (rk_data->k + (nStages-1)*nStates)[i];
       //memcpy(nlsData->nlsx, rk_data->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
       solved = solveNLS(data, threadData, nlsData, -1);
       if (!solved) {
-        errorStreamPrint(LOG_STDOUT, 0, "expl_diag_impl_RK: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage);
+        errorStreamPrint(LOG_STDOUT, 0, "expl_diag_impl_RK: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
     }
-    // copy last calculation of fODE, which should coincide with k[i]
-    memcpy(rk_data->k + stage * nStates, fODE, nStates*sizeof(double));
+    // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
+    memcpy(rk_data->k + stage_ * nStates, fODE, nStates*sizeof(double));
+  }
+
+  // Apply RK-scheme for determining the approximations at (rk_data->time + rk_data->stepSize)
+  // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
+  // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
+  for (i=0; i<nStates; i++)
+  {
+    rk_data->y[i]  = rk_data->yOld[i];
+    rk_data->yt[i] = rk_data->yOld[i];
+    for (stage_=0; stage_<nStages; stage_++)
+    {
+      rk_data->y[i]  += rk_data->stepSize * rk_data->tableau->b[stage_]  * (rk_data->k + stage_ * nStates)[i];
+      rk_data->yt[i] += rk_data->stepSize * rk_data->tableau->bt[stage_] * (rk_data->k + stage_ * nStates)[i];
+    }
   }
 
   return 0;
@@ -1424,8 +1439,8 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   NONLINEAR_SYSTEM_DATA* nlsData = rk_data->nlsData;
 
-  int i, j, k, l;
-  int stage;
+  int i;
+  int stage_;
   int nStates = data->modelData->nStates;
   int nStages = rk_data->tableau->nStages;
 
@@ -1439,20 +1454,34 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // memcpy(rk_data->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
 
   /* Set start values for non-linear solver */
-  for (stage=0; stage<rk_data->tableau->nStages; stage++) {
+  for (stage_=0; stage_<nStages; stage_++) {
     // BB ToDo: Ommit extrapolation after event!!!
-    for (int i=0; i<rk_data->nStates; i++)
-      nlsData->nlsx[stage*nStates +i] = rk_data->yOld[i] + rk_data->tableau->c[stage] * rk_data->stepSize * (rk_data->k + (nStages-1)*nStates)[i];
+    for (i=0; i<nStates; i++)
+      nlsData->nlsx[stage_*nStates +i] = rk_data->yOld[i] + rk_data->tableau->c[stage_] * rk_data->stepSize * (rk_data->k + (nStages-1)*nStates)[i];
 
-    // memcpy(&nlsData->nlsx[stage*nStates], rk_data->yOld, nStates*sizeof(double));
-    memcpy(&nlsData->nlsxOld[stage*nStates], &nlsData->nlsx[stage*nStates], nStates*sizeof(double));
-    memcpy(&nlsData->nlsxExtrapolation[stage*nStates], &nlsData->nlsx[stage*nStates], nStates*sizeof(double));
+    // memcpy(&nlsData->nlsx[stage_*nStates], rk_data->yOld, nStates*sizeof(double));
+    memcpy(&nlsData->nlsxOld[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
+    memcpy(&nlsData->nlsxExtrapolation[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
   }
 
   solved = solveNLS(data, threadData, rk_data->nlsData, -1);
   if (!solved) {
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_RK: Failed to solve NLS in full_implicit_RK");
     return -1;
+  }
+
+  // Apply RK-scheme for determining the approximations at (rk_data->time + rk_data->stepSize)
+  // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
+  // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
+  for (i=0; i<nStates; i++)
+  {
+    rk_data->y[i]  = rk_data->yOld[i];
+    rk_data->yt[i] = rk_data->yOld[i];
+    for (stage_=0; stage_<nStages; stage_++)
+    {
+      rk_data->y[i]  += rk_data->stepSize * rk_data->tableau->b[stage_]  * (rk_data->k + stage_ * nStates)[i];
+      rk_data->yt[i] += rk_data->stepSize * rk_data->tableau->bt[stage_] * (rk_data->k + stage_ * nStates)[i];
+    }
   }
 
   return 0;
@@ -1710,6 +1739,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
       // calculate one step of the integrator
       rk_step_info = rk_data->step_fun(data, threadData, solverInfo);
+
+      // error handling: try half of the step size!
       if (rk_step_info != 0) {
         errorStreamPrint(LOG_STDOUT, 0, "genericRK_step: Failed to calculate step at time = %5g.", rk_data->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
@@ -1718,28 +1749,18 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         //return -1;
       }
 
-      // Apply RK-scheme for determining the approximation at (time + stepsize)
-      // y       = yold+h*sum(b[i]*k[i], i=1..stages);
-      // yt      = yold+h*sum(bt[i]*k[i], i=1..stages);
-      // Furthermore, calculate corresponding values for error estimator and step size control
+      // calculate corresponding values for error estimator and step size control
+      // BB ToDo: Investigate error estimator with respect for global accuracy
+      // userdata->errtol[i] = Rtol*(fabs(userdata->y[i]) + fabs(userdata->stepSize*fODE[i])) + Atol*1e-3;
       for (i=0; i<nStates; i++)
       {
-        rk_data->y[i]  = rk_data->yOld[i];
-        rk_data->yt[i] = rk_data->yOld[i];
-        for (l=0; l<rk_data->tableau->nStages; l++)
-        {
-          rk_data->y[i]  += rk_data->stepSize * rk_data->tableau->b[l]  * (rk_data->k + l * nStates)[i];
-          rk_data->yt[i] += rk_data->stepSize * rk_data->tableau->bt[l] * (rk_data->k + l * nStates)[i];
-        }
-        // BB ToDo: Investigate error estimator with respect for global accuracy
-        // userdata->errtol[i] = Rtol*(fabs(userdata->y[i]) + fabs(userdata->stepSize*fODE[i])) + Atol*1e-3;
         rk_data->errtol[i] = Rtol*fmax(fabs(rk_data->y[i]),fabs(rk_data->yt[i])) + Atol;
         rk_data->errest[i] = fabs(rk_data->y[i] - rk_data->yt[i]);
       }
 
       /*** calculate error (infinity norm!)***/
       err = 0;
-      for (i=0; i<data->modelData->nStates; i++)
+      for (i=0; i<nStates; i++)
       {
          rk_data->err[i] = rk_data->errest[i]/rk_data->errtol[i];
          err = fmax(err, rk_data->err[i]);
