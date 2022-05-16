@@ -196,14 +196,13 @@ algorithm
   end try;
 end detectSparsePatternODE;
 
-
-
 // =============================================================================
-// section for postOptModule >>detectSparsePatternDAE<<
+// section for postOptModule >>symbolicJacobianDAE<<
 //
-// Generate sparse pattern
+// Generate symbolic jacobian for DAEMode
 // =============================================================================
-public function detectSparsePatternDAE
+
+public function symbolicJacobianDAE
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
@@ -217,19 +216,22 @@ protected
   BackendDAE.Var dummyVar;
   BackendDAE.Variables v, resVars;
   BackendDAE.Variables emptyVars = BackendVariable.emptyVars();
+  Option<BackendDAE.SymbolicJacobian> symjac;
+  DAE.FunctionTree funcs;
+  BackendDAE.Jacobian jacobian;
   constant Boolean debug = false;
 algorithm
   try
-    if debug then execStat("detectSparsePatternDAE -> start "); end if;
+    if debug then execStat(getInstanceName() + "-> start "); end if;
     BackendDAE.DAE(eqs = eqs) := inBackendDAE;
 
     // prepare a DAE
     DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
-    if debug then execStat("detectSparsePatternDAE -> copy dae "); end if;
+    if debug then execStat(getInstanceName() + "-> copy dae "); end if;
     DAE := BackendDAEOptimize.collapseIndependentBlocks(DAE);
-    if debug then execStat("detectSparsePatternDAE -> collapse blocks "); end if;
+    if debug then execStat(getInstanceName() + "-> collapse blocks "); end if;
     DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-    if debug then execStat("detectSparsePatternDAE -> transform backend dae "); end if;
+    if debug then execStat(getInstanceName() + "-> transform backend dae "); end if;
 
     // get states for DAE
     BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
@@ -238,21 +240,41 @@ algorithm
 
     inDepVars := listAppend(shared.daeModeData.stateVars, shared.daeModeData.algStateVars);
 
-    if debug then execStat("detectSparsePatternDAE -> get all vars "); end if;
+    if debug then execStat(getInstanceName() + "-> get all vars "); end if;
 
-    // generate sparse pattern
-    (sparsePattern, coloredCols) := generateSparsePattern(DAE, inDepVars, depVars);
-    if debug then execStat("detectSparsePatternDAE -> generateSparsePattern "); end if;
-    shared := addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
-    if debug then execStat("detectSparsePatternDAE -> addBackendDAESharedJacobianSparsePattern "); end if;
+    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+      // generate symbolic jacobian and sparsity pattern
+      (symjac, funcs, sparsePattern, coloredCols) := generateGenericJacobian(DAE,
+        inDepVars,
+        BackendVariable.emptyVars(),
+        BackendVariable.emptyVars(),
+        shared.globalKnownVars,
+        resVars,
+        depVars,
+        "A",
+        false);
+      if debug then execStat(getInstanceName() + "-> generateGenericJacobian "); end if;
+
+      jacobian := BackendDAE.GENERIC_JACOBIAN(symjac, sparsePattern, coloredCols);
+      shared.symjacs := List.set(shared.symjacs, BackendDAE.SymbolicJacobianAIndex, (symjac, sparsePattern, coloredCols));
+      shared.functionTree := funcs;
+
+      if debug then BackendDump.dumpJacobianString(jacobian); end if;
+    else
+      // only generate sparsity pattern
+      (sparsePattern, coloredCols) := generateSparsePattern(DAE, inDepVars, depVars);
+      if debug then execStat(getInstanceName() + "-> generateSparsePattern "); end if;
+      shared := addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
+      if debug then execStat(getInstanceName() + "-> addBackendDAESharedJacobianSparsePattern "); end if;
+    end if;
 
     outBackendDAE := BackendDAE.DAE(eqs, shared);
   else
     // skip this optimization module
-    Error.addCompilerWarning("The optimization module detectJacobianSparsePattern failed. This module will be skipped and the transformation process continued.");
+    Error.addCompilerWarning("The optimization module " + getInstanceName() + " failed. This module will be skipped and the transformation process continued.");
     outBackendDAE := inBackendDAE;
   end try;
-end detectSparsePatternDAE;
+end symbolicJacobianDAE;
 
 // =============================================================================
 // section for postOptModule >>generateSymbolicJacobianPast<<
