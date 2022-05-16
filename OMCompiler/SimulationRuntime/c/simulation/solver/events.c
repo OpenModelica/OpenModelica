@@ -148,12 +148,10 @@ int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_b
 {
   TRACE_PUSH
 
-  if (checkForStateEvent(data, eventLst))
+  int found = checkForStateEvent(data, eventLst);
+  if(found && useRootFinding)
   {
-    if (useRootFinding)
-    {
-      *eventTime = findRoot(data, threadData, eventLst);
-    }
+    *eventTime = findRoot(data, threadData, eventLst, data->simulationInfo->timeValueOld, data->simulationInfo->realVarsOld, data->localData[0]->timeValue, data->localData[0]->realVars);
   }
 
   if(data->simulationInfo->sampleActivated == 1)
@@ -286,11 +284,13 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
  *  \param [ref] [data]
  *  \param [ref] [threadData]
  *  \param [ref] [eventList]
- *  \return: first event of interval [oldTime, timeValue]
- *
- *  This function perform a root finding for interval = [oldTime, timeValue]
+ *  \param [in]  [time_left]
+ *  \param [in]  [values_left]
+ *  \param [in]  [time_right]
+ *  \param [in]  [values_right]
+ *  \return: first event of interval [time_left, time_right]
  */
-double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
+double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right)
 {
   TRACE_PUSH
 
@@ -301,9 +301,6 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
   /* static work arrays */
   static double *states_left = NULL;
   static double *states_right = NULL;
-
-  double time_left = data->simulationInfo->timeValueOld;
-  double time_right = data->localData[0]->timeValue;
 
   /* allocate memory once at first call, never free */
   if(!states_left)
@@ -318,8 +315,8 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
   }
 
   /* write states to work arrays */
-  memcpy(states_left,  data->simulationInfo->realVarsOld, data->modelData->nStates * sizeof(double));
-  memcpy(states_right, data->localData[0]->realVars     , data->modelData->nStates * sizeof(double));
+  memcpy(states_left,  values_left,  data->modelData->nStates * sizeof(double));
+  memcpy(states_right, values_right, data->modelData->nStates * sizeof(double));
 
   for(it=listFirstNode(eventList); it; it=listNextNode(it))
   {
