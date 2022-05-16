@@ -66,6 +66,7 @@
 #include "util/omc_error.h"
 #include "util/simulation_options.h"
 #include "util/varinfo.h"
+#include "epsilon.h"
 
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
@@ -1872,7 +1873,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   // TODO AHeu: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
   // Also instead of solverInfo->integratorSteps we should set and use solverInfo->solverNoEquidistantGrid
   /* Calculate steps until targetTime is reached */
-  if (solverInfo->integratorSteps) // 1 => stepSizeControl; 0 => equidistant grid
+  if (solverInfo->integratorSteps) // 1 => emit result at integrator step points; 0 => equidistant grid
   {
     if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
     {
@@ -1885,7 +1886,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
   else
   {
-    targetTime = sDataOld->timeValue + solverInfo->currentStepSize;
+    targetTime = solverInfo->currentTime + solverInfo->currentStepSize;
+    // targetTime = sDataOld->timeValue + solverInfo->currentStepSize;
   }
 
   // (Re-)initialize after events or at first call of genericRK_step
@@ -2023,6 +2025,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
       // Call the step size control
       gsriData->stepSize *= gsriData->stepSize_control(gsriData->errValues, gsriData->stepSizeValues, gsriData->tableau->error_order);
+
       // printVector_genericRK("y     ", gsriData->y, gsriData->nStates, sData->timeValue);
       // printVector_genericRK("yt    ", gsriData->yt, gsriData->nStates, sData->timeValue);
       // printVector_genericRK("errest", gsriData->errest, gsriData->nStates, sData->timeValue);
@@ -2138,7 +2141,6 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     memcpy(gsriData->yOld, gsriData->y, data->modelData->nStates*sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     gsriData->time- gsriData->lastStepSize, gsriData->time, err, gsriData->stepSize);
-    gsriData->time = gsriData->time;
 
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps)
@@ -2153,7 +2155,11 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       data->callback->updateContinuousSystem(data, threadData);
       sim_result.emit(&sim_result, data, threadData);
     }
-  }
+    if ((stopTime - gsriData->time) < DASSL_STEP_EPS){
+      gsriData->time = stopTime;
+      break;
+    }
+  } // end of while-loop (gsriData->time < targetTime)
 
   if (!solverInfo->integratorSteps)
   {
@@ -2167,8 +2173,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
                               sData->timeValue, sData->realVars,
                               gsriData->nFastStates, gsriData->fastStates);
 
-    // interpolating slow states if multirate method is used, otherwise all states are slow states
-    linear_interpolation_MR(gsriData->timeLeft, gsriData->yLeft,
+      // interpolating slow states if multirate method is used, otherwise all states are slow states
+      linear_interpolation_MR(gsriData->timeLeft, gsriData->yLeft,
                             gsriData->timeRight, gsriData->y,
                             sData->timeValue, sData->realVars,
                             gsriData->nSlowStates, gsriData->slowStates);

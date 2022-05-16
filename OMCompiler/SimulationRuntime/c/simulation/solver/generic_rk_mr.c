@@ -835,7 +835,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   int outerIntStepSynchronize = 0;
 
   int nStates = data->modelData->nStates;
-  int nFastStates = gmriData->nFastStates;
+  int nFastStates = gsriData->nFastStates;
 
 
   // This is the target time of the main integrator
