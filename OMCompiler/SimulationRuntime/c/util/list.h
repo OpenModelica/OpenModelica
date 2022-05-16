@@ -42,11 +42,19 @@ extern "C" {
 #endif
 
   /* type-free list */
-  struct LIST_NODE;
-  typedef struct LIST_NODE LIST_NODE;
+  typedef struct LIST_NODE
+  {
+    void *data;
+    struct LIST_NODE *next;
+  } LIST_NODE;
 
-  struct LIST;
-  typedef struct LIST LIST;
+  typedef struct LIST
+  {
+    LIST_NODE *first;
+    LIST_NODE *last;
+    unsigned int itemSize;
+    unsigned int length;
+  } LIST;
 
   LIST *allocList(unsigned int itemSize);
   void freeList(LIST *list);
