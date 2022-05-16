@@ -360,10 +360,6 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
     gmriData->jacobian = NULL;
   }
 
-
-  // // BB ToDo: Fix nls solver for multirate part
-  // gmriData->nlsSolverMethod = RK_NLS_NEWTON;
-  // gmriData->nlsSolverData = (void*) allocateNewtonData(gmriData->nlSystemSize);
   return 0;
 }
 
@@ -775,6 +771,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       //   solverData->x[i] = gmriData->yOld[gmriData->fastStates[i]];
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gmriData->nlsData;
+      nlsData->size = gmriData->nFastStates;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
       for (ii=0; ii<nFastStates; ii++) {
           i = gmriData->fastStates[ii];
@@ -828,14 +825,17 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   DATA_GMRI* gmriData = gsriData->gmriData;
   DATA_NEWTON* solverData = (DATA_NEWTON*)gmriData->nlsSolverData;
 
-  double err, err_values[2], eventTime;
-  double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
+  double err, eventTime;
+  double Atol = data->simulationInfo->tolerance;
+  double Rtol = data->simulationInfo->tolerance;
+
   int i, ii, l;
   int integrator_step_info;
   int outerIntStepSynchronize = 0;
 
   int nStates = data->modelData->nStates;
   int nFastStates = gsriData->nFastStates;
+
 
 
   // This is the target time of the main integrator
@@ -845,16 +845,14 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     outerIntStepSynchronize = 1;
   }
 
-  // BB ToDo: Use this to handel last step of the embedded integrator
-  double stopTime = data->simulationInfo->stopTime;
-
   // BB ToDo: needs to be performed also after an event!!!
   if (solverInfo->didEventStep || !gmriData->stepsDone)
   {
     gmriData->time = gsriData->time;
     gmriData->stepSize = gsriData->lastStepSize*0.5;
+    // BB ToDO: Copy only fast states!!
     memcpy(gmriData->yOld, gsriData->yOld, sizeof(double)*gsriData->nStates);
-    for (int i=0; i<gmriData->nStates*gmriData->tableau->nStages; i++)
+    for (i=0; i<gmriData->nStates*gmriData->tableau->nStages; i++)
       gmriData->k[i] = 0;
     gmriData->didEventStep = TRUE;
 
