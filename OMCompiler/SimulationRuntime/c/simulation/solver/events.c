@@ -354,11 +354,8 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
   debugStreamPrint(LOG_EVENTS, 0, (listLen(&tmpEventList) == 1) ? "found event: " : "found events: ");
   while(listLen(&tmpEventList) > 0)
   {
-    /* TODO do this directly w/o free-malloc */
     long event_id = *((long*)listFirstData(&tmpEventList));
-    listPopFront(&tmpEventList);
-    listPushFront(eventList, &event_id);
-
+    listPushFrontNodeNoCopy(eventList, listPopFrontNode(&tmpEventList));
     infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
   }
 

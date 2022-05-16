@@ -74,7 +74,7 @@ void freeValueList(VALUES_LIST *valueList, unsigned int numberOfList)
     for(i = 0; i < listLen(tmpList->valueList); ++i)
     {
       elem = (VALUE*) listFirstData(tmpList->valueList);
-      listPopFront(tmpList->valueList);
+      listRemoveFront(tmpList->valueList);
     }
     freeList(tmpList->valueList);
   }

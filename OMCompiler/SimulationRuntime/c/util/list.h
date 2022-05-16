@@ -60,6 +60,7 @@ extern "C" {
   void freeList(LIST *list);
 
   void listPushFront(LIST *list, const void *data);
+  void listPushFrontNodeNoCopy(LIST *list, LIST_NODE *node);
   void listPushBack(LIST *list, const void *data);
   void listInsert(LIST *list, LIST_NODE* prevNode, const void *data);
 
@@ -68,7 +69,8 @@ extern "C" {
   void *listFirstData(LIST *list);
   void *listLastData(LIST *list);
 
-  void listPopFront(LIST *list);
+  LIST_NODE *listPopFrontNode(LIST *list);
+  void listRemoveFront(LIST *list);
 
   void listClear(LIST *list);
   void freeNode(LIST_NODE *node);

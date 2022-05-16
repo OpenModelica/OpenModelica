@@ -89,6 +89,24 @@ void listPushFront(LIST *list, const void *data)
     list->last = list->first;
 }
 
+/**
+ * @brief Pushes node to the front of list
+ *
+ * @param list    Pointer to list
+ * @param node    Pointer to node (will not be copied)
+ */
+void listPushFrontNodeNoCopy(LIST *list, LIST_NODE *node)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != node, "invalid list-node");
+
+  node->next = list->first;
+  ++(list->length);
+  list->first = node;
+  if(!list->last)
+    list->last = list->first;
+}
+
 void listPushBack(LIST *list, const void *data)
 {
   LIST_NODE *tmpNode = NULL;
@@ -150,20 +168,43 @@ void *listLastData(LIST *list)
   return list->last->data;
 }
 
-void listPopFront(LIST *list)
+/**
+ * @brief Return first node and pop from list
+ *
+ * @param list    Pointer to list
+ * @return node   Pointer to node (must be freed by caller)
+ */
+LIST_NODE *listPopFrontNode(LIST *list)
 {
-  if(list)
-  {
-    if(list->first)
-    {
-      LIST_NODE *tmpNode = list->first->next;
-      freeNode(list->first);
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != list->first, "empty list");
 
-      list->first = tmpNode;
-      --(list->length);
-      if(!list->first)
-        list->last = list->first;
-    }
+  LIST_NODE *node = list->first;
+  list->first = node->next;
+  //node->next = NULL;
+  --(list->length);
+  if(!list->first)
+    list->last = list->first;
+  return node;
+}
+
+/**
+ * @brief Remove and free first node from list
+ *
+ * @param list    Pointer to list
+ */
+void listRemoveFront(LIST *list)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  if(list->first)
+  {
+    LIST_NODE *tmpNode = list->first->next;
+    freeNode(list->first);
+
+    list->first = tmpNode;
+    --(list->length);
+    if(!list->first)
+      list->last = list->first;
   }
 }
 
