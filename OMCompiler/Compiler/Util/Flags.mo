@@ -1260,7 +1260,7 @@ constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(119, "postOptModulesDAE",
     "simplifyAllExpressions",
     "findZeroCrossings",
     "createDAEmodeBDAE",
-    "detectDAEmodeSparsePattern",
+    "symbolicJacobianDAE",
     "setEvaluationStage"
     }),NONE(),
     Gettext.gettext("Sets the optimization modules for the DAEmode in the back end. See --help=optmodules for more info."));
