@@ -196,6 +196,10 @@ libOpenModelicaRuntimeC.so: $(BASE_OBJS) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(BASE_OBJS) $(GCOBJPATH_MINIMAL) $(LDFLAGS)
 
+libOpenModelicaRuntimeC.dll: $(BASE_OBJS) Makefile.objs
+	@rm -f $@
+	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS) -L$(OMBUILDDIR)/lib/omc -lomcgc -ldbghelp -lregex -Wl,--export-all-symbols,--out-implib,$@.a
+
 libOpenModelicaRuntimeC.dylib: $(BASE_OBJS) $(GCOBJPATH_MINIMAL) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(BASE_OBJS) $(GCOBJPATH_MINIMAL) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
@@ -270,7 +274,13 @@ $(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
 $(BUILDPATH)/simulation/socket$(OBJ_EXT): simulation/socket_win.inc simulation/socket_unix.inc
 
 bootstrap-dependencies: $(LIBRUNTIME)
+ifeq (MINGW,$(findstring MINGW,$(shell uname)))
+	cp -p $(LIBRUNTIME) $(builddir_bin)
+# 	copy the import (dll.a) lib as well.
+	cp -p $(LIBRUNTIME).a $(builddir_lib)
+else
 	cp -p $(LIBRUNTIME) $(builddir_lib)
+endif
 	# copy header files
 	cp -p $(RUNTIME_HEADERS) $(builddir_inc)/c/
 	cp -p $(RUNTIMELINEAR_HEADERS) $(builddir_inc)/c/linearization/

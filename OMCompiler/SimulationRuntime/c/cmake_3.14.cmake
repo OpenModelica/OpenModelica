@@ -87,7 +87,7 @@ if(MINGW)
 elseif(MSVC)
   target_link_libraries(SimulationRuntimeC PUBLIC wsock32)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
-endif(WIN32)
+endif(MINGW)
 
 if(OM_OMC_ENABLE_IPOPT)
   target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})

@@ -18,7 +18,7 @@ encapsulated package Autoconf
   constant String ldflags_sundials = " -lsundials_nvecserial -lsundials_sunmatrixdense -lsundials_sunmatrixsparse" +
                                      " -lsundials_sunlinsoldense -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense -lsundials_sunlinsolspbcgs -lsundials_sunlinsolspfgmr -lsundials_sunlinsolspgmr -lsundials_sunlinsolsptfqmr -lsundials_sunnonlinsolnewton" +
                                      " -lsundials_cvode -lsundials_cvodes -lsundials_idas -lsundials_kinsol";
-  constant String ldflags_basic = linkType + "-lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis" +
+  constant String ldflags_basic = " -lomcgc " + linkType + "-lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis" +
                                   ldflags_sundials +
                                   ldflags_suitesparse +
                                   " -lipopt -lcoinmumps -lpthread -lm " +
