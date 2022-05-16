@@ -298,24 +298,33 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
   fortran_integer i=0;
   static LIST tmpEventList = (LIST){NULL, NULL, sizeof(long), 0};
 
-  /* FIXME stop allocating all the time */
-  double *states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
-  double *states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
+  /* static work arrays */
+  static double *states_left = NULL;
+  static double *states_right = NULL;
 
   double time_left = data->simulationInfo->timeValueOld;
   double time_right = data->localData[0]->timeValue;
 
-  assert(states_right);
-  assert(states_left);
-
-  for(it=listFirstNode(eventList); it; it=listNextNode(it))
+  /* allocate memory once at first call, never free */
+  if(!states_left)
   {
-    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
+    states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
+    assertStreamPrint(NULL, NULL != states_left, "out of memory");
+  }
+  if(!states_right)
+  {
+    states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
+    assertStreamPrint(NULL, NULL != states_right, "out of memory");
   }
 
   /* write states to work arrays */
   memcpy(states_left,  data->simulationInfo->realVarsOld, data->modelData->nStates * sizeof(double));
   memcpy(states_right, data->localData[0]->realVars     , data->modelData->nStates * sizeof(double));
+
+  for(it=listFirstNode(eventList); it; it=listNextNode(it))
+  {
+    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
+  }
 
   /* Search for event time and event_id with bisection method */
   bisection(data, threadData, &time_left, &time_right, states_left, states_right, &tmpEventList, eventList);
@@ -348,6 +357,7 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
   debugStreamPrint(LOG_EVENTS, 0, (listLen(&tmpEventList) == 1) ? "found event: " : "found events: ");
   while(listLen(&tmpEventList) > 0)
   {
+    /* TODO do this directly w/o free-malloc */
     long event_id = *((long*)listFirstData(&tmpEventList));
     listPopFront(&tmpEventList);
     listPushFront(eventList, &event_id);
@@ -358,9 +368,7 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
   debugStreamPrint(LOG_EVENTS, 0, "time: %.10e", time_right);
 
   data->localData[0]->timeValue = time_left;
-  for(i=0; i < data->modelData->nStates; i++) {
-    data->localData[0]->realVars[i] = states_left[i];
-  }
+  memcpy(data->localData[0]->realVars, states_left, data->modelData->nStates * sizeof(double));
 
   /* determined continuous system */
   data->callback->updateContinuousSystem(data, threadData);
@@ -368,13 +376,7 @@ double findRoot(DATA* data, threadData_t *threadData, LIST *eventList)
   /*sim_result_emit(data);*/
 
   data->localData[0]->timeValue = time_right;
-  for(i=0; i < data->modelData->nStates; i++)
-  {
-    data->localData[0]->realVars[i] = states_right[i];
-  }
-
-  free(states_left);
-  free(states_right);
+  memcpy(data->localData[0]->realVars, states_right, data->modelData->nStates * sizeof(double));
 
   TRACE_POP
   return time_right;
