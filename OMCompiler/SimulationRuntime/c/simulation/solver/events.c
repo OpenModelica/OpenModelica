@@ -296,7 +296,7 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
 
   LIST_NODE* it;
   fortran_integer i=0;
-  static LIST tmpEventList = (LIST){NULL, NULL, sizeof(long), 0};
+  LIST tmpEventList = (LIST){NULL, NULL, sizeof(long), 0};
 
   /* static work arrays */
   static double *states_left = NULL;
