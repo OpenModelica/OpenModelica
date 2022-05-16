@@ -1157,8 +1157,7 @@ protected
 algorithm
   if isSome(annOpt) then
     SOME(ann) := annOpt;
-    json := JSON.addPair("annotation",
-      JSON.makeString(SCodeDump.printModStr(ann.modification)), json);
+    json := JSON.addPair("annotation", dumpJSONMod(ann.modification), json);
   end if;
 end dumpJSONAnnotationOpt;
 
@@ -1218,6 +1217,47 @@ algorithm
     end if;
   end for;
 end dumpJSONReplaceableElements;
+
+function dumpJSONMod
+  input SCode.Mod mod;
+  output JSON json = JSON.emptyObject();
+algorithm
+  () := match mod
+    case SCode.Mod.MOD()
+      algorithm
+        for sm in mod.subModLst loop
+          json := JSON.addPair(sm.ident, dumpJSONSubMod(sm), json);
+        end for;
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONMod;
+
+function dumpJSONSubMod
+  input SCode.SubMod subMod;
+  output JSON json = JSON.emptyObject();
+protected
+  SCode.Mod mod = subMod.mod;
+algorithm
+  () := match mod
+    case SCode.Mod.MOD()
+      algorithm
+        if not listEmpty(mod.subModLst) then
+          json := JSON.addPair("modifiers", dumpJSONMod(mod), json);
+        end if;
+
+        if isSome(mod.binding) then
+          json := JSON.addPair("value",
+            JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding))), json);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONSubMod;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

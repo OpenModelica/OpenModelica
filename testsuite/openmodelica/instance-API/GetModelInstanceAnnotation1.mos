@@ -19,7 +19,22 @@ getModelInstance(M, prettyPrint=true);
 // true
 // "{
 //   \"name\": \"M\",
-//   \"annotation\": \"(Icon(graphics = {Rectangle(extent = {{-66, 78}, {70, -56}}, lineColor = {28, 108, 200})}), Diagram(graphics = {Ellipse(extent = {{-62, 68}, {56, -60}}, lineColor = {28, 108, 200})}))\",
+//   \"annotation\": {
+//     \"Icon\": {
+//       \"modifiers\": {
+//         \"graphics\": {
+//           \"value\": \"{Rectangle(extent = {{-66, 78}, {70, -56}}, lineColor = {28, 108, 200})}\"
+//         }
+//       }
+//     },
+//     \"Diagram\": {
+//       \"modifiers\": {
+//         \"graphics\": {
+//           \"value\": \"{Ellipse(extent = {{-62, 68}, {56, -60}}, lineColor = {28, 108, 200})}\"
+//         }
+//       }
+//     }
+//   },
 //   \"connections\": [
 //
 //   ],
