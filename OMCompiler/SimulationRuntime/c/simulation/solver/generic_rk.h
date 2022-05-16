@@ -78,6 +78,7 @@ typedef struct DATA_GSRI{
   int act_stage;                      /* Current stage of Runge-Kutta method. */
   int didEventStep;                   /* Will be used for updating the derivatives */
   int ringBufferSize;
+  int multi_rate_phase;
   int multi_rate;
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;

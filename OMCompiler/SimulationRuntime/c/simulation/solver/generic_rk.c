@@ -1452,6 +1452,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsx, gsriData->yt, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
+  gsriData->multi_rate_phase = 0;
   solved = solveNLS(data, threadData, nlsData, -1);
   if (!solved) {
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_MS: Failed to solve NLS in full_implicit_MS");
@@ -1565,6 +1566,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       //memcpy(nlsData->nlsx, gsriData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
+      gsriData->multi_rate_phase = 0;
       solved = solveNLS(data, threadData, nlsData, -1);
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "expl_diag_impl_RK: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
@@ -1633,7 +1635,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     memcpy(&nlsData->nlsxOld[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
     memcpy(&nlsData->nlsxExtrapolation[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
   }
-
+  gsriData->multi_rate_phase = 0;
   solved = solveNLS(data, threadData, gsriData->nlsData, -1);
   if (!solved) {
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_RK: Failed to solve NLS in full_implicit_RK");
@@ -1707,6 +1709,9 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   gsriData->evalJacobians = 0;
   gsriData->errorTestFailures = 0;
   gsriData->convergenceFailures = 0;
+
+  gsriData->multi_rate_phase = 0;
+
 
   /* calculate starting step size 1st Version */
   /* BB: What is the difference between sData and sDataOld at this time instance?
@@ -1962,7 +1967,24 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
       if (gsriData->multi_rate && gsriData->percentage > 0)
       {
+        // BB ToDo: Gives problems, if the orderig of the fast states change during simulation
+        int *sortedStates;
+        if(ACTIVE_STREAM(LOG_SOLVER_V))
+        {
+          sortedStates = (int*) malloc(sizeof(int)*nStates);
+          memcpy(sortedStates, gsriData->sortedStates, sizeof(int)*nStates);
+        }
         sortErrorIndices(gsriData);
+        if(ACTIVE_STREAM(LOG_SOLVER_V))
+        {
+          for (int k=0; k<nStates; k++)
+            if (sortedStates[k] - gsriData->sortedStates[k]) {
+              printIntVector_genericRK("sortedStates before:", sortedStates, nStates, gsriData->time);
+              printIntVector_genericRK("sortedStates after:", gsriData->sortedStates, nStates, gsriData->time);
+              break;
+            }
+            free(sortedStates);
+        }
         //Find fast and slow states based on
         gsriData->nFastStates = 0;
         gsriData->nSlowStates = 0;

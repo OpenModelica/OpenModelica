@@ -52,7 +52,14 @@ typedef struct DATA_GMRI{
   enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
   enum RK_type type;                    /* Type of RK method */
   enum RK_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
-  void* nlsSolverData;                  /* Nonlinear solver data */
+  NONLINEAR_SYSTEM_DATA* nlsData;       /* Non-linear system
+                                         * Something like
+                                         *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
+                                         * */
+  ANALYTIC_JACOBIAN* jacobian;
+
+  void* nlsSolverData;
+
   double *y, *yt, *yOld, *f, *yStart, *yEnd;
   double *Jf;
   double *k, *res_const;

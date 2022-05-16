@@ -46,11 +46,13 @@
 #include "kinsolSolver.h"
 #include "model_help.h"
 #include "newtonIteration.h"
+#include "nonlinearSystem.h"
 #include "simulation/options.h"
 #include "simulation/results/simulation_result.h"
 #include "util/omc_error.h"
 #include "util/simulation_options.h"
 #include "util/varinfo.h"
+#include "util/jacobian_util.h"
 
 // help functions
 void printVector_genericRK(char name[], double* a, int n, double time);
@@ -63,11 +65,171 @@ void printMatrix_genericRK(char name[], double* a, int n, double time);
 int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
+void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int *iflag);
+int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
+
 // step size control function
 double IController(double* err_values, double* stepSize_values, double err_order);
 double PIController(double* err_values, double* stepSize_values, double err_order);
 
 double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues);
+
+/**
+ * @brief Initialize static data of non-linear system for DIRK.
+ *
+ * Initialize for diagoanl implicit Runge-Kutta (DIRK) method.
+ * Sets min, max, nominal values and sparsity pattern.
+ *
+ * @param data              Runtime data struct
+ * @param threadData        Thread data for error handling
+ * @param nonlinsys         Non-linear system data.
+ */
+void initializeStaticNLSData_DIRK_MR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
+
+  // Nur für FastStates!!!! Ändern sich während der Simulation
+  for(int i=0; i<nonlinsys->size; i++) {
+    // Get the nominal values of the states
+    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    nonlinsys->min[i]     = DBL_MIN;
+    nonlinsys->max[i]     = DBL_MAX;
+  }
+
+  /* Initialize sparsity pattern */
+  nonlinsys->sparsePattern = NULL;
+  nonlinsys->isPatternAvailable = FALSE;
+  return;
+}
+
+struct RK_USER_DATA_MR {
+  DATA* data;
+  threadData_t* threadData;
+  DATA_GMRI* gmriData;
+};
+
+struct dataSolver
+{
+  void* ordinaryData;
+  void* initHomotopyData;
+};
+
+
+/**
+ * @brief Allocate and initialize non-linear system data for Runge-Kutta method.
+ *
+ * Runge-Kutta method has to be implicit or diagonal implicit.
+ *
+ * @param data                        Runtime data struct.
+ * @param threadData                  Thread data for error handling.
+ * @param gmriData                     Runge-Kutta method.
+ * @return NONLINEAR_SYSTEM_DATA*     Pointer to initialized non-linear system data.
+ */
+NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GMRI* gmriData) {
+  assertStreamPrint(threadData, gmriData->type != RK_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
+
+  // TODO AHeu: Free solverData again
+  struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
+
+  ANALYTIC_JACOBIAN* jacobian = NULL;
+
+  NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) calloc(1, sizeof(NONLINEAR_SYSTEM_DATA));
+  assertStreamPrint(threadData, nlsData != NULL,"Out of memory");
+
+  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
+
+  nlsData->size = gmriData->nStates;
+  nlsData->equationIndex = -1;
+
+  nlsData->homotopySupport = FALSE;
+  nlsData->initHomotopy = FALSE;
+  nlsData->mixedSystem = FALSE;
+
+  nlsData->min = NULL;
+  nlsData->max = NULL;
+  nlsData->nominal = NULL;
+
+  switch (gmriData->type)
+  {
+  case RK_TYPE_DIRK:
+    nlsData->residualFunc = residual_DIRK_MR;
+    nlsData->analyticalJacobianColumn = NULL;//jacobian_DIRK_column_MR;
+    nlsData->initializeStaticNLSData = initializeStaticNLSData_DIRK_MR;
+    nlsData->getIterationVars = NULL;
+
+    gmriData->symJacAvailable = FALSE;
+    break;
+  // case MS_TYPE_IMPLICIT:
+  //   nlsData->residualFunc = residual_MS;
+  //   nlsData->analyticalJacobianColumn = jacobian_MS_column;
+  //   nlsData->initializeStaticNLSData = initializeStaticNLSData_MS;
+  //   nlsData->getIterationVars = NULL;
+
+  //   gmriData->symJacAvailable = TRUE;
+  //   break;
+  default:
+    errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gmriData->type);
+    break;
+  }
+
+  /* allocate system data */
+  nlsData->nlsx = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->nlsxExtrapolation = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->nlsxOld = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->resValues = (double*) malloc(nlsData->size*sizeof(double));
+
+  nlsData->lastTimeSolved = 0.0;
+
+  nlsData->nominal = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->min = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->max = (double*) malloc(nlsData->size*sizeof(double));
+
+  // // TODO: Do we need to initialize the Jacobian or is it already initialized?
+  // ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  // data->callback->initialAnalyticJacobianA(data, threadData, jacobian_ODE);
+  nlsData->initializeStaticNLSData(data, threadData, nlsData);
+
+  // TODO: Set callback to initialize Jacobian
+  //       Write said function...
+  // TODO: Free memory
+  gmriData->jacobian = initAnalyticJacobian(gmriData->nlSystemSize, gmriData->nlSystemSize, gmriData->nlSystemSize, NULL, nlsData->sparsePattern);
+  nlsData->initialAnalyticalJacobian = NULL;
+  nlsData->jacobianIndex = -1;
+
+  /* Initialize NLS method */
+  switch (gmriData->nlsSolverMethod) {
+  case RK_NLS_NEWTON:
+    nlsData->nlsMethod = NLS_NEWTON;
+    nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
+    nlsData->jacobianIndex = -1;
+    solverData->ordinaryData =(void*) allocateNewtonData(nlsData->size);
+    solverData->initHomotopyData = NULL;
+    nlsData->solverData = solverData;
+    break;
+  case RK_NLS_KINSOL:
+    nlsData->nlsMethod = NLS_KINSOL;
+    if (gmriData->symJacAvailable) {
+      nlsData->nlsLinearSolver = NLS_LS_KLU;
+    } else {
+      nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
+    }
+    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
+    solverData->initHomotopyData = NULL;
+    nlsData->solverData = solverData;
+    if (gmriData->symJacAvailable) {
+      resetKinsolMemory(solverData->ordinaryData, nlsData->sparsePattern->numberOfNonZeros, nlsData->analyticalJacobianColumn);
+    } else {
+      resetKinsolMemory(solverData->ordinaryData, nlsData->size*nlsData->size, NULL);
+      int flag = KINSetJacFn(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, NULL);
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
+    }
+    break;
+  default:
+    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gmriData->nlsSolverMethod]);
+    return NULL;
+    break;
+  }
+
+  return nlsData;
+}
 
 /**
  * @brief Function allocates memory needed for chosen RK method.
@@ -94,11 +256,11 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
     messageClose(LOG_STDOUT);
     omc_throw_function(threadData);
   }
-  // Check explicit, diagonally implicit or fully implicit status and fix solver settings
-  enum RK_type expl;
-  analyseButcherTableau(gmriData->tableau, gmriData->nStates, &gmriData->nlSystemSize, &expl);
 
-  switch (expl)
+  // Get size of non-linear system
+  analyseButcherTableau(gmriData->tableau, gmriData->nStates, &gmriData->nlSystemSize, &gmriData->type);
+
+  switch (gmriData->type)
   {
   case RK_TYPE_EXPLICIT:
     gmriData->isExplicit = TRUE;
@@ -182,11 +344,26 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
       messageClose(LOG_SOLVER);
     }
+
+  /* Allocate memory for the nonlinear solver */
+  //gmriData->nlsSolverMethod = getRK_NLS_Method();
+    gmriData->nlsSolverMethod = RK_NLS_NEWTON;
+    gmriData->nlsData = initRK_NLS_DATA_MR(data, threadData, gmriData);
+    if (!gmriData->nlsData) {
+      return -1;
+    }
+  }  else
+  {
+    gmriData->symJacAvailable = FALSE;
+    gmriData->nlsSolverMethod = RK_NLS_UNKNOWN;  // TODO AHeu: Add a no-solver option?
+    gmriData->nlsData = NULL;
+    gmriData->jacobian = NULL;
   }
 
-  // BB ToDo: Fix nls solver for multirate part
-  gmriData->nlsSolverMethod = RK_NLS_NEWTON;
-  gmriData->nlsSolverData = (void*) allocateNewtonData(gmriData->nlSystemSize);
+
+  // // BB ToDo: Fix nls solver for multirate part
+  // gmriData->nlsSolverMethod = RK_NLS_NEWTON;
+  // gmriData->nlsSolverData = (void*) allocateNewtonData(gmriData->nlSystemSize);
   return 0;
 }
 
@@ -195,26 +372,44 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
  *
  * @param data    Pointer to generik Runge-Kutta data struct.
  */
-void freeDataGenericRK_MR(DATA_GMRI* gmri_data) {
-  freeNewtonData(gmri_data->nlsSolverData);
+void freeDataGenericRK_MR(DATA_GMRI* gmriData) {
+  /* Free non-linear system data */
+  if(gmriData->nlsData != NULL) {
+    struct dataSolver* dataSolver = gmriData->nlsData->solverData;
+    switch (gmriData->nlsSolverMethod)
+    {
+    case RK_NLS_NEWTON:
+      freeNewtonData(dataSolver->ordinaryData);
+      break;
+    case RK_NLS_KINSOL:
+      //kinsolData = (NLS_KINSOL_DATA*) gsriData->nlsData->solverData;
+      nlsKinsolFree(dataSolver->ordinaryData);
+      break;
+    default:
+      warningStreamPrint(LOG_SOLVER, 0, "Not handled RK_NLS_METHOD in freeDataGenericRK. Are we leaking memroy?");
+      break;
+    }
+    free(dataSolver);
+    free(gmriData->nlsData);
+  }
 
-  freeButcherTableau(gmri_data->tableau);
+  freeButcherTableau(gmriData->tableau);
 
-  free(gmri_data->y);
-  free(gmri_data->yOld);
-  free(gmri_data->yt);
-  free(gmri_data->f);
-  free(gmri_data->Jf);
-  free(gmri_data->k);
-  free(gmri_data->res_const);
-  free(gmri_data->errest);
-  free(gmri_data->errtol);
-  free(gmri_data->err);
-  free(gmri_data->errValues);
-  free(gmri_data->stepSizeValues);
+  free(gmriData->y);
+  free(gmriData->yOld);
+  free(gmriData->yt);
+  free(gmriData->f);
+  free(gmriData->Jf);
+  free(gmriData->k);
+  free(gmriData->res_const);
+  free(gmriData->errest);
+  free(gmriData->errtol);
+  free(gmriData->err);
+  free(gmriData->errValues);
+  free(gmriData->stepSizeValues);
 
-  free(gmri_data);
-  gmri_data = NULL;
+  free(gmriData);
+  gmriData = NULL;
 
   return;
 }
@@ -347,6 +542,84 @@ int wrapper_Jf_genericRK_MR(int n, double t, double* x, double* fODE, void* gmri
   return 0;
 }
 
+
+/**
+ * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
+ *
+ * TODO: Describe what the residual means.
+ *
+ * @param dataIn  Userdata provided to non-linear system solver.
+ * @param xloc    Input vector for non-linear system.
+ * @param res     Residuum vector for given input xloc.
+ * @param iflag   Unused.
+ */
+void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int *iflag)
+{
+  DATA *data = (DATA *)((void **)dataIn[0]);
+  threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
+  DATA_GMRI *gmriData = (DATA_GMRI *)((void **)dataIn[2]);
+
+  SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
+  modelica_real *fODE = &sData->realVars[data->modelData->nStates];
+
+  int i, ii;
+  int nStates = data->modelData->nStates;
+  int nStages = gmriData->tableau->nStages;
+  int stage_  = gmriData->act_stage;
+
+  // Evaluate right hand side of ODE
+  for (ii=0; ii<gmriData->nFastStates;ii++) {
+    i = gmriData->fastStates[ii];
+    sData->realVars[i] = xloc[ii];
+  }
+  wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
+
+  // Evaluate residual
+  for (ii=0; ii<gmriData->nFastStates; ii++) {
+    i = gmriData->fastStates[ii];
+    res[ii] = gmriData->res_const[i] - xloc[ii] + gmriData->stepSize * gmriData->tableau->A[stage_ * nStages + stage_] * fODE[i];
+  }
+
+  return;
+}
+
+/**
+ * @brief Evaluate column of DIRK Jacobian.
+ *
+ * @param inData            Void pointer to runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param gsriData     Runge-Kutta method.
+ * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
+ * @param parentJacobian    Unused
+ * @return int              Return 0 on success.
+ */
+int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+
+  DATA* data = (DATA*) inData;
+  DATA_GMRI* gmriData = (DATA_GMRI*) data->simulationInfo->backupSolverData;
+
+  int i;
+  int nStates = data->modelData->nStates;
+  int nStages = gmriData->tableau->nStages;
+  int stage = gmriData->act_stage;
+
+  /* Evaluate column of Jacobian ODE */
+  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
+  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+
+  /* Update resultVars array */
+  for (i = 0; i < jacobian->sizeCols; i++) {
+    jacobian->resultVars[i] = gmriData->stepSize * gmriData->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
+    /* -1 on diagonal elements */
+    if (jacobian->seedVars[i] == 1) {
+      jacobian->resultVars[i] -= 1;
+    }
+  }
+
+  return 0;
+}
+
 /*!	\fn wrapper_DIRK
  *      residual function res = yOld-y+gam*h*(k1+f(tOld+c2*h,y)); c2=2*gam;
  *      i.e. solve for:
@@ -433,19 +706,20 @@ if (fj)
  */
 int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
-  int i, ii;
-
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
   DATA_GMRI* gmriData = gsriData->gmriData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*) gmriData->nlsSolverData;
+
+  int i, ii;
+  int stage, stage_;
 
   int nStates = data->modelData->nStates;
   int nFastStates = gmriData->nFastStates;
   int nStages = gmriData->tableau->nStages;
-  int stage, stage_;
+  modelica_boolean solved = FALSE;
 
+  // Is this necessary???
   gmriData->data = (void*) data;
   gmriData->threadData = threadData;
 
@@ -456,15 +730,12 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  if (gmriData->didEventStep) {
-    sData->timeValue = gmriData->time;
-    memcpy(sData->realVars, gmriData->yOld, nStates*sizeof(double));
-    wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
-    memcpy(gmriData->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
-    gmriData->didEventStep = FALSE;
-  }
+  sData->timeValue = gmriData->time;
+  memcpy(sData->realVars, gmriData->yOld, nStates*sizeof(double));
+  wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
+  memcpy(gmriData->k, fODE, nStates*sizeof(double));
 
-  for (stage = 0; stage < gmriData->tableau->nStages; stage++)
+  for (stage = 0; stage < nStages; stage++)
   {
     gmriData->act_stage = stage;
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
@@ -475,8 +746,8 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     for (i=0; i < nStates; i++)
     {
       gmriData->res_const[i] = gmriData->yOld[i];
-      for (stage_=0; stage_ < stage; stage_++)
-        gmriData->res_const[i] += gmriData->stepSize * gmriData->tableau->A[stage * nStages + stage_] * (gmriData->k + stage_ * nStates)[i];
+      for (stage_ = 0; stage_ < stage; stage_++)
+        gmriData->res_const[i] += gmriData->stepSize * gmriData->tableau->A[stage * nStages + stage_] * gmriData->k[stage_ * nStates + i];
     }
 
     // set simulation time with respect to the current stage
@@ -485,18 +756,14 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     // index of diagonal element of A
     if (gmriData->tableau->A[stage * nStages + stage_] == 0)
     {
-      // fODE = f(tOld + c2*h,x); x ~ yOld + gam*h*(k1+k2)
-      // set correct time value and states of simulation system
-      memcpy(sData->realVars, gmriData->res_const, nStates*sizeof(double));
-      wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
+      if (stage>0) {
+        memcpy(sData->realVars, gmriData->res_const, nStates*sizeof(double));
+        wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
+      }
+//      memcpy(gmriData->x + stage_ * nStates, gmriData->res_const, nStates*sizeof(double));
     }
     else
     {
-      solverData->initialized = 1;
-      solverData->numberOfIterations = 0;
-      solverData->numberOfFunctionEvaluations = 0;
-      solverData->n = nFastStates;
-
       // interpolate the slow states on the time of the current stage
       linear_interpolation_MR(gmriData->startTime, gmriData->yStart,
                               gmriData->endTime,   gmriData->yEnd,
@@ -506,20 +773,20 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       // setting the start vector for the newton step
       // for (i=0; i<nFastStates; i++)
       //   solverData->x[i] = gmriData->yOld[gmriData->fastStates[i]];
-
-      for (ii=0; ii<nFastStates; ii++) {
-        i = gmriData->fastStates[ii];
-        solverData->x[ii] = gmriData->yOld[i] + gmriData->tableau->c[stage] * gmriData->stepSize * (gmriData->k + (nStages-1)*nStates)[i];
-      }
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-      // set newton strategy
-      solverData->newtonStrategy = NEWTON_DAMPED2;
-      _omc_newton(wrapper_DIRK, solverData, (void*)gmriData);
-
-      /* if newton solver did not converge, do ??? */
-      if (solverData->info == -1)
-      {
-        warningStreamPrint(LOG_SOLVER, 0, "nonlinear solver did not converge at time %e, do iteration again with calculating jacobian in every step", solverInfo->currentTime);
+      NONLINEAR_SYSTEM_DATA* nlsData = gmriData->nlsData;
+      // Set start vector, BB ToDo: Ommit extrapolation after event!!!
+      for (ii=0; ii<nFastStates; ii++) {
+          i = gmriData->fastStates[ii];
+          nlsData->nlsx[ii] = gmriData->yOld[i] + gmriData->tableau->c[stage_] * gmriData->stepSize * gmriData->k[i];
+      }
+      //memcpy(nlsData->nlsx, gmriData->yOld, nStates*sizeof(modelica_real));
+      memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
+      memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
+      gsriData->multi_rate_phase = 1;
+      solved = solveNLS(data, threadData, nlsData, -1);
+      if (!solved) {
+        errorStreamPrint(LOG_STDOUT, 0, "expl_diag_impl_RK: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
     }
