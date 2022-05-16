@@ -690,7 +690,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
 #else
     fname = (char*) omc_alloc_interface.malloc_atomic(25 + strlen(varname));
     sprintf(fname, "tmp.%s.html.tmp", varname);
-    fout = fopen(fname, "wb+");
+    fout = omc_fopen(fname, "wb+");
     if (!fout)
     {
       perror("Error opening temp file"); fflush(stderr);
@@ -742,7 +742,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   } else if (!isResultCmp && (error || keepEqualResults)) {
     fname = (char*) omc_alloc_interface.malloc_atomic(25 + strlen(prefix) + strlen(varname));
     sprintf(fname, "%s.%s.csv", prefix, varname);
-    fout = fopen(fname,"w");
+    fout = omc_fopen(fname,"w");
     if (!fout)
     {
       perror("Error opening file");
@@ -829,7 +829,7 @@ fprintf(fout, "{title: '%s',\n"
 
       html[html_size] = '\0';
       fclose(fout);
-      unlink(fname);
+      omc_unlink(fname);
 #else
       fclose(fout);
 #endif

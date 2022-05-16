@@ -470,8 +470,8 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
       {
         struct stat stat_buffer;
 
-        //Make sure path exists, stat() returns 0 on success
-        if (stat(return_path, &stat_buffer))
+        //Make sure path exists, omc_stat() returns 0 on success
+        if (omc_stat(return_path, &stat_buffer))
         {
           if (return_path != resolved_path)
           {
@@ -479,7 +479,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
           }
 
           return_path = 0;
-          //stat() will set the correct errno for us
+          //omc_stat() will set the correct errno for us
         }
         //else we succeeded!
       }

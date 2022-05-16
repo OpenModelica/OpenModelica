@@ -95,7 +95,7 @@ void VisualizerMAT::readMat(const std::string& modelFile, const std::string& pat
   }
 
   /*
-     FILE * fileA = fopen("allVArs.txt", "w+");
+     FILE * fileA = omc_fopen("allVArs.txt", "w+");
      omc_matlab4_print_all_vars(fileA, &matReader);
      fclose(fileA);
      */
