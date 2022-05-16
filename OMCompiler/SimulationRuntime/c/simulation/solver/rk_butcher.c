@@ -265,13 +265,13 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 2;
   tableau->order_b = 1;
   tableau->order_bt = 1;
-  tableau->fac = 5.0;
+  tableau->fac = 1.0;
 
   /* Butcher Tableau */
   const double c[]   = {-1.0, 1.0};
   const double A[]   = {0.0, 0.0,
                         0.0, 0.0};
-  const double b[]   = {0.0, 1.0};
+  const double b[]   = {0.5, 0.5};
   const double bt[]  = {1.0, 0.0};
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);

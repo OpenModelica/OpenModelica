@@ -1291,7 +1291,8 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
   int nStates = data->modelData->nStates;
   int stage, stage_;
 
-  for (stage_=0; stage_<nStages; stage_++)
+  // stage_ == 0, was already handle for predictor step
+  for (stage_=1; stage_<nStages; stage_++)
   {
     /* Evaluate ODE and compute res for each stage_ */
     sData->timeValue = gsriData->time + gsriData->tableau->c[stage_] * gsriData->stepSize;
@@ -1406,7 +1407,8 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   int nStages = gsriData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // printVector_genericRK("k:  ", gsriData->k + (nStages-1) * nStates, nStates, gsriData->time);
+  // printVector_genericRK("k:  ", gsriData->k + 0 * nStates, nStates, gsriData->time);
+  // printVector_genericRK("k:  ", gsriData->k + 1 * nStates, nStates, gsriData->time);
 
   /* Predictor Schritt */
   for (i = 0; i < nStates; i++)
@@ -1416,7 +1418,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
       gsriData->yt[i] += -gsriData->x[stage_ * nStates + i] * gsriData->tableau->c[stage_] +
-                          gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] *  gsriData->stepSize;//gsriData->stepSizeValues[nStages-2-stage_];
+                          gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] *  gsriData->stepSize;
     }
     gsriData->yt[i] += gsriData->k[stage_ * nStates + i] * gsriData->tableau->bt[stage_] * gsriData->stepSize;
     gsriData->yt[i] /= gsriData->tableau->c[stage_];
@@ -1431,7 +1433,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
       gsriData->res_const[i] += -gsriData->x[stage_ * nStates + i] * gsriData->tableau->c[stage_] +
-                                 gsriData->k[stage_ * nStates + i] * gsriData->tableau->b[stage_] *  gsriData->stepSize;//gsriData->stepSizeValues[nStages-2-stage_];
+                                 gsriData->k[stage_ * nStates + i] * gsriData->tableau->b[stage_] *  gsriData->stepSize;
     }
   }
   // printVector_genericRK("res_const:  ", gsriData->res_const, nStates, gsriData->time);
@@ -1455,13 +1457,31 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_MS: Failed to solve NLS in full_implicit_MS");
     return -1;
   }
-  // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
+
   memcpy(gsriData->k + stage_ * nStates, fODE, nStates*sizeof(double));
-  memcpy(gsriData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
-  memcpy(gsriData->y, nlsData->nlsx, nStates*sizeof(double));
+
+  /* Corrector Schritt */
+  for (i = 0; i < nStates; i++)
+  {
+    // BB ToDo: check the formula with respect to gsriData->k[]
+    gsriData->y[i] = 0;
+    for (stage_ = 0; stage_ < nStages-1; stage_++)
+    {
+      gsriData->y[i] += -gsriData->x[stage_ * nStates + i] * gsriData->tableau->c[stage_] +
+                         gsriData->k[stage_ * nStates + i] * gsriData->tableau->b[stage_] *  gsriData->stepSize;
+    }
+    gsriData->y[i] += gsriData->k[stage_ * nStates + i] * gsriData->tableau->b[stage_] * gsriData->stepSize;
+    gsriData->y[i] /= gsriData->tableau->c[stage_];
+  }
+  // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
+  memcpy(gsriData->x + stage_ * nStates, gsriData->y, nStates*sizeof(double));
 
   // printVector_genericRK("yt: ", gsriData->yt, nStates, gsriData->time);
   // printVector_genericRK("y:  ", gsriData->y, nStates, gsriData->time);
+
+  // printVector_genericRK("k:  ", gsriData->k + 0 * nStates, nStates, gsriData->time);
+  // printVector_genericRK("k:  ", gsriData->k + 1 * nStates, nStates, gsriData->time);
+
 
   return 0;
 }
@@ -1491,13 +1511,10 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  if (gsriData->didEventStep) {
-    sData->timeValue = gsriData->time;
-    memcpy(sData->realVars, gsriData->yOld, nStates*sizeof(double));
-    wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
-    memcpy(gsriData->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
-    gsriData->didEventStep = FALSE;
-  }
+  sData->timeValue = gsriData->time;
+  memcpy(sData->realVars, gsriData->yOld, nStates*sizeof(double));
+  wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
+  memcpy(gsriData->k, fODE, nStates*sizeof(double));
 
   /* Runge-Kutta step */
   for (stage = 0; stage < nStages; stage++)
@@ -1526,17 +1543,25 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
     if (gsriData->tableau->A[stage * nStages + stage_] == 0)
     {
-      memcpy(sData->realVars, gsriData->res_const, nStates*sizeof(double));
-      wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
+      if (stage>0) {
+        memcpy(sData->realVars, gsriData->res_const, nStates*sizeof(double));
+        wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
+      }
+      memcpy(gsriData->x + stage_ * nStates, gsriData->res_const, nStates*sizeof(double));
     }
     else
     {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gsriData->nlsData;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
+      if (gsriData->didEventStep) {
+        for (i=0; i<nStates; i++)
+          nlsData->nlsx[i] = gsriData->yOld[i] + gsriData->tableau->c[stage_] * gsriData->stepSize * gsriData->k[i];
+      } else {
+        for (i=0; i<nStates; i++)
+          nlsData->nlsx[i] = gsriData->yOld[i] + gsriData->tableau->c[stage_] * gsriData->stepSize * gsriData->k[i];
 
-      for (i=0; i<nStates; i++)
-        nlsData->nlsx[i] = gsriData->yOld[i] + gsriData->tableau->c[stage_] * gsriData->stepSize * (gsriData->k + (nStages-1)*nStates)[i];
+      }
       //memcpy(nlsData->nlsx, gsriData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
@@ -1594,18 +1619,15 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  if (gsriData->didEventStep) {
-    memcpy(sData->realVars, gsriData->yOld, nStates*sizeof(double));
-    wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
-    memcpy(gsriData->k + (nStages-1) * nStates, fODE, nStates*sizeof(double));
-    gsriData->didEventStep = FALSE;
-  }
+  memcpy(sData->realVars, gsriData->yOld, nStates*sizeof(double));
+  wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
+  memcpy(gsriData->k, fODE, nStates*sizeof(double));
 
   /* Set start values for non-linear solver */
   for (stage_=0; stage_<nStages; stage_++) {
     // BB ToDo: Ommit extrapolation after event!!!
     for (i=0; i<nStates; i++)
-      nlsData->nlsx[stage_*nStates +i] = gsriData->yOld[i] + gsriData->tableau->c[stage_] * gsriData->stepSize * (gsriData->k + (nStages-1)*nStates)[i];
+      nlsData->nlsx[stage_*nStates +i] = gsriData->yOld[i] + gsriData->tableau->c[stage_] * gsriData->stepSize * gsriData->k[i];
 
     // memcpy(&nlsData->nlsx[stage_*nStates], gsriData->yOld, nStates*sizeof(double));
     memcpy(&nlsData->nlsxOld[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
@@ -1774,9 +1796,9 @@ double IController(double* err_values, double* stepSize_values, double err_order
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta = -1./err_order;
+  double beta = 1./err_order;
 
-  return fmin(facmax, fmax(facmin, fac*pow(err_values[0], beta)));
+  return fmin(facmax, fmax(facmin, fac*pow(1./err_values[0], beta)));
 
 }
 
@@ -1791,9 +1813,21 @@ double PIController(double* err_values, double* stepSize_values, double err_orde
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta1=-1./err_order, beta2=-1./err_order;
+  double beta  = 1./err_order;
+  double beta1 = 1./err_order;
+  double beta2 = 1./err_order;
 
-  return fmin(facmax, fmax(facmin, fac*pow(err_values[0], beta1)*pow(err_values[1]/err_values[0], beta2)));
+  double estimate;
+
+  if (err_values[0] < DBL_EPSILON)
+    return facmax;
+
+  if (err_values[1] < DBL_EPSILON)
+    estimate = pow(1./err_values[0], beta);
+  else
+    estimate = stepSize_values[0]/stepSize_values[1]*pow(1./err_values[0], beta1)*pow(err_values[1]/err_values[0], beta2);
+
+  return fmin(facmax, fmax(facmin, fac*estimate));
 
 }
 
