@@ -47,7 +47,6 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFlatten.FunctionTreeImpl;
-  import NFFunction.Function;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import Variable = NFVariable;
@@ -728,7 +727,6 @@ protected
     exp := match exp
       local
         Bucket bucket;
-        Function fn;
 
       // logical binarys: e.g. (a and b)
       // Todo: this might not always be correct -> check with something like "contains relation?"
@@ -744,7 +742,7 @@ protected
       then exp;
 
       // sample functions
-      case Expression.CALL(call = Call.TYPED_CALL(fn = fn)) guard(Call.getLastPathName(fn.path) == "sample") algorithm
+      case Expression.CALL() guard(Call.isNamed(exp.call, "sample")) algorithm
         (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), eqn_ptr);
         Pointer.update(bucket_ptr, bucket);
       then exp;

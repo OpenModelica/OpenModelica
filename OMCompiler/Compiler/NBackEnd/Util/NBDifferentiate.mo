@@ -902,7 +902,7 @@ public
 
       // try some simple known cases
       case (Expression.CALL()) algorithm
-        ret := match Call.getLastPathName(Call.functionName(exp.call))
+        ret := match Call.functionNameLast(exp.call)
           case "sample" then Expression.BOOLEAN(false);
           else fail();
         end match;
