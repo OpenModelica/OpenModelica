@@ -5,6 +5,7 @@ add_definitions(-DOMC_BUILD)
 
 # CPP libs should be installed to in lib/<arch>/omc/cpp/ for now.
 set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/cpp)
+set(CMAKE_INSTALL_BINDIR ${CMAKE_INSTALL_LIBDIR})
 # CPP headers are installed in include/omc/cpp for now.
 set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/cpp)
 

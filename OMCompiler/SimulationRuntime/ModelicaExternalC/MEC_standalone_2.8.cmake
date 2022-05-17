@@ -13,11 +13,15 @@ project(OMModelicaExternalC)
 # been built and installed to this dirs before we can build the ModelicaExternalC libs.
 link_directories(${CMAKE_INSTALL_LIBDIR} ${CMAKE_INSTALL_BINDIR})
 
-# Set the rpath to the same dir as the destination of the libs
-# when installing. This should be enough since the dependencies
-# (libOpenModelicaRuntimeC and libomcgc) should end up in the same
-# dir as well (lib/<arch>/omc/ on linux or bin/ on Windows).
-set(CMAKE_INSTALL_RPATH $ORIGIN)
+# Set the rpath to the one dir up as the destination of the libs
+# when installing is an 'ffi' directory in the lib directory.
+# See the install commnad at the end of this file. If that is
+# changed make sure to adjust this as well.
+if(APPLE)
+  set(CMAKE_INSTALL_RPATH "@loader_path/../../${CMAKE_INSTALL_LIBDIR}")
+else()
+  set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../../${CMAKE_INSTALL_LIBDIR}")
+endif()
 
 ## ModelicaExternalC #########################################################################
 set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
@@ -29,7 +33,10 @@ set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
 add_library(ModelicaExternalC STATIC ${libModelicaExternalC_SOURCES})
 add_library(omc::simrt::Modelica::ExternalC ALIAS ModelicaExternalC)
 
-target_link_libraries(ModelicaExternalC PUBLIC m)
+if(UNIX)
+  target_link_libraries(ModelicaExternalC PUBLIC m)
+endif()
+
 target_link_libraries(ModelicaExternalC PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(ModelicaExternalC PUBLIC omcgc)
 
@@ -39,12 +46,17 @@ add_library(omc::simrt::Modelica::ExternalC::shared ALIAS ModelicaExternalC_shar
 set_target_properties(ModelicaExternalC_shared
                       PROPERTIES OUTPUT_NAME ModelicaExternalC CLEAN_DIRECT_OUTPUT 1)
 
-target_link_libraries(ModelicaExternalC_shared PUBLIC m)
+if(UNIX)
+  target_link_libraries(ModelicaExternalC_shared PUBLIC m)
+endif()
+
 target_link_libraries(ModelicaExternalC_shared PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(ModelicaExternalC_shared PUBLIC omcgc)
 
-if(WIN32)
+if(MINGW)
   set_target_properties(ModelicaExternalC_shared PROPERTIES LINK_FLAGS "-Wl,--export-all-symbols")
+elseif(MSVC)
+  set_target_properties(ModelicaExternalC_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
@@ -70,8 +82,11 @@ target_compile_definitions(ModelicaMatIO_shared PUBLIC HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO_shared PUBLIC zlib)
 target_link_libraries(ModelicaMatIO_shared PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(ModelicaMatIO_shared PUBLIC omcgc)
-if(WIN32)
+
+if(MINGW)
   set_target_properties(ModelicaMatIO_shared PROPERTIES LINK_FLAGS "-Wl,--export-all-symbols")
+elseif(MSVC)
+  set_target_properties(ModelicaMatIO_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
@@ -90,8 +105,10 @@ set_target_properties(ModelicaIO_shared
                       PROPERTIES OUTPUT_NAME ModelicaIO CLEAN_DIRECT_OUTPUT 1)
 
 target_link_libraries(ModelicaIO_shared PUBLIC ModelicaMatIO_shared)
-if(WIN32)
+if(MINGW)
   set_target_properties(ModelicaIO_shared PROPERTIES LINK_FLAGS "-Wl,--export-all-symbols")
+elseif(MSVC)
+  set_target_properties(ModelicaIO_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
@@ -107,7 +124,9 @@ add_library(omc::simrt::Modelica::StandardTables ALIAS ModelicaStandardTables)
 target_compile_definitions(ModelicaStandardTables PRIVATE DUMMY_FUNCTION_USERTAB)
 
 target_link_libraries(ModelicaStandardTables PUBLIC ModelicaIO)
-target_link_libraries(ModelicaStandardTables PUBLIC m)
+if(UNIX)
+  target_link_libraries(ModelicaStandardTables PUBLIC m)
+endif()
 
 # Shared version
 add_library(ModelicaStandardTables_shared SHARED ${ModelicaStandardTables_SOURCES})
@@ -119,9 +138,14 @@ set_target_properties(ModelicaStandardTables_shared
 target_compile_definitions(ModelicaStandardTables_shared PRIVATE DUMMY_FUNCTION_USERTAB)
 
 target_link_libraries(ModelicaStandardTables_shared PUBLIC ModelicaIO_shared)
-target_link_libraries(ModelicaStandardTables_shared PUBLIC m)
-if(WIN32)
+if(UNIX)
+  target_link_libraries(ModelicaStandardTables_shared PUBLIC m)
+endif()
+
+if(MINGW)
   set_target_properties(ModelicaStandardTables_shared PROPERTIES LINK_FLAGS "-Wl,--export-all-symbols")
+elseif(MSVC)
+  set_target_properties(ModelicaStandardTables_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
