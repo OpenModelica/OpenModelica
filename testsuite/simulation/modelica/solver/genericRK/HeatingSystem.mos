@@ -1,0 +1,79 @@
+// name: HeatingSystem
+// status: correct
+// teardown_command: rm -rf temp_HeatingSystem/
+//
+// Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
+
+loadFile("HeatingSystemDiscrete.mo");
+getErrorString();
+
+loadString("
+model HeatingSystem
+  extends HeatingSystemDiscrete.HeatingSystem;
+end HeatingSystem;
+"); getErrorString();
+
+echo(false);
+system("rm -rf temp_HeatingSystem/ && mkdir temp_HeatingSystem/");
+cd("temp_HeatingSystem");
+echo(true);
+
+setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+
+// Build model
+buildModel(HeatingSystem, stopTime=864000); getErrorString();
+
+// Create reference results
+system("./HeatingSystem -s=dassl -r HeatingSystem_ref.mat -override=\"tolerance=1e-6,stopTime=864000\"", "refSimulation.log");
+print(readFile("refSimulation.log"));
+
+// Simulate with gauss2 & KINSOL+KLU
+system("./HeatingSystem -s=genericRK -genericRKOpt=gauss2 -rkNLS=kinsol -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_gauss2.log");
+print(readFile("HeatingSystem_gauss2.log"));
+
+diffSimulationResults(actualFile = "HeatingSystem_res.mat",
+                      expectedFile = "HeatingSystem_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"Td"});
+getErrorString();
+
+// Simulate with gauss2 & KINSOL+KLU
+system("./HeatingSystem -s=genericRKmr -genericRKOpt=sdirk2 -genericRKMROpt=sdirk2 -rkNLS=newton -rkmrFac=0.5 -override=\"tolerance=1e-10,stopTime=864000\"", "HeatingSystem_gauss2.log");
+print(readFile("HeatingSystem_gauss2.log"));
+
+diffSimulationResults(actualFile = "HeatingSystem_res.mat",
+                      expectedFile = "HeatingSystem_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"Td"});
+getErrorString();
+
+// Result:
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation.
+// "
+// true
+// ""
+// true
+// true
+// ""
+// {"HeatingSystem","HeatingSystem_init.xml"}
+// ""
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true,{})
+// ""
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true,{})
+// ""
+// endResult
