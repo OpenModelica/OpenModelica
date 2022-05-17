@@ -653,8 +653,6 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   }
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;
-  assertStreamPrint(threadData, nlsData->jacobianIndex >= 0, "Jacobian index of non-linear system %d is negative.", sysNumber);
-  analyticJacobian = &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
 
   /* Access N_Vector variables */
   x = N_VGetArrayPointer(vecX);
