@@ -425,6 +425,60 @@ void freeDataGenericRK_MR(DATA_GMRI* gmriData) {
   return;
 }
 
+/**
+ * @brief Initialize sparsity pattern for non-linear system of diagonal implicit Runge-Kutta methods.
+ *
+ * Get sparsity pattern of ODE Jacobian and edit to be non-zero on diagonal elements.
+ * Coloring of ODE Jacobian will be used, if it had non-zero elements on all diagonal entries.
+ * Calculate coloring otherwise.
+ *
+ * @param data                Runtime data struct.
+ * @param sysData             Non-linear system.
+ * @return SPARSE_PATTERN*    Pointer to sparsity pattern of non-linear system.
+ */
+SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sysData)
+{
+  unsigned int i,j;
+  unsigned int row, col;
+
+  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
+  DATA_GMRI* gmriData = gsriData->gmriData;
+
+  SPARSE_PATTERN* sparsePattern_MR;
+
+  int nStates = gmriData->nStates;
+
+  /* Compute size of new sparsitiy pattern
+   * Increase the size to contain non-zero elements on diagonal. */
+  int length_column_indices = nStates + 1;
+  int length_index = nStates * nStates;
+
+  // Allocate memory for new sparsity pattern
+  sparsePattern_MR = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
+  sparsePattern_MR->leadindex = (unsigned int*) malloc((length_column_indices)*sizeof(unsigned int));
+  sparsePattern_MR->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
+  sparsePattern_MR->sizeofIndex = length_index;
+  sparsePattern_MR->numberOfNonZeros = length_index;
+  sparsePattern_MR->colorCols = (unsigned int*) malloc(nStates*sizeof(unsigned int));
+  sparsePattern_MR->maxColors = nStates;
+
+    /* Set full matrix sparsitiy pattern */
+  for (i=0; i < gmriData->nStates; i++)
+    sparsePattern_MR->leadindex[i] = i * nStates;
+  for(i=0; i < nStates*nStates; i++) {
+    sparsePattern_MR->index[i] = i% nStates;
+  }
+
+
+  // trivial coloring, needs to be set each call of MR, if number of fast States changes...
+  sparsePattern_MR->maxColors = nStates;
+  for (i=0; i < nStates; i++)
+    sparsePattern_MR->colorCols[i] = i;
+
+  return sparsePattern_MR;
+}
+
+
 /*!	\fn wrapper_Jf_genericRK
  *
  *  calculate the Jacobian of functionODE with respect to the fast states
@@ -646,7 +700,9 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
 int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
   DATA* data = (DATA*) inData;
-  DATA_GMRI* gmriData = (DATA_GMRI*) data->simulationInfo->backupSolverData;
+  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
+  DATA_GMRI* gmriData = gsriData->gmriData;
+
 
   int i;
   int nStates = data->modelData->nStates;
@@ -1035,6 +1091,12 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   gmriData->slowStates  = gsriData->slowStates;
   gmriData->nFastStates = gsriData->nFastStates;
   gmriData->nSlowStates = gsriData->nSlowStates;
+
+  for (ii=0; ii<nFastStates; ii++) {
+    i = gmriData->fastStates[ii];
+  // Get the nominal values of the states
+    gmriData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+  }
 
   // print informations on the calling details
   infoStreamPrint(LOG_SOLVER, 1, "generic Runge-Kutta method (fast states):");
