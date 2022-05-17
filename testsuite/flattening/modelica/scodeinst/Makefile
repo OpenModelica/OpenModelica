@@ -524,7 +524,9 @@ FuncBuiltinMath.mo \
 FuncBuiltinMatrix.mo \
 FuncBuiltinMatrixWrongType1.mo \
 FuncBuiltinMax.mo \
+FuncBuiltinMax2.mo \
 FuncBuiltinMin.mo \
+FuncBuiltinMin2.mo \
 FuncBuiltinMod.mo \
 FuncBuiltinNdims.mo \
 FuncBuiltinNoClock1.mo \
