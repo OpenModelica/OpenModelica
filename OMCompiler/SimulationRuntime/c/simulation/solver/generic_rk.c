@@ -49,6 +49,7 @@
  */
 
 #include "generic_rk.h"
+#include "generic_rk_mr.h"
 
 #include <float.h>
 #include <math.h>

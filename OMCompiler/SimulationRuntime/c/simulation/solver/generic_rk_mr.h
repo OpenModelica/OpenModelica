@@ -63,6 +63,8 @@ typedef struct DATA_GMRI{
   double *y, *yt, *yOld, *f, *yStart, *yEnd;
   double *Jf;
   double *k, *res_const;
+  double *x;                            /* ring buffer for multistep method */
+
   double *errest, *errtol, *err;
   double *errValues;                    /* ring buffer for step size control */
   double *stepSizeValues;               /* ring buffer for step size control */
