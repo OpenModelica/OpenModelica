@@ -1727,7 +1727,7 @@ double PIController(double* err_values, double* stepSize_values, double err_orde
   if (err_values[1] < DBL_EPSILON)
     estimate = pow(1./err_values[0], beta);
   else
-    estimate = stepSize_values[0]/stepSize_values[1]*pow(0.5/err_values[0], beta1)*pow(err_values[1]/err_values[0], beta2);
+    estimate = stepSize_values[0]/stepSize_values[1]*pow(.5/err_values[0], beta1)*pow(err_values[1]/err_values[0], beta2);
 
   return fmin(facmax, fmax(facmin, fac*estimate));
 

@@ -87,7 +87,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
  */
 void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
 
-  // Nur für FastStates!!!! Ändern sich während der Simulation
+  // This needs to be done each time, the fast states change!
   for(int i=0; i<nonlinsys->size; i++) {
     // Get the nominal values of the states
     nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
@@ -405,6 +405,9 @@ void freeDataGenericRK_MR(DATA_GMRI* gmriData) {
     free(gmriData->nlsData);
   }
 
+  /* Free Jacobian */
+  freeAnalyticJacobian(gmriData->jacobian);
+
   freeButcherTableau(gmriData->tableau);
 
   free(gmriData->y);
@@ -464,7 +467,7 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   sparsePattern_MR->colorCols = (unsigned int*) malloc(nStates*sizeof(unsigned int));
   sparsePattern_MR->maxColors = nStates;
 
-    /* Set full matrix sparsitiy pattern */
+  /* Set full matrix sparsitiy pattern */
   for (i=0; i < gmriData->nStates; i++)
     sparsePattern_MR->leadindex[i] = i * nStates;
   for(i=0; i < nStates*nStates; i++) {
@@ -650,6 +653,44 @@ void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *i
 }
 
 /**
+ * @brief Evaluate column of DIRK Jacobian.
+ *
+ * @param inData            Void pointer to runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param gsriData     Runge-Kutta method.
+ * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
+ * @param parentJacobian    Unused
+ * @return int              Return 0 on success.
+ */
+int jacobian_MS_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+
+  DATA* data = (DATA*) inData;
+  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
+
+  int i;
+  int nStates = data->modelData->nStates;
+  int nStages = gsriData->tableau->nStages;
+  int stage = gsriData->act_stage;
+
+  /* Evaluate column of Jacobian ODE */
+  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
+  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+
+  /* Update resultVars array */
+  for (i = 0; i < jacobian->sizeCols; i++) {
+    jacobian->resultVars[i] = gsriData->tableau->b[nStages-1] * gsriData->stepSize * jacobian_ODE->resultVars[i];
+    /* -1 on diagonal elements */
+    if (jacobian->seedVars[i] == 1) {
+      jacobian->resultVars[i] -= gsriData->tableau->c[nStages-1];
+    }
+  }
+
+  return 0;
+}
+
+
+/**
  * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
  *
  * TODO: Describe what the residual means.
@@ -705,23 +746,37 @@ int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JAC
   DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
   DATA_GMRI* gmriData = gsriData->gmriData;
 
+  /* define callback to column function of Jacobian ODE */
+  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
-  int i;
+  int i, ii;
   int nStates = data->modelData->nStates;
   int nStages = gmriData->tableau->nStages;
-  int stage = gmriData->act_stage;
+  int nFastStates = gmriData->nFastStates;
+  int stage_ = gmriData->act_stage;
 
-  /* Evaluate column of Jacobian ODE */
-  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
+  for (i=0; i<jacobian_ODE->sizeCols; i++)
+    jacobian_ODE->seedVars[i] = 0;
+  // Map the jacobian->seedVars to the jacobian_ODE->seedVars
+  for (ii=0; ii<nFastStates; i++)
+  {
+    if (jacobian->seedVars[ii])
+      jacobian_ODE->seedVars[i] = 1;
+  }
+
+  // update timeValue and unknown vector based on the active column "stage_"
+  //sData->timeValue = gsriData->time + gsriData->tableau->c[stage_] * gsriData->stepSize;
+
+  // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Update resultVars array */
-  for (i = 0; i < jacobian->sizeCols; i++) {
-    jacobian->resultVars[i] = gmriData->stepSize * gmriData->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
+  for (ii = 0; ii < nFastStates; ii++) {
+    i = gmriData->fastStates[ii];
+    jacobian->resultVars[ii] = gmriData->stepSize * gmriData->tableau->A[stage_ * gmriData->tableau->nStages + stage_] * jacobian_ODE->resultVars[ii];
     /* -1 on diagonal elements */
-    if (jacobian->seedVars[i] == 1) {
-      jacobian->resultVars[i] -= 1;
+    if (jacobian->seedVars[ii] == 1) {
+      jacobian->resultVars[ii] -= 1;
     }
   }
 
@@ -999,7 +1054,6 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       //   solverData->x[i] = gmriData->yOld[gmriData->fastStates[i]];
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gmriData->nlsData;
-      nlsData->size = gmriData->nFastStates;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
       for (ii=0; ii<nFastStates; ii++) {
           i = gmriData->fastStates[ii];
@@ -1094,10 +1148,26 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   gmriData->nFastStates = gsriData->nFastStates;
   gmriData->nSlowStates = gsriData->nSlowStates;
 
+  // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
+  gmriData->nlsData->size = gmriData->nFastStates;
   for (ii=0; ii<nFastStates; ii++) {
     i = gmriData->fastStates[ii];
   // Get the nominal values of the states
     gmriData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+  }
+
+  if (gmriData->symJacAvailable) {
+    /* Set full matrix sparsitiy pattern only for the fast states*/
+    for (i=0; i < nFastStates; i++)
+      gmriData->jacobian->sparsePattern->leadindex[i] = i * nFastStates;
+    for(i=0; i < nFastStates*nFastStates; i++) {
+      gmriData->jacobian->sparsePattern->index[i] = i% nFastStates;
+    }
+      // trivial coloring, needs to be set each call of MR, if number of fast States changes...
+    gmriData->jacobian->sparsePattern->maxColors = nFastStates;
+    for (i=0; i < nFastStates; i++)
+      gmriData->jacobian->sparsePattern->colorCols[i] = i;
+
   }
 
   // print informations on the calling details
