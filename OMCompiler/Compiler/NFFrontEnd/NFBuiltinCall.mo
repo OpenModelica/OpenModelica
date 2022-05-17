@@ -624,7 +624,8 @@ protected
 
     // The argument must be differentiable, i.e. not discrete, unless where in a
     // scope where everything is discrete (like an initial equation).
-    if variability == Variability.DISCRETE and not InstContext.inDiscreteScope(context) then
+    if Prefixes.effectiveVariability(variability) == Variability.DISCRETE and
+       not InstContext.inDiscreteScope(context) then
       Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
         {Expression.toString(arg)}, info);
     end if;
@@ -688,6 +689,36 @@ protected
     Variability var1, var2;
     Purity pur1, pur2;
     TypeCheck.MatchKind mk;
+
+    function is_valid_type
+      input Type ty;
+      output Boolean res;
+    algorithm
+      res := match ty
+        case Type.REAL() then true;
+        case Type.INTEGER() then true;
+        case Type.BOOLEAN() then true;
+        case Type.ENUMERATION() then true;
+        else false;
+      end match;
+    end is_valid_type;
+
+    function invalid_args_error
+      input Call call;
+      input String name;
+      input SourceInfo info;
+    algorithm
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {Call.toString(call),
+         name + "(Real, Real) => Real\n  " +
+         name + "(Integer, Integer) => Integer\n  " +
+         name + "(Boolean, Boolean) => Boolean\n  " +
+         name + "(enumeration(:), enumeration(:)) => enumeration(:)\n  " +
+         name + "(Real[:, ...]) => Real\n  " +
+         name + "(Integer[:, ...]) => Integer\n  " +
+         name + "(Boolean[:, ...]) => Boolean\n  " +
+         name + "(enumeration(:)[:, ...]) => enumeration(:)"}, info);
+    end invalid_args_error;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams(name, named_args, info);
@@ -698,9 +729,8 @@ protected
           (arg1, ty1, var, purity) := Typing.typeExp(arg1, context, info);
           ty := Type.arrayElementType(ty1);
 
-          if not (Type.isArray(ty1) and Type.isBasic(ty)) then
-            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
-              {"1", name, "", Expression.toString(arg1), Type.toString(ty1), "Any[:, ...]"}, info);
+          if not (Type.isArray(ty1) and is_valid_type(ty)) then
+            invalid_args_error(call, name, info);
           end if;
 
           // If the argument is an array with a single element we can just
@@ -717,29 +747,21 @@ protected
           (arg1, ty1, var1, pur1) := Typing.typeExp(arg1, context, info);
           (arg2, ty2, var2, pur2) := Typing.typeExp(arg2, context, info);
 
-          if not Type.isBasic(ty1) then
-            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
-              {"1", name, "", Expression.toString(arg1), Type.toString(ty1), "Any"}, info);
-          end if;
-
-          if not Type.isBasic(ty2) then
-            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
-              {"2", name, "", Expression.toString(arg2), Type.toString(ty2), "Any"}, info);
+          if not (is_valid_type(ty1) and is_valid_type(ty2)) then
+            invalid_args_error(call, name, info);
           end if;
 
           (arg1, arg2, ty, mk) := TypeCheck.matchExpressions(arg1, ty1, arg2, ty2);
 
           if not TypeCheck.isValidArgumentMatch(mk) then
-            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-              {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+            invalid_args_error(call, name, info);
           end if;
         then
           ({arg1, arg2}, ty, Prefixes.variabilityMax(var1, var2), Purity.purityMin(pur1, pur2));
 
       else
         algorithm
-          Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-            {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+          invalid_args_error(call, name, info);
         then
           fail();
     end match;
@@ -915,12 +937,10 @@ protected
     Type arg_ty;
     Function fn;
     list<Dimension> dims;
-    Boolean evaluated;
     Integer index = 1;
   algorithm
     ty_args := {fillArg};
     dims := {};
-    evaluated := true;
 
     // Type the dimension arguments.
     for arg in dimensionArgs loop
@@ -939,8 +959,6 @@ protected
           arg := Ceval.evalExp(arg);
           arg_ty := Expression.typeOf(arg);
         end if;
-      else
-        evaluated := false;
       end if;
 
       // Each dimension argument must be an Integer expression.
@@ -950,16 +968,11 @@ protected
           Expression.toString(arg), Type.toString(arg_ty), "Integer"}, info);
       end if;
 
-      if not Expression.isInteger(arg) then
-        // Argument might be a binding expression that needs to be flattened
-        // before we can evaluate the fill call.
-        evaluated := false;
-      end if;
-
       variability := Prefixes.variabilityMax(variability, arg_var);
       purity := Prefixes.purityMin(purity, arg_pur);
       ty_args := arg :: ty_args;
       dims := Dimension.fromExp(arg, arg_var) :: dims;
+      index := index + 1;
     end for;
 
     ty_args := listReverseInPlace(ty_args);
@@ -968,12 +981,8 @@ protected
     {fn} := Function.typeRefCache(fnRef);
     ty := Type.liftArrayLeftList(fillType, dims);
 
-    if evaluated then
-      callExp := Ceval.evalBuiltinFill(ty_args);
-    else
-      callExp := Expression.CALL(
-        Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, purity, ty));
-    end if;
+    callExp := Expression.CALL(
+      Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, purity, ty));
   end typeFillCall2;
 
   function typeZerosOnesCall

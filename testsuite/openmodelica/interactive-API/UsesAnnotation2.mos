@@ -51,7 +51,7 @@ instantiateModel('0.8.1');getErrorString();
 // "class '2.2.2'
 // end '2.2.2';
 // "
-// "Warning: '2.2.2' requested package Modelica of version 2.2.2. Modelica 3.2.3 is used instead which states that it is only compatible with a conversion script. OpenModelica currently does not support conversion scripts and will proceed with potential issues as a result.
+// "Warning: '2.2.2' requested package Modelica of version 2.2.2. Modelica 3.2.3 is used instead which states that it is only compatible with a conversion script. Use convertPackageToLibrary('2.2.2', Modelica, \"3.2.3\") to run the conversion script or proceed with potential issues as a result.
 // "
 // true
 // true

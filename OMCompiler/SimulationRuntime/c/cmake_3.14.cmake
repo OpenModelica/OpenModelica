@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
+find_package(LAPACK REQUIRED)
+
 file(GLOB OMC_SIMRT_UTIL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
 file(GLOB OMC_SIMRT_UTIL_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/util/*.h)
 
@@ -37,14 +39,16 @@ target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
 
 target_include_directories(OpenModelicaRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+target_link_libraries(OpenModelicaRuntimeC PUBLIC OMCPThreads::OMCPThreads)
 
-if(WIN32)
+if(MINGW)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC dbghelp)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC wsock32)
   target_link_options(OpenModelicaRuntimeC PRIVATE  -Wl,--export-all-symbols)
-endif(WIN32)
-
+elseif(MSVC)
+  set_target_properties(OpenModelicaRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+endif()
 
 install(TARGETS OpenModelicaRuntimeC)
 
@@ -76,23 +80,20 @@ target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::config)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cminpack)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cdaskr)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
+target_link_libraries(SimulationRuntimeC PUBLIC ${LAPACK_LIBRARIES})
 
-if(WIN32)
+if(MINGW)
   target_link_options(SimulationRuntimeC PRIVATE  -Wl,--export-all-symbols)
-endif(WIN32)
+elseif(MSVC)
+  target_link_libraries(SimulationRuntimeC PUBLIC wsock32)
+  set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+endif(MINGW)
 
-if(WITH_IPOPT)
+if(OM_OMC_ENABLE_IPOPT)
   target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
-  ## disable for now to avoid duplicate definition warnings. The define is hardcoded in
-  ## omc_config.h. Until we remove that this just results in warnings.
-  # target_compile_definitions(SimulationRuntimeC PRIVATE -DWITH_IPOPT)
+  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_IPOPT)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
 endif()
-
-# Fix me. Make an interface (header only library) out of 3rdParty/dgesv
-target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
-
-# target_link_options(SimulationRuntimeC PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS SimulationRuntimeC)
 

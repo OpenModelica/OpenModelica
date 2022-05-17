@@ -206,6 +206,7 @@ uniontype InstNode
 
   record COMPONENT_NODE
     String name;
+    Option<SCode.Element> definition;
     Visibility visibility;
     Pointer<Component> component;
     InstNode parent "The instance that this component is part of.";
@@ -279,7 +280,7 @@ uniontype InstNode
     SCode.Visibility vis;
   algorithm
     SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
-    node := COMPONENT_NODE(name, Prefixes.visibilityFromSCode(vis),
+    node := COMPONENT_NODE(name, SOME(definition), Prefixes.visibilityFromSCode(vis),
       Pointer.create(Component.new(definition)), parent, InstNodeType.NORMAL_COMP());
   end newComponent;
 
@@ -323,7 +324,7 @@ uniontype InstNode
     input InstNode parent;
     output InstNode node;
   algorithm
-    node := COMPONENT_NODE(name, Visibility.PUBLIC, Pointer.create(component),
+    node := COMPONENT_NODE(name, NONE(), Visibility.PUBLIC, Pointer.create(component),
                            parent, InstNodeType.NORMAL_COMP());
   end fromComponent;
 
@@ -899,7 +900,7 @@ uniontype InstNode
   algorithm
     definition := match node
       case CLASS_NODE() then node.definition;
-      case COMPONENT_NODE() then Component.definition(Pointer.access(node.component));
+      case COMPONENT_NODE(definition = SOME(definition)) then definition;
     end match;
   end definition;
 
@@ -924,7 +925,7 @@ uniontype InstNode
   algorithm
     node := match node
       case COMPONENT_NODE() algorithm
-        node.component := Pointer.create(Component.setDirection(Pointer.access(node.component), direction));
+        node.component := Pointer.create(Component.setDirection(direction, Pointer.access(node.component)));
       then node;
 
       else algorithm
@@ -1460,6 +1461,19 @@ uniontype InstNode
     end match;
   end isRedeclared;
 
+  function isReplaceable
+    input InstNode node;
+    output Boolean repl;
+  protected
+    SCode.Element elem;
+  algorithm
+    repl := match node
+      case CLASS_NODE() then SCodeUtil.isElementReplaceable(node.definition);
+      case COMPONENT_NODE(definition = SOME(elem)) then SCodeUtil.isElementReplaceable(elem);
+      else false;
+    end match;
+  end isReplaceable;
+
   function isProtectedBaseClass
     input InstNode node;
     output Boolean isProtected;
@@ -1753,6 +1767,7 @@ uniontype InstNode
     isRec := match node
       case CLASS_NODE() then Restriction.isRecord(Class.restriction(Pointer.access(node.cls)));
       case COMPONENT_NODE() then isRecord(Component.classInstance(Pointer.access(node.component)));
+      else false;
     end match;
   end isRecord;
 
@@ -1845,6 +1860,28 @@ uniontype InstNode
       else false;
     end match;
   end isExtends;
+
+  function isDiscreteClass
+    input InstNode clsNode;
+    output Boolean isDiscrete;
+  protected
+    InstNode base_node;
+    Class cls;
+    array<InstNode> exts;
+  algorithm
+    base_node := Class.lastBaseClass(clsNode);
+    cls := InstNode.getClass(base_node);
+
+    isDiscrete := match cls
+      case Class.EXPANDED_CLASS(restriction = Restriction.TYPE())
+        algorithm
+          exts := ClassTree.getExtends(cls.elements);
+        then
+          if arrayLength(exts) == 1 then isDiscreteClass(exts[1]) else false;
+
+      else Type.isDiscrete(Class.getType(cls, base_node));
+    end match;
+  end isDiscreteClass;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

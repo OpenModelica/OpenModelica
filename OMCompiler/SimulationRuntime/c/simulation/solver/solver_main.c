@@ -95,7 +95,7 @@ static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
 static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 #endif
 
@@ -131,7 +131,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
 #endif
 
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
     if ((int)(data->modelData->nStates + data->modelData->nInputVars) > 0){
       retVal = ipopt_step(data, threadData, solverInfo);
@@ -328,7 +328,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     break;
   }
 #endif
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
   {
     infoStreamPrint(LOG_SOLVER, 0, "Initializing optimizer");
@@ -440,7 +440,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     dassl_deinitial(solverInfo->solverData);
   }
 #endif
-#ifdef WITH_IPOPT
+#ifdef OMC_HAVE_IPOPT
   else if(solverInfo->solverMethod == S_OPTIMIZATION)
   {
     /* free  work arrays */
@@ -752,7 +752,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     return 1;
 #endif
 
-#ifndef WITH_IPOPT
+#ifndef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
     warningStreamPrint(LOG_STDOUT, 0, "Ipopt is needed but not available.");
     TRACE_POP
@@ -955,7 +955,7 @@ static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO
   modelica_real* stateDerOld = sDataOld->realVars + nx;
   double t = sDataOld->timeValue;
   const double targetTime = t + solverInfo->currentStepSize;
-  const short isMaxStepSizeSet = (short) omc_flagValue[FLAG_MAX_STEP_SIZE];
+  const short isMaxStepSizeSet = omc_flagValue[FLAG_MAX_STEP_SIZE] != NULL;
   const double maxStepSize = isMaxStepSizeSet ? atof(omc_flagValue[FLAG_MAX_STEP_SIZE]) : -1;
 #if defined(_MSC_VER)
   /* handle stupid compilers */
@@ -1178,7 +1178,7 @@ static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 }
 
 /***************************************    Run Ipopt for optimization     ***********************************/
-#if defined(WITH_IPOPT)
+#if defined(OMC_HAVE_IPOPT)
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int cJ, res;

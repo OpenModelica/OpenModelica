@@ -162,25 +162,11 @@ void* omc_dlsym(void *handle, const char *symbol);
 int omc_dlclose(void *handle);
 int omc_dladdr(void *addr, Dl_info *info);
 
-static OMC_INLINE void* dlopen(const char *filename, int flag) {
-  return omc_dlopen(filename, flag);
-}
-
-static OMC_INLINE char* dlerror() {
-  return omc_dlerror();
-}
-
-static OMC_INLINE void* dlsym(void *handle, const char *symbol) {
-  return omc_dlsym(handle, symbol);
-}
-
-static OMC_INLINE int dlclose(void *handle) {
-  return omc_dlclose(handle);
-}
-
-static OMC_INLINE int dladdr(void *addr, Dl_info *info) {
-  return omc_dladdr(addr, info);
-}
+void* dlopen(const char *filename, int flag);
+char* dlerror();
+void* dlsym(void *handle, const char *symbol);
+int dlclose(void *handle);
+int dladdr(void *addr, Dl_info *info);
 
 #endif
 
@@ -188,7 +174,7 @@ static OMC_INLINE int dladdr(void *addr, Dl_info *info) {
 
 #if defined(_MSC_VER)
 
-#include <windows.h>
+#include <winsock2.h>
 #if !defined(PATH_MAX)
 #define PATH_MAX MAX_PATH
 #endif

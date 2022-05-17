@@ -825,7 +825,7 @@ public
           arr := Array.map(arr, function typeCast(ty = ety));
           t := Type.setArrayElementType(t, ety);
         then
-          ARRAY(t, arr, exp.literal);
+          makeArray(t, arr, exp.literal);
 
       case RANGE(ty = t)
         algorithm
@@ -938,6 +938,15 @@ public
     outExp := ARRAY(ty, expl, literal);
     annotation(__OpenModelica_EarlyInline = true);
   end makeArray;
+
+  function makeArrayCheckLiteral
+    input Type ty;
+    input array<Expression> expl;
+    output Expression outExp;
+  algorithm
+    outExp := ARRAY(ty, expl, Array.all(expl, isLiteral));
+    annotation(__OpenModelica_EarlyInline = true);
+  end makeArrayCheckLiteral;
 
   function makeEmptyArray
     input Type ty;
@@ -1515,6 +1524,7 @@ public
   function makeSubscriptedExp
     input list<Subscript> subscripts;
     input Expression exp;
+    input Boolean backend = false;
     output Expression outExp;
   protected
     Expression e;
@@ -1535,7 +1545,7 @@ public
     end if;
 
     dim_count := Type.dimensionCount(ty);
-    (subs, extra_subs) := Subscript.mergeList(subscripts, subs, dim_count);
+    (subs, extra_subs) := Subscript.mergeList(subscripts, subs, dim_count, backend);
 
     // Check that the expression has enough dimensions to be subscripted.
     if not listEmpty(extra_subs) then
@@ -2469,7 +2479,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
+      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, function map(func = func)), exp.literal);
       case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2645,7 +2655,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, Array.map(exp.elements, function mapReverse(func = func)), exp.literal);
+      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, function mapReverse(func = func)), exp.literal);
       case MATRIX() then MATRIX(list(list(mapReverse(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2802,7 +2812,7 @@ public
 
       case CLKCONST() then CLKCONST(ClockKind.mapExpShallow(exp.clk, func));
       case CREF() then CREF(exp.ty, ComponentRef.mapExpShallow(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, Array.map(exp.elements, func), exp.literal);
+      case ARRAY() then makeArray(exp.ty, Array.map(exp.elements, func), exp.literal);
       case MATRIX() then MATRIX(list(list(func(e) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -3483,7 +3493,7 @@ public
         algorithm
           (arr, arg) := Array.mapFold(exp.elements, function mapFold(func = func), arg);
         then
-          ARRAY(exp.ty, arr, exp.literal);
+          makeArray(exp.ty, arr, exp.literal);
 
       case MATRIX()
         algorithm
@@ -3722,7 +3732,7 @@ public
         algorithm
           (arr, arg) := Array.mapFold(exp.elements, func, arg);
         then
-          ARRAY(exp.ty, arr, exp.literal);
+          makeArray(exp.ty, arr, exp.literal);
 
       case MATRIX()
         algorithm
@@ -5649,7 +5659,7 @@ public
       end for;
 
       ty := typeOf(if arrayEmpty(expl) then exp else arrayGet(expl, 1));
-      outExp := makeExpArray(expl, ty, isLiteral = true);
+      outExp := makeExpArray(expl, ty, Array.all(expl, isLiteral));
     end if;
   end mapSplitExpressions2;
 

@@ -54,7 +54,9 @@ typedef int (*function_t)(threadData_t*, type_description*, type_description*);
 #endif
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-#define NOMINMAX
+  #ifndef NOMINMAX
+    #define NOMINMAX
+  #endif
 #include <windows.h>
 struct modelica_ptr_s {
   union {

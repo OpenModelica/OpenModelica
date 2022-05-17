@@ -38,6 +38,7 @@ import DAE;
 
 protected
 
+import Attributes = NFAttributes;
 import Inst = NFInst;
 import Builtin = NFBuiltin;
 import NFBinding.Binding;
@@ -103,12 +104,13 @@ import Scalarize = NFScalarize;
 import SimplifyExp = NFSimplifyExp;
 import SimplifyModel = NFSimplifyModel;
 import SymbolTable;
-import System;
 import Typing = NFTyping;
 import UnitCheck = NFUnitCheck;
 import Util;
 import Variable = NFVariable;
 import VerifyModel = NFVerifyModel;
+import SCodeUtil;
+import ElementSource;
 
 
 public
@@ -216,7 +218,7 @@ algorithm
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
-          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, NFInstContext.NO_CONTEXT);
+          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, NFInstContext.NO_CONTEXT);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
@@ -639,15 +641,7 @@ algorithm
     graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
     program := listAppend(graphicProgramSCode, program);
 
-    // gather here all the flags to disable expansion
-    // and scalarization if -d=-nfScalarize is on
-    if not Flags.isSet(Flags.NF_SCALARIZE) then
-      // make sure we don't expand anything
-      FlagsUtil.set(Flags.NF_EXPAND_OPERATIONS, false);
-      FlagsUtil.set(Flags.NF_EXPAND_FUNC_ARGS, false);
-    end if;
-
-    System.setUsesCardinality(false);
+    Inst.resetGlobalFlags();
 
     // Create a root node from the given top-level classes.
     top := NFInst.makeTopNode(program);
@@ -669,11 +663,7 @@ function frontEndFront_dispatch
   output String name;
   output InstNode inst_cls;
 protected
-  SCode.Program scode_builtin, graphicProgramSCode;
-  Absyn.Program placementProgram;
   InstNode top, cls;
-  list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
-  Boolean update = true;
 algorithm
   name := AbsynUtil.pathString(classPath);
 
@@ -729,11 +719,11 @@ protected
   SCode.Mod smod;
 algorithm
   // Type the class.
-  Typing.typeClass(inst_cls);
+  Typing.typeClass(inst_cls, NFInstContext.RELAXED);
 
   // Flatten and simplify the model.
   flat_model := Flatten.flatten(inst_cls, name);
-  flat_model := EvalConstants.evaluate(flat_model);
+  flat_model := EvalConstants.evaluate(flat_model, NFInstContext.RELAXED);
   flat_model := UnitCheck.checkUnits(flat_model);
   flat_model := SimplifyModel.simplify(flat_model);
   flat_model := Package.collectConstants(flat_model);
@@ -814,10 +804,7 @@ algorithm
   name := AbsynUtil.pathString(classPath);
 
   (program, top) := mkTop(absynProgram, name);
-
-  // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
-  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
+  cls := Inst.lookupRootClass(classPath, top, NFInstContext.RELAXED);
 
   // Expand the class.
   expanded_cls := NFInst.expand(cls);
@@ -852,55 +839,194 @@ algorithm
   end match;
 end getInheritedClasses;
 
+uniontype InstanceTree
+  record COMPONENT
+    InstNode node;
+  end COMPONENT;
+
+  record CLASS
+    InstNode node;
+    list<InstanceTree> exts;
+    list<InstanceTree> components;
+  end CLASS;
+end InstanceTree;
+
 function getModelInstance
   input Absyn.Path classPath;
   input Boolean prettyPrint;
   output Values.Value res;
 protected
-  InstNode cls_node;
+  InstNode top, cls_node;
   JSON json;
   InstContext.Type context;
+  InstanceTree inst_tree;
 algorithm
   context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+  cls_node := Inst.lookupRootClass(classPath, top, context);
+  cls_node := Inst.instantiateRootClass(cls_node, context);
+  inst_tree := buildInstanceTree(cls_node);
+  Inst.instExpressions(cls_node, context = context);
 
-  (_, _, cls_node) := frontEndFront_dispatch(SymbolTable.getAbsyn(), classPath);
   Typing.typeComponents(cls_node, context);
   Typing.typeBindings(cls_node, context);
 
-  json := dumpJSONClass(cls_node);
+  json := dumpJSONInstanceTree(inst_tree);
   res := Values.STRING(JSON.toString(json, prettyPrint));
 end getModelInstance;
 
-function dumpJSONClass
-  input InstNode clsNode;
-  output JSON json = JSON.emptyObject();
-algorithm
-  json := dumpJSONClassComponents(clsNode, json);
-end dumpJSONClass;
-
-function dumpJSONClassComponents
-  input InstNode clsNode;
-  input output JSON json;
+function buildInstanceTree
+  input InstNode node;
+  output InstanceTree tree;
 protected
-  Class cls;
   ClassTree cls_tree;
-  JSON comps_json;
+  list<InstanceTree> exts, components;
+  array<InstNode> ext_nodes;
 algorithm
-  cls := InstNode.getClass(clsNode);
-  cls_tree := Class.classTree(cls);
-  comps_json := ClassTree.foldComponents(Class.classTree(cls), dumpJSONClassComponent, JSON.makeNull());
+  cls_tree := Class.classTree(InstNode.getClass(node));
 
-  if not JSON.isNull(comps_json) then
-    json := JSON.addPair("components", comps_json, json);
+  tree := match cls_tree
+    case ClassTree.INSTANTIATED_TREE(exts = ext_nodes)
+      algorithm
+        exts := list(buildInstanceTree(e) for e in ext_nodes);
+        components := list(buildInstanceTreeComponent(arrayGet(cls_tree.components, i))
+                           for i in cls_tree.localComponents);
+      then
+        InstanceTree.CLASS(node, exts, components);
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown class tree", sourceInfo());
+      then
+        fail();
+  end match;
+end buildInstanceTree;
+
+function buildInstanceTreeComponent
+  input Mutable<InstNode> compNode;
+  output InstanceTree tree;
+algorithm
+  tree := InstanceTree.COMPONENT(Mutable.access(compNode));
+end buildInstanceTreeComponent;
+
+function dumpJSONInstanceTree
+  input InstanceTree tree;
+  input Boolean root = true;
+  output JSON json = JSON.emptyObject();
+protected
+  InstNode node;
+  list<InstanceTree> comps, exts;
+  Sections sections;
+  Option<SCode.Comment> cmt;
+algorithm
+  InstanceTree.CLASS(node = node, exts = exts, components = comps) := tree;
+  cmt := SCodeUtil.getElementComment(InstNode.definition(node));
+
+  json := JSON.addPair("name", dumpJSONNodePath(node), json);
+
+  if not listEmpty(exts) then
+    json := JSON.addPair("extends", dumpJSONExtends(exts), json);
   end if;
-end dumpJSONClassComponents;
 
-function dumpJSONClassComponent
-  input InstNode component;
-  input output JSON json;
+  json := dumpJSONCommentOpt(cmt, json);
+
+  if not listEmpty(comps) then
+    json := JSON.addPair("components", dumpJSONComponents(comps), json);
+  end if;
+
+  if root then
+    sections := Class.getSections(InstNode.getClass(node));
+    json := JSON.addPair("connections", dumpJSONConnections(sections), json);
+    json := JSON.addPair("replaceable", dumpJSONReplaceableElements(node), json);
+  end if;
+end dumpJSONInstanceTree;
+
+function dumpJSONNodePath
+  input InstNode node;
+  output JSON json = dumpJSONPath(InstNode.scopePath(node, ignoreBaseClass = true));
+end dumpJSONNodePath;
+
+function dumpJSONPath
+  input Absyn.Path path;
+  output JSON json = JSON.makeString(AbsynUtil.pathString(path));
+end dumpJSONPath;
+
+function dumpJSONExtends
+  input list<InstanceTree> exts;
+  output JSON json = JSON.emptyArray();
 algorithm
-  json := JSON.addPair(InstNode.name(component), dumpJSONComponent(component), json);
-end dumpJSONClassComponent;
+  for ext in exts loop
+    json := JSON.addElement(dumpJSONInstanceTree(ext, root = false), json);
+  end for;
+end dumpJSONExtends;
+
+function dumpJSONComponents
+  input list<InstanceTree> components;
+  output JSON json = JSON.emptyObject();
+protected
+  InstNode node;
+algorithm
+  for comp in components loop
+    InstanceTree.COMPONENT(node = node) := comp;
+    json := JSON.addPair(InstNode.name(node), dumpJSONComponent(comp), json);
+  end for;
+end dumpJSONComponents;
+
+function dumpJSONComponent
+  input InstanceTree component;
+  output JSON json = JSON.emptyObject();
+protected
+  InstNode node;
+  Component comp;
+  SCode.Element elem;
+  Boolean is_constant;
+  SCode.Comment cmt;
+  SCode.Annotation ann;
+algorithm
+  InstanceTree.COMPONENT(node = node) := component;
+  node := InstNode.resolveOuter(node);
+  comp := InstNode.component(node);
+  elem := InstNode.definition(node);
+
+  () := match (comp, elem)
+    case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
+      algorithm
+        json := JSON.addPair("type", dumpJSONTypeName(comp.ty), json);
+
+        if Type.isArray(comp.ty) then
+          json := JSON.addPair("dims",
+            dumpJSONDims(elem.attributes.arrayDims, Type.arrayDims(comp.ty)), json);
+        end if;
+
+        json := JSON.addPair("modifier", JSON.makeString(SCodeDump.printModStr(elem.modifications)), json);
+
+        //if not Type.isComplex(comp.ty) then
+        //  json := dumpJSONBuiltinClassComponents(comp.classInst, elem.modifications, json);
+        //end if;
+
+        is_constant := comp.attributes.variability <= Variability.STRUCTURAL_PARAMETER;
+
+        if Binding.isBound(comp.binding) then
+          json := JSON.addPair("value", dumpJSONBinding(comp.binding, evaluate = is_constant), json);
+        end if;
+
+        if Binding.isBound(comp.condition) then
+          json := JSON.addPair("condition", dumpJSONBinding(comp.condition), json);
+        end if;
+
+        json := JSON.addPair("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes), json);
+        json := dumpJSONCommentOpt(comp.comment, json);
+      then
+        ();
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown component " +
+          InstNode.name(node), sourceInfo());
+      then
+        fail();
+  end match;
+end dumpJSONComponent;
 
 function dumpJSONTypeName
   input Type ty;
@@ -912,19 +1038,19 @@ end dumpJSONTypeName;
 function dumpJSONBinding
   input Binding binding;
   input Boolean evaluate = true;
-  output JSON json = JSON.emptyArray();
+  output JSON json = JSON.emptyObject();
 protected
   Expression exp;
 algorithm
   exp := Binding.getExp(binding);
   exp := Expression.map(exp, Expression.expandSplitIndices);
-  json := JSON.addElement(JSON.makeString(Expression.toString(exp)), json);
+  json := JSON.addPair("binding", JSON.makeString(Expression.toString(exp)), json);
 
   if evaluate and not Expression.isLiteral(exp) then
     ErrorExt.setCheckpoint(getInstanceName());
     try
       exp := Ceval.evalExp(exp);
-      json := JSON.addElement(JSON.makeString(Expression.toString(exp)), json);
+      json := JSON.addPair("value", JSON.makeString(Expression.toString(exp)), json);
     else
     end try;
     ErrorExt.rollBack(getInstanceName());
@@ -939,7 +1065,6 @@ protected
   ClassTree cls_tree;
   Component comp;
   JSON attr_json = JSON.makeNull();
-  Modifier mod;
 algorithm
   cls := InstNode.getClass(clsNode);
   cls_tree := Class.classTree(cls);
@@ -966,121 +1091,173 @@ algorithm
 end dumpJSONBuiltinClassComponents;
 
 function dumpJSONDims
-  input list<Dimension> dims;
-  output JSON json = JSON.emptyArray();
+  input list<Absyn.Subscript> absynDims;
+  input list<Dimension> typedDims;
+  output JSON json = JSON.emptyObject();
+protected
+  JSON ty_json, absyn_json;
 algorithm
-  for d in dims loop
-    json := JSON.addElement(JSON.makeString(Dimension.toString(d)), json);
+  absyn_json := JSON.emptyArray();
+  for d in absynDims loop
+    absyn_json := JSON.addElement(JSON.makeString(Dump.printSubscriptStr(d)), absyn_json);
   end for;
+
+  json := JSON.addPair("absyn", absyn_json, json);
+
+  ty_json := JSON.emptyArray();
+  for d in typedDims loop
+    ty_json := JSON.addElement(JSON.makeString(Dimension.toString(d)), ty_json);
+  end for;
+
+  json := JSON.addPair("typed", ty_json, json);
 end dumpJSONDims;
 
-function dumpJSONComponent
-  input InstNode compNode;
-  output JSON json;
+function dumpJSONAttributes
+  input SCode.Attributes attrs;
+  input SCode.Prefixes prefs;
+  output JSON json = JSON.emptyObject();
+algorithm
+  json := JSON.addPair("public", JSON.makeBoolean(SCodeUtil.visibilityBool(prefs.visibility)), json);
+  json := JSON.addPair("final", JSON.makeBoolean(SCodeUtil.finalBool(prefs.finalPrefix)), json);
+  json := JSON.addPair("inner", JSON.makeBoolean(AbsynUtil.isInner(prefs.innerOuter)), json);
+  json := JSON.addPair("outer", JSON.makeBoolean(AbsynUtil.isOuter(prefs.innerOuter)), json);
+  json := JSON.addPair("replaceable", JSON.makeBoolean(SCodeUtil.replaceableBool(prefs.replaceablePrefix)), json);
+  json := JSON.addPair("redeclare", JSON.makeBoolean(SCodeUtil.redeclareBool(prefs.redeclarePrefix)), json);
+  json := JSON.addPair("connector", JSON.makeString(SCodeDump.connectorTypeStr(attrs.connectorType)), json);
+  json := JSON.addPair("variability", JSON.makeString(SCodeDump.unparseVariability(attrs.variability)), json);
+  json := JSON.addPair("direction", JSON.makeString(Dump.unparseDirectionSymbolStr(attrs.direction)), json);
+end dumpJSONAttributes;
+
+function dumpJSONCommentOpt
+  input Option<SCode.Comment> cmtOpt;
+  input output JSON json;
+  input Boolean dumpComment = true;
+  input Boolean dumpAnnotation = true;
 protected
-  Component comp;
-  JSON j;
-  Boolean is_constant;
   SCode.Comment cmt;
+algorithm
+  if isSome(cmtOpt) then
+    SOME(cmt) := cmtOpt;
+
+    if isSome(cmt.comment) and dumpComment then
+      json := JSON.addPair("comment", JSON.makeString(Util.getOption(cmt.comment)), json);
+    end if;
+
+    if dumpAnnotation then
+      json := dumpJSONAnnotationOpt(cmt.annotation_, json);
+    end if;
+  end if;
+end dumpJSONCommentOpt;
+
+function dumpJSONAnnotationOpt
+  input Option<SCode.Annotation> annOpt;
+  input output JSON json;
+protected
   SCode.Annotation ann;
 algorithm
-  comp := InstNode.component(InstNode.resolveOuter(compNode));
-  json := JSON.emptyObject();
+  if isSome(annOpt) then
+    SOME(ann) := annOpt;
+    json := JSON.addPair("annotation", dumpJSONMod(ann.modification), json);
+  end if;
+end dumpJSONAnnotationOpt;
 
-  () := match comp
-    case Component.TYPED_COMPONENT()
+function dumpJSONConnections
+  input Sections sections;
+  output JSON json = JSON.emptyArray();
+algorithm
+  () := match sections
+    case Sections.SECTIONS()
       algorithm
-        json := JSON.addPair("type", dumpJSONTypeName(comp.ty), json);
-
-        if Type.isArray(comp.ty) then
-          json := JSON.addPair("dims", dumpJSONDims(Type.arrayDims(comp.ty)), json);
-        end if;
-
-        if Type.isComplex(comp.ty) then
-          json := dumpJSONClassComponents(comp.classInst, json);
-        else
-          json := dumpJSONBuiltinClassComponents(comp.classInst, json);
-        end if;
-
-        is_constant := comp.attributes.variability <= Variability.STRUCTURAL_PARAMETER;
-
-        if Binding.isBound(comp.binding) then
-          json := JSON.addPair("value", dumpJSONBinding(comp.binding, evaluate = is_constant), json);
-        end if;
-
-        if Binding.isBound(comp.condition) then
-          json := JSON.addPair("condition", dumpJSONBinding(comp.condition), json);
-        end if;
-
-        json := JSON.addPair("prefixes",
-          dumpJSONAttributes(comp.attributes, InstNode.visibility(compNode)), json);
-
-        if isSome(comp.comment) then
-          SOME(cmt) := comp.comment;
-
-          if isSome(cmt.annotation_) then
-            SOME(ann) := cmt.annotation_;
-            json := JSON.addPair("annotation",
-              JSON.makeString(SCodeDump.printModStr(ann.modification)), json);
+        for eq in sections.equations loop
+          if Equation.isConnect(eq) then
+            json := JSON.addElement(dumpJSONConnection(eq), json);
           end if;
+        end for;
+      then
+        ();
 
-          if isSome(cmt.comment) then
-            json := JSON.addPair("comment", JSON.makeString(Util.getOption(cmt.comment)), json);
-          end if;
+    else ();
+  end match;
+end dumpJSONConnections;
+
+function dumpJSONConnection
+  input Equation connEq;
+  output JSON json = JSON.emptyObject();
+protected
+  Expression lhs, rhs;
+  DAE.ElementSource src;
+algorithm
+  Equation.CONNECT(lhs = lhs, rhs = rhs, source = src) := connEq;
+  json := JSON.addPair("lhs", JSON.makeString(Expression.toString(lhs)), json);
+  json := JSON.addPair("rhs", JSON.makeString(Expression.toString(rhs)), json);
+  json := dumpJSONCommentOpt(ElementSource.getOptComment(src), json, dumpComment = false);
+end dumpJSONConnection;
+
+function dumpJSONReplaceableElements
+  input InstNode clsNode;
+  output JSON json = JSON.emptyArray();
+protected
+  ClassTree cls_tree;
+  JSON j;
+algorithm
+  cls_tree := Class.classTree(InstNode.getClass(clsNode));
+
+  for c in ClassTree.getComponents(cls_tree) loop
+    if InstNode.isReplaceable(c) then
+      j := JSON.emptyObject();
+      j := JSON.addPair("name", JSON.makeString(InstNode.name(c)), j);
+      j := JSON.addPair("type", dumpJSONTypeName(InstNode.getType(c)), j);
+      json := JSON.addElement(j, json);
+    end if;
+  end for;
+
+  for c in ClassTree.getClasses(cls_tree) loop
+    if InstNode.isReplaceable(c) then
+      json := JSON.addElement(JSON.makeString(InstNode.name(c)), json);
+    end if;
+  end for;
+end dumpJSONReplaceableElements;
+
+function dumpJSONMod
+  input SCode.Mod mod;
+  output JSON json = JSON.emptyObject();
+algorithm
+  () := match mod
+    case SCode.Mod.MOD()
+      algorithm
+        for sm in mod.subModLst loop
+          json := JSON.addPair(sm.ident, dumpJSONSubMod(sm), json);
+        end for;
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONMod;
+
+function dumpJSONSubMod
+  input SCode.SubMod subMod;
+  output JSON json = JSON.emptyObject();
+protected
+  SCode.Mod mod = subMod.mod;
+algorithm
+  () := match mod
+    case SCode.Mod.MOD()
+      algorithm
+        if not listEmpty(mod.subModLst) then
+          json := JSON.addPair("modifiers", dumpJSONMod(mod), json);
+        end if;
+
+        if isSome(mod.binding) then
+          json := JSON.addPair("value",
+            JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding))), json);
         end if;
       then
         ();
 
     else ();
   end match;
-end dumpJSONComponent;
-
-function dumpJSONAttributes
-  input Component.Attributes attr;
-  input Visibility vis;
-  output JSON json;
-algorithm
-  json := JSON.emptyArray();
-
-  json := JSON.addElement(JSON.makeString(Prefixes.visibilityString(vis)), json);
-  json := JSON.addElement(JSON.makeBoolean(attr.isFinal), json);
-  json := JSON.addElement(JSON.makeBoolean(ConnectorType.isFlow(attr.connectorType)), json);
-  json := JSON.addElement(JSON.makeBoolean(ConnectorType.isStream(attr.connectorType)), json);
-  json := JSON.addElement(JSON.makeBoolean(Prefixes.isReplaceable(attr.isReplaceable)), json);
-
-  if attr.variability <= Variability.DISCRETE then
-    json := JSON.addElement(JSON.makeString(Prefixes.variabilityString(attr.variability)), json);
-  else
-    json := JSON.addElement(JSON.makeString(""), json);
-  end if;
-
-  json := JSON.addElement(JSON.makeString(Prefixes.innerOuterString(attr.innerOuter)), json);
-  json := JSON.addElement(JSON.makeString(Prefixes.directionString(attr.direction)), json);
-end dumpJSONAttributes;
-
-function dumpJSONType
-  input Type ty;
-  output JSON json;
-protected
-  list<Dimension> dims;
-  JSON dims_json;
-algorithm
-  dims := Type.arrayDims(ty);
-
-  if listEmpty(dims) then
-    json := JSON.makeString(Type.toString(ty));
-  else
-    json := JSON.emptyObject();
-    json := JSON.addPair("name", JSON.makeString(Type.toString(Type.arrayElementType(ty))), json);
-
-    dims_json := JSON.emptyArray();
-    for d in dims loop
-      dims_json := JSON.addElement(JSON.makeString(Dimension.toString(d)), dims_json);
-    end for;
-
-    json := JSON.addPair("dims", dims_json, json);
-  end if;
-end dumpJSONType;
+end dumpJSONSubMod;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

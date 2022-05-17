@@ -91,7 +91,7 @@ enum omc_rt_clock_t {
 };
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-#include <windows.h>
+#include <winsock2.h>
 #if defined(_MSC_VER)
 #include <intrin.h>
 #endif

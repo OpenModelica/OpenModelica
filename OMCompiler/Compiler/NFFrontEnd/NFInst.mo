@@ -62,6 +62,7 @@ import Connector = NFConnector;
 import Connection = NFConnection;
 import Algorithm = NFAlgorithm;
 import InstContext = NFInstContext;
+import Attributes = NFAttributes;
 
 protected
 import Config;
@@ -123,37 +124,19 @@ protected
   InstContext.Type context;
   Integer var_count, eq_count;
 algorithm
-  // gather here all the flags to disable expansion
-  // and scalarization if -d=-nfScalarize is on
-  if not Flags.isSet(Flags.NF_SCALARIZE) then
-    // make sure we don't expand anything
-    FlagsUtil.set(Flags.NF_EXPAND_OPERATIONS, false);
-    FlagsUtil.set(Flags.NF_EXPAND_FUNC_ARGS, false);
-  end if;
-
-  System.setUsesCardinality(false);
-  System.setHasOverconstrainedConnectors(false);
-  System.setHasStreamConnectors(false);
-
+  resetGlobalFlags();
   context := if Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
     NFInstContext.RELAXED else NFInstContext.NO_CONTEXT;
 
-  // Create a root node from the given top-level classes.
+  // Create a top scope from the given top-level classes.
   top := makeTopNode(program);
   name := AbsynUtil.pathString(classPath);
 
-  // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED,
-           AbsynUtil.dummyInfo, checkAccessViolations = false);
-  cls := InstUtil.mergeScalars(cls, classPath);
-  checkInstanceRestriction(cls, classPath, context);
-  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
+  // Look up the class to instantiate.
+  cls := lookupRootClass(classPath, top, context);
 
   // Instantiate the class.
-  inst_cls := instantiate(cls, context = context);
-  checkPartialClass(cls, context);
-
-  insertGeneratedInners(inst_cls, top, context);
+  inst_cls := instantiateRootClass(cls, context);
   execStat("NFInst.instantiate(" + name + ")");
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
@@ -167,11 +150,12 @@ algorithm
   execStat("NFInst.updateImplicitVariability");
 
   // Type the class.
-  Typing.typeClass(inst_cls);
+  Typing.typeClass(inst_cls, context);
 
   // Flatten the model and evaluate constants in it.
   flatModel := Flatten.flatten(inst_cls, name);
-  flatModel := EvalConstants.evaluate(flatModel);
+  flatModel := EvalConstants.evaluate(flatModel, context);
+
   InstUtil.dumpFlatModelDebug("eval", flatModel);
 
   // Do unit checking
@@ -226,6 +210,46 @@ algorithm
   //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
 end instClassInProgram;
 
+function resetGlobalFlags
+  "Resets the global flags that the frontend uses."
+algorithm
+  // gather here all the flags to disable expansion
+  // and scalarization if -d=-nfScalarize is on
+  if not Flags.isSet(Flags.NF_SCALARIZE) then
+    // make sure we don't expand anything
+    FlagsUtil.set(Flags.NF_EXPAND_OPERATIONS, false);
+    FlagsUtil.set(Flags.NF_EXPAND_FUNC_ARGS, false);
+  end if;
+
+  System.setUsesCardinality(false);
+  System.setHasOverconstrainedConnectors(false);
+  System.setHasStreamConnectors(false);
+end resetGlobalFlags;
+
+function lookupRootClass
+  "Looks up the class to instantiate and marks it as a root node."
+  input Absyn.Path path;
+  input InstNode topScope;
+  input InstContext.Type context;
+  output InstNode clsNode;
+algorithm
+  clsNode := Lookup.lookupClassName(path, topScope, NFInstContext.RELAXED,
+    AbsynUtil.dummyInfo, checkAccessViolations = false);
+  clsNode := InstUtil.mergeScalars(clsNode, path);
+  checkInstanceRestriction(clsNode, path, context);
+  clsNode := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), clsNode);
+end lookupRootClass;
+
+function instantiateRootClass
+  input output InstNode clsNode;
+  input InstContext.Type context;
+algorithm
+  clsNode := instantiate(clsNode, context = context);
+  checkPartialClass(clsNode, context);
+
+  insertGeneratedInners(clsNode, InstNode.topScope(clsNode), context);
+end instantiateRootClass;
+
 function instantiate
   input output InstNode node;
   input InstNode parent = InstNode.EMPTY_NODE();
@@ -235,7 +259,7 @@ algorithm
   node := expand(node);
 
   if instPartial or not InstNode.isPartial(node) or InstContext.inRelaxed(context) then
-    node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent, context);
+    node := instClass(node, Modifier.NOMOD(), NFAttributes.DEFAULT_ATTR, true, 0, parent, context);
   end if;
 end instantiate;
 
@@ -720,7 +744,7 @@ protected
   Class cls;
   Class.Prefixes prefs;
   SCode.Attributes sattrs;
-  Component.Attributes attrs;
+  Attributes attrs;
   list<Dimension> dims;
   Modifier mod, cc_mod;
   Restriction res;
@@ -749,7 +773,7 @@ algorithm
     prefs.partialPrefix := SCode.Partial.PARTIAL();
   end if;
 
-  attrs := instDerivedAttributes(sattrs);
+  attrs := Attributes.fromDerivedSCode(sattrs);
   dims := list(Dimension.RAW_DIM(d, InstNode.parent(node)) for d in AbsynUtil.typeSpecDimensions(ty));
   mod := Class.getModifier(cls);
   cc_mod := Class.getCCModifier(cls);
@@ -790,37 +814,10 @@ algorithm
   node := InstNode.updateClass(cls, node);
 end expandClassDerivedComplex;
 
-function instDerivedAttributes
-  input SCode.Attributes scodeAttr;
-  output Component.Attributes attributes;
-protected
-  ConnectorType.Type cty;
-  Variability var;
-  Direction dir;
-algorithm
-  attributes := match scodeAttr
-    case SCode.Attributes.ATTR(
-           connectorType = SCode.ConnectorType.POTENTIAL(),
-           variability = SCode.Variability.VAR(),
-           direction = Absyn.Direction.BIDIR())
-      then NFComponent.DEFAULT_ATTR;
-
-    else
-      algorithm
-        cty := ConnectorType.fromSCode(scodeAttr.connectorType);
-        var := Prefixes.variabilityFromSCode(scodeAttr.variability);
-        dir := Prefixes.directionFromSCode(scodeAttr.direction);
-      then
-        Component.Attributes.ATTRIBUTES(cty, Parallelism.NON_PARALLEL,
-          var, dir, InnerOuter.NOT_INNER_OUTER, false, false, Replaceable.NOT_REPLACEABLE());
-
-  end match;
-end instDerivedAttributes;
-
 function instClass
   input output InstNode node;
   input Modifier modifier;
-  input output Component.Attributes attributes = NFComponent.DEFAULT_ATTR;
+  input output Attributes attributes = NFAttributes.DEFAULT_ATTR;
   input Boolean useBinding;
   input Integer instLevel;
   input InstNode parent = InstNode.EMPTY_NODE();
@@ -846,7 +843,7 @@ end instClass;
 function instClassDef
   input Class cls;
   input Modifier outerMod;
-  input output Component.Attributes attributes;
+  input output Attributes attributes;
   input Boolean useBinding;
   input output InstNode node;
   input InstNode parent;
@@ -859,8 +856,7 @@ protected
   Modifier mod, outer_mod;
   Restriction res;
   Type ty;
-  Component.Attributes attrs;
-  SCode.Element elem;
+  Attributes attrs;
 algorithm
   () := match cls
     case Class.EXPANDED_CLASS(restriction = res)
@@ -874,7 +870,7 @@ algorithm
         end if;
 
         updateComponentType(parent, node);
-        attributes := updateClassConnectorType(res, attributes);
+        attributes := Attributes.updateClassConnectorType(res, attributes);
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
@@ -920,6 +916,7 @@ algorithm
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
         ClassTree.checkDuplicates(cls_tree);
         InstNode.updateClass(Class.setClassTree(cls_tree, inst_cls), node);
+        Restriction.checkClass(node, res, context);
       then
         ();
 
@@ -936,8 +933,8 @@ algorithm
         outer_mod := Modifier.propagate(cls.modifier, node, par);
         outer_mod := Modifier.merge(outerMod, outer_mod);
         mod := Modifier.merge(outer_mod, mod);
-        attrs := updateClassConnectorType(cls.restriction, cls.attributes);
-        attributes := mergeDerivedAttributes(attrs, attributes, parent);
+        attrs := Attributes.updateClassConnectorType(cls.restriction, cls.attributes);
+        attributes := Attributes.mergeDerivedAttributes(attrs, attributes, parent);
 
         // Instantiate the base class and update the nodes.
         (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, instLevel, par, context);
@@ -1007,17 +1004,6 @@ algorithm
     component := InstNode.componentApply(component, Component.setClassInstance, cls);
   end if;
 end updateComponentType;
-
-function updateClassConnectorType
-  input Restriction res;
-  input output Component.Attributes attrs;
-algorithm
-  if Restriction.isExpandableConnector(res) then
-    attrs.connectorType := ConnectorType.setExpandable(attrs.connectorType);
-  elseif Restriction.isConnector(res) then
-    attrs.connectorType := ConnectorType.setConnector(attrs.connectorType);
-  end if;
-end updateClassConnectorType;
 
 function instExternalObjectStructors
   "Instantiates the constructor and destructor for an ExternalObject class."
@@ -1184,7 +1170,7 @@ end applyExtendsVisibility;
 
 function instExtends
   input output InstNode node;
-  input Component.Attributes attributes;
+  input Attributes attributes;
   input Boolean useBinding;
   input Integer instLevel;
   input InstContext.Type context;
@@ -1390,8 +1376,8 @@ protected
 algorithm
   rdcl_node := Mutable.access(redeclareComp);
   repl_node := Mutable.access(replaceableComp);
-  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, NONE(), context);
-  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, rdcl_node, instLevel, context);
+  instComponent(repl_node, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, NONE(), context);
+  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFAttributes.DEFAULT_ATTR, rdcl_node, instLevel, context);
   outComp := Mutable.create(rdcl_node);
 end redeclareComponentElement;
 
@@ -1425,7 +1411,7 @@ algorithm
   //mod := Modifier.merge(mod, constrainingMod);
   mod := Modifier.merge(outerMod, mod);
 
-  prefs := mergeRedeclaredClassPrefixes(Class.getPrefixes(orig_cls),
+  prefs := Attributes.mergeRedeclaredClassPrefixes(Class.getPrefixes(orig_cls),
     Class.getPrefixes(rdcl_cls), redeclareNode);
 
   if SCodeUtil.isClassExtends(InstNode.definition(redeclareNode)) then
@@ -1531,11 +1517,11 @@ end redeclareEnum;
 
 function instComponent
   input InstNode node   "The component node to instantiate";
-  input Component.Attributes attributes "Attributes to be propagated to the component.";
+  input Attributes attributes "Attributes to be propagated to the component.";
   input Modifier innerMod;
   input Boolean useBinding "Ignore the component's binding if false.";
   input Integer instLevel;
-  input Option<Component.Attributes> originalAttr = NONE();
+  input Option<Attributes> originalAttr = NONE();
   input InstContext.Type context;
 protected
   Component comp;
@@ -1567,7 +1553,7 @@ algorithm
       outerMod = outer_mod, constrainingMod = cc_mod) := outer_mod;
 
     next_context := InstContext.set(context, NFInstContext.REDECLARED);
-    instComponentDef(def, Modifier.NOMOD(), inner_mod, NFComponent.DEFAULT_ATTR,
+    instComponentDef(def, Modifier.NOMOD(), inner_mod, NFAttributes.DEFAULT_ATTR,
       useBinding, comp_node, parent, instLevel, originalAttr, next_context);
 
     cc_mod := getConstrainingMod(def, parent, cc_mod);
@@ -1585,12 +1571,12 @@ function instComponentDef
   input SCode.Element component;
   input Modifier outerMod;
   input Modifier innerMod;
-  input Component.Attributes attributes;
+  input Attributes attributes;
   input Boolean useBinding;
   input InstNode node;
   input InstNode parent;
   input Integer instLevel;
-  input Option<Component.Attributes> originalAttr = NONE();
+  input Option<Attributes> originalAttr = NONE();
   input InstContext.Type context;
 algorithm
   () := match component
@@ -1599,7 +1585,7 @@ algorithm
       Modifier decl_mod, mod, cc_mod;
       list<Dimension> dims, ty_dims;
       Binding binding, condition;
-      Component.Attributes attr, ty_attr;
+      Attributes attr, ty_attr;
       Component inst_comp;
       InstNode ty_node;
       Class ty;
@@ -1620,12 +1606,12 @@ algorithm
         // Instantiate the component's attributes, and merge them with the
         // attributes of the component's parent (e.g. constant SomeComplexClass c).
         parent_res := Class.restriction(InstNode.getClass(parent));
-        attr := instComponentAttributes(component.attributes, component.prefixes);
-        attr := checkDeclaredComponentAttributes(attr, parent_res, node);
-        attr := mergeComponentAttributes(attributes, attr, node, parent_res);
+        attr := Attributes.fromSCode(component.attributes, component.prefixes);
+        attr := Attributes.checkDeclaredComponentAttributes(attr, parent_res, node);
+        attr := Attributes.mergeComponentAttributes(attributes, attr, node, parent_res);
 
         if isSome(originalAttr) then
-          attr := mergeRedeclaredComponentAttributes(Util.getOption(originalAttr), attr, node);
+          attr := Attributes.mergeRedeclaredComponentAttributes(Util.getOption(originalAttr), attr, node);
         end if;
 
         if not attr.isFinal and Modifier.isFinal(mod) then
@@ -1652,10 +1638,9 @@ algorithm
           checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, context, info);
         end if;
 
-        // Update the component's variability based on its type (e.g. Integer is discrete).
-        ty_attr := updateComponentVariability(ty_attr, ty, ty_node);
-        // Update the component's connector type now that we have its type.
-        ty_attr := updateComponentConnectorType(ty_attr, res, context, node);
+        // Update some of the attributes now that we now the type of the component.
+        ty_attr := Attributes.updateVariability(ty_attr, ty, ty_node);
+        ty_attr := Attributes.updateComponentConnectorType(ty_attr, res, context, node);
 
         if not referenceEq(attr, ty_attr) then
           InstNode.componentApply(node, Component.setAttributes, ty_attr);
@@ -1744,52 +1729,9 @@ algorithm
   end match;
 end propagateRedeclaredMod;
 
-function updateComponentConnectorType
-  input output Component.Attributes attributes;
-  input Restriction restriction;
-  input InstContext.Type context;
-  input InstNode component;
-protected
-  ConnectorType.Type cty = attributes.connectorType;
-algorithm
-  if ConnectorType.isConnectorType(cty) then
-    if Restriction.isConnector(restriction) then
-      if Restriction.isExpandableConnector(restriction) then
-        cty := ConnectorType.setPresent(cty);
-      else
-        cty := intBitAnd(cty, intBitNot(ConnectorType.EXPANDABLE));
-      end if;
-    else
-      // The connector type might have the connector or expandable bits set
-      // because of a parent node, but they should be unset if the component
-      // itself isn't a connector.
-      cty := intBitAnd(cty,
-        intBitNot(intBitOr(ConnectorType.CONNECTOR, ConnectorType.EXPANDABLE)));
-    end if;
-
-    // Connector elements that are not flow/stream are potentials.
-    if not ConnectorType.isFlowOrStream(cty) then
-      cty := ConnectorType.setPotential(cty);
-    end if;
-
-    if cty <> attributes.connectorType then
-      attributes.connectorType := cty;
-    end if;
-  elseif ConnectorType.isFlowOrStream(cty) and not InstContext.inRedeclared(context) then
-    // The Modelica specification forbids using stream outside connector
-    // declarations, but has no such restriction for flow. To compromise we
-    // print a warning for both flow and stream.
-    Error.addStrictMessage(Error.CONNECTOR_PREFIX_OUTSIDE_CONNECTOR,
-      {ConnectorType.toString(cty)}, InstNode.info(component));
-
-    // Remove the erroneous flow/stream prefix and keep going.
-    attributes.connectorType := ConnectorType.unsetFlowStream(cty);
-  end if;
-end updateComponentConnectorType;
-
 function checkPartialComponent
   input InstNode compNode;
-  input Component.Attributes compAttr;
+  input Attributes compAttr;
   input InstNode clsNode;
   input Boolean isPartial;
   input Restriction res;
@@ -1817,14 +1759,14 @@ function redeclareComponent
   input InstNode originalNode;
   input Modifier outerMod;
   input Modifier constrainingMod;
-  input Component.Attributes outerAttr;
+  input Attributes outerAttr;
   input InstNode redeclaredNode;
   input Integer instLevel;
   input InstContext.Type context;
 protected
   Component orig_comp, rdcl_comp, new_comp;
   Binding binding, condition;
-  Component.Attributes attr;
+  Attributes attr;
   array<Dimension> dims;
   Option<SCode.Comment> cmt;
   InstNode rdcl_node;
@@ -1900,349 +1842,10 @@ algorithm
   end if;
 end checkOuterComponentMod;
 
-function instComponentAttributes
-  input SCode.Attributes compAttr;
-  input SCode.Prefixes compPrefs;
-  output Component.Attributes attributes;
-protected
-  ConnectorType.Type cty;
-  Parallelism par;
-  Variability var;
-  Direction dir;
-  InnerOuter io;
-  Boolean fin, redecl;
-  Replaceable repl;
-algorithm
-  attributes := match (compAttr, compPrefs)
-    case (SCode.Attributes.ATTR(
-            connectorType = SCode.ConnectorType.POTENTIAL(),
-            parallelism = SCode.Parallelism.NON_PARALLEL(),
-            variability = SCode.Variability.VAR(),
-            direction = Absyn.Direction.BIDIR()),
-          SCode.Prefixes.PREFIXES(
-            redeclarePrefix = SCode.Redeclare.NOT_REDECLARE(),
-            finalPrefix = SCode.Final.NOT_FINAL(),
-            innerOuter = Absyn.InnerOuter.NOT_INNER_OUTER(),
-            replaceablePrefix = SCode.Replaceable.NOT_REPLACEABLE()))
-      then NFComponent.DEFAULT_ATTR;
-
-    else
-      algorithm
-        cty := ConnectorType.fromSCode(compAttr.connectorType);
-        par := Prefixes.parallelismFromSCode(compAttr.parallelism);
-        var := Prefixes.variabilityFromSCode(compAttr.variability);
-        dir := Prefixes.directionFromSCode(compAttr.direction);
-        io  := Prefixes.innerOuterFromSCode(compPrefs.innerOuter);
-        fin := SCodeUtil.finalBool(compPrefs.finalPrefix);
-        redecl := SCodeUtil.redeclareBool(compPrefs.redeclarePrefix);
-        repl := Replaceable.NOT_REPLACEABLE();
-      then
-        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
-  end match;
-end instComponentAttributes;
-
-function mergeComponentAttributes
-  input Component.Attributes outerAttr;
-  input Component.Attributes innerAttr;
-  input InstNode node;
-  input Restriction parentRestriction;
-  output Component.Attributes attr;
-protected
-  ConnectorType.Type cty;
-  Parallelism par;
-  Variability var;
-  Direction dir;
-  Boolean fin, redecl;
-  Replaceable repl;
-algorithm
-  if referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) and innerAttr.connectorType == 0 then
-    attr := innerAttr;
-  elseif referenceEq(innerAttr, NFComponent.DEFAULT_ATTR) then
-    cty := ConnectorType.merge(outerAttr.connectorType, innerAttr.connectorType, node);
-    attr := Component.Attributes.ATTRIBUTES(cty, outerAttr.parallelism,
-      outerAttr.variability, outerAttr.direction, innerAttr.innerOuter, outerAttr.isFinal,
-      innerAttr.isRedeclare, innerAttr.isReplaceable);
-  else
-    cty := ConnectorType.merge(outerAttr.connectorType, innerAttr.connectorType, node);
-    par := Prefixes.mergeParallelism(outerAttr.parallelism, innerAttr.parallelism, node);
-    var := Prefixes.variabilityMin(outerAttr.variability, innerAttr.variability);
-
-    if Restriction.isFunction(parentRestriction) then
-      dir := innerAttr.direction;
-    else
-      dir := Prefixes.mergeDirection(outerAttr.direction, innerAttr.direction, node);
-    end if;
-
-    fin := outerAttr.isFinal or innerAttr.isFinal;
-    redecl := innerAttr.isRedeclare;
-    repl := innerAttr.isReplaceable;
-    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, fin, redecl, repl);
-  end if;
-end mergeComponentAttributes;
-
-function checkDeclaredComponentAttributes
-  input output Component.Attributes attr;
-  input Restriction parentRestriction;
-  input InstNode component;
-algorithm
-  () := match parentRestriction
-    case Restriction.CONNECTOR()
-      algorithm
-        // Components of a connector may not have prefixes 'inner' or 'outer'.
-        assertNotInnerOuter(attr.innerOuter, component, parentRestriction);
-
-        if parentRestriction.isExpandable then
-          // Components of an expandable connector may not have the prefix 'flow'.
-          assertNotFlowStream(attr.connectorType, component, parentRestriction);
-
-          // Mark components in expandable connectors as potentially present.
-          attr.connectorType := intBitOr(attr.connectorType, ConnectorType.POTENTIALLY_PRESENT);
-        end if;
-      then
-        ();
-
-    case Restriction.RECORD()
-      algorithm
-        // Elements of a record may not have prefixes 'input', 'output', 'inner', 'outer', 'stream', or 'flow'.
-        assertNotInputOutput(attr.direction, component, parentRestriction);
-        assertNotInnerOuter(attr.innerOuter, component, parentRestriction);
-        assertNotFlowStream(attr.connectorType, component, parentRestriction);
-      then
-        ();
-
-    else ();
-  end match;
-end checkDeclaredComponentAttributes;
-
-function invalidComponentPrefixError
-  input String prefix;
-  input InstNode node;
-  input Restriction restriction;
-algorithm
-  Error.addSourceMessage(Error.INVALID_COMPONENT_PREFIX,
-    {prefix, InstNode.name(node), Restriction.toString(restriction)}, InstNode.info(node));
-end invalidComponentPrefixError;
-
-function assertNotInputOutput
-  input Direction dir;
-  input InstNode node;
-  input Restriction restriction;
-algorithm
-  if dir <> Direction.NONE then
-    invalidComponentPrefixError(Prefixes.directionString(dir), node, restriction);
-    fail();
-  end if;
-end assertNotInputOutput;
-
-function assertNotInnerOuter
-  input InnerOuter io;
-  input InstNode node;
-  input Restriction restriction;
-algorithm
-  if io <> InnerOuter.NOT_INNER_OUTER then
-    invalidComponentPrefixError(Prefixes.innerOuterString(io), node, restriction);
-    fail();
-  end if;
-end assertNotInnerOuter;
-
-function assertNotFlowStream
-  input ConnectorType.Type cty;
-  input InstNode node;
-  input Restriction restriction;
-algorithm
-  if ConnectorType.isFlowOrStream(cty) then
-    invalidComponentPrefixError(ConnectorType.toString(cty), node, restriction);
-    fail();
-  end if;
-end assertNotFlowStream;
-
-function mergeDerivedAttributes
-  input Component.Attributes outerAttr;
-  input Component.Attributes innerAttr;
-  input InstNode node;
-  output Component.Attributes attr;
-protected
-  ConnectorType.Type cty;
-  Parallelism par;
-  Variability var;
-  Direction dir;
-  InnerOuter io;
-  Boolean fin, redecl;
-  Replaceable repl;
-algorithm
-  if referenceEq(innerAttr, NFComponent.DEFAULT_ATTR) and outerAttr.connectorType == 0 then
-    attr := outerAttr;
-  elseif referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) and innerAttr.connectorType == 0 then
-    attr := innerAttr;
-  else
-    Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl) := outerAttr;
-    cty := ConnectorType.merge(cty, innerAttr.connectorType, node, isClass = true);
-    var := Prefixes.variabilityMin(var, innerAttr.variability);
-    dir := Prefixes.mergeDirection(dir, innerAttr.direction, node, allowSame = true);
-    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, fin, redecl, repl);
-  end if;
-end mergeDerivedAttributes;
-
-function mergeRedeclaredComponentAttributes
-  input Component.Attributes origAttr;
-  input Component.Attributes redeclAttr;
-  input InstNode node;
-  output Component.Attributes attr;
-protected
-  ConnectorType.Type cty, rcty, cty_fs, rcty_fs;
-  Parallelism par, rpar;
-  Variability var, rvar;
-  Direction dir, rdir;
-  InnerOuter io, rio;
-  Boolean fin;
-  Boolean redecl;
-  Replaceable repl;
-algorithm
-  if referenceEq(origAttr, NFComponent.DEFAULT_ATTR) then
-    attr := redeclAttr;
-  elseif referenceEq(redeclAttr, NFComponent.DEFAULT_ATTR) then
-    attr := origAttr;
-  else
-    Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, _, _, _) := origAttr;
-    Component.Attributes.ATTRIBUTES(rcty, rpar, rvar, rdir, rio, fin, redecl, repl) := redeclAttr;
-
-    // If no prefix is given for one of these attributes in the redeclaration,
-    // then the one from the original declaration is used. The redeclare is not
-    // allowed to change an existing prefix on the original declaration, except
-    // for the variability which can be lowered (e.g. parameter -> constant) and
-    // final which is always taken from the redeclare (since redeclaring a final
-    // element isn't allowed).
-
-    rcty_fs := intBitAnd(rcty, ConnectorType.FLOW_STREAM_MASK);
-    cty_fs := intBitAnd(cty, ConnectorType.FLOW_STREAM_MASK);
-    if rcty_fs > 0 then
-      if cty_fs > 0 and rcty_fs <> cty_fs then
-        printRedeclarePrefixError(node, ConnectorType.toString(rcty), ConnectorType.toString(cty));
-      end if;
-    end if;
-
-    if rpar <> Parallelism.NON_PARALLEL then
-      if par <> Parallelism.NON_PARALLEL and par <> rpar then
-        printRedeclarePrefixError(node, Prefixes.parallelismString(rpar), Prefixes.parallelismString(par));
-      end if;
-
-      par := rpar;
-    end if;
-
-    if rvar <> Variability.CONTINUOUS then
-      if rvar > var then
-        printRedeclarePrefixError(node, Prefixes.variabilityString(rvar), Prefixes.variabilityString(var));
-      end if;
-
-      var := rvar;
-    end if;
-
-    if rdir <> Direction.NONE then
-    if dir <> Direction.NONE and rdir <> dir then
-        printRedeclarePrefixError(node, Prefixes.directionString(rdir), Prefixes.directionString(dir));
-      end if;
-
-      dir := rdir;
-    end if;
-
-    if rio <> InnerOuter.NOT_INNER_OUTER then
-      if io <> InnerOuter.NOT_INNER_OUTER and rio <> io then
-        printRedeclarePrefixError(node, Prefixes.innerOuterString(rio), Prefixes.innerOuterString(io));
-      end if;
-
-      io := rio;
-    end if;
-
-    attr := Component.Attributes.ATTRIBUTES(rcty, par, var, dir, io, fin, redecl, repl);
-  end if;
-end mergeRedeclaredComponentAttributes;
-
-function mergeRedeclaredClassPrefixes
-  input Class.Prefixes origPrefs;
-  input Class.Prefixes redeclPrefs;
-  input InstNode node;
-  output Class.Prefixes prefs;
-protected
-  SCode.Encapsulated enc;
-  SCode.Partial par;
-  SCode.Final fin;
-  Absyn.InnerOuter io, rio;
-  SCode.Replaceable repl;
-algorithm
-  if referenceEq(origPrefs, NFClass.DEFAULT_PREFIXES) then
-    prefs := redeclPrefs;
-  else
-    Class.Prefixes.PREFIXES(innerOuter = io) := origPrefs;
-    Class.Prefixes.PREFIXES(enc, par, fin, rio, repl) := redeclPrefs;
-
-    io := match (io, rio)
-      case (Absyn.InnerOuter.NOT_INNER_OUTER(), _) then rio;
-      case (_, Absyn.InnerOuter.NOT_INNER_OUTER()) then io;
-      case (Absyn.InnerOuter.INNER(), Absyn.InnerOuter.INNER()) then io;
-      case (Absyn.InnerOuter.OUTER(), Absyn.InnerOuter.OUTER()) then io;
-      case (Absyn.InnerOuter.INNER_OUTER(), Absyn.InnerOuter.INNER_OUTER()) then io;
-      else
-        algorithm
-          printRedeclarePrefixError(node,
-            Prefixes.innerOuterString(Prefixes.innerOuterFromSCode(rio)),
-            Prefixes.innerOuterString(Prefixes.innerOuterFromSCode(io)));
-        then
-          fail();
-    end match;
-
-    prefs := Class.Prefixes.PREFIXES(enc, par, fin, io, repl);
-  end if;
-end mergeRedeclaredClassPrefixes;
-
-function printRedeclarePrefixError
-  input InstNode node;
-  input String prefix1;
-  input String prefix2;
-algorithm
-  Error.addSourceMessageAndFail(Error.REDECLARE_MISMATCHED_PREFIX,
-    {prefix1, InstNode.name(node), prefix2}, InstNode.info(node));
-end printRedeclarePrefixError;
-
-function updateComponentVariability
-  input output Component.Attributes attr;
-  input Class cls;
-  input InstNode clsNode;
-protected
-  Variability var = attr.variability;
-algorithm
-  if referenceEq(attr, NFComponent.DEFAULT_ATTR) and isDiscreteClass(clsNode) then
-    attr := NFComponent.IMPL_DISCRETE_ATTR;
-  elseif var == Variability.CONTINUOUS and isDiscreteClass(clsNode) then
-    attr.variability := Variability.IMPLICITLY_DISCRETE;
-  end if;
-end updateComponentVariability;
-
-function isDiscreteClass
-  input InstNode clsNode;
-  output Boolean isDiscrete;
-protected
-  InstNode base_node;
-  Class cls;
-  array<InstNode> exts;
-algorithm
-  base_node := Class.lastBaseClass(clsNode);
-  cls := InstNode.getClass(base_node);
-
-  isDiscrete := match cls
-    case Class.EXPANDED_CLASS(restriction = Restriction.TYPE())
-      algorithm
-        exts := ClassTree.getExtends(cls.elements);
-      then
-        if arrayLength(exts) == 1 then isDiscreteClass(exts[1]) else false;
-
-    else Type.isDiscrete(Class.getType(cls, base_node));
-  end match;
-end isDiscreteClass;
-
 function instTypeSpec
   input Absyn.TypeSpec typeSpec;
   input Modifier modifier;
-  input Component.Attributes attributes;
+  input Attributes attributes;
   input Boolean useBinding;
   input InstNode scope;
   input InstNode parent;
@@ -2250,7 +1853,7 @@ function instTypeSpec
   input Integer instLevel;
   input InstContext.Type context;
   output InstNode node;
-  output Component.Attributes outAttributes;
+  output Attributes outAttributes;
 algorithm
   node := match typeSpec
     case Absyn.TPATH()
@@ -2673,7 +2276,7 @@ algorithm
         arr := Array.mapList(absynExp.arrayExp,
           function instExp(scope = scope, context = context, info = info));
       then
-        Expression.makeArray(Type.UNKNOWN(), arr);
+        Expression.makeArrayCheckLiteral(Type.UNKNOWN(), arr);
 
     case Absyn.Exp.MATRIX()
       algorithm
@@ -3117,27 +2720,6 @@ function instEquation
   input InstNode scope;
   input InstContext.Type context;
   output Equation instEq;
-protected
-  SCode.EEquation eq;
-algorithm
-  SCode.EQUATION(eEquation = eq) := scodeEq;
-  instEq := instEEquation(eq, scope, context);
-end instEquation;
-
-function instEEquations
-  input list<SCode.EEquation> scodeEql;
-  input InstNode scope;
-  input InstContext.Type context;
-  output list<Equation> instEql;
-algorithm
-  instEql := list(instEEquation(eq, scope, context) for eq in scodeEql);
-end instEEquations;
-
-function instEEquation
-  input SCode.EEquation scodeEq;
-  input InstNode scope;
-  input InstContext.Type context;
-  output Equation instEq;
 algorithm
   instEq := match scodeEq
     local
@@ -3151,14 +2733,14 @@ algorithm
       ComponentRef lhs_cr, rhs_cr;
       InstContext.Type next_origin;
 
-    case SCode.EEquation.EQ_EQUALS(info = info)
+    case SCode.Equation.EQ_EQUALS(info = info)
       algorithm
         exp1 := instExp(scodeEq.expLeft, scope, context, info);
         exp2 := instExp(scodeEq.expRight, scope, context, info);
       then
         Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_CONNECT(info = info)
+    case SCode.Equation.EQ_CONNECT(info = info)
       algorithm
         if InstContext.inWhen(context) then
           Error.addSourceMessage(Error.CONNECT_IN_WHEN,
@@ -3172,17 +2754,17 @@ algorithm
       then
         Equation.CONNECT(exp1, exp2, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_FOR(info = info)
+    case SCode.Equation.EQ_FOR(info = info)
       algorithm
         oexp := instExpOpt(scodeEq.range, scope, context, info);
         checkIteratorShadowing(scodeEq.index, scope, scodeEq.info);
         (for_scope, iter) := addIteratorToScope(scodeEq.index, scope, scodeEq.info);
         next_origin := InstContext.set(context, NFInstContext.FOR);
-        eql := instEEquations(scodeEq.eEquationLst, for_scope, next_origin);
+        eql := instEquations(scodeEq.eEquationLst, for_scope, next_origin);
       then
         Equation.FOR(iter, oexp, eql, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_IF(info = info)
+    case SCode.Equation.EQ_IF(info = info)
       algorithm
         // Instantiate the conditions.
         expl := list(instExp(c, scope, context, info) for c in scodeEq.condition);
@@ -3191,7 +2773,7 @@ algorithm
         next_origin := InstContext.set(context, NFInstContext.IF);
         branches := {};
         for branch in scodeEq.thenBranch loop
-          eql := instEEquations(branch, scope, next_origin);
+          eql := instEquations(branch, scope, next_origin);
           exp1 :: expl := expl;
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
@@ -3199,13 +2781,13 @@ algorithm
         // Instantiate the else-branch, if there is one, and make it a branch
         // with condition true (so we only need a simple list of branches).
         if not listEmpty(scodeEq.elseBranch) then
-          eql := instEEquations(scodeEq.elseBranch, scope, next_origin);
+          eql := instEquations(scodeEq.elseBranch, scope, next_origin);
           branches := Equation.makeBranch(Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
         Equation.IF(listReverse(branches), makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_WHEN(info = info)
+    case SCode.Equation.EQ_WHEN(info = info)
       algorithm
         if InstContext.inWhen(context) then
           Error.addSourceMessageAndFail(Error.NESTED_WHEN, {}, info);
@@ -3215,18 +2797,18 @@ algorithm
 
         next_origin := InstContext.set(context, NFInstContext.WHEN);
         exp1 := instExp(scodeEq.condition, scope, context, info);
-        eql := instEEquations(scodeEq.eEquationLst, scope, next_origin);
+        eql := instEquations(scodeEq.eEquationLst, scope, next_origin);
         branches := {Equation.makeBranch(exp1, eql)};
 
         for branch in scodeEq.elseBranches loop
           exp1 := instExp(Util.tuple21(branch), scope, context, info);
-          eql := instEEquations(Util.tuple22(branch), scope, next_origin);
+          eql := instEquations(Util.tuple22(branch), scope, next_origin);
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
       then
         Equation.WHEN(listReverse(branches), makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_ASSERT(info = info)
+    case SCode.Equation.EQ_ASSERT(info = info)
       algorithm
         exp1 := instExp(scodeEq.condition, scope, context, info);
         exp2 := instExp(scodeEq.message, scope, context, info);
@@ -3234,13 +2816,13 @@ algorithm
       then
         Equation.ASSERT(exp1, exp2, exp3, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_TERMINATE(info = info)
+    case SCode.Equation.EQ_TERMINATE(info = info)
       algorithm
         exp1 := instExp(scodeEq.message, scope, context, info);
       then
         Equation.TERMINATE(exp1, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_REINIT(info = info)
+    case SCode.Equation.EQ_REINIT(info = info)
       algorithm
         if not InstContext.inWhen(context) then
           Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
@@ -3252,7 +2834,7 @@ algorithm
       then
         Equation.REINIT(exp1, exp2, makeSource(scodeEq.comment, info));
 
-    case SCode.EEquation.EQ_NORETCALL(info = info)
+    case SCode.Equation.EQ_NORETCALL(info = info)
       algorithm
         exp1 := instExp(scodeEq.exp, scope, context, info);
       then
@@ -3265,7 +2847,7 @@ algorithm
         fail();
 
   end match;
-end instEEquation;
+end instEquation;
 
 function instConnectorCref
   input Absyn.ComponentRef absynCref;
@@ -3556,7 +3138,7 @@ algorithm
     if InstNode.isComponent(n) then
       // The component might have been instantiated during lookup, otherwise do
       // it here (instComponent will skip already instantiated components).
-      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), NFInstContext.CLASS);
+      instComponent(n, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), NFInstContext.CLASS);
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.

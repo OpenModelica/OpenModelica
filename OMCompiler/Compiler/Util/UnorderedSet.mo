@@ -122,7 +122,7 @@ public
     end if;
   end add;
 
-  function addNoUpdCheck
+  function addNew
     "Adds a key to the set without checking if it already exists. Faster than
      add since it doesn't need to check if the key exists, but will lead to
      duplicate keys if it actually does exist in the set already. Might trigger
@@ -135,7 +135,7 @@ public
   algorithm
     hash := hashfn(key, arrayLength(Mutable.access(set.buckets)));
     addKey(key, hash, set);
-  end addNoUpdCheck;
+  end addNew;
 
   function addUnique
     "Adds a key to the set, but fails if the key already exists.

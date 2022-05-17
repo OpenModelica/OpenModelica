@@ -1,0 +1,71 @@
+// name: GetModelInstanceDuplicate1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    Real x;
+  end A;
+
+  model B
+    extends A;
+    Real x;
+  end B;
+");
+
+getModelInstance(B, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"B\",
+//   \"extends\": [
+//     {
+//       \"name\": \"A\",
+//       \"components\": {
+//         \"x\": {
+//           \"type\": \"Real\",
+//           \"modifier\": \"\",
+//           \"prefixes\": {
+//             \"public\": true,
+//             \"final\": false,
+//             \"inner\": false,
+//             \"outer\": false,
+//             \"replaceable\": false,
+//             \"redeclare\": false,
+//             \"connector\": \"\",
+//             \"variability\": \"\",
+//             \"direction\": \"\"
+//           }
+//         }
+//       }
+//     }
+//   ],
+//   \"components\": {
+//     \"x\": {
+//       \"type\": \"Real\",
+//       \"modifier\": \"\",
+//       \"prefixes\": {
+//         \"public\": true,
+//         \"final\": false,
+//         \"inner\": false,
+//         \"outer\": false,
+//         \"replaceable\": false,
+//         \"redeclare\": false,
+//         \"connector\": \"\",
+//         \"variability\": \"\",
+//         \"direction\": \"\"
+//       }
+//     }
+//   },
+//   \"connections\": [
+//
+//   ],
+//   \"replaceable\": [
+//
+//   ]
+// }"
+// endResult

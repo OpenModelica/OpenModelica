@@ -44,6 +44,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* For mkdtemp */
+#if defined(__APPLE__)
+#include <unistd.h>
+#endif
+
 #ifndef MATIO_PUBCONF_H
 #define MATIO_PUBCONF_H 1
 

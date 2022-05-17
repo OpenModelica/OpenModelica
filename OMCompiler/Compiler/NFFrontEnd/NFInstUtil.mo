@@ -546,6 +546,10 @@ public
           has_submods := not listEmpty(mod.subModLst);
 
           if has_binding then
+            if stringEmpty(name) then
+              strl := Dump.printExpStr(Util.getOption(mod.binding)) :: strl;
+            end if;
+
             strl := "=" :: strl;
           end if;
 
@@ -777,13 +781,13 @@ public
 
   function mergeScalarsEq
     "Updates the names of merged components in an equation."
-    input output SCode.EEquation eq;
+    input output SCode.Equation eq;
     input UnorderedMap<String, Absyn.ComponentRef> nameMap;
   algorithm
-    eq := SCodeUtil.mapEEquationExps(eq, function mergeScalarsExps(nameMap = nameMap));
+    eq := SCodeUtil.mapEquationExps(eq, function mergeScalarsExps(nameMap = nameMap));
 
     () := match eq
-      case SCode.EEquation.EQ_CONNECT()
+      case SCode.Equation.EQ_CONNECT()
         algorithm
           eq.crefLeft := mergeScalarsCref(eq.crefLeft, nameMap);
           eq.crefRight := mergeScalarsCref(eq.crefRight, nameMap);

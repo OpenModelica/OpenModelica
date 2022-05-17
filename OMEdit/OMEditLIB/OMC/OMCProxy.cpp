@@ -133,6 +133,7 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mLibrariesBrowserDeletionCommandsList << "deleteClass"
                                       << "clear"
                                       << "clearProgram";
+  mLoadModelError = false;
   //start the server
   if(!initializeOMC(threadData)) {  // if we are unable to start OMC. Exit the application.
     MainWindow::instance()->setExitApplicationStatus(true);
@@ -261,6 +262,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   Helper::OpenModelicaVersion = getVersion();
   // set OpenModelicaHome variable
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath().replace("\\", "/");
+  // set ModelicaPath variale
+  Helper::ModelicaPath = getModelicaPath();
 #if defined(_WIN32)
   MMC_TRY_TOP_INTERNAL()
   omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toUtf8().constData()));
@@ -573,9 +576,14 @@ bool OMCProxy::printMessagesStringInternal()
   /* Loop in reverse order since getMessagesStringInternal returns error messages in reverse order. */
   for (int i = errorsSize; i > 0 ; i--) {
     setCurrentError(i);
-    MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
-                            getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
-    MessagesWidget::instance()->addGUIMessage(messageItem);
+    const int errorId = getErrorId();
+    if (errorId == 371 || errorId == 372 || errorId == 373) {
+      mLoadModelError = true;
+    } else {
+      MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
+                              getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
+      MessagesWidget::instance()->addGUIMessage(messageItem);
+    }
   }
   return returnValue;
 }
@@ -699,6 +707,17 @@ QString OMCProxy::getErrorLevel()
 {
   sendCommand("currentError.level");
   return getResult();
+}
+
+/*!
+ * \brief OMCProxy::getErrorId
+ * Gets the current error id.
+ * \return
+ */
+int OMCProxy::getErrorId()
+{
+  sendCommand("currentError.id");
+  return getResult().toInt();
 }
 
 /*!
@@ -1584,6 +1603,7 @@ QString OMCProxy::changeDirectory(QString directory)
   */
 bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify, QString languageStandard, bool requireExactVersion)
 {
+  mLoadModelError = false;
   bool result = false;
   QList<QString> priorityVersionList;
   priorityVersionList << priorityVersion;
@@ -1599,6 +1619,7 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
   */
 bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion)
 {
+  mLoadModelError = false;
   bool result = false;
   fileName = fileName.replace('\\', '/');
   result = mpOMCInterface->loadFile(fileName, encoding, uses, notify, requireExactVersion);
@@ -2764,6 +2785,7 @@ bool OMCProxy::setModelicaPath(const QString &path)
 {
   bool result = mpOMCInterface->setModelicaPath(path);
   printMessagesStringInternal();
+  MainWindow::instance()->addSystemLibraries();
   return result;
 }
 

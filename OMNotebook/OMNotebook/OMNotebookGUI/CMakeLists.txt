@@ -100,14 +100,9 @@ target_link_libraries(OMNotebook PUBLIC Qt5::WebKitWidgets)
 target_link_libraries(OMNotebook PUBLIC OMPlotLib)
 target_link_libraries(OMNotebook PUBLIC OpenModelicaCompiler)
 
-# target_link_options(OMNotebook PRIVATE -Wl,--no-undefined)
 
-
-# add_executable(OMNotebook qtapp.cpp)
-# target_link_libraries(OMNotebook PRIVATE OMNotebookLib)
-
-# install(TARGETS OMNotebookLib)
-install(TARGETS OMNotebook)
+install(TARGETS OMNotebook
+        BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(FILES stylesheet.xml
               commands.xml

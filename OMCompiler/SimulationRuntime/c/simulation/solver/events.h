@@ -49,7 +49,7 @@ int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_b
 
 void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
 
-double findRoot(DATA *data, threadData_t *threadData, LIST *eventList);
+double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* states_left, double time_right, double* states_right);
 
 #ifdef __cplusplus
 }

@@ -7,7 +7,6 @@ extern "C" {
 #include "FCore.h"
 #include "FGraph.h"
 #include "FGraphBuildEnv.h"
-#include "FGraphStream.h"
 #include "FNode.h"
 #include "Flags.h"
 #include "List.h"

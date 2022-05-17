@@ -201,6 +201,16 @@ public
     end match;
   end size;
 
+  function sizesProduct
+    "Returns the product of the given dimension sizes."
+    input list<Dimension> dims;
+    output Integer outSize = 1;
+  algorithm
+    for dim in dims loop
+      outSize := outSize * Dimension.size(dim);
+    end for;
+  end sizesProduct;
+
   function isEqual
     input Dimension dim1;
     input Dimension dim2;

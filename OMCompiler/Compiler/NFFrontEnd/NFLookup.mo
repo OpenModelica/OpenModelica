@@ -37,6 +37,7 @@ encapsulated package NFLookup
 
 import Absyn;
 import AbsynUtil;
+import Attributes = NFAttributes;
 import SCode;
 import Dump;
 import ErrorTypes;
@@ -891,7 +892,7 @@ algorithm
   elseif InstNode.isGeneratedInner(scope) and Component.isDefinition(InstNode.component(scope)) then
     // The scope is a generated inner component that hasn't been instantiated,
     // it needs to be instantiated to continue lookup.
-    Inst.instComponent(scope, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), NFInstContext.CLASS);
+    Inst.instComponent(scope, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), NFInstContext.CLASS);
   end if;
 
   name := AbsynUtil.crefFirstIdent(cref);

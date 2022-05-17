@@ -6,7 +6,7 @@
 // Tests that libraries can be looked up even when not explicitly loaded.
 //
 
-class LookupLibrary1
+model LookupLibrary1
   Modelica.Units.SI.Angle angle;
 end LookupLibrary1;
 

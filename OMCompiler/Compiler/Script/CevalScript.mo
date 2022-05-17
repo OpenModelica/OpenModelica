@@ -802,6 +802,7 @@ algorithm
       algorithm
         // cmd = Util.rawStringToInputString(cmd);
         Settings.setModelicaPath(cmd);
+        setGlobalRoot(Global.packageIndexCacheIndex, 0);
       then
         Values.BOOL(true);
 

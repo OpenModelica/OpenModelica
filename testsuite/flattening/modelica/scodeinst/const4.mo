@@ -5,7 +5,7 @@
 //
 
 
-class P
+model P
   constant Real i = 3;
 end P;
 

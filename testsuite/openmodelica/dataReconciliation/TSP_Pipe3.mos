@@ -2251,117 +2251,22 @@ getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Simulation execution failed for model: NewDataReconciliationSimpleTests.TSP_Pipe3
-// stdout            | info    | Using sparse solver kinsol for nonlinear system 0 (31),
-// |                 | |       | because density of 0.02 remains under threshold of 0.10.
-// stdout            | info    | Using sparse solver kinsol for nonlinear system 2 (66),
-// |                 | |       | because density of 0.02 remains under threshold of 0.10.
-// stdout            | info    | The maximum density for using sparse solvers can be specified
-// |                 | |       | using the runtime flag '<-nlssMaxDensity=value>'.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 1 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 2 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 3 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 4 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 5 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 6 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 7 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 8 singular. See LOG_NLS for more information.
-// stdout            | warning | ##KINSOL## Jacobian row 9 singular. See LOG_NLS for more information.
-// assert            | debug   | Solving non-linear system 31 failed at time=0.
+// stdout            | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// stdout            | warning | Sparsity pattern for non-linear system 2 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
+// assert            | debug   | Solving non-linear system 66 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // assert            | info    | simulation terminated by an assertion at initialization
 // stdout            | info    | DataReconciliation Starting!
 // stdout            | info    | NewDataReconciliationSimpleTests.TSP_Pipe3
 // "
 // end SimulationResult;
-// ""
+// "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SourcePQ.mo:29:3-30:52:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/Sink.mo:17:3-19:16:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:20:3-22:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SingularPressureLoss.mo:23:3-24:52:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "
 // endResult

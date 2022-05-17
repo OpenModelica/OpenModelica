@@ -93,7 +93,7 @@ int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBI
 void residual_IRK(void **dataIn, const double *xloc, double *res, const int *iflag);
 int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
-void initializeStaticNLSData(void* nlsDataVoid, threadData_t *threadData, void* gsriData_void);
+void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
 
 void allocateDataGenericRK_MR(DATA* data, threadData_t* threadData, DATA_GSRI* gsriData);
 
@@ -661,7 +661,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
  * @param threadData        Thread data for error handling
  * @param nonlinsys         Non-linear system data.
  */
-void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
+void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
   for(int i=0; i<nonlinsys->size; i++) {
     // Get the nominal values of the states
     nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
@@ -670,8 +670,10 @@ void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEA
   }
 
   /* Initialize sparsity pattern */
-  nonlinsys->sparsePattern = initializeSparsePattern_DIRK(data, nonlinsys);
-  nonlinsys->isPatternAvailable = TRUE;
+  if (initSparsPattern) {
+    nonlinsys->sparsePattern = initializeSparsePattern_DIRK(data, nonlinsys);
+    nonlinsys->isPatternAvailable = TRUE;
+  }
   return;
 }
 
@@ -685,7 +687,7 @@ void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEA
  * @param threadData        Thread data for error handling
  * @param nonlinsys         Non-linear system data.
  */
-void initializeStaticNLSData_MS(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
+void initializeStaticNLSData_MS(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
   for(int i=0; i<nonlinsys->size; i++) {
     // Get the nominal values of the states
     nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
@@ -694,8 +696,10 @@ void initializeStaticNLSData_MS(DATA* data, threadData_t *threadData, NONLINEAR_
   }
 
   /* Initialize sparsity pattern */
-  nonlinsys->sparsePattern = initializeSparsePattern_DIRK(data, nonlinsys); // BB ToDo: is this correct
-  nonlinsys->isPatternAvailable = TRUE;
+  if( initSparsPattern) {
+    nonlinsys->sparsePattern = initializeSparsePattern_DIRK(data, nonlinsys); // BB ToDo: is this correct
+    nonlinsys->isPatternAvailable = TRUE;
+  }
   return;
 }
 
@@ -710,7 +714,7 @@ void initializeStaticNLSData_MS(DATA* data, threadData_t *threadData, NONLINEAR_
  * @param threadData        Thread data for error handling
  * @param nonlinsys         Non-linear system data.
  */
-void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
+void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
   for(int i=0; i<nonlinsys->size; i++) {
     // Get the nominal values of the states, the non-linear system has size stages*nStates
     int ii = nonlinsys->size % data->modelData->nStates;
@@ -720,8 +724,10 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
   }
 
   /* Initialize sparsity pattern */
-  nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
-  nonlinsys->isPatternAvailable = TRUE;
+  if (initSparsPattern) {
+    nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
+    nonlinsys->isPatternAvailable = TRUE;
+  }
   return;
 }
 
@@ -805,7 +811,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   // TODO: Do we need to initialize the Jacobian or is it already initialized?
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   data->callback->initialAnalyticJacobianA(data, threadData, jacobian_ODE);
-  nlsData->initializeStaticNLSData(data, threadData, nlsData);
+  nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE);
 
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
@@ -835,9 +841,9 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     if (gsriData->symJacAvailable) {
-      resetKinsolMemory(solverData->ordinaryData, nlsData->sparsePattern->numberOfNonZeros, nlsData->analyticalJacobianColumn);
+      resetKinsolMemory(solverData->ordinaryData, nlsData);
     } else {
-      resetKinsolMemory(solverData->ordinaryData, nlsData->size*nlsData->size, NULL);
+      resetKinsolMemory(solverData->ordinaryData, nlsData);
       int flag = KINSetJacFn(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, NULL);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
     }

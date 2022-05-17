@@ -1653,16 +1653,13 @@ protected function analyseEquation
   "Analyses an equation."
   input SCode.Equation inEquation;
   input Env inEnv;
-protected
-  SCode.EEquation equ;
 algorithm
-  SCode.EQUATION(equ) := inEquation;
-  (_, _) := SCodeUtil.mapFoldEEquations(equ, analyseEEquationTraverser, inEnv);
+  (_, _) := SCodeUtil.mapFoldEquations(inEquation, analyseEquationTraverser, inEnv);
 end analyseEquation;
 
-protected function analyseEEquationTraverser
+protected function analyseEquationTraverser
   "Traversal function for use in analyseEquation."
-  input output SCode.EEquation eq;
+  input output SCode.Equation eq;
   input output Env env;
 algorithm
   (eq, env) := match eq
@@ -1674,29 +1671,29 @@ algorithm
     case SCode.EQ_FOR(index = iter_name, info = info)
       algorithm
         env := NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
+        (eq, _) := SCodeUtil.mapFoldEquationExps(eq, traverseExp, (env, info));
       then
         (eq, env);
 
     case SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1), info = info)
       algorithm
         analyseCref(cref1, env, info);
-        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
+        (eq, _) := SCodeUtil.mapFoldEquationExps(eq, traverseExp, (env, info));
       then
         (eq, env);
 
     else
       algorithm
-        info := SCodeUtil.getEEquationInfo(eq);
-        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
+        info := SCodeUtil.getEquationInfo(eq);
+        (eq, _) := SCodeUtil.mapFoldEquationExps(eq, traverseExp, (env, info));
       then
         (eq, env);
 
   end match;
-end analyseEEquationTraverser;
+end analyseEquationTraverser;
 
 protected function traverseExp
-  "Traversal function used by analyseEEquationTraverser and
+  "Traversal function used by analyseEquationTraverser and
   analyseStatementTraverser."
   input Absyn.Exp inExp;
   input tuple<Env, SourceInfo> inTuple;

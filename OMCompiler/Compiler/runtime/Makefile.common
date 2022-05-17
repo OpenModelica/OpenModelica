@@ -41,7 +41,7 @@ OMC_OBJ = $(OMC_OBJ_SHARED) \
 all: install
 .PHONY: all install
 
-install: libomcruntime$(SHREXT) libomcgraphstream.a libomcbackendruntime.a
+install: libomcruntime$(SHREXT) libomcbackendruntime.a
 	cp libomcruntime$(SHREXT) $(builddir_lib)/$(TRIPLE)/omc/
 
 OBJEXT=.o
@@ -51,18 +51,12 @@ ifeq ($(wildcard $(OMC)),)
 OBJEXT=.boot.o
 BOOTH=../boot/tarball-include/OpenModelicaBootstrappingHeader.h
 CPPFLAGS += -DOMC_BOOTSTRAPPING -I../boot/tarball-include
-install_bootstrapping: libomcruntime-boot$(SHREXT) libomcgraphstream.a libomcbackendruntime.a
+install_bootstrapping: libomcruntime-boot$(SHREXT) libomcbackendruntime.a
 else
 install_bootstrapping:
 	@echo "Skipping libomcruntime-boot.a since we already have an OMC executable"
 endif
 endif
-
-libomcgraphstream.a: GraphStreamExt_omc$(OBJEXT) $(TOP_DIR)/3rdParty/graphstream/gs-netstream/c++/libnetstream.a
-	rm -f $@
-	cp -a $(TOP_DIR)/3rdParty/graphstream/gs-netstream/c++/libnetstream.a "$@.tmp"
-	$(AR) -s -r "$@.tmp" GraphStreamExt_omc$(OBJEXT)
-	mv "$@.tmp" "$@"
 
 libomcbackendruntime.a: HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o BackendDAEEXT_omc.o matching.o matching_cheap.o Dynload_omc$(OBJEXT) FMI_omc.o cJSON.o
 	rm -f $@
@@ -130,7 +124,6 @@ HpcOmBenchmarkExt_omc$(OBJEXT) : HpcOmBenchmarkExt.cpp $(BOOTH)
 HpcOmSchedulerExt_omc$(OBJEXT) : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp $(BOOTH)
 ptolemyio_omc$(OBJEXT) : ptolemyio.cpp errorext.h $(RML_COMPAT) $(BOOTH)
 FMI_omc$(OBJEXT) : FMIImpl.c $(BOOTH)
-GraphStreamExt_omc$(OBJEXT) : $(BOOTH) GraphStreamExt_impl.cpp $(RML_COMPAT)
 Settings_omc$(OBJEXT) : Settings_omc.cpp settingsimpl.c $(configUnix) $(BOOTH) $(OMC_CONFIG_INC)/omc_config.h
 
 %.boot.o: %.c

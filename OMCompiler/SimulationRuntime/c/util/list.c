@@ -40,19 +40,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct LIST_NODE
-{
-  void *data;
-  LIST_NODE *next;
-};
-
-struct LIST
-{
-  LIST_NODE *first;
-  LIST_NODE *last;
-  unsigned int itemSize;
-  unsigned int length;
-};
 
 LIST *allocList(unsigned int itemSize)
 {

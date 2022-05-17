@@ -109,10 +109,11 @@ public
   record SINGLE_ALGORITHM
     list<Pointer<Variable>> vars;
     Pointer<Equation> eqn;
+    Solve.Status status;
   end SINGLE_ALGORITHM;
 
   record SINGLE_RECORD_EQUATION
-    list<Pointer<Variable>> vars;
+    Pointer<Variable> var;
     Pointer<Equation> eqn;
     Solve.Status status;
   end SINGLE_RECORD_EQUATION;
@@ -204,7 +205,7 @@ public
       then str;
 
       case SINGLE_ALGORITHM() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Algorithm");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Algorithm (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variables:\n";
         for var in comp.vars loop
           str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
@@ -214,10 +215,7 @@ public
 
       case SINGLE_RECORD_EQUATION() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Record Equation (status = " + Solve.statusString(comp.status) + ")");
-        str := str + "### Variables:\n";
-        for var in comp.vars loop
-          str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
-        end for;
+        str := str + "### Variable:\n" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
         str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
@@ -280,7 +278,7 @@ public
       case SINGLE_EQUATION()        then intMod(BVariable.hash(comp.var, mod) + Equation.hash(comp.eqn, mod), mod);
       case SINGLE_ARRAY()           then intMod(BVariable.hash(comp.var, mod) + Equation.hash(comp.eqn, mod), mod);
       case SINGLE_ALGORITHM()       then intMod(Equation.hash(comp.eqn, mod), mod);
-      case SINGLE_RECORD_EQUATION() then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + Equation.hash(comp.eqn, mod), mod);
+      case SINGLE_RECORD_EQUATION() then intMod(BVariable.hash(comp.var, mod) + Equation.hash(comp.eqn, mod), mod);
       case SINGLE_WHEN_EQUATION()   then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + Equation.hash(comp.eqn, mod), mod);
       case SINGLE_IF_EQUATION()     then intMod(sum(BVariable.hash(var, mod) for var in comp.vars) + Equation.hash(comp.eqn, mod), mod);
       case SLICED_EQUATION()        then intMod(ComponentRef.hash(comp.var_cref, mod) + Equation.hash(Slice.getT(comp.eqn), mod), mod);
@@ -300,7 +298,7 @@ public
       case (SINGLE_EQUATION(), SINGLE_EQUATION())                 then BVariable.equalName(comp1.var, comp2.var) and Equation.equalName(comp1.eqn, comp2.eqn);
       case (SINGLE_ARRAY(), SINGLE_ARRAY())                       then BVariable.equalName(comp1.var, comp2.var) and Equation.equalName(comp1.eqn, comp2.eqn);
       case (SINGLE_ALGORITHM(), SINGLE_ALGORITHM())               then Equation.equalName(comp1.eqn, comp2.eqn);
-      case (SINGLE_RECORD_EQUATION(), SINGLE_RECORD_EQUATION())   then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName);
+      case (SINGLE_RECORD_EQUATION(), SINGLE_RECORD_EQUATION())   then BVariable.equalName(comp1.var, comp2.var) and Equation.equalName(comp1.eqn, comp2.eqn);
       case (SINGLE_WHEN_EQUATION(), SINGLE_WHEN_EQUATION())       then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName);
       case (SINGLE_IF_EQUATION(), SINGLE_IF_EQUATION())           then Equation.equalName(comp1.eqn, comp2.eqn) and List.isEqualOnTrue(comp1.vars, comp2.vars, BVariable.equalName);
       case (SLICED_EQUATION(), SLICED_EQUATION())                 then ComponentRef.isEqual(comp1.var_cref, comp2.var_cref) and Slice.isEqual(comp1.eqn, comp2.eqn, Equation.equalName);
@@ -480,12 +478,15 @@ public
   end makeDAEModeResidualTraverse;
 
   function fromSolvedEquation
+    "creates a strong component assuming the equation is already solved
+    todo: if and when equations"
     input Pointer<Equation> eqn;
     output StrongComponent comp;
   algorithm
     comp := match Pointer.access(eqn)
       case Equation.SCALAR_EQUATION() then SINGLE_EQUATION(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.ARRAY_EQUATION()  then SINGLE_ARRAY(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.RECORD_EQUATION() then SINGLE_RECORD_EQUATION(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
       case Equation.FOR_EQUATION()    then SLICED_EQUATION(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), Slice.SLICE(eqn, {}), NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
@@ -493,6 +494,26 @@ public
       then fail();
     end match;
   end fromSolvedEquation;
+
+  function toSolvedEquation
+    "creates a solved equation for an explicitely solved strong component.
+    fails if it is not solved explicitely."
+    input StrongComponent comp;
+    output Pointer<Equation> eqn;
+  algorithm
+    eqn := match comp
+      case SINGLE_EQUATION(status = NBSolve.Status.EXPLICIT)          then comp.eqn;
+      case SINGLE_ARRAY(status = NBSolve.Status.EXPLICIT)             then comp.eqn;
+      case SINGLE_RECORD_EQUATION(status = NBSolve.Status.EXPLICIT)   then comp.eqn;
+      case SINGLE_IF_EQUATION(status = NBSolve.Status.EXPLICIT)       then comp.eqn;
+      case SINGLE_WHEN_EQUATION(status = NBSolve.Status.EXPLICIT)     then comp.eqn;
+      case SLICED_EQUATION(status = NBSolve.Status.EXPLICIT)          then Slice.getT(comp.eqn);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component could not be
+        solved explicitely:\n" + StrongComponent.toString(comp)});
+      then fail();
+    end match;
+  end toSolvedEquation;
 
   function collectCrefs
     "Collects dependent crefs in current comp and saves them in the
@@ -648,6 +669,7 @@ public
 
 protected
   function createScalar
+    // UNUSED AND BROKEN!
     input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;
     input VariablePointers vars;
@@ -658,8 +680,9 @@ protected
     comp := match comp_indices
       local
         Integer i;
-        list<Pointer<Variable>> acc_vars = {};
-        list<Pointer<Equation>> acc_eqns = {};
+        list<Integer> array_comp_indices;
+        list<Pointer<Variable>> loop_vars;
+        list<Pointer<Equation>> loop_eqns;
 
       case {i} then SINGLE_EQUATION(
                       var     = VariablePointers.getVarAt(vars, eqn_to_var[i]),
@@ -668,12 +691,10 @@ protected
                     );
 
       case _ algorithm
-        for i in comp_indices loop
-          (acc_vars, acc_eqns) := getLoopPair(i, eqn_to_var, vars, eqns, acc_vars, acc_eqns);
-        end for;
+        //(loop_vars, loop_eqns) := getLoopPairs(comp_indices, mapping, eqn_to_var, vars, eqns);
       then ALGEBRAIC_LOOP(
-          vars    = acc_vars,
-          eqns    = acc_eqns,
+          vars    = {},
+          eqns    = {},
           jac     = NONE(),
           mixed   = false,
           status  = NBSolve.Status.UNPROCESSED
@@ -702,8 +723,8 @@ protected
         ComponentRef cref;
         Pointer<Variable> var;
         Pointer<Equation> eqn;
-        list<Pointer<Variable>> acc_vars = {};
-        list<Pointer<Equation>> acc_eqns = {};
+        list<Pointer<Variable>> comp_vars;
+        list<Pointer<Equation>> comp_eqns;
 
       case {i} algorithm
         var_scal_idx := eqn_to_var[i];
@@ -720,21 +741,62 @@ protected
           comp := SLICED_EQUATION(cref, Slice.SLICE(var, {}), Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
         else
           // just create a regular equation
-          comp := SINGLE_EQUATION(var, eqn, NBSolve.Status.UNPROCESSED);
+          comp := match Pointer.access(eqn)
+            case Equation.WHEN_EQUATION()   then SINGLE_WHEN_EQUATION({var}, eqn, NBSolve.Status.UNPROCESSED);
+            case Equation.IF_EQUATION()     then SINGLE_IF_EQUATION({var}, eqn, NBSolve.Status.UNPROCESSED);
+            case Equation.ALGORITHM()       then SINGLE_ALGORITHM({var}, eqn, NBSolve.Status.UNPROCESSED);
+                                            else SINGLE_EQUATION(var, eqn, NBSolve.Status.UNPROCESSED);
+          end match;
         end if;
       then comp;
 
       case _ algorithm
-        for i in comp_indices loop
-          (acc_vars, acc_eqns) := getLoopPair(i, eqn_to_var, vars, eqns, acc_vars, acc_eqns);
-        end for;
-      then ALGEBRAIC_LOOP(
-          vars    = acc_vars,
-          eqns    = acc_eqns,
-          jac     = NONE(),
-          mixed   = false,
-          status  = NBSolve.Status.UNPROCESSED
-        );
+        (comp_vars, comp_eqns) := getLoopPairs(comp_indices, eqn_to_var, mapping, vars, eqns);
+        comp := match (comp_vars, comp_eqns)
+          case (_, {eqn}) guard(Equation.isWhenEquation(eqn))
+          then SINGLE_WHEN_EQUATION(
+            vars    = comp_vars,
+            eqn     = eqn,
+            status  = NBSolve.Status.UNPROCESSED
+          );
+
+          case (_, {eqn}) guard(Equation.isIfEquation(eqn))
+          then SINGLE_IF_EQUATION(
+            vars    = comp_vars,
+            eqn     = eqn,
+            status  = NBSolve.Status.UNPROCESSED
+          );
+
+          case ({var}, {eqn}) guard(Equation.isArrayEquation(eqn))
+          then SINGLE_ARRAY(
+            var     = var,
+            eqn     = eqn,
+            status  = NBSolve.Status.UNPROCESSED
+          );
+
+          case ({var}, {eqn}) guard(Equation.isRecordEquation(eqn))
+          then SINGLE_RECORD_EQUATION(
+            var     = var,
+            eqn     = eqn,
+            status  = NBSolve.Status.UNPROCESSED
+          );
+
+          case (_, {eqn}) guard(Equation.isAlgorithm(eqn))
+          then SINGLE_ALGORITHM(
+            vars    = comp_vars,
+            eqn     = eqn,
+            status  = NBSolve.Status.UNPROCESSED
+          );
+
+          else ALGEBRAIC_LOOP(
+            vars    = comp_vars,
+            eqns    = comp_eqns,
+            jac     = NONE(),
+            mixed   = false,
+            status  = NBSolve.Status.UNPROCESSED
+          );
+        end match;
+      then comp;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
@@ -742,19 +804,37 @@ protected
     end match;
   end createPseudoScalar;
 
-  function getLoopPair
+  function getLoopPairs
     "adds the equation and matched variable to accumulated lists.
-    used to collect algebraic loops"
-    input Integer idx;
+    used to collect algebraic loops
+    ToDo: currently assumes full dependency - update with Slice structures!"
+    input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;
+    input Adjacency.Mapping mapping;
     input VariablePointers vars;
     input EquationPointers eqns;
-    input output list<Pointer<Variable>> acc_vars;
-    input output list<Pointer<Equation>> acc_eqns;
+    output list<Pointer<Variable>> acc_vars = {};
+    output list<Pointer<Equation>> acc_eqns = {};
+  protected
+    Integer var_idx, var_arr_idx, eqn_arr_idx;
+    // when adding slices these should be maps collecting scalar indices instead
+    UnorderedSet<Integer> var_set = UnorderedSet.new(intMod, intEq, listLength(comp_indices));
+    UnorderedSet<Integer> eqn_set = UnorderedSet.new(intMod, intEq, listLength(comp_indices));
   algorithm
-    acc_vars := VariablePointers.getVarAt(vars, eqn_to_var[idx]) :: acc_vars;
-    acc_eqns := EquationPointers.getEqnAt(eqns, idx) :: acc_eqns;
-  end getLoopPair;
+    for eqn_idx in comp_indices loop
+      var_idx := eqn_to_var[eqn_idx];
+      var_arr_idx := mapping.var_StA[var_idx];
+      eqn_arr_idx := mapping.eqn_StA[eqn_idx];
+      if not UnorderedSet.contains(var_arr_idx, var_set) then
+        UnorderedSet.add(var_arr_idx, var_set);
+        acc_vars := VariablePointers.getVarAt(vars, var_arr_idx) :: acc_vars;
+      end if;
+      if not UnorderedSet.contains(eqn_arr_idx, eqn_set) then
+        UnorderedSet.add(eqn_arr_idx, eqn_set);
+        acc_eqns := EquationPointers.getEqnAt(eqns, eqn_arr_idx) :: acc_eqns;
+      end if;
+    end for;
+  end getLoopPairs;
 
   function updateDependencyMap
     input ComponentRef cref                                   "cref representing current equation";

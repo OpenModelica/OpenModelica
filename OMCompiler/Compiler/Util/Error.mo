@@ -373,7 +373,7 @@ public constant ErrorTypes.Message LOOKUP_FUNCTION_GOT_CLASS = ErrorTypes.MESSAG
 public constant ErrorTypes.Message NON_STREAM_OPERAND_IN_STREAM_OPERATOR = ErrorTypes.MESSAGE(149, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Operand ‘%s‘ to operator ‘%s‘ is not a stream variable."));
 public constant ErrorTypes.Message UNBALANCED_CONNECTOR = ErrorTypes.MESSAGE(150, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("Connector %s is not balanced: %s"));
+  Gettext.gettext("Connector %s is not balanced: The number of potential variables (%s) is not equal to the number of flow variables (%s)."));
 public constant ErrorTypes.Message RESTRICTION_VIOLATION = ErrorTypes.MESSAGE(151, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Class specialization violation: %s is a %s, not a %s."));
 public constant ErrorTypes.Message ZERO_STEP_IN_ARRAY_CONSTRUCTOR = ErrorTypes.MESSAGE(152, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -447,7 +447,7 @@ public constant ErrorTypes.Message REPLACEABLE_BASE_CLASS_SIMPLE = ErrorTypes.ME
 public constant ErrorTypes.Message INVALID_SIZE_INDEX = ErrorTypes.MESSAGE(186, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid index %s in call to size of %s, valid index interval is [1,%s]."));
 public constant ErrorTypes.Message ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Algorithm section is not allowed in %s."));
+  Gettext.gettext("Algorithm sections are not allowed in %s."));
 public constant ErrorTypes.Message FAILURE_TO_DEDUCE_DIMS_NO_MOD = ErrorTypes.MESSAGE(188, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to deduce dimension %s of %s due to missing binding equation."));
 public constant ErrorTypes.Message FUNCTION_MULTIPLE_ALGORITHM = ErrorTypes.MESSAGE(189, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
@@ -504,8 +504,8 @@ public constant ErrorTypes.Message MISSING_MODIFIED_ELEMENT = ErrorTypes.MESSAGE
   Gettext.gettext("Modified element %s not found in class %s."));
 public constant ErrorTypes.Message INVALID_REDECLARE_IN_BASIC_TYPE = ErrorTypes.MESSAGE(215, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid redeclaration of %s, attributes of basic types may not be redeclared."));
-public constant ErrorTypes.Message INVALID_STREAM_CONNECTOR = ErrorTypes.MESSAGE(216, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Invalid stream connector %s: %s"));
+public constant ErrorTypes.Message MISMATCHED_FLOW_IN_STREAM_CONNECTOR = ErrorTypes.MESSAGE(216, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid stream connector %s: A stream connector must have exactly one flow variable, this connector has %s flow variables."));
 public constant ErrorTypes.Message CONDITION_TYPE_ERROR = ErrorTypes.MESSAGE(217, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Type mismatch in condition '%s' of component %s. Expected a Boolean expression, but got an expression of type %s."));
 public constant ErrorTypes.Message SIMPLIFY_CONSTANT_ERROR = ErrorTypes.MESSAGE(218, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
@@ -812,8 +812,9 @@ public constant ErrorTypes.Message DER_OF_NONDIFFERENTIABLE_EXP = ErrorTypes.MES
   Gettext.gettext("Argument ‘%s‘ of der is not differentiable."));
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_WITHOUT_CONVERSION = ErrorTypes.MESSAGE(370, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("%1 requested package %2 of version %3. %2 %4 is used instead which states that it is fully compatible without conversion script needed."));
+// The following errors (371, 372, 373) are used by OMEdit. Do not change them.
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_WITH_CONVERSION = ErrorTypes.MESSAGE(371, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
-  Gettext.gettext("%1 requested package %2 of version %3. %2 %4 is used instead which states that it is only compatible with a conversion script. OpenModelica currently does not support conversion scripts and will proceed with potential issues as a result."));
+  Gettext.gettext("%1 requested package %2 of version %3. %2 %4 is used instead which states that it is only compatible with a conversion script. Use convertPackageToLibrary(%1, %2, \"%4\") to run the conversion script or proceed with potential issues as a result."));
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_OLDER = ErrorTypes.MESSAGE(372, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("Requested package %1 of version %2, but this package was already loaded with version %3. There are no conversion annotations and %2 is older than %3, so the libraries are probably incompatible."));
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_NEWER = ErrorTypes.MESSAGE(373, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
@@ -866,6 +867,12 @@ public constant ErrorTypes.Message UNEXPECTED_COMPONENT_IN_COMPOSITE_NAME = Erro
   Gettext.gettext("Found component ‘%s‘ in composite name ‘%s‘, expected class."));
 public constant ErrorTypes.Message NF_MODIFY_PROTECTED = ErrorTypes.MESSAGE(396, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Protected element ‘%s‘ may not be modified, got ‘%s‘."));
+public constant ErrorTypes.Message PROTECTED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Protected sections are not allowed in %s."));
+public constant ErrorTypes.Message DEPRECATED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("%s are deprecated in %s."));
+public constant ErrorTypes.Message INITIAL_ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Initial algorithm sections are not allowed in %s."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

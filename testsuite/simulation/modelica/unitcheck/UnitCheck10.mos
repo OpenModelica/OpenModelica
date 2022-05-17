@@ -25,10 +25,9 @@ instantiateModel(unitCheckTests.UnitCheck10); getErrorString();
 // ""
 // true
 // ""
-// HashTable:
-// {V,{MASTER(V)}}
-// {A,{MASTER(A)}}
-// {S,{1.0 * m^(1) * s^(-1)}}
+// (V, MASTER(V))
+// (A, MASTER(A))
+// (S, 1.0 * m^(1) * s^(-1))
 // ######## UnitCheck COMPLETED ########
 // "class unitCheckTests.UnitCheck10
 //   Real V;

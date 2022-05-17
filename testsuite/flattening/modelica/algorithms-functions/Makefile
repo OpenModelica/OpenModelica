@@ -23,6 +23,7 @@ AssignmentFunction.mo \
 AssignmentFunctionMultiple1.mo \
 AssignmentSimple.mo \
 Break.mo \
+CheckPartialFunctionCall1.mos \
 ComponentFunctions.mo \
 ElementWiseMultiplication.mo \
 ErrorExternalAlgorithm.mo \
@@ -80,7 +81,6 @@ FunctionReturn.mo \
 FunctionSimple.mo \
 FunctionSimplex.mo \
 FunctionVariability.mo \
-FunctionWithEquation.mo \
 IfExpression1.mo \
 InvalidFunctionBinding.mo \
 JoinThreeVectors2.mo \

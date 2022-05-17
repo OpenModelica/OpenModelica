@@ -48,6 +48,7 @@ import Algorithm = NFAlgorithm;
 import CardinalityTable = NFCardinalityTable;
 
 protected
+import Attributes = NFAttributes;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import ExecStat.execStat;
@@ -442,7 +443,7 @@ protected
   Type ty;
   Option<SCode.Comment> cmt;
   SourceInfo info;
-  Component.Attributes comp_attr;
+  Attributes comp_attr;
   Visibility vis;
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
@@ -746,6 +747,8 @@ function vectorizeArray
 protected
   list<Variable> vrs;
   Sections sects;
+  list<Equation> eq, ieq;
+  list<Algorithm> alg, ialg;
 algorithm
   // if we don't scalarize flatten the class and vectorize it
   (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), deletedVars, settings);
@@ -760,18 +763,11 @@ algorithm
   () := match sects
     case Sections.SECTIONS()
       algorithm
-        for eqn in listReverse(sects.equations) loop
-          sections := Sections.prependEquation(vectorizeEquation(eqn, dimensions, prefix, settings), sections);
-        end for;
-        for eqn in listReverse(sects.initialEquations) loop
-          sections := Sections.prependEquation(vectorizeEquation(eqn, dimensions, prefix, settings), sections, true);
-        end for;
-        for alg in listReverse(sects.algorithms) loop
-          sections := Sections.prependAlgorithm(vectorizeAlgorithm(alg, dimensions, prefix), sections);
-        end for;
-        for alg in listReverse(sects.initialAlgorithms) loop
-          sections := Sections.prependAlgorithm(vectorizeAlgorithm(alg, dimensions, prefix), sections, true);
-        end for;
+        eq := vectorizeEquations(sects.equations, dimensions, prefix, settings);
+        ieq := vectorizeEquations(sects.initialEquations, dimensions, prefix, settings);
+        alg := vectorizeAlgorithms(sects.algorithms, dimensions, prefix);
+        ialg := vectorizeAlgorithms(sects.initialAlgorithms, dimensions, prefix);
+        sections := Sections.prepend(eq, ieq, alg, ialg, sections);
       then ();
   end match;
 end vectorizeArray;
@@ -811,50 +807,82 @@ algorithm
   end match;
 end vectorizeBinding;
 
-function vectorizeEquation
-  input output Equation eqn;
+function vectorizeEquations
+  input list<Equation> eql;
   input list<Dimension> dimensions;
   input ComponentRef prefix;
   input FlattenSettings settings;
+  output list<Equation> equations = {};
+algorithm
+  for eq in eql loop
+    equations := vectorizeEquation(eq, dimensions, prefix, settings, equations);
+  end for;
+
+  equations := listReverseInPlace(equations);
+end vectorizeEquations;
+
+function vectorizeEquation
+  input Equation eqn;
+  input list<Dimension> dimensions;
+  input ComponentRef prefix;
+  input FlattenSettings settings;
+  input output list<Equation> equations;
+protected
+  list<Equation> eql;
 algorithm
   // Flatten with an empty prefix to get rid of any split indices.
-  {eqn} := flattenEquation(eqn, EMPTY_PREFIX, {}, settings);
+  eql := flattenEquation(eqn, EMPTY_PREFIX, {}, settings);
 
-  eqn := match eqn
-    local
-      InstNode iter;
-      list<InstNode> iters;
-      Expression range;
-      list<Expression> ranges;
-      list<Subscript> subs;
-      DAE.ElementSource src;
+  for eq in eql loop
+    equations := match eq
+      local
+        InstNode iter;
+        list<InstNode> iters;
+        Expression range;
+        list<Expression> ranges;
+        list<Subscript> subs;
+        DAE.ElementSource src;
 
-    // convert simple equality of crefs to array equality
-    case Equation.EQUALITY(lhs = Expression.CREF(), rhs = Expression.CREF())
-      then Equation.ARRAY_EQUALITY(eqn.lhs, eqn.rhs, Type.liftArrayLeftList(eqn.ty, dimensions), eqn.source);
+      // convert simple equality of crefs to array equality
+      case Equation.EQUALITY(lhs = Expression.CREF(), rhs = Expression.CREF())
+        then Equation.ARRAY_EQUALITY(eq.lhs, eq.rhs, Type.liftArrayLeftList(eq.ty, dimensions), eq.source) :: equations;
 
-    // wrap general equation into for loop
-    else
-      algorithm
-        (iters, ranges, subs) := makeIterators(prefix, dimensions);
-        subs := listReverseInPlace(subs);
-        eqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscripts = subs));
-        src := Equation.source(eqn);
+      // wrap general equation into for loop
+      else
+        algorithm
+          (iters, ranges, subs) := makeIterators(prefix, dimensions);
+          subs := listReverseInPlace(subs);
+          eq := Equation.mapExp(eq, function addIterator(prefix = prefix, subscripts = subs));
+          src := Equation.source(eqn);
 
-        iter :: iters := iters;
-        range :: ranges := ranges;
-        eqn := Equation.FOR(iter, SOME(range), {eqn}, src);
-
-        while not listEmpty(iters) loop
           iter :: iters := iters;
           range :: ranges := ranges;
-          eqn := Equation.FOR(iter, SOME(range), {eqn}, src);
-        end while;
-      then
-        eqn;
+          eq := Equation.FOR(iter, SOME(range), {eq}, src);
 
-  end match;
+          while not listEmpty(iters) loop
+            iter :: iters := iters;
+            range :: ranges := ranges;
+            eq := Equation.FOR(iter, SOME(range), {eq}, src);
+          end while;
+        then
+          eq :: equations;
+
+    end match;
+  end for;
 end vectorizeEquation;
+
+function vectorizeAlgorithms
+  input list<Algorithm> algs;
+  input list<Dimension> dimensions;
+  input ComponentRef prefix;
+  output list<Algorithm> algorithms = {};
+algorithm
+  for alg in algs loop
+    algorithms := vectorizeAlgorithm(alg, dimensions, prefix) :: algorithms;
+  end for;
+
+  algorithms := listReverseInPlace(algorithms);
+end vectorizeAlgorithms;
 
 function vectorizeAlgorithm
   input output Algorithm alg;

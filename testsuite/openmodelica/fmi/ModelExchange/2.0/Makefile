@@ -19,6 +19,7 @@ fmi_attributes_15.mos \
 fmi_attributes_16.mos \
 fmi_attributes_17.mos \
 fmi_attributes_18.mos \
+fmi_attributes_19.mos \
 FMUResourceTest.mos \
 testBug2764.mos \
 testBug2765.mos \

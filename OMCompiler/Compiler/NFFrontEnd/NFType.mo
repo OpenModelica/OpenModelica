@@ -266,17 +266,6 @@ public
     end match;
   end isReal;
 
-  function isRealRecursive
-    input Type ty;
-    output Boolean isReal;
-  algorithm
-    isReal := match ty
-      case REAL()   then true;
-      case ARRAY()  then isRealRecursive(ty.elementType);
-      else false;
-    end match;
-  end isRealRecursive;
-
   function isBoolean
     input Type ty;
     output Boolean isBool;
@@ -1350,7 +1339,7 @@ public
       case BOOLEAN() then 1;
       case CLOCK() then 1;
       case ENUMERATION() then 1;
-      case ARRAY() then sizeOf(ty.elementType) * product(Dimension.size(d) for d in ty.dimensions);
+      case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions);
       case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
       case COMPLEX()
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);

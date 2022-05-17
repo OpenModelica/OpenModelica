@@ -6,7 +6,7 @@
 //
 // Tests code generation for functions returning tuples, both simulation and
 // function code.
-// 
+//
 loadFile("TupleReturn.mo");
 simulate(TupleReturn, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
 getErrorString();

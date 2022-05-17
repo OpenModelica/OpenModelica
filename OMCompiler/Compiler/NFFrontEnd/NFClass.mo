@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFClass
 
+import Attributes = NFAttributes;
 import Component = NFComponent;
 import Dimension = NFDimension;
 import Expression = NFExpression;
@@ -119,7 +120,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     Modifier ccMod;
     array<Dimension> dims;
     Prefixes prefixes;
-    Component.Attributes attributes;
+    Attributes attributes;
     Restriction restriction;
   end EXPANDED_DERIVED;
 
@@ -223,6 +224,23 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   algorithm
     (node, isImport) := ClassTree.lookupElement(name, classTree(cls));
   end lookupElement;
+
+  function tryLookupElement
+    input String name;
+    input Class cls;
+    output Option<InstNode> node;
+    output Boolean isImport;
+  protected
+    InstNode n;
+  algorithm
+    try
+      (n, isImport) := ClassTree.lookupElement(name, classTree(cls));
+      node := SOME(n);
+    else
+      node := NONE();
+      isImport := false;
+    end try;
+  end tryLookupElement;
 
   function lookupComponentIndex
     input String name;
@@ -477,11 +495,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
 
   function getAttributes
     input Class cls;
-    output Component.Attributes attr;
+    output Attributes attr;
   algorithm
     attr := match cls
       case EXPANDED_DERIVED() then cls.attributes;
-      else NFComponent.DEFAULT_ATTR;
+      else NFAttributes.DEFAULT_ATTR;
     end match;
   end getAttributes;
 

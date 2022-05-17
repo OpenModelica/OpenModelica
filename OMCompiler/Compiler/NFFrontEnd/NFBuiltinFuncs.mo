@@ -31,6 +31,7 @@
 
 encapsulated package NFBuiltinFuncs
 
+import Attributes = NFAttributes;
 import Class = NFClass;
 import NFClassTree.ClassTree;
 import NFFunction.Function;
@@ -78,46 +79,46 @@ constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(
 
 // Default Integer parameter.
 constant Component INT_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.INTEGER(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+  Type.INTEGER(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
 
 constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
-  Visibility.PUBLIC,
+  NONE(), Visibility.PUBLIC,
   Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE(),
   InstNodeType.NORMAL_COMP());
 
 // Default Real parameter.
 constant Component REAL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.REAL(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+  Type.REAL(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
 
 constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
-  Visibility.PUBLIC,
+  NONE(), Visibility.PUBLIC,
   Pointer.createImmutable(REAL_COMPONENT), InstNode.EMPTY_NODE(),
   InstNodeType.NORMAL_COMP());
 
 // Default Boolean parameter.
 constant Component BOOL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.BOOLEAN(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+  Type.BOOLEAN(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
 
 constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
-  Visibility.PUBLIC,
+  NONE(), Visibility.PUBLIC,
   Pointer.createImmutable(BOOL_COMPONENT), InstNode.EMPTY_NODE(),
   InstNodeType.NORMAL_COMP());
 
 // Default String parameter.
 constant Component STRING_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.STRING(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+  Type.STRING(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
 
 constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
-  Visibility.PUBLIC,
+  NONE(), Visibility.PUBLIC,
   Pointer.createImmutable(STRING_COMPONENT), InstNode.EMPTY_NODE(),
   InstNodeType.NORMAL_COMP());
 
 // Default enumeration(:) parameter.
 constant Component ENUM_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.ENUMERATION_ANY(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+  Type.ENUMERATION_ANY(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
-  Visibility.PUBLIC,
+  NONE(), Visibility.PUBLIC,
   Pointer.createImmutable(ENUM_COMPONENT), InstNode.EMPTY_NODE(),
   InstNodeType.NORMAL_COMP());
 
@@ -154,21 +155,21 @@ constant InstNode STRING_DUMMY_NODE = NFInstNode.CLASS_NODE("String",
   DUMMY_ELEMENT, Visibility.PUBLIC, Pointer.createImmutable(Class.NOT_INSTANTIATED()),
   EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-constant InstNode R_PARAM = InstNode.COMPONENT_NODE("r",
+constant InstNode R_PARAM = InstNode.COMPONENT_NODE("r", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(REAL_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode I_PARAM = InstNode.COMPONENT_NODE("i",
+constant InstNode I_PARAM = InstNode.COMPONENT_NODE("i", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode B_PARAM = InstNode.COMPONENT_NODE("b",
+constant InstNode B_PARAM = InstNode.COMPONENT_NODE("b", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(BOOL_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode E_PARAM = InstNode.COMPONENT_NODE("e",
+constant InstNode E_PARAM = InstNode.COMPONENT_NODE("e", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(ENUM_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode SIGNIFICANT_DIGITS_PARAM = InstNode.COMPONENT_NODE("significantDigits",
+constant InstNode SIGNIFICANT_DIGITS_PARAM = InstNode.COMPONENT_NODE("significantDigits", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode MINIMUM_LENGTH_PARAM = InstNode.COMPONENT_NODE("minimumLength",
+constant InstNode MINIMUM_LENGTH_PARAM = InstNode.COMPONENT_NODE("minimumLength", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode LEFT_JUSTIFIED_PARAM = InstNode.COMPONENT_NODE("leftJustified",
+constant InstNode LEFT_JUSTIFIED_PARAM = InstNode.COMPONENT_NODE("leftJustified", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(BOOL_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode FORMAT_PARAM = InstNode.COMPONENT_NODE("format",
+constant InstNode FORMAT_PARAM = InstNode.COMPONENT_NODE("format", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(STRING_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
 
 // String(r, significantDigits=d, minimumLength=0, leftJustified=true)
@@ -373,10 +374,10 @@ constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Component CLOCK_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
+  Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFAttributes.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
 
 constant InstNode CLOCK_PARAM = InstNode.COMPONENT_NODE("s",
-  Visibility.PUBLIC,
+  NONE(), Visibility.PUBLIC,
   Pointer.createImmutable(CLOCK_COMPONENT), InstNode.EMPTY_NODE(),
   InstNodeType.NORMAL_COMP());
 
@@ -385,24 +386,24 @@ constant InstNode CLOCK_DUMMY_NODE = NFInstNode.CLASS_NODE("Clock",
   EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 // Clock() - inferred clock
-constant Function CLOCK_INFERED = Function.FUNCTION(Path.IDENT("Clock"),
+constant Function CLOCK_INFERRED = Function.FUNCTION(Path.IDENT("Clock"),
   CLOCK_DUMMY_NODE, {}, {CLOCK_PARAM}, {}, {}, Type.CLOCK(),
   DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),
   Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-constant InstNode INTERVAL_COUNTER_PARAM = InstNode.COMPONENT_NODE("intervalCounter",
+constant InstNode INTERVAL_COUNTER_PARAM = InstNode.COMPONENT_NODE("intervalCounter", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode RESOLUTION_PARAM = InstNode.COMPONENT_NODE("resolution",
+constant InstNode RESOLUTION_PARAM = InstNode.COMPONENT_NODE("resolution", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode INTERVAL_PARAM = InstNode.COMPONENT_NODE("interval",
+constant InstNode INTERVAL_PARAM = InstNode.COMPONENT_NODE("interval", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(REAL_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode CONDITION_PARAM = InstNode.COMPONENT_NODE("condition",
+constant InstNode CONDITION_PARAM = InstNode.COMPONENT_NODE("condition", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(BOOL_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode START_INTERVAL_PARAM = InstNode.COMPONENT_NODE("startInterval",
+constant InstNode START_INTERVAL_PARAM = InstNode.COMPONENT_NODE("startInterval", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(REAL_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode C_PARAM = InstNode.COMPONENT_NODE("c",
+constant InstNode C_PARAM = InstNode.COMPONENT_NODE("c", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(CLOCK_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
-constant InstNode SOLVER_METHOD_PARAM = InstNode.COMPONENT_NODE("solverMethod",
+constant InstNode SOLVER_METHOD_PARAM = InstNode.COMPONENT_NODE("solverMethod", NONE(),
   Visibility.PUBLIC, Pointer.createImmutable(STRING_COMPONENT), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP());
 
 // Clock(intervalCounter, resolution = 1) - clock with Integer interval
@@ -443,7 +444,7 @@ constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
     Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
   listArrayLiteral({
     NFInstNode.CachedData.FUNCTION({
-        CLOCK_INFERED,
+        CLOCK_INFERRED,
         CLOCK_INT,
         CLOCK_REAL,
         CLOCK_BOOL,

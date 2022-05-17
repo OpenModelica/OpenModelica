@@ -1031,6 +1031,7 @@ public
     input list<Subscript> newSubs "Subscripts to add";
     input list<Subscript> oldSubs "Existing subscripts";
     input Integer dimensions "The number of dimensions to subscript";
+    input Boolean backend "if true discards a subscript for scalar if it is exacty 1";
     output list<Subscript> outSubs "The merged subscripts, at most 'dimensions' many";
     output list<Subscript> remainingSubs "The subscripts that didn't fit";
   protected
@@ -1039,6 +1040,17 @@ public
     list<Subscript> rest_old_subs;
     Boolean merged = true;
   algorithm
+    // discard an index for backend if it is exactly one for scalars
+    if backend and dimensions == 0 and not listEmpty(newSubs) then
+      outSubs := {};
+      new_sub :: remainingSubs := newSubs;
+      remainingSubs := match new_sub
+        case INDEX(index = Expression.INTEGER(1)) then remainingSubs;
+        else newSubs;
+      end match;
+      return;
+    end if;
+
     // If there aren't any existing subscripts we just add as many subscripts
     // from the list of new subscripts as possible.
     if listEmpty(oldSubs) then

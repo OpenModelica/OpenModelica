@@ -1,6 +1,6 @@
 
 cmake_minimum_required(VERSION 3.14)
-project(OpenModelica C CXX Fortran)
+project(OpenModelica C CXX)
 
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
@@ -22,6 +22,11 @@ set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 include(cmake/omc_utils.cmake)
 include(cmake/omc_target_info.cmake)
 include(cmake/omc_check_exists.cmake)
+
+# Include the small thread library setup we have. This provides the library
+# OMCPThreads::OMCPThreads which gives us a PThreads library on Windows as
+# well as linux. See the file for more info.
+include(cmake/OMCPThreads.cmake)
 
 # Add the compiler ids to the report for convenience.
 omc_add_to_report(CMAKE_C_COMPILER_ID)
@@ -60,6 +65,9 @@ if(NOT CMAKE_BUILD_TYPE)
       "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
+
+## Set position independent code for everything built in OpenModelica.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(OM_USE_CCACHE)
   find_program(CCACHE_PROGRAM ccache)
@@ -113,10 +121,14 @@ set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/o
 set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/omc/)
 
 ## Set the adjusted installation lib directory as an rpath for all installed binaries.
-## This is useful for those binaries that end up in bin/ directory but not for
-## others as it is a relative path to the lib dir from <build_dir>/<some_dir>.
-## Maybe there is a better way to do this but it should suffice for now.
-set(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+## Assumes binaries end up in either 'bin' or 'lib' AND also assumes that 'bin' and 'lib' are sibling directories.
+if(APPLE)
+  ## MacOS Bundles end up in bin/<BundleName>.app/Contents/MacOS/
+  ## So make sure that the lib dir is referenced from that location as well
+  set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path/../../../../${CMAKE_INSTALL_LIBDIR}")
+else()
+  set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+endif()
 
 ## Do not print unnecessary install messages when nothing has actually changed.
 set(CMAKE_INSTALL_MESSAGE LAZY)

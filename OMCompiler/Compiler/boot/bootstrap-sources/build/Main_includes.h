@@ -19,7 +19,6 @@ extern "C" {
 #include "ExecStat.h"
 #include "FCore.h"
 #include "FGraph.h"
-#include "FGraphStream.h"
 #include "Flags.h"
 #include "FlagsUtil.h"
 #include "GC.h"

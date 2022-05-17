@@ -143,10 +143,31 @@ protected
   String mp, name, pwd, cmd, version, userLibraries;
   Boolean isDir, impactOK;
   Option<Absyn.Class> cl;
-  list<String> versionsThatProvideTheWanted, commands;
+  list<String> versionsThatProvideTheWanted, commands, versions;
 algorithm
+  if not requireExactVersion then
+    if listEmpty(prios) then
+      versions := PackageManagement.versionsThatProvideTheWanted(id, "default", printError = false);
+    else
+      versions := {};
+
+      for v in listReverse(prios) loop
+        versionsThatProvideTheWanted :=
+          PackageManagement.versionsThatProvideTheWanted(id, v, printError = false);
+
+        if listEmpty(versionsThatProvideTheWanted) then
+          versions := v :: versions;
+        else
+          versions := listAppend(versionsThatProvideTheWanted, versions);
+        end if;
+      end for;
+    end if;
+  else
+    versions := prios;
+  end if;
+
   try
-    (mp,name,isDir) := System.getLoadModelPath(id,prios,mps,requireExactVersion);
+    (mp,name,isDir) := System.getLoadModelPath(id,versions,mps,requireExactVersion);
   else
     version := match prios
       case version::_ then version;

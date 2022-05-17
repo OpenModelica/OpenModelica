@@ -20,6 +20,11 @@ target_link_libraries(ParModelicaAuto PUBLIC omc::simrt::runtime)
 target_link_libraries(ParModelicaAuto PUBLIC omc::3rd::tbb)
 target_compile_definitions(ParModelicaAuto PRIVATE USE_FLOW_SCHEDULER)
 
+# For now, disable deprecation warning from the json reader. We do not plan to update any time soon.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  target_compile_options(ParModelicaAuto PRIVATE -Wno-deprecated-declarations)
+endif()
+
 # add_executable(ParModelicaAutoTest)
 # target_sources(ParModelicaAutoTest PRIVATE test_task_graph.cpp)
 # target_link_libraries(ParModelicaAutoTest PRIVATE ParModelicaAuto)

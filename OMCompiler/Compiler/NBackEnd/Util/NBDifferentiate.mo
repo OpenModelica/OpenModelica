@@ -157,13 +157,13 @@ public
         new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
         new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
         Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_ALGORITHM(new_vars, new_eqn);
+      then StrongComponent.SINGLE_ALGORITHM(new_vars, new_eqn, comp.status);
 
       case StrongComponent.SINGLE_RECORD_EQUATION() algorithm
-        new_vars := list(differentiateVariablePointer(var, diffArguments_ptr) for var in comp.vars);
+        new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
         new_eqn := differentiateEquationPointer(comp.eqn, diffArguments_ptr, name);
         Equation.createName(new_eqn, idx, context);
-      then StrongComponent.SINGLE_RECORD_EQUATION(new_vars, new_eqn, comp.status);
+      then StrongComponent.SINGLE_RECORD_EQUATION(new_var, new_eqn, comp.status);
 
       // is this needed? when equations should never be differentiated
       case StrongComponent.SINGLE_WHEN_EQUATION() algorithm
@@ -807,7 +807,7 @@ public
             // do not check for continuous if it is for functions (differentiating a function inside a function)
             // crefs are not lowered there! assume it is continuous
             isCont := (diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.isContinuous(arg);
-            isReal := Type.isRealRecursive(Expression.typeOf(arg)); // ToDo also records
+            isReal := Type.isReal(Type.arrayElementType(Expression.typeOf(arg))); // ToDo also records
             if not (isCont and isReal) then
               // add to map; if it is not Real also already set to true (always removed from interface)
               UnorderedMap.add(InstNode.name(inp), not isReal, interface_map);
@@ -1271,7 +1271,7 @@ public
         list<tuple<Expression, list<Statement>>> branches = {};
 
       // I. differentiate 'Real' assignment and return differentiated and original statement
-      case diff_stmt as Statement.ASSIGNMENT() guard(Type.isRealRecursive(Expression.typeOf(diff_stmt.lhs))) algorithm
+      case diff_stmt as Statement.ASSIGNMENT() guard(Type.isReal(Type.arrayElementType(Expression.typeOf(diff_stmt.lhs)))) algorithm
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;

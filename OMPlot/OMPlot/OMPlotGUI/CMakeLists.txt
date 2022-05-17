@@ -39,11 +39,9 @@ target_link_libraries(OMPlotLib PUBLIC Qt5::PrintSupport)
 target_link_libraries(OMPlotLib PUBLIC qwt)
 target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
 
-target_link_options(OMPlotLib PRIVATE -Wl,--no-undefined)
-
-
-add_executable(OMPlot main.cpp rc_omplot.rc)
+add_executable(OMPlot WIN32 MACOSX_BUNDLE main.cpp rc_omplot.rc)
 target_link_libraries(OMPlot PRIVATE OMPlotLib)
 
 install(TARGETS OMPlotLib)
-install(TARGETS OMPlot)
+install(TARGETS OMPlot
+        BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})

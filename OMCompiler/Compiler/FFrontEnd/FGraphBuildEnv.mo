@@ -1092,17 +1092,14 @@ protected function analyseEquation
   input Kind inKind;
   input Graph inGraph;
   output Graph outGraph;
-protected
-  SCode.EEquation equ;
 algorithm
-  SCode.EQUATION(equ) := inEquation;
-  (_, outGraph) := SCodeUtil.mapFoldEEquations(equ,
-    function analyseEEquationTraverser(ref = inParentRef, kind = inKind), inGraph);
+  (_, outGraph) := SCodeUtil.mapFoldEquations(inEquation,
+    function analyseEquationTraverser(ref = inParentRef, kind = inKind), inGraph);
 end analyseEquation;
 
-protected function analyseEEquationTraverser
+protected function analyseEquationTraverser
   "Traversal function for use in analyseEquation."
-  input output SCode.EEquation eq;
+  input output SCode.Equation eq;
   input Ref ref;
   input Kind kind;
   input output Graph graph;
@@ -1116,25 +1113,25 @@ algorithm
       algorithm
         graph := addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, kind, graph);
       then
-        SCodeUtil.mapFoldEEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
+        SCodeUtil.mapFoldEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
 
     case SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1))
       algorithm
         graph := analyseCref(cref1, ref, kind, graph);
       then
-        SCodeUtil.mapFoldEEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
+        SCodeUtil.mapFoldEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
 
     else
       algorithm
-        _ := SCodeUtil.getEEquationInfo(eq);
+        _ := SCodeUtil.getEquationInfo(eq);
       then
-        SCodeUtil.mapFoldEEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
+        SCodeUtil.mapFoldEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
 
   end match;
-end analyseEEquationTraverser;
+end analyseEquationTraverser;
 
 protected function traverseExp
-  "Traversal function used by analyseEEquationTraverser and
+  "Traversal function used by analyseEquationTraverser and
   analyseStatementTraverser."
   input output Absyn.Exp exp;
   input output Graph graph;

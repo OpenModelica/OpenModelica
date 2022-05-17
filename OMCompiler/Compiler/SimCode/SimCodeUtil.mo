@@ -110,13 +110,13 @@ import SimCodeFunctionUtil;
 import SimCodeFunctionUtil.varName;
 import SymbolicJacobian;
 import System;
-import HashTableUnitToString = NFHashTableUnitToString;
-import HashTableStringToUnit = NFHashTableStringToUnit;
 import Util;
 import ValuesUtil;
 import VisualXML;
 import ZeroCrossings;
 import ReduceDAE;
+import Settings;
+
 protected constant String UNDERLINE = "========================================";
 
 protected function compareEqSystems
@@ -10141,13 +10141,26 @@ algorithm
       e = DAEUtil.getStartAttrFail(dae_var_attr);
     then SOME(e);
 
-    /* Parameters with binding */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e)))
+    // C RUNTIME
+    // Parameters with binding
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard not stringEq(Config.simCodeTarget(), "Cpp")
     then SOME(e);
 
-    /* Parameters without binding. Investigate if it has start value */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr, varType = tp)) equation
+    // C RUNTIME
+    // Parameters without binding. Investigate if it has start value
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr, varType = tp)) guard not stringEq(Config.simCodeTarget(), "Cpp") equation
       e = DAEUtil.getStartAttr(dae_var_attr, tp);
+    then SOME(e);
+
+    // CPP RUNTIME
+    // Parameters with constant binding
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard Expression.isConst(e) and stringEq(Config.simCodeTarget(), "Cpp")
+    then SOME(e);
+
+    // CPP RUNTIME
+    // Parameters without constant binding. Investigate if it has start value
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr)) guard stringEq(Config.simCodeTarget(), "Cpp") equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))
@@ -15304,13 +15317,14 @@ algorithm
         File.open(file,fileName,File.Mode.Write);
 
         locations := getDirectoriesForDLLsFromLinkLibs(code.makefileParams.libs);
+        locations := locations + ";" + Settings.getInstallationDirectoryPath() + "/bin/";
         str := "@echo off\n"
-                + "set PATH=" + locations + ";%PATH%;\n"
-                + "set ERRORLEVEL=\n"
-                + "call \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
-                + "set RESULT=%ERRORLEVEL%\n"
+                + "SET PATH=" + locations + ";%PATH%;\n"
+                + "SET ERRORLEVEL=\n"
+                + "CALL \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
+                + "SET RESULT=%ERRORLEVEL%\n"
                 + "\n"
-                + "exit /b %RESULT%\n";
+                + "EXIT /b %RESULT%\n";
         File.write(file, str);
       then (fileName);
     else

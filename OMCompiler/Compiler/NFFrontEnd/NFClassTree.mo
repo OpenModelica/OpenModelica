@@ -38,6 +38,7 @@ encapsulated package NFClassTree
   import Import = NFImport;
   import NFBuiltin;
   import NFDuplicateTree;
+  import UnorderedMap;
 
 protected
   import Array;
@@ -54,11 +55,15 @@ protected
   import NFInstNode.InstNodeType;
   import Restriction = NFRestriction;
   import LookupTree = NFLookupTree;
+
 public
   constant ClassTree EMPTY = ClassTree.PARTIAL_TREE(LookupTree.EMPTY(),
       listArray({}), listArray({}), listArray({}), listArray({}), NFDuplicateTree.EMPTY());
   constant ClassTree EMPTY_FLAT = ClassTree.FLAT_TREE(LookupTree.EMPTY(),
       listArray({}), listArray({}), listArray({}), NFDuplicateTree.EMPTY());
+
+  type LookupEntry = LookupTree.Entry;
+  type LookupTable = UnorderedMap<String, LookupEntry>;
 
   uniontype ClassTree
     record PARTIAL_TREE

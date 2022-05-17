@@ -56,6 +56,7 @@ AC_SUBST(MAKE)
 AC_SUBST(HAVE_LAPACK)
 AC_SUBST(HAVE_LAPACK_DEPRECATED)
 AC_SUBST(LD_LAPACK)
+AC_SUBST(OMC_HAVE_IPOPT)
 AC_SUBST(WITH_SUITESPARSE)
 AC_SUBST(SUITESPARSE_TARGET)
 AC_SUBST(SUITESPARSE_LDFLAGS)
@@ -80,7 +81,6 @@ AC_SUBST(RPATH_QMAKE)
 AC_SUBST(MSL_EXTRA_ARGS)
 AC_SUBST(WITH_HWLOC)
 AC_SUBST(WITH_UUID)
-AC_SUBST(OS_TARGET)
 AC_SUBST(LIS_LDFLAGS)
 AC_SUBST(LAPACK_TARGET)
 AC_SUBST(CONFIG_WITH_OPENMP)
@@ -726,8 +726,10 @@ AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation with IPOP
 AS_IF([test "x$with_ipopt" = xyes],
 [
   IPOPT_TARGET="ipopt";
+  OMC_HAVE_IPOPT="#define OMC_HAVE_IPOPT"
 ],[
   IPOPT_TARGET=""
+  OMC_HAVE_IPOPT="/* #define OMC_HAVE_IPOPT */ /* Without Ipopt*/"
 ])
 
 m4_include([common/m4/corba.m4])
@@ -769,14 +771,13 @@ if test "$DARWIN" = "1"; then
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
-  OS_TARGET="osx"
   LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
   AR_SH="sh -x ar.sh"
   OMC_LIBS="$OMC_LIBS -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
   CMAKE_LDFLAGS_UNDEFINED_LOOKUP="-Wl,-undefined -Wl,dynamic_lookup"
   SUITESPARSE_SHARED=ON
-  CONFIG_OS=OSX
+  CONFIG_OS=darwin
 elif echo "$host" | grep -iq "mingw"; then
   EXE=".exe"
   # Yes, we build static libs on Windows, so the "shared" extension is .a
@@ -802,7 +803,6 @@ elif echo "$host" | grep -iq "mingw"; then
   # No RPATH in Windows :(
   RPATH=""
   RPATH_QMAKE=""
-  OS_TARGET="windows"
   AR_SH="$AR -ru"
   LDFLAGS_SOCKET=" -lwsock32"
   BOOTSTRAP_STATIC=""
@@ -841,7 +841,6 @@ else
   OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS $LIBLPSOLVE55 -lzmq $LIBUUID"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
-  OS_TARGET="linux"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
   SUITESPARSE_SHARED=ON

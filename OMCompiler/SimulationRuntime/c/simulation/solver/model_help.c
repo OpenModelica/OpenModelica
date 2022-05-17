@@ -57,6 +57,15 @@
   #include <omp.h>
 #endif
 
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = DEFAULT_FLAG_LSS_MAX_DENSITY;
 int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;
@@ -431,6 +440,61 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   messageClose(stream);
 }
 
+/**
+ * @brief Check if sparsity pattern can describe regular matrix.
+ *
+ * @param sparsePattern       Sparsity pattern.
+ * @param nlsSize             size of non-linear loop / size of square matrix.
+ * @param stream              Stream for logging.
+ * @return modelica_boolean   False if sparsity pattern can't describe regular matrix, true otherwise.
+ */
+modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize, int stream)
+{
+  int i;
+  char *colCheck;
+
+  if (sparsePattern == NULL || nlsSize <= 0)
+  {
+    warningStreamPrint(stream, 0, "No sparse structure available.");
+    return FALSE;
+  }
+
+  if (sparsePattern->numberOfNonZeros < nlsSize) {
+    warningStreamPrint(stream, 0, "Sparsity pattern of %dx%d has ony %d non-zero elements.", nlsSize,nlsSize, sparsePattern->numberOfNonZeros);
+    return FALSE;
+  }
+
+  /* check rows (or cols?) */
+  for(i=1; i < nlsSize; i++)
+  {
+    if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
+      warningStreamPrint(stream, 0, "Sparsity pattern row %d has no non-zero elements.", i);
+      return FALSE;
+    }
+  }
+
+  /* check cols (or rows?) */
+  colCheck = (char*) calloc(nlsSize, sizeof(char));
+
+  for(i=0; i < sparsePattern->leadindex[nlsSize]; i++)
+  {
+    colCheck[sparsePattern->index[i]] = TRUE;
+  }
+
+  for(i=0; i < nlsSize; i++)
+  {
+    if(!colCheck[i]) {
+      warningStreamPrint(stream, 0, "Sparsity pattern column %d has no non-zero elements.", i);
+      free(colCheck);
+      return FALSE;
+    }
+  }
+
+  free(colCheck);
+  return TRUE;
+}
+
+
 #ifdef USE_DEBUG_OUTPUT
 /*! \fn printRelationsDebug
  *
@@ -571,6 +635,44 @@ void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATI
 #endif
   }
 
+
+  TRACE_POP
+}
+
+/*
+* print information about ring buffer simulation data
+*/
+void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
+{
+  TRACE_PUSH
+
+  for (int i = 0; i < ringBufferLength(rb); i++)
+  {
+    messageClose(LOG_STDOUT);
+    SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(rb, i);
+    infoStreamPrint(LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
+
+    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Real Variable");
+    for (int j = 0; j < data->modelData->nVariablesReal; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
+    }
+    messageClose(LOG_STDOUT);
+
+    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Integer Variable");
+    for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
+    }
+    messageClose(LOG_STDOUT);
+
+    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Boolean Variable");
+    for(int j = 0; j < data->modelData->nVariablesBoolean; ++j)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
+    }
+    messageClose(LOG_STDOUT);
+  }
 
   TRACE_POP
 }

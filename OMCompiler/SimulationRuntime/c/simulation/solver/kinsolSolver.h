@@ -124,7 +124,7 @@ typedef struct NLS_KINSOL_DATA {
 
 } NLS_KINSOL_DATA;
 
-void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData, unsigned int numberOfNonZeros, analyticalJacobianColumn_func_ptr analyticalJacobianColumn);
+void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nlsData);
 NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_LS linearSolverMethod);
 void nlsKinsolFree(NLS_KINSOL_DATA *kinsolData);
 modelica_boolean nlsKinsolSolve(DATA *data, threadData_t *threadData,  NONLINEAR_SYSTEM_DATA *nlsData, int sysNumber);

@@ -38,30 +38,11 @@
 #include "omc_msvc.h"
 #include <stdarg.h>
 
-static OMC_INLINE modelica_boolean boolean_get(const boolean_array_t a, size_t i)
-{
-    return ((modelica_boolean *) a.data)[i];
-}
-
-static OMC_INLINE modelica_boolean boolean_get_2D(const boolean_array_t a, size_t i, size_t j)
-{
-    return boolean_get(a, getIndex_2D(a.dim_size,i,j));
-}
-
-static OMC_INLINE modelica_boolean boolean_get_3D(const boolean_array_t a, size_t i, size_t j, size_t k)
-{
-    return boolean_get(a, getIndex_3D(a.dim_size,i,j,k));
-}
-
-static OMC_INLINE modelica_boolean boolean_get_4D(const boolean_array_t a, size_t i, size_t j, size_t k, size_t l)
-{
-    return boolean_get(a, getIndex_4D(a.dim_size,i,j,k,l));
-}
-
-static OMC_INLINE modelica_boolean boolean_get_5D(const boolean_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m)
-{
-    return boolean_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
-}
+modelica_boolean boolean_get(const boolean_array_t a, size_t i);
+modelica_boolean boolean_get_2D(const boolean_array_t a, size_t i, size_t j);
+modelica_boolean boolean_get_3D(const boolean_array_t a, size_t i, size_t j, size_t k);
+modelica_boolean boolean_get_4D(const boolean_array_t a, size_t i, size_t j, size_t k, size_t l);
+modelica_boolean boolean_get_5D(const boolean_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m);
 
 /* Setting the fields of a boolean_array */
 extern void boolean_array_create(boolean_array_t *dest, modelica_boolean *data, int ndims, ...);

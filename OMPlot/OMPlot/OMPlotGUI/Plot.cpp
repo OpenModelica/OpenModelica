@@ -55,11 +55,11 @@ Plot::Plot(PlotWindow *pParent)
   // create an instance of grid
   mpPlotGrid = new PlotGrid(this);
   // create the scale engine
-  mpXLinearScaleEngine = new LinearScaleEngine;
-  setAxisScaleEngine(QwtPlot::xBottom, mpXLinearScaleEngine);
+  LinearScaleEngine *pXLinearScaleEngine = new LinearScaleEngine;
+  setAxisScaleEngine(QwtPlot::xBottom, pXLinearScaleEngine);
   setAxisAutoScale(QwtPlot::xBottom);
-  mpYLinearScaleEngine = new LinearScaleEngine;
-  setAxisScaleEngine(QwtPlot::yLeft, mpYLinearScaleEngine);
+  LinearScaleEngine *pYLinearScaleEngine = new LinearScaleEngine;
+  setAxisScaleEngine(QwtPlot::yLeft, pYLinearScaleEngine);
   setAxisAutoScale(QwtPlot::yLeft);
   // create the scale draw
   mpXScaleDraw = new ScaleDraw(QwtPlot::xBottom, this);
@@ -315,13 +315,14 @@ void Plot::replot()
     QString timeUnit = mpParentPlotWindow->getTimeUnit();
     if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOT
         || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTALL
-        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE
-        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
       if (mpXScaleDraw->getUnitPrefix().isEmpty()) {
         setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
       } else {
         setAxisTitle(QwtPlot::xBottom, QString("%1 (%2%3)").arg(mpParentPlotWindow->getXLabel(), mpXScaleDraw->getUnitPrefix(), timeUnit));
       }
+    } else if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+      setAxisTitle(QwtPlot::xBottom, mpParentPlotWindow->getXLabel());
     } else {
       setAxisTitle(QwtPlot::xBottom, "");
     }

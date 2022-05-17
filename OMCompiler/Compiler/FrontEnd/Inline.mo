@@ -809,6 +809,7 @@ algorithm
       Boolean generateEvents;
       Option<SCode.Comment> comment;
       DAE.Type ty;
+      DAE.Function func;
 
     // If we disable inlining by use of flags, we still inline builtin functions
     case DAE.CALL(attr=DAE.CALL_ATTR(inlineType=inlineType))
@@ -816,6 +817,17 @@ algorithm
         false = Flags.isSet(Flags.INLINE_FUNCTIONS);
         false = valueEq(DAE.BUILTIN_EARLY_INLINE(), inlineType);
       then (exp,assrtLst);
+
+    // remove empty calls entirely if it is not impure
+    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)))
+      equation
+        // is impure?
+        func = getFunction(p,fns);
+        false = DAEUtil.getFunctionImpureAttribute(func);
+        // no return value?
+        0 = Types.getDimensionProduct(ty);
+        newExp = Expression.makeArray({}, ty, true);
+      then (newExp, assrtLst);
 
     case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)))
       equation
@@ -1428,6 +1440,29 @@ algorithm
         fail();
   end matchcontinue;
 end getFunctionBody;
+
+
+public function getFunction
+"returns the function"
+  input Absyn.Path p;
+  input Functiontuple fns;
+  output DAE.Function func;
+algorithm
+  func := matchcontinue(p,fns)
+    local
+      DAE.FunctionTree ftree;
+    case(_,(SOME(ftree),_))
+      equation
+        SOME(func) = DAE.AvlTreePathFunction.get(ftree,p);
+      then func;
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("Inline.getFunction failed for function: " + AbsynUtil.pathString(p));
+      then
+        fail();
+  end matchcontinue;
+end getFunction;
 
 protected function getRhsExp
 "returns the right hand side of an assignment from a function"

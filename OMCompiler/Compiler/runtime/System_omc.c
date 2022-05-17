@@ -390,11 +390,15 @@ extern double System_getVariableValue(double _timeStamp, void* _timeValues, void
 
 extern void* System_getFileModificationTime(const char *fileName)
 {
-  struct stat attrib;   // create a file attribute structure
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  struct _stat attrib;
+#else /* unix */
+  struct stat attrib;
+#endif
   double elapsedTime;    // the time elapsed as double
   int result;            // the result of the function call
 
-  if (stat( fileName, &attrib ) != 0) {
+  if (omc_stat( fileName, &attrib ) != 0) {
     return mmc_mk_none();
   } else {
     return mmc_mk_some(mmc_mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time
@@ -429,7 +433,7 @@ void* System_moFiles(const char *directory)
 {
   int i,count;
   void *res;
-  struct dirent **files;
+  struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_mo, NULL);
   res = mmc_mk_nil();
@@ -438,6 +442,7 @@ void* System_moFiles(const char *directory)
     res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
     free(files[i]);
   }
+  free(files);
   return res;
 }
 #endif
@@ -470,7 +475,7 @@ void* System_mocFiles(const char *directory)
 {
   int i,count;
   void *res;
-  struct dirent **files;
+  struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_moc, NULL);
   res = mmc_mk_nil();
@@ -479,6 +484,7 @@ void* System_mocFiles(const char *directory)
     res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
     free(files[i]);
   }
+  free(files);
   return res;
 }
 #endif
@@ -580,7 +586,7 @@ void* System_subDirectories(const char *directory)
 {
   int i,count;
   void *res;
-  struct dirent **files;
+  struct dirent **files = NULL;
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_directories, NULL);
   res = mmc_mk_nil();
@@ -589,6 +595,7 @@ void* System_subDirectories(const char *directory)
     res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
     free(files[i]);
   }
+  free(files);
   return res;
 }
 #endif
@@ -597,19 +604,14 @@ extern void* System_regex(const char* str, const char* re, int maxn, int extende
 {
   void *res;
   int i = 0;
-#if !defined(_MSC_VER)
-  void *matches[maxn];
-#else
   void **matches = omc_alloc_interface.malloc(sizeof(void*)*maxn);
-#endif
-  *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)&matches);
+  *nmatch = OpenModelica_regexImpl(str,re,maxn,extended,sensitive,mmc_mk_scon,(void**)matches);
   res = mmc_mk_nil();
   for (i=maxn-1; i>=0; i--) {
     res = mmc_mk_cons(matches[i],res);
   }
-#if defined(_MSC_VER)
+
   GC_free(matches);
-#endif
   return res;
 }
 
@@ -769,7 +771,7 @@ extern const char* System_realpath(const char *path)
     MMC_THROW();
   }
 
-  WCHAR unicodeFullPath[bufLen];
+  WCHAR* unicodeFullPath = (WCHAR*)omc_alloc_interface.malloc_atomic(sizeof(WCHAR) * bufLen);
   if (!GetFullPathNameW(unicodePath, bufLen, unicodeFullPath, NULL)) {
     MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
     fprintf(stderr, "GetFullPathNameW failed. %lu\n", GetLastError());
@@ -782,6 +784,8 @@ extern const char* System_realpath(const char *path)
   SystemImpl__toWindowsSeperators(buffer, bufferLength);
   char *res = omc_alloc_interface.malloc_strdup(buffer);
   MULTIBYTE_OR_WIDECHAR_VAR_FREE(buffer);
+
+  GC_free(unicodeFullPath);
   return res;
 #else
   char buf[PATH_MAX];
@@ -880,19 +884,21 @@ static void* System_launchParallelTasksSerial(threadData_t *threadData, void *da
 
 extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads, void *dataLst, modelica_metatype (*fn)(threadData_t *,modelica_metatype))
 {
-  int len = listLength(dataLst), i;
+  int i;
+  size_t len = listLength(dataLst);
   void *result = mmc_mk_nil();
   thread_data data = {0};
-#if !defined(_MSC_VER)
-  void *commands[len];
-  void *status[len];
-  pthread_t th[numThreads];
   int isInteger = 0;
+  pthread_attr_t* attr_addr = NULL;
+
+  void **commands = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  void **status = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
+  pthread_t *th = (pthread_t*) omc_alloc_interface.malloc(sizeof(pthread_t)*numThreads);
 
 #if defined(__MINGW32__)
-  /* adrpo: set thread stack size on Windows to 4MB */
   pthread_attr_t attr;
-  if (pthread_attr_init(&attr))
+  attr_addr = &attr;
+  if (pthread_attr_init(attr_addr))
   {
     const char *tok[1] = {strerror(errno)};
     data.fail = 1;
@@ -900,38 +906,30 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
       ErrorType_scripting,
       ErrorLevel_internal,
       gettext("System.launchParallelTasks: failed to initialize the pthread attributes: %s"),
-      NULL,
-      0);
+      tok,
+      1);
     MMC_THROW_INTERNAL();
   }
-  /* try to set a stack size of 4MB */
-  if (pthread_attr_setstacksize(&attr, 4194304))
+
+  /* adrpo: set thread stack size on Windows to 4MB */
+  /* try to set a stack size of 4MB, if not then 2MB, if not then 1MB, if not then fail */
+  /* Rely on left to right Short Circuit Evaluation, i.e, shorts on the first true. */
+  if (pthread_attr_setstacksize(attr_addr, 4194304) ||
+      pthread_attr_setstacksize(attr_addr, 2097152) ||
+      pthread_attr_setstacksize(attr_addr, 1048576))
   {
-    /* did not work, try half 2MB */
-    if (pthread_attr_setstacksize(&attr, 2097152))
-    {
-      /* did not work, try half 1MB */
-      if (pthread_attr_setstacksize(&attr, 1048576))
-      {
         const char *tok[1] = {strerror(errno)};
         data.fail = 1;
         c_add_message(NULL,5999,
           ErrorType_scripting,
           ErrorLevel_internal,
           gettext("System.launchParallelTasks: failed to set the pthread stack size to 1MB: %s"),
-          NULL,
-          0);
+          tok,
+          1);
         MMC_THROW_INTERNAL();
-      }
-    }
   }
 #endif
 
-#else /* MSVC */
-  void **commands = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
-  void **status = (void**) omc_alloc_interface.malloc(sizeof(void*)*len);
-  pthread_t *th = (pthread_t*) omc_alloc_interface.malloc(sizeof(pthread_t)*numThreads);
-#endif
   if (len == 0) {
     return mmc_mk_nil();
   } else if (numThreads == 1 || len == 1) {
@@ -956,14 +954,9 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
     status[i] = 0; /* just in case */
   }
   numThreads = numThreads > len ? len : numThreads;
-  for (i=0; i<numThreads; i++) {
-    if (GC_pthread_create(&th[i],
-#if defined(__MINGW32__)
-    &attr,
-#else
-    NULL,
-#endif
-    System_launchParallelTasksThread,&data)) {
+  unsigned int live_threads = 0;
+  for (i=0; i < numThreads; i++) {
+    if (GC_pthread_create(&th[i], attr_addr, System_launchParallelTasksThread,&data)) {
       /* GC_pthread_create failed. We need to join already created threads though... */
       const char *tok[1] = {strerror(errno)};
       data.fail = 1;
@@ -971,21 +964,27 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
         ErrorType_scripting,
         ErrorLevel_internal,
         gettext("System.launchParallelTasks: Failed to create thread: %s"),
-        NULL,
-        0);
+        tok,
+        1);
       break;
     }
+    live_threads++;
   }
-  for (i=0; i<numThreads; i++) {
-    if (th[i] && GC_pthread_join(th[i], NULL)) {
+
+#if defined(__MINGW32__)
+  pthread_attr_destroy(attr_addr);
+#endif
+
+  for (i=0; i < live_threads; i++) {
+    if (GC_pthread_join(th[i], NULL)) {
       const char *tok[1] = {strerror(errno)};
       data.fail = 1;
       c_add_message(NULL,5999,
         ErrorType_scripting,
         ErrorLevel_internal,
         gettext("System.launchParallelTasks: Failed to join thread: %s"),
-        NULL,
-        0);
+        tok,
+        1);
     }
   }
   if (data.fail) {

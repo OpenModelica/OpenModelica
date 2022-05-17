@@ -507,13 +507,13 @@ private:
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
   LibraryTreeView *mpLibraryTreeView;
   bool multipleTopLevelClasses(const QStringList &classesList, const QString &fileName);
-  bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
-  bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem);
+  bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
+  bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
+  bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   void saveChildLibraryTreeItemsOneFile(LibraryTreeItem *pLibraryTreeItem);
   void saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
-  bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   bool saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveOMSLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
@@ -521,9 +521,12 @@ private:
   bool saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
+  bool resolveConflictWithLoadedLibraries(const QString &library, const QStringList classes);
 private slots:
   void handleAutoLoadedLibrary();
 public slots:
+  void loadSystemLibrary();
+  void loadSystemLibrary(const QString &library, QString version = QString("default"));
   void scrollToActiveLibraryTreeItem();
   void searchClasses();
 };

@@ -44,6 +44,7 @@ protected
   import SCodeUtil;
 
   //NF imports
+  import Attributes = NFAttributes;
   import NFBinding.Binding;
   import ComplexType = NFComplexType;
   import NFComponent.Component;
@@ -307,7 +308,7 @@ public
 
     function toString
       input VariableAttributes attr;
-      output String str;
+      output String str = "";
     algorithm
       str := match attr
         case VAR_ATTR_REAL()
@@ -329,7 +330,7 @@ public
         then attributesToString({("fixed", attr.fixed), ("start", attr.start), ("min", attr.min), ("max", attr.max)}, NONE(), NONE());
 
         case VAR_ATTR_RECORD()
-        then "Attribute string for RECORD not supported yet";
+        then List.toString(UnorderedMap.toList(attr.indexMap), function recordString(childrenAttr = attr.childrenAttr), "", "" ,", " , "");
 
         else getInstanceName() + " failed. Attribute string could not be created.";
       end match;
@@ -337,10 +338,22 @@ public
       str := if "" == str then "" else "(" + str + ")";
     end toString;
 
+    function recordString
+      input tuple<String, Integer> attr_tpl;
+      input array<VariableAttributes> childrenAttr;
+      output String str;
+    protected
+      String name;
+      Integer index;
+    algorithm
+      (name, index) := attr_tpl;
+      str := name + toString(childrenAttr[index]);
+    end recordString;
+
     function create
       input list<tuple<String, Binding>> attrs;
       input Type ty;
-      input Component.Attributes compAttrs;
+      input Attributes compAttrs;
       input list<Variable> children;
       input Option<SCode.Comment> comment;
       output VariableAttributes attributes;
@@ -780,6 +793,23 @@ public
       end match;
     end scalarize;
 
+    function elemType
+      input VariableAttributes attr;
+      output Type ty;
+    algorithm
+      ty := match attr
+        case VAR_ATTR_REAL()    then Type.REAL();
+        case VAR_ATTR_INT()     then Type.INTEGER();
+        case VAR_ATTR_BOOL()    then Type.BOOLEAN();
+        case VAR_ATTR_CLOCK()   then Type.CLOCK();
+        case VAR_ATTR_STRING()  then Type.STRING();
+        // should probably add enumeration but currently the needed info is not stored here
+        else algorithm
+          Error.assertion(false, getInstanceName() + " cannot create type from attributes: " + toString(attr), sourceInfo());
+        then fail();
+      end match;
+    end elemType;
+
   protected
     function attributesToString
       input list<tuple<String, Option<Expression>>> tpl_list;
@@ -1158,7 +1188,6 @@ public
             fail();
       end match;
     end lookupTearingSelectMember;
-
   end VariableAttributes;
 
   constant VariableAttributes EMPTY_VAR_ATTR_REAL         = VAR_ATTR_REAL(NONE(),NONE(),NONE(), NONE(), NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());

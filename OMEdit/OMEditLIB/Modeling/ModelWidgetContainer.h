@@ -49,6 +49,7 @@
 #include "LibraryTreeWidget.h"
 #include "OMSimulator.h"
 
+#include <QOpenGLContext>
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QStatusBar>

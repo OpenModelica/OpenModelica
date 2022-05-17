@@ -228,7 +228,7 @@ protected
           varData.nonTrivialAlias := VariablePointers.addList(non_trivial_alias, varData.nonTrivialAlias);
 
           // add non trivial alias to removed
-          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex) for var in non_trivial_alias);
+          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex, false) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
           //eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
 
@@ -452,6 +452,11 @@ protected
         case Expression.CREF()
           guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
         then tpl;
+
+        // fail for multidimensional crefs for now
+        case Expression.CREF()
+          guard(BVariable.size(BVariable.getVarPointer(exp.cref)) > 1)
+        then FAILED_CREF_TPL;
 
         // variable found
         // 1. not time and not param or const

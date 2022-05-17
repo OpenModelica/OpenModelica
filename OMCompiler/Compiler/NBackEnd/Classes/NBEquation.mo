@@ -42,6 +42,7 @@ public
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
+  import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;
@@ -273,10 +274,8 @@ public
             rest2 := intersectRest(iter2.name, start2, step2, stop2, start_max-step2, stop_min+step2);
         then (intersection, rest1, rest2);
 
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because only single iterators with equal step can be intersected:\n"
-            + Iterator.toString(iter1) + "\n" + Iterator.toString(iter2) + "\n"});
-        then fail();
+        // cannot intersect
+        else (EMPTY(), (iter1, EMPTY()), (EMPTY(), iter2));
       end match;
     end intersect;
 
@@ -1128,6 +1127,7 @@ public
 
         case IF_EQUATION() algorithm
           eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+          IfEquationBody.createNames(eqn.body, idx, context);
         then eqn;
 
         case FOR_EQUATION() algorithm
@@ -1358,6 +1358,16 @@ public
       end match;
     end isWhenEquation;
 
+    function isIfEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.IF_EQUATION() then true;
+        else false;
+      end match;
+    end isIfEquation;
+
     function isForEquation
       input Pointer<Equation> eqn;
       output Boolean b;
@@ -1367,6 +1377,36 @@ public
         else false;
       end match;
     end isForEquation;
+
+    function isArrayEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.ARRAY_EQUATION() then true;
+        else false;
+      end match;
+    end isArrayEquation;
+
+    function isRecordEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.RECORD_EQUATION() then true;
+        else false;
+      end match;
+    end isRecordEquation;
+
+    function isAlgorithm
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.ALGORITHM() then true;
+        else false;
+      end match;
+    end isAlgorithm;
 
     function isParameterEquation
       input Equation eqn;
@@ -1408,10 +1448,12 @@ public
     function generateBindingEquation
       input Pointer<Variable> var_ptr;
       input Pointer<Integer> idx;
+      input Boolean initial_;
       output Pointer<Equation> eqn;
     protected
       Variable var;
       Expression lhs, rhs;
+      EquationAttributes eqnAttr;
     algorithm
       var := Pointer.access(var_ptr);
       lhs := Expression.fromCref(var.name);
@@ -1424,7 +1466,16 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
         then fail();
       end match;
-      eqn := Equation.fromLHSandRHS(lhs, rhs, idx, "BND", EQ_ATTR_DEFAULT_INITIAL);
+
+      if initial_ then
+        eqnAttr := EQ_ATTR_DEFAULT_INITIAL;
+      elseif BVariable.isContinuous(var_ptr) then
+        eqnAttr := EQ_ATTR_DEFAULT_DYNAMIC;
+      else
+        eqnAttr := EQ_ATTR_DEFAULT_DISCRETE;
+      end if;
+
+      eqn := Equation.fromLHSandRHS(lhs, rhs, idx, "BND", eqnAttr);
     end generateBindingEquation;
 
     function mergeIterators
@@ -1483,12 +1534,18 @@ public
 
     function entwine
       input list<Equation> eqn_lst        "has to be for-loops with combinable ranges";
+      input Integer nesting_level = 0;
       output list<Equation> entwined = {} "returns a single for-loop on top level if it is possible";
     protected
       Equation eqn1, eqn2, next;
       list<Equation> rest, tmp;
       Iterator intersection, rest1_left, rest1_right, rest2_left, rest2_right;
+      String shift = StringUtil.repeat("  ", nesting_level);
     algorithm
+      if Flags.isSet(Flags.DUMP_SLICE) then
+        print(shift + "[" + intString(nesting_level) + "] ### Entwining following equations:\n"
+          + List.toString(eqn_lst, function Equation.toString(str = shift + "  "), "", "", "\n", "\n\n"));
+      end if;
       eqn1 :: rest := eqn_lst;
       while not listEmpty(rest) loop
         eqn2 :: rest := rest;
@@ -1496,7 +1553,7 @@ public
 
           // entwine body if possible - equal iterator -> no intersecting
           case (FOR_EQUATION(), FOR_EQUATION()) guard(Iterator.isEqual(eqn1.iter, eqn2.iter)) algorithm
-            eqn1.body := entwine(listAppend(eqn1.body, eqn2.body));
+            eqn1.body := entwine(listAppend(eqn1.body, eqn2.body), nesting_level + 1);
           then eqn1;
 
           // if the iterators are not equal, they have to be intersected and the respective rests have to be handled
@@ -1513,7 +1570,7 @@ public
               tmp := FOR_EQUATION(
                 ty      = eqn1.ty,
                 iter    = intersection,
-                body    = entwine(listAppend(eqn1.body, eqn2.body)),
+                body    = entwine(listAppend(eqn1.body, eqn2.body), nesting_level + 1),
                 source  = eqn1.source,
                 attr    = eqn1.attr
               ) :: tmp;
@@ -1536,6 +1593,10 @@ public
         end match;
       end while;
       entwined := listReverse(eqn1 :: entwined);
+      if Flags.isSet(Flags.DUMP_SLICE) then
+        print(shift + "[" + intString(nesting_level) + "] +++ Result of entwining:\n"
+          + List.toString(entwined, function Equation.toString(str = shift  + "  "), "", "", "\n", "\n\n"));
+      end if;
     end entwine;
 
     function slice
@@ -1571,6 +1632,24 @@ public
 
         // empty index list indicates no slicing and no rearranging
         case _ guard(listEmpty(indices)) then (Pointer.create(eqn), SlicingStatus.UNCHANGED, NBSolve.Status.EXPLICIT);
+
+        case RECORD_EQUATION() algorithm
+          slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
+          if Util.isSome(cref_opt) then
+            (eqn, funcTree, solve_status, _) := Solve.solveEquation(Pointer.access(eqn_ptr), Util.getOption(cref_opt), funcTree);
+          else
+            solve_status := NBSolve.Status.EXPLICIT;
+          end if;
+        then (Pointer.create(eqn), slicing_status, solve_status);
+
+        case ARRAY_EQUATION() algorithm
+          slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
+          if Util.isSome(cref_opt) then
+            (eqn, funcTree, solve_status, _) := Solve.solveEquation(Pointer.access(eqn_ptr), Util.getOption(cref_opt), funcTree);
+          else
+            solve_status := NBSolve.Status.EXPLICIT;
+          end if;
+        then (Pointer.create(eqn), slicing_status, solve_status);
 
         case FOR_EQUATION() algorithm
           // get the sizes of the 'return value' of the equation
@@ -1706,6 +1785,12 @@ public
         case SCALAR_EQUATION()
         then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
 
+        case ARRAY_EQUATION()
+        then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+
+        case RECORD_EQUATION()
+        then Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, Type.arrayElementType(eqn.ty), eqn.source);
+
         case SIMPLE_EQUATION()
         then Statement.ASSIGNMENT(Expression.fromCref(eqn.lhs), Expression.fromCref(eqn.rhs), Type.arrayElementType(eqn.ty), eqn.source);
 
@@ -1769,6 +1854,7 @@ public
       input MapFuncExpWrapper mapFunc;
     protected
       Expression condition;
+      IfEquationBody else_if;
     algorithm
       condition := mapFunc(ifBody.condition, funcExp);
       if not referenceEq(condition, ifBody.condition) then
@@ -1777,7 +1863,30 @@ public
 
       // referenceEq for lists?
       ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc)));
+
+      if Util.isSome(ifBody.else_if) then
+        else_if := map(Util.getOption(ifBody.else_if), funcExp, funcCrefOpt, mapFunc);
+      end if;
     end map;
+
+    function size
+      "only considers first branch"
+      input IfEquationBody body;
+      output Integer size = sum(Equation.size(eqn) for eqn in body.then_eqns);
+    end size;
+
+    function createNames
+      input IfEquationBody body;
+      input Pointer<Integer> idx;
+      input String context;
+    algorithm
+      for eqn in body.then_eqns loop
+        Equation.createName(eqn, idx, context);
+      end for;
+      if Util.isSome(body.else_if) then
+        createNames(Util.getOption(body.else_if), idx, context);
+      end if;
+    end createNames;
 
     function toStatement
       input IfEquationBody body;

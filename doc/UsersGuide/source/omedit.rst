@@ -277,6 +277,10 @@ File Menu
   -  *Figaro* - Exports the current model to Figaro.
   -  *To OMNotebook* - Exports the current model to a OMNotebook file.
 -  *System Libraries* - Contains a list of system libraries.
+-  *Manage Libraries*
+  -  *Install Library* - Opens a dialog to select and install a new library. see :ref:`omedit-install-library-label`
+  -  *Upgrade Installed Libraries* - Opens a dialog to upgrade the installed libraries.
+  -  *Update Library Index* - Updates the library index.
 -  *Recent Files* - Contains a list of recent files.
 -  *Clear Recent Files* - Clears the list of recent files.
 -  *Print* - Prints the current model.
@@ -307,6 +311,18 @@ View Menu
 -  *Reset Zoom* - Resets the zoom of the current model.
 -  *Zoom In* - Zoom in the current model.
 -  *Zoom Out* - Zoom out the current model.
+-  *Fit to Diagram* - Fit the current model diagram in the view.
+
+SSP Menu
+--------
+
+-  *Add System* - Adds the system to a model.
+-  *Add/Edit Icon* - Add/Edit the system/submodel icon.
+-  *Delete Icon* - Deletes the system/submodel icon.
+-  *Add Connector* - Adds a connector to a system/submodel.
+-  *Add Bus* - Adds a bus to a system/submodel.
+-  *Add TLM Bus* - Adds a TLM bus to a system/submodel.
+-  *Add SubModel* - Adds a submodel to a system.
 
 Simulation Menu
 ---------------
@@ -324,27 +340,21 @@ Simulation Menu
 -  *Archived Simulations* - Shows the list of simulations already finished or running.
    Double clicking on any of them opens the simulation output window.
 
-Debug Menu
-----------
+Data Reconciliation
+-------------------
 
--  *Debug Configurations* - Opens the debug configurations window.
--  *Attach to Running Process* - Attaches the algorithmic debugger to a running process.
-
-SSP Menu
---------
-
--  *Add System* - Adds the system to a model.
--  *Add/Edit Icon* - Add/Edit the system/submodel icon.
--  *Delete Icon* - Deletes the system/submodel icon.
--  *Add Connector* - Adds a connector to a system/submodel.
--  *Add Bus* - Adds a bus to a system/submodel.
--  *Add TLM Bus* - Adds a TLM bus to a system/submodel.
--  *Add SubModel* - Adds a submodel to a system.
+-  *Calculate Data Reconciliation* - Opens the dialog to run the data reconciliation algorithm.
 
 Sensitivity Optimization Menu
 -----------------------------
 
 - *Run Sensitivity Analysis and Optimization* - Runs the sensitivity analysis and optimization.
+
+Debug Menu
+----------
+
+-  *Debug Configurations* - Opens the debug configurations window.
+-  *Attach to Running Process* - Attaches the algorithmic debugger to a running process.
 
 Tools Menu
 ----------
@@ -353,6 +363,7 @@ Tools Menu
    interface window.
 -  *OpenModelica Command Prompt* - Opens the OpenModelica Command Prompt (Only
    available on Windows).
+-  *Open Temporary Directory* - Opens the current temporary directory.
 -  *Open Working Directory* - Opens the current working directory.
 -  *Open Terminal* - Runs the terminal command set in :ref:`omedit-options-general`.
 -  *Options* - Opens the options window.
@@ -360,12 +371,12 @@ Tools Menu
 Help Menu
 ---------
 
--  *OpenModelica Users Guide* - Opens the OpenModelica Users Guide.
--  *OpenModelica Users Guide (PDF)* - Opens the OpenModelica Users Guide (PDF).
+-  *OpenModelica User's Guide* - Opens the OpenModelica User's Guide.
+-  *OpenModelica User's Guide (PDF)* - Opens the OpenModelica User's Guide (PDF).
 -  *OpenModelica System Documentation* - Opens the OpenModelica System Documentation.
 -  *OpenModelica Scripting Documentation* - Opens the OpenModelica Scripting Documentation.
 -  *Modelica Documentation* - Opens the Modelica Documentation.
--  *OMSimulator Users Guide* - Opens the OMSimulator Users Guide.
+-  *OMSimulator User's Guide* - Opens the OMSimulator User's Guide.
 -  *OpenModelica TLM Simulator Documentation* - Opens the OpenModelica TLM Simulator Documentation.
 -  *About OMEdit* - Shows the information about OpenModelica Connection Editor.
 
@@ -637,9 +648,9 @@ Output
 
 -  *Result File (Optional)* - the simulation result file name.
 
--  *Variable Filter (Optional)*
+-  *Variable Filter (Optional)* - only output variables with names fully matching the regular expression
 
--  *Protected Variables –* adds the protected variables in result file.
+-  *Protected Variables * - adds the protected variables in result file.
 
 -  *Equidistant Time Grid –* output the internal steps given by dassl instead of interpolating results into an equidistant time grid as given by stepSize or numberOfIntervals
 
@@ -647,7 +658,21 @@ Output
 
 -  *Show Generated File* – displays the generated files in a dialog box.
 
-.. _omedit-2d-plotting :
+The Variable Filter takes a regular expression input and only saves in the simulation results file those variables whose names fully match it.
+Here are some simple examples:
+
+- ``.*`` matches any variable (default choice)
+- ``xy.*`` matches variables starting with ``xy``
+- ``.*yz`` matches variables ending with ``yz``
+- ``abc\.def.*`` matches variables starting with ``abc.def``. Note that the ``.`` character is a regex metacharacter, so it must be escaped by a ``\``
+- ``.*body\.a_0\[1\]`` matches variables ending with ``body.a_0[1]``. Note that ``.``, ``[``, and ``]`` must be escaped
+- ``x\[.*\]`` matches all elements of array ``x``
+- ``x\[[2-4]\]`` matches elements 2, 3, and 4 of array ``x``
+- ``abc.*|def.*`` matches variables starting with ``abc`` or ``def``
+- ``.*der\(.*\)`` matches all derivatives in the model. Note that ``(`` and ``)`` must be escaped
+
+Please note that all the model variables will still be shown in the Variables Browser tree; however, only those for which results were actually saved
+will have a checkbox to plot them.
 
 Data Reconciliation
 ~~~~~~~~~~~~~~~~~~~
@@ -659,6 +684,8 @@ Data Reconciliation
 -  *Correlation Matrix Input File* – correlation matrix file.
 
 -  *Epsilon*
+
+.. _omedit-2d-plotting :
 
 2D Plotting
 -----------
@@ -1726,7 +1753,7 @@ Install Library
 ---------------
 
 A new library can be installed with the help of the :ref:`package manager <packagemanagement>`.
-Click `File->Install Library` to open the install library dialog. OMEdit lists the libraries
+Click `File->Manage Libraries->Install Library` to open the install library dialog. OMEdit lists the libraries
 that are available for installation through the package manager.
 
 .. figure :: media/omedit_install_library.png

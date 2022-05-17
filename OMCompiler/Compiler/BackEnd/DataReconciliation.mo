@@ -209,7 +209,7 @@ algorithm
     dumpSetSVarsSolvedInfo(tempSetS, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "Set-S Solved-Variables Information");
   end if;
 
-  //print("\nUnmapped set of equations after extraction algorithm \n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(ebltEqsLst)+"\n" +"SET_S: "+ dumplistInteger(tempSetS)+ "\n\n" );
+  //print("\nUnmapped set of equations after extraction algorithm\n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(ebltEqsLst)+"\n" +"SET_S: "+ dumplistInteger(tempSetS)+ "\n\n" );
   extractedVarsfromSetS := getVariablesAfterExtraction({}, tempSetS, sBltAdjacencyMatrix);
   extractedVarsfromSetS := List.setDifferenceOnTrue(extractedVarsfromSetS, knowns, intEq);
 
@@ -220,7 +220,7 @@ algorithm
   setC_Eq := getEquationsFromSBLTAndEBLT(setC, currentSystem.orderedEqs, {});
   setS_Eq := getEquationsFromSBLTAndEBLT(setS, currentSystem.orderedEqs, {});
 
-  print("\nFinal set of equations after extraction algorithm \n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(setC)+"\n" +"SET_S: "+ dumplistInteger(setS)+ "\n\n" );
+  print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(setC)+"\n" +"SET_S: "+ dumplistInteger(setS)+ "\n\n" );
 
   BackendDump.dumpEquationArray(BackendEquation.listEquation(setC_Eq), "SET_C");
   BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S");
@@ -485,7 +485,7 @@ algorithm
   setS_Eq := getEquationsFromSBLTAndEBLT(setS, currentSystem.orderedEqs, {});
   //setS_Eq := listAppend(failedboundaryConditionEquations, setS_Eq);
 
-  print("\nFinal set of equations after extraction algorithm \n" + UNDERLINE + "\n");
+  print("\nFinal set of equations after extraction algorithm\n" + UNDERLINE + "\n");
   BackendDump.dumpEquationArray(BackendEquation.listEquation(failedboundaryConditionEquations), "SET_B");
   BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S'");
 
@@ -1042,7 +1042,7 @@ algorithm
   eqCount := BackendEquation.equationArraySize(currentSystem.orderedEqs);
 
   if debug then
-    print("\nOverDetermined-Systems-Information : \n====================================\n");
+    print("\nOverDetermined-Systems-Information :\n====================================\n");
     print("\nAdjacency Matrix     :" + anyString(adjacencyMatrix));
     print("\nNumber of Vars       :" + intString(varCount));
     print("\nNumber of Equations  :" + intString(eqCount));
@@ -1063,7 +1063,7 @@ algorithm
   unMatchedEqsLstCorrectIndex := List.unique(List.map1r(unMatchedEqsLst, listGet, arrayList(mapIncRowEqn)));
 
   if debug then
-    print("\nFinding unmatched subset of equations : \n=========================================\n");
+    print("\nFinding unmatched subset of equations :\n=========================================\n");
     print("\nSolvedEqsAndVarsInfo                   :" + anyString(solvedEqsAndVarsInfo));
     print("\nList of Equations                      :" + intString(BackendEquation.getNumberOfEquations(currentSystem.orderedEqs)));
     print("\nMatchedEquationsLst                    :" + anyString(List.sort(matchedEqsLst, intGt)));
@@ -1081,7 +1081,7 @@ algorithm
   BackendDump.dumpEquationList(List.map1r(unMatchedEqsLstCorrectIndex, BackendEquation.get, currentSystem.orderedEqs), "E-BLT-Equations " + dumplistInteger(unMatchedEqsLst));
 
   if debug then
-    print("\nE-BLT Information \n================");
+    print("\nE-BLT Information\n================");
     print("\nE-BLT-Blocks   :" + anyString(e_BLTBlocks));
     print("\nE-BLT-Blocks-with ranks   :" + anyString(e_BLTBlockRanks));
     print("\nE-BLT-Adjacency-Matrix    :" + anyString(eBltAdjacencyMatrix));
@@ -1130,7 +1130,7 @@ algorithm
 
 
   if debug then
-    print("\nCombined S-BLT and E-BLT Information \n================================");
+    print("\nCombined S-BLT and E-BLT Information\n================================");
     print("\nCombined S-BLT-Blocks and E-BLT-Blocks                :" + anyString(s_BLTBlocks));
     print("\nCombined S-BLT-Blocks and E-BLT-Blocks with Ranks     :" + anyString(s_BLTBlockRanks));
     print("\nCombined Adjacency Matrix with S-BLT and E-BLT        :" + anyString(sBltAdjacencyMatrix));
@@ -1207,7 +1207,7 @@ algorithm
   // extract Set-C and Set-S equations using setOperation formula
   (tempSetC, tempSetS) := ExtractEquationsUsingSetOperations(predecessorBlockTargetInfo, e_BLTBlockRanks, approximatedEquations, debug);
 
-  print("\nFINAL SET OF EQUATIONS After Reconciliation \n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(tempSetC)+"\n" +"SET_S: "+ dumplistInteger(tempSetS)+ "\n\n" );
+  print("\nFINAL SET OF EQUATIONS After Reconciliation\n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(tempSetC)+"\n" +"SET_S: "+ dumplistInteger(tempSetS)+ "\n\n" );
   if debug then
     dumpSetSVarsSolvedInfo(tempSetS, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "Set-S Solved-Variables Information");
   end if;
@@ -1244,7 +1244,7 @@ algorithm
 
   if debug then
     print("\n****End of Minimal extraction Algorithm****\n");
-    print("\nSet-S after running minimal extraction algorithm \n" + UNDERLINE + "\n" +"SET_S: "+dumplistInteger(tempSetS)+ "\n\n");
+    print("\nSet-S after running minimal extraction algorithm\n" + UNDERLINE + "\n" +"SET_S: "+dumplistInteger(tempSetS)+ "\n\n");
   end if;
 
   extractedVarsfromSetS := getVariablesAfterExtraction({}, tempSetS, sBltAdjacencyMatrix);
@@ -1253,7 +1253,7 @@ algorithm
   setC := List.unique(getAbsoluteIndexHelper(tempSetC, mapIncRowEqn));
   setS := List.unique(getAbsoluteIndexHelper(tempSetS, mapIncRowEqn));
 
-  //print("\nFINAL SET OF EQUATIONS After Mapping \n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(setC)+"\n" +"SET_S: "+ dumplistInteger(setS)+ "\n\n" );
+  //print("\nFINAL SET OF EQUATIONS After Mapping\n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(setC)+"\n" +"SET_S: "+ dumplistInteger(setS)+ "\n\n" );
 
   setC_Eq := getEquationsFromSBLTAndEBLT(setC, currentSystem.orderedEqs, e_BLT_EquationsWithIndex);
   setS_Eq := getEquationsFromSBLTAndEBLT(setS, currentSystem.orderedEqs, e_BLT_EquationsWithIndex);
@@ -2352,7 +2352,7 @@ protected
 algorithm
 
   if debug then
-    print ("\nDetailed BlockTarget Dependency tree: \n========================================\n");
+    print ("\nDetailed BlockTarget Dependency tree:\n========================================\n");
   end if;
 
   for i in inlist1 loop
@@ -2788,7 +2788,7 @@ algorithm
   varsToReconcile := intString(listLength(knowns));
 
   //Condition-1
-  condition1 := "Condition-1 \"SET_C and SET_S must not have no equations in common\" ";
+  condition1 := "Condition-1 \"SET_C and SET_S must not have no equations in common\"";
   print(condition1 + "\n" + UNDERLINE + "\n");
   matchedeq := List.intersectionOnTrue(mappedSetC, mappedSetS, intEq);
 
@@ -2807,12 +2807,12 @@ algorithm
   (matchedknownssets, matchedunknownssets) := getVariableOccurence(sets, mExt, knowns);
 
   // Condition -2
-  condition2 := "Condition-2 \"All variables of interest must be involved in SET_C or SET_S\" ";
+  condition2 := "Condition-2 \"All variables of interest must be involved in SET_C or SET_S\"";
   print(condition2 +  "\n" + UNDERLINE + "\n");
   (tmplist1, tmplist2, tmplist3) := List.intersection1OnTrue(matchedknownssetc, knowns, intEq);
 
   if listEmpty(tmplist3) then
-    print("-Passed \n");
+    print("-Passed\n");
     BackendDump.dumpVarList(List.map1r(tmplist1, BackendVariable.getVarAt, allVars), "-SET_C has all known variables:" + dumplistInteger(tmplist1));
    // check in sets
   elseif not listEmpty(tmplist3) then
@@ -2829,18 +2829,18 @@ algorithm
       //fail();
     end if;
     if (rule2) then
-      print("-Passed \n");
+      print("-Passed\n");
     end if;
     BackendDump.dumpVarList(List.map1r(tmplist1, BackendVariable.getVarAt, allVars), "-SET_C has known variables:" + dumplistInteger(tmplist1));
     BackendDump.dumpVarList(List.map1r(tmplist1sets, BackendVariable.getVarAt, allVars), "-SET_S has known variables:" + dumplistInteger(tmplist1sets));
   end if;
 
   //Condition-3
-  condition3 := "Condition-3 \"SET_C equations must be strictly less than Variable of Interest\" ";
+  condition3 := "Condition-3 \"SET_C equations must be strictly less than Variable of Interest\"";
   print(condition3 + "\n" + UNDERLINE + "\n");
 
   if (listLength(setc) < listLength(knowns) and not listEmpty(setc)) then
-    print("-Passed"+ "\n" + "-SET_C contains:" + intString(listLength(setc)) + " equations < " + intString(listLength(knowns))+" known variables \n\n");
+    print("-Passed"+ "\n" + "-SET_C contains:" + intString(listLength(setc)) + " equations < " + intString(listLength(knowns))+" known variables\n\n");
   else
     condition3 := "Set-C has " + intString(listLength(setc)) + " equations and " + intString(listLength(knowns)) + " variables to be reconciled";
     resstr := "-Failed" + "\n" + "-" + condition3 + "\n\n";
@@ -2856,12 +2856,12 @@ algorithm
   end if;
 
   //Condition-4
-  condition4 := "Condition-4 \"SET_S should contain all intermediate variables involved in SET_C\" ";
+  condition4 := "Condition-4 \"SET_S should contain all intermediate variables involved in SET_C\"";
   print(condition4 + "\n" + UNDERLINE + "\n");
   (tmplistvar1, tmplistvar2, tmplistvar3) := List.intersection1OnTrue(matchedunknownssetc, matchedunknownssets, intEq);
 
   if listEmpty(matchedunknownssetc) then
-    print("-Passed"+"\n"+"-SET_C contains No Intermediate Variables \n\n");
+    print("-Passed"+"\n"+"-SET_C contains No Intermediate Variables\n\n");
     return;
   else
     BackendDump.dumpVarList(List.map1r(matchedunknownssetc, BackendVariable.getVarAt, allVars), "-SET_C has intermediate variables:" + dumplistInteger(matchedunknownssetc));
@@ -2878,11 +2878,11 @@ algorithm
   end if;
 
   //Condition-5
-  condition5 := "Condition-5 \"SET_S should be square\" ";
+  condition5 := "Condition-5 \"SET_S should be square\"";
   print(condition5 + "\n" + UNDERLINE + "\n");
 
   if(listEmpty(outsetS_eq)) then
-    print("-Passed"+"\n"+"-SET_S contains 0 intermediate variables and 0 equations \n\n");
+    print("-Passed"+"\n"+"-SET_S contains 0 intermediate variables and 0 equations\n\n");
     return;
   else
     //BackendEquation.equationArraySize(inEqns)
@@ -3128,7 +3128,7 @@ algorithm
       equation
         s1 = ExpressionDump.printExp2Str(iter, "", NONE(), NONE()) + " in " + ExpressionDump.printExp2Str(start, "", NONE(), NONE()) + " : " + ExpressionDump.printExp2Str(stop, "", NONE(), NONE());
         s2 = dumpEquationString(eqn);
-        res = stringAppendList({"for ", s1, " loop \n    ", s2, "; end for; "});
+        res = stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
       then
         res;
   end match;

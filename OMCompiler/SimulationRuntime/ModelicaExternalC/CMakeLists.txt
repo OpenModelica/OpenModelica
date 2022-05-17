@@ -20,11 +20,18 @@ set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
                                  C-Sources/ModelicaRandom.c
                                  C-Sources/ModelicaStrings.c)
 
+if(MSVC)
+  set(libModelicaExternalC_SOURCES ${libModelicaExternalC_SOURCES} C-Sources/win32_dirent.c)
+endif()
+
 # Static version
 add_library(ModelicaExternalC STATIC ${libModelicaExternalC_SOURCES})
 add_library(omc::simrt::Modelica::ExternalC ALIAS ModelicaExternalC)
 
-target_link_libraries(ModelicaExternalC PUBLIC m)
+if(UNIX)
+  target_link_libraries(ModelicaExternalC PUBLIC m)
+endif()
+
 target_link_libraries(ModelicaExternalC PUBLIC omc::simrt::runtime)
 
 # Shared version.
@@ -33,10 +40,16 @@ add_library(omc::simrt::Modelica::ExternalC::shared ALIAS ModelicaExternalC_shar
 set_target_properties(ModelicaExternalC_shared
                       PROPERTIES OUTPUT_NAME ModelicaExternalC CLEAN_DIRECT_OUTPUT 1)
 
-target_link_libraries(ModelicaExternalC_shared PUBLIC m)
+if(UNIX)
+  target_link_libraries(ModelicaExternalC_shared PUBLIC m)
+endif()
+
 target_link_libraries(ModelicaExternalC_shared PUBLIC omc::simrt::runtime)
-if(WIN32)
+
+if(MINGW)
   target_link_options(ModelicaExternalC_shared PRIVATE -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(ModelicaExternalC_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
@@ -60,8 +73,11 @@ set_target_properties(ModelicaMatIO_shared
 target_compile_definitions(ModelicaMatIO_shared PUBLIC HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO_shared PUBLIC omc::3rd::zlib)
 target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
-if(WIN32)
+
+if(MINGW)
   target_link_options(ModelicaMatIO_shared PRIVATE -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(ModelicaMatIO_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
@@ -80,8 +96,11 @@ set_target_properties(ModelicaIO_shared
                       PROPERTIES OUTPUT_NAME ModelicaIO CLEAN_DIRECT_OUTPUT 1)
 
 target_link_libraries(ModelicaIO_shared PUBLIC ModelicaMatIO_shared)
-if(WIN32)
+
+if(MINGW)
   target_link_options(ModelicaIO_shared PRIVATE -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(ModelicaIO_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 
@@ -94,10 +113,12 @@ add_library(ModelicaStandardTables STATIC ${ModelicaStandardTables_SOURCES})
 add_library(omc::simrt::Modelica::StandardTables ALIAS ModelicaStandardTables)
 
 # This seems to be needed. Otherwise we get undefined references to function 'usertab'
-target_compile_definitions(ModelicaStandardTables PRIVATE -DDUMMY_FUNCTION_USERTAB)
+target_compile_definitions(ModelicaStandardTables PRIVATE DUMMY_FUNCTION_USERTAB)
 
 target_link_libraries(ModelicaStandardTables PUBLIC ModelicaIO)
-target_link_libraries(ModelicaStandardTables PUBLIC m)
+if(UNIX)
+  target_link_libraries(ModelicaStandardTables PUBLIC m)
+endif()
 
 # Shared version
 add_library(ModelicaStandardTables_shared SHARED ${ModelicaStandardTables_SOURCES})
@@ -106,12 +127,18 @@ set_target_properties(ModelicaStandardTables_shared
                       PROPERTIES OUTPUT_NAME ModelicaStandardTables CLEAN_DIRECT_OUTPUT 1)
 
 # This seems to be needed. Otherwise we get undefined references to function 'usertab'
-target_compile_definitions(ModelicaStandardTables_shared PRIVATE -DDUMMY_FUNCTION_USERTAB)
+target_compile_definitions(ModelicaStandardTables_shared PRIVATE DUMMY_FUNCTION_USERTAB)
 
 target_link_libraries(ModelicaStandardTables_shared PUBLIC ModelicaIO_shared)
-target_link_libraries(ModelicaStandardTables_shared PUBLIC m)
-if(WIN32)
+
+if(UNIX)
+  target_link_libraries(ModelicaStandardTables_shared PUBLIC m)
+endif()
+
+if(MINGW)
   target_link_options(ModelicaStandardTables_shared PRIVATE -Wl,--export-all-symbols)
+elseif(MSVC)
+  set_target_properties(ModelicaStandardTables_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
 

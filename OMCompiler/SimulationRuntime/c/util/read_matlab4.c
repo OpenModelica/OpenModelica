@@ -226,6 +226,8 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   int i;
   char binTrans = 1;
   memset(reader, 0, sizeof(ModelicaMatReader));
+  reader->startTime = NaN;
+  reader->stopTime = NaN;
   reader->file = omc_fopen(filename, "rb");
   if(!reader->file) return strerror(errno);
   reader->fileName = strdup(filename);

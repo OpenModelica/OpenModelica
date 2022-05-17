@@ -50,6 +50,7 @@
 #include "../simulation_info_json.h"
 #include "../simulation_runtime.h"
 #include "model_help.h"
+#include "../../util/jacobian_util.h"
 
 /* for try and catch simulationJumpBuffer */
 #include "../../meta/meta_modelica.h"
@@ -387,10 +388,29 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
 
   nonlinsys->lastTimeSolved = 0.0;
 
+  /* Allocate nomianl, min and max */
   nonlinsys->nominal = (double*) malloc(size*sizeof(double));
   nonlinsys->min = (double*) malloc(size*sizeof(double));
   nonlinsys->max = (double*) malloc(size*sizeof(double));
-  nonlinsys->initializeStaticNLSData(data, threadData, nonlinsys);
+  /* Init sparsitiy pattern */
+  nonlinsys->initializeStaticNLSData(data, threadData, nonlinsys, 1 /* true */);
+
+  if(nonlinsys->isPatternAvailable) {
+    /* only test for singularity if sparsity pattern is supposed to be there */
+    modelica_boolean useSparsityPattern = sparsitySanityCheck(nonlinsys->sparsePattern, nonlinsys->size, LOG_NLS);
+    if (!useSparsityPattern) {
+      // free sparsity pattern and don't use scaling
+      warningStreamPrint(LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d is not regular. "
+                                        "This indicates that something went wrong during sparsity pattern generation. "
+                                        "Removing sparsity pattern and disabling NLS scaling.", sysNum);
+      /* DEBUG */
+      //printSparseStructure(nonlinsys->sparsePattern, nonlinsys->size, nonlinsys->size, LOG_NLS, "NLS sparse pattern");
+      freeSparsePattern(nonlinsys->sparsePattern);
+      nonlinsys->sparsePattern = NULL;
+      nonlinsys->isPatternAvailable = 0 /* FALSE */;
+      omc_flag[FLAG_NO_SCALING] = 1 /* TRUE */;
+    }
+  }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* csv data call stats*/
@@ -472,7 +492,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
       allocateHomotopyData(size-1, &(solverData->initHomotopyData));
     } else {
       nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nonlinsys->nlsLinearSolver);
-      resetKinsolMemory(nonlinsys->solverData, nonlinsys->sparsePattern->numberOfNonZeros, nonlinsys->analyticalJacobianColumn);
+      resetKinsolMemory(nonlinsys->solverData, nonlinsys);
       solverData->ordinaryData = nonlinsys->solverData;
     }
     nonlinsys->solverData = (void*) solverData;
@@ -576,11 +596,15 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   return 0;
 }
 
-/*! \fn int updateStaticDataOfNonlinearSystems(DATA *data)
+/**
+ * @brief Initialize min, max, nominal for non-linear systems.
  *
- *  This function allocates memory for all nonlinear systems.
+ * This function allocates memory for sparsity pattern and
+ * initialized nominal, min, max and spsarsity pattern.
  *
- *  \param [ref] [data]
+ * @param data          Pointer to data.
+ * @param threadData    Thread data for error handling.
+ * @return int          Return 0.
  */
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 {
@@ -593,7 +617,7 @@ int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
-    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
+    nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i], 0 /* false */);
   }
 
   messageClose(LOG_NLS);

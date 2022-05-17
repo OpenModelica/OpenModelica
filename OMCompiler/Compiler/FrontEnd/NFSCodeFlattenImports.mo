@@ -328,16 +328,12 @@ protected function flattenEquation
   input SCode.Equation inEquation;
   input Env inEnv;
   output SCode.Equation outEquation;
-protected
-  SCode.EEquation equ;
 algorithm
-  SCode.EQUATION(equ) := inEquation;
-  (equ, _) := SCodeUtil.mapFoldEEquations(equ, flattenEEquationTraverser, inEnv);
-  outEquation := SCode.EQUATION(equ);
+  (outEquation, _) := SCodeUtil.mapFoldEquations(inEquation, flattenEquationTraverser, inEnv);
 end flattenEquation;
 
-protected function flattenEEquationTraverser
-  input output SCode.EEquation eq;
+protected function flattenEquationTraverser
+  input output SCode.Equation eq;
   input output Env env;
 algorithm
   (eq, env) := match eq
@@ -351,7 +347,7 @@ algorithm
     case SCode.EQ_FOR(index = iter_name, info = info)
       algorithm
         env := NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
+        (eq, _) := SCodeUtil.mapFoldEquationExps(eq, traverseExp, (env, info));
       then
         (eq, env);
 
@@ -359,19 +355,19 @@ algorithm
       algorithm
         cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
         eq := SCode.EQ_REINIT(crefExp, exp, cmt, info);
-        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
+        (eq, _) := SCodeUtil.mapFoldEquationExps(eq, traverseExp, (env, info));
       then
         (eq, env);
 
     else
       algorithm
-        info := SCodeUtil.getEEquationInfo(eq);
-        (eq, _) := SCodeUtil.mapFoldEEquationExps(eq, traverseExp, (env, info));
+        info := SCodeUtil.getEquationInfo(eq);
+        (eq, _) := SCodeUtil.mapFoldEquationExps(eq, traverseExp, (env, info));
       then
         (eq, env);
 
   end match;
-end flattenEEquationTraverser;
+end flattenEquationTraverser;
 
 protected function traverseExp
   input Absyn.Exp inExp;

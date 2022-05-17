@@ -5,7 +5,7 @@
 //
 
 
-class P
+package P
   constant Integer i = 2;
 end P;
 

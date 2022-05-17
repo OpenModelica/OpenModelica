@@ -112,6 +112,7 @@ CevalBinding4.mo \
 CevalBinding5.mo \
 CevalBinding6.mo \
 CevalBinding7.mo \
+CevalBinding8.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
@@ -503,6 +504,7 @@ FuncBuiltinCross.mo \
 FuncBuiltinDelay.mo \
 FuncBuiltinDer.mo \
 FuncBuiltinDerInvalid1.mo \
+FuncBuiltinDerInvalid2.mo \
 FuncBuiltinDiagonal.mo \
 FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \
@@ -523,7 +525,9 @@ FuncBuiltinMath.mo \
 FuncBuiltinMatrix.mo \
 FuncBuiltinMatrixWrongType1.mo \
 FuncBuiltinMax.mo \
+FuncBuiltinMax2.mo \
 FuncBuiltinMin.mo \
+FuncBuiltinMin2.mo \
 FuncBuiltinMod.mo \
 FuncBuiltinNdims.mo \
 FuncBuiltinNoClock1.mo \
@@ -775,6 +779,9 @@ LookupLibrary1.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \
+MaxInvalidArg1.mo \
+MaxInvalidArg2.mo \
+MaxInvalidArg3.mo \
 MergeComponents1.mo \
 MergeComponents2.mo \
 MergeComponents3.mo \
@@ -782,6 +789,10 @@ MergeComponents4.mo \
 MergeComponents5.mo \
 MergeComponents6.mo \
 MergeComponents7.mo \
+MergeComponents8.mo \
+MinInvalidArg1.mo \
+MinInvalidArg2.mo \
+MinInvalidArg3.mo \
 MissingRedeclare1.mo \
 mod1.mo \
 mod10.mo \
@@ -856,6 +867,7 @@ PackageConstant1.mo \
 PackageConstant3.mo \
 PackageConstant4.mo \
 ParameterBug.mos \
+ParameterDer.mo \
 PartialApplication1.mo \
 PartialApplication2.mo \
 PartialApplicationInvalidArg1.mo \

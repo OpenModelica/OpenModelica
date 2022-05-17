@@ -1,0 +1,41 @@
+// name: MergeComponents8
+// keywords:
+// status: correct
+// teardown_command: rm MergeComponents8_merged_table.json
+// cflags: -d=newInst,mergeComponents,-nfScalarize
+//
+
+model A
+  parameter Real p = 1;
+  input Real u;
+  Real y;
+  Real x;
+equation
+  der(x) = -p*x+u;
+  y = 2*p*x;
+end A;
+
+model MergeComponents8
+  parameter Real n1 = 1.0;
+  parameter Real n2 = 2.0;
+  A a1(p = n1);
+  A a2(p = n2);
+end MergeComponents8;
+
+// Result:
+// class MergeComponents8
+//   parameter Real n1 = 1.0;
+//   parameter Real n2 = 2.0;
+//   Real[2] $A1.x;
+//   Real[2] $A1.y;
+//   Real[2] $A1.u;
+//   parameter Real[2] $A1.p = {n1, n2};
+// equation
+//   for $i1 in 1:2 loop
+//     der($A1[$i1].x) = (-$A1[$i1].p * $A1[$i1].x) + $A1[$i1].u;
+//   end for;
+//   for $i1 in 1:2 loop
+//     $A1[$i1].y = 2.0 * $A1[$i1].p * $A1[$i1].x;
+//   end for;
+// end MergeComponents8;
+// endResult

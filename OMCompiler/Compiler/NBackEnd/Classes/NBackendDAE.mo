@@ -37,7 +37,7 @@ encapsulated uniontype NBackendDAE
 public
   import BVariable = NBVariable;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData, Iterator};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, IfEquationBody, Iterator};
   import NBVariable.{VariablePointers, VarData};
   import Events = NBEvents;
   import NFFlatten.FunctionTree;
@@ -66,6 +66,7 @@ protected
 
   // New Backend imports
   import BackendDAE = NBackendDAE;
+  import Bindings = NBBindings;
   import Causalize = NBCausalize;
   import DetectStates = NBDetectStates;
   import DAEMode = NBDAEMode;
@@ -220,6 +221,7 @@ public
     // Pre-Partitioning Modules
     // (do not change order SIMPLIFY -> RSE -> EVENTS -> DETECTSTATES)
     preOptModules := {
+      (Bindings.main,               "Bindings"),
       (simplify,                    "simplify"),
       (RemoveSimpleEquations.main,  "RemoveSimpleEquations"),
       (Events.main,                 "Events"),
@@ -362,6 +364,7 @@ protected
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, previous;
     VariablePointers parameters, constants;
+    Pointer<list<Pointer<Variable>>> binding_iter_lst = Pointer.create({});
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
   algorithm
     // instantiate variable data (with one more space for time variable);
@@ -456,8 +459,11 @@ protected
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
 
-    /* lower the variable bindings */
-    VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
+    /* lower the variable bindings and add binding iterators */
+    variables       := VariablePointers.map(variables, function collectVariableBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+    variables       := VariablePointers.addList(Pointer.access(binding_iter_lst), variables);
+    knowns          := VariablePointers.addList(Pointer.access(binding_iter_lst), knowns);
+    variables       := VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
@@ -547,6 +553,22 @@ protected
     end match;
   end lowerVariableKind;
 
+  function collectVariableBindingIterators
+    input output Variable var;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+  algorithm
+    _ := match var
+      local
+        Binding binding;
+      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
+        // collect all iterators (only locally known) so that they have a respective variable
+        Expression.map(binding.bindingExp, function collectBindingIterators(variables = variables, binding_iter_lst = binding_iter_lst));
+      then ();
+      else ();
+    end match;
+  end collectVariableBindingIterators;
+
   function lowerVariableBinding
     input output Variable var;
     input VariablePointers variables;
@@ -554,10 +576,9 @@ protected
     var := match var
       local
         Binding binding;
-      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING())
-        algorithm
-          binding.bindingExp := Expression.map(binding.bindingExp, function lowerComponentReferenceExp(variables = variables));
-          var.binding := binding;
+      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
+        binding.bindingExp := Expression.map(binding.bindingExp, function lowerComponentReferenceExp(variables = variables));
+        var.binding := binding;
       then var;
       else var;
     end match;
@@ -583,7 +604,7 @@ protected
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     for eqn_ptr in equation_lst loop
-      BEquation.Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
+      Equation.createName(eqn_ptr, idx, NBEquation.SIMULATION_STR);
       iterators := listAppend(Equation.getForIterators(Pointer.access(eqn_ptr)), iterators);
     end for;
     iterators := List.uniqueOnTrue(iterators, ComponentRef.isEqual);
@@ -699,7 +720,7 @@ protected
         DAE.ElementSource source;
         ComponentRef iterator;
         list<FEquation.Branch> branches;
-        BEquation.EquationAttributes attr;
+        EquationAttributes attr;
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         guard(Type.isArray(ty))
@@ -788,15 +809,15 @@ protected
       local
         list<FEquation.Branch> branches;
         DAE.ElementSource source;
-        BEquation.IfEquationBody ifEqBody;
-        BEquation.EquationAttributes attr;
+        IfEquationBody ifEqBody;
+        EquationAttributes attr;
 
       case FEquation.IF(branches = branches, source = source)
         algorithm
           attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(ifEqBody) := lowerIfEquationBody(branches, init);
           // ToDo: compute correct size
-      then BEquation.IF_EQUATION(0, ifEqBody, source, attr);
+      then BEquation.IF_EQUATION(IfEquationBody.size(ifEqBody), ifEqBody, source, attr);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + FEquation.toString(frontend_equation)});
@@ -808,7 +829,7 @@ protected
   function lowerIfEquationBody
     input list<FEquation.Branch> branches;
     input Boolean init;
-    output Option<BEquation.IfEquationBody> ifEq;
+    output Option<IfEquationBody> ifEq;
   algorithm
     ifEq := match branches
       local
@@ -816,7 +837,7 @@ protected
         list<FEquation.Branch> rest;
         list<Pointer<Equation>> eqns;
         Expression condition;
-        Option<BEquation.IfEquationBody> result;
+        Option<IfEquationBody> result;
 
       // lower current branch
       case branch::rest
@@ -903,7 +924,7 @@ protected
         DAE.ElementSource source;
         Expression condition, message, level;
         BEquation.WhenEquationBody whenEqBody;
-        BEquation.EquationAttributes attr;
+        EquationAttributes attr;
 
       case FEquation.WHEN(branches = branches, source = source)
         algorithm
@@ -1045,7 +1066,7 @@ protected
   protected
     Integer size;
     list<ComponentRef> inputs, outputs;
-    BEquation.EquationAttributes attr;
+    EquationAttributes attr;
   algorithm
     // ToDo! check if always DAE.EXPAND() can be used
     // ToDo! export inputs
@@ -1060,7 +1081,7 @@ protected
   function lowerEquationAttributes
     input Type ty;
     input Boolean init;
-    output BEquation.EquationAttributes attr;
+    output EquationAttributes attr;
   algorithm
     attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
             elseif Type.isDiscrete(ty) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
@@ -1104,6 +1125,23 @@ protected
     end try;
   end lowerComponentReference;
 
+  function collectBindingIterators
+    "collects all iterators in bindings and creates variables for them.
+    in bindings they are only known locally but they still need a respective variable"
+    input output Expression exp;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Variable>>> binding_iter_lst;
+  algorithm
+    _ := match exp
+      local
+        ComponentRef cref;
+      case Expression.CREF(cref = cref) guard(not VariablePointers.containsCref(cref, variables)) algorithm
+        Pointer.update(binding_iter_lst, lowerIterator(cref) :: Pointer.access(binding_iter_lst));
+      then ();
+      else ();
+    end match;
+  end collectBindingIterators;
+
 public
   function lowerComponentReferenceInstNode
     "Adds the pointer to a variable to a component reference. This function needs
@@ -1124,8 +1162,6 @@ public
       else cref;
     end match;
   end lowerComponentReferenceInstNode;
-
-protected
 
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

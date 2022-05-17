@@ -250,10 +250,11 @@ algorithm
       then
         exp;
 
+    case "der"       then simplifyDer(listHead(args), call);
     case "fill"      then simplifyFill(listHead(args), listRest(args), call);
     case "homotopy"  then simplifyHomotopy(args, call);
-    case "max"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
-    case "min"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
+    case "max"       then simplifyMinMax(args, call, isMin = false);
+    case "min"       then simplifyMinMax(args, call, isMin = true);
     case "ones"      then simplifyFill(Expression.INTEGER(1), args, call);
     case "product"   then simplifySumProduct(listHead(args), call, isSum = false);
     case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
@@ -264,6 +265,31 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyBuiltinCall;
+
+function simplifyMinMax
+  input list<Expression> args;
+  input Call call;
+  input Boolean isMin;
+  output Expression exp;
+protected
+  Expression arg;
+  Type ty;
+algorithm
+  if listLength(args) == 1 then
+    arg := listHead(args);
+    ty := Expression.typeOf(arg);
+
+    if Type.isEmptyArray(ty) then
+      ty := Type.arrayElementType(ty);
+      exp := if isMin then Expression.makeMaxValue(ty) else
+                           Expression.makeMinValue(ty);
+    else
+      exp := simplifyReducedArrayConstructor(arg, call);
+    end if;
+  else
+    exp := Expression.CALL(call);
+  end if;
+end simplifyMinMax;
 
 function simplifySumProduct
   input Expression arg;
@@ -389,6 +415,18 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyHomotopy;
+
+function simplifyDer
+  input Expression arg;
+  input Call call;
+  output Expression exp;
+algorithm
+  if Call.variability(call) < Variability.DISCRETE then
+    exp := Expression.makeZero(Expression.typeOf(arg));
+  else
+    exp := Expression.CALL(call);
+  end if;
+end simplifyDer;
 
 function simplifyArrayConstructor
   input Call call;

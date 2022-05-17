@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.* ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum_* ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.log ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.c ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 

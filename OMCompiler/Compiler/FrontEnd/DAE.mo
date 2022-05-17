@@ -121,7 +121,7 @@ public constant ElementSource emptyElementSource = SOURCE(AbsynUtil.dummyInfo,{}
 
 public uniontype SymbolicOperation
   record FLATTEN "From one equation/statement to an element"
-    SCode.EEquation scode;
+    SCode.Equation scode;
     Option<Element> dae;
   end FLATTEN;
   record SIMPLIFY "Before and after expression is equivalent"

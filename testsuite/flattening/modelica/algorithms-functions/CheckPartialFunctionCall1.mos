@@ -1,0 +1,30 @@
+// name: CheckPartialFunctionCall1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  partial function f
+    input Real x;
+    output Real y;
+  end f;
+
+  model M
+    Real x = f(time);
+  end M;
+");
+getErrorString();
+
+checkModel(M);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of M completed successfully.
+// Class M has 1 equation(s) and 1 variable(s).
+// 1 of these are trivial equation(s)."
+// ""
+// endResult

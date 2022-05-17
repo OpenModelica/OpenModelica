@@ -154,8 +154,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GCExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Gettext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Graph.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphStream.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphStreamExt.mo
   # Remember: Only files needed for compiling MetaModelica
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashSetExp.mo
@@ -170,7 +168,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToExpOption.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableExpToIndex.mo
-    #${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTablePathToFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableStringToPath.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableStringToProgram.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/IOStreamExt.mo
@@ -250,7 +247,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/ZeroCrossings.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/FFrontEnd/FGraphDump.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FFrontEnd/FGraphStream.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FFrontEnd/FInst.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/CheckModel.mo
@@ -297,6 +293,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBPartitioning.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBResolveSingularities.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/1_Main/NBSorting.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBBindings.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBDetectStates.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBEvents.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBRemoveSimpleEquations.mo
@@ -313,6 +310,7 @@ set(OMC_MM_BACKEND_SOURCES
     # "NFFrontEnd";
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFArrayConnections.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFAttributes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBackendExtension.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBinding.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBuiltinCall.mo
@@ -352,15 +350,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionDerivative.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionInverse.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunction.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashSet.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable3.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCG.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCrToExp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCrToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableStringToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableUnitToString.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFImport.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInline.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstContext.mo
@@ -479,11 +468,9 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FMIExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/JSONExt.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTable4.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableExpToExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrIntToExp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableExpToIndexExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToExpSourceTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToCrEqLst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSimCodeEqCache.mo

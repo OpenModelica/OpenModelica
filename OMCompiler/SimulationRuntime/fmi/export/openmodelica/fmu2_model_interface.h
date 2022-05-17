@@ -60,13 +60,18 @@ extern "C" {
 #define NUMBER_OF_CATEGORIES 11
 
 typedef enum {
-  modelInstantiated       = 1<<0, /* ME and CS */
-  modelInitializationMode = 1<<1, /* ME and CS */
-  modelContinuousTimeMode = 1<<2, /* ME only */
-  modelEventMode          = 1<<3, /* ME only */
-  modelSlaveInitialized   = 1<<4, /* CS only */
-  modelTerminated         = 1<<5, /* ME and CS */
-  modelError              = 1<<6  /* ME and CS */
+  model_state_start_end               = 1<<0,  /* ME and CS */
+  model_state_instantiated            = 1<<1,  /* ME and CS */
+  model_state_initialization_mode     = 1<<2,  /* ME and CS */
+  model_state_cs_step_complete        = 1<<3,  /* CS only */
+  model_state_cs_step_in_progress     = 1<<4,  /* CS only */
+  model_state_cs_step_failed          = 1<<5,  /* CS only */
+  model_state_cs_step_canceled        = 1<<6,  /* CS only */
+  model_state_me_event_mode           = 1<<7,  /* ME only */
+  model_state_me_continuous_time_mode = 1<<8,  /* ME only */
+  model_state_terminated              = 1<<9,  /* ME and CS */
+  model_state_error                   = 1<<10, /* ME and CS */
+  model_state_fatal                   = 1<<11  /* ME and CS */
 } ModelState;
 
 typedef struct {
@@ -101,6 +106,15 @@ typedef struct {
   fmi2Real* event_indicators_prev;
   fmi2Real* input_real_derivative;
 } ModelInstance;
+
+typedef struct {
+  RINGBUFFER* simulationData;
+  modelica_real* realParameter;
+  modelica_integer* integerParameter;
+  modelica_boolean* booleanParameter;
+  modelica_string* stringParameter;
+} INTERNAL_FMU_STATE;
+
 
 /* reset alignment policy to the one set before reading this file */
 #if defined _MSC_VER || defined __GNUC__

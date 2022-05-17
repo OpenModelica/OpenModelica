@@ -38,6 +38,7 @@ encapsulated package NFRecord
   Functions used by NFInst for handling records.
 "
 
+import Attributes = NFAttributes;
 import Binding = NFBinding;
 import Class = NFClass;
 import Component = NFComponent;
@@ -148,7 +149,7 @@ algorithm
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
                 NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-                NFComponent.OUTPUT_ATTR, NONE(), false, AbsynUtil.dummyInfo);
+                NFAttributes.OUTPUT_ATTR, NONE(), false, AbsynUtil.dummyInfo);
   out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 
   // Make a record constructor class and create a node for the constructor.
@@ -264,14 +265,8 @@ end collectRecordParam;
 function setFieldDirection
   input InstNode field;
   input Direction direction;
-protected
-  Component comp = InstNode.component(field);
-  Component.Attributes attr;
 algorithm
-  attr := Component.getAttributes(comp);
-  attr.direction := direction;
-  comp := Component.setAttributes(attr, comp);
-  InstNode.updateComponent(comp, field);
+  InstNode.componentApply(field, Component.setDirection, direction);
 end setFieldDirection;
 
 function collectRecordFields

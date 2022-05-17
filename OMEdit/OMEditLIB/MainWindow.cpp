@@ -177,6 +177,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // create an object of OMSProxy
   OMSProxy::create();
   // Create an object of OptionsDialog
+  mpLibrariesMenu = 0;
   OptionsDialog::create();
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // apply MessagesWidget settings
@@ -1494,31 +1495,40 @@ void MainWindow::LoadModelCallbackFunction(void *p, const char *modelName)
  */
 void MainWindow::addSystemLibraries()
 {
-  mpLibrariesMenu->clear();
-  // get the available libraries and versions.
-  QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
-  libraries.sort();
-  foreach (QString library, libraries) {
-    QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
-    if (versions.isEmpty()) {
-      QAction *pAction = new QAction(library, this);
-      pAction->setData(QStringList() << library << "");
-      connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
-      mpLibrariesMenu->addAction(pAction);
-    } else {
-      QMenu *pLibraryMenu = new QMenu(library);
-      foreach (QString version, versions) {
-        QAction *pAction = new QAction(version, this);
-        pAction->setData(QStringList() << library << version);
-        if ((library.compare(QStringLiteral("Modelica")) == 0) && (version.compare(QStringLiteral("4.0.0")) == 0)) {
-          pAction->setShortcut(QKeySequence("Ctrl+m"));
+  if (mpLibrariesMenu) {
+    mpLibrariesMenu->clear();
+    // get the available libraries and versions.
+    QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
+    libraries.sort();
+    foreach (QString library, libraries) {
+      QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
+      if (versions.isEmpty()) {
+        QAction *pAction = new QAction(library, this);
+        pAction->setData(QStringList() << library << "");
+        connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
+        mpLibrariesMenu->addAction(pAction);
+      } else {
+        QMenu *pLibraryMenu = new QMenu(library);
+        foreach (QString version, versions) {
+          QAction *pAction = new QAction(StringHandler::convertSemVertoReadableString(version), this);
+          pAction->setData(QStringList() << library << version);
+          connect(pAction, SIGNAL(triggered()), mpLibraryWidget, SLOT(loadSystemLibrary()));
+          pLibraryMenu->addAction(pAction);
         }
-        connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
-        pLibraryMenu->addAction(pAction);
+        mpLibrariesMenu->addMenu(pLibraryMenu);
       }
-      mpLibrariesMenu->addMenu(pLibraryMenu);
     }
   }
+}
+
+/*!
+ * \brief MainWindow::getLibraryIndexFilePath
+ * Returns the library index file path.
+ * \return
+ */
+QString MainWindow::getLibraryIndexFilePath() const
+{
+  return QString("%1/.openmodelica/libraries/index.json").arg(Helper::userHomeDirectory);
 }
 
 /*!
@@ -1857,69 +1867,13 @@ void MainWindow::openDirectory()
 }
 
 /*!
- * \brief MainWindow::loadSystemLibrary
- * Loads a system library.
- */
-void MainWindow::loadSystemLibrary()
-{
-  QAction *pAction = qobject_cast<QAction*>(sender());
-  if (pAction) {
-    QStringList actionData = pAction->data().toStringList();
-    if (actionData.size() > 1) {
-      loadSystemLibrary(actionData.at(0), actionData.at(1));
-    }
-  }
-}
-
-/*!
- * \brief MainWindow::loadSystemLibrary
- * Loads a system library.
- * \param library
- * \param version
- */
-void MainWindow::loadSystemLibrary(const QString &library, QString version)
-{
-  /* check if library is already loaded. */
-  LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-  if (pLibraryTreeModel->findLibraryTreeItemOneLevel(library)) {
-    QMessageBox *pMessageBox = new QMessageBox(this);
-    pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::information));
-    pMessageBox->setIcon(QMessageBox::Information);
-    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(library)));
-    pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES)).arg(library).append("\n")
-                                    .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(library)));
-    pMessageBox->setStandardButtons(QMessageBox::Ok);
-    pMessageBox->exec();
-  } else {  /* if library is not loaded then load it. */
-    mpProgressBar->setRange(0, 0);
-    showProgressBar();
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(library));
-
-    if (version.isEmpty()) {
-      version = QString("default");
-    }
-
-    mpLibraryWidget->setLoadingLibraries(true);
-    if (mpOMCProxy->loadModel(library, version)) {
-      pLibraryTreeModel->createLibraryTreeItem(library, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
-      pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-    }
-    mpLibraryWidget->setLoadingLibraries(false);
-    mpStatusBar->clearMessage();
-    hideProgressBar();
-  }
-}
-
-/*!
  * \brief MainWindow::writeOutputFileData
  * Writes the output data from stdout file and adds it to MessagesWidget.
  * \param data
  */
 void MainWindow::writeOutputFileData(QString data)
 {
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, data,
-                                                        Helper::scriptingKind, Helper::notificationLevel));
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 
 /*!
@@ -2506,18 +2460,67 @@ void MainWindow::exportModelToOMNotebook()
  */
 bool MainWindow::openInstallLibraryDialog()
 {
-  InstallLibraryDialog *pInstallLibraryDialog = new InstallLibraryDialog;
-  return pInstallLibraryDialog->exec();
+  updateLibraryIndex(false);
+  bool returnValue = false;
+  QString indexFilePath = getLibraryIndexFilePath();
+  if (QFile::exists(indexFilePath)) {
+    InstallLibraryDialog *pInstallLibraryDialog = new InstallLibraryDialog;
+    returnValue = pInstallLibraryDialog->exec();
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::LIBRARY_INDEX_FILE_NOT_FOUND).arg(indexFilePath),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+  return returnValue;
 }
 
 /*!
  * \brief MainWindow::updateInstalledLibraries
- * Opens the update installed libraries dialog.
+ * Opens the upgrade installed libraries dialog.
  */
-void MainWindow::updateInstalledLibraries()
+void MainWindow::upgradeInstalledLibraries()
 {
-  UpdateInstalledLibrariesDialog *pUpdateInstalledLibrariesDialog = new UpdateInstalledLibrariesDialog;
-  pUpdateInstalledLibrariesDialog->exec();
+  updateLibraryIndex(false);
+  QString indexFilePath = getLibraryIndexFilePath();
+  if (QFile::exists(indexFilePath)) {
+    UpgradeInstalledLibrariesDialog *pUpdateInstalledLibrariesDialog = new UpgradeInstalledLibrariesDialog;
+    pUpdateInstalledLibrariesDialog->exec();
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::LIBRARY_INDEX_FILE_NOT_FOUND).arg(indexFilePath),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::updateLibraryIndex
+ * Slot activated when Update Library Index menu item is triggered.
+ */
+void MainWindow::updateLibraryIndex()
+{
+  updateLibraryIndex(true);
+}
+
+/*!
+ * \brief MainWindow::updateLibraryIndex
+ * Calls OMCProxy::updatePackageIndex() once per OMEdit session.
+ * \param forceUpdate
+ */
+void MainWindow::updateLibraryIndex(bool forceUpdate)
+{
+  static int init = 0;
+  if (forceUpdate || !init) {
+    init = 1;
+    // show the progressbar and set the message in status bar
+    mpStatusBar->showMessage(tr("Updating library index"));
+    mpProgressBar->setRange(0, 0);
+    showProgressBar();
+    if (!MainWindow::instance()->getOMCProxy()->updatePackageIndex()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to update the library index. This could be because of bad internet connection."),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+    // hide the progressbar and clear the message in status bar
+    mpStatusBar->clearMessage();
+    hideProgressBar();
+  }
 }
 
 //! Imports the models from OMNotebook.
@@ -2770,6 +2773,7 @@ void MainWindow::runOMSensPlugin()
 #ifdef Q_OS_MAC
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("OMSens is not supported on MacOS"), Helper::scriptingKind, Helper::errorLevel));
     return;
+  }
 #else
 #ifdef Q_OS_WIN
     QPluginLoader loader(QString("%1/lib/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome));
@@ -2803,11 +2807,8 @@ void MainWindow::runOMSensPlugin()
  */
 void MainWindow::openUsersGuide()
 {
-  QUrl usersGuidePath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide/index.html").arg(Helper::OpenModelicaHome));
-  if (!QDesktopServices::openUrl(usersGuidePath)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                          Helper::scriptingKind, Helper::errorLevel));
-  }
+  QUrl usersGuidePath("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/");
+  QDesktopServices::openUrl(usersGuidePath);
 }
 
 /*!
@@ -2817,7 +2818,7 @@ void MainWindow::openUsersGuide()
  */
 void MainWindow::openUsersGuidePdf()
 {
-  QUrl usersGuidePath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide-latest.pdf").arg(Helper::OpenModelicaHome));
+  QUrl usersGuidePath(QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide-latest.pdf").arg(Helper::OpenModelicaHome));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
                                                           Helper::scriptingKind, Helper::errorLevel));
@@ -2831,7 +2832,7 @@ void MainWindow::openUsersGuidePdf()
  */
 void MainWindow::openSystemDocumentation()
 {
-  QUrl systemDocumentationPath (QString("file:///%1/share/doc/omc/SystemDocumentation/OpenModelicaSystem.pdf").arg(Helper::OpenModelicaHome));
+  QUrl systemDocumentationPath(QString("file:///%1/share/doc/omc/SystemDocumentation/OpenModelicaSystem.pdf").arg(Helper::OpenModelicaHome));
   if (!QDesktopServices::openUrl(systemDocumentationPath)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(systemDocumentationPath.toString()),
                                                           Helper::scriptingKind, Helper::errorLevel));
@@ -2844,7 +2845,7 @@ void MainWindow::openSystemDocumentation()
  */
 void MainWindow::openOpenModelicaScriptingDocumentation()
 {
-  QUrl openModelicaScriptingUrl (QUrl("https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html"));
+  QUrl openModelicaScriptingUrl("https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html");
   QDesktopServices::openUrl(openModelicaScriptingUrl);
 }
 
@@ -2854,20 +2855,8 @@ void MainWindow::openOpenModelicaScriptingDocumentation()
  */
 void MainWindow::openModelicaDocumentation()
 {
-  QUrl modelicaDocumentationUrl (QUrl("https://build.openmodelica.org/Documentation/index.html"));
+  QUrl modelicaDocumentationUrl("https://build.openmodelica.org/Documentation/index.html");
   QDesktopServices::openUrl(modelicaDocumentationUrl);
-}
-
-void MainWindow::openModelicaByExample()
-{
-  QUrl modelicaByExampleUrl (QUrl("http://book.xogeny.com"));
-  QDesktopServices::openUrl(modelicaByExampleUrl);
-}
-
-void MainWindow::openModelicaWebReference()
-{
-  QUrl modelicaWebReference (QUrl("http://modref.xogeny.com"));
-  QDesktopServices::openUrl(modelicaWebReference);
 }
 
 /*!
@@ -2876,7 +2865,7 @@ void MainWindow::openModelicaWebReference()
  */
 void MainWindow::openOMSimulatorUsersGuide()
 {
-  QUrl OMSimulatorUsersGuideUrl (QString("https://openmodelica.org/doc/OMSimulator/master/html/"));
+  QUrl OMSimulatorUsersGuideUrl("https://openmodelica.org/doc/OMSimulator/master/html/");
   QDesktopServices::openUrl(OMSimulatorUsersGuideUrl);
 }
 
@@ -2886,7 +2875,7 @@ void MainWindow::openOMSimulatorUsersGuide()
  */
 void MainWindow::openOpenModelicaTLMSimulatorDocumentation()
 {
-  QUrl openModelicaTLMSimulatorDocumentation (QString("file:///%1/OMTLMSimulator/Documentation/OMTLMSimulator.pdf").arg(Helper::OpenModelicaHome));
+  QUrl openModelicaTLMSimulatorDocumentation(QString("file:///%1/OMTLMSimulator/Documentation/OMTLMSimulator.pdf").arg(Helper::OpenModelicaHome));
   if (!QDesktopServices::openUrl(openModelicaTLMSimulatorDocumentation)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE)
                                                           .arg(openModelicaTLMSimulatorDocumentation.toString()), Helper::scriptingKind, Helper::errorLevel));
@@ -3463,10 +3452,14 @@ void MainWindow::createActions()
   mpInstallLibraryAction = new QAction(Helper::installLibrary, this);
   mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
   connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
-  // updated installed libraries action
-  mpUpdateInstalledLibrariesAction = new QAction(Helper::updateInstalledLibraries, this);
-  mpUpdateInstalledLibrariesAction->setStatusTip(tr("Updates the installed libraries"));
-  connect(mpUpdateInstalledLibrariesAction, SIGNAL(triggered()), SLOT(updateInstalledLibraries()));
+  // upgrade installed libraries action
+  mpUpgradeInstalledLibrariesAction = new QAction(Helper::upgradeInstalledLibraries, this);
+  mpUpgradeInstalledLibrariesAction->setStatusTip(tr("Upgrades the installed libraries"));
+  connect(mpUpgradeInstalledLibrariesAction, SIGNAL(triggered()), SLOT(upgradeInstalledLibraries()));
+  // update library index action
+  mpUpdateLibraryIndexAction = new QAction(Helper::updateLibraryIndex, this);
+  mpUpdateLibraryIndexAction->setStatusTip(tr("Updates the library index"));
+  connect(mpUpdateLibraryIndexAction, SIGNAL(triggered()), SLOT(updateLibraryIndex()));
   // clear recent files action
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
@@ -3693,13 +3686,13 @@ void MainWindow::createActions()
   connect(mpRunOMSensAction, SIGNAL(triggered()), SLOT(runOMSensPlugin()));
   // Help Menu
   // users guide action
-  mpUsersGuideAction = new QAction(tr("OpenModelica Users Guide"), this);
-  mpUsersGuideAction->setStatusTip(tr("Opens the OpenModelica Users Guide"));
+  mpUsersGuideAction = new QAction(tr("OpenModelica User's Guide"), this);
+  mpUsersGuideAction->setStatusTip(tr("Opens the OpenModelica User's Guide"));
   mpUsersGuideAction->setShortcut(QKeySequence(Qt::Key_F1));
   connect(mpUsersGuideAction, SIGNAL(triggered()), SLOT(openUsersGuide()));
   // users guide new pdf action
-  mpUsersGuidePdfAction = new QAction(tr("OpenModelica Users Guide (PDF)"), this);
-  mpUsersGuidePdfAction->setStatusTip(tr("Opens the OpenModelica Users Guide (PDF)"));
+  mpUsersGuidePdfAction = new QAction(tr("OpenModelica User's Guide (PDF)"), this);
+  mpUsersGuidePdfAction->setStatusTip(tr("Opens the OpenModelica User's Guide (PDF)"));
   connect(mpUsersGuidePdfAction, SIGNAL(triggered()), SLOT(openUsersGuidePdf()));
   // system documentation action
   mpSystemDocumentationAction = new QAction(tr("OpenModelica System Documentation"), this);
@@ -3713,17 +3706,9 @@ void MainWindow::createActions()
   mpModelicaDocumentationAction = new QAction(tr("Modelica Documentation"), this);
   mpModelicaDocumentationAction->setStatusTip(tr("Opens the Modelica Documentation"));
   connect(mpModelicaDocumentationAction, SIGNAL(triggered()), SLOT(openModelicaDocumentation()));
-  // Modelica By Example action
-  mpModelicaByExampleAction = new QAction(tr("Modelica By Example"), this);
-  mpModelicaByExampleAction->setStatusTip(tr("Opens the Modelica By Example online book"));
-  connect(mpModelicaByExampleAction, SIGNAL(triggered()), SLOT(openModelicaByExample()));
-  // Modelica Web Reference action
-  mpModelicaWebReferenceAction = new QAction(tr("Modelica Web Reference"), this);
-  mpModelicaWebReferenceAction->setStatusTip(tr("Opens the Modelica Web Reference"));
-  connect(mpModelicaWebReferenceAction, SIGNAL(triggered()), SLOT(openModelicaWebReference()));
   // OMSimulator users guide action
-  mpOMSimulatorUsersGuideAction = new QAction(tr("OMSimulator Users Guide"), this);
-  mpOMSimulatorUsersGuideAction->setStatusTip(tr("Opens the OMSimulator Users Guide"));
+  mpOMSimulatorUsersGuideAction = new QAction(tr("OMSimulator User's Guide"), this);
+  mpOMSimulatorUsersGuideAction->setStatusTip(tr("Opens the OMSimulator User's Guide"));
   connect(mpOMSimulatorUsersGuideAction, SIGNAL(triggered()), SLOT(openOMSimulatorUsersGuide()));
   // OMTLMSimulator documenatation action
   mpOpenModelicaTLMSimulatorDocumentationAction = new QAction(tr("OpenModelica TLM Simulator Documentation"), this);
@@ -3919,12 +3904,19 @@ void MainWindow::createMenus()
   mpFileMenu->addSeparator();
   // System libraries menu
   mpLibrariesMenu = new QMenu(menuBar());
-  mpLibrariesMenu->setObjectName("LibrariesMenu");
+  mpLibrariesMenu->setObjectName("SystemLibrariesMenu");
   mpLibrariesMenu->setTitle(tr("&System Libraries"));
   addSystemLibraries();
   mpFileMenu->addMenu(mpLibrariesMenu);
-  mpFileMenu->addAction(mpInstallLibraryAction);
-  mpFileMenu->addAction(mpUpdateInstalledLibrariesAction);
+  // manage libraries menu
+  QMenu *pManageLibrariesMenu = new QMenu(menuBar());
+  pManageLibrariesMenu->setObjectName("ManageLibrariesMenu");
+  pManageLibrariesMenu->setTitle(tr("&Manage Libraries"));
+  // add actions to manage libraries
+  pManageLibrariesMenu->addAction(mpInstallLibraryAction);
+  pManageLibrariesMenu->addAction(mpUpgradeInstalledLibrariesAction);
+  pManageLibrariesMenu->addAction(mpUpdateLibraryIndexAction);
+  mpFileMenu->addMenu(pManageLibrariesMenu);
   mpFileMenu->addSeparator();
   mpRecentFilesMenu = new QMenu(menuBar());
   mpRecentFilesMenu->setObjectName("RecentFilesMenu");
@@ -4122,9 +4114,6 @@ void MainWindow::createMenus()
   pHelpMenu->addAction(mpOpenModelicaScriptingAction);
   pHelpMenu->addAction(mpModelicaDocumentationAction);
   pHelpMenu->addSeparator();
-  //  pHelpMenu->addAction(mpModelicaByExampleAction);
-  //  pHelpMenu->addAction(mpModelicaWebReferenceAction);
-  //  pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpOMSimulatorUsersGuideAction);
   pHelpMenu->addAction(mpOpenModelicaTLMSimulatorDocumentationAction);
   pHelpMenu->addSeparator();

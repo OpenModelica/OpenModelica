@@ -1,11 +1,22 @@
 cmake_minimum_required(VERSION 3.14)
-project(OMCompiler C CXX Fortran)
+project(OMCompiler C CXX)
 
 ## OPTIONS #################################################################################################
 
+omc_option(OM_OMC_ENABLE_FORTRAN "Enable Fortran support. Fortran is required if you enable IPOPT support." ON)
+if(OM_OMC_ENABLE_FORTRAN)
+  enable_language(Fortran)
+endif()
+
+
+omc_option(OM_OMC_ENABLE_IPOPT "Should we enable dynamic optimization support with Ipopt." ON)
+if(OM_OMC_ENABLE_IPOPT AND NOT OM_OMC_ENABLE_FORTRAN)
+message(FATAL_ERROR "Ipopt support requires Fortran support to be enabled.
+    ***Note: currently it is not possible to disable IPOPT from OpenModelica. This Option is here as a placeholder. ")
+endif()
+
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
 
-omc_option(WITH_IPOPT "Should we enable dynamic optimization support with Ipopt." ON)
 omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LPSOLVE "Should we use lpsolve." OFF)
@@ -23,14 +34,6 @@ string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}
 
 string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
 string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-
-## Set position independent code OMCompiler/ wide. We will take some performance hit from this.
-## However it allows us to build all static libs and combine them later to single shared libs
-## for easy configuration. Instead of having dozens of shared libs.
-## This can of course be turned of if we do not care about memory and are happy to sacrifice a
-## bunch of memory for some performance gain. If so disable this and change the few libraries
-## we build as shared to static (see SimulationRuntime/c, which contains the only shared libs to come).
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 ## Add a config library for OMC. They will provide access to common config headres such as
 ## config.h, version.h ... These headers, right now for us, are in 'OMCompiler' directory. So

@@ -44,10 +44,10 @@ public
   import SCodeUtil;
 
   //NF Imports
+  import Attributes = NFAttributes;
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.BackendInfo;
   import NFBinding.Binding;
-  import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -79,11 +79,11 @@ public
   //               Single Variable constants and functions
   // ==========================================================================
   constant Variable DUMMY_VARIABLE = Variable.VARIABLE(ComponentRef.EMPTY(), Type.ANY(),
-    NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFComponent.DEFAULT_ATTR,
+    NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
     {}, {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
 
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
-    NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFComponent.DEFAULT_ATTR,
+    NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
     {}, {}, NONE(), SCodeUtil.dummyInfo, BackendExtension.BACKEND_INFO(
     BackendExtension.VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL));
 
@@ -146,7 +146,7 @@ public
     ty := ComponentRef.getSubscriptedType(cref, true);
     vis := InstNode.visibility(node);
     info := InstNode.info(node);
-    variable := Variable.VARIABLE(cref, ty, binding, vis, NFComponent.DEFAULT_ATTR, {}, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
+    variable := Variable.VARIABLE(cref, ty, binding, vis, NFAttributes.DEFAULT_ATTR, {}, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
 
   function makeVarPtrCyclic
@@ -423,8 +423,8 @@ public
   algorithm
     b := match Pointer.access(var)
       local
-        Component.Direction direction;
-      case Variable.VARIABLE(attributes = Component.Attributes.ATTRIBUTES(direction = NFComponent.Direction.INPUT)) then true;
+        Prefixes.Direction direction;
+      case Variable.VARIABLE(attributes = Attributes.ATTRIBUTES(direction = NFPrefixes.Direction.INPUT)) then true;
       else false;
     end match;
   end isInput;
@@ -435,8 +435,8 @@ public
   algorithm
     b := match Pointer.access(var)
       local
-        Component.Direction direction;
-      case Variable.VARIABLE(attributes = Component.Attributes.ATTRIBUTES(direction = NFComponent.Direction.OUTPUT)) then true;
+        Prefixes.Direction direction;
+      case Variable.VARIABLE(attributes = Attributes.ATTRIBUTES(direction = NFPrefixes.Direction.OUTPUT)) then true;
       else false;
     end match;
   end isOutput;
@@ -1142,6 +1142,18 @@ public
     end match;
   end isTimeDependent;
 
+  function isBound
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    b := match var.binding
+      case Binding.TYPED_BINDING() then true;
+      else false;
+    end match;
+  end isBound;
+
   // ==========================================================================
   //                        Other type wrappers
   //
@@ -1463,8 +1475,15 @@ public
       "Returns true if the variable is in the variable pointer array."
       input Pointer<Variable> var;
       input VariablePointers variables;
-      output Boolean b = getVarIndex(variables, getVarName(var)) > 0;
+      output Boolean b = containsCref(getVarName(var), variables);
     end contains;
+
+    function containsCref
+      "Returns true if a variable with this name is in the variable pointer array."
+      input ComponentRef cref;
+      input VariablePointers variables;
+      output Boolean b = getVarIndex(variables, cref) > 0;
+    end containsCref;
 
     function getVarNames
       "returns a list of crefs representing the names of all variables"
@@ -1556,28 +1575,37 @@ public
       input output VariablePointers variables;
     protected
       list<Pointer<Variable>> vars, new_vars = {};
-      list<Variable> scalar_vars;
+      list<Variable> scalar_vars, element_vars;
       Variable var;
-      Boolean anyArr;
+      Boolean flattened = false;
     algorithm
       vars := toList(variables);
       for var_ptr in vars loop
         var := Pointer.access(var_ptr);
+        // flatten potential arrays
         if Type.isArray(var.ty) then
-          anyArr := true;
-          scalar_vars := Scalarize.scalarizeVariable(var);
-          for scalar_var in listReverse(scalar_vars) loop
-            // create new pointers for the scalar variables
-            new_vars := Pointer.create(scalar_var) :: new_vars;
-          end for;
+          flattened := true;
+          scalar_vars := Scalarize.scalarizeBackendVariable(var);
         else
-          // preserve original variable pointers
-          new_vars := var_ptr :: new_vars;
+          scalar_vars := {Pointer.access(var_ptr)};
         end if;
+
+        // flatten potential records
+        for var in listReverse(scalar_vars) loop
+          if Type.isComplex(var.ty) then
+            flattened := true;
+            element_vars := Scalarize.scalarizeComplexVariable(var);
+            for elem_var in listReverse(element_vars) loop
+              new_vars := Pointer.create(elem_var) :: new_vars;
+            end for;
+          else
+            new_vars := Pointer.create(var) :: new_vars;
+          end if;
+        end for;
       end for;
 
-      // only change variables if any of them was an array
-      if anyArr then
+      // only change variables if any of them have been flattened
+      if flattened then
         variables := fromList(listReverse(new_vars), true);
       end if;
     end scalarize;

@@ -58,6 +58,7 @@ import Record = NFRecord;
 import InstContext = NFInstContext;
 
 protected
+import Attributes = NFAttributes;
 import Builtin = NFBuiltin;
 import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
@@ -112,13 +113,17 @@ end TypingError;
 public
 function typeClass
   input InstNode cls;
+  input InstContext.Type context;
+protected
+  InstContext.Type next_context;
 algorithm
-  typeClassType(cls, NFBinding.EMPTY_BINDING, NFInstContext.CLASS, cls);
-  typeComponents(cls, NFInstContext.CLASS);
+  next_context := InstContext.set(context, NFInstContext.CLASS);
+  typeClassType(cls, NFBinding.EMPTY_BINDING, next_context, cls);
+  typeComponents(cls, next_context);
   execStat("NFTyping.typeComponents");
-  typeBindings(cls, NFInstContext.CLASS);
+  typeBindings(cls, next_context);
   execStat("NFTyping.typeBindings");
-  typeClassSections(cls, NFInstContext.CLASS);
+  typeClassSections(cls, next_context);
   execStat("NFTyping.typeClassSections");
 end typeClass;
 
@@ -331,6 +336,44 @@ algorithm
   end if;
 end makeConnectorType;
 
+function checkConnectorTypeBalance
+  input InstNode component;
+protected
+  Integer pots, flows, streams;
+  Component comp;
+  InstNode parent;
+algorithm
+  comp := InstNode.component(component);
+
+  if not Component.isConnector(comp) or Component.isExpandableConnector(comp) then
+    return;
+  end if;
+
+  parent := InstNode.parent(component);
+  if InstNode.isComponent(parent) and Component.isConnector(InstNode.component(parent)) then
+    return;
+  end if;
+
+  (pots, flows, streams) := Component.countConnectorVars(comp);
+
+  // Modelica 3.2 section 9.3.1:
+  // For each non-partial connector class the number of flow variables shall
+  // be equal to the number of variables that are neither parameter, constant,
+  // input, output, stream nor flow.
+  if pots <> flows then
+    Error.addStrictMessage(Error.UNBALANCED_CONNECTOR,
+      {InstNode.name(component), String(pots), String(flows)}, InstNode.info(component));
+  end if;
+
+  // Modelica 3.2 section 15.1:
+  // A stream connector must have exactly one scalar variable with the flow prefix.
+  if streams > 0 and flows <> 1 then
+    Error.addSourceMessage(Error.MISMATCHED_FLOW_IN_STREAM_CONNECTOR,
+      {InstNode.name(component), String(flows)}, InstNode.info(component));
+    fail();
+  end if;
+end checkConnectorTypeBalance;
+
 function makeRecordType
   input InstNode constructor;
   output ComplexType recordTy;
@@ -399,6 +442,8 @@ algorithm
 
           // Type the component's children.
           typeComponents(c.classInst, context);
+
+          checkConnectorTypeBalance(node);
         end if;
       then
         ty;
@@ -526,6 +571,7 @@ algorithm
       Type ty;
       TypingError ty_err;
       Integer parent_dims, dim_index;
+      Boolean evaluated;
 
     // A dimension that we're already trying to type.
     case Dimension.UNTYPED(isProcessing = true)
@@ -549,11 +595,17 @@ algorithm
 
         (exp, ty, var) := typeExp(dimension.dimension, InstContext.set(context, NFInstContext.DIMENSION), info);
         TypeCheck.checkDimensionType(exp, ty, info);
+        evaluated := true;
 
         if not InstContext.inFunction(context) then
           // Dimensions must be parameter expressions in a non-function class.
           if var <= Variability.PARAMETER then
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+            if InstContext.inRelaxed(context) then
+              exp := Ceval.tryEvalExp(exp);
+              evaluated := Expression.isLiteral(exp);
+            else
+              exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+            end if;
           else
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
             fail();
@@ -598,6 +650,7 @@ algorithm
         (dim, ty_err) := match b
           // Print an error if there's no binding.
           case Binding.UNBOUND()
+            guard not InstContext.inRelaxed(context)
             algorithm
               Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,
                 {String(index), InstNode.name(component)}, info);
@@ -658,6 +711,7 @@ algorithm
               Dimension.fromExp(exp, dim.var);
 
           case Dimension.UNKNOWN()
+            guard not InstContext.inRelaxed(context)
             algorithm
               Error.addInternalError(getInstanceName() + " returned unknown dimension in a non-function context", info);
             then
@@ -852,7 +906,7 @@ protected
   MatchKind matchKind;
   String name;
   Variability comp_var, comp_eff_var, bind_var, bind_eff_var;
-  Component.Attributes attrs;
+  Attributes attrs;
   Type ty;
 algorithm
   c := InstNode.component(node);
@@ -1173,7 +1227,7 @@ algorithm
       then
         (exp, exp.ty, Variability.CONSTANT, Purity.PURE);
 
-    case Expression.ARRAY()  then typeArray(exp.elements, context, info);
+    case Expression.ARRAY()  then typeArray(exp.elements, exp.literal, context, info);
     case Expression.MATRIX() then typeMatrix(exp.elements, context, info);
     case Expression.RANGE()  then typeRange(exp, context, info);
     case Expression.TUPLE()  then typeTuple(exp.elements, context, info);
@@ -1485,7 +1539,7 @@ algorithm
 
         expl := listReverseInPlace(expl);
         ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
-        outExp := Expression.makeArray(ty, listArray(expl));
+        outExp := Expression.makeArray(ty, listArray(expl), exp.literal);
       then
         (outExp, ty, variability, purity);
 
@@ -1985,6 +2039,7 @@ end typeSubscript;
 
 function typeArray
   input array<Expression> elements;
+  input Boolean isLiteral;
   input InstContext.Type context;
   input SourceInfo info;
   output Expression arrayExp;
@@ -2038,7 +2093,7 @@ algorithm
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
-  arrayExp := Expression.makeArray(arrayType, listArray(expl2));
+  arrayExp := Expression.makeArray(arrayType, listArray(expl2), isLiteral);
 end typeArray;
 
 function typeMatrix "The array concatenation operator"
@@ -2580,13 +2635,8 @@ algorithm
 
           case Sections.SECTIONS()
             algorithm
-              if listLength(sections.equations) > 0 or listLength(sections.initialEquations) > 0 then
-                Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE,
-                  {"function"}, InstNode.info(classNode));
-              else
-                Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
-                  {InstNode.name(classNode)}, InstNode.info(classNode));
-              end if;
+              Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
+                {InstNode.name(classNode)}, InstNode.info(classNode));
             then
               fail();
 

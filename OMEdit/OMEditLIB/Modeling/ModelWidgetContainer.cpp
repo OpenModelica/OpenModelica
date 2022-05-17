@@ -5633,7 +5633,7 @@ void ModelWidget::updateModelText()
       }
     }
     if (pModelLibraryTreeItem != mpLibraryTreeItem) {
-      setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
+      setWindowTitle(QString("%1*").arg(mpLibraryTreeItem->getName()));
       setModelFilePathLabel(mpLibraryTreeItem->getFileName());
     }
   } else {
@@ -8423,7 +8423,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   }
   // update the actions of the menu and toolbars
   MainWindow::instance()->getSaveAction()->setEnabled(enabled);
-  MainWindow::instance()->getSaveAsAction()->setEnabled(enabled);
+  MainWindow::instance()->getSaveAsAction()->setEnabled(enabled && pLibraryTreeItem && pLibraryTreeItem->isTopLevel());
   //  MainWindow::instance()->getSaveAllAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveTotalAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel || oms) && !textView && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
@@ -8609,7 +8609,7 @@ void ModelWidgetContainer::saveAsModelWidget()
   ModelWidget *pModelWidget = getCurrentModelWidget();
   // if pModelWidget = 0
   if (!pModelWidget) {
-    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("save as")), Helper::ok);
     return;
   }

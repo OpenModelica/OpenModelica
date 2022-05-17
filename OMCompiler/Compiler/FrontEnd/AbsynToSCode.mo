@@ -1430,44 +1430,11 @@ algorithm
       case Absyn.EQUATIONITEM()
         algorithm
           (com,info) := translateCommentWithLineInfoChanges(eq.comment, eq.info);
-        then SCode.EQUATION(translateEquation(eq.equation_,com,info,inIsInitial));
+        then translateEquation(eq.equation_,com,info,inIsInitial);
     end match
     for eq guard match eq case Absyn.EQUATIONITEM() then true; else false; end match in inAbsynEquationItemLst
   );
 end translateEquations;
-
-
-protected function translateEEquations
-"Helper function to translateEquations"
-  input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  input Boolean inIsInitial;
-  output list<SCode.EEquation> outEEquationLst;
-algorithm
-  outEEquationLst := match (inAbsynEquationItemLst, inIsInitial)
-    local
-      SCode.EEquation e_1;
-      list<SCode.EEquation> es_1;
-      Absyn.Equation e;
-      list<Absyn.EquationItem> es;
-      Option<Absyn.Comment> acom;
-      SCode.Comment com;
-      SourceInfo info;
-
-    case ({}, _) then {};
-
-    case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
-      equation
-        // fprintln(Flags.TRANSLATE, "translating equation: " + Dump.unparseEquationStr(0, e));
-        (com,info) = translateCommentWithLineInfoChanges(acom,info);
-        e_1 = translateEquation(e,com,info, inIsInitial);
-        es_1 = translateEEquations(es, inIsInitial);
-      then
-        (e_1 :: es_1);
-
-    case (Absyn.EQUATIONITEMCOMMENT() :: es, _) then translateEEquations(es, inIsInitial);
-
-  end match;
-end translateEEquations;
 
 protected function translateCommentWithLineInfoChanges
 "turns an Absyn.Comment into an SCode.Comment"
@@ -1591,34 +1558,34 @@ protected function translateEquation
   input SCode.Comment inComment;
   input SourceInfo inInfo;
   input Boolean inIsInitial;
-  output SCode.EEquation outEEquation;
+  output SCode.Equation outEquation;
 algorithm
-  outEEquation := match inEquation
+  outEquation := match inEquation
     local
       Absyn.Exp exp, e1, e2, e3;
       list<Absyn.Equation> abody;
-      list<SCode.EEquation> else_branch, body;
-      list<tuple<Absyn.Exp, list<SCode.EEquation>>> branches;
+      list<SCode.Equation> else_branch, body;
+      list<tuple<Absyn.Exp, list<SCode.Equation>>> branches;
       String iter_name;
       Option<Absyn.Exp> iter_range;
-      SCode.EEquation eq;
+      SCode.Equation eq;
       list<Absyn.Exp> conditions;
-      list<list<SCode.EEquation>> bodies;
+      list<list<SCode.Equation>> bodies;
       Absyn.ComponentRef cr;
 
     case Absyn.EQ_IF()
       algorithm
-        body := translateEEquations(inEquation.equationTrueItems, inIsInitial);
+        body := translateEquations(inEquation.equationTrueItems, inIsInitial);
         (conditions, bodies) :=
           List.map1_2(inEquation.elseIfBranches, translateEqBranch, inIsInitial);
         conditions := inEquation.ifExp :: conditions;
-        else_branch := translateEEquations(inEquation.equationElseItems, inIsInitial);
+        else_branch := translateEquations(inEquation.equationElseItems, inIsInitial);
       then
         SCode.EQ_IF(conditions, body :: bodies, else_branch, inComment, inInfo);
 
     case Absyn.EQ_WHEN_E()
       algorithm
-        body := translateEEquations(inEquation.whenEquations, inIsInitial);
+        body := translateEquations(inEquation.whenEquations, inIsInitial);
         (conditions, bodies) :=
           List.map1_2(inEquation.elseWhenEquations, translateEqBranch, inIsInitial);
         branches := list((c, b) threaded for c in conditions, b in bodies);
@@ -1641,7 +1608,7 @@ algorithm
 
     case Absyn.EQ_FOR()
       algorithm
-        body := translateEEquations(inEquation.forEquations, inIsInitial);
+        body := translateEquations(inEquation.forEquations, inIsInitial);
 
         // Convert for-loops with multiple iterators into nested for-loops.
         for i in listReverse(inEquation.iterators) loop
@@ -1692,12 +1659,12 @@ protected function translateEqBranch
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inBranch;
   input Boolean inIsInitial;
   output Absyn.Exp outCondition;
-  output list<SCode.EEquation> outBody;
+  output list<SCode.Equation> outBody;
 protected
   list<Absyn.EquationItem> body;
 algorithm
   (outCondition, body) := inBranch;
-  outBody := translateEEquations(body, inIsInitial);
+  outBody := translateEquations(body, inIsInitial);
 end translateEqBranch;
 
 protected function translateIterator

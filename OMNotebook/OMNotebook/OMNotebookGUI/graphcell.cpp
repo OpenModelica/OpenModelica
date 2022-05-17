@@ -143,7 +143,11 @@ namespace IAEX {
         max /= 10;
         ++digits;
     }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+    int space = 3 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
+#else // QT_VERSION_CHECK
     int space = 3 + fontMetrics().width(QLatin1Char('9')) * digits;
+#endif // QT_VERSION_CHECK
 
     return space;
   }
@@ -1487,7 +1491,11 @@ namespace IAEX {
       lst << legendPosition;
       lst << footer;
       lst << autoScale;
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+      lst << QString(variables).split(" ", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
       lst << QString(variables).split(" ", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
       emit pGraphCell->plotVariables(lst);  // yes we need to use signal & slot since command is executed in different thread.
     }
   }

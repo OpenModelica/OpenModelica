@@ -186,7 +186,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   // // TODO: Do we need to initialize the Jacobian or is it already initialized?
   // ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   // data->callback->initialAnalyticJacobianA(data, threadData, jacobian_ODE);
-  nlsData->initializeStaticNLSData(data, threadData, nlsData);
+  nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE);
 
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
@@ -216,9 +216,9 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     if (gmriData->symJacAvailable) {
-      resetKinsolMemory(solverData->ordinaryData, nlsData->sparsePattern->numberOfNonZeros, nlsData->analyticalJacobianColumn);
+      resetKinsolMemory(solverData->ordinaryData, nlsData);
     } else {
-      resetKinsolMemory(solverData->ordinaryData, nlsData->size*nlsData->size, NULL);
+      resetKinsolMemory(solverData->ordinaryData, nlsData);
       int flag = KINSetJacFn(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, NULL);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
     }

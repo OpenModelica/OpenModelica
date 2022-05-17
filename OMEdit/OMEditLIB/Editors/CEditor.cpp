@@ -94,7 +94,7 @@ void CEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
     }
     /* if user is changing the text. */
     if (!mForceSetPlainText) {
-      mpModelWidget->updateModelText();
+      contentsChanged();
     }
   }
 }
