@@ -69,6 +69,8 @@ void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *i
 void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int *iflag);
 int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
+SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
+
 // step size control function
 double IController(double* err_values, double* stepSize_values, double err_order);
 double PIController(double* err_values, double* stepSize_values, double err_order);
@@ -96,9 +98,9 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   }
 
   /* Initialize sparsity pattern */
-  if(initSparsPattern) {
-    nonlinsys->sparsePattern = NULL;
-    nonlinsys->isPatternAvailable = FALSE;
+  if (initSparsPattern) {
+    nonlinsys->sparsePattern = initializeSparsePattern_MS(data, nonlinsys);
+    nonlinsys->isPatternAvailable = TRUE;
   }
   return;
 }
@@ -159,6 +161,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->getIterationVars = NULL;
 
     gmriData->symJacAvailable = FALSE;
+    // gmriData->symJacAvailable = TRUE;
     break;
   case MS_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_MS_MR;
