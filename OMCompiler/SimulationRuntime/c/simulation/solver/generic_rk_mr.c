@@ -85,7 +85,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
  * @param threadData        Thread data for error handling
  * @param nonlinsys         Non-linear system data.
  */
-void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys) {
+void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
 
   // Nur für FastStates!!!! Ändern sich während der Simulation
   for(int i=0; i<nonlinsys->size; i++) {
@@ -96,8 +96,10 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   }
 
   /* Initialize sparsity pattern */
-  nonlinsys->sparsePattern = NULL;
-  nonlinsys->isPatternAvailable = FALSE;
+  if(initSparsPattern) {
+    nonlinsys->sparsePattern = NULL;
+    nonlinsys->isPatternAvailable = FALSE;
+  }
   return;
 }
 
