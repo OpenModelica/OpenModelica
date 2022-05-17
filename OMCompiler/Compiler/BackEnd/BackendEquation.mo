@@ -1636,7 +1636,7 @@ public function traverseEquationToScalarResidualForm
   output BackendDAE.Equation outEq;
   output tuple<DAE.FunctionTree, list<BackendDAE.Equation>> outEqs;
 algorithm
-  (outEq,outEqs) := matchcontinue(inEq,inEqs)
+  (outEq,outEqs) := match(inEq,inEqs)
     local
       list<BackendDAE.Equation> eqns,reqn;
       BackendDAE.Equation eqn;
@@ -1648,8 +1648,12 @@ algorithm
         eqns = listAppend(reqn,eqns);
       then (eqn, (funcs, eqns));
 
-    else (inEq,inEqs);
-  end matchcontinue;
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Error.addInternalError(getInstanceName() + " failed", sourceInfo());
+      then fail();
+  end match;
 end traverseEquationToScalarResidualForm;
 
 public function convertResidualsIntoSolvedEquations
@@ -1688,7 +1692,7 @@ algorithm
       else
         equation
           true = Flags.isSet(Flags.FAILTRACE);
-          Error.addInternalError("function convertResidualsIntoSolvedEquations failed", sourceInfo());
+          Error.addInternalError(getInstanceName() + " failed", sourceInfo());
         then fail();
     end match;
   end for;
