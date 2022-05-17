@@ -263,7 +263,7 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
   // const double bt[]  = {5./12., -16./12., 23./12., 0.0};
 
   tableau->nStages = 2;
-  tableau->order_b = 1;
+  tableau->order_b = 2;
   tableau->order_bt = 1;
   tableau->fac = 1.0;
 
