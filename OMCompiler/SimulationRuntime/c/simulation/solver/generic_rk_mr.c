@@ -156,7 +156,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   {
   case RK_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK_MR;
-    nlsData->analyticalJacobianColumn = NULL;//jacobian_DIRK_column_MR;
+    // nlsData->analyticalJacobianColumn = jacobian_DIRK_column_MR;
+    nlsData->analyticalJacobianColumn = NULL;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
@@ -471,17 +472,25 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   sparsePattern_MR->maxColors = nStates;
 
   /* Set full matrix sparsitiy pattern */
-  for (i=0; i < gmriData->nStates; i++)
+  for (i=0; i < gmriData->nStates+1; i++)
     sparsePattern_MR->leadindex[i] = i * nStates;
   for(i=0; i < nStates*nStates; i++) {
     sparsePattern_MR->index[i] = i% nStates;
   }
 
+  // printIntVector_genericRK("sparsePattern leadindex", sparsePattern_MR->leadindex, length_column_indices, 0);
+  // printIntVector_genericRK("sparsePattern index", sparsePattern_MR->index, length_index, 0);
 
   // trivial coloring, needs to be set each call of MR, if number of fast States changes...
   sparsePattern_MR->maxColors = nStates;
   for (i=0; i < nStates; i++)
     sparsePattern_MR->colorCols[i] = i;
+
+  // printSparseStructure(sparsePattern_MR,
+  //                     nStates,
+  //                     nStates,
+  //                     LOG_STDOUT,
+  //                     "sparsePattern_MR");
 
   return sparsePattern_MR;
 }
@@ -730,6 +739,7 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
     res[ii] = gmriData->res_const[i] - xloc[ii] + gmriData->stepSize * gmriData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
 
+  // printVector_genericRK("res", res, gmriData->nFastStates, gmriData->time);
   return;
 }
 
@@ -758,11 +768,18 @@ int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JAC
   int nFastStates = gmriData->nFastStates;
   int stage_ = gmriData->act_stage;
 
+  // printSparseStructure(gmriData->jacobian->sparsePattern,
+  //                     nFastStates,
+  //                     nFastStates,
+  //                     LOG_STDOUT,
+  //                     "sparsePattern");
+
   for (i=0; i<jacobian_ODE->sizeCols; i++)
     jacobian_ODE->seedVars[i] = 0;
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
-  for (ii=0; ii<nFastStates; i++)
+  for (ii=0; ii<nFastStates; ii++)
   {
+    i = gmriData->fastStates[ii];
     if (jacobian->seedVars[ii])
       jacobian_ODE->seedVars[i] = 1;
   }
@@ -1107,7 +1124,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
   DATA_GMRI* gmriData = gsriData->gmriData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)gmriData->nlsSolverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*)gmriData->nlsData->solverData;
 
   double err, eventTime;
   double Atol = data->simulationInfo->tolerance;
@@ -1161,7 +1178,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   if (gmriData->symJacAvailable) {
     /* Set full matrix sparsitiy pattern only for the fast states*/
-    for (i=0; i < nFastStates; i++)
+    for (i=0; i < nFastStates + 1; i++)
       gmriData->jacobian->sparsePattern->leadindex[i] = i * nFastStates;
     for(i=0; i < nFastStates*nFastStates; i++) {
       gmriData->jacobian->sparsePattern->index[i] = i% nFastStates;
@@ -1171,6 +1188,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     for (i=0; i < nFastStates; i++)
       gmriData->jacobian->sparsePattern->colorCols[i] = i;
 
+    gmriData->jacobian->sparsePattern->sizeofIndex = nFastStates*nFastStates;
+    gmriData->jacobian->sparsePattern->numberOfNonZeros = nFastStates*nFastStates;
+    gmriData->jacobian->sizeCols = nFastStates;
+    gmriData->jacobian->sizeRows = nFastStates;
   }
 
   // print informations on the calling details
