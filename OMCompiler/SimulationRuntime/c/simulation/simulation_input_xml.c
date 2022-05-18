@@ -206,7 +206,7 @@ typedef hash_string_string omc_CommandLineOverrides;
 typedef hash_string_long omc_CommandLineOverridesUses;
 
 // function to handle command line settings override
-void doOverride(omc_ModelInput *mi, MODEL_DATA* modelData, const char* override, const char* overrideFile);
+modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile);
 
 static const double REAL_MIN = -DBL_MAX;
 static const double REAL_MAX = DBL_MAX;
@@ -527,7 +527,7 @@ void read_input_xml(MODEL_DATA* modelData,
   // deal with override
   override = omc_flagValue[FLAG_OVERRIDE];
   overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
-  doOverride(&mi, modelData, override, overrideFile);
+  modelica_boolean reCalcStepSize = doOverride(&mi, modelData, override, overrideFile);
 
   /* read all the DefaultExperiment values */
   infoStreamPrint(LOG_SIMULATION, 1, "read all the DefaultExperiment values:");
@@ -538,7 +538,15 @@ void read_input_xml(MODEL_DATA* modelData,
   read_value_real(findHashStringString(mi.de,"stopTime"), &(simulationInfo->stopTime), 1.0);
   infoStreamPrint(LOG_SIMULATION, 0, "stopTime = %g", simulationInfo->stopTime);
 
-  read_value_real(findHashStringString(mi.de,"stepSize"), &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
+  if (reCalcStepSize) {
+    simulationInfo->stepSize = (simulationInfo->stopTime - simulationInfo->startTime) / 500;
+    warningStreamPrint(LOG_STDOUT, 1, "Start or stop time was overwritten, but no new integrator step size was provided.");
+    infoStreamPrint(LOG_STDOUT, 0, "Re-calculating step size for 500 intervals.");
+    infoStreamPrint(LOG_STDOUT, 0, "Add `stepSize=<value>` to `-override=` or override file to silence this warning.");
+    messageClose(LOG_STDOUT);
+  } else {
+    read_value_real(findHashStringString(mi.de,"stepSize"), &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
+  }
   infoStreamPrint(LOG_SIMULATION, 0, "stepSize = %g", simulationInfo->stepSize);
 
   read_value_real(findHashStringString(mi.de,"tolerance"), &(simulationInfo->tolerance), 1e-5);
@@ -941,11 +949,14 @@ static const char* getOverrideValue(omc_CommandLineOverrides *mOverrides, omc_Co
   return findHashStringString(mOverrides, name);
 }
 
-void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile)
+modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile)
 {
   omc_CommandLineOverrides *mOverrides = NULL;
   omc_CommandLineOverridesUses *mOverridesUses = NULL, *it = NULL, *ittmp = NULL;
   mmc_sint_t i;
+  modelica_boolean changedStartStop = 0 /* false */;
+  modelica_boolean changedStepSize = 0 /* false */;
+  modelica_boolean reCalcStepSize = 0 /* false */;
   char* overrideStr1 = NULL, *overrideStr2 = NULL, *overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL)) {
     infoStreamPrint(LOG_SOLVER, 0, "using -override=%s and -overrideFile=%s", override, overrideFile);
@@ -1080,11 +1091,21 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       free(overrideStr2);
     }
 
-    // now we have all overrides in mOverrides, override mi now
+    // Now we have all overrides in mOverrides, override mi now
+    // Also check if we need to re-calculate stepSize (start / stop time changed, but stepSize not)
     for (i=0; i<sizeof(strs)/sizeof(char*); i++) {
       if (findHashStringStringNull(mOverrides, strs[i])) {
         addHashStringString(&mi->de, strs[i], getOverrideValue(mOverrides, &mOverridesUses, strs[i]));
+        if (i==1 /* startTime */ || i ==2 /* stopTime */ ) {
+          changedStartStop = 1 /* true */;
+        }
+        if (i==3 /* stepSize */) {
+          changedStepSize = 1 /* true */;
+        }
       }
+    }
+    if(changedStartStop && ! changedStepSize) {
+      reCalcStepSize = 1 /* true */;
     }
 
     #define CHECK_OVERRIDE(v,b) \
@@ -1158,6 +1179,8 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "NO override given on the command line.");
   }
+
+  return reCalcStepSize;
 }
 
 void parseVariableStr(char* variableStr)
