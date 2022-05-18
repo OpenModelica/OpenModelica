@@ -744,7 +744,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   }
   /* Check step size is not larger then stopTime-startTime, up to 6 decimals */
   if (simInfo->stepSize > (simInfo->stopTime - simInfo->startTime + 1e-7)) {
-    warningStreamPrint(LOG_STDOUT, 1, "Integrator step size greater then length of experiment");
+    warningStreamPrint(LOG_STDOUT, 1, "Integrator step size greater than length of experiment");
     infoStreamPrint(LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
     messageClose(LOG_STDOUT);
   }
