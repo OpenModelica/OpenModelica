@@ -873,6 +873,10 @@ public constant ErrorTypes.Message DEPRECATED_TRANSITION_FAILURE = ErrorTypes.ME
   Gettext.gettext("%s are deprecated in %s."));
 public constant ErrorTypes.Message INITIAL_ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(399, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Initial algorithm sections are not allowed in %s."));
+public constant ErrorTypes.Message INVALID_SPECIALIZATION_FOR_BINDING_EQUATION = ErrorTypes.MESSAGE(400, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Component ‘%s‘ may not have a binding equation due to class specialization ‘%s‘."));
+public constant ErrorTypes.Message INVALID_SPECIALIZATION_IN_ASSIGNMENT = ErrorTypes.MESSAGE(401, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Component ‘%s‘ may not be assigned to due to class specialization ‘%s‘."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

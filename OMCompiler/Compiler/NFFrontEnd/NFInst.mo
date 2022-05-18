@@ -1638,6 +1638,8 @@ algorithm
           checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, context, info);
         end if;
 
+        checkBindingRestriction(res, binding, node, info);
+
         // Update some of the attributes now that we now the type of the component.
         ty_attr := Attributes.updateVariability(ty_attr, ty, ty_node);
         ty_attr := Attributes.updateComponentConnectorType(ty_attr, res, context, node);
@@ -1753,6 +1755,30 @@ algorithm
     fail();
   end if;
 end checkPartialComponent;
+
+function checkBindingRestriction
+  input Restriction restriction;
+  input Binding binding;
+  input InstNode component;
+  input SourceInfo info;
+algorithm
+  if Binding.isBound(binding) then
+    () := match restriction
+      case Restriction.CLOCK() then ();
+      case Restriction.CONNECTOR() then ();
+      case Restriction.ENUMERATION() then ();
+      case Restriction.EXTERNAL_OBJECT() then ();
+      case Restriction.RECORD() then ();
+      case Restriction.TYPE() then ();
+      else
+        algorithm
+          Error.addSourceMessage(Error.INVALID_SPECIALIZATION_FOR_BINDING_EQUATION,
+            {InstNode.name(component), Restriction.toString(restriction)}, info);
+        then
+          fail();
+    end match;
+  end if;
+end checkBindingRestriction;
 
 function redeclareComponent
   input InstNode redeclareNode;
@@ -2930,6 +2956,7 @@ algorithm
     case SCode.Statement.ALG_ASSIGN(info = info)
       algorithm
         exp1 := instExp(scodeStmt.assignComponent, scope, context, info);
+        checkAssignmentRestriction(exp1, info);
         exp2 := instExp(scodeStmt.value, scope, context, info);
       then
         Statement.ASSIGNMENT(exp1, exp2, Type.UNKNOWN(), makeSource(scodeStmt.comment, info));
@@ -3058,6 +3085,48 @@ algorithm
 
   end match;
 end instStatement;
+
+function checkAssignmentRestriction
+  input Expression lhs;
+  input SourceInfo info;
+protected
+  InstNode node;
+  Restriction res;
+algorithm
+  () := match lhs
+    case Expression.CREF()
+      guard ComponentRef.isCref(lhs.cref)
+      algorithm
+        node := ComponentRef.node(lhs.cref);
+        res := Class.restriction(InstNode.getClass(node));
+
+        () := match res
+          case Restriction.CLOCK() then ();
+          case Restriction.CONNECTOR() then ();
+          case Restriction.ENUMERATION() then ();
+          case Restriction.RECORD() then ();
+          case Restriction.TYPE() then ();
+          else
+            algorithm
+              Error.addSourceMessage(Error.INVALID_SPECIALIZATION_IN_ASSIGNMENT,
+                {InstNode.name(node), Restriction.toString(res)}, info);
+            then
+              fail();
+        end match;
+      then
+        ();
+
+    case Expression.TUPLE()
+      algorithm
+        for e in lhs.elements loop
+          checkAssignmentRestriction(e, info);
+        end for;
+      then
+        ();
+
+    else ();
+  end match;
+end checkAssignmentRestriction;
 
 function addIteratorToScope
   input String name;
