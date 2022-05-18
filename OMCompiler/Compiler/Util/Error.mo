@@ -867,11 +867,11 @@ public constant ErrorTypes.Message UNEXPECTED_COMPONENT_IN_COMPOSITE_NAME = Erro
   Gettext.gettext("Found component ‘%s‘ in composite name ‘%s‘, expected class."));
 public constant ErrorTypes.Message NF_MODIFY_PROTECTED = ErrorTypes.MESSAGE(396, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Protected element ‘%s‘ may not be modified, got ‘%s‘."));
-public constant ErrorTypes.Message PROTECTED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message PROTECTED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(397, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Protected sections are not allowed in %s."));
-public constant ErrorTypes.Message DEPRECATED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+public constant ErrorTypes.Message DEPRECATED_TRANSITION_FAILURE = ErrorTypes.MESSAGE(398, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("%s are deprecated in %s."));
-public constant ErrorTypes.Message INITIAL_ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message INITIAL_ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(399, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Initial algorithm sections are not allowed in %s."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
