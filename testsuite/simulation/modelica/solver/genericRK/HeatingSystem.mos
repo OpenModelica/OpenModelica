@@ -48,7 +48,7 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=genericRKmr -genericRKOpt=adams -genericRKMROpt=sdirk2 -rkNLS=newton -rkmrFac=.5 -override=\"tolerance=1e-7,stopTime=864000\"", "HeatingSystem_gauss2.log");
+system("./HeatingSystem -s=genericRK -genericRKOpt=adams -genericRKMROpt=sdirk2 -rkNLS=kinsol -rkmrFac=1 -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_gauss2.log");
 print(readFile("HeatingSystem_gauss2.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",

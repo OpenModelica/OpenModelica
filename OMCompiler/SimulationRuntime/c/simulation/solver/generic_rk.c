@@ -1813,9 +1813,9 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   solverInfo->solverRootFinding = 1;
 
-  infoStreamPrint(LOG_STATS, 0, "generic Runge-Kutta method:");
+  infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method:");
 
-  if(ACTIVE_STREAM(LOG_STATS))
+  if(ACTIVE_STREAM(LOG_SOLVER))
   {
     printVector_genericRK("yIni:", sData->realVars, gsriData->nStates, sDataOld->timeValue);
   }
@@ -1869,7 +1869,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       memcpy(gsriData->yLeft, gsriData->yOld, data->modelData->nStates*sizeof(double));
       gsriData->timeLeft = gsriData->time;
 
-      if(ACTIVE_STREAM(LOG_STATS))
+      if(ACTIVE_STREAM(LOG_SOLVER))
       {
         printVector_genericRK("yOld: ", gsriData->yOld, gsriData->nStates, gsriData->time);
       }
@@ -1921,7 +1921,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       // printIntVector_genericRK("Indices after sorting:", gsriData->sortedStates, gsriData->nStates, gsriData->time);
       // printVector_genericRK_MR("Error after sorting:", gsriData->err, gsriData->nStates, gsriData->time,  gsriData->nStates, gsriData->sortedStates);
 
-      if (gsriData->multi_rate && gsriData->percentage > 0 && (err > 0.1))
+      if (gsriData->multi_rate && gsriData->percentage > 0 && (err > 0.0))
       {
         // BB ToDo: Gives problems, if the orderig of the fast states change during simulation
         int *sortedStates;
@@ -1949,7 +1949,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         for (i=0; i<gsriData->nStates; i++)
         {
           ii = gsriData->sortedStates[i];
-          if (i < gsriData->nStates * gsriData->percentage || gsriData->err[ii]>=1)
+          if (i < gsriData->nStates * gsriData->percentage - 1 || gsriData->err[ii]>=1)
           {
             gsriData->fastStates[gsriData->nFastStates] = ii;
             gsriData->nFastStates++;
@@ -1995,7 +1995,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         // printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
         //     gsriData->nSlowStates, gsriData->nFastStates,
         //     gsriData->nFastStates + gsriData->nSlowStates - gsriData->nStates);
-        if (gsriData->nFastStates>0  && gsriData->err_fast > 1)
+        if (gsriData->nFastStates>0  && gsriData->err_fast > 0)
         {
           if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
             return 0;
@@ -2011,8 +2011,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
           //   err = fmax(err, gsriData->err[i]);
           // }
           //printVector_genericRK("Error: ", rkData->err, rkData->nStates, rkData->time);
+          err = gsriData->err_fast;
         }
-        err = gsriData->err_fast;
       }
 
       // printf("Stepsize: old: %g, last: %g, act: %g\n", rkData->stepSize_old, rkData->lastStepSize, rkData->stepSize);
@@ -2078,13 +2078,23 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
           // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
           messageClose(LOG_SOLVER);
         }
+        if (!gsriData->multi_rate || (gsriData->multi_rate && !gsriData->percentage))
+        {
+            /* write statistics to the solverInfo data structure */
+          solverInfo->solverStatsTmp[0] = gsriData->stepsDone;
+          solverInfo->solverStatsTmp[1] = gsriData->evalFunctionODE;
+          solverInfo->solverStatsTmp[2] = gsriData->evalJacobians;
+          solverInfo->solverStatsTmp[3] = gsriData->errorTestFailures;
+          solverInfo->solverStatsTmp[4] = gsriData->convergenceFailures;
+        }
+
         return 0;
       }
     }
     /* update time with performed stepSize */
     gsriData->time += gsriData->lastStepSize;
 
-    if(ACTIVE_STREAM(LOG_STATS))
+    if(ACTIVE_STREAM(LOG_SOLVER))
     {
       printVector_genericRK("y:    ", gsriData->y, gsriData->nStates, gsriData->time);
     }
@@ -2116,7 +2126,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     }
   } // end of while-loop (gsriData->time < targetTime)
 
-  if(ACTIVE_STREAM(LOG_STATS))
+  if(ACTIVE_STREAM(LOG_SOLVER))
   {
     printf("\n");
   }
