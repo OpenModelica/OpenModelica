@@ -18,7 +18,7 @@ setCommandLineOptions("-d=newInst"); getErrorString();
 buildModel(testSolver.problem6); getErrorString();
 
 // Test default settings
-system(realpath(".") + "/testSolver.problem6 -s=cvode -override stopTime=3.0", "testSolver_problem6_default.log"); getErrorString();
+system(realpath(".") + "/testSolver.problem6 -s=cvode -override=stopTime=3.0,stepSize=0.006", "testSolver_problem6_default.log"); getErrorString();
 readFile("testSolver_problem6_default.log"); remove("testSolver_problem6_default.log");
 
 echo(false);  /* Silence readSimulationResult */
