@@ -33,6 +33,8 @@ AssertInvalid3.mo \
 AssertInvalid4.mo \
 AssignConstant1.mo \
 AssignInput1.mo \
+AssignModel1.mo \
+AssignPackage1.mo \
 AssignParameter1.mo \
 Binding1.mo \
 BindingArray1.mo \
@@ -810,6 +812,7 @@ ModClass3.mo \
 ModClass4.mo \
 ModClass5.mo \
 ModClass6.mo \
+ModelBinding1.mo \
 ModScope1.mo \
 MultiInheritanceRedeclare1.mo \
 MultiInheritanceRedeclare2.mo \
@@ -863,6 +866,7 @@ OperatorOverloadConstructorInvalidOutput2.mo \
 OperatorOverloadConstructorSimple.mo \
 OperatorOverloadError1.mo \
 OperatorOverloadSum1.mo \
+PackageBinding1.mo \
 PackageConstant1.mo \
 PackageConstant3.mo \
 PackageConstant4.mo \
