@@ -82,13 +82,14 @@ add_custom_command (
 
 
 # On Windows it also needs to have the dlls it depends on (remember bomc is being used without being installed)
-# think of this as a manual install for it. Luckily it depends only on one dll for now,
+# think of this as a manual install for it. Luckily it depends only on just two dlls for now,
 if(WIN32)
   add_custom_command (
     TARGET bomc
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::simrt::runtime> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
-    COMMENT "Copying OpenModelicaRuntimeC.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::3rd::omcgc> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+    COMMENT "Copying libOpenModelicaRuntimeC.dll and libomcgc.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
 endif()
 
 # add_custom_command(
