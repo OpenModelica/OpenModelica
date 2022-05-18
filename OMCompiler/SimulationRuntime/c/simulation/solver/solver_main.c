@@ -742,6 +742,13 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     simInfo->stepSize = simInfo->minStepSize;
     simInfo->numSteps = round((simInfo->stopTime - simInfo->startTime)/simInfo->stepSize);
   }
+  /* Check step size is not larger then stopTime-startTime, up to 6 decimals
+   * Ignored when linearizing model */
+  if (!data->modelData->create_linearmodel && simInfo->stepSize > (simInfo->stopTime - simInfo->startTime + 1e-7)) {
+    warningStreamPrint(LOG_STDOUT, 1, "Integrator step size greater than length of experiment");
+    infoStreamPrint(LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
+    messageClose(LOG_STDOUT);
+  }
 #if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif

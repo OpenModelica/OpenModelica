@@ -421,6 +421,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
 
   /* linear model option is set : <-l lintime> */
   int create_linearmodel = omc_flag[FLAG_L];
+  data->modelData->create_linearmodel = create_linearmodel;
   const char* lintime = omc_flagValue[FLAG_L];
 
   /* activated measure time option with LOG_STATS */

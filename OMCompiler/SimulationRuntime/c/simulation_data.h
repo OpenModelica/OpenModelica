@@ -507,7 +507,8 @@ typedef struct MODEL_DATA
   char* resourcesDir;
   modelica_boolean runTestsuite;       /* true if this model was generated during testing */
 
-  int linearizationDumpLanguage;       /* default is 0-modelica, options: 1-matlab, 2-julia, 3-pythong */
+  int linearizationDumpLanguage;        /* default is 0-modelica, options: 1-matlab, 2-julia, 3-pythong */
+  modelica_boolean create_linearmodel;  /* true if model gets linearized */
 
   long nSamples;                       /* number of different sample-calls */
   SAMPLE_INFO* samplesInfo;            /* array containing each sample-call */
