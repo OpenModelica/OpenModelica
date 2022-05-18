@@ -678,23 +678,34 @@ int jacobian_MS_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JACOB
 
   DATA* data = (DATA*) inData;
   DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
+  DATA_GMRI* gmriData = gsriData->gmriData;
+  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
-  int i;
+  int i, ii;
   int nStates = data->modelData->nStates;
-  int nStages = gsriData->tableau->nStages;
-  int stage = gsriData->act_stage;
+  int nStages = gmriData->tableau->nStages;
+  int nFastStates = gmriData->nFastStates;
+  int stage = gmriData->act_stage;
+
+  for (i=0; i<jacobian_ODE->sizeCols; i++)
+    jacobian_ODE->seedVars[i] = 0;
+  // Map the jacobian->seedVars to the jacobian_ODE->seedVars
+  for (ii=0; ii<nFastStates; ii++)
+  {
+    i = gmriData->fastStates[ii];
+    if (jacobian->seedVars[ii])
+      jacobian_ODE->seedVars[i] = 1;
+  }
 
   /* Evaluate column of Jacobian ODE */
-  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
-  /* Update resultVars array */
-  for (i = 0; i < jacobian->sizeCols; i++) {
-    jacobian->resultVars[i] = gsriData->tableau->b[nStages-1] * gsriData->stepSize * jacobian_ODE->resultVars[i];
+  for (ii = 0; ii < nFastStates; ii++) {
+    i = gmriData->fastStates[ii];
+    jacobian->resultVars[ii] = gmriData->tableau->b[nStages-1] * gmriData->stepSize * jacobian_ODE->resultVars[i];
     /* -1 on diagonal elements */
-    if (jacobian->seedVars[i] == 1) {
-      jacobian->resultVars[i] -= gsriData->tableau->c[nStages-1];
+    if (jacobian->seedVars[ii] == 1) {
+      jacobian->resultVars[ii] -= 1;
     }
   }
 
