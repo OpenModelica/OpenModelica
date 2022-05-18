@@ -247,6 +247,50 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
                         "sparsePatternT");
 }
 
+/**
+ * @brief Prints sparse structure.
+ *
+ * Use to print e.g. sparse Jacobian matrix.
+ * Only prints if stream is active and sparse pattern is non NULL and of size > 0.
+ *
+ * @param sparsePattern   Matrix to print.
+ * @param sizeRows        Number of rows of matrix.
+ * @param sizeCols        Number of columns of matrix.
+ * @param stream          Steam to print to.
+ * @param name            Name of matrix.
+ */
+void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name)
+{
+  /* Variables */
+  unsigned int row, col, i, j;
+  infoStreamPrint(LOG_STDOUT, 0, "Sparse structure of %s [size: %ux%u]", name, jacobian->sizeRows, jacobian->sizeCols);
+  infoStreamPrint(LOG_STDOUT, 0, "%u non-zero elements", jacobian->sparsePattern->numberOfNonZeros);
+
+  infoStreamPrint(LOG_STDOUT, 0, "Values of the transposed matrix (rows: states)");
+
+  printf("\n");
+  i=0;
+  for(row=0; row < jacobian->sizeRows; row++)
+  {
+    j=0;
+    for(col=0; i < jacobian->sparsePattern->leadindex[row+1]; col++)
+    {
+      if(jacobian->sparsePattern->index[i] == col)
+      {
+        printf("%20.16g ", jacobian->resultVars[col]);
+        ++i;
+      }
+      else
+      {
+        printf("%20.16g ", 0.0);
+      }
+    }
+    printf("\n");
+  }
+  printf("\n");
+}
+
+
 void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages)
 {
   SPARSE_PATTERN* sparsePatternT;
@@ -1159,6 +1203,10 @@ int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBI
       jacobian->resultVars[i] -= 1;
     }
   }
+
+  // printVector_genericRK("jacobian_ODE colums", jacobian_ODE->resultVars, nStates, gsriData->time);
+  // printVector_genericRK("jacobian colums", jacobian->resultVars, nStates, gsriData->time);
+  // printIntVector_genericRK("sparsity pattern colors", jacobian->sparsePattern->colorCols, nStates, gsriData->time);
 
   return 0;
 }

@@ -156,13 +156,13 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   {
   case RK_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK_MR;
-    // nlsData->analyticalJacobianColumn = jacobian_DIRK_column_MR;
-    nlsData->analyticalJacobianColumn = NULL;
+    // nlsData->analyticalJacobianColumn = NULL;
+    nlsData->analyticalJacobianColumn = jacobian_DIRK_column_MR;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
-    gmriData->symJacAvailable = FALSE;
-    // gmriData->symJacAvailable = TRUE;
+    // gmriData->symJacAvailable = FALSE;
+    gmriData->symJacAvailable = TRUE;
     break;
   case MS_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_MS_MR;
@@ -799,6 +799,9 @@ int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JAC
       jacobian->resultVars[ii] -= 1;
     }
   }
+  // printVector_genericRK("jacobian_ODE colums", jacobian_ODE->resultVars, nFastStates, gmriData->time);
+  // printVector_genericRK("jacobian colums", jacobian->resultVars, nFastStates, gmriData->time);
+  // printIntVector_genericRK("sparsity pattern colors", jacobian->sparsePattern->colorCols, nFastStates, gmriData->time);
 
   return 0;
 }
@@ -1124,7 +1127,8 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
   DATA_GMRI* gmriData = gsriData->gmriData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)gmriData->nlsData->solverData;
+  struct dataSolver *solverDataStruct = gmriData->nlsData->solverData;
+  DATA_NEWTON* solverData = (DATA_NEWTON*) solverDataStruct->ordinaryData;
 
   double err, eventTime;
   double Atol = data->simulationInfo->tolerance;
@@ -1148,7 +1152,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   if (solverInfo->didEventStep || !gmriData->stepsDone)
   {
     gmriData->time = gsriData->time;
-    gmriData->stepSize = gsriData->lastStepSize*0.5;
+    gmriData->stepSize = gsriData->lastStepSize;//*0.5;
     // BB ToDO: Copy only fast states!!
     memcpy(gmriData->yOld, gsriData->yOld, sizeof(double)*gsriData->nStates);
     for (i=0; i<gmriData->nStates*gmriData->tableau->nStages; i++)
@@ -1170,6 +1174,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
   gmriData->nlsData->size = gmriData->nFastStates;
+  solverData->n = gmriData->nFastStates;
   for (ii=0; ii<nFastStates; ii++) {
     i = gmriData->fastStates[ii];
   // Get the nominal values of the states
@@ -1186,7 +1191,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // trivial coloring, needs to be set each call of MR, if number of fast States changes...
     gmriData->jacobian->sparsePattern->maxColors = nFastStates;
     for (i=0; i < nFastStates; i++)
-      gmriData->jacobian->sparsePattern->colorCols[i] = i;
+      gmriData->jacobian->sparsePattern->colorCols[i] = i+1;
 
     gmriData->jacobian->sparsePattern->sizeofIndex = nFastStates*nFastStates;
     gmriData->jacobian->sparsePattern->numberOfNonZeros = nFastStates*nFastStates;
@@ -1195,7 +1200,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   }
 
   // print informations on the calling details
-  infoStreamPrint(LOG_SOLVER, 1, "generic Runge-Kutta method (fast states):");
+  infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states):");
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (outer simulation time %10g)",
                   gsriData->timeLeft, gsriData->timeRight, gsriData->time);
 
@@ -1357,7 +1362,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   solverInfo->solverStatsTmp[4] = gmriData->convergenceFailures;
 
   infoStreamPrint(LOG_SOLVER, 0, "Finished genericRKmr step.");
-  messageClose(LOG_SOLVER);
+  if(ACTIVE_STREAM(LOG_SOLVER))
+  {
+    messageClose(LOG_SOLVER);
+  }
 
   return 0;
 }

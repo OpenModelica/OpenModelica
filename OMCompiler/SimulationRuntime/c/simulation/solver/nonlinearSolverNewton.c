@@ -41,6 +41,8 @@ extern "C" {
 
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
+#include "omc_math.h"
+
 #include "util/varinfo.h"
 #include "model_help.h"
 #include "generic_rk.h"
@@ -139,7 +141,6 @@ int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* ja
   return 0;
 }
 
-
 /*! \fn wrapper_fvec_newton for the residual Function
  *   tensolve calls for the subroutine fcn(n, x, fvec, iflag, data)
  *
@@ -179,6 +180,12 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
 
     if ((systemData->jacobianIndex == -1) && (sysNumber<0)  && (systemData->analyticalJacobianColumn != NULL)) {
       getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, sysNumber);
+      _omc_matrix* dumpJac  = _omc_createMatrix(solverData->n, solverData->n, solverData->fjac);
+      _omc_vector* dumpFvec = _omc_createVector(solverData->n, fvec);
+
+      _omc_printMatrix(dumpJac, "Jacobian:", LOG_SOLVER_V);
+      _omc_printVector(dumpFvec, "Residuum:", LOG_SOLVER_V);
+
     }
     else if(systemData->jacobianIndex != -1) {
       getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, sysNumber);
