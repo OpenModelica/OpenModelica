@@ -918,12 +918,14 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   int nStages = gmriData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // printVector_genericRK("k:  ", gsriData->k + 0 * nStates, nStates, gsriData->time);
-  // printVector_genericRK("k:  ", gsriData->k + 1 * nStates, nStates, gsriData->time);
+  // printVector_genericRK("k:  ", gmriData->k + 0 * nStates, nStates, gmriData->time);
+  // printVector_genericRK("k:  ", gmriData->k + 1 * nStates, nStates, gmriData->time);
+  // printVector_genericRK("x:  ", gmriData->x + 0 * nStates, nStates, gmriData->time);
+  // printVector_genericRK("x:  ", gmriData->x + 1 * nStates, nStates, gmriData->time);
 
   // Is this necessary???
-  gmriData->data = (void*) data;
-  gmriData->threadData = threadData;
+  // gmriData->data = (void*) data;
+  // gmriData->threadData = threadData;
 
   /* Predictor Schritt */
   for (ii = 0; ii < gmriData->nFastStates; ii++)
@@ -1033,8 +1035,8 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   modelica_boolean solved = FALSE;
 
   // Is this necessary???
-  gmriData->data = (void*) data;
-  gmriData->threadData = threadData;
+  // gmriData->data = (void*) data;
+  // gmriData->threadData = threadData;
 
   // interpolate the slow states on the current time of gmriData->yOld for correct evaluation of gmriData->res_const
   linear_interpolation_MR(gmriData->startTime, gmriData->yStart,
@@ -1160,17 +1162,18 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   }
 
   // BB ToDo: needs to be performed also after an event!!!
-  if (solverInfo->didEventStep || !gmriData->stepsDone)
+  if (gmriData->didEventStep)
   {
     gmriData->time = gsriData->time;
     gmriData->stepSize = gsriData->lastStepSize;//*0.5;
     // BB ToDO: Copy only fast states!!
     memcpy(gmriData->yOld, gsriData->yOld, sizeof(double)*gsriData->nStates);
-    for (i=0; i<gmriData->nStates*gmriData->tableau->nStages; i++)
-      gmriData->k[i] = 0;
-    gmriData->didEventStep = TRUE;
+    // for (i=0; i<gmriData->nStates*gmriData->tableau->nStages; i++)
+    //   gmriData->k[i] = 0;
+    gmriData->didEventStep = FALSE;
     if (gmriData->type == MS_TYPE_IMPLICIT) {
-      memcpy(gmriData->x + (gmriData->tableau->nStages-2) * nStates, gsriData->yOld, nStates*sizeof(double));
+      memcpy(gmriData->x, gsriData->x, nStates*sizeof(double));
+      memcpy(gmriData->k, gsriData->k, nStates*sizeof(double));
     }
   }
   gmriData->stepSize    = fmin(gmriData->stepSize, gsriData->timeRight - gmriData->time);

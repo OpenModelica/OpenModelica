@@ -1354,6 +1354,8 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   // printVector_genericRK("k:  ", gsriData->k + 0 * nStates, nStates, gsriData->time);
   // printVector_genericRK("k:  ", gsriData->k + 1 * nStates, nStates, gsriData->time);
+  // printVector_genericRK("x:  ", gsriData->x + 0 * nStates, nStates, gsriData->time);
+  // printVector_genericRK("x:  ", gsriData->x + 1 * nStates, nStates, gsriData->time);
 
   /* Predictor Schritt */
   for (i = 0; i < nStates; i++)
@@ -1500,13 +1502,8 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gsriData->nlsData;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
-      if (gsriData->didEventStep) {
-        for (i=0; i<nStates; i++)
+      for (i=0; i<nStates; i++) {
           nlsData->nlsx[i] = gsriData->yOld[i] + gsriData->tableau->c[stage_] * gsriData->stepSize * gsriData->k[i];
-      } else {
-        for (i=0; i<nStates; i++)
-          nlsData->nlsx[i] = gsriData->yOld[i] + gsriData->tableau->c[stage_] * gsriData->stepSize * gsriData->k[i];
-
       }
       //memcpy(nlsData->nlsx, gsriData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
@@ -1641,6 +1638,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   /* set correct flags in order to calculate initial step size */
   gsriData->isFirstStep = FALSE;
   gsriData->didEventStep = TRUE;
+  gsriData->gmriData->didEventStep = TRUE;
   solverInfo->didEventStep = FALSE;
 
   for (int i=0; i<gsriData->ringBufferSize; i++) {
@@ -1667,14 +1665,15 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   //printVector_genericRK("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
   //printVector_genericRK("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
   memcpy(gsriData->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
+  memcpy(gsriData->x, sData->realVars, data->modelData->nStates*sizeof(double));
   wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
   /* store values of the state derivatives at initial or event time */
   memcpy(gsriData->f, fODE, data->modelData->nStates*sizeof(double));
-  memcpy(gsriData->k + (nStages-2) * nStates, fODE, nStates*sizeof(double));
+  memcpy(gsriData->k, fODE, nStates*sizeof(double));
 
-  if (gsriData->type == MS_TYPE_IMPLICIT) {
-      memcpy(gsriData->x + (nStages-2) * nStates, gsriData->yOld, nStates*sizeof(double));
-  }
+  // if (gsriData->type == MS_TYPE_IMPLICIT) {
+  //     memcpy(gsriData->x + (nStages-2) * nStates, gsriData->yOld, nStates*sizeof(double));
+  // }
 
   for (i=0; i<data->modelData->nStates; i++)
   {
