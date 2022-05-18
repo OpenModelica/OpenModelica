@@ -505,6 +505,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           }
         }
 
+        // Calculate integrator step size
         if(simInfo->numSteps == 0) {
           if(fabs(simInfo->stopTime-simInfo->startTime) < 1e-16) {
             solverInfo->currentStepSize = 0;
