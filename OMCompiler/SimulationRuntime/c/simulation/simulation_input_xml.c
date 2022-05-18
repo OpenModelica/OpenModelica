@@ -949,6 +949,16 @@ static const char* getOverrideValue(omc_CommandLineOverrides *mOverrides, omc_Co
   return findHashStringString(mOverrides, name);
 }
 
+/**
+ * @brief Read override values from simulation flags `-override` and `-overrideFile` and update variables.
+ *
+ * Return if step sizes needs to be re-calculated because start or stop time was changed, but step size wasn't changed.
+ *
+ * @param mi                    Model input from info XML file.
+ * @param modelData             Pointer to model data containing variable values to override.
+ * @param overrideFile          Path to override file given by `-overrideFile`.
+ * @return modelica_boolean     True if integrator step size should be re-caclualted.
+ */
 modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile)
 {
   omc_CommandLineOverrides *mOverrides = NULL;
@@ -1104,9 +1114,7 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
         }
       }
     }
-    if(changedStartStop && ! changedStepSize) {
-      reCalcStepSize = 1 /* true */;
-    }
+    reCalcStepSize = changedStartStop && !changedStepSize;
 
     #define CHECK_OVERRIDE(v,b) \
       if (findHashStringStringNull(mOverrides, findHashStringString(*findHashLongVar(mi->v,i),"name"))) { \
