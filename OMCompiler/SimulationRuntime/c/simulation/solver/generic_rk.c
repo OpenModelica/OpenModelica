@@ -73,7 +73,6 @@
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void printVector_genericRK(char name[], double* a, int n, double time);
 void printIntVector_genericRK(char name[], int* a, int n, double time);
-void printVector_genericRK_MR_fs(char name[], double* a, int n, double time, int nIndx, int* indx);
 void printMatrix_genericRK(char name[], double* a, int n, double time);
 void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx);
 void sortErrorIndices(DATA_GSRI* gsriData);
@@ -131,6 +130,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   if (eventHappend) {
     eventTime = findRoot(data, threadData, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues);
+    infoStreamPrint(LOG_SOLVER, 0, "event happend at time: %20.16g", eventTime);
   }
 
   // re-store the pre values of the zeroCrossings for comparison
@@ -1665,6 +1665,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   /* initialize start values of the integrator and calculate ODE function*/
   //printVector_genericRK("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
   //printVector_genericRK("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
+
   memcpy(gsriData->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
   memcpy(gsriData->x, sData->realVars, data->modelData->nStates*sizeof(double));
   wrapper_f_genericRK(data, threadData, &(gsriData->evalFunctionODE), fODE);
@@ -1812,8 +1813,12 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   solverInfo->solverRootFinding = 1;
 
-  infoStreamPrint(LOG_SOLVER, 1, "generic Runge-Kutta method:");
+  infoStreamPrint(LOG_STATS, 0, "generic Runge-Kutta method:");
 
+  if(ACTIVE_STREAM(LOG_STATS))
+  {
+    printVector_genericRK("yIni:", sData->realVars, gsriData->nStates, sDataOld->timeValue);
+  }
   // TODO AHeu: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
   // Also instead of solverInfo->integratorSteps we should set and use solverInfo->solverNoEquidistantGrid
   /* Calculate steps until targetTime is reached */
@@ -1864,6 +1869,11 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       memcpy(gsriData->yLeft, gsriData->yOld, data->modelData->nStates*sizeof(double));
       gsriData->timeLeft = gsriData->time;
 
+      if(ACTIVE_STREAM(LOG_STATS))
+      {
+        printVector_genericRK("yOld: ", gsriData->yOld, gsriData->nStates, gsriData->time);
+      }
+
       /* calculate jacobian:
        *    once for the first iteration after initial or an event
        *    solverData->calculate_jacobian = 0
@@ -1911,7 +1921,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       // printIntVector_genericRK("Indices after sorting:", gsriData->sortedStates, gsriData->nStates, gsriData->time);
       // printVector_genericRK_MR("Error after sorting:", gsriData->err, gsriData->nStates, gsriData->time,  gsriData->nStates, gsriData->sortedStates);
 
-      if (gsriData->multi_rate && gsriData->percentage > 0)
+      if (gsriData->multi_rate && gsriData->percentage > 0 && (err > 0.1))
       {
         // BB ToDo: Gives problems, if the orderig of the fast states change during simulation
         int *sortedStates;
@@ -1985,7 +1995,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         // printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
         //     gsriData->nSlowStates, gsriData->nFastStates,
         //     gsriData->nFastStates + gsriData->nSlowStates - gsriData->nStates);
-        if (gsriData->nFastStates>0)
+        if (gsriData->nFastStates>0  && gsriData->err_fast > 1)
         {
           if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
             return 0;
@@ -1994,8 +2004,6 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
           //  copyVector_genericRK_MR(rkData->y, rkData->gmriData->y, rkData->nFastStates, rkData->fastStates);
           //  copyVector_genericRK_MR(rkData->yt, rkData->gmriData->yt, rkData->nFastStates, rkData->fastStates);
           //  copyVector_genericRK_MR(rkData->err, rkData->gmriData->err, rkData->nFastStates, rkData->fastStates);
-          //  printVector_genericRK_MR_fs("y ", rkData->y, n, rkData->time, rkData->nFastStates, rkData->fastStates);
-          //  printVector_genericRK_MR_fs("yt ", rkData->yt, n, rkData->time, rkData->nFastStates, rkData->fastStates);
           /*** calculate error (infinity norm!)***/
           // err = 0;
           // for (i=0; i<data->modelData->nStates; i++)
@@ -2003,8 +2011,8 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
           //   err = fmax(err, gsriData->err[i]);
           // }
           //printVector_genericRK("Error: ", rkData->err, rkData->nStates, rkData->time);
-          err = gsriData->err_fast;
         }
+        err = gsriData->err_fast;
       }
 
       // printf("Stepsize: old: %g, last: %g, act: %g\n", rkData->stepSize_old, rkData->lastStepSize, rkData->stepSize);
@@ -2057,15 +2065,12 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       eventTime = checkForEvents(data, threadData, solverInfo, gsriData->time, gsriData->yOld, gsriData->time + gsriData->lastStepSize, gsriData->y);
       if (eventTime > 0)
       {
-        // sData->realVars are the "numerical" values on the right hand side of the event
-        memcpy(gsriData->yOld, sData->realVars, gsriData->nStates * sizeof(double));
-
-//        gsriData->lastStepSize = eventTime-gsriData->time;
-        gsriData->time = eventTime;
-
         solverInfo->currentTime = eventTime;
         sData->timeValue = eventTime;
 
+        // sData->realVars are the "numerical" values on the right hand side of the event
+        gsriData->time = eventTime;
+        memcpy(gsriData->yOld, sData->realVars, gsriData->nStates * sizeof(double));
         // printVector_genericRK("y:    ", gsriData->y, nStates, gsriData->time);
         if(ACTIVE_STREAM(LOG_SOLVER))
         {
@@ -2078,6 +2083,12 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     }
     /* update time with performed stepSize */
     gsriData->time += gsriData->lastStepSize;
+
+    if(ACTIVE_STREAM(LOG_STATS))
+    {
+      printVector_genericRK("y:    ", gsriData->y, gsriData->nStates, gsriData->time);
+    }
+
 
     // printVector_genericRK("yOld", gsriData->yOld, gsriData->nStates, gsriData->time - gsriData->lastStepSize);
     // printVector_genericRK("y   ", gsriData->y, gsriData->nStates, gsriData->time);
@@ -2105,23 +2116,30 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     }
   } // end of while-loop (gsriData->time < targetTime)
 
+  if(ACTIVE_STREAM(LOG_STATS))
+  {
+    printf("\n");
+  }
+
   if (!solverInfo->integratorSteps)
   {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;
-    if (gsriData->multi_rate)
+    if (gsriData->multi_rate) {
       // interpolating fast states if multirate method is used
       linear_interpolation_MR(gsriData->gmriData->time-gsriData->gmriData->lastStepSize, gsriData->gmriData->yt,
                               gsriData->gmriData->time, gsriData->gmriData->y,
                               sData->timeValue, sData->realVars,
                               gsriData->nFastStates, gsriData->fastStates);
 
-      // interpolating slow states if multirate method is used, otherwise all states are slow states
-      linear_interpolation_MR(gsriData->timeLeft, gsriData->yLeft,
-                            gsriData->timeRight, gsriData->y,
-                            sData->timeValue, sData->realVars,
-                            gsriData->nSlowStates, gsriData->slowStates);
+    }
+
+    // interpolating slow states if multirate method is used, otherwise all states are slow states
+    linear_interpolation_MR(gsriData->timeLeft, gsriData->yLeft,
+                          gsriData->timeRight, gsriData->y,
+                          sData->timeValue, sData->realVars,
+                          gsriData->nSlowStates, gsriData->slowStates);
     if(ACTIVE_STREAM(LOG_SOLVER))
     {
       // printIntVector_genericRK("fast states:", gsriData->fastStates, gsriData->nFastStates, solverInfo->currentTime);
@@ -2130,6 +2148,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     }
   }else{
     // Integrator emits result on the simulation grid
+    sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
     solverInfo->currentTime = gsriData->time;
   }
 
@@ -2205,7 +2224,7 @@ void linear_interpolation(double ta, double* fa, double tb, double* fb, double t
 
 void printVector_genericRK(char name[], double* a, int n, double time)
 {
-  printf("%s at time: %16.12g:", name, time);
+  printf("%s\t(time = %14.8g):", name, time);
   for (int i=0;i<n;i++)
     printf("%16.12g ", a[i]);
   printf("\n");
@@ -2213,17 +2232,9 @@ void printVector_genericRK(char name[], double* a, int n, double time)
 
 void printIntVector_genericRK(char name[], int* a, int n, double time)
 {
-  printf("\n%s at time: %g: \n", name, time);
+  printf("%s\t(time = %g): \n", name, time);
   for (int i=0;i<n;i++)
     printf("%d ", a[i]);
-  printf("\n");
-}
-
-void printVector_genericRK_MR_fs(char name[], double* a, int n, double time, int nIndx, int* indx)
-{
-  printf("\n%s at time: %g: \n", name, time);
-  for (int i=0;i<nIndx;i++)
-    printf("%6g ", a[indx[i]]);
   printf("\n");
 }
 

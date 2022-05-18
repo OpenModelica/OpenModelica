@@ -57,7 +57,6 @@
 // help functions
 void printVector_genericRK(char name[], double* a, int n, double time);
 void printIntVector_genericRK(char name[], int* a, int n, double time);
-void printVector_genericRK_MR_fs(char name[], double* a, int n, double time, int nIndx, int* indx);
 void printMatrix_genericRK(char name[], double* a, int n, double time);
 
 
@@ -796,13 +795,6 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
   memcpy(gmriData->x + stage_ * nStates, gmriData->y, nStates*sizeof(double));
 
-  // printVector_genericRK("yt: ", gsriData->yt, nStates, gsriData->time);
-  // printVector_genericRK("y:  ", gsriData->y, nStates, gsriData->time);
-
-  // printVector_genericRK("k:  ", gsriData->k + 0 * nStates, nStates, gsriData->time);
-  // printVector_genericRK("k:  ", gsriData->k + 1 * nStates, nStates, gsriData->time);
-
-
   return 0;
 }
 
@@ -935,7 +927,6 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
   DATA_GMRI* gmriData = gsriData->gmriData;
   struct dataSolver *solverDataStruct = gmriData->nlsData->solverData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*) solverDataStruct->ordinaryData;
 
   double err, eventTime;
   double Atol = data->simulationInfo->tolerance;
@@ -966,18 +957,16 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     gmriData->convergenceFailures = 0;
 
     gmriData->time = gsriData->time;
-    gmriData->stepSize = gsriData->lastStepSize*0.5;
+    gmriData->stepSize = gsriData->lastStepSize;
     // BB ToDO: Copy only fast states!!
     memcpy(gmriData->yOld, gsriData->yOld, sizeof(double)*gsriData->nStates);
-    // for (i=0; i<gmriData->nStates*gmriData->tableau->nStages; i++)
-    //   gmriData->k[i] = 0;
     gmriData->didEventStep = FALSE;
     if (gmriData->type == MS_TYPE_IMPLICIT) {
       memcpy(gmriData->x, gsriData->x, nStates*sizeof(double));
       memcpy(gmriData->k, gsriData->k, nStates*sizeof(double));
     }
   }
-  gmriData->stepSize    = fmin(gmriData->stepSize, gsriData->timeRight - gmriData->time);
+//  gmriData->stepSize    = fmin(gmriData->stepSize, gsriData->timeRight - gmriData->time);
   gmriData->startTime   = gsriData->timeLeft;
   gmriData->endTime     = gsriData->timeRight;
   gmriData->yStart      = gsriData->yLeft;
@@ -989,7 +978,20 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
   gmriData->nlsData->size = gmriData->nFastStates;
-  solverData->n = gmriData->nFastStates;
+  switch (gmriData->nlsSolverMethod)
+  {
+    case  RK_NLS_NEWTON:
+      ((DATA_NEWTON*) solverDataStruct->ordinaryData)->n = gmriData->nFastStates;
+      break;
+    case  RK_NLS_KINSOL:
+      ((NLS_KINSOL_DATA*) solverDataStruct->ordinaryData)->size = gmriData->nFastStates;
+      break;
+    default:
+      errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gmriData->nlsSolverMethod]);
+      return -1;
+      break;
+  }
+
   for (ii=0; ii<nFastStates; ii++) {
     i = gmriData->fastStates[ii];
   // Get the nominal values of the states
@@ -1017,18 +1019,30 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   }
 
   // print informations on the calling details
-  infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states):");
+  infoStreamPrint(LOG_STATS, 0, "generic Runge-Kutta method (fast states):");
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (outer simulation time %10g)",
                   gsriData->timeLeft, gsriData->timeRight, gsriData->time);
+  if(ACTIVE_STREAM(LOG_STATS))
+  {
+    printVector_genericRK("yL: ", gsriData->yLeft, gsriData->nStates, gsriData->timeLeft);
+    printVector_genericRK("yR: ", gsriData->y, gsriData->nStates, gsriData->timeRight);
+    printf("\n");
+  }
 
   while (gmriData->time < targetTime)
   {
     do
     {
+      if(ACTIVE_STREAM(LOG_STATS))
+      {
+        //printVector_genericRK_MR("yOld: ", gmriData->yOld, gmriData->nStates, gmriData->time, gmriData->nFastStates, gmriData->fastStates);
+        printVector_genericRK("yOld: ", gmriData->yOld, gmriData->nStates, gmriData->time);
+      }
+
       // calculate one step of the integrator
       integrator_step_info = gmriData->step_fun(data, threadData, solverInfo);
 
-            // error handling: try half of the step size!
+      // error handling: try half of the step size!
       if (integrator_step_info != 0) {
         errorStreamPrint(LOG_STDOUT, 0, "genericRK_step: Failed to calculate step at time = %5g.", gmriData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
@@ -1088,7 +1102,6 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       }
     }
 
-
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
     linear_interpolation_MR(gmriData->startTime, gmriData->yStart,
                             gmriData->endTime,   gmriData->yEnd,
@@ -1099,15 +1112,15 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     eventTime = checkForEvents(data, threadData, solverInfo, gmriData->time, gmriData->yOld, gmriData->time + gmriData->lastStepSize, gmriData->y);
     if (eventTime > 0)
     {
-      // sData->realVars are the "numerical" values on the right hand side of the event
-      memcpy(gsriData->yOld, sData->realVars, gmriData->nStates * sizeof(double));
-      memcpy(gmriData->yOld, sData->realVars, gmriData->nStates * sizeof(double));
-
-      gmriData->time = eventTime;
-      gsriData->time = eventTime;
-
       solverInfo->currentTime = eventTime;
       sData->timeValue = solverInfo->currentTime;
+
+      // sData->realVars are the "numerical" values on the right hand side of the event
+      gsriData->time = eventTime;
+      memcpy(gsriData->yOld, sData->realVars, gmriData->nStates * sizeof(double));
+
+      gmriData->time = eventTime;
+      memcpy(gmriData->yOld, sData->realVars, gmriData->nStates * sizeof(double));
 
       if(ACTIVE_STREAM(LOG_SOLVER))
       {
@@ -1119,6 +1132,11 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
     /* update time with performed stepSize */
     gmriData->time += gmriData->lastStepSize;
+    if(ACTIVE_STREAM(LOG_STATS))
+    {
+      printVector_genericRK("y:    ", gmriData->y, gmriData->nStates, gmriData->time);
+    }
+
 
     /* step is accepted and yOld needs to be updated, store yOld for later interpolation... */
     copyVector_genericRK_MR(gmriData->yt, gmriData->yOld, nFastStates, gmriData->fastStates);
@@ -1178,7 +1196,13 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   solverInfo->solverStatsTmp[3] = gmriData->errorTestFailures;
   solverInfo->solverStatsTmp[4] = gmriData->convergenceFailures;
 
-  infoStreamPrint(LOG_SOLVER, 0, "Finished genericRKmr step.");
+  infoStreamPrint(LOG_STATS, 0, "Finished genericRKmr step.");
+  if(ACTIVE_STREAM(LOG_STATS))
+  {
+    printf("\n");
+  }
+
+
   if(ACTIVE_STREAM(LOG_SOLVER))
   {
     messageClose(LOG_SOLVER);
@@ -1206,9 +1230,9 @@ void linear_interpolation_MR(double ta, double* fa, double tb, double* fb, doubl
 
 void printVector_genericRK_MR(char name[], double* a, int n, double time, int nIndx, int* indx)
 {
-  printf("%s at time: %g: ", name, time);
+  printf("%s\t(time = %14.8g):", name, time);
   for (int i=0;i<nIndx;i++)
-    printf("%6g ", a[indx[i]]);
+    printf("%16.12g ", a[indx[i]]);
   printf("\n");
 }
 
@@ -1218,7 +1242,7 @@ void printMatrix_genericRK_MR(char name[], double* a, int n, double time)
   for (int i=0;i<n;i++)
   {
     for (int j=0;j<n;j++)
-      printf("%6g ", a[i*n + j]);
+      printf("%16.12g ", a[i*n + j]);
     printf("\n");
   }
   printf("\n");

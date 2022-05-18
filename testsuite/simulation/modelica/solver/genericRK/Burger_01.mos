@@ -38,9 +38,9 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
                               "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
 getErrorString();
 
-// Simulate with ESDIRK3 and KINSOL+KLU
-system("./burgerEq -s=genericRK -genericRKOpt=esdirk3_test -rkNLS=kinsol", "burgerEq_esdirk3_test.log");
-print(readFile("burgerEq_esdirk3_test.log"));
+// Simulate with ADAMS and KINSOL+KLU
+system("./burgerEq -s=genericRKmr -genericRKOpt=adams -genericRKMROpt=adams  -rkNLS=kinsol -rkmrFac=0.12 -override=\"tolerance=1e-4\"", "burgerEq_adams_test.log");
+print(readFile("burgerEq_adams_test.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",
                       expectedFile = "burgerEq_ref.mat",
@@ -49,8 +49,8 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
                               "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
 getErrorString();
 
-// Simulate with ESDIRK3 and KINSOL+KLU
-system("./burgerEq -s=genericRKmr -genericRKOpt=sdirk2 -genericRKMROpt=sdirk2 -rkNLS=kinsol -rkmrFac=0.12 -override=\"tolerance=1e-7\"", "burgerEq_esdirk3_mr.log");
+// Simulate with SDIRK2 and KINSOL+KLU
+system("./burgerEq -s=genericRKmr -genericRKOpt=sdirk2 -genericRKMROpt=sdirk2 -rkNLS=kinsol -rkmrFac=0.12 -override=\"tolerance=1e-5\"", "burgerEq_esdirk3_mr.log");
 print(readFile("burgerEq_esdirk3_mr.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",

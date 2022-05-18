@@ -37,8 +37,18 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
                       vars = {"Td"});
 getErrorString();
 
-// Simulate with gauss2 & KINSOL+KLU
-system("./HeatingSystem -s=genericRKmr -genericRKOpt=sdirk2 -genericRKMROpt=sdirk2 -rkNLS=newton -rkmrFac=0.5 -override=\"tolerance=1e-10,stopTime=864000\"", "HeatingSystem_gauss2.log");
+// Simulate with sdirk2 & KINSOL+KLU
+system("./HeatingSystem -s=genericRKmr -genericRKOpt=sdirk2 -genericRKMROpt=sdirk2 -rkNLS=newton -rkmrFac=0.5 -override=\"tolerance=1e-9,stopTime=864000\"", "HeatingSystem_gauss2.log");
+print(readFile("HeatingSystem_gauss2.log"));
+
+diffSimulationResults(actualFile = "HeatingSystem_res.mat",
+                      expectedFile = "HeatingSystem_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"Td"});
+getErrorString();
+
+// Simulate with sdirk2 & KINSOL+KLU
+system("./HeatingSystem -s=genericRKmr -genericRKOpt=adams -genericRKMROpt=sdirk2 -rkNLS=newton -rkmrFac=.5 -override=\"tolerance=1e-7,stopTime=864000\"", "HeatingSystem_gauss2.log");
 print(readFile("HeatingSystem_gauss2.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
@@ -64,6 +74,12 @@ getErrorString();
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true,{})
+// ""
 // 0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
