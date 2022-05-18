@@ -1638,7 +1638,8 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   /* set correct flags in order to calculate initial step size */
   gsriData->isFirstStep = FALSE;
   gsriData->didEventStep = TRUE;
-  gsriData->gmriData->didEventStep = TRUE;
+  if (gsriData->multi_rate)
+    gsriData->gmriData->didEventStep = TRUE;
   solverInfo->didEventStep = FALSE;
 
   for (int i=0; i<gsriData->ringBufferSize; i++) {
