@@ -495,135 +495,6 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   return sparsePattern_MR;
 }
 
-
-/*!	\fn wrapper_Jf_genericRK
- *
- *  calculate the Jacobian of functionODE with respect to the fast states
- *  IMPORTANT: assuming the correct values of the time value and the states are set
- *  \param [in]      n              pointer to number of states
- *  \param [in]      x              pointer to state vector
- *  \param [in]      fvec           pointer to corresponding fODE-values usually
- *                                  stored in gmriData->f (verify before calling)
- *  \param [in/out]  gmriData       data of the integrator (DATA_GMRI)
- *  \param [out]     fODE           pointer to state derivatives
- *
- *  result of the Jacobian is stored in solverData->fjac (DATA_NEWTON) ???????
- *
- */
-int wrapper_Jf_genericRK_MR(int n, double t, double* x, double* fODE, void* gmriData_void)
-{
-  DATA_GMRI* gmriData = (DATA_GMRI*) gmriData_void;
-
-  DATA* data = gmriData->data;
-  threadData_t* threadData = gmriData->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)gmriData->nlsSolverData;
-
-  int i,ii,j,jj,l,callJacColumns;
-  int nFastStates = gmriData->nFastStates;
-
-  // if ((solverData->calculate_jacobian >= 0) && (gmriData->evalJacobians==0))
-  {
-    /* profiling */
-    rt_tick(SIM_TIMER_JACOBIAN);
-
-    gmriData->evalJacobians++;
-
-    if (gmriData->symJacAvailable)
-    {
-      const int index = data->callback->INDEX_JAC_A;
-      ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
-      unsigned int columns = jac->sizeCols;
-      unsigned int rows = jac->sizeRows;
-      unsigned int sizeTmpVars = jac->sizeTmpVars;
-      unsigned int currentIndex, nth;
-      SPARSE_PATTERN* spp = jac->sparsePattern;
-
-      /* Evaluate constant equations if available */
-      // BB: Do I need this?
-      if (jac->constantEqns != NULL) {
-        jac->constantEqns(data, threadData, jac, NULL);
-      }
-      // genericColoredSymbolicJacobianEvaluation(rows, columns, spp, gmriData->Jf, jac,
-      //                                     data, threadData, &setJacElementESDIRKSparse_MR);
-      /* Reset seed vector */
-      // This is necessary, when memory is allocated
-      for (j=0; j < columns; j++) {
-        jac->seedVars[j] = 0;
-      }
-      for (i=0; i < spp->maxColors; i++) {
-        callJacColumns = FALSE;
-        for (jj=0; jj < nFastStates; jj++) {
-          j = gmriData->fastStates[jj];
-          if (spp->colorCols[j]-1 == i) {
-            callJacColumns = TRUE;
-            jac->seedVars[j] = 1;
-          }
-        }
-
-        if (callJacColumns) {
-          /* Evaluate with updated seed vector */
-          data->callback->functionJacA_column(data, threadData, jac, NULL);
-          for (jj=0; jj < nFastStates; jj++) {
-            j = gmriData->fastStates[jj];
-            if (jac->seedVars[j] == 1) {
-              nth = spp->leadindex[j];
-              while (nth < spp->leadindex[j+1]) {
-                currentIndex = spp->index[nth];
-                gmriData->Jf[j*rows + currentIndex] = jac->resultVars[currentIndex];
-                nth++;
-              }
-            }
-          }
-
-          /* Reset seed vector */
-          for (j=0; j < columns; j++) {
-            jac->seedVars[j] = 0;
-          }
-        }
-      }
-    }
-    else
-    {
-      warningStreamPrint(LOG_STDOUT, 0, "Numerical Jacobian is used");
-
-      double delta_h = sqrt(solverData->epsfcn);
-      double delta_hh;
-      double xsave;
-
-      memcpy(gmriData->f, fODE, n * sizeof(double));
-      for(ii = 0; ii < nFastStates; ii++)
-      {
-        i = gmriData->fastStates[ii];
-        delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(gmriData->f[i])), delta_h);
-        delta_hh = ((gmriData->f[i] >= 0) ? delta_hh : -delta_hh);
-        delta_hh = x[i] + delta_hh - x[i];
-        xsave = x[i];
-        x[i] += delta_hh;
-        delta_hh = 1. / delta_hh;
-
-        wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
-        // this should not count on function evaluation, since
-        // it belongs to jacobian evaluation
-        gmriData->evalFunctionODE--;
-
-        /* BB: Is this necessary for the statistics? */
-        solverData->nfev++;
-
-        for(j = 0; j < n; j++)
-        {
-          l = i * n + j;
-          gmriData->Jf[l] = (fODE[j] - gmriData->f[j]) * delta_hh;
-        }
-        x[i] = xsave;
-      }
-    }
-
-    /* profiling */
-    rt_accumulate(SIM_TIMER_JACOBIAN);
-  }
-  return 0;
-}
-
 /**
  * @brief Residual function for non-linear system of generic multistep methods.
  *
@@ -814,83 +685,6 @@ int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JAC
   // printVector_genericRK("jacobian colums", jacobian->resultVars, nFastStates, gmriData->time);
   // printIntVector_genericRK("sparsity pattern colors", jacobian->sparsePattern->colorCols, nFastStates, gmriData->time);
 
-  return 0;
-}
-
-/*!	\fn wrapper_DIRK
- *      residual function res = yOld-y+gam*h*(k1+f(tOld+c2*h,y)); c2=2*gam;
- *      i.e. solve for:
- *           y1g = yOld+gam*h*(k1+f(tOld+c2*h,y1g)) = yOld+gam*h*(k1+k2)
- *      <=>  k2  = f(tOld+c2*h,yOld+gam*h*(k1+k2))
- *
- *  calculate function values or jacobian matrix for Newton-solver
- *  \param [in]      n_p            pointer to number of states
- *  \param [in]      x              pointer to unknowns (BB: storage in DATA_NEWTON?)
- *  \param [in/out]  res            pointer to residual function (BB: storage in DATA_NEWTON?)
- *  \param [in/out]  gmriData       data of the integrator (DATA_GMRI)
- *  \param [in]      fj             fj = 1 ==> calculate function values
- *                                  fj = 0 ==> calculate jacobian matrix
- */
-int wrapper_DIRK(int* n_p, double* x, double* res, void* gmriData_void, int fj)
-{
-  DATA_GMRI* gmriData = (DATA_GMRI*) gmriData_void;
-
-  DATA* data = gmriData->data;
-  threadData_t* threadData = gmriData->threadData;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)gmriData->nlsSolverData;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  modelica_real* fODE = sData->realVars + data->modelData->nStates;
-
-  //printf("Dimensionen nFastStates = %d, n_nonlinear = %d\n", n, *n_p);
-
-  int i, ii, j, jj, l, ll;
-  int nStates = gmriData->nStates;
-  int nFastStates = gmriData->nFastStates;
-  int nStages = gmriData->tableau->nStages;
-  int stage_   = gmriData->act_stage;
-
-if (fj)
-  {
-    // fODE = f(tOld + c2*h,x); x ~ yOld + h*(ai1*k1+ai2*k2+...+aii*ki)
-    // res_const = yOld + h*(ai1*k1+ai2*k2+...+ai{i-1}*k{i-1})
-    // set correct time value and states of simulation system
-    // the interpolated values are already stored in sData->realVars!!!!
-    for (ii=0; ii<nFastStates;ii++) {
-      i = gmriData->fastStates[ii];
-      sData->realVars[i] = x[ii];
-    }
-    wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
-
-    // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
-    for (ii=0; ii<nFastStates; ii++)
-    {
-      i = gmriData->fastStates[ii];
-      res[ii] = gmriData->res_const[i] - x[ii] + gmriData->stepSize * gmriData->tableau->A[stage_ * nStages + stage_]  * fODE[i];
-    }
-  }
-  else
-  {
-    /* Calculate Jacobian of the ODE system, result is in solverData->fjac */
-    // set correct time value and states of simulation system
-    // sData->timeValue = gmriData->time + gmriData->tableau->c[gmriData->act_stage]*gmriData->stepSize;
-    // fODE correct?
-    wrapper_Jf_genericRK_MR(gmriData->nStates, sData->timeValue, sData->realVars, fODE, gmriData);
-
-    // residual function res = yOld-x+gam*h*(k1+f(tk+c2*h,x))
-    // jacobian          Jac = -E + gam*h*Jf(tk+c2*h,x))
-    for(ii = 0; ii < nFastStates; ii++)
-    {
-      for(jj = 0; jj < nFastStates; jj++)
-      {
-        ll = ii * nFastStates + jj;
-        i = gmriData->fastStates[ii];
-        j = gmriData->fastStates[jj];
-        l = i * gmriData->nStates + j;
-        solverData->fjac[ll] = gmriData->stepSize * gmriData->tableau->A[stage_ * nStages + stage_] * gmriData->Jf[l];
-        if (ii==jj) solverData->fjac[ll] -= 1;
-      }
-    }
-  }
   return 0;
 }
 
@@ -1164,8 +958,15 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // BB ToDo: needs to be performed also after an event!!!
   if (gmriData->didEventStep)
   {
+     /* reset statistics because it is accumulated in solver_main.c */
+    gmriData->stepsDone = 0;
+    gmriData->evalFunctionODE = 0;
+    gmriData->evalJacobians = 0;
+    gmriData->errorTestFailures = 0;
+    gmriData->convergenceFailures = 0;
+
     gmriData->time = gsriData->time;
-    gmriData->stepSize = gsriData->lastStepSize;//*0.5;
+    gmriData->stepSize = gsriData->lastStepSize*0.5;
     // BB ToDO: Copy only fast states!!
     memcpy(gmriData->yOld, gsriData->yOld, sizeof(double)*gsriData->nStates);
     // for (i=0; i<gmriData->nStates*gmriData->tableau->nStages; i++)
@@ -1202,7 +1003,9 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     for(i=0; i < nFastStates*nFastStates; i++) {
       gmriData->jacobian->sparsePattern->index[i] = i% nFastStates;
     }
-      // trivial coloring, needs to be set each call of MR, if number of fast States changes...
+    // trivial coloring, needs to be set each call of MR, if number of fast States changes...
+    // use here the sparsity pattern and coloring from jacobian_DIRK from the outer integrator
+    // Otherwise, it is not exactly the same for -rkmrFac=1!
     gmriData->jacobian->sparsePattern->maxColors = nFastStates;
     for (i=0; i < nFastStates; i++)
       gmriData->jacobian->sparsePattern->colorCols[i] = i+1;

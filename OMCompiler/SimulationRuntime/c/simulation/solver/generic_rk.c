@@ -2154,12 +2154,15 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     messageClose(LOG_SOLVER_V);
   }
 
-  /* write statistics to the solverInfo data structure */
-  solverInfo->solverStatsTmp[0] = gsriData->stepsDone;
-  solverInfo->solverStatsTmp[1] = gsriData->evalFunctionODE;
-  solverInfo->solverStatsTmp[2] = gsriData->evalJacobians;
-  solverInfo->solverStatsTmp[3] = gsriData->errorTestFailures;
-  solverInfo->solverStatsTmp[4] = gsriData->convergenceFailures;
+  if (!gsriData->multi_rate || (gsriData->multi_rate && !gsriData->percentage))
+  {
+      /* write statistics to the solverInfo data structure */
+    solverInfo->solverStatsTmp[0] = gsriData->stepsDone;
+    solverInfo->solverStatsTmp[1] = gsriData->evalFunctionODE;
+    solverInfo->solverStatsTmp[2] = gsriData->evalJacobians;
+    solverInfo->solverStatsTmp[3] = gsriData->errorTestFailures;
+    solverInfo->solverStatsTmp[4] = gsriData->convergenceFailures;
+  }
 
   infoStreamPrint(LOG_SOLVER_V, 0, "finished genericRK step.");
   messageClose(LOG_SOLVER);
