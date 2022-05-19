@@ -41,6 +41,12 @@
 #include <string.h>
 
 
+/**
+ * @brief Allocates memory for a new empty list
+ *
+ * @param itemSize    Size of data
+ * @return list       Pointer to list
+ */
 LIST *allocList(unsigned int itemSize)
 {
   LIST *list = (LIST*)malloc(sizeof(LIST));
@@ -54,6 +60,11 @@ LIST *allocList(unsigned int itemSize)
   return list;
 }
 
+/**
+ * @brief Frees list and everything inside it
+ *
+ * @param list    Pointer to list
+ */
 void freeList(LIST *list)
 {
   if(list)
@@ -63,12 +74,23 @@ void freeList(LIST *list)
   }
 }
 
+/**
+ * @brief Frees node and data inside node
+ *
+ * @param node    Pointer to node
+ */
 void freeNode(LIST_NODE *node)
 {
   free(node->data);
   free(node);
 }
 
+/**
+ * @brief Copies data into new tmpNode and pushes tmpNode to the front of list
+ *
+ * @param list    Pointer to list
+ * @param data    Pointer to data (copied)
+ */
 void listPushFront(LIST *list, const void *data)
 {
   LIST_NODE *tmpNode = NULL;
@@ -89,6 +111,30 @@ void listPushFront(LIST *list, const void *data)
     list->last = list->first;
 }
 
+/**
+ * @brief Pushes node to the front of list
+ *
+ * @param list    Pointer to list
+ * @param node    Pointer to node (not copied)
+ */
+void listPushFrontNodeNoCopy(LIST *list, LIST_NODE *node)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != node, "invalid list-node");
+
+  node->next = list->first;
+  ++(list->length);
+  list->first = node;
+  if(!list->last)
+    list->last = list->first;
+}
+
+/**
+ * @brief Copies data into new tmpNode and pushes tmpNode to the back of list
+ *
+ * @param list    Pointer to list
+ * @param data    Pointer to data (copied)
+ */
 void listPushBack(LIST *list, const void *data)
 {
   LIST_NODE *tmpNode = NULL;
@@ -113,6 +159,13 @@ void listPushBack(LIST *list, const void *data)
     list->first = list->last;
 }
 
+/**
+ * @brief Copies data into new tmpNode and inserts tmpNode into list after prevNode
+ *
+ * @param list       Pointer to list
+ * @param prevNode   Pointer to previous node
+ * @param data       Pointer to data (copied)
+ */
 void listInsert(LIST *list, LIST_NODE* prevNode, const void *data)
 {
   LIST_NODE *tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
@@ -130,12 +183,24 @@ void listInsert(LIST *list, LIST_NODE* prevNode, const void *data)
     list->last = tmpNode;
 }
 
+/**
+ * @brief Returns the length of list
+ *
+ * @param list    Pointer to list
+ * @return        length of list
+ */
 int listLen(LIST *list)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
   return list->length;
 }
 
+/**
+ * @brief Returns data of first node in list
+ *
+ * @param list    Pointer to list
+ * @return        Pointer to data of first node in list
+ */
 void *listFirstData(LIST *list)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
@@ -143,6 +208,12 @@ void *listFirstData(LIST *list)
   return list->first->data;
 }
 
+/**
+ * @brief Returns data of last node in list
+ *
+ * @param list    Pointer to list
+ * @return        Pointer to data of last node in list
+ */
 void *listLastData(LIST *list)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
@@ -150,23 +221,51 @@ void *listLastData(LIST *list)
   return list->last->data;
 }
 
-void listPopFront(LIST *list)
+/**
+ * @brief Returns first node and pops node from list
+ *
+ * @param list    Pointer to list
+ * @return node   Pointer to node (must be freed by caller)
+ */
+LIST_NODE *listPopFrontNode(LIST *list)
 {
-  if(list)
-  {
-    if(list->first)
-    {
-      LIST_NODE *tmpNode = list->first->next;
-      freeNode(list->first);
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != list->first, "empty list");
 
-      list->first = tmpNode;
-      --(list->length);
-      if(!list->first)
-        list->last = list->first;
-    }
+  LIST_NODE *node = list->first;
+  list->first = node->next;
+  //node->next = NULL;
+  --(list->length);
+  if(!list->first)
+    list->last = list->first;
+  return node;
+}
+
+/**
+ * @brief Removes and frees first node from list
+ *
+ * @param list    Pointer to list
+ */
+void listRemoveFront(LIST *list)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  if(list->first)
+  {
+    LIST_NODE *tmpNode = list->first->next;
+    freeNode(list->first);
+
+    list->first = tmpNode;
+    --(list->length);
+    if(!list->first)
+      list->last = list->first;
   }
 }
 
+/**
+ * @brief Frees all nodes and their data in list
+ *
+ * @param list    Pointer to list
+ */
 void listClear(LIST *list)
 {
   LIST_NODE *delNode;
@@ -187,6 +286,14 @@ void listClear(LIST *list)
   list->last = NULL;
 }
 
+/**
+ * @brief Removes and frees nodes from list starting from node
+ *
+ * used only in simulation/solver/nonlinearValuesList
+ *
+ * @param list    Pointer to list
+ * @param node    Pointer to node
+ */
 void removeNodes(LIST* list, LIST_NODE *node)
 {
   while(node)
@@ -198,6 +305,12 @@ void removeNodes(LIST* list, LIST_NODE *node)
   }
 }
 
+/**
+ * @brief Retruns first node of list
+ *
+ * @param list    Pointer to list
+ * @return        Pointer to first node
+ */
 LIST_NODE *listFirstNode(LIST *list)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
@@ -205,6 +318,12 @@ LIST_NODE *listFirstNode(LIST *list)
   return list->first;
 }
 
+/**
+ * @brief Returns next node after node (used for iterating over list)
+ *
+ * @param node    Pointer to node
+ * @return        Pointer to next node
+ */
 LIST_NODE *listNextNode(LIST_NODE *node)
 {
   assertStreamPrint(NULL, 0 != node, "invalid list-node");
@@ -213,6 +332,12 @@ LIST_NODE *listNextNode(LIST_NODE *node)
   return NULL;
 }
 
+/**
+ * @brief Returns node data
+ *
+ * @param node    Pointer to node
+ * @return        Pointer to data
+ */
 void *listNodeData(LIST_NODE *node)
 {
   assertStreamPrint(NULL, 0 != node, "invalid list-node");
@@ -220,6 +345,7 @@ void *listNodeData(LIST_NODE *node)
   return node->data;
 }
 
+/* not sure about this, looks dangerous */
 void updateNodeData(LIST *list, LIST_NODE *node, const void *data)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
@@ -229,6 +355,7 @@ void updateNodeData(LIST *list, LIST_NODE *node, const void *data)
   return;
 }
 
+/* not sure about this, looks dangerous */
 LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext)
 {
   LIST_NODE *next;
@@ -239,6 +366,7 @@ LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext)
   return next;
 }
 
+/* not sure about this, looks dangerous */
 void updatelistFirst(LIST* list, LIST_NODE *node)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
@@ -246,6 +374,7 @@ void updatelistFirst(LIST* list, LIST_NODE *node)
   list->first = node;
 }
 
+/* not sure about this, looks dangerous */
 void updatelistLength(LIST* list, unsigned int newLength)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");

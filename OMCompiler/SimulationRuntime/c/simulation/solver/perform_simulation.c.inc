@@ -505,7 +505,21 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           }
         }
 
-        solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+        // Calculate integrator step size
+        if(simInfo->numSteps == 0) {
+          if(fabs(simInfo->stopTime-simInfo->startTime) < 1e-16) {
+            solverInfo->currentStepSize = 0;
+          } else {
+            errorStreamPrint(LOG_STDOUT, 1, "Number of integrator steps to do is 0, but experiment start time is not equal stop time.");
+            infoStreamPrint(LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
+            messageClose(LOG_STDOUT);
+            errorStreamPrint(LOG_STDOUT, 0, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
+            retValue = -1;
+            break;
+          }
+        } else {
+          solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+        }
 
         solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
 

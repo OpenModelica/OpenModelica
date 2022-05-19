@@ -291,7 +291,7 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     sub_idx = nextTimer->sub_idx;
     type = nextTimer->type;
     activationTime = nextTimer->activationTime;
-    listPopFront(data->simulationInfo->intvlTimers);
+    listRemoveFront(data->simulationInfo->intvlTimers);
     switch(type)
     {
       case SYNC_BASE_CLOCK:
@@ -374,7 +374,7 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
     sub_idx = nextTimer->sub_idx;
     type = nextTimer->type;
     activationTime = nextTimer->activationTime;
-    listPopFront(data->simulationInfo->intvlTimers);
+    listRemoveFront(data->simulationInfo->intvlTimers);
     switch(type)
     {
       case SYNC_BASE_CLOCK:

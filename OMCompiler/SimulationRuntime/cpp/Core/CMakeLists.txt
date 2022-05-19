@@ -7,7 +7,7 @@ set(SCOREP_INCLUDE_ ".")
 set(Boost_INCLUDE_ ".")
 set(Boost_LIBS_ ".")
 set(LAPACK_LIBS_ ".")
-set(LAPACK_LIBRARIES_ "-llapack -lblas")
+set(LAPACK_LIBRARIES_ "")
 set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -fPIC -DUSE_THREAD")
 
 configure_file(Modelica/ModelicaLibraryConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc)
