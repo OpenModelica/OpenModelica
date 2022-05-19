@@ -25,7 +25,26 @@ getModelInstance(M, prettyPrint = true);
 //   \"name\": \"M\",
 //   \"components\": {
 //     \"m\": {
-//       \"type\": \"M\",
+//       \"type\": {
+//         \"name\": \"M\",
+//         \"components\": {
+//           \"x\": {
+//             \"type\": \"Real\",
+//             \"modifier\": \"\",
+//             \"prefixes\": {
+//               \"public\": true,
+//               \"final\": false,
+//               \"inner\": false,
+//               \"outer\": false,
+//               \"replaceable\": false,
+//               \"redeclare\": false,
+//               \"connector\": \"\",
+//               \"variability\": \"\",
+//               \"direction\": \"\"
+//             }
+//           }
+//         }
+//       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"public\": true,
@@ -58,9 +77,6 @@ getModelInstance(M, prettyPrint = true);
 //       }
 //     }
 //   },
-//   \"connections\": [
-//
-//   ],
 //   \"replaceable\": [
 //     {
 //       \"name\": \"x\",

@@ -842,6 +842,7 @@ end getInheritedClasses;
 uniontype InstanceTree
   record COMPONENT
     InstNode node;
+    InstanceTree cls;
   end COMPONENT;
 
   record CLASS
@@ -849,6 +850,9 @@ uniontype InstanceTree
     list<InstanceTree> exts;
     list<InstanceTree> components;
   end CLASS;
+
+  record EMPTY
+  end EMPTY;
 end InstanceTree;
 
 function getModelInstance
@@ -879,11 +883,19 @@ function buildInstanceTree
   input InstNode node;
   output InstanceTree tree;
 protected
+  Class cls;
   ClassTree cls_tree;
   list<InstanceTree> exts, components;
   array<InstNode> ext_nodes;
 algorithm
-  cls_tree := Class.classTree(InstNode.getClass(node));
+  cls := InstNode.getClass(node);
+
+  if Class.isBuiltin(cls) then
+    tree := InstanceTree.EMPTY();
+    return;
+  end if;
+
+  cls_tree := Class.classTree(cls);
 
   tree := match cls_tree
     case ClassTree.INSTANTIATED_TREE(exts = ext_nodes)
@@ -905,8 +917,13 @@ end buildInstanceTree;
 function buildInstanceTreeComponent
   input Mutable<InstNode> compNode;
   output InstanceTree tree;
+protected
+  InstNode node;
+  InstanceTree cls;
 algorithm
-  tree := InstanceTree.COMPONENT(Mutable.access(compNode));
+  node := Mutable.access(compNode);
+  cls := buildInstanceTree(InstNode.classScope(node));
+  tree := InstanceTree.COMPONENT(node, cls);
 end buildInstanceTreeComponent;
 
 function dumpJSONInstanceTree
@@ -918,6 +935,7 @@ protected
   list<InstanceTree> comps, exts;
   Sections sections;
   Option<SCode.Comment> cmt;
+  JSON j;
 algorithm
   InstanceTree.CLASS(node = node, exts = exts, components = comps) := tree;
   cmt := SCodeUtil.getElementComment(InstNode.definition(node));
@@ -936,8 +954,15 @@ algorithm
 
   if root then
     sections := Class.getSections(InstNode.getClass(node));
-    json := JSON.addPair("connections", dumpJSONConnections(sections), json);
-    json := JSON.addPair("replaceable", dumpJSONReplaceableElements(node), json);
+    j := dumpJSONConnections(sections);
+    if not JSON.isNull(j) then
+      json := JSON.addPair("connections", j, json);
+    end if;
+
+    j := dumpJSONReplaceableElements(node);
+    if not JSON.isNull(j) then
+      json := JSON.addPair("replaceable", j, json);
+    end if;
   end if;
 end dumpJSONInstanceTree;
 
@@ -982,8 +1007,9 @@ protected
   Boolean is_constant;
   SCode.Comment cmt;
   SCode.Annotation ann;
+  InstanceTree cls;
 algorithm
-  InstanceTree.COMPONENT(node = node) := component;
+  InstanceTree.COMPONENT(node = node, cls = cls) := component;
   node := InstNode.resolveOuter(node);
   comp := InstNode.component(node);
   elem := InstNode.definition(node);
@@ -991,7 +1017,7 @@ algorithm
   () := match (comp, elem)
     case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
       algorithm
-        json := JSON.addPair("type", dumpJSONTypeName(comp.ty), json);
+        json := JSON.addPair("type", dumpJSONComponentType(cls, comp.ty), json);
 
         if Type.isArray(comp.ty) then
           json := JSON.addPair("dims",
@@ -1027,6 +1053,17 @@ algorithm
         fail();
   end match;
 end dumpJSONComponent;
+
+function dumpJSONComponentType
+  input InstanceTree cls;
+  input Type ty;
+  output JSON json;
+algorithm
+  json := match cls
+    case InstanceTree.CLASS() then dumpJSONInstanceTree(cls);
+    else dumpJSONTypeName(ty);
+  end match;
+end dumpJSONComponentType;
 
 function dumpJSONTypeName
   input Type ty;
@@ -1163,7 +1200,7 @@ end dumpJSONAnnotationOpt;
 
 function dumpJSONConnections
   input Sections sections;
-  output JSON json = JSON.emptyArray();
+  output JSON json = JSON.makeNull();
 algorithm
   () := match sections
     case Sections.SECTIONS()
@@ -1195,7 +1232,7 @@ end dumpJSONConnection;
 
 function dumpJSONReplaceableElements
   input InstNode clsNode;
-  output JSON json = JSON.emptyArray();
+  output JSON json = JSON.makeNull();
 protected
   ClassTree cls_tree;
   JSON j;
