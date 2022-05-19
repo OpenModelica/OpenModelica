@@ -923,6 +923,11 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     gsriData->nlsData = initRK_NLS_DATA(data, threadData, gsriData);
     if (!gsriData->nlsData) {
       return -1;
+    } else {
+      for (int i =0; i<gsriData->nStates; i++)
+      {
+        infoStreamPrint(LOG_STDOUT, 0, "nominal values of  %s = %g", data->modelData->realVarsData[i].info.name, gsriData->nlsData->nominal[i]);
+      }
     }
   }
   else
@@ -1363,6 +1368,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
   gsriData->multi_rate_phase = 0;
+//  gsriData->nlsData->nominal[5]=1e-4;
   solved = solveNLS(data, threadData, nlsData, -1);
   if (!solved) {
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_MS: Failed to solve NLS in full_implicit_MS");
