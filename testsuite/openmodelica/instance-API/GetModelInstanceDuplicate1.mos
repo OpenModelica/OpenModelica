@@ -60,12 +60,6 @@ getModelInstance(B, prettyPrint = true);
 //         \"direction\": \"\"
 //       }
 //     }
-//   },
-//   \"connections\": [
-//
-//   ],
-//   \"replaceable\": [
-//
-//   ]
+//   }
 // }"
 // endResult

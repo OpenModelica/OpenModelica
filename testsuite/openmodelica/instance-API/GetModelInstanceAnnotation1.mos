@@ -34,12 +34,6 @@ getModelInstance(M, prettyPrint=true);
 //         }
 //       }
 //     }
-//   },
-//   \"connections\": [
-//
-//   ],
-//   \"replaceable\": [
-//
-//   ]
+//   }
 // }"
 // endResult
