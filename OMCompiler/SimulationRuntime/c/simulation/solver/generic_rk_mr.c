@@ -28,7 +28,7 @@
  *
  */
 
-/*! \file genericRKmr.c
+/*! \file gmode.c
  *  Implementation of  a generic (implicit and explicit) Runge Kutta solver, which works for any
  *  order and stage based on a provided Butcher tableau
  *
@@ -1000,7 +1000,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       // error handling: try half of the step size!
       if (integrator_step_info != 0) {
-        errorStreamPrint(LOG_STDOUT, 0, "genericRK_step: Failed to calculate step at time = %5g.", gmriData->time);
+        errorStreamPrint(LOG_STDOUT, 0, "gmode_step: Failed to calculate step at time = %5g.", gmriData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
         gmriData->stepSize = gmriData->stepSize/2.;
         continue;
@@ -1140,7 +1140,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))
   {
-    infoStreamPrint(LOG_SOLVER_V, 1, "genericRKmr call statistics: ");
+    infoStreamPrint(LOG_SOLVER_V, 1, "gmode call statistics: ");
     infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
     infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gmriData->time);
     infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gmriData->stepSize);
@@ -1159,7 +1159,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   solverInfo->solverStatsTmp[3] = gmriData->errorTestFailures;
   solverInfo->solverStatsTmp[4] = gmriData->convergenceFailures;
 
-  infoStreamPrint(LOG_SOLVER, 0, "Finished genericRKmr step.");
+  infoStreamPrint(LOG_SOLVER, 0, "Finished gmode outer step.");
   if(ACTIVE_STREAM(LOG_SOLVER))
   {
     printf("\n");

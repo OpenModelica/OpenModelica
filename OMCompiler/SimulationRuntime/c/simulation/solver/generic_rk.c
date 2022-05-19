@@ -953,18 +953,11 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     gsriData->jacobian = NULL;
   }
 
-  if (solverInfo->solverMethod == S_GMODE)
-  {
+  const char* flag_value = omc_flagValue[FLAG_MR_PAR];
+  if (flag_value != NULL) {
     gsriData->multi_rate = 1;
-    const char* flag_value = omc_flagValue[FLAG_MR_PAR];
-    if (flag_value != NULL) {
-      gsriData->percentage = atof(omc_flagValue[FLAG_MR_PAR]);
-    } else
-    {
-      gsriData->percentage = 0.3;
-    }
-  } else
-  {
+    gsriData->percentage = atof(omc_flagValue[FLAG_MR_PAR]);
+  } else {
     gsriData->multi_rate = 0;
     gsriData->percentage = 1;
   }
@@ -1777,7 +1770,7 @@ double PIController(double* err_values, double* stepSize_values, double err_orde
  * @param solverInfo    Storing Runge-Kutta solver data.
  * @return int          Return 0 on success, -1 on failure.
  */
-int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1]; // BB: Is this the ring buffer???
@@ -1823,7 +1816,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     // targetTime = sDataOld->timeValue + solverInfo->currentStepSize;
   }
 
-  // (Re-)initialize after events or at first call of genericRK_step
+  // (Re-)initialize after events or at first call of gmode_step
   if (solverInfo->didEventStep == 1 || gsriData->isFirstStep)
   {
     genericRK_first_step(data, threadData, solverInfo);
@@ -1875,7 +1868,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
       // error handling: try half of the step size!
       if (rk_step_info != 0) {
-        errorStreamPrint(LOG_STDOUT, 0, "genericRK_step: Failed to calculate step at time = %5g.", gsriData->time);
+        errorStreamPrint(LOG_STDOUT, 0, "gmode_step: Failed to calculate step at time = %5g.", gsriData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
         gsriData->stepSize = gsriData->stepSize/2.;
         continue;

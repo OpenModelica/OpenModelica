@@ -12,7 +12,7 @@ cd("tmp");
 
 setCommandLineOptions("--generateSymbolicJacobian");
 
-simulate(TestAnalytic, stopTime=20, simflags = "-lv=LOG_SOLVER -s=genericRK -rkOpt=esdirk2");
+simulate(TestAnalytic, stopTime=20, simflags = "-lv=LOG_SOLVER -s=gmode -rkOpt=esdirk2");
 getErrorString();
 
 //plot({err}, externalWindow=true);

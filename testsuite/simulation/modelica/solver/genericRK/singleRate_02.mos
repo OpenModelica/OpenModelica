@@ -42,7 +42,7 @@ for rkMethod in rkMethods loop
     print("\n--------------------------------------------------------\n");
     print("Running RK " + rkMethod + " with NLS " + nlsMethod + ":\n");
     logFile := "SlowFastDynamics_"+ rkMethod + "_" + nlsMethod + ".log";
-    system("rm -f SlowFastDynamics_res.mat && ./SlowFastDynamics -override=stopTime=20 -s=genericRK -genericRKOpt=" + rkMethod + " -rkNLS=" + nlsMethod, logFile);
+    system("rm -f SlowFastDynamics_res.mat && ./SlowFastDynamics -override=stopTime=20 -s=gmode -gmsolver=" + rkMethod + " -gmnls=" + nlsMethod, logFile);
     print(readFile(logFile) + "\n");
 
     (success, failVars) := diffSimulationResults(actualFile = "SlowFastDynamics_res.mat",
