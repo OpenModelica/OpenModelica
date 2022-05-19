@@ -42,7 +42,8 @@ requirements.log \
 scalable.log \
 device.log \
 ffi.log \
-conversion.log
+conversion.log \
+visualization.log \
 
 SIMULATIONLOGS = \
 linearization.log \
@@ -643,6 +644,9 @@ ffi.log: omc-diff
 	@echo $@ done
 conversion.log: omc-diff
 	$(MAKE) -C openmodelica/conversion -f Makefile test > $@
+	@echo $@ done
+visualization.log: omc-diff
+	$(MAKE) -C openmodelica/visualization -f Makefile test > $@
 	@echo $@ done
 
 failingtest: omc-diff
