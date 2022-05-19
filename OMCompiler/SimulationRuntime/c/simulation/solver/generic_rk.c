@@ -175,8 +175,8 @@ enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_RK_METHOD) {
     errorStreamPrint(LOG_STDOUT, 0, "Choose RK method: %s [from command line]", RK_method_string);
     return RK_UNKNOWN;
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: esdirk3 [default]");
-    return RK_ESDIRK3;
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: adams [default]");
+    return MS_ADAMS_MOULTON;
   }
 }
 
@@ -206,8 +206,8 @@ enum RK_NLS_METHOD getRK_NLS_Method() {
     errorStreamPrint(LOG_STDOUT, 0, "Choose RK NLS method: %s [from command line]", RK_NLS_method_string);
     return RK_NLS_UNKNOWN;
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: omc_newton [default]");
-    return RK_NLS_NEWTON;
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: kinsol [default]");
+    return RK_NLS_KINSOL;
   }
 }
 
@@ -545,7 +545,20 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
           }
         }
       }
+      if (!diagElemNonZero) {
+        coo_col[i] = col + k*nStates;
+        coo_row[i] = col + k*nStates;
+        i++;
+        diagElemNonZero = TRUE;
+      }
     }
+  }
+
+  numberOfNonZeros = i;
+
+  if (ACTIVE_STREAM(LOG_SOLVER_V)){
+    printIntVector_genericRK("rows", coo_row, numberOfNonZeros, 0.0);
+    printIntVector_genericRK("cols", coo_col, numberOfNonZeros, 0.0);
   }
 
   int length_row_indices = jacobian->sizeCols*nStages+1;
@@ -926,7 +939,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     } else {
       for (int i =0; i<gsriData->nStates; i++)
       {
-        infoStreamPrint(LOG_STDOUT, 0, "nominal values of  %s = %g", data->modelData->realVarsData[i].info.name, gsriData->nlsData->nominal[i]);
+        infoStreamPrint(LOG_SOLVER, 0, "nominal values of  %s = %g", data->modelData->realVarsData[i].info.name, gsriData->nlsData->nominal[i]);
       }
     }
   }
@@ -1782,9 +1795,9 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   solverInfo->solverRootFinding = 1;
 
-  infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method:");
+  infoStreamPrint(LOG_SOLVER_V, 0, "generic Runge-Kutta method:");
 
-  if(ACTIVE_STREAM(LOG_SOLVER))
+  if(ACTIVE_STREAM(LOG_SOLVER_V))
   {
     printVector_genericRK("yIni:", sData->realVars, gsriData->nStates, sDataOld->timeValue);
   }
@@ -1838,7 +1851,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       memcpy(gsriData->yLeft, gsriData->yOld, data->modelData->nStates*sizeof(double));
       gsriData->timeLeft = gsriData->time;
 
-      if(ACTIVE_STREAM(LOG_SOLVER))
+      if(ACTIVE_STREAM(LOG_SOLVER_V))
       {
         printVector_genericRK("yOld: ", gsriData->yOld, gsriData->nStates, gsriData->time);
       }
@@ -2063,7 +2076,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     /* update time with performed stepSize */
     gsriData->time += gsriData->lastStepSize;
 
-    if(ACTIVE_STREAM(LOG_SOLVER))
+    if(ACTIVE_STREAM(LOG_SOLVER_V))
     {
       printVector_genericRK("y:    ", gsriData->y, gsriData->nStates, gsriData->time);
     }
@@ -2095,7 +2108,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     }
   } // end of while-loop (gsriData->time < targetTime)
 
-  if(ACTIVE_STREAM(LOG_SOLVER))
+  if(ACTIVE_STREAM(LOG_SOLVER_V))
   {
     printf("\n");
   }
@@ -2162,7 +2175,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     solverInfo->solverStatsTmp[4] = gsriData->convergenceFailures;
   }
 
-  infoStreamPrint(LOG_SOLVER_V, 0, "finished genericRK step.");
+  infoStreamPrint(LOG_SOLVER, 0, "finished genericRK step.");
   messageClose(LOG_SOLVER);
   return 0;
 }
