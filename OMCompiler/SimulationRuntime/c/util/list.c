@@ -287,25 +287,6 @@ void listClear(LIST *list)
 }
 
 /**
- * @brief Removes and frees nodes from list starting from node
- *
- * used only in simulation/solver/nonlinearValuesList
- *
- * @param list    Pointer to list
- * @param node    Pointer to node
- */
-void removeNodes(LIST* list, LIST_NODE *node)
-{
-  while(node)
-  {
-    LIST_NODE *tmpNode = node->next;
-    freeNode(node);
-    node = tmpNode;
-    --(list->length);
-  }
-}
-
-/**
  * @brief Retruns first node of list
  *
  * @param list    Pointer to list
@@ -355,10 +336,9 @@ void updateNodeData(LIST *list, LIST_NODE *node, const void *data)
 /* not sure about this, looks dangerous */
 LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext)
 {
-  LIST_NODE *next;
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
   assertStreamPrint(NULL, 0 != node, "invalid list-node");
-  next = node->next;
+  LIST_NODE *next = node->next;
   node->next = newNext;
   return next;
 }
