@@ -159,6 +159,18 @@ interface package VisualXMLTplTV
         array<DAE.Exp> color;
         DAE.Exp specularCoeff;
       end SHAPE;
+
+      record VECTOR
+        DAE.ComponentRef ident;
+        array<list<DAE.Exp>> T;
+        array<DAE.Exp> r;
+        array<DAE.Exp> coordinates;
+        array<DAE.Exp> color;
+        DAE.Exp specularCoeff;
+        DAE.Exp quantity;
+        DAE.Exp headAtOrigin;
+        DAE.Exp twoHeadedArrow;
+      end VECTOR;
     end Visualization;
   end VisualXML;
 

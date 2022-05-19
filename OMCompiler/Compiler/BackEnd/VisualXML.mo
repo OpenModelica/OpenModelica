@@ -32,8 +32,8 @@
 encapsulated package VisualXML
 " file:        VisualXML
   package:     VisualXML
-  description: This package gathers alle information about visualization objects from the MultiBody lib and outputs them as an XML file.
-               This can be used additionally to the result file to visualize the system.
+  description: This package gathers all information about visualization objects from the MultiBody lib and outputs them as an XML file.
+               This can be used together with the result file to visualize the system.
 
 
 
@@ -64,7 +64,8 @@ import System;
 //  Visualization types
 //----------------------------
 
-public uniontype Visualization
+public
+uniontype Visualization
   record SHAPE
     DAE.ComponentRef ident;
     DAE.Exp shapeType;
@@ -80,13 +81,26 @@ public uniontype Visualization
     array<DAE.Exp> color;
     DAE.Exp specularCoeff;
   end SHAPE;
+
+  record VECTOR
+    DAE.ComponentRef ident;
+    array<list<DAE.Exp>> T;
+    array<DAE.Exp> r;
+    array<DAE.Exp> coordinates;
+    array<DAE.Exp> color;
+    DAE.Exp specularCoeff;
+    DAE.Exp quantity;
+    DAE.Exp headAtOrigin;
+    DAE.Exp twoHeadedArrow;
+  end VECTOR;
 end Visualization;
 
 //-------------------------
 // dump visualization xml
 //-------------------------
 
-public function visualizationInfoXML"dumps an xml containing information about visualization objects.
+public
+function visualizationInfoXML"dumps an xml containing information about visualization objects.
 author:Waurich TUD 2015-04"
   input BackendDAE.BackendDAE daeIn;
   input String fileName;
@@ -98,7 +112,7 @@ protected
   BackendDAE.Variables globalKnownVars, aliasVars;
   list<BackendDAE.Var> globalKnownVarLst, allVarLst, aliasVarLst;
   list<Visualization> visuals;
-  list<DAE.ComponentRef> allVisuals;
+  list<tuple<DAE.ComponentRef, String>> allVisuals;
 algorithm
   BackendDAE.DAE(eqs=eqs0, shared=shared) := daeIn;
   BackendDAE.SHARED(globalKnownVars=globalKnownVars,aliasVars=aliasVars) := shared;
@@ -119,7 +133,7 @@ algorithm
 
   //fill theses visualization objects with information
   allVarLst := listAppend(globalKnownVarLst,listAppend(allVarLst,aliasVarLst));
-  (visuals,_,_) := List.mapFold2(allVisuals, fillVisualizationObjects,allVarLst, program);
+  visuals := List.mapFold2(allVisuals, fillVisualizationObjects,allVarLst, program);
   //some expressions refer to other known parameters, get them
   visuals := List.map2(visuals,replaceVisualBinding,globalKnownVars,program);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
@@ -128,44 +142,43 @@ algorithm
   dumpVis(listArray(visuals), fileName+"_visual.xml");
 
   //update the variabels
-  (globalKnownVars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, setVisVarsPublic,"");
-  (aliasVars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, setVisVarsPublic,"");
+  globalKnownVars := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, setVisVarsPublic,"");
+  aliasVars := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, setVisVarsPublic,"");
   daeOut := BackendDAE.DAE(eqs=eqs, shared=shared);
 end visualizationInfoXML;
 
-protected function replaceVisualBinding"Replace the cref binding for the given visualization shapeType with the constant expression of its alias.
-author: vwaurich 2016-10"
-  input Visualization visIn;
+protected
+function replaceVisualBinding
+  "Replace the cref binding for the given visualization shapeType with the constant expression of its alias.
+   author: vwaurich 2016-10"
+  input output Visualization vis;
   input BackendDAE.Variables varArray;
   input Absyn.Program program;
-  output Visualization visOut;
 algorithm
-  visOut := matchcontinue(visIn,varArray,program)
+  () := matchcontinue vis
     local
-      DAE.ComponentRef cr, ident;
-      DAE.Exp exp, length, width, height, extra, specularCoeff, shapeType;
-      Real rvalue;
+      DAE.ComponentRef cr;
       String s;
-      array<DAE.Exp> color, r, lengthDir, widthDir, r_shape ;
-      array<list<DAE.Exp>> T;
-  case(SHAPE(ident=ident, shapeType=DAE.CREF(componentRef = cr), T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir,
-     length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff),_,_)
-     equation
-       DAE.SCONST(string=s) = getConstCrefBinding(cr,varArray);
-       s = getFullCADFilePath(s,program);
-    then (SHAPE(ident, DAE.SCONST(s), T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
-  case(SHAPE(ident=ident, shapeType=DAE.SCONST(string=s), T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir,
-     length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff),_,_)
-     equation
-       s = getFullCADFilePath(s,program);
-    then (SHAPE(ident, DAE.SCONST(s), T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
-  else
-    then visIn;
+
+    case SHAPE(shapeType = DAE.CREF(componentRef = cr))
+      algorithm
+        vis.shapeType := getConstCrefBinding(cr, varArray);
+      then
+        ();
+
+    case SHAPE(shapeType = DAE.SCONST(string=s))
+      algorithm
+        vis.shapeType := DAE.SCONST(getFullCADFilePath(s, program));
+      then
+        ();
+
+    else ();
   end matchcontinue;
 end replaceVisualBinding;
 
-protected function getConstCrefBinding"Get the const binding for the cref. It has to be somewhere in the vars.
-author: vwaurich 2016-10"
+function getConstCrefBinding
+  "Get the const binding for the cref. It has to be somewhere in the vars.
+   author: vwaurich 2016-10"
   input DAE.ComponentRef cr;
   input BackendDAE.Variables vars;
   output DAE.Exp eOut;
@@ -177,14 +190,9 @@ algorithm
   try
     ({var},_) := BackendVariable.getVar(cr,vars);
     e := BackendVariable.varBindExp(var);
-    eOut := matchcontinue(e)
-      case(_)
-        equation
-          true = Expression.isConst(e);
-        then e;
-      case(DAE.CREF(_))
-        equation
-        then  getConstCrefBinding(Expression.expCref(e),vars);
+    eOut := matchcontinue e
+      case _  guard Expression.isConst(e) then e;
+      case DAE.CREF(_) then getConstCrefBinding(Expression.expCref(e),vars);
           /*
       case(DAE.CALL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Utilities",Absyn.QUALIFIED("Files",Absyn.IDENT("fullPathName"))))),{DAE.SCONST(s)},_))
         equation
@@ -200,8 +208,9 @@ algorithm
   end try;
 end getConstCrefBinding;
 
-public function setVisVarsPublic "Sets the VariableAttributes of protected visualization vars to public.
-author: waurich TUD 08-2016"
+function setVisVarsPublic
+  "Sets the VariableAttributes of protected visualization vars to public.
+   author: waurich TUD 08-2016"
   input BackendDAE.Var inVar;
   input String dummyArgIn;
   output BackendDAE.Var outVar = inVar;
@@ -212,12 +221,13 @@ algorithm
   end if;
 end setVisVarsPublic;
 
-protected function makeVarPublicHideResultFalse "Sets the VariableAttributes to public and hideResult to false
-author: waurich TUD 08-2016"
+function makeVarPublicHideResultFalse
+  "Sets the VariableAttributes to public and hideResult to false
+   author: waurich TUD 08-2016"
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
 protected
-    Option<DAE.VariableAttributes> vals;
+  Option<DAE.VariableAttributes> vals;
 algorithm
   vals := inVar.values;
   vals := DAEUtil.setProtectedAttr(vals,false);
@@ -225,8 +235,9 @@ algorithm
   outVar := BackendVariable.setHideResult(outVar,SOME(DAE.BCONST(false)));
 end makeVarPublicHideResultFalse;
 
-protected function setBindingForProtectedVars "searches for protected vars and sets the binding exp with their equation.
-This is needed since protected, time-dependent variables are not stored in result files (in OMC and Dymola)"
+function setBindingForProtectedVars
+  "searches for protected vars and sets the binding exp with their equation.
+   This is needed since protected, time-dependent variables are not stored in result files (in OMC and Dymola)"
   input BackendDAE.EqSystem eqSysIn;
   output BackendDAE.EqSystem eqSysOut;
 protected
@@ -235,20 +246,22 @@ protected
   BackendDAE.EquationArray eqs;
 algorithm
   try
-  BackendDAE.EQSYSTEM(orderedEqs=eqs, orderedVars=vars, matching=BackendDAE.MATCHING(ass1=ass1)) := eqSysIn;
-  BackendVariable.traverseBackendDAEVarsWithUpdate(vars, setBindingForProtectedVars1, (1, ass1, eqs));
+    BackendDAE.EQSYSTEM(orderedEqs=eqs, orderedVars=vars, matching=BackendDAE.MATCHING(ass1=ass1)) := eqSysIn;
+    BackendVariable.traverseBackendDAEVarsWithUpdate(vars, setBindingForProtectedVars1, (1, ass1, eqs));
   else
   end try;
+
   eqSysOut := eqSysIn;
 end setBindingForProtectedVars;
 
-protected function setBindingForProtectedVars1 "checks if the var is protected and sets the binding (i.e. the solved equation)"
+function setBindingForProtectedVars1
+  "checks if the var is protected and sets the binding (i.e. the solved equation)"
   input BackendDAE.Var varIn;
   input tuple<Integer,array<Integer>,BackendDAE.EquationArray> tplIn;
   output BackendDAE.Var varOut;
   output tuple<Integer,array<Integer>,BackendDAE.EquationArray> tplOut;
 algorithm
-  (varOut,tplOut) := matchcontinue(varIn,tplIn)
+  (varOut, tplOut) := matchcontinue (varIn, tplIn)
     local
       Integer idx, eqIdx;
       array<Integer> ass1;
@@ -256,63 +269,105 @@ algorithm
       BackendDAE.Equation eq;
       BackendDAE.Var var;
       DAE.Exp exp1, exp2;
-  case(BackendDAE.VAR(bindExp=NONE(), values=SOME(_)),(idx,ass1,eqs))
-    equation
-      true = (BackendVariable.isProtectedVar(varIn) and isVisualizationVar(varIn));
-      eq = BackendEquation.get(eqs,arrayGet(ass1,idx));
-      BackendDAE.EQUATION(exp=exp1, scalar=exp2) = eq;
-      (exp1,_) =  ExpressionSolve.solve(exp1,exp2,BackendVariable.varExp(varIn));
-      var = BackendVariable.setBindExp(varIn,SOME(exp1));
-      var = makeVarPublicHideResultFalse(var);
-    then (var,(idx+1,ass1,eqs));
-  case(_,(idx,ass1,eqs))
+
+  case (BackendDAE.VAR(bindExp=NONE(), values=SOME(_)) , (idx, ass1, eqs))
+      guard BackendVariable.isProtectedVar(varIn) and isVisualizationVar(varIn)
+    algorithm
+      eq := BackendEquation.get(eqs, arrayGet(ass1, idx));
+      BackendDAE.EQUATION(exp=exp1, scalar=exp2) := eq;
+      (exp1,_) := ExpressionSolve.solve(exp1, exp2, BackendVariable.varExp(varIn));
+      var := BackendVariable.setBindExp(varIn, SOME(exp1));
+      var := makeVarPublicHideResultFalse(var);
+    then
+      (var, (idx+1, ass1, eqs));
+
+  case (_, (idx, ass1, eqs))
     equation
       if (BackendVariable.isProtectedVar(varIn) and isVisualizationVar(varIn)) then
         var = makeVarPublicHideResultFalse(varIn);
       else
         var = varIn;
       end if;
-    then (var,(idx+1,ass1,eqs));
+    then (var, (idx+1, ass1, eqs));
   end matchcontinue;
 end setBindingForProtectedVars1;
 
-protected function fillVisualizationObjects"gets the identifier of a visualization object as an input and collects all information from allVars.
-author:Waurich TUD 2015-04"
-  input DAE.ComponentRef crefIn;
+function fillVisualizationObjects
+  "gets the identifier of a visualization object as an input and collects all information from allVars.
+   author:Waurich TUD 2015-04"
+  input tuple<DAE.ComponentRef, String> visVar;
   input list<BackendDAE.Var> allVarsIn;
   input Absyn.Program programIn;
   output Visualization visOut;
-  output list<BackendDAE.Var> allVarsOut;
-  output Absyn.Program programOut;
+  output list<BackendDAE.Var> allVarsOut = allVarsIn;
+  output Absyn.Program programOut = programIn;
+protected
+  DAE.ComponentRef cref;
+  String name, vis_name;
+  list<String> nameChars,prefix;
+  Visualization vis;
+  list<BackendDAE.Var> allVars;
 algorithm
-  (visOut,allVarsOut,programOut) := matchcontinue(crefIn,allVarsIn,programIn)
-    local
-      String name;
-      list<String> nameChars,prefix;
-      Visualization vis;
-      list<BackendDAE.Var> allVars;
-  case(_,_,_)
-    algorithm
-      //nameChars := stringListStringChar(nameIn);
-      //(prefix,nameChars) := List.split(nameChars,6);
-      //name := stringCharListString(nameChars);
-      //name := Util.stringReplaceChar(name,"$",".");
-      //true := stringEqual(stringCharListString(prefix),"Shape$");
-      //name := ComponentReference.printComponentRefStr(crefIn);
-      vis := SHAPE(crefIn,DAE.SCONST("DUMMY"),arrayCreate(3,{DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
-                           arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)),arrayCreate(3,DAE.RCONST(-1)),
-                           DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1), arrayCreate(3,DAE.RCONST(-1)), DAE.RCONST(-1));
-      (_,vis) := List.fold2(allVarsIn,fillVisualizationObjects1,true,programIn,({},vis));
-    then (vis,allVarsIn,programIn);
+  try
+    //nameChars := stringListStringChar(nameIn);
+    //(prefix,nameChars) := List.split(nameChars,6);
+    //name := stringCharListString(nameChars);
+    //name := Util.stringReplaceChar(name,"$",".");
+    //true := stringEqual(stringCharListString(prefix),"Shape$");
+    //name := ComponentReference.printComponentRefStr(crefIn);
+    (cref, vis_name) := visVar;
+    vis := newVisualizer(cref, vis_name);
+    (_, visOut) := List.fold2(allVarsIn,fillVisualizationObjects1,true,programIn,({},vis));
   else
-    algorithm
     print("fillVisualizationObjects failed! - not yet supported type");
-   then fail();
-  end matchcontinue;
+    fail();
+  end try;
 end fillVisualizationObjects;
 
-protected function makeCrefQualFromString"generates a qualified cref from the '.' separated string.
-author: Waurich TUD 2015-04"
+function newVisualizer
+  input DAE.ComponentRef cref;
+  input String visualizerName;
+  output Visualization vis;
+algorithm
+  vis := match visualizerName
+    case "Shape"
+      then SHAPE(cref,
+             DAE.SCONST("DUMMY"),
+             arrayCreate(3, {DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
+             arrayCreate(3, DAE.RCONST(-1)),
+             arrayCreate(3, DAE.RCONST(-1)),
+             arrayCreate(3, DAE.RCONST(-1)),
+             arrayCreate(3, DAE.RCONST(-1)),
+             DAE.RCONST(-1),
+             DAE.RCONST(-1),
+             DAE.RCONST(-1),
+             DAE.RCONST(-1),
+             arrayCreate(3, DAE.RCONST(-1)),
+             DAE.RCONST(-1));
+
+    case "Vector"
+      then VECTOR(cref,
+             arrayCreate(3, {DAE.RCONST(-1), DAE.RCONST(-1), DAE.RCONST(-1)}),
+             arrayCreate(3, DAE.RCONST(-1)),
+             arrayCreate(3, DAE.RCONST(-1)),
+             arrayCreate(3, DAE.RCONST(-1)),
+             DAE.RCONST(-1),
+             DAE.RCONST(-1),
+             DAE.BCONST(false),
+             DAE.BCONST(false));
+
+    else
+      algorithm
+        Error.addInternalError(getInstanceName() + " failed on " +
+          visualizerName + "\n", sourceInfo());
+      then
+        fail();
+  end match;
+end newVisualizer;
+
+function makeCrefQualFromString
+  "generates a qualified cref from the '.' separated string.
+   author: Waurich TUD 2015-04"
   input String s;
   output DAE.ComponentRef crefOut;
 protected
@@ -326,71 +381,96 @@ algorithm
   crefOut := List.foldr(crefs,ComponentReference.joinCrefs,cref);
 end makeCrefQualFromString;
 
-protected function splitCrefAfter"checks if crefCut exists in the crefIn and outputs the appending crefs
-author:Waurich TUD 2015-04"
+function splitCrefAfter
+  "checks if crefCut exists in the crefIn and outputs the appending crefs
+   author:Waurich TUD 2015-04"
   input DAE.ComponentRef crefIn;
   input DAE.ComponentRef crefCut;
   output DAE.ComponentRef crefOut;
   output Boolean wasCut;
 algorithm
-  (crefOut,wasCut) := matchcontinue(crefIn,crefCut)
+  (crefOut, wasCut) := matchcontinue(crefIn, crefCut)
     local
       DAE.ComponentRef crefCut1, crefIn1;
-  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL())
-    equation
-      // the crefs are not equal, check the next cref in crefIn
-      true = not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
-    then splitCrefAfter(crefIn1,crefCut);
-  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=crefCut1))
-    equation
-      // the crefs are equal, continue checking
-      true = ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
-    then splitCrefAfter(crefIn1,crefCut1);
-  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
-    equation
-      // the cref has to be cut after this step
-      true = ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
-    then (crefIn1,true);
-  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
-    equation
-      // there is no identical cref
-      true = not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
-    then (crefIn1,false);
-   else
-     then (crefCut,false);
+
+    case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL())
+      algorithm
+        // the crefs are not equal, check the next cref in crefIn
+        true := not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+      then
+        splitCrefAfter(crefIn1,crefCut);
+
+    case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=crefCut1))
+      algorithm
+        // the crefs are equal, continue checking
+        true := ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+      then
+        splitCrefAfter(crefIn1,crefCut1);
+
+    case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
+      algorithm
+        // the cref has to be cut after this step
+        true := ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+      then
+        (crefIn1, true);
+
+    case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
+      algorithm
+        // there is no identical cref
+        true := not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+      then
+        (crefIn1, false);
+
+    else (crefCut, false);
   end matchcontinue;
 end splitCrefAfter;
 
-protected function fillVisualizationObjects1"checks if a variable belongs to a certain visualization var. if true, add information to the visualization object
-author:Waurich TUD 2015-04"
+function fillVisualizationObjects1
+  "checks if a variable belongs to a certain visualization var. if true, add information to the visualization object
+   author:Waurich TUD 2015-04"
   input BackendDAE.Var varIn; //check this var
   input Boolean storeProtectedCrefs; // if you want to store the protected crefs instead of the bidning expression
   input Absyn.Program program;
   input tuple<list<BackendDAE.Var>,Visualization> tplIn; // fold <vars for other visualization objects, the current visualization >
   output tuple<list<BackendDAE.Var>,Visualization> tplOut;
 algorithm
-   tplOut := matchcontinue(varIn,storeProtectedCrefs,tplIn)
+   tplOut := matchcontinue(varIn, tplIn)
     local
       String compIdent;
       list<BackendDAE.Var> vars;
       DAE.ComponentRef cref,crefIdent,cref1,ident;
-      Visualization vis;
-  case(BackendDAE.VAR(varName=cref),_,(vars, vis as SHAPE(ident=ident)))
-    algorithm
-      //this var belongs to the visualization object
-      //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
-      (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
-      vis := fillShapeObject(cref1,varIn,storeProtectedCrefs,program,vis);
-    then (vars, vis);
-  else
-    algorithm
-      (vars,vis) := tplIn;
-    then (varIn::vars, vis);
+      Visualization vis, filled_vis;
+
+    case (BackendDAE.VAR(varName=cref), (vars, vis as SHAPE(ident=ident)))
+      algorithm
+        //this var belongs to the visualization object
+        //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
+        (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
+        filled_vis := fillShapeObject(cref1,varIn,storeProtectedCrefs,program,vis);
+      then
+        (vars, filled_vis);
+
+    case (BackendDAE.VAR(varName=cref), (vars, vis as VECTOR(ident=ident)))
+      algorithm
+        //this var belongs to the visualization object
+        //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
+        (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
+        filled_vis := fillVectorObject(cref1,varIn,storeProtectedCrefs,program,vis);
+      then
+        (vars, filled_vis);
+
+    else
+      algorithm
+        (vars, vis) := tplIn;
+      then
+        (varIn::vars, vis);
+
   end matchcontinue;
 end fillVisualizationObjects1;
 
-protected function getFullCADFilePath "Get the absolute path for the given modelica uri.
-author: vwaurich TUD 2016-10"
+function getFullCADFilePath
+  "Get the absolute path for the given modelica uri.
+   author: vwaurich TUD 2016-10"
   input String sIn;
   input Absyn.Program program;
   output String sOut = sIn;
@@ -404,132 +484,209 @@ algorithm
   end if;
 end getFullCADFilePath;
 
-protected function fillShapeObject"sets the visualization info in the visualization object
-author:Waurich TUD 2015-04"
+function fillShapeObject
+  "sets the visualization info in the visualization object
+   author:Waurich TUD 2015-04"
   input DAE.ComponentRef cref;
   input BackendDAE.Var var;
   input Boolean storeProtectedCrefs;
   input Absyn.Program program;
-  input Visualization visIn;
-  output Visualization visOut;
+  input output Visualization vis;
 algorithm
-  visOut := matchcontinue(cref,var,storeProtectedCrefs,program,visIn)
+  () := matchcontinue (cref, vis)
     local
       Option<DAE.Exp> bind;
-      DAE.ComponentRef ident;
-      DAE.Exp exp, length, width, height, extra, specularCoeff, shapeType;
-      Integer ivalue, pos, pos1;
-      Real rvalue;
-      array<DAE.Exp> color, r, lengthDir, widthDir, r_shape ;
+      DAE.Exp exp;
+      Integer pos, pos1;
       list<DAE.Exp> T0;
-      array<list<DAE.Exp>> T;
 
-  case(DAE.CREF_IDENT(ident="shapeType"),BackendDAE.VAR(bindExp=SOME(exp)),_ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-    then (SHAPE(ident, exp, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+    case (DAE.CREF_IDENT(ident="shapeType"), SHAPE())
+      algorithm
+        BackendDAE.VAR(bindExp = bind) := var;
 
-  case(DAE.CREF_QUAL(ident="R",componentRef=DAE.CREF_IDENT(ident="T", subscriptLst = {DAE.INDEX(DAE.ICONST(pos)),DAE.INDEX(DAE.ICONST(pos1))})),BackendDAE.VAR(bindExp=bind),_ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-      T0 := arrayGet(T,pos);
-      T0 := List.replaceAt(exp,pos1,T0);
-      T := arrayUpdate(T,pos,T0);
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+        if isSome(bind) then
+          vis.shapeType := Util.getOption(bind);
+        end if;
+      then
+        ();
 
-  case(DAE.CREF_IDENT(ident="r", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-      r := arrayUpdate(r,pos,exp);
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+    case (DAE.CREF_QUAL(ident="R", componentRef=DAE.CREF_IDENT(ident="T",
+            subscriptLst = {DAE.INDEX(DAE.ICONST(pos)), DAE.INDEX(DAE.ICONST(pos1))})), SHAPE())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        T0 := arrayGet(vis.T, pos);
+        T0 := List.replaceAt(exp, pos1, T0);
+        arrayUpdate(vis.T, pos, T0);
+      then
+        ();
 
-  case(DAE.CREF_IDENT(ident="r_shape", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-      r_shape := arrayUpdate(r_shape,pos,exp);
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+    case (DAE.CREF_IDENT(ident="r", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), SHAPE())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.r, pos, exp);
+      then
+        ();
 
-  case(DAE.CREF_IDENT(ident="lengthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-      lengthDir := arrayUpdate(lengthDir,pos,exp);
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+    case (DAE.CREF_IDENT(ident="r_shape", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), SHAPE())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.r_shape, pos, exp);
+      then
+        ();
 
-  case(DAE.CREF_IDENT(ident="widthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-      widthDir := arrayUpdate(widthDir,pos,exp);
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+    case (DAE.CREF_IDENT(ident="lengthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), SHAPE())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.lengthDir, pos, exp);
+      then
+        ();
 
-  case(DAE.CREF_IDENT(ident="length"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, exp, width, height, extra, color, specularCoeff));
+    case (DAE.CREF_IDENT(ident="widthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), SHAPE())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.widthDir, pos, exp);
+      then
+        ();
 
-  case(DAE.CREF_IDENT(ident="width"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, exp, height, extra, color, specularCoeff));
+    case (DAE.CREF_IDENT(ident="length"), SHAPE())
+      algorithm
+        vis.length := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
 
-  case(DAE.CREF_IDENT(ident="height"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, exp, extra, color, specularCoeff));
+    case (DAE.CREF_IDENT(ident="width"), SHAPE())
+      algorithm
+        vis.width := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
 
-   case(DAE.CREF_IDENT(ident="extra"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, exp, color, specularCoeff));
+    case (DAE.CREF_IDENT(ident="height"), SHAPE())
+      algorithm
+        vis.height := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
 
-  case(DAE.CREF_IDENT(ident="color", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-      color := arrayUpdate(color,pos,exp);
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+     case (DAE.CREF_IDENT(ident="extra"), SHAPE())
+      algorithm
+        vis.extra := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
 
-   case(DAE.CREF_IDENT(ident="specularCoefficient"),BackendDAE.VAR(bindExp=bind), _ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color))
-    algorithm
-      if isSome(bind) then
-        exp := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else exp := BackendVariable.varExp(var);
-      end if;
-    then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, exp));
+    case (DAE.CREF_IDENT(ident="color", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), SHAPE())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.color, pos, exp);
+      then
+        ();
 
-  else visIn;
+    case (DAE.CREF_IDENT(ident="specularCoefficient"), SHAPE())
+      algorithm
+        vis.specularCoeff := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    else ();
   end matchcontinue;
 end fillShapeObject;
 
-protected function printVisualization"printing function for debugging.
-author:Waurich TUD 2015-04"
+function fillVectorObject
+  "sets the visualization info in the visualization object
+   author:Waurich TUD 2015-04"
+  input DAE.ComponentRef cref;
+  input BackendDAE.Var var;
+  input Boolean storeProtectedCrefs;
+  input Absyn.Program program;
+  input output Visualization vis;
+algorithm
+  () := matchcontinue (cref, vis)
+    local
+      Option<DAE.Exp> bind;
+      DAE.Exp exp;
+      Integer pos, pos1;
+      list<DAE.Exp> T0;
+
+    case (DAE.CREF_QUAL(ident="R", componentRef=DAE.CREF_IDENT(ident="T",
+            subscriptLst = {DAE.INDEX(DAE.ICONST(pos)), DAE.INDEX(DAE.ICONST(pos1))})), VECTOR())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        T0 := arrayGet(vis.T, pos);
+        T0 := List.replaceAt(exp, pos1, T0);
+        arrayUpdate(vis.T, pos, T0);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="r", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), VECTOR())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.r, pos, exp);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="coordinates", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), VECTOR())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.coordinates, pos, exp);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="color", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), VECTOR())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.color, pos, exp);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="specularCoefficient"), VECTOR())
+      algorithm
+        vis.specularCoeff := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="quantity"), VECTOR())
+      algorithm
+        vis.quantity := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="headAtOrigin"), VECTOR())
+      algorithm
+        vis.headAtOrigin := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="twoHeadedArrow"), VECTOR())
+      algorithm
+        vis.twoHeadedArrow := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    else ();
+  end matchcontinue;
+end fillVectorObject;
+
+function getVariableBinding
+  input BackendDAE.Var var;
+  input Boolean storeProtectedCrefs;
+  output DAE.Exp exp;
+protected
+  Option<DAE.Exp> binding;
+algorithm
+  BackendDAE.VAR(bindExp = binding) := var;
+
+  if isSome(binding) then
+    SOME(exp) := binding;
+
+    if not Expression.isConstValue(exp) and storeProtectedCrefs then
+      exp := BackendVariable.varExp(var);
+    end if;
+  else
+    exp := BackendVariable.varExp(var);
+  end if;
+end getVariableBinding;
+
+function printVisualization
+  "printing function for debugging.
+   author:Waurich TUD 2015-04"
   input Visualization vis;
   output String s;
 algorithm
@@ -549,57 +706,60 @@ algorithm
   end match;
 end printVisualization;
 
-protected function isVisualizationVar"the var inherits from an visualization object. Therefore, the paths are checked.
-author:Waurich TUD 2015-04"
+function isVisualizationVar
+  "the var inherits from an visualization object. Therefore, the paths are checked.
+   author:Waurich TUD 2015-04"
   input BackendDAE.Var var;
   output Boolean isVisVar;
 algorithm
-  isVisVar := matchcontinue(var)
-  local
-    Boolean b;
-    DAE.ElementSource source;
-    String obj;
-    list<Absyn.Path> paths;
-    list<String> paths_lst;
-    case(BackendDAE.VAR(source=source))
+  isVisVar := matchcontinue var
+    local
+      Boolean b;
+      DAE.ElementSource source;
+      String obj;
+      list<Absyn.Path> paths;
+      list<String> paths_lst;
+
+    case BackendDAE.VAR(source=source)
       algorithm
-       paths := ElementSource.getElementSourceTypes(source);
-       //_ := list(AbsynUtil.pathString(p) for p in paths);
-       //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
-       (obj,_) := hasVisPath(paths,1);
-    then Util.stringNotEqual(obj,"");
-    else
-      then false;
+        paths := ElementSource.getElementSourceTypes(source);
+        //_ := list(AbsynUtil.pathString(p) for p in paths);
+        //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
+        obj := hasVisPath(paths, 1);
+      then
+        Util.stringNotEqual(obj, "");
+
+    else false;
   end matchcontinue;
 end isVisualizationVar;
 
-
-protected function isVisualizationVarFold"the var inherits from an visualization object. Therefore, the paths are checked.
-author:Waurich TUD 2015-04"
+function isVisualizationVarFold
+  "the var inherits from an visualization object. Therefore, the paths are checked.
+   author:Waurich TUD 2015-04"
   input BackendDAE.Var var;
-  input tuple<list<BackendDAE.Var>,list<DAE.ComponentRef>> tplIn;//visualizationVars, visualization Identifiers
-  output tuple<list<BackendDAE.Var>,list<DAE.ComponentRef>> tplOut;
+  input tuple<list<BackendDAE.Var>,list<tuple<DAE.ComponentRef, String>>> tplIn;//visualizationVars, visualization Identifiers
+  output tuple<list<BackendDAE.Var>,list<tuple<DAE.ComponentRef, String>>> tplOut;
 algorithm
   tplOut := matchcontinue(var,tplIn)
     local
       Integer idx;
       DAE.ComponentRef varName, cref;
-      list<DAE.ComponentRef> crefs;
+      list<tuple<DAE.ComponentRef, String>> crefs;
       DAE.ElementSource source;
       list<BackendDAE.Var> varLst;
       String obj;
       list<Absyn.Path> paths;
 
-    case (BackendDAE.VAR(varName=varName,  source=source), (varLst,crefs))
+    case (BackendDAE.VAR(varName=varName, source=source), (varLst,crefs))
       algorithm
         paths := ElementSource.getElementSourceTypes(source);
         //print("Component " + ComponentReference.printComponentRefStr(varName) + ":\n");
         //print(List.toString(paths, AbsynUtil.pathStringDefault, "", "  ", "\n  ", "", false) + "\n");
-        (obj,idx) := hasVisPath(paths,1);
-        true := Util.stringNotEqual(obj,"");
+        (obj, idx) := hasVisPath(paths, 1);
+        true := Util.stringNotEqual(obj, "");
         //print("ComponentRef "+ComponentReference.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
-        cref := ComponentReference.firstNCrefs(varName,idx-1);
-        crefs := List.unique(cref::crefs);
+        cref := ComponentReference.firstNCrefs(varName, idx-1);
+        crefs := List.unique((cref, obj)::crefs);
       then
         (var::varLst, crefs);
 
@@ -607,41 +767,44 @@ algorithm
   end matchcontinue;
 end isVisualizationVarFold;
 
-protected function hasVisPath"checks if the path is Modelica.Mechanics.MultiBody.Visualizers.Advanced.* and outputs * if true. outputs which path is the vis path
-author:Waurich TUD 2015-04"
+function hasVisPath
+  "checks if the path is Modelica.Mechanics.MultiBody.Visualizers.Advanced.* and
+   outputs * if true. outputs which path is the vis path
+   author:Waurich TUD 2015-04"
   input  list<Absyn.Path> pathsIn;
   input Integer numIn;
   output String visPath;
   output Integer numOut;
 algorithm
-  (visPath,numOut) := matchcontinue(pathsIn,numIn)
+  (visPath, numOut) := matchcontinue pathsIn
     local
       String name, shapeIdent;
       Integer num;
       Boolean b;
       Absyn.Path path;
       list<Absyn.Path> rest;
-  case({},_)
-    then ("",-1);
-  case(Absyn.FULLYQUALIFIED(path=path)::rest,_)
-    algorithm
-    (name,num) := hasVisPath(path::rest,numIn);
-    then (name,num);
-  case(Absyn.QUALIFIED(name="Modelica",path=Absyn.QUALIFIED(name="Mechanics",path=Absyn.QUALIFIED(name="MultiBody",path=Absyn.QUALIFIED(name="Visualizers",path=Absyn.QUALIFIED(name="Advanced",path=Absyn.IDENT(name=name))))))::_,_)
-    algorithm
-      shapeIdent := substring(name, 1, 5);
-      true := stringEqual(shapeIdent,"Shape");
-    then (name,numIn);
-  case(_::rest,_)
-    algorithm
-      (name,num) := hasVisPath(rest,numIn+1);
-    then (name,num);
+
+    case {} then ("", -1);
+    case Absyn.FULLYQUALIFIED(path=path)::rest then hasVisPath(path::rest, numIn);
+
+    case Absyn.QUALIFIED(name="Modelica",
+        path=Absyn.QUALIFIED(name="Mechanics",
+          path=Absyn.QUALIFIED(name="MultiBody",
+            path=Absyn.QUALIFIED(name="Visualizers",
+              path=Absyn.QUALIFIED(name="Advanced",
+                path=Absyn.IDENT(name=name))))))::_
+      algorithm
+        true := listMember(name, {"Shape", "Vector"});
+      then
+        (name, numIn);
+
+    case _::rest then hasVisPath(rest,numIn+1);
   end matchcontinue;
 end hasVisPath;
 
-
-public function dumpVis "author: waurich TUD
-  Dumps the graph into a *.xml-file."
+function dumpVis
+  "author: waurich TUD
+   Dumps the graph into a *.xml-file."
   input array<Visualization> visIn;
   input String iFileName;
 algorithm
