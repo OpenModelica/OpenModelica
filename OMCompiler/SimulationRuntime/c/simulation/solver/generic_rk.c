@@ -128,7 +128,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   if (eventHappend) {
     eventTime = findRoot(data, threadData, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues);
-    infoStreamPrint(LOG_SOLVER, 0, "event happend at time: %20.16g", eventTime);
+    infoStreamPrint(LOG_MULTIRATE, 0, "gMode detected an event at time: %20.16g", eventTime);
   }
 
   // re-store the pre values of the zeroCrossings for comparison
@@ -150,17 +150,17 @@ struct dataSolver
 };
 
 /**
- * @brief Get Runge-Kutta method from simulation flag FLAG_RK.
+ * @brief Get Runge-Kutta method from simulation flag FLAG_SR.
  *
  * Defaults to RK_DOPRI45 if flag is not set.
  * Returns RK_UNKNOWN if flag is not known.
  *
  * @return enum RK_SINGLERATE_METHOD    Runge-Kutta method.
  */
-enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_RK_METHOD) {
+enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_SR_METHOD) {
   enum RK_SINGLERATE_METHOD method;
   const char* flag_value;
-  flag_value = omc_flagValue[FLAG_RK_METHOD];
+  flag_value = omc_flagValue[FLAG_SR_METHOD];
   char* RK_method_string;
 
   if (flag_value != NULL) {
@@ -181,7 +181,7 @@ enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_RK_METHOD) {
 }
 
 /**
- * @brief Get non-linear solver method for Runge-Kutta from flag FLAG_RK_NLS.
+ * @brief Get non-linear solver method for Runge-Kutta from flag FLAG_SR_NLS.
  *
  * Defaults to Newton if flag is not set.
  * Returns RK_UNKNOWN if flag is not known.
@@ -191,7 +191,7 @@ enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_RK_METHOD) {
 enum RK_NLS_METHOD getRK_NLS_Method() {
   enum RK_NLS_METHOD method;
   const char* flag_value;
-  flag_value = omc_flagValue[FLAG_RK_NLS];
+  flag_value = omc_flagValue[FLAG_SR_NLS];
   char* RK_NLS_method_string;
 
   if (flag_value != NULL) {
@@ -236,12 +236,12 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
   printSparseStructure(sparsePattern,
                         sizeRows,
                         sizeCols,
-                        LOG_SOLVER_V,
+                        LOG_MULTIRATE_V,
                         "sparsePattern");
   printSparseStructure(sparsePatternT,
                         sizeRows,
                         sizeCols,
-                        LOG_SOLVER_V,
+                        LOG_MULTIRATE_V,
                         "sparsePatternT");
 }
 
@@ -305,7 +305,7 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
      for (j=0; j<sizeCols; j++)
         tabu[i*sizeCols + j]=0;
 
-    // Allocate memory for new sparsity pattern
+  // Allocate memory for new sparsity pattern
   sparsePatternT = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
   sparsePatternT->leadindex = (unsigned int*) malloc((length_column_indices)*sizeof(unsigned int));
   sparsePatternT->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
@@ -489,7 +489,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   printSparseStructure(sparsePattern_ODE,
                       sizeRows,
                       sizeCols,
-                      LOG_SOLVER_V,
+                      LOG_MULTIRATE_V,
                       "sparsePatternODE");
 
   nnz_A = 0;
@@ -556,7 +556,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
 
   numberOfNonZeros = i;
 
-  if (ACTIVE_STREAM(LOG_SOLVER_V)){
+  if (ACTIVE_STREAM(LOG_MULTIRATE_V)){
     printIntVector_genericRK("rows", coo_row, numberOfNonZeros, 0.0);
     printIntVector_genericRK("cols", coo_col, numberOfNonZeros, 0.0);
   }
@@ -822,7 +822,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  gsriData->RK_method = getRK_Method(FLAG_RK);
+  gsriData->RK_method = getRK_Method(FLAG_SR);
   gsriData->tableau = initButcherTableau(gsriData->RK_method);
   if (gsriData->tableau == NULL){
     errorStreamPrint(LOG_STDOUT, 0, "allocateDataGenericRK: Failed to initialize butcher tableau for Runge-Kutta method %s", RK_SINGLERATE_METHOD_NAME[gsriData->RK_method]);
@@ -869,7 +869,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 
   // test of multistep method
 
-  const char* flag_StepSize_ctrl = omc_flagValue[FLAG_RK_STEPSIZE_CTRL];
+  const char* flag_StepSize_ctrl = omc_flagValue[FLAG_SR_CTRL];
 
   if (flag_StepSize_ctrl != NULL) {
     gsriData->stepSize_control = &(PIController);
@@ -937,10 +937,12 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     if (!gsriData->nlsData) {
       return -1;
     } else {
+      infoStreamPrint(LOG_SOLVER, 1, "Nominal values of  the states:");
       for (int i =0; i<gsriData->nStates; i++)
       {
-        infoStreamPrint(LOG_SOLVER, 0, "nominal values of  %s = %g", data->modelData->realVarsData[i].info.name, gsriData->nlsData->nominal[i]);
+        infoStreamPrint(LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gsriData->nlsData->nominal[i]);
       }
+      messageClose(LOG_SOLVER);
     }
   }
   else
@@ -951,12 +953,12 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     gsriData->jacobian = NULL;
   }
 
-  if (solverInfo->solverMethod == S_GENERIC_RK_MR)
+  if (solverInfo->solverMethod == S_GMODE)
   {
     gsriData->multi_rate = 1;
-    const char* flag_value = omc_flagValue[FLAG_RK_MR_PAR];
+    const char* flag_value = omc_flagValue[FLAG_MR_PAR];
     if (flag_value != NULL) {
-      gsriData->percentage = atof(omc_flagValue[FLAG_RK_MR_PAR]);
+      gsriData->percentage = atof(omc_flagValue[FLAG_MR_PAR]);
     } else
     {
       gsriData->percentage = 0.3;
@@ -979,7 +981,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     gsriData->sortedStates[i] = i;
   }
 
-  if (solverInfo->solverMethod == S_GENERIC_RK_MR) {
+  if (solverInfo->solverMethod == S_GMODE) {
     allocateDataGenericRK_MR(data, threadData, gsriData);
   } else {
     gsriData->gmriData = NULL;
@@ -1714,7 +1716,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   gsriData->stepSize = 0.5*fmin(100*h0,h1);
   gsriData->lastStepSize = gsriData->stepSize;
 
-  infoStreamPrint(LOG_SOLVER, 0, "initial step size = %e at time %g", gsriData->stepSize, gsriData->time);
+  infoStreamPrint(LOG_MULTIRATE, 0, "initial step size = %e at time %g", gsriData->stepSize, gsriData->time);
 }
 
 
@@ -1795,9 +1797,9 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   solverInfo->solverRootFinding = 1;
 
-  infoStreamPrint(LOG_SOLVER_V, 0, "generic Runge-Kutta method:");
+  infoStreamPrint(LOG_MULTIRATE, 0, "generic Runge-Kutta method:");
 
-  if(ACTIVE_STREAM(LOG_SOLVER_V))
+  if(ACTIVE_STREAM(LOG_MULTIRATE_V))
   {
     printVector_genericRK("yIni:", sData->realVars, gsriData->nStates, sDataOld->timeValue);
   }
@@ -1851,7 +1853,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       memcpy(gsriData->yLeft, gsriData->yOld, data->modelData->nStates*sizeof(double));
       gsriData->timeLeft = gsriData->time;
 
-      if(ACTIVE_STREAM(LOG_SOLVER_V))
+      if(ACTIVE_STREAM(LOG_MULTIRATE_V))
       {
         printVector_genericRK("yOld: ", gsriData->yOld, gsriData->nStates, gsriData->time);
       }
@@ -1907,13 +1909,13 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       {
         // BB ToDo: Gives problems, if the orderig of the fast states change during simulation
         int *sortedStates;
-        if(ACTIVE_STREAM(LOG_SOLVER_V))
+        if(ACTIVE_STREAM(LOG_MULTIRATE_V))
         {
           sortedStates = (int*) malloc(sizeof(int)*nStates);
           memcpy(sortedStates, gsriData->sortedStates, sizeof(int)*nStates);
         }
         sortErrorIndices(gsriData);
-        if(ACTIVE_STREAM(LOG_SOLVER_V))
+        if(ACTIVE_STREAM(LOG_MULTIRATE_V))
         {
           for (int k=0; k<nStates; k++)
             if (sortedStates[k] - gsriData->sortedStates[k]) {
@@ -1972,6 +1974,21 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
       //printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
       //    gsriData->nSlowStates, gsriData->nFastStates,
       //    gsriData->nFastStates + gsriData->nSlowStates - gsriData->nStates);
+
+
+      /* BB ToDo:
+       * 1)
+       * If all states are fast states, no need of multi_rate step, just reject!!!
+       * same yields, if err_fast is smaller than a threshhold
+       *
+       * 2)
+       * if gSMratio == 0 or gSMratio == 1 => no need for multi rate step for the whole simulation
+       * should be detected during allocation
+       *
+       *
+       *
+      */
+
       if (gsriData->multi_rate)
       {
         // printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
@@ -2054,11 +2071,11 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         gsriData->time = eventTime;
         memcpy(gsriData->yOld, sData->realVars, gsriData->nStates * sizeof(double));
         // printVector_genericRK("y:    ", gsriData->y, nStates, gsriData->time);
-        if(ACTIVE_STREAM(LOG_SOLVER))
+        if(ACTIVE_STREAM(LOG_MULTIRATE))
         {
-          // printIntVector_genericRK("fast states:", gsriData->fastStates, gsriData->nFastStates, solverInfo->currentTime);
-          // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
-          messageClose(LOG_SOLVER);
+          printIntVector_genericRK("fast states:", gsriData->fastStates, gsriData->nFastStates, solverInfo->currentTime);
+          printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+          messageClose(LOG_MULTIRATE);
         }
         if (!gsriData->multi_rate || (gsriData->multi_rate && !gsriData->percentage))
         {
@@ -2076,7 +2093,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     /* update time with performed stepSize */
     gsriData->time += gsriData->lastStepSize;
 
-    if(ACTIVE_STREAM(LOG_SOLVER_V))
+    if(ACTIVE_STREAM(LOG_MULTIRATE_V))
     {
       printVector_genericRK("y:    ", gsriData->y, gsriData->nStates, gsriData->time);
     }
@@ -2108,7 +2125,7 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     }
   } // end of while-loop (gsriData->time < targetTime)
 
-  if(ACTIVE_STREAM(LOG_SOLVER_V))
+  if(ACTIVE_STREAM(LOG_MULTIRATE_V))
   {
     printf("\n");
   }
@@ -2132,11 +2149,11 @@ int genericRK_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
                           gsriData->timeRight, gsriData->y,
                           sData->timeValue, sData->realVars,
                           gsriData->nSlowStates, gsriData->slowStates);
-    if(ACTIVE_STREAM(LOG_SOLVER))
+    if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
-      // printIntVector_genericRK("fast states:", gsriData->fastStates, gsriData->nFastStates, solverInfo->currentTime);
-      // printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
-      messageClose(LOG_SOLVER);
+      printIntVector_genericRK("fast states:", gsriData->fastStates, gsriData->nFastStates, solverInfo->currentTime);
+      printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+      messageClose(LOG_MULTIRATE);
     }
   }else{
     // Integrator emits result on the simulation grid

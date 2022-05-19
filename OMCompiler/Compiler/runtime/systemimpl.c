@@ -2841,19 +2841,19 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
         flagDesc = NLS_LS_METHOD_DESC;
         break;
 
-      case FLAG_RK:
+      case FLAG_SR:
         numExtraFlags = RK_MAX;
         flagName = RK_SINGLERATE_METHOD_NAME;
         flagDesc = RK_SINGLERATE_METHOD_DESC;
         break;
 
-      case FLAG_RK_MR:
+      case FLAG_MR:
         numExtraFlags = RK_MAX;
         flagName = RK_SINGLERATE_METHOD_NAME;
         flagDesc = RK_SINGLERATE_METHOD_DESC;
         break;
 
-      case FLAG_RK_NLS:
+      case FLAG_SR_NLS:
         numExtraFlags = RK_NLS_MAX;
         flagName = RK_NLS_METHOD_NAME;
         flagDesc = RK_NLS_METHOD_DESC;

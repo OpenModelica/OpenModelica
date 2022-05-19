@@ -255,7 +255,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  gmriData->RK_method = getRK_Method(FLAG_RK_MR);
+  gmriData->RK_method = getRK_Method(FLAG_MR);
   gmriData->tableau = initButcherTableau(gmriData->RK_method);
   if (gmriData->tableau == NULL){
     // ERROR
@@ -301,7 +301,7 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
 
   infoStreamPrint(LOG_SOLVER, 0, "Step control factor is set to %g", gmriData->tableau->fac);
 
-  const char* flag_StepSize_ctrl = omc_flagValue[FLAG_RK_STEPSIZE_CTRL];
+  const char* flag_StepSize_ctrl = omc_flagValue[FLAG_SR_CTRL];
 
   if (flag_StepSize_ctrl != NULL) {
     gmriData->stepSize_control = &(PIController);
@@ -963,7 +963,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       }
       // trivial coloring, needs to be set each call of MR, if number of fast States changes...
       // use here the sparsity pattern and coloring from jacobian_DIRK from the outer integrator
-      // Otherwise, it is not exactly the same for -rkmrFac=1!
+      // Otherwise, it is not exactly the same for -gSMratio=1!
       gmriData->jacobian->sparsePattern->maxColors = nFastStates;
       for (i=0; i < nFastStates; i++)
         gmriData->jacobian->sparsePattern->colorCols[i] = i+1;

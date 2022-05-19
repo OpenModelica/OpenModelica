@@ -103,7 +103,7 @@ typedef struct DATA_GSRI{
   unsigned int convergenceFailures;   /* Total number of convergence failures */
 } DATA_GSRI;
 
-enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_RK_METHOD);
+enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_SR_METHOD);
 enum RK_NLS_METHOD getRK_NLS_Method();
 int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 void freeDataGenericRK(DATA_GSRI* data);

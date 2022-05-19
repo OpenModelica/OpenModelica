@@ -63,12 +63,12 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b
 }
 
 void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
-  const char* flag_value = omc_flagValue[FLAG_RK_PAR];
+  const char* flag_value = omc_flagValue[FLAG_SR_PAR];
   double lim;
 
   // ESDIRK2 method
   if (flag_value != NULL) {
-    lim = atof(omc_flagValue[FLAG_RK_PAR]);
+    lim = atof(omc_flagValue[FLAG_SR_PAR]);
     //printf("embedded method yields R(\u221e) =  %.19g\n", lim);
   } else
   {
@@ -117,12 +117,12 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
 }
 
 void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
-  const char* flag_value = omc_flagValue[FLAG_RK_PAR];
+  const char* flag_value = omc_flagValue[FLAG_SR_PAR];
   double lim;
 
   // ESDIRK2 method
   if (flag_value != NULL) {
-    lim = atof(omc_flagValue[FLAG_RK_PAR]);
+    lim = atof(omc_flagValue[FLAG_SR_PAR]);
     //printf("embedded method yields R(\u221e) =  %.19g\n", lim);
   } else
   {
@@ -155,7 +155,7 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau) {
   tableau->order_bt = 2;
   tableau->fac = 1.0;
 
-  const char* flag_value = omc_flagValue[FLAG_RK_PAR];
+  const char* flag_value = omc_flagValue[FLAG_SR_PAR];
   double gam;
 
   gam = 1.0/2.0 + sqrt(3.0)/6.0;
