@@ -84,10 +84,8 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
 // Residuum and Jacobian functions for diagonal implicit (DIRK) and implicit (IRK) Runge-Kutta methods.
 void residual_MS(void **dataIn, const double *xloc, double *res, const int *iflag);
-int jacobian_MS_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
-
 void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *iflag);
-int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int jacobian_SR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
 void residual_IRK(void **dataIn, const double *xloc, double *res, const int *iflag);
 int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
@@ -702,7 +700,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   {
   case RK_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK;
-    nlsData->analyticalJacobianColumn = jacobian_DIRK_column;
+    nlsData->analyticalJacobianColumn = jacobian_SR_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_DIRK;
     nlsData->getIterationVars = NULL;
 
@@ -718,7 +716,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case MS_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_MS;
-    nlsData->analyticalJacobianColumn = jacobian_MS_column;
+    nlsData->analyticalJacobianColumn = jacobian_SR_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MS;
     nlsData->getIterationVars = NULL;
 
@@ -1106,7 +1104,7 @@ void residual_MS(void **dataIn, const double *xloc, double *res, const int *ifla
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
  */
-int jacobian_MS_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+int jacobian_SR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
   DATA* data = (DATA*) inData;
   DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
@@ -1123,16 +1121,23 @@ int jacobian_MS_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN
 
   /* Update resultVars array */
   for (i = 0; i < jacobian->sizeCols; i++) {
-    jacobian->resultVars[i] = gsriData->tableau->b[nStages-1] * gsriData->stepSize * jacobian_ODE->resultVars[i];
+    if (gsriData->type == MS_TYPE_IMPLICIT) {
+      jacobian->resultVars[i] = gsriData->tableau->b[nStages-1] * gsriData->stepSize * jacobian_ODE->resultVars[i];
+    } else {
+      jacobian->resultVars[i] = gsriData->stepSize * gsriData->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
+    }
     /* -1 on diagonal elements */
     if (jacobian->seedVars[i] == 1) {
-      jacobian->resultVars[i] -= gsriData->tableau->c[nStages-1];
+      jacobian->resultVars[i] -= 1;
     }
   }
 
+  // printVector_genericRK("jacobian_ODE colums", jacobian_ODE->resultVars, nStates, gsriData->time);
+  // printVector_genericRK("jacobian colums", jacobian->resultVars, nStates, gsriData->time);
+  // printIntVector_genericRK("sparsity pattern colors", jacobian->sparsePattern->colorCols, nStates, gsriData->time);
+
   return 0;
 }
-
 
 /**
  * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
@@ -1169,48 +1174,6 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
 
   return;
 }
-
-/**
- * @brief Evaluate column of DIRK Jacobian.
- *
- * @param inData            Void pointer to runtime data struct.
- * @param threadData        Thread data for error handling.
- * @param gsriData     Runge-Kutta method.
- * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
- * @param parentJacobian    Unused
- * @return int              Return 0 on success.
- */
-int jacobian_DIRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
-
-  DATA* data = (DATA*) inData;
-  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
-
-  int i;
-  int nStates = data->modelData->nStates;
-  int nStages = gsriData->tableau->nStages;
-  int stage = gsriData->act_stage;
-
-  /* Evaluate column of Jacobian ODE */
-  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
-  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
-
-  /* Update resultVars array */
-  for (i = 0; i < jacobian->sizeCols; i++) {
-    jacobian->resultVars[i] = gsriData->stepSize * gsriData->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
-    /* -1 on diagonal elements */
-    if (jacobian->seedVars[i] == 1) {
-      jacobian->resultVars[i] -= 1;
-    }
-  }
-
-  // printVector_genericRK("jacobian_ODE colums", jacobian_ODE->resultVars, nStates, gsriData->time);
-  // printVector_genericRK("jacobian colums", jacobian->resultVars, nStates, gsriData->time);
-  // printIntVector_genericRK("sparsity pattern colors", jacobian->sparsePattern->colorCols, nStates, gsriData->time);
-
-  return 0;
-}
-
 
 /**
  * @brief Evaluate residual for non-linear system of implicit Runge-Kutta method.

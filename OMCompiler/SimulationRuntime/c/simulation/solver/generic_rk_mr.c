@@ -66,7 +66,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 
 void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *iflag);
 void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int *iflag);
-int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
 SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
 
@@ -156,7 +156,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   case RK_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK_MR;
     // nlsData->analyticalJacobianColumn = NULL;
-    nlsData->analyticalJacobianColumn = jacobian_DIRK_column_MR;
+    nlsData->analyticalJacobianColumn = jacobian_MR_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
@@ -165,11 +165,11 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     break;
   case MS_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_MS_MR;
-    nlsData->analyticalJacobianColumn = NULL;//jacobian_MS_column;
+    nlsData->analyticalJacobianColumn = jacobian_MR_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
-    gmriData->symJacAvailable = FALSE;
+    gmriData->symJacAvailable = TRUE;
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gmriData->type);
@@ -535,55 +535,6 @@ void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *i
 }
 
 /**
- * @brief Evaluate column of DIRK Jacobian.
- *
- * @param inData            Void pointer to runtime data struct.
- * @param threadData        Thread data for error handling.
- * @param gsriData     Runge-Kutta method.
- * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
- * @param parentJacobian    Unused
- * @return int              Return 0 on success.
- */
-int jacobian_MS_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
-
-  DATA* data = (DATA*) inData;
-  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
-  DATA_GMRI* gmriData = gsriData->gmriData;
-  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-
-  int i, ii;
-  int nStates = data->modelData->nStates;
-  int nStages = gmriData->tableau->nStages;
-  int nFastStates = gmriData->nFastStates;
-  int stage = gmriData->act_stage;
-
-  for (i=0; i<jacobian_ODE->sizeCols; i++)
-    jacobian_ODE->seedVars[i] = 0;
-  // Map the jacobian->seedVars to the jacobian_ODE->seedVars
-  for (ii=0; ii<nFastStates; ii++)
-  {
-    i = gmriData->fastStates[ii];
-    if (jacobian->seedVars[ii])
-      jacobian_ODE->seedVars[i] = 1;
-  }
-
-  /* Evaluate column of Jacobian ODE */
-  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
-
-  for (ii = 0; ii < nFastStates; ii++) {
-    i = gmriData->fastStates[ii];
-    jacobian->resultVars[ii] = gmriData->tableau->b[nStages-1] * gmriData->stepSize * jacobian_ODE->resultVars[i];
-    /* -1 on diagonal elements */
-    if (jacobian->seedVars[ii] == 1) {
-      jacobian->resultVars[ii] -= 1;
-    }
-  }
-
-  return 0;
-}
-
-
-/**
  * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
  *
  * TODO: Describe what the residual means.
@@ -634,7 +585,7 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
  */
-int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
   DATA* data = (DATA*) inData;
   DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
@@ -674,7 +625,11 @@ int jacobian_DIRK_column_MR(void* inData, threadData_t *threadData, ANALYTIC_JAC
   /* Update resultVars array */
   for (ii = 0; ii < nFastStates; ii++) {
     i = gmriData->fastStates[ii];
-    jacobian->resultVars[ii] = gmriData->stepSize * gmriData->tableau->A[stage_ * gmriData->tableau->nStages + stage_] * jacobian_ODE->resultVars[ii];
+    if (gmriData->type == MS_TYPE_IMPLICIT) {
+      jacobian->resultVars[ii] = gmriData->tableau->b[nStages-1] * gmriData->stepSize * jacobian_ODE->resultVars[i];
+    } else {
+      jacobian->resultVars[ii] = gmriData->stepSize * gmriData->tableau->A[stage_ * gmriData->tableau->nStages + stage_] * jacobian_ODE->resultVars[i];
+    }
     /* -1 on diagonal elements */
     if (jacobian->seedVars[ii] == 1) {
       jacobian->resultVars[ii] -= 1;
