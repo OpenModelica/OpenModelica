@@ -46,6 +46,7 @@ class ElementInfo;
 class StringHandler;
 class OMCInterface;
 class LibraryTreeItem;
+class QNetworkReply;
 
 typedef struct {
   QString mFromUnit;
@@ -287,6 +288,7 @@ public slots:
   void logCommand(QString command) { logCommand(command, false); }
   void logCommand(QString command, bool saveToHistory);
   void logResponse(QString command, QString response, double elapsed, bool customCommand = false);
+  void setUsersGuideVersion(QNetworkReply *pNetworkReply);
   void showException(QString exception);
   void openOMCLoggerWidget();
   void sendCustomExpression();
