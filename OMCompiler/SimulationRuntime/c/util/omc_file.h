@@ -102,7 +102,9 @@ int omc_stat(const char *filename, struct stat *statbuf);
 #endif
 
 int omc_unlink(const char *filename);
+#if defined(__MINGW32__) || defined(_MSC_VER)
 wchar_t* longabspath(wchar_t* unicodePath);
+#endif
 
 #ifdef __cplusplus
 }
