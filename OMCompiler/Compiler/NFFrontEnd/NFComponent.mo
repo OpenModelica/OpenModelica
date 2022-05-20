@@ -905,7 +905,7 @@ public
 
   function getEvaluateAnnotation
     input Component component;
-    output Boolean evaluate;
+    output Option<Boolean> evaluate;
   protected
     SCode.Comment cmt;
   algorithm

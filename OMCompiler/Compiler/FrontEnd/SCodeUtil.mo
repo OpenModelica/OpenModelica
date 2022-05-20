@@ -3263,6 +3263,37 @@ algorithm
   end match;
 end lookupNamedAnnotation;
 
+public function lookupNamedAnnotationBinding
+  input SCode.Annotation ann;
+  input String name;
+  output Option<Absyn.Exp> binding;
+protected
+  SCode.Mod mod;
+algorithm
+  mod := lookupNamedAnnotation(ann, name);
+
+  binding := match mod
+    case SCode.Mod.MOD() then mod.binding;
+    else NONE();
+  end match;
+end lookupNamedAnnotationBinding;
+
+public function lookupNamedBooleanAnnotation
+  input SCode.Annotation ann;
+  input String name;
+  output Option<Boolean> value;
+protected
+  Option<Absyn.Exp> binding;
+  Boolean bval;
+algorithm
+  binding := lookupNamedAnnotationBinding(ann, name);
+
+  value := match binding
+    case SOME(Absyn.Exp.BOOL(value = bval)) then SOME(bval);
+    else NONE();
+  end match;
+end lookupNamedBooleanAnnotation;
+
 public function lookupNamedAnnotations
   "Returns a list of modifiers with the given name found in the annotation."
   input SCode.Annotation ann;
@@ -3380,18 +3411,18 @@ algorithm
 end hasBooleanNamedAnnotation2;
 
 public function getEvaluateAnnotation
-"@author: adrpo
- returns true if annotation(Evaluate = true) is present,
- otherwise false"
-  input Option<SCode.Comment> inCommentOpt;
-  output Boolean evalIsTrue;
+  "Looks up the Evaluate annotation and returns the value if the annotation
+   exists and has a boolean value, otherwise NONE()."
+  input Option<SCode.Comment> cmt;
+  output Option<Boolean> value;
+protected
+  SCode.Annotation ann;
+  Option<Absyn.Exp> binding;
 algorithm
-  evalIsTrue := match (inCommentOpt)
-    local
-      SCode.Annotation ann;
-    case (SOME(SCode.COMMENT(annotation_ = SOME(ann))))
-      then hasBooleanNamedAnnotation(ann, "Evaluate");
-    else false;
+  value := match cmt
+    case SOME(SCode.COMMENT(annotation_ = SOME(ann)))
+      then lookupNamedBooleanAnnotation(ann, "Evaluate");
+    else NONE();
   end match;
 end getEvaluateAnnotation;
 
