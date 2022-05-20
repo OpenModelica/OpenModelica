@@ -6241,7 +6241,7 @@ let &sub = buffer ""
 
   case CALL(path=IDENT(name="print"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
-    'fputs(MMC_STRINGDATA(<%var1%>),stdout)'
+    'omc_fputs(MMC_STRINGDATA(<%var1%>),stdout)'
 
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

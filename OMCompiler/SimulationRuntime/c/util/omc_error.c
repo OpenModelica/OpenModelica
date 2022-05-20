@@ -34,6 +34,11 @@
 /* For MMC_THROW, so we can end this thing */
 #include "../meta/meta_modelica.h"
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+/* For Console related functions and macros used in omc_fputs. */
+#include <windows.h>
+#endif
+
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
@@ -546,4 +551,159 @@ void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *in
 #endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
+}
+
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+
+/* Taken from https://stackoverflow.com/a/12652946/6271971 */
+static int _wprintf(const wchar_t* format, ...)
+{
+  int r;
+  static int utf8ModeSet = 0;
+  static wchar_t* bufWchar = NULL;
+  static size_t bufWcharCount = 256;
+  static char* bufMchar = NULL;
+  static size_t bufMcharCount = 256;
+  va_list vl;
+  int mcharCount = 0;
+
+  if (utf8ModeSet == 0)
+  {
+    if (!SetConsoleOutputCP(CP_UTF8))
+    {
+      DWORD err = GetLastError();
+      fprintf(stderr, "SetConsoleOutputCP(CP_UTF8) failed with error 0x%X\n", err);
+      utf8ModeSet = -1;
+    }
+    else
+    {
+      utf8ModeSet = 1;
+    }
+  }
+
+  if (utf8ModeSet != 1)
+  {
+    va_start(vl, format);
+    r = vwprintf(format, vl);
+    va_end(vl);
+    return r;
+  }
+
+  if (bufWchar == NULL)
+  {
+    if ((bufWchar = malloc(bufWcharCount * sizeof(wchar_t))) == NULL)
+    {
+      return -1;
+    }
+  }
+
+  for (;;)
+  {
+    va_start(vl, format);
+    r = vswprintf(bufWchar, bufWcharCount, format, vl);
+    va_end(vl);
+
+    if (r < 0)
+    {
+      break;
+    }
+
+    if (r + 2 <= bufWcharCount)
+    {
+      break;
+    }
+
+    free(bufWchar);
+    if ((bufWchar = malloc(bufWcharCount * sizeof(wchar_t) * 2)) == NULL)
+    {
+      return -1;
+    }
+    bufWcharCount *= 2;
+  }
+
+  if (r > 0)
+  {
+    if (bufMchar == NULL)
+    {
+      if ((bufMchar = malloc(bufMcharCount)) == NULL)
+      {
+        return -1;
+      }
+    }
+
+    for (;;)
+    {
+      mcharCount = WideCharToMultiByte(CP_UTF8,
+                                       0,
+                                       bufWchar,
+                                       -1,
+                                       bufMchar,
+                                       bufMcharCount,
+                                       NULL,
+                                       NULL);
+      if (mcharCount > 0)
+      {
+        break;
+      }
+
+      if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+      {
+        return -1;
+      }
+
+      free(bufMchar);
+      if ((bufMchar = malloc(bufMcharCount * 2)) == NULL)
+      {
+        return -1;
+      }
+      bufMcharCount *= 2;
+    }
+  }
+
+  if (mcharCount > 1)
+  {
+    DWORD numberOfCharsWritten, consoleMode;
+
+    if (GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &consoleMode))
+    {
+      fflush(stdout);
+      if (!WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE),
+                         bufMchar,
+                         mcharCount - 1,
+                         &numberOfCharsWritten,
+                         NULL))
+      {
+        return -1;
+      }
+    }
+    else
+    {
+      if (fputs(bufMchar, stdout) == EOF)
+      {
+        return -1;
+      }
+    }
+  }
+
+  return r;
+}
+#endif // #if defined(__MINGW32__) || defined(_MSC_VER)
+
+
+
+int omc_fputs(const char* in_string, FILE* stream) {
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  int unicodeLength = MultiByteToWideChar(CP_UTF8, 0, in_string, -1, NULL, 0);
+  wchar_t *unicodeString = (wchar_t*)malloc(unicodeLength*sizeof(wchar_t));
+  MultiByteToWideChar(CP_UTF8, 0, in_string, -1, unicodeString, unicodeLength);
+
+  _wprintf(unicodeString);
+
+  free(unicodeString);
+#else
+  fputs(in_string, stream);
+#endif
+
 }

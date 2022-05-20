@@ -244,6 +244,9 @@ static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream __attribut
 static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream  __attribute__((unused)), int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...)  {/* Do nothing */}
 #endif
 
+
+int omc_fputs(const char* in_string, FILE* stream);
+
 #ifdef __cplusplus
 }
 #endif
