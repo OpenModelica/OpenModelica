@@ -3300,7 +3300,7 @@ algorithm
       algorithm
         // check if we have a parameter with (fixed = true), annotation(Evaluate = true) and no binding
         if listMember(Component.variability(component), {Variability.STRUCTURAL_PARAMETER, Variability.PARAMETER}) and
-           Component.getEvaluateAnnotation(component)
+           Util.getOptionOrDefault(Component.getEvaluateAnnotation(component), false)
         then
           // only add an error if fixed = true
           if Component.getFixedAttribute(component) then
