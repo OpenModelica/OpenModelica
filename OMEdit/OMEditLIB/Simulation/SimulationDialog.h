@@ -166,6 +166,7 @@ private:
   QLineEdit *mpResultFileNameTextBox;
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
+  QToolButton *mpVariableFilterHelpButton;
   QCheckBox *mpProtectedVariablesCheckBox;
   QCheckBox *mpIgnoreHideResultCheckBox;
   QCheckBox *mpEquidistantTimeGridCheckBox;
@@ -225,6 +226,7 @@ public slots:
   void updateYAxis(double min, double max);
 private slots:
   void resultFileNameChanged(QString text);
+  void showVariableFilterHelp();
   void simulationStarted();
   void simulationPaused();
 };

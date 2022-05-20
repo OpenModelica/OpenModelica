@@ -523,6 +523,10 @@ void SimulationDialog::setUpForm()
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
   mpVariableFilterTextBox = new QLineEdit(".*");
+  mpVariableFilterHelpButton = new QToolButton;
+  mpVariableFilterHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpVariableFilterHelpButton->setToolTip(tr("Variable Filter help"));
+  connect(mpVariableFilterHelpButton, SIGNAL(clicked()), SLOT(showVariableFilterHelp()));
   // Protected Variabels
   mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
   // ignore hide result
@@ -1741,6 +1745,17 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
       MainWindow::instance()->switchToAlgorithmicDebuggingPerspectiveSlot();
     }
   }
+}
+
+/*!
+ * \brief SimulationDialog::showVariableFilterHelp
+ * Slot activated when mpVariableFilterHelpButton clicked signal is raised.\n
+ * Opens the omedit.html#output page of OpenModelica users guide.
+ */
+void SimulationDialog::showVariableFilterHelp()
+{
+  QUrl variabeFilterHelpPath("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/omedit.html#output");
+  QDesktopServices::openUrl(variabeFilterHelpPath);
 }
 
 /*!
