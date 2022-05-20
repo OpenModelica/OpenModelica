@@ -33,6 +33,9 @@
  * Containing Butcher tableau for generic Runge-Kutta methods.
  */
 
+// BB ToDo: generate automatically the Butcher tableau for Richardson extrapolation
+// (depending on order) and introduce a corresponding flag
+
 #include "rk_butcher.h"
 
 #include <string.h>

@@ -38,7 +38,7 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=gmode -gmsolver=sdirk2 -gmfsolver=sdirk2 -gmnls=kinsol -gmratio=0.5 -override=\"tolerance=1e-9,stopTime=864000\"", "HeatingSystem_gauss2.log");
+system("./HeatingSystem -s=gmode -gmsolver=sdirk2 -gmfsolver=sdirk2 -gmnls=kinsol -gmratio=1 -override=\"tolerance=1e-10,stopTime=864000\"", "HeatingSystem_gauss2.log");
 print(readFile("HeatingSystem_gauss2.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
@@ -48,7 +48,7 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=gmode -gmsolver=adams -gmfsolver=sdirk2 -gmnls=kinsol -gmratio=0 -override=\"tolerance=1e-8,stopTime=864000\"", "HeatingSystem_gauss2.log");
+system("./HeatingSystem -s=gmode -gmsolver=adams -gmfsolver=adams -gmnls=kinsol -gmratio=0 -override=\"tolerance=1e-9,stopTime=864000\"", "HeatingSystem_gauss2.log");
 print(readFile("HeatingSystem_gauss2.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",

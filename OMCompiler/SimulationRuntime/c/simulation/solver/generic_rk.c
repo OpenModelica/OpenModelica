@@ -75,7 +75,7 @@ void printVector_genericRK(char name[], double* a, int n, double time);
 void printIntVector_genericRK(char name[], int* a, int n, double time);
 void printMatrix_genericRK(char name[], double* a, int n, double time);
 void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx);
-void sortErrorIndices(DATA_GSRI* gsriData);
+double getErrorThreshold(DATA_GSRI* gsriData);
 
 // singlerate step function
 int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
@@ -1777,7 +1777,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
 
-  double err;
+  double err, err_threshold;
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
   int i, ii, l;
@@ -1907,7 +1907,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
           sortedStates = (int*) malloc(sizeof(int)*nStates);
           memcpy(sortedStates, gsriData->sortedStates, sizeof(int)*nStates);
         }
-        sortErrorIndices(gsriData);
+        err_threshold = getErrorThreshold(gsriData);
         if(ACTIVE_STREAM(LOG_MULTIRATE_V))
         {
           for (int k=0; k<nStates; k++)
@@ -1925,18 +1925,17 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         gsriData->err_fast = 0;
         for (i=0; i<gsriData->nStates; i++)
         {
-          ii = gsriData->sortedStates[i];
-          if (i < gsriData->nStates * gsriData->percentage - 1 || gsriData->err[ii]>=1)
+          if (gsriData->err[i]>=err_threshold)
           {
-            gsriData->fastStates[gsriData->nFastStates] = ii;
+            gsriData->fastStates[gsriData->nFastStates] = i;
             gsriData->nFastStates++;
-            gsriData->err_fast = fmax(gsriData->err_fast, gsriData->err[ii]);
+            gsriData->err_fast = fmax(gsriData->err_fast, gsriData->err[i]);
           }
           else
           {
-            gsriData->slowStates[gsriData->nSlowStates] = ii;
+            gsriData->slowStates[gsriData->nSlowStates] = i;
             gsriData->nSlowStates++;
-            gsriData->err_slow = fmax(gsriData->err_slow, gsriData->err[ii]);
+            gsriData->err_slow = fmax(gsriData->err_slow, gsriData->err[i]);
           }
         }
         err = gsriData->err_slow;
@@ -2190,7 +2189,10 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   return 0;
 }
 
-void sortErrorIndices(DATA_GSRI* gsriData)
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
+double getErrorThreshold(DATA_GSRI* gsriData)
 {
   int i, j, temp;
 
@@ -2206,6 +2208,10 @@ void sortErrorIndices(DATA_GSRI* gsriData)
       }
     }
   }
+  i = MIN(MAX(gsriData->nStates * gsriData->percentage - 1, 0), gsriData->nStates - 1);
+
+  // BB ToDo: check, if 0.1 is ok, or should be parameterized
+  return fmax(gsriData->err[i], 0.1);
 }
 
 // TODO AHeu: For sure there is already a linear interpolation function somewhere

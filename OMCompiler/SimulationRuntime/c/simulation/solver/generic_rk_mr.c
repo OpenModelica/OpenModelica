@@ -888,17 +888,12 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   int i, ii, l;
   int integrator_step_info;
-  int outerIntStepSynchronize = 0;
 
   int nStates = data->modelData->nStates;
   int nFastStates = gsriData->nFastStates;
 
   // This is the target time of the main integrator
-  if (targetTime > gsriData->timeRight)
-  {
-    targetTime = gsriData->timeRight;
-    outerIntStepSynchronize = 1;
-  }
+  double innerTargetTime = fmin(targetTime, gsriData->timeRight);
 
   // BB ToDo: needs to be performed also after an event!!!
   if (gmriData->didEventStep)
@@ -978,18 +973,18 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states):");
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (SR-stepsize: %10g)",
                   gsriData->timeLeft, gsriData->timeRight, gsriData->lastStepSize);
-  if(ACTIVE_STREAM(LOG_SOLVER))
+  if(ACTIVE_STREAM(LOG_MULTIRATE))
   {
     printVector_genericRK("yL: ", gsriData->yLeft, gsriData->nStates, gsriData->timeLeft);
     printVector_genericRK("yR: ", gsriData->y, gsriData->nStates, gsriData->timeRight);
     printf("\n");
   }
 
-  while (gmriData->time < targetTime)
+  while (gmriData->time < innerTargetTime)
   {
     do
     {
-      if(ACTIVE_STREAM(LOG_SOLVER))
+      if(ACTIVE_STREAM(LOG_MULTIRATE))
       {
         //printVector_genericRK_MR("yOld: ", gmriData->yOld, gmriData->nStates, gmriData->time, gmriData->nFastStates, gmriData->fastStates);
         printVector_genericRK("yOld: ", gmriData->yOld, gmriData->nStates, gmriData->time);
@@ -1037,7 +1032,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (err>1)
       {
         gmriData->errorTestFailures++;
-        infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
+        infoStreamPrint(LOG_MULTIRATE, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gmriData->time, gmriData->time + gmriData->lastStepSize, err, gmriData->stepSize);
       }
     } while  (err>1);
@@ -1095,7 +1090,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
     /* update time with performed stepSize */
     gmriData->time += gmriData->lastStepSize;
-    if(ACTIVE_STREAM(LOG_SOLVER))
+    if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
       printVector_genericRK("y:    ", gmriData->y, gmriData->nStates, gmriData->time);
     }
@@ -1110,7 +1105,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
                     gmriData->time- gmriData->lastStepSize, gmriData->time, err, gmriData->stepSize);
 
     // Dont disturb the inner step size control!!
-    if (gmriData->time + gmriData->stepSize > gsriData->timeRight)
+    if (gmriData->time + gmriData->stepSize > innerTargetTime)
       break;
   }
 
@@ -1119,7 +1114,9 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
   gsriData->err_fast = gmriData->errValues[0];
-  if (outerIntStepSynchronize)
+
+  //outer integration needs to be synchronized
+  if ((gmriData->time < gsriData->timeRight) && (gsriData->timeRight < targetTime))
   {
     memcpy(gsriData->yOld, gmriData->y, gmriData->nStates * sizeof(double));
     memcpy(gsriData->y, gmriData->y, gmriData->nStates * sizeof(double));
@@ -1160,7 +1157,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   solverInfo->solverStatsTmp[4] = gmriData->convergenceFailures;
 
   infoStreamPrint(LOG_SOLVER, 0, "Finished gmode outer step.");
-  if(ACTIVE_STREAM(LOG_SOLVER))
+  if(ACTIVE_STREAM(LOG_MULTIRATE))
   {
     printf("\n");
   }
