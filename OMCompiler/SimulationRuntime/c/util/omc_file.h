@@ -102,6 +102,7 @@ int omc_stat(const char *filename, struct stat *statbuf);
 #endif
 
 int omc_unlink(const char *filename);
+wchar_t* longabspath(wchar_t* unicodePath);
 
 #ifdef __cplusplus
 }
