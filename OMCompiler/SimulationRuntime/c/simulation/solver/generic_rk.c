@@ -954,12 +954,12 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   }
 
   const char* flag_value = omc_flagValue[FLAG_MR_PAR];
-  if (flag_value != NULL) {
-    gsriData->multi_rate = 1;
+  if (flag_value != NULL)
     gsriData->percentage = atof(omc_flagValue[FLAG_MR_PAR]);
+  if (gsriData->percentage > 0) {
+    gsriData->multi_rate = 1;
   } else {
     gsriData->multi_rate = 0;
-    gsriData->percentage = 1;
   }
 
   gsriData->fastStates = malloc(sizeof(int)*gsriData->nStates);
@@ -1898,7 +1898,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       // printIntVector_genericRK("Indices after sorting:", gsriData->sortedStates, gsriData->nStates, gsriData->time);
       // printVector_genericRK_MR("Error after sorting:", gsriData->err, gsriData->nStates, gsriData->time,  gsriData->nStates, gsriData->sortedStates);
 
-      if (gsriData->multi_rate && gsriData->percentage > 0 && (err > 0.0))
+      if (gsriData->multi_rate && (err > 0.0))
       {
         // BB ToDo: Gives problems, if the orderig of the fast states change during simulation
         int *sortedStates;
@@ -1908,6 +1908,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
           memcpy(sortedStates, gsriData->sortedStates, sizeof(int)*nStates);
         }
         err_threshold = getErrorThreshold(gsriData);
+        err_threshold = -1;
         if(ACTIVE_STREAM(LOG_MULTIRATE_V))
         {
           for (int k=0; k<nStates; k++)

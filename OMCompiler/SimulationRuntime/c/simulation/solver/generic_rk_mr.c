@@ -69,6 +69,8 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
 int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
 SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
+SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
+
 
 // step size control function
 double IController(double* err_values, double* stepSize_values, double err_order);
@@ -98,7 +100,8 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
 
   /* Initialize sparsity pattern */
   if (initSparsPattern) {
-    nonlinsys->sparsePattern = initializeSparsePattern_MS(data, nonlinsys);
+    // nonlinsys->sparsePattern = initializeSparsePattern_MS(data, nonlinsys);
+    nonlinsys->sparsePattern = initializeSparsePattern_DIRK(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
   return;
@@ -949,25 +952,25 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       gmriData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
     }
 
-    if (gmriData->symJacAvailable) {
-      /* Set full matrix sparsitiy pattern only for the fast states*/
-      for (i=0; i < nFastStates + 1; i++)
-        gmriData->jacobian->sparsePattern->leadindex[i] = i * nFastStates;
-      for(i=0; i < nFastStates*nFastStates; i++) {
-        gmriData->jacobian->sparsePattern->index[i] = i% nFastStates;
-      }
-      // trivial coloring, needs to be set each call of MR, if number of fast States changes...
-      // use here the sparsity pattern and coloring from jacobian_DIRK from the outer integrator
-      // Otherwise, it is not exactly the same for -gSMratio=1!
-      gmriData->jacobian->sparsePattern->maxColors = nFastStates;
-      for (i=0; i < nFastStates; i++)
-        gmriData->jacobian->sparsePattern->colorCols[i] = i+1;
-
-      gmriData->jacobian->sparsePattern->sizeofIndex = nFastStates*nFastStates;
-      gmriData->jacobian->sparsePattern->numberOfNonZeros = nFastStates*nFastStates;
-      gmriData->jacobian->sizeCols = nFastStates;
-      gmriData->jacobian->sizeRows = nFastStates;
-  }
+//     if (gmriData->symJacAvailable) {
+//       /* Set full matrix sparsitiy pattern only for the fast states*/
+//       for (i=0; i < nFastStates + 1; i++)
+//         gmriData->jacobian->sparsePattern->leadindex[i] = i * nFastStates;
+//       for(i=0; i < nFastStates*nFastStates; i++) {
+//         gmriData->jacobian->sparsePattern->index[i] = i% nFastStates;
+//       }
+//       // trivial coloring, needs to be set each call of MR, if number of fast States changes...
+//       // use here the sparsity pattern and coloring from jacobian_DIRK from the outer integrator
+//       // Otherwise, it is not exactly the same for -gSMratio=1!
+//       gmriData->jacobian->sparsePattern->maxColors = nFastStates;
+//       for (i=0; i < nFastStates; i++)
+//         gmriData->jacobian->sparsePattern->colorCols[i] = i+1;
+//
+//       gmriData->jacobian->sparsePattern->sizeofIndex = nFastStates*nFastStates;
+//       gmriData->jacobian->sparsePattern->numberOfNonZeros = nFastStates*nFastStates;
+//       gmriData->jacobian->sizeCols = nFastStates;
+//       gmriData->jacobian->sizeRows = nFastStates;
+//    }
   }
   // print informations on the calling details
   infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states):");
@@ -1116,17 +1119,21 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   gsriData->err_fast = gmriData->errValues[0];
 
   //outer integration needs to be synchronized
-  if ((gmriData->time < gsriData->timeRight) && (gsriData->timeRight < targetTime))
+  // if ((gmriData->time < gsriData->timeRight) && (gsriData->timeRight < targetTime))
+  if  ((gmriData->time + gmriData->stepSize > gsriData->timeRight) ||
+        (gsriData->time > targetTime) ||
+        ((gsriData->time < targetTime) && (gsriData->time + gsriData->lastStepSize > targetTime))
+      )
   {
-    memcpy(gsriData->yOld, gmriData->y, gmriData->nStates * sizeof(double));
-    memcpy(gsriData->y, gmriData->y, gmriData->nStates * sizeof(double));
-
     gsriData->lastStepSize = gmriData->time - gsriData->timeLeft;
     gsriData->timeRight = gmriData->time;
     if (gsriData->time > gsriData->timeLeft)
       gsriData->time = gmriData->time;
     else
       gsriData->time = gsriData->timeLeft;
+
+    memcpy(gsriData->yOld, gmriData->y, gmriData->nStates * sizeof(double));
+    memcpy(gsriData->y, gmriData->y, gmriData->nStates * sizeof(double));
 
     // solverInfo->currentTime = eventTime;
     // sData->timeValue = solverInfo->currentTime;
@@ -1156,7 +1163,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   solverInfo->solverStatsTmp[3] = gmriData->errorTestFailures;
   solverInfo->solverStatsTmp[4] = gmriData->convergenceFailures;
 
-  infoStreamPrint(LOG_SOLVER, 0, "Finished gmode outer step.");
+  infoStreamPrint(LOG_SOLVER, 0, "Finished gmode inner step.");
   if(ACTIVE_STREAM(LOG_MULTIRATE))
   {
     printf("\n");
