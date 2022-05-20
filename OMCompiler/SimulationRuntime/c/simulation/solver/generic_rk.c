@@ -1908,7 +1908,6 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
           memcpy(sortedStates, gsriData->sortedStates, sizeof(int)*nStates);
         }
         err_threshold = getErrorThreshold(gsriData);
-        err_threshold = -1;
         if(ACTIVE_STREAM(LOG_MULTIRATE_V))
         {
           for (int k=0; k<nStates; k++)
@@ -1926,7 +1925,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         gsriData->err_fast = 0;
         for (i=0; i<gsriData->nStates; i++)
         {
-          if (gsriData->err[i]>=err_threshold)
+          if (gsriData->err[i]>err_threshold)
           {
             gsriData->fastStates[gsriData->nFastStates] = i;
             gsriData->nFastStates++;
@@ -2209,7 +2208,7 @@ double getErrorThreshold(DATA_GSRI* gsriData)
       }
     }
   }
-  i = MIN(MAX(gsriData->nStates * gsriData->percentage - 1, 0), gsriData->nStates - 1);
+  i = MIN(MAX(ceil((gsriData->nStates - 1) * gsriData->percentage), 0), gsriData->nStates - 1);
 
   // BB ToDo: check, if 0.1 is ok, or should be parameterized
   return fmax(gsriData->err[i], 0.1);
