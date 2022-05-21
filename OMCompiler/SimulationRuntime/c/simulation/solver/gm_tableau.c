@@ -41,6 +41,7 @@
 #include <string.h>
 
 #include "util/omc_error.h"
+#include "omc_math.h"
 #include "util/simulation_options.h"
 #include "simulation/options.h"
 
@@ -53,19 +54,74 @@
 #define TRUE 1
 #endif
 
-void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b, double * bt) {
-  tableau->c = malloc(sizeof(double)*tableau->nStages);
-  tableau->A = malloc(sizeof(double)*tableau->nStages * tableau->nStages);
-  tableau->b = malloc(sizeof(double)*tableau->nStages);
-  tableau->bt = malloc(sizeof(double)*tableau->nStages);
+void getRichardsonButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b, double *bt) {
+  // create Butcher tableau based on Richardson extrapolation
 
-  memcpy(tableau->c, c, tableau->nStages*sizeof(double));
-  memcpy(tableau->A, A, tableau->nStages * tableau->nStages * sizeof(double));
-  memcpy(tableau->b, b, tableau->nStages*sizeof(double));
-  memcpy(tableau->bt, bt, tableau->nStages*sizeof(double));
+  unsigned int nStages = tableau->nStages;
+  unsigned int p = tableau->order_b;
+
+  int i, j;
+  double value = pow(2,p-1)/(pow(2,p)-1);
+
+  tableau->nStages = 3*nStages;
+  tableau->order_b = p;
+  tableau->order_bt = p+1;
+  tableau->fac = 1e0;
+
+  tableau->c = malloc(sizeof(double) * tableau->nStages);
+  tableau->A = malloc(sizeof(double) * tableau->nStages * tableau->nStages);
+  tableau->b = malloc(sizeof(double) * tableau->nStages);
+  tableau->bt = malloc(sizeof(double)* tableau->nStages);
+
+  for (i=0; i < nStages; i++) {
+    tableau->c[i]             = c[i]/2.;
+    tableau->c[i + nStages]   = (c[i] + 1)/2.;
+    tableau->c[i + 2*nStages] = c[i];
+  }
+  for (i=0; i < nStages; i++) {
+    tableau->b[i]              = 0.0;
+    tableau->b[i + nStages]    = 0.0;
+    tableau->b[i + 2*nStages]  = b[i];
+    tableau->bt[i]             = value*b[i];
+    tableau->bt[i + nStages]   = value*b[i];
+    tableau->bt[i + 2*nStages] = -b[i];
+  }
+
+  for (i=0; i < tableau->nStages * tableau->nStages; i++)
+    tableau->A[i] = 0.0;
+
+  for (j=0; j < nStages; j++) {
+    for (i=0; i < nStages; i++) {
+      tableau->A[ j              * tableau->nStages + i]             = A[j*nStages + i];
+      tableau->A[(j +   nStages) * tableau->nStages +   nStages + i] = A[j*nStages + i];
+      tableau->A[(j + 2*nStages) * tableau->nStages + 2*nStages + i] = A[j*nStages + i];
+    }
+  }
+  for (i=0; i < nStages; i++) {
+    tableau->A[      nStages * tableau->nStages + i] = b[i]/2;
+    tableau->A[(nStages + 1) * tableau->nStages + i] = b[i]/2;
+  }
 }
 
-void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
+void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b, double *bt, modelica_boolean richardson) {
+
+  if (richardson) {
+    getRichardsonButcherTableau(tableau, c, A, b, bt);
+    return;
+  } else {
+    tableau->c = malloc(sizeof(double)*tableau->nStages);
+    tableau->A = malloc(sizeof(double)*tableau->nStages * tableau->nStages);
+    tableau->b = malloc(sizeof(double)*tableau->nStages);
+    tableau->bt = malloc(sizeof(double)*tableau->nStages);
+
+    memcpy(tableau->c,  c, tableau->nStages*sizeof(double));
+    memcpy(tableau->A,  A, tableau->nStages * tableau->nStages * sizeof(double));
+    memcpy(tableau->b,  b, tableau->nStages*sizeof(double));
+    memcpy(tableau->bt, bt, tableau->nStages*sizeof(double));
+  }
+}
+
+void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   double lim = 0.7;
 
   // ESDIRK2 method
@@ -108,10 +164,10 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
   const double b[]  = {b1, b2, b3};
   const double bt[] = {bt1, bt2, bt3};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
+void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   double lim = 0.7;
 
   //ESDIRK3
@@ -130,10 +186,10 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
   const double b[]  = {.187641024346723825161292144158, -.595297473576954948047823027584, .971789927721772123470511432228, .435866521508458999416019451194};
   const double bt[]  = {.187641024346723825161292144140-.36132349168887087099928261975*lim, -1.46846946256021140302557262326*lim-.595297473576954948047823027622, 1.37419900268512763072398740524*lim+.971789927721772123470511432300, .455593951563954643300867837766*lim+.435866521508458999416019451180};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau) {
+void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   //SDIRK3
   tableau->nStages = 3;
   tableau->order_b = 3;
@@ -151,11 +207,11 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau) {
   const double b[]  = {1.0/(12.0*gam*gam - 12.0*gam + 4.0), 3.0*(2.0*gam - 1.0)*(2.0*gam - 1.0)/(12.0*gam*gam - 12.0*gam + 4.0), 0.0};
   const double bt[]  = {(2.0*sqrt(3.0) + 1.0)/(-3.0 + sqrt(3.0)), 1.0 + 1.0/3.0*sqrt(3.0), (-6.0 - 3.0*sqrt(3.0))/(-9.0 + 3.0*sqrt(3.0))};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 
 }
 
-void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
+void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richardson)
 {
   //SDIRK2
 
@@ -172,10 +228,10 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   const double bt[]  = {0.25, 0.75};
 
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt, richardson);
 }
 
-void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
+void getButcherTableau_MS(BUTCHER_TABLEAU* tableau, modelica_boolean richardson)
 {
   //ADAMS-MOULTON
 
@@ -205,10 +261,10 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
   const double b[]   = {0.5, 0.5};
   const double bt[]  = {1.0, 0.0};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt, richardson);
 }
 
-void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
+void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   //explicit Euler with Richardson-Extrapolation for step size control
 
   tableau->nStages = 2;
@@ -223,10 +279,10 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
   const double b[]  = {0,1}; // explicit midpoint rule
   const double  bt[] = {1,0}; // explicit Euler step
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau) {
+void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   //implicit Gauss-Legendre with Richardson-Extrapolation for step size control
 
   tableau->nStages = 2;
@@ -246,32 +302,17 @@ void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau) {
   const double bt1 = 1./2. - sqrt3/2.;
   const double bt2 = 1./2. + sqrt3/2.;
 
-
-  /* Butcher Tableau */
-  // const double c[] = {c1, c2, c1/2., c2/2., 1./2. + c1/2., 1./2. + c2/2.};
-  // const double A[] = {a11, a12, 0.0, 0.0, 0.0, 0.0,
-  //                     a21, a22, 0.0, 0.0, 0.0, 0.0,
-  //                     0.0, 0.0, a11, a12, 0.0, 0.0,
-  //                     0.0, 0.0, a21, a22, 0.0, 0.0,
-  //                     0.0, 0.0, b1/2., b2/2., a11, a12,
-  //                     0.0, 0.0, b1/2., b2/2., a21, a22,
-  //                     };
-  // const double b[]  = {b1, b2, 0.0, 0.0, 0.0, 0.0}; // implicit Gauss-Legendre rule
-  // const double  bt[] = {-b1, -b2, 4./7.*b1, 4./7.*b2, 4./7.*b1, 4./7.*b2}; // Richardson-Extrapolation
-
   const double c[] = {c1, c2};
   const double A[] = {a11, a12,
                       a21, a22
                       };
-  const double b[]  = {b1, b2}; // implicit Gauss-Legendre rule
-  const double  bt[] = {bt1, bt2}; // Embedded method
+  const double b[]  = {b1, b2};    // implicit Gauss-Legendre rule
+  const double  bt[] = {bt1, bt2}; // Embedded method (order 1)
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-
-
-void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
+void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   // Implicit Euler with Richardson-Extrapolation for step size control
   tableau->nStages = 3;
   tableau->order_b = 2;
@@ -279,24 +320,27 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
   tableau->fac = 1.0;
 
   /* Butcher Tableau */
-  const double c[] = {1.0, 0.5, 1.0};
-  const double A[] = {1.0, 0.0, 0.0,
-                      0.0, 0.5, 0.0,
-                      0.0, 0.5, 0.5};
-  const double bt[] = {1.0, 0.0, 0.0}; // implicit Euler step
-  const double b[]  = {-1.0, 1.0, 1.0}; // Richardson extrapolation for error estimator
+  const double c[] = {0.5, 1.0, 1.0};
+  const double A[] = {0.5, 0.0, 0.0,
+                      0.5, 0.5, 0.0,
+                      0.0, 0.0, 1.0};
+  const double bt[] = {0.0, 0.0, 1.0};  // implicit Euler step
+  const double b[]  = {1.0, 1.0, -1.0}; // Richardson extrapolation for error estimator
+
+  // higher order (extrapolated) solution will be taken as estimate
 
   // /* Butcher Tableau */
+  // alternative Butcher tableau
   // const double c[] = {0.0, 1.0};
   // const double A[] = {0.0, 0.0,
   //                     0.0, 1.0};
-  // const double  b[] = {0.0, 1.0}; // implicit Euler step
+  // const double  b[] = {0.0, 1.0};  // implicit Euler step
   // const double  bt[] = {0.5, 0.5}; // trapezoidal rule for error estimator
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
+void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   //explicit Merson method
   tableau->nStages = 5;
   tableau->order_b = 4;
@@ -315,10 +359,10 @@ void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
   // const double bt_EXPLEULER_SC[]  = {1./2, 0.0, -3./2,  2.0,  0.0}; // 3th order???
   const double  bt[]  = {1./10, 0.0, 3./10,  2./5,  1./5}; // 3th order???
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
+void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   //DOPRI45 this is the real one
 
   tableau->nStages = 7;
@@ -339,10 +383,10 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
   const double b[] = {35./384, 0.0, 500./1113, 125./192, -2187./6784, 11./84, 0.0};
   const double  bt[] = {5179./57600, 0.0, 7571./16695, 393./640, -92097./339200, 187./2100, 1./40};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-void getButcherTableau_FEHLBERG54(BUTCHER_TABLEAU* tableau) {
+void getButcherTableau_FEHLBERG54(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   //Fehlberg45
 
   tableau->nStages = 6;
@@ -362,10 +406,10 @@ void getButcherTableau_FEHLBERG54(BUTCHER_TABLEAU* tableau) {
   const double b[]   = {0.121296296296296296296296296296, -0.0304761904761904761904761904762, 0.578869395711500974658869395712, 0.516977165135059871901977165135, -0.186666666666666666666666666667,                               0};
   const double bt[]  = {0.115740740740740740740740740741,                               0, 0.548927875243664717348927875244,    0.535331384015594541910331384016,                              -0.2,                               0};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-void getButcherTableau_FEHLBERG87(BUTCHER_TABLEAU* tableau) {
+void getButcherTableau_FEHLBERG87(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
   //Fehlberg45
 
   tableau->nStages = 13;
@@ -374,26 +418,25 @@ void getButcherTableau_FEHLBERG87(BUTCHER_TABLEAU* tableau) {
   tableau->fac = 1e3;
 
   /* Butcher Tableau */
-const double c[]  = {                              0, 0.0740740740740740740740740740741, 0.111111111111111111111111111111, 0.166666666666666666666666666667, 0.416666666666666666666666666667,                             0.5, 0.833333333333333333333333333333, 0.166666666666666666666666666667, 0.666666666666666666666666666667, 0.333333333333333333333333333333,                               1,                               0,                               1};
-const double A[]  = {
-                                                       0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
-                        0.0740740740740740740740740740741,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
-                        0.0277777777777777777777777777778, 0.0833333333333333333333333333333,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
-                        0.0416666666666666666666666666667,                                0,                            0.125,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
-                        0.416666666666666666666666666667,                                0,                          -1.5625,                           1.5625,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
-                                                    0.05,                                0,                                0,                             0.25,                              0.2,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
-                        -0.231481481481481481481481481481,                                0,                                0,  1.15740740740740740740740740741, -2.40740740740740740740740740741,  2.31481481481481481481481481481,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
-                        0.103333333333333333333333333333,                                0,                                0,                                0, 0.271111111111111111111111111111, -0.222222222222222222222222222222, 0.0144444444444444444444444444444,                                0,                                0,                                0,                                0,                                0,                                0,
-                                                       2,                                0,                                0, -8.83333333333333333333333333333,  15.6444444444444444444444444444, -11.8888888888888888888888888889, 0.744444444444444444444444444444,                                3,                                0,                                0,                                0,                                0,                                0,
-                        -0.842592592592592592592592592593,                                0,                                0, 0.212962962962962962962962962963, -7.22962962962962962962962962963,  5.75925925925925925925925925926, -0.316666666666666666666666666667,  2.83333333333333333333333333333, -0.0833333333333333333333333333333,                                0,                                0,                                0,                                0,
-                        0.581219512195121951219512195122,                                0,                                0, -2.07926829268292682926829268293,  4.38634146341463414634146341463, -3.67073170731707317073170731707, 0.520243902439024390243902439024, 0.548780487804878048780487804878, 0.274390243902439024390243902439, 0.439024390243902439024390243902,                                0,                                0,                                0,
-                        0.0146341463414634146341463414634,                                0,                                0,                                0,                                0, -0.146341463414634146341463414634, -0.0146341463414634146341463414634, -0.0731707317073170731707317073171, 0.0731707317073170731707317073171, 0.146341463414634146341463414634,                                0,                                0,                                0,
-                        -0.433414634146341463414634146341,                                0,                                0, -2.07926829268292682926829268293,  4.38634146341463414634146341463, -3.52439024390243902439024390244, 0.534878048780487804878048780488, 0.621951219512195121951219512195, 0.201219512195121951219512195122, 0.292682926829268292682926829268,                                0,                                1,                                0};
-const double b[]  = {                              0,                               0,                               0,                               0,                               0, 0.32380952380952380952380952381, 0.257142857142857142857142857143, 0.257142857142857142857142857143, 0.0321428571428571428571428571429, 0.0321428571428571428571428571429,                               0, 0.0488095238095238095238095238095, 0.0488095238095238095238095238095};
-const double bt[]  = {0.0488095238095238095238095238095,                               0,                               0,                               0,                               0, 0.32380952380952380952380952381, 0.257142857142857142857142857143, 0.257142857142857142857142857143, 0.0321428571428571428571428571429, 0.0321428571428571428571428571429, 0.0488095238095238095238095238095,                               0,                               0};
+  const double c[]  = {0, 0.0740740740740740740740740740741, 0.111111111111111111111111111111, 0.166666666666666666666666666667, 0.416666666666666666666666666667, 0.5, 0.833333333333333333333333333333, 0.166666666666666666666666666667, 0.666666666666666666666666666667, 0.333333333333333333333333333333, 1, 0, 1};
+  const double A[]  = {
+                                                        0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
+                          0.0740740740740740740740740740741,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
+                          0.0277777777777777777777777777778, 0.0833333333333333333333333333333,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
+                          0.0416666666666666666666666666667,                                0,                            0.125,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
+                          0.416666666666666666666666666667,                                0,                          -1.5625,                           1.5625,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
+                                                      0.05,                                0,                                0,                             0.25,                              0.2,                                0,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
+                          -0.231481481481481481481481481481,                                0,                                0,  1.15740740740740740740740740741, -2.40740740740740740740740740741,  2.31481481481481481481481481481,                                0,                                0,                                0,                                0,                                0,                                0,                                0,
+                          0.103333333333333333333333333333,                                0,                                0,                                0, 0.271111111111111111111111111111, -0.222222222222222222222222222222, 0.0144444444444444444444444444444,                                0,                                0,                                0,                                0,                                0,                                0,
+                                                        2,                                0,                                0, -8.83333333333333333333333333333,  15.6444444444444444444444444444, -11.8888888888888888888888888889, 0.744444444444444444444444444444,                                3,                                0,                                0,                                0,                                0,                                0,
+                          -0.842592592592592592592592592593,                                0,                                0, 0.212962962962962962962962962963, -7.22962962962962962962962962963,  5.75925925925925925925925925926, -0.316666666666666666666666666667,  2.83333333333333333333333333333, -0.0833333333333333333333333333333,                                0,                                0,                                0,                                0,
+                          0.581219512195121951219512195122,                                0,                                0, -2.07926829268292682926829268293,  4.38634146341463414634146341463, -3.67073170731707317073170731707, 0.520243902439024390243902439024, 0.548780487804878048780487804878, 0.274390243902439024390243902439, 0.439024390243902439024390243902,                                0,                                0,                                0,
+                          0.0146341463414634146341463414634,                                0,                                0,                                0,                                0, -0.146341463414634146341463414634, -0.0146341463414634146341463414634, -0.0731707317073170731707317073171, 0.0731707317073170731707317073171, 0.146341463414634146341463414634,                                0,                                0,                                0,
+                          -0.433414634146341463414634146341,                                0,                                0, -2.07926829268292682926829268293,  4.38634146341463414634146341463, -3.52439024390243902439024390244, 0.534878048780487804878048780488, 0.621951219512195121951219512195, 0.201219512195121951219512195122, 0.292682926829268292682926829268,                                0,                                1,                                0};
+  const double b[]  = {                              0,                               0,                               0,                               0,                               0, 0.32380952380952380952380952381, 0.257142857142857142857142857143, 0.257142857142857142857142857143, 0.0321428571428571428571428571429, 0.0321428571428571428571428571429,                               0, 0.0488095238095238095238095238095, 0.0488095238095238095238095238095};
+  const double bt[]  = {0.0488095238095238095238095238095,                               0,                               0,                               0,                               0, 0.32380952380952380952380952381, 0.257142857142857142857142857143, 0.257142857142857142857142857143, 0.0321428571428571428571428571429, 0.0321428571428571428571428571429, 0.0488095238095238095238095238095,                               0,                               0};
 
-
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
 /**
@@ -447,55 +490,58 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
  * @param GM_method           Runge-Kutta method.
  * @return BUTCHER_TABLEAU*   Return pointer to Butcher tableau on success, NULL on failure.
  */
-BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method) {
+BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method, enum _FLAG FLAG_ERR) {
   BUTCHER_TABLEAU* tableau = (BUTCHER_TABLEAU*) malloc(sizeof(BUTCHER_TABLEAU));
+  modelica_boolean richardson;
+  const char* flag_value = omc_flagValue[FLAG_ERR];
+  richardson= (flag_value != NULL);
 
   switch(GM_method)
   {
     case MS_ADAMS_MOULTON:
-      getButcherTableau_MS(tableau);
+      getButcherTableau_MS(tableau, richardson);
       break;
     case RK_DOPRI45:
-      getButcherTableau_DOPRI45(tableau);
+      getButcherTableau_DOPRI45(tableau, richardson);
       break;
     case RK_MERSON:
-      getButcherTableau_MERSON(tableau);
+      getButcherTableau_MERSON(tableau, richardson);
       break;
     case RK_FEHLBERG45:
-      getButcherTableau_FEHLBERG54(tableau);
+      getButcherTableau_FEHLBERG54(tableau, richardson);
       break;
     case RK_FEHLBERG78:
-      getButcherTableau_FEHLBERG87(tableau);
+      getButcherTableau_FEHLBERG87(tableau, richardson);
       break;
     case RK_SDIRK2:
-      getButcherTableau_SDIRK2(tableau);
+      getButcherTableau_SDIRK2(tableau, richardson);
       break;
     case RK_SDIRK3:
-      getButcherTableau_SDIRK3(tableau);
+      getButcherTableau_SDIRK3(tableau, richardson);
       break;
     case RK_ESDIRK2:
-      getButcherTableau_ESDIRK2(tableau);
+      getButcherTableau_ESDIRK2(tableau, richardson);
       break;
     case RK_ESDIRK2_test:
-      getButcherTableau_ESDIRK2(tableau);
+      getButcherTableau_ESDIRK2(tableau, richardson);
       // //ESDIRK2 not optimized (just for testing) solved with gm solver method
       // getButcherTableau_ESDIRK2(userdata);
       break;
     case RK_EXPL_EULER:
-      getButcherTableau_EXPLEULER(tableau);
+      getButcherTableau_EXPLEULER(tableau, richardson);
       break;
     case RK_IMPL_EULER:
-      getButcherTableau_IMPLEULER(tableau);
+      getButcherTableau_IMPLEULER(tableau, richardson);
       break;
     case RK_ESDIRK3_test:
       //ESDIRK3 not optimized (just for testing) solved with gm solver method
-      getButcherTableau_ESDIRK3(tableau);
+      getButcherTableau_ESDIRK3(tableau, richardson);
       break;
     case RK_ESDIRK3:
-      getButcherTableau_ESDIRK3(tableau);
+      getButcherTableau_ESDIRK3(tableau, richardson);
       break;
     case RK_GAUSS2:
-      getButcherTableau_GAUSS2(tableau);
+      getButcherTableau_GAUSS2(tableau, richardson);
       break;
     default:
       errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", GM_method);

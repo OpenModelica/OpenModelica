@@ -176,8 +176,13 @@ enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD) {
     errorStreamPrint(LOG_STDOUT, 0, "Choose RK method: %s [from command line]", GM_method_string);
     return RK_UNKNOWN;
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: adams [default]");
-    return MS_ADAMS_MOULTON;
+    if (FLAG_SR_METHOD == FLAG_MR) {
+      return getGM_method(FLAG_SR);
+    } else {
+
+      infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: adams [default]");
+      return MS_ADAMS_MOULTON;
+    }
   }
 }
 
@@ -824,7 +829,7 @@ int allocateDataGm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
   gmData->GM_method = getGM_method(FLAG_SR);
-  gmData->tableau = initButcherTableau(gmData->GM_method);
+  gmData->tableau = initButcherTableau(gmData->GM_method, FLAG_SR_ERR);
   if (gmData->tableau == NULL){
     errorStreamPrint(LOG_STDOUT, 0, "allocateDataGm: Failed to initialize butcher tableau for Runge-Kutta method %s", GM_SINGLERATE_METHOD_NAME[gmData->GM_method]);
     return -1;

@@ -139,9 +139,11 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_BOUNDARY */      "reconcileBoundaryConditions",
   /* FLAG_SR */                           "gmsolver",
   /* FLAG_SR_CTRL */                      "gmctrl",
+  /* FLAG_SR_ERR */                       "gmerr",
   /* FLAG_SR_NLS */                       "gmnls",
   /* FLAG_MR */                           "gmfsolver",
   /* FLAG_MR_CTRL */                      "gmfctrl",
+  /* FLAG_MR_ERR */                       "gmferr",
   /* FLAG_MR_NLS */                       "gmfnls",
   /* FLAG_MR_PAR */                       "gmratio",
   /* FLAG_RT */                           "rt",
@@ -266,9 +268,11 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_BOUNDARY */      "Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
   /* FLAG_SR */                           "value specifies the chosen outer ODE solver (adams)",
   /* FLAG_SR_CTRL */                      "step size control of the outer ODE solver",
+  /* FLAG_SR_ERR */                       "error estimation done by Richardson extrapolation",
   /* FLAG_SR_NLS */                       "non-linear solver method used by the outer ODE solver (default kinsol)",
   /* FLAG_MR */                           "value specifies the chosen inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_CTRL */                      "step size control of the inner ODE solver (defaults from outer integrator)",
+  /* FLAG_MR_ERR */                       "error estimation done by Richardson extrapolation",
   /* FLAG_MR_NLS */                       "non-linear solver method used by the inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_PAR */                       "define percentage of states for the fast states selection",
   /* FLAG_RT */                           "value specifies the scaling factor for real-time synchronization (0 disables)",
@@ -563,12 +567,16 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the chosen outer ODE solver (adams)",
   /* FLAG_SR_CTRL */
   "  Step size control of the outer ODE solver",
+  /* FLAG_SR_ERR */
+  "  Error estimation done by Richardson extrapolation",
   /* FLAG_SR_NLS */
   "  Non-linear solver method used by the outer ODE solver (default kinsol)",
   /* FLAG_MR */
   "  Value specifies the chosen inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_CTRL */
   "  Step size control of the inner ODE solver (defaults from outer integrator)",
+  /* FLAG_MR_ERR */
+  "  Error estimation done by Richardson extrapolation",
   /* FLAG_MR_NLS */
   "  Non-linear solver method used by the inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_PAR */
@@ -705,9 +713,11 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE_BOUNDARY */      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_NLS */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_MR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_NLS */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_PAR */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RT */                           FLAG_REPEAT_POLICY_FORBID,
@@ -831,9 +841,11 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE_BOUNDARY */      FLAG_TYPE_FLAG,
   /* FLAG_SR */                           FLAG_TYPE_OPTION,
   /* FLAG_SR_CTRL */                      FLAG_TYPE_OPTION,
+  /* FLAG_SR_ERR */                       FLAG_TYPE_OPTION,
   /* FLAG_SR_NLS */                       FLAG_TYPE_OPTION,
   /* FLAG_MR */                           FLAG_TYPE_OPTION,
   /* FLAG_MR_CTRL */                      FLAG_TYPE_OPTION,
+  /* FLAG_MR_ERR */                       FLAG_TYPE_OPTION,
   /* FLAG_MR_NLS */                       FLAG_TYPE_OPTION,
   /* FLAG_MR_PAR */                       FLAG_TYPE_OPTION,
   /* FLAG_RT */                           FLAG_TYPE_OPTION,

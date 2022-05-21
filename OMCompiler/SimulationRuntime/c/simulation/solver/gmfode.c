@@ -260,7 +260,7 @@ int allocateDataGmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
   gmfData->GM_method = getGM_method(FLAG_MR);
-  gmfData->tableau = initButcherTableau(gmfData->GM_method);
+  gmfData->tableau = initButcherTableau(gmfData->GM_method, FLAG_MR_ERR);
   if (gmfData->tableau == NULL){
     // ERROR
     messageClose(LOG_STDOUT);

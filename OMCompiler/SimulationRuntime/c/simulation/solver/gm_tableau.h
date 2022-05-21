@@ -66,6 +66,8 @@ typedef struct BUTCHER_TABLEAU {
   unsigned int order_bt;    /* Order of the embeddet Runge-Kutta method */
   unsigned int error_order;
   double fac;               /* Security factor for step size control */
+  unsigned int richardson;  /* if no embedded version is available, Richardson
+                               extrapolation can be used for step size control */
 } BUTCHER_TABLEAU;
 
 /**
@@ -81,7 +83,7 @@ enum GM_TYPE {
 
 /* Function prototypes */
 
-BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method);
+BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method, enum _FLAG FLAG_ERR);
 void freeButcherTableau(BUTCHER_TABLEAU* tableau);
 
 void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_TYPE* expl);
