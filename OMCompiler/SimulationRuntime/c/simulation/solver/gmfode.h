@@ -43,24 +43,24 @@
 /**
  * @brief Function to compute single Runge-Kutta step.
  */
-typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-typedef double (*rk_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
+typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
 
 typedef struct DATA_GMF{
-  DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
-  threadData_t *threadData;     //            I'm afraid not...
-  enum GM_SINGLERATE_METHOD GM_method;  /* Runge-Kutta method to use. */
-  enum GM_type type;                    /* Type of RK method */
-  enum GM_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
-  NONLINEAR_SYSTEM_DATA* nlsData;       /* Non-linear system
-                                         * Something like
-                                         *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-                                         * */
+  enum GM_SINGLERATE_METHOD GM_method;        /* Runge-Kutta method to use. */
+  enum GM_TYPE type;                          /* Type of RK method */
+  enum GM_NLS_METHOD nlsSolverMethod;         /* Non-linear solver method uses by generic RK method. */
+
+  NONLINEAR_SYSTEM_DATA* nlsData;             /* Non-linear system
+                                               * Something like
+                                               *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
+                                               * */
   ANALYTIC_JACOBIAN* jacobian;
 
   void* nlsSolverData;
 
-  double *y, *yt, *yOld, *f, *yStart, *yEnd;
+  double *y, *yt, *yOld, *f;
+  double *yStart, *yEnd, *kStart, *kEnd;
   double *Jf;
   double *k, *res_const;
   double *x;                            /* ring buffer for multistep method */
@@ -78,6 +78,7 @@ typedef struct DATA_GMF{
   int firstStep;
   int didEventStep;                   /* Will be used for updating the derivatives */
   int ringBufferSize;
+  int interpolation;
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
   unsigned int stepsDone;
@@ -85,19 +86,19 @@ typedef struct DATA_GMF{
   unsigned int evalJacobians;
   unsigned int errorTestFailures;
   unsigned int convergenceFailures;
-  rk_step_function step_fun;
-  rk_stepSize_control_function stepSize_control;
+  gm_step_function step_fun;
+  gm_stepSize_control_function stepSize_control;
 } DATA_GMF;
 
-void freeDatagmf(DATA_GMF* data);
-int gmf_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
+void freeDataGmf(DATA_GMF* data);
+int gmfode_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
 //auxiliary vector functions
-void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
-void linear_interpolation_MR(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
+void linear_interpolation_gm(double a, double* fa, double b, double* fb, double t, double *f, int n);
+void linear_interpolation_gmf(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
+void hermite_interpolation_gmf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx);
+
 void printVector_gmf(char name[], double* a, int n, double time, int nIndx, int* indx);
 void printMatrix_gmf(char name[], double* a, int n, double time);
 void copyVector_gmf(double* a, double* b, int nIndx, int* indx);
-
-
 
 #endif /* _DATA_GMF_H_ */

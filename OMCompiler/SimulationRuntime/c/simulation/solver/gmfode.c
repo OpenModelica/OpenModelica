@@ -132,7 +132,7 @@ struct dataSolver
  * @return NONLINEAR_SYSTEM_DATA*     Pointer to initialized non-linear system data.
  */
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GMF* gmfData) {
-  assertStreamPrint(threadData, gmfData->type != GM_type_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
+  assertStreamPrint(threadData, gmfData->type != GM_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
   // TODO AHeu: Free solverData again
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
@@ -157,7 +157,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   switch (gmfData->type)
   {
-  case GM_type_DIRK:
+  case GM_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK_MR;
     // nlsData->analyticalJacobianColumn = NULL;
     nlsData->analyticalJacobianColumn = jacobian_MR_column;
@@ -249,7 +249,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int allocateDatagmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
+int allocateDataGmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
 {
   DATA_GMF* gmfData = (DATA_GMF*) malloc(sizeof(DATA_GMF));
   gmData->gmfData = gmfData;
@@ -279,11 +279,11 @@ int allocateDatagmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
 
   switch (gmfData->type)
   {
-  case GM_type_EXPLICIT:
+  case GM_TYPE_EXPLICIT:
     gmfData->isExplicit = TRUE;
     gmfData->step_fun = &(expl_diag_impl_RK_MR);
     break;
-  case GM_type_DIRK:
+  case GM_TYPE_DIRK:
     gmfData->isExplicit = FALSE;
     gmfData->step_fun = &(expl_diag_impl_RK_MR);
     break;
@@ -292,7 +292,7 @@ int allocateDatagmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
     gmfData->step_fun = &(full_implicit_MS_MR);
     break;
 
-  case GM_type_IMPLICIT:
+  case GM_TYPE_IMPLICIT:
     errorStreamPrint(LOG_STDOUT, 0, "Fully Implicit RK method is not supported for the fast states integration!");
     messageClose(LOG_STDOUT);
     omc_throw_function(threadData);
@@ -389,6 +389,9 @@ int allocateDatagmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
     gmfData->jacobian = NULL;
   }
 
+  //gmfData->interpolation = 2; // hermite
+  gmfData->interpolation = 1; // linear
+
   return 0;
 }
 
@@ -397,7 +400,7 @@ int allocateDatagmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
  *
  * @param data    Pointer to generik Runge-Kutta data struct.
  */
-void freeDatagmf(DATA_GMF* gmfData) {
+void freeDataGmf(DATA_GMF* gmfData) {
   /* Free non-linear system data */
   if(gmfData->nlsData != NULL) {
     struct dataSolver* dataSolver = gmfData->nlsData->solverData;
@@ -411,7 +414,7 @@ void freeDatagmf(DATA_GMF* gmfData) {
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
-      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDatagm. Are we leaking memroy?");
+      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDataGmf. Are we leaking memroy?");
       break;
     }
     free(dataSolver);
@@ -731,9 +734,10 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   // set simulation time with respect to the current stage
   sData->timeValue = gmfData->time + gmfData->stepSize;
   // interpolate the slow states on the current time of gmfData->yOld for correct evaluation of gmfData->res_const
-  linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
-                          gmfData->endTime, gmfData->yEnd,
-                          sData->timeValue,  sData->realVars, gmfData->nSlowStates, gmfData->slowStates);
+  linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
+                          gmfData->endTime,    gmfData->yEnd,
+                          sData->timeValue,    sData->realVars,
+                          gmfData->nSlowStates, gmfData->slowStates);
 
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
@@ -794,14 +798,11 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   int nStages = gmfData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // Is this necessary???
-  // gmfData->data = (void*) data;
-  // gmfData->threadData = threadData;
-
   // interpolate the slow states on the current time of gmfData->yOld for correct evaluation of gmfData->res_const
-  linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
-                          gmfData->endTime,   gmfData->yEnd,
-                          gmfData->time, gmfData->yOld, gmfData->nSlowStates, gmfData->slowStates);
+  linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
+                          gmfData->endTime,    gmfData->yEnd,
+                          gmfData->time,      gmfData->yOld,
+                          gmfData->nSlowStates, gmfData->slowStates);
 
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
@@ -840,9 +841,10 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     else
     {
       // interpolate the slow states on the time of the current stage
-      linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
-                              gmfData->endTime,   gmfData->yEnd,
-                              sData->timeValue, sData->realVars, gmfData->nSlowStates, gmfData->slowStates);
+      linear_interpolation_gmf(gmfData->startTime,  gmfData->yStart,
+                               gmfData->endTime,    gmfData->yEnd,
+                               sData->timeValue,   sData->realVars,
+                               gmfData->nSlowStates, gmfData->slowStates);
 
       // BB ToDo: set good starting values for the newton solver (solution of the last newton iteration!)
       // setting the start vector for the newton step
@@ -887,14 +889,14 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   return 0;
 }
 
-/*! \fn gmf_step
+/*! \fn gmfode_step
  *
  *  function does one integration step and calculates
  *  next step size by the implicit midpoint rule
  *
  *  used for solver 'gm'
  */
-int gmf_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double targetTime)
+int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double targetTime)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
@@ -973,7 +975,7 @@ int gmf_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, doub
 
     modelica_boolean fastStateChange = FALSE;
     if (gmfData->nFastStates != gmfData->nFastStates_old) {
-      infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %g", gmfData->nFastStates, gmfData->nFastStates_old);
+      infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %d", gmfData->nFastStates, gmfData->nFastStates_old);
       fastStateChange = TRUE;
     } else {
       for (int k=0; k<nFastStates; k++)
@@ -1122,12 +1124,14 @@ int gmf_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, doub
     }
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
-    linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
+    linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
                             gmfData->endTime,   gmfData->yEnd,
-                            gmfData->time, gmfData->yOld, gmfData->nSlowStates, gmfData->slowStates);
-    linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
+                            gmfData->time,      gmfData->yOld,
+                            gmfData->nSlowStates, gmfData->slowStates);
+    linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
                             gmfData->endTime,   gmfData->yEnd,
-                            gmfData->time + gmfData->lastStepSize, gmfData->y, gmfData->nSlowStates, gmfData->slowStates);
+                            gmfData->time + gmfData->lastStepSize, gmfData->y,
+                            gmfData->nSlowStates, gmfData->slowStates);
     eventTime = checkForEvents(data, threadData, solverInfo, gmfData->time, gmfData->yOld, gmfData->time + gmfData->lastStepSize, gmfData->y);
     if (eventTime > 0)
     {
@@ -1244,21 +1248,40 @@ int gmf_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, doub
 }
 
 //Interpolation only some entries (indices given by idx[nIdx])
-void linear_interpolation_MR(double ta, double* fa, double tb, double* fb, double t, double* f, int nIdx, int* idx)
+void linear_interpolation_gmf(double ta, double* fa, double tb, double* fb, double t, double* f, int nIdx, int* idx)
 {
   double lambda, h0, h1;
-  int ii;
+  int i, ii;
 
   lambda = (t-ta)/(tb-ta);
   h0 = 1-lambda;
   h1 = lambda;
 
-  for (int i=0; i<nIdx; i++)
+  for (ii=0; ii<nIdx; ii++)
   {
-    ii = idx[i];
-    f[ii] = h0*fa[ii] + h1*fb[ii];
+    i = idx[ii];
+    f[i] = h0*fa[i] + h1*fb[i];
   }
 }
+
+void hermite_interpolation_gmf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx)
+{
+  double tt, h00, h01, h10, h11;
+  int i, ii;
+
+  tt = (t-ta)/(tb-ta);
+  h00 = (1+2*tt)*(1-tt)*(1-tt);
+  h10 = (tb-ta)*tt*(1-tt)*(1-tt);
+  h01 = (3-2*tt)*tt*tt;
+  h11 = (tb-ta)*(tt-1)*tt*tt;
+
+  for (ii=0; ii<nIdx; ii++)
+  {
+    i = idx[ii];
+    f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
+  }
+}
+
 
 void printVector_gmf(char name[], double* a, int n, double time, int nIndx, int* indx)
 {

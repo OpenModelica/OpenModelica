@@ -260,8 +260,8 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_GMODE:
   {
-    if (allocateDatagm(data, threadData, solverInfo) != 0) {
-      throwStreamPrint(threadData, "Failed to allocate memory for generic RK solver.");
+    if (allocateDataGm(data, threadData, solverInfo) != 0) {
+      throwStreamPrint(threadData, "Failed to allocate memory for generic multigrid solver.");
     }
     break;
   }
@@ -417,7 +417,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
   else if (solverInfo->solverMethod == S_GMODE)
   {
-    freeDatagm(solverInfo->solverData);
+    freeDataGm(solverInfo->solverData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
   else if(solverInfo->solverMethod == S_DASSL)

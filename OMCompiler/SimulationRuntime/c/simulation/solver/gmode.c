@@ -70,7 +70,7 @@
 #include "epsilon.h"
 
 //auxiliary vector functions
-void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
+void linear_interpolation_gm(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n);
 void printVector_gm(char name[], double* a, int n, double time);
 void printIntVector_gm(char name[], int* a, int n, double time);
@@ -93,7 +93,7 @@ int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIA
 
 void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
 
-void allocateDatagmf(DATA* data, threadData_t* threadData, DATA_GM* gmData);
+void allocateDataGmf(DATA* data, threadData_t* threadData, DATA_GM* gmData);
 
 // step size control function
 double IController(double* err_values, double* stepSize_values, double err_order);
@@ -687,7 +687,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
  * @return NONLINEAR_SYSTEM_DATA*     Pointer to initialized non-linear system data.
  */
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GM* gmData) {
-  assertStreamPrint(threadData, gmData->type != GM_type_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
+  assertStreamPrint(threadData, gmData->type != GM_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
   // TODO AHeu: Free solverData again
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
@@ -712,7 +712,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
   switch (gmData->type)
   {
-  case GM_type_DIRK:
+  case GM_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK;
     nlsData->analyticalJacobianColumn = jacobian_SR_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_DIRK;
@@ -720,7 +720,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
     gmData->symJacAvailable = TRUE;
     break;
-  case GM_type_IMPLICIT:
+  case GM_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
     nlsData->analyticalJacobianColumn = jacobian_IRK_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
@@ -810,7 +810,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo) {
+int allocateDataGm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo) {
   DATA_GM* gmData = (DATA_GM*) malloc(sizeof(DATA_GM));
 
   // Set backup in simulationInfo
@@ -826,7 +826,7 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   gmData->GM_method = getGM_method(FLAG_SR);
   gmData->tableau = initButcherTableau(gmData->GM_method);
   if (gmData->tableau == NULL){
-    errorStreamPrint(LOG_STDOUT, 0, "allocateDatagm: Failed to initialize butcher tableau for Runge-Kutta method %s", GM_SINGLERATE_METHOD_NAME[gmData->GM_method]);
+    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGm: Failed to initialize butcher tableau for Runge-Kutta method %s", GM_SINGLERATE_METHOD_NAME[gmData->GM_method]);
     return -1;
   }
 
@@ -835,15 +835,15 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
 
   switch (gmData->type)
   {
-  case GM_type_EXPLICIT:
+  case GM_TYPE_EXPLICIT:
     gmData->isExplicit = TRUE;
     gmData->step_fun = &(expl_diag_impl_RK);
     break;
-  case GM_type_DIRK:
+  case GM_TYPE_DIRK:
     gmData->isExplicit = FALSE;
     gmData->step_fun = &(expl_diag_impl_RK);
     break;
-  case GM_type_IMPLICIT:
+  case GM_TYPE_IMPLICIT:
     gmData->isExplicit = FALSE;
     gmData->step_fun = &(full_implicit_RK);
     break;
@@ -852,14 +852,14 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     gmData->step_fun = &(full_implicit_MS);
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "allocateDatagm: Unknown Runge-Kutta type %i", gmData->type);
+    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGm: Unknown Runge-Kutta type %i", gmData->type);
     return -1;
   }
   // adapt decision for testing of the fully implicit implementation
   if (gmData->GM_method == RK_ESDIRK2_test || gmData->GM_method == RK_ESDIRK3_test) {
     gmData->nlSystemSize = gmData->tableau->nStages*gmData->nStates;
     gmData->step_fun = &(full_implicit_RK);
-    gmData->type = GM_type_IMPLICIT;
+    gmData->type = GM_TYPE_IMPLICIT;
   }
   if (gmData->GM_method == MS_ADAMS_MOULTON) {
     gmData->nlSystemSize = gmData->nStates;
@@ -957,6 +957,8 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   const char* flag_value = omc_flagValue[FLAG_MR_PAR];
   if (flag_value != NULL)
     gmData->percentage = atof(omc_flagValue[FLAG_MR_PAR]);
+  else
+    gmData->percentage = 0;
   if (gmData->percentage > 0) {
     gmData->multi_rate = 1;
   } else {
@@ -976,10 +978,13 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   }
 
   if (gmData->multi_rate) {
-    allocateDatagmf(data, threadData, gmData);
+    allocateDataGmf(data, threadData, gmData);
   } else {
     gmData->gmfData = NULL;
   }
+
+  //gmData->interpolation = 2; // GM_HERMITE
+  gmData->interpolation = 1; // GM_LINEAR
 
   return 0;
 }
@@ -989,7 +994,7 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
  *
  * @param gmData    Pointer to generik Runge-Kutta data struct.
  */
-void freeDatagm(DATA_GM* gmData) {
+void freeDataGm(DATA_GM* gmData) {
   /* Free non-linear system data */
   if(gmData->nlsData != NULL) {
     struct dataSolver* dataSolver = gmData->nlsData->solverData;
@@ -1003,7 +1008,7 @@ void freeDatagm(DATA_GM* gmData) {
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
-      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDatagm. Are we leaking memroy?");
+      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDataGm. Are we leaking memroy?");
       break;
     }
     free(dataSolver);
@@ -1016,7 +1021,7 @@ void freeDatagm(DATA_GM* gmData) {
   freeButcherTableau(gmData->tableau);
 
   if (gmData->multi_rate == 1) {
-    freeDatagmf(gmData->gmfData);
+    freeDataGmf(gmData->gmfData);
   }
   /* Free multi-rate data */
   free(gmData->err);
@@ -1830,7 +1835,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   // Check if multirate step is necessary, otherwise the correct values are already stored in sData
   if (gmData->multi_rate)
     if (gmData->nFastStates > 0 && gmData->gmfData->time < gmData->time)
-      if (gmf_step(data, threadData, solverInfo, targetTime))
+      if (gmfode_step(data, threadData, solverInfo, targetTime))
               return 0;
 
 
@@ -1989,7 +1994,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         //     gmData->nFastStates + gmData->nSlowStates - gmData->nStates);
         if (gmData->nFastStates>0  && gmData->err_fast > 0)
         {
-          if (gmf_step(data, threadData, solverInfo, targetTime))
+          if (gmfode_step(data, threadData, solverInfo, targetTime))
             return 0;
           // gmData->lastStepSize = gmData->gmfData->lastStepSize;
           // gmData->stepSize = gmData->gmfData->stepSize;
@@ -2130,7 +2135,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     solverInfo->currentTime = sData->timeValue;
     if (gmData->multi_rate) {
       // interpolating fast states if multirate method is used
-      linear_interpolation_MR(gmData->gmfData->time-gmData->gmfData->lastStepSize, gmData->gmfData->yt,
+      linear_interpolation_gmf(gmData->gmfData->time-gmData->gmfData->lastStepSize, gmData->gmfData->yt,
                               gmData->gmfData->time, gmData->gmfData->y,
                               sData->timeValue, sData->realVars,
                               gmData->nFastStates, gmData->fastStates);
@@ -2138,7 +2143,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     }
 
     // interpolating slow states if multirate method is used, otherwise all states are slow states
-    linear_interpolation_MR(gmData->timeLeft, gmData->yLeft,
+    linear_interpolation_gmf(gmData->timeLeft, gmData->yLeft,
                           gmData->timeRight, gmData->y,
                           sData->timeValue, sData->realVars,
                           gmData->nSlowStates, gmData->slowStates);
@@ -2217,7 +2222,7 @@ double getErrorThreshold(DATA_GM* gmData)
 
 // TODO AHeu: For sure there is already a linear interpolation function somewhere
 //auxiliary vector functions for better code structure
-void linear_interpolation(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
+void linear_interpolation_gm(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
 {
   double lambda, h0, h1;
 
