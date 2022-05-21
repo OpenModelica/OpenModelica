@@ -89,14 +89,14 @@ typedef struct DATA_GMF{
   rk_stepSize_control_function stepSize_control;
 } DATA_GMF;
 
-void freeDatagm_MR(DATA_GMF* data);
-int gm_MR_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
+void freeDatagmf(DATA_GMF* data);
+int gmf_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void linear_interpolation_MR(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
-void printVector_gm_MR(char name[], double* a, int n, double time, int nIndx, int* indx);
-void printMatrix_gm_MR(char name[], double* a, int n, double time);
-void copyVector_gm_MR(double* a, double* b, int nIndx, int* indx);
+void printVector_gmf(char name[], double* a, int n, double time, int nIndx, int* indx);
+void printMatrix_gmf(char name[], double* a, int n, double time);
+void copyVector_gmf(double* a, double* b, int nIndx, int* indx);
 
 
 

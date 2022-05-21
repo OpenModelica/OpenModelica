@@ -75,7 +75,7 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
 void printVector_gm(char name[], double* a, int n, double time);
 void printIntVector_gm(char name[], int* a, int n, double time);
 void printMatrix_gm(char name[], double* a, int n, double time);
-void copyVector_gm_MR(double* a, double* b, int nIndx, int* indx);
+void copyVector_gmf(double* a, double* b, int nIndx, int* indx);
 double getErrorThreshold(DATA_GM* gmData);
 
 // singlerate step function
@@ -93,7 +93,7 @@ int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIA
 
 void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
 
-void allocateDatagm_MR(DATA* data, threadData_t* threadData, DATA_GM* gmData);
+void allocateDatagmf(DATA* data, threadData_t* threadData, DATA_GM* gmData);
 
 // step size control function
 double IController(double* err_values, double* stepSize_values, double err_order);
@@ -976,7 +976,7 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   }
 
   if (gmData->multi_rate) {
-    allocateDatagm_MR(data, threadData, gmData);
+    allocateDatagmf(data, threadData, gmData);
   } else {
     gmData->gmfData = NULL;
   }
@@ -1016,7 +1016,7 @@ void freeDatagm(DATA_GM* gmData) {
   freeButcherTableau(gmData->tableau);
 
   if (gmData->multi_rate == 1) {
-    freeDatagm_MR(gmData->gmfData);
+    freeDatagmf(gmData->gmfData);
   }
   /* Free multi-rate data */
   free(gmData->err);
@@ -1830,7 +1830,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   // Check if multirate step is necessary, otherwise the correct values are already stored in sData
   if (gmData->multi_rate)
     if (gmData->nFastStates > 0 && gmData->gmfData->time < gmData->time)
-      if (gm_MR_step(data, threadData, solverInfo, targetTime))
+      if (gmf_step(data, threadData, solverInfo, targetTime))
               return 0;
 
 
@@ -1897,7 +1897,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       // printVector_gm("Error before sorting:", gmData->err, gmData->nStates, gmData->time);
       // printIntVector_gm("Indices before sorting:", gmData->sortedStates, gmData->nStates, gmData->time);
       // printIntVector_gm("Indices after sorting:", gmData->sortedStates, gmData->nStates, gmData->time);
-      // printVector_gm_MR("Error after sorting:", gmData->err, gmData->nStates, gmData->time,  gmData->nStates, gmData->sortedStates);
+      // printVector_gmf("Error after sorting:", gmData->err, gmData->nStates, gmData->time,  gmData->nStates, gmData->sortedStates);
 
       if (gmData->multi_rate && (err > 0.0))
       {
@@ -1989,13 +1989,13 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         //     gmData->nFastStates + gmData->nSlowStates - gmData->nStates);
         if (gmData->nFastStates>0  && gmData->err_fast > 0)
         {
-          if (gm_MR_step(data, threadData, solverInfo, targetTime))
+          if (gmf_step(data, threadData, solverInfo, targetTime))
             return 0;
           // gmData->lastStepSize = gmData->gmfData->lastStepSize;
           // gmData->stepSize = gmData->gmfData->stepSize;
-          //  copyVector_gm_MR(rkData->y, rkData->gmfData->y, rkData->nFastStates, rkData->fastStates);
-          //  copyVector_gm_MR(rkData->yt, rkData->gmfData->yt, rkData->nFastStates, rkData->fastStates);
-          //  copyVector_gm_MR(rkData->err, rkData->gmfData->err, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_gmf(rkData->y, rkData->gmfData->y, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_gmf(rkData->yt, rkData->gmfData->yt, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_gmf(rkData->err, rkData->gmfData->err, rkData->nFastStates, rkData->fastStates);
           /*** calculate error (infinity norm!)***/
           // err = 0;
           // for (i=0; i<data->modelData->nStates; i++)
@@ -2265,7 +2265,7 @@ void printIntVector_gm(char name[], int* a, int n, double time)
   printf("\n");
 }
 
-void copyVector_gm_MR(double* a, double* b, int nIndx, int* indx)
+void copyVector_gmf(double* a, double* b, int nIndx, int* indx)
 {
   for (int i=0;i<nIndx;i++)
     a[indx[i]] = b[indx[i]];

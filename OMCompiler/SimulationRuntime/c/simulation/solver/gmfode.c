@@ -249,7 +249,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int allocateDatagm_MR(DATA* data, threadData_t *threadData, DATA_GM* gmData)
+int allocateDatagmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
 {
   DATA_GMF* gmfData = (DATA_GMF*) malloc(sizeof(DATA_GMF));
   gmData->gmfData = gmfData;
@@ -397,7 +397,7 @@ int allocateDatagm_MR(DATA* data, threadData_t *threadData, DATA_GM* gmData)
  *
  * @param data    Pointer to generik Runge-Kutta data struct.
  */
-void freeDatagm_MR(DATA_GMF* gmfData) {
+void freeDatagmf(DATA_GMF* gmfData) {
   /* Free non-linear system data */
   if(gmfData->nlsData != NULL) {
     struct dataSolver* dataSolver = gmfData->nlsData->solverData;
@@ -887,14 +887,14 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   return 0;
 }
 
-/*! \fn gm_MR_step
+/*! \fn gmf_step
  *
  *  function does one integration step and calculates
  *  next step size by the implicit midpoint rule
  *
  *  used for solver 'gm'
  */
-int gm_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double targetTime)
+int gmf_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double targetTime)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
@@ -1054,7 +1054,7 @@ int gm_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, do
     {
       if(ACTIVE_STREAM(LOG_MULTIRATE))
       {
-        //printVector_gm_MR("yOld: ", gmfData->yOld, gmfData->nStates, gmfData->time, gmfData->nFastStates, gmfData->fastStates);
+        //printVector_gmf("yOld: ", gmfData->yOld, gmfData->nStates, gmfData->time, gmfData->nFastStates, gmfData->fastStates);
         printVector_gm("yOld: ", gmfData->yOld, gmfData->nStates, gmfData->time);
       }
 
@@ -1165,10 +1165,10 @@ int gm_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, do
 
 
     /* step is accepted and yOld needs to be updated, store yOld for later interpolation... */
-    copyVector_gm_MR(gmfData->yt, gmfData->yOld, nFastStates, gmfData->fastStates);
+    copyVector_gmf(gmfData->yt, gmfData->yOld, nFastStates, gmfData->fastStates);
 
     /* step is accepted and yOld needs to be updated */
-    copyVector_gm_MR(gmfData->yOld, gmfData->y, nFastStates, gmfData->fastStates);
+    copyVector_gmf(gmfData->yOld, gmfData->y, nFastStates, gmfData->fastStates);
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     gmfData->time- gmfData->lastStepSize, gmfData->time, err, gmfData->stepSize);
 
@@ -1202,9 +1202,9 @@ int gm_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, do
 
     // solverInfo->currentTime = eventTime;
     // sData->timeValue = solverInfo->currentTime;
-    copyVector_gm_MR(gmData->err, gmfData->err, nFastStates, gmfData->fastStates);
-    // copyVector_gm_MR(gmData->y, gmfData->y, nFastStates, gmfData->fastStates);
-    // copyVector_gm_MR(gmData->yOld, gmfData->y, nFastStates, gmfData->fastStates);
+    copyVector_gmf(gmData->err, gmfData->err, nFastStates, gmfData->fastStates);
+    // copyVector_gmf(gmData->y, gmfData->y, nFastStates, gmfData->fastStates);
+    // copyVector_gmf(gmData->yOld, gmfData->y, nFastStates, gmfData->fastStates);
   }
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))
@@ -1260,7 +1260,7 @@ void linear_interpolation_MR(double ta, double* fa, double tb, double* fb, doubl
   }
 }
 
-void printVector_gm_MR(char name[], double* a, int n, double time, int nIndx, int* indx)
+void printVector_gmf(char name[], double* a, int n, double time, int nIndx, int* indx)
 {
   printf("%s\t(time = %14.8g):", name, time);
   for (int i=0;i<nIndx;i++)
@@ -1268,7 +1268,7 @@ void printVector_gm_MR(char name[], double* a, int n, double time, int nIndx, in
   printf("\n");
 }
 
-void printMatrix_gm_MR(char name[], double* a, int n, double time)
+void printMatrix_gmf(char name[], double* a, int n, double time)
 {
   printf("\n%s at time: %g: \n ", name, time);
   for (int i=0;i<n;i++)

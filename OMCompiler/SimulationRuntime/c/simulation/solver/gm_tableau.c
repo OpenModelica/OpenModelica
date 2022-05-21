@@ -404,9 +404,9 @@ const double bt[]  = {0.0488095238095238095238095238095,                        
  * @param tableau       Butcher tableau. error_order will be set after return.
  * @param nStates       Number of states of ODE/DAE system.
  * @param nlSystemSize  Contains size of internal non-linear system on return.
- * @param GM_type        Contains Runge-Kutta method type on return.
+ * @param GM_TYPE        Contains Runge-Kutta method type on return.
  */
-void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_type* GM_type) {
+void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_TYPE* GM_type) {
   modelica_boolean isGenericIRK = FALSE;  /* generic implicit Runge-Kutta method */
   modelica_boolean isDIRK = FALSE;        /* diagonal something something Runge-Kutta method */
   int i, j, l;
@@ -424,15 +424,15 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     }
   }
   if (isGenericIRK) {
-    *GM_type = GM_type_IMPLICIT;
+    *GM_type = GM_TYPE_IMPLICIT;
     *nlSystemSize = tableau->nStages*nStates;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is fully implicit");
   } else if (isDIRK) {
-    *GM_type = GM_type_DIRK;
+    *GM_type = GM_TYPE_DIRK;
     *nlSystemSize = nStates;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method diagonally implicit");
   } else {
-    *GM_type = GM_type_EXPLICIT;
+    *GM_type = GM_TYPE_EXPLICIT;
     *nlSystemSize = 0;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is explicit");
   }
