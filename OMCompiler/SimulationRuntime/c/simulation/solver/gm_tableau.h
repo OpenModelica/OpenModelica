@@ -71,20 +71,20 @@ typedef struct BUTCHER_TABLEAU {
 /**
  * @brief Type of Runge-Kutta method
  */
-enum RK_type {
-  RK_TYPE_UNDEF = 0,    /* Undefined type */
-  RK_TYPE_EXPLICIT,     /* Explicit: A is lower triangular matrix */
-  RK_TYPE_DIRK,         /* Diagonal implicit: A is triangular matrix */
-  RK_TYPE_IMPLICIT,     /* Implicit: A has elements above diagonal */
+enum GM_type {
+  GM_type_UNDEF = 0,    /* Undefined type */
+  GM_type_EXPLICIT,     /* Explicit: A is lower triangular matrix */
+  GM_type_DIRK,         /* Diagonal implicit: A is triangular matrix */
+  GM_type_IMPLICIT,     /* Implicit: A has elements above diagonal */
   MS_TYPE_IMPLICIT      /* NEW: Implicit multistep method, A is completely zero! */
 };
 
 /* Function prototypes */
 
-BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method);
+BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method);
 void freeButcherTableau(BUTCHER_TABLEAU* tableau);
 
-void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum RK_type* expl);
+void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_type* expl);
 
 void printButcherTableau(BUTCHER_TABLEAU* tableau);
 

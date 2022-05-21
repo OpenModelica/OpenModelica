@@ -49,9 +49,9 @@ typedef double (*rk_stepSize_control_function)(double* err_values, double* stepS
 
 typedef struct DATA_GM{
   DATA_GMF* gmfData;
-  enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
-  enum RK_type type;                    /* Type of RK method */
-  enum RK_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
+  enum GM_SINGLERATE_METHOD GM_method;  /* Runge-Kutta method to use. */
+  enum GM_type type;                    /* Type of RK method */
+  enum GM_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
   NONLINEAR_SYSTEM_DATA* nlsData;       /* Non-linear system
                                          * Something like
                                          *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
@@ -103,8 +103,8 @@ typedef struct DATA_GM{
   unsigned int convergenceFailures;   /* Total number of convergence failures */
 } DATA_GM;
 
-enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_SR_METHOD);
-enum RK_NLS_METHOD getRK_NLS_Method();
+enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD);
+enum GM_NLS_METHOD getGM_NLS_METHOD();
 int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 void freeDatagm(DATA_GM* data);
 int gmode_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);

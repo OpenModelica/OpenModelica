@@ -404,9 +404,9 @@ const double bt[]  = {0.0488095238095238095238095238095,                        
  * @param tableau       Butcher tableau. error_order will be set after return.
  * @param nStates       Number of states of ODE/DAE system.
  * @param nlSystemSize  Contains size of internal non-linear system on return.
- * @param rk_type        Contains Runge-Kutta method type on return.
+ * @param GM_type        Contains Runge-Kutta method type on return.
  */
-void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum RK_type* rk_type) {
+void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_type* GM_type) {
   modelica_boolean isGenericIRK = FALSE;  /* generic implicit Runge-Kutta method */
   modelica_boolean isDIRK = FALSE;        /* diagonal something something Runge-Kutta method */
   int i, j, l;
@@ -424,15 +424,15 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     }
   }
   if (isGenericIRK) {
-    *rk_type = RK_TYPE_IMPLICIT;
+    *GM_type = GM_type_IMPLICIT;
     *nlSystemSize = tableau->nStages*nStates;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is fully implicit");
   } else if (isDIRK) {
-    *rk_type = RK_TYPE_DIRK;
+    *GM_type = GM_type_DIRK;
     *nlSystemSize = nStates;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method diagonally implicit");
   } else {
-    *rk_type = RK_TYPE_EXPLICIT;
+    *GM_type = GM_type_EXPLICIT;
     *nlSystemSize = 0;
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is explicit");
   }
@@ -444,13 +444,13 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
 /**
  * @brief Allocate memory and initialize Butcher tableau for given method.
  *
- * @param RK_method           Runge-Kutta method.
+ * @param GM_method           Runge-Kutta method.
  * @return BUTCHER_TABLEAU*   Return pointer to Butcher tableau on success, NULL on failure.
  */
-BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method) {
+BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method) {
   BUTCHER_TABLEAU* tableau = (BUTCHER_TABLEAU*) malloc(sizeof(BUTCHER_TABLEAU));
 
-  switch(RK_method)
+  switch(GM_method)
   {
     case MS_ADAMS_MOULTON:
       getButcherTableau_MS(tableau);
@@ -494,7 +494,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method) {
       getButcherTableau_GAUSS2(tableau);
       break;
     default:
-      errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", RK_method);
+      errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", GM_method);
       free(tableau);
       return NULL;
   }

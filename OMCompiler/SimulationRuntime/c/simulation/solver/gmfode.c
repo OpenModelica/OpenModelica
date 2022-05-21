@@ -132,7 +132,7 @@ struct dataSolver
  * @return NONLINEAR_SYSTEM_DATA*     Pointer to initialized non-linear system data.
  */
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GMF* gmfData) {
-  assertStreamPrint(threadData, gmfData->type != RK_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
+  assertStreamPrint(threadData, gmfData->type != GM_type_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
   // TODO AHeu: Free solverData again
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
@@ -157,7 +157,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   switch (gmfData->type)
   {
-  case RK_TYPE_DIRK:
+  case GM_type_DIRK:
     nlsData->residualFunc = residual_DIRK_MR;
     // nlsData->analyticalJacobianColumn = NULL;
     nlsData->analyticalJacobianColumn = jacobian_MR_column;
@@ -233,7 +233,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     }
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gmfData->nlsSolverMethod]);
+    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GM_NLS_METHOD_NAME[gmfData->nlsSolverMethod]);
     return NULL;
     break;
   }
@@ -259,8 +259,8 @@ int allocateDatagm_MR(DATA* data, threadData_t *threadData, DATA_GM* gmData)
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  gmfData->RK_method = getRK_Method(FLAG_MR);
-  gmfData->tableau = initButcherTableau(gmfData->RK_method);
+  gmfData->GM_method = getGM_method(FLAG_MR);
+  gmfData->tableau = initButcherTableau(gmfData->GM_method);
   if (gmfData->tableau == NULL){
     // ERROR
     messageClose(LOG_STDOUT);
@@ -270,7 +270,7 @@ int allocateDatagm_MR(DATA* data, threadData_t *threadData, DATA_GM* gmData)
   // Get size of non-linear system
   analyseButcherTableau(gmfData->tableau, gmfData->nStates, &gmfData->nlSystemSize, &gmfData->type);
 
-  if (gmfData->RK_method == MS_ADAMS_MOULTON) {
+  if (gmfData->GM_method == MS_ADAMS_MOULTON) {
     gmfData->nlSystemSize = gmfData->nStates;
     gmfData->step_fun = &(full_implicit_MS_MR);
     gmfData->type = MS_TYPE_IMPLICIT;
@@ -279,11 +279,11 @@ int allocateDatagm_MR(DATA* data, threadData_t *threadData, DATA_GM* gmData)
 
   switch (gmfData->type)
   {
-  case RK_TYPE_EXPLICIT:
+  case GM_type_EXPLICIT:
     gmfData->isExplicit = TRUE;
     gmfData->step_fun = &(expl_diag_impl_RK_MR);
     break;
-  case RK_TYPE_DIRK:
+  case GM_type_DIRK:
     gmfData->isExplicit = FALSE;
     gmfData->step_fun = &(expl_diag_impl_RK_MR);
     break;
@@ -292,7 +292,7 @@ int allocateDatagm_MR(DATA* data, threadData_t *threadData, DATA_GM* gmData)
     gmfData->step_fun = &(full_implicit_MS_MR);
     break;
 
-  case RK_TYPE_IMPLICIT:
+  case GM_type_IMPLICIT:
     errorStreamPrint(LOG_STDOUT, 0, "Fully Implicit RK method is not supported for the fast states integration!");
     messageClose(LOG_STDOUT);
     omc_throw_function(threadData);
@@ -375,7 +375,7 @@ int allocateDatagm_MR(DATA* data, threadData_t *threadData, DATA_GM* gmData)
     }
 
   /* Allocate memory for the nonlinear solver */
-  //gmfData->nlsSolverMethod = getRK_NLS_Method();
+  //gmfData->nlsSolverMethod = getGM_NLS_METHOD();
     gmfData->nlsSolverMethod = RK_NLS_NEWTON;
     gmfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gmfData);
     if (!gmfData->nlsData) {
@@ -411,7 +411,7 @@ void freeDatagm_MR(DATA_GMF* gmfData) {
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
-      warningStreamPrint(LOG_SOLVER, 0, "Not handled RK_NLS_METHOD in freeDatagm. Are we leaking memroy?");
+      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDatagm. Are we leaking memroy?");
       break;
     }
     free(dataSolver);
@@ -957,7 +957,7 @@ int gm_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, do
         ((NLS_KINSOL_DATA*) solverDataStruct->ordinaryData)->size = gmfData->nFastStates;
         break;
       default:
-        errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gmfData->nlsSolverMethod]);
+        errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", GM_NLS_METHOD_NAME[gmfData->nlsSolverMethod]);
         return -1;
         break;
     }

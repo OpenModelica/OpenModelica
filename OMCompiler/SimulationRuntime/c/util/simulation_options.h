@@ -196,7 +196,7 @@ extern const char *FLAG_DETAILED_DESC[FLAG_MAX+1];
 extern const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX];
 extern const int FLAG_TYPE[FLAG_MAX];
 
-enum RK_SINGLERATE_METHOD {
+enum GM_SINGLERATE_METHOD {
   RK_UNKNOWN = 0,
 
   MS_ADAMS_MOULTON,
@@ -215,10 +215,10 @@ enum RK_SINGLERATE_METHOD {
   RK_MAX
 };
 
-extern const char *RK_SINGLERATE_METHOD_NAME[RK_MAX];
-extern const char *RK_SINGLERATE_METHOD_DESC[RK_MAX];
+extern const char *GM_SINGLERATE_METHOD_NAME[RK_MAX];
+extern const char *GM_SINGLERATE_METHOD_DESC[RK_MAX];
 
-enum RK_NLS_METHOD {
+enum GM_NLS_METHOD {
   RK_NLS_UNKNOWN = 0,
 
   RK_NLS_NEWTON,
@@ -227,8 +227,8 @@ enum RK_NLS_METHOD {
   RK_NLS_MAX
 };
 
-extern const char *RK_NLS_METHOD_NAME[RK_NLS_MAX];
-extern const char *RK_NLS_METHOD_DESC[RK_NLS_MAX];
+extern const char *GM_NLS_METHOD_NAME[RK_NLS_MAX];
+extern const char *GM_NLS_METHOD_DESC[RK_NLS_MAX];
 
 enum SOLVER_METHOD
 {

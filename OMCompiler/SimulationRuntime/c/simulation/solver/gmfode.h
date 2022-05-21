@@ -49,9 +49,9 @@ typedef double (*rk_stepSize_control_function)(double* err_values, double* stepS
 typedef struct DATA_GMF{
   DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
   threadData_t *threadData;     //            I'm afraid not...
-  enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
-  enum RK_type type;                    /* Type of RK method */
-  enum RK_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
+  enum GM_SINGLERATE_METHOD GM_method;  /* Runge-Kutta method to use. */
+  enum GM_type type;                    /* Type of RK method */
+  enum GM_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
   NONLINEAR_SYSTEM_DATA* nlsData;       /* Non-linear system
                                          * Something like
                                          *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))

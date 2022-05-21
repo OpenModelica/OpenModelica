@@ -156,24 +156,24 @@ struct dataSolver
  * Defaults to RK_DOPRI45 if flag is not set.
  * Returns RK_UNKNOWN if flag is not known.
  *
- * @return enum RK_SINGLERATE_METHOD    Runge-Kutta method.
+ * @return enum GM_SINGLERATE_METHOD    Runge-Kutta method.
  */
-enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_SR_METHOD) {
-  enum RK_SINGLERATE_METHOD method;
+enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD) {
+  enum GM_SINGLERATE_METHOD method;
   const char* flag_value;
   flag_value = omc_flagValue[FLAG_SR_METHOD];
-  char* RK_method_string;
+  char* GM_method_string;
 
   if (flag_value != NULL) {
-    RK_method_string = GC_strdup(flag_value);
+    GM_method_string = GC_strdup(flag_value);
     for (method=RK_UNKNOWN; method<RK_MAX; method++) {
-      if (strcmp(RK_method_string, RK_SINGLERATE_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: %s", RK_SINGLERATE_METHOD_NAME[method]);
+      if (strcmp(GM_method_string, GM_SINGLERATE_METHOD_NAME[method]) == 0){
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: %s", GM_SINGLERATE_METHOD_NAME[method]);
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge-Kutta method %s.", RK_method_string);
-    errorStreamPrint(LOG_STDOUT, 0, "Choose RK method: %s [from command line]", RK_method_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge-Kutta method %s.", GM_method_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Choose RK method: %s [from command line]", GM_method_string);
     return RK_UNKNOWN;
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: adams [default]");
@@ -187,24 +187,24 @@ enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_SR_METHOD) {
  * Defaults to Newton if flag is not set.
  * Returns RK_UNKNOWN if flag is not known.
  *
- * @return enum RK_NLS_METHOD   NLS method.
+ * @return enum GM_NLS_METHOD   NLS method.
  */
-enum RK_NLS_METHOD getRK_NLS_Method() {
-  enum RK_NLS_METHOD method;
+enum GM_NLS_METHOD getGM_NLS_METHOD() {
+  enum GM_NLS_METHOD method;
   const char* flag_value;
   flag_value = omc_flagValue[FLAG_SR_NLS];
-  char* RK_NLS_method_string;
+  char* GM_NLS_METHOD_string;
 
   if (flag_value != NULL) {
-    RK_NLS_method_string = GC_strdup(flag_value);
+    GM_NLS_METHOD_string = GC_strdup(flag_value);
     for (method=RK_NLS_UNKNOWN; method<RK_NLS_MAX; method++) {
-      if (strcmp(RK_NLS_method_string, RK_NLS_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK NLS method: %s", RK_NLS_METHOD_NAME[method]);
+      if (strcmp(GM_NLS_METHOD_string, GM_NLS_METHOD_NAME[method]) == 0){
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK NLS method: %s", GM_NLS_METHOD_NAME[method]);
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow non-linear solver method %s for Runge-Kutta method.", RK_NLS_method_string);
-    errorStreamPrint(LOG_STDOUT, 0, "Choose RK NLS method: %s [from command line]", RK_NLS_method_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow non-linear solver method %s for Runge-Kutta method.", GM_NLS_METHOD_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Choose RK NLS method: %s [from command line]", GM_NLS_METHOD_string);
     return RK_NLS_UNKNOWN;
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: kinsol [default]");
@@ -687,7 +687,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
  * @return NONLINEAR_SYSTEM_DATA*     Pointer to initialized non-linear system data.
  */
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GM* gmData) {
-  assertStreamPrint(threadData, gmData->type != RK_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
+  assertStreamPrint(threadData, gmData->type != GM_type_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
   // TODO AHeu: Free solverData again
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
@@ -712,7 +712,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
   switch (gmData->type)
   {
-  case RK_TYPE_DIRK:
+  case GM_type_DIRK:
     nlsData->residualFunc = residual_DIRK;
     nlsData->analyticalJacobianColumn = jacobian_SR_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_DIRK;
@@ -720,7 +720,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
     gmData->symJacAvailable = TRUE;
     break;
-  case RK_TYPE_IMPLICIT:
+  case GM_type_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
     nlsData->analyticalJacobianColumn = jacobian_IRK_column;
     nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
@@ -794,7 +794,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     }
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gmData->nlsSolverMethod]);
+    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GM_NLS_METHOD_NAME[gmData->nlsSolverMethod]);
     return NULL;
     break;
   }
@@ -823,10 +823,10 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  gmData->RK_method = getRK_Method(FLAG_SR);
-  gmData->tableau = initButcherTableau(gmData->RK_method);
+  gmData->GM_method = getGM_method(FLAG_SR);
+  gmData->tableau = initButcherTableau(gmData->GM_method);
   if (gmData->tableau == NULL){
-    errorStreamPrint(LOG_STDOUT, 0, "allocateDatagm: Failed to initialize butcher tableau for Runge-Kutta method %s", RK_SINGLERATE_METHOD_NAME[gmData->RK_method]);
+    errorStreamPrint(LOG_STDOUT, 0, "allocateDatagm: Failed to initialize butcher tableau for Runge-Kutta method %s", GM_SINGLERATE_METHOD_NAME[gmData->GM_method]);
     return -1;
   }
 
@@ -835,15 +835,15 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
 
   switch (gmData->type)
   {
-  case RK_TYPE_EXPLICIT:
+  case GM_type_EXPLICIT:
     gmData->isExplicit = TRUE;
     gmData->step_fun = &(expl_diag_impl_RK);
     break;
-  case RK_TYPE_DIRK:
+  case GM_type_DIRK:
     gmData->isExplicit = FALSE;
     gmData->step_fun = &(expl_diag_impl_RK);
     break;
-  case RK_TYPE_IMPLICIT:
+  case GM_type_IMPLICIT:
     gmData->isExplicit = FALSE;
     gmData->step_fun = &(full_implicit_RK);
     break;
@@ -856,12 +856,12 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     return -1;
   }
   // adapt decision for testing of the fully implicit implementation
-  if (gmData->RK_method == RK_ESDIRK2_test || gmData->RK_method == RK_ESDIRK3_test) {
+  if (gmData->GM_method == RK_ESDIRK2_test || gmData->GM_method == RK_ESDIRK3_test) {
     gmData->nlSystemSize = gmData->tableau->nStages*gmData->nStates;
     gmData->step_fun = &(full_implicit_RK);
-    gmData->type = RK_TYPE_IMPLICIT;
+    gmData->type = GM_type_IMPLICIT;
   }
-  if (gmData->RK_method == MS_ADAMS_MOULTON) {
+  if (gmData->GM_method == MS_ADAMS_MOULTON) {
     gmData->nlSystemSize = gmData->nStates;
     gmData->step_fun = &(full_implicit_MS);
     gmData->type = MS_TYPE_IMPLICIT;
@@ -933,7 +933,7 @@ int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     }
 
   /* Allocate memory for the nonlinear solver */
-    gmData->nlsSolverMethod = getRK_NLS_Method();
+    gmData->nlsSolverMethod = getGM_NLS_METHOD();
     gmData->nlsData = initRK_NLS_DATA(data, threadData, gmData);
     if (!gmData->nlsData) {
       return -1;
@@ -1003,7 +1003,7 @@ void freeDatagm(DATA_GM* gmData) {
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
-      warningStreamPrint(LOG_SOLVER, 0, "Not handled RK_NLS_METHOD in freeDatagm. Are we leaking memroy?");
+      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDatagm. Are we leaking memroy?");
       break;
     }
     free(dataSolver);
