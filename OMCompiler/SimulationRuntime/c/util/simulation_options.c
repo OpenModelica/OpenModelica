@@ -872,6 +872,8 @@ const char *GM_SINGLERATE_METHOD_NAME[RK_MAX] = {
   /* RK_ESDIRK3_test */  "esdirk3_test",
   /* RK_GAUSS2 */        "gauss2",
   /* RK_MERSON */        "merson",
+  /* RK_FEHLBERG45 */    "fehlberg45",
+  /* RK_FEHLBERG78 */    "fehlberg78",
   /* RK_DOPRI45 */       "dopri45"
 };
 
@@ -888,6 +890,8 @@ const char *GM_SINGLERATE_METHOD_DESC[RK_MAX] = {
   /* RK_ESDIRK3_test */  "esdirk3_test",
   /* RK_GAUSS2 */        "gauss2",
   /* RK_MERSON */        "merson",
+  /* RK_FEHLBERG45 */    "fehlberg45",
+  /* RK_FEHLBERG78 */    "fehlberg78",
   /* RK_DOPRI45 */       "dopri45"
 };
 

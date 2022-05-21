@@ -459,8 +459,12 @@ BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method) {
       getButcherTableau_DOPRI45(tableau);
       break;
     case RK_MERSON:
-      //getButcherTableau_MERSON(tableau);
-      //getButcherTableau_FEHLBERG54(tableau);
+      getButcherTableau_MERSON(tableau);
+      break;
+    case RK_FEHLBERG45:
+      getButcherTableau_FEHLBERG54(tableau);
+      break;
+    case RK_FEHLBERG78:
       getButcherTableau_FEHLBERG87(tableau);
       break;
     case RK_SDIRK2:
