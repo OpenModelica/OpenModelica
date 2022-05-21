@@ -74,6 +74,7 @@ typedef struct DATA_GMRI{
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;
   int nStates, nFastStates, nSlowStates, *fastStates, *slowStates;
+  int nFastStates_old, *fastStates_old;
   int firstStep;
   int didEventStep;                   /* Will be used for updating the derivatives */
   int ringBufferSize;

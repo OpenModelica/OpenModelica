@@ -70,6 +70,7 @@ int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN
 
 SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
 SPARSE_PATTERN* initializeSparsePattern_DIRK(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
+void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages);
 
 
 // step size control function
@@ -340,6 +341,12 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
 
   gmriData->nFastStates = gmriData->nStates;
   gmriData->nSlowStates = 0;
+  gmriData->fastStates_old = malloc(sizeof(int)*gmriData->nStates);
+  gmriData->nFastStates_old = gmriData->nFastStates;
+  for (int i=0; i<gmriData->nStates; i++)
+  {
+    gmriData->fastStates_old[i] = i;
+  }
 
   printButcherTableau(gmriData->tableau);
 
@@ -429,6 +436,7 @@ void freeDataGenericRK_MR(DATA_GMRI* gmriData) {
   free(gmriData->err);
   free(gmriData->errValues);
   free(gmriData->stepSizeValues);
+  free(gmriData->fastStates_old);
 
   free(gmriData);
   gmriData = NULL;
@@ -963,16 +971,28 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     }
     messageClose(LOG_SOLVER);
 
-    if (gmriData->symJacAvailable) {
+    modelica_boolean fastStateChange = FALSE;
+    if (gmriData->nFastStates != gmriData->nFastStates_old) {
+      infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %g", gmriData->nFastStates, gmriData->nFastStates_old);
+      fastStateChange = TRUE;
+    } else {
+      for (int k=0; k<nFastStates; k++)
+        if (gmriData->fastStates[k] - gmriData->fastStates_old[k]) {
+          if(ACTIVE_STREAM(LOG_SOLVER))
+          {
+            printIntVector_genericRK("old fast States:", gmriData->fastStates_old, gmriData->nFastStates_old, gsriData->time);
+            printIntVector_genericRK("new fast States:", gmriData->fastStates, gmriData->nFastStates, gsriData->time);
+          }
+          fastStateChange = TRUE;
+          break;
+        }
+    }
+
+    if (gmriData->symJacAvailable && fastStateChange) {
+
       // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
       SPARSE_PATTERN* sparsePattern_DIRK = gsriData->jacobian->sparsePattern;
       SPARSE_PATTERN* sparsePattern_MR = gmriData->jacobian->sparsePattern;
-
-      // printSparseStructure(sparsePattern_DIRK,
-      //                     nStates,
-      //                     nStates,
-      //                     LOG_MULTIRATE,
-      //                     "sparsePattern_DIRK");
 
       /* Set sparsity pattern for the fast states */
       ii = 0;
@@ -1003,19 +1023,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       sparsePattern_MR->numberOfNonZeros = ll;
       sparsePattern_MR->sizeofIndex = ll;
 
-//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
-      // trivial coloring
-      // sparsePattern_MR->maxColors = nFastStates;
-      // for (i=0; i < nFastStates; i++)
-      //   sparsePattern_MR->colorCols[i] = i+1;
-
-      // Just take the coloring from DIRK
-      sparsePattern_MR->maxColors = sparsePattern_DIRK->maxColors;
-      for (ii=0; ii < nFastStates; ii++) {
-        i = gmriData->fastStates[ii];
-        sparsePattern_MR->colorCols[ii] = sparsePattern_DIRK->colorCols[i];
-      }
-//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+      ColoringAlg(sparsePattern_MR, nFastStates, nFastStates, 1);
 
       gmriData->jacobian->sizeCols = nFastStates;
       gmriData->jacobian->sizeRows = nFastStates;
