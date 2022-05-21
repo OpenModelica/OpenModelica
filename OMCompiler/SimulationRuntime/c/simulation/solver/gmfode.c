@@ -35,7 +35,7 @@
  *  \author bbachmann
  */
 
-#include "generic_rk.h"
+#include "gmode.h"
 
 #include <float.h>
 #include <math.h>

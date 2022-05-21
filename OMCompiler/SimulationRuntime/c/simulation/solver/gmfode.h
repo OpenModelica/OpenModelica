@@ -37,8 +37,8 @@
 #include "simulation_data.h"
 #include "solver_main.h"
 
-#include "rk_butcher.h"
-#include "generic_rk.h"
+#include "gm_tableau.h"
+#include "gmode.h"
 
 /**
  * @brief Function to compute single Runge-Kutta step.

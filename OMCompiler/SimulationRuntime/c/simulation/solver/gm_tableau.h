@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef RK_BUTCHER_H
-#define RK_BUTCHER_H
+#ifndef gm_tableau_H
+#define gm_tableau_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -93,4 +93,4 @@ void printButcherTableau(BUTCHER_TABLEAU* tableau);
 }
 #endif
 
-#endif // RK_BUTCHER_H
+#endif // gm_tableau_H

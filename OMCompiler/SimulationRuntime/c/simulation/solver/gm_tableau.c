@@ -28,7 +28,7 @@
  *
  */
 
-/*! \file rk_butcher.c
+/*! \file gm_tableau.c
  *
  * Containing Butcher tableau for generic Runge-Kutta methods.
  */
@@ -36,7 +36,7 @@
 // BB ToDo: generate automatically the Butcher tableau for Richardson extrapolation
 // (depending on order) and introduce a corresponding flag
 
-#include "rk_butcher.h"
+#include "gm_tableau.h"
 
 #include <string.h>
 

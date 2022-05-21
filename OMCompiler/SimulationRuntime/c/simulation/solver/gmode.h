@@ -37,8 +37,8 @@
 #include "simulation_data.h"
 #include "solver_main.h"
 
-#include "generic_rk_mr.h"
-#include "rk_butcher.h"
+#include "gmfode.h"
+#include "gm_tableau.h"
 
 
 /**

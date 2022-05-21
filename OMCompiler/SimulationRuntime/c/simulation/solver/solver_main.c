@@ -54,8 +54,8 @@
 #include "synchronous.h"
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
-#include "generic_rk.h"
-#include "generic_rk_mr.h"
+#include "gmode.h"
+#include "gmfode.h"
 #include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
