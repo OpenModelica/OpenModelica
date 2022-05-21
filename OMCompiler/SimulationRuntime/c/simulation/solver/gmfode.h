@@ -28,11 +28,11 @@
  *
  */
 
-/*! \file DATA_GMRI.h
+/*! \file DATA_GMF.h
  */
 
-#ifndef _DATA_GMRI_H_
-#define _DATA_GMRI_H_
+#ifndef _DATA_GMF_H_
+#define _DATA_GMF_H_
 
 #include "simulation_data.h"
 #include "solver_main.h"
@@ -46,7 +46,7 @@
 typedef int (*rk_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 typedef double (*rk_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
 
-typedef struct DATA_GMRI{
+typedef struct DATA_GMF{
   DATA* data;                   // TODO AHeu: Can we get around having data and threadData inside this struct?
   threadData_t *threadData;     //            I'm afraid not...
   enum RK_SINGLERATE_METHOD RK_method;  /* Runge-Kutta method to use. */
@@ -87,9 +87,9 @@ typedef struct DATA_GMRI{
   unsigned int convergenceFailures;
   rk_step_function step_fun;
   rk_stepSize_control_function stepSize_control;
-} DATA_GMRI;
+} DATA_GMF;
 
-void freeDataGenericRK_MR(DATA_GMRI* data);
+void freeDataGenericRK_MR(DATA_GMF* data);
 int genericRK_MR_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
@@ -100,4 +100,4 @@ void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx);
 
 
 
-#endif /* _DATA_GMRI_H_ */
+#endif /* _DATA_GMF_H_ */

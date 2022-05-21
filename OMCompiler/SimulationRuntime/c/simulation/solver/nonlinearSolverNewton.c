@@ -86,11 +86,11 @@ int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* ja
   if(sysNumber>=0) {
     systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GSRI* gsriData = (DATA_GSRI*)data->simulationInfo->backupSolverData;
-    if (gsriData->multi_rate_phase)
-      systemData = gsriData->gmriData->nlsData;
+    DATA_GM* gmData = (DATA_GM*)data->simulationInfo->backupSolverData;
+    if (gmData->multi_rate_phase)
+      systemData = gmData->gmfData->nlsData;
     else
-      systemData = gsriData->nlsData;
+      systemData = gmData->nlsData;
   }
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   int index;
@@ -100,11 +100,11 @@ int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* ja
     index = systemData->jacobianIndex;
     jacobian = &(data->simulationInfo->analyticJacobians[index]);
   } else {
-    DATA_GSRI* gsriData = (DATA_GSRI*)data->simulationInfo->backupSolverData;
-    if (gsriData->multi_rate_phase)
-      jacobian = gsriData->gmriData->jacobian;
+    DATA_GM* gmData = (DATA_GM*)data->simulationInfo->backupSolverData;
+    if (gmData->multi_rate_phase)
+      jacobian = gmData->gmfData->jacobian;
     else
-      jacobian = gsriData->jacobian;
+      jacobian = gmData->jacobian;
   }
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
@@ -159,13 +159,13 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
   if(sysNumber>=0) {
     systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GSRI* gsriData = (DATA_GSRI*)data->simulationInfo->backupSolverData;
-    if (gsriData->multi_rate_phase) {
-      systemData = gsriData->gmriData->nlsData;
-      dataAndThreadData[2] = gsriData->gmriData;
+    DATA_GM* gmData = (DATA_GM*)data->simulationInfo->backupSolverData;
+    if (gmData->multi_rate_phase) {
+      systemData = gmData->gmfData->nlsData;
+      dataAndThreadData[2] = gmData->gmfData;
     } else {
-      systemData = gsriData->nlsData;
-      dataAndThreadData[2] = gsriData;
+      systemData = gmData->nlsData;
+      dataAndThreadData[2] = gmData;
     }
   }
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
@@ -235,11 +235,11 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
   if(sysNumber>=0) {
     systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GSRI* gsriData = (DATA_GSRI*)data->simulationInfo->backupSolverData;
-    if (gsriData->multi_rate_phase)
-      systemData = gsriData->gmriData->nlsData;
+    DATA_GM* gmData = (DATA_GM*)data->simulationInfo->backupSolverData;
+    if (gmData->multi_rate_phase)
+      systemData = gmData->gmfData->nlsData;
     else
-      systemData = gsriData->nlsData;
+      systemData = gmData->nlsData;
   }
 
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);

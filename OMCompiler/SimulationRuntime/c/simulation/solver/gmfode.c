@@ -111,7 +111,7 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
 struct RK_USER_DATA_MR {
   DATA* data;
   threadData_t* threadData;
-  DATA_GMRI* gmriData;
+  DATA_GMF* gmfData;
 };
 
 struct dataSolver
@@ -128,11 +128,11 @@ struct dataSolver
  *
  * @param data                        Runtime data struct.
  * @param threadData                  Thread data for error handling.
- * @param gmriData                     Runge-Kutta method.
+ * @param gmfData                     Runge-Kutta method.
  * @return NONLINEAR_SYSTEM_DATA*     Pointer to initialized non-linear system data.
  */
-NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GMRI* gmriData) {
-  assertStreamPrint(threadData, gmriData->type != RK_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
+NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GMF* gmfData) {
+  assertStreamPrint(threadData, gmfData->type != RK_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
   // TODO AHeu: Free solverData again
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
@@ -144,7 +144,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
 
-  nlsData->size = gmriData->nStates;
+  nlsData->size = gmfData->nStates;
   nlsData->equationIndex = -1;
 
   nlsData->homotopySupport = FALSE;
@@ -155,7 +155,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   nlsData->max = NULL;
   nlsData->nominal = NULL;
 
-  switch (gmriData->type)
+  switch (gmfData->type)
   {
   case RK_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK_MR;
@@ -164,8 +164,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
-    // gmriData->symJacAvailable = FALSE;
-    gmriData->symJacAvailable = TRUE;
+    // gmfData->symJacAvailable = FALSE;
+    gmfData->symJacAvailable = TRUE;
     break;
   case MS_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_MS_MR;
@@ -173,10 +173,10 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
-    gmriData->symJacAvailable = TRUE;
+    gmfData->symJacAvailable = TRUE;
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gmriData->type);
+    errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gmfData->type);
     break;
   }
 
@@ -200,12 +200,12 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
   // TODO: Free memory
-  gmriData->jacobian = initAnalyticJacobian(gmriData->nlSystemSize, gmriData->nlSystemSize, gmriData->nlSystemSize, NULL, nlsData->sparsePattern);
+  gmfData->jacobian = initAnalyticJacobian(gmfData->nlSystemSize, gmfData->nlSystemSize, gmfData->nlSystemSize, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
   /* Initialize NLS method */
-  switch (gmriData->nlsSolverMethod) {
+  switch (gmfData->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     nlsData->nlsMethod = NLS_NEWTON;
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
@@ -216,7 +216,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     break;
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    if (gmriData->symJacAvailable) {
+    if (gmfData->symJacAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
@@ -224,7 +224,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
-    if (gmriData->symJacAvailable) {
+    if (gmfData->symJacAvailable) {
       resetKinsolMemory(solverData->ordinaryData, nlsData);
     } else {
       resetKinsolMemory(solverData->ordinaryData, nlsData);
@@ -233,7 +233,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     }
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gmriData->nlsSolverMethod]);
+    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gmfData->nlsSolverMethod]);
     return NULL;
     break;
   }
@@ -249,47 +249,47 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gsriData)
+int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GM* gmData)
 {
-  DATA_GMRI* gmriData = (DATA_GMRI*) malloc(sizeof(DATA_GMRI));
-  gsriData->gmriData = gmriData;
+  DATA_GMF* gmfData = (DATA_GMF*) malloc(sizeof(DATA_GMF));
+  gmData->gmfData = gmfData;
 
-  gmriData->nStates = gsriData->nStates;
+  gmfData->nStates = gmData->nStates;
 
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  gmriData->RK_method = getRK_Method(FLAG_MR);
-  gmriData->tableau = initButcherTableau(gmriData->RK_method);
-  if (gmriData->tableau == NULL){
+  gmfData->RK_method = getRK_Method(FLAG_MR);
+  gmfData->tableau = initButcherTableau(gmfData->RK_method);
+  if (gmfData->tableau == NULL){
     // ERROR
     messageClose(LOG_STDOUT);
     omc_throw_function(threadData);
   }
 
   // Get size of non-linear system
-  analyseButcherTableau(gmriData->tableau, gmriData->nStates, &gmriData->nlSystemSize, &gmriData->type);
+  analyseButcherTableau(gmfData->tableau, gmfData->nStates, &gmfData->nlSystemSize, &gmfData->type);
 
-  if (gmriData->RK_method == MS_ADAMS_MOULTON) {
-    gmriData->nlSystemSize = gmriData->nStates;
-    gmriData->step_fun = &(full_implicit_MS_MR);
-    gmriData->type = MS_TYPE_IMPLICIT;
-    gmriData->isExplicit = FALSE;
+  if (gmfData->RK_method == MS_ADAMS_MOULTON) {
+    gmfData->nlSystemSize = gmfData->nStates;
+    gmfData->step_fun = &(full_implicit_MS_MR);
+    gmfData->type = MS_TYPE_IMPLICIT;
+    gmfData->isExplicit = FALSE;
   }
 
-  switch (gmriData->type)
+  switch (gmfData->type)
   {
   case RK_TYPE_EXPLICIT:
-    gmriData->isExplicit = TRUE;
-    gmriData->step_fun = &(expl_diag_impl_RK_MR);
+    gmfData->isExplicit = TRUE;
+    gmfData->step_fun = &(expl_diag_impl_RK_MR);
     break;
   case RK_TYPE_DIRK:
-    gmriData->isExplicit = FALSE;
-    gmriData->step_fun = &(expl_diag_impl_RK_MR);
+    gmfData->isExplicit = FALSE;
+    gmfData->step_fun = &(expl_diag_impl_RK_MR);
     break;
   case MS_TYPE_IMPLICIT:
-    gmriData->isExplicit = FALSE;
-    gmriData->step_fun = &(full_implicit_MS_MR);
+    gmfData->isExplicit = FALSE;
+    gmfData->step_fun = &(full_implicit_MS_MR);
     break;
 
   case RK_TYPE_IMPLICIT:
@@ -303,69 +303,69 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
     break;
   }
 
-  infoStreamPrint(LOG_SOLVER, 0, "Step control factor is set to %g", gmriData->tableau->fac);
+  infoStreamPrint(LOG_SOLVER, 0, "Step control factor is set to %g", gmfData->tableau->fac);
 
   const char* flag_StepSize_ctrl = omc_flagValue[FLAG_SR_CTRL];
 
   if (flag_StepSize_ctrl != NULL) {
-    gmriData->stepSize_control = &(PIController);
+    gmfData->stepSize_control = &(PIController);
     infoStreamPrint(LOG_SOLVER, 0, "PIController is use for step size control");
   } else
   {
-    gmriData->stepSize_control = &(IController);
+    gmfData->stepSize_control = &(IController);
     infoStreamPrint(LOG_SOLVER, 0, "IController is use for step size control");
   }
 
   // allocate memory for the generic RK method
-  gmriData->y = malloc(sizeof(double)*gmriData->nStates);
-  gmriData->yOld = malloc(sizeof(double)*gmriData->nStates);
-  gmriData->yt = malloc(sizeof(double)*gmriData->nStates);
-  gmriData->f = malloc(sizeof(double)*gmriData->nStates);
-  if (!gmriData->isExplicit) {
-    gmriData->Jf = malloc(sizeof(double)*gmriData->nStates*gmriData->nStates);
-    for (int i=0; i<gmriData->nStates*gmriData->nStates; i++)
-      gmriData->Jf[i] = 0;
+  gmfData->y = malloc(sizeof(double)*gmfData->nStates);
+  gmfData->yOld = malloc(sizeof(double)*gmfData->nStates);
+  gmfData->yt = malloc(sizeof(double)*gmfData->nStates);
+  gmfData->f = malloc(sizeof(double)*gmfData->nStates);
+  if (!gmfData->isExplicit) {
+    gmfData->Jf = malloc(sizeof(double)*gmfData->nStates*gmfData->nStates);
+    for (int i=0; i<gmfData->nStates*gmfData->nStates; i++)
+      gmfData->Jf[i] = 0;
 
   } else {
-    gmriData->Jf = NULL;
+    gmfData->Jf = NULL;
   }
-  gmriData->k = malloc(sizeof(double)*gmriData->nStates*gmriData->tableau->nStages);
-  gmriData->x = malloc(sizeof(double)*gmriData->nStates*gmriData->tableau->nStages);
-  gmriData->res_const = malloc(sizeof(double)*gmriData->nStates);
-  gmriData->errest = malloc(sizeof(double)*gmriData->nStates);
-  gmriData->errtol = malloc(sizeof(double)*gmriData->nStates);
-  gmriData->err = malloc(sizeof(double)*gmriData->nStates);
-  gmriData->ringBufferSize = 5;
-  gmriData->errValues = malloc(sizeof(double)*gmriData->ringBufferSize);
-  gmriData->stepSizeValues = malloc(sizeof(double)*gmriData->ringBufferSize);
+  gmfData->k = malloc(sizeof(double)*gmfData->nStates*gmfData->tableau->nStages);
+  gmfData->x = malloc(sizeof(double)*gmfData->nStates*gmfData->tableau->nStages);
+  gmfData->res_const = malloc(sizeof(double)*gmfData->nStates);
+  gmfData->errest = malloc(sizeof(double)*gmfData->nStates);
+  gmfData->errtol = malloc(sizeof(double)*gmfData->nStates);
+  gmfData->err = malloc(sizeof(double)*gmfData->nStates);
+  gmfData->ringBufferSize = 5;
+  gmfData->errValues = malloc(sizeof(double)*gmfData->ringBufferSize);
+  gmfData->stepSizeValues = malloc(sizeof(double)*gmfData->ringBufferSize);
 
-  gmriData->nFastStates = gmriData->nStates;
-  gmriData->nSlowStates = 0;
-  gmriData->fastStates_old = malloc(sizeof(int)*gmriData->nStates);
-  gmriData->nFastStates_old = gmriData->nFastStates;
-  for (int i=0; i<gmriData->nStates; i++)
+  gmfData->nFastStates = gmfData->nStates;
+  gmfData->nSlowStates = 0;
+  gmfData->fastStates_old = malloc(sizeof(int)*gmfData->nStates);
+  gmfData->nFastStates_old = gmfData->nFastStates;
+  for (int i=0; i<gmfData->nStates; i++)
   {
-    gmriData->fastStates_old[i] = i;
+    gmfData->fastStates_old[i] = i;
   }
 
-  printButcherTableau(gmriData->tableau);
+  printButcherTableau(gmfData->tableau);
 
   /* initialize statistic counter */
   // TODO AHeu: Use calloc instead?
-  gmriData->stepsDone = 0;
-  gmriData->evalFunctionODE = 0;
-  gmriData->evalJacobians = 0;
-  gmriData->errorTestFailures = 0;
-  gmriData->convergenceFailures = 0;
+  gmfData->stepsDone = 0;
+  gmfData->evalFunctionODE = 0;
+  gmfData->evalJacobians = 0;
+  gmfData->errorTestFailures = 0;
+  gmfData->convergenceFailures = 0;
 
   /* initialize analytic Jacobian, if available and needed */
-  if (!gmriData->isExplicit) {
+  if (!gmfData->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
-      gmriData->symJacAvailable = FALSE;
+      gmfData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
     } else {
-      gmriData->symJacAvailable = TRUE;
+      gmfData->symJacAvailable = TRUE;
       // TODO AHeu: Is there a reason we get the jacobian again? Did data->callback->initialAnalyticJacobianA change the pointer?
       // ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
@@ -375,18 +375,18 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
     }
 
   /* Allocate memory for the nonlinear solver */
-  //gmriData->nlsSolverMethod = getRK_NLS_Method();
-    gmriData->nlsSolverMethod = RK_NLS_NEWTON;
-    gmriData->nlsData = initRK_NLS_DATA_MR(data, threadData, gmriData);
-    if (!gmriData->nlsData) {
+  //gmfData->nlsSolverMethod = getRK_NLS_Method();
+    gmfData->nlsSolverMethod = RK_NLS_NEWTON;
+    gmfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gmfData);
+    if (!gmfData->nlsData) {
       return -1;
     }
   }  else
   {
-    gmriData->symJacAvailable = FALSE;
-    gmriData->nlsSolverMethod = RK_NLS_UNKNOWN;  // TODO AHeu: Add a no-solver option?
-    gmriData->nlsData = NULL;
-    gmriData->jacobian = NULL;
+    gmfData->symJacAvailable = FALSE;
+    gmfData->nlsSolverMethod = RK_NLS_UNKNOWN;  // TODO AHeu: Add a no-solver option?
+    gmfData->nlsData = NULL;
+    gmfData->jacobian = NULL;
   }
 
   return 0;
@@ -397,17 +397,17 @@ int allocateDataGenericRK_MR(DATA* data, threadData_t *threadData, DATA_GSRI* gs
  *
  * @param data    Pointer to generik Runge-Kutta data struct.
  */
-void freeDataGenericRK_MR(DATA_GMRI* gmriData) {
+void freeDataGenericRK_MR(DATA_GMF* gmfData) {
   /* Free non-linear system data */
-  if(gmriData->nlsData != NULL) {
-    struct dataSolver* dataSolver = gmriData->nlsData->solverData;
-    switch (gmriData->nlsSolverMethod)
+  if(gmfData->nlsData != NULL) {
+    struct dataSolver* dataSolver = gmfData->nlsData->solverData;
+    switch (gmfData->nlsSolverMethod)
     {
     case RK_NLS_NEWTON:
       freeNewtonData(dataSolver->ordinaryData);
       break;
     case RK_NLS_KINSOL:
-      //kinsolData = (NLS_KINSOL_DATA*) gsriData->nlsData->solverData;
+      //kinsolData = (NLS_KINSOL_DATA*) gmData->nlsData->solverData;
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
@@ -415,31 +415,31 @@ void freeDataGenericRK_MR(DATA_GMRI* gmriData) {
       break;
     }
     free(dataSolver);
-    free(gmriData->nlsData);
+    free(gmfData->nlsData);
   }
 
   /* Free Jacobian */
-  freeAnalyticJacobian(gmriData->jacobian);
+  freeAnalyticJacobian(gmfData->jacobian);
 
-  freeButcherTableau(gmriData->tableau);
+  freeButcherTableau(gmfData->tableau);
 
-  free(gmriData->y);
-  free(gmriData->yOld);
-  free(gmriData->yt);
-  free(gmriData->f);
-  free(gmriData->Jf);
-  free(gmriData->k);
-  free(gmriData->x);
-  free(gmriData->res_const);
-  free(gmriData->errest);
-  free(gmriData->errtol);
-  free(gmriData->err);
-  free(gmriData->errValues);
-  free(gmriData->stepSizeValues);
-  free(gmriData->fastStates_old);
+  free(gmfData->y);
+  free(gmfData->yOld);
+  free(gmfData->yt);
+  free(gmfData->f);
+  free(gmfData->Jf);
+  free(gmfData->k);
+  free(gmfData->x);
+  free(gmfData->res_const);
+  free(gmfData->errest);
+  free(gmfData->errtol);
+  free(gmfData->err);
+  free(gmfData->errValues);
+  free(gmfData->stepSizeValues);
+  free(gmfData->fastStates_old);
 
-  free(gmriData);
-  gmriData = NULL;
+  free(gmfData);
+  gmfData = NULL;
 
   return;
 }
@@ -460,13 +460,13 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   unsigned int i,j;
   unsigned int row, col;
 
-  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
-  DATA_GMRI* gmriData = gsriData->gmriData;
+  DATA_GM* gmData = (DATA_GM*) data->simulationInfo->backupSolverData;
+  DATA_GMF* gmfData = gmData->gmfData;
 
   SPARSE_PATTERN* sparsePattern_MR;
-  SPARSE_PATTERN* sparsePattern_DIRK = gsriData->jacobian->sparsePattern;
+  SPARSE_PATTERN* sparsePattern_DIRK = gmData->jacobian->sparsePattern;
 
-  int nStates = gmriData->nStates;
+  int nStates = gmfData->nStates;
 
   /* Compute size of new sparsitiy pattern
    * Increase the size to contain non-zero elements on diagonal. */
@@ -489,7 +489,7 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   memcpy(sparsePattern_MR->colorCols, sparsePattern_DIRK->colorCols, nStates*sizeof(unsigned int));
 
   // /* Set full matrix sparsitiy pattern */
-  // for (i=0; i < gmriData->nStates+1; i++)
+  // for (i=0; i < gmfData->nStates+1; i++)
   //   sparsePattern_MR->leadindex[i] = i * nStates;
   // for(i=0; i < nStates*nStates; i++) {
   //   sparsePattern_MR->index[i] = i% nStates;
@@ -526,28 +526,28 @@ void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *i
 {
   DATA *data = (DATA *)((void **)dataIn[0]);
   threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GMRI *gmriData = (DATA_GMRI *)((void **)dataIn[2]);
+  DATA_GMF *gmfData = (DATA_GMF *)((void **)dataIn[2]);
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
 
   int i, ii;
   int nStates = data->modelData->nStates;
-  int nStages = gmriData->tableau->nStages;
-  int nFastStates = gmriData->nFastStates;
-  int stage_   = gmriData->act_stage;
+  int nStages = gmfData->tableau->nStages;
+  int nFastStates = gmfData->nFastStates;
+  int stage_   = gmfData->act_stage;
 
   // Evaluate right hand side of ODE
   for (ii=0; ii < nFastStates;ii++) {
-    i = gmriData->fastStates[ii];
+    i = gmfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
+  wrapper_f_genericRK(data, threadData, &(gmfData->evalFunctionODE), fODE);
 
   for (ii=0; ii < nFastStates; ii++) {
-    i = gmriData->fastStates[ii];
-    res[ii] = gmriData->res_const[i] - xloc[ii] * gmriData->tableau->c[nStages-1] +
-                                       fODE[i] * gmriData->tableau->b[nStages-1] * gmriData->stepSize;
+    i = gmfData->fastStates[ii];
+    res[ii] = gmfData->res_const[i] - xloc[ii] * gmfData->tableau->c[nStages-1] +
+                                       fODE[i] * gmfData->tableau->b[nStages-1] * gmfData->stepSize;
   }
 
   return;
@@ -567,30 +567,30 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
 {
   DATA *data = (DATA *)((void **)dataIn[0]);
   threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GMRI *gmriData = (DATA_GMRI *)((void **)dataIn[2]);
+  DATA_GMF *gmfData = (DATA_GMF *)((void **)dataIn[2]);
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
 
   int i, ii;
   int nStates = data->modelData->nStates;
-  int nStages = gmriData->tableau->nStages;
-  int stage_  = gmriData->act_stage;
+  int nStages = gmfData->tableau->nStages;
+  int stage_  = gmfData->act_stage;
 
   // Evaluate right hand side of ODE
-  for (ii=0; ii<gmriData->nFastStates;ii++) {
-    i = gmriData->fastStates[ii];
+  for (ii=0; ii<gmfData->nFastStates;ii++) {
+    i = gmfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
+  wrapper_f_genericRK(data, threadData, &(gmfData->evalFunctionODE), fODE);
 
   // Evaluate residual
-  for (ii=0; ii<gmriData->nFastStates; ii++) {
-    i = gmriData->fastStates[ii];
-    res[ii] = gmriData->res_const[i] - xloc[ii] + gmriData->stepSize * gmriData->tableau->A[stage_ * nStages + stage_] * fODE[i];
+  for (ii=0; ii<gmfData->nFastStates; ii++) {
+    i = gmfData->fastStates[ii];
+    res[ii] = gmfData->res_const[i] - xloc[ii] + gmfData->stepSize * gmfData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
 
-  // printVector_genericRK("res", res, gmriData->nFastStates, gmriData->time);
+  // printVector_genericRK("res", res, gmfData->nFastStates, gmfData->time);
   return;
 }
 
@@ -599,7 +599,7 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
  *
  * @param inData            Void pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
- * @param gsriData     Runge-Kutta method.
+ * @param gmData     Runge-Kutta method.
  * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
@@ -607,19 +607,19 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
 int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
   DATA* data = (DATA*) inData;
-  DATA_GSRI* gsriData = (DATA_GSRI*) data->simulationInfo->backupSolverData;
-  DATA_GMRI* gmriData = gsriData->gmriData;
+  DATA_GM* gmData = (DATA_GM*) data->simulationInfo->backupSolverData;
+  DATA_GMF* gmfData = gmData->gmfData;
 
   /* define callback to column function of Jacobian ODE */
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
   int i, ii;
   int nStates = data->modelData->nStates;
-  int nStages = gmriData->tableau->nStages;
-  int nFastStates = gmriData->nFastStates;
-  int stage_ = gmriData->act_stage;
+  int nStages = gmfData->tableau->nStages;
+  int nFastStates = gmfData->nFastStates;
+  int stage_ = gmfData->act_stage;
 
-  // printSparseStructure(gmriData->jacobian->sparsePattern,
+  // printSparseStructure(gmfData->jacobian->sparsePattern,
   //                     nFastStates,
   //                     nFastStates,
   //                     LOG_STDOUT,
@@ -630,33 +630,33 @@ int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
   for (ii=0; ii<nFastStates; ii++)
   {
-    i = gmriData->fastStates[ii];
+    i = gmfData->fastStates[ii];
     if (jacobian->seedVars[ii])
       jacobian_ODE->seedVars[i] = 1;
   }
 
   // update timeValue and unknown vector based on the active column "stage_"
-  //sData->timeValue = gsriData->time + gsriData->tableau->c[stage_] * gsriData->stepSize;
+  //sData->timeValue = gmData->time + gmData->tableau->c[stage_] * gmData->stepSize;
 
   // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Update resultVars array */
   for (ii = 0; ii < nFastStates; ii++) {
-    i = gmriData->fastStates[ii];
-    if (gmriData->type == MS_TYPE_IMPLICIT) {
-      jacobian->resultVars[ii] = gmriData->tableau->b[nStages-1] * gmriData->stepSize * jacobian_ODE->resultVars[i];
+    i = gmfData->fastStates[ii];
+    if (gmfData->type == MS_TYPE_IMPLICIT) {
+      jacobian->resultVars[ii] = gmfData->tableau->b[nStages-1] * gmfData->stepSize * jacobian_ODE->resultVars[i];
     } else {
-      jacobian->resultVars[ii] = gmriData->stepSize * gmriData->tableau->A[stage_ * gmriData->tableau->nStages + stage_] * jacobian_ODE->resultVars[i];
+      jacobian->resultVars[ii] = gmfData->stepSize * gmfData->tableau->A[stage_ * gmfData->tableau->nStages + stage_] * jacobian_ODE->resultVars[i];
     }
     /* -1 on diagonal elements */
     if (jacobian->seedVars[ii] == 1) {
       jacobian->resultVars[ii] -= 1;
     }
   }
-  // printVector_genericRK("jacobian_ODE colums", jacobian_ODE->resultVars, nFastStates, gmriData->time);
-  // printVector_genericRK("jacobian colums", jacobian->resultVars, nFastStates, gmriData->time);
-  // printIntVector_genericRK("sparsity pattern colors", jacobian->sparsePattern->colorCols, nFastStates, gmriData->time);
+  // printVector_genericRK("jacobian_ODE colums", jacobian_ODE->resultVars, nFastStates, gmfData->time);
+  // printVector_genericRK("jacobian colums", jacobian->resultVars, nFastStates, gmfData->time);
+  // printIntVector_genericRK("sparsity pattern colors", jacobian->sparsePattern->colorCols, nFastStates, gmfData->time);
 
   return 0;
 }
@@ -676,98 +676,98 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
-  DATA_GMRI* gmriData = gsriData->gmriData;
+  DATA_GM* gmData = (DATA_GM*)solverInfo->solverData;
+  DATA_GMF* gmfData = gmData->gmfData;
 
   int i, ii;
   int stage, stage_;
   int nStates = data->modelData->nStates;
-  int nStages = gmriData->tableau->nStages;
+  int nStages = gmfData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // printVector_genericRK("k:  ", gmriData->k + 0 * nStates, nStates, gmriData->time);
-  // printVector_genericRK("k:  ", gmriData->k + 1 * nStates, nStates, gmriData->time);
-  // printVector_genericRK("x:  ", gmriData->x + 0 * nStates, nStates, gmriData->time);
-  // printVector_genericRK("x:  ", gmriData->x + 1 * nStates, nStates, gmriData->time);
+  // printVector_genericRK("k:  ", gmfData->k + 0 * nStates, nStates, gmfData->time);
+  // printVector_genericRK("k:  ", gmfData->k + 1 * nStates, nStates, gmfData->time);
+  // printVector_genericRK("x:  ", gmfData->x + 0 * nStates, nStates, gmfData->time);
+  // printVector_genericRK("x:  ", gmfData->x + 1 * nStates, nStates, gmfData->time);
 
   // Is this necessary???
-  // gmriData->data = (void*) data;
-  // gmriData->threadData = threadData;
+  // gmfData->data = (void*) data;
+  // gmfData->threadData = threadData;
 
   /* Predictor Schritt */
-  for (ii = 0; ii < gmriData->nFastStates; ii++)
+  for (ii = 0; ii < gmfData->nFastStates; ii++)
   {
-    i = gmriData->fastStates[ii];
-    // BB ToDo: check the formula with respect to gsriData->k[]
-    gmriData->yt[i] = 0;
+    i = gmfData->fastStates[ii];
+    // BB ToDo: check the formula with respect to gmData->k[]
+    gmfData->yt[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gmriData->yt[i] += -gmriData->x[stage_ * nStates + i] * gmriData->tableau->c[stage_] +
-                          gmriData->k[stage_ * nStates + i] * gmriData->tableau->bt[stage_] *  gmriData->stepSize;
+      gmfData->yt[i] += -gmfData->x[stage_ * nStates + i] * gmfData->tableau->c[stage_] +
+                          gmfData->k[stage_ * nStates + i] * gmfData->tableau->bt[stage_] *  gmfData->stepSize;
     }
-    gmriData->yt[i] += gmriData->k[stage_ * nStates + i] * gmriData->tableau->bt[stage_] * gmriData->stepSize;
-    gmriData->yt[i] /= gmriData->tableau->c[stage_];
+    gmfData->yt[i] += gmfData->k[stage_ * nStates + i] * gmfData->tableau->bt[stage_] * gmfData->stepSize;
+    gmfData->yt[i] /= gmfData->tableau->c[stage_];
   }
 
 
   /* Constant part of the multistep method */
-  for (ii = 0; ii < gmriData->nFastStates; ii++)
+  for (ii = 0; ii < gmfData->nFastStates; ii++)
   {
-    i = gmriData->fastStates[ii];
-    // BB ToDo: check the formula with respect to gsriData->k[]
-    gmriData->res_const[i] = 0;
+    i = gmfData->fastStates[ii];
+    // BB ToDo: check the formula with respect to gmData->k[]
+    gmfData->res_const[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gmriData->res_const[i] += -gmriData->x[stage_ * nStates + i] * gmriData->tableau->c[stage_] +
-                                 gmriData->k[stage_ * nStates + i] * gmriData->tableau->b[stage_] *  gmriData->stepSize;
+      gmfData->res_const[i] += -gmfData->x[stage_ * nStates + i] * gmfData->tableau->c[stage_] +
+                                 gmfData->k[stage_ * nStates + i] * gmfData->tableau->b[stage_] *  gmfData->stepSize;
     }
   }
-  // printVector_genericRK("res_const:  ", gsriData->res_const, nStates, gsriData->time);
+  // printVector_genericRK("res_const:  ", gmData->res_const, nStates, gmData->time);
 
   /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
     * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
   // here, it yields:   stage == stage_, and stage * nStages + stage_ is index of the diagonal element
 
   // set simulation time with respect to the current stage
-  sData->timeValue = gmriData->time + gmriData->stepSize;
-  // interpolate the slow states on the current time of gmriData->yOld for correct evaluation of gmriData->res_const
-  linear_interpolation_MR(gmriData->startTime, gmriData->yStart,
-                          gmriData->endTime, gmriData->yEnd,
-                          sData->timeValue,  sData->realVars, gmriData->nSlowStates, gmriData->slowStates);
+  sData->timeValue = gmfData->time + gmfData->stepSize;
+  // interpolate the slow states on the current time of gmfData->yOld for correct evaluation of gmfData->res_const
+  linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
+                          gmfData->endTime, gmfData->yEnd,
+                          sData->timeValue,  sData->realVars, gmfData->nSlowStates, gmfData->slowStates);
 
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-  NONLINEAR_SYSTEM_DATA* nlsData = gmriData->nlsData;
+  NONLINEAR_SYSTEM_DATA* nlsData = gmfData->nlsData;
   // Set start vector, BB ToDo: Ommit extrapolation after event!!!
 
-  memcpy(nlsData->nlsx, gmriData->yt, nStates*sizeof(modelica_real));
+  memcpy(nlsData->nlsx, gmfData->yt, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
-  gsriData->multi_rate_phase = 1;
+  gmData->multi_rate_phase = 1;
   solved = solveNLS(data, threadData, nlsData, -1);
   if (!solved) {
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_MS: Failed to solve NLS in full_implicit_MS");
     return -1;
   }
 
-  memcpy(gmriData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+  memcpy(gmfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
 
   /* Corrector Schritt */
-  for (ii = 0; ii < gmriData->nFastStates; ii++)
+  for (ii = 0; ii < gmfData->nFastStates; ii++)
   {
-    i = gmriData->fastStates[ii];
-    // BB ToDo: check the formula with respect to gsriData->k[]
-    gmriData->y[i] = 0;
+    i = gmfData->fastStates[ii];
+    // BB ToDo: check the formula with respect to gmData->k[]
+    gmfData->y[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gmriData->y[i] += -gmriData->x[stage_ * nStates + i] * gmriData->tableau->c[stage_] +
-                         gmriData->k[stage_ * nStates + i] * gmriData->tableau->b[stage_] *  gmriData->stepSize;
+      gmfData->y[i] += -gmfData->x[stage_ * nStates + i] * gmfData->tableau->c[stage_] +
+                         gmfData->k[stage_ * nStates + i] * gmfData->tableau->b[stage_] *  gmfData->stepSize;
     }
-    gmriData->y[i] += gmriData->k[stage_ * nStates + i] * gmriData->tableau->b[stage_] * gmriData->stepSize;
-    gmriData->y[i] /= gmriData->tableau->c[stage_];
+    gmfData->y[i] += gmfData->k[stage_ * nStates + i] * gmfData->tableau->b[stage_] * gmfData->stepSize;
+    gmfData->y[i] /= gmfData->tableau->c[stage_];
   }
   // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
-  memcpy(gmriData->x + stage_ * nStates, gmriData->y, nStates*sizeof(double));
+  memcpy(gmfData->x + stage_ * nStates, gmfData->y, nStates*sizeof(double));
 
   return 0;
 }
@@ -783,36 +783,36 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
-  DATA_GMRI* gmriData = gsriData->gmriData;
+  DATA_GM* gmData = (DATA_GM*)solverInfo->solverData;
+  DATA_GMF* gmfData = gmData->gmfData;
 
   int i, ii;
   int stage, stage_;
 
   int nStates = data->modelData->nStates;
-  int nFastStates = gmriData->nFastStates;
-  int nStages = gmriData->tableau->nStages;
+  int nFastStates = gmfData->nFastStates;
+  int nStages = gmfData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
   // Is this necessary???
-  // gmriData->data = (void*) data;
-  // gmriData->threadData = threadData;
+  // gmfData->data = (void*) data;
+  // gmfData->threadData = threadData;
 
-  // interpolate the slow states on the current time of gmriData->yOld for correct evaluation of gmriData->res_const
-  linear_interpolation_MR(gmriData->startTime, gmriData->yStart,
-                          gmriData->endTime,   gmriData->yEnd,
-                          gmriData->time, gmriData->yOld, gmriData->nSlowStates, gmriData->slowStates);
+  // interpolate the slow states on the current time of gmfData->yOld for correct evaluation of gmfData->res_const
+  linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
+                          gmfData->endTime,   gmfData->yEnd,
+                          gmfData->time, gmfData->yOld, gmfData->nSlowStates, gmfData->slowStates);
 
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  sData->timeValue = gmriData->time;
-  memcpy(sData->realVars, gmriData->yOld, nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
-  memcpy(gmriData->k, fODE, nStates*sizeof(double));
+  sData->timeValue = gmfData->time;
+  memcpy(sData->realVars, gmfData->yOld, nStates*sizeof(double));
+  wrapper_f_genericRK(data, threadData, &(gmfData->evalFunctionODE), fODE);
+  memcpy(gmfData->k, fODE, nStates*sizeof(double));
 
   for (stage = 0; stage < nStages; stage++)
   {
-    gmriData->act_stage = stage;
+    gmfData->act_stage = stage;
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // residual constant part:
     // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
@@ -820,45 +820,45 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
     for (i=0; i < nStates; i++)
     {
-      gmriData->res_const[i] = gmriData->yOld[i];
+      gmfData->res_const[i] = gmfData->yOld[i];
       for (stage_ = 0; stage_ < stage; stage_++)
-        gmriData->res_const[i] += gmriData->stepSize * gmriData->tableau->A[stage * nStages + stage_] * gmriData->k[stage_ * nStates + i];
+        gmfData->res_const[i] += gmfData->stepSize * gmfData->tableau->A[stage * nStages + stage_] * gmfData->k[stage_ * nStates + i];
     }
 
     // set simulation time with respect to the current stage
-    sData->timeValue = gmriData->time + gmriData->tableau->c[stage]*gmriData->stepSize;
+    sData->timeValue = gmfData->time + gmfData->tableau->c[stage]*gmfData->stepSize;
 
     // index of diagonal element of A
-    if (gmriData->tableau->A[stage * nStages + stage_] == 0)
+    if (gmfData->tableau->A[stage * nStages + stage_] == 0)
     {
       if (stage>0) {
-        memcpy(sData->realVars, gmriData->res_const, nStates*sizeof(double));
-        wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
+        memcpy(sData->realVars, gmfData->res_const, nStates*sizeof(double));
+        wrapper_f_genericRK(data, threadData, &(gmfData->evalFunctionODE), fODE);
       }
-//      memcpy(gmriData->x + stage_ * nStates, gmriData->res_const, nStates*sizeof(double));
+//      memcpy(gmfData->x + stage_ * nStates, gmfData->res_const, nStates*sizeof(double));
     }
     else
     {
       // interpolate the slow states on the time of the current stage
-      linear_interpolation_MR(gmriData->startTime, gmriData->yStart,
-                              gmriData->endTime,   gmriData->yEnd,
-                              sData->timeValue, sData->realVars, gmriData->nSlowStates, gmriData->slowStates);
+      linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
+                              gmfData->endTime,   gmfData->yEnd,
+                              sData->timeValue, sData->realVars, gmfData->nSlowStates, gmfData->slowStates);
 
       // BB ToDo: set good starting values for the newton solver (solution of the last newton iteration!)
       // setting the start vector for the newton step
       // for (i=0; i<nFastStates; i++)
-      //   solverData->x[i] = gmriData->yOld[gmriData->fastStates[i]];
+      //   solverData->x[i] = gmfData->yOld[gmfData->fastStates[i]];
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-      NONLINEAR_SYSTEM_DATA* nlsData = gmriData->nlsData;
+      NONLINEAR_SYSTEM_DATA* nlsData = gmfData->nlsData;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
       for (ii=0; ii<nFastStates; ii++) {
-          i = gmriData->fastStates[ii];
-          nlsData->nlsx[ii] = gmriData->yOld[i] + gmriData->tableau->c[stage_] * gmriData->stepSize * gmriData->k[i];
+          i = gmfData->fastStates[ii];
+          nlsData->nlsx[ii] = gmfData->yOld[i] + gmfData->tableau->c[stage_] * gmfData->stepSize * gmfData->k[i];
       }
-      //memcpy(nlsData->nlsx, gmriData->yOld, nStates*sizeof(modelica_real));
+      //memcpy(nlsData->nlsx, gmfData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
-      gsriData->multi_rate_phase = 1;
+      gmData->multi_rate_phase = 1;
       solved = solveNLS(data, threadData, nlsData, -1);
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "expl_diag_impl_RK: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
@@ -866,21 +866,21 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
     }
     // copy last calculation of fODE, which should coincide with k[i]
-    memcpy(gmriData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+    memcpy(gmfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
 
   }
 
   for (ii=0; ii<nFastStates; ii++)
   {
-    i = gmriData->fastStates[ii];
+    i = gmfData->fastStates[ii];
     // y   is the new approximation
     // yt  is the approximation of the embedded method for error estimation
-    gmriData->y[i]  = gmriData->yOld[i];
-    gmriData->yt[i] = gmriData->yOld[i];
+    gmfData->y[i]  = gmfData->yOld[i];
+    gmfData->yt[i] = gmfData->yOld[i];
     for (stage_=0; stage_<nStages; stage_++)
     {
-      gmriData->y[i]  += gmriData->stepSize * gmriData->tableau->b[stage_]  * (gmriData->k + stage_ * nStates)[i];
-      gmriData->yt[i] += gmriData->stepSize * gmriData->tableau->bt[stage_] * (gmriData->k + stage_ * nStates)[i];
+      gmfData->y[i]  += gmfData->stepSize * gmfData->tableau->b[stage_]  * (gmfData->k + stage_ * nStates)[i];
+      gmfData->yt[i] += gmfData->stepSize * gmfData->tableau->bt[stage_] * (gmfData->k + stage_ * nStates)[i];
     }
   }
 
@@ -898,8 +898,8 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GSRI* gsriData = (DATA_GSRI*)solverInfo->solverData;
-  DATA_GMRI* gmriData = gsriData->gmriData;
+  DATA_GM* gmData = (DATA_GM*)solverInfo->solverData;
+  DATA_GMF* gmfData = gmData->gmfData;
 
   double err, eventTime;
   double Atol = data->simulationInfo->tolerance;
@@ -909,90 +909,90 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   int integrator_step_info;
 
   int nStates = data->modelData->nStates;
-  int nFastStates = gsriData->nFastStates;
+  int nFastStates = gmData->nFastStates;
 
   // This is the target time of the main integrator
-  double innerTargetTime = fmin(targetTime, gsriData->timeRight);
+  double innerTargetTime = fmin(targetTime, gmData->timeRight);
 
   // BB ToDo: needs to be performed also after an event!!!
-  if (gmriData->didEventStep)
+  if (gmfData->didEventStep)
   {
      /* reset statistics because it is accumulated in solver_main.c */
-    gmriData->stepsDone = 0;
-    gmriData->evalFunctionODE = 0;
-    gmriData->evalJacobians = 0;
-    gmriData->errorTestFailures = 0;
-    gmriData->convergenceFailures = 0;
+    gmfData->stepsDone = 0;
+    gmfData->evalFunctionODE = 0;
+    gmfData->evalJacobians = 0;
+    gmfData->errorTestFailures = 0;
+    gmfData->convergenceFailures = 0;
 
-    gmriData->time = gsriData->time;
-    gmriData->stepSize = gsriData->lastStepSize;
+    gmfData->time = gmData->time;
+    gmfData->stepSize = gmData->lastStepSize;
     // BB ToDO: Copy only fast states!!
-    memcpy(gmriData->yOld, gsriData->yOld, sizeof(double)*gsriData->nStates);
-    gmriData->didEventStep = FALSE;
-    if (gmriData->type == MS_TYPE_IMPLICIT) {
-      memcpy(gmriData->x, gsriData->x, nStates*sizeof(double));
-      memcpy(gmriData->k, gsriData->k, nStates*sizeof(double));
+    memcpy(gmfData->yOld, gmData->yOld, sizeof(double)*gmData->nStates);
+    gmfData->didEventStep = FALSE;
+    if (gmfData->type == MS_TYPE_IMPLICIT) {
+      memcpy(gmfData->x, gmData->x, nStates*sizeof(double));
+      memcpy(gmfData->k, gmData->k, nStates*sizeof(double));
     }
   }
-//  gmriData->stepSize    = fmin(gmriData->stepSize, gsriData->timeRight - gmriData->time);
-  gmriData->startTime   = gsriData->timeLeft;
-  gmriData->endTime     = gsriData->timeRight;
-  gmriData->yStart      = gsriData->yLeft;
-  gmriData->yEnd        = gsriData->y;
-  gmriData->fastStates  = gsriData->fastStates;
-  gmriData->slowStates  = gsriData->slowStates;
-  gmriData->nFastStates = gsriData->nFastStates;
-  gmriData->nSlowStates = gsriData->nSlowStates;
+//  gmfData->stepSize    = fmin(gmfData->stepSize, gmData->timeRight - gmfData->time);
+  gmfData->startTime   = gmData->timeLeft;
+  gmfData->endTime     = gmData->timeRight;
+  gmfData->yStart      = gmData->yLeft;
+  gmfData->yEnd        = gmData->y;
+  gmfData->fastStates  = gmData->fastStates;
+  gmfData->slowStates  = gmData->slowStates;
+  gmfData->nFastStates = gmData->nFastStates;
+  gmfData->nSlowStates = gmData->nSlowStates;
 
-  if (!gmriData->isExplicit) {
-    struct dataSolver *solverDataStruct = gmriData->nlsData->solverData;
+  if (!gmfData->isExplicit) {
+    struct dataSolver *solverDataStruct = gmfData->nlsData->solverData;
     // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
-    gmriData->nlsData->size = gmriData->nFastStates;
-    switch (gmriData->nlsSolverMethod)
+    gmfData->nlsData->size = gmfData->nFastStates;
+    switch (gmfData->nlsSolverMethod)
     {
       case  RK_NLS_NEWTON:
-        ((DATA_NEWTON*) solverDataStruct->ordinaryData)->n = gmriData->nFastStates;
+        ((DATA_NEWTON*) solverDataStruct->ordinaryData)->n = gmfData->nFastStates;
         break;
       case  RK_NLS_KINSOL:
-        ((NLS_KINSOL_DATA*) solverDataStruct->ordinaryData)->size = gmriData->nFastStates;
+        ((NLS_KINSOL_DATA*) solverDataStruct->ordinaryData)->size = gmfData->nFastStates;
         break;
       default:
-        errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gmriData->nlsSolverMethod]);
+        errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", RK_NLS_METHOD_NAME[gmfData->nlsSolverMethod]);
         return -1;
         break;
     }
 
     infoStreamPrint(LOG_SOLVER, 1, "Fast states and corresponding nominal values:");
     for (ii=0; ii<nFastStates; ii++) {
-      i = gmriData->fastStates[ii];
+      i = gmfData->fastStates[ii];
     // Get the nominal values of the fast states
-      gmriData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-      infoStreamPrint(LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gsriData->nlsData->nominal[i]);
+      gmfData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+      infoStreamPrint(LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gmData->nlsData->nominal[i]);
     }
     messageClose(LOG_SOLVER);
 
     modelica_boolean fastStateChange = FALSE;
-    if (gmriData->nFastStates != gmriData->nFastStates_old) {
-      infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %g", gmriData->nFastStates, gmriData->nFastStates_old);
+    if (gmfData->nFastStates != gmfData->nFastStates_old) {
+      infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %g", gmfData->nFastStates, gmfData->nFastStates_old);
       fastStateChange = TRUE;
     } else {
       for (int k=0; k<nFastStates; k++)
-        if (gmriData->fastStates[k] - gmriData->fastStates_old[k]) {
+        if (gmfData->fastStates[k] - gmfData->fastStates_old[k]) {
           if(ACTIVE_STREAM(LOG_SOLVER))
           {
-            printIntVector_genericRK("old fast States:", gmriData->fastStates_old, gmriData->nFastStates_old, gsriData->time);
-            printIntVector_genericRK("new fast States:", gmriData->fastStates, gmriData->nFastStates, gsriData->time);
+            printIntVector_genericRK("old fast States:", gmfData->fastStates_old, gmfData->nFastStates_old, gmData->time);
+            printIntVector_genericRK("new fast States:", gmfData->fastStates, gmfData->nFastStates, gmData->time);
           }
           fastStateChange = TRUE;
           break;
         }
     }
 
-    if (gmriData->symJacAvailable && fastStateChange) {
+    if (gmfData->symJacAvailable && fastStateChange) {
 
       // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
-      SPARSE_PATTERN* sparsePattern_DIRK = gsriData->jacobian->sparsePattern;
-      SPARSE_PATTERN* sparsePattern_MR = gmriData->jacobian->sparsePattern;
+      SPARSE_PATTERN* sparsePattern_DIRK = gmData->jacobian->sparsePattern;
+      SPARSE_PATTERN* sparsePattern_MR = gmfData->jacobian->sparsePattern;
 
       /* Set sparsity pattern for the fast states */
       ii = 0;
@@ -1001,10 +1001,10 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       sparsePattern_MR->leadindex[0] = sparsePattern_DIRK->leadindex[0];
       for(rr=0; rr < nFastStates; rr++) {
-        r = gmriData->fastStates[rr];
+        r = gmfData->fastStates[rr];
         ii = 0;
         for(jj = sparsePattern_DIRK->leadindex[r]; jj < sparsePattern_DIRK->leadindex[r+1];) {
-          i = gmriData->fastStates[ii];
+          i = gmfData->fastStates[ii];
           j = sparsePattern_DIRK->index[jj];
           if( i == j) {
             sparsePattern_MR->index[ll] = ii;
@@ -1025,8 +1025,8 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       ColoringAlg(sparsePattern_MR, nFastStates, nFastStates, 1);
 
-      gmriData->jacobian->sizeCols = nFastStates;
-      gmriData->jacobian->sizeRows = nFastStates;
+      gmfData->jacobian->sizeCols = nFastStates;
+      gmfData->jacobian->sizeRows = nFastStates;
 
       printSparseStructure(sparsePattern_MR,
                            nFastStates,
@@ -1040,113 +1040,113 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // print informations on the calling details
   infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states):");
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (SR-stepsize: %10g)",
-                  gsriData->timeLeft, gsriData->timeRight, gsriData->lastStepSize);
+                  gmData->timeLeft, gmData->timeRight, gmData->lastStepSize);
   if(ACTIVE_STREAM(LOG_MULTIRATE))
   {
-    printVector_genericRK("yL: ", gsriData->yLeft, gsriData->nStates, gsriData->timeLeft);
-    printVector_genericRK("yR: ", gsriData->y, gsriData->nStates, gsriData->timeRight);
+    printVector_genericRK("yL: ", gmData->yLeft, gmData->nStates, gmData->timeLeft);
+    printVector_genericRK("yR: ", gmData->y, gmData->nStates, gmData->timeRight);
     printf("\n");
   }
 
-  while (gmriData->time < innerTargetTime)
+  while (gmfData->time < innerTargetTime)
   {
     do
     {
       if(ACTIVE_STREAM(LOG_MULTIRATE))
       {
-        //printVector_genericRK_MR("yOld: ", gmriData->yOld, gmriData->nStates, gmriData->time, gmriData->nFastStates, gmriData->fastStates);
-        printVector_genericRK("yOld: ", gmriData->yOld, gmriData->nStates, gmriData->time);
+        //printVector_genericRK_MR("yOld: ", gmfData->yOld, gmfData->nStates, gmfData->time, gmfData->nFastStates, gmfData->fastStates);
+        printVector_genericRK("yOld: ", gmfData->yOld, gmfData->nStates, gmfData->time);
       }
 
       // calculate one step of the integrator
-      integrator_step_info = gmriData->step_fun(data, threadData, solverInfo);
+      integrator_step_info = gmfData->step_fun(data, threadData, solverInfo);
 
       // error handling: try half of the step size!
       if (integrator_step_info != 0) {
-        errorStreamPrint(LOG_STDOUT, 0, "gmode_step: Failed to calculate step at time = %5g.", gmriData->time);
+        errorStreamPrint(LOG_STDOUT, 0, "gmode_step: Failed to calculate step at time = %5g.", gmfData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
-        gmriData->stepSize = gmriData->stepSize/2.;
+        gmfData->stepSize = gmfData->stepSize/2.;
         continue;
         //return -1;
       }
 
       for (i=0; i<nFastStates; i++)
       {
-        ii = gmriData->fastStates[i];
+        ii = gmfData->fastStates[i];
         // calculate corresponding values for the error estimator and step size control
-        gmriData->errtol[ii] = Rtol*fmax(fabs(gmriData->y[ii]),fabs(gmriData->yt[ii])) + Atol;
-        gmriData->errest[ii] = fabs(gmriData->y[ii] - gmriData->yt[ii]);
+        gmfData->errtol[ii] = Rtol*fmax(fabs(gmfData->y[ii]),fabs(gmfData->yt[ii])) + Atol;
+        gmfData->errest[ii] = fabs(gmfData->y[ii] - gmfData->yt[ii]);
       }
 
       /*** calculate error (infinity norm!)***/
       err = 0;
       for (i=0; i < nFastStates; i++)
       {
-        ii = gmriData->fastStates[i];
-        gmriData->err[ii] = gmriData->errest[ii]/gmriData->errtol[ii];
-        err = fmax(err, gmriData->err[ii]);
+        ii = gmfData->fastStates[i];
+        gmfData->err[ii] = gmfData->errest[ii]/gmfData->errtol[ii];
+        err = fmax(err, gmfData->err[ii]);
       }
 
-      gmriData->errValues[0] = gmriData->tableau->fac * err;
-      gmriData->stepSizeValues[0] = gmriData->stepSize;
+      gmfData->errValues[0] = gmfData->tableau->fac * err;
+      gmfData->stepSizeValues[0] = gmfData->stepSize;
 
       // Store performed stepSize for adjusting the time in case of latter interpolation
-      gmriData->lastStepSize = gmriData->stepSize;
+      gmfData->lastStepSize = gmfData->stepSize;
 
       // Call the step size control
-      gmriData->stepSize *= gmriData->stepSize_control(gmriData->errValues, gmriData->stepSizeValues, gmriData->tableau->error_order);
+      gmfData->stepSize *= gmfData->stepSize_control(gmfData->errValues, gmfData->stepSizeValues, gmfData->tableau->error_order);
 
       // Re-do step, if error is larger than requested
       if (err>1)
       {
-        gmriData->errorTestFailures++;
+        gmfData->errorTestFailures++;
         infoStreamPrint(LOG_MULTIRATE, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
-                        gmriData->time, gmriData->time + gmriData->lastStepSize, err, gmriData->stepSize);
+                        gmfData->time, gmfData->time + gmfData->lastStepSize, err, gmfData->stepSize);
       }
     } while  (err>1);
 
     // Count succesful integration steps
-    gmriData->stepsDone += 1;
+    gmfData->stepsDone += 1;
 
     // Rotate ring buffer
-    for (i=0; i<(gmriData->ringBufferSize-1); i++) {
-      gmriData->errValues[i+1] = gmriData->errValues[i];
-      gmriData->stepSizeValues[i+1] = gmriData->stepSizeValues[i];
+    for (i=0; i<(gmfData->ringBufferSize-1); i++) {
+      gmfData->errValues[i+1] = gmfData->errValues[i];
+      gmfData->stepSizeValues[i+1] = gmfData->stepSizeValues[i];
     }
 
-    if (gmriData->type == MS_TYPE_IMPLICIT) {
-      for (int stage_=0; stage_< (gmriData->tableau->nStages-1); stage_++) {
-        memcpy(gmriData->k + stage_ * nStates, gmriData->k + (stage_+1) * nStates, nStates*sizeof(double));
-        memcpy(gmriData->x + stage_ * nStates, gmriData->x + (stage_+1) * nStates, nStates*sizeof(double));
+    if (gmfData->type == MS_TYPE_IMPLICIT) {
+      for (int stage_=0; stage_< (gmfData->tableau->nStages-1); stage_++) {
+        memcpy(gmfData->k + stage_ * nStates, gmfData->k + (stage_+1) * nStates, nStates*sizeof(double));
+        memcpy(gmfData->x + stage_ * nStates, gmfData->x + (stage_+1) * nStates, nStates*sizeof(double));
       }
     }
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
-    linear_interpolation_MR(gmriData->startTime, gmriData->yStart,
-                            gmriData->endTime,   gmriData->yEnd,
-                            gmriData->time, gmriData->yOld, gmriData->nSlowStates, gmriData->slowStates);
-    linear_interpolation_MR(gmriData->startTime, gmriData->yStart,
-                            gmriData->endTime,   gmriData->yEnd,
-                            gmriData->time + gmriData->lastStepSize, gmriData->y, gmriData->nSlowStates, gmriData->slowStates);
-    eventTime = checkForEvents(data, threadData, solverInfo, gmriData->time, gmriData->yOld, gmriData->time + gmriData->lastStepSize, gmriData->y);
+    linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
+                            gmfData->endTime,   gmfData->yEnd,
+                            gmfData->time, gmfData->yOld, gmfData->nSlowStates, gmfData->slowStates);
+    linear_interpolation_MR(gmfData->startTime, gmfData->yStart,
+                            gmfData->endTime,   gmfData->yEnd,
+                            gmfData->time + gmfData->lastStepSize, gmfData->y, gmfData->nSlowStates, gmfData->slowStates);
+    eventTime = checkForEvents(data, threadData, solverInfo, gmfData->time, gmfData->yOld, gmfData->time + gmfData->lastStepSize, gmfData->y);
     if (eventTime > 0)
     {
       solverInfo->currentTime = eventTime;
       sData->timeValue = solverInfo->currentTime;
 
       // sData->realVars are the "numerical" values on the right hand side of the event
-      gsriData->time = eventTime;
-      memcpy(gsriData->yOld, sData->realVars, gmriData->nStates * sizeof(double));
+      gmData->time = eventTime;
+      memcpy(gmData->yOld, sData->realVars, gmfData->nStates * sizeof(double));
 
-      gmriData->time = eventTime;
-      memcpy(gmriData->yOld, sData->realVars, gmriData->nStates * sizeof(double));
+      gmfData->time = eventTime;
+      memcpy(gmfData->yOld, sData->realVars, gmfData->nStates * sizeof(double));
 
       /* write statistics to the solverInfo data structure */
-      solverInfo->solverStatsTmp[0] = gmriData->stepsDone;
-      solverInfo->solverStatsTmp[1] = gmriData->evalFunctionODE;
-      solverInfo->solverStatsTmp[2] = gmriData->evalJacobians;
-      solverInfo->solverStatsTmp[3] = gmriData->errorTestFailures;
-      solverInfo->solverStatsTmp[4] = gmriData->convergenceFailures;
+      solverInfo->solverStatsTmp[0] = gmfData->stepsDone;
+      solverInfo->solverStatsTmp[1] = gmfData->evalFunctionODE;
+      solverInfo->solverStatsTmp[2] = gmfData->evalJacobians;
+      solverInfo->solverStatsTmp[3] = gmfData->errorTestFailures;
+      solverInfo->solverStatsTmp[4] = gmfData->convergenceFailures;
 
       if(ACTIVE_STREAM(LOG_SOLVER))
       {
@@ -1157,76 +1157,76 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     }
 
     /* update time with performed stepSize */
-    gmriData->time += gmriData->lastStepSize;
+    gmfData->time += gmfData->lastStepSize;
     if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
-      printVector_genericRK("y:    ", gmriData->y, gmriData->nStates, gmriData->time);
+      printVector_genericRK("y:    ", gmfData->y, gmfData->nStates, gmfData->time);
     }
 
 
     /* step is accepted and yOld needs to be updated, store yOld for later interpolation... */
-    copyVector_genericRK_MR(gmriData->yt, gmriData->yOld, nFastStates, gmriData->fastStates);
+    copyVector_genericRK_MR(gmfData->yt, gmfData->yOld, nFastStates, gmfData->fastStates);
 
     /* step is accepted and yOld needs to be updated */
-    copyVector_genericRK_MR(gmriData->yOld, gmriData->y, nFastStates, gmriData->fastStates);
+    copyVector_genericRK_MR(gmfData->yOld, gmfData->y, nFastStates, gmfData->fastStates);
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
-                    gmriData->time- gmriData->lastStepSize, gmriData->time, err, gmriData->stepSize);
+                    gmfData->time- gmfData->lastStepSize, gmfData->time, err, gmfData->stepSize);
 
     // Dont disturb the inner step size control!!
-    if (gmriData->time + gmriData->stepSize > innerTargetTime)
+    if (gmfData->time + gmfData->stepSize > innerTargetTime)
       break;
   }
 
   // restore the last predicted step size, only necessary if last step size has been reduced to reach the target time
-  // gmriData->stepSize = gmriData->stepSize_old;
+  // gmfData->stepSize = gmfData->stepSize_old;
 
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
-  gsriData->err_fast = gmriData->errValues[0];
+  gmData->err_fast = gmfData->errValues[0];
 
   //outer integration needs to be synchronized
-  // if ((gmriData->time < gsriData->timeRight) && (gsriData->timeRight < targetTime))
-  if  ((gmriData->time + gmriData->stepSize > gsriData->timeRight) ||
-        (gsriData->time > targetTime) ||
-        ((gsriData->time < targetTime) && (gsriData->time + gsriData->lastStepSize > targetTime))
+  // if ((gmfData->time < gmData->timeRight) && (gmData->timeRight < targetTime))
+  if  ((gmfData->time + gmfData->stepSize > gmData->timeRight) ||
+        (gmData->time > targetTime) ||
+        ((gmData->time < targetTime) && (gmData->time + gmData->lastStepSize > targetTime))
       )
   {
-    gsriData->lastStepSize = gmriData->time - gsriData->timeLeft;
-    gsriData->timeRight = gmriData->time;
-    if (gsriData->time > gsriData->timeLeft)
-      gsriData->time = gmriData->time;
+    gmData->lastStepSize = gmfData->time - gmData->timeLeft;
+    gmData->timeRight = gmfData->time;
+    if (gmData->time > gmData->timeLeft)
+      gmData->time = gmfData->time;
     else
-      gsriData->time = gsriData->timeLeft;
+      gmData->time = gmData->timeLeft;
 
-    memcpy(gsriData->yOld, gmriData->y, gmriData->nStates * sizeof(double));
-    memcpy(gsriData->y, gmriData->y, gmriData->nStates * sizeof(double));
+    memcpy(gmData->yOld, gmfData->y, gmfData->nStates * sizeof(double));
+    memcpy(gmData->y, gmfData->y, gmfData->nStates * sizeof(double));
 
     // solverInfo->currentTime = eventTime;
     // sData->timeValue = solverInfo->currentTime;
-    copyVector_genericRK_MR(gsriData->err, gmriData->err, nFastStates, gmriData->fastStates);
-    // copyVector_genericRK_MR(gsriData->y, gmriData->y, nFastStates, gmriData->fastStates);
-    // copyVector_genericRK_MR(gsriData->yOld, gmriData->y, nFastStates, gmriData->fastStates);
+    copyVector_genericRK_MR(gmData->err, gmfData->err, nFastStates, gmfData->fastStates);
+    // copyVector_genericRK_MR(gmData->y, gmfData->y, nFastStates, gmfData->fastStates);
+    // copyVector_genericRK_MR(gmData->yOld, gmfData->y, nFastStates, gmfData->fastStates);
   }
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))
   {
     infoStreamPrint(LOG_SOLVER_V, 1, "gmode call statistics: ");
     infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
-    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gmriData->time);
-    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gmriData->stepSize);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", gmriData->stepsDone);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", gmriData->evalFunctionODE);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", gmriData->evalJacobians);
-    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", gmriData->errorTestFailures);
-    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", gmriData->convergenceFailures);
+    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gmfData->time);
+    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gmfData->stepSize);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", gmfData->stepsDone);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", gmfData->evalFunctionODE);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", gmfData->evalJacobians);
+    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", gmfData->errorTestFailures);
+    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", gmfData->convergenceFailures);
     messageClose(LOG_SOLVER_V);
   }
 
   /* write statistics to the solverInfo data structure */
-  solverInfo->solverStatsTmp[0] = gmriData->stepsDone;
-  solverInfo->solverStatsTmp[1] = gmriData->evalFunctionODE;
-  solverInfo->solverStatsTmp[2] = gmriData->evalJacobians;
-  solverInfo->solverStatsTmp[3] = gmriData->errorTestFailures;
-  solverInfo->solverStatsTmp[4] = gmriData->convergenceFailures;
+  solverInfo->solverStatsTmp[0] = gmfData->stepsDone;
+  solverInfo->solverStatsTmp[1] = gmfData->evalFunctionODE;
+  solverInfo->solverStatsTmp[2] = gmfData->evalJacobians;
+  solverInfo->solverStatsTmp[3] = gmfData->errorTestFailures;
+  solverInfo->solverStatsTmp[4] = gmfData->convergenceFailures;
 
   infoStreamPrint(LOG_SOLVER, 0, "Finished gmode inner step.");
   if(ACTIVE_STREAM(LOG_MULTIRATE))
