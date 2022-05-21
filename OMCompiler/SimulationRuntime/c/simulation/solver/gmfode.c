@@ -734,11 +734,18 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   // set simulation time with respect to the current stage
   sData->timeValue = gmfData->time + gmfData->stepSize;
   // interpolate the slow states on the current time of gmfData->yOld for correct evaluation of gmfData->res_const
-  linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
-                          gmfData->endTime,    gmfData->yEnd,
-                          sData->timeValue,    sData->realVars,
-                          gmfData->nSlowStates, gmfData->slowStates);
+if (gmfData->interpolation == 1) {
+    linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
+                            gmfData->endTime,    gmfData->yEnd,
+                            sData->timeValue,    sData->realVars,
+                            gmfData->nSlowStates, gmfData->slowStates);
 
+  } else {
+    hermite_interpolation_gmf(gmfData->startTime,  gmfData->yStart, gmfData->kStart,
+                              gmfData->endTime,    gmfData->yEnd,   gmfData->kEnd,
+                              sData->timeValue,    sData->realVars,
+                              gmfData->nSlowStates, gmfData->slowStates);
+  }
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
   NONLINEAR_SYSTEM_DATA* nlsData = gmfData->nlsData;
@@ -799,11 +806,19 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   modelica_boolean solved = FALSE;
 
   // interpolate the slow states on the current time of gmfData->yOld for correct evaluation of gmfData->res_const
-  linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
-                          gmfData->endTime,    gmfData->yEnd,
-                          gmfData->time,      gmfData->yOld,
-                          gmfData->nSlowStates, gmfData->slowStates);
+    if (gmfData->interpolation == 1) {
+    linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
+                            gmfData->endTime,    gmfData->yEnd,
+                            gmfData->time,       gmfData->yOld,
+                            gmfData->nSlowStates, gmfData->slowStates);
 
+  } else {
+    hermite_interpolation_gmf(gmfData->startTime, gmfData->yStart, gmfData->kStart,
+                              gmfData->endTime,   gmfData->yEnd,   gmfData->kEnd,
+                              gmfData->time,      gmfData->yOld,
+                              gmfData->nSlowStates, gmfData->slowStates);
+
+  }
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
   sData->timeValue = gmfData->time;
@@ -841,11 +856,18 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     else
     {
       // interpolate the slow states on the time of the current stage
+    if (gmfData->interpolation == 1) {
       linear_interpolation_gmf(gmfData->startTime,  gmfData->yStart,
                                gmfData->endTime,    gmfData->yEnd,
-                               sData->timeValue,   sData->realVars,
+                               sData->timeValue,    sData->realVars,
                                gmfData->nSlowStates, gmfData->slowStates);
+      } else {
+        hermite_interpolation_gmf(gmfData->startTime, gmfData->yStart, gmfData->kStart,
+                                  gmfData->endTime,   gmfData->yEnd,   gmfData->kEnd,
+                                  sData->timeValue,   sData->realVars,
+                                  gmfData->nSlowStates, gmfData->slowStates);
 
+      }
       // BB ToDo: set good starting values for the newton solver (solution of the last newton iteration!)
       // setting the start vector for the newton step
       // for (i=0; i<nFastStates; i++)
@@ -1124,14 +1146,27 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     }
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
-    linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
-                            gmfData->endTime,   gmfData->yEnd,
-                            gmfData->time,      gmfData->yOld,
-                            gmfData->nSlowStates, gmfData->slowStates);
-    linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
-                            gmfData->endTime,   gmfData->yEnd,
-                            gmfData->time + gmfData->lastStepSize, gmfData->y,
-                            gmfData->nSlowStates, gmfData->slowStates);
+      // interpolate the slow states on the time of the current stage
+    if (gmfData->interpolation == 1) {
+      linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
+                               gmfData->endTime,   gmfData->yEnd,
+                               gmfData->time,      gmfData->yOld,
+                               gmfData->nSlowStates, gmfData->slowStates);
+      linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
+                               gmfData->endTime,   gmfData->yEnd,
+                               gmfData->time + gmfData->lastStepSize, gmfData->y,
+                               gmfData->nSlowStates, gmfData->slowStates);
+    } else {
+      hermite_interpolation_gmf(gmfData->startTime, gmfData->yStart, gmfData->kStart,
+                                gmfData->endTime,   gmfData->yEnd,   gmfData->kEnd,
+                                gmfData->time,      gmfData->yOld,
+                                gmfData->nSlowStates, gmfData->slowStates);
+      hermite_interpolation_gmf(gmfData->startTime, gmfData->yStart, gmfData->kStart,
+                                gmfData->endTime,   gmfData->yEnd,   gmfData->kEnd,
+                                gmfData->time + gmfData->lastStepSize, gmfData->y,
+                                gmfData->nSlowStates, gmfData->slowStates);
+    }
+
     eventTime = checkForEvents(data, threadData, solverInfo, gmfData->time, gmfData->yOld, gmfData->time + gmfData->lastStepSize, gmfData->y);
     if (eventTime > 0)
     {
