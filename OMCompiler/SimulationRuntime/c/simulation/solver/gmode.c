@@ -71,6 +71,7 @@
 
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
+void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n);
 void printVector_genericRK(char name[], double* a, int n, double time);
 void printIntVector_genericRK(char name[], int* a, int n, double time);
 void printMatrix_genericRK(char name[], double* a, int n, double time);
@@ -2227,6 +2228,24 @@ void linear_interpolation(double ta, double* fa, double tb, double* fb, double t
   for (int i=0; i<n; i++)
   {
     f[i] = h0*fa[i] + h1*fb[i];
+  }
+}
+
+//auxiliary vector functions for better code structure
+void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n)
+{
+  double tt, h00, h01, h10, h11;
+  int i;
+
+  tt = (t-ta)/(tb-ta);
+  h00 = (1+2*tt)*(1-tt)*(1-tt);
+  h10 = (tb-ta)*tt*(1-tt)*(1-tt);
+  h01 = (3-2*tt)*tt*tt;
+  h11 = (tb-ta)*(tt-1)*tt*tt;
+
+  for (i=0; i<n; i++)
+  {
+    f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
   }
 }
 
