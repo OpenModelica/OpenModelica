@@ -974,7 +974,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     gsriData->sortedStates[i] = i;
   }
 
-  if (solverInfo->solverMethod == S_GMODE) {
+  if (gsriData->multi_rate) {
     allocateDataGenericRK_MR(data, threadData, gsriData);
   } else {
     gsriData->gmriData = NULL;
@@ -1925,7 +1925,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         gsriData->err_fast = 0;
         for (i=0; i<gsriData->nStates; i++)
         {
-          if (gsriData->err[i]>err_threshold)
+          if (gsriData->err[i]>=err_threshold || gsriData->percentage==1)
           {
             gsriData->fastStates[gsriData->nFastStates] = i;
             gsriData->nFastStates++;

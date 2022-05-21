@@ -456,38 +456,45 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   DATA_GMRI* gmriData = gsriData->gmriData;
 
   SPARSE_PATTERN* sparsePattern_MR;
+  SPARSE_PATTERN* sparsePattern_DIRK = gsriData->jacobian->sparsePattern;
 
   int nStates = gmriData->nStates;
 
   /* Compute size of new sparsitiy pattern
    * Increase the size to contain non-zero elements on diagonal. */
-  int length_column_indices = nStates + 1;
-  int length_index = nStates * nStates;
+  int sizeofIndex = sparsePattern_DIRK->sizeofIndex;
 
   // Allocate memory for new sparsity pattern
   sparsePattern_MR = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-  sparsePattern_MR->leadindex = (unsigned int*) malloc((length_column_indices)*sizeof(unsigned int));
-  sparsePattern_MR->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
-  sparsePattern_MR->sizeofIndex = length_index;
-  sparsePattern_MR->numberOfNonZeros = length_index;
-  sparsePattern_MR->colorCols = (unsigned int*) malloc(nStates*sizeof(unsigned int));
-  sparsePattern_MR->maxColors = nStates;
 
-  /* Set full matrix sparsitiy pattern */
-  for (i=0; i < gmriData->nStates+1; i++)
-    sparsePattern_MR->leadindex[i] = i * nStates;
-  for(i=0; i < nStates*nStates; i++) {
-    sparsePattern_MR->index[i] = i% nStates;
-  }
+  sparsePattern_MR->sizeofIndex = sizeofIndex;
+  sparsePattern_MR->numberOfNonZeros = sparsePattern_DIRK->numberOfNonZeros;
+  sparsePattern_MR->maxColors = sparsePattern_DIRK->maxColors;
+
+  sparsePattern_MR->leadindex = (unsigned int*) malloc((nStates + 1)*sizeof(unsigned int));
+  memcpy(sparsePattern_MR->leadindex, sparsePattern_DIRK->leadindex, (nStates + 1)*sizeof(unsigned int));
+
+  sparsePattern_MR->index = (unsigned int*) malloc(sizeofIndex*sizeof(unsigned int));
+  memcpy(sparsePattern_MR->index, sparsePattern_DIRK->index, sizeofIndex*sizeof(unsigned int));
+
+  sparsePattern_MR->colorCols = (unsigned int*) malloc(nStates*sizeof(unsigned int));
+  memcpy(sparsePattern_MR->colorCols, sparsePattern_DIRK->colorCols, nStates*sizeof(unsigned int));
+
+  // /* Set full matrix sparsitiy pattern */
+  // for (i=0; i < gmriData->nStates+1; i++)
+  //   sparsePattern_MR->leadindex[i] = i * nStates;
+  // for(i=0; i < nStates*nStates; i++) {
+  //   sparsePattern_MR->index[i] = i% nStates;
+  // }
 
   // printIntVector_genericRK("sparsePattern leadindex", sparsePattern_MR->leadindex, length_column_indices, 0);
   // printIntVector_genericRK("sparsePattern index", sparsePattern_MR->index, length_index, 0);
 
   // trivial coloring, needs to be set each call of MR, if number of fast States changes...
-  sparsePattern_MR->maxColors = nStates;
-  for (i=0; i < nStates; i++)
-    sparsePattern_MR->colorCols[i] = i+1;
-
+//   sparsePattern_MR->maxColors = nStates;
+//   for (i=0; i < nStates; i++)
+//     sparsePattern_MR->colorCols[i] = i+1;
+//
   // printSparseStructure(sparsePattern_MR,
   //                     nStates,
   //                     nStates,
@@ -519,16 +526,17 @@ void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *i
   int i, ii;
   int nStates = data->modelData->nStates;
   int nStages = gmriData->tableau->nStages;
+  int nFastStates = gmriData->nFastStates;
   int stage_   = gmriData->act_stage;
 
   // Evaluate right hand side of ODE
-  for (ii=0; ii<gmriData->nFastStates;ii++) {
+  for (ii=0; ii < nFastStates;ii++) {
     i = gmriData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
   wrapper_f_genericRK(data, threadData, &(gmriData->evalFunctionODE), fODE);
 
-  for (ii=0; ii<gmriData->nFastStates; ii++) {
+  for (ii=0; ii < nFastStates; ii++) {
     i = gmriData->fastStates[ii];
     res[ii] = gmriData->res_const[i] - xloc[ii] * gmriData->tableau->c[nStages-1] +
                                        fODE[i] * gmriData->tableau->b[nStages-1] * gmriData->stepSize;
@@ -946,24 +954,25 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         break;
     }
 
+    infoStreamPrint(LOG_SOLVER, 1, "Fast states and corresponding nominal values:");
     for (ii=0; ii<nFastStates; ii++) {
       i = gmriData->fastStates[ii];
-    // Get the nominal values of the states
+    // Get the nominal values of the fast states
       gmriData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+      infoStreamPrint(LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gsriData->nlsData->nominal[i]);
     }
+    messageClose(LOG_SOLVER);
 
     if (gmriData->symJacAvailable) {
+      // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
       SPARSE_PATTERN* sparsePattern_DIRK = gsriData->jacobian->sparsePattern;
       SPARSE_PATTERN* sparsePattern_MR = gmriData->jacobian->sparsePattern;
 
-      printIntVector_genericRK("DIRK->leadindex", sparsePattern_DIRK->leadindex, nStates + 1, gmriData->time);
-      printIntVector_genericRK("DIRK->index", sparsePattern_DIRK->index, sparsePattern_DIRK->sizeofIndex,  gmriData->time);
-
-      printSparseStructure(sparsePattern_DIRK,
-                          nStates,
-                          nStates,
-                          LOG_MULTIRATE,
-                          "sparsePattern_DIRK");
+      // printSparseStructure(sparsePattern_DIRK,
+      //                     nStates,
+      //                     nStates,
+      //                     LOG_MULTIRATE,
+      //                     "sparsePattern_DIRK");
 
       /* Set sparsity pattern for the fast states */
       ii = 0;
@@ -974,7 +983,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       for(rr=0; rr < nFastStates; rr++) {
         r = gmriData->fastStates[rr];
         ii = 0;
-        for(; jj < sparsePattern_DIRK->leadindex[r+1];) {
+        for(jj = sparsePattern_DIRK->leadindex[r]; jj < sparsePattern_DIRK->leadindex[r+1];) {
           i = gmriData->fastStates[ii];
           j = sparsePattern_DIRK->index[jj];
           if( i == j) {
@@ -994,18 +1003,19 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       sparsePattern_MR->numberOfNonZeros = ll;
       sparsePattern_MR->sizeofIndex = ll;
 
-      printIntVector_genericRK("MR->leadindex", sparsePattern_MR->leadindex, nFastStates + 1, gmriData->time);
-      printIntVector_genericRK("MR->index", sparsePattern_MR->index, sparsePattern_MR->sizeofIndex,  gmriData->time);
+//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+      // trivial coloring
+      // sparsePattern_MR->maxColors = nFastStates;
+      // for (i=0; i < nFastStates; i++)
+      //   sparsePattern_MR->colorCols[i] = i+1;
 
-      if (ACTIVE_STREAM(LOG_MULTIRATE))
-      {
-        printIntVector_genericRK("fast states", gmriData->fastStates, gmriData->nFastStates, gmriData->time);
+      // Just take the coloring from DIRK
+      sparsePattern_MR->maxColors = sparsePattern_DIRK->maxColors;
+      for (ii=0; ii < nFastStates; ii++) {
+        i = gmriData->fastStates[ii];
+        sparsePattern_MR->colorCols[ii] = sparsePattern_DIRK->colorCols[i];
       }
-
-      // trivial coloring, needs to be set each call of MR, if number of fast States changes...
-      gmriData->jacobian->sparsePattern->maxColors = nFastStates;
-      for (i=0; i < nFastStates; i++)
-        gmriData->jacobian->sparsePattern->colorCols[i] = i+1;
+//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
 
       gmriData->jacobian->sizeCols = nFastStates;
       gmriData->jacobian->sizeRows = nFastStates;
@@ -1018,6 +1028,7 @@ int genericRK_MR_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
     }
   }
+
   // print informations on the calling details
   infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states):");
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (SR-stepsize: %10g)",
