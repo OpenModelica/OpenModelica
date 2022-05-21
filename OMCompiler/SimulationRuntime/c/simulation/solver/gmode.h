@@ -105,10 +105,10 @@ typedef struct DATA_GM{
 
 enum RK_SINGLERATE_METHOD getRK_Method(enum _FLAG FLAG_SR_METHOD);
 enum RK_NLS_METHOD getRK_NLS_Method();
-int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-void freeDataGenericRK(DATA_GM* data);
+int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+void freeDatagm(DATA_GM* data);
 int gmode_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
+int wrapper_f_gm(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
 
 
 #endif /* _DATA_GM_H_ */

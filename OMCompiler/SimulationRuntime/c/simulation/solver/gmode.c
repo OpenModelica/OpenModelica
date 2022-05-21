@@ -40,7 +40,7 @@
  *
 */
 
-/*! \file genericRK.c
+/*! \file gm.c
  *  Implementation of a generic (implicit and explicit) Runge Kutta solver, which works for any
  *  order and stage based on a provided Butcher tableau. Utilizes the sparsity pattern of the ODE
  *  together with the KINSOL (KLU) solver
@@ -72,10 +72,10 @@
 //auxiliary vector functions
 void linear_interpolation(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n);
-void printVector_genericRK(char name[], double* a, int n, double time);
-void printIntVector_genericRK(char name[], int* a, int n, double time);
-void printMatrix_genericRK(char name[], double* a, int n, double time);
-void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx);
+void printVector_gm(char name[], double* a, int n, double time);
+void printIntVector_gm(char name[], int* a, int n, double time);
+void printMatrix_gm(char name[], double* a, int n, double time);
+void copyVector_gm_MR(double* a, double* b, int nIndx, int* indx);
 double getErrorThreshold(DATA_GM* gmData);
 
 // singlerate step function
@@ -93,7 +93,7 @@ int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIA
 
 void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
 
-void allocateDataGenericRK_MR(DATA* data, threadData_t* threadData, DATA_GM* gmData);
+void allocateDatagm_MR(DATA* data, threadData_t* threadData, DATA_GM* gmData);
 
 // step size control function
 double IController(double* err_values, double* stepSize_values, double err_order);
@@ -558,8 +558,8 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   numberOfNonZeros = i;
 
   if (ACTIVE_STREAM(LOG_MULTIRATE_V)){
-    printIntVector_genericRK("rows", coo_row, numberOfNonZeros, 0.0);
-    printIntVector_genericRK("cols", coo_col, numberOfNonZeros, 0.0);
+    printIntVector_gm("rows", coo_row, numberOfNonZeros, 0.0);
+    printIntVector_gm("cols", coo_col, numberOfNonZeros, 0.0);
   }
 
   int length_row_indices = jacobian->sizeCols*nStages+1;
@@ -591,7 +591,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages);
 
   // for (int k=0; k<nStages; k++)
-  //   printIntVector_genericRK("colorCols: ", &sparsePattern_IRK->colorCols[k*nStates], sizeCols, 0);
+  //   printIntVector_gm("colorCols: ", &sparsePattern_IRK->colorCols[k*nStates], sizeCols, 0);
 
   return sparsePattern_IRK;
 }
@@ -810,7 +810,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo) {
+int allocateDatagm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo) {
   DATA_GM* gmData = (DATA_GM*) malloc(sizeof(DATA_GM));
 
   // Set backup in simulationInfo
@@ -826,7 +826,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   gmData->RK_method = getRK_Method(FLAG_SR);
   gmData->tableau = initButcherTableau(gmData->RK_method);
   if (gmData->tableau == NULL){
-    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGenericRK: Failed to initialize butcher tableau for Runge-Kutta method %s", RK_SINGLERATE_METHOD_NAME[gmData->RK_method]);
+    errorStreamPrint(LOG_STDOUT, 0, "allocateDatagm: Failed to initialize butcher tableau for Runge-Kutta method %s", RK_SINGLERATE_METHOD_NAME[gmData->RK_method]);
     return -1;
   }
 
@@ -852,7 +852,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     gmData->step_fun = &(full_implicit_MS);
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGenericRK: Unknown Runge-Kutta type %i", gmData->type);
+    errorStreamPrint(LOG_STDOUT, 0, "allocateDatagm: Unknown Runge-Kutta type %i", gmData->type);
     return -1;
   }
   // adapt decision for testing of the fully implicit implementation
@@ -976,7 +976,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   }
 
   if (gmData->multi_rate) {
-    allocateDataGenericRK_MR(data, threadData, gmData);
+    allocateDatagm_MR(data, threadData, gmData);
   } else {
     gmData->gmfData = NULL;
   }
@@ -989,7 +989,7 @@ int allocateDataGenericRK(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
  *
  * @param gmData    Pointer to generik Runge-Kutta data struct.
  */
-void freeDataGenericRK(DATA_GM* gmData) {
+void freeDatagm(DATA_GM* gmData) {
   /* Free non-linear system data */
   if(gmData->nlsData != NULL) {
     struct dataSolver* dataSolver = gmData->nlsData->solverData;
@@ -1003,7 +1003,7 @@ void freeDataGenericRK(DATA_GM* gmData) {
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
-      warningStreamPrint(LOG_SOLVER, 0, "Not handled RK_NLS_METHOD in freeDataGenericRK. Are we leaking memroy?");
+      warningStreamPrint(LOG_SOLVER, 0, "Not handled RK_NLS_METHOD in freeDatagm. Are we leaking memroy?");
       break;
     }
     free(dataSolver);
@@ -1016,7 +1016,7 @@ void freeDataGenericRK(DATA_GM* gmData) {
   freeButcherTableau(gmData->tableau);
 
   if (gmData->multi_rate == 1) {
-    freeDataGenericRK_MR(gmData->gmfData);
+    freeDatagm_MR(gmData->gmfData);
   }
   /* Free multi-rate data */
   free(gmData->err);
@@ -1055,7 +1055,7 @@ void freeDataGenericRK(DATA_GM* gmData) {
  * @param fODE               Array of state derivatives.
  * @return int               Returns 0 on success.
  */
-int wrapper_f_genericRK(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE)
+int wrapper_f_gm(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE)
 {
   unsigned int* counter = (unsigned int*) evalFunctionODE;
 
@@ -1097,7 +1097,7 @@ void residual_MS(void **dataIn, const double *xloc, double *res, const int *ifla
 
   // Evaluate right hand side of ODE
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, &(gmData->evalFunctionODE), fODE);
+  wrapper_f_gm(data, threadData, &(gmData->evalFunctionODE), fODE);
 
   // Evaluate residual
   for (i=0; i<nStates; i++) {
@@ -1146,9 +1146,9 @@ int jacobian_SR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN
     }
   }
 
-  // printVector_genericRK("jacobian_ODE colums", jacobian_ODE->resultVars, nStates, gmData->time);
-  // printVector_genericRK("jacobian colums", jacobian->resultVars, nStates, gmData->time);
-  // printIntVector_genericRK("sparsity pattern colors", jacobian->sparsePattern->colorCols, nStates, gmData->time);
+  // printVector_gm("jacobian_ODE colums", jacobian_ODE->resultVars, nStates, gmData->time);
+  // printVector_gm("jacobian colums", jacobian->resultVars, nStates, gmData->time);
+  // printIntVector_gm("sparsity pattern colors", jacobian->sparsePattern->colorCols, nStates, gmData->time);
 
   return 0;
 }
@@ -1179,7 +1179,7 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
 
   // Evaluate right hand side of ODE
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, &(gmData->evalFunctionODE), fODE);
+  wrapper_f_gm(data, threadData, &(gmData->evalFunctionODE), fODE);
 
   // Evaluate residual
   for (i=0; i<nStates; i++) {
@@ -1219,7 +1219,7 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
     /* Evaluate ODE and compute res for each stage_ */
     sData->timeValue = gmData->time + gmData->tableau->c[stage_] * gmData->stepSize;
     memcpy(sData->realVars, &xloc[stage_*nStates], nStates*sizeof(double));
-    wrapper_f_genericRK(data, threadData, &(gmData->evalFunctionODE), fODE);
+    wrapper_f_gm(data, threadData, &(gmData->evalFunctionODE), fODE);
     memcpy(&gmData->k[stage_*nStates], fODE, nStates*sizeof(double));
   }
 
@@ -1329,10 +1329,10 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   int nStages = gmData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // printVector_genericRK("k:  ", gmData->k + 0 * nStates, nStates, gmData->time);
-  // printVector_genericRK("k:  ", gmData->k + 1 * nStates, nStates, gmData->time);
-  // printVector_genericRK("x:  ", gmData->x + 0 * nStates, nStates, gmData->time);
-  // printVector_genericRK("x:  ", gmData->x + 1 * nStates, nStates, gmData->time);
+  // printVector_gm("k:  ", gmData->k + 0 * nStates, nStates, gmData->time);
+  // printVector_gm("k:  ", gmData->k + 1 * nStates, nStates, gmData->time);
+  // printVector_gm("x:  ", gmData->x + 0 * nStates, nStates, gmData->time);
+  // printVector_gm("x:  ", gmData->x + 1 * nStates, nStates, gmData->time);
 
   /* Predictor Schritt */
   for (i = 0; i < nStates; i++)
@@ -1360,7 +1360,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
                                  gmData->k[stage_ * nStates + i] * gmData->tableau->b[stage_] *  gmData->stepSize;
     }
   }
-  // printVector_genericRK("res_const:  ", gmData->res_const, nStates, gmData->time);
+  // printVector_gm("res_const:  ", gmData->res_const, nStates, gmData->time);
 
   /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
     * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
@@ -1402,11 +1402,11 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
   memcpy(gmData->x + stage_ * nStates, gmData->y, nStates*sizeof(double));
 
-  // printVector_genericRK("yt: ", gmData->yt, nStates, gmData->time);
-  // printVector_genericRK("y:  ", gmData->y, nStates, gmData->time);
+  // printVector_gm("yt: ", gmData->yt, nStates, gmData->time);
+  // printVector_gm("y:  ", gmData->y, nStates, gmData->time);
 
-  // printVector_genericRK("k:  ", gmData->k + 0 * nStates, nStates, gmData->time);
-  // printVector_genericRK("k:  ", gmData->k + 1 * nStates, nStates, gmData->time);
+  // printVector_gm("k:  ", gmData->k + 0 * nStates, nStates, gmData->time);
+  // printVector_gm("k:  ", gmData->k + 1 * nStates, nStates, gmData->time);
 
 
   return 0;
@@ -1439,7 +1439,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
   sData->timeValue = gmData->time;
   memcpy(sData->realVars, gmData->yOld, nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, &(gmData->evalFunctionODE), fODE);
+  wrapper_f_gm(data, threadData, &(gmData->evalFunctionODE), fODE);
   memcpy(gmData->k, fODE, nStates*sizeof(double));
 
   /* Runge-Kutta step */
@@ -1471,7 +1471,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     {
       if (stage>0) {
         memcpy(sData->realVars, gmData->res_const, nStates*sizeof(double));
-        wrapper_f_genericRK(data, threadData, &(gmData->evalFunctionODE), fODE);
+        wrapper_f_gm(data, threadData, &(gmData->evalFunctionODE), fODE);
       }
       memcpy(gmData->x + stage_ * nStates, gmData->res_const, nStates*sizeof(double));
     }
@@ -1542,7 +1542,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
   memcpy(sData->realVars, gmData->yOld, nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, &(gmData->evalFunctionODE), fODE);
+  wrapper_f_gm(data, threadData, &(gmData->evalFunctionODE), fODE);
   memcpy(gmData->k, fODE, nStates*sizeof(double));
 
   /* Set start values for non-linear solver */
@@ -1590,7 +1590,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
  * @param threadData        Thread data for error handling.
  * @param solverInfo        Storing Runge-Kutta solver data.
  */
-void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+void gm_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
@@ -1641,12 +1641,12 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
          And should this also been copied to userdata->old (see above?)
   */
   /* initialize start values of the integrator and calculate ODE function*/
-  //printVector_genericRK("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
-  //printVector_genericRK("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
+  //printVector_gm("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
+  //printVector_gm("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
 
   memcpy(gmData->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
   memcpy(gmData->x, sData->realVars, data->modelData->nStates*sizeof(double));
-  wrapper_f_genericRK(data, threadData, &(gmData->evalFunctionODE), fODE);
+  wrapper_f_gm(data, threadData, &(gmData->evalFunctionODE), fODE);
   /* store values of the state derivatives at initial or event time */
   memcpy(gmData->f, fODE, data->modelData->nStates*sizeof(double));
   memcpy(gmData->k, fODE, nStates*sizeof(double));
@@ -1684,7 +1684,7 @@ void genericRK_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   }
   sData->timeValue += h0;
 
-  wrapper_f_genericRK(data, threadData, &(gmData->evalFunctionODE), fODE);
+  wrapper_f_gm(data, threadData, &(gmData->evalFunctionODE), fODE);
 
   for (i=0; i<data->modelData->nStates; i++)
   {
@@ -1795,7 +1795,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
   if(ACTIVE_STREAM(LOG_MULTIRATE_V))
   {
-    printVector_genericRK("yIni:", sData->realVars, gmData->nStates, sDataOld->timeValue);
+    printVector_gm("yIni:", sData->realVars, gmData->nStates, sDataOld->timeValue);
   }
   // TODO AHeu: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
   // Also instead of solverInfo->integratorSteps we should set and use solverInfo->solverNoEquidistantGrid
@@ -1820,7 +1820,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   // (Re-)initialize after events or at first call of gmode_step
   if (solverInfo->didEventStep == 1 || gmData->isFirstStep)
   {
-    genericRK_first_step(data, threadData, solverInfo);
+    gm_first_step(data, threadData, solverInfo);
 
     // side effect:
     //    sData->realVars, userdata->yOld, and userdata->f are consistent
@@ -1830,7 +1830,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   // Check if multirate step is necessary, otherwise the correct values are already stored in sData
   if (gmData->multi_rate)
     if (gmData->nFastStates > 0 && gmData->gmfData->time < gmData->time)
-      if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
+      if (gm_MR_step(data, threadData, solverInfo, targetTime))
               return 0;
 
 
@@ -1839,8 +1839,8 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   {
     do
     {
-      // printVector_genericRK("yOld: ", gmData->yOld, nStates, gmData->time);
-      // printVector_genericRK("y:    ", gmData->y, nStates, gmData->time);
+      // printVector_gm("yOld: ", gmData->yOld, nStates, gmData->time);
+      // printVector_gm("y:    ", gmData->y, nStates, gmData->time);
       /* store yOld in yLeft for interpolation purposes, if necessary
       * BB: Check condition
       */
@@ -1849,7 +1849,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
       if(ACTIVE_STREAM(LOG_MULTIRATE_V))
       {
-        printVector_genericRK("yOld: ", gmData->yOld, gmData->nStates, gmData->time);
+        printVector_gm("yOld: ", gmData->yOld, gmData->nStates, gmData->time);
       }
 
       /* calculate jacobian:
@@ -1894,10 +1894,10 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       }
       err = gmData->tableau->fac * err;
 
-      // printVector_genericRK("Error before sorting:", gmData->err, gmData->nStates, gmData->time);
-      // printIntVector_genericRK("Indices before sorting:", gmData->sortedStates, gmData->nStates, gmData->time);
-      // printIntVector_genericRK("Indices after sorting:", gmData->sortedStates, gmData->nStates, gmData->time);
-      // printVector_genericRK_MR("Error after sorting:", gmData->err, gmData->nStates, gmData->time,  gmData->nStates, gmData->sortedStates);
+      // printVector_gm("Error before sorting:", gmData->err, gmData->nStates, gmData->time);
+      // printIntVector_gm("Indices before sorting:", gmData->sortedStates, gmData->nStates, gmData->time);
+      // printIntVector_gm("Indices after sorting:", gmData->sortedStates, gmData->nStates, gmData->time);
+      // printVector_gm_MR("Error after sorting:", gmData->err, gmData->nStates, gmData->time,  gmData->nStates, gmData->sortedStates);
 
       if (gmData->multi_rate && (err > 0.0))
       {
@@ -1913,8 +1913,8 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         {
           for (int k=0; k<nStates; k++)
             if (sortedStates[k] - gmData->sortedStates[k]) {
-              printIntVector_genericRK("sortedStates before:", sortedStates, nStates, gmData->time);
-              printIntVector_genericRK("sortedStates after:", gmData->sortedStates, nStates, gmData->time);
+              printIntVector_gm("sortedStates before:", sortedStates, nStates, gmData->time);
+              printIntVector_gm("sortedStates after:", gmData->sortedStates, nStates, gmData->time);
               break;
             }
             free(sortedStates);
@@ -1957,11 +1957,11 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       // Call the step size control
       gmData->stepSize *= gmData->stepSize_control(gmData->errValues, gmData->stepSizeValues, gmData->tableau->error_order);
 
-      // printVector_genericRK("y     ", gmData->y, gmData->nStates, sData->timeValue);
-      // printVector_genericRK("yt    ", gmData->yt, gmData->nStates, sData->timeValue);
-      // printVector_genericRK("errest", gmData->errest, gmData->nStates, sData->timeValue);
-      // printVector_genericRK("errtol", gmData->errtol, gmData->nStates, sData->timeValue);
-      // printVector_genericRK("err   ", gmData->err, gmData->nStates, sData->timeValue);
+      // printVector_gm("y     ", gmData->y, gmData->nStates, sData->timeValue);
+      // printVector_gm("yt    ", gmData->yt, gmData->nStates, sData->timeValue);
+      // printVector_gm("errest", gmData->errest, gmData->nStates, sData->timeValue);
+      // printVector_gm("errtol", gmData->errtol, gmData->nStates, sData->timeValue);
+      // printVector_gm("err   ", gmData->err, gmData->nStates, sData->timeValue);
 
 
       //printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
@@ -1989,20 +1989,20 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         //     gmData->nFastStates + gmData->nSlowStates - gmData->nStates);
         if (gmData->nFastStates>0  && gmData->err_fast > 0)
         {
-          if (genericRK_MR_step(data, threadData, solverInfo, targetTime))
+          if (gm_MR_step(data, threadData, solverInfo, targetTime))
             return 0;
           // gmData->lastStepSize = gmData->gmfData->lastStepSize;
           // gmData->stepSize = gmData->gmfData->stepSize;
-          //  copyVector_genericRK_MR(rkData->y, rkData->gmfData->y, rkData->nFastStates, rkData->fastStates);
-          //  copyVector_genericRK_MR(rkData->yt, rkData->gmfData->yt, rkData->nFastStates, rkData->fastStates);
-          //  copyVector_genericRK_MR(rkData->err, rkData->gmfData->err, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_gm_MR(rkData->y, rkData->gmfData->y, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_gm_MR(rkData->yt, rkData->gmfData->yt, rkData->nFastStates, rkData->fastStates);
+          //  copyVector_gm_MR(rkData->err, rkData->gmfData->err, rkData->nFastStates, rkData->fastStates);
           /*** calculate error (infinity norm!)***/
           // err = 0;
           // for (i=0; i<data->modelData->nStates; i++)
           // {
           //   err = fmax(err, gmData->err[i]);
           // }
-          //printVector_genericRK("Error: ", rkData->err, rkData->nStates, rkData->time);
+          //printVector_gm("Error: ", rkData->err, rkData->nStates, rkData->time);
           err = gmData->err_fast;
         }
       }
@@ -2044,10 +2044,10 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         memcpy(gmData->x + stage_ * nStates, gmData->x + (stage_+1) * nStates, nStates*sizeof(double));
       }
       // for (int stage_=0; stage_< (gmData->tableau->nStages); stage_++) {
-      //   printVector_genericRK("gmData->k + stage_ * nStates    ", gmData->k + stage_ * nStates, nStates, gmData->time);
+      //   printVector_gm("gmData->k + stage_ * nStates    ", gmData->k + stage_ * nStates, nStates, gmData->time);
       // }
       // for (int stage_=0; stage_< (gmData->tableau->nStages); stage_++) {
-      //   printVector_genericRK("gmData->x + stage_ * nStates    ", gmData->x + stage_ * nStates, nStates, gmData->time);
+      //   printVector_gm("gmData->x + stage_ * nStates    ", gmData->x + stage_ * nStates, nStates, gmData->time);
       // }
     }
 
@@ -2063,11 +2063,11 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         // sData->realVars are the "numerical" values on the right hand side of the event
         gmData->time = eventTime;
         memcpy(gmData->yOld, sData->realVars, gmData->nStates * sizeof(double));
-        // printVector_genericRK("y:    ", gmData->y, nStates, gmData->time);
+        // printVector_gm("y:    ", gmData->y, nStates, gmData->time);
         if(ACTIVE_STREAM(LOG_MULTIRATE))
         {
-          printIntVector_genericRK("fast states:", gmData->fastStates, gmData->nFastStates, solverInfo->currentTime);
-          printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+          printIntVector_gm("fast states:", gmData->fastStates, gmData->nFastStates, solverInfo->currentTime);
+          printVector_gm("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
           messageClose(LOG_MULTIRATE);
         }
         if (!gmData->multi_rate || (gmData->multi_rate && !gmData->percentage))
@@ -2088,12 +2088,12 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
     if(ACTIVE_STREAM(LOG_MULTIRATE_V))
     {
-      printVector_genericRK("y:    ", gmData->y, gmData->nStates, gmData->time);
+      printVector_gm("y:    ", gmData->y, gmData->nStates, gmData->time);
     }
 
 
-    // printVector_genericRK("yOld", gmData->yOld, gmData->nStates, gmData->time - gmData->lastStepSize);
-    // printVector_genericRK("y   ", gmData->y, gmData->nStates, gmData->time);
+    // printVector_gm("yOld", gmData->yOld, gmData->nStates, gmData->time - gmData->lastStepSize);
+    // printVector_gm("y   ", gmData->y, gmData->nStates, gmData->time);
     /* step is accepted and yOld needs to be updated */
     memcpy(gmData->yOld, gmData->y, data->modelData->nStates*sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
@@ -2144,8 +2144,8 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
                           gmData->nSlowStates, gmData->slowStates);
     if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
-      printIntVector_genericRK("fast states:", gmData->fastStates, gmData->nFastStates, solverInfo->currentTime);
-      printVector_genericRK("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+      printIntVector_gm("fast states:", gmData->fastStates, gmData->nFastStates, solverInfo->currentTime);
+      printVector_gm("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
       messageClose(LOG_MULTIRATE);
     }
   }else{
@@ -2163,7 +2163,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   /* Solver statistics */
   if(ACTIVE_STREAM(LOG_SOLVER_V))
   {
-    infoStreamPrint(LOG_SOLVER_V, 1, "genericRK call statistics: ");
+    infoStreamPrint(LOG_SOLVER_V, 1, "gm call statistics: ");
     infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
     infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gmData->time);
     infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gmData->stepSize);
@@ -2185,7 +2185,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     solverInfo->solverStatsTmp[4] = gmData->convergenceFailures;
   }
 
-  infoStreamPrint(LOG_SOLVER, 0, "finished genericRK step.");
+  infoStreamPrint(LOG_SOLVER, 0, "finished gm step.");
   messageClose(LOG_SOLVER);
   return 0;
 }
@@ -2249,7 +2249,7 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
   }
 }
 
-void printVector_genericRK(char name[], double* a, int n, double time)
+void printVector_gm(char name[], double* a, int n, double time)
 {
   printf("%s\t(time = %14.8g):", name, time);
   for (int i=0;i<n;i++)
@@ -2257,7 +2257,7 @@ void printVector_genericRK(char name[], double* a, int n, double time)
   printf("\n");
 }
 
-void printIntVector_genericRK(char name[], int* a, int n, double time)
+void printIntVector_gm(char name[], int* a, int n, double time)
 {
   printf("%s\t(time = %g): \n", name, time);
   for (int i=0;i<n;i++)
@@ -2265,14 +2265,14 @@ void printIntVector_genericRK(char name[], int* a, int n, double time)
   printf("\n");
 }
 
-void copyVector_genericRK_MR(double* a, double* b, int nIndx, int* indx)
+void copyVector_gm_MR(double* a, double* b, int nIndx, int* indx)
 {
   for (int i=0;i<nIndx;i++)
     a[indx[i]] = b[indx[i]];
 }
 
 
-void printMatrix_genericRK(char name[], double* a, int n, double time)
+void printMatrix_gm(char name[], double* a, int n, double time)
 {
   printf("\n%s at time: %g: \n ", name, time);
   for (int i=0;i<n;i++)

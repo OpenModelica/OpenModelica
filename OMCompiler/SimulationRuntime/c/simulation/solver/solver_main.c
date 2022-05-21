@@ -260,7 +260,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_GMODE:
   {
-    if (allocateDataGenericRK(data, threadData, solverInfo) != 0) {
+    if (allocateDatagm(data, threadData, solverInfo) != 0) {
       throwStreamPrint(threadData, "Failed to allocate memory for generic RK solver.");
     }
     break;
@@ -417,7 +417,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
   else if (solverInfo->solverMethod == S_GMODE)
   {
-    freeDataGenericRK(solverInfo->solverData);
+    freeDatagm(solverInfo->solverData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
   else if(solverInfo->solverMethod == S_DASSL)

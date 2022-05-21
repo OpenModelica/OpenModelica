@@ -474,7 +474,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method) {
       break;
     case RK_ESDIRK2_test:
       getButcherTableau_ESDIRK2(tableau);
-      // //ESDIRK2 not optimized (just for testing) solved with genericRK solver method
+      // //ESDIRK2 not optimized (just for testing) solved with gm solver method
       // getButcherTableau_ESDIRK2(userdata);
       break;
     case RK_EXPL_EULER:
@@ -484,7 +484,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum RK_SINGLERATE_METHOD RK_method) {
       getButcherTableau_IMPLEULER(tableau);
       break;
     case RK_ESDIRK3_test:
-      //ESDIRK3 not optimized (just for testing) solved with genericRK solver method
+      //ESDIRK3 not optimized (just for testing) solved with gm solver method
       getButcherTableau_ESDIRK3(tableau);
       break;
     case RK_ESDIRK3:
