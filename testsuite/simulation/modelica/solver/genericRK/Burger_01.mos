@@ -14,8 +14,8 @@ end burgerEq;
 "); getErrorString();
 
 echo(false);
-system("rm -rf temp_Burger_01/ && mkdir temp_Burger_01/");
-cd("temp_Burger_01");
+system("rm -rf temp_Burger/ && mkdir temp_Burger/");
+cd("temp_Burger");
 echo(true);
 
 setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
