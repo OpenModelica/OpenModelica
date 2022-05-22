@@ -90,7 +90,7 @@ typedef struct DATA_GMF{
   gm_stepSize_control_function stepSize_control;
 } DATA_GMF;
 
-void freeDataGmf(DATA_GMF* data);
+void freeDataGbf(DATA_GMF* data);
 int gmfode_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
 //auxiliary vector functions
 void linear_interpolation_gm(double a, double* fa, double b, double* fb, double t, double *f, int n);

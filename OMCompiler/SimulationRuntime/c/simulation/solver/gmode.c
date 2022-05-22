@@ -815,7 +815,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int allocateDataGm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo) {
+int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo) {
   DATA_GM* gmData = (DATA_GM*) malloc(sizeof(DATA_GM));
 
   // Set backup in simulationInfo
@@ -999,7 +999,7 @@ int allocateDataGm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
  *
  * @param gmData    Pointer to generik Runge-Kutta data struct.
  */
-void freeDataGm(DATA_GM* gmData) {
+void freeDataGbode(DATA_GM* gmData) {
   /* Free non-linear system data */
   if(gmData->nlsData != NULL) {
     struct dataSolver* dataSolver = gmData->nlsData->solverData;
@@ -1013,7 +1013,7 @@ void freeDataGm(DATA_GM* gmData) {
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
-      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDataGm. Are we leaking memroy?");
+      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDataGbode. Are we leaking memroy?");
       break;
     }
     free(dataSolver);
@@ -1026,7 +1026,7 @@ void freeDataGm(DATA_GM* gmData) {
   freeButcherTableau(gmData->tableau);
 
   if (gmData->multi_rate == 1) {
-    freeDataGmf(gmData->gmfData);
+    freeDataGbf(gmData->gmfData);
   }
   /* Free multi-rate data */
   free(gmData->err);
@@ -1781,7 +1781,7 @@ double PIController(double* err_values, double* stepSize_values, double err_orde
  * @param solverInfo    Storing Runge-Kutta solver data.
  * @return int          Return 0 on success, -1 on failure.
  */
-int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1]; // BB: Is this the ring buffer???
@@ -1827,7 +1827,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     // targetTime = sDataOld->timeValue + solverInfo->currentStepSize;
   }
 
-  // (Re-)initialize after events or at first call of gmode_step
+  // (Re-)initialize after events or at first call of gbode_step
   if (solverInfo->didEventStep == 1 || gmData->isFirstStep)
   {
     gm_first_step(data, threadData, solverInfo);
@@ -1879,7 +1879,7 @@ int gmode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
       // error handling: try half of the step size!
       if (rk_step_info != 0) {
-        errorStreamPrint(LOG_STDOUT, 0, "gmode_step: Failed to calculate step at time = %5g.", gmData->time);
+        errorStreamPrint(LOG_STDOUT, 0, "gbode_step: Failed to calculate step at time = %5g.", gmData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
         gmData->stepSize = gmData->stepSize/2.;
         continue;

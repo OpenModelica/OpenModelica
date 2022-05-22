@@ -97,7 +97,7 @@ package HeatingSystemDiscrete
         StopTime=864000,
         __Dymola_NumberOfIntervals=5000,
         Tolerance=1e-006), __Dymola_experimentSetupOutput,
-      __OpenModelica_simulationFlags(gmfsolver = "sdirk2", gmsolver = "sdirk2", lv = "LOG_STATS", gmnls = "kinsol", gmratio = "1", s = "gmode"));
+      __OpenModelica_simulationFlags(gbfmeth = "sdirk2", gbmeth = "sdirk2", lv = "LOG_STATS", gbnls = "kinsol", gbratio = "1", s = "gmode"));
   end HeatingSystem;
   annotation (uses(Modelica(version="4.0.0")));
 end HeatingSystemDiscrete;

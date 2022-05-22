@@ -267,7 +267,7 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean rich
 
     setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
   } else {
-    tableau->nStages = 3;
+    tableau->nStages = 2;
     tableau->order_b = 1;
     tableau->order_bt = 2;
     tableau->fac = 1.0;
@@ -676,7 +676,10 @@ BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method, enum _F
   modelica_boolean richardson;
   const char* flag_value = omc_flagValue[FLAG_ERR];
 
-  richardson= (flag_value != NULL);
+  if (flag_value != NULL)
+    richardson = TRUE;
+  else
+    richardson = FALSE;
 
   switch(GM_method)
   {

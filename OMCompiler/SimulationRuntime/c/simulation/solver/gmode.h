@@ -106,9 +106,9 @@ typedef struct DATA_GM{
 
 enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD);
 enum GM_NLS_METHOD getGM_NLS_METHOD();
-int allocateDataGm(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-void freeDataGm(DATA_GM* data);
-int gmode_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+void freeDataGbode(DATA_GM* data);
+int gbode_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int wrapper_f_gm(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
 
 

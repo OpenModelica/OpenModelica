@@ -400,7 +400,7 @@ int allocateDataGmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
  *
  * @param data    Pointer to generik Runge-Kutta data struct.
  */
-void freeDataGmf(DATA_GMF* gmfData) {
+void freeDataGbf(DATA_GMF* gmfData) {
   /* Free non-linear system data */
   if(gmfData->nlsData != NULL) {
     struct dataSolver* dataSolver = gmfData->nlsData->solverData;
@@ -414,7 +414,7 @@ void freeDataGmf(DATA_GMF* gmfData) {
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
-      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDataGmf. Are we leaking memroy?");
+      warningStreamPrint(LOG_SOLVER, 0, "Not handled GM_NLS_METHOD in freeDataGbf. Are we leaking memroy?");
       break;
     }
     free(dataSolver);
@@ -1087,7 +1087,7 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
       // error handling: try half of the step size!
       if (integrator_step_info != 0) {
-        errorStreamPrint(LOG_STDOUT, 0, "gmode_step: Failed to calculate step at time = %5g.", gmfData->time);
+        errorStreamPrint(LOG_STDOUT, 0, "gbode_step: Failed to calculate step at time = %5g.", gmfData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
         gmfData->stepSize = gmfData->stepSize/2.;
         continue;
