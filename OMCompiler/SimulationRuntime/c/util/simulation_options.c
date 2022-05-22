@@ -886,6 +886,9 @@ const char *GM_SINGLERATE_METHOD_NAME[RK_MAX] = {
   /* RK_MERSON */        "merson",
   /* RK_FEHLBERG45 */    "fehlberg45",
   /* RK_FEHLBERG78 */    "fehlberg78",
+  /* RK_RK810 */         "rk810",
+  /* RK_RK1012 */        "rk1012",
+  /* RK_RK1214 */        "rk1214",
   /* RK_DOPRI45 */       "dopri45"
 };
 
@@ -904,6 +907,9 @@ const char *GM_SINGLERATE_METHOD_DESC[RK_MAX] = {
   /* RK_MERSON */        "merson",
   /* RK_FEHLBERG45 */    "fehlberg45",
   /* RK_FEHLBERG78 */    "fehlberg78",
+  /* RK_RK810 */         "rk810",
+  /* RK_RK1012 */        "rk1012",
+  /* RK_RK1214 */        "rk1214",
   /* RK_DOPRI45 */       "dopri45"
 };
 
