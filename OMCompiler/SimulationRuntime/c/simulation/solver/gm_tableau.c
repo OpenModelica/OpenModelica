@@ -54,6 +54,8 @@
 #define TRUE 1
 #endif
 
+// BB ToDo: implement sparse representation of the Butcher tableau, and use this in the expl_impl_diag routine
+
 void getRichardsonButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b, double *bt) {
   // create Butcher tableau based on Richardson extrapolation
 
@@ -61,7 +63,8 @@ void getRichardsonButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A,
   unsigned int p = tableau->order_b;
 
   int i, j;
-  double value = pow(2,p-1)/(pow(2,p)-1);
+  double v1 = -1.0/(pow(2.0,p)-1.0);
+  double v2 = pow(2.0,p-1)/(pow(2.0,p)-1.0);
 
   tableau->nStages = 3*nStages;
   tableau->order_b = p;
@@ -82,9 +85,9 @@ void getRichardsonButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A,
     tableau->b[i]              = 0.0;
     tableau->b[i + nStages]    = 0.0;
     tableau->b[i + 2*nStages]  = b[i];
-    tableau->bt[i]             = value*b[i];
-    tableau->bt[i + nStages]   = value*b[i];
-    tableau->bt[i + 2*nStages] = -b[i];
+    tableau->bt[i]             = v2*b[i];
+    tableau->bt[i + nStages]   = v2*b[i];
+    tableau->bt[i + 2*nStages] = v1*b[i];
   }
 
   for (i=0; i < tableau->nStages * tableau->nStages; i++)
@@ -92,14 +95,11 @@ void getRichardsonButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A,
 
   for (j=0; j < nStages; j++) {
     for (i=0; i < nStages; i++) {
-      tableau->A[ j              * tableau->nStages + i]             = A[j*nStages + i];
-      tableau->A[(j +   nStages) * tableau->nStages +   nStages + i] = A[j*nStages + i];
+      tableau->A[ j              * tableau->nStages + i]             = A[j*nStages + i]/2;
+      tableau->A[(j +   nStages) * tableau->nStages + i]             = b[i]/2;
+      tableau->A[(j +   nStages) * tableau->nStages +   nStages + i] = A[j*nStages + i]/2;
       tableau->A[(j + 2*nStages) * tableau->nStages + 2*nStages + i] = A[j*nStages + i];
     }
-  }
-  for (i=0; i < nStages; i++) {
-    tableau->A[      nStages * tableau->nStages + i] = b[i]/2;
-    tableau->A[(nStages + 1) * tableau->nStages + i] = b[i]/2;
   }
 }
 
@@ -122,9 +122,7 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b
 }
 
 void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
-  double lim = 0.7;
 
-  // ESDIRK2 method
   /* initialize values of the Butcher tableau */
   double gam = (2.0-sqrt(2.0))*0.5;
   double c2 = 2.0*gam;
@@ -139,23 +137,12 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richar
   tableau->nStages = 3;
   tableau->fac = 1.0;
   tableau->order_b = 2;
+  tableau->order_bt = 3;
 
-  if (lim<100)
-  {
-    tableau->order_bt = 1;
+  bt1 = 1.0/3.0-(sqrt(2.0))/12.0;
+  bt2 = 1.0/3.0+(sqrt(2.0))/4.0;
+  bt3 = -(sqrt(2.0))/6.0+1.0/3.0;
 
-    bt1 = 1.0/4.0*(-3.0*lim+1.0)*sqrt(2.0)+lim;
-    bt2 = -1.0/4.0*(3.0*sqrt(2.0)-4.0)*(-2.0*sqrt(2.0)+lim-3.0);
-    bt3 = 1.0/2.0*(3.0*sqrt(2.0)-4.0)*(1.0+lim+sqrt(2.0));
-  }
-  else
-  {
-    tableau->order_bt = 3;
-
-    bt1 = 1.0/3.0-(sqrt(2.0))/12.0;
-    bt2 = 1.0/3.0+(sqrt(2.0))/4.0;
-    bt3 = -(sqrt(2.0))/6.0+1.0/3.0;
-  }
   /* Butcher Tableau */
   const double c[] = {0.0, c2, 1.0};
   const double A[] = {0.0, 0.0, 0.0,
@@ -168,9 +155,10 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richar
 }
 
 void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+
+  // define limit of the embedded RK method towards -Inf
   double lim = 0.7;
 
-  //ESDIRK3
   tableau->nStages = 4;
   tableau->order_b = 3;
   tableau->order_bt = 2;
@@ -179,10 +167,10 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richar
   /* Butcher Tableau */
   const double c[]  = {0.0, .871733043016917998832038902388, 3./5., 1.0};
   const double A[]  = {
-                          0.0, 0.0, 0.0, 0.0,
-                          .435866521508458999416019451194, .435866521508458999416019451194, 0.0, 0.0,
-                          .257648246066427245799996016284, -.935147675748862452160154674779e-1, .435866521508458999416019451194, 0.0,
-                          .187641024346723825161292144158, -.595297473576954948047823027584, .971789927721772123470511432228, .435866521508458999416019451194};
+                        0.0, 0.0, 0.0, 0.0,
+                        .435866521508458999416019451194, .435866521508458999416019451194, 0.0, 0.0,
+                        .257648246066427245799996016284, -.935147675748862452160154674779e-1, .435866521508458999416019451194, 0.0,
+                        .187641024346723825161292144158, -.595297473576954948047823027584, .971789927721772123470511432228, .435866521508458999416019451194};
   const double b[]  = {.187641024346723825161292144158, -.595297473576954948047823027584, .971789927721772123470511432228, .435866521508458999416019451194};
   const double bt[]  = {.187641024346723825161292144140-.36132349168887087099928261975*lim, -1.46846946256021140302557262326*lim-.595297473576954948047823027622, 1.37419900268512763072398740524*lim+.971789927721772123470511432300, .455593951563954643300867837766*lim+.435866521508458999416019451180};
 
@@ -190,7 +178,6 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richar
 }
 
 void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
-  //SDIRK3
   tableau->nStages = 3;
   tableau->order_b = 3;
   tableau->order_bt = 2;
@@ -208,13 +195,10 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richard
   const double bt[]  = {(2.0*sqrt(3.0) + 1.0)/(-3.0 + sqrt(3.0)), 1.0 + 1.0/3.0*sqrt(3.0), (-6.0 - 3.0*sqrt(3.0))/(-9.0 + 3.0*sqrt(3.0))};
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
-
 }
 
 void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richardson)
 {
-  //SDIRK2
-
   tableau->nStages = 2;
   tableau->order_b = 2;
   tableau->order_bt = 1;
@@ -227,14 +211,19 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richard
   const double b[]   = { 0.5,  0.5};
   const double bt[]  = {0.25, 0.75};
 
-
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt, richardson);
 }
 
 void getButcherTableau_MS(BUTCHER_TABLEAU* tableau, modelica_boolean richardson)
 {
-  //ADAMS-MOULTON
 
+  if (richardson) {
+    warningStreamPrint(LOG_MULTIRATE, 0,"Richardson extrapolation is not available for multistep methods");
+    richardson = FALSE;
+  }
+
+  //ADAMS-MOULTON
+  // e.g. a higher order scheme
   // tableau->nStages = 4;
   // tableau->order_b = 3;
   // tableau->order_bt = 2;
@@ -265,25 +254,37 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau, modelica_boolean richardson)
 }
 
 void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
-  //explicit Euler with Richardson-Extrapolation for step size control
 
-  tableau->nStages = 2;
-  tableau->order_b = 1;
-  tableau->order_bt = 2;
-  tableau->fac = 1.0;
+  if (richardson) {
+    tableau->nStages = 1;
+    tableau->order_b = 1;
 
-  /* Butcher Tableau */
-  const double c[] = {0.0, 0.5};
-  const double A[] = {0.0, 0.0,
-                      0.5, 0.0};
-  const double b[]  = {0,1}; // explicit midpoint rule
-  const double  bt[] = {1,0}; // explicit Euler step
+    /* Butcher Tableau */
+    const double c[] = {0.0};
+    const double A[] = {0.0};
+    const double b[] = {1.0};
+    const double bt[] = {};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  } else {
+    tableau->nStages = 3;
+    tableau->order_b = 1;
+    tableau->order_bt = 2;
+    tableau->fac = 1.0;
+
+    /* Butcher Tableau */
+    const double c[] = {0.0, 0.5};
+    const double A[] = {0.0, 0.0,
+                        0.5, 0.0};
+    const double b[]  = {0,1};      // explicit midpoint rule corresponds to Richardson extrapolation
+    const double  bt[] = {1,0};     // explicit Euler step
+
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  }
 }
 
 void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
-  //implicit Gauss-Legendre with Richardson-Extrapolation for step size control
+  //implicit Gauss-Legendre, order 2*s, but embedded scheme has order s
 
   tableau->nStages = 2;
   tableau->order_b = 4;
@@ -313,39 +314,41 @@ void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau, modelica_boolean richard
 }
 
 void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
-  // Implicit Euler with Richardson-Extrapolation for step size control
-  tableau->nStages = 3;
-  tableau->order_b = 2;
-  tableau->order_bt = 1;
-  tableau->fac = 1.0;
 
-  /* Butcher Tableau */
-  const double c[] = {0.5, 1.0, 1.0};
-  const double A[] = {0.5, 0.0, 0.0,
-                      0.5, 0.5, 0.0,
-                      0.0, 0.0, 1.0};
-  const double bt[] = {0.0, 0.0, 1.0};  // implicit Euler step
-  const double b[]  = {1.0, 1.0, -1.0}; // Richardson extrapolation for error estimator
+    if (richardson) {
+    tableau->nStages = 1;
+    tableau->order_b = 1;
+    /* Butcher Tableau */
+    const double c[] = {1.0};
+    const double A[] = {1.0};
+    const double b[] = {1.0};
+    const double bt[] = {};
 
-  // higher order (extrapolated) solution will be taken as estimate
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  } else {
+    tableau->nStages  = 2;
+    tableau->order_b  = 1;
+    tableau->order_bt = 2;
+    tableau->fac      = 1.e0;
 
-  // /* Butcher Tableau */
-  // alternative Butcher tableau
-  // const double c[] = {0.0, 1.0};
-  // const double A[] = {0.0, 0.0,
-  //                     0.0, 1.0};
-  // const double  b[] = {0.0, 1.0};  // implicit Euler step
-  // const double  bt[] = {0.5, 0.5}; // trapezoidal rule for error estimator
+    // /* Butcher Tableau */
+    const double c[] = {0.0, 1.0};
+    const double A[] = {0.0, 0.0,
+                        0.0, 1.0};
+    const double  bt[] = {0.0, 1.0};  // implicit Euler step
+    const double  b[] = {0.5, 0.5}; // trapezoidal rule for error estimator
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  }
 }
 
 void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
-  //explicit Merson method
+  // BB ToDo: check embedded method, values and order in Maple...
+
   tableau->nStages = 5;
   tableau->order_b = 4;
   tableau->order_bt = 3;
-  tableau->fac = 1.e7;
+  tableau->fac = 1.e5;
 
   /* Butcher Tableau */
   const double c[] = {0.0, 1./3, 1./3, 1./2, 1.0};
@@ -363,7 +366,6 @@ void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau, modelica_boolean richard
 }
 
 void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
-  //DOPRI45 this is the real one
 
   tableau->nStages = 7;
   tableau->order_b = 5;
@@ -386,8 +388,7 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau, modelica_boolean richar
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-void getButcherTableau_FEHLBERG54(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
-  //Fehlberg45
+void getButcherTableau_FEHLBERG45(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
 
   tableau->nStages = 6;
   tableau->order_b = 5;
@@ -409,8 +410,7 @@ void getButcherTableau_FEHLBERG54(BUTCHER_TABLEAU* tableau, modelica_boolean ric
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
-void getButcherTableau_FEHLBERG87(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
-  //Fehlberg45
+void getButcherTableau_FEHLBERG78(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
 
   tableau->nStages = 13;
   tableau->order_b = 8;
@@ -494,6 +494,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method, enum _F
   BUTCHER_TABLEAU* tableau = (BUTCHER_TABLEAU*) malloc(sizeof(BUTCHER_TABLEAU));
   modelica_boolean richardson;
   const char* flag_value = omc_flagValue[FLAG_ERR];
+
   richardson= (flag_value != NULL);
 
   switch(GM_method)
@@ -508,10 +509,10 @@ BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method, enum _F
       getButcherTableau_MERSON(tableau, richardson);
       break;
     case RK_FEHLBERG45:
-      getButcherTableau_FEHLBERG54(tableau, richardson);
+      getButcherTableau_FEHLBERG45(tableau, richardson);
       break;
     case RK_FEHLBERG78:
-      getButcherTableau_FEHLBERG87(tableau, richardson);
+      getButcherTableau_FEHLBERG78(tableau, richardson);
       break;
     case RK_SDIRK2:
       getButcherTableau_SDIRK2(tableau, richardson);
@@ -522,26 +523,25 @@ BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method, enum _F
     case RK_ESDIRK2:
       getButcherTableau_ESDIRK2(tableau, richardson);
       break;
-    case RK_ESDIRK2_test:
-      getButcherTableau_ESDIRK2(tableau, richardson);
-      // //ESDIRK2 not optimized (just for testing) solved with gm solver method
-      // getButcherTableau_ESDIRK2(userdata);
-      break;
     case RK_EXPL_EULER:
       getButcherTableau_EXPLEULER(tableau, richardson);
       break;
     case RK_IMPL_EULER:
       getButcherTableau_IMPLEULER(tableau, richardson);
       break;
-    case RK_ESDIRK3_test:
-      //ESDIRK3 not optimized (just for testing) solved with gm solver method
-      getButcherTableau_ESDIRK3(tableau, richardson);
-      break;
     case RK_ESDIRK3:
       getButcherTableau_ESDIRK3(tableau, richardson);
       break;
     case RK_GAUSS2:
       getButcherTableau_GAUSS2(tableau, richardson);
+      break;
+    case RK_ESDIRK2_test:
+      getButcherTableau_ESDIRK2(tableau, richardson);
+      // //ESDIRK2 not optimized (just for testing) solved with gm solver method
+      break;
+    case RK_ESDIRK3_test:
+      //ESDIRK3 not optimized (just for testing) solved with gm solver method
+      getButcherTableau_ESDIRK3(tableau, richardson);
       break;
     default:
       errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", GM_method);
