@@ -491,27 +491,6 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   sparsePattern_MR->colorCols = (unsigned int*) malloc(nStates*sizeof(unsigned int));
   memcpy(sparsePattern_MR->colorCols, sparsePattern_DIRK->colorCols, nStates*sizeof(unsigned int));
 
-  // /* Set full matrix sparsitiy pattern */
-  // for (i=0; i < gmfData->nStates+1; i++)
-  //   sparsePattern_MR->leadindex[i] = i * nStates;
-  // for(i=0; i < nStates*nStates; i++) {
-  //   sparsePattern_MR->index[i] = i% nStates;
-  // }
-
-  // printIntVector_gm("sparsePattern leadindex", sparsePattern_MR->leadindex, length_column_indices, 0);
-  // printIntVector_gm("sparsePattern index", sparsePattern_MR->index, length_index, 0);
-
-  // trivial coloring, needs to be set each call of MR, if number of fast States changes...
-//   sparsePattern_MR->maxColors = nStates;
-//   for (i=0; i < nStates; i++)
-//     sparsePattern_MR->colorCols[i] = i+1;
-//
-  // printSparseStructure(sparsePattern_MR,
-  //                     nStates,
-  //                     nStates,
-  //                     LOG_STDOUT,
-  //                     "sparsePattern_MR");
-
   return sparsePattern_MR;
 }
 
@@ -885,7 +864,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       gmData->multi_rate_phase = 1;
       solved = solveNLS(data, threadData, nlsData, -1);
       if (!solved) {
-        errorStreamPrint(LOG_STDOUT, 0, "expl_diag_impl_RK: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
+        errorStreamPrint(LOG_STDOUT, 0, "gbf error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
     }
@@ -986,14 +965,14 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
         break;
     }
 
-    infoStreamPrint(LOG_SOLVER, 1, "Fast states and corresponding nominal values:");
+    infoStreamPrint(LOG_MULTIRATE, 1, "Fast states and corresponding nominal values:");
     for (ii=0; ii<nFastStates; ii++) {
       i = gmfData->fastStates[ii];
     // Get the nominal values of the fast states
       gmfData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-      infoStreamPrint(LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gmData->nlsData->nominal[i]);
+      infoStreamPrint(LOG_MULTIRATE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gmData->nlsData->nominal[i]);
     }
-    messageClose(LOG_SOLVER);
+    messageClose(LOG_MULTIRATE);
 
     modelica_boolean fastStateChange = FALSE;
     if (gmfData->nFastStates != gmfData->nFastStates_old) {
@@ -1002,7 +981,7 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     } else {
       for (int k=0; k<nFastStates; k++)
         if (gmfData->fastStates[k] - gmfData->fastStates_old[k]) {
-          if(ACTIVE_STREAM(LOG_SOLVER))
+          if(ACTIVE_STREAM(LOG_MULTIRATE))
           {
             printIntVector_gm("old fast States:", gmfData->fastStates_old, gmfData->nFastStates_old, gmData->time);
             printIntVector_gm("new fast States:", gmfData->fastStates, gmfData->nFastStates, gmData->time);
@@ -1062,7 +1041,7 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   }
 
   // print informations on the calling details
-  infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states):");
+  infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states): %d", gmData->nFastStates);
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (SR-stepsize: %10g)",
                   gmData->timeLeft, gmData->timeRight, gmData->lastStepSize);
   if(ACTIVE_STREAM(LOG_MULTIRATE))
@@ -1124,7 +1103,7 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
       if (err>1)
       {
         gmfData->errorTestFailures++;
-        infoStreamPrint(LOG_MULTIRATE, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
+        infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gmfData->time, gmfData->time + gmfData->lastStepSize, err, gmfData->stepSize);
       }
     } while  (err>1);
@@ -1237,7 +1216,8 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
       gmData->time = gmData->timeLeft;
 
     memcpy(gmData->yOld, gmfData->y, gmfData->nStates * sizeof(double));
-    memcpy(gmData->y, gmfData->y, gmfData->nStates * sizeof(double));
+    // This could be problem when gmData->y is used for interpolation, one should introduce yRight!!
+    // memcpy(gmData->y, gmfData->y, gmfData->nStates * sizeof(double));
 
     // solverInfo->currentTime = eventTime;
     // sData->timeValue = solverInfo->currentTime;

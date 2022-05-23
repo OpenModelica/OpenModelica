@@ -39,7 +39,7 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
 getErrorString();
 
 // Simulate with ADAMS and KINSOL+KLU
-system("./burgerEq -s=gbode -gbmeth=esdirk3 -gbfmeth=esdirk3  -gbnls=kinsol -gbratio=0.12 -override=\"tolerance=1e-6\"", "burgerEq_adams_test.log");
+system("./burgerEq -s=gbode -gbmeth=dopri45 -gbnls=kinsol -gbratio=0.12 -override=\"tolerance=1e-6\"", "burgerEq_adams_test.log");
 print(readFile("burgerEq_adams_test.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",

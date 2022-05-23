@@ -168,19 +168,19 @@ enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD) {
     GM_method_string = GC_strdup(flag_value);
     for (method=RK_UNKNOWN; method<RK_MAX; method++) {
       if (strcmp(GM_method_string, GM_SINGLERATE_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: %s", GM_SINGLERATE_METHOD_NAME[method]);
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: %s", GM_SINGLERATE_METHOD_NAME[method]);
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge-Kutta method %s.", GM_method_string);
-    errorStreamPrint(LOG_STDOUT, 0, "Choose RK method: %s [from command line]", GM_method_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow gbode method %s.", GM_method_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Choose gbode method: %s [from command line]", GM_method_string);
     return RK_UNKNOWN;
   } else {
     if (FLAG_SR_METHOD == FLAG_MR) {
       return getGM_method(FLAG_SR);
     } else {
 
-      infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: adams [default]");
+      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: adams [default]");
       return MS_ADAMS_MOULTON;
     }
   }
@@ -204,15 +204,15 @@ enum GM_NLS_METHOD getGM_NLS_METHOD() {
     GM_NLS_METHOD_string = GC_strdup(flag_value);
     for (method=RK_NLS_UNKNOWN; method<RK_NLS_MAX; method++) {
       if (strcmp(GM_NLS_METHOD_string, GM_NLS_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen RK NLS method: %s", GM_NLS_METHOD_NAME[method]);
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: %s", GM_NLS_METHOD_NAME[method]);
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow non-linear solver method %s for Runge-Kutta method.", GM_NLS_METHOD_string);
-    errorStreamPrint(LOG_STDOUT, 0, "Choose RK NLS method: %s [from command line]", GM_NLS_METHOD_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow non-linear solver method %s for gbode.", GM_NLS_METHOD_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Choose gbode NLS method: %s [from command line]", GM_NLS_METHOD_string);
     return RK_NLS_UNKNOWN;
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method: kinsol [default]");
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
     return RK_NLS_KINSOL;
   }
 }
@@ -1737,8 +1737,11 @@ double IController(double* err_values, double* stepSize_values, double err_order
   double facmin = 0.5;
   double beta = 1./err_order;
 
-  return fmin(facmax, fmax(facmin, fac*pow(1./err_values[0], beta)));
-
+  if (err_values[0]>0) {
+    return fmin(facmax, fmax(facmin, fac*pow(1./err_values[0], beta)));
+  } else {
+    return facmax;
+  }
 }
 
 /**
@@ -1875,7 +1878,8 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       //  solverData->calculate_jacobian = 0;
 
       // calculate one step of the integrator
-      rk_step_info = gmData->step_fun(data, threadData, solverInfo);
+      if (gmData->percentage!=1 || !gmData->stepsDone)
+        rk_step_info = gmData->step_fun(data, threadData, solverInfo);
 
       // error handling: try half of the step size!
       if (rk_step_info != 0) {
@@ -1909,7 +1913,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       // printIntVector_gm("Indices after sorting:", gmData->sortedStates, gmData->nStates, gmData->time);
       // printVector_gmf("Error after sorting:", gmData->err, gmData->nStates, gmData->time,  gmData->nStates, gmData->sortedStates);
 
-      if (gmData->multi_rate && (err > 0.0))
+      if (gmData->multi_rate)
       {
         // BB ToDo: Gives problems, if the orderig of the fast states change during simulation
         int *sortedStates;
@@ -1967,66 +1971,15 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       // Call the step size control
       gmData->stepSize *= gmData->stepSize_control(gmData->errValues, gmData->stepSizeValues, gmData->tableau->error_order);
 
-      // printVector_gm("y     ", gmData->y, gmData->nStates, sData->timeValue);
-      // printVector_gm("yt    ", gmData->yt, gmData->nStates, sData->timeValue);
-      // printVector_gm("errest", gmData->errest, gmData->nStates, sData->timeValue);
-      // printVector_gm("errtol", gmData->errtol, gmData->nStates, sData->timeValue);
-      // printVector_gm("err   ", gmData->err, gmData->nStates, sData->timeValue);
-
-
-      //printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
-      //    gmData->nSlowStates, gmData->nFastStates,
-      //    gmData->nFastStates + gmData->nSlowStates - gmData->nStates);
-
-
-      /* BB ToDo:
-       * 1)
-       * If all states are fast states, no need of multi_rate step, just reject!!!
-       * same yields, if err_fast is smaller than a threshhold
-       *
-       * 2)
-       * if gSMratio == 0 or gSMratio == 1 => no need for multi rate step for the whole simulation
-       * should be detected during allocation
-       *
-       *
-       *
-      */
-
       if (gmData->multi_rate)
       {
-        // printf("nSlowStates = %d, nFastStates = %d, Check = %d\n",
-        //     gmData->nSlowStates, gmData->nFastStates,
-        //     gmData->nFastStates + gmData->nSlowStates - gmData->nStates);
         if (gmData->nFastStates>0  && gmData->err_fast > 0)
         {
           if (gmfode_step(data, threadData, solverInfo, targetTime))
             return 0;
-          // gmData->lastStepSize = gmData->gmfData->lastStepSize;
-          // gmData->stepSize = gmData->gmfData->stepSize;
-          //  copyVector_gmf(rkData->y, rkData->gmfData->y, rkData->nFastStates, rkData->fastStates);
-          //  copyVector_gmf(rkData->yt, rkData->gmfData->yt, rkData->nFastStates, rkData->fastStates);
-          //  copyVector_gmf(rkData->err, rkData->gmfData->err, rkData->nFastStates, rkData->fastStates);
-          /*** calculate error (infinity norm!)***/
-          // err = 0;
-          // for (i=0; i<data->modelData->nStates; i++)
-          // {
-          //   err = fmax(err, gmData->err[i]);
-          // }
-          //printVector_gm("Error: ", rkData->err, rkData->nStates, rkData->time);
           err = gmData->err_fast;
         }
       }
-
-      // printf("Stepsize: old: %g, last: %g, act: %g\n", rkData->stepSize_old, rkData->lastStepSize, rkData->stepSize);
-      // printf("Error:    old: %g, new: %g\n", rkData->err_old, rkData->err_new);
-
-
-      //rkData->stepSize *= fmin(facmax, fmax(facmin, rkData->tableau->fac*pow(1.0/err, 1./rkData->tableau->error_order)));
-      /*
-       * step size control from Luca, etc.:
-       * stepSize = seccoeff*sqrt(norm_errtol/fmax(norm_errest,errmin));
-       * printf("Error:  %g, New stepSize: %g from %g to  %g\n", err, rkData->stepSize, rkData->time, rkData->time+stepSize);
-       */
       if (err>1)
       {
         gmData->errorTestFailures++;
@@ -2035,7 +1988,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       }
       else
       {
-        // BB ToDo: maybe better to set userdata->stepSize to zero, if err<1 (last step!!!)
+        // BB ToDo: check if this is appropriate
         gmData->stepSize = fmin(gmData->stepSize, stopTime - (gmData->time + gmData->lastStepSize));
       }
 
@@ -2053,12 +2006,6 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         memcpy(gmData->k + stage_ * nStates, gmData->k + (stage_+1) * nStates, nStates*sizeof(double));
         memcpy(gmData->x + stage_ * nStates, gmData->x + (stage_+1) * nStates, nStates*sizeof(double));
       }
-      // for (int stage_=0; stage_< (gmData->tableau->nStages); stage_++) {
-      //   printVector_gm("gmData->k + stage_ * nStates    ", gmData->k + stage_ * nStates, nStates, gmData->time);
-      // }
-      // for (int stage_=0; stage_< (gmData->tableau->nStages); stage_++) {
-      //   printVector_gm("gmData->x + stage_ * nStates    ", gmData->x + stage_ * nStates, nStates, gmData->time);
-      // }
     }
 
 
