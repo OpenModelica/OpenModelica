@@ -1071,7 +1071,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   }
 
   // print informations on the calling details
-  infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states): %d", gbData->nFastStates);
+  infoStreamPrint(LOG_SOLVER, 0, "gbodef solver started (fast states): %d", gbData->nFastStates);
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (SR-stepsize: %10g)",
                   gbData->timeLeft, gbData->timeRight, gbData->lastStepSize);
   if(ACTIVE_STREAM(LOG_MULTIRATE))
@@ -1120,7 +1120,8 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
         err = fmax(err, gbfData->err[ii]);
       }
 
-      gbfData->errValues[0] = gbfData->tableau->fac * err;
+      err = gbfData->tableau->fac * err;
+      gbfData->errValues[0] = err;
       gbfData->stepSizeValues[0] = gbfData->stepSize;
 
       // Store performed stepSize for adjusting the time in case of latter interpolation
@@ -1277,7 +1278,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   solverInfo->solverStatsTmp[3] = gbfData->errorTestFailures;
   solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
 
-  infoStreamPrint(LOG_SOLVER, 0, "Finished gbodef (inner step).");
+  infoStreamPrint(LOG_SOLVER, 0, "gbodef finished  (inner steps).");
   if(ACTIVE_STREAM(LOG_MULTIRATE))
   {
     printf("\n");

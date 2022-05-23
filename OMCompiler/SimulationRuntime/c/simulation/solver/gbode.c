@@ -1847,7 +1847,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
   solverInfo->solverRootFinding = 1;
 
-  infoStreamPrint(LOG_MULTIRATE, 0, "generic Runge-Kutta method:");
+  infoStreamPrint(LOG_SOLVER, 0, "gbode solver started:");
 
   if(ACTIVE_STREAM(LOG_MULTIRATE_V))
   {
@@ -2019,7 +2019,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
       if (gbData->multi_rate)
       {
-        if (gbData->nFastStates>0  && gbData->err_fast > 0)
+        if (gbData->nFastStates>0  && gbData->err_fast >= 0)
         {
           if (gbodef_step(data, threadData, solverInfo, targetTime))
             return 0;
