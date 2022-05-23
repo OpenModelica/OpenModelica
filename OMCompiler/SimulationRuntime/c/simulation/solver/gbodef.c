@@ -1010,17 +1010,17 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     if (gbfData->nFastStates != gbfData->nFastStates_old) {
       infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %d", gbfData->nFastStates, gbfData->nFastStates_old);
       fastStateChange = TRUE;
-    } else {
-      for (int k=0; k<nFastStates; k++)
-        if (gbfData->fastStates[k] - gbfData->fastStates_old[k]) {
-          if(ACTIVE_STREAM(LOG_MULTIRATE))
-          {
-            printIntVector_gm("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbData->time);
-            printIntVector_gm("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbData->time);
-          }
-          fastStateChange = TRUE;
-          break;
+    }
+    for (int k=0; k<nFastStates; k++) {
+      if (gbfData->fastStates[k] - gbfData->fastStates_old[k]) {
+        if(ACTIVE_STREAM(LOG_MULTIRATE))
+        {
+          printIntVector_gm("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbData->time);
+          printIntVector_gm("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbData->time);
         }
+        fastStateChange = TRUE;
+        break;
+      }
     }
 
     if (gbfData->symJacAvailable && fastStateChange) {
@@ -1258,6 +1258,9 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
         ((gbData->time < targetTime) && (gbData->time + gbData->lastStepSize > targetTime))
       )
   {
+    // Resetting the time and the integrator is not a good idea!!!!
+    // Just storing the values would be appropriate, integrator should keep their time, and values!!!!
+    // Especially, when it comes to high order integrators
     gbData->lastStepSize = gbfData->time - gbData->timeLeft;
     gbData->timeRight = gbfData->time;
     if (gbData->time > gbData->timeLeft)
