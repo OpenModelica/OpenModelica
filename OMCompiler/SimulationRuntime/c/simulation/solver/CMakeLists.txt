@@ -16,7 +16,7 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     dassl.c
                     delay.c
                     events.c
-                    gmode.c
+                    gbode.c
                     gmfode.c
                     external_input.c
                     irksco.c
@@ -36,7 +36,7 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     nonlinearSystem.c
                     omc_math.c
                     radau.c
-                    gm_tableau.c
+                    gbode_tableau.c
                     sample.c
                     solver_main.c
                     spatialDistribution.c
@@ -49,7 +49,7 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     dassl.h
                     delay.h
                     epsilon.h
-                    gmode.h
+                    gbode.h
                     gmfode.h
                     events.h
                     external_input.h
@@ -70,7 +70,7 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     nonlinearSystem.h
                     omc_math.h
                     radau.h
-                    gm_tableau.h
+                    gbode_tableau.h
                     solver_main.h
                     spatialDistribution.h
                     stateset.h

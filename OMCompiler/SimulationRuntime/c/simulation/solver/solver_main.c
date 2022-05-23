@@ -54,7 +54,7 @@
 #include "synchronous.h"
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
-#include "gmode.h"
+#include "gbode.h"
 #include "gmfode.h"
 #include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
