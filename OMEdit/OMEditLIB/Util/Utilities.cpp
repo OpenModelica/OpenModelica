@@ -1263,6 +1263,29 @@ QStringList Utilities::variantListToStringList(const QVariantList lst)
 }
 
 /*!
+ * \brief Utilities::addDefaultDisplayUnit
+ * \param unit
+ * \param displayUnit
+ */
+void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayUnit)
+{
+  /* Issue #5447
+   * For angular speeds always add in the menu in the unit column, in addition to the standard "rad/s" also "rpm"
+   * For energies always add in the menu in the Display Unit column, in addition to standard "J", also "Wh" (prefixes such as kWh, MWh, GWh will be obtained automatically)
+   */
+  /* Issue #8758
+   * Whenever unit = "K", we also add "degC" even if it is not defined as displayUnits.
+   */
+  if (unit.compare(QStringLiteral("rad/s")) == 0) {
+    displayUnit << "rpm";
+  } else if (unit.compare(QStringLiteral("J")) == 0) {
+    displayUnit << "Wh";
+  } else if (unit.compare(QStringLiteral("K")) == 0) {
+    displayUnit << "degC";
+  }
+}
+
+/*!
  * \brief Utilities::convertUnitToSymbol
  * Converts the unit to a symbol.
  * \param displayUnit
