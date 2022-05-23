@@ -72,12 +72,12 @@
 #include "epsilon.h"
 
 //auxiliary vector functions
-void linear_interpolation_gm(double a, double* fa, double b, double* fb, double t, double *f, int n);
+void linear_interpolation_gb(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n);
-void printVector_gm(char name[], double* a, int n, double time);
-void printIntVector_gm(char name[], int* a, int n, double time);
-void printMatrix_gm(char name[], double* a, int n, double time);
-void copyVector_gmf(double* a, double* b, int nIndx, int* indx);
+void printVector_gb(char name[], double* a, int n, double time);
+void printIntVector_gb(char name[], int* a, int n, double time);
+void printMatrix_gb(char name[], double* a, int n, double time);
+void copyVector_gbf(double* a, double* b, int nIndx, int* indx);
 double getErrorThreshold(DATA_GBODE* gbData);
 
 // singlerate step function
@@ -131,7 +131,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   if (eventHappend) {
     eventTime = findRoot(data, threadData, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues);
-    infoStreamPrint(LOG_SOLVER, 0, "gMode detected an event at time: %20.16g", eventTime);
+    infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
   }
 
   // re-store the pre values of the zeroCrossings for comparison
@@ -565,8 +565,8 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   numberOfNonZeros = i;
 
   if (ACTIVE_STREAM(LOG_MULTIRATE_V)){
-    printIntVector_gm("rows", coo_row, numberOfNonZeros, 0.0);
-    printIntVector_gm("cols", coo_col, numberOfNonZeros, 0.0);
+    printIntVector_gb("rows", coo_row, numberOfNonZeros, 0.0);
+    printIntVector_gb("cols", coo_col, numberOfNonZeros, 0.0);
   }
 
   int length_row_indices = jacobian->sizeCols*nStages+1;
@@ -598,7 +598,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages);
 
   // for (int k=0; k<nStages; k++)
-  //   printIntVector_gm("colorCols: ", &sparsePattern_IRK->colorCols[k*nStates], sizeCols, 0);
+  //   printIntVector_gb("colorCols: ", &sparsePattern_IRK->colorCols[k*nStates], sizeCols, 0);
 
   return sparsePattern_IRK;
 }
@@ -1160,9 +1160,9 @@ int jacobian_SR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN
     }
   }
 
-  // printVector_gm("jacobian_ODE colums", jacobian_ODE->resultVars, nStates, gbData->time);
-  // printVector_gm("jacobian colums", jacobian->resultVars, nStates, gbData->time);
-  // printIntVector_gm("sparsity pattern colors", jacobian->sparsePattern->colorCols, nStates, gbData->time);
+  // printVector_gb("jacobian_ODE colums", jacobian_ODE->resultVars, nStates, gbData->time);
+  // printVector_gb("jacobian colums", jacobian->resultVars, nStates, gbData->time);
+  // printIntVector_gb("sparsity pattern colors", jacobian->sparsePattern->colorCols, nStates, gbData->time);
 
   return 0;
 }
@@ -1343,10 +1343,10 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   int nStages = gbData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // printVector_gm("k:  ", gbData->k + 0 * nStates, nStates, gbData->time);
-  // printVector_gm("k:  ", gbData->k + 1 * nStates, nStates, gbData->time);
-  // printVector_gm("x:  ", gbData->x + 0 * nStates, nStates, gbData->time);
-  // printVector_gm("x:  ", gbData->x + 1 * nStates, nStates, gbData->time);
+  // printVector_gb("k:  ", gbData->k + 0 * nStates, nStates, gbData->time);
+  // printVector_gb("k:  ", gbData->k + 1 * nStates, nStates, gbData->time);
+  // printVector_gb("x:  ", gbData->x + 0 * nStates, nStates, gbData->time);
+  // printVector_gb("x:  ", gbData->x + 1 * nStates, nStates, gbData->time);
 
   /* Predictor Schritt */
   for (i = 0; i < nStates; i++)
@@ -1374,7 +1374,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
                                  gbData->k[stage_ * nStates + i] * gbData->tableau->b[stage_] *  gbData->stepSize;
     }
   }
-  // printVector_gm("res_const:  ", gbData->res_const, nStates, gbData->time);
+  // printVector_gb("res_const:  ", gbData->res_const, nStates, gbData->time);
 
   /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
     * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
@@ -1429,11 +1429,11 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
   memcpy(gbData->x + stage_ * nStates, gbData->y, nStates*sizeof(double));
 
-  // printVector_gm("yt: ", gbData->yt, nStates, gbData->time);
-  // printVector_gm("y:  ", gbData->y, nStates, gbData->time);
+  // printVector_gb("yt: ", gbData->yt, nStates, gbData->time);
+  // printVector_gb("y:  ", gbData->y, nStates, gbData->time);
 
-  // printVector_gm("k:  ", gbData->k + 0 * nStates, nStates, gbData->time);
-  // printVector_gm("k:  ", gbData->k + 1 * nStates, nStates, gbData->time);
+  // printVector_gb("k:  ", gbData->k + 0 * nStates, nStates, gbData->time);
+  // printVector_gb("k:  ", gbData->k + 1 * nStates, nStates, gbData->time);
 
 
   return 0;
@@ -1697,8 +1697,8 @@ void gm_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
          And should this also been copied to userdata->old (see above?)
   */
   /* initialize start values of the integrator and calculate ODE function*/
-  //printVector_gm("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
-  //printVector_gm("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
+  //printVector_gb("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
+  //printVector_gb("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
 
   memcpy(gbData->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
   memcpy(gbData->x, sData->realVars, data->modelData->nStates*sizeof(double));
@@ -1854,7 +1854,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
   if(ACTIVE_STREAM(LOG_MULTIRATE_V))
   {
-    printVector_gm("yIni:", sData->realVars, gbData->nStates, sDataOld->timeValue);
+    printVector_gb("yIni:", sData->realVars, gbData->nStates, sDataOld->timeValue);
   }
   // TODO AHeu: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
   // Also instead of solverInfo->integratorSteps we should set and use solverInfo->solverNoEquidistantGrid
@@ -1898,8 +1898,8 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   {
     do
     {
-      // printVector_gm("yOld: ", gbData->yOld, nStates, gbData->time);
-      // printVector_gm("y:    ", gbData->y, nStates, gbData->time);
+      // printVector_gb("yOld: ", gbData->yOld, nStates, gbData->time);
+      // printVector_gb("y:    ", gbData->y, nStates, gbData->time);
       /* store yOld in yLeft for interpolation purposes, if necessary
       * BB: Check condition
       */
@@ -1908,7 +1908,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
       if(ACTIVE_STREAM(LOG_MULTIRATE))
       {
-        printVector_gm("gb->yOld: ", gbData->yOld, gbData->nStates, gbData->time);
+        printVector_gb("gb->yOld: ", gbData->yOld, gbData->nStates, gbData->time);
       }
 
       /* calculate jacobian:
@@ -1957,10 +1957,10 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       }
       err = gbData->tableau->fac * err;
 
-      // printVector_gm("Error before sorting:", gbData->err, gbData->nStates, gbData->time);
-      // printIntVector_gm("Indices before sorting:", gbData->sortedStates, gbData->nStates, gbData->time);
-      // printIntVector_gm("Indices after sorting:", gbData->sortedStates, gbData->nStates, gbData->time);
-      // printVector_gmf("Error after sorting:", gbData->err, gbData->nStates, gbData->time,  gbData->nStates, gbData->sortedStates);
+      // printVector_gb("Error before sorting:", gbData->err, gbData->nStates, gbData->time);
+      // printIntVector_gb("Indices before sorting:", gbData->sortedStates, gbData->nStates, gbData->time);
+      // printIntVector_gb("Indices after sorting:", gbData->sortedStates, gbData->nStates, gbData->time);
+      // printVector_gbf("Error after sorting:", gbData->err, gbData->nStates, gbData->time,  gbData->nStates, gbData->sortedStates);
 
       if (gbData->multi_rate)
       {
@@ -1976,8 +1976,8 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         {
           for (int k=0; k<nStates; k++)
             if (sortedStates[k] - gbData->sortedStates[k]) {
-              printIntVector_gm("sortedStates before:", sortedStates, nStates, gbData->time);
-              printIntVector_gm("sortedStates after:", gbData->sortedStates, nStates, gbData->time);
+              printIntVector_gb("sortedStates before:", sortedStates, nStates, gbData->time);
+              printIntVector_gb("sortedStates after:", gbData->sortedStates, nStates, gbData->time);
               break;
             }
             free(sortedStates);
@@ -2072,11 +2072,11 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
         // sData->realVars are the "numerical" values on the right hand side of the event
         gbData->time = eventTime;
         memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
-        // printVector_gm("y:    ", gbData->y, nStates, gbData->time);
+        // printVector_gb("y:    ", gbData->y, nStates, gbData->time);
         if(ACTIVE_STREAM(LOG_MULTIRATE))
         {
-          printIntVector_gm("fast states:", gbData->fastStates, gbData->nFastStates, solverInfo->currentTime);
-          printVector_gm("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+          printIntVector_gb("fast states:", gbData->fastStates, gbData->nFastStates, solverInfo->currentTime);
+          printVector_gb("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
           messageClose(LOG_MULTIRATE);
         }
         if (!gbData->multi_rate || (gbData->multi_rate && !gbData->percentage))
@@ -2097,12 +2097,12 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
     if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
-      printVector_gm("gb->y:    ", gbData->y, gbData->nStates, gbData->time);
+      printVector_gb("gb->y:    ", gbData->y, gbData->nStates, gbData->time);
     }
 
 
-    // printVector_gm("yOld", gbData->yOld, gbData->nStates, gbData->time - gbData->lastStepSize);
-    // printVector_gm("y   ", gbData->y, gbData->nStates, gbData->time);
+    // printVector_gb("yOld", gbData->yOld, gbData->nStates, gbData->time - gbData->lastStepSize);
+    // printVector_gb("y   ", gbData->y, gbData->nStates, gbData->time);
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, data->modelData->nStates*sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
@@ -2139,7 +2139,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     solverInfo->currentTime = sData->timeValue;
     if (gbData->multi_rate) {
       // interpolating fast states if multirate method is used
-      linear_interpolation_gmf(gbData->gbfData->time-gbData->gbfData->lastStepSize, gbData->gbfData->yt,
+      linear_interpolation_gbf(gbData->gbfData->time-gbData->gbfData->lastStepSize, gbData->gbfData->yt,
                               gbData->gbfData->time, gbData->gbfData->y,
                               sData->timeValue, sData->realVars,
                               gbData->nFastStates, gbData->fastStates);
@@ -2147,14 +2147,14 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     }
 
     // interpolating slow states if multirate method is used, otherwise all states are slow states
-    linear_interpolation_gmf(gbData->timeLeft, gbData->yLeft,
+    linear_interpolation_gbf(gbData->timeLeft, gbData->yLeft,
                           gbData->timeRight, gbData->y,
                           sData->timeValue, sData->realVars,
                           gbData->nSlowStates, gbData->slowStates);
     if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
-      printIntVector_gm("fast states:", gbData->fastStates, gbData->nFastStates, solverInfo->currentTime);
-      printVector_gm("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
+      printIntVector_gb("fast states:", gbData->fastStates, gbData->nFastStates, solverInfo->currentTime);
+      printVector_gb("y_int:", sData->realVars, data->modelData->nStates, solverInfo->currentTime);
       messageClose(LOG_MULTIRATE);
     }
   }else{
@@ -2226,7 +2226,7 @@ double getErrorThreshold(DATA_GBODE* gbData)
 
 // TODO AHeu: For sure there is already a linear interpolation function somewhere
 //auxiliary vector functions for better code structure
-void linear_interpolation_gm(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
+void linear_interpolation_gb(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
 {
   double lambda, h0, h1;
 
@@ -2258,7 +2258,7 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
   }
 }
 
-void printVector_gm(char name[], double* a, int n, double time)
+void printVector_gb(char name[], double* a, int n, double time)
 {
   printf("%s\t(time = %14.8g):", name, time);
   for (int i=0;i<n;i++)
@@ -2266,7 +2266,7 @@ void printVector_gm(char name[], double* a, int n, double time)
   printf("\n");
 }
 
-void printIntVector_gm(char name[], int* a, int n, double time)
+void printIntVector_gb(char name[], int* a, int n, double time)
 {
   printf("%s\t(time = %g): \n", name, time);
   for (int i=0;i<n;i++)
@@ -2274,14 +2274,14 @@ void printIntVector_gm(char name[], int* a, int n, double time)
   printf("\n");
 }
 
-void copyVector_gmf(double* a, double* b, int nIndx, int* indx)
+void copyVector_gbf(double* a, double* b, int nIndx, int* indx)
 {
   for (int i=0;i<nIndx;i++)
     a[indx[i]] = b[indx[i]];
 }
 
 
-void printMatrix_gm(char name[], double* a, int n, double time)
+void printMatrix_gb(char name[], double* a, int n, double time)
 {
   printf("\n%s at time: %g: \n ", name, time);
   for (int i=0;i<n;i++)

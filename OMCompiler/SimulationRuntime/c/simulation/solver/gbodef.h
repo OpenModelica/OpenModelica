@@ -93,12 +93,12 @@ typedef struct DATA_GBODEF{
 void freeDataGbf(DATA_GBODEF* data);
 int gbodef_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
 //auxiliary vector functions
-void linear_interpolation_gm(double a, double* fa, double b, double* fb, double t, double *f, int n);
-void linear_interpolation_gmf(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
+void linear_interpolation_gb(double a, double* fa, double b, double* fb, double t, double *f, int n);
+void linear_interpolation_gbf(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
 void hermite_interpolation_gmf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx);
 
-void printVector_gmf(char name[], double* a, int n, double time, int nIndx, int* indx);
-void printMatrix_gmf(char name[], double* a, int n, double time);
-void copyVector_gmf(double* a, double* b, int nIndx, int* indx);
+void printVector_gbf(char name[], double* a, int n, double time, int nIndx, int* indx);
+void printMatrix_gbf(char name[], double* a, int n, double time);
+void copyVector_gbf(double* a, double* b, int nIndx, int* indx);
 
 #endif /* _DATA_GBODEF_H_ */

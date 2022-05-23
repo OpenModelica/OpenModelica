@@ -55,11 +55,12 @@
 #include "util/simulation_options.h"
 #include "util/varinfo.h"
 #include "util/jacobian_util.h"
+#include "epsilon.h"
 
 // help functions
-void printVector_gm(char name[], double* a, int n, double time);
-void printIntVector_gm(char name[], int* a, int n, double time);
-void printMatrix_gm(char name[], double* a, int n, double time);
+void printVector_gb(char name[], double* a, int n, double time);
+void printIntVector_gb(char name[], int* a, int n, double time);
+void printMatrix_gb(char name[], double* a, int n, double time);
 
 
 // singlerate step function
@@ -574,7 +575,7 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
     res[ii] = gbfData->res_const[i] - xloc[ii] + gbfData->stepSize * gbfData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
 
-  // printVector_gm("res", res, gbfData->nFastStates, gbfData->time);
+  // printVector_gb("res", res, gbfData->nFastStates, gbfData->time);
   return;
 }
 
@@ -638,9 +639,9 @@ int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN
       jacobian->resultVars[ii] -= 1;
     }
   }
-  // printVector_gm("jacobian_ODE colums", jacobian_ODE->resultVars, nFastStates, gbfData->time);
-  // printVector_gm("jacobian colums", jacobian->resultVars, nFastStates, gbfData->time);
-  // printIntVector_gm("sparsity pattern colors", jacobian->sparsePattern->colorCols, nFastStates, gbfData->time);
+  // printVector_gb("jacobian_ODE colums", jacobian_ODE->resultVars, nFastStates, gbfData->time);
+  // printVector_gb("jacobian colums", jacobian->resultVars, nFastStates, gbfData->time);
+  // printIntVector_gb("sparsity pattern colors", jacobian->sparsePattern->colorCols, nFastStates, gbfData->time);
 
   return 0;
 }
@@ -669,10 +670,10 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   int nStages = gbfData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // printVector_gm("k:  ", gbfData->k + 0 * nStates, nStates, gbfData->time);
-  // printVector_gm("k:  ", gbfData->k + 1 * nStates, nStates, gbfData->time);
-  // printVector_gm("x:  ", gbfData->x + 0 * nStates, nStates, gbfData->time);
-  // printVector_gm("x:  ", gbfData->x + 1 * nStates, nStates, gbfData->time);
+  // printVector_gb("k:  ", gbfData->k + 0 * nStates, nStates, gbfData->time);
+  // printVector_gb("k:  ", gbfData->k + 1 * nStates, nStates, gbfData->time);
+  // printVector_gb("x:  ", gbfData->x + 0 * nStates, nStates, gbfData->time);
+  // printVector_gb("x:  ", gbfData->x + 1 * nStates, nStates, gbfData->time);
 
   // Is this necessary???
   // gbfData->data = (void*) data;
@@ -706,7 +707,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
                                  gbfData->k[stage_ * nStates + i] * gbfData->tableau->b[stage_] *  gbfData->stepSize;
     }
   }
-  // printVector_gm("res_const:  ", gbData->res_const, nStates, gbData->time);
+  // printVector_gb("res_const:  ", gbData->res_const, nStates, gbData->time);
 
   /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
     * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
@@ -716,7 +717,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   sData->timeValue = gbfData->time + gbfData->stepSize;
   // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
 if (gbfData->interpolation == 1) {
-    linear_interpolation_gmf(gbfData->startTime, gbfData->yStart,
+    linear_interpolation_gbf(gbfData->startTime, gbfData->yStart,
                             gbfData->endTime,    gbfData->yEnd,
                             sData->timeValue,    sData->realVars,
                             gbfData->nSlowStates, gbfData->slowStates);
@@ -802,7 +803,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
   // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
     if (gbfData->interpolation == 1) {
-    linear_interpolation_gmf(gbfData->startTime, gbfData->yStart,
+    linear_interpolation_gbf(gbfData->startTime, gbfData->yStart,
                             gbfData->endTime,    gbfData->yEnd,
                             gbfData->time,       gbfData->yOld,
                             gbfData->nSlowStates, gbfData->slowStates);
@@ -852,7 +853,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     {
       // interpolate the slow states on the time of the current stage
     if (gbfData->interpolation == 1) {
-      linear_interpolation_gmf(gbfData->startTime,  gbfData->yStart,
+      linear_interpolation_gbf(gbfData->startTime,  gbfData->yStart,
                                gbfData->endTime,    gbfData->yEnd,
                                sData->timeValue,    sData->realVars,
                                gbfData->nSlowStates, gbfData->slowStates);
@@ -1015,8 +1016,8 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
       if (gbfData->fastStates[k] - gbfData->fastStates_old[k]) {
         if(ACTIVE_STREAM(LOG_MULTIRATE))
         {
-          printIntVector_gm("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbData->time);
-          printIntVector_gm("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbData->time);
+          printIntVector_gb("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbData->time);
+          printIntVector_gb("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbData->time);
         }
         fastStateChange = TRUE;
         break;
@@ -1078,8 +1079,8 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
                   gbData->timeLeft, gbData->timeRight, gbData->lastStepSize);
   if(ACTIVE_STREAM(LOG_MULTIRATE))
   {
-    printVector_gm("yL:     ", gbData->yLeft, gbData->nStates, gbData->timeLeft);
-    printVector_gm("yR:     ", gbData->y, gbData->nStates, gbData->timeRight);
+    printVector_gb("yL:     ", gbData->yLeft, gbData->nStates, gbData->timeLeft);
+    printVector_gb("yR:     ", gbData->y, gbData->nStates, gbData->timeRight);
   }
 
   while (gbfData->time < innerTargetTime)
@@ -1088,8 +1089,8 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     {
       if(ACTIVE_STREAM(LOG_MULTIRATE))
       {
-        //printVector_gmf("yOld: ", gbfData->yOld, gbfData->nStates, gbfData->time, gbfData->nFastStates, gbfData->fastStates);
-        printVector_gm("yOld:     ", gbfData->yOld, gbfData->nStates, gbfData->time);
+        //printVector_gbf("yOld: ", gbfData->yOld, gbfData->nStates, gbfData->time, gbfData->nFastStates, gbfData->fastStates);
+        printVector_gb("yOld:     ", gbfData->yOld, gbfData->nStates, gbfData->time);
       }
 
       // calculate one step of the integrator
@@ -1159,11 +1160,11 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
       // interpolate the slow states on the time of the current stage
     if (gbfData->interpolation == 1) {
-      linear_interpolation_gmf(gbfData->startTime, gbfData->yStart,
+      linear_interpolation_gbf(gbfData->startTime, gbfData->yStart,
                                gbfData->endTime,   gbfData->yEnd,
                                gbfData->time,      gbfData->yOld,
                                gbfData->nSlowStates, gbfData->slowStates);
-      linear_interpolation_gmf(gbfData->startTime, gbfData->yStart,
+      linear_interpolation_gbf(gbfData->startTime, gbfData->yStart,
                                gbfData->endTime,   gbfData->yEnd,
                                gbfData->time + gbfData->lastStepSize, gbfData->y,
                                gbfData->nSlowStates, gbfData->slowStates);
@@ -1210,15 +1211,15 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     gbfData->time += gbfData->lastStepSize;
     if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
-      printVector_gm("y:        ", gbfData->y, gbfData->nStates, gbfData->time);
+      printVector_gb("y:        ", gbfData->y, gbfData->nStates, gbfData->time);
     }
 
 
     /* step is accepted and yOld needs to be updated, store yOld for later interpolation... */
-    copyVector_gmf(gbfData->yt, gbfData->yOld, nFastStates, gbfData->fastStates);
+    copyVector_gbf(gbfData->yt, gbfData->yOld, nFastStates, gbfData->fastStates);
 
     /* step is accepted and yOld needs to be updated */
-    copyVector_gmf(gbfData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
+    copyVector_gbf(gbfData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     gbfData->time- gbfData->lastStepSize, gbfData->time, err, gbfData->stepSize);
 
@@ -1243,15 +1244,16 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     // Dont disturb the inner step size control!!
     // if (gbfData->time + gbfData->stepSize > innerTargetTime)
     //   break;
-    if (gbfData->time + gbfData->stepSize > innerTargetTime)
+    gbfData->stepSize_old = gbfData->stepSize;
+    if (gbfData->time + gbfData->stepSize > innerTargetTime) {
       gbfData->stepSize = innerTargetTime - gbfData->time;
-
-    if ((stopTime - gbfData->time) < DASSL_STEP_EPS){
+    }
+    if ((innerTargetTime - gbfData->time) < DASSL_STEP_EPS){
       gbfData->time = innerTargetTime;
       break;
     }
-
   }
+  gbfData->stepSize = gbfData->stepSize_old;
 
   // restore the last predicted step size, only necessary if last step size has been reduced to reach the target time
   // gbfData->stepSize = gbfData->stepSize_old;
@@ -1282,9 +1284,9 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
     // solverInfo->currentTime = eventTime;
     // sData->timeValue = solverInfo->currentTime;
-    copyVector_gmf(gbData->err, gbfData->err, nFastStates, gbfData->fastStates);
-    copyVector_gmf(gbData->y, gbfData->y, nFastStates, gbfData->fastStates);
-    copyVector_gmf(gbData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
+    copyVector_gbf(gbData->err, gbfData->err, nFastStates, gbfData->fastStates);
+    copyVector_gbf(gbData->y, gbfData->y, nFastStates, gbfData->fastStates);
+    copyVector_gbf(gbData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
   }
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))
@@ -1324,7 +1326,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 }
 
 //Interpolation only some entries (indices given by idx[nIdx])
-void linear_interpolation_gmf(double ta, double* fa, double tb, double* fb, double t, double* f, int nIdx, int* idx)
+void linear_interpolation_gbf(double ta, double* fa, double tb, double* fb, double t, double* f, int nIdx, int* idx)
 {
   double lambda, h0, h1;
   int i, ii;
@@ -1359,7 +1361,7 @@ void hermite_interpolation_gmf(double ta, double* fa, double* dfa, double tb, do
 }
 
 
-void printVector_gmf(char name[], double* a, int n, double time, int nIndx, int* indx)
+void printVector_gbf(char name[], double* a, int n, double time, int nIndx, int* indx)
 {
   printf("%s\t(time = %14.8g):", name, time);
   for (int i=0;i<nIndx;i++)
@@ -1367,7 +1369,7 @@ void printVector_gmf(char name[], double* a, int n, double time, int nIndx, int*
   printf("\n");
 }
 
-void printMatrix_gmf(char name[], double* a, int n, double time)
+void printMatrix_gbf(char name[], double* a, int n, double time)
 {
   printf("\n%s at time: %g: \n ", name, time);
   for (int i=0;i<n;i++)
