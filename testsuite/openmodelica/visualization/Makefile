@@ -2,6 +2,7 @@ TEST=../../rtest -v
 
 TESTFILES= \
 ForceAndTorque.mos \
+Surfaces.mos \
 
 
 FAILINGTESTFILES= \

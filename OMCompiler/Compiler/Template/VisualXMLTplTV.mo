@@ -171,6 +171,20 @@ interface package VisualXMLTplTV
         DAE.Exp headAtOrigin;
         DAE.Exp twoHeadedArrow;
       end VECTOR;
+
+      record SURFACE
+        DAE.ComponentRef ident;
+        array<list<DAE.Exp>> T;
+        array<DAE.Exp> r_0;
+        DAE.Exp nu;
+        DAE.Exp nv;
+        // surfaceCharacteristic
+        DAE.Exp wireframe;
+        DAE.Exp multiColored;
+        array<DAE.Exp> color;
+        DAE.Exp specularCoeff;
+        DAE.Exp transparency;
+      end SURFACE;
     end Visualization;
   end VisualXML;
 
