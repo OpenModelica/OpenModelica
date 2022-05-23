@@ -35,6 +35,8 @@
  *  \author bbachmann
  */
 
+#include <time.h>
+
 #include "gmode.h"
 
 #include <float.h>
@@ -242,14 +244,14 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 }
 
 /**
- * @brief Function allocates memory needed for chosen RK method.
+ * @brief Function allocates memory needed for chosen gbodef method.
  *
  * @param data          Runtime data struct.
  * @param threadData    Thread data for error handling.
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int allocateDataGmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
+int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GM* gmData)
 {
   DATA_GMF* gmfData = (DATA_GMF*) malloc(sizeof(DATA_GMF));
   gmData->gmfData = gmfData;
@@ -375,8 +377,8 @@ int allocateDataGmf(DATA* data, threadData_t *threadData, DATA_GM* gmData)
     }
 
   /* Allocate memory for the nonlinear solver */
-  //gmfData->nlsSolverMethod = getGM_NLS_METHOD();
-    gmfData->nlsSolverMethod = RK_NLS_NEWTON;
+    gmfData->nlsSolverMethod = getGM_NLS_METHOD(FLAG_MR_NLS);
+    //gmfData->nlsSolverMethod = RK_NLS_NEWTON;
     gmfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gmfData);
     if (!gmfData->nlsData) {
       return -1;
@@ -734,7 +736,21 @@ if (gmfData->interpolation == 1) {
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
   gmData->multi_rate_phase = 1;
-  solved = solveNLS(data, threadData, nlsData, -1);
+
+  if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
+    clock_t start, end;
+    double cpu_time_used;
+
+    start = clock();
+    solved = solveNLS(data, threadData, nlsData, -1);
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+    infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
+  } else {
+    solved = solveNLS(data, threadData, nlsData, -1);
+  }
+
   if (!solved) {
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_MS: Failed to solve NLS in full_implicit_MS");
     return -1;
@@ -862,7 +878,21 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
       gmData->multi_rate_phase = 1;
-      solved = solveNLS(data, threadData, nlsData, -1);
+
+      if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
+        clock_t start, end;
+        double cpu_time_used;
+
+        start = clock();
+        solved = solveNLS(data, threadData, nlsData, -1);
+        end = clock();
+        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+        infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
+      } else {
+        solved = solveNLS(data, threadData, nlsData, -1);
+      }
+
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "gbf error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;

@@ -768,7 +768,7 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau) {
 void printButcherTableau(BUTCHER_TABLEAU* tableau) {
   int i, j;
   char Butcher_row[1024];
-  infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of RK-method:");
+  infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of gbode method:");
   for (i = 0; i<tableau->nStages; i++) {
     // TODO AHeu: Use snprintf instead of sprintf
     sprintf(Butcher_row, "%10g | ", tableau->c[i]);

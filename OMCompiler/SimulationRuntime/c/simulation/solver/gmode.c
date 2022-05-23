@@ -48,6 +48,8 @@
  *  \author bbachmann
  */
 
+#include <time.h>
+
 #include "gmode.h"
 #include "gmfode.h"
 
@@ -93,7 +95,7 @@ int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIA
 
 void initializeStaticNLSData_DIRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
 
-void allocateDataGmf(DATA* data, threadData_t* threadData, DATA_GM* gmData);
+void allocateDataGbodef(DATA* data, threadData_t* threadData, DATA_GM* gmData);
 
 // step size control function
 double IController(double* err_values, double* stepSize_values, double err_order);
@@ -194,10 +196,10 @@ enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD) {
  *
  * @return enum GM_NLS_METHOD   NLS method.
  */
-enum GM_NLS_METHOD getGM_NLS_METHOD() {
+enum GM_NLS_METHOD getGM_NLS_METHOD(enum _FLAG FLAG_NLS_METHOD) {
   enum GM_NLS_METHOD method;
   const char* flag_value;
-  flag_value = omc_flagValue[FLAG_SR_NLS];
+  flag_value = omc_flagValue[FLAG_NLS_METHOD];
   char* GM_NLS_METHOD_string;
 
   if (flag_value != NULL) {
@@ -212,8 +214,8 @@ enum GM_NLS_METHOD getGM_NLS_METHOD() {
     errorStreamPrint(LOG_STDOUT, 0, "Choose gbode NLS method: %s [from command line]", GM_NLS_METHOD_string);
     return RK_NLS_UNKNOWN;
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
-    return RK_NLS_KINSOL;
+    infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: newton [default]");
+    return RK_NLS_NEWTON;
   }
 }
 
@@ -938,7 +940,7 @@ int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
     }
 
   /* Allocate memory for the nonlinear solver */
-    gmData->nlsSolverMethod = getGM_NLS_METHOD();
+    gmData->nlsSolverMethod = getGM_NLS_METHOD(FLAG_SR_NLS);
     gmData->nlsData = initRK_NLS_DATA(data, threadData, gmData);
     if (!gmData->nlsData) {
       return -1;
@@ -983,7 +985,7 @@ int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
   }
 
   if (gmData->multi_rate) {
-    allocateDataGmf(data, threadData, gmData);
+    allocateDataGbodef(data, threadData, gmData);
   } else {
     gmData->gmfData = NULL;
   }
@@ -1387,8 +1389,21 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
   gmData->multi_rate_phase = 0;
-//  gmData->nlsData->nominal[5]=1e-4;
-  solved = solveNLS(data, threadData, nlsData, -1);
+
+  if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
+    clock_t start, end;
+    double cpu_time_used;
+
+    start = clock();
+    solved = solveNLS(data, threadData, nlsData, -1);
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+    infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
+  } else {
+    solved = solveNLS(data, threadData, nlsData, -1);
+  }
+
   if (!solved) {
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_MS: Failed to solve NLS in full_implicit_MS");
     return -1;
@@ -1497,7 +1512,21 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
       gmData->multi_rate_phase = 0;
-      solved = solveNLS(data, threadData, nlsData, -1);
+
+      if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
+        clock_t start, end;
+        double cpu_time_used;
+
+        start = clock();
+        solved = solveNLS(data, threadData, nlsData, -1);
+        end = clock();
+        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+        infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
+      } else {
+        solved = solveNLS(data, threadData, nlsData, -1);
+      }
+
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "expl_diag_impl_RK: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
@@ -1566,7 +1595,21 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     memcpy(&nlsData->nlsxExtrapolation[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
   }
   gmData->multi_rate_phase = 0;
-  solved = solveNLS(data, threadData, gmData->nlsData, -1);
+
+  if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
+    clock_t start, end;
+    double cpu_time_used;
+
+    start = clock();
+    solved = solveNLS(data, threadData, nlsData, -1);
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+    infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
+  } else {
+    solved = solveNLS(data, threadData, nlsData, -1);
+  }
+
   if (!solved) {
     errorStreamPrint(LOG_STDOUT, 0, "full_implicit_RK: Failed to solve NLS in full_implicit_RK");
     return -1;
@@ -1877,9 +1920,12 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       //if (rkData->stepsDone == 0)
       //  solverData->calculate_jacobian = 0;
 
+
       // calculate one step of the integrator
-      if (gmData->percentage!=1 || !gmData->stepsDone)
+      // calculate one step of the integrator
+      if (gmData->percentage!=1 || !gmData->stepsDone) {
         rk_step_info = gmData->step_fun(data, threadData, solverInfo);
+      }
 
       // error handling: try half of the step size!
       if (rk_step_info != 0) {

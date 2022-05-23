@@ -50,7 +50,7 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
 getErrorString();
 
 // Simulate with SDIRK2 and KINSOL+KLU
-system("./burgerEq -s=gbode -gbmeth=sdirk2 -gbfmeth=sdirk2 -gbnls=kinsol -gbratio=0.12 -override=\"tolerance=1e-5\"", "burgerEq_esdirk3_mr.log");
+system("./burgerEq -s=gbode -gbmeth=dopri45 -gbnls=kinsol -gbratio=0.12 -override=\"tolerance=1e-5\"", "burgerEq_esdirk3_mr.log");
 print(readFile("burgerEq_esdirk3_mr.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",
