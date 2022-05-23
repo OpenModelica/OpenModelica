@@ -2807,7 +2807,7 @@ void MainWindow::runOMSensPlugin()
  */
 void MainWindow::openUsersGuide()
 {
-  QUrl usersGuidePath("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/");
+  QUrl usersGuidePath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/").arg(Helper::OpenModelicaUsersGuideVersion));
   QDesktopServices::openUrl(usersGuidePath);
 }
 

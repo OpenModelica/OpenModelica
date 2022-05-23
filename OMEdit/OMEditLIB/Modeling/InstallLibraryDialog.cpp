@@ -51,7 +51,7 @@ InstallLibraryDialog::InstallLibraryDialog(QDialog *parent)
   setMinimumWidth(400);
   Label *pHeadingLabel = Utilities::getHeadingLabel(Helper::installLibrary);
   pHeadingLabel->setElideMode(Qt::ElideMiddle);
-  Label *pPackageManagerText = new Label(tr("The library will be installed using the <u><a href=\"https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/packagemanager.html#the-package-manager\">package manager</a></u>."));
+  Label *pPackageManagerText = new Label(tr("The library will be installed using the <u><a href=\"https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/packagemanager.html#the-package-manager\">package manager</a></u>.").arg(Helper::OpenModelicaUsersGuideVersion));
   pPackageManagerText->setOpenExternalLinks(true);
   pPackageManagerText->setTextInteractionFlags(Qt::TextBrowserInteraction);
   // support levels
