@@ -44,7 +44,6 @@
 #include "util/simulation_options.h"
 #include "util/omc_error.h"
 #include "FlatModelica/Expression.h"
-#include "Util/NetworkAccessManager.h"
 
 extern "C" {
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
@@ -277,10 +276,6 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
     }
   }
   Helper::OpenModelicaUsersGuideVersion = versionShort;
-  // check if users guide version exists
-  NetworkAccessManager *pNetworkAccessManager = new NetworkAccessManager;
-  connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(setUsersGuideVersion(QNetworkReply*)));
-  pNetworkAccessManager->get(QNetworkRequest(QUrl(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/").arg(versionShort))));
   // set OpenModelicaHome variable
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath().replace("\\", "/");
   // set ModelicaPath variale
@@ -488,21 +483,6 @@ void OMCProxy::logResponse(QString command, QString response, double elapsed, bo
       fflush(NULL);
     }
   }
-}
-
-/*!
- * \brief OMCProxy::setUsersGuideVersion
- * Slot activated when we try to get the OpenModelica users guide for specific version.\n
- * If the request fails then we set it users guide version to latest.
- * \param pNetworkReply
- */
-void OMCProxy::setUsersGuideVersion(QNetworkReply *pNetworkReply)
-{
-  qDebug() << pNetworkReply->error();
-  if (pNetworkReply->error() == QNetworkReply::HostNotFoundError) {
-    Helper::OpenModelicaUsersGuideVersion = Helper::defaultUsersGuideVersion;
-  }
-  pNetworkReply->deleteLater();
 }
 
 /*!
