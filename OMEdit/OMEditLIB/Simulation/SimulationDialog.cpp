@@ -2046,11 +2046,8 @@ void SimulationDialog::enableDasslIdaOptions(QString method)
  */
 void SimulationDialog::showIntegrationHelp()
 {
-  QUrl integrationAlgorithmsPath ("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/simulationflags.html#integration-methods");
-  if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString()), Helper::ok);
-  }
+  QUrl integrationAlgorithmsPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/simulationflags.html#integration-methods").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(integrationAlgorithmsPath);
 }
 
 /*!
@@ -2112,11 +2109,8 @@ void SimulationDialog::browseEquationSystemInitializationFile()
  */
 void SimulationDialog::showSimulationFlagsHelp()
 {
-  QUrl simulationflagsPath ("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/simulationflags.html");
-  if (!QDesktopServices::openUrl(simulationflagsPath)) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(simulationflagsPath.toString()), Helper::ok);
-  }
+  QUrl simulationflagsPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/simulationflags.html").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(simulationflagsPath);
 }
 
 /*!

@@ -56,6 +56,7 @@ public:
   static QString organization;
   static QString application;
   static QString OpenModelicaVersion;
+  static QString OpenModelicaUsersGuideVersion;
   static QString OpenModelicaHome;
   static QString ModelicaPath;
   static QString userHomeDirectory;

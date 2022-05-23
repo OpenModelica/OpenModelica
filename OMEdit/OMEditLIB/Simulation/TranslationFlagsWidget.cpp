@@ -203,9 +203,6 @@ QString TranslationFlagsWidget::commandLineOptions()
  */
 void TranslationFlagsWidget::showTranslationFlagsHelp()
 {
-  QUrl omcHelpTextPath ("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/omchelptext.html");
-  if (!QDesktopServices::openUrl(omcHelpTextPath)) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(omcHelpTextPath.toString()), Helper::ok);
-  }
+  QUrl omcHelpTextPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/omchelptext.html").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(omcHelpTextPath);
 }
