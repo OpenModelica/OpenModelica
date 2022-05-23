@@ -2109,7 +2109,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
                     gbData->time- gbData->lastStepSize, gbData->time, err, gbData->stepSize);
 
     /* emit step, if integratorSteps is selected */
-    if (solverInfo->integratorSteps)
+    if (solverInfo->integratorSteps  && !gbData->multi_rate)
     {
       sData->timeValue = gbData->time;
       solverInfo->currentTime = sData->timeValue;
@@ -2159,7 +2159,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     }
   }else{
     // Integrator emits result on the simulation grid
-    sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
+    sData->timeValue = gbData->time;
     solverInfo->currentTime = gbData->time;
   }
 

@@ -934,6 +934,8 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
   DATA_GBODEF* gbfData = gbData->gbfData;
 
+  double stopTime = data->simulationInfo->stopTime;
+
   double err, eventTime;
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
@@ -1219,6 +1221,24 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     copyVector_gmf(gbfData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     gbfData->time- gbfData->lastStepSize, gbfData->time, err, gbfData->stepSize);
+
+    /* emit step, if integratorSteps is selected */
+    if (solverInfo->integratorSteps)
+    {
+      sData->timeValue = gbfData->time;
+      solverInfo->currentTime = sData->timeValue;
+      memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
+      /*
+       * to emit consistent value we need to update the whole
+       * continuous system with algebraic variables.
+       */
+      data->callback->updateContinuousSystem(data, threadData);
+      sim_result.emit(&sim_result, data, threadData);
+    }
+
+    // Dont disturb the inner step size control!!
+    if (gbfData->time + gbfData->stepSize > stopTime)
+      gbfData->stepSize = stopTime - gbfData->time;
 
     // Dont disturb the inner step size control!!
     if (gbfData->time + gbfData->stepSize > innerTargetTime)
