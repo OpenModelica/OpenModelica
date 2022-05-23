@@ -1241,8 +1241,16 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
       gbfData->stepSize = stopTime - gbfData->time;
 
     // Dont disturb the inner step size control!!
+    // if (gbfData->time + gbfData->stepSize > innerTargetTime)
+    //   break;
     if (gbfData->time + gbfData->stepSize > innerTargetTime)
+      gbfData->stepSize = innerTargetTime - gbfData->time;
+
+    if ((stopTime - gbfData->time) < DASSL_STEP_EPS){
+      gbfData->time = innerTargetTime;
       break;
+    }
+
   }
 
   // restore the last predicted step size, only necessary if last step size has been reduced to reach the target time
