@@ -541,19 +541,20 @@ void SimulationDialog::setUpForm()
   QGridLayout *pOutputTabLayout = new QGridLayout;
   pOutputTabLayout->setAlignment(Qt::AlignTop);
   pOutputTabLayout->addWidget(mpOutputFormatLabel, 0, 0);
-  pOutputTabLayout->addWidget(mpOutputFormatComboBox, 0, 1);
-  pOutputTabLayout->addWidget(mpSinglePrecisionCheckBox, 1, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpOutputFormatComboBox, 0, 1, 1, 2);
+  pOutputTabLayout->addWidget(mpSinglePrecisionCheckBox, 1, 0, 1, 3);
   pOutputTabLayout->addWidget(mpFileNameLabel, 2, 0);
-  pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1);
+  pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1, 1, 2);
   pOutputTabLayout->addWidget(mpResultFileNameLabel, 3, 0);
-  pOutputTabLayout->addWidget(mpResultFileNameTextBox, 3, 1);
+  pOutputTabLayout->addWidget(mpResultFileNameTextBox, 3, 1, 1, 2);
   pOutputTabLayout->addWidget(mpVariableFilterLabel, 4, 0);
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 4, 1);
-  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpIgnoreHideResultCheckBox, 6, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 7, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 8, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 9, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpVariableFilterHelpButton, 4, 2);
+  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpIgnoreHideResultCheckBox, 6, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 7, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 8, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 9, 0, 1, 3);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
@@ -1740,8 +1741,7 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
     } else {
       QString GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
-      GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(),
-                                     GDBPath, simulationOptions);
+      GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(), GDBPath, simulationOptions);
       MainWindow::instance()->switchToAlgorithmicDebuggingPerspectiveSlot();
     }
   }
@@ -1754,7 +1754,7 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
  */
 void SimulationDialog::showVariableFilterHelp()
 {
-  QUrl variabeFilterHelpPath("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/omedit.html#output");
+  QUrl variabeFilterHelpPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/omedit.html#output").arg(Helper::OpenModelicaUsersGuideVersion));
   QDesktopServices::openUrl(variabeFilterHelpPath);
 }
 
@@ -2061,7 +2061,7 @@ void SimulationDialog::enableDasslIdaOptions(QString method)
  */
 void SimulationDialog::showIntegrationHelp()
 {
-  QUrl integrationAlgorithmsPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/simulationflags.html#integration-methods").arg(Helper::OpenModelicaUsersGuideVersion));
+  QUrl integrationAlgorithmsPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/solving.html#cruntime-integration-methods").arg(Helper::OpenModelicaUsersGuideVersion));
   QDesktopServices::openUrl(integrationAlgorithmsPath);
 }
 
