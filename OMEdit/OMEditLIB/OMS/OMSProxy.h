@@ -73,7 +73,7 @@ public:
   void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
 
   bool addBus(QString cref);
-  bool addConnection(QString crefA, QString crefB);
+  bool addConnection(QString crefA, QString crefB, bool suppressUnitConversion = false);
   bool addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type);
   bool addConnectorToBus(QString busCref, QString connectorCref);
   bool addConnectorToTLMBus(QString busCref, QString connectorCref, QString type);
