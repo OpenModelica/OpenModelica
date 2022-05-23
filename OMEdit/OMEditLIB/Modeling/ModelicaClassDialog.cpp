@@ -1452,7 +1452,8 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
     pMainLayout->addWidget(new Label(tr("Following libraries from the uses annotation have new versions available.")));
   }
   pMainLayout->addWidget(mpUsesLibrariesTreeWidget);
-  pMainLayout->addWidget(new Label(tr("Note: The converted class and used library might be reloaded.")));
+  pMainLayout->addWidget(new Label(tr("Note: If the library that you want to convert to is missing then please install it using File->Manage Libraries->Install Library.")));
+  pMainLayout->addWidget(new Label(tr("The converted class and used library might be reloaded.")));
   pMainLayout->addWidget(new Label(tr("This operation can take sometime depending on the conversions.")));
   pMainLayout->addWidget(new Label(tr("Backup your work before starting the conversion.")));
   QHBoxLayout *pHBoxLayout = new QHBoxLayout;
