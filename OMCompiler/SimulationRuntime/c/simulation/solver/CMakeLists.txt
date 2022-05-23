@@ -50,7 +50,7 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     delay.h
                     epsilon.h
                     gbode.h
-                    gmfode.h
+                    gbodef.h
                     events.h
                     external_input.h
                     irksco.h

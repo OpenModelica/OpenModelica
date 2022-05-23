@@ -28,11 +28,11 @@
  *
  */
 
-/*! \file DATA_GMF.h
+/*! \file DATA_GBODEF.h
  */
 
-#ifndef _DATA_GMF_H_
-#define _DATA_GMF_H_
+#ifndef _DATA_GBODEF_H_
+#define _DATA_GBODEF_H_
 
 #include "simulation_data.h"
 #include "solver_main.h"
@@ -46,7 +46,7 @@
 typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
 
-typedef struct DATA_GMF{
+typedef struct DATA_GBODEF{
   enum GM_SINGLERATE_METHOD GM_method;        /* Runge-Kutta method to use. */
   enum GM_TYPE type;                          /* Type of RK method */
   enum GM_NLS_METHOD nlsSolverMethod;         /* Non-linear solver method uses by generic RK method. */
@@ -88,10 +88,10 @@ typedef struct DATA_GMF{
   unsigned int convergenceFailures;
   gm_step_function step_fun;
   gm_stepSize_control_function stepSize_control;
-} DATA_GMF;
+} DATA_GBODEF;
 
-void freeDataGbf(DATA_GMF* data);
-int gmfode_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
+void freeDataGbf(DATA_GBODEF* data);
+int gbodef_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
 //auxiliary vector functions
 void linear_interpolation_gm(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void linear_interpolation_gmf(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
@@ -101,4 +101,4 @@ void printVector_gmf(char name[], double* a, int n, double time, int nIndx, int*
 void printMatrix_gmf(char name[], double* a, int n, double time);
 void copyVector_gmf(double* a, double* b, int nIndx, int* indx);
 
-#endif /* _DATA_GMF_H_ */
+#endif /* _DATA_GBODEF_H_ */

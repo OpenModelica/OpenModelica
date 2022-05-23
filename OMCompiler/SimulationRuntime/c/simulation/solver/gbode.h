@@ -28,16 +28,16 @@
  *
  */
 
-/*! \file DATA_GM.h
+/*! \file DATA_GBODE.h
  */
 
-#ifndef _DATA_GM_H_
-#define _DATA_GM_H_
+#ifndef _DATA_GBODE_H_
+#define _DATA_GBODE_H_
 
 #include "simulation_data.h"
 #include "solver_main.h"
 
-#include "gmfode.h"
+#include "gbodef.h"
 #include "gbode_tableau.h"
 
 
@@ -47,8 +47,8 @@
 typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
 
-typedef struct DATA_GM{
-  DATA_GMF* gmfData;
+typedef struct DATA_GBODE{
+  DATA_GBODEF* gbfData;
   enum GM_SINGLERATE_METHOD GM_method;  /* method to use for fast states integration. */
   enum GM_TYPE type;                    /* Type of GM method */
   enum GM_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
@@ -102,14 +102,14 @@ typedef struct DATA_GM{
   unsigned int evalJacobians;         /* Total number of Jacobian evaluations */
   unsigned int errorTestFailures;     /* Total number of error test failures */
   unsigned int convergenceFailures;   /* Total number of convergence failures */
-} DATA_GM;
+} DATA_GBODE;
 
 enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD);
 enum GM_NLS_METHOD getGM_NLS_METHOD();
 int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-void freeDataGbode(DATA_GM* data);
+void freeDataGbode(DATA_GBODE* data);
 int gbode_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int wrapper_f_gm(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
 
 
-#endif /* _DATA_GM_H_ */
+#endif /* _DATA_GBODE_H_ */

@@ -315,13 +315,13 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData) {
   if(sysNumber>=0) {
     nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GM* gmData = (DATA_GM*)data->simulationInfo->backupSolverData;
-    if (gmData->multi_rate_phase) {
-      nlsData = gmData->gmfData->nlsData;
-      dataAndThreadData[2] = gmData->gmfData;
+    DATA_GBODE* gbData = (DATA_GBODE*)data->simulationInfo->backupSolverData;
+    if (gbData->multi_rate_phase) {
+      nlsData = gbData->gbfData->nlsData;
+      dataAndThreadData[2] = gbData->gbfData;
     } else {
-      nlsData = gmData->nlsData;
-      dataAndThreadData[2] = gmData;
+      nlsData = gbData->nlsData;
+      dataAndThreadData[2] = gbData;
     }
   }
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
@@ -360,11 +360,11 @@ static int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   if(sysNumber>=0) {
     nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GM* gmData = (DATA_GM*)data->simulationInfo->backupSolverData;
-    if (gmData->multi_rate_phase)
-      nlsData = gmData->gmfData->nlsData;
+    DATA_GBODE* gbData = (DATA_GBODE*)data->simulationInfo->backupSolverData;
+    if (gbData->multi_rate_phase)
+      nlsData = gbData->gbfData->nlsData;
     else
-      nlsData = gmData->nlsData;
+      nlsData = gbData->nlsData;
   }
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
 
@@ -518,11 +518,11 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   if(sysNumber>=0) {
     nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   } else {
-    DATA_GM* gmData = (DATA_GM*)data->simulationInfo->backupSolverData;
-    if (gmData->multi_rate_phase)
-      nlsData = gmData->gmfData->nlsData;
+    DATA_GBODE* gbData = (DATA_GBODE*)data->simulationInfo->backupSolverData;
+    if (gbData->multi_rate_phase)
+      nlsData = gbData->gbfData->nlsData;
     else
-      nlsData = gmData->nlsData;
+      nlsData = gbData->nlsData;
   }
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;
@@ -642,13 +642,13 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
     nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
     analyticJacobian = &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
   } else {
-    DATA_GM* gmData = (DATA_GM*)data->simulationInfo->backupSolverData;
-    if (gmData->multi_rate_phase) {
-      nlsData = gmData->gmfData->nlsData;
-      analyticJacobian = gmData->gmfData->jacobian;
+    DATA_GBODE* gbData = (DATA_GBODE*)data->simulationInfo->backupSolverData;
+    if (gbData->multi_rate_phase) {
+      nlsData = gbData->gbfData->nlsData;
+      analyticJacobian = gbData->gbfData->jacobian;
     } else {
-      nlsData = gmData->nlsData;
-      analyticJacobian = gmData->jacobian;
+      nlsData = gbData->nlsData;
+      analyticJacobian = gbData->jacobian;
     }
   }
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;

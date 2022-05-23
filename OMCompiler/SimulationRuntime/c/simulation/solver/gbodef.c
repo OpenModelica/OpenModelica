@@ -113,7 +113,7 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
 struct RK_USER_DATA_MR {
   DATA* data;
   threadData_t* threadData;
-  DATA_GMF* gmfData;
+  DATA_GBODEF* gbfData;
 };
 
 struct dataSolver
@@ -130,11 +130,11 @@ struct dataSolver
  *
  * @param data                        Runtime data struct.
  * @param threadData                  Thread data for error handling.
- * @param gmfData                     Runge-Kutta method.
+ * @param gbfData                     Runge-Kutta method.
  * @return NONLINEAR_SYSTEM_DATA*     Pointer to initialized non-linear system data.
  */
-NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GMF* gmfData) {
-  assertStreamPrint(threadData, gmfData->type != GM_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
+NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GBODEF* gbfData) {
+  assertStreamPrint(threadData, gbfData->type != GM_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
   // TODO AHeu: Free solverData again
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
@@ -146,7 +146,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
 
-  nlsData->size = gmfData->nStates;
+  nlsData->size = gbfData->nStates;
   nlsData->equationIndex = -1;
 
   nlsData->homotopySupport = FALSE;
@@ -157,7 +157,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   nlsData->max = NULL;
   nlsData->nominal = NULL;
 
-  switch (gmfData->type)
+  switch (gbfData->type)
   {
   case GM_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK_MR;
@@ -166,8 +166,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
-    // gmfData->symJacAvailable = FALSE;
-    gmfData->symJacAvailable = TRUE;
+    // gbfData->symJacAvailable = FALSE;
+    gbfData->symJacAvailable = TRUE;
     break;
   case MS_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_MS_MR;
@@ -175,10 +175,10 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
-    gmfData->symJacAvailable = TRUE;
+    gbfData->symJacAvailable = TRUE;
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gmfData->type);
+    errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gbfData->type);
     break;
   }
 
@@ -202,12 +202,12 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
   // TODO: Free memory
-  gmfData->jacobian = initAnalyticJacobian(gmfData->nlSystemSize, gmfData->nlSystemSize, gmfData->nlSystemSize, NULL, nlsData->sparsePattern);
+  gbfData->jacobian = initAnalyticJacobian(gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
   /* Initialize NLS method */
-  switch (gmfData->nlsSolverMethod) {
+  switch (gbfData->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     nlsData->nlsMethod = NLS_NEWTON;
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
@@ -218,7 +218,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     break;
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    if (gmfData->symJacAvailable) {
+    if (gbfData->symJacAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
@@ -226,7 +226,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
-    if (gmfData->symJacAvailable) {
+    if (gbfData->symJacAvailable) {
       resetKinsolMemory(solverData->ordinaryData, nlsData);
     } else {
       resetKinsolMemory(solverData->ordinaryData, nlsData);
@@ -235,7 +235,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     }
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GM_NLS_METHOD_NAME[gmfData->nlsSolverMethod]);
+    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GM_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
     return NULL;
     break;
   }
@@ -251,47 +251,47 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GM* gmData)
+int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GBODE* gbData)
 {
-  DATA_GMF* gmfData = (DATA_GMF*) malloc(sizeof(DATA_GMF));
-  gmData->gmfData = gmfData;
+  DATA_GBODEF* gbfData = (DATA_GBODEF*) malloc(sizeof(DATA_GBODEF));
+  gbData->gbfData = gbfData;
 
-  gmfData->nStates = gmData->nStates;
+  gbfData->nStates = gbData->nStates;
 
   ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
-  gmfData->GM_method = getGM_method(FLAG_MR);
-  gmfData->tableau = initButcherTableau(gmfData->GM_method, FLAG_MR_ERR);
-  if (gmfData->tableau == NULL){
+  gbfData->GM_method = getGM_method(FLAG_MR);
+  gbfData->tableau = initButcherTableau(gbfData->GM_method, FLAG_MR_ERR);
+  if (gbfData->tableau == NULL){
     // ERROR
     messageClose(LOG_STDOUT);
     omc_throw_function(threadData);
   }
 
   // Get size of non-linear system
-  analyseButcherTableau(gmfData->tableau, gmfData->nStates, &gmfData->nlSystemSize, &gmfData->type);
+  analyseButcherTableau(gbfData->tableau, gbfData->nStates, &gbfData->nlSystemSize, &gbfData->type);
 
-  if (gmfData->GM_method == MS_ADAMS_MOULTON) {
-    gmfData->nlSystemSize = gmfData->nStates;
-    gmfData->step_fun = &(full_implicit_MS_MR);
-    gmfData->type = MS_TYPE_IMPLICIT;
-    gmfData->isExplicit = FALSE;
+  if (gbfData->GM_method == MS_ADAMS_MOULTON) {
+    gbfData->nlSystemSize = gbfData->nStates;
+    gbfData->step_fun = &(full_implicit_MS_MR);
+    gbfData->type = MS_TYPE_IMPLICIT;
+    gbfData->isExplicit = FALSE;
   }
 
-  switch (gmfData->type)
+  switch (gbfData->type)
   {
   case GM_TYPE_EXPLICIT:
-    gmfData->isExplicit = TRUE;
-    gmfData->step_fun = &(expl_diag_impl_RK_MR);
+    gbfData->isExplicit = TRUE;
+    gbfData->step_fun = &(expl_diag_impl_RK_MR);
     break;
   case GM_TYPE_DIRK:
-    gmfData->isExplicit = FALSE;
-    gmfData->step_fun = &(expl_diag_impl_RK_MR);
+    gbfData->isExplicit = FALSE;
+    gbfData->step_fun = &(expl_diag_impl_RK_MR);
     break;
   case MS_TYPE_IMPLICIT:
-    gmfData->isExplicit = FALSE;
-    gmfData->step_fun = &(full_implicit_MS_MR);
+    gbfData->isExplicit = FALSE;
+    gbfData->step_fun = &(full_implicit_MS_MR);
     break;
 
   case GM_TYPE_IMPLICIT:
@@ -305,69 +305,69 @@ int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GM* gmData)
     break;
   }
 
-  infoStreamPrint(LOG_SOLVER, 0, "Step control factor is set to %g", gmfData->tableau->fac);
+  infoStreamPrint(LOG_SOLVER, 0, "Step control factor is set to %g", gbfData->tableau->fac);
 
   const char* flag_StepSize_ctrl = omc_flagValue[FLAG_SR_CTRL];
 
   if (flag_StepSize_ctrl != NULL) {
-    gmfData->stepSize_control = &(PIController);
+    gbfData->stepSize_control = &(PIController);
     infoStreamPrint(LOG_SOLVER, 0, "PIController is use for step size control");
   } else
   {
-    gmfData->stepSize_control = &(IController);
+    gbfData->stepSize_control = &(IController);
     infoStreamPrint(LOG_SOLVER, 0, "IController is use for step size control");
   }
 
   // allocate memory for the generic RK method
-  gmfData->y = malloc(sizeof(double)*gmfData->nStates);
-  gmfData->yOld = malloc(sizeof(double)*gmfData->nStates);
-  gmfData->yt = malloc(sizeof(double)*gmfData->nStates);
-  gmfData->f = malloc(sizeof(double)*gmfData->nStates);
-  if (!gmfData->isExplicit) {
-    gmfData->Jf = malloc(sizeof(double)*gmfData->nStates*gmfData->nStates);
-    for (int i=0; i<gmfData->nStates*gmfData->nStates; i++)
-      gmfData->Jf[i] = 0;
+  gbfData->y = malloc(sizeof(double)*gbfData->nStates);
+  gbfData->yOld = malloc(sizeof(double)*gbfData->nStates);
+  gbfData->yt = malloc(sizeof(double)*gbfData->nStates);
+  gbfData->f = malloc(sizeof(double)*gbfData->nStates);
+  if (!gbfData->isExplicit) {
+    gbfData->Jf = malloc(sizeof(double)*gbfData->nStates*gbfData->nStates);
+    for (int i=0; i<gbfData->nStates*gbfData->nStates; i++)
+      gbfData->Jf[i] = 0;
 
   } else {
-    gmfData->Jf = NULL;
+    gbfData->Jf = NULL;
   }
-  gmfData->k = malloc(sizeof(double)*gmfData->nStates*gmfData->tableau->nStages);
-  gmfData->x = malloc(sizeof(double)*gmfData->nStates*gmfData->tableau->nStages);
-  gmfData->res_const = malloc(sizeof(double)*gmfData->nStates);
-  gmfData->errest = malloc(sizeof(double)*gmfData->nStates);
-  gmfData->errtol = malloc(sizeof(double)*gmfData->nStates);
-  gmfData->err = malloc(sizeof(double)*gmfData->nStates);
-  gmfData->ringBufferSize = 5;
-  gmfData->errValues = malloc(sizeof(double)*gmfData->ringBufferSize);
-  gmfData->stepSizeValues = malloc(sizeof(double)*gmfData->ringBufferSize);
+  gbfData->k = malloc(sizeof(double)*gbfData->nStates*gbfData->tableau->nStages);
+  gbfData->x = malloc(sizeof(double)*gbfData->nStates*gbfData->tableau->nStages);
+  gbfData->res_const = malloc(sizeof(double)*gbfData->nStates);
+  gbfData->errest = malloc(sizeof(double)*gbfData->nStates);
+  gbfData->errtol = malloc(sizeof(double)*gbfData->nStates);
+  gbfData->err = malloc(sizeof(double)*gbfData->nStates);
+  gbfData->ringBufferSize = 5;
+  gbfData->errValues = malloc(sizeof(double)*gbfData->ringBufferSize);
+  gbfData->stepSizeValues = malloc(sizeof(double)*gbfData->ringBufferSize);
 
-  gmfData->nFastStates = gmfData->nStates;
-  gmfData->nSlowStates = 0;
-  gmfData->fastStates_old = malloc(sizeof(int)*gmfData->nStates);
-  gmfData->nFastStates_old = gmfData->nFastStates;
-  for (int i=0; i<gmfData->nStates; i++)
+  gbfData->nFastStates = gbfData->nStates;
+  gbfData->nSlowStates = 0;
+  gbfData->fastStates_old = malloc(sizeof(int)*gbfData->nStates);
+  gbfData->nFastStates_old = gbfData->nFastStates;
+  for (int i=0; i<gbfData->nStates; i++)
   {
-    gmfData->fastStates_old[i] = i;
+    gbfData->fastStates_old[i] = i;
   }
 
-  printButcherTableau(gmfData->tableau);
+  printButcherTableau(gbfData->tableau);
 
   /* initialize statistic counter */
   // TODO AHeu: Use calloc instead?
-  gmfData->stepsDone = 0;
-  gmfData->evalFunctionODE = 0;
-  gmfData->evalJacobians = 0;
-  gmfData->errorTestFailures = 0;
-  gmfData->convergenceFailures = 0;
+  gbfData->stepsDone = 0;
+  gbfData->evalFunctionODE = 0;
+  gbfData->evalJacobians = 0;
+  gbfData->errorTestFailures = 0;
+  gbfData->convergenceFailures = 0;
 
   /* initialize analytic Jacobian, if available and needed */
-  if (!gmfData->isExplicit) {
+  if (!gbfData->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
-      gmfData->symJacAvailable = FALSE;
+      gbfData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
     } else {
-      gmfData->symJacAvailable = TRUE;
+      gbfData->symJacAvailable = TRUE;
       // TODO AHeu: Is there a reason we get the jacobian again? Did data->callback->initialAnalyticJacobianA change the pointer?
       // ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
@@ -377,22 +377,22 @@ int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GM* gmData)
     }
 
   /* Allocate memory for the nonlinear solver */
-    gmfData->nlsSolverMethod = getGM_NLS_METHOD(FLAG_MR_NLS);
-    //gmfData->nlsSolverMethod = RK_NLS_NEWTON;
-    gmfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gmfData);
-    if (!gmfData->nlsData) {
+    gbfData->nlsSolverMethod = getGM_NLS_METHOD(FLAG_MR_NLS);
+    //gbfData->nlsSolverMethod = RK_NLS_NEWTON;
+    gbfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gbfData);
+    if (!gbfData->nlsData) {
       return -1;
     }
   }  else
   {
-    gmfData->symJacAvailable = FALSE;
-    gmfData->nlsSolverMethod = RK_NLS_UNKNOWN;  // TODO AHeu: Add a no-solver option?
-    gmfData->nlsData = NULL;
-    gmfData->jacobian = NULL;
+    gbfData->symJacAvailable = FALSE;
+    gbfData->nlsSolverMethod = RK_NLS_UNKNOWN;  // TODO AHeu: Add a no-solver option?
+    gbfData->nlsData = NULL;
+    gbfData->jacobian = NULL;
   }
 
-  //gmfData->interpolation = 2; // hermite
-  gmfData->interpolation = 1; // linear
+  //gbfData->interpolation = 2; // hermite
+  gbfData->interpolation = 1; // linear
 
   return 0;
 }
@@ -402,17 +402,17 @@ int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GM* gmData)
  *
  * @param data    Pointer to generik Runge-Kutta data struct.
  */
-void freeDataGbf(DATA_GMF* gmfData) {
+void freeDataGbf(DATA_GBODEF* gbfData) {
   /* Free non-linear system data */
-  if(gmfData->nlsData != NULL) {
-    struct dataSolver* dataSolver = gmfData->nlsData->solverData;
-    switch (gmfData->nlsSolverMethod)
+  if(gbfData->nlsData != NULL) {
+    struct dataSolver* dataSolver = gbfData->nlsData->solverData;
+    switch (gbfData->nlsSolverMethod)
     {
     case RK_NLS_NEWTON:
       freeNewtonData(dataSolver->ordinaryData);
       break;
     case RK_NLS_KINSOL:
-      //kinsolData = (NLS_KINSOL_DATA*) gmData->nlsData->solverData;
+      //kinsolData = (NLS_KINSOL_DATA*) gbData->nlsData->solverData;
       nlsKinsolFree(dataSolver->ordinaryData);
       break;
     default:
@@ -420,31 +420,31 @@ void freeDataGbf(DATA_GMF* gmfData) {
       break;
     }
     free(dataSolver);
-    free(gmfData->nlsData);
+    free(gbfData->nlsData);
   }
 
   /* Free Jacobian */
-  freeAnalyticJacobian(gmfData->jacobian);
+  freeAnalyticJacobian(gbfData->jacobian);
 
-  freeButcherTableau(gmfData->tableau);
+  freeButcherTableau(gbfData->tableau);
 
-  free(gmfData->y);
-  free(gmfData->yOld);
-  free(gmfData->yt);
-  free(gmfData->f);
-  free(gmfData->Jf);
-  free(gmfData->k);
-  free(gmfData->x);
-  free(gmfData->res_const);
-  free(gmfData->errest);
-  free(gmfData->errtol);
-  free(gmfData->err);
-  free(gmfData->errValues);
-  free(gmfData->stepSizeValues);
-  free(gmfData->fastStates_old);
+  free(gbfData->y);
+  free(gbfData->yOld);
+  free(gbfData->yt);
+  free(gbfData->f);
+  free(gbfData->Jf);
+  free(gbfData->k);
+  free(gbfData->x);
+  free(gbfData->res_const);
+  free(gbfData->errest);
+  free(gbfData->errtol);
+  free(gbfData->err);
+  free(gbfData->errValues);
+  free(gbfData->stepSizeValues);
+  free(gbfData->fastStates_old);
 
-  free(gmfData);
-  gmfData = NULL;
+  free(gbfData);
+  gbfData = NULL;
 
   return;
 }
@@ -465,13 +465,13 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   unsigned int i,j;
   unsigned int row, col;
 
-  DATA_GM* gmData = (DATA_GM*) data->simulationInfo->backupSolverData;
-  DATA_GMF* gmfData = gmData->gmfData;
+  DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
+  DATA_GBODEF* gbfData = gbData->gbfData;
 
   SPARSE_PATTERN* sparsePattern_MR;
-  SPARSE_PATTERN* sparsePattern_DIRK = gmData->jacobian->sparsePattern;
+  SPARSE_PATTERN* sparsePattern_DIRK = gbData->jacobian->sparsePattern;
 
-  int nStates = gmfData->nStates;
+  int nStates = gbfData->nStates;
 
   /* Compute size of new sparsitiy pattern
    * Increase the size to contain non-zero elements on diagonal. */
@@ -510,28 +510,28 @@ void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *i
 {
   DATA *data = (DATA *)((void **)dataIn[0]);
   threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GMF *gmfData = (DATA_GMF *)((void **)dataIn[2]);
+  DATA_GBODEF *gbfData = (DATA_GBODEF *)((void **)dataIn[2]);
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
 
   int i, ii;
   int nStates = data->modelData->nStates;
-  int nStages = gmfData->tableau->nStages;
-  int nFastStates = gmfData->nFastStates;
-  int stage_   = gmfData->act_stage;
+  int nStages = gbfData->tableau->nStages;
+  int nFastStates = gbfData->nFastStates;
+  int stage_   = gbfData->act_stage;
 
   // Evaluate right hand side of ODE
   for (ii=0; ii < nFastStates;ii++) {
-    i = gmfData->fastStates[ii];
+    i = gbfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  wrapper_f_gm(data, threadData, &(gmfData->evalFunctionODE), fODE);
+  wrapper_f_gm(data, threadData, &(gbfData->evalFunctionODE), fODE);
 
   for (ii=0; ii < nFastStates; ii++) {
-    i = gmfData->fastStates[ii];
-    res[ii] = gmfData->res_const[i] - xloc[ii] * gmfData->tableau->c[nStages-1] +
-                                       fODE[i] * gmfData->tableau->b[nStages-1] * gmfData->stepSize;
+    i = gbfData->fastStates[ii];
+    res[ii] = gbfData->res_const[i] - xloc[ii] * gbfData->tableau->c[nStages-1] +
+                                       fODE[i] * gbfData->tableau->b[nStages-1] * gbfData->stepSize;
   }
 
   return;
@@ -551,30 +551,30 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
 {
   DATA *data = (DATA *)((void **)dataIn[0]);
   threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GMF *gmfData = (DATA_GMF *)((void **)dataIn[2]);
+  DATA_GBODEF *gbfData = (DATA_GBODEF *)((void **)dataIn[2]);
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
 
   int i, ii;
   int nStates = data->modelData->nStates;
-  int nStages = gmfData->tableau->nStages;
-  int stage_  = gmfData->act_stage;
+  int nStages = gbfData->tableau->nStages;
+  int stage_  = gbfData->act_stage;
 
   // Evaluate right hand side of ODE
-  for (ii=0; ii<gmfData->nFastStates;ii++) {
-    i = gmfData->fastStates[ii];
+  for (ii=0; ii<gbfData->nFastStates;ii++) {
+    i = gbfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  wrapper_f_gm(data, threadData, &(gmfData->evalFunctionODE), fODE);
+  wrapper_f_gm(data, threadData, &(gbfData->evalFunctionODE), fODE);
 
   // Evaluate residual
-  for (ii=0; ii<gmfData->nFastStates; ii++) {
-    i = gmfData->fastStates[ii];
-    res[ii] = gmfData->res_const[i] - xloc[ii] + gmfData->stepSize * gmfData->tableau->A[stage_ * nStages + stage_] * fODE[i];
+  for (ii=0; ii<gbfData->nFastStates; ii++) {
+    i = gbfData->fastStates[ii];
+    res[ii] = gbfData->res_const[i] - xloc[ii] + gbfData->stepSize * gbfData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
 
-  // printVector_gm("res", res, gmfData->nFastStates, gmfData->time);
+  // printVector_gm("res", res, gbfData->nFastStates, gbfData->time);
   return;
 }
 
@@ -583,7 +583,7 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
  *
  * @param inData            Void pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
- * @param gmData     Runge-Kutta method.
+ * @param gbData     Runge-Kutta method.
  * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
@@ -591,19 +591,19 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
 int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
   DATA* data = (DATA*) inData;
-  DATA_GM* gmData = (DATA_GM*) data->simulationInfo->backupSolverData;
-  DATA_GMF* gmfData = gmData->gmfData;
+  DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
+  DATA_GBODEF* gbfData = gbData->gbfData;
 
   /* define callback to column function of Jacobian ODE */
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
   int i, ii;
   int nStates = data->modelData->nStates;
-  int nStages = gmfData->tableau->nStages;
-  int nFastStates = gmfData->nFastStates;
-  int stage_ = gmfData->act_stage;
+  int nStages = gbfData->tableau->nStages;
+  int nFastStates = gbfData->nFastStates;
+  int stage_ = gbfData->act_stage;
 
-  // printSparseStructure(gmfData->jacobian->sparsePattern,
+  // printSparseStructure(gbfData->jacobian->sparsePattern,
   //                     nFastStates,
   //                     nFastStates,
   //                     LOG_STDOUT,
@@ -614,33 +614,33 @@ int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
   for (ii=0; ii<nFastStates; ii++)
   {
-    i = gmfData->fastStates[ii];
+    i = gbfData->fastStates[ii];
     if (jacobian->seedVars[ii])
       jacobian_ODE->seedVars[i] = 1;
   }
 
   // update timeValue and unknown vector based on the active column "stage_"
-  //sData->timeValue = gmData->time + gmData->tableau->c[stage_] * gmData->stepSize;
+  //sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
 
   // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Update resultVars array */
   for (ii = 0; ii < nFastStates; ii++) {
-    i = gmfData->fastStates[ii];
-    if (gmfData->type == MS_TYPE_IMPLICIT) {
-      jacobian->resultVars[ii] = gmfData->tableau->b[nStages-1] * gmfData->stepSize * jacobian_ODE->resultVars[i];
+    i = gbfData->fastStates[ii];
+    if (gbfData->type == MS_TYPE_IMPLICIT) {
+      jacobian->resultVars[ii] = gbfData->tableau->b[nStages-1] * gbfData->stepSize * jacobian_ODE->resultVars[i];
     } else {
-      jacobian->resultVars[ii] = gmfData->stepSize * gmfData->tableau->A[stage_ * gmfData->tableau->nStages + stage_] * jacobian_ODE->resultVars[i];
+      jacobian->resultVars[ii] = gbfData->stepSize * gbfData->tableau->A[stage_ * gbfData->tableau->nStages + stage_] * jacobian_ODE->resultVars[i];
     }
     /* -1 on diagonal elements */
     if (jacobian->seedVars[ii] == 1) {
       jacobian->resultVars[ii] -= 1;
     }
   }
-  // printVector_gm("jacobian_ODE colums", jacobian_ODE->resultVars, nFastStates, gmfData->time);
-  // printVector_gm("jacobian colums", jacobian->resultVars, nFastStates, gmfData->time);
-  // printIntVector_gm("sparsity pattern colors", jacobian->sparsePattern->colorCols, nFastStates, gmfData->time);
+  // printVector_gm("jacobian_ODE colums", jacobian_ODE->resultVars, nFastStates, gbfData->time);
+  // printVector_gm("jacobian colums", jacobian->resultVars, nFastStates, gbfData->time);
+  // printIntVector_gm("sparsity pattern colors", jacobian->sparsePattern->colorCols, nFastStates, gbfData->time);
 
   return 0;
 }
@@ -660,82 +660,82 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GM* gmData = (DATA_GM*)solverInfo->solverData;
-  DATA_GMF* gmfData = gmData->gmfData;
+  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+  DATA_GBODEF* gbfData = gbData->gbfData;
 
   int i, ii;
   int stage, stage_;
   int nStates = data->modelData->nStates;
-  int nStages = gmfData->tableau->nStages;
+  int nStages = gbfData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // printVector_gm("k:  ", gmfData->k + 0 * nStates, nStates, gmfData->time);
-  // printVector_gm("k:  ", gmfData->k + 1 * nStates, nStates, gmfData->time);
-  // printVector_gm("x:  ", gmfData->x + 0 * nStates, nStates, gmfData->time);
-  // printVector_gm("x:  ", gmfData->x + 1 * nStates, nStates, gmfData->time);
+  // printVector_gm("k:  ", gbfData->k + 0 * nStates, nStates, gbfData->time);
+  // printVector_gm("k:  ", gbfData->k + 1 * nStates, nStates, gbfData->time);
+  // printVector_gm("x:  ", gbfData->x + 0 * nStates, nStates, gbfData->time);
+  // printVector_gm("x:  ", gbfData->x + 1 * nStates, nStates, gbfData->time);
 
   // Is this necessary???
-  // gmfData->data = (void*) data;
-  // gmfData->threadData = threadData;
+  // gbfData->data = (void*) data;
+  // gbfData->threadData = threadData;
 
   /* Predictor Schritt */
-  for (ii = 0; ii < gmfData->nFastStates; ii++)
+  for (ii = 0; ii < gbfData->nFastStates; ii++)
   {
-    i = gmfData->fastStates[ii];
-    // BB ToDo: check the formula with respect to gmData->k[]
-    gmfData->yt[i] = 0;
+    i = gbfData->fastStates[ii];
+    // BB ToDo: check the formula with respect to gbData->k[]
+    gbfData->yt[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gmfData->yt[i] += -gmfData->x[stage_ * nStates + i] * gmfData->tableau->c[stage_] +
-                          gmfData->k[stage_ * nStates + i] * gmfData->tableau->bt[stage_] *  gmfData->stepSize;
+      gbfData->yt[i] += -gbfData->x[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
+                          gbfData->k[stage_ * nStates + i] * gbfData->tableau->bt[stage_] *  gbfData->stepSize;
     }
-    gmfData->yt[i] += gmfData->k[stage_ * nStates + i] * gmfData->tableau->bt[stage_] * gmfData->stepSize;
-    gmfData->yt[i] /= gmfData->tableau->c[stage_];
+    gbfData->yt[i] += gbfData->k[stage_ * nStates + i] * gbfData->tableau->bt[stage_] * gbfData->stepSize;
+    gbfData->yt[i] /= gbfData->tableau->c[stage_];
   }
 
 
   /* Constant part of the multistep method */
-  for (ii = 0; ii < gmfData->nFastStates; ii++)
+  for (ii = 0; ii < gbfData->nFastStates; ii++)
   {
-    i = gmfData->fastStates[ii];
-    // BB ToDo: check the formula with respect to gmData->k[]
-    gmfData->res_const[i] = 0;
+    i = gbfData->fastStates[ii];
+    // BB ToDo: check the formula with respect to gbData->k[]
+    gbfData->res_const[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gmfData->res_const[i] += -gmfData->x[stage_ * nStates + i] * gmfData->tableau->c[stage_] +
-                                 gmfData->k[stage_ * nStates + i] * gmfData->tableau->b[stage_] *  gmfData->stepSize;
+      gbfData->res_const[i] += -gbfData->x[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
+                                 gbfData->k[stage_ * nStates + i] * gbfData->tableau->b[stage_] *  gbfData->stepSize;
     }
   }
-  // printVector_gm("res_const:  ", gmData->res_const, nStates, gmData->time);
+  // printVector_gm("res_const:  ", gbData->res_const, nStates, gbData->time);
 
   /* Compute intermediate step k, explicit if diagonal element is zero, implicit otherwise
     * k[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..i)) */
   // here, it yields:   stage == stage_, and stage * nStages + stage_ is index of the diagonal element
 
   // set simulation time with respect to the current stage
-  sData->timeValue = gmfData->time + gmfData->stepSize;
-  // interpolate the slow states on the current time of gmfData->yOld for correct evaluation of gmfData->res_const
-if (gmfData->interpolation == 1) {
-    linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
-                            gmfData->endTime,    gmfData->yEnd,
+  sData->timeValue = gbfData->time + gbfData->stepSize;
+  // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
+if (gbfData->interpolation == 1) {
+    linear_interpolation_gmf(gbfData->startTime, gbfData->yStart,
+                            gbfData->endTime,    gbfData->yEnd,
                             sData->timeValue,    sData->realVars,
-                            gmfData->nSlowStates, gmfData->slowStates);
+                            gbfData->nSlowStates, gbfData->slowStates);
 
   } else {
-    hermite_interpolation_gmf(gmfData->startTime,  gmfData->yStart, gmfData->kStart,
-                              gmfData->endTime,    gmfData->yEnd,   gmfData->kEnd,
+    hermite_interpolation_gmf(gbfData->startTime,  gbfData->yStart, gbfData->kStart,
+                              gbfData->endTime,    gbfData->yEnd,   gbfData->kEnd,
                               sData->timeValue,    sData->realVars,
-                              gmfData->nSlowStates, gmfData->slowStates);
+                              gbfData->nSlowStates, gbfData->slowStates);
   }
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-  NONLINEAR_SYSTEM_DATA* nlsData = gmfData->nlsData;
+  NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;
   // Set start vector, BB ToDo: Ommit extrapolation after event!!!
 
-  memcpy(nlsData->nlsx, gmfData->yt, nStates*sizeof(modelica_real));
+  memcpy(nlsData->nlsx, gbfData->yt, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
-  gmData->multi_rate_phase = 1;
+  gbData->multi_rate_phase = 1;
 
   if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
     clock_t start, end;
@@ -752,28 +752,28 @@ if (gmfData->interpolation == 1) {
   }
 
   if (!solved) {
-    errorStreamPrint(LOG_STDOUT, 0, "full_implicit_MS: Failed to solve NLS in full_implicit_MS");
+    errorStreamPrint(LOG_STDOUT, 0, "gbodef error: Failed to solve NLS in full_implicit_MS");
     return -1;
   }
 
-  memcpy(gmfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+  memcpy(gbfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
 
   /* Corrector Schritt */
-  for (ii = 0; ii < gmfData->nFastStates; ii++)
+  for (ii = 0; ii < gbfData->nFastStates; ii++)
   {
-    i = gmfData->fastStates[ii];
-    // BB ToDo: check the formula with respect to gmData->k[]
-    gmfData->y[i] = 0;
+    i = gbfData->fastStates[ii];
+    // BB ToDo: check the formula with respect to gbData->k[]
+    gbfData->y[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gmfData->y[i] += -gmfData->x[stage_ * nStates + i] * gmfData->tableau->c[stage_] +
-                         gmfData->k[stage_ * nStates + i] * gmfData->tableau->b[stage_] *  gmfData->stepSize;
+      gbfData->y[i] += -gbfData->x[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
+                         gbfData->k[stage_ * nStates + i] * gbfData->tableau->b[stage_] *  gbfData->stepSize;
     }
-    gmfData->y[i] += gmfData->k[stage_ * nStates + i] * gmfData->tableau->b[stage_] * gmfData->stepSize;
-    gmfData->y[i] /= gmfData->tableau->c[stage_];
+    gbfData->y[i] += gbfData->k[stage_ * nStates + i] * gbfData->tableau->b[stage_] * gbfData->stepSize;
+    gbfData->y[i] /= gbfData->tableau->c[stage_];
   }
   // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
-  memcpy(gmfData->x + stage_ * nStates, gmfData->y, nStates*sizeof(double));
+  memcpy(gbfData->x + stage_ * nStates, gbfData->y, nStates*sizeof(double));
 
   return 0;
 }
@@ -789,41 +789,41 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GM* gmData = (DATA_GM*)solverInfo->solverData;
-  DATA_GMF* gmfData = gmData->gmfData;
+  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+  DATA_GBODEF* gbfData = gbData->gbfData;
 
   int i, ii;
   int stage, stage_;
 
   int nStates = data->modelData->nStates;
-  int nFastStates = gmfData->nFastStates;
-  int nStages = gmfData->tableau->nStages;
+  int nFastStates = gbfData->nFastStates;
+  int nStages = gbfData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // interpolate the slow states on the current time of gmfData->yOld for correct evaluation of gmfData->res_const
-    if (gmfData->interpolation == 1) {
-    linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
-                            gmfData->endTime,    gmfData->yEnd,
-                            gmfData->time,       gmfData->yOld,
-                            gmfData->nSlowStates, gmfData->slowStates);
+  // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
+    if (gbfData->interpolation == 1) {
+    linear_interpolation_gmf(gbfData->startTime, gbfData->yStart,
+                            gbfData->endTime,    gbfData->yEnd,
+                            gbfData->time,       gbfData->yOld,
+                            gbfData->nSlowStates, gbfData->slowStates);
 
   } else {
-    hermite_interpolation_gmf(gmfData->startTime, gmfData->yStart, gmfData->kStart,
-                              gmfData->endTime,   gmfData->yEnd,   gmfData->kEnd,
-                              gmfData->time,      gmfData->yOld,
-                              gmfData->nSlowStates, gmfData->slowStates);
+    hermite_interpolation_gmf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+                              gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
+                              gbfData->time,      gbfData->yOld,
+                              gbfData->nSlowStates, gbfData->slowStates);
 
   }
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  sData->timeValue = gmfData->time;
-  memcpy(sData->realVars, gmfData->yOld, nStates*sizeof(double));
-  wrapper_f_gm(data, threadData, &(gmfData->evalFunctionODE), fODE);
-  memcpy(gmfData->k, fODE, nStates*sizeof(double));
+  sData->timeValue = gbfData->time;
+  memcpy(sData->realVars, gbfData->yOld, nStates*sizeof(double));
+  wrapper_f_gm(data, threadData, &(gbfData->evalFunctionODE), fODE);
+  memcpy(gbfData->k, fODE, nStates*sizeof(double));
 
   for (stage = 0; stage < nStages; stage++)
   {
-    gmfData->act_stage = stage;
+    gbfData->act_stage = stage;
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // residual constant part:
     // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
@@ -831,53 +831,53 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
     for (i=0; i < nStates; i++)
     {
-      gmfData->res_const[i] = gmfData->yOld[i];
+      gbfData->res_const[i] = gbfData->yOld[i];
       for (stage_ = 0; stage_ < stage; stage_++)
-        gmfData->res_const[i] += gmfData->stepSize * gmfData->tableau->A[stage * nStages + stage_] * gmfData->k[stage_ * nStates + i];
+        gbfData->res_const[i] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + stage_] * gbfData->k[stage_ * nStates + i];
     }
 
     // set simulation time with respect to the current stage
-    sData->timeValue = gmfData->time + gmfData->tableau->c[stage]*gmfData->stepSize;
+    sData->timeValue = gbfData->time + gbfData->tableau->c[stage]*gbfData->stepSize;
 
     // index of diagonal element of A
-    if (gmfData->tableau->A[stage * nStages + stage_] == 0)
+    if (gbfData->tableau->A[stage * nStages + stage_] == 0)
     {
       if (stage>0) {
-        memcpy(sData->realVars, gmfData->res_const, nStates*sizeof(double));
-        wrapper_f_gm(data, threadData, &(gmfData->evalFunctionODE), fODE);
+        memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
+        wrapper_f_gm(data, threadData, &(gbfData->evalFunctionODE), fODE);
       }
-//      memcpy(gmfData->x + stage_ * nStates, gmfData->res_const, nStates*sizeof(double));
+//      memcpy(gbfData->x + stage_ * nStates, gbfData->res_const, nStates*sizeof(double));
     }
     else
     {
       // interpolate the slow states on the time of the current stage
-    if (gmfData->interpolation == 1) {
-      linear_interpolation_gmf(gmfData->startTime,  gmfData->yStart,
-                               gmfData->endTime,    gmfData->yEnd,
+    if (gbfData->interpolation == 1) {
+      linear_interpolation_gmf(gbfData->startTime,  gbfData->yStart,
+                               gbfData->endTime,    gbfData->yEnd,
                                sData->timeValue,    sData->realVars,
-                               gmfData->nSlowStates, gmfData->slowStates);
+                               gbfData->nSlowStates, gbfData->slowStates);
       } else {
-        hermite_interpolation_gmf(gmfData->startTime, gmfData->yStart, gmfData->kStart,
-                                  gmfData->endTime,   gmfData->yEnd,   gmfData->kEnd,
+        hermite_interpolation_gmf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+                                  gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
                                   sData->timeValue,   sData->realVars,
-                                  gmfData->nSlowStates, gmfData->slowStates);
+                                  gbfData->nSlowStates, gbfData->slowStates);
 
       }
       // BB ToDo: set good starting values for the newton solver (solution of the last newton iteration!)
       // setting the start vector for the newton step
       // for (i=0; i<nFastStates; i++)
-      //   solverData->x[i] = gmfData->yOld[gmfData->fastStates[i]];
+      //   solverData->x[i] = gbfData->yOld[gbfData->fastStates[i]];
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-      NONLINEAR_SYSTEM_DATA* nlsData = gmfData->nlsData;
+      NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
       for (ii=0; ii<nFastStates; ii++) {
-          i = gmfData->fastStates[ii];
-          nlsData->nlsx[ii] = gmfData->yOld[i] + gmfData->tableau->c[stage_] * gmfData->stepSize * gmfData->k[i];
+          i = gbfData->fastStates[ii];
+          nlsData->nlsx[ii] = gbfData->yOld[i] + gbfData->tableau->c[stage_] * gbfData->stepSize * gbfData->k[i];
       }
-      //memcpy(nlsData->nlsx, gmfData->yOld, nStates*sizeof(modelica_real));
+      //memcpy(nlsData->nlsx, gbfData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
-      gmData->multi_rate_phase = 1;
+      gbData->multi_rate_phase = 1;
 
       if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
         clock_t start, end;
@@ -894,45 +894,45 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
 
       if (!solved) {
-        errorStreamPrint(LOG_STDOUT, 0, "gbf error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
+        errorStreamPrint(LOG_STDOUT, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
     }
     // copy last calculation of fODE, which should coincide with k[i]
-    memcpy(gmfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+    memcpy(gbfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
 
   }
 
   for (ii=0; ii<nFastStates; ii++)
   {
-    i = gmfData->fastStates[ii];
+    i = gbfData->fastStates[ii];
     // y   is the new approximation
     // yt  is the approximation of the embedded method for error estimation
-    gmfData->y[i]  = gmfData->yOld[i];
-    gmfData->yt[i] = gmfData->yOld[i];
+    gbfData->y[i]  = gbfData->yOld[i];
+    gbfData->yt[i] = gbfData->yOld[i];
     for (stage_=0; stage_<nStages; stage_++)
     {
-      gmfData->y[i]  += gmfData->stepSize * gmfData->tableau->b[stage_]  * (gmfData->k + stage_ * nStates)[i];
-      gmfData->yt[i] += gmfData->stepSize * gmfData->tableau->bt[stage_] * (gmfData->k + stage_ * nStates)[i];
+      gbfData->y[i]  += gbfData->stepSize * gbfData->tableau->b[stage_]  * (gbfData->k + stage_ * nStates)[i];
+      gbfData->yt[i] += gbfData->stepSize * gbfData->tableau->bt[stage_] * (gbfData->k + stage_ * nStates)[i];
     }
   }
 
   return 0;
 }
 
-/*! \fn gmfode_step
+/*! \fn gbodef_step
  *
  *  function does one integration step and calculates
  *  next step size by the implicit midpoint rule
  *
  *  used for solver 'gm'
  */
-int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double targetTime)
+int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double targetTime)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
-  DATA_GM* gmData = (DATA_GM*)solverInfo->solverData;
-  DATA_GMF* gmfData = gmData->gmfData;
+  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+  DATA_GBODEF* gbfData = gbData->gbfData;
 
   double err, eventTime;
   double Atol = data->simulationInfo->tolerance;
@@ -942,90 +942,90 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   int integrator_step_info;
 
   int nStates = data->modelData->nStates;
-  int nFastStates = gmData->nFastStates;
+  int nFastStates = gbData->nFastStates;
 
   // This is the target time of the main integrator
-  double innerTargetTime = fmin(targetTime, gmData->timeRight);
+  double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
   // BB ToDo: needs to be performed also after an event!!!
-  if (gmfData->didEventStep)
+  if (gbfData->didEventStep)
   {
      /* reset statistics because it is accumulated in solver_main.c */
-    gmfData->stepsDone = 0;
-    gmfData->evalFunctionODE = 0;
-    gmfData->evalJacobians = 0;
-    gmfData->errorTestFailures = 0;
-    gmfData->convergenceFailures = 0;
+    gbfData->stepsDone = 0;
+    gbfData->evalFunctionODE = 0;
+    gbfData->evalJacobians = 0;
+    gbfData->errorTestFailures = 0;
+    gbfData->convergenceFailures = 0;
 
-    gmfData->time = gmData->time;
-    gmfData->stepSize = gmData->lastStepSize;
+    gbfData->time = gbData->time;
+    gbfData->stepSize = gbData->lastStepSize;
     // BB ToDO: Copy only fast states!!
-    memcpy(gmfData->yOld, gmData->yOld, sizeof(double)*gmData->nStates);
-    gmfData->didEventStep = FALSE;
-    if (gmfData->type == MS_TYPE_IMPLICIT) {
-      memcpy(gmfData->x, gmData->x, nStates*sizeof(double));
-      memcpy(gmfData->k, gmData->k, nStates*sizeof(double));
+    memcpy(gbfData->yOld, gbData->yOld, sizeof(double)*gbData->nStates);
+    gbfData->didEventStep = FALSE;
+    if (gbfData->type == MS_TYPE_IMPLICIT) {
+      memcpy(gbfData->x, gbData->x, nStates*sizeof(double));
+      memcpy(gbfData->k, gbData->k, nStates*sizeof(double));
     }
   }
-//  gmfData->stepSize    = fmin(gmfData->stepSize, gmData->timeRight - gmfData->time);
-  gmfData->startTime   = gmData->timeLeft;
-  gmfData->endTime     = gmData->timeRight;
-  gmfData->yStart      = gmData->yLeft;
-  gmfData->yEnd        = gmData->y;
-  gmfData->fastStates  = gmData->fastStates;
-  gmfData->slowStates  = gmData->slowStates;
-  gmfData->nFastStates = gmData->nFastStates;
-  gmfData->nSlowStates = gmData->nSlowStates;
+//  gbfData->stepSize    = fmin(gbfData->stepSize, gbData->timeRight - gbfData->time);
+  gbfData->startTime   = gbData->timeLeft;
+  gbfData->endTime     = gbData->timeRight;
+  gbfData->yStart      = gbData->yLeft;
+  gbfData->yEnd        = gbData->y;
+  gbfData->fastStates  = gbData->fastStates;
+  gbfData->slowStates  = gbData->slowStates;
+  gbfData->nFastStates = gbData->nFastStates;
+  gbfData->nSlowStates = gbData->nSlowStates;
 
-  if (!gmfData->isExplicit) {
-    struct dataSolver *solverDataStruct = gmfData->nlsData->solverData;
+  if (!gbfData->isExplicit) {
+    struct dataSolver *solverDataStruct = gbfData->nlsData->solverData;
     // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
-    gmfData->nlsData->size = gmfData->nFastStates;
-    switch (gmfData->nlsSolverMethod)
+    gbfData->nlsData->size = gbfData->nFastStates;
+    switch (gbfData->nlsSolverMethod)
     {
       case  RK_NLS_NEWTON:
-        ((DATA_NEWTON*) solverDataStruct->ordinaryData)->n = gmfData->nFastStates;
+        ((DATA_NEWTON*) solverDataStruct->ordinaryData)->n = gbfData->nFastStates;
         break;
       case  RK_NLS_KINSOL:
-        ((NLS_KINSOL_DATA*) solverDataStruct->ordinaryData)->size = gmfData->nFastStates;
+        ((NLS_KINSOL_DATA*) solverDataStruct->ordinaryData)->size = gbfData->nFastStates;
         break;
       default:
-        errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", GM_NLS_METHOD_NAME[gmfData->nlsSolverMethod]);
+        errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", GM_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
         return -1;
         break;
     }
 
     infoStreamPrint(LOG_MULTIRATE, 1, "Fast states and corresponding nominal values:");
     for (ii=0; ii<nFastStates; ii++) {
-      i = gmfData->fastStates[ii];
+      i = gbfData->fastStates[ii];
     // Get the nominal values of the fast states
-      gmfData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-      infoStreamPrint(LOG_MULTIRATE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gmData->nlsData->nominal[i]);
+      gbfData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+      infoStreamPrint(LOG_MULTIRATE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->nominal[i]);
     }
     messageClose(LOG_MULTIRATE);
 
     modelica_boolean fastStateChange = FALSE;
-    if (gmfData->nFastStates != gmfData->nFastStates_old) {
-      infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %d", gmfData->nFastStates, gmfData->nFastStates_old);
+    if (gbfData->nFastStates != gbfData->nFastStates_old) {
+      infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %d", gbfData->nFastStates, gbfData->nFastStates_old);
       fastStateChange = TRUE;
     } else {
       for (int k=0; k<nFastStates; k++)
-        if (gmfData->fastStates[k] - gmfData->fastStates_old[k]) {
+        if (gbfData->fastStates[k] - gbfData->fastStates_old[k]) {
           if(ACTIVE_STREAM(LOG_MULTIRATE))
           {
-            printIntVector_gm("old fast States:", gmfData->fastStates_old, gmfData->nFastStates_old, gmData->time);
-            printIntVector_gm("new fast States:", gmfData->fastStates, gmfData->nFastStates, gmData->time);
+            printIntVector_gm("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbData->time);
+            printIntVector_gm("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbData->time);
           }
           fastStateChange = TRUE;
           break;
         }
     }
 
-    if (gmfData->symJacAvailable && fastStateChange) {
+    if (gbfData->symJacAvailable && fastStateChange) {
 
       // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
-      SPARSE_PATTERN* sparsePattern_DIRK = gmData->jacobian->sparsePattern;
-      SPARSE_PATTERN* sparsePattern_MR = gmfData->jacobian->sparsePattern;
+      SPARSE_PATTERN* sparsePattern_DIRK = gbData->jacobian->sparsePattern;
+      SPARSE_PATTERN* sparsePattern_MR = gbfData->jacobian->sparsePattern;
 
       /* Set sparsity pattern for the fast states */
       ii = 0;
@@ -1034,10 +1034,10 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
       sparsePattern_MR->leadindex[0] = sparsePattern_DIRK->leadindex[0];
       for(rr=0; rr < nFastStates; rr++) {
-        r = gmfData->fastStates[rr];
+        r = gbfData->fastStates[rr];
         ii = 0;
         for(jj = sparsePattern_DIRK->leadindex[r]; jj < sparsePattern_DIRK->leadindex[r+1];) {
-          i = gmfData->fastStates[ii];
+          i = gbfData->fastStates[ii];
           j = sparsePattern_DIRK->index[jj];
           if( i == j) {
             sparsePattern_MR->index[ll] = ii;
@@ -1058,8 +1058,8 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
       ColoringAlg(sparsePattern_MR, nFastStates, nFastStates, 1);
 
-      gmfData->jacobian->sizeCols = nFastStates;
-      gmfData->jacobian->sizeRows = nFastStates;
+      gbfData->jacobian->sizeCols = nFastStates;
+      gbfData->jacobian->sizeRows = nFastStates;
 
       printSparseStructure(sparsePattern_MR,
                            nFastStates,
@@ -1071,130 +1071,130 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   }
 
   // print informations on the calling details
-  infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states): %d", gmData->nFastStates);
+  infoStreamPrint(LOG_SOLVER, 0, "generic Runge-Kutta method (fast states): %d", gbData->nFastStates);
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (SR-stepsize: %10g)",
-                  gmData->timeLeft, gmData->timeRight, gmData->lastStepSize);
+                  gbData->timeLeft, gbData->timeRight, gbData->lastStepSize);
   if(ACTIVE_STREAM(LOG_MULTIRATE))
   {
-    printVector_gm("yL: ", gmData->yLeft, gmData->nStates, gmData->timeLeft);
-    printVector_gm("yR: ", gmData->y, gmData->nStates, gmData->timeRight);
+    printVector_gm("yL: ", gbData->yLeft, gbData->nStates, gbData->timeLeft);
+    printVector_gm("yR: ", gbData->y, gbData->nStates, gbData->timeRight);
     printf("\n");
   }
 
-  while (gmfData->time < innerTargetTime)
+  while (gbfData->time < innerTargetTime)
   {
     do
     {
       if(ACTIVE_STREAM(LOG_MULTIRATE))
       {
-        //printVector_gmf("yOld: ", gmfData->yOld, gmfData->nStates, gmfData->time, gmfData->nFastStates, gmfData->fastStates);
-        printVector_gm("yOld: ", gmfData->yOld, gmfData->nStates, gmfData->time);
+        //printVector_gmf("yOld: ", gbfData->yOld, gbfData->nStates, gbfData->time, gbfData->nFastStates, gbfData->fastStates);
+        printVector_gm("yOld: ", gbfData->yOld, gbfData->nStates, gbfData->time);
       }
 
       // calculate one step of the integrator
-      integrator_step_info = gmfData->step_fun(data, threadData, solverInfo);
+      integrator_step_info = gbfData->step_fun(data, threadData, solverInfo);
 
       // error handling: try half of the step size!
       if (integrator_step_info != 0) {
-        errorStreamPrint(LOG_STDOUT, 0, "gbode_step: Failed to calculate step at time = %5g.", gmfData->time);
+        errorStreamPrint(LOG_STDOUT, 0, "gbodef_step: Failed to calculate step at time = %5g.", gbfData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
-        gmfData->stepSize = gmfData->stepSize/2.;
+        gbfData->stepSize = gbfData->stepSize/2.;
         continue;
         //return -1;
       }
 
       for (i=0; i<nFastStates; i++)
       {
-        ii = gmfData->fastStates[i];
+        ii = gbfData->fastStates[i];
         // calculate corresponding values for the error estimator and step size control
-        gmfData->errtol[ii] = Rtol*fmax(fabs(gmfData->y[ii]),fabs(gmfData->yt[ii])) + Atol;
-        gmfData->errest[ii] = fabs(gmfData->y[ii] - gmfData->yt[ii]);
+        gbfData->errtol[ii] = Rtol*fmax(fabs(gbfData->y[ii]),fabs(gbfData->yt[ii])) + Atol;
+        gbfData->errest[ii] = fabs(gbfData->y[ii] - gbfData->yt[ii]);
       }
 
       /*** calculate error (infinity norm!)***/
       err = 0;
       for (i=0; i < nFastStates; i++)
       {
-        ii = gmfData->fastStates[i];
-        gmfData->err[ii] = gmfData->errest[ii]/gmfData->errtol[ii];
-        err = fmax(err, gmfData->err[ii]);
+        ii = gbfData->fastStates[i];
+        gbfData->err[ii] = gbfData->errest[ii]/gbfData->errtol[ii];
+        err = fmax(err, gbfData->err[ii]);
       }
 
-      gmfData->errValues[0] = gmfData->tableau->fac * err;
-      gmfData->stepSizeValues[0] = gmfData->stepSize;
+      gbfData->errValues[0] = gbfData->tableau->fac * err;
+      gbfData->stepSizeValues[0] = gbfData->stepSize;
 
       // Store performed stepSize for adjusting the time in case of latter interpolation
-      gmfData->lastStepSize = gmfData->stepSize;
+      gbfData->lastStepSize = gbfData->stepSize;
 
       // Call the step size control
-      gmfData->stepSize *= gmfData->stepSize_control(gmfData->errValues, gmfData->stepSizeValues, gmfData->tableau->error_order);
+      gbfData->stepSize *= gbfData->stepSize_control(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order);
 
       // Re-do step, if error is larger than requested
       if (err>1)
       {
-        gmfData->errorTestFailures++;
+        gbfData->errorTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
-                        gmfData->time, gmfData->time + gmfData->lastStepSize, err, gmfData->stepSize);
+                        gbfData->time, gbfData->time + gbfData->lastStepSize, err, gbfData->stepSize);
       }
     } while  (err>1);
 
     // Count succesful integration steps
-    gmfData->stepsDone += 1;
+    gbfData->stepsDone += 1;
 
     // Rotate ring buffer
-    for (i=0; i<(gmfData->ringBufferSize-1); i++) {
-      gmfData->errValues[i+1] = gmfData->errValues[i];
-      gmfData->stepSizeValues[i+1] = gmfData->stepSizeValues[i];
+    for (i=0; i<(gbfData->ringBufferSize-1); i++) {
+      gbfData->errValues[i+1] = gbfData->errValues[i];
+      gbfData->stepSizeValues[i+1] = gbfData->stepSizeValues[i];
     }
 
-    if (gmfData->type == MS_TYPE_IMPLICIT) {
-      for (int stage_=0; stage_< (gmfData->tableau->nStages-1); stage_++) {
-        memcpy(gmfData->k + stage_ * nStates, gmfData->k + (stage_+1) * nStates, nStates*sizeof(double));
-        memcpy(gmfData->x + stage_ * nStates, gmfData->x + (stage_+1) * nStates, nStates*sizeof(double));
+    if (gbfData->type == MS_TYPE_IMPLICIT) {
+      for (int stage_=0; stage_< (gbfData->tableau->nStages-1); stage_++) {
+        memcpy(gbfData->k + stage_ * nStates, gbfData->k + (stage_+1) * nStates, nStates*sizeof(double));
+        memcpy(gbfData->x + stage_ * nStates, gbfData->x + (stage_+1) * nStates, nStates*sizeof(double));
       }
     }
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
       // interpolate the slow states on the time of the current stage
-    if (gmfData->interpolation == 1) {
-      linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
-                               gmfData->endTime,   gmfData->yEnd,
-                               gmfData->time,      gmfData->yOld,
-                               gmfData->nSlowStates, gmfData->slowStates);
-      linear_interpolation_gmf(gmfData->startTime, gmfData->yStart,
-                               gmfData->endTime,   gmfData->yEnd,
-                               gmfData->time + gmfData->lastStepSize, gmfData->y,
-                               gmfData->nSlowStates, gmfData->slowStates);
+    if (gbfData->interpolation == 1) {
+      linear_interpolation_gmf(gbfData->startTime, gbfData->yStart,
+                               gbfData->endTime,   gbfData->yEnd,
+                               gbfData->time,      gbfData->yOld,
+                               gbfData->nSlowStates, gbfData->slowStates);
+      linear_interpolation_gmf(gbfData->startTime, gbfData->yStart,
+                               gbfData->endTime,   gbfData->yEnd,
+                               gbfData->time + gbfData->lastStepSize, gbfData->y,
+                               gbfData->nSlowStates, gbfData->slowStates);
     } else {
-      hermite_interpolation_gmf(gmfData->startTime, gmfData->yStart, gmfData->kStart,
-                                gmfData->endTime,   gmfData->yEnd,   gmfData->kEnd,
-                                gmfData->time,      gmfData->yOld,
-                                gmfData->nSlowStates, gmfData->slowStates);
-      hermite_interpolation_gmf(gmfData->startTime, gmfData->yStart, gmfData->kStart,
-                                gmfData->endTime,   gmfData->yEnd,   gmfData->kEnd,
-                                gmfData->time + gmfData->lastStepSize, gmfData->y,
-                                gmfData->nSlowStates, gmfData->slowStates);
+      hermite_interpolation_gmf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+                                gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
+                                gbfData->time,      gbfData->yOld,
+                                gbfData->nSlowStates, gbfData->slowStates);
+      hermite_interpolation_gmf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+                                gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
+                                gbfData->time + gbfData->lastStepSize, gbfData->y,
+                                gbfData->nSlowStates, gbfData->slowStates);
     }
 
-    eventTime = checkForEvents(data, threadData, solverInfo, gmfData->time, gmfData->yOld, gmfData->time + gmfData->lastStepSize, gmfData->y);
+    eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y);
     if (eventTime > 0)
     {
       solverInfo->currentTime = eventTime;
       sData->timeValue = solverInfo->currentTime;
 
       // sData->realVars are the "numerical" values on the right hand side of the event
-      gmData->time = eventTime;
-      memcpy(gmData->yOld, sData->realVars, gmfData->nStates * sizeof(double));
+      gbData->time = eventTime;
+      memcpy(gbData->yOld, sData->realVars, gbfData->nStates * sizeof(double));
 
-      gmfData->time = eventTime;
-      memcpy(gmfData->yOld, sData->realVars, gmfData->nStates * sizeof(double));
+      gbfData->time = eventTime;
+      memcpy(gbfData->yOld, sData->realVars, gbfData->nStates * sizeof(double));
 
       /* write statistics to the solverInfo data structure */
-      solverInfo->solverStatsTmp[0] = gmfData->stepsDone;
-      solverInfo->solverStatsTmp[1] = gmfData->evalFunctionODE;
-      solverInfo->solverStatsTmp[2] = gmfData->evalJacobians;
-      solverInfo->solverStatsTmp[3] = gmfData->errorTestFailures;
-      solverInfo->solverStatsTmp[4] = gmfData->convergenceFailures;
+      solverInfo->solverStatsTmp[0] = gbfData->stepsDone;
+      solverInfo->solverStatsTmp[1] = gbfData->evalFunctionODE;
+      solverInfo->solverStatsTmp[2] = gbfData->evalJacobians;
+      solverInfo->solverStatsTmp[3] = gbfData->errorTestFailures;
+      solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
 
       if(ACTIVE_STREAM(LOG_SOLVER))
       {
@@ -1205,77 +1205,77 @@ int gmfode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     }
 
     /* update time with performed stepSize */
-    gmfData->time += gmfData->lastStepSize;
+    gbfData->time += gbfData->lastStepSize;
     if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
-      printVector_gm("y:    ", gmfData->y, gmfData->nStates, gmfData->time);
+      printVector_gm("y:    ", gbfData->y, gbfData->nStates, gbfData->time);
     }
 
 
     /* step is accepted and yOld needs to be updated, store yOld for later interpolation... */
-    copyVector_gmf(gmfData->yt, gmfData->yOld, nFastStates, gmfData->fastStates);
+    copyVector_gmf(gbfData->yt, gbfData->yOld, nFastStates, gbfData->fastStates);
 
     /* step is accepted and yOld needs to be updated */
-    copyVector_gmf(gmfData->yOld, gmfData->y, nFastStates, gmfData->fastStates);
+    copyVector_gmf(gbfData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
-                    gmfData->time- gmfData->lastStepSize, gmfData->time, err, gmfData->stepSize);
+                    gbfData->time- gbfData->lastStepSize, gbfData->time, err, gbfData->stepSize);
 
     // Dont disturb the inner step size control!!
-    if (gmfData->time + gmfData->stepSize > innerTargetTime)
+    if (gbfData->time + gbfData->stepSize > innerTargetTime)
       break;
   }
 
   // restore the last predicted step size, only necessary if last step size has been reduced to reach the target time
-  // gmfData->stepSize = gmfData->stepSize_old;
+  // gbfData->stepSize = gbfData->stepSize_old;
 
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
-  gmData->err_fast = gmfData->errValues[0];
+  gbData->err_fast = gbfData->errValues[0];
 
   //outer integration needs to be synchronized
-  // if ((gmfData->time < gmData->timeRight) && (gmData->timeRight < targetTime))
-  if  ((gmfData->time + gmfData->stepSize > gmData->timeRight) ||
-        (gmData->time > targetTime) ||
-        ((gmData->time < targetTime) && (gmData->time + gmData->lastStepSize > targetTime))
+  // if ((gbfData->time < gbData->timeRight) && (gbData->timeRight < targetTime))
+  if  ((gbfData->time + gbfData->stepSize > gbData->timeRight) ||
+        (gbData->time > targetTime) ||
+        ((gbData->time < targetTime) && (gbData->time + gbData->lastStepSize > targetTime))
       )
   {
-    gmData->lastStepSize = gmfData->time - gmData->timeLeft;
-    gmData->timeRight = gmfData->time;
-    if (gmData->time > gmData->timeLeft)
-      gmData->time = gmfData->time;
+    gbData->lastStepSize = gbfData->time - gbData->timeLeft;
+    gbData->timeRight = gbfData->time;
+    if (gbData->time > gbData->timeLeft)
+      gbData->time = gbfData->time;
     else
-      gmData->time = gmData->timeLeft;
+      gbData->time = gbData->timeLeft;
 
-    memcpy(gmData->yOld, gmfData->y, gmfData->nStates * sizeof(double));
-    // This could be problem when gmData->y is used for interpolation, one should introduce yRight!!
-    // memcpy(gmData->y, gmfData->y, gmfData->nStates * sizeof(double));
+    memcpy(gbData->yOld, gbfData->y, gbfData->nStates * sizeof(double));
+    // This could be problem when gbData->y is used for interpolation, one should introduce yRight!!
+    // memcpy(gbData->y, gbfData->y, gbfData->nStates * sizeof(double));
 
     // solverInfo->currentTime = eventTime;
     // sData->timeValue = solverInfo->currentTime;
-    copyVector_gmf(gmData->err, gmfData->err, nFastStates, gmfData->fastStates);
-    // copyVector_gmf(gmData->y, gmfData->y, nFastStates, gmfData->fastStates);
-    // copyVector_gmf(gmData->yOld, gmfData->y, nFastStates, gmfData->fastStates);
+    copyVector_gmf(gbData->err, gbfData->err, nFastStates, gbfData->fastStates);
+    // copyVector_gmf(gbData->y, gbfData->y, nFastStates, gbfData->fastStates);
+    // copyVector_gmf(gbData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
   }
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))
   {
     infoStreamPrint(LOG_SOLVER_V, 1, "gmode call statistics: ");
     infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
-    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gmfData->time);
-    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gmfData->stepSize);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", gmfData->stepsDone);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", gmfData->evalFunctionODE);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", gmfData->evalJacobians);
-    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", gmfData->errorTestFailures);
-    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", gmfData->convergenceFailures);
+    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gbfData->time);
+    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gbfData->stepSize);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", gbfData->stepsDone);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", gbfData->evalFunctionODE);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", gbfData->evalJacobians);
+    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", gbfData->errorTestFailures);
+    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", gbfData->convergenceFailures);
     messageClose(LOG_SOLVER_V);
   }
 
   /* write statistics to the solverInfo data structure */
-  solverInfo->solverStatsTmp[0] = gmfData->stepsDone;
-  solverInfo->solverStatsTmp[1] = gmfData->evalFunctionODE;
-  solverInfo->solverStatsTmp[2] = gmfData->evalJacobians;
-  solverInfo->solverStatsTmp[3] = gmfData->errorTestFailures;
-  solverInfo->solverStatsTmp[4] = gmfData->convergenceFailures;
+  solverInfo->solverStatsTmp[0] = gbfData->stepsDone;
+  solverInfo->solverStatsTmp[1] = gbfData->evalFunctionODE;
+  solverInfo->solverStatsTmp[2] = gbfData->evalJacobians;
+  solverInfo->solverStatsTmp[3] = gbfData->errorTestFailures;
+  solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
 
   infoStreamPrint(LOG_SOLVER, 0, "Finished gmode inner step.");
   if(ACTIVE_STREAM(LOG_MULTIRATE))
