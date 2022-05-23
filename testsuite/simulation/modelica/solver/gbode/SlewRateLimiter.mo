@@ -58,5 +58,6 @@ This example demonstrates how to use the Nonlinear.SlewRateLimiter block to limi
 <p>
 A position controlled drive with limited velocity and limited acceleration (i.e. torque) is able to follow the smoothed reference position.
 </p>
-</html>"));
+</html>"),
+    __OpenModelica_simulationFlags(lv = "LOG_STATS", s = "gbode"));
 end SlewRateLimiter;

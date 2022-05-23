@@ -971,7 +971,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   gbfData->startTime   = gbData->timeLeft;
   gbfData->endTime     = gbData->timeRight;
   gbfData->yStart      = gbData->yLeft;
-  gbfData->yEnd        = gbData->y;
+  gbfData->yEnd        = gbData->yRight;
   gbfData->fastStates  = gbData->fastStates;
   gbfData->slowStates  = gbData->slowStates;
   gbfData->nFastStates = gbData->nFastStates;
@@ -1076,9 +1076,8 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
                   gbData->timeLeft, gbData->timeRight, gbData->lastStepSize);
   if(ACTIVE_STREAM(LOG_MULTIRATE))
   {
-    printVector_gm("yL: ", gbData->yLeft, gbData->nStates, gbData->timeLeft);
-    printVector_gm("yR: ", gbData->y, gbData->nStates, gbData->timeRight);
-    printf("\n");
+    printVector_gm("yL:     ", gbData->yLeft, gbData->nStates, gbData->timeLeft);
+    printVector_gm("yR:     ", gbData->y, gbData->nStates, gbData->timeRight);
   }
 
   while (gbfData->time < innerTargetTime)
@@ -1088,7 +1087,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
       if(ACTIVE_STREAM(LOG_MULTIRATE))
       {
         //printVector_gmf("yOld: ", gbfData->yOld, gbfData->nStates, gbfData->time, gbfData->nFastStates, gbfData->fastStates);
-        printVector_gm("yOld: ", gbfData->yOld, gbfData->nStates, gbfData->time);
+        printVector_gm("yOld:     ", gbfData->yOld, gbfData->nStates, gbfData->time);
       }
 
       // calculate one step of the integrator
@@ -1209,7 +1208,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     gbfData->time += gbfData->lastStepSize;
     if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
-      printVector_gm("y:    ", gbfData->y, gbfData->nStates, gbfData->time);
+      printVector_gm("y:        ", gbfData->y, gbfData->nStates, gbfData->time);
     }
 
 
@@ -1253,8 +1252,8 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     // solverInfo->currentTime = eventTime;
     // sData->timeValue = solverInfo->currentTime;
     copyVector_gmf(gbData->err, gbfData->err, nFastStates, gbfData->fastStates);
-    // copyVector_gmf(gbData->y, gbfData->y, nFastStates, gbfData->fastStates);
-    // copyVector_gmf(gbData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
+    copyVector_gmf(gbData->y, gbfData->y, nFastStates, gbfData->fastStates);
+    copyVector_gmf(gbData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
   }
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))

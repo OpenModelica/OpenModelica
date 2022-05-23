@@ -131,7 +131,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   if (eventHappend) {
     eventTime = findRoot(data, threadData, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues);
-    infoStreamPrint(LOG_MULTIRATE, 0, "gMode detected an event at time: %20.16g", eventTime);
+    infoStreamPrint(LOG_SOLVER, 0, "gMode detected an event at time: %20.16g", eventTime);
   }
 
   // re-store the pre values of the zeroCrossings for comparison
@@ -893,6 +893,7 @@ int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
   gbData->y = malloc(sizeof(double)*gbData->nStates);
   gbData->yOld = malloc(sizeof(double)*gbData->nStates);
   gbData->yLeft = malloc(sizeof(double)*gbData->nStates);
+  gbData->yRight = malloc(sizeof(double)*gbData->nStates);
   gbData->yt = malloc(sizeof(double)*gbData->nStates);
   gbData->f = malloc(sizeof(double)*gbData->nStates);
   gbData->k = malloc(sizeof(double)*gbData->nStates*gbData->tableau->nStages);
@@ -1041,6 +1042,7 @@ void freeDataGbode(DATA_GBODE* gbData) {
   free(gbData->y);
   free(gbData->yOld);
   free(gbData->yLeft);
+  free(gbData->yRight);
   free(gbData->yt);
   free(gbData->f);
   free(gbData->Jf);
@@ -1664,8 +1666,9 @@ void gm_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   gbData->time = sDataOld->timeValue;
   if (gbData->multi_rate)
       gbData->gbfData->time = gbData->time;
-    gbData->timeLeft = gbData->time;
-    gbData->timeRight = gbData->time;
+
+  gbData->timeLeft = gbData->time;
+  gbData->timeRight = gbData->time;
   /* set correct flags in order to calculate initial step size */
   gbData->isFirstStep = FALSE;
   gbData->didEventStep = TRUE;
@@ -1903,9 +1906,9 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       memcpy(gbData->yLeft, gbData->yOld, data->modelData->nStates*sizeof(double));
       gbData->timeLeft = gbData->time;
 
-      if(ACTIVE_STREAM(LOG_MULTIRATE_V))
+      if(ACTIVE_STREAM(LOG_MULTIRATE))
       {
-        printVector_gm("yOld: ", gbData->yOld, gbData->nStates, gbData->time);
+        printVector_gm("gb->yOld: ", gbData->yOld, gbData->nStates, gbData->time);
       }
 
       /* calculate jacobian:
@@ -2012,7 +2015,10 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       // Store performed stepSize for adjusting the time and interpolation purposes
       // gbData->stepSize_old = gbData->lastStepSize;
       gbData->lastStepSize = gbData->stepSize;
+
+      // store right hand values for interpolation in the inner integration
       gbData->timeRight    = gbData->time + gbData->stepSize;
+      memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
 
       // Call the step size control
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
@@ -2089,9 +2095,9 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     /* update time with performed stepSize */
     gbData->time += gbData->lastStepSize;
 
-    if(ACTIVE_STREAM(LOG_MULTIRATE_V))
+    if(ACTIVE_STREAM(LOG_MULTIRATE))
     {
-      printVector_gm("y:    ", gbData->y, gbData->nStates, gbData->time);
+      printVector_gm("gb->y:    ", gbData->y, gbData->nStates, gbData->time);
     }
 
 

@@ -116,5 +116,6 @@ package Burger_Equations
       der(y[i]) = Al[i]*y[i-1] + Ad[i]*y[i] + Au[i]*y[i+1] + y[i]*(Cl[i-1]*y[i-1] + Cu[i]*y[i+1]);
     end for;
     der(y[N]) = Al[N-1]*y[N-1] + Ad[N]*y[N] + y[N]*Cl[N-1]*y[N-1];
-  end Burger_equation_03;
+  annotation(
+      __OpenModelica_simulationFlags(gbmeth = "dopri45", lv = "LOG_STATS", s = "gbode"));end Burger_equation_03;
 end Burger_Equations;
