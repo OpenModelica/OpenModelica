@@ -202,7 +202,7 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richard
   tableau->nStages = 2;
   tableau->order_b = 2;
   tableau->order_bt = 1;
-  tableau->fac = 1.0;
+  tableau->fac = 1.5;
 
   /* Butcher Tableau */
   const double c[]   = {0.5, 1.0};
