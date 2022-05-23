@@ -37,6 +37,7 @@
 #include "Modeling/MessagesWidget.h"
 #include "Modeling/Commands.h"
 #include "Options/OptionsDialog.h"
+#include "OMPlot.h"
 
 #include <QApplication>
 #include <QMenu>
@@ -101,22 +102,40 @@ Parameter::Parameter(Element *pComponent, bool showStartAttribute, QString tab, 
   setSaveSelectorCaption("-");
   createValueWidget();
   // Get unit value
-  QString unit = mpComponent->getDerivedClassModifierValue("unit");
-  mUnit = unit;
+  mUnit = mpComponent->getDerivedClassModifierValue("unit");;
   // Get displayUnit value
   QString displayUnit = mpComponent->getDerivedClassModifierValue("displayUnit");
   if (displayUnit.isEmpty()) {
-    displayUnit = unit;
+    displayUnit = mUnit;
   }
   mDisplayUnit = StringHandler::removeFirstLastQuotes(displayUnit);
   mPreviousUnit = mDisplayUnit;
-  mpUnitComboBox = new QComboBox;
+  QStringList units;
   if (!mUnit.isEmpty()) {
-    mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(mUnit), mUnit);
+    units << mUnit;
     if (mDisplayUnit.compare(mUnit) != 0) {
-      mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(mDisplayUnit), mDisplayUnit);
-      mpUnitComboBox->setCurrentIndex(1);
+      units << mDisplayUnit;
     }
+    Utilities::addDefaultDisplayUnit(mUnit, units);
+    // add unit prefixes
+    if (OMPlot::Plot::prefixableUnit(mUnit)) {
+      units << QString("k%1").arg(mUnit)
+            << QString("M%1").arg(mUnit)
+            << QString("G%1").arg(mUnit)
+            << QString("T%1").arg(mUnit)
+            << QString("m%1").arg(mUnit)
+            << QString("u%1").arg(mUnit)
+            << QString("n%1").arg(mUnit)
+            << QString("p%1").arg(mUnit);
+    }
+  }
+  mpUnitComboBox = new QComboBox;
+  units.removeDuplicates();
+  foreach (QString unit, units) {
+    mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(unit), unit);
+  }
+  if (mDisplayUnit.compare(mUnit) != 0) {
+    mpUnitComboBox->setCurrentIndex(1);
   }
   connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
   mpCommentLabel = new Label(mpComponent->getComponentInfo()->getComment());
