@@ -156,8 +156,9 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               cvode_solver$(OBJ_EXT) \
               dae_mode$(OBJ_EXT) \
               dassl$(OBJ_EXT) \
-              gmode$(OBJ_EXT) \
-              gmfode$(OBJ_EXT) \
+              gbode_tableau$(OBJ_EXT) \
+              gbode$(OBJ_EXT) \
+              gbodef$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
               irksco$(OBJ_EXT) \
               jacobianSymbolical$(OBJ_EXT) \
@@ -168,7 +169,6 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               newtonIteration$(OBJ_EXT) \
               nonlinearSolverNewton$(OBJ_EXT) \
               radau$(OBJ_EXT) \
-              gm_tableau$(OBJ_EXT) \
               sundials_error$(OBJ_EXT) \
               sym_solver_ssc$(OBJ_EXT)
 else

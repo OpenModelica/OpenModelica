@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef gm_tableau_H
-#define gm_tableau_H
+#ifndef gb_tableau_H
+#define gb_tableau_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -95,4 +95,4 @@ void printButcherTableau(BUTCHER_TABLEAU* tableau);
 }
 #endif
 
-#endif // gm_tableau_H
+#endif // gb_tableau_H

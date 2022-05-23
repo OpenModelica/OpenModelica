@@ -1258,7 +1258,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))
   {
-    infoStreamPrint(LOG_SOLVER_V, 1, "gmode call statistics: ");
+    infoStreamPrint(LOG_SOLVER_V, 1, "gbode call statistics: ");
     infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
     infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gbfData->time);
     infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gbfData->stepSize);
@@ -1277,7 +1277,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   solverInfo->solverStatsTmp[3] = gbfData->errorTestFailures;
   solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
 
-  infoStreamPrint(LOG_SOLVER, 0, "Finished gmode inner step.");
+  infoStreamPrint(LOG_SOLVER, 0, "Finished gbodef (inner step).");
   if(ACTIVE_STREAM(LOG_MULTIRATE))
   {
     printf("\n");
