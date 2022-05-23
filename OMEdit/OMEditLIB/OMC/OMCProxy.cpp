@@ -259,7 +259,23 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
   mHasInitialized = true;
   // get OpenModelica version
-  Helper::OpenModelicaVersion = getVersion();
+  QString version = getVersion();
+  Helper::OpenModelicaVersion = version;
+  // set users guide version
+  QString versionShort;
+  int dots = 0;
+  for (int i=0; i < version.length(); i++) {
+    if (version.at(i).isDigit()) {
+      versionShort.append(version.at(i));
+    } else if (version.at(i) == '.') {
+      dots++;
+      if (dots > 1) {
+        break;
+      }
+      versionShort.append(version.at(i));
+    }
+  }
+  Helper::OpenModelicaUsersGuideVersion = versionShort;
   // set OpenModelicaHome variable
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath().replace("\\", "/");
   // set ModelicaPath variale
