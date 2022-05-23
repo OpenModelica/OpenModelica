@@ -101,6 +101,32 @@ template dumpVisualization(VisualXML.Visualization vis)
               </vector>
             >>
 
+        case vis as SURFACE() then
+          let TDump = arrayList(T) |> T0 => <<
+          <%dumpVecExp(T0)%>
+          >> ; separator="\n"
+          let r_0Dump = dumpVecExp(arrayList(r_0))
+          let colorDump = dumpVecExp(arrayList(color))
+            <<
+              <surface>
+                  <ident><%ComponentReference.printComponentRefStr(ident)%></ident>
+                  <T>
+                      <%TDump%>
+                  </T>
+                  <r>
+                      <%r_0Dump%>
+                  </r>
+                  <nu><%dumpExp(nu)%></nu>
+                  <nv><%dumpExp(nv)%></nv>
+                  <wireframe><%dumpExp(wireframe)%></wireframe>
+                  <multiColored><%dumpExp(multiColored)%></multiColored>
+                  <color>
+                      <%colorDump%>
+                  </color>
+                  <specCoeff><%dumpExp(specularCoeff)%></specCoeff>
+                  <transparency><%dumpExp(transparency)%></transparency>
+              </surface>
+            >>
     end match
 end dumpVisualization;
 

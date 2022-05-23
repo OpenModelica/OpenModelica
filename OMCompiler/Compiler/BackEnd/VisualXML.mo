@@ -93,6 +93,20 @@ uniontype Visualization
     DAE.Exp headAtOrigin;
     DAE.Exp twoHeadedArrow;
   end VECTOR;
+
+  record SURFACE
+    DAE.ComponentRef ident;
+    array<list<DAE.Exp>> T;
+    array<DAE.Exp> r_0;
+    DAE.Exp nu;
+    DAE.Exp nv;
+    // surfaceCharacteristic
+    DAE.Exp wireframe;
+    DAE.Exp multiColored;
+    array<DAE.Exp> color;
+    DAE.Exp specularCoeff;
+    DAE.Exp transparency;
+  end SURFACE;
 end Visualization;
 
 //-------------------------
@@ -356,6 +370,19 @@ algorithm
              DAE.BCONST(false),
              DAE.BCONST(false));
 
+    case "Surface"
+      then SURFACE(cref,
+             arrayCreate(3, {DAE.RCONST(-1), DAE.RCONST(-1), DAE.RCONST(-1)}),
+             arrayCreate(3, DAE.RCONST(-1)),
+             DAE.ICONST(-1),
+             DAE.ICONST(-1),
+             // surfaceCharacteristic
+             DAE.BCONST(false),
+             DAE.BCONST(false),
+             arrayCreate(3, DAE.RCONST(-1)),
+             DAE.RCONST(-1),
+             DAE.RCONST(-1));
+
     else
       algorithm
         Error.addInternalError(getInstanceName() + " failed on " +
@@ -456,6 +483,15 @@ algorithm
         //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
         (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
         filled_vis := fillVectorObject(cref1,varIn,storeProtectedCrefs,program,vis);
+      then
+        (vars, filled_vis);
+
+    case (BackendDAE.VAR(varName=cref), (vars, vis as SURFACE(ident=ident)))
+      algorithm
+        //this var belongs to the visualization object
+        //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
+        (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
+        filled_vis := fillSurfaceObject(cref1,varIn,storeProtectedCrefs,program,vis);
       then
         (vars, filled_vis);
 
@@ -590,8 +626,7 @@ algorithm
 end fillShapeObject;
 
 function fillVectorObject
-  "sets the visualization info in the visualization object
-   author:Waurich TUD 2015-04"
+  "sets the visualization info in the visualization object"
   input DAE.ComponentRef cref;
   input BackendDAE.Var var;
   input Boolean storeProtectedCrefs;
@@ -663,6 +698,90 @@ algorithm
     else ();
   end matchcontinue;
 end fillVectorObject;
+
+function fillSurfaceObject
+  "sets the visualization info in the visualization object"
+  input DAE.ComponentRef cref;
+  input BackendDAE.Var var;
+  input Boolean storeProtectedCrefs;
+  input Absyn.Program program;
+  input output Visualization vis;
+algorithm
+  () := matchcontinue (cref, vis)
+    local
+      Option<DAE.Exp> bind;
+      DAE.Exp exp;
+      Integer pos, pos1;
+      list<DAE.Exp> T0;
+
+    case (DAE.CREF_QUAL(ident="R", componentRef=DAE.CREF_IDENT(ident="T",
+            subscriptLst = {DAE.INDEX(DAE.ICONST(pos)), DAE.INDEX(DAE.ICONST(pos1))})), SURFACE())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        T0 := arrayGet(vis.T, pos);
+        T0 := List.replaceAt(exp, pos1, T0);
+        arrayUpdate(vis.T, pos, T0);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="r_0", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), SURFACE())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.r_0, pos, exp);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="nu"), SURFACE())
+      algorithm
+        vis.nu := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="nv"), SURFACE())
+      algorithm
+        vis.nv := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    //case (DAE.CREF_IDENT(ident="surfaceCharacteristic"), SURFACE())
+    //  algorithm
+    //  then
+    //    ();
+
+    case (DAE.CREF_IDENT(ident="wireframe"), SURFACE())
+      algorithm
+        vis.wireframe := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="multiColored"), SURFACE())
+      algorithm
+        vis.multiColored := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="color", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}), SURFACE())
+      algorithm
+        exp := getVariableBinding(var, storeProtectedCrefs);
+        arrayUpdate(vis.color, pos, exp);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="specularCoefficient"), SURFACE())
+      algorithm
+        vis.specularCoeff := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(ident="transparency"), SURFACE())
+      algorithm
+        vis.transparency := getVariableBinding(var, storeProtectedCrefs);
+      then
+        ();
+
+    else ();
+  end matchcontinue;
+end fillSurfaceObject;
 
 function getVariableBinding
   input BackendDAE.Var var;
@@ -793,8 +912,12 @@ algorithm
             path=Absyn.QUALIFIED(name="Visualizers",
               path=Absyn.QUALIFIED(name="Advanced",
                 path=Absyn.IDENT(name=name))))))::_
-      algorithm
-        true := listMember(name, {"Shape", "Vector"});
+        guard match name
+          case "Shape" then true;
+          case "Vector" then true;
+          case "Surface" then true;
+          else false;
+        end match
       then
         (name, numIn);
 
