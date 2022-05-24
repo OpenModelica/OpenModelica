@@ -990,6 +990,21 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   gbfData->nFastStates = gbData->nFastStates;
   gbfData->nSlowStates = gbData->nSlowStates;
 
+  if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
+    char fastStates_row[2048];
+    sprintf(fastStates_row, "%10g ", gbfData->time);
+    for (i=0, ii=0; i<nStates; ) {
+      if (i == gbfData->fastStates[ii]) {
+        sprintf(fastStates_row, "%s 1", fastStates_row);
+        i++; ii++;
+      } else {
+        sprintf(fastStates_row, "%s 0", fastStates_row);
+        i++;
+      }
+    }
+    printf("%s\n", fastStates_row);
+  }
+
   if (!gbfData->isExplicit) {
     struct dataSolver *solverDataStruct = gbfData->nlsData->solverData;
     // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
@@ -1012,8 +1027,9 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     for (ii=0; ii<nFastStates; ii++) {
       i = gbfData->fastStates[ii];
     // Get the nominal values of the fast states
-      gbfData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-      infoStreamPrint(LOG_MULTIRATE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->nominal[i]);
+      gbData->nlsData->nominal[ii] = fabs(data->modelData->realVarsData[i].attribute.nominal);
+      gbfData->nlsData->nominal[ii] = fmax(fabs(gbData->nlsData->nominal[ii]), 1e-32);
+      infoStreamPrint(LOG_MULTIRATE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->nominal[ii]);
     }
     messageClose(LOG_MULTIRATE);
 

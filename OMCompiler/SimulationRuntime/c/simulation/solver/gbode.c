@@ -2116,7 +2116,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
       if (gbData->multi_rate)
       {
-        if (gbData->nFastStates>0  && gbData->err_fast >= 0)
+        if (gbData->nFastStates>0)
         {
           if (gbodef_step(data, threadData, solverInfo, targetTime))
             return 0;
