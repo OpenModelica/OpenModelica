@@ -215,7 +215,7 @@ enum GM_NLS_METHOD getGM_NLS_METHOD(enum _FLAG FLAG_NLS_METHOD) {
     return RK_NLS_UNKNOWN;
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: newton [default]");
-    return RK_NLS_NEWTON;
+    return RK_NLS_KINSOL;
   }
 }
 
@@ -999,6 +999,7 @@ int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
 
   //gbData->interpolation = 2; // GM_HERMITE
   gbData->interpolation = 1; // GM_LINEAR
+  gbData->err_threshold = 0.1;
 
   return 0;
 }
@@ -2328,10 +2329,10 @@ double getErrorThreshold(DATA_GBODE* gbData)
       }
     }
   }
-  i = MIN(MAX(ceil((gbData->nStates - 1) * gbData->percentage), 0), gbData->nStates - 1);
+  i = MIN(MAX(floor((gbData->nStates - 1) * gbData->percentage), 0), gbData->nStates - 1);
 
   // BB ToDo: check, if 0.1 is ok, or should be parameterized
-  return fmax(gbData->err[i], 0.1);
+  return fmax(gbData->err[i], gbData->err_threshold);
 }
 
 // TODO AHeu: For sure there is already a linear interpolation function somewhere

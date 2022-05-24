@@ -379,7 +379,8 @@ int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GBODE* gbData)
 
   /* Allocate memory for the nonlinear solver */
     gbfData->nlsSolverMethod = getGM_NLS_METHOD(FLAG_MR_NLS);
-    //gbfData->nlsSolverMethod = RK_NLS_NEWTON;
+  // BB ToDo: get kinsol up and running!!
+    gbfData->nlsSolverMethod = RK_NLS_NEWTON;
     gbfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gbfData);
     if (!gbfData->nlsData) {
       return -1;
