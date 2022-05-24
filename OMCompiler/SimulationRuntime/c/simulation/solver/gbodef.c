@@ -956,6 +956,8 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   int nStates = data->modelData->nStates;
   int nFastStates = gbData->nFastStates;
 
+  modelica_boolean fastStateChange = FALSE;
+
   // This is the target time of the main integrator
   double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
@@ -991,19 +993,21 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   gbfData->nFastStates = gbData->nFastStates;
   gbfData->nSlowStates = gbData->nSlowStates;
 
-  if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
-    char fastStates_row[2048];
-    sprintf(fastStates_row, "%10g ", gbfData->time);
-    for (i=0, ii=0; i<nStates; ) {
-      if (i == gbfData->fastStates[ii]) {
-        sprintf(fastStates_row, "%s 1", fastStates_row);
-        i++; ii++;
-      } else {
-        sprintf(fastStates_row, "%s 0", fastStates_row);
-        i++;
+  if (gbfData->nFastStates != gbfData->nFastStates_old) {
+    gbfData->nFastStates_old = gbfData->nFastStates;
+    infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %d", gbfData->nFastStates, gbfData->nFastStates_old);
+    fastStateChange = TRUE;
+  }
+  for (int k=0; k<nFastStates; k++) {
+    if (gbfData->fastStates_old[k] - gbfData->fastStates[k]) {
+      if(ACTIVE_STREAM(LOG_MULTIRATE))
+      {
+        printIntVector_gb("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbData->time);
+        printIntVector_gb("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbData->time);
       }
+      fastStateChange = TRUE;
+      gbfData->fastStates_old[k] = gbfData->fastStates[k];
     }
-    printf("%s\n", fastStates_row);
   }
 
   if (!gbfData->isExplicit) {
@@ -1033,23 +1037,6 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
       infoStreamPrint(LOG_MULTIRATE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->nominal[ii]);
     }
     messageClose(LOG_MULTIRATE);
-
-    modelica_boolean fastStateChange = FALSE;
-    if (gbfData->nFastStates != gbfData->nFastStates_old) {
-      infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %d", gbfData->nFastStates, gbfData->nFastStates_old);
-      fastStateChange = TRUE;
-    }
-    for (int k=0; k<nFastStates; k++) {
-      if (gbfData->fastStates[k] - gbfData->fastStates_old[k]) {
-        if(ACTIVE_STREAM(LOG_MULTIRATE))
-        {
-          printIntVector_gb("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbData->time);
-          printIntVector_gb("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbData->time);
-        }
-        fastStateChange = TRUE;
-        break;
-      }
-    }
 
     if (gbfData->symJacAvailable && fastStateChange) {
 
@@ -1099,6 +1086,22 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
     }
   }
+
+  if (ACTIVE_STREAM(LOG_M_FASTSTATES)  && (fastStateChange)) {
+    char fastStates_row[2048];
+    sprintf(fastStates_row, "%10g ", gbfData->time);
+    for (i=0, ii=0; i<nStates; ) {
+      if (i == gbfData->fastStates[ii]) {
+        sprintf(fastStates_row, "%s 1", fastStates_row);
+        i++; ii++;
+      } else {
+        sprintf(fastStates_row, "%s 0", fastStates_row);
+        i++;
+      }
+    }
+    printf("%s\n", fastStates_row);
+  }
+
 
   // print informations on the calling details
   infoStreamPrint(LOG_SOLVER, 0, "gbodef solver started (fast states): %d", gbData->nFastStates);
