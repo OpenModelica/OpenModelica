@@ -1096,7 +1096,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     }
   }
 
-  if (ACTIVE_STREAM(LOG_M_FASTSTATES)  && (fastStateChange)) {
+  if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
     char fastStates_row[2048];
     sprintf(fastStates_row, "%10g ", gbfData->time);
     for (i=0, ii=0; i<nStates; ) {
@@ -1310,12 +1310,12 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     // Resetting the time and the integrator is not a good idea!!!!
     // Just storing the values would be appropriate, integrator should keep their time, and values!!!!
     // Especially, when it comes to high order integrators
-    gbData->lastStepSize = gbfData->time - gbData->timeLeft;
-    gbData->timeRight = gbfData->time;
-    if (gbData->time > gbData->timeLeft)
-      gbData->time = gbfData->time;
-    else
-      gbData->time = gbData->timeLeft;
+ //   gbData->lastStepSize = gbfData->time - gbData->timeLeft;
+ //   gbData->timeRight = gbfData->time;
+ //   if (gbData->time > gbData->timeLeft)
+ //     gbData->time = gbfData->time;
+ //   else
+ //     gbData->time = gbData->timeLeft;
 
     memcpy(gbData->yOld, gbfData->yt, gbfData->nStates * sizeof(double));
     memcpy(gbData->y, gbfData->y, gbfData->nStates * sizeof(double));

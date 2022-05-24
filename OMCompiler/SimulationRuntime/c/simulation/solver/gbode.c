@@ -987,6 +987,7 @@ int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
   gbData->nSlowStates = gbData->nStates;
   for (int i=0; i<gbData->nStates; i++)
   {
+    gbData->fastStates[i] = i;
     gbData->slowStates[i] = i;
     gbData->sortedStates[i] = i;
   }
@@ -2115,13 +2116,22 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       // Call the step size control
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
 
+      if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
+        char fastStates_row[2048];
+        sprintf(fastStates_row, "%10g ", gbData->time);
+        for (i=0; i<nStates; i++) {
+            sprintf(fastStates_row, "%s 1", fastStates_row);
+          }
+        fprintf(gbData->gbfData->fastStatesDebugFile,"%s\n", fastStates_row);
+      }
+
       if (gbData->multi_rate)
       {
         if (gbData->nFastStates>0)
         {
           if (gbodef_step(data, threadData, solverInfo, targetTime))
             return 0;
-          err = gbData->err_fast;
+          err = fmax(gbData->err_slow, gbData->err_fast);
         }
       }
       if (err>1)
@@ -2217,7 +2227,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, data->modelData->nStates*sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
-                    gbData->time- gbData->lastStepSize, gbData->time, err, gbData->stepSize);
+                    gbData->time- gbData->lastStepSize, gbData->time, gbData->err_slow, gbData->stepSize);
 
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps  && !gbData->multi_rate)
