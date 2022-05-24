@@ -404,6 +404,12 @@ int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GBODE* gbData)
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for the slow states");
   }
 
+  if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
+    gbfData->fastStatesDebugFile = fopen("fastStates.txt","w");
+  } else {
+    gbfData->fastStatesDebugFile = NULL;
+  }
+
   return 0;
 }
 
@@ -452,6 +458,9 @@ void freeDataGbf(DATA_GBODEF* gbfData) {
   free(gbfData->errValues);
   free(gbfData->stepSizeValues);
   free(gbfData->fastStates_old);
+
+  if (gbfData->fastStatesDebugFile != NULL)
+    fclose(gbfData->fastStatesDebugFile);
 
   free(gbfData);
   gbfData = NULL;

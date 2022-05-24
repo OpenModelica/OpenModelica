@@ -86,6 +86,7 @@ typedef struct DATA_GBODEF{
   unsigned int evalJacobians;
   unsigned int errorTestFailures;
   unsigned int convergenceFailures;
+  FILE *fastStatesDebugFile;
   gm_step_function step_fun;
   gm_stepSize_control_function stepSize_control;
 } DATA_GBODEF;
