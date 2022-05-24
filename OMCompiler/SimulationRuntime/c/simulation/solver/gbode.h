@@ -109,7 +109,7 @@ enum GM_NLS_METHOD getGM_NLS_METHOD();
 int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 void freeDataGbode(DATA_GBODE* data);
 int gbode_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-int wrapper_f_gm(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
+int wrapper_f_gb(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
 
 
 #endif /* _DATA_GBODE_H_ */

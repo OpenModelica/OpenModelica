@@ -68,6 +68,8 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_JAC",
   "LOG_LS",
   "LOG_LS_V",
+  "LOG_M_BB",
+  "LOG_M_NLS",
   "LOG_MULTIRATE",
   "LOG_MULTIRATE_V",
   "LOG_FASTSTATES",

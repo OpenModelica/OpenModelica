@@ -527,7 +527,7 @@ void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *i
     i = gbfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  wrapper_f_gm(data, threadData, &(gbfData->evalFunctionODE), fODE);
+  wrapper_f_gb(data, threadData, &(gbfData->evalFunctionODE), fODE);
 
   for (ii=0; ii < nFastStates; ii++) {
     i = gbfData->fastStates[ii];
@@ -567,7 +567,7 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
     i = gbfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  wrapper_f_gm(data, threadData, &(gbfData->evalFunctionODE), fODE);
+  wrapper_f_gb(data, threadData, &(gbfData->evalFunctionODE), fODE);
 
   // Evaluate residual
   for (ii=0; ii<gbfData->nFastStates; ii++) {
@@ -819,7 +819,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
   sData->timeValue = gbfData->time;
   memcpy(sData->realVars, gbfData->yOld, nStates*sizeof(double));
-  wrapper_f_gm(data, threadData, &(gbfData->evalFunctionODE), fODE);
+  wrapper_f_gb(data, threadData, &(gbfData->evalFunctionODE), fODE);
   memcpy(gbfData->k, fODE, nStates*sizeof(double));
 
   for (stage = 0; stage < nStages; stage++)
@@ -845,7 +845,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     {
       if (stage>0) {
         memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
-        wrapper_f_gm(data, threadData, &(gbfData->evalFunctionODE), fODE);
+        wrapper_f_gb(data, threadData, &(gbfData->evalFunctionODE), fODE);
       }
 //      memcpy(gbfData->x + stage_ * nStates, gbfData->res_const, nStates*sizeof(double));
     }

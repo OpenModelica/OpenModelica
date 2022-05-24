@@ -893,11 +893,13 @@ int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
   gbData->y = malloc(sizeof(double)*gbData->nStates);
   gbData->yOld = malloc(sizeof(double)*gbData->nStates);
   gbData->yLeft = malloc(sizeof(double)*gbData->nStates);
+  gbData->kLeft = malloc(sizeof(double)*gbData->nStates);
   gbData->yRight = malloc(sizeof(double)*gbData->nStates);
+  gbData->kRight = malloc(sizeof(double)*gbData->nStates);
   gbData->yt = malloc(sizeof(double)*gbData->nStates);
   gbData->f = malloc(sizeof(double)*gbData->nStates);
-  gbData->k = malloc(sizeof(double)*gbData->nStates*gbData->tableau->nStages);
-  gbData->x = malloc(sizeof(double)*gbData->nStates*gbData->tableau->nStages);
+  gbData->k = malloc(sizeof(double)*gbData->nStates*(gbData->tableau->nStages + 1));
+  gbData->x = malloc(sizeof(double)*gbData->nStates*(gbData->tableau->nStages + 1));
   gbData->res_const = malloc(sizeof(double)*gbData->nStates);
   gbData->errest = malloc(sizeof(double)*gbData->nStates);
   gbData->errtol = malloc(sizeof(double)*gbData->nStates);
@@ -1042,7 +1044,9 @@ void freeDataGbode(DATA_GBODE* gbData) {
   free(gbData->y);
   free(gbData->yOld);
   free(gbData->yLeft);
+  free(gbData->kLeft);
   free(gbData->yRight);
+  free(gbData->kRight);
   free(gbData->yt);
   free(gbData->f);
   free(gbData->Jf);
@@ -1069,7 +1073,7 @@ void freeDataGbode(DATA_GBODE* gbData) {
  * @param fODE               Array of state derivatives.
  * @return int               Returns 0 on success.
  */
-int wrapper_f_gm(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE)
+int wrapper_f_gb(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE)
 {
   unsigned int* counter = (unsigned int*) evalFunctionODE;
 
@@ -1111,7 +1115,7 @@ void residual_MS(void **dataIn, const double *xloc, double *res, const int *ifla
 
   // Evaluate right hand side of ODE
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  wrapper_f_gm(data, threadData, &(gbData->evalFunctionODE), fODE);
+  wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
 
   // Evaluate residual
   for (i=0; i<nStates; i++) {
@@ -1193,7 +1197,7 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
 
   // Evaluate right hand side of ODE
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  wrapper_f_gm(data, threadData, &(gbData->evalFunctionODE), fODE);
+  wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
 
   // Evaluate residual
   for (i=0; i<nStates; i++) {
@@ -1233,7 +1237,7 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
     /* Evaluate ODE and compute res for each stage_ */
     sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
     memcpy(sData->realVars, &xloc[stage_*nStates], nStates*sizeof(double));
-    wrapper_f_gm(data, threadData, &(gbData->evalFunctionODE), fODE);
+    wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
     memcpy(&gbData->k[stage_*nStates], fODE, nStates*sizeof(double));
   }
 
@@ -1392,7 +1396,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
   gbData->multi_rate_phase = 0;
 
-  if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
+  if (ACTIVE_STREAM(LOG_M_NLS)) {
     clock_t start, end;
     double cpu_time_used;
 
@@ -1401,7 +1405,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
-    infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
+    infoStreamPrint(LOG_M_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
   } else {
     solved = solveNLS(data, threadData, nlsData, -1);
   }
@@ -1466,7 +1470,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
   sData->timeValue = gbData->time;
   memcpy(sData->realVars, gbData->yOld, nStates*sizeof(double));
-  wrapper_f_gm(data, threadData, &(gbData->evalFunctionODE), fODE);
+  wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
   memcpy(gbData->k, fODE, nStates*sizeof(double));
 
   /* Runge-Kutta step */
@@ -1498,7 +1502,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     {
       if (stage>0) {
         memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
-        wrapper_f_gm(data, threadData, &(gbData->evalFunctionODE), fODE);
+        wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
       }
       memcpy(gbData->x + stage_ * nStates, gbData->res_const, nStates*sizeof(double));
     }
@@ -1515,7 +1519,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
       gbData->multi_rate_phase = 0;
 
-      if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
+      if (ACTIVE_STREAM(LOG_M_NLS)) {
         clock_t start, end;
         double cpu_time_used;
 
@@ -1524,7 +1528,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         end = clock();
         cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
-        infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
+        infoStreamPrint(LOG_M_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
       } else {
         solved = solveNLS(data, threadData, nlsData, -1);
       }
@@ -1533,6 +1537,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         errorStreamPrint(LOG_STDOUT, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
+      memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
     }
     // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
@@ -1551,6 +1556,12 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
     }
   }
+  memcpy(gbData->x + nStages * nStates, gbData->y, nStates*sizeof(double));
+
+  sData->timeValue = gbData->time + gbData->stepSize;
+  memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
+  wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
+  memcpy(gbData->k + nStages* nStates, fODE, nStates*sizeof(double));
 
   return 0;
 }
@@ -1583,7 +1594,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
   memcpy(sData->realVars, gbData->yOld, nStates*sizeof(double));
-  wrapper_f_gm(data, threadData, &(gbData->evalFunctionODE), fODE);
+  wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
   memcpy(gbData->k, fODE, nStates*sizeof(double));
 
   /* Set start values for non-linear solver */
@@ -1598,7 +1609,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
   gbData->multi_rate_phase = 0;
 
-  if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
+  if (ACTIVE_STREAM(LOG_M_NLS)) {
     clock_t start, end;
     double cpu_time_used;
 
@@ -1607,7 +1618,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
-    infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
+    infoStreamPrint(LOG_M_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
   } else {
     solved = solveNLS(data, threadData, nlsData, -1);
   }
@@ -1700,12 +1711,18 @@ void gm_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   //printVector_gb("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
   //printVector_gb("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
 
-  memcpy(gbData->yOld, sData->realVars, data->modelData->nStates*sizeof(double));
-  memcpy(gbData->x, sData->realVars, data->modelData->nStates*sizeof(double));
-  wrapper_f_gm(data, threadData, &(gbData->evalFunctionODE), fODE);
+  memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
+  for (int stage_=0; stage_<= nStages; stage_++) {
+    memcpy(gbData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
+  }
+  memcpy(gbData->x, sData->realVars, nStates*sizeof(double));
+  memcpy(gbData->x + nStages*nStates, sData->realVars, nStates*sizeof(double));
+  wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
   /* store values of the state derivatives at initial or event time */
-  memcpy(gbData->f, fODE, data->modelData->nStates*sizeof(double));
-  memcpy(gbData->k, fODE, nStates*sizeof(double));
+  memcpy(gbData->f, fODE, nStates*sizeof(double));
+  for (int stage_=0; stage_<= nStages; stage_++) {
+    memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+  }
 
   // if (gbData->type == MS_TYPE_IMPLICIT) {
   //     memcpy(gbData->x + (nStages-2) * nStates, gbData->yOld, nStates*sizeof(double));
@@ -1740,7 +1757,7 @@ void gm_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
   sData->timeValue += h0;
 
-  wrapper_f_gm(data, threadData, &(gbData->evalFunctionODE), fODE);
+  wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
 
   for (i=0; i<data->modelData->nStates; i++)
   {
@@ -1842,6 +1859,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   double Rtol = data->simulationInfo->tolerance;
   int i, ii, l;
   int nStates = (int) data->modelData->nStates;
+  int nStages = gbData->tableau->nStages;
   int rk_step_info;
 
   double targetTime;
@@ -1886,6 +1904,20 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     //    userdata->time and userdata->stepSize are defined
   }
 
+  if (ACTIVE_STREAM(LOG_M_BB)) {
+    printf("\n");
+    for (int stage_=0; stage_< nStages; stage_++) {
+      printVector_gb("gb->x:    ", gbData->x + stage_ * nStates, nStates, gbData->time + gbData->tableau->c[stage_]*gbData->lastStepSize);
+    }
+    printVector_gb("gb->x:    ", gbData->x + nStages * nStates, nStates, gbData->time + gbData->lastStepSize);
+    for (int stage_=0; stage_< nStages; stage_++) {
+      printVector_gb("gb->k:    ", gbData->k + stage_ * nStates, nStates, gbData->time + gbData->tableau->c[stage_]*gbData->lastStepSize);
+    }
+    printVector_gb("gb->k:    ", gbData->k + nStages * nStates, nStates, gbData->time + gbData->lastStepSize);
+    printf("\n");
+  }
+
+
   // Check if multirate step is necessary, otherwise the correct values are already stored in sData
   if (gbData->multi_rate)
     if (gbData->nFastStates > 0 && gbData->gbfData->time < gbData->time)
@@ -1903,12 +1935,18 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       /* store yOld in yLeft for interpolation purposes, if necessary
       * BB: Check condition
       */
-      memcpy(gbData->yLeft, gbData->yOld, data->modelData->nStates*sizeof(double));
       gbData->timeLeft = gbData->time;
+      memcpy(gbData->yLeft, gbData->yOld, data->modelData->nStates*sizeof(double));
+      memcpy(gbData->kLeft, gbData->k, data->modelData->nStates*sizeof(double));
 
       if(ACTIVE_STREAM(LOG_MULTIRATE))
       {
         printVector_gb("gb->yOld: ", gbData->yOld, gbData->nStates, gbData->time);
+      }
+      if(ACTIVE_STREAM(LOG_M_BB))
+      {
+        printVector_gb("gb->yL:    ", gbData->yLeft, gbData->nStates, gbData->timeLeft);
+        printVector_gb("gb->kL:    ", gbData->kLeft, gbData->nStates, gbData->timeLeft);
       }
 
       /* calculate jacobian:
@@ -2019,6 +2057,7 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       // store right hand values for interpolation in the inner integration
       gbData->timeRight    = gbData->time + gbData->stepSize;
       memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
+      memcpy(gbData->kRight, gbData->k + nStages * nStates, nStates * sizeof(double));
 
       // Call the step size control
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
@@ -2060,6 +2099,19 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
       }
     }
 
+    if (ACTIVE_STREAM(LOG_M_BB)) {
+      printf("\n");
+      for (int stage_=0; stage_< nStages; stage_++) {
+        printVector_gb("gb->x:    ", gbData->x + stage_ * nStates, nStates, gbData->time + gbData->tableau->c[stage_]*gbData->lastStepSize);
+      }
+      printVector_gb("gb->x:    ", gbData->x + nStages * nStates, nStates, gbData->time + gbData->lastStepSize);
+      for (int stage_=0; stage_< nStages; stage_++) {
+        printVector_gb("gb->k:    ", gbData->k + stage_ * nStates, nStates, gbData->time + gbData->tableau->c[stage_]*gbData->lastStepSize);
+      }
+      printVector_gb("gb->k:    ", gbData->k + nStages * nStates, nStates, gbData->time + gbData->lastStepSize);
+      printf("\n");
+    }
+
 
     if (!gbData->multi_rate || !gbData->percentage)
     {
@@ -2099,6 +2151,12 @@ int gbode_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     {
       printVector_gb("gb->y:    ", gbData->y, gbData->nStates, gbData->time);
     }
+    if(ACTIVE_STREAM(LOG_M_BB))
+    {
+      printVector_gb("gb->yR:   ", gbData->yRight, gbData->nStates, gbData->timeRight);
+      printVector_gb("gb->kR:   ", gbData->kRight, gbData->nStates, gbData->timeRight);
+    }
+
 
 
     // printVector_gb("yOld", gbData->yOld, gbData->nStates, gbData->time - gbData->lastStepSize);
@@ -2262,7 +2320,7 @@ void printVector_gb(char name[], double* a, int n, double time)
 {
   printf("%s\t(time = %14.8g):", name, time);
   for (int i=0;i<n;i++)
-    printf("%16.12g ", a[i]);
+    printf("%20.12g ", a[i]);
   printf("\n");
 }
 
