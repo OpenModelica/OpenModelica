@@ -1108,7 +1108,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
         i++;
       }
     }
-    printf("%s\n", fastStates_row);
+    fprintf(gbfData->fastStatesDebugFile,"%s\n", fastStates_row);
   }
 
 

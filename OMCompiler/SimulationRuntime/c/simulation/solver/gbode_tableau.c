@@ -388,6 +388,24 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau, modelica_boolean richar
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }
 
+void getButcherTableau_FEHLBERG12(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+
+  tableau->nStages = 3;
+  tableau->order_b = 2;
+  tableau->order_bt = 1;
+  tableau->fac = 1e3;
+
+  /* Butcher Tableau */
+  const double c[]  = {0.0, 0.5, 1.0};
+  const double A[]  = {   0.0,      0.0, 0.0,
+                          0.5,      0.0, 0.0,
+                       1./256., 255./256., 0.0};
+  const double b[]   = {1./512., 255./256., 1./512.};
+  const double bt[]  = {1./256., 255./256., 0.0};
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+}
+
 void getButcherTableau_FEHLBERG45(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
 
   tableau->nStages = 6;
@@ -700,6 +718,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method, enum _F
       break;
     case RK_MERSON:
       getButcherTableau_MERSON(tableau, richardson);
+      break;
+    case RK_FEHLBERG12:
+      getButcherTableau_FEHLBERG12(tableau, richardson);
       break;
     case RK_FEHLBERG45:
       getButcherTableau_FEHLBERG45(tableau, richardson);
