@@ -980,13 +980,6 @@ public
     end match;
   end isTypeAttribute;
 
-  function isModifiable
-    input Component component;
-    output Boolean isModifiable;
-  algorithm
-    isModifiable := not isFinal(component) and not (isConst(component) and hasBinding(component));
-  end isModifiable;
-
   function countConnectorVars
     "Returns the number of potential (neither constant, parameter, input, nor
      output), flow, and stream variables in the given connector."
