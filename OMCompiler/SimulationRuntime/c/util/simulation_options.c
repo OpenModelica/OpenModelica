@@ -143,7 +143,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_SR_NLS */                       "gbnls",
   /* FLAG_MR */                           "gbfmeth",
   /* FLAG_MR_CTRL */                      "gbfctrl",
-  /* FLAG_MR_ERR */                       "gmferr",
+  /* FLAG_MR_ERR */                       "gbferr",
+  /* FLAG_MR_INT */                       "gbfint",
   /* FLAG_MR_NLS */                       "gbfnls",
   /* FLAG_MR_PAR */                       "gbratio",
   /* FLAG_RT */                           "rt",
@@ -273,6 +274,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MR */                           "value specifies the chosen inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_CTRL */                      "step size control of the inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_ERR */                       "error estimation done by Richardson extrapolation",
+  /* FLAG_MR_INT */                       "experimental flag for the type of interpolation used for the slow states",
   /* FLAG_MR_NLS */                       "non-linear solver method used by the inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_PAR */                       "define percentage of states for the fast states selection",
   /* FLAG_RT */                           "value specifies the scaling factor for real-time synchronization (0 disables)",
@@ -577,6 +579,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Step size control of the inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_ERR */
   "  Error estimation done by Richardson extrapolation",
+  /* FLAG_MR_INT */
+  "experimental flag for the type of interpolation used for the slow states",
   /* FLAG_MR_NLS */
   "  Non-linear solver method used by the inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_PAR */
@@ -718,6 +722,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_MR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_MR_INT */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_NLS */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_PAR */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RT */                           FLAG_REPEAT_POLICY_FORBID,
@@ -846,6 +851,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_MR */                           FLAG_TYPE_OPTION,
   /* FLAG_MR_CTRL */                      FLAG_TYPE_OPTION,
   /* FLAG_MR_ERR */                       FLAG_TYPE_OPTION,
+  /* FLAG_MR_INT */                       FLAG_TYPE_OPTION,
   /* FLAG_MR_NLS */                       FLAG_TYPE_OPTION,
   /* FLAG_MR_PAR */                       FLAG_TYPE_OPTION,
   /* FLAG_RT */                           FLAG_TYPE_OPTION,

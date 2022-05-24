@@ -392,8 +392,16 @@ int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GBODE* gbData)
     gbfData->jacobian = NULL;
   }
 
-  //gbfData->interpolation = 2; // hermite
-  gbfData->interpolation = 1; // linear
+  const char* flag_Interpolation = omc_flagValue[FLAG_MR_INT];
+
+  if (flag_Interpolation != NULL) {
+    gbfData->interpolation = 2; // hermite
+    infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for the slow states");
+  } else
+  {
+    gbfData->interpolation = 1; // linear
+    infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for the slow states");
+  }
 
   return 0;
 }
