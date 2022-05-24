@@ -1179,7 +1179,7 @@ void UnitParser::initSIUnits() {
       Rational(3141592, 30000000), Rational(0), true);
 #endif
 
-  addDerived("Energy", "watt hour", "Wh", "J",Rational(0),
+  addDerived("energy", "watt hour", "Wh", "J",Rational(0),
       Rational(3600), Rational(0), true);
 
   addDerived("velocity", "knot", "kn", "m/s", Rational(0),
