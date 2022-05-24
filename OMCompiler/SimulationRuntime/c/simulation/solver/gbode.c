@@ -73,7 +73,7 @@
 
 //auxiliary vector functions
 void linear_interpolation_gb(double a, double* fa, double b, double* fb, double t, double *f, int n);
-void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n);
+void hermite_interpolation_gb(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n);
 void printVector_gb(char name[], double* a, int n, double time);
 void printIntVector_gb(char name[], int* a, int n, double time);
 void printMatrix_gb(char name[], double* a, int n, double time);
@@ -1551,7 +1551,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // }
       //memcpy(nlsData->nlsx, gbData->yOld, nStates*sizeof(modelica_real));
       // this is actually extrapolation...
-      hermite_interpolation(gbData->time,                    gbData->nlsxLeft, gbData->nlskLeft,
+      hermite_interpolation_gb(gbData->time,                    gbData->nlsxLeft, gbData->nlskLeft,
                             gbData->time + gbData->stepSize, gbData->nlsxRight, gbData->nlskRight,
                             gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsx, nStates);
       // linear_interpolation_gb(gbData->time,                    gbData->nlsxLeft,
@@ -2351,7 +2351,7 @@ void linear_interpolation_gb(double ta, double* fa, double tb, double* fb, doubl
 }
 
 //auxiliary vector functions for better code structure
-void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n)
+void hermite_interpolation_gb(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n)
 {
   double tt, h00, h01, h10, h11;
   int i;

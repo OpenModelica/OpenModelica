@@ -144,7 +144,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_MR */                           "gbfmeth",
   /* FLAG_MR_CTRL */                      "gbfctrl",
   /* FLAG_MR_ERR */                       "gbferr",
-  /* FLAG_MR_INT */                       "gbfint",
+  /* FLAG_MR_INT */                       "gbint",
   /* FLAG_MR_NLS */                       "gbfnls",
   /* FLAG_MR_PAR */                       "gbratio",
   /* FLAG_RT */                           "rt",

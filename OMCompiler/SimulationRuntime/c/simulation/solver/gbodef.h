@@ -95,7 +95,7 @@ int gbodef_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, d
 //auxiliary vector functions
 void linear_interpolation_gb(double a, double* fa, double b, double* fb, double t, double *f, int n);
 void linear_interpolation_gbf(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
-void hermite_interpolation_gmf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx);
+void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx);
 
 void printVector_gbf(char name[], double* a, int n, double time, int nIndx, int* indx);
 void printMatrix_gbf(char name[], double* a, int n, double time);

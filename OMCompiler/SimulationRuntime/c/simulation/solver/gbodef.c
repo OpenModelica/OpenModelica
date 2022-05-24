@@ -395,12 +395,12 @@ int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GBODE* gbData)
   const char* flag_Interpolation = omc_flagValue[FLAG_MR_INT];
 
   if (flag_Interpolation != NULL) {
-    gbfData->interpolation = 2; // hermite
-    infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for the slow states");
+    gbfData->interpolation = 1;
+    infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for the slow states");
   } else
   {
-    gbfData->interpolation = 1; // linear
-    infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for the slow states");
+    gbfData->interpolation = 2;
+    infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for the slow states");
   }
 
   return 0;
@@ -731,7 +731,7 @@ if (gbfData->interpolation == 1) {
                             gbfData->nSlowStates, gbfData->slowStates);
 
   } else {
-    hermite_interpolation_gmf(gbfData->startTime,  gbfData->yStart, gbfData->kStart,
+    hermite_interpolation_gbf(gbfData->startTime,  gbfData->yStart, gbfData->kStart,
                               gbfData->endTime,    gbfData->yEnd,   gbfData->kEnd,
                               sData->timeValue,    sData->realVars,
                               gbfData->nSlowStates, gbfData->slowStates);
@@ -817,7 +817,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
                             gbfData->nSlowStates, gbfData->slowStates);
 
   } else {
-    hermite_interpolation_gmf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+    hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
                               gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
                               gbfData->time,      gbfData->yOld,
                               gbfData->nSlowStates, gbfData->slowStates);
@@ -866,7 +866,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
                                sData->timeValue,    sData->realVars,
                                gbfData->nSlowStates, gbfData->slowStates);
       } else {
-        hermite_interpolation_gmf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+        hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
                                   gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
                                   sData->timeValue,   sData->realVars,
                                   gbfData->nSlowStates, gbfData->slowStates);
@@ -982,7 +982,9 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   gbfData->startTime   = gbData->timeLeft;
   gbfData->endTime     = gbData->timeRight;
   gbfData->yStart      = gbData->yLeft;
+  gbfData->kStart      = gbData->kLeft;
   gbfData->yEnd        = gbData->yRight;
+  gbfData->kEnd        = gbData->kRight;
   gbfData->fastStates  = gbData->fastStates;
   gbfData->slowStates  = gbData->slowStates;
   gbfData->nFastStates = gbData->nFastStates;
@@ -1177,11 +1179,11 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
                                gbfData->time + gbfData->lastStepSize, gbfData->y,
                                gbfData->nSlowStates, gbfData->slowStates);
     } else {
-      hermite_interpolation_gmf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+      hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
                                 gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
                                 gbfData->time,      gbfData->yOld,
                                 gbfData->nSlowStates, gbfData->slowStates);
-      hermite_interpolation_gmf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+      hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
                                 gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
                                 gbfData->time + gbfData->lastStepSize, gbfData->y,
                                 gbfData->nSlowStates, gbfData->slowStates);
@@ -1350,7 +1352,7 @@ void linear_interpolation_gbf(double ta, double* fa, double tb, double* fb, doub
   }
 }
 
-void hermite_interpolation_gmf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx)
+void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx)
 {
   double tt, h00, h01, h10, h11;
   int i, ii;
