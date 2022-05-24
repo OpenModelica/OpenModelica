@@ -57,31 +57,33 @@ typedef struct DATA_GBODE{
                                          *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
                                          * */
   ANALYTIC_JACOBIAN* jacobian;
-  double *y;                            /* Result vector of RK step */
-  double *yt;                           /* Result vector of embedded RK step */
-  double *yLeft, *kLeft, *yRight, *kRight;
-  double *yOld;                         /* Result vector of last RK step ???? */
-  double *f;                            /* State derivatives of ODE */
+  double *y;                               /* Result vector of RK step */
+  double *yt;                              /* Result vector of embedded RK step */
+  double *yLeft, *kLeft, *yRight, *kRight; /* Needed for interpolation of the slow states */
+  double *nlsxLeft, *nlsxRight;
+  double *nlskLeft, *nlskRight;
+  double *yOld;                            /* Result vector of last RK step ???? */
+  double *f;                               /* State derivatives of ODE */
   double *Jf;
-  double *k;                            /* Vector k with result of intermediate steps of Runge-Kutta method */
-  double *x;                            /* ring buffer for multistep method */
-                                        // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
-  double *res_const;                    /* Constant parts of residual for non-linear system of implicit RK method. */
+  double *k;                               /* Vector k with result of intermediate steps of Runge-Kutta method */
+  double *x;                               /* ring buffer for multistep method */
+                                           // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
+  double *res_const;                       /* Constant parts of residual for non-linear system of implicit RK method. */
   double *errest, *errtol;
   double *err;
-  double *errValues;                    /* ring buffer for step size control */
-  double *stepSizeValues;               /* ring buffer for step size control */
+  double *errValues;                       /* ring buffer for step size control */
+  double *stepSizeValues;                  /* ring buffer for step size control */
   double err_slow, err_fast, percentage;
   double time, timeLeft, timeRight;
   double stepSize, lastStepSize;
   double stepSize_old, stepSize_fast;
-  int act_stage;                      /* Current stage of Runge-Kutta method. */
-  int didEventStep;                   /* Will be used for updating the derivatives */
+  int act_stage;                          /* Current stage of Runge-Kutta method. */
+  int didEventStep;                       /* will be used for updating the derivatives */
   int ringBufferSize;
   int multi_rate_phase;
   int multi_rate;
   int interpolation;
-  modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
+  modelica_boolean isExplicit;            /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;
   int nStates;
   int nFastStates, nSlowStates;

@@ -896,6 +896,10 @@ int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
   gbData->kLeft = malloc(sizeof(double)*gbData->nStates);
   gbData->yRight = malloc(sizeof(double)*gbData->nStates);
   gbData->kRight = malloc(sizeof(double)*gbData->nStates);
+  gbData->nlsxLeft = malloc(sizeof(double)*gbData->nStates);
+  gbData->nlskLeft = malloc(sizeof(double)*gbData->nStates);
+  gbData->nlsxRight = malloc(sizeof(double)*gbData->nStates);
+  gbData->nlskRight = malloc(sizeof(double)*gbData->nStates);
   gbData->yt = malloc(sizeof(double)*gbData->nStates);
   gbData->f = malloc(sizeof(double)*gbData->nStates);
   gbData->k = malloc(sizeof(double)*gbData->nStates*(gbData->tableau->nStages + 1));
@@ -1047,6 +1051,10 @@ void freeDataGbode(DATA_GBODE* gbData) {
   free(gbData->kLeft);
   free(gbData->yRight);
   free(gbData->kRight);
+  free(gbData->nlsxLeft);
+  free(gbData->nlskLeft);
+  free(gbData->nlsxRight);
+  free(gbData->nlskRight);
   free(gbData->yt);
   free(gbData->f);
   free(gbData->Jf);
@@ -1351,6 +1359,13 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // printVector_gb("k:  ", gbData->k + 1 * nStates, nStates, gbData->time);
   // printVector_gb("x:  ", gbData->x + 0 * nStates, nStates, gbData->time);
   // printVector_gb("x:  ", gbData->x + 1 * nStates, nStates, gbData->time);
+  // BB ToDo: correct setting of nominal values crucial
+  for(int i=0; i<nStates; i++) {
+    // Get the nominal values of the states
+    gbData->nlsData->nominal[i] = fabs(data->modelData->realVarsData[i].attribute.nominal);
+    gbData->nlsData->nominal[i] = fmax(fmin(gbData->nlsData->nominal[i],gbData->yOld[i]), 1e-32);
+  }
+
 
   /* Predictor Schritt */
   for (i = 0; i < nStates; i++)
@@ -1466,8 +1481,29 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   int nStages = gbData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
+  memcpy(gbData->nlsxLeft, gbData->x, nStates*sizeof(double));
+  memcpy(gbData->nlskLeft, gbData->k, nStates*sizeof(double));
+  memcpy(gbData->nlsxRight, gbData->x + nStages * nStates, nStates*sizeof(double));
+  memcpy(gbData->nlskRight, gbData->k + nStages * nStates, nStates*sizeof(double));
+
+  if (!gbData->isExplicit) {
+    for(int i=0; i<nStates; i++) {
+      // Get the nominal values of the states
+        gbData->nlsData->nominal[i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->nlsxRight[i]), 1e-32);
+    }
+  }
+
+  if (ACTIVE_STREAM(LOG_M_BB)) {
+    printf("Nonlinear interpolation\n");
+    printVector_gb("gb->nlsx:    ", gbData->nlsxLeft, nStates, gbData->time);
+    printVector_gb("gb->nlsx:    ", gbData->nlsxRight, nStates, gbData->time);
+    printVector_gb("gb->nlsk:    ", gbData->nlskLeft, nStates, gbData->time);
+    printVector_gb("gb->nlsk:    ", gbData->nlskRight, nStates, gbData->time);
+  }
+
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
+  // BB ToDo: this is no longer necessary, since x and k are storing these values from the las step
   sData->timeValue = gbData->time;
   memcpy(sData->realVars, gbData->yOld, nStates*sizeof(double));
   wrapper_f_gb(data, threadData, &(gbData->evalFunctionODE), fODE);
@@ -1497,7 +1533,6 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     // set simulation time with respect to the current stage
     sData->timeValue = gbData->time + gbData->tableau->c[stage_]*gbData->stepSize;
 
-
     if (gbData->tableau->A[stage * nStages + stage_] == 0)
     {
       if (stage>0) {
@@ -1511,10 +1546,20 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
-      for (i=0; i<nStates; i++) {
-          nlsData->nlsx[i] = gbData->yOld[i] + gbData->tableau->c[stage_] * gbData->stepSize * gbData->k[i];
-      }
+      // for (i=0; i<nStates; i++) {
+      //     nlsData->nlsx[i] = gbData->yOld[i] + gbData->tableau->c[stage_] * gbData->stepSize * gbData->k[i];
+      // }
       //memcpy(nlsData->nlsx, gbData->yOld, nStates*sizeof(modelica_real));
+      // this is actually extrapolation...
+      hermite_interpolation(gbData->time,                    gbData->nlsxLeft, gbData->nlskLeft,
+                            gbData->time + gbData->stepSize, gbData->nlsxRight, gbData->nlskRight,
+                            gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsx, nStates);
+      // linear_interpolation_gb(gbData->time,                    gbData->nlsxLeft,
+      //                      gbData->time + gbData->stepSize, gbData->nlsxRight,
+      //                      gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsx, nStates);
+      // for (i=0; i<nStates; i++) {
+      //     nlsData->nlsx[i] = gbData->nlsxRight[i] + gbData->tableau->c[stage_] * gbData->stepSize * gbData->nlskRight[i];
+      // }
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
       gbData->multi_rate_phase = 0;
@@ -1590,6 +1635,13 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
   modelica_boolean solved = FALSE;
+
+  /* Set start values for non-linear solver */
+  for (stage_=0; stage_<nStages; stage_++) {
+    // BB ToDo: Ommit extrapolation after event!!!
+    for (i=0; i<nStates; i++)
+      nlsData->nominal[stage_*nStates +i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->yOld[i]), 1e-32);
+  }
 
   // First try for better starting values, only necessary after restart
   // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
