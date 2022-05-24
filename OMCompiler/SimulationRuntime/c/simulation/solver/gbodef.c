@@ -1226,7 +1226,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
 
     /* step is accepted and yOld needs to be updated, store yOld for later interpolation... */
-    copyVector_gbf(gbfData->yt, gbfData->yOld, nFastStates, gbfData->fastStates);
+    memcpy(gbfData->yt, gbfData->yOld, nStates);
 
     /* step is accepted and yOld needs to be updated */
     copyVector_gbf(gbfData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
@@ -1288,15 +1288,21 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     else
       gbData->time = gbData->timeLeft;
 
-    memcpy(gbData->yOld, gbfData->y, gbfData->nStates * sizeof(double));
+    memcpy(gbData->yOld, gbfData->yt, gbfData->nStates * sizeof(double));
+    memcpy(gbData->y, gbfData->y, gbfData->nStates * sizeof(double));
+    memcpy(gbData->x, gbfData->x, gbfData->nStates * sizeof(double));
+    memcpy(gbData->x + gbData->tableau->nStages * nStates, gbfData->x + gbData->tableau->nStages * nStates, gbfData->nStates * sizeof(double));
+    memcpy(gbData->k, gbfData->k, gbfData->nStates * sizeof(double));
+    memcpy(gbData->k + gbData->tableau->nStages * nStates, gbfData->k + gbData->tableau->nStages * nStates, gbfData->nStates * sizeof(double));
+
     // This could be problem when gbData->y is used for interpolation, one should introduce yRight!!
     // memcpy(gbData->y, gbfData->y, gbfData->nStates * sizeof(double));
 
     // solverInfo->currentTime = eventTime;
     // sData->timeValue = solverInfo->currentTime;
     copyVector_gbf(gbData->err, gbfData->err, nFastStates, gbfData->fastStates);
-    copyVector_gbf(gbData->y, gbfData->y, nFastStates, gbfData->fastStates);
-    copyVector_gbf(gbData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
+    // copyVector_gbf(gbData->y, gbfData->y, nFastStates, gbfData->fastStates);
+    // copyVector_gbf(gbData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
   }
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))
