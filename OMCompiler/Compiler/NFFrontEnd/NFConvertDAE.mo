@@ -1271,10 +1271,10 @@ algorithm
   comp := InstNode.component(component);
   attr := Component.getAttributes(comp);
 
-  if Component.isModifiable(comp) then
-    vis := InstNode.visibility(component);
-  else
+  if Component.isFinal(comp) then
     vis := Visibility.PROTECTED;
+  else
+    vis := InstNode.visibility(component);
   end if;
 
   binding := Component.getBinding(comp);

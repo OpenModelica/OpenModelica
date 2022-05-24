@@ -31,7 +31,7 @@ end FunctionRecordArg3;
 // end BaseR;
 //
 // function R "Automatically generated record constructor for R"
-//   protected Integer n = 2;
+//   input Integer n = 2;
 //   input Real[2] x;
 //   output R res;
 // end R;
