@@ -83,7 +83,7 @@ enum GM_TYPE {
 
 /* Function prototypes */
 
-BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method, enum _FLAG FLAG_ERR);
+BUTCHER_TABLEAU* initButcherTableau(enum GB_SINGLERATE_METHOD GM_method, enum _FLAG FLAG_ERR);
 void freeButcherTableau(BUTCHER_TABLEAU* tableau);
 
 void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_TYPE* expl);

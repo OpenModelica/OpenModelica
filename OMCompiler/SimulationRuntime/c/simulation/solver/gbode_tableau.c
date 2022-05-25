@@ -71,9 +71,9 @@ void getRichardsonButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A,
   tableau->order_bt = p+1;
   tableau->fac = 1e0;
 
-  tableau->c = malloc(sizeof(double) * tableau->nStages);
-  tableau->A = malloc(sizeof(double) * tableau->nStages * tableau->nStages);
-  tableau->b = malloc(sizeof(double) * tableau->nStages);
+  tableau->c  = malloc(sizeof(double) * tableau->nStages);
+  tableau->A  = malloc(sizeof(double) * tableau->nStages * tableau->nStages);
+  tableau->b  = malloc(sizeof(double) * tableau->nStages);
   tableau->bt = malloc(sizeof(double)* tableau->nStages);
 
   for (i=0; i < nStages; i++) {
@@ -689,7 +689,7 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
  * @param GM_method           Runge-Kutta method.
  * @return BUTCHER_TABLEAU*   Return pointer to Butcher tableau on success, NULL on failure.
  */
-BUTCHER_TABLEAU* initButcherTableau(enum GM_SINGLERATE_METHOD GM_method, enum _FLAG FLAG_ERR) {
+BUTCHER_TABLEAU* initButcherTableau(enum GB_SINGLERATE_METHOD GM_method, enum _FLAG FLAG_ERR) {
   BUTCHER_TABLEAU* tableau = (BUTCHER_TABLEAU*) malloc(sizeof(BUTCHER_TABLEAU));
   modelica_boolean richardson;
   const char* flag_value = omc_flagValue[FLAG_ERR];
