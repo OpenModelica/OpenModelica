@@ -104,8 +104,8 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
 
   /* Initialize sparsity pattern */
   if (initSparsPattern) {
-    nonlinsys->sparsePattern = initializeSparsePattern_MS(data, nonlinsys);
-    //nonlinsys->sparsePattern = initializeSparsePattern_DIRK(data, nonlinsys);
+    nonlinsys->sparsePattern = initializeSparsePattern_DIRK(data, nonlinsys);
+    //nonlinsys->sparsePattern = initializeSparsePattern_MS(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
   return;
@@ -385,6 +385,7 @@ int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GBODE* gbData)
     if (!gbfData->nlsData) {
       return -1;
     }
+    gbfData->sparesPattern_DIRK = initializeSparsePattern_DIRK(data, gbfData->nlsData);
   }  else
   {
     gbfData->symJacAvailable = FALSE;
@@ -1002,22 +1003,18 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   gbfData->nFastStates = gbData->nFastStates;
   gbfData->nSlowStates = gbData->nSlowStates;
 
-  if (gbfData->nFastStates != gbfData->nFastStates_old) {
-    gbfData->nFastStates_old = gbfData->nFastStates;
-    infoStreamPrint(LOG_SOLVER, 0, "Number of fast states changed from %d to %d", gbfData->nFastStates, gbfData->nFastStates_old);
-    fastStateChange = TRUE;
-  }
   for (int k=0; k<nFastStates; k++) {
     if (gbfData->fastStates_old[k] - gbfData->fastStates[k]) {
-      if(ACTIVE_STREAM(LOG_MULTIRATE))
+      if(ACTIVE_STREAM(LOG_SOLVER))
       {
-        printIntVector_gb("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbData->time);
-        printIntVector_gb("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbData->time);
+        printIntVector_gb("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
+        printIntVector_gb("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbfData->time);
       }
       fastStateChange = TRUE;
       gbfData->fastStates_old[k] = gbfData->fastStates[k];
     }
   }
+  gbfData->nFastStates_old = gbfData->nFastStates;
 
   if (!gbfData->isExplicit) {
     struct dataSolver *solverDataStruct = gbfData->nlsData->solverData;
@@ -1041,16 +1038,16 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
     for (ii=0; ii<nFastStates; ii++) {
       i = gbfData->fastStates[ii];
     // Get the nominal values of the fast states
-      gbData->nlsData->nominal[ii] = fabs(data->modelData->realVarsData[i].attribute.nominal);
-      gbfData->nlsData->nominal[ii] = fmax(fabs(gbData->nlsData->nominal[ii]), 1e-32);
-      infoStreamPrint(LOG_MULTIRATE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->nominal[ii]);
+      gbfData->nlsData->nominal[ii] = fabs(data->modelData->realVarsData[i].attribute.nominal);
+      gbfData->nlsData->nominal[ii] = fmax(fabs(gbfData->nlsData->nominal[ii]), 1e-32);
+      infoStreamPrint(LOG_MULTIRATE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbfData->nlsData->nominal[ii]);
     }
     messageClose(LOG_MULTIRATE);
 
     if (gbfData->symJacAvailable && fastStateChange) {
 
       // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
-      SPARSE_PATTERN* sparsePattern_DIRK = gbData->jacobian->sparsePattern;
+      SPARSE_PATTERN* sparsePattern_DIRK = gbfData->sparesPattern_DIRK;
       SPARSE_PATTERN* sparsePattern_MR = gbfData->jacobian->sparsePattern;
 
       /* Set sparsity pattern for the fast states */

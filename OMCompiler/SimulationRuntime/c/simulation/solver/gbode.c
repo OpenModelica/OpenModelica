@@ -160,10 +160,10 @@ struct dataSolver
  *
  * @return enum GM_SINGLERATE_METHOD    Runge-Kutta method.
  */
-enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD) {
+enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_METHOD) {
   enum GM_SINGLERATE_METHOD method;
   const char* flag_value;
-  flag_value = omc_flagValue[FLAG_SR_METHOD];
+  flag_value = omc_flagValue[FLAG_METHOD];
   char* GM_method_string;
 
   if (flag_value != NULL) {
@@ -178,7 +178,7 @@ enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD) {
     errorStreamPrint(LOG_STDOUT, 0, "Choose gbode method: %s [from command line]", GM_method_string);
     return RK_UNKNOWN;
   } else {
-    if (FLAG_SR_METHOD == FLAG_MR) {
+    if (FLAG_METHOD == FLAG_MR) {
       return getGM_method(FLAG_SR);
     } else {
 

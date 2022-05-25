@@ -106,7 +106,7 @@ typedef struct DATA_GBODE{
   unsigned int convergenceFailures;   /* Total number of convergence failures */
 } DATA_GBODE;
 
-enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_SR_METHOD);
+enum GM_SINGLERATE_METHOD getGM_method(enum _FLAG FLAG_METHOD);
 enum GM_NLS_METHOD getGM_NLS_METHOD();
 int allocateDataGbode(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 void freeDataGbode(DATA_GBODE* data);

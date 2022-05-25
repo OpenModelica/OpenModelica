@@ -56,6 +56,7 @@ typedef struct DATA_GBODEF{
                                                *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
                                                * */
   ANALYTIC_JACOBIAN* jacobian;
+  SPARSE_PATTERN* sparesPattern_DIRK;
 
   void* nlsSolverData;
 
