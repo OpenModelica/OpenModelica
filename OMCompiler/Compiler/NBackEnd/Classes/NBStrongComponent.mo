@@ -362,13 +362,13 @@ public
 
           comp := match val
             case Sorting.PSEUDO_BUCKET_SINGLE()
-            then SOME(createPseudoSlice(mapping.eqn_StA[i], val.cref_to_solve, val.eqn_scal_indices, eqns, mapping, bucket));
+            then SOME(createPseudoSlice(mapping.eqn_StA[i], val.cref_to_solve, val.eqn_scal_indices, eqns, mapping));
 
             case Sorting.PSEUDO_BUCKET_ENTWINED() algorithm
               for tpl in val.entwined_lst loop
                 // has to be single because nested entwining not allowed (already flattened)
                 (key, Sorting.PSEUDO_BUCKET_SINGLE(cref_to_solve, eqn_scal_indices, _, _)) := tpl;
-                entwined := createPseudoSlice(key.eqn_arr_idx, cref_to_solve, eqn_scal_indices, eqns, mapping, bucket) :: entwined;
+                entwined := createPseudoSlice(key.eqn_arr_idx, cref_to_solve, eqn_scal_indices, eqns, mapping) :: entwined;
               end for;
               entwined_tpl_lst := createPseudoEntwinedIndices(val.entwined_arr, eqns, mapping);
             then SOME(ENTWINED_EQUATION(entwined, entwined_tpl_lst));
@@ -391,7 +391,7 @@ public
     input list<Integer> eqn_scal_indices;
     input EquationPointers eqns;
     input Adjacency.Mapping mapping;
-    input Sorting.PseudoBucket bucket;
+//    input Sorting.PseudoBucket bucket;
     output StrongComponent slice;
   protected
     Pointer<Equation> eqn_ptr;
@@ -401,11 +401,12 @@ public
     eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
     (first_eqn, _) := mapping.eqn_AtS[eqn_arr_idx];
 
+/*
     // mark all scalar indices
     for scal_idx in eqn_scal_indices loop
       arrayUpdate(bucket.marks, scal_idx, true);
     end for;
-
+*/
     // variable slice necessary? if yes fill it!
     slice := SLICED_EQUATION(
       var_cref    = cref_to_solve,
@@ -663,11 +664,6 @@ public
     end match;
   end isDiscrete;
 
-  // ############################################################
-  //                Protected Functions and Types
-  // ############################################################
-
-protected
   function createScalar
     // UNUSED AND BROKEN!
     input list<Integer> comp_indices;
@@ -804,6 +800,11 @@ protected
     end match;
   end createPseudoScalar;
 
+  // ############################################################
+  //                Protected Functions and Types
+  // ############################################################
+
+protected
   function getLoopPairs
     "adds the equation and matched variable to accumulated lists.
     used to collect algebraic loops

@@ -615,6 +615,41 @@ public
       end match;
     end nonZeroCount;
 
+    function expandMatrix
+      input output array<list<Integer>> m;
+      input Integer shift;
+    algorithm
+      m := Array.expandToSize(arrayLength(m) + shift, m, {});
+    end expandMatrix;
+
+    function transposeScalar
+      input array<list<Integer>> m      "original matrix";
+      input Integer size                "size of the transposed matrix (does not have to be square!)";
+      output array<list<Integer>> mT    "transposed matrix";
+    algorithm
+      mT := arrayCreate(size, {});
+      // loop over all elements and store them in reverse
+      for row in 1:arrayLength(m) loop
+        for idx in m[row] loop
+          try
+            if idx > 0 then
+              mT[idx] := row :: mT[idx];
+            else
+              mT[intAbs(idx)] := -row :: mT[intAbs(idx)];
+            end if;
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(idx) + ".
+              The variables have to be dense (without empty spaces) for this to work!"});
+          end try;
+        end for;
+      end for;
+      // sort the transposed matrix
+      // bigger to lower such that negative entries are at the and
+      for row in 1:arrayLength(mT) loop
+        mT[row] := List.sort(mT[row], intLt);
+      end for;
+    end transposeScalar;
+
   protected
     function toStringSingle
       input array<list<Integer>> m;
@@ -895,13 +930,6 @@ public
       end match;
     end fillMatrix;
 
-    function expandMatrix
-      input output array<list<Integer>> m;
-      input Integer shift;
-    algorithm
-      m := Array.expandToSize(arrayLength(m) + shift, m, {});
-    end expandMatrix;
-
     function cleanMatrix
       input array<list<Integer>> m;
       input Option<Mapping> mapping_opt;
@@ -928,34 +956,6 @@ public
         then ();
       end match;
     end cleanMatrix;
-
-    function transposeScalar
-      input array<list<Integer>> m      "original matrix";
-      input Integer size                "size of the transposed matrix (does not have to be square!)";
-      output array<list<Integer>> mT    "transposed matrix";
-    algorithm
-      mT := arrayCreate(size, {});
-      // loop over all elements and store them in reverse
-      for row in 1:arrayLength(m) loop
-        for idx in m[row] loop
-          try
-            if idx > 0 then
-              mT[idx] := row :: mT[idx];
-            else
-              mT[intAbs(idx)] := -row :: mT[intAbs(idx)];
-            end if;
-          else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(idx) + ".
-              The variables have to be dense (without empty spaces) for this to work!"});
-          end try;
-        end for;
-      end for;
-      // sort the transposed matrix
-      // bigger to lower such that negative entries are at the and
-      for row in 1:arrayLength(mT) loop
-        mT[row] := List.sort(mT[row], intLt);
-      end for;
-    end transposeScalar;
 
     function createArray
       input VariablePointers vars;
@@ -1026,7 +1026,6 @@ public
         arrayUpdate(m, eqn_scal_idx+(i-1), listAppend(m_part[i], m[eqn_scal_idx+(i-1)]));
       end for;
     end expandRows;
-
   end Matrix;
 
   annotation(__OpenModelica_Interface="backend");

@@ -131,6 +131,30 @@ public
         then fail();
       end match;
     end addIndices;
+
+    function getIndices
+      input PseudoBucketValue val;
+      output list<Integer> eqn_scal_indices;
+    algorithm
+      eqn_scal_indices := match val
+        case PSEUDO_BUCKET_SINGLE() then val.eqn_scal_indices;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cannot add single index to entwined pseudo bucket."});
+        then fail();
+      end match;
+    end getIndices;
+
+    function getCref
+      input PseudoBucketValue val;
+      output ComponentRef cref_to_solve;
+    algorithm
+      cref_to_solve := match val
+        case PSEUDO_BUCKET_SINGLE() then val.cref_to_solve;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " cannot add single index to entwined pseudo bucket."});
+        then fail();
+      end match;
+    end getCref;
   end PseudoBucketValue;
 
   uniontype PseudoBucket
@@ -143,6 +167,11 @@ public
       input PseudoBucket bucket;
       output String str = UnorderedMap.toString(bucket.bucket, PseudoBucketKey.toString, PseudoBucketValue.toString);
     end toString;
+
+    function isEmpty
+      input PseudoBucket bucket;
+      output Boolean b = UnorderedMap.isEmpty(bucket.bucket);
+    end isEmpty;
 
     function create
       "recollects subsets of multi-dimensional equations that have to be solved in the same way.
@@ -217,6 +246,54 @@ public
         updateEntwined(acc, entwined_arr, bucket);
       end if;
     end create;
+
+    function create2
+      "recollects subsets of multi-dimensional equations that have to be solved in the same way.
+      currently only for loops!"
+      input array<Integer> eqn_to_var           "eqn to var matching";
+      input Adjacency.Mapping mapping           "scalar <-> array index mapping";
+      input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
+      output PseudoBucket bucket                "the bucket containing the equation subsets";
+    protected
+      Integer mode;
+    algorithm
+      // 1. create empty buckets
+      bucket := PSEUDO_BUCKET(
+        bucket  = UnorderedMap.new<PseudoBucketValue>(
+          hash    = function PseudoBucketKey.hash(shift=arrayLength(modes.mode_to_cref)),
+          keyEq   = PseudoBucketKey.equal),
+        marks   = arrayCreate(arrayLength(eqn_to_var), false)
+      );
+
+      // 2. add each equation to a bucket if solved the same way
+      for eqn_scal_idx in 1:arrayLength(eqn_to_var) loop
+        if Adjacency.CausalizeModes.contains(eqn_scal_idx, modes) then
+          mode := Adjacency.CausalizeModes.get(eqn_scal_idx, eqn_to_var[eqn_scal_idx], modes);
+          PseudoBucket.add2(mapping.eqn_StA[eqn_scal_idx], eqn_scal_idx, mode, modes, bucket);
+        end if;
+      end for;
+    end create2;
+
+    function add2
+      input Integer eqn_arr_idx;
+      input Integer eqn_scal_idx;
+      input Integer mode;
+      input Adjacency.CausalizeModes modes      "the causalization modes for all multi-dimensional equations";
+      input PseudoBucket bucket;
+    protected
+      PseudoBucketKey key = PSEUDO_BUCKET_KEY(0, eqn_arr_idx, mode);
+      PseudoBucketValue val;
+    algorithm
+      if UnorderedMap.contains(key, bucket.bucket) then
+        // if the mode already was found, add this equation to the bucket
+        val := PseudoBucketValue.addIndices(UnorderedMap.getSafe(key, bucket.bucket), eqn_scal_idx, 0);
+        UnorderedMap.add(key, val, bucket.bucket);
+      else
+        // create a new bucket containing this equation
+        val := PSEUDO_BUCKET_SINGLE(arrayGet(arrayGet(modes.mode_to_cref, eqn_arr_idx), mode), {eqn_scal_idx}, 0, 0);
+        UnorderedMap.addNew(key, val, bucket.bucket);
+      end if;
+    end add2;
 
     function add
       input Integer eqn_arr_idx;
@@ -334,9 +411,12 @@ public
   algorithm
     comps := match (adj, matching)
       local
-        list<list<Integer>> comps_indices;
+        list<list<Integer>> comps_indices, phase2_indices;
         PseudoBucket bucket;
         Option<StrongComponent> comp_opt;
+        Adjacency.Matrix phase2_adj;
+        Matching phase2_matching;
+        array<SuperNode> super_nodes;
 
       case (Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
@@ -344,8 +424,30 @@ public
       then comps;
 
       case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+        bucket := PseudoBucket.create2(matching.eqn_to_var, adj.mapping, adj.modes);
         comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
 
+        // phase 2 tarjan
+        if not PseudoBucket.isEmpty(bucket) then
+          (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, comps_indices, bucket);
+          // kabdelhak: this matching is superfluous, SuperNode.create always returns these types.
+          // it is just safer if something is changed in the future
+          _ := match (phase2_adj, phase2_matching)
+            case (Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+              phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching.var_to_eqn, phase2_matching.eqn_to_var);
+              for comp_lst in phase2_indices loop
+                print(List.toString(comp_lst, function SuperNode.toStringTraverse(super_nodes = super_nodes)));
+              end for;
+              comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, adj.modes, matching.var_to_eqn, matching.eqn_to_var, vars, eqns) for comp in phase2_indices);
+              print(List.toString(comps, function StrongComponent.toString(index = -1), "comps", "\t", "\n\t", "\n"));
+            then ();
+
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix or matching type."});
+            then fail();
+          end match;
+        end if;
+/*
         // recollect array information
         bucket := PseudoBucket.create(comps_indices, matching.eqn_to_var, adj.mapping, adj.modes);
 
@@ -359,7 +461,7 @@ public
             comps := Util.getOption(comp_opt) :: comps;
           end if;
         end for;
-        comps := listReverse(comps);
+        comps := listReverse(comps);*/
       then comps;
 
       case (Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX(), Matching.ARRAY_MATCHING()) algorithm
@@ -475,6 +577,301 @@ protected
   algorithm
     pre_lst := list(mapping[cand] for cand guard(cand > 0 and mapping[cand] <> idx and mapping[cand] > 0) in m[idx]);
   end predecessors;
+
+  uniontype SuperNode
+    record SINGLE
+      "does not belong to an algebraic loop or array"
+    end SINGLE;
+
+    record SCALAR
+      "is part of either an algebraic loop or array"
+      Integer parent;
+    end SCALAR;
+
+    record ALGEBRAIC_LOOP
+      "an algebraic loop of equations"
+      list<Integer> eqn_indices;
+    end ALGEBRAIC_LOOP;
+
+    record ARRAY_BUCKET
+      "a bucket of array equations solved for the same cref"
+      ComponentRef cref_to_solve;
+      list<Integer> eqn_indices;
+    end ARRAY_BUCKET;
+
+    function toString
+      input SuperNode node;
+      input Integer idx = 0;
+      output String str = "(" + intString(idx) + ")";
+    algorithm
+      str := match node
+        case SINGLE()           then str + " single";
+        case SCALAR()           then str + " scalar part of (" + intString(node.parent) + ")";
+        case ALGEBRAIC_LOOP()   then str + " algebraic loop " + List.toString(node.eqn_indices, intString);
+        case ARRAY_BUCKET()     then str + " array bucket " + List.toString(node.eqn_indices, intString);
+                                else str + " ERROR";
+      end match;
+    end toString;
+
+    function toStringTraverse
+      input Integer index;
+      input array<SuperNode> super_nodes;
+      output String str = toString(super_nodes[index], index);
+    end toStringTraverse;
+
+    function isNotArrayBucket
+      input SuperNode node;
+      output Boolean b;
+    algorithm
+      b := match node
+        case ARRAY_BUCKET() then false;
+        else true;
+      end match;
+    end isNotArrayBucket;
+
+    function getEqnIndices
+      input SuperNode node;
+      output list<Integer> eqn_indices;
+    algorithm
+      eqn_indices := match node
+        case ALGEBRAIC_LOOP() then node.eqn_indices;
+        case ARRAY_BUCKET()   then node.eqn_indices;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of incorrect super node type."});
+        then fail();
+      end match;
+    end getEqnIndices;
+
+    function create
+      input Adjacency.Matrix adj;
+      input Matching matching;
+      input list<list<Integer>> scc_phase1;
+      input PseudoBucket bucket;
+      output Adjacency.Matrix phase2_adj = adj;
+      output Matching phase2_matching = matching;
+      output array<SuperNode> super_nodes;
+    protected
+      list<list<Integer>> algebraic_loops = list(scc for scc guard(listLength(scc) > 1) in scc_phase1);
+      list<PseudoBucketValue> buckets = UnorderedMap.valueList(bucket.bucket);
+      Integer index, shift = listLength(algebraic_loops) + listLength(buckets);
+      list<Integer> var_lst;
+    algorithm
+      phase2_adj := match (phase2_adj, phase2_matching)
+        case (Adjacency.PSEUDO_ARRAY_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+          //### 0. initialize super nodes ###
+          super_nodes := arrayCreate(arrayLength(phase2_adj.m) + shift, SuperNode.SINGLE());
+
+          // ### 3. expand matching ###
+          index := arrayLength(phase2_matching.eqn_to_var);
+          phase2_matching.eqn_to_var := Array.expandToSize(arrayLength(phase2_matching.eqn_to_var) + shift, phase2_matching.eqn_to_var, -1);
+          for i in index+1:index+shift loop
+            phase2_matching.eqn_to_var[i] := i;
+          end for;
+
+          for n_idx in 1:arrayLength(super_nodes) loop
+            print("node: " + toString(super_nodes[n_idx], n_idx) + " -- ");
+          end for;
+          print("\n\n");
+
+          index := arrayLength(phase2_matching.var_to_eqn);
+          phase2_matching.var_to_eqn := Array.expandToSize(arrayLength(phase2_matching.var_to_eqn) + shift, phase2_matching.var_to_eqn, -1);
+          for i in index+1:index+shift loop
+            phase2_matching.var_to_eqn[i] := i;
+          end for;
+
+          //### 1. adjust transposed matrix ###
+          // 1.1. enlarge transposed matrix by the maximum possible amount of new nodes
+          index := arrayLength(phase2_adj.mT) + 1;
+          phase2_adj.mT := Adjacency.Matrix.expandMatrix(phase2_adj.mT, shift);
+          // 1.2. merge all algebraic loop variables of one scc to one single variable
+
+          for scc in algebraic_loops loop
+            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in scc);
+            mergeLoopNodes(super_nodes, var_lst, index, false);
+            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
+          end for;
+          for n_idx in 1:arrayLength(super_nodes) loop
+            print("node: " + toString(super_nodes[n_idx], n_idx) + " -- ");
+          end for;
+          print("\n\n1.3");
+          // 1.3. merge all for-loop variables of one bucket to one single variable
+          for bucket in buckets loop
+            print("eqn idc: " + List.toString(PseudoBucketValue.getIndices(bucket), intString)+ "\n");
+            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in PseudoBucketValue.getIndices(bucket));
+            print("var idc: " + List.toString(var_lst, intString)+ "\n");
+            mergeArrayNodes(super_nodes, PseudoBucketValue.getCref(bucket), var_lst, index, false);
+            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
+          end for;
+          for n_idx in 1:arrayLength(super_nodes) loop
+            print("node: " + toString(super_nodes[n_idx], n_idx) + " -- ");
+          end for;
+          print("\n\n");
+
+          /// ### 2. adjust normal matrix ###
+          // 2.1. transpose the transposed matrix and enlarge it by the maximum possible amount of new nodes
+          index := arrayLength(phase2_adj.m) + 1;
+          phase2_adj.m := Adjacency.Matrix.transposeScalar(phase2_adj.mT, arrayLength(phase2_adj.m) + shift);
+          // 2.2 merge all algebraic loop equations of one scc to one single equation
+          for scc in algebraic_loops loop
+            mergeLoopNodes(super_nodes, scc, index, true);
+            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, scc, index);
+          end for;
+          for n_idx in 1:arrayLength(super_nodes) loop
+            print("node: " + toString(super_nodes[n_idx], n_idx) + " -- ");
+          end for;
+          print("\n\n");
+          // 2.3. merge all for-loop equations of one bucket to one single equation
+          for bucket in buckets loop
+            mergeArrayNodes(super_nodes, PseudoBucketValue.getCref(bucket), PseudoBucketValue.getIndices(bucket), index, true);
+            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, PseudoBucketValue.getIndices(bucket), index);
+          end for;
+          for n_idx in 1:arrayLength(super_nodes) loop
+            print("node: " + toString(super_nodes[n_idx], n_idx) + " -- ");
+          end for;
+          print("\n\n");
+          // 2.4. transpose it back to have it consistent (probably not actually necessary for phase2 tarjan but more safe)
+          phase2_adj.mT := Adjacency.Matrix.transposeScalar(phase2_adj.m, arrayLength(phase2_adj.mT));
+
+        then phase2_adj;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix or matching type."});
+        then fail();
+      end match;
+      print(Adjacency.Matrix.toString(adj, "before"));
+      print(Matching.toString(matching, "before"));
+      print(Adjacency.Matrix.toString(phase2_adj, "after"));
+      print(Matching.toString(phase2_matching, "after"));
+    end create;
+
+    function collapse
+      input list<Integer> comp_indices;
+      input array<SuperNode> super_nodes;
+      input array<list<Integer>> m;
+      input Adjacency.Mapping mapping;
+      input Adjacency.CausalizeModes modes;
+      input array<Integer> var_to_eqn;
+      input array<Integer> eqn_to_var;
+      input VariablePointers vars;
+      input EquationPointers eqns;
+      output StrongComponent comp;
+    protected
+      list<SuperNode> node_comp = list(super_nodes[i] for i in comp_indices);
+      list<list<Integer>> sorted_body_components;
+      list<Integer> sorted_body_indices;
+    algorithm
+      comp := match node_comp
+        local
+          SuperNode node;
+          array<list<Integer>> m_local;
+          array<Integer> var_to_eqn_local, eqn_to_var_local;
+          list<StrongComponent> local_comps = {};
+
+        // a single scalar equation that has nothing to do with arrays
+        case {SINGLE()}
+        then StrongComponent.createPseudoScalar(comp_indices, eqn_to_var, mapping, vars, eqns);
+
+        // a single strong component from phase I
+        case {node as ALGEBRAIC_LOOP()}
+        then StrongComponent.createPseudoScalar(node.eqn_indices, eqn_to_var, mapping, vars, eqns);
+
+        // a single array equation
+        case {node as ARRAY_BUCKET()} algorithm
+          m_local := arrayCreate(arrayLength(m), {});
+          var_to_eqn_local := arrayCreate(arrayLength(var_to_eqn), -1);
+          eqn_to_var_local := arrayCreate(arrayLength(eqn_to_var), -1);
+          for i in node.eqn_indices loop
+            m_local[i] := m[i];
+            eqn_to_var_local[i] := eqn_to_var[i];
+            var_to_eqn_local[eqn_to_var[i]] := var_to_eqn[eqn_to_var[i]];
+          end for;
+          sorted_body_components := tarjanScalar(m_local, var_to_eqn_local, eqn_to_var_local);
+          sorted_body_indices := List.flatten(sorted_body_components);
+          if not listLength(sorted_body_components) == listLength(sorted_body_indices) then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " crucially failed for the following Phase II strong component because
+              the body turned out to still have strong components:\n"
+              + List.toString(comp_indices, function toStringTraverse(super_nodes = super_nodes), "", "\t", "\n\t", "\n")});
+          end if;
+        then StrongComponent.createPseudoSlice(mapping.eqn_StA[List.first(node.eqn_indices)], node.cref_to_solve, sorted_body_indices, eqns, mapping);
+
+        case _ guard(not List.any(node_comp, isNotArrayBucket)) algorithm
+          m_local := arrayCreate(arrayLength(m), {});
+          var_to_eqn_local := arrayCreate(arrayLength(var_to_eqn), -1);
+          eqn_to_var_local := arrayCreate(arrayLength(eqn_to_var), -1);
+          for node in node_comp loop
+            for i in getEqnIndices(node) loop
+              m_local[i] := m[i];
+              eqn_to_var_local[i] := eqn_to_var[i];
+              var_to_eqn_local[eqn_to_var[i]] := var_to_eqn[eqn_to_var[i]];
+            end for;
+          end for;
+          sorted_body_components := tarjanScalar(m_local, var_to_eqn_local, eqn_to_var_local);
+          sorted_body_indices := List.flatten(sorted_body_components);
+          if not listLength(sorted_body_components) == listLength(sorted_body_indices) then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " crucially failed for the following Phase II strong component because
+              the body turned out to still have strong components:\n"
+              + List.toString(comp_indices, function toStringTraverse(super_nodes = super_nodes), "", "\t", "\n\t", "\n")});
+          end if;
+          // fail for now: somehow put them all together
+        then fail();
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for the following Phase II strong component:\n"
+            + List.toString(comp_indices, function toStringTraverse(super_nodes = super_nodes), "", "\t", "\n\t", "\n")});
+        then fail();
+      end match;
+    end collapse;
+
+  protected
+    function mergeRows
+      input array<list<Integer>> m;
+      input array<Integer> matching;
+      input array<SuperNode> super_nodes;
+      input list<Integer> rows_to_merge;
+      input output Integer new_idx;
+    algorithm
+      // merge all rows to one row
+      arrayUpdate(m, new_idx, List.unique(List.flatten(list(m[idx] for idx in rows_to_merge))));
+      // remove the original rows
+      for idx in rows_to_merge loop
+        arrayUpdate(m, idx, {});
+        arrayUpdate(matching, idx, -1);
+      end for;
+      new_idx := new_idx + 1;
+    end mergeRows;
+
+    function mergeArrayNodes
+      input array<SuperNode> super_nodes;
+      input ComponentRef cref_to_solve;
+      input list<Integer> rows_to_merge;
+      input output Integer new_idx;
+      input Boolean update_scalar;
+    algorithm
+      arrayUpdate(super_nodes, new_idx, SuperNode.ARRAY_BUCKET(cref_to_solve, rows_to_merge));
+      // this is not necessary but better to debug.
+      if update_scalar then
+        for i in rows_to_merge loop
+          arrayUpdate(super_nodes, i, SuperNode.SCALAR(new_idx));
+        end for;
+      end if;
+    end mergeArrayNodes;
+
+    function mergeLoopNodes
+      input array<SuperNode> super_nodes;
+      input list<Integer> rows_to_merge;
+      input output Integer new_idx;
+      input Boolean update_scalar;
+    algorithm
+      arrayUpdate(super_nodes, new_idx, SuperNode.ALGEBRAIC_LOOP(rows_to_merge));
+      // this is not necessary but better to debug.
+      if update_scalar then
+        for i in rows_to_merge loop
+          arrayUpdate(super_nodes, i, SuperNode.SCALAR(new_idx));
+        end for;
+      end if;
+    end mergeLoopNodes;
+
+  end SuperNode;
 
   annotation(__OpenModelica_Interface="backend");
 end NBSorting;
