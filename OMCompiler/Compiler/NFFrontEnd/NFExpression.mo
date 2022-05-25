@@ -5366,6 +5366,26 @@ public
     exp := ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, n), n);
   end nthEnumLiteral;
 
+  function createIterationRanges
+    input output Expression exp;
+    input list<tuple<InstNode, Expression>> iterators;
+          output list<Expression> ranges = {};
+          output list<Mutable<Expression>> iters = {};
+  protected
+    InstNode node;
+    Expression range;
+    Mutable<Expression> iter;
+  algorithm
+    for i in iterators loop
+      (node, range) := i;
+      iter := Mutable.create(INTEGER(0));
+      ranges := list(replaceIterator(r, node, MUTABLE(iter)) for r in ranges);
+      exp := replaceIterator(exp, node, MUTABLE(iter));
+      iters := iter :: iters;
+      ranges := range :: ranges;
+    end for;
+  end createIterationRanges;
+
   function foldReduction
     input Expression exp;
     input list<tuple<InstNode, Expression>> iterators;
@@ -5390,15 +5410,7 @@ public
     list<Expression> ranges = {};
     list<Mutable<Expression>> iters = {};
   algorithm
-    e := exp;
-    for i in iterators loop
-      (node, range) := i;
-      iter := Mutable.create(INTEGER(0));
-      e := replaceIterator(e, node, MUTABLE(iter));
-      iters := iter :: iters;
-      ranges := range :: ranges;
-    end for;
-
+    (e, ranges, iters) := createIterationRanges(exp, iterators);
     result := foldReduction2(e, ranges, iters, foldExp, mapFn, foldFn);
   end foldReduction;
 
@@ -5431,6 +5443,7 @@ public
       result := foldFn(foldExp, mapFn(exp));
     else
       range :: ranges_rest := ranges;
+      range := Ceval.evalExp(range);
       iter :: iters_rest := iterators;
       range_iter := ExpressionIterator.fromExp(range);
       result := foldExp;

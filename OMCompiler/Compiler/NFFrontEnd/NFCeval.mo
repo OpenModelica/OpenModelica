@@ -299,6 +299,14 @@ algorithm
   end match;
 end evalExpOpt;
 
+function evalExpPartialDefault
+  "Simplied version of evalExpPartial to work around MetaModelica issues with
+   default arguments and multiple return values when used as a function pointer."
+  input output Expression exp;
+algorithm
+  exp := evalExpPartial(exp);
+end evalExpPartialDefault;
+
 function evalExpPartial
   "Evaluates the parts of an expression that are possible to evaluate. This
    means leaving parts of the expression that contains e.g. iterators or mutable
@@ -1841,14 +1849,14 @@ algorithm
     case Call.TYPED_ARRAY_CONSTRUCTOR()
       algorithm
         c.exp := evalExpPartial(c.exp);
-        c.iters := list((Util.tuple21(i), evalExp(Util.tuple22(i), target)) for i in c.iters);
+        c.iters := Call.mapIteratorsExpShallow(c.iters, evalExpPartialDefault);
       then
         Expression.mapSplitExpressions(Expression.CALL(c), evalArrayConstructor);
 
     case Call.TYPED_REDUCTION()
       algorithm
         c.exp := evalExpPartial(c.exp);
-        c.iters := list((Util.tuple21(i), evalExp(Util.tuple22(i), target)) for i in c.iters);
+        c.iters := Call.mapIteratorsExpShallow(c.iters, evalExpPartialDefault);
       then
         Expression.mapSplitExpressions(Expression.CALL(c), evalReduction);
 
@@ -3075,7 +3083,7 @@ protected
   list<Type> types = {};
 algorithm
   Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = exp, iters = iters)) := callExp;
-  (exp, ranges, iter_exps) := createIterationRanges(exp, iters);
+  (exp, ranges, iter_exps) := Expression.createIterationRanges(exp, iters);
 
   // Precompute all the types we're going to need for the arrays created.
   ty := Expression.typeOf(exp);
@@ -3086,25 +3094,6 @@ algorithm
 
   result := evalArrayConstructor3(exp, ranges, iter_exps, types);
 end evalArrayConstructor;
-
-function createIterationRanges
-  input output Expression exp;
-  input list<tuple<InstNode, Expression>> iterators;
-        output list<Expression> ranges = {};
-        output list<Mutable<Expression>> iters = {};
-protected
-  InstNode node;
-  Expression range;
-  Mutable<Expression> iter;
-algorithm
-  for i in iterators loop
-    (node, range) := i;
-    iter := Mutable.create(Expression.INTEGER(0));
-    exp := Expression.replaceIterator(exp, node, Expression.MUTABLE(iter));
-    iters := iter :: iters;
-    ranges := range :: ranges;
-  end for;
-end createIterationRanges;
 
 function evalArrayConstructor3
   input Expression exp;
@@ -3126,6 +3115,7 @@ algorithm
     result := evalExp(exp, EvalTarget.IGNORE_ERRORS());
   else
     range :: ranges_rest := ranges;
+    range := evalExp(range);
     iter :: iters_rest := iterators;
     ty :: rest_ty := types;
     range_iter := ExpressionIterator.fromExp(range);
