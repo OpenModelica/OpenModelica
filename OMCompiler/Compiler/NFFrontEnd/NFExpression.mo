@@ -282,6 +282,16 @@ public
     end match;
   end isCref;
 
+  function isFunctionInputCref
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF() then ComponentRef.isInput(ComponentRef.last(exp.cref));
+      else false;
+    end match;
+  end isFunctionInputCref;
+
   function isWildCref
     input Expression exp;
     output Boolean wild;
