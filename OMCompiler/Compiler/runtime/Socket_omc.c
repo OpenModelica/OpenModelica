@@ -28,8 +28,7 @@
  *
  */
 
- #if defined(_MSC_VER) || defined(__MINGW32__)
- #define WIN32_LEAN_AND_MEAN
+#if defined(_MSC_VER) || defined(__MINGW32__)
  #include <windows.h>
 #endif
 

@@ -2,6 +2,15 @@
 
 defaultMakefileTarget = Makefile.unix
 
+host=@host@
+host_short=@host_short@
+CC=@CC@
+CXX=@CXX@
+CPPFLAGS=@CPPFLAGS@
+CFLAGS=@CFLAGS@
+CXXFLAGS=@CXXFLAGS@
+LDFLAGS=@LDFLAGS@
+
 CMAKE = @CMAKE@
 # Use the system's default cmake if nothing is passed to configure script, i.e., no CMAKE=<some_path> is specified
 ifeq ($(CMAKE),)

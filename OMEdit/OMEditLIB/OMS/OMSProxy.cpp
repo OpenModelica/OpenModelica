@@ -350,13 +350,13 @@ bool OMSProxy::addBus(QString cref)
  * \param crefB
  * \return
  */
-bool OMSProxy::addConnection(QString crefA, QString crefB)
+bool OMSProxy::addConnection(QString crefA, QString crefB, bool suppressUnitConversion)
 {
   QString command = "oms_addConnection";
   QStringList args;
-  args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
+  args << "\"" + crefA + "\"" << "\"" + crefB + "\"" << (suppressUnitConversion ? "true" : "false");
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData());
+  oms_status_enu_t status = oms_addConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData(), suppressUnitConversion);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }

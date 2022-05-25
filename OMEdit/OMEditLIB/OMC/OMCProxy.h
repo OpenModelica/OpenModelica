@@ -46,6 +46,7 @@ class ElementInfo;
 class StringHandler;
 class OMCInterface;
 class LibraryTreeItem;
+class QNetworkReply;
 
 typedef struct {
   QString mFromUnit;

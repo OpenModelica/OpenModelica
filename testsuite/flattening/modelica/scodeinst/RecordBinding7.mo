@@ -6,7 +6,7 @@
 
 record R
   Real x;
-  constant Real y = x / 2.0;
+  final constant Real y = x / 2.0;
   Real z;
 end R;
 
@@ -20,7 +20,7 @@ end RecordBinding7;
 // Result:
 // class RecordBinding7
 //   constant Real r.x = 1.0;
-//   constant Real r.y = 0.5;
+//   final constant Real r.y = 0.5;
 //   constant Real r.z = 3.0;
 //   constant Real x = 1.0;
 //   constant Real y = 0.5;

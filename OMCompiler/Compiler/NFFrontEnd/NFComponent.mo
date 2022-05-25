@@ -905,7 +905,7 @@ public
 
   function getEvaluateAnnotation
     input Component component;
-    output Boolean evaluate;
+    output Option<Boolean> evaluate;
   protected
     SCode.Comment cmt;
   algorithm
@@ -979,13 +979,6 @@ public
       else false;
     end match;
   end isTypeAttribute;
-
-  function isModifiable
-    input Component component;
-    output Boolean isModifiable;
-  algorithm
-    isModifiable := not isFinal(component) and not (isConst(component) and hasBinding(component));
-  end isModifiable;
 
   function countConnectorVars
     "Returns the number of potential (neither constant, parameter, input, nor

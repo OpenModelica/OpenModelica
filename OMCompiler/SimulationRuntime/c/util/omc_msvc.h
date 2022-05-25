@@ -35,6 +35,8 @@ extern "C" {
 #endif
 
 #include <math.h> /* Make sure we try to get INFINITY and NAN from the system. They are way cooler */
+/*For _MAX_PATH on MSVC */
+#include <stdlib.h>
 
 #ifndef NaN
 #define NaN NAN

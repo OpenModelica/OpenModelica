@@ -70,7 +70,9 @@ extern "C" {
 
 #include "openmodelica_types.h"
 #if defined(__MINGW32__) || defined(_MSC_VER)
+#if !defined(WIN32_LEAN_AND_MEAN)
  #define WIN32_LEAN_AND_MEAN
+#endif
 #if !defined(NOMINMAX)
  #define NOMINMAX
 #endif

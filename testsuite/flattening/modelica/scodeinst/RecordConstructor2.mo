@@ -3,13 +3,13 @@
 // status: correct
 // cflags: -d=newInst
 //
-// Checks that constants in a record becomes protected in the default
+// Checks that final components in a record becomes protected in the default
 // constructor.
 //
 
 record R
   Real x;
-  constant Real y = 1.0;
+  final constant Real y = 1.0;
 end R;
 
 model RecordConstructor2
@@ -27,7 +27,7 @@ end RecordConstructor2;
 //
 // class RecordConstructor2
 //   Real r.x;
-//   constant Real r.y = 1.0;
+//   final constant Real r.y = 1.0;
 // algorithm
 //   r := R(time, 1.0);
 // end RecordConstructor2;

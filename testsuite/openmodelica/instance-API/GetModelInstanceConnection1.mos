@@ -36,7 +36,41 @@ getModelInstance(M, prettyPrint = true);
 //       \"name\": \"A\",
 //       \"components\": {
 //         \"c2\": {
-//           \"type\": \"C\",
+//           \"type\": {
+//             \"name\": \"C\",
+//             \"components\": {
+//               \"f\": {
+//                 \"type\": \"Real\",
+//                 \"modifier\": \"\",
+//                 \"prefixes\": {
+//                   \"public\": true,
+//                   \"final\": false,
+//                   \"inner\": false,
+//                   \"outer\": false,
+//                   \"replaceable\": false,
+//                   \"redeclare\": false,
+//                   \"connector\": \"flow\",
+//                   \"variability\": \"\",
+//                   \"direction\": \"\"
+//                 }
+//               },
+//               \"e\": {
+//                 \"type\": \"Real\",
+//                 \"modifier\": \"\",
+//                 \"prefixes\": {
+//                   \"public\": true,
+//                   \"final\": false,
+//                   \"inner\": false,
+//                   \"outer\": false,
+//                   \"replaceable\": false,
+//                   \"redeclare\": false,
+//                   \"connector\": \"\",
+//                   \"variability\": \"\",
+//                   \"direction\": \"\"
+//                 }
+//               }
+//             }
+//           },
 //           \"modifier\": \"\",
 //           \"prefixes\": {
 //             \"public\": true,
@@ -51,7 +85,41 @@ getModelInstance(M, prettyPrint = true);
 //           }
 //         },
 //         \"c1\": {
-//           \"type\": \"C\",
+//           \"type\": {
+//             \"name\": \"C\",
+//             \"components\": {
+//               \"f\": {
+//                 \"type\": \"Real\",
+//                 \"modifier\": \"\",
+//                 \"prefixes\": {
+//                   \"public\": true,
+//                   \"final\": false,
+//                   \"inner\": false,
+//                   \"outer\": false,
+//                   \"replaceable\": false,
+//                   \"redeclare\": false,
+//                   \"connector\": \"flow\",
+//                   \"variability\": \"\",
+//                   \"direction\": \"\"
+//                 }
+//               },
+//               \"e\": {
+//                 \"type\": \"Real\",
+//                 \"modifier\": \"\",
+//                 \"prefixes\": {
+//                   \"public\": true,
+//                   \"final\": false,
+//                   \"inner\": false,
+//                   \"outer\": false,
+//                   \"replaceable\": false,
+//                   \"redeclare\": false,
+//                   \"connector\": \"\",
+//                   \"variability\": \"\",
+//                   \"direction\": \"\"
+//                 }
+//               }
+//             }
+//           },
 //           \"modifier\": \"\",
 //           \"prefixes\": {
 //             \"public\": true,
@@ -70,7 +138,41 @@ getModelInstance(M, prettyPrint = true);
 //   ],
 //   \"components\": {
 //     \"c3\": {
-//       \"type\": \"C\",
+//       \"type\": {
+//         \"name\": \"C\",
+//         \"components\": {
+//           \"f\": {
+//             \"type\": \"Real\",
+//             \"modifier\": \"\",
+//             \"prefixes\": {
+//               \"public\": true,
+//               \"final\": false,
+//               \"inner\": false,
+//               \"outer\": false,
+//               \"replaceable\": false,
+//               \"redeclare\": false,
+//               \"connector\": \"flow\",
+//               \"variability\": \"\",
+//               \"direction\": \"\"
+//             }
+//           },
+//           \"e\": {
+//             \"type\": \"Real\",
+//             \"modifier\": \"\",
+//             \"prefixes\": {
+//               \"public\": true,
+//               \"final\": false,
+//               \"inner\": false,
+//               \"outer\": false,
+//               \"replaceable\": false,
+//               \"redeclare\": false,
+//               \"connector\": \"\",
+//               \"variability\": \"\",
+//               \"direction\": \"\"
+//             }
+//           }
+//         }
+//       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"public\": true,
@@ -103,9 +205,6 @@ getModelInstance(M, prettyPrint = true);
 //       \"lhs\": \"c1\",
 //       \"rhs\": \"c2\"
 //     }
-//   ],
-//   \"replaceable\": [
-//
 //   ]
 // }"
 // endResult

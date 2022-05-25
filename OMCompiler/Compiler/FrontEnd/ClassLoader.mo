@@ -796,11 +796,11 @@ function getProgramFromStrategy
 algorithm
   program := match strategy
     case STRATEGY_HASHTABLE()
-      equation
-        /* if not BaseHashTable.hasKey(filename, strategy.ht) then
-          Error.addInternalError("HashTable missing file " + filename + " - all entries include:\n" + stringDelimitList(BaseHashTable.hashTableKeyList(ht), "\n"), sourceInfo());
+      algorithm
+        if not BaseHashTable.hasKey(filename, strategy.ht) then
+          Error.addInternalError("HashTable missing file " + filename + " - all entries include:\n" + stringDelimitList(BaseHashTable.hashTableKeyList(strategy.ht), "\n"), sourceInfo());
           fail();
-        end if; */
+        end if;
       then BaseHashTable.get(filename, strategy.ht);
     case STRATEGY_ON_DEMAND() then Parser.parse(filename, strategy.encoding);
   end match;

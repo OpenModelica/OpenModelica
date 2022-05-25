@@ -930,15 +930,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         } else { /* use unit as displayUnit */
           variableData[VariableItemData::DISPLAYUNIT] = unit;
         }
-        /* Issue #5447
-         * For angular speeds always add in the menu in the unit column, in addition to the standard "rad/s" also "rpm"
-         * For energies always add in the menu in the Display Unit column, in addition to standard "J", also "Wh" (prefixes such as kWh, MWh, GWh will be obtained automatically)
-         */
-        if (unit.compare(QStringLiteral("rad/s")) == 0) {
-          displayUnitOptions << "rpm";
-        } else if (unit.compare(QStringLiteral("J")) == 0) {
-          displayUnitOptions << "Wh";
-        }
+        Utilities::addDefaultDisplayUnit(unit, displayUnitOptions);
         displayUnitOptions.removeDuplicates();
         displayUnits << displayUnitOptions;
         variableData << displayUnits;

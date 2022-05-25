@@ -118,12 +118,6 @@
 #define WITH_HWLOC 0
 #define WITH_SUNDIALS
 
-#if defined(__MINGW32__)
-#define OMC_HAVE_IPOPT
-#else
-/* Without IPOPT for MSVC */
-#endif
-
 #include "revision.h"
 
 #define WITH_SUITESPARSE

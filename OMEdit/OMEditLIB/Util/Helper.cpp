@@ -42,6 +42,7 @@ QString Helper::organization = "openmodelica";  /* case-sensitive string. Don't 
 QString Helper::application = "omedit"; /* case-sensitive string. Don't change it. Used by ini settings file. */
 // Following four variables are set once we are connected to OMC......in OMCProxy::initializeOMC().
 QString Helper::OpenModelicaVersion = "";
+QString Helper::OpenModelicaUsersGuideVersion = "latest";
 QString Helper::OpenModelicaHome = "";
 QString Helper::ModelicaPath = "";
 QString Helper::userHomeDirectory = "";

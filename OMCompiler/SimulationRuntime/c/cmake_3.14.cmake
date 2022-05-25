@@ -35,16 +35,20 @@ add_library(OpenModelicaRuntimeC SHARED)
 add_library(omc::simrt::runtime ALIAS OpenModelicaRuntimeC)
 
 target_sources(OpenModelicaRuntimeC PRIVATE ${OMC_SIMRT_GC_SOURCES} ${OMC_SIMRT_UTIL_SOURCES} ${OMC_SIMRT_META_SOURCES})
-target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
-
 target_include_directories(OpenModelicaRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+# Add the define WIN32_LEAN_AND_MEAN to this lib and anything that links to it.
+# The reason is that the define tells windows.h not to include winsock.h. We want
+# to use winsock2.h in some 3rdParty libraries and the two can not be used simultaneously.
+# winsock2.h is backwards compatible with winsock.h.
+target_compile_definitions(OpenModelicaRuntimeC PUBLIC WIN32_LEAN_AND_MEAN)
+
 target_link_libraries(OpenModelicaRuntimeC PUBLIC OMCPThreads::OMCPThreads)
+target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
 
 if(MINGW)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC dbghelp)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
-  target_link_libraries(OpenModelicaRuntimeC PUBLIC wsock32)
   target_link_options(OpenModelicaRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
   set_target_properties(OpenModelicaRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
@@ -82,10 +86,13 @@ target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cdaskr)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
 target_link_libraries(SimulationRuntimeC PUBLIC ${LAPACK_LIBRARIES})
 
+if(WIN32)
+  target_link_libraries(SimulationRuntimeC PUBLIC wsock32)
+endif()
+
 if(MINGW)
   target_link_options(SimulationRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
-  target_link_libraries(SimulationRuntimeC PUBLIC wsock32)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif(MINGW)
 

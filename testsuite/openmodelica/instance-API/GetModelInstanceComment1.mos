@@ -17,12 +17,6 @@ getModelInstance(M, prettyPrint=true);
 // true
 // "{
 //   \"name\": \"M\",
-//   \"comment\": \"A class\",
-//   \"connections\": [
-//
-//   ],
-//   \"replaceable\": [
-//
-//   ]
+//   \"comment\": \"A class\"
 // }"
 // endResult

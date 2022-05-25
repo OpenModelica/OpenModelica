@@ -253,12 +253,12 @@ algorithm
 
   comp := InstNode.component(comp_node);
 
-  if Component.isModifiable(comp) then
-    setFieldDirection(comp_node, Direction.INPUT);
-    inputs := comp_node :: inputs;
-  else
+  if Component.isFinal(comp) then
     setFieldDirection(comp_node, Direction.NONE);
     locals := comp_node :: locals;
+  else
+    setFieldDirection(comp_node, Direction.INPUT);
+    inputs := comp_node :: inputs;
   end if;
 end collectRecordParam;
 
@@ -296,7 +296,7 @@ algorithm
   else
     comp := InstNode.component(comp_node);
 
-    if not Component.isModifiable(comp) then
+    if Component.isFinal(comp) then
       fields := Field.LOCAL(InstNode.name(comp_node)) :: fields;
     elseif not Component.isOutput(comp) then
       fields := Field.INPUT(InstNode.name(comp_node)) :: fields;

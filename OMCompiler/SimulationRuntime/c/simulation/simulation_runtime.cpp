@@ -50,6 +50,12 @@
   #include <regex.h>
 #endif
 
+/* For CommandLineToArgvW. */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#include <shellapi.h>
+#endif
+
 /* ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
  *
  */

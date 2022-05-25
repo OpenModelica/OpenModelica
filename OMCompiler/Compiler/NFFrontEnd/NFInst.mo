@@ -3318,14 +3318,23 @@ algorithm
   () := match c
     local
       Binding binding, condition;
+      Option<Boolean> opt_eval;
       Boolean eval;
 
     case Component.UNTYPED_COMPONENT(binding = binding, condition = condition)
       algorithm
-        eval := Component.getEvaluateAnnotation(c);
+        opt_eval := Component.getEvaluateAnnotation(c);
+        eval := Util.getOptionOrDefault(opt_eval, false);
 
-        if Structural.isStructuralComponent(c, c.attributes, binding, node, eval, parentEval) then
-          Structural.markComponent(c, node);
+        if isSome(opt_eval) and not eval and c.attributes.variability == Variability.PARAMETER then
+          // If the component is a parameter with Evaluate=false,
+          // mark it as non-structural to try to avoid it being evaluated.
+          InstNode.updateComponent(Component.setVariability(Variability.NON_STRUCTURAL_PARAMETER, c), node);
+        else
+          // Otherwise check if we should mark it as structural.
+          if Structural.isStructuralComponent(c, c.attributes, binding, node, eval, parentEval) then
+            Structural.markComponent(c, node);
+          end if;
         end if;
 
         // Parameters used in array dimensions are structural.

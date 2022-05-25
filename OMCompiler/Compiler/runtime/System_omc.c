@@ -29,7 +29,6 @@
  */
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
- #define WIN32_LEAN_AND_MEAN
  #include <windows.h>
 #endif
 
@@ -406,30 +405,64 @@ extern void* System_getFileModificationTime(const char *fileName)
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-void* System_moFiles(const char *directory)
+/**
+ * @brief Scan directory for package files with given pattern except for packageName.
+ *
+ * @param directory     Directory to search in
+ * @param pattern       Pattern to search for, e.g. "*.mo" or "*.moc".
+ * @param packageName   Name of packages, e.g. "package.mo" or "package.moc"
+ * @return void*        List of file names matching pattern.
+ */
+void* omc_scanDirForPackagePattern(const char* directory, const char* pattern, const wchar_t* packageName)
 {
   void *res;
-  WIN32_FIND_DATA FileData;
+  WIN32_FIND_DATAW FileData;
   BOOL more = TRUE;
-  char pattern[1024];
   HANDLE sh;
-  sprintf(pattern, "%s\\*.mo", directory);
+  char pattern_mb[1024];
+
+  // TODO: Use longabspath for path longer than MAX_PATH
+  //wchar_t* unicodeAbsDirectory = longabspath(directory);
+  sprintf(pattern_mb, "%s\\%s", directory, pattern);
+
+  MULTIBYTE_TO_WIDECHAR_LENGTH(pattern_mb, pattern_uc_length);
+  MULTIBYTE_TO_WIDECHAR_VAR(pattern_mb, pattern_uc, pattern_uc_length);
+
   res = mmc_mk_nil();
-  sh = FindFirstFile(pattern, &FileData);
+  sh = FindFirstFileW(pattern_uc, &FileData);
   if (sh != INVALID_HANDLE_VALUE) {
     while(more) {
-      if (strcmp(FileData.cFileName,"package.mo") != 0)
+      if (wcscmp(FileData.cFileName, packageName) != 0)
       {
-        res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
+        WIDECHAR_TO_MULTIBYTE_LENGTH(FileData.cFileName, file_name_mb_length);
+        WIDECHAR_TO_MULTIBYTE_VAR(FileData.cFileName, file_name_mb, file_name_mb_length);
+
+        res = mmc_mk_cons(mmc_mk_scon(file_name_mb),res);
+        MULTIBYTE_OR_WIDECHAR_VAR_FREE(file_name_mb);
       }
-      more = FindNextFile(sh, &FileData);
+      more = FindNextFileW(sh, &FileData);
     }
     if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
   }
+
+  MULTIBYTE_OR_WIDECHAR_VAR_FREE(pattern_uc);
+
   return res;
 }
-#else
+#endif
+
+/**
+ * @brief Scan directory for .mo files excluding package.mo.
+ *
+ * @param directory   Directory to search in.
+ * @return void*      List of file names.
+ */
 void* System_moFiles(const char *directory)
+#if defined(__MINGW32__) || defined(_MSC_VER)
+{
+  return omc_scanDirForPackagePattern(directory, "*.mo", L"package.mo");
+}
+#else
 {
   int i,count;
   void *res;
@@ -447,31 +480,18 @@ void* System_moFiles(const char *directory)
 }
 #endif
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+/**
+ * @brief Scan directory for .moc files excluding package.moc.
+ *
+ * @param directory   Directory to search in.
+ * @return void*      List of file names.
+ */
 void* System_mocFiles(const char *directory)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 {
-  void *res;
-  WIN32_FIND_DATA FileData;
-  BOOL more = TRUE;
-  char pattern[1024];
-  HANDLE sh;
-  sprintf(pattern, "%s\\*.moc", directory);
-  res = mmc_mk_nil();
-  sh = FindFirstFile(pattern, &FileData);
-  if (sh != INVALID_HANDLE_VALUE) {
-    while(more) {
-      if (strcmp(FileData.cFileName,"package.moc") != 0)
-      {
-        res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
-      }
-      more = FindNextFile(sh, &FileData);
-    }
-    if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
-  }
-  return res;
+  return omc_scanDirForPackagePattern(directory, "*.moc", L"package.moc");
 }
 #else
-void* System_mocFiles(const char *directory)
 {
   int i,count;
   void *res;

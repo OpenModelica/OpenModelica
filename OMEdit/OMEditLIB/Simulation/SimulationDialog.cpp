@@ -523,6 +523,10 @@ void SimulationDialog::setUpForm()
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
   mpVariableFilterTextBox = new QLineEdit(".*");
+  mpVariableFilterHelpButton = new QToolButton;
+  mpVariableFilterHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpVariableFilterHelpButton->setToolTip(tr("Variable Filter help"));
+  connect(mpVariableFilterHelpButton, SIGNAL(clicked()), SLOT(showVariableFilterHelp()));
   // Protected Variabels
   mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
   // ignore hide result
@@ -537,19 +541,20 @@ void SimulationDialog::setUpForm()
   QGridLayout *pOutputTabLayout = new QGridLayout;
   pOutputTabLayout->setAlignment(Qt::AlignTop);
   pOutputTabLayout->addWidget(mpOutputFormatLabel, 0, 0);
-  pOutputTabLayout->addWidget(mpOutputFormatComboBox, 0, 1);
-  pOutputTabLayout->addWidget(mpSinglePrecisionCheckBox, 1, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpOutputFormatComboBox, 0, 1, 1, 2);
+  pOutputTabLayout->addWidget(mpSinglePrecisionCheckBox, 1, 0, 1, 3);
   pOutputTabLayout->addWidget(mpFileNameLabel, 2, 0);
-  pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1);
+  pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1, 1, 2);
   pOutputTabLayout->addWidget(mpResultFileNameLabel, 3, 0);
-  pOutputTabLayout->addWidget(mpResultFileNameTextBox, 3, 1);
+  pOutputTabLayout->addWidget(mpResultFileNameTextBox, 3, 1, 1, 2);
   pOutputTabLayout->addWidget(mpVariableFilterLabel, 4, 0);
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 4, 1);
-  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpIgnoreHideResultCheckBox, 6, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 7, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 8, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 9, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpVariableFilterHelpButton, 4, 2);
+  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpIgnoreHideResultCheckBox, 6, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 7, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 8, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 9, 0, 1, 3);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
@@ -1736,11 +1741,21 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
     } else {
       QString GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
-      GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(),
-                                     GDBPath, simulationOptions);
+      GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(), GDBPath, simulationOptions);
       MainWindow::instance()->switchToAlgorithmicDebuggingPerspectiveSlot();
     }
   }
+}
+
+/*!
+ * \brief SimulationDialog::showVariableFilterHelp
+ * Slot activated when mpVariableFilterHelpButton clicked signal is raised.\n
+ * Opens the omedit.html#output page of OpenModelica users guide.
+ */
+void SimulationDialog::showVariableFilterHelp()
+{
+  QUrl variabeFilterHelpPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/omedit.html#output").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(variabeFilterHelpPath);
 }
 
 /*!
@@ -2046,11 +2061,8 @@ void SimulationDialog::enableDasslIdaOptions(QString method)
  */
 void SimulationDialog::showIntegrationHelp()
 {
-  QUrl integrationAlgorithmsPath ("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/simulationflags.html#integration-methods");
-  if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString()), Helper::ok);
-  }
+  QUrl integrationAlgorithmsPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/solving.html#cruntime-integration-methods").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(integrationAlgorithmsPath);
 }
 
 /*!
@@ -2112,11 +2124,8 @@ void SimulationDialog::browseEquationSystemInitializationFile()
  */
 void SimulationDialog::showSimulationFlagsHelp()
 {
-  QUrl simulationflagsPath ("https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/simulationflags.html");
-  if (!QDesktopServices::openUrl(simulationflagsPath)) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(simulationflagsPath.toString()), Helper::ok);
-  }
+  QUrl simulationflagsPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/simulationflags.html").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(simulationflagsPath);
 }
 
 /*!
