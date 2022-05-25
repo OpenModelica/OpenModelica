@@ -156,7 +156,7 @@ unsigned int numShapes(rapidxml::xml_node<>* rootNode)
     if (NULL == rootNode->first_node("shape"))
         return num;
     else
-        for (rapidxml::xml_node<>* shapeNode = rootNode->first_node("shape"); shapeNode; shapeNode = shapeNode->next_sibling())
+        for (rapidxml::xml_node<>* shapeNode = rootNode->first_node("shape"); shapeNode; shapeNode = shapeNode->next_sibling("shape"))
             ++num;
 
     return num;
