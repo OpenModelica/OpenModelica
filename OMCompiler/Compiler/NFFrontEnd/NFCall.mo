@@ -2103,7 +2103,7 @@ protected
     InstNode iter, range_node;
     Type ty;
   algorithm
-    for i in inIters loop
+    for i in listReverse(inIters) loop
       if isSome(i.range) then
         range := Inst.instExp(Util.getOption(i.range), outScope, context, info);
       else
@@ -2124,8 +2124,6 @@ protected
       (outScope, iter) := Inst.addIteratorToScope(i.name, outScope, info, ty);
       outIters := (iter, range) :: outIters;
     end for;
-
-    outIters := listReverse(outIters);
   end instIterators;
 
   function typeArrayConstructor
@@ -2155,7 +2153,7 @@ protected
           is_structural := not InstContext.inFunction(context);
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
-          for i in call.iters loop
+          for i in listReverse(call.iters) loop
             (iter, range) := i;
 
             if Expression.isEmpty(range) then
@@ -2169,12 +2167,13 @@ protected
               iter_ty := Expression.typeOf(range);
             end if;
 
-            dims := listAppend(Type.arrayDims(iter_ty), dims);
+            dims := List.append_reverse(Type.arrayDims(iter_ty), dims);
             variability := Prefixes.variabilityMax(variability, iter_var);
             purity := Prefixes.purityMin(purity, iter_pur);
             iters := (iter, range) :: iters;
           end for;
-          iters := listReverseInPlace(iters);
+
+          dims := listReverseInPlace(dims);
 
           // InstContext.FOR is used here as a marker that this expression may contain iterators.
           next_context := InstContext.set(next_context, NFInstContext.FOR);
@@ -2219,7 +2218,7 @@ protected
           purity := Purity.PURE;
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
-          for i in call.iters loop
+          for i in listReverse(call.iters) loop
             (iter, range) := i;
 
             if Expression.isEmpty(range) then
@@ -2231,8 +2230,6 @@ protected
             purity := Variability.purityMin(purity, iter_pur);
             iters := (iter, range) :: iters;
           end for;
-
-          iters := listReverseInPlace(iters);
 
           // InstContext.FOR is used here as a marker that this expression may contain iterators.
           next_context := InstContext.set(next_context, NFInstContext.FOR);
