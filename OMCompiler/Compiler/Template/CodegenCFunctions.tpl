@@ -5243,13 +5243,21 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     let arrayType = type + "_array"
     let wrapperArray = tempDecl(arrayType, &varDecls)
     if crefSubIsScalar(cr) then
-      let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
-      let dimsLenStr = listLength(dims)
-      let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
-      let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-      let t = '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&(<%nosubname%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-      let &preExp += t
-    wrapperArray
+      if hasZeroDimension(dims) then
+        let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+        let dimsLenStr = listLength(dims)
+        let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+        let t = '<%type%>_array_create(&<%wrapperArray%>, NULL, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+        let &preExp += t
+      wrapperArray
+      else
+        let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+        let dimsLenStr = listLength(dims)
+        let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+        let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+        let t = '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&(<%nosubname%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+        let &preExp += t
+      wrapperArray
     else
       let &sub = buffer ""
       let dimsLenStr = listLength(crefDims(cr))
