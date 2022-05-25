@@ -214,8 +214,12 @@ enum GM_NLS_METHOD getGM_NLS_METHOD(enum _FLAG FLAG_NLS_METHOD) {
     errorStreamPrint(LOG_STDOUT, 0, "Choose gbode NLS method: %s [from command line]", GM_NLS_METHOD_string);
     return RK_NLS_UNKNOWN;
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: newton [default]");
-    return RK_NLS_KINSOL;
+    if (FLAG_NLS_METHOD == FLAG_MR_NLS) {
+      return getGM_NLS_METHOD(FLAG_SR_NLS);
+    } else {
+      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: newton [default]");
+      return RK_NLS_KINSOL;
+    }
   }
 }
 

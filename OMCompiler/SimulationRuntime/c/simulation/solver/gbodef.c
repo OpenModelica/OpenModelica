@@ -380,7 +380,6 @@ int allocateDataGbodef(DATA* data, threadData_t *threadData, DATA_GBODE* gbData)
   /* Allocate memory for the nonlinear solver */
     gbfData->nlsSolverMethod = getGM_NLS_METHOD(FLAG_MR_NLS);
   // BB ToDo: get kinsol up and running!!
-    gbfData->nlsSolverMethod = RK_NLS_NEWTON;
     gbfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gbfData);
     if (!gbfData->nlsData) {
       return -1;
@@ -1005,7 +1004,7 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
   for (int k=0; k<nFastStates; k++) {
     if (gbfData->fastStates_old[k] - gbfData->fastStates[k]) {
-      if(ACTIVE_STREAM(LOG_SOLVER))
+      if(ACTIVE_STREAM(LOG_SOLVER) && !fastStateChange)
       {
         printIntVector_gb("old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
         printIntVector_gb("new fast States:", gbfData->fastStates, gbfData->nFastStates, gbfData->time);
@@ -1014,7 +1013,10 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
       gbfData->fastStates_old[k] = gbfData->fastStates[k];
     }
   }
-  gbfData->nFastStates_old = gbfData->nFastStates;
+  if (gbfData->nFastStates_old != gbfData->nFastStates) {
+    gbfData->nFastStates_old = gbfData->nFastStates;
+    fastStateChange = TRUE;
+  }
 
   if (!gbfData->isExplicit) {
     struct dataSolver *solverDataStruct = gbfData->nlsData->solverData;
