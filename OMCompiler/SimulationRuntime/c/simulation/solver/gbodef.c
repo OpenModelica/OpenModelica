@@ -1019,22 +1019,9 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   }
 
   if (!gbfData->isExplicit) {
-    struct dataSolver *solverDataStruct = gbfData->nlsData->solverData;
+    struct dataSolver *solverData = gbfData->nlsData->solverData;
     // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
     gbfData->nlsData->size = gbfData->nFastStates;
-    switch (gbfData->nlsSolverMethod)
-    {
-      case  RK_NLS_NEWTON:
-        ((DATA_NEWTON*) solverDataStruct->ordinaryData)->n = gbfData->nFastStates;
-        break;
-      case  RK_NLS_KINSOL:
-        ((NLS_KINSOL_DATA*) solverDataStruct->ordinaryData)->size = gbfData->nFastStates;
-        break;
-      default:
-        errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", GM_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
-        return -1;
-        break;
-    }
 
     infoStreamPrint(LOG_MULTIRATE, 1, "Fast states and corresponding nominal values:");
     for (ii=0; ii<nFastStates; ii++) {
@@ -1085,6 +1072,22 @@ int gbodef_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
       gbfData->jacobian->sizeCols = nFastStates;
       gbfData->jacobian->sizeRows = nFastStates;
+
+      switch (gbfData->nlsSolverMethod)
+      {
+        case  RK_NLS_NEWTON:
+          ((DATA_NEWTON*) solverData->ordinaryData)->n = gbfData->nFastStates;
+          break;
+        case  RK_NLS_KINSOL:
+          nlsKinsolFree(solverData->ordinaryData);
+          solverData->ordinaryData = (void*) nlsKinsolAllocate(gbfData->nlsData->size, gbfData->nlsData->nlsLinearSolver);
+          resetKinsolMemory(solverData->ordinaryData, gbfData->nlsData);
+          break;
+        default:
+          errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", GM_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
+          return -1;
+          break;
+      }
 
       printSparseStructure(sparsePattern_MR,
                            nFastStates,
