@@ -180,6 +180,16 @@ public
     end match;
   end isIterator;
 
+  function isInput
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF() then InstNode.isInput(cref.node);
+      else false;
+    end match;
+  end isInput;
+
   function node
     input ComponentRef cref;
     output InstNode node;

@@ -612,7 +612,8 @@ algorithm
           end if;
         else
           // For functions, only evaluate constant and structural parameter expressions.
-          if var <= Variability.STRUCTURAL_PARAMETER then
+          if var <= Variability.STRUCTURAL_PARAMETER and
+             not Expression.contains(exp, Expression.isFunctionInputCref) then
             exp := Ceval.tryEvalExp(exp);
           end if;
         end if;
