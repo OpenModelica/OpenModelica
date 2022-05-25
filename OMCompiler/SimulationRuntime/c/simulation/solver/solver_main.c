@@ -191,7 +191,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   }
   case S_GBODE:
   {
-    retVal = gbode_step(data, threadData, solverInfo);
+    retVal = gbode_main(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
@@ -260,7 +260,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_GBODE:
   {
-    if (allocateDataGbode(data, threadData, solverInfo) != 0) {
+    if (gbode_allocateData(data, threadData, solverInfo) != 0) {
       throwStreamPrint(threadData, "Failed to allocate memory for generic multigrid solver.");
     }
     break;
@@ -417,7 +417,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
   else if (solverInfo->solverMethod == S_GBODE)
   {
-    freeDataGbode(solverInfo->solverData);
+    gbode_freeData(solverInfo->solverData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
   else if(solverInfo->solverMethod == S_DASSL)

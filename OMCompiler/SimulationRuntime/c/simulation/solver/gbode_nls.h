@@ -31,6 +31,12 @@
 /*! \file gbode_nls.h
  */
 
+struct dataSolver
+{
+  void* ordinaryData;
+  void* initHomotopyData;
+};
+
 void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
 
 

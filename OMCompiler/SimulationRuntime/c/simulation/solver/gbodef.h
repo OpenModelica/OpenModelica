@@ -46,61 +46,8 @@
 typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
 
-typedef struct DATA_GBODEF{
-  enum GM_SINGLERATE_METHOD GM_method;        /* Runge-Kutta method to use. */
-  enum GM_TYPE type;                          /* Type of RK method */
-  enum GM_NLS_METHOD nlsSolverMethod;         /* Non-linear solver method uses by generic RK method. */
 
-  NONLINEAR_SYSTEM_DATA* nlsData;             /* Non-linear system
-                                               * Something like
-                                               *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-                                               * */
-  ANALYTIC_JACOBIAN* jacobian;
-  SPARSE_PATTERN* sparesPattern_DIRK;
-
-  void* nlsSolverData;
-
-  double *y, *yt, *yOld, *f;
-  double *yStart, *yEnd, *kStart, *kEnd;
-  double *Jf;
-  double *k, *res_const;
-  double *x;                            /* ring buffer for multistep method */
-
-  double *errest, *errtol, *err;
-  double *errValues;                    /* ring buffer for step size control */
-  double *stepSizeValues;               /* ring buffer for step size control */
-  double time, startTime, endTime;
-  double stepSize, lastStepSize, stepSize_old;
-  int act_stage;
-  modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
-  BUTCHER_TABLEAU* tableau;
-  int nStates, nFastStates, nSlowStates, *fastStates, *slowStates;
-  int nFastStates_old, *fastStates_old;
-  int firstStep;
-  int didEventStep;                   /* Will be used for updating the derivatives */
-  int ringBufferSize;
-  int interpolation;
-  unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
-  modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
-  unsigned int stepsDone;
-  unsigned int evalFunctionODE;
-  unsigned int evalJacobians;
-  unsigned int errorTestFailures;
-  unsigned int convergenceFailures;
-  FILE *fastStatesDebugFile;
-  gm_step_function step_fun;
-  gm_stepSize_control_function stepSize_control;
-} DATA_GBODEF;
-
-void freeDataGbf(DATA_GBODEF* data);
-int gbodef_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
-//auxiliary vector functions
-void linear_interpolation_gb(double a, double* fa, double b, double* fb, double t, double *f, int n);
-void linear_interpolation_gbf(double a, double* fa, double b, double* fb, double t, double *f, int nIdx, int* indx);
-void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx);
-
-void printVector_gbf(char name[], double* a, int n, double time, int nIndx, int* indx);
-void printMatrix_gbf(char name[], double* a, int n, double time);
-void copyVector_gbf(double* a, double* b, int nIndx, int* indx);
+void gbodef_freeData(DATA_GBODEF* data);
+int gbodef_main(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double targetTime);
 
 #endif /* _DATA_GBODEF_H_ */

@@ -865,19 +865,19 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_W */                            FLAG_TYPE_FLAG
 };
 
-const char *GM_NLS_METHOD_NAME[RK_NLS_MAX] = {
-  /* RK_NLS_UNKNOWN = 0*/ "unknown",
+const char *GB_NLS_METHOD_NAME[RK_NLS_MAX] = {
+  /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* RK_NLS_NEWTON */     "newton",
   /* RK_NLS_KINSOL */     "kinsol"
 };
 
-const char *GM_NLS_METHOD_DESC[RK_NLS_MAX] = {
-  /* RK_NLS_UNKNOWN = 0*/ "unknown",
+const char *GB_NLS_METHOD_DESC[RK_NLS_MAX] = {
+  /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* RK_NLS_NEWTON */     "Newton method, dense",
   /* RK_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse"
 };
 
-const char *GM_SINGLERATE_METHOD_NAME[RK_MAX] = {
+const char *GB_SINGLERATE_METHOD_NAME[RK_MAX] = {
   /* RK_UNKNOWN = 0 */   "unknown",
   /* MS_ADAMS_MOULTON */ "adams",
   /* RK_EXPL_EULER */    "expl_euler",
@@ -899,7 +899,7 @@ const char *GM_SINGLERATE_METHOD_NAME[RK_MAX] = {
   /* RK_DOPRI45 */       "dopri45"
 };
 
-const char *GM_SINGLERATE_METHOD_DESC[RK_MAX] = {
+const char *GB_SINGLERATE_METHOD_DESC[RK_MAX] = {
   /* RK_UNKNOWN = 0 */   "unknown",
   /* MS_ADAMS_MOULTON */ "adams",
   /* RK_EXPL_EULER */    "expl_euler",
