@@ -115,7 +115,7 @@ void OMVisualBase::initVisObjects()
   ShapeObject shape;
   rapidxml::xml_node<>* expNode;
 
-  for (rapidxml::xml_node<>* shapeNode = rootNode->first_node("shape"); shapeNode; shapeNode = shapeNode->next_sibling())
+  for (rapidxml::xml_node<>* shapeNode = rootNode->first_node("shape"); shapeNode; shapeNode = shapeNode->next_sibling("shape"))
   {
     expNode = shapeNode->first_node((const char*) "ident")->first_node();
     shape._id = std::string(expNode->value());
