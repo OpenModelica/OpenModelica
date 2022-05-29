@@ -28,27 +28,27 @@ buildModel(problem3); getErrorString();
 // ========================================
 // Number of non zero elements: 4
 // Independents [or inputs] (2)
-// {x[1], x[2]}
+// {x[2], x[1]}
 // Dependents [or outputs] (2)
 // {$res_LSJac0_1, $res_LSJac0_2}
-// x[1] affects the following (2) outputs
-//   {$res_LSJac0_2, $res_LSJac0_1}
 // x[2] affects the following (2) outputs
+//   {$res_LSJac0_2, $res_LSJac0_1}
+// x[1] affects the following (2) outputs
 //   {$res_LSJac0_2, $res_LSJac0_1}
 //
 // Transposed pattern
 // $res_LSJac0_1 affects the following (2) outputs
-//   {x[1], x[2]}
+//   {x[2], x[1]}
 // $res_LSJac0_2 affects the following (2) outputs
-//   {x[1], x[2]}
+//   {x[2], x[1]}
 //
 //  --- Sparsity Coloring ---
 // ========================================
 // Number of colors: 2
 // The following (1) independents belong to one color
-// 0: {x[1]}
+// 0: {x[2]}
 // The following (1) independents belong to one color
-// 1: {x[2]}
+// 1: {x[1]}
 //
 //  --- SparsityPattern ---
 // ========================================
