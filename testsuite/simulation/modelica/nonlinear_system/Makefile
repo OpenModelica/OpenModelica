@@ -42,7 +42,6 @@ problem7_symjac.mos \
 problem7_symjac_tearing.mos \
 problem8_newton.mos \
 problem9.mos \
-problem10.mos \
 problem11.mos \
 problem12.mos \
 TestInputIteration.mos \
