@@ -11636,6 +11636,25 @@ algorithm
   end matchcontinue;
 end dimensionsList;
 
+public function hasZeroDimension
+  "Returns true if at least one dimension is zero or dimensions is empty list."
+  input DAE.Dimensions inDims;
+  output Boolean hasZeroDimension = false;
+protected
+  list<Integer> intDims;
+algorithm
+  if listLength(inDims) == 0 then
+    hasZeroDimension := true;
+    return;
+  end if;
+  intDims := dimensionsList(inDims);
+  for dim in intDims loop
+    if dim == 0 then
+      hasZeroDimension := true;
+      break;
+    end if;
+  end for;
+end hasZeroDimension;
 
 public function expDimensionsList
   "Extracts a list of integers from a list of expressions"
