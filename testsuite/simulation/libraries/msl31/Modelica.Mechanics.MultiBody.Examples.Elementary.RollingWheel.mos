@@ -40,8 +40,8 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Parts.mo:2404:7-2406:80:writable] Warning: Variable $DER.wheel1.der_angles[2] has attribute stateSelect=StateSelect.always, but can't be selected as a state.
 // [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Parts.mo:2404:7-2406:80:writable] Warning: Variable $DER.wheel1.der_angles[1] has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Parts.mo:2404:7-2406:80:writable] Warning: Variable $DER.wheel1.der_angles[2] has attribute stateSelect=StateSelect.always, but can't be selected as a state.
 //
 // "true
 // "
