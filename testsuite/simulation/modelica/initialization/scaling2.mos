@@ -59,6 +59,6 @@ res := readSimulationResult("initializationTests.forest_res.mat", {time, foxes, 
 // end SimulationResult;
 // "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {{0.0,0.0},{6.051192201167479,6.051192201167479},{841.0267641520732,841.0267641520732}}
+// {{0.0,0.0},{52.88214113216586,52.88214113216586},{255.6399025145935,255.6399025145935}}
 // ""
 // endResult
