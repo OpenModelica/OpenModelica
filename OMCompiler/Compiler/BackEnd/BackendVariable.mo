@@ -4591,5 +4591,36 @@ algorithm
   end match;
 end varExp2;
 
+public function scalarizeVariables
+  input output BackendDAE.Variables vars;
+protected
+  list<BackendDAE.Var> var_lst, new_var_lst = {};
+algorithm
+  var_lst := varList(vars);
+  for var in var_lst loop
+    new_var_lst := scalarizeVar(var, new_var_lst);
+  end for;
+  vars := listVar(listReverse(new_var_lst));
+end scalarizeVariables;
+
+public function scalarizeVar
+  input BackendDAE.Var var;
+  input output list<BackendDAE.Var> scalar_vars = {};
+protected
+  list<DAE.ComponentRef> scalar_crefs;
+  BackendDAE.Var scalar_var;
+algorithm
+  if Types.isArray(var.varType) then
+    scalar_crefs := ComponentReference.expandCref(var.varName, false);
+    for cref in scalar_crefs loop
+      scalar_var := BackendVariable.copyVarNewName(cref, var);
+      scalar_var.varType := ComponentReference.crefTypeFull(cref);
+      scalar_vars := scalar_var :: scalar_vars;
+    end for;
+  else
+    scalar_vars := var :: scalar_vars;
+  end if;
+end scalarizeVar;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendVariable;
