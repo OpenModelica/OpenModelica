@@ -1015,6 +1015,13 @@ algorithm
   elem := InstNode.definition(node);
 
   () := match (comp, elem)
+    case (_, _)
+      guard Component.isDeleted(comp)
+      algorithm
+
+      then
+        ();
+
     case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
       algorithm
         json := JSON.addPair("type", dumpJSONComponentType(cls, comp.ty), json);
