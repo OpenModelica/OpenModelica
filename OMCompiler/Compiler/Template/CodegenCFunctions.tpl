@@ -5253,7 +5253,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
         '((modelica_<%type%>*)&(<%nosubname%>))'
       let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
-      wrapperArray
+    wrapperArray
     else
       let &sub = buffer ""
       let dimsLenStr = listLength(crefDims(cr))
