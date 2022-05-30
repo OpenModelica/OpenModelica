@@ -2474,6 +2474,13 @@ public
     end match;
   end dimensionCount;
 
+  function dimensions
+    input Expression exp;
+    output list<Dimension> dims;
+  algorithm
+    dims := Type.arrayDims(typeOf(exp));
+  end dimensions;
+
   function map
     input Expression exp;
     input MapFunc func;
