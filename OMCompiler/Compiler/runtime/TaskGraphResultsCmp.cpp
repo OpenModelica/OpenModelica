@@ -149,11 +149,7 @@ GraphParser::~GraphParser()
 
 bool GraphParser::CheckIfFileExists(const char* fileName)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat stats;
-#else /* unix */
-  struct stat stats;
-#endif
+  omc_stat_t stats;
   return 0 == omc_stat(fileName, &stats);
 }
 

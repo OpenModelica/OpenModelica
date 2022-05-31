@@ -542,11 +542,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     init_initMethod = omc_flagValue[FLAG_IIM];
   }
   if(omc_flag[FLAG_IIF]) {
-      #if defined(__MINGW32__) || defined(_MSC_VER)
-        struct _stat attrib;
-      #else
-        struct stat attrib;
-      #endif
+    omc_stat_t attrib;
     if (omc_flag[FLAG_INPUT_PATH]) {
       const char *tmp_filename;
 
@@ -1165,10 +1161,9 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
    */
   wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
   for (int i = 0; i < argc; i++) {
-    WIDECHAR_TO_MULTIBYTE_LENGTH(wargv[i], len);
-    WIDECHAR_TO_MULTIBYTE_VAR(wargv[i], buf, len);
+    char* buf = omc_wchar_to_multibyte_str(wargv[i]);
     strcpy(argv[i], buf);
-    MULTIBYTE_OR_WIDECHAR_VAR_FREE(buf);
+    free(buf);
   }
 #endif
 
