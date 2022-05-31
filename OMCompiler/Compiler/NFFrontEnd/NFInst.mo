@@ -909,8 +909,8 @@ algorithm
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
-                                 originalAttr = NONE(), useBinding = useBinding,
-                                 instLevel = instLevel + 1, context = context));
+                                 useBinding = useBinding, instLevel = instLevel + 1, context = context,
+                                 originalAttr = NONE(), propagatedSubs = {}));
 
         // Remove duplicate elements.
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
@@ -1189,7 +1189,8 @@ algorithm
 
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
-            originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel, context = context));
+            useBinding = useBinding, instLevel = instLevel, context = context,
+            originalAttr = NONE(), propagatedSubs = {}));
       then
         ();
 
@@ -1376,8 +1377,8 @@ protected
 algorithm
   rdcl_node := Mutable.access(redeclareComp);
   repl_node := Mutable.access(replaceableComp);
-  instComponent(repl_node, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, NONE(), context);
-  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFAttributes.DEFAULT_ATTR, rdcl_node, instLevel, context);
+  instComponent(repl_node, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, context);
+  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), {}, NFAttributes.DEFAULT_ATTR, rdcl_node, instLevel, context);
   outComp := Mutable.create(rdcl_node);
 end redeclareComponentElement;
 
@@ -1521,8 +1522,9 @@ function instComponent
   input Modifier innerMod;
   input Boolean useBinding "Ignore the component's binding if false.";
   input Integer instLevel;
-  input Option<Attributes> originalAttr = NONE();
   input InstContext.Type context;
+  input Option<Attributes> originalAttr = NONE();
+  input list<Subscript> propagatedSubs = {};
 protected
   Component comp;
   SCode.Element def;
@@ -1532,6 +1534,7 @@ protected
   String name;
   InstNode parent;
   InstContext.Type next_context;
+  list<Subscript> propagated_subs;
 algorithm
   comp_node := InstNode.resolveOuter(node);
   comp := InstNode.component(comp_node);
@@ -1550,20 +1553,20 @@ algorithm
     checkOuterComponentMod(outer_mod, def, comp_node);
 
     Modifier.REDECLARE(element = rdcl_node, innerMod = inner_mod,
-      outerMod = outer_mod, constrainingMod = cc_mod) := outer_mod;
+      outerMod = outer_mod, constrainingMod = cc_mod, propagatedSubs = propagated_subs) := outer_mod;
 
     next_context := InstContext.set(context, NFInstContext.REDECLARED);
     instComponentDef(def, Modifier.NOMOD(), inner_mod, NFAttributes.DEFAULT_ATTR,
-      useBinding, comp_node, parent, instLevel, originalAttr, next_context);
+      useBinding, comp_node, parent, instLevel, originalAttr, {}, next_context);
 
     cc_mod := getConstrainingMod(def, parent, cc_mod);
     cc_mod := Modifier.merge(cc_mod, innerMod);
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
-    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node, instLevel, context);
+    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, propagated_subs, attributes, node, instLevel, context);
   else
-    instComponentDef(def, outer_mod, innerMod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, context);
+    instComponentDef(def, outer_mod, innerMod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, propagatedSubs, context);
   end if;
 end instComponent;
 
@@ -1577,6 +1580,7 @@ function instComponentDef
   input InstNode parent;
   input Integer instLevel;
   input Option<Attributes> originalAttr = NONE();
+  input list<Subscript> propagatedSubs = {};
   input InstContext.Type context;
 algorithm
   () := match component
@@ -1595,6 +1599,11 @@ algorithm
     case SCode.COMPONENT(info = info)
       algorithm
         mod := instElementModifier(component, node, parent);
+
+        if not listEmpty(propagatedSubs) then
+          mod := Modifier.propagateSubs(mod, propagatedSubs);
+        end if;
+
         mod := Modifier.merge(mod, innerMod);
         mod := Modifier.merge(outerMod, mod);
         checkOuterComponentMod(mod, component, node);
@@ -1785,6 +1794,7 @@ function redeclareComponent
   input InstNode originalNode;
   input Modifier outerMod;
   input Modifier constrainingMod;
+  input list<Subscript> propagatedSubs;
   input Attributes outerAttr;
   input InstNode redeclaredNode;
   input Integer instLevel;
@@ -1811,7 +1821,8 @@ algorithm
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
   rdcl_node := InstNode.copyInstancePtr(originalNode, rdcl_node);
   rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
-  instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, SOME(Component.getAttributes(orig_comp)), context);
+  instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, context,
+    SOME(Component.getAttributes(orig_comp)), propagatedSubs);
   rdcl_comp := InstNode.component(rdcl_node);
 
   new_comp := match (orig_comp, rdcl_comp)
@@ -3207,7 +3218,7 @@ algorithm
     if InstNode.isComponent(n) then
       // The component might have been instantiated during lookup, otherwise do
       // it here (instComponent will skip already instantiated components).
-      instComponent(n, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), NFInstContext.CLASS);
+      instComponent(n, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NFInstContext.CLASS);
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.
