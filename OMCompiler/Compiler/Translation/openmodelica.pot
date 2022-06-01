@@ -5034,10 +5034,6 @@ msgstr ""
 msgid "Unknown uri: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1801
-msgid "Not compiled with lpsolve support"
-msgstr ""
-
 #: ../runtime/systemimpl.c:2226
 #, c-format
 msgid "freopen(%s,%s,%s) failed: %s"
