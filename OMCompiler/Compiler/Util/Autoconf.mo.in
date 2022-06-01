@@ -26,7 +26,7 @@ encapsulated package Autoconf
 
   constant String corbaLibs = "@CORBALIBS@";
   constant String hwloc = if @WITH_HWLOC@ == 1 then "-lhwloc" else "";
-  constant list<String> systemLibs = {"-lomcruntime", "-lexpat", "-lsqlite3", "@LIBLPSOLVE55@", corbaLibs, "-lomcgc", hwloc};
+  constant list<String> systemLibs = {"-lomcruntime", "-lexpat", "-lsqlite3", corbaLibs, "-lomcgc", hwloc};
 
   constant String triple = "@host_short@";
 

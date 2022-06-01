@@ -2038,61 +2038,6 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
 }
 #endif
 
-#ifdef NO_LPLIB
-int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
-{
-  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Not compiled with lpsolve support"),NULL,0);
-  MMC_THROW();
-}
-#else
-
-#include CONFIG_LPSOLVEINC
-
-int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
-{
-  int i = 0, j = 0, info, sz = 0;
-  void *tmp = lB;
-  lprec *lp;
-  double inf,*vres;
-
-  while (MMC_NILHDR != MMC_GETHDR(tmp)) {
-    sz++;
-    tmp = MMC_CDR(tmp);
-  }
-  vres = (double*)omc_alloc_interface.malloc_atomic(sz*sizeof(double));
-  memset(vres,0,sz*sizeof(double));
-  lp = make_lp(sz, sz);
-  set_verbose(lp, 1);
-  inf = get_infinite(lp);
-
-  for (i=0; i<sz; i++) {
-    set_lowbo(lp, i+1, -inf);
-    set_constr_type(lp, i+1, EQ);
-    tmp = MMC_CAR(lA);
-    for (j=0; j<sz; j++) {
-      set_mat(lp, i+1, j+1, mmc_prim_get_real(MMC_CAR(tmp)));
-      tmp = MMC_CDR(tmp);
-    }
-    set_rh(lp, i+1, mmc_prim_get_real(MMC_CAR(lB)));
-    lA = MMC_CDR(lA);
-    lB = MMC_CDR(lB);
-  }
-  while (MMC_NILHDR != MMC_GETHDR(ix)) {
-    if (MMC_UNTAGFIXNUM(MMC_CAR(ix)) != -1) set_int(lp, MMC_UNTAGFIXNUM(MMC_CAR(ix)), 1);
-    ix = MMC_CDR(ix);
-  }
-  info=solve(lp);
-  //print_lp(lp);
-  if (info==0 || info==1) get_ptr_variables(lp,&vres);
-  *res = mmc_mk_nil();
-  while (sz--) {
-    *res = mmc_mk_cons(mmc_mk_rcon(vres[sz]),*res);
-  }
-  delete_lp(lp);
-  return info;
-}
-#endif
-
 #define MODELICAPATH_LEVELS 6
 typedef struct {
   const char *dir;

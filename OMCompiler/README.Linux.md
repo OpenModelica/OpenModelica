@@ -54,7 +54,6 @@ But first you need to install dependencies:
 - Lapack/BLAS
 - libhdf5 (optional part of the [MSL](https://github.com/modelica/Modelica) tables library supported by few other Modelica tools, so it does not do much)
 - libexpat (it's actually included in the FMIL sources which are included... but we do not compile those and it's better to use the OS-provided dynamically linked version)
-- [lpsolve55](http://lpsolve.sourceforge.net)
 - omniORB or mico (optional; CORBA is used by OMOptim, OMShell, and OMPython)
 - [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
 - libcurl (libcurl4-gnutls-dev)
@@ -157,7 +156,7 @@ end Modelica.Electrical.Analog.Basic.Resistor;
 
 ## CentOS 6 Hints (RPM, command-line only; for clients, add CORBA, readline)
 ```bash
-yum install tar gcc-c++ autoconf sqlite-devel java expat-devel lpsolve-devel lapack-devel make patch gettext
+yum install tar gcc-c++ autoconf sqlite-devel java expat-devel lapack-devel make patch gettext
 ```
 also needs cmake > 2.8; not in default repos; try to install an [rpm manually if needed](http://dl.atrpms.net/el6-x86_64/atrpms/testing/cmake-2.8.8-4.el6.x86_64.rpm)
 ```bash

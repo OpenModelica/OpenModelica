@@ -79,12 +79,6 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
 
-if(OM_OMC_USE_LPSOLVE)
-  target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
-else()
-  target_compile_definitions(omcruntime PRIVATE NO_LPLIB)
-endif()
-
 if(OM_OMC_USE_LAPACK)
   target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
 endif()
@@ -193,8 +187,6 @@ find_package(OpenMP)
 if(OpenMP_FOUND)
   set(OMPCFLAGS "-fopenmp")
 endif()
-
-set(LPSOLVEINC "lpsolve/lp_lib.h")
 
 if(LAPACK_FOUND)
   set(HAVE_LAPACK "#define HAVE_LAPACK")

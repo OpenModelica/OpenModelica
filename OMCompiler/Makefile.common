@@ -586,19 +586,6 @@ msgpack-clean:
 	test ! -f 3rdParty/msgpack-0.5.8/Makefile || $(MAKE) -C 3rdParty/msgpack-0.5.8 distclean || true
 	rm -f 3rdParty/msgpack-0.5.8/Makefile
 
-# build lpsolve
-lpsolve: $(builddir_lib_omc)/liblpsolve55.a
-$(builddir_lib_omc)/liblpsolve55.a: 3rdParty/lpsolve/Makefile
-	$(MAKE) -C 3rdParty/lpsolve/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" -j1
-	cp -pf 3rdParty/lpsolve/build/lib*/liblpsolve55* $(builddir_lib_omc)
-	cp -prf 3rdParty/lpsolve/build/include/* $(builddir_inc)/
-	test ! `uname` = Darwin || install_name_tool -id @rpath/liblpsolve55.dylib "$(builddir_lib_omc)/liblpsolve55.dylib"
-3rdParty/lpsolve/Makefile: 3rdParty/lpsolve/configure.ac
-	(cd 3rdParty/lpsolve && autoreconf -vif && ./configure --prefix="`pwd`/build" "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)")
-clean-lpsolve:
-	rm -rf 3rdParty/lpsolve/build
-	rm -rf $(builddir_lib_omc)/lpsolve*
-
 # build sqlite3
 sqlite3: 3rdParty/sqlite3/Makefile
 	$(MAKE) -C 3rdParty/sqlite3/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"

@@ -96,7 +96,6 @@
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
 #define CONFIG_DLL_EXT ".dll"
-#define CONFIG_LPSOLVEINC "lpsolve/lp_lib.h"
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
   /*
