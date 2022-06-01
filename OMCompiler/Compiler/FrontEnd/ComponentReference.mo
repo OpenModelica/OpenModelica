@@ -2768,6 +2768,23 @@ public function crefStripSubsExceptModelSubs
 "Removes all subscript of a componentref expcept for model subscripts"
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
+protected
+  function is_model_array
+    input DAE.Type ty;
+    output Boolean res;
+  protected
+    ClassInf.State state;
+  algorithm
+    res := match ty
+      case DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType = state))
+        then match state
+          case ClassInf.MODEL() then true;
+          case ClassInf.BLOCK() then true;
+          else false;
+        end match;
+      else false;
+    end match;
+  end is_model_array;
 algorithm
   outCref := match(inCref)
     local
@@ -2775,10 +2792,12 @@ algorithm
       DAE.ComponentRef cr, cref;
       DAE.Type ty;
 
-    case (cref as DAE.CREF_IDENT(ident = id,identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.MODEL()))))
-      then cref;
+    case DAE.CREF_IDENT()
+      guard is_model_array(inCref.identType)
+      then inCref;
 
-    case (cref as DAE.CREF_QUAL(componentRef = cr, identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.MODEL()))))
+    case cref as DAE.CREF_QUAL(componentRef = cr)
+      guard is_model_array(inCref.identType)
       algorithm
         outCref := crefStripSubsExceptModelSubs(cr);
         cref.componentRef := outCref;
