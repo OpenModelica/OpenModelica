@@ -1201,9 +1201,139 @@ protected
 algorithm
   if isSome(annOpt) then
     SOME(ann) := annOpt;
-    json := JSON.addPair("annotation", dumpJSONMod(ann.modification), json);
+    json := JSON.addPair("annotation", dumpJSONAnnotationMod(ann.modification), json);
   end if;
 end dumpJSONAnnotationOpt;
+
+function dumpJSONAnnotationMod
+  input SCode.Mod mod;
+  output JSON json;
+algorithm
+  json := match mod
+    case SCode.Mod.MOD()
+      then dumpJSONAnnotationSubMods(mod.subModLst);
+
+    else JSON.makeNull();
+  end match;
+end dumpJSONAnnotationMod;
+
+function dumpJSONAnnotationSubMods
+  input list<SCode.SubMod> subMods;
+  output JSON json = JSON.makeNull();
+algorithm
+  for m in subMods loop
+    json := dumpJSONAnnotationSubMod(m, json);
+  end for;
+end dumpJSONAnnotationSubMods;
+
+function dumpJSONAnnotationSubMod
+  input SCode.SubMod subMod;
+  input output JSON json;
+protected
+  String name;
+  SCode.Mod mod;
+  Absyn.Exp binding;
+algorithm
+  SCode.SubMod.NAMEMOD(ident = name, mod = mod) := subMod;
+
+  () := match mod
+    case SCode.Mod.MOD(binding = SOME(binding))
+      algorithm
+        json := JSON.addPair(name, dumpJSONAbsynExpression(binding), json);
+      then
+        ();
+
+    case SCode.Mod.MOD()
+      algorithm
+        json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst), json);
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONAnnotationSubMod;
+
+function dumpJSONAbsynExpression
+  input Absyn.Exp exp;
+  output JSON json;
+protected
+  Integer i;
+  String r;
+algorithm
+  json := match exp
+    case Absyn.Exp.INTEGER() then JSON.makeInteger(exp.value);
+    case Absyn.Exp.REAL() then JSON.makeNumber(stringReal(exp.value));
+    case Absyn.Exp.CREF() then dumpJSONAbsynCref(exp.componentRef);
+    case Absyn.Exp.STRING() then JSON.makeString(exp.value);
+    case Absyn.Exp.BOOL() then JSON.makeBoolean(exp.value);
+
+    case Absyn.Exp.UNARY(op = Absyn.Operator.UMINUS(), exp = Absyn.Exp.INTEGER(value = i))
+      then JSON.makeInteger(-i);
+
+    case Absyn.Exp.UNARY(op = Absyn.Operator.UMINUS(), exp = Absyn.Exp.REAL(value = r))
+      then JSON.makeNumber(-stringReal(r));
+
+    case Absyn.Exp.CALL()
+      algorithm
+        json := JSON.emptyObject();
+        json := JSON.addPair("kind", JSON.makeString("call"), json);
+        json := JSON.addPair("name", dumpJSONAbsynCref(exp.function_), json);
+        json := dumpJSONAbsynFunctionArgs(exp.functionArgs, json);
+      then
+        json;
+
+    case Absyn.Exp.ARRAY()
+      algorithm
+        json := JSON.emptyArray(listLength(exp.arrayExp));
+        for e in exp.arrayExp loop
+          json := JSON.addElement(dumpJSONAbsynExpression(e), json);
+        end for;
+      then
+        json;
+
+    else JSON.makeString(Dump.printExpStr(exp));
+  end match;
+end dumpJSONAbsynExpression;
+
+function dumpJSONAbsynCref
+  input Absyn.ComponentRef cref;
+  output JSON json;
+algorithm
+  json := JSON.makeString(Dump.printComponentRefStr(cref));
+end dumpJSONAbsynCref;
+
+function dumpJSONAbsynFunctionArgs
+  input Absyn.FunctionArgs args;
+  input output JSON json;
+protected
+  JSON json_args;
+algorithm
+  () := match args
+    case Absyn.FunctionArgs.FUNCTIONARGS()
+      algorithm
+        if not listEmpty(args.args) then
+          json_args := JSON.makeNull();
+          for arg in args.args loop
+            json_args := JSON.addElement(dumpJSONAbsynExpression(arg), json_args);
+          end for;
+
+         json := JSON.addPair("args", json_args, json);
+        end if;
+
+        if not listEmpty(args.argNames) then
+          json_args := JSON.makeNull();
+          for arg in args.argNames loop
+            json_args := JSON.addPair(arg.argName, dumpJSONAbsynExpression(arg.argValue), json_args);
+          end for;
+
+          json := JSON.addPair("namedArgs", json_args, json);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end dumpJSONAbsynFunctionArgs;
 
 function dumpJSONConnections
   input Sections sections;
