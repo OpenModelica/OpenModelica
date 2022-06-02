@@ -39,6 +39,7 @@
 #include "Element/Element.h"
 #include "Util/StringHandler.h"
 #include "Util/Helper.h"
+#include "ModelInstanceJson.h"
 #include "Editors/BaseEditor.h"
 #include "Editors/ModelicaEditor.h"
 #include "Editors/CompositeModelEditor.h"
@@ -606,6 +607,7 @@ private:
   GraphicsScene *mpIconGraphicsScene;
   UndoStack *mpUndoStack;
   QUndoView *mpUndoView;
+  ModelInstanceJson mModelInstanceJson;
   BaseEditor *mpEditor;
   QStatusBar *mpModelStatusBar;
   bool mComponentsLoaded;

@@ -3431,6 +3431,20 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
 }
 
 /*!
+ * \brief OMCProxy::getModelInstance
+ * Returns the class information as json string.
+ * \param className
+ * \param prettyPrint
+ * \return
+ */
+QString OMCProxy::getModelInstance(const QString &className, bool prettyPrint)
+{
+  QString result = mpOMCInterface->getModelInstance(className, prettyPrint);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */

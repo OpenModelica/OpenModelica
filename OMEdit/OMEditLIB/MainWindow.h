@@ -104,6 +104,8 @@ public:
   void setUpMainWindow(threadData_t *threadData);
   bool isDebug() const {return mDebug;}
   void setDebug(bool debug) {mDebug = debug;}
+  bool isNewApi() const {return mNewApi;}
+  void setNewApi(bool newApi) {mNewApi = newApi;}
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
   void setTestsuiteRunning(bool testsuiteRunning) {mTestsuiteRunning = testsuiteRunning;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
@@ -259,6 +261,7 @@ public:
   QList<QString> mMOLDirectoriesList;
 private:
   bool mDebug;
+  bool mNewApi;
   bool mTestsuiteRunning;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;

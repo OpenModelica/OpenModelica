@@ -114,6 +114,7 @@ SOURCES += Util/Helper.cpp \
   Modeling/Commands.cpp \
   Modeling/CoOrdinateSystem.cpp \
   Modeling/ModelWidgetContainer.cpp \
+  Modeling/ModelInstanceJson.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Modeling/FunctionArgumentDialog.cpp \
   Modeling/InstallLibraryDialog.cpp \
@@ -215,6 +216,7 @@ HEADERS  += Util/Helper.h \
   Modeling/Commands.h \
   Modeling/CoOrdinateSystem.h \
   Modeling/ModelWidgetContainer.h \
+  Modeling/ModelInstanceJson.h \
   Modeling/ModelicaClassDialog.h \
   Modeling/FunctionArgumentDialog.h \
   Modeling/InstallLibraryDialog.h \

@@ -4430,6 +4430,20 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
     mpDiagramGraphicsView->hide();
     createUndoStack();
+
+    QString modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
+    qDebug() << modelInstanceJson;
+    if (!modelInstanceJson.isEmpty()) {
+      if (!mModelInstanceJson.parse(modelInstanceJson.toUtf8())) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                              QString("Failed to parse model instance json for class %1.").arg(mpLibraryTreeItem->getNameStructure()),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+        MainWindow::instance()->printStandardOutAndErrorFilesMessages();
+      } else {
+        qDebug() << mModelInstanceJson.getIconAnnotation();
+      }
+    }
+
     getModelInheritedClasses();
     drawModelInheritedClassShapes(this, StringHandler::Icon);
     getModelIconDiagramShapes(StringHandler::Icon);
