@@ -30,6 +30,7 @@
 
 /*! \file gbode_util.c
  */
+#include "gbode_util.h"
 
 //auxiliary vector functions for better code structure
 void linear_interpolation_gb(double ta, double* fa, double tb, double* fb, double t, double* f, int n)

@@ -38,7 +38,7 @@
 #include "solver_main.h"
 
 #include "gbode_tableau.h"
-#include "gbode.h"
+#include "gbode_main.h"
 
 /**
  * @brief Function to compute single Runge-Kutta step.

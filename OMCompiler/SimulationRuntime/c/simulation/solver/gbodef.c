@@ -28,7 +28,7 @@
  *
  */
 
-/*! \file gbode.c
+/*! \file gbodef.c
  *  Implementation of  a generic (implicit and explicit) Runge Kutta solver, which works for any
  *  order and stage based on a provided Butcher tableau
  *
@@ -37,7 +37,7 @@
 
 #include <time.h>
 
-#include "gbode.h"
+#include "gbode_main.h"
 #include "gbode_util.h"
 
 #include <float.h>

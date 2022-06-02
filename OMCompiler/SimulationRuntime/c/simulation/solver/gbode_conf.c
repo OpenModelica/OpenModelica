@@ -30,7 +30,11 @@
 
 /*! \file gbode_conf.c
  */
+#include <string.h>
 
+#include "util/omc_error.h"
+#include "util/simulation_options.h"
+#include "simulation/options.h"
 
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_SR.

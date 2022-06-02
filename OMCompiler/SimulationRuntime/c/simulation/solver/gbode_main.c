@@ -50,12 +50,13 @@
 
 #include <time.h>
 
-#include "gbode_main.h"
 #include "gbode_conf.h"
 #include "gbode_ctrl.h"
 #include "gbode_events.h"
+#include "gbode_main.h"
 #include "gbode_nls.h"
 #include "gbode_sparse.h"
+#include "gbode_step.h"
 #include "gbode_util.h"
 
 #include <float.h>
@@ -72,6 +73,7 @@
 #include "simulation/results/simulation_result.h"
 #include "util/jacobian_util.h"
 #include "util/omc_error.h"
+#include "util/omc_file.h"
 #include "util/simulation_options.h"
 #include "util/varinfo.h"
 #include "epsilon.h"

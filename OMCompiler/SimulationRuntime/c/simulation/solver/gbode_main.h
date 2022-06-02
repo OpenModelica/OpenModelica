@@ -34,10 +34,40 @@
 #ifndef _DATA_GBODE_H_
 #define _DATA_GBODE_H_
 
-#include "simulation_data.h"
-#include "solver_main.h"
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#include <float.h>
+#include <math.h>
+#include <string.h>
 
 #include "gbode_tableau.h"
+#include "gbode_util.h"
+
+#include "simulation_data.h"
+#include "solver_main.h"
+#include "external_input.h"
+#include "jacobianSymbolical.h"
+#include "kinsolSolver.h"
+#include "model_help.h"
+#include "newtonIteration.h"
+#include "nonlinearSystem.h"
+#include "simulation/options.h"
+#include "simulation/results/simulation_result.h"
+#include "util/jacobian_util.h"
+#include "util/omc_error.h"
+#include "util/omc_file.h"
+#include "util/simulation_options.h"
+#include "util/varinfo.h"
+#include "epsilon.h"
+
+
+
 
 /**
  * @brief Function to compute single-rate step.

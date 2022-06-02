@@ -45,7 +45,7 @@ extern "C" {
 
 #include "util/varinfo.h"
 #include "model_help.h"
-#include "gbode.h"
+#include "gbode_main.h"
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverNewton.h"

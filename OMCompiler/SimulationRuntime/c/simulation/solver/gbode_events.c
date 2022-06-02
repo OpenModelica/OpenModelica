@@ -32,8 +32,11 @@
  */
 
 #include "simulation_data.h"
+#include "external_input.h"
 #include "solver_main.h"
 #include "events.h"
+
+int checkForStateEvent(DATA* data, LIST *eventList);
 
 double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues)
 {

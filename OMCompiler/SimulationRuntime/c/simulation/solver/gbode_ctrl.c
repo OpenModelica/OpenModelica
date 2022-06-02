@@ -31,10 +31,13 @@
 /*! \file gbode_ctrl.c
  */
 
-#include "gbode.h"
+#include "gbode_main.h"
+
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
+
+int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
 
 double getErrorThreshold(DATA_GBODE* gbData)
 {

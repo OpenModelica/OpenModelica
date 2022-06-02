@@ -31,6 +31,24 @@
 /*! \file gbode_nls.c
  */
 
+#include "gbode_main.h"
+#include "gbode_nls.h"
+#include "gbode_sparse.h"
+
+#include "../../simulation_data.h"
+
+#include "solver_main.h"
+#include "jacobianSymbolical.h"
+#include "kinsolSolver.h"
+#include "model_help.h"
+#include "newtonIteration.h"
+#include "nonlinearSystem.h"
+
+#include "util/jacobian_util.h"
+
+int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
+
+
 /**
  * @brief Initialize static data of non-linear system for DIRK.
  *

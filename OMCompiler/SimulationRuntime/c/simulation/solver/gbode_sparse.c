@@ -31,6 +31,7 @@
 /*! \file gbode_sparse.c
  */
 
+#include "gbode_main.h"
 #include "gbode_util.h"
 
 #include "model_help.h"

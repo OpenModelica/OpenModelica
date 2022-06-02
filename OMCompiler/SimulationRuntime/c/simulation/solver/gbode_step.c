@@ -31,6 +31,11 @@
 /*! \file gbode_main.c
  */
 
+#include "gbode_main.h"
+
+int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
+
+
 /**
  * @brief Generic multistep function.
  *

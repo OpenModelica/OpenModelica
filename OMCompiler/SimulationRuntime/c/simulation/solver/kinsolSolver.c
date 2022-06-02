@@ -48,7 +48,7 @@
 #include "openmodelica_func.h"
 #include "util/read_matlab4.h"
 #include "util/varinfo.h"
-#include "gbode.h"
+#include "gbode_main.h"
 
 #include <math.h>
 #include <stdio.h>
