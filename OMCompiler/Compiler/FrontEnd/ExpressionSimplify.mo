@@ -146,7 +146,7 @@ algorithm
         //print("SIMPLIFY BEFORE->" + ExpressionDump.printExpStr(e) + "\n");
         (eNew,_) = simplify1WithOptions(e,options); // Basic local simplifications
         //print("SIMPLIFY INTERMEDIATE->" + ExpressionDump.printExpStr(eNew) + "\n");
-        if listLength(Expression.getAllCrefs(eNew)) <= maxNumCrefs then
+        if Expression.countCrefs(eNew) <= maxNumCrefs  then
           eNew = simplify2(eNew); // Advanced (global) simplifications
           (eNew,_) = simplify1WithOptions(eNew,options); // Basic local simplifications
         end if;

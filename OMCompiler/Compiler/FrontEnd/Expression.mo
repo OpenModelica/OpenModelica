@@ -13393,5 +13393,26 @@ algorithm
   end match;
 end arrayFirstScalar;
 
+public function countCrefs
+  input DAE.Exp exp;
+  output Integer nCrefs;
+
+  protected function countCrefs1
+    input DAE.Exp inExp;
+    input Integer inCount;
+    output DAE.Exp outExp = inExp ;
+    output Integer outCount;
+  algorithm
+    outCount := match inExp
+      case DAE.CREF() then(inCount + 1);
+      else inCount;
+    end match;
+  end countCrefs1;
+
+algorithm
+  (_, nCrefs) := traverseExpBottomUp(exp, countCrefs1, 0);
+end countCrefs;
+
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;
