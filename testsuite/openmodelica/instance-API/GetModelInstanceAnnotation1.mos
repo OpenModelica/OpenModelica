@@ -21,18 +21,54 @@ getModelInstance(M, prettyPrint=true);
 //   \"name\": \"M\",
 //   \"annotation\": {
 //     \"Icon\": {
-//       \"modifiers\": {
-//         \"graphics\": {
-//           \"value\": \"{Rectangle(extent = {{-66, 78}, {70, -56}}, lineColor = {28, 108, 200})}\"
+//       \"graphics\": [
+//         {
+//           \"kind\": \"call\",
+//           \"name\": \"Rectangle\",
+//           \"namedArgs\": {
+//             \"extent\": [
+//               [
+//                 -66,
+//                 78
+//               ],
+//               [
+//                 70,
+//                 -56
+//               ]
+//             ],
+//             \"lineColor\": [
+//               28,
+//               108,
+//               200
+//             ]
+//           }
 //         }
-//       }
+//       ]
 //     },
 //     \"Diagram\": {
-//       \"modifiers\": {
-//         \"graphics\": {
-//           \"value\": \"{Ellipse(extent = {{-62, 68}, {56, -60}}, lineColor = {28, 108, 200})}\"
+//       \"graphics\": [
+//         {
+//           \"kind\": \"call\",
+//           \"name\": \"Ellipse\",
+//           \"namedArgs\": {
+//             \"extent\": [
+//               [
+//                 -62,
+//                 68
+//               ],
+//               [
+//                 56,
+//                 -60
+//               ]
+//             ],
+//             \"lineColor\": [
+//               28,
+//               108,
+//               200
+//             ]
+//           }
 //         }
-//       }
+//       ]
 //     }
 //   }
 // }"
