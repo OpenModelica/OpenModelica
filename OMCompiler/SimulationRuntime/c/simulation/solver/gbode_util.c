@@ -32,7 +32,17 @@
  */
 #include "gbode_util.h"
 
-//auxiliary vector functions for better code structure
+/**
+ * @brief Linear interpolation of all vector components
+ *
+ * @param ta      Time value at the left hand side
+ * @param fa      Function values at the left hand side
+ * @param tb      Time value at the right hand side
+ * @param fb      Function values at the right hand side
+ * @param t       Time value at the interpolated time point
+ * @param f       Function values at the interpolated time point
+ * @param n       Size of the vector
+ */
 void linear_interpolation_gb(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
 {
   double lambda, h0, h1;
@@ -47,7 +57,19 @@ void linear_interpolation_gb(double ta, double* fa, double tb, double* fb, doubl
   }
 }
 
-//auxiliary vector functions for better code structure
+/**
+ * @brief Hermite interpolation of all vector components
+ *
+ * @param ta      Time value at the left hand side
+ * @param fa      Function values at the left hand side
+ * @param dfa     Derivative function values at the left hand side
+ * @param tb      Time value at the right hand side
+ * @param fb      Function values at the right hand side
+ * @param dfb     Derivative function values at the right hand side
+ * @param t       Time value at the interpolated time point
+ * @param f       Function values at the interpolated time point
+ * @param n       Size of the vector
+ */
 void hermite_interpolation_gb(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n)
 {
   double tt, h00, h01, h10, h11;
@@ -65,7 +87,18 @@ void hermite_interpolation_gb(double ta, double* fa, double* dfa, double tb, dou
   }
 }
 
-//Interpolation only some entries (indices given by idx[nIdx])
+/**
+ * @brief         Linear interpolation of specific vector components
+ *
+ * @param ta      Time value at the left hand side
+ * @param fa      Function values at the left hand side
+ * @param tb      Time value at the right hand side
+ * @param fb      Function values at the right hand side
+ * @param t       Time value at the interpolated time point
+ * @param f       Function values at the interpolated time point
+ * @param nIdx    Size of index vector
+ * @param idx     Index vector
+ */
 void linear_interpolation_gbf(double ta, double* fa, double tb, double* fb, double t, double* f, int nIdx, int* idx)
 {
   double lambda, h0, h1;
@@ -82,6 +115,20 @@ void linear_interpolation_gbf(double ta, double* fa, double tb, double* fb, doub
   }
 }
 
+/**
+ * @brief Hermite interpolation of specific vector components
+ *
+ * @param ta      Time value at the left hand side
+ * @param fa      Function values at the left hand side
+ * @param dfa     Derivative function values at the left hand side
+ * @param tb      Time value at the right hand side
+ * @param fb      Function values at the right hand side
+ * @param dfb     Derivative function values at the right hand side
+ * @param t       Time value at the interpolated time point
+ * @param f       Function values at the interpolated time point
+ * @param nIdx    Size of index vector
+ * @param idx     Index vector
+ */
 void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx)
 {
   double tt, h00, h01, h10, h11;
@@ -100,12 +147,29 @@ void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, do
   }
 }
 
+/**
+ * @brief Copy specific vector components given by an index vector
+ *
+ * @param a       Target vector
+ * @param b       Source vector
+ * @param nIndx   Size of the index vector
+ * @param indx    Index vector
+ */
 void copyVector_gbf(double* a, double* b, int nIndx, int* indx)
 {
   for (int i=0;i<nIndx;i++)
     a[indx[i]] = b[indx[i]];
 }
 
+
+/**
+ * @brief Prints a vector
+ *
+ * @param name    Specific string to print (usually name of the vector)
+ * @param a       Vector to print
+ * @param n       Size of the vector
+ * @param time    Time value
+ */
 void printVector_gb(char name[], double* a, int n, double time)
 {
   printf("%s\t(time = %14.8g):", name, time);
@@ -114,6 +178,14 @@ void printVector_gb(char name[], double* a, int n, double time)
   printf("\n");
 }
 
+/**
+ * @brief Prints an integer vector
+ *
+ * @param name    Specific string to print (usually name of the vector)
+ * @param a       Integer vector to print
+ * @param n       Size of the vector
+ * @param time    Time value
+ */
 void printIntVector_gb(char name[], int* a, int n, double time)
 {
   printf("%s\t(time = %g): \n", name, time);
@@ -122,6 +194,14 @@ void printIntVector_gb(char name[], int* a, int n, double time)
   printf("\n");
 }
 
+/**
+ * @brief Prints a square matrix
+ *
+ * @param name    Specific string to print (usually name of the matrix)
+ * @param a       Matrix to print
+ * @param n       number of columns and rows
+ * @param time    Time value
+ */
 void printMatrix_gb(char name[], double* a, int n, double time)
 {
   printf("\n%s at time: %g: \n ", name, time);
@@ -133,6 +213,17 @@ void printMatrix_gb(char name[], double* a, int n, double time)
   }
   printf("\n");
 }
+
+/**
+ * @brief Prints selected vector components given by an index vector
+ *
+ * @param name    Specific string to print (usually name of the vector)
+ * @param a       Vector to print
+ * @param n       Size of the vector
+ * @param time    Time value
+ * @param nIndx   Size of index vector
+ * @param indx    Index vector
+ */
 
 void printVector_gbf(char name[], double* a, int n, double time, int nIndx, int* indx)
 {

@@ -55,7 +55,6 @@
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
 #include "gbode_main.h"
-#include "gbodef.h"
 #include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"

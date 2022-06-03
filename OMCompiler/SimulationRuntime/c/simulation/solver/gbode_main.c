@@ -958,12 +958,12 @@ int gbodef_main(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
   //outer integration needs to be synchronized
   // if ((gbfData->time < gbData->timeRight) && (gbData->timeRight < targetTime))
-  if  ((gbfData->time + gbfData->stepSize > gbData->timeRight) ||
-        (gbData->time > targetTime) ||
-        ((gbData->time < targetTime) && (gbData->time + gbData->lastStepSize > targetTime))
-      )
-  {
-    // Resetting the time and the integrator is not a good idea!!!!
+  // if  ((gbfData->time + gbfData->stepSize > gbData->timeRight) ||
+  //       (gbData->time > targetTime) ||
+  //       ((gbData->time < targetTime) && (gbData->time + gbData->lastStepSize > targetTime))
+  //     )
+  // {
+  //   // Resetting the time and the integrator is not a good idea!!!!
     // Just storing the values would be appropriate, integrator should keep their time, and values!!!!
     // Especially, when it comes to high order integrators
  //   gbData->lastStepSize = gbfData->time - gbData->timeLeft;
@@ -973,22 +973,22 @@ int gbodef_main(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
  //   else
  //     gbData->time = gbData->timeLeft;
 
-    memcpy(gbData->yOld, gbfData->yt, gbfData->nStates * sizeof(double));
-    memcpy(gbData->y, gbfData->y, gbfData->nStates * sizeof(double));
-    memcpy(gbData->x, gbfData->x, gbfData->nStates * sizeof(double));
-    memcpy(gbData->x + gbData->tableau->nStages * nStates, gbfData->x + gbData->tableau->nStages * nStates, gbfData->nStates * sizeof(double));
-    memcpy(gbData->k, gbfData->k, gbfData->nStates * sizeof(double));
-    memcpy(gbData->k + gbData->tableau->nStages * nStates, gbfData->k + gbData->tableau->nStages * nStates, gbfData->nStates * sizeof(double));
+    // memcpy(gbData->yOld, gbfData->yt, gbfData->nStates * sizeof(double));
+    // memcpy(gbData->y, gbfData->y, gbfData->nStates * sizeof(double));
+    // memcpy(gbData->x, gbfData->x, gbfData->nStates * sizeof(double));
+    // memcpy(gbData->x + gbData->tableau->nStages * nStates, gbfData->x + gbfData->tableau->nStages * nStates, gbfData->nStates * sizeof(double));
+    // memcpy(gbData->k, gbfData->k, gbfData->nStates * sizeof(double));
+    // memcpy(gbData->k + gbData->tableau->nStages * nStates, gbfData->k + gbfData->tableau->nStages * nStates, gbfData->nStates * sizeof(double));
 
     // This could be problem when gbData->y is used for interpolation, one should introduce yRight!!
     // memcpy(gbData->y, gbfData->y, gbfData->nStates * sizeof(double));
 
     // solverInfo->currentTime = eventTime;
     // sData->timeValue = solverInfo->currentTime;
-    copyVector_gbf(gbData->err, gbfData->err, nFastStates, gbfData->fastStates);
+    // copyVector_gbf(gbData->err, gbfData->err, nFastStates, gbfData->fastStates);
     // copyVector_gbf(gbData->y, gbfData->y, nFastStates, gbfData->fastStates);
     // copyVector_gbf(gbData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
-  }
+  // }
 
   if(ACTIVE_STREAM(LOG_SOLVER_V))
   {
@@ -1404,7 +1404,7 @@ int gbode_main(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
     // interpolating slow states if multirate method is used, otherwise all states are slow states
     linear_interpolation_gbf(gbData->timeLeft, gbData->yLeft,
-                          gbData->timeRight, gbData->y,
+                          gbData->timeRight, gbData->yRight,
                           sData->timeValue, sData->realVars,
                           gbData->nSlowStates, gbData->slowStates);
     if(ACTIVE_STREAM(LOG_MULTIRATE))
