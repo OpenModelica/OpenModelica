@@ -127,6 +127,8 @@ protected function simplifyWithOptions "Simplifies expressions"
   input ExpressionSimplifyTypes.Options options;
   output DAE.Exp outExp;
   output Boolean hasChanged;
+protected
+  Integer maxNumCrefs = 100;
 algorithm
   (outExp,hasChanged) := matchcontinue (inExp,options)
     local
@@ -144,8 +146,12 @@ algorithm
         //print("SIMPLIFY BEFORE->" + ExpressionDump.printExpStr(e) + "\n");
         (eNew,_) = simplify1WithOptions(e,options); // Basic local simplifications
         //print("SIMPLIFY INTERMEDIATE->" + ExpressionDump.printExpStr(eNew) + "\n");
-        eNew = simplify2(eNew); // Advanced (global) simplifications
-        (eNew,_) = simplify1WithOptions(eNew,options); // Basic local simplifications
+        if listLength(Expression.getAllCrefs(eNew)) <= maxNumCrefs then
+          eNew = simplify2(eNew); // Advanced (global) simplifications
+          (eNew,_) = simplify1WithOptions(eNew,options); // Basic local simplifications
+        else
+          print("Skipping eq\n");
+        end if;
         b = not Expression.expEqual(e,eNew);
         //print("SIMPLIFY FINAL->" + ExpressionDump.printExpStr(eNew) + "\n");
       then (eNew,b);
