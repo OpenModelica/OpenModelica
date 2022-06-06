@@ -75,15 +75,20 @@ void hermite_interpolation_gb(double ta, double* fa, double* dfa, double tb, dou
   double tt, h00, h01, h10, h11;
   int i;
 
-  tt = (t-ta)/(tb-ta);
-  h00 = (1+2*tt)*(1-tt)*(1-tt);
-  h10 = (tb-ta)*tt*(1-tt)*(1-tt);
-  h01 = (3-2*tt)*tt*tt;
-  h11 = (tb-ta)*(tt-1)*tt*tt;
+  if (tb == ta) {
+    // omit division by zero
+    memcpy(f, fb, n*sizeof(double));
+  } else {
+    tt = (t-ta)/(tb-ta);
+    h00 = (1+2*tt)*(1-tt)*(1-tt);
+    h10 = (tb-ta)*tt*(1-tt)*(1-tt);
+    h01 = (3-2*tt)*tt*tt;
+    h11 = (tb-ta)*(tt-1)*tt*tt;
 
-  for (i=0; i<n; i++)
-  {
-    f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
+    for (i=0; i<n; i++)
+    {
+      f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
+    }
   }
 }
 
@@ -155,27 +160,52 @@ void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, do
  * @param nIndx   Size of the index vector
  * @param indx    Index vector
  */
-void copyVector_gbf(double* a, double* b, int nIndx, int* indx)
-{
+void copyVector_gbf(double* a, double* b, int nIndx, int* indx) {
   for (int i=0;i<nIndx;i++)
     a[indx[i]] = b[indx[i]];
 }
 
+// debug ring buffer for the states and derviatives of the states
+void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize) {
+
+  // If stream is not active do nothing
+  if (!ACTIVE_STREAM(stream)) return;
+
+  int nStages = tableau->nStages, stage_;
+
+  infoStreamPrint(stream, 0, "states:");
+  for (int stage_ = 0; stage_ < nStages; stage_++) {
+    printVector_gb(stream, "x", x + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize);
+  }
+  printVector_gb(stream, "x", x + nStages * nStates, nStates, time + stepSize);
+  infoStreamPrint(stream, 0, "derivatives:");
+  for (int stage_ = 0; stage_ < nStages; stage_++) {
+    printVector_gb(stream, "k", k + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize);
+  }
+  printVector_gb(stream, "k", k + nStages * nStates, nStates, time + stepSize);
+}
 
 /**
  * @brief Prints a vector
  *
+ * @param stream  Prints only, if stream is active
  * @param name    Specific string to print (usually name of the vector)
  * @param a       Vector to print
  * @param n       Size of the vector
  * @param time    Time value
  */
-void printVector_gb(char name[], double* a, int n, double time)
-{
-  printf("%s\t(time = %14.8g):", name, time);
+void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, double time) {
+
+  // If stream is not active do nothing
+  if (!ACTIVE_STREAM(stream)) return;
+
+  // BB ToDo: This only works for number of states less than 10!
+  // For large arrays, this is not a good output format!
+  char row_to_print[40960];
+  sprintf(row_to_print, "%s(%10g) =\t", name, time);
   for (int i=0;i<n;i++)
-    printf("%20.12g ", a[i]);
-  printf("\n");
+    sprintf(row_to_print, "%s %20.12g", row_to_print, a[i]);
+  infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
 /**
@@ -186,12 +216,13 @@ void printVector_gb(char name[], double* a, int n, double time)
  * @param n       Size of the vector
  * @param time    Time value
  */
-void printIntVector_gb(char name[], int* a, int n, double time)
-{
-  printf("%s\t(time = %g): \n", name, time);
+void printIntVector_gb(enum LOG_STREAM stream, char name[], int* a, int n, double time) {
+
+  char row_to_print[1024];
+  sprintf(row_to_print, "%s\t(time = %g): \n", name, time);
   for (int i=0;i<n;i++)
-    printf("%d ", a[i]);
-  printf("\n");
+    sprintf(row_to_print, "%s %d", row_to_print, a[i]);
+  infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
 /**
@@ -202,8 +233,7 @@ void printIntVector_gb(char name[], int* a, int n, double time)
  * @param n       number of columns and rows
  * @param time    Time value
  */
-void printMatrix_gb(char name[], double* a, int n, double time)
-{
+void printMatrix_gb(char name[], double* a, int n, double time) {
   printf("\n%s at time: %g: \n ", name, time);
   for (int i=0;i<n;i++)
   {
@@ -225,8 +255,7 @@ void printMatrix_gb(char name[], double* a, int n, double time)
  * @param indx    Index vector
  */
 
-void printVector_gbf(char name[], double* a, int n, double time, int nIndx, int* indx)
-{
+void printVector_gbf(char name[], double* a, int n, double time, int nIndx, int* indx) {
   printf("%s\t(time = %14.8g):", name, time);
   for (int i=0;i<nIndx;i++)
     printf("%16.12g ", a[indx[i]]);
@@ -245,13 +274,11 @@ void printVector_gbf(char name[], double* a, int n, double time, int nIndx, int*
  * @param stream          Steam to print to.
  * @param name            Name of matrix.
  */
-void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name)
-{
+void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
   /* Variables */
   unsigned int row, col, i, j;
   infoStreamPrint(LOG_STDOUT, 0, "Sparse structure of %s [size: %ux%u]", name, jacobian->sizeRows, jacobian->sizeCols);
   infoStreamPrint(LOG_STDOUT, 0, "%u non-zero elements", jacobian->sparsePattern->numberOfNonZeros);
-
   infoStreamPrint(LOG_STDOUT, 0, "Values of the transposed matrix (rows: states)");
 
   printf("\n");

@@ -59,10 +59,6 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   int nStages = gbData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // printVector_gb("k:  ", gbData->k + 0 * nStates, nStates, gbData->time);
-  // printVector_gb("k:  ", gbData->k + 1 * nStates, nStates, gbData->time);
-  // printVector_gb("x:  ", gbData->x + 0 * nStates, nStates, gbData->time);
-  // printVector_gb("x:  ", gbData->x + 1 * nStates, nStates, gbData->time);
   // BB ToDo: correct setting of nominal values crucial
   for(int i=0; i<nStates; i++) {
     // Get the nominal values of the states
@@ -152,13 +148,6 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
   memcpy(gbData->x + stage_ * nStates, gbData->y, nStates*sizeof(double));
 
-  // printVector_gb("yt: ", gbData->yt, nStates, gbData->time);
-  // printVector_gb("y:  ", gbData->y, nStates, gbData->time);
-
-  // printVector_gb("k:  ", gbData->k + 0 * nStates, nStates, gbData->time);
-  // printVector_gb("k:  ", gbData->k + 1 * nStates, nStates, gbData->time);
-
-
   return 0;
 }
 
@@ -185,15 +174,6 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   int nStates = data->modelData->nStates;
   int nStages = gbfData->tableau->nStages;
   modelica_boolean solved = FALSE;
-
-  // printVector_gb("k:  ", gbfData->k + 0 * nStates, nStates, gbfData->time);
-  // printVector_gb("k:  ", gbfData->k + 1 * nStates, nStates, gbfData->time);
-  // printVector_gb("x:  ", gbfData->x + 0 * nStates, nStates, gbfData->time);
-  // printVector_gb("x:  ", gbfData->x + 1 * nStates, nStates, gbfData->time);
-
-  // Is this necessary???
-  // gbfData->data = (void*) data;
-  // gbfData->threadData = threadData;
 
   /* Predictor Schritt */
   for (ii = 0; ii < gbfData->nFastStates; ii++)
@@ -318,44 +298,33 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   int nStages = gbData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  memcpy(gbData->nlsxLeft, gbData->x, nStates*sizeof(double));
-  memcpy(gbData->nlskLeft, gbData->k, nStates*sizeof(double));
-  memcpy(gbData->nlsxRight, gbData->x + nStages * nStates, nStates*sizeof(double));
-  memcpy(gbData->nlskRight, gbData->k + nStages * nStates, nStates*sizeof(double));
-
   if (!gbData->isExplicit) {
+    memcpy(gbData->nlsxLeft, gbData->x, nStates*sizeof(double));
+    memcpy(gbData->nlskLeft, gbData->k, nStates*sizeof(double));
+    memcpy(gbData->nlsxRight, gbData->x + nStages * nStates, nStates*sizeof(double));
+    memcpy(gbData->nlskRight, gbData->k + nStages * nStates, nStates*sizeof(double));
+
+    infoStreamPrint(LOG_SOLVER_V, 1, "NLS - used values for extrapolation:");
+    printVector_gb(LOG_SOLVER_V, "xL", gbData->nlsxLeft, nStates, gbData->time - gbData->lastStepSize);
+    printVector_gb(LOG_SOLVER_V, "kL", gbData->nlskLeft, nStates, gbData->time - gbData->lastStepSize);
+    printVector_gb(LOG_SOLVER_V, "xR", gbData->nlsxRight, nStates, gbData->time);
+    printVector_gb(LOG_SOLVER_V, "kR", gbData->nlskRight, nStates, gbData->time);
+    messageClose(LOG_SOLVER_V);
     for(int i=0; i<nStates; i++) {
       // Get the nominal values of the states
         gbData->nlsData->nominal[i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->nlsxRight[i]), 1e-32);
     }
   }
 
-  if (ACTIVE_STREAM(LOG_M_BB)) {
-    printf("Nonlinear interpolation\n");
-    printVector_gb("gb->nlsx:    ", gbData->nlsxLeft, nStates, gbData->time);
-    printVector_gb("gb->nlsx:    ", gbData->nlsxRight, nStates, gbData->time);
-    printVector_gb("gb->nlsk:    ", gbData->nlskLeft, nStates, gbData->time);
-    printVector_gb("gb->nlsk:    ", gbData->nlskRight, nStates, gbData->time);
-  }
-
-  // First try for better starting values, only necessary after restart
-  // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  // BB ToDo: this is no longer necessary, since x and k are storing these values from the las step
-  sData->timeValue = gbData->time;
-  memcpy(sData->realVars, gbData->yOld, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-  memcpy(gbData->k, fODE, nStates*sizeof(double));
-
   /* Runge-Kutta step */
   for (stage = 0; stage < nStages; stage++)
   {
     gbData->act_stage = stage;
-    /* Set constant parts or residual input
-     * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..stage-1)) */
 
+    /* Set constant part or residual input
+     * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], i=j..stage-1)) */
     for (i = 0; i < nStates; i++)
     {
-      // BB ToDo: check the formula with respect to gbData->k[]
       gbData->res_const[i] = gbData->yOld[i];
       for (stage_ = 0; stage_ < stage; stage_++)
       {
@@ -370,50 +339,62 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     // set simulation time with respect to the current stage
     sData->timeValue = gbData->time + gbData->tableau->c[stage_]*gbData->stepSize;
 
-    if (gbData->tableau->A[stage * nStages + stage_] == 0)
-    {
-      if (stage>0) {
-        memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-      }
+    // if the diagonal element is zero, an explicit step has to be performed
+    if (gbData->tableau->A[stage * nStages + stage_] == 0) {
+      // Store values in the ring buffer
       memcpy(gbData->x + stage_ * nStates, gbData->res_const, nStates*sizeof(double));
-    }
-    else
-    {
+
+      // Calculate the fODE values for the explicit stage
+      memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
+      gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+    } else {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;
+
       // Set start vector, BB ToDo: Ommit extrapolation after event!!!
       // for (i=0; i<nStates; i++) {
       //     nlsData->nlsx[i] = gbData->yOld[i] + gbData->tableau->c[stage_] * gbData->stepSize * gbData->k[i];
       // }
-      //memcpy(nlsData->nlsx, gbData->yOld, nStates*sizeof(modelica_real));
+      memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
+      memcpy(nlsData->nlsxOld, gbData->yOld, nStates*sizeof(modelica_real));
       // this is actually extrapolation...
-      hermite_interpolation_gb(gbData->time,                    gbData->nlsxLeft, gbData->nlskLeft,
-                            gbData->time + gbData->stepSize, gbData->nlsxRight, gbData->nlskRight,
-                            gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsx, nStates);
-      // linear_interpolation_gb(gbData->time,                    gbData->nlsxLeft,
-      //                      gbData->time + gbData->stepSize, gbData->nlsxRight,
-      //                      gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsx, nStates);
-      // for (i=0; i<nStates; i++) {
-      //     nlsData->nlsx[i] = gbData->nlsxRight[i] + gbData->tableau->c[stage_] * gbData->stepSize * gbData->nlskRight[i];
-      // }
-      memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
-      memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
+      if (gbData->stepRejected) {
+        hermite_interpolation_gb(gbData->time + gbData->tableau->c[0] * gbData->stepSize, gbData->nlsxLeft,  gbData->nlskLeft,
+                                 gbData->time + gbData->stepSize,                          gbData->nlsxRight, gbData->nlskRight,
+                                 gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation, nStates);
+
+      } else {
+        hermite_interpolation_gb(gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize, gbData->nlsxLeft,  gbData->nlskLeft,
+                                gbData->time,                        gbData->nlsxRight, gbData->nlskRight,
+                                gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation, nStates);
+      }
+
+      // This is a hack and needed, since nonlinear solver is based on numbered equation systems
       gbData->multi_rate_phase = 0;
 
+      // Debug nonlinear solution process
       if (ACTIVE_STREAM(LOG_M_NLS)) {
         clock_t start, end;
         double cpu_time_used;
 
         start = clock();
+
+        //Solve nonlinear equation system
         solved = solveNLS(data, threadData, nlsData, -1);
+
         end = clock();
         cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
-        infoStreamPrint(LOG_M_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
+        infoStreamPrint(LOG_M_NLS, 0, "time needed for solving the NLS:  %20.16g", cpu_time_used);
       } else {
+        //Solve nonlinear equation system
         solved = solveNLS(data, threadData, nlsData, -1);
       }
+
+      infoStreamPrint(LOG_SOLVER_V, 1, "NLS - start values and solution of the NLS:");
+      printVector_gb(LOG_SOLVER_V, "xS", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      printVector_gb(LOG_SOLVER_V, "xL", nlsData->nlsx,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      messageClose(LOG_SOLVER_V);
 
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
@@ -617,31 +598,35 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   double Rtol = data->simulationInfo->tolerance;
   modelica_boolean solved = FALSE;
 
+  // NLS - used values for extrapolation
+  infoStreamPrint(LOG_SOLVER_V, 1, "NLS - used values for extrapolation:");
+  printVector_gb(LOG_SOLVER_V, "xL", gbData->x, nStates, gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize);
+  printVector_gb(LOG_SOLVER_V, "kL", gbData->k, nStates, gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize);
+  printVector_gb(LOG_SOLVER_V, "xR", gbData->x + nStages * nStates, nStates, gbData->time);
+  printVector_gb(LOG_SOLVER_V, "kR", gbData->k + nStages * nStates, nStates, gbData->time);
+  messageClose(LOG_SOLVER_V);
+
   /* Set start values for non-linear solver */
   for (stage_=0; stage_<nStages; stage_++) {
-    // BB ToDo: Ommit extrapolation after event!!!
+    memcpy(nlsData->nlsx + stage_*nStates,    gbData->yOld, nStates*sizeof(modelica_real));
+    memcpy(nlsData->nlsxOld + stage_*nStates, gbData->yOld, nStates*sizeof(modelica_real));
+    // this is actually extrapolation...
+    if (gbData->stepRejected) {
+      hermite_interpolation_gb(gbData->time + gbData->tableau->c[0] * gbData->stepSize, gbData->x,  gbData->k,
+                               gbData->time + gbData->stepSize,                        gbData->x + nStages * nStates, gbData->k + nStages * nStates,
+                               gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation + stage_*nStates, nStates);
+
+    } else {
+      hermite_interpolation_gb(gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize, gbData->x,  gbData->k,
+                               gbData->time,                       gbData->x + nStages * nStates, gbData->k + nStages * nStates,
+                               gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation + stage_*nStates, nStates);
+    }
     for (i=0; i<nStates; i++)
       nlsData->nominal[stage_*nStates +i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->yOld[i]), 1e-32);
   }
 
-  // First try for better starting values, only necessary after restart
-  // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  memcpy(sData->realVars, gbData->yOld, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-  memcpy(gbData->k, fODE, nStates*sizeof(double));
-
-  /* Set start values for non-linear solver */
-  for (stage_=0; stage_<nStages; stage_++) {
-    // BB ToDo: Ommit extrapolation after event!!!
-    for (i=0; i<nStates; i++)
-      nlsData->nlsx[stage_*nStates +i] = gbData->yOld[i] + gbData->tableau->c[stage_] * gbData->stepSize * gbData->k[i];
-
-    // memcpy(&nlsData->nlsx[stage_*nStates], gbData->yOld, nStates*sizeof(double));
-    memcpy(&nlsData->nlsxOld[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
-    memcpy(&nlsData->nlsxExtrapolation[stage_*nStates], &nlsData->nlsx[stage_*nStates], nStates*sizeof(double));
-  }
+  // This is a hack and needed, since nonlinear solver is based on numbered equation systems
   gbData->multi_rate_phase = 0;
-
   if (ACTIVE_STREAM(LOG_M_NLS)) {
     clock_t start, end;
     double cpu_time_used;
@@ -654,6 +639,15 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     infoStreamPrint(LOG_M_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
   } else {
     solved = solveNLS(data, threadData, nlsData, -1);
+  }
+
+  if (ACTIVE_STREAM(LOG_SOLVER_V)) {
+    infoStreamPrint(LOG_SOLVER_V, 1, "NLS - start values and solution of the NLS:");
+    for (stage_=0; stage_<nStages; stage_++) {
+      printVector_gb(LOG_SOLVER_V, "xS", nlsData->nlsxExtrapolation + stage_*nStates, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      printVector_gb(LOG_SOLVER_V, "xL", nlsData->nlsx + stage_*nStates,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    }
+    messageClose(LOG_SOLVER_V);
   }
 
   if (!solved) {
@@ -674,6 +668,13 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
     }
   }
+  memcpy(gbData->x, nlsData->nlsx, nlsData->size*sizeof(double));
+  memcpy(gbData->x + nStages * nStates, gbData->y, nStates*sizeof(double));
+
+  sData->timeValue = gbData->time + gbData->stepSize;
+  memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
+  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+  memcpy(gbData->k + nStages* nStates, fODE, nStates*sizeof(double));
 
   return 0;
 }

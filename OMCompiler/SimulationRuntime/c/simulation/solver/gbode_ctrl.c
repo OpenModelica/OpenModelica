@@ -149,7 +149,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   double Atol = 1e-6;
   double Rtol = 1e-3;
 
-  int i,j;
+  int i, j, stage_;
 
   /* store Startime of the simulation */
   gbData->time = sDataOld->timeValue;
@@ -158,6 +158,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   gbData->timeLeft = gbData->time;
   gbData->timeRight = gbData->time;
+
   /* set correct flags in order to calculate initial step size */
   gbData->isFirstStep = FALSE;
   gbData->didEventStep = TRUE;
@@ -165,7 +166,8 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     gbData->gbfData->didEventStep = TRUE;
   solverInfo->didEventStep = FALSE;
 
-  for (int i=0; i<gbData->ringBufferSize; i++) {
+  // initialize ring buffer for error and step size control
+  for (i=0; i<gbData->ringBufferSize; i++) {
     gbData->errValues[i] = 0;
     gbData->stepSizeValues[i] = 0;
   }
@@ -177,37 +179,28 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   gbData->errorTestFailures = 0;
   gbData->convergenceFailures = 0;
 
-  gbData->multi_rate_phase = 0;
-
-
   /* calculate starting step size 1st Version */
   /* BB: What is the difference between sData and sDataOld at this time instance?
          Is this important for the restart after an event?
-         And should this also been copied to userdata->old (see above?)
+         And should this also been copied to gbData->yOld (see above?)
   */
-  /* initialize start values of the integrator and calculate ODE function*/
-  //printVector_gb("sData->realVars: ", sData->realVars, data->modelData->nStates, sData->timeValue);
-  //printVector_gb("sDataOld->realVars: ", sDataOld->realVars, data->modelData->nStates, sDataOld->timeValue);
 
+  /* initialize start values of the integrator and calculate ODE function*/
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
-  for (int stage_=0; stage_<= nStages; stage_++) {
+  memcpy(gbData->yRight, sData->realVars, nStates*sizeof(double));
+  for (stage_=0; stage_<= nStages; stage_++) {
     memcpy(gbData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
   }
-  memcpy(gbData->x, sData->realVars, nStates*sizeof(double));
-  memcpy(gbData->x + nStages*nStates, sData->realVars, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+
   /* store values of the state derivatives at initial or event time */
+  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+  memcpy(gbData->kRight, fODE, nStates*sizeof(double));
   memcpy(gbData->f, fODE, nStates*sizeof(double));
-  for (int stage_=0; stage_<= nStages; stage_++) {
+  for (stage_=0; stage_<= nStages; stage_++) {
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
   }
 
-  // if (gbData->type == MS_TYPE_IMPLICIT) {
-  //     memcpy(gbData->x + (nStages-2) * nStates, gbData->yOld, nStates*sizeof(double));
-  // }
-
-  for (i=0; i<data->modelData->nStates; i++)
-  {
+  for (i=0; i<nStates; i++) {
     sc = Atol + fabs(sDataOld->realVars[i])*Rtol;
     d0 += ((sDataOld->realVars[i] * sDataOld->realVars[i])/(sc*sc));
     d1 += ((fODE[i] * fODE[i]) / (sc*sc));
@@ -219,26 +212,20 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   d1 = sqrt(d1);
 
   /* calculate first guess of the initial step size */
-  if (d0 < 1e-5 || d1 < 1e-5)
-  {
+  if (d0 < 1e-5 || d1 < 1e-5) {
     h0 = 1e-6;
-  }
-  else
-  {
+  } else {
     h0 = 0.01 * d0/d1;
   }
 
-
-  for (i=0; i<data->modelData->nStates; i++)
-  {
+  for (i=0; i<nStates; i++) {
     sData->realVars[i] = gbData->yOld[i] + fODE[i] * h0;
   }
   sData->timeValue += h0;
 
   gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
 
-  for (i=0; i<data->modelData->nStates; i++)
-  {
+  for (i=0; i<nStates; i++) {
     sc = Atol + fabs(gbData->yOld[i])*Rtol;
     d2 += ((fODE[i]-gbData->f[i])*(fODE[i]-gbData->f[i])/(sc*sc));
   }
@@ -249,17 +236,14 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   d = fmax(d1,d2);
 
-  if (d > 1e-15)
-  {
+  if (d > 1e-15) {
     h1 = sqrt(0.01/d);
-  }
-  else
-  {
+  } else {
     h1 = fmax(1e-6, h0*1e-3);
   }
 
   gbData->stepSize = 0.5*fmin(100*h0,h1);
-  gbData->lastStepSize = gbData->stepSize;
+  gbData->lastStepSize = 0.0;
 
   infoStreamPrint(LOG_MULTIRATE, 0, "initial step size = %e at time %g", gbData->stepSize, gbData->time);
 }

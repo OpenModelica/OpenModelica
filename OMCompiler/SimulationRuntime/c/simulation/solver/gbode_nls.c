@@ -530,6 +530,10 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
   for (i=0; i<nStates; i++) {
     res[i] = gbData->res_const[i] - xloc[i] + gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
+  infoStreamPrint(LOG_SOLVER_V, 1, "NLS - residual:");
+  printVector_gb(LOG_SOLVER_V, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+  messageClose(LOG_SOLVER_V);
+
 
   return;
 }
@@ -558,8 +562,8 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
   int nStates = data->modelData->nStates;
   int stage, stage_;
 
-  // stage_ == 0, was already handle for predictor step
-  for (stage_=1; stage_<nStages; stage_++)
+  // Bullshit!!! stage_ == 0, was already handle for predictor step
+  for (stage_=0; stage_<nStages; stage_++)
   {
     /* Evaluate ODE and compute res for each stage_ */
     sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
@@ -580,6 +584,13 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
       }
     }
   }
+
+  infoStreamPrint(LOG_SOLVER_V, 1, "NLS - residual:");
+  for (stage=0; stage<nStages; stage++) {
+    printVector_gb(LOG_SOLVER_V, "r", res + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
+  }
+  messageClose(LOG_SOLVER_V);
+
 
   return;
 }

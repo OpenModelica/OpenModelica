@@ -183,16 +183,13 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richard
   tableau->order_bt = 2;
   tableau->fac = 1.0;
 
-  double gam;
-
-  gam = 1.0/2.0 + sqrt(3.0)/6.0;
-  const double c[]  = {gam, (3.0*gam - 2.0)/(6.0*gam - 3.0), 1.0};
+  const double c[]  = {0.788675134594812882254574390252, 0.21132486540518711774542560975,                               1};
   const double A[]  = {
-                        gam, 0, 0,
-                        (-6*gam*gam+6*gam-2)/(6*gam-3), gam, 0,
-                          0, 1-gam, gam};
-  const double b[]  = {1.0/(12.0*gam*gam - 12.0*gam + 4.0), 3.0*(2.0*gam - 1.0)*(2.0*gam - 1.0)/(12.0*gam*gam - 12.0*gam + 4.0), 0.0};
-  const double bt[]  = {(2.0*sqrt(3.0) + 1.0)/(-3.0 + sqrt(3.0)), 1.0 + 1.0/3.0*sqrt(3.0), (-6.0 - 3.0*sqrt(3.0))/(-9.0 + 3.0*sqrt(3.0))};
+                          0.788675134594812882254574390252,                                0,                                0,
+                          -0.577350269189625764509148780509, 0.788675134594812882254574390252,                                0,
+                                                        0, 0.211324865405187117745425609748, 0.788675134594812882254574390252};
+  const double b[]  = {0.5, 0.5, 0.0};
+  const double bt[]  = {-3.52072594216369017578202073251, 1.57735026918962576450914878069, 2.94337567297406441127287195182};
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
 }

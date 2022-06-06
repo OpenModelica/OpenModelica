@@ -105,8 +105,9 @@ typedef struct DATA_GBODEF{
   BUTCHER_TABLEAU* tableau;
   int nStates, nFastStates, nSlowStates, *fastStates, *slowStates;
   int nFastStates_old, *fastStates_old;
-  int firstStep;
-  int didEventStep;                   /* Will be used for updating the derivatives */
+  modelica_boolean stepRejected;
+  modelica_boolean firstStep;
+  modelica_boolean didEventStep;                   /* Will be used for updating the derivatives */
   int ringBufferSize;
   int interpolation;
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
@@ -152,10 +153,10 @@ typedef struct DATA_GBODE{
   double stepSize, lastStepSize;
   double stepSize_old, stepSize_fast;
   int act_stage;                          /* Current stage of Runge-Kutta method. */
-  int didEventStep;                       /* will be used for updating the derivatives */
+  modelica_boolean didEventStep;                       /* will be used for updating the derivatives */
   int ringBufferSize;
   int multi_rate_phase;
-  int multi_rate;
+  modelica_boolean multi_rate;
   int interpolation;
   modelica_boolean isExplicit;            /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;
@@ -164,6 +165,7 @@ typedef struct DATA_GBODE{
   int *fastStates;
   int *slowStates;
   int *sortedStates;
+  modelica_boolean stepRejected;
   modelica_boolean isFirstStep;       /* True during first Runge-Kutta integrator step, false otherwise */
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */

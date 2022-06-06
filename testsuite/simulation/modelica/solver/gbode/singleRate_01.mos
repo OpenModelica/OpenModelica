@@ -300,9 +300,6 @@ end for;
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Failed vars:
-// 	der(y[1])
-// Failed to compare simulation results
-//
 //
 // --------------------------------------------------------
 // Running RK rk810 with NLS kinsol:
@@ -313,9 +310,6 @@ end for;
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Failed vars:
-// 	der(y[1])
-// Failed to compare simulation results
-//
 //
 // --------------------------------------------------------
 // Running RK rk1012 with NLS newton:
@@ -326,9 +320,6 @@ end for;
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Failed vars:
-// 	der(y[1])
-// Failed to compare simulation results
-//
 //
 // --------------------------------------------------------
 // Running RK rk1012 with NLS kinsol:
@@ -339,9 +330,6 @@ end for;
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Failed vars:
-// 	der(y[1])
-// Failed to compare simulation results
-//
 //
 // --------------------------------------------------------
 // Running RK rk1214 with NLS newton:
