@@ -39,7 +39,7 @@ double CController(double* err_values, double* stepSize_values, double err_order
 double IController(double* err_values, double* stepSize_values, double err_order);
 double PIController(double* err_values, double* stepSize_values, double err_order);
 
-void gm_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 double getErrorThreshold(DATA_GBODE* gbData);
 

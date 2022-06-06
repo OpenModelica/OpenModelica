@@ -134,7 +134,7 @@ double PIController(double* err_values, double* stepSize_values, double err_orde
  * @param threadData        Thread data for error handling.
  * @param solverInfo        Storing Runge-Kutta solver data.
  */
-void gm_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
