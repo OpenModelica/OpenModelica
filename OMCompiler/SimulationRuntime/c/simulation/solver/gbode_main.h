@@ -91,6 +91,7 @@ typedef struct DATA_GBODEF{
 
   double *y, *yt, *yOld, *f;
   double *yStart, *yEnd, *kStart, *kEnd;
+  double *yLeft, *kLeft, *yRight, *kRight;
   double *Jf;
   double *k, *res_const;
   double *x;                            /* ring buffer for multistep method */
@@ -99,6 +100,7 @@ typedef struct DATA_GBODEF{
   double *errValues;                    /* ring buffer for step size control */
   double *stepSizeValues;               /* ring buffer for step size control */
   double time, startTime, endTime;
+  double timeLeft, timeRight;
   double stepSize, lastStepSize, stepSize_old;
   int act_stage;
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */

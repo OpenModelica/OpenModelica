@@ -447,31 +447,34 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   int i, ii;
   int stage, stage_;
 
-  int nStates = data->modelData->nStates;
+  int nStates = gbfData->nStates;
   int nFastStates = gbfData->nFastStates;
   int nStages = gbfData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
   // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
-    if (gbfData->interpolation == 1) {
-    linear_interpolation_gbf(gbfData->startTime, gbfData->yStart,
-                            gbfData->endTime,    gbfData->yEnd,
-                            gbfData->time,       gbfData->yOld,
+  hermite_interpolation_gbf(gbfData->startTime,   gbfData->yStart, gbfData->kStart,
+                            gbfData->endTime,     gbfData->yEnd,   gbfData->kEnd,
+                            gbfData->time,        gbfData->yOld,
                             gbfData->nSlowStates, gbfData->slowStates);
 
-  } else {
-    hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
-                              gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
-                              gbfData->time,      gbfData->yOld,
-                              gbfData->nSlowStates, gbfData->slowStates);
+  if (!gbfData->isExplicit) {
+    memcpy(gbData->nlsxLeft, gbfData->x, nStates*sizeof(double));
+    memcpy(gbData->nlskLeft, gbfData->k, nStates*sizeof(double));
+    memcpy(gbData->nlsxRight, gbfData->x + nStages * nStates, nStates*sizeof(double));
+    memcpy(gbData->nlskRight, gbfData->k + nStages * nStates, nStates*sizeof(double));
 
+    infoStreamPrint(LOG_SOLVER_V, 1, "NLS - used values for extrapolation:");
+    printVector_gb(LOG_SOLVER_V, "xL", gbData->nlsxLeft, nStates, gbfData->time - gbfData->lastStepSize);
+    printVector_gb(LOG_SOLVER_V, "kL", gbData->nlskLeft, nStates, gbfData->time - gbfData->lastStepSize);
+    printVector_gb(LOG_SOLVER_V, "xR", gbData->nlsxRight, nStates, gbfData->time);
+    printVector_gb(LOG_SOLVER_V, "kR", gbData->nlskRight, nStates, gbfData->time);
+    messageClose(LOG_SOLVER_V);
+    for(int i=0; i<nStates; i++) {
+      // Get the nominal values of the states
+        gbfData->nlsData->nominal[i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->nlsxRight[i]), 1e-32);
+    }
   }
-  // First try for better starting values, only necessary after restart
-  // BB ToDo: Or maybe necessary for RK methods, where b is not equal to the last row of A
-  sData->timeValue = gbfData->time;
-  memcpy(sData->realVars, gbfData->yOld, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
-  memcpy(gbfData->k, fODE, nStates*sizeof(double));
 
   for (stage = 0; stage < nStages; stage++)
   {
@@ -494,41 +497,40 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     // index of diagonal element of A
     if (gbfData->tableau->A[stage * nStages + stage_] == 0)
     {
-      if (stage>0) {
-        memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
-      }
-//      memcpy(gbfData->x + stage_ * nStates, gbfData->res_const, nStates*sizeof(double));
+      // Calculate the fODE values for the explicit stage
+      memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
+      gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
     }
     else
     {
       // interpolate the slow states on the time of the current stage
-    if (gbfData->interpolation == 1) {
-      linear_interpolation_gbf(gbfData->startTime,  gbfData->yStart,
-                               gbfData->endTime,    gbfData->yEnd,
-                               sData->timeValue,    sData->realVars,
-                               gbfData->nSlowStates, gbfData->slowStates);
-      } else {
-        hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
-                                  gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
-                                  sData->timeValue,   sData->realVars,
-                                  gbfData->nSlowStates, gbfData->slowStates);
+      hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+                                gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
+                                sData->timeValue,   sData->realVars,
+                                gbfData->nSlowStates, gbfData->slowStates);
 
-      }
       // BB ToDo: set good starting values for the newton solver (solution of the last newton iteration!)
       // setting the start vector for the newton step
       // for (i=0; i<nFastStates; i++)
       //   solverData->x[i] = gbfData->yOld[gbfData->fastStates[i]];
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;
-      // Set start vector, BB ToDo: Ommit extrapolation after event!!!
-      for (ii=0; ii<nFastStates; ii++) {
-          i = gbfData->fastStates[ii];
-          nlsData->nlsx[ii] = gbfData->yOld[i] + gbfData->tableau->c[stage_] * gbfData->stepSize * gbfData->k[i];
+
+      projVector_gbf(nlsData->nlsx, gbfData->yOld, nFastStates, gbfData->fastStates);
+      memcpy(nlsData->nlsxOld, nlsData->nlsx, nFastStates*sizeof(modelica_real));
+      // this is actually extrapolation...
+      if (gbfData->stepRejected) {
+        hermite_interpolation_gbf(gbfData->time + gbfData->tableau->c[0] * gbfData->stepSize, gbData->nlsxLeft,  gbData->nlskLeft,
+                                  gbfData->time + gbfData->stepSize,                          gbData->nlsxRight, gbData->nlskRight,
+                                  gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize, sData->realVars, nFastStates, gbfData->fastStates);
+
+      } else {
+        hermite_interpolation_gbf(gbfData->time - (1 - gbfData->tableau->c[0]) * gbfData->lastStepSize, gbData->nlsxLeft,  gbData->nlskLeft,
+                                  gbfData->time,                                                        gbData->nlsxRight, gbData->nlskRight,
+                                  gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize, sData->realVars, nFastStates, gbfData->fastStates);
       }
-      //memcpy(nlsData->nlsx, gbfData->yOld, nStates*sizeof(modelica_real));
-      memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
-      memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
+      projVector_gbf(nlsData->nlsxExtrapolation, sData->realVars, nFastStates, gbfData->fastStates);
+
       gbData->multi_rate_phase = 1;
 
       if (ACTIVE_STREAM(LOG_MULTIRATE_V)) {
@@ -545,14 +547,20 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
         solved = solveNLS(data, threadData, nlsData, -1);
       }
 
+      infoStreamPrint(LOG_SOLVER_V, 1, "NLS - start values and solution of the NLS:");
+      printVector_gb(LOG_SOLVER_V, "xS", nlsData->nlsxExtrapolation, nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+      printVector_gb(LOG_SOLVER_V, "xL", nlsData->nlsx,              nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+      messageClose(LOG_SOLVER_V);
+
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
     }
+    // copy last values of sData->realVars, which should coincide with x[i]
+    memcpy(gbfData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
     // copy last calculation of fODE, which should coincide with k[i]
     memcpy(gbfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
-
   }
 
   for (ii=0; ii<nFastStates; ii++)
@@ -568,6 +576,21 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       gbfData->yt[i] += gbfData->stepSize * gbfData->tableau->bt[stage_] * (gbfData->k + stage_ * nStates)[i];
     }
   }
+
+  // set time value to the right hand side of the actual interval
+  sData->timeValue = gbfData->time + gbfData->stepSize;
+  // interpolate the slow states, respectively
+  hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+                            gbfData->endTime,   gbfData->yEnd,   gbfData->kEnd,
+                            sData->timeValue,   gbfData->y,
+                            gbfData->nSlowStates, gbfData->slowStates);
+
+  // store corresponding values in the ring buffer
+  memcpy(gbfData->x + nStages * nStates, gbfData->y, nStates*sizeof(double));
+
+  memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
+  gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
+  memcpy(gbfData->k + nStages* nStates, fODE, nStates*sizeof(double));
 
   return 0;
 }

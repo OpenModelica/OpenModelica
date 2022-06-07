@@ -156,8 +156,6 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   /* store Startime of the simulation */
   gbData->time = sDataOld->timeValue;
-  if (gbData->multi_rate)
-      gbData->gbfData->time = gbData->time;
 
   gbData->timeLeft = gbData->time;
   gbData->timeRight = gbData->time;
@@ -165,8 +163,6 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   /* set correct flags in order to calculate initial step size */
   gbData->isFirstStep = FALSE;
   gbData->didEventStep = TRUE;
-  if (gbData->multi_rate)
-    gbData->gbfData->didEventStep = TRUE;
   solverInfo->didEventStep = FALSE;
 
   // initialize ring buffer for error and step size control
@@ -201,6 +197,15 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   memcpy(gbData->f, fODE, nStates*sizeof(double));
   for (stage_=0; stage_<= nStages; stage_++) {
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+  }
+
+  if (gbData->multi_rate) {
+    gbData->gbfData->didEventStep = TRUE;
+    gbData->gbfData->time = gbData->time;
+    for (stage_=0; stage_<= gbData->gbfData->tableau->nStages; stage_++) {
+      memcpy(gbData->gbfData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
+      memcpy(gbData->gbfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+    }
   }
 
   for (i=0; i<nStates; i++) {

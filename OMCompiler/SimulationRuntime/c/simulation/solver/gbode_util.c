@@ -139,16 +139,21 @@ void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, do
   double tt, h00, h01, h10, h11;
   int i, ii;
 
-  tt = (t-ta)/(tb-ta);
-  h00 = (1+2*tt)*(1-tt)*(1-tt);
-  h10 = (tb-ta)*tt*(1-tt)*(1-tt);
-  h01 = (3-2*tt)*tt*tt;
-  h11 = (tb-ta)*(tt-1)*tt*tt;
+  if (tb == ta) {
+    // omit division by zero
+    copyVector_gbf(f, fb, nIdx, idx);
+  } else {
+    tt = (t-ta)/(tb-ta);
+    h00 = (1+2*tt)*(1-tt)*(1-tt);
+    h10 = (tb-ta)*tt*(1-tt)*(1-tt);
+    h01 = (3-2*tt)*tt*tt;
+    h11 = (tb-ta)*(tt-1)*tt*tt;
 
-  for (ii=0; ii<nIdx; ii++)
-  {
-    i = idx[ii];
-    f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
+    for (ii=0; ii<nIdx; ii++)
+    {
+      i = idx[ii];
+      f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
+    }
   }
 }
 
@@ -163,6 +168,11 @@ void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, do
 void copyVector_gbf(double* a, double* b, int nIndx, int* indx) {
   for (int i=0;i<nIndx;i++)
     a[indx[i]] = b[indx[i]];
+}
+
+void projVector_gbf(double* a, double* b, int nIndx, int* indx) {
+  for (int i=0;i<nIndx;i++)
+    a[i] = b[indx[i]];
 }
 
 // debug ring buffer for the states and derviatives of the states
@@ -202,9 +212,9 @@ void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, doubl
   // BB ToDo: This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
   char row_to_print[40960];
-  sprintf(row_to_print, "%s(%10g) =\t", name, time);
+  sprintf(row_to_print, "%s(%8g) =\t", name, time);
   for (int i=0;i<n;i++)
-    sprintf(row_to_print, "%s %20.12g", row_to_print, a[i]);
+    sprintf(row_to_print, "%s %18.12g", row_to_print, a[i]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
@@ -266,9 +276,9 @@ void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, doub
   // BB ToDo: This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
   char row_to_print[40960];
-  sprintf(row_to_print, "%s(%10g) =\t", name, time);
+  sprintf(row_to_print, "%s(%8g) =\t", name, time);
   for (int i=0;i<nIndx;i++)
-    sprintf(row_to_print, "%s %20.12g", row_to_print, a[indx[i]]);
+    sprintf(row_to_print, "%s %16.12g", row_to_print, a[indx[i]]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 

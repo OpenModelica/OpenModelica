@@ -43,6 +43,7 @@ void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, do
 
 // Copy only specific values referenced by an index vector
 void copyVector_gbf(double* a, double* b, int nIndx, int* indx);
+void projVector_gbf(double* a, double* b, int nIndx, int* indx);
 
 // Debug functions for the development of gbode
 void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, double time);

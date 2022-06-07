@@ -199,8 +199,12 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   {
     gbfData->Jf = NULL;
   }
-  gbfData->k = malloc(sizeof(double) * gbfData->nStates * gbfData->tableau->nStages);
-  gbfData->x = malloc(sizeof(double) * gbfData->nStates * gbfData->tableau->nStages);
+  gbfData->k = malloc(sizeof(double) * gbfData->nStates * (gbfData->tableau->nStages + 1));
+  gbfData->x = malloc(sizeof(double) * gbfData->nStates * (gbfData->tableau->nStages + 1));
+  gbfData->yLeft = malloc(sizeof(double) * gbfData->nStates);
+  gbfData->kLeft = malloc(sizeof(double) * gbfData->nStates);
+  gbfData->yRight = malloc(sizeof(double) * gbfData->nStates);
+  gbfData->kRight = malloc(sizeof(double) * gbfData->nStates);
   gbfData->res_const = malloc(sizeof(double) * gbfData->nStates);
   gbfData->errest = malloc(sizeof(double) * gbfData->nStates);
   gbfData->errtol = malloc(sizeof(double) * gbfData->nStates);
@@ -546,6 +550,10 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
 
   free(gbfData->y);
   free(gbfData->yOld);
+  free(gbfData->yLeft);
+  free(gbfData->kLeft);
+  free(gbfData->yRight);
+  free(gbfData->kRight);
   free(gbfData->yt);
   free(gbfData->f);
   free(gbfData->Jf);
@@ -663,6 +671,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
   int nStates = data->modelData->nStates;
   int nFastStates = gbData->nFastStates;
+  int nStages = gbfData->tableau->nStages;
 
   modelica_boolean fastStateChange = FALSE;
 
@@ -808,20 +817,15 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
   }
 
-  if (ACTIVE_STREAM(LOG_M_FASTSTATES))
-  {
+  if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
     char fastStates_row[2048];
     sprintf(fastStates_row, "%10g ", gbfData->time);
-    for (i = 0, ii = 0; i < nStates;)
-    {
-      if (i == gbfData->fastStates[ii])
-      {
+    for (i = 0, ii = 0; i < nStates;) {
+      if (i == gbfData->fastStates[ii]) {
         sprintf(fastStates_row, "%s 1", fastStates_row);
         i++;
         ii++;
-      }
-      else
-      {
+      } else {
         sprintf(fastStates_row, "%s 0", fastStates_row);
         i++;
       }
@@ -834,30 +838,33 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (SR-stepsize: %10g)",
                   gbData->timeLeft, gbData->timeRight, gbData->lastStepSize);
 
-  printVector_gb(LOG_MULTIRATE, "yL:     ", gbData->yLeft, gbData->nStates, gbData->timeLeft);
-  printVector_gb(LOG_MULTIRATE, "yR:     ", gbData->y, gbData->nStates, gbData->timeRight);
+  infoStreamPrint(LOG_SOLVER_V, 1, "Interpolation values from outer integration:");
+  printVector_gb(LOG_SOLVER_V, "yL", gbData->yLeft, gbData->nStates, gbData->timeLeft);
+  printVector_gb(LOG_SOLVER_V, "kL", gbData->kLeft, gbData->nStates, gbData->timeLeft);
+  printVector_gb(LOG_SOLVER_V, "yR", gbData->yRight, gbData->nStates, gbData->timeRight);
+  printVector_gb(LOG_SOLVER_V, "kR", gbData->kRight, gbData->nStates, gbData->timeRight);
+  messageClose(LOG_SOLVER_V);
 
-  while (gbfData->time < innerTargetTime)
-  {
-    do
-    {
-      printVector_gb(LOG_MULTIRATE, "yOld:     ", gbfData->yOld, gbfData->nStates, gbfData->time);
+  while (gbfData->time < innerTargetTime) {
 
+    // store left hand data for later interpolation
+    gbfData->timeLeft = gbfData->time;
+    memcpy(gbfData->yLeft, gbfData->x, nStates * sizeof(double));
+    memcpy(gbfData->kLeft, gbfData->k, nStates * sizeof(double));
+
+    do {
       // calculate one step of the integrator
       integrator_step_info = gbfData->step_fun(data, threadData, solverInfo);
 
       // error handling: try half of the step size!
-      if (integrator_step_info != 0)
-      {
+      if (integrator_step_info != 0) {
         errorStreamPrint(LOG_STDOUT, 0, "gbodef_main: Failed to calculate step at time = %5g.", gbfData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
         gbfData->stepSize = gbfData->stepSize / 2.;
         continue;
-        // return -1;
       }
 
-      for (i = 0, err=0; i < nFastStates; i++)
-      {
+      for (i = 0, err=0; i < nFastStates; i++) {
         ii = gbfData->fastStates[i];
         // calculate corresponding values for the error estimator and step size control
         gbfData->errtol[ii] = Rtol * fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) + Atol;
@@ -865,20 +872,21 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         gbfData->err[ii] = gbfData->errest[ii] / gbfData->errtol[ii];
         err = fmax(err, gbfData->err[ii]);
       }
-
       err = gbfData->tableau->fac * err;
+
       gbfData->errValues[0] = err;
       gbfData->stepSizeValues[0] = gbfData->stepSize;
 
       // Store performed stepSize for adjusting the time in case of latter interpolation
-      gbfData->lastStepSize = gbfData->stepSize;
-
       // Call the step size control
+      gbfData->lastStepSize = gbfData->stepSize;
       gbfData->stepSize *= gbfData->stepSize_control(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order);
 
       // Re-do step, if error is larger than requested
+      gbfData->stepRejected = FALSE;
       if (err > 1)
       {
+        gbfData->stepRejected = TRUE;
         gbfData->errorTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gbfData->time, gbfData->time + gbfData->lastStepSize, err, gbfData->stepSize);
@@ -889,16 +897,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbfData->stepsDone += 1;
 
     // Rotate ring buffer
-    for (i = 0; i < (gbfData->ringBufferSize - 1); i++)
-    {
+    for (i = 0; i < (gbfData->ringBufferSize - 1); i++) {
       gbfData->errValues[i + 1] = gbfData->errValues[i];
       gbfData->stepSizeValues[i + 1] = gbfData->stepSizeValues[i];
     }
 
-    if (gbfData->type == MS_TYPE_IMPLICIT)
-    {
-      for (int stage_ = 0; stage_ < (gbfData->tableau->nStages - 1); stage_++)
-      {
+    if (gbfData->type == MS_TYPE_IMPLICIT) {
+      for (int stage_ = 0; stage_ < (gbfData->tableau->nStages - 1); stage_++) {
         memcpy(gbfData->k + stage_ * nStates, gbfData->k + (stage_ + 1) * nStates, nStates * sizeof(double));
         memcpy(gbfData->x + stage_ * nStates, gbfData->x + (stage_ + 1) * nStates, nStates * sizeof(double));
       }
@@ -906,8 +911,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
     // interpolate the slow states on the time of the current stage
-    if (gbfData->interpolation == 1)
-    {
+    if (gbfData->interpolation == 1) {
       linear_interpolation_gbf(gbfData->startTime, gbfData->yStart,
                                gbfData->endTime, gbfData->yEnd,
                                gbfData->time, gbfData->yOld,
@@ -957,12 +961,22 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       return 1;
     }
 
+    // debug ring buffer for the states and derviatives of the states
+    infoStreamPrint(LOG_SOLVER_V, 1, "ring buffer during steps of inner integration");
+    infoStreamPrint(LOG_SOLVER_V, 0, "old value:");
+    printVector_gb(LOG_SOLVER_V, "y", gbfData->yOld, nStates, gbfData->time);
+    debugRingBuffer(LOG_SOLVER_V, gbfData->x, gbfData->k, nStates, gbfData->tableau, gbfData->time, gbfData->lastStepSize);
+    infoStreamPrint(LOG_SOLVER_V, 0, "new value:");
+    printVector_gb(LOG_SOLVER_V, "y", gbfData->y, nStates, gbfData->time + gbfData->lastStepSize);
+    messageClose(LOG_SOLVER_V);
+
     /* update time with performed stepSize */
     gbfData->time += gbfData->lastStepSize;
-    printVector_gb(LOG_MULTIRATE, "y:        ", gbfData->y, gbfData->nStates, gbfData->time);
 
-    /* step is accepted and yOld needs to be updated, store yOld for later interpolation... */
-    memcpy(gbfData->yt, gbfData->yOld, nStates);
+    // store right hand values for latter interpolation
+    gbfData->timeRight = gbfData->time;
+    memcpy(gbfData->yRight, gbfData->y, nStates * sizeof(double));
+    memcpy(gbfData->kRight, gbfData->k + gbfData->tableau->nStages * nStates, nStates * sizeof(double));
 
     /* step is accepted and yOld needs to be updated */
     copyVector_gbf(gbfData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
@@ -983,7 +997,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       sim_result.emit(&sim_result, data, threadData);
     }
 
-    // Dont disturb the inner step size control!!
+    // Don't exceed simulation stop time
     if (gbfData->time + gbfData->stepSize > stopTime)
       gbfData->stepSize = stopTime - gbfData->time;
 
@@ -991,56 +1005,23 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // if (gbfData->time + gbfData->stepSize > innerTargetTime)
     //   break;
     gbfData->stepSize_old = gbfData->stepSize;
-    if (gbfData->time + gbfData->stepSize > innerTargetTime)
-    {
+    if (gbfData->time + gbfData->stepSize > innerTargetTime) {
       gbfData->stepSize = innerTargetTime - gbfData->time;
     }
-    if ((innerTargetTime - gbfData->time) < MINIMAL_STEP_SIZE)
-    {
+
+    if ((innerTargetTime - gbfData->time) < MINIMAL_STEP_SIZE) {
       gbfData->time = innerTargetTime;
       break;
     }
   }
-  gbfData->stepSize = gbfData->stepSize_old;
 
   // restore the last predicted step size, only necessary if last step size has been reduced to reach the target time
-  // gbfData->stepSize = gbfData->stepSize_old;
+  gbfData->stepSize = gbfData->stepSize_old;
 
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
   gbData->err_fast = gbfData->errValues[0];
 
-  // outer integration needs to be synchronized
-  //  if ((gbfData->time < gbData->timeRight) && (gbData->timeRight < targetTime))
-  if ((gbfData->time + gbfData->stepSize > gbData->timeRight) ||
-      (gbData->time > targetTime) ||
-      ((gbData->time < targetTime) && (gbData->time + gbData->lastStepSize > targetTime)))
-  {
-    //   // Resetting the time and the integrator is not a good idea!!!!
-    // Just storing the values would be appropriate, integrator should keep their time, and values!!!!
-    // Especially, when it comes to high order integrators
-    //   gbData->lastStepSize = gbfData->time - gbData->timeLeft;
-    //   gbData->timeRight = gbfData->time;
-    //   if (gbData->time > gbData->timeLeft)
-    //     gbData->time = gbfData->time;
-    //   else
-    //     gbData->time = gbData->timeLeft;
-
-    // memcpy(gbData->yOld, gbfData->yt, gbfData->nStates * sizeof(double));
-    memcpy(gbData->y, gbfData->y, gbfData->nStates * sizeof(double));
-    // memcpy(gbData->x, gbfData->x, gbfData->nStates * sizeof(double));
-    memcpy(gbData->x + gbData->tableau->nStages * nStates, gbfData->x + gbfData->tableau->nStages * nStates, gbfData->nStates * sizeof(double));
-    // memcpy(gbData->k, gbfData->k, gbfData->nStates * sizeof(double));
-    memcpy(gbData->k + gbData->tableau->nStages * nStates, gbfData->k + gbfData->tableau->nStages * nStates, gbfData->nStates * sizeof(double));
-
-    // solverInfo->currentTime = eventTime;
-    // sData->timeValue = solverInfo->currentTime;
-    copyVector_gbf(gbData->err, gbfData->err, nFastStates, gbfData->fastStates);
-    // copyVector_gbf(gbData->y, gbfData->y, nFastStates, gbfData->fastStates);
-    // copyVector_gbf(gbData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
-  }
-
-  if (ACTIVE_STREAM(LOG_SOLVER_V))
-  {
+  if (ACTIVE_STREAM(LOG_SOLVER_V)) {
     infoStreamPrint(LOG_SOLVER_V, 1, "gbode call statistics: ");
     infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
     infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gbfData->time);
@@ -1061,15 +1042,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
 
   infoStreamPrint(LOG_SOLVER, 0, "gbodef finished  (inner steps).");
-  if (ACTIVE_STREAM(LOG_MULTIRATE))
-  {
-    printf("\n");
-  }
-
-  if (ACTIVE_STREAM(LOG_SOLVER))
-  {
-    messageClose(LOG_SOLVER);
-  }
 
   return 0;
 }
@@ -1136,9 +1108,12 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   }
 
   // Check if multirate step is necessary, otherwise the correct values are already stored in sData
-  if (gbData->nFastStates > 0 && gbData->gbfData->time < gbData->time)
-    if (gbodef_main(data, threadData, solverInfo, targetTime))
+  if (gbData->nFastStates > 0 && gbData->gbfData->time < gbData->time) {
+    if (gbodef_main(data, threadData, solverInfo, targetTime)) {
+      // get out of here, if an event has happend!
       return 0;
+    }
+  }
 
   /* Main integration loop, if gbData->time already greater than targetTime, only the
      interpolation is necessary for emitting the output variables (see below) */
@@ -1160,7 +1135,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     gb_step_info = gbData->step_fun(data, threadData, solverInfo);
 
     infoStreamPrint(LOG_SOLVER_V, 1, "Approximations after step calculation:");
-    printVector_gb(LOG_SOLVER_V, "y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
+    printVector_gb(LOG_SOLVER_V, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
     printVector_gb(LOG_SOLVER_V, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
     messageClose(LOG_SOLVER_V);
 
@@ -1256,17 +1231,19 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     printVector_gb(LOG_SOLVER_V, "kR", gbData->kRight, nStates, gbData->timeRight);
     messageClose(LOG_SOLVER_V);
 
-    if (gbData->nFastStates > 0)
-    {
-      if (gbodef_main(data, threadData, solverInfo, targetTime))
+    if (gbData->nFastStates > 0) {
+      if (gbodef_main(data, threadData, solverInfo, targetTime)) {
+        // get out of here, if an event has happend!
         return 0;
+      }
+      memcpy(gbData->y, gbData->gbfData->y, gbData->nStates * sizeof(double));
       err = fmax(gbData->err_slow, gbData->err_fast);
     }
 
     // debug ring buffer for the states and derviatives of the states
     infoStreamPrint(LOG_SOLVER_V, 1, "ring buffer during steps of integration");
     infoStreamPrint(LOG_SOLVER_V, 0, "old value:");
-    printVector_gb(LOG_SOLVER_V, "yO", gbData->yOld, nStates, gbData->time);
+    printVector_gb(LOG_SOLVER_V, "y", gbData->yOld, nStates, gbData->time);
     debugRingBuffer(LOG_SOLVER_V, gbData->x, gbData->k, nStates, gbData->tableau, gbData->time, gbData->lastStepSize);
     infoStreamPrint(LOG_SOLVER_V, 0, "new value:");
     printVector_gb(LOG_SOLVER_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
@@ -1312,11 +1289,24 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   if (!solverInfo->integratorSteps) {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
+    solverInfo->currentTime = sData->timeValue;
+
+    // use hermite interpolation for emitting equidistant output
+    hermite_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                              gbData->timeRight, gbData->yRight, gbData->kRight,
+                              sData->timeValue,  sData->realVars,
+                              gbData->nSlowStates, gbData->slowStates);
+    // use hermite interpolation for emitting equidistant output
+    hermite_interpolation_gbf(gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
+                              gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
+                              sData->timeValue,  sData->realVars,
+                              gbData->nFastStates, gbData->fastStates);
+
   } else {
     // Integrator emits result on the simulation grid (see above)
     sData->timeValue = gbData->time;
+    solverInfo->currentTime = sData->timeValue;
   }
-  solverInfo->currentTime = sData->timeValue;
 
   infoStreamPrint(LOG_SOLVER, 0, "finished gb birate step.");
   messageClose(LOG_SOLVER);
@@ -1403,7 +1393,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       gb_step_info = gbData->step_fun(data, threadData, solverInfo);
 
       infoStreamPrint(LOG_SOLVER_V, 1, "Approximations after step calculation:");
-      printVector_gb(LOG_SOLVER_V, "y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
+      printVector_gb(LOG_SOLVER_V, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
       printVector_gb(LOG_SOLVER_V, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
       messageClose(LOG_SOLVER_V);
 
@@ -1445,7 +1435,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       // debug ring buffer for the states and derviatives of the states
       infoStreamPrint(LOG_SOLVER_V, 1, "ring buffer during steps of integration");
       infoStreamPrint(LOG_SOLVER_V, 0, "old value:");
-      printVector_gb(LOG_SOLVER_V, "yO", gbData->yOld, nStates, gbData->time);
+      printVector_gb(LOG_SOLVER_V, "y", gbData->yOld, nStates, gbData->time);
       debugRingBuffer(LOG_SOLVER_V, gbData->x, gbData->k, nStates, gbData->tableau, gbData->time, gbData->lastStepSize);
       infoStreamPrint(LOG_SOLVER_V, 0, "new value:");
       printVector_gb(LOG_SOLVER_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
