@@ -202,6 +202,8 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   if (gbData->multi_rate) {
     gbData->gbfData->didEventStep = TRUE;
     gbData->gbfData->time = gbData->time;
+    memcpy(gbData->gbfData->yRight, sData->realVars, nStates*sizeof(double));
+    memcpy(gbData->gbfData->kRight, fODE, nStates*sizeof(double));
     for (stage_=0; stage_<= gbData->gbfData->tableau->nStages; stage_++) {
       memcpy(gbData->gbfData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
       memcpy(gbData->gbfData->k + stage_ * nStates, fODE, nStates*sizeof(double));

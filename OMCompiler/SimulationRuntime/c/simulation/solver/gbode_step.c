@@ -304,12 +304,12 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     memcpy(gbData->nlsxRight, gbData->x + nStages * nStates, nStates*sizeof(double));
     memcpy(gbData->nlskRight, gbData->k + nStages * nStates, nStates*sizeof(double));
 
-    infoStreamPrint(LOG_SOLVER_V, 1, "NLS - used values for extrapolation:");
-    printVector_gb(LOG_SOLVER_V, "xL", gbData->nlsxLeft, nStates, gbData->time - gbData->lastStepSize);
-    printVector_gb(LOG_SOLVER_V, "kL", gbData->nlskLeft, nStates, gbData->time - gbData->lastStepSize);
-    printVector_gb(LOG_SOLVER_V, "xR", gbData->nlsxRight, nStates, gbData->time);
-    printVector_gb(LOG_SOLVER_V, "kR", gbData->nlskRight, nStates, gbData->time);
-    messageClose(LOG_SOLVER_V);
+    infoStreamPrint(LOG_M_NLS, 1, "NLS - used values for extrapolation:");
+    printVector_gb(LOG_M_NLS, "xL", gbData->nlsxLeft, nStates, gbData->time - gbData->lastStepSize);
+    printVector_gb(LOG_M_NLS, "kL", gbData->nlskLeft, nStates, gbData->time - gbData->lastStepSize);
+    printVector_gb(LOG_M_NLS, "xR", gbData->nlsxRight, nStates, gbData->time);
+    printVector_gb(LOG_M_NLS, "kR", gbData->nlskRight, nStates, gbData->time);
+    messageClose(LOG_M_NLS);
     for(int i=0; i<nStates; i++) {
       // Get the nominal values of the states
         gbData->nlsData->nominal[i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->nlsxRight[i]), 1e-32);
@@ -391,10 +391,10 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         solved = solveNLS(data, threadData, nlsData, -1);
       }
 
-      infoStreamPrint(LOG_SOLVER_V, 1, "NLS - start values and solution of the NLS:");
-      printVector_gb(LOG_SOLVER_V, "xS", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-      printVector_gb(LOG_SOLVER_V, "xL", nlsData->nlsx,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-      messageClose(LOG_SOLVER_V);
+      infoStreamPrint(LOG_M_NLS, 1, "NLS - start values and solution of the NLS:");
+      printVector_gb(LOG_M_NLS, "xS", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      printVector_gb(LOG_M_NLS, "xL", nlsData->nlsx,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      messageClose(LOG_M_NLS);
 
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
@@ -464,12 +464,12 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     memcpy(gbData->nlsxRight, gbfData->x + nStages * nStates, nStates*sizeof(double));
     memcpy(gbData->nlskRight, gbfData->k + nStages * nStates, nStates*sizeof(double));
 
-    infoStreamPrint(LOG_SOLVER_V, 1, "NLS - used values for extrapolation:");
-    printVector_gb(LOG_SOLVER_V, "xL", gbData->nlsxLeft, nStates, gbfData->time - gbfData->lastStepSize);
-    printVector_gb(LOG_SOLVER_V, "kL", gbData->nlskLeft, nStates, gbfData->time - gbfData->lastStepSize);
-    printVector_gb(LOG_SOLVER_V, "xR", gbData->nlsxRight, nStates, gbfData->time);
-    printVector_gb(LOG_SOLVER_V, "kR", gbData->nlskRight, nStates, gbfData->time);
-    messageClose(LOG_SOLVER_V);
+    infoStreamPrint(LOG_M_NLS, 1, "NLS - used values for extrapolation:");
+    printVector_gb(LOG_M_NLS, "xL", gbData->nlsxLeft, nStates, gbfData->time - gbfData->lastStepSize);
+    printVector_gb(LOG_M_NLS, "kL", gbData->nlskLeft, nStates, gbfData->time - gbfData->lastStepSize);
+    printVector_gb(LOG_M_NLS, "xR", gbData->nlsxRight, nStates, gbfData->time);
+    printVector_gb(LOG_M_NLS, "kR", gbData->nlskRight, nStates, gbfData->time);
+    messageClose(LOG_M_NLS);
     for(int i=0; i<nStates; i++) {
       // Get the nominal values of the states
         gbfData->nlsData->nominal[i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->nlsxRight[i]), 1e-32);
@@ -547,10 +547,10 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
         solved = solveNLS(data, threadData, nlsData, -1);
       }
 
-      infoStreamPrint(LOG_SOLVER_V, 1, "NLS - start values and solution of the NLS:");
-      printVector_gb(LOG_SOLVER_V, "xS", nlsData->nlsxExtrapolation, nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
-      printVector_gb(LOG_SOLVER_V, "xL", nlsData->nlsx,              nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
-      messageClose(LOG_SOLVER_V);
+      infoStreamPrint(LOG_M_NLS, 1, "NLS - start values and solution of the NLS:");
+      printVector_gb(LOG_M_NLS, "xS", nlsData->nlsxExtrapolation, nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+      printVector_gb(LOG_M_NLS, "xL", nlsData->nlsx,              nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+      messageClose(LOG_M_NLS);
 
       if (!solved) {
         errorStreamPrint(LOG_STDOUT, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
@@ -622,12 +622,12 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   modelica_boolean solved = FALSE;
 
   // NLS - used values for extrapolation
-  infoStreamPrint(LOG_SOLVER_V, 1, "NLS - used values for extrapolation:");
-  printVector_gb(LOG_SOLVER_V, "xL", gbData->x, nStates, gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize);
-  printVector_gb(LOG_SOLVER_V, "kL", gbData->k, nStates, gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize);
-  printVector_gb(LOG_SOLVER_V, "xR", gbData->x + nStages * nStates, nStates, gbData->time);
-  printVector_gb(LOG_SOLVER_V, "kR", gbData->k + nStages * nStates, nStates, gbData->time);
-  messageClose(LOG_SOLVER_V);
+  infoStreamPrint(LOG_M_NLS, 1, "NLS - used values for extrapolation:");
+  printVector_gb(LOG_M_NLS, "xL", gbData->x, nStates, gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize);
+  printVector_gb(LOG_M_NLS, "kL", gbData->k, nStates, gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize);
+  printVector_gb(LOG_M_NLS, "xR", gbData->x + nStages * nStates, nStates, gbData->time);
+  printVector_gb(LOG_M_NLS, "kR", gbData->k + nStages * nStates, nStates, gbData->time);
+  messageClose(LOG_M_NLS);
 
   /* Set start values for non-linear solver */
   for (stage_=0; stage_<nStages; stage_++) {
@@ -664,13 +664,13 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     solved = solveNLS(data, threadData, nlsData, -1);
   }
 
-  if (ACTIVE_STREAM(LOG_SOLVER_V)) {
-    infoStreamPrint(LOG_SOLVER_V, 1, "NLS - start values and solution of the NLS:");
+  if (ACTIVE_STREAM(LOG_M_NLS)) {
+    infoStreamPrint(LOG_M_NLS, 1, "NLS - start values and solution of the NLS:");
     for (stage_=0; stage_<nStages; stage_++) {
-      printVector_gb(LOG_SOLVER_V, "xS", nlsData->nlsxExtrapolation + stage_*nStates, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-      printVector_gb(LOG_SOLVER_V, "xL", nlsData->nlsx + stage_*nStates,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      printVector_gb(LOG_M_NLS, "xS", nlsData->nlsxExtrapolation + stage_*nStates, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      printVector_gb(LOG_M_NLS, "xL", nlsData->nlsx + stage_*nStates,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
     }
-    messageClose(LOG_SOLVER_V);
+    messageClose(LOG_M_NLS);
   }
 
   if (!solved) {

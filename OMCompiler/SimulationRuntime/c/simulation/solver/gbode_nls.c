@@ -530,9 +530,9 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
   for (i=0; i<nStates; i++) {
     res[i] = gbData->res_const[i] - xloc[i] + gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
-  infoStreamPrint(LOG_SOLVER_V, 1, "NLS - residual:");
-  printVector_gb(LOG_SOLVER_V, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-  messageClose(LOG_SOLVER_V);
+  infoStreamPrint(LOG_M_NLS, 1, "NLS - residual:");
+  printVector_gb(LOG_M_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+  messageClose(LOG_M_NLS);
 
   return;
 }
@@ -584,11 +584,11 @@ void residual_IRK(void **dataIn, const double *xloc, double *res, const int *ifl
     }
   }
 
-  infoStreamPrint(LOG_SOLVER_V, 1, "NLS - residual:");
+  infoStreamPrint(LOG_M_NLS, 1, "NLS - residual:");
   for (stage=0; stage<nStages; stage++) {
-    printVector_gb(LOG_SOLVER_V, "r", res + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
+    printVector_gb(LOG_M_NLS, "r", res + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
   }
-  messageClose(LOG_SOLVER_V);
+  messageClose(LOG_M_NLS);
 
 
   return;
