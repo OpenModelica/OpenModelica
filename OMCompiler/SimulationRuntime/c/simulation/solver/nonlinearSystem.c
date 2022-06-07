@@ -353,6 +353,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   int i,j;
   int size, nnz;
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
+  ANALYTIC_JACOBIAN* jacobian;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
   modelica_boolean someSmallDensity = 0;  /* pretty dumping of flag info */
@@ -388,12 +389,15 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     /* check if analytical jacobian is created */
     if(nonlinsys[i].jacobianIndex != -1)
     {
-      ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[nonlinsys[i].jacobianIndex]);
+      jacobian = &(data->simulationInfo->analyticJacobians[nonlinsys[i].jacobianIndex]);
       assertStreamPrint(threadData, 0 != nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       if(nonlinsys[i].initialAnalyticalJacobian(data, threadData, jacobian))
       {
         nonlinsys[i].jacobianIndex = -1;
+        jacobian = NULL;
       }
+    } else {
+      jacobian = NULL;
     }
 
     /* allocate system data */
@@ -505,12 +509,9 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     case NLS_KINSOL:
       solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        // Try without homotopy not supported for kinsol
-        // nlsKinsolAllocate(size-1, &nonlinsys[i], data->simulationInfo->nlsLinearSolver);
-        // solverData->ordinaryData = nonlinsys[i].solverData;
         allocateHomotopyData(size-1, &(solverData->initHomotopyData));
       } else {
-        nlsKinsolAllocate(size, &nonlinsys[i], nonlinsys[i].nlsLinearSolver);
+        nlsKinsolAllocate(data, threadData, size, i, &nonlinsys[i], jacobian, nonlinsys[i].nlsLinearSolver);
         solverData->ordinaryData = nonlinsys[i].solverData;
       }
       nonlinsys[i].solverData = (void*) solverData;
@@ -909,7 +910,7 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
     #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
     #endif
-    success = nlsKinsolSolve(data, threadData, sysNumber);
+    success = nlsKinsolSolve(data, threadData, nonlinsys);
     /*catch */
     #ifndef OMC_EMCC
       MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -1073,7 +1074,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /* performance measurement */
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Nonlinear system %lld dump LOG_NLS_EXTRAPOLATE", nonlinsys->equationIndex);
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Nonlinear system %ld dump LOG_NLS_EXTRAPOLATE", nonlinsys->equationIndex);
   /* grab the initial guess */
   /* if last solving is too long ago use just old values  */
   if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize || casualTearingSet)
@@ -1092,7 +1093,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   }
 
   /* print debug initial information */
-  infoStreamPrint(LOG_NLS, 1, "############ Solve nonlinear system %lld at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
+  infoStreamPrint(LOG_NLS, 1, "############ Solve nonlinear system %ld at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
   printNonLinearInitialInfo(LOG_NLS, data, nonlinsys);
 
   /* try */

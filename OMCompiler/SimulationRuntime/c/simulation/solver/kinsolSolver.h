@@ -38,6 +38,7 @@
 extern "C" {
 #endif
 
+#include "simulation_data.h"
 #include "sundials_error.h"
 #include "simulation_data.h"
 #include "util/simulation_options.h"
@@ -76,7 +77,9 @@ typedef struct NLS_KINSOL_USERDATA {
   DATA *data;
   threadData_t *threadData;
 
-  int sysNumber;
+  int sysNumber;                        /* System index, for print messages only */
+  NONLINEAR_SYSTEM_DATA* nlsData;       /* Pointer to nonlinear system data */
+  ANALYTIC_JACOBIAN* analyticJacobian;  /* Pointer to analytic Jacobian */
 } NLS_KINSOL_USERDATA;
 
 typedef struct NLS_KINSOL_DATA {
@@ -124,10 +127,9 @@ typedef struct NLS_KINSOL_DATA {
 
 } NLS_KINSOL_DATA;
 
-int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nonlinsys,
-                      NLS_LS linearSolverMethod);
+int nlsKinsolAllocate(DATA *data, threadData_t *threadData, int size, unsigned int sysNumber, NONLINEAR_SYSTEM_DATA *nlsData, ANALYTIC_JACOBIAN* analyticJacobian, NLS_LS linearSolverMethod);
 int nlsKinsolFree(void **solverData);
-int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber);
+int nlsKinsolSolve(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 
 #ifdef __cplusplus
 };
