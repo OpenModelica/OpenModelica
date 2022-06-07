@@ -248,7 +248,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_IRKSCO:
   {
-    allocateIrksco(solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
+    allocateIrksco(data, threadData, solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
     break;
   }
   case S_ERKSSC:

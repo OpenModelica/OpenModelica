@@ -259,7 +259,7 @@ static void resetKinsolMemory(DATA *data,
 int nlsKinsolAllocate(DATA *data,
                       threadData_t *threadData,
                       int size,
-                      unsigned int sysNumber,
+                      int sysNumber,
                       NONLINEAR_SYSTEM_DATA *nlsData,
                       ANALYTIC_JACOBIAN* analyticJacobian,
                       NLS_LS linearSolverMethod) {
@@ -641,7 +641,6 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   analyticJacobian = kinsolUserData->analyticJacobian;
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;
-  // TODO AHeu: Uncomment
   assertStreamPrint(threadData, nlsData->jacobianIndex >= 0, "Jacobian index of non-linear system %d is negative.", kinsolUserData->sysNumber);
 
   /* Access N_Vector variables */
@@ -1292,7 +1291,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* 
 
 #else /* WITH_SUNDIALS */
 
-int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, ANALYTIC_JACOBIAN* analyticJacobian, int linearSolverMethod) {
+int nlsKinsolAllocate(DATA *data, threadData_t *threadData, int size, int sysNumber, NONLINEAR_SYSTEM_DATA *nlsData, ANALYTIC_JACOBIAN* analyticJacobian, NLS_LS linearSolverMethod) {
 
   throwStreamPrint(NULL, "No sundials/kinsol support activated.");
   return 0;

@@ -127,7 +127,7 @@ typedef struct NLS_KINSOL_DATA {
 
 } NLS_KINSOL_DATA;
 
-int nlsKinsolAllocate(DATA *data, threadData_t *threadData, int size, unsigned int sysNumber, NONLINEAR_SYSTEM_DATA *nlsData, ANALYTIC_JACOBIAN* analyticJacobian, NLS_LS linearSolverMethod);
+int nlsKinsolAllocate(DATA *data, threadData_t *threadData, int size, int sysNumber, NONLINEAR_SYSTEM_DATA *nlsData, ANALYTIC_JACOBIAN* analyticJacobian, NLS_LS linearSolverMethod);
 int nlsKinsolFree(void **solverData);
 int nlsKinsolSolve(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 

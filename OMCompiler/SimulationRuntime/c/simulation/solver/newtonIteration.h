@@ -41,6 +41,15 @@
 extern "C" {
 #endif
 
+typedef struct NLS_NEWTON_USERDATA {
+  DATA* data;
+  threadData_t *threadData;
+
+  int sysNumber;                        /* System index, for print messages only */
+  NONLINEAR_SYSTEM_DATA* nlsData;       /* Pointer to nonlinear system data */
+  ANALYTIC_JACOBIAN* analyticJacobian;  /* Pointer to analytic Jacobian */
+} NLS_NEWTON_USERDATA;
+
 /**
  * @brief Struct containing information about equation system to be solved with Newton-Raphson method.
  */
@@ -77,14 +86,19 @@ typedef struct DATA_NEWTON
   double* delta_f;
   double* delta_x_vec;
 
-   rtclock_t timeClock;
+  rtclock_t timeClock;
+
+  NLS_NEWTON_USERDATA userData;
 
 } DATA_NEWTON;
 
+/* Typedef */
+typedef int (genericResidualFunc)(int n, double* x, double* fvec, void* userData, int fj);
 
-DATA_NEWTON* allocateNewtonData(int size);
+
+DATA_NEWTON* allocateNewtonData(DATA *data, threadData_t *threadData, int size, int sysNumber, NONLINEAR_SYSTEM_DATA *nlsData, ANALYTIC_JACOBIAN* analyticJacobian);
 void freeNewtonData(DATA_NEWTON* newtonData);
-int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solverData, void* userdata);
+int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData);
 
 #ifdef __cplusplus
 }

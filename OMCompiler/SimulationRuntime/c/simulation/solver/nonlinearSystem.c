@@ -519,10 +519,10 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     case NLS_NEWTON:
       solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        solverData->ordinaryData =  allocateNewtonData(size-1);
+        solverData->ordinaryData =  allocateNewtonData(data, threadData, size-1, i, &nonlinsys[i], jacobian);
         allocateHomotopyData(size-1, &(solverData->initHomotopyData));
       } else {
-        solverData->ordinaryData = allocateNewtonData(size);
+        solverData->ordinaryData = allocateNewtonData(data, threadData, size, i, &nonlinsys[i], jacobian);
       }
       nonlinsys[i].solverData = (void*) solverData;
       break;
@@ -924,7 +924,7 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
     #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
     #endif
-    success = solveNewton(data, threadData, sysNumber);
+    success = solveNewton(data, threadData, nonlinsys);
     /*catch */
     #ifndef OMC_EMCC
       MMC_CATCH_INTERNAL(simulationJumpBuffer)
