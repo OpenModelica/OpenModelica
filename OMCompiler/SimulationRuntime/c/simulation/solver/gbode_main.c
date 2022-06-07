@@ -1002,15 +1002,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       gbfData->stepSize = stopTime - gbfData->time;
 
     // Dont disturb the inner step size control!!
-    // if (gbfData->time + gbfData->stepSize > innerTargetTime)
-    //   break;
     gbfData->stepSize_old = gbfData->stepSize;
-    if (gbfData->time + gbfData->stepSize > innerTargetTime) {
-      gbfData->stepSize = innerTargetTime - gbfData->time;
+    if (gbfData->time + gbfData->stepSize > gbData->timeRight) {
+      gbfData->stepSize = gbData->timeRight - gbfData->time;
     }
 
-    if ((innerTargetTime - gbfData->time) < MINIMAL_STEP_SIZE) {
-      gbfData->time = innerTargetTime;
+    if ((gbData->timeRight - gbfData->time) < MINIMAL_STEP_SIZE) {
+      gbfData->time = gbData->timeRight;
       break;
     }
   }
