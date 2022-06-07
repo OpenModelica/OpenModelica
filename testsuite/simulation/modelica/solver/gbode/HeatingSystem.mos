@@ -48,7 +48,7 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-8,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
+system("./HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-14,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
 print(readFile("HeatingSystem_fehlberg78.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",

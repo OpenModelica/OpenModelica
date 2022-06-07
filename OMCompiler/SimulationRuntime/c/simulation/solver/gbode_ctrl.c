@@ -43,6 +43,9 @@ double getErrorThreshold(DATA_GBODE* gbData)
 {
   int i, j, temp;
 
+  if (gbData->percentage == 1)
+    return -1;
+
   for (i = 0;  i < gbData->nStates - 1; i++)
   {
     for (j = 0; j < gbData->nStates - i - 1; j++)

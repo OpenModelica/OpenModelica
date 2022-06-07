@@ -218,6 +218,9 @@ void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, doubl
  */
 void printIntVector_gb(enum LOG_STREAM stream, char name[], int* a, int n, double time) {
 
+  // If stream is not active do nothing
+  if (!ACTIVE_STREAM(stream)) return;
+
   char row_to_print[1024];
   sprintf(row_to_print, "%s\t(time = %g): \n", name, time);
   for (int i=0;i<n;i++)
@@ -255,11 +258,18 @@ void printMatrix_gb(char name[], double* a, int n, double time) {
  * @param indx    Index vector
  */
 
-void printVector_gbf(char name[], double* a, int n, double time, int nIndx, int* indx) {
-  printf("%s\t(time = %14.8g):", name, time);
+void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, double time, int nIndx, int* indx) {
+
+  // If stream is not active do nothing
+  if (!ACTIVE_STREAM(stream)) return;
+
+  // BB ToDo: This only works for number of states less than 10!
+  // For large arrays, this is not a good output format!
+  char row_to_print[40960];
+  sprintf(row_to_print, "%s(%10g) =\t", name, time);
   for (int i=0;i<nIndx;i++)
-    printf("%16.12g ", a[indx[i]]);
-  printf("\n");
+    sprintf(row_to_print, "%s %20.12g", row_to_print, a[indx[i]]);
+  infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
 /**

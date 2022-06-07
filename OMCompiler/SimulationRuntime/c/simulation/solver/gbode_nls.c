@@ -534,7 +534,6 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
   printVector_gb(LOG_SOLVER_V, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
   messageClose(LOG_SOLVER_V);
 
-
   return;
 }
 
