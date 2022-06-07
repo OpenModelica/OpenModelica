@@ -412,10 +412,10 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   }
 #endif
 
-  /* check if the system is sparse enough to use kinsol
-      it is considered sparse if
-        * the density (nnz/size^2) is less than a threshold or
-        * the size is bigger than a threshold */
+  /* Check if the system is sparse enough to use kinsol.
+   * It is considered sparse if
+   * the density (nnz/size^2) is less than a threshold or
+   * the size is bigger than a threshold */
   nonlinsys->nlsMethod = data->simulationInfo->nlsMethod;
   nonlinsys->nlsLinearSolver = data->simulationInfo->nlsLinearSolver;
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -473,8 +473,6 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
       allocateHomotopyData(size-1, &(solverData->initHomotopyData));
     } else {
       nonlinsys->solverData = (void*) nlsKinsolAllocate(data, threadData, size, sysNum, nonlinsys, jacobian, nonlinsys->nlsLinearSolver);
-      // TODO AHeu: Where does resetKinsolMemory kome from?
-      // resetKinsolMemory(nonlinsys->solverData, nonlinsys->sparsePattern->numberOfNonZeros, nonlinsys->analyticalJacobianColumn);
       solverData->ordinaryData = nonlinsys->solverData;
     }
     nonlinsys->solverData = (void*) solverData;
@@ -515,13 +513,15 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   return;
 }
 
-
-
-/*! \fn int initializeNonlinearSystems(DATA *data)
+/**
+ * @brief Initialize all non-linear systems.
  *
- *  This function allocates memory for all nonlinear systems.
+ * Loop over all non-linear systems and call initializeNonlinearSystemData.
+ * Memory for data->simulationInfo->nonlinearSystemData is already allocated.
  *
- *  \param [ref] [data]
+ * @param data          Runtime data struct.
+ * @param threadData    Thread data for error handling.
+ * @return int          Return 0 on success.
  */
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
