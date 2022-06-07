@@ -55,13 +55,14 @@
 #include <string.h>
 
 /* Function prototypes */
-static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData);
+static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData);
 static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
-                        void *userData, N_Vector tmp1, N_Vector tmp2);
+                        void* userData, N_Vector tmp1, N_Vector tmp2);
 int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
-                    void *userData, N_Vector tmp1, N_Vector tmp2);
-static int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
-                       void *userData, N_Vector tmp1, N_Vector tmp2);
+                    void* userData, N_Vector tmp1, N_Vector tmp2);
+static int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX,
+                       SUNMatrix Jac, NLS_KINSOL_USERDATA *kinsolUserData,
+                       N_Vector tmp1, N_Vector tmp2);
 static void nlsKinsolJacSumSparse(SUNMatrix A);
 static void nlsKinsolJacSumDense(SUNMatrix A);
 
@@ -301,7 +302,7 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(DATA *data,
 void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData) {
   KINFree((void *)&kinsolData->kinsolMemory);
 
-  N_VDestroy_Serial(kinsolData->initialGuess);   /* TODO: Or was N_VDestroy_Serial correct? It won't free internal data */
+  N_VDestroy_Serial(kinsolData->initialGuess);
   N_VDestroy_Serial(kinsolData->xScale);
   N_VDestroy_Serial(kinsolData->fScale);
   N_VDestroy_Serial(kinsolData->fRes);
@@ -318,14 +319,14 @@ void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData) {
 }
 
 /**
- * @brief System function for non-linear problem.
+ * @brief Residual function for non-linear problem.
  *
- * @param x           The current value of the variable vector.
- * @param f           Output vector.
- * @param userData    Pointer to user data.
- * @return int
+ * @param x         The current value of the variable vector.
+ * @param f         Output vector.
+ * @param userData  Pointer to Kinsol user data.
+ * @return int      Return 0 on success, return 1 on recoverable error.
  */
-static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData) {
+static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
   double *xdata = NV_DATA_S(x);
   double *fdata = NV_DATA_S(f);
 
@@ -355,12 +356,25 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData) {
   return iflag;
 }
 
-/*
- *  function calculates a jacobian matrix
+/**
+ * @brief Calculate dense Jacobian matrix.
+ *
+ * @param N               Size of vecX and vecFX.
+ * @param vecX            Vector x.
+ * @param vecFX           Residual vector f(x).
+ * @param Jac             Jacobian matrix J(x).
+ * @param kinsolUserData  Pointer to Kinsol user data.
+ * @param tmp1            Work vector.
+ * @param tmp2            Work vector.
+ * @return int            Return 0 on success.
  */
-static int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
-                       void *userData, N_Vector tmp1, N_Vector tmp2) {
-  NLS_KINSOL_USERDATA *kinsolUserData = (NLS_KINSOL_USERDATA *)userData;
+static int nlsDenseJac(long int N,
+                       N_Vector vecX,
+                       N_Vector vecFX,
+                       SUNMatrix Jac,
+                       NLS_KINSOL_USERDATA *kinsolUserData,
+                       N_Vector tmp1,
+                       N_Vector tmp2) {
   DATA *data = kinsolUserData->data;
   threadData_t *threadData = kinsolUserData->threadData;
   NONLINEAR_SYSTEM_DATA *nlsData = kinsolUserData->nlsData;
@@ -390,7 +404,7 @@ static int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
     x[i] += delta_hh;
 
     /* Evaluate Jacobian function */
-    nlsKinsolResiduals(vecX, kinsolData->fRes, userData);
+    nlsKinsolResiduals(vecX, kinsolData->fRes, kinsolUserData);
 
     /* Calculate scaled difference quotient */
     delta_hh = 1.0 / delta_hh;
@@ -1028,11 +1042,11 @@ static void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData,
 /**
  * @brief Try to handle errors of KINSol().
  *
- * @param errorCode
- * @param data
- * @param nlsData
- * @param kinsolData
- * @return int
+ * @param errorCode   Error code from KINSOL.
+ * @param data        Pointer to data struct.
+ * @param nlsData     Non-linear solver data.
+ * @param kinsolData  Kinsol data.
+ * @return int        ???
  */
 static int nlsKinsolErrorHandler(int errorCode, DATA *data,
                                  NONLINEAR_SYSTEM_DATA *nlsData,
@@ -1185,14 +1199,23 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
   return retValue + retValue2;
 }
 
-int nlsKinsolSolve(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
+/**
+ * @brief Solve non-linear system with KINSol
+ *
+ * @param data                Runtime data struct.
+ * @param threadData          Thread data for error handling.
+ * @param nlsData             Pointer to non-linear system data.
+ * @param sysNumber           Non-linear system number.
+ * @return modelica_boolean   Return true on success and false otherwise.
+ */
+modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData, int sysNumber) {
 
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   int indexes[2] = {1, nlsData->equationIndex};
 
   int flag;
   long nFEval;
-  int success = 0;
+  modelica_boolean success = FALSE;
   int retry = 0;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double fNormValue;
@@ -1238,7 +1261,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* 
     /* solution found */
     if ((flag == KIN_SUCCESS) || (flag == KIN_INITIAL_GUESS_OK) ||
         (flag == KIN_STEP_LT_STPTOL)) {
-      success = 1;
+      success = TRUE;
     }
     kinsolData->retries++;
 
@@ -1269,7 +1292,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* 
     if (FTOL_WITH_LESS_ACCURACY < fNormValue) {
       warningStreamPrint(LOG_NLS_V, 0,
                          "False positive solution. FNorm is not small enough.");
-      success = 0;
+      success = FALSE;
     } else { /* solved system for reuse linear solver information */
       kinsolData->solved = 1;
     }
