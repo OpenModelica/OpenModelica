@@ -82,8 +82,8 @@ typedef struct DATA_NEWTON
 } DATA_NEWTON;
 
 
-int allocateNewtonData(int size, void** data);
-int freeNewtonData(void** data);
+DATA_NEWTON* allocateNewtonData(int size);
+void freeNewtonData(DATA_NEWTON* newtonData);
 int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solverData, void* userdata);
 
 #ifdef __cplusplus

@@ -79,73 +79,70 @@ extern void dgetrs_(char *trans, int *n, int *nrhs, doublereal *a, int *lda, int
 #endif
 
 
-/*! \fn allocateNewtonData
- * allocate memory for nonlinear system solver
+/**
+ * @brief Allocate NLS Newton data.
+ *
+ * @param size            Size of non-linear system.
+ * @return DATA_NEWTON*   Allocated memory.
  */
-int allocateNewtonData(int size, void** voiddata)
+DATA_NEWTON* allocateNewtonData(int size)
 {
-  DATA_NEWTON* data = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
+  DATA_NEWTON* newtonData = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
+  assertStreamPrint(NULL, NULL != newtonData, "allocationNewtonData() failed. Out of memory.");
 
-  *voiddata = (void*)data;
-  assertStreamPrint(NULL, NULL != data, "allocationNewtonData() failed!");
+  newtonData->resScaling = (double*) malloc(size*sizeof(double));
+  newtonData->fvecScaled = (double*) malloc(size*sizeof(double));
 
-  data->resScaling = (double*) malloc(size*sizeof(double));
-  data->fvecScaled = (double*) malloc(size*sizeof(double));
+  newtonData->n = size;
+  newtonData->x = (double*) malloc((size+1)*sizeof(double));
+  newtonData->fvec = (double*) calloc(size,sizeof(double));
+  newtonData->xtol = 1e-6;
+  newtonData->ftol = 1e-6;
+  newtonData->maxfev = size*100;
+  newtonData->epsfcn = DBL_EPSILON;
+  newtonData->fjac = (double*) malloc((size*(size+1))*sizeof(double));
 
-  data->n = size;
-  data->x = (double*) malloc((size+1)*sizeof(double));
-  data->fvec = (double*) calloc(size,sizeof(double));
-  data->xtol = 1e-6;
-  data->ftol = 1e-6;
-  data->maxfev = size*100;
-  data->epsfcn = DBL_EPSILON;
-  data->fjac = (double*) malloc((size*(size+1))*sizeof(double));
-
-  data->rwork = (double*) malloc((size)*sizeof(double));
-  data->iwork = (int*) malloc(size*sizeof(int));
+  newtonData->rwork = (double*) malloc((size)*sizeof(double));
+  newtonData->iwork = (int*) malloc(size*sizeof(int));
 
   /* damped newton */
-  data->x_new = (double*) malloc((size+1)*sizeof(double));
-  data->x_increment = (double*) malloc(size*sizeof(double));
-  data->f_old = (double*) calloc(size,sizeof(double));
-  data->fvec_minimum = (double*) calloc(size,sizeof(double));
-  data->delta_f = (double*) calloc(size,sizeof(double));
-  data->delta_x_vec = (double*) calloc(size,sizeof(double));
+  newtonData->x_new = (double*) malloc((size+1)*sizeof(double));
+  newtonData->x_increment = (double*) malloc(size*sizeof(double));
+  newtonData->f_old = (double*) calloc(size,sizeof(double));
+  newtonData->fvec_minimum = (double*) calloc(size,sizeof(double));
+  newtonData->delta_f = (double*) calloc(size,sizeof(double));
+  newtonData->delta_x_vec = (double*) calloc(size,sizeof(double));
 
-  data->factorization = 0;
-  data->calculate_jacobian = 1;
-  data->numberOfIterations = 0;
-  data->numberOfFunctionEvaluations = 0;
+  newtonData->factorization = 0;
+  newtonData->calculate_jacobian = 1;
+  newtonData->numberOfIterations = 0;
+  newtonData->numberOfFunctionEvaluations = 0;
 
-  return 0;
+  return newtonData;
 }
 
-/*! \fn freeNewtonData
+/**
+ * @brief Free NLS Newton data.
  *
- * free memory for nonlinear solver newton
- *
+ * @param newtonData  Pointer to Newton data.
  */
-int freeNewtonData(void **voiddata)
+void freeNewtonData(DATA_NEWTON* newtonData)
 {
-  DATA_NEWTON* data = (DATA_NEWTON*) *voiddata;
-
-  free(data->resScaling);
-  free(data->fvecScaled);
-  free(data->x);
-  free(data->fvec);
-  free(data->fjac);
-  free(data->rwork);
-  free(data->iwork);
+  free(newtonData->resScaling);
+  free(newtonData->fvecScaled);
+  free(newtonData->x);
+  free(newtonData->fvec);
+  free(newtonData->fjac);
+  free(newtonData->rwork);
+  free(newtonData->iwork);
 
   /* damped newton */
-  free(data->x_new);
-  free(data->x_increment);
-  free(data->f_old);
-  free(data->fvec_minimum);
-  free(data->delta_f);
-  free(data->delta_x_vec);
-
-  return 0;
+  free(newtonData->x_new);
+  free(newtonData->x_increment);
+  free(newtonData->f_old);
+  free(newtonData->fvec_minimum);
+  free(newtonData->delta_f);
+  free(newtonData->delta_x_vec);
 }
 
 /**
