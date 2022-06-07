@@ -242,16 +242,19 @@ static void resetKinsolMemory(DATA *data,
 }
 
 /**
- * @brief Allocate memory for kinsol solver data and initialize KINSOL solver
+ * @brief Allocate memory for kinsol solver data and initialize KINSOL solver.
+ *
+ * Initialize nlsData->solverData with NLS_KINSOL_DATA struct.
  *
  * @param data                  Pointer to data struct.
  * @param threadData            Pointer to thread data.
  * @param size                  Size of non-linear problem.
  * @param sysNumber             Index of non-linear system.
  * @param nlsData               Pointer to non-linear system data.
+ *                              Initialized KINSOL memory in nlsData->solverData on exit.
  * @param analyticJacobian      Pointer to analytic Jacobian.
  * @param linearSolverMethod    Linear solver method.
- * @return int
+ * @return int                  Return 0 on success.
  */
 int nlsKinsolAllocate(DATA *data,
                       threadData_t *threadData,
