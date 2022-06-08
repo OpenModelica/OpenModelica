@@ -31,6 +31,7 @@
 /*! \file gbode_events.c
  */
 
+#include "gbode_main.h"
 #include "simulation_data.h"
 #include "external_input.h"
 #include "solver_main.h"
@@ -53,9 +54,14 @@ int checkZeroCrossings(DATA *data, LIST *list, LIST*);
  *
  *  Method to find root in interval [oldTime, timeValue]
  */
-void bisection_gb(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
+void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
 {
   TRACE_PUSH
+
+  DATA_GBODE *gbData = (DATA_GBODE *)solverInfo->solverData;
+
+  int gb_step_info;
+  double timeValue, *y;
 
   double TTOL = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE*fabs(*b-*a); /* absTol + relTol*abs(b-a) */
   double c;
@@ -71,12 +77,29 @@ void bisection_gb(DATA* data, threadData_t *threadData, double* a, double* b, do
   while(fabs(*b - *a) > MINIMAL_STEP_SIZE && n-- > 0)
   {
     c = 0.5 * (*a + *b);
-    data->localData[0]->timeValue = c;
 
     /*calculates states at time c */
+    if (gbData->multi_rate) {
+      gbData->gbfData->stepSize = c - gbData->gbfData->time;
+      gb_step_info = gbData->gbfData->step_fun(data, threadData, solverInfo);
+      y = gbData->gbfData->y;
+    } else {
+      gbData->stepSize = c - gbData->time;
+      gb_step_info = gbData->step_fun(data, threadData, solverInfo);
+      y = gbData->y;
+    }
+
+    // error handling: try half of the step size!
+    if (gb_step_info != 0)
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "gbode_event: Failed to calculate event time = %5g.", c);
+      exit(1);
+    }
+
+    data->localData[0]->timeValue = c;
     for(i=0; i < data->modelData->nStates; i++)
     {
-      data->localData[0]->realVars[i] = 0.5*(states_a[i] + states_b[i]);
+      data->localData[0]->realVars[i] = y[i];
     }
 
     /*calculates Values dependents on new states*/
@@ -117,7 +140,7 @@ void bisection_gb(DATA* data, threadData_t *threadData, double* a, double* b, do
  *  \param [in]  [values_right]
  *  \return: first event of interval [time_left, time_right]
  */
-double findRoot_gb(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right)
+double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right)
 {
   TRACE_PUSH
 
@@ -151,7 +174,7 @@ double findRoot_gb(DATA* data, threadData_t* threadData, LIST* eventList, double
   }
 
   /* Search for event time and event_id with bisection method */
-  bisection_gb(data, threadData, &time_left, &time_right, states_left, states_right, &tmpEventList, eventList);
+  bisection_gb(data, threadData, solverInfo, &time_left, &time_right, states_left, states_right, &tmpEventList, eventList);
 
   /* what happens here? */
   if(listLen(&tmpEventList) == 0)
@@ -229,7 +252,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   eventHappend = checkForStateEvent(data, solverInfo->eventLst);
 
   if (eventHappend) {
-    eventTime = findRoot_gb(data, threadData, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues);
+    eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues);
     infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
   }
 
