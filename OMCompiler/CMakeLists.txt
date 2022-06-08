@@ -19,9 +19,6 @@ omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulat
 
 omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
-omc_option(OM_OMC_USE_LPSOLVE "Should we use lpsolve." OFF)
-omc_option(OM_OMC_BUILD_LPSOLVE "Should we build our own 3rdParty/lpsolve." OFF)
-
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
 

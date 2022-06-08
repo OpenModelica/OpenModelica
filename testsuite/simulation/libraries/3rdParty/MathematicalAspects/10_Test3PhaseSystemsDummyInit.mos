@@ -28,9 +28,9 @@ res := OpenModelica.Scripting.compareSimulationResults("Test3PhaseSystemsDummyIn
 // "
 // end SimulationResult;
 // "[simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[1] has attribute stateSelect=StateSelect.always, but can't be selected as a state.
-// [simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[2] has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[3] has attribute stateSelect=StateSelect.always, but can't be selected as a state.
 // [simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[1] has attribute stateSelect=StateSelect.always, but can't be selected as a state.
-// [simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[2] has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[3] has attribute stateSelect=StateSelect.always, but can't be selected as a state.
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

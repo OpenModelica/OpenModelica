@@ -36,11 +36,48 @@ extern "C" {
 #include "omc_file.h"
 #include "omc_error.h"
 
+#define BUFSIZE 4096
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 wchar_t* longabspath(wchar_t* unicodePath);
 #endif
 
-#define BUFSIZE 4096
+#if defined(__MINGW32__) || defined(_MSC_VER)
+/**
+ * @brief Convert a multibyte (normal) string to a wide character string.
+ * NOTE: The caller is responsible for deallocating the memory of the returned wchar string.
+ *
+ * @param in_mb_str  multibyte (normal) string to be converted.
+ * @return wchar_t*  A wide character representation of the multibyte string. The caller is responsible for deallocating the memory.
+ */
+wchar_t* omc_multibyte_to_wchar_str(const char* in_mb_str) {
+  int length = MultiByteToWideChar(CP_UTF8, 0, in_mb_str, -1, NULL, 0);
+
+  wchar_t* out_wc_str = (wchar_t*) malloc(length * sizeof(wchar_t));
+  MultiByteToWideChar(CP_UTF8, 0, in_mb_str, -1, out_wc_str, length);
+
+  return out_wc_str;
+}
+
+/**
+ * @brief Convert a wide character string to multibyte (normal) string.
+ * NOTE: The caller is responsible for deallocating the memory of the returned multibyte string.
+ *
+ * @param in_wc_str  wide character string to be converted.
+ * @return char*  A multibyte string representation of the wide character. The caller is responsible for deallocating the memory.
+ */
+char* omc_wchar_to_multibyte_str(const wchar_t* in_wc_str) {
+
+  int length = WideCharToMultiByte(CP_UTF8, 0, in_wc_str, -1, NULL, 0, NULL, NULL);
+
+  char* out_mb_str = (char*) malloc(length * sizeof(char));
+  WideCharToMultiByte(CP_UTF8, 0, in_wc_str, -1, out_mb_str, length, NULL, NULL);
+
+  return out_mb_str;
+}
+
+#endif // defined(__MINGW32__) || defined(_MSC_VER)
+
 
 /**
  * @brief Open a file in given mode.
@@ -55,29 +92,21 @@ wchar_t* longabspath(wchar_t* unicodePath);
 FILE* omc_fopen(const char *filename, const char *mode)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  MULTIBYTE_TO_WIDECHAR_LENGTH(filename, unicodeFilenameLength);
-  MULTIBYTE_TO_WIDECHAR_VAR(filename, unicodeFilename, unicodeFilenameLength);
+
+  wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(filename);
+  wchar_t* unicodeMode = omc_multibyte_to_wchar_str(mode);
 
   wchar_t* unicodeLongFileName = longabspath(unicodeFilename);
-
-  MULTIBYTE_TO_WIDECHAR_LENGTH(mode, unicodeModeLength);
-  MULTIBYTE_TO_WIDECHAR_VAR(mode, unicodeMode, unicodeModeLength);
-
   FILE *f = _wfopen(unicodeLongFileName, unicodeMode);
 
   free(unicodeLongFileName);
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeFilename);
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeMode);
+  free(unicodeFilename);
+  free(unicodeMode);
 #else /* unix */
   FILE *f = fopen(filename, mode);
 #endif
   return f;
 }
-
-/// The last argument allow_early_eof specifies wheather the call is okay or not with reaching
-/// EOF before reading the specified amount. Set it to 1 if you do not exactly know how much to read
-/// and would not mind if the file ends before 'count' elements are read from it.
-/// If you are not sure what to do start by passing 0.
 
 /**
  * @brief Read data from stream.
@@ -120,22 +149,21 @@ size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allo
  * @param statbuf   Pointer to stat structure.
  * @return int      0 on success, -1 on error.
  */
-int omc_stat(const char *filename, struct _stat *statbuf)
+int omc_stat(const char *filename, omc_stat_t* statbuf)
 {
-  MULTIBYTE_TO_WIDECHAR_LENGTH(filename, unicodeFilenameLength);
-  MULTIBYTE_TO_WIDECHAR_VAR(filename, unicodeFilename, unicodeFilenameLength);
+  wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(filename);
   wchar_t* unicodeLongFileName = longabspath(unicodeFilename);
 
   int res;
   res = _wstat(unicodeLongFileName, statbuf);
 
   free(unicodeLongFileName);
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeFilename);
+  free(unicodeFilename);
 
   return res;
 }
 #else /* unix */
-int omc_stat(const char *filename, struct stat *statbuf)
+int omc_stat(const char *filename, omc_stat_t* statbuf)
 {
   int res;
   res = stat(filename, statbuf);
@@ -156,12 +184,11 @@ int omc_unlink(const char *filename)
 {
   int result = 0;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  MULTIBYTE_TO_WIDECHAR_LENGTH(filename, unicodeFilenameLength);
-  MULTIBYTE_TO_WIDECHAR_VAR(filename, unicodeFilename, unicodeFilenameLength);
+  wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(filename);
   wchar_t* unicodeLongFileName = longabspath(unicodeFilename);
   result = _wunlink(unicodeFilename);
   free(unicodeLongFileName);
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeFilename);
+  free(unicodeFilename);
 #else /* unix */
   result = unlink(filename);
 #endif

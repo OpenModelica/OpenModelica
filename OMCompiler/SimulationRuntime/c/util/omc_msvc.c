@@ -34,6 +34,7 @@ extern "C" {
 
 #include "omc_msvc.h"
 #include "omc_error.h"
+#include "omc_file.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -489,7 +490,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
       //If we get to here with a valid return_path, we're still doing good
       if (return_path)
       {
-        struct stat stat_buffer;
+        omc_stat_t stat_buffer;
 
         //Make sure path exists, omc_stat() returns 0 on success
         if (omc_stat(return_path, &stat_buffer))

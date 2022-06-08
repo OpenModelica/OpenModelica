@@ -374,11 +374,7 @@ static void readInfoJson(const char *str,MODEL_DATA_XML *xml)
 
 void modelInfoInit(MODEL_DATA_XML* xml)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat buf;
-#else
-  struct stat buf = {0};
-#endif
+  omc_stat_t buf = {0};
   // check for file exists, as --fmiFilter=blackBox or protected will not export the _info.json file
   int fileStatus;
   if (omc_flag[FLAG_INPUT_PATH])

@@ -389,11 +389,7 @@ extern double System_getVariableValue(double _timeStamp, void* _timeValues, void
 
 extern void* System_getFileModificationTime(const char *fileName)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat attrib;
-#else /* unix */
-  struct stat attrib;
-#endif
+  omc_stat_t attrib;
   double elapsedTime;    // the time elapsed as double
   int result;            // the result of the function call
 
@@ -425,27 +421,24 @@ void* omc_scanDirForPackagePattern(const char* directory, const char* pattern, c
   //wchar_t* unicodeAbsDirectory = longabspath(directory);
   sprintf(pattern_mb, "%s\\%s", directory, pattern);
 
-  MULTIBYTE_TO_WIDECHAR_LENGTH(pattern_mb, pattern_uc_length);
-  MULTIBYTE_TO_WIDECHAR_VAR(pattern_mb, pattern_uc, pattern_uc_length);
+  wchar_t* pattern_uc = omc_multibyte_to_wchar_str(pattern_mb);
+  sh = FindFirstFileW(pattern_uc, &FileData);
+  free(pattern_uc);
 
   res = mmc_mk_nil();
-  sh = FindFirstFileW(pattern_uc, &FileData);
   if (sh != INVALID_HANDLE_VALUE) {
     while(more) {
       if (wcscmp(FileData.cFileName, packageName) != 0)
       {
-        WIDECHAR_TO_MULTIBYTE_LENGTH(FileData.cFileName, file_name_mb_length);
-        WIDECHAR_TO_MULTIBYTE_VAR(FileData.cFileName, file_name_mb, file_name_mb_length);
-
+        char* file_name_mb = omc_wchar_to_multibyte_str(FileData.cFileName);
         res = mmc_mk_cons(mmc_mk_scon(file_name_mb),res);
-        MULTIBYTE_OR_WIDECHAR_VAR_FREE(file_name_mb);
+        free(file_name_mb);
       }
       more = FindNextFileW(sh, &FileData);
     }
     if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
   }
 
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(pattern_uc);
 
   return res;
 }
@@ -578,24 +571,30 @@ extern int System_loadLibrary(const char *name, int relativePath, int printDebug
 void* System_subDirectories(const char *directory)
 {
   void *res;
-  WIN32_FIND_DATA FileData;
+  WIN32_FIND_DATAW FileData;
   BOOL more = TRUE;
-  char pattern[1024];
+  char pattern_mb[1024];
   HANDLE sh;
 
-  sprintf(pattern, "%s\\*.*", directory);
+  sprintf(pattern_mb, "%s\\*.*", directory);
+
+  wchar_t* pattern_uc = omc_multibyte_to_wchar_str(pattern_mb);
+  sh = FindFirstFileW(pattern_uc, &FileData);
+  free(pattern_uc);
 
   res = mmc_mk_nil();
-  sh = FindFirstFile(pattern, &FileData);
   if (sh != INVALID_HANDLE_VALUE) {
     while(more) {
-      if (strcmp(FileData.cFileName,"..") != 0 &&
-        strcmp(FileData.cFileName,".") != 0 &&
+      if (wcscmp(FileData.cFileName,L"..") != 0 &&
+        wcscmp(FileData.cFileName,L".") != 0 &&
         (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
       {
-          res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
+        char* dir_name_mb = omc_wchar_to_multibyte_str(FileData.cFileName);
+        res = mmc_mk_cons(mmc_mk_scon(dir_name_mb),res);
+        free(dir_name_mb);
+
       }
-      more = FindNextFile(sh, &FileData);
+      more = FindNextFileW(sh, &FileData);
     }
     if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
   }
@@ -781,8 +780,7 @@ extern const char* System_sprintff(const char *fmt, double d)
 extern const char* System_realpath(const char *path)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  MULTIBYTE_TO_WIDECHAR_LENGTH(path, unicodePathLength);
-  MULTIBYTE_TO_WIDECHAR_VAR(path, unicodePath, unicodePathLength);
+  wchar_t* unicodePath = omc_multibyte_to_wchar_str(path);
 
   DWORD bufLen = 0;
   bufLen = GetFullPathNameW(unicodePath, bufLen, NULL, NULL);
@@ -791,19 +789,22 @@ extern const char* System_realpath(const char *path)
     MMC_THROW();
   }
 
-  WCHAR* unicodeFullPath = (WCHAR*)omc_alloc_interface.malloc_atomic(sizeof(WCHAR) * bufLen);
-  if (!GetFullPathNameW(unicodePath, bufLen, unicodeFullPath, NULL)) {
-    MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
+  wchar_t* unicodeFullPath = (wchar_t*) omc_alloc_interface.malloc_atomic(sizeof(wchar_t) * bufLen);
+  int success = GetFullPathNameW(unicodePath, bufLen, unicodeFullPath, NULL);
+  free(unicodePath);
+
+  if (!success) {
     fprintf(stderr, "GetFullPathNameW failed. %lu\n", GetLastError());
     MMC_THROW();
   }
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
 
-  WIDECHAR_TO_MULTIBYTE_LENGTH(unicodeFullPath, bufferLength);
-  WIDECHAR_TO_MULTIBYTE_VAR(unicodeFullPath, buffer, bufferLength);
+  char* buffer = omc_wchar_to_multibyte_str(unicodeFullPath);
+  // This seems like it is an overkill. If all we need is the length then strlen on the 'buffer' above should suffice.
+  // I am leaving it like this for now since this was what was being done by the macro WIDECHAR_TO_MULTIBYTE_LENGTH
+  int bufferLength = WideCharToMultiByte(CP_UTF8, 0, unicodeFullPath, -1, NULL, 0, NULL, NULL);
   SystemImpl__toWindowsSeperators(buffer, bufferLength);
   char *res = omc_alloc_interface.malloc_strdup(buffer);
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(buffer);
+  free(buffer);
 
   GC_free(unicodeFullPath);
   return res;

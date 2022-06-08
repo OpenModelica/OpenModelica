@@ -977,16 +977,6 @@ public function dgesv
   external "C" info=SystemImpl__dgesv(A,B,X) annotation(Library = {"omcruntime","Lapack"});
 end dgesv;
 
-public function lpsolve55
-  "lpsolve55"
-  input list<list<Real>> A;
-  input list<Real> B;
-  input list<Integer> intIndices;
-  output list<Real> X;
-  output Integer info;
-  external "C" info=SystemImpl__lpsolve55(A,B,intIndices,X) annotation(Library = {"omcruntime"});
-end lpsolve55;
-
 public function reopenStandardStream
   input Integer _stream "stdin,stdout,stderr";
   input String filename;

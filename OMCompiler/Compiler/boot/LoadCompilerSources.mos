@@ -190,8 +190,10 @@ if true then /* Suppress output */
     "../Util/Socket.mo",
     "../Util/System.mo",
     "../Util/Testsuite.mo",
+    "../Util/UnorderedMap.mo",
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
+    "../Util/Vector.mo",
     "../Util/ZeroMQ.mo"
   };
   backendfiles := if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_BACKEND_STUBS")<>"" then
@@ -522,10 +524,8 @@ if true then /* Suppress output */
     "../Util/SBSet.mo",
     "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo",
-    "../Util/UnorderedMap.mo",
     "../Util/UnorderedSet.mo",
     "../Util/Unzip.mo",
-    "../Util/Vector.mo",
 
     "../../SimulationRuntime/c/RuntimeSources.mo"
   };

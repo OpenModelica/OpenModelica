@@ -158,6 +158,7 @@ uniontype Modifier
     Modifier innerMod;
     Modifier outerMod;
     Modifier constrainingMod;
+    list<Subscript> propagatedSubs;
   end REDECLARE;
 
   record NOMOD end NOMOD;
@@ -203,7 +204,7 @@ public
 
           cc_mod := createConstrainingMod(elem, scope);
         then
-          REDECLARE(mod.finalPrefix, mod.eachPrefix, node, NOMOD(), NOMOD(), cc_mod);
+          REDECLARE(mod.finalPrefix, mod.eachPrefix, node, NOMOD(), NOMOD(), cc_mod, {});
 
     end match;
   end create;
@@ -420,7 +421,7 @@ public
 
       case (REDECLARE(constrainingMod = NOMOD()), REDECLARE(constrainingMod = MODIFIER()))
         then REDECLARE(outerMod.finalPrefix, outerMod.eachPrefix, outerMod.element,
-          outerMod.innerMod, outerMod.outerMod, innerMod.constrainingMod);
+          outerMod.innerMod, outerMod.outerMod, innerMod.constrainingMod, outerMod.propagatedSubs);
 
       case (REDECLARE(), _) then outerMod;
       case (_, REDECLARE()) then innerMod;
@@ -441,21 +442,26 @@ public
      while the parent is the node the modifier is applied to. These are usually
      the same node, but can be different when the modifier comes from a short
      class declaration (the origin) but is applied to a component (the parent)."
-    input output Modifier mod;
+    input Modifier mod;
     input InstNode origin;
     input InstNode parent;
+    output Modifier outMod = propagateSubs(mod, {Subscript.SPLIT_PROXY(origin, parent)});
+  end propagate;
+
+  function propagateSubs
+    input output Modifier mod;
+    input list<Subscript> subs;
   algorithm
     () := match mod
       case MODIFIER()
         algorithm
-          mod.subModifiers := ModTable.map(mod.subModifiers,
-            function propagateSubMod(subs = {Subscript.SPLIT_PROXY(origin, parent)}));
+          mod.subModifiers := ModTable.map(mod.subModifiers, function propagateSubMod(subs = subs));
         then
           ();
 
       else ();
     end match;
-  end propagate;
+  end propagateSubs;
 
   function propagateBinding
     input output Modifier mod;
@@ -469,12 +475,6 @@ public
         algorithm
           subs := {Subscript.SPLIT_PROXY(origin, parent)};
           mod.binding := Binding.propagate(mod.binding, subs);
-        then
-          ();
-
-      case REDECLARE()
-        algorithm
-          mod.innerMod := propagateBinding(mod.innerMod, origin, parent);
         then
           ();
 
@@ -499,6 +499,7 @@ public
       case REDECLARE(eachPrefix = SCode.NOT_EACH())
         algorithm
           submod.innerMod := propagateSubMod(name, submod.innerMod, subs);
+          submod.propagatedSubs := listAppend(subs, submod.propagatedSubs);
         then
           ();
 

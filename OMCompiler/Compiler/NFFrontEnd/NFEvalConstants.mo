@@ -173,7 +173,7 @@ protected
   Type ty, ty2;
   Variability var;
 algorithm
-  outExp := match exp
+  (outExp, outChanged) := match exp
     case Expression.CREF()
       algorithm
         (outExp as Expression.CREF(cref = cref, ty = ty), outChanged) :=
@@ -194,16 +194,12 @@ algorithm
           outExp := Expression.setType(ty2, outExp);
         end if;
       then
-        outExp;
+        (outExp, outChanged);
 
     case Expression.ARRAY(literal = true)
-      then exp;
+      then (exp, false);
 
-    case Expression.IF()
-      algorithm
-        (outExp, outChanged) := evaluateIfExp(exp, info);
-      then
-        outExp;
+    case Expression.IF() then evaluateIfExp(exp, info);
 
     // TODO: The return type of calls can have dimensions that reference
     //       function parameters, and thus can't be evaluated. This should be
@@ -213,10 +209,22 @@ algorithm
         (outExp, outChanged) := Expression.mapFoldShallow(exp,
           function evaluateExpTraverser(info = info), false);
       then
-        outExp;
+        (outExp, outChanged);
 
+    // Only evaluate the index for size expressions.
     case Expression.SIZE()
-      then Expression.SIZE(exp.exp, evaluateExpOpt(exp.dimIndex, info));
+      algorithm
+        if isSome(exp.dimIndex) then
+          SOME(e) := exp.dimIndex;
+          (e, outChanged) := Expression.mapFoldShallow(e,
+            function evaluateExpTraverser(info = info), false);
+
+          if outChanged then
+            exp.dimIndex := SOME(e);
+          end if;
+        end if;
+      then
+        (exp, outChanged);
 
     case Expression.RANGE()
       algorithm
@@ -230,7 +238,7 @@ algorithm
           outExp := Expression.retype(outExp);
         end if;
       then
-        outExp;
+        (outExp, outChanged);
 
     else
       algorithm
@@ -240,7 +248,7 @@ algorithm
         ty := Expression.typeOf(outExp);
         ty2 := evaluateType(ty, info);
       then
-        if referenceEq(ty, ty2) then outExp else Expression.setType(ty2, outExp);
+        (if referenceEq(ty, ty2) then outExp else Expression.setType(ty2, outExp), outChanged);
   end match;
 
   outChanged := changed or outChanged;

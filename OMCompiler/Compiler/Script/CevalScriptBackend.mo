@@ -3058,16 +3058,9 @@ algorithm
       then
         ValuesUtil.makeTuple({Values.BOOL(false),Values.STRING("")});
 
-    case ("solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=1 /*dgesv*/),Values.ARRAY(valueLst={Values.INTEGER(-1)})})
+    case ("solveLinearSystem",{Values.ARRAY(valueLst=vals),v})
       equation
         (realVals,i) = System.dgesv(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
-        v = ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
-      then
-        Values.TUPLE({v,Values.INTEGER(i)});
-
-    case ("solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=2 /*lpsolve55*/),Values.ARRAY(valueLst=vals2)})
-      equation
-        (realVals,i) = System.lpsolve55(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v),List.map(vals2,ValuesUtil.valueInteger));
         v = ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
       then
         Values.TUPLE({v,Values.INTEGER(i)});

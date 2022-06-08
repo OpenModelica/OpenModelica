@@ -18,9 +18,6 @@ AC_SUBST(EXTRA_CFLAGS_GENERATED_CODE)
 AC_SUBST(HAVE_GETTEXT)
 AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
-AC_SUBST(LIBLPSOLVE55)
-AC_SUBST(NO_LPLIB)
-AC_SUBST(LPSOLVEINC)
 AC_SUBST(OPENCL)
 AC_SUBST(USE_GRAPH)
 AC_SUBST(USE_METIS)
@@ -511,58 +508,6 @@ AC_SEARCH_LIBS(dlopen,dl)
 LIBDL="$LIBS"
 LIBS=""
 
-dnl check for lpsolve55
-
-AC_ARG_WITH(lpsolve,  [  --with-lpsolve        (default searching for lpsolve; disable if only using omc to cross-compile)],[if test "$withval" = "no"; then NO_LPLIB="#define NO_LPLIB"; fi],[])
-
-if test -z "$NO_LPLIB"; then
-
-echo "NO_LPLIB: '$NO_LPLIB'"
-
-AC_ARG_WITH(static-lpsolve,  [  --with-static-lpsolve=DIR        (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_LPSOLVE="$withval"],[WANT_STATIC_LPSOLVE="no"])
-
-if test "$WANT_STATIC_LPSOLVE" = "no"; then
-  LIBS=""
-  AC_SEARCH_LIBS(dlopen,dl)
-  LIBDL="$LIBS"
-  AC_SEARCH_LIBS(sqrt,m)
-  AC_SEARCH_LIBS(SuiteSparse_calloc,suitesparseconfig)
-  AC_SEARCH_LIBS(colamd,colamd)
-  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[LIBLPSOLVE55=$LIBS],[COMPILE_LPSOLVE=1])
-  LIBS=""
-else
-  if test "$WANT_STATIC_LPSOLVE" = "yes"; then
-    LPLIB=/usr/lib;
-  else
-    LPLIB=$WANT_STATIC_LPSOLVE/lib
-  fi
-  LIBS=""
-  AC_SEARCH_LIBS(dlopen,dl)
-  AC_SEARCH_LIBS(sqrt,m)
-  LIBS="$LPLIB/liblpsolve55_pic.a $LPLIB/libcolamd.a $LIBS"
-  AC_MSG_CHECKING([for static lpsolve55])
-  AC_LINK_IFELSE([AC_LANG_CALL([], [make_lp])], [LIBLPSOLVE55=$LIBS], [COMPILE_LPSOLVE="1"])
-  AC_MSG_RESULT([$LIBLPSOLVE55])
-  LIBS=""
-fi
-AC_CHECK_HEADER([lp_lib.h],[LPSOLVEINC=lp_lib.h],[
-  AC_CHECK_HEADER([lpsolve/lp_lib.h],[LPSOLVEINC=lpsolve/lp_lib.h],[
-    COMPILE_LPSOLVE=1
-  ])
-])
-
-if test "$COMPILE_LPSOLVE" = 1; then
-  MINGW_EXTRA_LIBS="$MINGW_EXTRA_LIBS lpsolve";
-  AC_MSG_RESULT([failed to find lpsolve55 headers or library; will compile them ourselves])
-  LPSOLVEINC="$ac_pwd/3rdParty/lpsolve/build/include/lpsolve/lp_lib.h"
-  if test "$WANT_STATIC_LPSOLVE" = "yes"; then
-    LIBLPSOLVE55="-Wl,-Bstatic -llpsolve55 -Wl,-Bdynamic"
-  else
-    LIBLPSOLVE55="-llpsolve55"
-  fi
-fi
-
-fi # NO_LPLIB
 
 if ! (echo "$host" | grep -q "mingw"); then
   AC_CHECK_FUNC(socket,[LIBSOCKET=""],
@@ -767,7 +712,7 @@ if test "$DARWIN" = "1"; then
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -lSimulationRuntimeFMI $RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU"
   RT_LDFLAGS_SHARED=
-  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup $LIBLPSOLVE55 -lzmq $LIBUUID $RT_LDFLAGS_OPTIONAL"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup -lzmq $LIBUUID $RT_LDFLAGS_OPTIONAL"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
@@ -838,7 +783,7 @@ else
   LINK="cp -frl"
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
-  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS $LIBLPSOLVE55 -lzmq $LIBUUID"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -lzmq $LIBUUID"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   AR_SH="$AR -ru"

@@ -624,32 +624,6 @@ _success = omc_System_reopenStandardStream(threadData, tmp1, _filename);
 out_success = mmc_mk_icon(_success);
 return out_success;
 }
-modelica_metatype omc_System_lpsolve55(threadData_t *threadData, modelica_metatype _A, modelica_metatype _B, modelica_metatype _intIndices, modelica_integer *out_info)
-{
-modelica_metatype _A_ext;
-modelica_metatype _B_ext;
-modelica_metatype _intIndices_ext;
-modelica_metatype _X_ext;
-int _info_ext;
-modelica_metatype _X = NULL;
-modelica_integer _info;
-_A_ext = (modelica_metatype)_A;
-_B_ext = (modelica_metatype)_B;
-_intIndices_ext = (modelica_metatype)_intIndices;
-_info_ext = SystemImpl__lpsolve55(_A_ext, _B_ext, _intIndices_ext, &_X_ext);
-_X = (modelica_metatype)_X_ext;
-_info = (modelica_integer)_info_ext;
-if (out_info) { *out_info = _info; }
-return _X;
-}
-modelica_metatype boxptr_System_lpsolve55(threadData_t *threadData, modelica_metatype _A, modelica_metatype _B, modelica_metatype _intIndices, modelica_metatype *out_info)
-{
-modelica_integer _info;
-modelica_metatype _X = NULL;
-_X = omc_System_lpsolve55(threadData, _A, _B, _intIndices, &_info);
-if (out_info) { *out_info = mmc_mk_icon(_info); }
-return _X;
-}
 modelica_metatype omc_System_dgesv(threadData_t *threadData, modelica_metatype _A, modelica_metatype _B, modelica_integer *out_info)
 {
 modelica_metatype _A_ext;

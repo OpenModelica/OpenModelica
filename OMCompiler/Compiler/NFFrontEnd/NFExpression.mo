@@ -282,6 +282,16 @@ public
     end match;
   end isCref;
 
+  function isFunctionInputCref
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF() then ComponentRef.isInput(ComponentRef.last(exp.cref));
+      else false;
+    end match;
+  end isFunctionInputCref;
+
   function isWildCref
     input Expression exp;
     output Boolean wild;
@@ -2463,6 +2473,13 @@ public
       else 0;
     end match;
   end dimensionCount;
+
+  function dimensions
+    input Expression exp;
+    output list<Dimension> dims;
+  algorithm
+    dims := Type.arrayDims(typeOf(exp));
+  end dimensions;
 
   function map
     input Expression exp;
@@ -5366,6 +5383,26 @@ public
     exp := ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, n), n);
   end nthEnumLiteral;
 
+  function createIterationRanges
+    input output Expression exp;
+    input list<tuple<InstNode, Expression>> iterators;
+          output list<Expression> ranges = {};
+          output list<Mutable<Expression>> iters = {};
+  protected
+    InstNode node;
+    Expression range;
+    Mutable<Expression> iter;
+  algorithm
+    for i in iterators loop
+      (node, range) := i;
+      iter := Mutable.create(INTEGER(0));
+      ranges := list(replaceIterator(r, node, MUTABLE(iter)) for r in ranges);
+      exp := replaceIterator(exp, node, MUTABLE(iter));
+      iters := iter :: iters;
+      ranges := range :: ranges;
+    end for;
+  end createIterationRanges;
+
   function foldReduction
     input Expression exp;
     input list<tuple<InstNode, Expression>> iterators;
@@ -5390,15 +5427,7 @@ public
     list<Expression> ranges = {};
     list<Mutable<Expression>> iters = {};
   algorithm
-    e := exp;
-    for i in iterators loop
-      (node, range) := i;
-      iter := Mutable.create(INTEGER(0));
-      e := replaceIterator(e, node, MUTABLE(iter));
-      iters := iter :: iters;
-      ranges := range :: ranges;
-    end for;
-
+    (e, ranges, iters) := createIterationRanges(exp, iterators);
     result := foldReduction2(e, ranges, iters, foldExp, mapFn, foldFn);
   end foldReduction;
 
@@ -5431,6 +5460,7 @@ public
       result := foldFn(foldExp, mapFn(exp));
     else
       range :: ranges_rest := ranges;
+      range := Ceval.evalExp(range);
       iter :: iters_rest := iterators;
       range_iter := ExpressionIterator.fromExp(range);
       result := foldExp;

@@ -187,7 +187,7 @@ MSGPACK_MODELICA_STATIC void* msgpack_modelica_new_deserialiser(const char *file
   char *mapped;
   /* The msgpack api uses raw data, and  mmap is nice if we want to use random access in the file */
 #if HAVE_MMAP
-  struct stat s;
+  omc_stat_t s;
   int fd;
   fd = open(file, O_RDONLY);
   if (fd < 0) {

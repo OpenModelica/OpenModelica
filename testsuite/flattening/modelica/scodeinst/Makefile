@@ -171,6 +171,8 @@ CevalMul1.mo \
 CevalNoEvent1.mo \
 CevalOnes1.mo \
 CevalProduct1.mo \
+CevalReduction1.mo \
+CevalReduction2.mo \
 CevalRecord1.mo \
 CevalRecord2.mo \
 CevalRecord3.mo \
@@ -650,6 +652,7 @@ FunctionRecordArg1.mo \
 FunctionRecordArg2.mo \
 FunctionRecordArg3.mo \
 FunctionRecordArg4.mo \
+FunctionRecordArg5.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \
@@ -963,6 +966,7 @@ RedeclareMod6.mo \
 RedeclareMod7.mo \
 RedeclareMod8.mo \
 RedeclareMod9.mo \
+RedeclareMod10.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
