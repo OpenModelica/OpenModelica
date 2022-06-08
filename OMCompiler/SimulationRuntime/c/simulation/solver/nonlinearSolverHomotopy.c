@@ -159,135 +159,132 @@ typedef struct DATA_HOMOTOPY
 
 } DATA_HOMOTOPY;
 
-/*! \fn allocateHomotopyData
- *  allocate memory for nonlinear system solver
- *  \author bbachmann
+/**
+ * @brief Allocate memory for non-linear homotopy solver.
+ *
+ * @param size              Size of non-linear system.
+ * @return DATA_HOMOTOPY*   Pointer to allocated homotopy data.
  */
-int allocateHomotopyData(size_t size, void** voiddata)
+DATA_HOMOTOPY* allocateHomotopyData(size_t size)
 {
-  DATA_HOMOTOPY* data = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
+  DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
+  assertStreamPrint(NULL, 0 != homotopyData, "allocationHomotopyData() failed!");
 
-  *voiddata = (void*)data;
-  assertStreamPrint(NULL, 0 != data, "allocationHomotopyData() failed!");
+  homotopyData->initialized = 0;
+  homotopyData->n = size;
+  homotopyData->m = size + 1;
+  homotopyData->xtol_sqrd = newtonXTol*newtonXTol;
+  homotopyData->ftol_sqrd = newtonFTol*newtonFTol;
 
-  data->initialized = 0;
-  data->n = size;
-  data->m = size + 1;
-  data->xtol_sqrd = newtonXTol*newtonXTol;
-  data->ftol_sqrd = newtonFTol*newtonFTol;
+  homotopyData->error_f_sqrd = 0;
 
-  data->error_f_sqrd = 0;
+  homotopyData->maxNumberOfIterations = size*100;
+  homotopyData->numberOfIterations = 0;
+  homotopyData->numberOfFunctionEvaluations = 0;
 
-  data->maxNumberOfIterations = size*100;
-  data->numberOfIterations = 0;
-  data->numberOfFunctionEvaluations = 0;
+  homotopyData->resScaling = (double*) calloc(size,sizeof(double));
+  homotopyData->fvecScaled = (double*) calloc(size,sizeof(double));
+  homotopyData->hvecScaled = (double*) calloc(size,sizeof(double));
+  homotopyData->dxScaled = (double*) calloc(size,sizeof(double));
 
-  data->resScaling = (double*) calloc(size,sizeof(double));
-  data->fvecScaled = (double*) calloc(size,sizeof(double));
-  data->hvecScaled = (double*) calloc(size,sizeof(double));
-  data->dxScaled = (double*) calloc(size,sizeof(double));
+  homotopyData->xScaling = (double*) calloc((size+1),sizeof(double));
 
-  data->xScaling = (double*) calloc((size+1),sizeof(double));
-
-  data->f1 = (double*) calloc(size,sizeof(double));
-  data->f2 = (double*) calloc(size,sizeof(double));
-  data->gradFx = (double*) calloc(size,sizeof(double));
+  homotopyData->f1 = (double*) calloc(size,sizeof(double));
+  homotopyData->f2 = (double*) calloc(size,sizeof(double));
+  homotopyData->gradFx = (double*) calloc(size,sizeof(double));
 
   /* damped newton */
-  data->x = (double*) calloc((size+1),sizeof(double));
-  data->x0 = (double*) calloc((size+1),sizeof(double));
-  data->xStart = (double*) calloc(size,sizeof(double));
-  data->x1 = (double*) calloc((size+1),sizeof(double));
-  data->finit = (double*) calloc(size,sizeof(double));
-  data->fx0 = (double*) calloc(size,sizeof(double));
-  data->fJac = (double*) calloc((size*(size+1)),sizeof(double));
-  data->fJacx0 = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->x = (double*) calloc((size+1),sizeof(double));
+  homotopyData->x0 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->xStart = (double*) calloc(size,sizeof(double));
+  homotopyData->x1 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->finit = (double*) calloc(size,sizeof(double));
+  homotopyData->fx0 = (double*) calloc(size,sizeof(double));
+  homotopyData->fJac = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->fJacx0 = (double*) calloc((size*(size+1)),sizeof(double));
 
   /* debug arrays */
-  data->debug_dx = (double*) calloc(size,sizeof(double));
-  data->debug_fJac = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->debug_dx = (double*) calloc(size,sizeof(double));
+  homotopyData->debug_fJac = (double*) calloc((size*(size+1)),sizeof(double));
 
    /* homotopy */
-  data->y0 = (double*) calloc((size+1),sizeof(double));
-  data->y1 = (double*) calloc((size+1),sizeof(double));
-  data->y2 = (double*) calloc((size+1),sizeof(double));
-  data->yt = (double*) calloc((size+1),sizeof(double));
-  data->dy0 = (double*) calloc((size+1),sizeof(double));
-  data->dy1 = (double*) calloc((size+homBacktraceStrategy),sizeof(double));
-  data->dy2 = (double*) calloc((size+1),sizeof(double));
-  data->hvec = (double*) calloc(size,sizeof(double));
-  data->hJac  = (double*) calloc(size*(size+1),sizeof(double));
-  data->hJac2  = (double*) calloc((size+1)*(size+2),sizeof(double));
-  data->hJacInit  = (double*) calloc(size*(size+1),sizeof(double));
-  data->ones  = (double*) calloc(size+1,sizeof(double));
+  homotopyData->y0 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->y1 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->y2 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->yt = (double*) calloc((size+1),sizeof(double));
+  homotopyData->dy0 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->dy1 = (double*) calloc((size+homBacktraceStrategy),sizeof(double));
+  homotopyData->dy2 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->hvec = (double*) calloc(size,sizeof(double));
+  homotopyData->hJac  = (double*) calloc(size*(size+1),sizeof(double));
+  homotopyData->hJac2  = (double*) calloc((size+1)*(size+2),sizeof(double));
+  homotopyData->hJacInit  = (double*) calloc(size*(size+1),sizeof(double));
+  homotopyData->ones  = (double*) calloc(size+1,sizeof(double));
 
   /* linear system */
-  data->indRow =(int*) calloc(size+homBacktraceStrategy-1,sizeof(int));
-  data->indCol =(int*) calloc(size+homBacktraceStrategy,sizeof(int));
+  homotopyData->indRow =(int*) calloc(size+homBacktraceStrategy-1,sizeof(int));
+  homotopyData->indCol =(int*) calloc(size+homBacktraceStrategy,sizeof(int));
 
-  allocateHybrdData(size, &data->dataHybrid);
+  allocateHybrdData(size, &homotopyData->dataHybrid);
 
-  assertStreamPrint(NULL, 0 != *voiddata, "allocationHomotopyData() voiddata failed!");
-  return 0;
+  assertStreamPrint(NULL, homotopyData != NULL, "allocationHomotopyData() voiddata failed!");
+  return homotopyData;
 }
 
-/*! \fn freeHomotopyData
+/**
+ * @brief Free homotpy data.
  *
- *  free memory for nonlinear system solver
- *  \author bbachmann
+ * @param homotopyData  Pointer to homotopy data.
  */
-int freeHomotopyData(void **voiddata)
+void freeHomotopyData(DATA_HOMOTOPY* homotopyData)
 {
-  DATA_HOMOTOPY* data = (DATA_HOMOTOPY*) *voiddata;
-
-  free(data->resScaling);
-  free(data->fvecScaled);
-  free(data->hvecScaled);
-  free(data->x);
-  free(data->debug_dx);
-  free(data->finit);
-  free(data->f1);
-  free(data->f2);
-  free(data->gradFx);
-  free(data->fJac);
-  free(data->fJacx0);
-  free(data->debug_fJac);
+  free(homotopyData->resScaling);
+  free(homotopyData->fvecScaled);
+  free(homotopyData->hvecScaled);
+  free(homotopyData->x);
+  free(homotopyData->debug_dx);
+  free(homotopyData->finit);
+  free(homotopyData->f1);
+  free(homotopyData->f2);
+  free(homotopyData->gradFx);
+  free(homotopyData->fJac);
+  free(homotopyData->fJacx0);
+  free(homotopyData->debug_fJac);
 
   /* damped newton */
-  free(data->x0);
-  free(data->xStart);
-  free(data->x1);
-  free(data->dxScaled);
+  free(homotopyData->x0);
+  free(homotopyData->xStart);
+  free(homotopyData->x1);
+  free(homotopyData->dxScaled);
 
   /* homotopy */
-  free(data->fx0);
-  free(data->hvec);
-  free(data->hJac);
-  free(data->hJac2);
-  free(data->hJacInit);
-  free(data->y0);
-  free(data->y1);
-  free(data->y2);
-  free(data->yt);
-  free(data->dy0);
-  free(data->dy1);
-  free(data->dy2);
-  free(data->xScaling);
-  free(data->ones);
+  free(homotopyData->fx0);
+  free(homotopyData->hvec);
+  free(homotopyData->hJac);
+  free(homotopyData->hJac2);
+  free(homotopyData->hJacInit);
+  free(homotopyData->y0);
+  free(homotopyData->y1);
+  free(homotopyData->y2);
+  free(homotopyData->yt);
+  free(homotopyData->dy0);
+  free(homotopyData->dy1);
+  free(homotopyData->dy2);
+  free(homotopyData->xScaling);
+  free(homotopyData->ones);
 
   /* linear system */
-  free(data->indRow);
-  free(data->indCol);
+  free(homotopyData->indRow);
+  free(homotopyData->indCol);
 
-  freeHybrdData(&data->dataHybrid);
+  freeHybrdData(&homotopyData->dataHybrid);
 
-  return 0;
+  return;
 }
 
 /* Prototypes for debug functions
  *  \author bbachmann
  */
-
 void printUnknowns(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;

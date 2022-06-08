@@ -36,8 +36,10 @@
 
 #include "../../simulation_data.h"
 
-int allocateHomotopyData(size_t size, void** data);
-int freeHomotopyData(void** data);
+typedef struct DATA_HOMOTOPY DATA_HOMOTOPY;
+
+DATA_HOMOTOPY* allocateHomotopyData(size_t size);
+void freeHomotopyData(DATA_HOMOTOPY* homotopyData);
 
 int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber);
 
