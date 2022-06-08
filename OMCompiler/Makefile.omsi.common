@@ -85,7 +85,7 @@ OMSICClean:
 
 OMSICPP: omc
 
-OMSICPPinstall: copycppheader OMSICPP
+OMSICPPinstall: OMSICPP
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR) LIB_OMC=$(LIB_OMC)
 	# TODO: Fix this chaos!
 	# Correct every lib directly after it is compiled and before it is linked to the next target!
