@@ -626,7 +626,6 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   int sysNumber;
 
   double *x;
-  double *fx;
   double *xScaling;
 
   long int i, j, ii;
@@ -656,7 +655,6 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   /* Access N_Vector variables */
   x = N_VGetArrayPointer(vecX);
-  fx = N_VGetArrayPointer(vecFX);
   xScaling = NV_DATA_S(kinsolData->xScale);
 
   nth = 0;
@@ -929,18 +927,19 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     /* Enable scaled jacobian evaluation */
     kinsolData->nominalJac = 1;
 
-    /* Update x for the matrix */
-    nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
-
     /* Calculate the scaled Jacobian */
     if (nlsData->isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
       spJac = SUNSparseMatrix(kinsolData->size, kinsolData->size,kinsolData->nnz, CSC_MAT);
       if (nlsData->analyticalJacobianColumn != NULL) {
         nlsSparseSymJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
       } else {
+        /* Update f(x) for the numerical jacobian matrix */
+        nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
         nlsSparseJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
       }
     } else {
+      /* Update f(x) for the numerical jacobian matrix */
+       nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
       denseJac = SUNDenseMatrix(kinsolData->size, kinsolData->size);
       nlsDenseJac(nlsData->size, x, kinsolData->fTmp, denseJac,
                   &kinsolData->userData, tmp1, tmp2);
@@ -1289,9 +1288,6 @@ modelica_boolean nlsKinsolSolve(DATA *data, threadData_t *threadData,  NONLINEAR
 
   /* Solution found */
   if (success) {
-    /* Check if solution really solves the residuals */
-    nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes,
-                       &kinsolData->userData);
     if (!omc_flag[FLAG_NO_SCALING]) {
       N_VProd(kinsolData->fRes, kinsolData->fScale, kinsolData->fRes);
     }
