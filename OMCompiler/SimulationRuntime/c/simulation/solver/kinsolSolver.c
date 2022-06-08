@@ -1289,9 +1289,9 @@ modelica_boolean nlsKinsolSolve(DATA *data, threadData_t *threadData,  NONLINEAR
 
   /* Solution found */
   if (success) {
-    // /* Check if solution really solves the residuals */
-    // nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes,
-    //                    &kinsolData->userData);
+    /* Check if solution really solves the residuals */
+    nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes,
+                       &kinsolData->userData);
     if (!omc_flag[FLAG_NO_SCALING]) {
       N_VProd(kinsolData->fRes, kinsolData->fScale, kinsolData->fRes);
     }
