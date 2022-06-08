@@ -38,6 +38,7 @@
 extern "C" {
 #endif
 
+#include "nonlinearSystem.h"
 #include "simulation_data.h"
 #include "sundials_error.h"
 #include "simulation_data.h"
@@ -64,15 +65,6 @@ typedef enum scalingMode {
   SCALING_ONES,                        /* Scale with ones (no scaling) */
   SCALING_JACOBIAN                     /* Scale jacobian */
 } scalingMode;
-
-typedef struct NLS_KINSOL_USERDATA {
-  DATA *data;
-  threadData_t *threadData;
-
-  int sysNumber;                        /* System index, for print messages only */
-  NONLINEAR_SYSTEM_DATA* nlsData;       /* Pointer to nonlinear system data */
-  ANALYTIC_JACOBIAN* analyticJacobian;  /* Pointer to analytic Jacobian */
-} NLS_KINSOL_USERDATA;
 
 typedef struct NLS_KINSOL_DATA {
   /* ### configuration  ### */
@@ -104,7 +96,7 @@ typedef struct NLS_KINSOL_DATA {
 
   /* ### kinsol internal data */
   void *kinsolMemory;                  /* Internal memroy block for KINSOL */
-  NLS_KINSOL_USERDATA userData;        /* User data provided to KINSOL */
+  NLS_USERDATA* userData;        /* User data provided to KINSOL */
 
   /* linear solver data */
   SUNLinearSolver linSol;              /* Linear solver object used by KINSOL */
@@ -119,7 +111,7 @@ typedef struct NLS_KINSOL_DATA {
 
 } NLS_KINSOL_DATA;
 
-NLS_KINSOL_DATA* nlsKinsolAllocate(DATA *data, threadData_t *threadData, int size, int sysNumber, NONLINEAR_SYSTEM_DATA *nlsData, ANALYTIC_JACOBIAN* analyticJacobian, NLS_LS linearSolverMethod);
+NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData);
 void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData);
 modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData,  NONLINEAR_SYSTEM_DATA* nlsData, int sysNumber);
 

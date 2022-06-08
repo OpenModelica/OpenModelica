@@ -259,6 +259,9 @@ typedef struct STATIC_STRING_DATA
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 } STATIC_STRING_DATA;
 
+
+typedef struct NLS_USERDATA NLS_USERDATA;
+
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 typedef struct NONLINEAR_SYSTEM_DATA
 {
@@ -287,6 +290,9 @@ typedef struct NONLINEAR_SYSTEM_DATA
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
   modelica_boolean isPatternAvailable;
 
+  // TODO AHeu: Make NLS_USERDATA
+  // Also add a documentation
+  //void (*residualFunc)(NLS_USERDATA* userData, const double* x, double* fx, const int* iflag);
   void (*residualFunc)(void**, const double*, double*, const int*);
   int (*residualFuncConstraints)(void**, const double*, double*, const int*);
   void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*, modelica_boolean);

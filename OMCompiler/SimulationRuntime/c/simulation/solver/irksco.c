@@ -51,23 +51,28 @@ void irksco_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solver
 int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double* y_new);
 
 
-/*! \fn allocateIrksco
+/**
+ * @brief Allocate memory for implicit Runge-Kutta with step size controll solver.
  *
- *   Function allocates memory needed for implicit rk solving methods.
+ * Integration methods of higher order can be used by increasing userdata->order:
+ *   (1) implicit euler method
  *
- *   Integration methods of higher order can be used by increasing userdata->order:
- *      (1) implicit euler method
- *
+ * @param data        Pointer to data struct.
+ * @param threadData  Pointer to thread data.
+ * @param solverInfo  Pointer to solver info.
+ * @param size        Size of ODE.
+ * @param zcSize      Number of zero-crossings-
+ * @return int        Return 0 on success.
  */
-int allocateIrksco(DATA *data, threadData_t *threadData,
-                   SOLVER_INFO* solverInfo, int size, int zcSize)
+int allocateIrksco(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, int size, int zcSize)
 {
   DATA_IRKSCO* irkscoData = (DATA_IRKSCO*) malloc(sizeof(DATA_IRKSCO));
   solverInfo->solverData = (void*) irkscoData;
   irkscoData->order = 1;
   irkscoData->ordersize = 1;
 
-  irkscoData->newtonData = allocateNewtonData(data, threadData, irkscoData->ordersize*size, -1, NULL, NULL);
+  NLS_USERDATA* newtonUserData = initNlsUserData(data, threadData, -1, NULL, NULL);
+  irkscoData->newtonData = allocateNewtonData(irkscoData->ordersize*size, newtonUserData);
   irkscoData->firstStep = 1;
   irkscoData->y0 = malloc(sizeof(double)*size);
   irkscoData->y05= malloc(sizeof(double)*size);
@@ -184,13 +189,9 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   DATA_IRKSCO* irkscoData = (DATA_IRKSCO*)solverInfo->solverData;
   DATA_NEWTON* newtonData = irkscoData->newtonData;
 
-  /* Set user data */
-  //irkscoData->data = data;
-  //irkscoData->threadData = threadData;
-  //newtonData->userData.data = data;
-  //newtonData->userData.threadData = threadData;
-  newtonData->userData.nlsData = nonlinsys;
-  newtonData->userData.analyticJacobian = NULL;
+  /* Set rest of user data */
+  newtonData->userData->nlsData = nonlinsys;
+  newtonData->userData->analyticJacobian = NULL;
 
   double a,b;
 

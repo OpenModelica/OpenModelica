@@ -34,21 +34,13 @@
 #ifndef _NEWTONITERATION_H_
 #define _NEWTONITERATION_H_
 
-#include "simulation_data.h"
 #include "nonlinearSolverNewton.h"
+#include "nonlinearSystem.h"
+#include "simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct NLS_NEWTON_USERDATA {
-  DATA* data;
-  threadData_t *threadData;
-
-  int sysNumber;                        /* System index, for print messages only */
-  NONLINEAR_SYSTEM_DATA* nlsData;       /* Pointer to nonlinear system data */
-  ANALYTIC_JACOBIAN* analyticJacobian;  /* Pointer to analytic Jacobian */
-} NLS_NEWTON_USERDATA;
 
 /**
  * @brief Struct containing information about equation system to be solved with Newton-Raphson method.
@@ -88,15 +80,14 @@ typedef struct DATA_NEWTON
 
   rtclock_t timeClock;
 
-  NLS_NEWTON_USERDATA userData;
-
+  NLS_USERDATA* userData;
 } DATA_NEWTON;
 
 /* Typedef */
 typedef int (genericResidualFunc)(int n, double* x, double* fvec, void* userData, int fj);
 
 
-DATA_NEWTON* allocateNewtonData(DATA *data, threadData_t *threadData, int size, int sysNumber, NONLINEAR_SYSTEM_DATA *nlsData, ANALYTIC_JACOBIAN* analyticJacobian);
+DATA_NEWTON* allocateNewtonData(int size, NLS_USERDATA* userData);
 void freeNewtonData(DATA_NEWTON* newtonData);
 int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData);
 

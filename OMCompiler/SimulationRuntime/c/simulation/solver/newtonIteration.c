@@ -57,16 +57,16 @@ void calculatingErrors(DATA_NEWTON* solverData, double* delta_x, double* delta_x
 void scaling_residual_vector(DATA_NEWTON* solverData);
 void damping_heuristic(double* x, genericResidualFunc f,
                        double current_fvec_enorm, int n, double* fvec, double* lambda, int* k,
-                       DATA_NEWTON* solverData, NLS_NEWTON_USERDATA* userData);
+                       DATA_NEWTON* solverData, NLS_USERDATA* userData);
 void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc f,
                         double current_fvec_enorm, int n, double* fvec, int* k,
-                        DATA_NEWTON* solverData, NLS_NEWTON_USERDATA* userdata);
+                        DATA_NEWTON* solverData, NLS_USERDATA* userdata);
 void LineSearch(double* x, genericResidualFunc f,
                 double current_fvec_enorm, int n, double* fvec, int* k,
-                DATA_NEWTON* solverData, NLS_NEWTON_USERDATA* userdata);
+                DATA_NEWTON* solverData, NLS_USERDATA* userdata);
 void Backtracking(double* x, genericResidualFunc f, double current_fvec_enorm,
                   int n, double* fvec, DATA_NEWTON* solverData,
-                  NLS_NEWTON_USERDATA* userdata);
+                  NLS_USERDATA* userdata);
 void printErrors(double delta_x, double delta_x_scaled, double delta_f, double error_f, double scaledError_f, double* eps);
 
 /* Extern function prototypes */
@@ -80,14 +80,10 @@ extern void dgetrs_(char *trans, int *n, int *nrhs, doublereal *a, int *lda, int
  * @brief Allocate NLS Newton data.
  *
  * @param size            Size of non-linear system.
+ * @param userData        Pointer to set NLS user data.
  * @return DATA_NEWTON*   Allocated memory.
  */
-DATA_NEWTON* allocateNewtonData(DATA *data,
-                                threadData_t *threadData,
-                                int size,
-                                int sysNumber,
-                                NONLINEAR_SYSTEM_DATA *nlsData,
-                                ANALYTIC_JACOBIAN* analyticJacobian)
+DATA_NEWTON* allocateNewtonData(int size, NLS_USERDATA* userData)
 {
   DATA_NEWTON* newtonData = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
   assertStreamPrint(NULL, NULL != newtonData, "allocationNewtonData() failed. Out of memory.");
@@ -120,12 +116,7 @@ DATA_NEWTON* allocateNewtonData(DATA *data,
   newtonData->numberOfIterations = 0;
   newtonData->numberOfFunctionEvaluations = 0;
 
-  /* Set user data */
-  newtonData->userData.data = data;
-  newtonData->userData.threadData = threadData;
-  newtonData->userData.sysNumber = sysNumber;
-  newtonData->userData.nlsData = nlsData;
-  newtonData->userData.analyticJacobian = analyticJacobian;
+  newtonData->userData = userData;
 
   return newtonData;
 }
@@ -152,6 +143,10 @@ void freeNewtonData(DATA_NEWTON* newtonData)
   free(newtonData->fvec_minimum);
   free(newtonData->delta_f);
   free(newtonData->delta_x_vec);
+
+  freeNlsUserData(newtonData->userData);
+  // TODO AHeu: Do we leak memory?
+  // free(newtonData);
 }
 
 /**
@@ -491,7 +486,7 @@ void scaling_residual_vector(DATA_NEWTON* solverData)
  */
 void damping_heuristic(double* x, genericResidualFunc f,
                        double current_fvec_enorm, int n, double* fvec, double* lambda, int* k,
-                       DATA_NEWTON* solverData, NLS_NEWTON_USERDATA* userData)
+                       DATA_NEWTON* solverData, NLS_USERDATA* userData)
 {
   int i,j=0;
   double enorm_new, treshold = 1e-2;
@@ -560,7 +555,7 @@ void damping_heuristic(double* x, genericResidualFunc f,
  */
 void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc f,
                         double current_fvec_enorm, int n, double* fvec, int* k,
-                        DATA_NEWTON* solverData, NLS_NEWTON_USERDATA* userdata)
+                        DATA_NEWTON* solverData, NLS_USERDATA* userdata)
 {
   int i,j=0;
   double enorm_new, treshold = 1e-4, lambda=1;
@@ -627,7 +622,7 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
  */
 void LineSearch(double* x, genericResidualFunc f,
                 double current_fvec_enorm, int n, double* fvec, int* k,
-                DATA_NEWTON* solverData, NLS_NEWTON_USERDATA* userdata)
+                DATA_NEWTON* solverData, NLS_USERDATA* userdata)
 {
   int i,j;
   double enorm_new, enorm_minimum=current_fvec_enorm, lambda_minimum=0;
@@ -706,7 +701,7 @@ void Backtracking(double* x,
                   int n,
                   double* fvec,
                   DATA_NEWTON* solverData,
-                  NLS_NEWTON_USERDATA* userdata)
+                  NLS_USERDATA* userdata)
 {
   int i,j;
   double enorm_new, enorm_f, lambda, a1, b1, a, b, tau, g1, g2;

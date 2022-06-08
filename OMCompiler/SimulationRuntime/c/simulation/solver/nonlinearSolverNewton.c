@@ -52,7 +52,7 @@ extern "C" {
 
 /* Private function prototypes */
 
-int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_NEWTON_USERDATA* userData, int fj);
+int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, int fj);
 
 /* External function prototypes */
 
@@ -126,7 +126,7 @@ int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* ja
  *                  fj = 0: calculate jacobian matrix
  * @return int      Returns 1 on success (probably)
  */
-int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_NEWTON_USERDATA* userData, int fj)
+int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, int fj)
 {
   DATA* data = userData->data;
   threadData_t *threadData = userData->threadData;

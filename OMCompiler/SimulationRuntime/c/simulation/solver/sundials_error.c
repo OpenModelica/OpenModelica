@@ -852,8 +852,8 @@ void kinsolErrorHandlerFunction(int errorCode, const char* module,
 
   if (userData != NULL) {
     kinsolData = (NLS_KINSOL_DATA *)userData;
-    data = kinsolData->userData.data;
-    nlsData = kinsolData->userData.nlsData;
+    data = kinsolData->userData->data;
+    nlsData = kinsolData->userData->nlsData;
     if (nlsData) {
       eqSystemNumber = nlsData->equationIndex;
     } else {
