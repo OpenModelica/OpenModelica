@@ -344,20 +344,23 @@ int print_csvLineIterStats(void* voidCsvData, int size, int num,
 /**
  * @brief Initialize internal structure of non-linear system.
  *
- * @param data          Runtime data struct.
- * @param threadData    Thread data for error handling.
- * @param nonlinsys     Pointer to non-linear system.
- * @param sysNum        Number of non-linear system.
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param nonlinsys         Pointer to non-linear system.
+ * @param sysNum            Number of non-linear system.
+ * @param isSparseNls       Becomes true when non-linear system density is
+ *                          smaller than maximum allowed density for sparse solvers.
+ *                          Otherwise value stays unchanged.
+ * @param isBigNls          Becomes true when non-linear system size is greater than
+ *                          minimum system size for sparse solvers.
+ *                          Otherwise value stays unchanged.
  */
-void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum) {
+void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum, modelica_boolean* isSparseNls, modelica_boolean* isBigNls) {
   modelica_integer size;
   unsigned int nnz;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
   ANALYTIC_JACOBIAN* jacobian;
-
-  modelica_boolean someSmallDensity = FALSE;  /* pretty dumping of flag info */
-  modelica_boolean someBigSize = FALSE;       /* analogous to someSmallDensity */
 
   size = nonlinsys->size;
   nonlinsys->numberOfFEval = 0;
@@ -391,10 +394,29 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
 
   nonlinsys->lastTimeSolved = 0.0;
 
+  /* Allocate nomianl, min and max */
   nonlinsys->nominal = (double*) malloc(size*sizeof(double));
   nonlinsys->min = (double*) malloc(size*sizeof(double));
   nonlinsys->max = (double*) malloc(size*sizeof(double));
-  nonlinsys->initializeStaticNLSData(data, threadData, nonlinsys, TRUE);
+  /* Init sparsitiy pattern */
+  nonlinsys->initializeStaticNLSData(data, threadData, nonlinsys, 1 /* true */);
+
+  if(nonlinsys->isPatternAvailable) {
+    /* only test for singularity if sparsity pattern is supposed to be there */
+    modelica_boolean useSparsityPattern = sparsitySanityCheck(nonlinsys->sparsePattern, nonlinsys->size, LOG_NLS);
+    if (!useSparsityPattern) {
+      // free sparsity pattern and don't use scaling
+      warningStreamPrint(LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d is not regular. "
+                                        "This indicates that something went wrong during sparsity pattern generation. "
+                                        "Removing sparsity pattern and disabling NLS scaling.", sysNum);
+      /* DEBUG */
+      //printSparseStructure(nonlinsys->sparsePattern, nonlinsys->size, nonlinsys->size, LOG_NLS, "NLS sparse pattern");
+      freeSparsePattern(nonlinsys->sparsePattern);
+      nonlinsys->sparsePattern = NULL;
+      nonlinsys->isPatternAvailable = FALSE;
+      omc_flag[FLAG_NO_SCALING] = TRUE;
+    }
+  }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* csv data call stats*/
@@ -426,29 +448,29 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if (nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity) {
       nonlinsys->nlsMethod = NLS_KINSOL;
       nonlinsys->nlsLinearSolver = NLS_LS_KLU;
-      someSmallDensity = 1;
+      *isSparseNls = 1;
       if (size > nonlinearSparseSolverMinSize) {
-        someBigSize = 1;
+        *isBigNls = 1;
         infoStreamPrint(LOG_STDOUT, 0,
                         "Using sparse solver kinsol for nonlinear system %d (%d),\n"
                         "because density of %.2f remains under threshold of %.2f\n"
                         "and size of %d exceeds threshold of %d.",
-                        sysNum, nonlinsys->equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity,
-                        size, nonlinearSparseSolverMinSize);
+                        sysNum, (int)nonlinsys->equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity,
+                        (int)size, nonlinearSparseSolverMinSize);
       } else {
         infoStreamPrint(LOG_STDOUT, 0,
                         "Using sparse solver kinsol for nonlinear system %d (%d),\n"
                         "because density of %.2f remains under threshold of %.2f.",
-                        sysNum, nonlinsys->equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity);
+                        sysNum, (int)nonlinsys->equationIndex, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity);
       }
     } else if (size > nonlinearSparseSolverMinSize) {
       nonlinsys->nlsMethod = NLS_KINSOL;
       nonlinsys->nlsLinearSolver = NLS_LS_KLU;
-      someBigSize = 1;
+      *isBigNls = 1;
       infoStreamPrint(LOG_STDOUT, 0,
                       "Using sparse solver kinsol for nonlinear system %d (%d),\n"
                       "because size of %d exceeds threshold of %d.",
-                      sysNum, nonlinsys->equationIndex, size, nonlinearSparseSolverMinSize);
+                      sysNum, (int)nonlinsys->equationIndex, (int)size, nonlinearSparseSolverMinSize);
     }
   }
 #endif
@@ -526,14 +548,10 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
-  int i,j;
-  int size, nnz;
+  int i;
+  modelica_boolean someSmallDensity = FALSE;  /* pretty dumping of flag info */
+  modelica_boolean someBigSize = FALSE;       /* analogous to someSmallDensity */
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
-  ANALYTIC_JACOBIAN* jacobian;
-  struct dataSolver *solverData;
-  struct dataMixedSolver *mixedSolverData;
-  modelica_boolean someSmallDensity = 0;  /* pretty dumping of flag info */
-  modelica_boolean someBigSize = 0;       /* analogous to someSmallDensity */
 
   infoStreamPrint(LOG_NLS, 1, "initialize non-linear system solvers");
   infoStreamPrint(LOG_NLS, 0, "%ld non-linear systems", data->modelData->nNonLinearSystems);
@@ -554,7 +572,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   }
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i) {
-    initializeNonlinearSystemData(data, threadData, &nonlinsys[i], i);
+    initializeNonlinearSystemData(data, threadData, &nonlinsys[i], i, &someSmallDensity, &someBigSize);
   }
 
   /* print relevant flag information */
