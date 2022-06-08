@@ -741,8 +741,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     {
       i = gbfData->fastStates[ii];
       // Get the nominal values of the fast states
-      gbfData->nlsData->nominal[ii] = fabs(data->modelData->realVarsData[i].attribute.nominal);
-      gbfData->nlsData->nominal[ii] = fmax(fabs(gbfData->nlsData->nominal[ii]), 1e-32);
+      gbfData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
       infoStreamPrint(LOG_MULTIRATE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbfData->nlsData->nominal[ii]);
     }
     messageClose(LOG_MULTIRATE);

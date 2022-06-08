@@ -59,14 +59,6 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   int nStages = gbData->tableau->nStages;
   modelica_boolean solved = FALSE;
 
-  // BB ToDo: correct setting of nominal values crucial
-  for(int i=0; i<nStates; i++) {
-    // Get the nominal values of the states
-    gbData->nlsData->nominal[i] = fabs(data->modelData->realVarsData[i].attribute.nominal);
-    gbData->nlsData->nominal[i] = fmax(fmin(gbData->nlsData->nominal[i],gbData->yOld[i]), 1e-32);
-  }
-
-
   /* Predictor Schritt */
   for (i = 0; i < nStates; i++)
   {
@@ -310,10 +302,6 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     printVector_gb(LOG_M_NLS, "xR", gbData->nlsxRight, nStates, gbData->time);
     printVector_gb(LOG_M_NLS, "kR", gbData->nlskRight, nStates, gbData->time);
     messageClose(LOG_M_NLS);
-    for(int i=0; i<nStates; i++) {
-      // Get the nominal values of the states
-        gbData->nlsData->nominal[i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->nlsxRight[i]), 1e-32);
-    }
   }
 
   /* Runge-Kutta step */
@@ -470,10 +458,6 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     printVector_gb(LOG_M_NLS, "xR", gbData->nlsxRight, nStates, gbfData->time);
     printVector_gb(LOG_M_NLS, "kR", gbData->nlskRight, nStates, gbfData->time);
     messageClose(LOG_M_NLS);
-    for(int i=0; i<nStates; i++) {
-      // Get the nominal values of the states
-        gbfData->nlsData->nominal[i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->nlsxRight[i]), 1e-32);
-    }
   }
 
   for (stage = 0; stage < nStages; stage++)
@@ -644,8 +628,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
                                gbData->time,                       gbData->x + nStages * nStates, gbData->k + nStages * nStates,
                                gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation + stage_*nStates, nStates);
     }
-    for (i=0; i<nStates; i++)
-      nlsData->nominal[stage_*nStates +i] = fmax(fmin(fabs(data->modelData->realVarsData[i].attribute.nominal),gbData->yOld[i]), 1e-32);
   }
 
   // This is a hack and needed, since nonlinear solver is based on numbered equation systems
