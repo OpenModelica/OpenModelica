@@ -1113,13 +1113,13 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // get out of here, if an event has happend!
       return 0;
     }
-    if (abs(gbData->timeRight - gbData->gbfData->timeRight) < MINIMAL_STEP_SIZE) {
+    if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < MINIMAL_STEP_SIZE) {
         memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
         memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
         memcpy(gbData->kRight, gbData->gbfData->kRight, nStates * sizeof(double));
         memcpy(gbData->x + nStages * nStates, gbData->yRight, nStates * sizeof(double));
         memcpy(gbData->k + nStages * nStates, gbData->kRight, nStates * sizeof(double));
-      }
+     }
   }
 
   /* Main integration loop, if gbData->time already greater than targetTime, only the
@@ -1243,7 +1243,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         // get out of here, if an event has happend!
         return 0;
       }
-      if (abs(gbData->timeRight - gbData->gbfData->timeRight) < MINIMAL_STEP_SIZE) {
+      if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < MINIMAL_STEP_SIZE) {
         memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
         memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
         memcpy(gbData->kRight, gbData->gbfData->kRight, nStates * sizeof(double));
@@ -1304,16 +1304,26 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;
 
-    // use hermite interpolation for emitting equidistant output
-    hermite_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                              gbData->timeRight, gbData->yRight, gbData->kRight,
-                              sData->timeValue,  sData->realVars,
-                              gbData->nSlowStates, gbData->slowStates);
-    // use hermite interpolation for emitting equidistant output
-    hermite_interpolation_gbf(gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
-                              gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
-                              sData->timeValue,  sData->realVars,
-                              gbData->nFastStates, gbData->fastStates);
+    // use linear interpolation for emitting equidistant output
+    linear_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,
+                             gbData->timeRight, gbData->yRight,
+                             sData->timeValue,  sData->realVars,
+                             gbData->nSlowStates, gbData->slowStates);
+    // use linear interpolation for emitting equidistant output
+    linear_interpolation_gbf(gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,
+                             gbData->gbfData->timeRight, gbData->gbfData->yRight,
+                             sData->timeValue,  sData->realVars,
+                             gbData->nFastStates, gbData->fastStates);
+    // // use hermite interpolation for emitting equidistant output
+    // hermite_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+    //                           gbData->timeRight, gbData->yRight, gbData->kRight,
+    //                           sData->timeValue,  sData->realVars,
+    //                           gbData->nSlowStates, gbData->slowStates);
+    // // use hermite interpolation for emitting equidistant output
+    // hermite_interpolation_gbf(gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
+    //                           gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
+    //                           sData->timeValue,  sData->realVars,
+    //                           gbData->nFastStates, gbData->fastStates);
 
   } else {
     // Integrator emits result on the simulation grid (see above)

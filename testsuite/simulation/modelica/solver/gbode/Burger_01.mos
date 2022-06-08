@@ -38,7 +38,7 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
                               "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
 getErrorString();
 
-// Simulate with ADAMS and KINSOL+KLU
+// Simulate with expl euler
 system("./burgerEq -s=gbode -gbm=expl_euler -gbnls=kinsol -gbratio=0.05 -override=\"tolerance=1e-6\"", "burgerEq_adams_test.log");
 print(readFile("burgerEq_adams_test.log"));
 
@@ -49,7 +49,7 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
                               "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
 getErrorString();
 
-// Simulate with SDIRK2 and KINSOL+KLU
+// Simulate with fehlberg78
 system("./burgerEq -s=gbode -gbm=fehlberg78 -gbnls=kinsol -gbratio=0 -override=\"tolerance=1e-8\"", "burgerEq_esdirk3_mr.log");
 print(readFile("burgerEq_esdirk3_mr.log"));
 

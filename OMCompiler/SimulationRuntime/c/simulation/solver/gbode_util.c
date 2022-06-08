@@ -47,13 +47,18 @@ void linear_interpolation_gb(double ta, double* fa, double tb, double* fb, doubl
 {
   double lambda, h0, h1;
 
-  lambda = (t-ta)/(tb-ta);
-  h0 = 1-lambda;
-  h1 = lambda;
+  if (tb == ta) {
+    // omit division by zero
+    memcpy(f, fb, n*sizeof(double));
+  } else {
+    lambda = (t-ta)/(tb-ta);
+    h0 = 1-lambda;
+    h1 = lambda;
 
-  for (int i=0; i<n; i++)
-  {
-    f[i] = h0*fa[i] + h1*fb[i];
+    for (int i=0; i<n; i++)
+    {
+      f[i] = h0*fa[i] + h1*fb[i];
+    }
   }
 }
 
@@ -109,14 +114,19 @@ void linear_interpolation_gbf(double ta, double* fa, double tb, double* fb, doub
   double lambda, h0, h1;
   int i, ii;
 
-  lambda = (t-ta)/(tb-ta);
-  h0 = 1-lambda;
-  h1 = lambda;
+  if (tb == ta) {
+    // omit division by zero
+    copyVector_gbf(f, fb, nIdx, idx);
+  } else {
+    lambda = (t-ta)/(tb-ta);
+    h0 = 1-lambda;
+    h1 = lambda;
 
-  for (ii=0; ii<nIdx; ii++)
-  {
-    i = idx[ii];
-    f[i] = h0*fa[i] + h1*fb[i];
+    for (ii=0; ii<nIdx; ii++)
+    {
+      i = idx[ii];
+      f[i] = h0*fa[i] + h1*fb[i];
+    }
   }
 }
 
@@ -206,8 +216,8 @@ void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, 
  */
 void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, double time) {
 
-  // If stream is not active do nothing
-  if (!ACTIVE_STREAM(stream)) return;
+  // If stream is not active or size of vector to big do nothing
+  if (!ACTIVE_STREAM(stream) || n>100) return;
 
   // BB ToDo: This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
@@ -228,8 +238,8 @@ void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, doubl
  */
 void printIntVector_gb(enum LOG_STREAM stream, char name[], int* a, int n, double time) {
 
-  // If stream is not active do nothing
-  if (!ACTIVE_STREAM(stream)) return;
+  // If stream is not active or size of vector to big do nothing
+  if (!ACTIVE_STREAM(stream) || n>100) return;
 
   char row_to_print[1024];
   sprintf(row_to_print, "%s\t(time = %g): \n", name, time);
@@ -270,8 +280,8 @@ void printMatrix_gb(char name[], double* a, int n, double time) {
 
 void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, double time, int nIndx, int* indx) {
 
-  // If stream is not active do nothing
-  if (!ACTIVE_STREAM(stream)) return;
+  // If stream is not active or size of vector to big do nothing
+  if (!ACTIVE_STREAM(stream) || nIndx>100) return;
 
   // BB ToDo: This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
