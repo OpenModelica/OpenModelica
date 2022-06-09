@@ -12,8 +12,8 @@ if (defined $ENV{"RTEST_OMCFLAGS"}) {
 (undef,$testTempFile) = tempfile("rtest$$.XXXXX", TMPDIR => 1, SUFFIX => ".tmp", UNLINK => 1);
 $cwd = getcwd;
 if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
-  if (-e "$1build/install_cmake/bin/omc") {
-    $OPENMODELICAHOME = "$1build/install_cmake";
+  if (-e "$1build_cmake/install_cmake/bin/omc") {
+    $OPENMODELICAHOME = "$1build_cmake/install_cmake";
   } else {
     $OPENMODELICAHOME = "$1build";
   }

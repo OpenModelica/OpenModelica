@@ -61,7 +61,7 @@ double getErrorThreshold(DATA_GBODE* gbData)
   i = MIN(MAX(floor((gbData->nStates - 1) * gbData->percentage), 0), gbData->nStates - 1);
 
   // BB ToDo: check, if 0.1 is ok, or should be parameterized
-  return gbData->err[i];
+  return gbData->err[gbData->sortedStates[i]];
 }
 
 
