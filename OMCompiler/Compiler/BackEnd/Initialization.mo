@@ -165,6 +165,12 @@ algorithm
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
     execStat("collectInitialBindings (initialization)");
 
+    // scalarize variables after collecting bindings
+    if Flags.isSet(Flags.NF_SCALARIZE) then
+      vars := BackendVariable.scalarizeVariables(vars);
+      initVars := BackendVariable.scalarizeVariables(initVars);
+    end if;
+
     // replace initial(), sample(...), delay(...) and homotopy(...)
     useHomotopy := BackendDAEUtil.traverseBackendDAEExpsEqns(eqns, simplifyInitialFunctions, false);
     execStat("simplifyInitialFunctions (initialization)");

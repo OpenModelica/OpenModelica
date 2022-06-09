@@ -60,9 +60,9 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // Variables (4)
 // ========================================
 // 1: z:VARIABLE()  type: Real
-// 2: a:VARIABLE()  type: Real
-// 3: y:VARIABLE()  type: Real
-// 4: x:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
+// 4: a:VARIABLE()  type: Real
 //
 //
 // Equations (4, 4)
@@ -72,25 +72,25 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 //   a := 2.0 * x;
 //    [dynamic |0|0|0|0|]
 // 2/2 (1): g * a * x + time - y ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): a + 2.0 * y - k * z = 0.0   [dynamic |0|0|0|0|]
-// 4/4 (1): g * a + x * z - y = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): g * a + x * z - y = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): a + 2.0 * y - k * z = 0.0   [dynamic |0|0|0|0|]
 //
 //
 // Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 4
-// 1: 4 2
+// 1: 4 3
 // 2: 4 3 2
-// 3: 3 2 1
-// 4: 4 3 2 1
+// 3: 4 3 2 1
+// 4: 4 2 1
 //
 // Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 4
 // 1: 4 3
-// 2: 4 3 2 1
-// 3: 4 3 2
-// 4: 4 2 1
+// 2: 4 3 2
+// 3: 3 2 1
+// 4: 4 3 2 1
 //
 // no matching
 //
@@ -109,38 +109,38 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // Adjacency Matrix Enhanced (row == equation)
 // ====================================
 // number of rows: 4
-// 1:(4,unsolvable) (2,solved) 
-// 2:(2,variable(false)) (4,variable(false)) (3,nonlinear) 
-// 3:(2,constone) (3,const(true)) (1,param(true)) 
-// 4:(2,param(false)) (4,variable(true)) (1,variable(true)) (3,constone) 
+// 1:(3,unsolvable) (4,solved)
+// 2:(4,variable(false)) (3,variable(false)) (2,nonlinear)
+// 3:(4,param(false)) (3,variable(true)) (1,variable(true)) (2,constone)
+// 4:(4,constone) (2,const(true)) (1,param(true))
 //
 // AdjacencyMatrixTransposedEnhanced:
 // Transpose Adjacency Matrix Enhanced (row == var)
 // =====================================
 // number of rows: 4
-// 1:(4,variable(true)) (3,param(true)) 
-// 2:(4,param(false)) (3,constone) (2,variable(false)) (1,solved) 
-// 3:(4,constone) (3,const(true)) (2,nonlinear) 
-// 4:(4,variable(true)) (2,variable(false)) (1,unsolvable) 
+// 1:(4,param(true)) (3,variable(true))
+// 2:(4,const(true)) (3,constone) (2,nonlinear)
+// 3:(3,variable(true)) (2,variable(false)) (1,unsolvable)
+// 4:(4,constone) (3,param(false)) (2,variable(false)) (1,solved)
 //
 // eqLinPoints:
-// 100,150,17,62
+// 100,150,62,17
 //
 //
 // Forced selection of Tearing Variables:
 // ========================================
-// Unsolvables as tVars: 4
+// Unsolvables as tVars: 3
 // Variables with annotation attribute 'always' as tVars: 
 //
 // Matching
 // ========================================
 // 4 variables and equations
 // var 1 is solved in eqn 8
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 4
-// var 4 is solved in eqn 8
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 8
+// var 4 is solved in eqn 1
 //
-// order: 1,4
+// order: 1,3
 // ========================================
 //
 //
@@ -151,12 +151,12 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // * No of equations in strong component: 4
 // * No of tVars: 2
 // *
-// * tVars: 4,1
+// * tVars: 3,1
 // *
-// * resEq: 3,2
+// * resEq: 4,2
 // *
 // * innerEquations ({eqn,vars}):
-// * {1:2}, {4:3}
+// * {1:4}, {3:2}
 // *
 // ****************************************
 //
