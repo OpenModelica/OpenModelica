@@ -739,7 +739,6 @@ void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DA
 #endif
   case NLS_HOMOTOPY:
     freeHomotopyData(nonlinsys->solverData);
-    free(nonlinsys->solverData);
     break;
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_MIXED:
