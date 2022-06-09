@@ -1033,8 +1033,12 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     solverInfo->currentTime = sData->timeValue;
 
     // use linear interpolation for emitting equidistant output
-    linear_interpolation_gb(gbfData->timeLeft , gbfData->yLeft,
-                            gbfData->timeRight, gbfData->yRight,
+    // linear_interpolation_gb(gbfData->timeLeft , gbfData->yLeft,
+    //                         gbfData->timeRight, gbfData->yRight,
+    //                         sData->timeValue,  sData->realVars, nStates);
+    // use hermite interpolation for emitting equidistant output
+    hermite_interpolation_gb(gbfData->timeLeft , gbfData->yLeft,  gbfData->kLeft,
+                            gbfData->timeRight, gbfData->yRight, gbfData->kRight,
                             sData->timeValue,  sData->realVars, nStates);
 
     infoStreamPrint(LOG_SOLVER, 1, "emit result (inner integration):");
