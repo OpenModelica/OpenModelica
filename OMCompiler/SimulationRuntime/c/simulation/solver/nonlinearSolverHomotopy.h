@@ -38,8 +38,8 @@
 extern "C" {
 #endif
 
+#include "../../openmodelica_types.h"
 #include "../../simulation_data.h"
-#include "openmodelica_types.h"
 #include "simulation_data.h"
 
 typedef struct DATA_HOMOTOPY DATA_HOMOTOPY;
