@@ -55,19 +55,6 @@
 /* readability */
 #define MINIMAL_SCALE_FACTOR 1e-8
 
-#ifndef booleantype
-#define booleantype int
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-
 typedef struct IDA_USERDATA
 {
   DATA* data;

@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -31,6 +31,12 @@
 /*! \file gbode_nls.h
  */
 
+#ifndef GBODE_NLS_H
+#define GBODE_NLS_H
+
+#include "simulation_data.h"
+
+// TODO AHeu: Don't define struct dataSolver here
 struct dataSolver
 {
   void* ordinaryData;
@@ -43,15 +49,15 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GBODEF* gbfData);
 
 // Residuum and Jacobian functions for diagonal implicit (DIRK) and implicit (IRK) Runge-Kutta methods.
-void residual_MS(void **dataIn, const double *xloc, double *res, const int *iflag);
-void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *iflag);
-void residual_IRK(void **dataIn, const double *xloc, double *res, const int *iflag);
+void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
+void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
+void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
 
 int jacobian_SR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
-void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *iflag);
-void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int *iflag);
+void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
+void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
 int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
 
-
+#endif  /* #ifndef GBODE_NLS_H*/

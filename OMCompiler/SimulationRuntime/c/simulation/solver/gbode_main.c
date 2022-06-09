@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -806,9 +806,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         ((DATA_NEWTON *)solverData->ordinaryData)->n = gbfData->nFastStates;
         break;
       case RK_NLS_KINSOL:
+        // TODO AHeu: Can we resolve this free & alloc thing?
         nlsKinsolFree(solverData->ordinaryData);
-        solverData->ordinaryData = (void *)nlsKinsolAllocate(gbfData->nlsData->size, gbfData->nlsData->nlsLinearSolver);
-        resetKinsolMemory(solverData->ordinaryData, gbfData->nlsData);
+        /* Set NLS user data */
+        NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
+        nlsUserData->solverData = (void*) gbfData;
+        solverData->ordinaryData = (void *)nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData);
+        //resetKinsolMemory(solverData->ordinaryData, gbfData->nlsData);
         break;
       default:
         errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
@@ -883,6 +887,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         errorStreamPrint(LOG_STDOUT, 0, "gbodef_main: Failed to calculate step at time = %5g.", gbfData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
         gbfData->stepSize = gbfData->stepSize / 2.;
+        // TODO AHeu: This needs some breaking criteria --> endless loooooop
         continue;
       }
 
@@ -1488,6 +1493,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         errorStreamPrint(LOG_STDOUT, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time);
         errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
         gbData->stepSize = gbData->stepSize / 2.;
+        // TODO AHeu: We need a break if step size becomes to small / no progress is made.
         continue;
       }
 

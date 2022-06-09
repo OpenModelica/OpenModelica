@@ -57,15 +57,6 @@
   #include <omp.h>
 #endif
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = DEFAULT_FLAG_LSS_MAX_DENSITY;
 int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;

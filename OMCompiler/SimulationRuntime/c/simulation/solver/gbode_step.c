@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -108,13 +108,13 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     double cpu_time_used;
 
     start = clock();
-    solved = solveNLS(data, threadData, nlsData, -1);
+    solved = solveNLS(data, threadData, nlsData);
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     infoStreamPrint(LOG_M_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
   } else {
-    solved = solveNLS(data, threadData, nlsData, -1);
+    solved = solveNLS(data, threadData, nlsData);
   }
 
   if (!solved) {
@@ -231,13 +231,13 @@ if (gbfData->interpolation == 1) {
     double cpu_time_used;
 
     start = clock();
-    solved = solveNLS(data, threadData, nlsData, -1);
+    solved = solveNLS(data, threadData, nlsData);
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
   } else {
-    solved = solveNLS(data, threadData, nlsData, -1);
+    solved = solveNLS(data, threadData, nlsData);
   }
 
   if (!solved) {
@@ -368,7 +368,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         start = clock();
 
         //Solve nonlinear equation system
-        solved = solveNLS(data, threadData, nlsData, -1);
+        solved = solveNLS(data, threadData, nlsData);
 
         end = clock();
         cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
@@ -376,7 +376,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         infoStreamPrint(LOG_M_NLS, 0, "time needed for solving the NLS:  %20.16g", cpu_time_used);
       } else {
         //Solve nonlinear equation system
-        solved = solveNLS(data, threadData, nlsData, -1);
+        solved = solveNLS(data, threadData, nlsData);
       }
 
       infoStreamPrint(LOG_M_NLS, 1, "NLS - start values and solution of the NLS:");
@@ -522,13 +522,13 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
         double cpu_time_used;
 
         start = clock();
-        solved = solveNLS(data, threadData, nlsData, -1);
+        solved = solveNLS(data, threadData, nlsData);
         end = clock();
         cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
         infoStreamPrint(LOG_STATS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
       } else {
-        solved = solveNLS(data, threadData, nlsData, -1);
+        solved = solveNLS(data, threadData, nlsData);
       }
 
       infoStreamPrint(LOG_M_NLS, 1, "NLS - start values and solution of the NLS:");
@@ -637,13 +637,13 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     double cpu_time_used;
 
     start = clock();
-    solved = solveNLS(data, threadData, nlsData, -1);
+    solved = solveNLS(data, threadData, nlsData);
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     infoStreamPrint(LOG_M_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
   } else {
-    solved = solveNLS(data, threadData, nlsData, -1);
+    solved = solveNLS(data, threadData, nlsData);
   }
 
   if (ACTIVE_STREAM(LOG_M_NLS)) {

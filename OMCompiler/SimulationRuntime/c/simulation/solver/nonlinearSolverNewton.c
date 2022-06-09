@@ -53,59 +53,32 @@ extern "C" {
 
 #include "external_input.h"
 
+/* Private function prototypes */
+
+int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, int fj);
+
+/* External function prototypes */
 
 extern double enorm_(int *n, double *x);
-int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj);
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doublereal *b, int *ldb, int *info);
 
-#ifdef __cplusplus
-}
-#endif
 
-
-/*! \fn getAnalyticalJacobian
+/**
+ * @brief Compute analytical Jacobian for Newton solver.
  *
- *  function calculates analytical jacobian
+ * Using coloring and sparsity pattern.
  *
- *  \param [ref] [data]
- *  \param [out] [jac]
- *
- *  \author wbraun
- *
+ * @param data        Pointer to data.
+ * @param threadData  Pointer to thread data.
+ * @param jac         Contains jacobian values on exit.
+ * @param nlsData     Non-linear system data.
+ * @param jacobian    Analytic Jacobian.
+ * @return int        Return 0 on success.
  */
-int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
+int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* jac, NONLINEAR_SYSTEM_DATA* nlsData, ANALYTIC_JACOBIAN* jacobian)
 {
   int i,j,k,l,ii;
-  NONLINEAR_SYSTEM_DATA *systemData;
-  if(sysNumber>=0) {
-    systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-  } else {
-    DATA_GBODE* gbData = (DATA_GBODE*)data->simulationInfo->backupSolverData;
-    if (gbData->multi_rate_phase)
-      systemData = gbData->gbfData->nlsData;
-    else
-      systemData = gbData->nlsData;
-  }
-  DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
-  int index;
-  ANALYTIC_JACOBIAN* jacobian ;
-
-  if(sysNumber>=0) {
-    index = systemData->jacobianIndex;
-    jacobian = &(data->simulationInfo->analyticJacobians[index]);
-  } else {
-    DATA_GBODE* gbData = (DATA_GBODE*)data->simulationInfo->backupSolverData;
-    if (gbData->multi_rate_phase)
-      jacobian = gbData->gbfData->jacobian;
-    else
-      jacobian = gbData->jacobian;
-  }
+  DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
 
@@ -116,7 +89,7 @@ int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* ja
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
         jacobian->seedVars[ii] = 1;
 
-    systemData->analyticalJacobianColumn(data, threadData, jacobian, NULL);
+    nlsData->analyticalJacobianColumn(data, threadData, jacobian, NULL);
 
     for(j = 0; j < jacobian->sizeCols; j++)
     {
@@ -135,60 +108,48 @@ int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* ja
       if(jacobian->sparsePattern->colorCols[j]-1 == i)
         jacobian->seedVars[j] = 0;
     }
-
   }
 
   return 0;
 }
 
-/*! \fn wrapper_fvec_newton for the residual Function
- *   tensolve calls for the subroutine fcn(n, x, fvec, iflag, data)
+
+/**
+ * @brief Calculate residual f(x) or Jacobian J(x).
  *
- *  fj decides whether the function values or the jacobian matrix shall be calculated
- *  fj = 1 ==> calculate function values
- *   fj = 0 ==> calculate jacobian matrix
+ * @param n         Size of vector x.
+ * @param x         Input vector x.
+ *                  Also used as work array, but will be reverted before function exits.
+ * @param fvec      Value of f(x).
+ *                  Will be computed if fj = 1.
+ *                  Will be used to compute Jacobian if fj = 0.
+ * @param userData  Pointer to Newton user data.
+ * @param fj        Decides whether the function values or the jacobian matrix shall be calculated.
+ *                  fj = 1: calculate function values
+ *                  fj = 0: calculate jacobian matrix
+ * @return int      Returns 1 on success (probably)
  */
-int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
+int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, int fj)
 {
-  DATA_USER* uData = (DATA_USER*) userdata;
-  DATA* data = (DATA*)(uData->data);
-  void *dataAndThreadData[3] = {data, uData->threadData, NULL};
-  int sysNumber = ((DATA_USER*)userdata)->sysNumber;
-  // TODO AHeu: This is quiet the hack
-  NONLINEAR_SYSTEM_DATA *systemData;
-  if(sysNumber>=0) {
-    systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-  } else {
-    DATA_GBODE* gbData = (DATA_GBODE*)data->simulationInfo->backupSolverData;
-    if (gbData->multi_rate_phase) {
-      systemData = gbData->gbfData->nlsData;
-      dataAndThreadData[2] = gbData->gbfData;
-    } else {
-      systemData = gbData->nlsData;
-      dataAndThreadData[2] = gbData;
-    }
-  }
-  DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+  DATA* data = userData->data;
+  threadData_t *threadData = userData->threadData;
+  int sysNumber = userData->sysNumber;
+  NONLINEAR_SYSTEM_DATA* nlsData = userData->nlsData;
+  ANALYTIC_JACOBIAN* jacobian = userData->analyticJacobian;
+
+  DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=userData->solverData};
   int flag = 1;
-  int *iflag=&flag;
+  int *iflag = &flag;
 
   if (fj) {
-    (systemData->residualFunc)(dataAndThreadData, x, fvec, iflag);
+    (nlsData->residualFunc)(&resUserData, x, fvec, iflag);
   } else {
     /* performance measurement */
-    rt_ext_tp_tick(&systemData->jacobianTimeClock);
+    rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
-    if ((systemData->jacobianIndex == -1) && (sysNumber<0)  && (systemData->analyticalJacobianColumn != NULL)) {
-      getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, sysNumber);
-      _omc_matrix* dumpJac  = _omc_createMatrix(solverData->n, solverData->n, solverData->fjac);
-      _omc_vector* dumpFvec = _omc_createVector(solverData->n, fvec);
-
-      _omc_printMatrix(dumpJac, "Jacobian:", LOG_SOLVER_V);
-      _omc_printVector(dumpFvec, "Residuum:", LOG_SOLVER_V);
-
-    }
-    else if(systemData->jacobianIndex != -1) {
-      getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, sysNumber);
+    if(nlsData->jacobianIndex != -1 && jacobian != NULL ) {
+      getAnalyticalJacobianNewton(data, threadData, solverData->fjac, nlsData, jacobian);
     } else {
       double delta_h = sqrt(solverData->epsfcn);
       double delta_hh;
@@ -196,7 +157,7 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
 
       int i,j,l, linear=0;
 
-      for(i = 0; i < *n; i++) {
+      for(i = 0; i < n; i++) {
         delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(fvec[i])), delta_h);
         delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
         delta_hh = x[i] + delta_hh - x[i];
@@ -204,19 +165,19 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
         x[i] += delta_hh;
         delta_hh = 1. / delta_hh;
 
-        wrapper_fvec_newton(n, x, solverData->rwork, userdata, 1);
+        wrapper_fvec_newton(n, x, solverData->rwork, userData, 1);
         solverData->nfev++;
 
-        for(j = 0; j < *n; j++) {
-          l = i * *n + j;
+        for(j = 0; j < n; j++) {
+          l = i * n + j;
           solverData->fjac[l] = (solverData->rwork[j] - fvec[j]) * delta_hh;
         }
         x[i] = xsave;
       }
     }
     /* performance measurement and statistics */
-    systemData->jacobianTime += rt_ext_tp_tock(&(systemData->jacobianTimeClock));
-    systemData->numberOfJEval++;
+    nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
+    nlsData->numberOfJEval++;
   }
   return *iflag;
 }
@@ -228,20 +189,8 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
  *
  *  \author wbraun
  */
-int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
+int solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* systemData)
 {
-  // TODO AHeu: This is quiet the hack
-  NONLINEAR_SYSTEM_DATA *systemData;
-  if(sysNumber>=0) {
-    systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-  } else {
-    DATA_GBODE* gbData = (DATA_GBODE*)data->simulationInfo->backupSolverData;
-    if (gbData->multi_rate_phase)
-      systemData = gbData->gbfData->nlsData;
-    else
-      systemData = gbData->nlsData;
-  }
-
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   assertStreamPrint(threadData, solverData != NULL, "Something went horribly wrong in solveNewton!");
 
@@ -259,8 +208,6 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
   int nonContinuousCase = 0;
   modelica_boolean *relationsPreBackup = NULL;
   int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
-
-  DATA_USER userdata = {.data = (void*)data, .threadData = threadData, .sysNumber = sysNumber};
 
   /*
    * We are given the number of the non-linear system.
@@ -314,7 +261,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
 
     giveUp = 1;
     solverData->newtonStrategy = data->simulationInfo->newtonStrategy;
-    _omc_newton(wrapper_fvec_newton, solverData, &userdata);
+    _omc_newton((genericResidualFunc*)wrapper_fvec_newton, solverData, solverData->userData);
 
     /* check for proper inputs */
     if(solverData->info == 0)

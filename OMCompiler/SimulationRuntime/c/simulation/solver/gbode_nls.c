@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -222,13 +222,17 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
+  /* Set NLS user data */
+  NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, nlsData, gbData->jacobian);
+  nlsUserData->solverData = (void*) gbData;
+
   /* Initialize NLS method */
   switch (gbData->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     nlsData->nlsMethod = NLS_NEWTON;
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     nlsData->jacobianIndex = -1;
-    solverData->ordinaryData =(void*) allocateNewtonData(nlsData->size);
+    solverData->ordinaryData =(void*) allocateNewtonData(nlsData->size, nlsUserData);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -239,16 +243,17 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
+    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
-    if (gbData->symJacAvailable) {
-      resetKinsolMemory(solverData->ordinaryData, nlsData);
-    } else {
-      resetKinsolMemory(solverData->ordinaryData, nlsData);
-      int flag = KINSetJacFn(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, NULL);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
-    }
+    // TODO AHeu: resetKinsolMemory already called in nlsKinsolAllocate
+    //if (gbData->symJacAvailable) {
+    //  resetKinsolMemory(solverData->ordinaryData);
+    //} else {
+    //  resetKinsolMemory(solverData->ordinaryData);
+    //  int flag = KINSetJacFn(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, NULL);
+    //  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
+    //}
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbData->nlsSolverMethod]);
@@ -342,13 +347,17 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
+  /* Set NLS user data */
+  NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, nlsData, gbfData->jacobian);
+  nlsUserData->solverData = (void*) gbfData;
+
   /* Initialize NLS method */
   switch (gbfData->nlsSolverMethod) {
   case RK_NLS_NEWTON:
     nlsData->nlsMethod = NLS_NEWTON;
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     nlsData->jacobianIndex = -1;
-    solverData->ordinaryData =(void*) allocateNewtonData(nlsData->size);
+    solverData->ordinaryData =(void*) allocateNewtonData(nlsData->size, nlsUserData);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -359,16 +368,17 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsData->nlsLinearSolver);
+    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
-    if (gbfData->symJacAvailable) {
-      resetKinsolMemory(solverData->ordinaryData, nlsData);
-    } else {
-      resetKinsolMemory(solverData->ordinaryData, nlsData);
-      int flag = KINSetJacFn(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, NULL);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
-    }
+    // TODO AHeu: resetKinsolMemory already called by nlsKinsolAllocate
+    //if (gbfData->symJacAvailable) {
+    //  resetKinsolMemory(solverData->ordinaryData);
+    //} else {
+    //  resetKinsolMemory(solverData->ordinaryData);
+    //  int flag = KINSetJacFn(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, NULL);
+    //  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
+    //}
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
@@ -384,16 +394,17 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
  *
  * TODO: Describe what the residual means.
  *
- * @param dataIn  Userdata provided to non-linear system solver.
- * @param xloc    Input vector for non-linear system.
- * @param res     Residuum vector for given input xloc.
- * @param iflag   Unused.
+ * @param userData  Userdata provided to non-linear system solver.
+ * @param xloc      Input vector for non-linear system.
+ * @param res       Residuum vector for given input xloc.
+ * @param iflag     Unused.
  */
-void residual_MS(void **dataIn, const double *xloc, double *res, const int *iflag)
+void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag)
 {
-  DATA *data = (DATA *)((void **)dataIn[0]);
-  threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GBODE *gbData = (DATA_GBODE *)((void **)dataIn[2]);
+  DATA *data = userData->data;
+  threadData_t *threadData = userData->threadData;
+  DATA_GBODE *gbData = (DATA_GBODE *)userData->solverData;
+  assertStreamPrint(threadData, gbData != NULL, "residual_MS: user data not set correctly");
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
@@ -421,16 +432,17 @@ void residual_MS(void **dataIn, const double *xloc, double *res, const int *ifla
  *
  * TODO: Describe what the residual means.
  *
- * @param dataIn  Userdata provided to non-linear system solver.
- * @param xloc    Input vector for non-linear system.
- * @param res     Residuum vector for given input xloc.
- * @param iflag   Unused.
+ * @param userData  Userdata provided to non-linear system solver.
+ * @param xloc      Input vector for non-linear system.
+ * @param res       Residuum vector for given input xloc.
+ * @param iflag     Unused.
  */
-void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *iflag)
+void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag)
 {
-  DATA *data = (DATA *)((void **)dataIn[0]);
-  threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GBODEF *gbfData = (DATA_GBODEF *)((void **)dataIn[2]);
+  DATA *data = userData->data;
+  threadData_t *threadData = userData->threadData;
+  DATA_GBODEF *gbfData = (DATA_GBODEF *)userData->solverData;
+  assertStreamPrint(threadData, gbfData != NULL, "residual_MS_MR: user data not set correctly");
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
@@ -462,16 +474,17 @@ void residual_MS_MR(void **dataIn, const double *xloc, double *res, const int *i
  *
  * TODO: Describe what the residual means.
  *
- * @param dataIn  Userdata provided to non-linear system solver.
- * @param xloc    Input vector for non-linear system.
- * @param res     Residuum vector for given input xloc.
- * @param iflag   Unused.
+ * @param userData  Userdata provided to non-linear system solver.
+ * @param xloc      Input vector for non-linear system.
+ * @param res       Residuum vector for given input xloc.
+ * @param iflag     Unused.
  */
-void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int *iflag)
+void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag)
 {
-  DATA *data = (DATA *)((void **)dataIn[0]);
-  threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GBODEF *gbfData = (DATA_GBODEF *)((void **)dataIn[2]);
+  DATA *data = userData->data;
+  threadData_t *threadData = userData->threadData;
+  DATA_GBODEF *gbfData = (DATA_GBODEF *)userData->solverData;
+  assertStreamPrint(threadData, gbfData != NULL, "residual_DIRK_MR: user data not set correctly");
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
@@ -503,16 +516,17 @@ void residual_DIRK_MR(void **dataIn, const double *xloc, double *res, const int 
  *
  * TODO: Describe what the residual means.
  *
- * @param dataIn  Userdata provided to non-linear system solver.
+ * @param userData  Userdata provided to non-linear system solver.
  * @param xloc    Input vector for non-linear system.
  * @param res     Residuum vector for given input xloc.
  * @param iflag   Unused.
  */
-void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *iflag)
+void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag)
 {
-  DATA *data = (DATA *)((void **)dataIn[0]);
-  threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GBODE *gbData = (DATA_GBODE *)((void **)dataIn[2]);
+  DATA *data = userData->data;
+  threadData_t *threadData = userData->threadData;
+  DATA_GBODE *gbData = (DATA_GBODE *)userData->solverData;
+  assertStreamPrint(threadData, gbData != NULL, "residual_DIRK: user data not set correctly");
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
@@ -542,16 +556,17 @@ void residual_DIRK(void **dataIn, const double *xloc, double *res, const int *if
  *
  * TODO: Describe how the residual is computed.
  *
- * @param dataIn  Userdata provided to non-linear system solver.
- * @param xloc    Input vector for non-linear system.
- * @param res     Residuum vector for given input xloc.
- * @param iflag   Unused.
+ * @param userData  Userdata provided to non-linear system solver.
+ * @param xloc      Input vector for non-linear system.
+ * @param res       Residuum vector for given input xloc.
+ * @param iflag     Unused.
  */
-void residual_IRK(void **dataIn, const double *xloc, double *res, const int *iflag) {
+void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag) {
 
-  DATA *data = (DATA *)((void **)dataIn[0]);
-  threadData_t *threadData = (threadData_t *)((void **)dataIn[1]);
-  DATA_GBODE *gbData = (DATA_GBODE *)((void **)dataIn[2]);
+  DATA *data = userData->data;
+  threadData_t *threadData = userData->threadData;
+  DATA_GBODE *gbData = (DATA_GBODE *)userData->solverData;
+  assertStreamPrint(threadData, gbData != NULL, "residual_IRK: user data not set correctly");
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;

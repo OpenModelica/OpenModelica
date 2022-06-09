@@ -2333,11 +2333,11 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        <%auxFunction%>
        <%tmp%>
 
-       void residualFunc<%ls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)
+       void residualFunc<%ls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
        {
          TRACE_PUSH
-         DATA *data = (DATA*) ((void**)dataIn[0]);
-         threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+         DATA *data = userData->data;
+         threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%ls.index%>};
          <% if ls.partOfJac then
            'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
@@ -2474,11 +2474,11 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        <%auxFunction%>
        <%tmp%>
 
-       void residualFunc<%ls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)
+       void residualFunc<%ls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
        {
          TRACE_PUSH
-         DATA *data = (DATA*) ((void**)dataIn[0]);
-         threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+         DATA *data = userData->data;
+         threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%ls.index%>};
          <% if ls.partOfJac then
            'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
@@ -2505,11 +2505,11 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        <%auxFunction2%>
        <%tmp2%>
 
-       void residualFunc<%at.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)
+       void residualFunc<%at.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
        {
          TRACE_PUSH
-         DATA *data = (DATA*) ((void**)dataIn[0]);
-         threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+         DATA *data = userData->data;
+         threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%at.index%>};
          <% if ls.partOfJac then
            'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
@@ -2883,8 +2883,8 @@ end functionNonLinearResidualsMultiFile2;
 template getNLSPrototypes(Integer index)
 ::=
   <<
-  void residualFunc<%index%>(void** dataIn, const double* xloc, double* res, const int* iflag);
-  void initializeStaticDataNLS<%index%>(void *inData, threadData_t *threadData, void *inSystemData, modelica_boolean initSparsPattern);
+  void residualFunc<%index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag);
+  void initializeStaticDataNLS<%index%>(void *inData, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsPattern);
   void getIterationVarsNLS<%index%>(struct DATA *inData, double *array);
   >>
 end getNLSPrototypes;
@@ -2903,7 +2903,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -2916,7 +2916,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -2935,13 +2935,13 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
       let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName)
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -2965,13 +2965,13 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
       let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName)
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -3046,9 +3046,9 @@ match system
         ;separator="\n")
     let residualFunctionHeader =
       if intEq(whichSet, 0) then
-        'void residualFunc<%nls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)'
+        'void residualFunc<%nls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)'
       else
-        'int residualFuncConstraints<%nls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)'
+        'int residualFuncConstraints<%nls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)'
     let returnValue = if intEq(whichSet, 1) then 'return 0;'
     <<
     <%innerNLSSystems%>
@@ -3059,8 +3059,8 @@ match system
     <%residualFunctionHeader%>
     {
       TRACE_PUSH
-      DATA *data = (DATA*) ((void**)dataIn[0]);
-      threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+      DATA *data = userData->data;
+      threadData_t *threadData = userData->threadData;
       const int equationIndexes[2] = {1,<%nls.index%>};
       int i;<% if clockIndex then <<
       const int clockIndex = <%clockIndex%>;
@@ -3158,9 +3158,10 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
    end match
 end generateStaticSparseData;
 
-template generateStaticInitialData(list<ComponentRef> crefs, String indexName, String systemType)
+template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   "Generates initial function for nonlinear loops."
 ::=
+  let systemType = 'NONLINEAR_SYSTEM_DATA'
   let bodyStaticData = (crefs |> cr hasindex i0 =>
     <<
     /* static nls data for <%crefStrNoUnderscore(cr)%> */
@@ -3172,10 +3173,9 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   <<
 
   OMC_DISABLE_OPT
-  void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData, modelica_boolean initSparsPattern)
+  void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsPattern)
   {
     DATA* data = (DATA*) inData;
-    <%systemType%>* sysData = (<%systemType%>*) inSystemData;
     int i=0;
     <%bodyStaticData%>
     /* initial sparse pattern */
