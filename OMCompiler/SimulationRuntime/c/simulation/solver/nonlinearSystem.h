@@ -36,6 +36,7 @@
 #define _NONLINEARSYSTEM_H_
 
 #include "../../simulation_data.h"
+#include "../../util/omc_error.h"
 #include "../../util/simulation_options.h"
 
 #ifdef __cplusplus
@@ -48,19 +49,34 @@ extern "C" {
 
 typedef void* NLS_SOLVER_DATA;
 
+typedef struct NLS_USERDATA {
+  DATA *data;
+  threadData_t *threadData;
+
+  int sysNumber;                        /* System index, for print messages only */
+  NONLINEAR_SYSTEM_DATA* nlsData;       /* Pointer to nonlinear system data */
+  ANALYTIC_JACOBIAN* analyticJacobian;  /* Pointer to analytic Jacobian */
+
+  void* solverData; /* Optional pointer to ODE solver data.
+                     * Used in NLS solving of ODE integrator step. */
+} NLS_USERDATA;
+
 void cleanUpOldValueListAfterEvent(DATA *data, double time);
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData);
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData);
-int freeNonlinearSystems(DATA *data, threadData_t *threadData);
-void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
-int solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, int sysNumber);
+void freeNonlinearSystems(DATA *data, threadData_t *threadData);
+void printNonLinearSystemSolvingStatistics(NONLINEAR_SYSTEM_DATA* nonlinsys, enum LOG_STREAM stream);
+modelica_boolean solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys);
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);
 int print_csvLineIterStats(void* csvData, int size, int num,
                            int iteration, double* x, double* f, double error_f,
                            double error_fs, double delta_x, double delta_xs,
                            double lambda);
-void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum);
+void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum, modelica_boolean* isSparseNls, modelica_boolean* isBigNls);
+
+NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumber, NONLINEAR_SYSTEM_DATA* nlsData, ANALYTIC_JACOBIAN* analyticJacobian);
+void freeNlsUserData(NLS_USERDATA* userData);
 
 extern void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, int n, int m, int* indRow, int* indCol);
 extern void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int m);

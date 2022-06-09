@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2022, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -49,25 +49,21 @@
 #include "gbode_tableau.h"
 #include "gbode_util.h"
 
-#include "simulation_data.h"
-#include "solver_main.h"
+#include "epsilon.h"
 #include "external_input.h"
 #include "jacobianSymbolical.h"
 #include "kinsolSolver.h"
 #include "model_help.h"
 #include "newtonIteration.h"
 #include "nonlinearSystem.h"
-#include "simulation/options.h"
-#include "simulation/results/simulation_result.h"
-#include "util/jacobian_util.h"
-#include "util/omc_error.h"
-#include "util/omc_file.h"
-#include "util/simulation_options.h"
-#include "util/varinfo.h"
-#include "epsilon.h"
-
-
-
+#include "../../simulation_data.h"
+#include "../results/simulation_result.h"
+#include "solver_main.h"
+#include "../../util/jacobian_util.h"
+#include "../../util/omc_error.h"
+#include "../../util/omc_file.h"
+#include "../../util/simulation_options.h"
+#include "../../util/varinfo.h"
 
 /**
  * @brief Function to compute single-rate step.

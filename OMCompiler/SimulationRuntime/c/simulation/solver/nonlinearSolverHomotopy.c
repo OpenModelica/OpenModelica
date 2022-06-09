@@ -148,151 +148,151 @@ typedef struct DATA_HOMOTOPY
   int (*h_function)(struct DATA_HOMOTOPY*, double*, double*);
   int (*hJac_dh)   (struct DATA_HOMOTOPY*, double*, double*);
 
-  DATA* data;
-  threadData_t *threadData;
-  int sysNumber;
+  NLS_USERDATA* userData;
   int eqSystemNumber;
   double timeValue;
   int mixedSystem;
 
+  // TODO AHeu: Don't use a void pointer here
   void* dataHybrid;
 
 } DATA_HOMOTOPY;
 
-/*! \fn allocateHomotopyData
- *  allocate memory for nonlinear system solver
- *  \author bbachmann
+/**
+ * @brief Allocate memory for non-linear homotopy solver.
+ *
+ * @param size              Size of non-linear system.
+ * @return DATA_HOMOTOPY*   Pointer to allocated homotopy data.
  */
-int allocateHomotopyData(size_t size, void** voiddata)
+DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
 {
-  DATA_HOMOTOPY* data = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
+  DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
+  assertStreamPrint(NULL, 0 != homotopyData, "allocationHomotopyData() failed!");
 
-  *voiddata = (void*)data;
-  assertStreamPrint(NULL, 0 != data, "allocationHomotopyData() failed!");
+  homotopyData->initialized = 0;
+  homotopyData->n = size;
+  homotopyData->m = size + 1;
+  homotopyData->xtol_sqrd = newtonXTol*newtonXTol;
+  homotopyData->ftol_sqrd = newtonFTol*newtonFTol;
 
-  data->initialized = 0;
-  data->n = size;
-  data->m = size + 1;
-  data->xtol_sqrd = newtonXTol*newtonXTol;
-  data->ftol_sqrd = newtonFTol*newtonFTol;
+  homotopyData->error_f_sqrd = 0;
 
-  data->error_f_sqrd = 0;
+  homotopyData->maxNumberOfIterations = size*100;
+  homotopyData->numberOfIterations = 0;
+  homotopyData->numberOfFunctionEvaluations = 0;
 
-  data->maxNumberOfIterations = size*100;
-  data->numberOfIterations = 0;
-  data->numberOfFunctionEvaluations = 0;
+  homotopyData->resScaling = (double*) calloc(size,sizeof(double));
+  homotopyData->fvecScaled = (double*) calloc(size,sizeof(double));
+  homotopyData->hvecScaled = (double*) calloc(size,sizeof(double));
+  homotopyData->dxScaled = (double*) calloc(size,sizeof(double));
 
-  data->resScaling = (double*) calloc(size,sizeof(double));
-  data->fvecScaled = (double*) calloc(size,sizeof(double));
-  data->hvecScaled = (double*) calloc(size,sizeof(double));
-  data->dxScaled = (double*) calloc(size,sizeof(double));
+  homotopyData->xScaling = (double*) calloc((size+1),sizeof(double));
 
-  data->xScaling = (double*) calloc((size+1),sizeof(double));
-
-  data->f1 = (double*) calloc(size,sizeof(double));
-  data->f2 = (double*) calloc(size,sizeof(double));
-  data->gradFx = (double*) calloc(size,sizeof(double));
+  homotopyData->f1 = (double*) calloc(size,sizeof(double));
+  homotopyData->f2 = (double*) calloc(size,sizeof(double));
+  homotopyData->gradFx = (double*) calloc(size,sizeof(double));
 
   /* damped newton */
-  data->x = (double*) calloc((size+1),sizeof(double));
-  data->x0 = (double*) calloc((size+1),sizeof(double));
-  data->xStart = (double*) calloc(size,sizeof(double));
-  data->x1 = (double*) calloc((size+1),sizeof(double));
-  data->finit = (double*) calloc(size,sizeof(double));
-  data->fx0 = (double*) calloc(size,sizeof(double));
-  data->fJac = (double*) calloc((size*(size+1)),sizeof(double));
-  data->fJacx0 = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->x = (double*) calloc((size+1),sizeof(double));
+  homotopyData->x0 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->xStart = (double*) calloc(size,sizeof(double));
+  homotopyData->x1 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->finit = (double*) calloc(size,sizeof(double));
+  homotopyData->fx0 = (double*) calloc(size,sizeof(double));
+  homotopyData->fJac = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->fJacx0 = (double*) calloc((size*(size+1)),sizeof(double));
 
   /* debug arrays */
-  data->debug_dx = (double*) calloc(size,sizeof(double));
-  data->debug_fJac = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->debug_dx = (double*) calloc(size,sizeof(double));
+  homotopyData->debug_fJac = (double*) calloc((size*(size+1)),sizeof(double));
 
    /* homotopy */
-  data->y0 = (double*) calloc((size+1),sizeof(double));
-  data->y1 = (double*) calloc((size+1),sizeof(double));
-  data->y2 = (double*) calloc((size+1),sizeof(double));
-  data->yt = (double*) calloc((size+1),sizeof(double));
-  data->dy0 = (double*) calloc((size+1),sizeof(double));
-  data->dy1 = (double*) calloc((size+homBacktraceStrategy),sizeof(double));
-  data->dy2 = (double*) calloc((size+1),sizeof(double));
-  data->hvec = (double*) calloc(size,sizeof(double));
-  data->hJac  = (double*) calloc(size*(size+1),sizeof(double));
-  data->hJac2  = (double*) calloc((size+1)*(size+2),sizeof(double));
-  data->hJacInit  = (double*) calloc(size*(size+1),sizeof(double));
-  data->ones  = (double*) calloc(size+1,sizeof(double));
+  homotopyData->y0 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->y1 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->y2 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->yt = (double*) calloc((size+1),sizeof(double));
+  homotopyData->dy0 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->dy1 = (double*) calloc((size+homBacktraceStrategy),sizeof(double));
+  homotopyData->dy2 = (double*) calloc((size+1),sizeof(double));
+  homotopyData->hvec = (double*) calloc(size,sizeof(double));
+  homotopyData->hJac  = (double*) calloc(size*(size+1),sizeof(double));
+  homotopyData->hJac2  = (double*) calloc((size+1)*(size+2),sizeof(double));
+  homotopyData->hJacInit  = (double*) calloc(size*(size+1),sizeof(double));
+  homotopyData->ones  = (double*) calloc(size+1,sizeof(double));
 
   /* linear system */
-  data->indRow =(int*) calloc(size+homBacktraceStrategy-1,sizeof(int));
-  data->indCol =(int*) calloc(size+homBacktraceStrategy,sizeof(int));
+  homotopyData->indRow =(int*) calloc(size+homBacktraceStrategy-1,sizeof(int));
+  homotopyData->indCol =(int*) calloc(size+homBacktraceStrategy,sizeof(int));
 
-  allocateHybrdData(size, &data->dataHybrid);
+  homotopyData->userData = userData;
 
-  assertStreamPrint(NULL, 0 != *voiddata, "allocationHomotopyData() voiddata failed!");
-  return 0;
+  homotopyData->dataHybrid = allocateHybrdData(size, userData);
+
+  assertStreamPrint(NULL, homotopyData != NULL, "allocationHomotopyData() voiddata failed!");
+  return homotopyData;
 }
 
-/*! \fn freeHomotopyData
+/**
+ * @brief Free homotpy data.
  *
- *  free memory for nonlinear system solver
- *  \author bbachmann
+ * @param homotopyData  Pointer to homotopy data.
  */
-int freeHomotopyData(void **voiddata)
+void freeHomotopyData(DATA_HOMOTOPY* homotopyData)
 {
-  DATA_HOMOTOPY* data = (DATA_HOMOTOPY*) *voiddata;
-
-  free(data->resScaling);
-  free(data->fvecScaled);
-  free(data->hvecScaled);
-  free(data->x);
-  free(data->debug_dx);
-  free(data->finit);
-  free(data->f1);
-  free(data->f2);
-  free(data->gradFx);
-  free(data->fJac);
-  free(data->fJacx0);
-  free(data->debug_fJac);
+  free(homotopyData->resScaling);
+  free(homotopyData->fvecScaled);
+  free(homotopyData->hvecScaled);
+  free(homotopyData->x);
+  free(homotopyData->debug_dx);
+  free(homotopyData->finit);
+  free(homotopyData->f1);
+  free(homotopyData->f2);
+  free(homotopyData->gradFx);
+  free(homotopyData->fJac);
+  free(homotopyData->fJacx0);
+  free(homotopyData->debug_fJac);
 
   /* damped newton */
-  free(data->x0);
-  free(data->xStart);
-  free(data->x1);
-  free(data->dxScaled);
+  free(homotopyData->x0);
+  free(homotopyData->xStart);
+  free(homotopyData->x1);
+  free(homotopyData->dxScaled);
 
   /* homotopy */
-  free(data->fx0);
-  free(data->hvec);
-  free(data->hJac);
-  free(data->hJac2);
-  free(data->hJacInit);
-  free(data->y0);
-  free(data->y1);
-  free(data->y2);
-  free(data->yt);
-  free(data->dy0);
-  free(data->dy1);
-  free(data->dy2);
-  free(data->xScaling);
-  free(data->ones);
+  free(homotopyData->fx0);
+  free(homotopyData->hvec);
+  free(homotopyData->hJac);
+  free(homotopyData->hJac2);
+  free(homotopyData->hJacInit);
+  free(homotopyData->y0);
+  free(homotopyData->y1);
+  free(homotopyData->y2);
+  free(homotopyData->yt);
+  free(homotopyData->dy0);
+  free(homotopyData->dy1);
+  free(homotopyData->dy2);
+  free(homotopyData->xScaling);
+  free(homotopyData->ones);
 
   /* linear system */
-  free(data->indRow);
-  free(data->indCol);
+  free(homotopyData->indRow);
+  free(homotopyData->indCol);
 
-  freeHybrdData(&data->dataHybrid);
+  /* Don't free userData here, it's done in freeHybrdData */
+  freeHybrdData(homotopyData->dataHybrid);
 
-  return 0;
+  free(homotopyData);
+  return;
 }
 
 /* Prototypes for debug functions
  *  \author bbachmann
  */
-
 void printUnknowns(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "nls status");
@@ -310,7 +310,7 @@ void printNewtonStep(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "newton step");
@@ -328,7 +328,7 @@ void printHomotopyUnknowns(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "homotopy status");
@@ -356,7 +356,7 @@ void printHomotopyPredictorStep(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "predictor status");
@@ -383,7 +383,7 @@ void printHomotopyCorrectorStep(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "corrector status");
@@ -834,12 +834,11 @@ void swapPointer(double* *p1, double* *p2)
  */
 int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
 {
-  DATA* data = solverData->data;
-  threadData_t *threadData = solverData->threadData;
   int i,j,k,l,ii;
-  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[solverData->sysNumber]);
-  const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+  DATA* data = solverData->userData->data;
+  threadData_t *threadData = solverData->userData->threadData;
+  NONLINEAR_SYSTEM_DATA* systemData = solverData->userData->nlsData;
+  ANALYTIC_JACOBIAN* jacobian = solverData->userData->analyticJacobian;
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
 
@@ -933,11 +932,14 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
  */
 static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
 {
-  void *dataAndThreadData[2] = {solverData->data, solverData->threadData};
+  DATA* data = solverData->userData->data;
+  threadData_t* threadData = solverData->userData->threadData;
+  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 0;
 
-  /*TODO: change input to residualFunc from data to systemData */
-  (solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].residualFunc(dataAndThreadData, x, f, &iflag);
+  /* TODO: change input to residualFunc from data to systemData */
+  nlsData->residualFunc(&resUserData, x, f, &iflag);
   solverData->numberOfFunctionEvaluations++;
 
   return 0;
@@ -951,12 +953,15 @@ static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
  */
 int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
 {
-  void *dataAndThreadData[2] = {solverData->data, solverData->threadData};
+  DATA* data = solverData->userData->data;
+  threadData_t* threadData = solverData->userData->threadData;
+  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 0;
   int retVal;
 
-  /*TODO: change input to residualFunc from data to systemData */
-  retVal = (solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].residualFuncConstraints(dataAndThreadData, x, f, &iflag);
+  /* TODO: change input to residualFunc from data to systemData */
+  retVal = nlsData->residualFuncConstraints(&resUserData, x, f, &iflag);
   solverData->numberOfFunctionEvaluations++;
 
   return retVal;
@@ -970,12 +975,12 @@ int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
  */
 static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
 {
+  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
+  int jacobianIndex = nlsData->jacobianIndex;
   int i;
-  int jacobianIndex = (&(solverData->data->simulationInfo->nonlinearSystemData[solverData->sysNumber]))->jacobianIndex;
-  NONLINEAR_SYSTEM_DATA* nonlinsys = &(solverData->data->simulationInfo->nonlinearSystemData[solverData->sysNumber]);
 
   /* performance measurement */
-  rt_ext_tp_tick(&nonlinsys->jacobianTimeClock);
+  rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
   /* calculate jacobian */
   if(jacobianIndex != -1)
@@ -1002,8 +1007,8 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
     messageClose(LOG_NLS_JAC_TEST);
   }
   /* performance measurement and statistics */
-  nonlinsys->jacobianTime += rt_ext_tp_tock(&(nonlinsys->jacobianTimeClock));
-  nonlinsys->numberOfJEval++;
+  nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
+  nlsData->numberOfJEval++;
 
   return 0;
 }
@@ -1338,9 +1343,10 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   int lastWasGood = 0; /* boolean, keeps track of previous x */
 
   int assert = 1;
-  threadData_t *threadData = solverData->threadData;
-  NONLINEAR_SYSTEM_DATA* nonlinsys = &(solverData->data->simulationInfo->nonlinearSystemData[solverData->data->simulationInfo->currentNonlinearSystemIndex]);
-  int linearSolverMethod = solverData->data->simulationInfo->nlsLinearSolver;
+  DATA* data = solverData->userData->data;
+  threadData_t *threadData = solverData->userData->threadData;
+  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
+  int linearSolverMethod = data->simulationInfo->nlsLinearSolver;
 
   /* debug information */
   debugString(LOG_NLS_V, "******************************************************");
@@ -1552,10 +1558,10 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     debugDouble(LOG_NLS_V, "newtonFTol          =", sqrt(solverData->ftol_sqrd));
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-    if (solverData->data->simulationInfo->nlsCsvInfomation){
-      print_csvLineIterStats(((struct csvStats*) nonlinsys->csvData)->iterStats,
-                             nonlinsys->size,
-                             nonlinsys->numberOfCall+1,
+    if (data->simulationInfo->nlsCsvInfomation){
+      print_csvLineIterStats(((struct csvStats*) nlsData->csvData)->iterStats,
+                             nlsData->size,
+                             nlsData->numberOfCall+1,
                              numberOfIterations,
                              solverData->x,
                              solverData->f1,
@@ -1704,7 +1710,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   int maxLambdaSteps = homMaxLambdaSteps ? homMaxLambdaSteps : solverData->maxNumberOfIterations;
 
   int assert = 1;
-  threadData_t *threadData = solverData->threadData;
+  DATA* data = solverData->userData->data;
+  threadData_t *threadData = solverData->userData->threadData;
+  int sysNumber = solverData->userData->sysNumber;
+
+  // TODO: Make this print a function!
   FILE *pFile = NULL;
   char buffer[4096];
 
@@ -1713,17 +1723,17 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     if(solverData->initHomotopy && ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
     {
       if (omc_flag[FLAG_OUTPUT_PATH]) { /* Add output path to file name */
-        sprintf(buffer, "%s/%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", omc_flagValue[FLAG_OUTPUT_PATH], solverData->data->modelData->modelFilePrefix, solverData->sysNumber, solverData->data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
+        sprintf(buffer, "%s/%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix, sysNumber, data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
       }
       else
       {
-        sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", solverData->data->modelData->modelFilePrefix, solverData->sysNumber, solverData->data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
+        sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", data->modelData->modelFilePrefix, sysNumber, data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
       }
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = omc_fopen(buffer, "wt");
       fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
       for(i=0; i<n; ++i)
-        fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquation(&solverData->data->modelData->modelDataXml,solverData->eqSystemNumber).vars[i]);
+        fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquation(&data->modelData->modelDataXml,solverData->eqSystemNumber).vars[i]);
       fprintf(pFile, "\n");
       fprintf(pFile, "0.0");
       for(i=0; i<n; ++i)
@@ -2110,7 +2120,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
   debugString(LOG_NLS_HOMOTOPY, "HOMOTOPY ALGORITHM SUCCEEDED");
   if (solverData->initHomotopy) {
-    solverData->data->simulationInfo->homotopySteps += numSteps;
+    data->simulationInfo->homotopySteps += numSteps;
     debugInt(LOG_INIT_HOMOTOPY, "Total number of lambda steps for this homotopy loop:", numSteps);
   }
   debugString(LOG_NLS_HOMOTOPY, "======================================================");
@@ -2124,28 +2134,27 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   return 0;
 }
 
-/*! \fn solve non-linear system with a damped Newton method combined with a homotopy approach
-
+/**
+ * @brief Solve non-linear system with damped Newton method, combined with homotopy approach.
  *
- *  \param [in]  [data]
-*                [sysNumber] index of the corresponding non-linear system
- *
- *  \author bbachmann
+ * @param data              Pointer to data struct.
+ * @param threadData        Pointer to thread data.
+ * @param nlsData           Non-linear system data.
+ * @return modelica_boolean
  */
-int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
+modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData)
 {
-  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-  DATA_HOMOTOPY* solverData = (DATA_HOMOTOPY*)(systemData->solverData);
+  DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*)(nlsData->solverData);
   DATA_HYBRD* solverDataHybrid;
 
   /*
    * Get non-linear equation system
    */
-  int eqSystemNumber = systemData->equationIndex;
-  int mixedSystem = systemData->mixedSystem;
+  int eqSystemNumber = nlsData->equationIndex;
+  int mixedSystem = nlsData->mixedSystem;
 
   int i, j;
-  int success = 0;
+  modelica_boolean success = FALSE;
   double error_f_sqrd, error_f1_sqrd;
 
   int assert = 1;
@@ -2156,77 +2165,74 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   int tries = 0;
   int runHomotopy = 0;
   int skipNewton = 0;
-  int numberOfFunctionEvaluationsOld = solverData->numberOfFunctionEvaluations;
-  solverData->casualTearingSet = systemData->strictTearingFunctionCall != NULL;
+  int numberOfFunctionEvaluationsOld = homotopyData->numberOfFunctionEvaluations;
+  homotopyData->casualTearingSet = nlsData->strictTearingFunctionCall != NULL;
   int constraintViolated;
-  solverData->initHomotopy = systemData->initHomotopy;
+  homotopyData->initHomotopy = nlsData->initHomotopy;
 
   modelica_boolean* relationsPreBackup;
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
 
-  solverData->f = wrapper_fvec;
-  solverData->f_con = wrapper_fvec_constraints;
-  solverData->fJac_f = wrapper_fvec_der;
+  homotopyData->f = wrapper_fvec;
+  homotopyData->f_con = wrapper_fvec_constraints;
+  homotopyData->fJac_f = wrapper_fvec_der;
 
-  solverData->data = data;
-  solverData->threadData = threadData;
-  solverData->sysNumber = sysNumber;
-  solverData->eqSystemNumber = systemData->equationIndex;
-  solverData->mixedSystem = mixedSystem;
-  solverData->timeValue = data->localData[0]->timeValue;
-  solverData->minValue = systemData->min;
-  solverData->maxValue = systemData->max;
-  solverData->info = 0;
+  homotopyData->eqSystemNumber = nlsData->equationIndex;
+  homotopyData->mixedSystem = mixedSystem;
+  homotopyData->timeValue = data->localData[0]->timeValue;
+  homotopyData->minValue = nlsData->min;
+  homotopyData->maxValue = nlsData->max;
+  homotopyData->info = 0;
 
-  vecConst(solverData->m,1.0,solverData->ones);
+  vecConst(homotopyData->m,1.0,homotopyData->ones);
 
   debugString(LOG_NLS_V, "------------------------------------------------------");
-  if (!solverData->initHomotopy)
+  if (!homotopyData->initHomotopy)
     debugString(LOG_NLS_V, "SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)");
   else
     debugString(LOG_NLS_V, "SOLVING HOMOTOPY INITIALIZATION PROBLEM WITH THE HOMOTOPY SOLVER");
   debugInt(LOG_NLS_V, "EQUATION NUMBER:", eqSystemNumber);
-  debugDouble(LOG_NLS_V, "TIME:", solverData->timeValue);
+  debugDouble(LOG_NLS_V, "TIME:", homotopyData->timeValue);
   debugInt(LOG_NLS_V,   "number of function calls (so far!): ",numberOfFunctionEvaluationsOld);
 
   /* set x vector */
   if(data->simulationInfo->discreteCall)
   {
-    vecCopy(solverData->n, systemData->nlsx, solverData->xStart);
-    debugVectorDouble(LOG_NLS_V,"System values", solverData->xStart, solverData->n);
+    vecCopy(homotopyData->n, nlsData->nlsx, homotopyData->xStart);
+    debugVectorDouble(LOG_NLS_V,"System values", homotopyData->xStart, homotopyData->n);
   } else
   {
-    vecCopy(solverData->n, systemData->nlsxExtrapolation, solverData->xStart);
-    debugVectorDouble(LOG_NLS_V,"System extrapolation", solverData->xStart, solverData->n);
+    vecCopy(homotopyData->n, nlsData->nlsxExtrapolation, homotopyData->xStart);
+    debugVectorDouble(LOG_NLS_V,"System extrapolation", homotopyData->xStart, homotopyData->n);
   }
-  vecCopy(solverData->n, solverData->xStart, solverData->x0);
+  vecCopy(homotopyData->n, homotopyData->xStart, homotopyData->x0);
   // Initialize lambda variable
-  if ((solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].homotopySupport && !solverData->initHomotopy && (solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].size > solverData->n) {
-    solverData->x0[solverData->n] = 1.0;
-    solverData->x[solverData->n] = 1.0;
-    solverData->x1[solverData->n] = 1.0;
+  if (homotopyData->userData->nlsData->homotopySupport && !homotopyData->initHomotopy && homotopyData->userData->nlsData->size > homotopyData->n) {
+    homotopyData->x0[homotopyData->n] = 1.0;
+    homotopyData->x[homotopyData->n] = 1.0;
+    homotopyData->x1[homotopyData->n] = 1.0;
   } else {
-    solverData->x0[solverData->n] = 0.0;
-    solverData->x[solverData->n] = 0.0;
-    solverData->x1[solverData->n] = 0.0;
+    homotopyData->x0[homotopyData->n] = 0.0;
+    homotopyData->x[homotopyData->n] = 0.0;
+    homotopyData->x1[homotopyData->n] = 0.0;
   }
   /* Use actual working point for scaling */
-  for (i=0;i<solverData->n;i++){
-    solverData->xScaling[i] = fmax(systemData->nominal[i],fabs(solverData->x0[i]));
+  for (i=0;i<homotopyData->n;i++){
+    homotopyData->xScaling[i] = fmax(nlsData->nominal[i],fabs(homotopyData->x0[i]));
   }
-  solverData->xScaling[solverData->n] = 1.0;
+  homotopyData->xScaling[homotopyData->n] = 1.0;
 
-  debugVectorDouble(LOG_NLS_V,"Nominal values", systemData->nominal, solverData->n);
-  debugVectorDouble(LOG_NLS_V,"Scaling values", solverData->xScaling, solverData->m);
+  debugVectorDouble(LOG_NLS_V,"Nominal values", nlsData->nominal, homotopyData->n);
+  debugVectorDouble(LOG_NLS_V,"Scaling values", homotopyData->xScaling, homotopyData->m);
 
 
-  if (!solverData->initHomotopy) {
+  if (!homotopyData->initHomotopy) {
     /* Handle asserts of function calls, mainly necessary for fluid stuff */
     assert = 1;
     giveUp = 1;
     while (tries<=2)
     {
-      debugVectorDouble(LOG_NLS_V,"x0", solverData->x0, solverData->n);
+      debugVectorDouble(LOG_NLS_V,"x0", homotopyData->x0, homotopyData->n);
       /* evaluate with discontinuities */
       if(data->simulationInfo->discreteCall)
       {
@@ -2239,38 +2245,38 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       if (mixedSystem)
         memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
 
-      if (solverData->casualTearingSet){
-        constraintViolated = solverData->f_con(solverData, solverData->x0, solverData->f1);
+      if (homotopyData->casualTearingSet){
+        constraintViolated = homotopyData->f_con(homotopyData, homotopyData->x0, homotopyData->f1);
         if (constraintViolated){
           giveUp = 1;
           break;
         }
       }
       else
-        solverData->f(solverData, solverData->x0, solverData->f1);
+        homotopyData->f(homotopyData, homotopyData->x0, homotopyData->f1);
 
       /* Try to get out of here!!! */
-      error_f_sqrd        = vec2NormSqrd(solverData->n, solverData->f1);
+      error_f_sqrd        = vec2NormSqrd(homotopyData->n, homotopyData->f1);
 
-      solverData->fJac_f(solverData, solverData->x0, solverData->fJac);
-      vecCopy(solverData->n, solverData->f1, solverData->fJac + solverData->n*solverData->n);
-      vecCopy(solverData->n*solverData->m, solverData->fJac, solverData->fJacx0);
+      homotopyData->fJac_f(homotopyData, homotopyData->x0, homotopyData->fJac);
+      vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fJac + homotopyData->n*homotopyData->n);
+      vecCopy(homotopyData->n*homotopyData->m, homotopyData->fJac, homotopyData->fJacx0);
       if (mixedSystem)
         memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
       /* calculate scaling factor of residuals */
-      matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
-      debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", solverData->resScaling, solverData->n);
-      scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
+      matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
+      debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", homotopyData->resScaling, homotopyData->n);
+      scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 
-      pos = solverData->n;
-      assert = (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1);
+      pos = homotopyData->n;
+      assert = (solveSystemWithTotalPivotSearch(homotopyData->n, homotopyData->dy0, homotopyData->fJac, homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
       if (!assert)
         debugString(LOG_NLS_V, "regular initial point!!!");
       giveUp = 0;
 #ifndef OMC_EMCC
       MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
-      if (assert && solverData->casualTearingSet)
+      if (assert && homotopyData->casualTearingSet)
       {
         giveUp = 1;
         break;
@@ -2286,19 +2292,19 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       if (tries == 1)
       {
         debugString(LOG_NLS_V, "assert handling:\t vary initial guess by +1%.");
-        for(i = 0; i < solverData->n; i++)
-          solverData->x0[i] = solverData->xStart[i] + solverData->xScaling[i]*i/solverData->n*0.01;
+        for(i = 0; i < homotopyData->n; i++)
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.01;
       }
       if (tries == 2)
       {
         debugString(LOG_NLS_V,"assert handling:\t vary initial guess by +10%.");
-        for(i = 0; i < solverData->n; i++)
-          solverData->x0[i] = solverData->xStart[i] + solverData->xScaling[i]*i/solverData->n*0.1;
+        for(i = 0; i < homotopyData->n; i++)
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.1;
       }
     }
     ((DATA*)data)->simulationInfo->solveContinuous = 1;
-    vecCopy(solverData->n, solverData->x0, solverData->x);
-    vecCopy(solverData->n, solverData->f1, solverData->fx0);
+    vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
+    vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fx0);
   }
 
   /* start solving loop */
@@ -2306,39 +2312,39 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   {
     giveUp = 1;
 
-    if (!skipNewton && !solverData->initHomotopy){
+    if (!skipNewton && !homotopyData->initHomotopy){
 
       /* set x vector */
       if(data->simulationInfo->discreteCall){
-        memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
+        memcpy(nlsData->nlsx, homotopyData->x, homotopyData->n*(sizeof(double)));
       }
       else{
-        memcpy(systemData->nlsxExtrapolation, solverData->x, solverData->n*(sizeof(double)));
+        memcpy(nlsData->nlsxExtrapolation, homotopyData->x, homotopyData->n*(sizeof(double)));
       }
 
-      newtonAlgorithm(solverData, solverData->x);
+      newtonAlgorithm(homotopyData, homotopyData->x);
 
       // If this is the casual tearing set (only exists for dynamic tearing), break after first try
-      if (solverData->info == -1 && solverData->casualTearingSet){
+      if (homotopyData->info == -1 && homotopyData->casualTearingSet){
         infoStreamPrint(LOG_NLS_V, 0, "### No Solution for the casual tearing set at the first try! ###");
         break;
       }
 
-      if (solverData->info == -1){
-        solverDataHybrid = (DATA_HYBRD*)(solverData->dataHybrid);
-        systemData->solverData = solverDataHybrid;
+      if (homotopyData->info == -1){
+        solverDataHybrid = (DATA_HYBRD*)(homotopyData->dataHybrid);
+        nlsData->solverData = solverDataHybrid;
 
-        solverData->info = solveHybrd(data, threadData, sysNumber);
+        homotopyData->info = solveHybrd(data, threadData, nlsData);
 
-        memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
-        systemData->solverData = solverData;
+        memcpy(homotopyData->x, nlsData->nlsx, homotopyData->n*(sizeof(double)));
+        nlsData->solverData = homotopyData;
       }
     }
 
     /* solution found */
-    if(solverData->info == 1)
+    if(homotopyData->info == 1)
     {
-      success = 1;
+      success = TRUE;
       /* This case may be switched off, because of event chattering!!!*/
       if(mixedSystem && data->simulationInfo->discreteCall && (alreadyTested<1))
       {
@@ -2346,35 +2352,35 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
         debugVectorBool(LOG_NLS_V,"Relations Backup vector", relationsPreBackup, ((DATA*)data)->modelData->nRelations);
         ((DATA*)data)->simulationInfo->solveContinuous = 0;
 
-        if (solverData->casualTearingSet){
-          constraintViolated = solverData->f_con(solverData, solverData->x, solverData->f1);
+        if (homotopyData->casualTearingSet){
+          constraintViolated = homotopyData->f_con(homotopyData, homotopyData->x, homotopyData->f1);
           if (constraintViolated){
-            success = 0;
+            success = FALSE;
             break;
           }
         }
         else
-          solverData->f(solverData, solverData->x, solverData->f1);
+          homotopyData->f(homotopyData, homotopyData->x, homotopyData->f1);
 
         debugVectorBool(LOG_NLS_V,"Relations vector", ((DATA*)data)->simulationInfo->relations, ((DATA*)data)->modelData->nRelations);
         if (isNotEqualVectorInt(((DATA*)data)->modelData->nRelations, ((DATA*)data)->simulationInfo->relations, relationsPreBackup)>0)
         {
           /* re-run the solution process, since relations in the system have changed */
-          success = 0;
+          success = FALSE;
           giveUp = 0;
           runHomotopy = 0;
           alreadyTested = 1;
-          vecCopy(solverData->n, solverData->x0, solverData->x);
-          vecCopy(solverData->n, solverData->fx0, solverData->f1);
-          vecCopy(solverData->n*solverData->m, solverData->fJacx0, solverData->fJac);
+          vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
+          vecCopy(homotopyData->n, homotopyData->fx0, homotopyData->f1);
+          vecCopy(homotopyData->n*homotopyData->m, homotopyData->fJacx0, homotopyData->fJac);
 
           /* calculate scaling factor of residuals */
-          matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
-          scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
+          matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
+          scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 
-          pos = solverData->n;
-          solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac,   solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet);
-          debugDouble(LOG_NLS_V,"solve mixed system at time : ", solverData->timeValue);
+          pos = homotopyData->n;
+          solveSystemWithTotalPivotSearch(homotopyData->n, homotopyData->dy0, homotopyData->fJac,   homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet);
+          debugDouble(LOG_NLS_V,"solve mixed system at time : ", homotopyData->timeValue);
           continue;
         }
       }
@@ -2382,12 +2388,12 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       {
         debugString(LOG_NLS_V,"SYSTEM SOLVED");
         debugInt(LOG_NLS_V,   "homotopy method:          ",runHomotopy);
-        debugInt(LOG_NLS_V,   "number of function calls: ",solverData->numberOfFunctionEvaluations-numberOfFunctionEvaluationsOld);
-        printUnknowns(LOG_NLS_V, solverData);
+        debugInt(LOG_NLS_V,   "number of function calls: ",homotopyData->numberOfFunctionEvaluations-numberOfFunctionEvaluationsOld);
+        printUnknowns(LOG_NLS_V, homotopyData);
         debugString(LOG_NLS_V, "------------------------------------------------------");
         /* take the solution */
-        vecCopy(solverData->n, solverData->x, systemData->nlsx);
-        debugVectorDouble(LOG_NLS_V,"Solution", solverData->x, solverData->n);
+        vecCopy(homotopyData->n, homotopyData->x, nlsData->nlsx);
+        debugVectorDouble(LOG_NLS_V,"Solution", homotopyData->x, homotopyData->n);
         /* reset continous flag */
         ((DATA*)data)->simulationInfo->solveContinuous = 0;
         break;
@@ -2395,31 +2401,31 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     }
     if (!success && runHomotopy>=3) break;
     /* Start homotopy search for new start values */
-    vecCopy(solverData->n, solverData->x0, solverData->x);
+    vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
     runHomotopy++;
     /* debug output */
     debugString(LOG_NLS_HOMOTOPY, "======================================================");
 
-    if (solverData->initHomotopy) {
+    if (homotopyData->initHomotopy) {
       if (runHomotopy == 1) {
-        solverData->h_function = wrapper_fvec;
-        solverData->hJac_dh = wrapper_fvec_der;
-        solverData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? -1.0 : 1.0;
+        homotopyData->h_function = wrapper_fvec;
+        homotopyData->hJac_dh = wrapper_fvec_der;
+        homotopyData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? -1.0 : 1.0;
         debugInt(LOG_INIT_HOMOTOPY, "Homotopy run: ", runHomotopy);
-        debugDouble(LOG_INIT_HOMOTOPY,"startDirection = ", solverData->startDirection);
+        debugDouble(LOG_INIT_HOMOTOPY,"startDirection = ", homotopyData->startDirection);
       }
 
       if (runHomotopy == 2) {
-        solverData->h_function = wrapper_fvec;
-        solverData->hJac_dh = wrapper_fvec_der;
-        solverData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? 1.0 : -1.0;
+        homotopyData->h_function = wrapper_fvec;
+        homotopyData->hJac_dh = wrapper_fvec_der;
+        homotopyData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? 1.0 : -1.0;
         infoStreamPrint(LOG_ASSERT, 0, "The homotopy algorithm is started again with opposing start direction.");
         debugInt(LOG_INIT_HOMOTOPY, "Homotopy run: ", runHomotopy);
-        debugDouble(LOG_INIT_HOMOTOPY,"Try again with startDirection = ", solverData->startDirection);
+        debugDouble(LOG_INIT_HOMOTOPY,"Try again with startDirection = ", homotopyData->startDirection);
       }
 
       if (runHomotopy == 3) {
-        success = 0;
+        success = FALSE;
         break;
       }
     }
@@ -2428,40 +2434,40 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       if (runHomotopy == 1)
       {
         /* store x0 and calculate f(x0) -> newton homotopy, fJac(x0) -> taylor, affin homotopy */
-        solverData->h_function = wrapper_fvec_homotopy_newton;
-        solverData->hJac_dh = wrapper_fvec_homotopy_newton_der;
-        solverData->startDirection = 1.0;
-        debugDouble(LOG_NLS_HOMOTOPY,"STARTING NEWTON HOMOTOPY METHOD; startDirection = ", solverData->startDirection);
+        homotopyData->h_function = wrapper_fvec_homotopy_newton;
+        homotopyData->hJac_dh = wrapper_fvec_homotopy_newton_der;
+        homotopyData->startDirection = 1.0;
+        debugDouble(LOG_NLS_HOMOTOPY,"STARTING NEWTON HOMOTOPY METHOD; startDirection = ", homotopyData->startDirection);
       }
       if (runHomotopy == 2)
       {
         /* store x0 and calculate f(x0) -> newton homotopy, fJac(x0) -> taylor, affin homotopy */
-        solverData->h_function = wrapper_fvec_homotopy_newton;
-        solverData->hJac_dh = wrapper_fvec_homotopy_newton_der;
-        solverData->startDirection = -1.0;
-        debugDouble(LOG_NLS_HOMOTOPY,"STARTING NEWTON HOMOTOPY METHOD; startDirection = ", solverData->startDirection);
+        homotopyData->h_function = wrapper_fvec_homotopy_newton;
+        homotopyData->hJac_dh = wrapper_fvec_homotopy_newton_der;
+        homotopyData->startDirection = -1.0;
+        debugDouble(LOG_NLS_HOMOTOPY,"STARTING NEWTON HOMOTOPY METHOD; startDirection = ", homotopyData->startDirection);
       }
       if (runHomotopy == 3)
       {
-        solverData->h_function = wrapper_fvec_homotopy_fixpoint;
-        solverData->hJac_dh = wrapper_fvec_homotopy_fixpoint_der;
-        solverData->startDirection = 1.0;
-        debugDouble(LOG_NLS_HOMOTOPY,"STARTING FIXPOINT HOMOTOPY METHOD = ", solverData->startDirection);
+        homotopyData->h_function = wrapper_fvec_homotopy_fixpoint;
+        homotopyData->hJac_dh = wrapper_fvec_homotopy_fixpoint_der;
+        homotopyData->startDirection = 1.0;
+        debugDouble(LOG_NLS_HOMOTOPY,"STARTING FIXPOINT HOMOTOPY METHOD = ", homotopyData->startDirection);
       }
     }
 
-    homotopyAlgorithm(solverData, solverData->x);
+    homotopyAlgorithm(homotopyData, homotopyData->x);
 
-    if (solverData->info<1)
+    if (homotopyData->info<1)
     {
       skipNewton = 1;
       giveUp = runHomotopy>=3;
 
-    } else if (solverData->initHomotopy && solverData->info==1) {
+    } else if (homotopyData->initHomotopy && homotopyData->info==1) {
       /* take the solution */
-      vecCopy(solverData->n, solverData->x, systemData->nlsx);
-      debugVectorDouble(LOG_NLS_V,"Solution", solverData->x, solverData->n);
-      success = 1;
+      vecCopy(homotopyData->n, homotopyData->x, nlsData->nlsx);
+      debugVectorDouble(LOG_NLS_V,"Solution", homotopyData->x, homotopyData->n);
+      success = TRUE;
     }
 
     else {
@@ -2469,25 +2475,25 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-      if (solverData->casualTearingSet){
-        constraintViolated = solverData->f_con(solverData, solverData->x, solverData->f1);
+      if (homotopyData->casualTearingSet){
+        constraintViolated = homotopyData->f_con(homotopyData, homotopyData->x, homotopyData->f1);
         if (constraintViolated){
-          success = 0;
+          success = FALSE;
           break;
         }
       }
       else
-        solverData->f(solverData, solverData->x, solverData->f1);
+        homotopyData->f(homotopyData, homotopyData->x, homotopyData->f1);
 
-      solverData->fJac_f(solverData, solverData->x, solverData->fJac);
-      vecCopy(solverData->n, solverData->f1, solverData->fJac + solverData->n*solverData->n);
+      homotopyData->fJac_f(homotopyData, homotopyData->x, homotopyData->fJac);
+      vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fJac + homotopyData->n*homotopyData->n);
       /* calculate scaling factor of residuals */
-      matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
-      debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", solverData->resScaling, solverData->n);
-      scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
+      matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
+      debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", homotopyData->resScaling, homotopyData->n);
+      scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 
-      pos = solverData->n;
-      assert = (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac,   solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1);
+      pos = homotopyData->n;
+      assert = (solveSystemWithTotalPivotSearch(homotopyData->n, homotopyData->dy0, homotopyData->fJac,   homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
       if (!assert)
         debugString(LOG_NLS_V, "regular initial point!!!");
 #ifndef OMC_EMCC
@@ -2510,8 +2516,8 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   free(relationsPreBackup);
 
   /* write statistics */
-  systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;
-  systemData->numberOfIterations = solverData->numberOfIterations;
+  nlsData->numberOfFEval = homotopyData->numberOfFunctionEvaluations;
+  nlsData->numberOfIterations = homotopyData->numberOfIterations;
 
   return success;
 }

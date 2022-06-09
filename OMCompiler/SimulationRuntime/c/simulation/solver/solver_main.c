@@ -254,7 +254,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_IRKSCO:
   {
-    allocateIrksco(solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
+    allocateIrksco(data, threadData, solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
     break;
   }
   case S_GBODE:
@@ -689,7 +689,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
     infoStreamPrint(LOG_STATS_V, 1, "non-linear systems");
     for(ui=0; ui<data->modelData->nNonLinearSystems; ui++)
-      printNonLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
+      printNonLinearSystemSolvingStatistics(&data->simulationInfo->nonlinearSystemData[ui], LOG_STATS_V);
     messageClose(LOG_STATS_V);
 
     messageClose(LOG_STATS);

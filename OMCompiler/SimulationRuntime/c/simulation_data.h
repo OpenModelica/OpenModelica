@@ -246,6 +246,20 @@ typedef struct STATIC_STRING_DATA
 
 typedef int (*analyticalJacobianColumn_func_ptr)(void* data, threadData_t* threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 
+/**
+ * @brief User data provided to residual functions.
+ *
+ * Created by (non-)linear solver before evaluating a residual.
+ */
+typedef struct RESIDUAL_USERDATA {
+  struct DATA* data;
+  threadData_t* threadData;
+  void* solverData;           /* Optional pointer to ODE solver data.
+                               * Used in NLS solving of ODE integrator step. */
+} RESIDUAL_USERDATA;
+
+typedef struct NLS_USERDATA NLS_USERDATA;
+
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 typedef struct NONLINEAR_SYSTEM_DATA
 {
@@ -274,8 +288,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
   modelica_boolean isPatternAvailable;
 
-  void (*residualFunc)(void** data, const double* x, double* res, const int* flag);
-  int (*residualFuncConstraints)(void**, const double*, double*, const int*);
+  void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
+  int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);
   void (*initializeStaticNLSData)(struct DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
   int (*strictTearingFunctionCall)(struct DATA* data, threadData_t *threadData);
   void (*getIterationVars)(struct DATA*, double*);
@@ -344,7 +358,7 @@ typedef struct LINEAR_SYSTEM_DATA
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
 
-  void (*residualFunc)(void**, const double*, double*, const int*);
+  void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   void (*initializeStaticLSData)(void*, threadData_t *threadData, void*, modelica_boolean);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
   int (*checkConstraints)(struct DATA*, threadData_t *threadData);
@@ -727,7 +741,6 @@ typedef struct SIMULATION_INFO
   ANALYTIC_JACOBIAN* analyticJacobians; // TODO Only store information for Jacobian used by integrator here
 
   NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
-  int currentNonlinearSystemIndex;
 
   LINEAR_SYSTEM_DATA* linearSystemData;
   int currentLinearSystemIndex;

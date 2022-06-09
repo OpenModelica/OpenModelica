@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2022, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -32,9 +32,8 @@
  */
 #include <string.h>
 
-#include "util/omc_error.h"
-#include "util/simulation_options.h"
-#include "simulation/options.h"
+#include "../../util/omc_error.h"
+#include "../../simulation/options.h"
 
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_SR.
@@ -47,10 +46,12 @@
 enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG FLAG_METHOD) {
   enum GB_SINGLERATE_METHOD method;
   const char* flag_value;
+  // TODO AHeu: Unsafe, FLAG_METHOD could be out of bounds
   flag_value = omc_flagValue[FLAG_METHOD];
   char* GB_method_string;
 
   if (flag_value != NULL) {
+    // TODO AHeu: Does GC free GB_method_string?
     GB_method_string = GC_strdup(flag_value);
     for (method=RK_UNKNOWN; method<RK_MAX; method++) {
       if (strcmp(GB_method_string, GB_SINGLERATE_METHOD_NAME[method]) == 0){
@@ -83,6 +84,7 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG FLAG_METHOD) {
 enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG FLAG_NLS_METHOD) {
   enum GB_NLS_METHOD method;
   const char* flag_value;
+  // TODO AHeu: Unsafe, FLAG_NLS_METHOD could be out of bounds
   flag_value = omc_flagValue[FLAG_NLS_METHOD];
   char* GB_NLS_METHOD_string;
 
@@ -106,4 +108,3 @@ enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG FLAG_NLS_METHOD) {
     }
   }
 }
-

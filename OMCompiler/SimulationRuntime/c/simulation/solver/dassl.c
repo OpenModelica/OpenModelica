@@ -495,6 +495,8 @@ int printCurrentStatesVector(int logLevel, double* states, DATA* data, double ti
   return 0;
 }
 
+// TODO AHeu: Remove millionths definition of a simple vector print function
+
 /* \fn printVector(int logLevel, double* y, DATA* data, double time)
  *
  * \param [in] [logLevel]
