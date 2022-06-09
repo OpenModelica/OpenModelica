@@ -34,9 +34,9 @@
 #ifndef _NONLINEARSOLVERHYBRD_H_
 #define _NONLINEARSOLVERHYBRD_H_
 
+#include "../../openmodelica_types.h"
 #include "../../simulation_data.h"
 #include "nonlinearSystem.h"
-#include "openmodelica_types.h"
 
 #ifdef __cplusplus
 extern "C" {

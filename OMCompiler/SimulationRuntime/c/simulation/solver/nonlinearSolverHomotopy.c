@@ -278,6 +278,8 @@ void freeHomotopyData(DATA_HOMOTOPY* homotopyData)
   free(homotopyData->indRow);
   free(homotopyData->indCol);
 
+  freeNlsUserData(homotopyData->userData);
+
   freeHybrdData(homotopyData->dataHybrid);
 
   free(homotopyData);

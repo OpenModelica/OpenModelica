@@ -134,6 +134,8 @@ void freeHybrdData(DATA_HYBRD* hybrdData)
   free(hybrdData->wa3);
   free(hybrdData->wa4);
 
+  freeNlsUserData(hybrdData->userData);
+
   free(hybrdData);
   return;
 }
