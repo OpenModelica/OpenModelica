@@ -509,7 +509,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   // gbData->interpolation = 2; // GM_HERMITE
   gbData->interpolation = 1; // GM_LINEAR
-  gbData->err_threshold = 0.1;
+  gbData->err_threshold = 0.2;
   gbData->stepRejected = FALSE;
 
   return 0;
@@ -1004,7 +1004,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     /* step is accepted and yOld needs to be updated */
     copyVector_gbf(gbfData->yOld, gbfData->y, nFastStates, gbfData->fastStates);
-    infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
+    infoStreamPrint(LOG_SOLVER, 0, "i: accept step from %10g to %10g, error %10g, new stepsize %10g",
                     gbfData->time - gbfData->lastStepSize, gbfData->time, err, gbfData->stepSize);
 
     /* emit step, if integratorSteps is selected */
@@ -1036,6 +1036,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     linear_interpolation_gb(gbfData->timeLeft , gbfData->yLeft,
                             gbfData->timeRight, gbfData->yRight,
                             sData->timeValue,  sData->realVars, nStates);
+
+    infoStreamPrint(LOG_SOLVER, 1, "emit result (inner integration):");
+    printVector_gb(LOG_SOLVER, " y", sData->realVars, nStates, sData->timeValue);
+    messageClose(LOG_SOLVER);
     // // use hermite interpolation for emitting equidistant output
     // hermite_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
     //                           gbData->timeRight, gbData->yRight, gbData->kRight,
@@ -1261,7 +1265,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (ACTIVE_STREAM(LOG_M_FASTSTATES))
       {
         char fastStates_row[2048];
-        sprintf(fastStates_row, "%10g ", gbData->time);
+        sprintf(fastStates_row, "%15.10g ", gbData->time);
         for (i = 0; i < nStates; i++)
         {
           sprintf(fastStates_row, "%s 1", fastStates_row);
@@ -1324,7 +1328,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       infoStreamPrint(LOG_SOLVER_V, 0, "new value:");
       printVector_gb(LOG_SOLVER_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
       messageClose(LOG_SOLVER_V);
-    } while (err > 1);
+    } while ((err > 1) && fabs(gbData->gbfData->time <= gbData->timeRight) < MINIMAL_STEP_SIZE);
 
     // count processed steps
     gbData->stepsDone += 1;
