@@ -826,7 +826,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
   if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
     char fastStates_row[2048];
-    sprintf(fastStates_row, "%10g ", gbfData->time);
+    sprintf(fastStates_row, "%15.10g ", gbfData->time);
     for (i = 0, ii = 0; i < nStates;) {
       if (i == gbfData->fastStates[ii]) {
         sprintf(fastStates_row, "%s 1", fastStates_row);
@@ -1238,7 +1238,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->err_fast = 0;
       for (i = 0; i < gbData->nStates; i++)
       {
-        if (gbData->err[i] >= err_threshold)
+        if (gbData->err[i] >= fmax(err_threshold, gbData->err_threshold))
         {
           gbData->fastStates[gbData->nFastStates] = i;
           gbData->nFastStates++;
@@ -1251,8 +1251,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           gbData->err_slow = fmax(gbData->err_slow, gbData->err[i]);
         }
       }
-      err = gbData->err_slow;
-
+      // err = gbData->err_slow;
       // store values in the ring buffer
       gbData->errValues[0] = err;
       gbData->stepSizeValues[0] = gbData->stepSize;
@@ -1261,6 +1260,17 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // Call the step size control
       gbData->lastStepSize = gbData->stepSize;
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+
+      err = err_threshold;
+      gbData->stepRejected = FALSE;
+      if (err > 1) {
+        gbData->stepRejected = TRUE;
+        // count failed steps and output information on the solver status
+        gbData->errorTestFailures++;
+        infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error slow states %10g, new stepsize %10g",
+                        gbData->time, gbData->time + gbData->lastStepSize, gbData->errValues[0], gbData->stepSize);
+        continue;
+      }
 
       if (ACTIVE_STREAM(LOG_M_FASTSTATES))
       {
@@ -1310,16 +1320,6 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       printVector_gb(LOG_SOLVER, "er", gbData->err, nStates, gbData->timeRight);
       messageClose(LOG_SOLVER);
 
-      gbData->stepRejected = FALSE;
-      if (err > 1) {
-        gbData->stepRejected = TRUE;
-        // count failed steps and output information on the solver status
-        gbData->errorTestFailures++;
-        infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error slow states %10g, new stepsize %10g",
-                        gbData->time, gbData->time + gbData->lastStepSize, gbData->errValues[0], gbData->stepSize);
-      }
-
-
       // debug ring buffer for the states and derviatives of the states
       infoStreamPrint(LOG_SOLVER_V, 1, "ring buffer after inner steps of integration");
       infoStreamPrint(LOG_SOLVER_V, 0, "old value:");
@@ -1328,7 +1328,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       infoStreamPrint(LOG_SOLVER_V, 0, "new value:");
       printVector_gb(LOG_SOLVER_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
       messageClose(LOG_SOLVER_V);
-    } while ((err > 1) && fabs(gbData->gbfData->time <= gbData->timeRight) < MINIMAL_STEP_SIZE);
+    } while (err > 1);
 
     // count processed steps
     gbData->stepsDone += 1;
