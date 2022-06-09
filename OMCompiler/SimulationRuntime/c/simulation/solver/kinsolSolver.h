@@ -70,7 +70,6 @@ typedef struct NLS_KINSOL_DATA {
   /* ### configuration  ### */
   NLS_LS linearSolverMethod;           /* specifies the method to solve the
                                           underlying linear problem */
-  int nonLinearSystemNumber;
   int kinsolStrategy;                  /* Strategy used to solve nonlinear systems. Has to be one
                                           of: KIN_NONE, KIN_LINESEARCH, KIN_FP, KIN_PICARD */
   int retries;                         /* Number of retries after failed solve of KINSOL */

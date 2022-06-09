@@ -145,8 +145,7 @@ void freeNewtonData(DATA_NEWTON* newtonData)
   free(newtonData->delta_x_vec);
 
   freeNlsUserData(newtonData->userData);
-  // TODO AHeu: Do we leak memory?
-  // free(newtonData);
+  free(newtonData);
 }
 
 /**

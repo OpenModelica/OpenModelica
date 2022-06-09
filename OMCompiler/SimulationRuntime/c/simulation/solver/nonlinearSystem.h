@@ -36,6 +36,7 @@
 #define _NONLINEARSYSTEM_H_
 
 #include "../../simulation_data.h"
+#include "../../util/omc_error.h"
 #include "../../util/simulation_options.h"
 
 #ifdef __cplusplus
@@ -60,8 +61,8 @@ typedef struct NLS_USERDATA {
 void cleanUpOldValueListAfterEvent(DATA *data, double time);
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData);
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData);
-int freeNonlinearSystems(DATA *data, threadData_t *threadData);
-void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
+void freeNonlinearSystems(DATA *data, threadData_t *threadData);
+void printNonLinearSystemSolvingStatistics(NONLINEAR_SYSTEM_DATA* nonlinsys, enum LOG_STREAM stream);
 modelica_boolean solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, int sysNumber);
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);

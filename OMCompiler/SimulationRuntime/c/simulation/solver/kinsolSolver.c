@@ -76,35 +76,21 @@ static void nlsKinsolConfigSetup(NLS_KINSOL_DATA *kinsolData) {
   int flag;
 
   /* configuration */
-  flag = KINSetFuncNormTol(
-      kinsolData->kinsolMemory,
-      kinsolData->fnormtol); /* Set function-norm stopping tolerance */
+  flag = KINSetFuncNormTol(kinsolData->kinsolMemory,
+                           kinsolData->fnormtol); /* Set function-norm stopping tolerance */
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetFuncNormTol");
 
-  flag = KINSetScaledStepTol(
-      kinsolData->kinsolMemory,
-      kinsolData->scsteptol); /* Set scaled-step stopping tolerance */
+  flag = KINSetScaledStepTol(kinsolData->kinsolMemory,
+                             kinsolData->scsteptol); /* Set scaled-step stopping tolerance */
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetScaledStepTol");
 
-  flag = KINSetNumMaxIters(
-      kinsolData->kinsolMemory,
-      100 * kinsolData->size); /* Set max. number of nonlinear iterations */
+  flag = KINSetNumMaxIters(kinsolData->kinsolMemory,
+                           100 * kinsolData->size); /* Set max. number of nonlinear iterations */
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
 
-  kinsolData->kinsolStrategy =
-      KIN_LINESEARCH; /* Newton with globalization strategy to solve nonlinear
-                         systems */
+  kinsolData->kinsolStrategy = KIN_LINESEARCH; /* Newton with globalization strategy to solve nonlinear systems */
 
-  /* configuration for exact Newton */ /* TODO: Remove this? */
-  /*
-  KINSetMaxSetupCalls(kinsolData->kinsolMemory, 1);
-  KINSetMaxSubSetupCalls(kinsolData->kinsolMemory, 1);
-  */
-
-  flag =
-      KINSetNoInitSetup(kinsolData->kinsolMemory,
-                        SUNFALSE); /* TODO: This is the default value. Is there
-                                      a point in calling this function? */
+  flag = KINSetNoInitSetup(kinsolData->kinsolMemory, SUNFALSE); /* TODO: This is the default value. Is there a point in calling this function? */
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNoInitSetup");
 
   kinsolData->retries = 0;
@@ -155,7 +141,7 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
   flag = KINSetInfoHandlerFn(kinsolData->kinsolMemory, kinsolInfoHandlerFunction, NULL);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetInfoHandlerFn");
 
-  flag = KINSetUserData(kinsolData->kinsolMemory, (void *)&(kinsolData->userData));
+  flag = KINSetUserData(kinsolData->kinsolMemory, (void*)kinsolData->userData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetUserData");
 
   /* Initialize KINSOL object */
@@ -304,12 +290,12 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
   double *xdata = NV_DATA_S(x);
   double *fdata = NV_DATA_S(f);
 
-  NLS_USERDATA *kinsolUserData = (NLS_USERDATA *)userData;
-  DATA *data = kinsolUserData->data;
-  threadData_t *threadData = kinsolUserData->threadData;
-  void *dataAndThreadData[2] = {data, threadData};
-  NONLINEAR_SYSTEM_DATA *nlsData = kinsolUserData->nlsData;
-  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
+  NLS_USERDATA* kinsolUserData = (NLS_USERDATA*)userData;
+  DATA* data = kinsolUserData->data;
+  threadData_t* threadData = kinsolUserData->threadData;
+  void* dataAndThreadData[2] = {data, threadData};
+  NONLINEAR_SYSTEM_DATA* nlsData = kinsolUserData->nlsData;
+  NLS_KINSOL_DATA* kinsolData = (NLS_KINSOL_DATA*)nlsData->solverData;
   int iflag = 1 /* recoverable error */;
 
   /* Update statistics */
@@ -902,15 +888,15 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     kinsolData->nominalJac = 1;
 
     /* Update x for the matrix */
-    nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
+    nlsKinsolResiduals(x, kinsolData->fTmp, kinsolData->userData);
 
     /* Calculate the scaled Jacobian */
     if (nlsData->isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
       spJac = SUNSparseMatrix(kinsolData->size, kinsolData->size,kinsolData->nnz, CSC_MAT);
       if (nlsData->analyticalJacobianColumn != NULL) {
-        nlsSparseSymJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
+        nlsSparseSymJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
       } else {
-        nlsSparseJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
+        nlsSparseJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
       }
     } else {
       denseJac = SUNDenseMatrix(kinsolData->size, kinsolData->size);
@@ -1255,7 +1241,7 @@ modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_
   if (success) {
     /* Check if solution really solves the residuals */
     nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes,
-                       &kinsolData->userData);
+                       kinsolData->userData);
     if (!omc_flag[FLAG_NO_SCALING]) {
       N_VProd(kinsolData->fRes, kinsolData->fScale, kinsolData->fRes);
     }

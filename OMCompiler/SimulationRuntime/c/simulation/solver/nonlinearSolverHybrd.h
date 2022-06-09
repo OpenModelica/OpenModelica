@@ -88,7 +88,7 @@ typedef struct DATA_HYBRD
   unsigned int numberOfIterations; /* over the whole simulation time */
   unsigned int numberOfFunctionEvaluations; /* over the whole simulation time */
 
-  NLS_USERDATA userData;        /* User data provided to KINSOL */
+  NLS_USERDATA* userData;        /* User data provided to KINSOL */
 
 } DATA_HYBRD;
 
@@ -99,7 +99,7 @@ void hybrj_( void(*) (const integer*, const double*, double*, double *, const in
   double *r, integer *lr, double *qtf, double *wa1, double *wa2,
   double *wa3, double *wa4, void* user_data);
 
-DATA_HYBRD* allocateHybrdData(size_t size);
+DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData);
 void freeHybrdData(DATA_HYBRD* hybrdData);
 modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, int sysNumber);
 

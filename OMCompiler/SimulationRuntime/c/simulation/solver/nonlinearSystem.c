@@ -525,17 +525,17 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   case NLS_HYBRID:
     solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-      solverData->ordinaryData = allocateHybrdData(size-1);
-      solverData->initHomotopyData = (void*) allocateHomotopyData(size-1);
+      solverData->ordinaryData = allocateHybrdData(size-1, nlsUserData);
+      solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
-      solverData->ordinaryData = allocateHybrdData(size);
+      solverData->ordinaryData = allocateHybrdData(size, nlsUserData);
     }
     nonlinsys->solverData = (void*) solverData;
     break;
   case NLS_KINSOL:
     solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-      solverData->initHomotopyData = (void*) allocateHomotopyData(size-1);
+      solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
       nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData);
       solverData->ordinaryData = nonlinsys->solverData;
@@ -546,7 +546,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
       solverData->ordinaryData = (void*) allocateNewtonData(size-1, nlsUserData);
-      solverData->initHomotopyData = (void*) allocateHomotopyData(size-1);
+      solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
       solverData->ordinaryData = (void*) allocateNewtonData(size, nlsUserData);
     }
@@ -555,20 +555,20 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   case NLS_MIXED:
     mixedSolverData = (struct dataMixedSolver*) malloc(sizeof(struct dataMixedSolver));
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-      mixedSolverData->newtonHomotopyData = (void*) allocateHomotopyData(size-1);
-      mixedSolverData->hybridData = allocateHybrdData(size-1);
+      mixedSolverData->newtonHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
+      mixedSolverData->hybridData = allocateHybrdData(size-1, nlsUserData);
     } else {
-      mixedSolverData->newtonHomotopyData = (void*) allocateHomotopyData(size);
-      mixedSolverData->hybridData = allocateHybrdData(size);
+      mixedSolverData->newtonHomotopyData = (void*) allocateHomotopyData(size, nlsUserData);
+      mixedSolverData->hybridData = allocateHybrdData(size, nlsUserData);
     }
     nonlinsys->solverData = (void*) mixedSolverData;
     break;
 #endif
   case NLS_HOMOTOPY:
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-      nonlinsys->solverData = (void*) allocateHomotopyData(size-1);
+      nonlinsys->solverData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
-      nonlinsys->solverData = (void*) allocateHomotopyData(size);
+      nonlinsys->solverData = (void*) allocateHomotopyData(size, nlsUserData);
     }
     break;
   default:
@@ -668,110 +668,132 @@ int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
   return 0;
 }
 
-/*! \fn freeNonlinearSystems
+/**
+ * @brief Free non-linear system data.
  *
- *  This function frees memory of nonlinear systems.
+ * Freeing non-linear solver data as well.
  *
- *  \param [ref] [data]
+ * @param data        Pointer to data struct.
+ * @param threadData  Pointer to thread data. Used for error handling.
+ * @param nonlinsys   Pointer to non-linear system data.
  */
-// TODO AHeu: Make function to free single NONLINEAR_SYSTEM_DATA
-int freeNonlinearSystems(DATA *data, threadData_t *threadData)
+void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nonlinsys)
+{
+  struct csvStats* stats;
+
+  free(nonlinsys->nlsx);
+  free(nonlinsys->nlsxExtrapolation);
+  free(nonlinsys->nlsxOld);
+  free(nonlinsys->resValues);
+  free(nonlinsys->nominal);
+  free(nonlinsys->min);
+  free(nonlinsys->max);
+  freeValueList(nonlinsys->oldValueList, 1);
+
+  /* Free CSV data */
+#if !defined(OMC_MINIMAL_RUNTIME)
+  if (data->simulationInfo->nlsCsvInfomation)
+  {
+    stats = nonlinsys->csvData;
+    omc_write_csv_free(stats->callStats);
+    omc_write_csv_free(stats->iterStats);
+    free(nonlinsys->csvData);
+    // TODO: Make a function freeNLScsvData
+  }
+#endif
+
+  /* free solver data */
+  // TODO: Make this simpler. Don't cast nonlinsys->solverData back and forth.
+  // Always have a structure accepting two solver methods (primary and backup) and make the missing one NULL.
+  // Also just set nonlinsys->solverData->ordinaryData to NULL, if no hybrid solver is available
+  // and make freeHybrdData(NULL) work.
+  switch(nonlinsys->nlsMethod)
+  {
+#if !defined(OMC_MINIMAL_RUNTIME)
+  case NLS_HYBRID:
+    freeHybrdData(((struct dataSolver*) nonlinsys->solverData)->ordinaryData);
+    if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
+      freeHomotopyData(((struct dataSolver*) nonlinsys->solverData)->initHomotopyData);
+    }
+    free(nonlinsys->solverData);
+    break;
+  case NLS_KINSOL:
+    if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
+      freeHomotopyData(((struct dataSolver*) nonlinsys->solverData)->initHomotopyData);
+    } else {
+      nlsKinsolFree(((struct dataSolver*) nonlinsys->solverData)->ordinaryData);
+    }
+    free(nonlinsys->solverData);
+    break;
+  case NLS_NEWTON:
+    freeNewtonData(((struct dataSolver*) nonlinsys->solverData)->ordinaryData);
+    if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
+      freeHomotopyData(((struct dataSolver*) nonlinsys->solverData)->initHomotopyData);
+    }
+    free(nonlinsys->solverData);
+    break;
+#endif
+  case NLS_HOMOTOPY:
+    freeHomotopyData(nonlinsys->solverData);
+    free(nonlinsys->solverData);
+    break;
+#if !defined(OMC_MINIMAL_RUNTIME)
+  case NLS_MIXED:
+    freeHomotopyData(((struct dataMixedSolver*) nonlinsys->solverData)->newtonHomotopyData);
+    freeHybrdData(((struct dataMixedSolver*) nonlinsys->solverData)->hybridData);
+    free(nonlinsys->solverData);
+    break;
+#endif
+  default:
+    throwStreamPrint(threadData, "freeNonlinearSyst: Unrecognized non-linear solver method");
+  }
+
+  return;
+}
+
+/**
+ * @brief Free memory for all non-linear systems in simulationInfo.
+ *
+ * Free all non-linear systems from array data->simulationInfo->nonlinearSystemData.
+ *
+ * @param data          Pointer to data struct.
+ * @param threadData    Pointer to thread data. Used for error handling.
+ */
+void freeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int i;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
-  struct csvStats* stats;
 
   infoStreamPrint(LOG_NLS, 1, "free non-linear system solvers");
-
   for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
-    free(nonlinsys[i].nlsx);
-    free(nonlinsys[i].nlsxExtrapolation);
-    free(nonlinsys[i].nlsxOld);
-    free(nonlinsys[i].resValues);
-    free(nonlinsys[i].nominal);
-    free(nonlinsys[i].min);
-    free(nonlinsys[i].max);
-    freeValueList(nonlinsys[i].oldValueList, 1);
-
-
-#if !defined(OMC_MINIMAL_RUNTIME)
-    if (data->simulationInfo->nlsCsvInfomation)
-    {
-      stats = nonlinsys[i].csvData;
-      omc_write_csv_free(stats->callStats);
-      omc_write_csv_free(stats->iterStats);
-    }
-#endif
-    /* free solver data */
-    switch(nonlinsys[i].nlsMethod)
-    {
-#if !defined(OMC_MINIMAL_RUNTIME)
-    case NLS_HYBRID:
-      freeHybrdData(((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
-      if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        freeHomotopyData(((struct dataSolver*) nonlinsys[i].solverData)->initHomotopyData);
-      }
-      free(nonlinsys[i].solverData);
-      break;
-    case NLS_KINSOL:
-      if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        freeHomotopyData(((struct dataSolver*) nonlinsys[i].solverData)->initHomotopyData);
-      } else {
-        nlsKinsolFree(((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
-      }
-      free(nonlinsys[i].solverData);
-      break;
-    case NLS_NEWTON:
-      freeNewtonData(((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
-      if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        freeHomotopyData(((struct dataSolver*) nonlinsys[i].solverData)->initHomotopyData);
-      }
-      free(nonlinsys[i].solverData);
-      break;
-#endif
-    case NLS_HOMOTOPY:
-      freeHomotopyData(nonlinsys[i].solverData);
-      free(nonlinsys[i].solverData);
-      break;
-#if !defined(OMC_MINIMAL_RUNTIME)
-    case NLS_MIXED:
-      freeHomotopyData(((struct dataMixedSolver*) nonlinsys[i].solverData)->newtonHomotopyData);
-      freeHybrdData(((struct dataMixedSolver*) nonlinsys[i].solverData)->hybridData);
-      free(nonlinsys[i].solverData);
-      break;
-#endif
-    default:
-      throwStreamPrint(threadData, "unrecognized nonlinear solver");
-    }
+    freeNonlinearSyst(data, threadData, &nonlinsys[i]);
   }
 
   messageClose(LOG_NLS);
 
   TRACE_POP
-  return 0;
+  return;
 }
 
-/*! \fn printNonLinearSystemSolvingStatistics
+/**
+ * @brief Print non-linear system statistics to stream.
  *
- *  This function prints memory for all non-linear systems.
- *
- *  \param [ref] [data]
- *         [in]  [sysNumber] index of corresponding non-linear system
+ * @param nonlinsys   Non-linear system data to print.
+ * @param stream      Log stream to use for logging.
  */
-void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
+void printNonLinearSystemSolvingStatistics(NONLINEAR_SYSTEM_DATA* nonlinsys, enum LOG_STREAM stream)
 {
-  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
-  infoStreamPrint(logLevel, 1, "Non-linear system %d of size %d solver statistics:", (int)nonlinsys[sysNumber].equationIndex, (int)nonlinsys[sysNumber].size);
-  infoStreamPrint(logLevel, 0, " number of calls                : %ld", nonlinsys[sysNumber].numberOfCall);
-  infoStreamPrint(logLevel, 0, " number of iterations           : %ld", nonlinsys[sysNumber].numberOfIterations);
-  infoStreamPrint(logLevel, 0, " number of function evaluations : %ld", nonlinsys[sysNumber].numberOfFEval);
-  infoStreamPrint(logLevel, 0, " number of jacobian evaluations : %ld", nonlinsys[sysNumber].numberOfJEval);
-  infoStreamPrint(logLevel, 0, " time of jacobian evaluations   : %f", nonlinsys[sysNumber].jacobianTime);
-  infoStreamPrint(logLevel, 0, " average time per call          : %f", nonlinsys[sysNumber].totalTime/nonlinsys[sysNumber].numberOfCall);
-  infoStreamPrint(logLevel, 0, " total time                     : %f", nonlinsys[sysNumber].totalTime);
-  messageClose(logLevel);
+  infoStreamPrint(stream, 1, "Non-linear system %d of size %d solver statistics:", (int)nonlinsys->equationIndex, (int)nonlinsys->size);
+  infoStreamPrint(stream, 0, " number of calls                : %ld", nonlinsys->numberOfCall);
+  infoStreamPrint(stream, 0, " number of iterations           : %ld", nonlinsys->numberOfIterations);
+  infoStreamPrint(stream, 0, " number of function evaluations : %ld", nonlinsys->numberOfFEval);
+  infoStreamPrint(stream, 0, " number of jacobian evaluations : %ld", nonlinsys->numberOfJEval);
+  infoStreamPrint(stream, 0, " time of jacobian evaluations   : %f", nonlinsys->jacobianTime);
+  infoStreamPrint(stream, 0, " average time per call          : %f", nonlinsys->totalTime/nonlinsys->numberOfCall);
+  infoStreamPrint(stream, 0, " total time                     : %f", nonlinsys->totalTime);
+  messageClose(stream);
 }
 
 /*! \fn printNonLinearInitialInfo
@@ -1140,8 +1162,6 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 #if !defined(OMC_MINIMAL_RUNTIME)
   kinsol = (nonlinsys->nlsMethod == NLS_KINSOL);
 #endif
-
-  data->simulationInfo->currentNonlinearSystemIndex = sysNumber;
 
   /* enable to avoid division by zero */
   data->simulationInfo->noThrowDivZero = 1;

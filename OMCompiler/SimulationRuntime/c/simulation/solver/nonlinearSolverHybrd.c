@@ -59,7 +59,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
  * @param size            Size of non-linear system.
  * @return DATA_HYBRD*    Pointer to allocated hybrid data.
  */
-DATA_HYBRD* allocateHybrdData(size_t size)
+DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
 {
   DATA_HYBRD* hybrdData = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
   assertStreamPrint(NULL, hybrdData != NULL, "allocationHybrdData() failed!");
@@ -103,6 +103,8 @@ DATA_HYBRD* allocateHybrdData(size_t size)
   hybrdData->numberOfIterations = 0;
   hybrdData->numberOfFunctionEvaluations = 0;
 
+  hybrdData->userData = userData;
+
   return hybrdData;
 }
 
@@ -132,6 +134,7 @@ void freeHybrdData(DATA_HYBRD* hybrdData)
   free(hybrdData->wa3);
   free(hybrdData->wa4);
 
+  free(hybrdData);
   return;
 }
 
@@ -258,13 +261,10 @@ static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
   int i, j, k, l, ii;
   DATA *data = hybrdUserData->data;
   threadData_t *threadData = hybrdUserData->threadData;
-  // TODO AHeu: Use for init!
-  //NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[dataSys->sysNumber]);
   NONLINEAR_SYSTEM_DATA* systemData = hybrdUserData->nlsData;
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   const int index = systemData->jacobianIndex;
   ANALYTIC_JACOBIAN* jacobian = hybrdUserData->analyticJacobian;
-  //ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
   memset(solverData->fjacobian, 0, (solverData->n)*(solverData->n)*sizeof(double));
@@ -329,6 +329,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
   NONLINEAR_SYSTEM_DATA* systemData = userData->nlsData;
   DATA_HYBRD* hybrdData = (DATA_HYBRD*)(systemData->solverData);
   int continuous = data->simulationInfo->solveContinuous;
+  void *dataAndThreadData[2] = {data, threadData};
 
   switch(*iflag)
   {
@@ -347,10 +348,9 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
 
     /* call residual function */
     if(hybrdData->useXScaling){
-      // TODO AHeu: Check what residualFunc wants as input
-      (systemData->residualFunc)((void**)&userData, (const double*) hybrdData->xScaled, f, (const int*)iflag);
+      (systemData->residualFunc)(dataAndThreadData, (const double*) hybrdData->xScaled, f, (const int*)iflag);
     } else {
-      (systemData->residualFunc)((void**)&userData, x, f, (const int*)iflag);
+      (systemData->residualFunc)(dataAndThreadData, x, f, (const int*)iflag);
     }
 
     /* debug output */
@@ -452,9 +452,6 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
 
   modelica_boolean* relationsPreBackup;
 
-  //NLS_USERDATA dataAndSysNumber = {data, threadData, sysNumber};
-  // TODO AHeu: Set user data somewhere else
-
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
 
   hybrdData->numberOfFunctionEvaluations = 0;
@@ -542,7 +539,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
           &hybrdData->maxfev, hybrdData->diag, &hybrdData->mode, &hybrdData->factor,
           &hybrdData->nprint, &hybrdData->info, &hybrdData->nfev, &hybrdData->njev, hybrdData->r__,
           &hybrdData->lr, hybrdData->qtf, hybrdData->wa1, hybrdData->wa2,
-          hybrdData->wa3, hybrdData->wa4, &hybrdData->userData);
+          hybrdData->wa3, hybrdData->wa4, hybrdData->userData);
 
       success = TRUE;
       if(assertCalled)
@@ -592,11 +589,11 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
     /* set residual function continuous */
     if(continuous)
     {
-      ((DATA*)data)->simulationInfo->solveContinuous = 0;
+      data->simulationInfo->solveContinuous = 0;
     }
     else
     {
-      ((DATA*)data)->simulationInfo->solveContinuous = 1;
+      data->simulationInfo->solveContinuous = 1;
     }
 
     /* re-scaling x vector */
@@ -625,7 +622,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
 #ifndef OMC_EMCC
         MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-        wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, &hybrdData->userData);
+        wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
         success = TRUE;
 #ifndef OMC_EMCC
         MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -744,7 +741,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
 #ifndef OMC_EMCC
         MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-        wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, &hybrdData->userData);
+        wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
         success = TRUE;
 #ifndef OMC_EMCC
         MMC_CATCH_INTERNAL(simulationJumpBuffer)

@@ -135,7 +135,7 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
   ANALYTIC_JACOBIAN* jacobian = userData->analyticJacobian;
 
   DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
-  void *dataAndThreadData[2] = {data, userData->threadData};
+  void *dataAndThreadData[2] = {data, threadData};
   int flag = 1;
   int *iflag = &flag;
 
@@ -146,7 +146,7 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
     rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
     if(nlsData->jacobianIndex != -1) {
-      getAnalyticalJacobianNewton(data, userData->threadData, solverData->fjac, nlsData, jacobian);
+      getAnalyticalJacobianNewton(data, threadData, solverData->fjac, nlsData, jacobian);
     } else {
       double delta_h = sqrt(solverData->epsfcn);
       double delta_hh;
@@ -256,7 +256,7 @@ int solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* sys
 
     giveUp = 1;
     solverData->newtonStrategy = data->simulationInfo->newtonStrategy;
-    _omc_newton((genericResidualFunc*)wrapper_fvec_newton, solverData, &(solverData->userData));
+    _omc_newton((genericResidualFunc*)wrapper_fvec_newton, solverData, solverData->userData);
 
     /* check for proper inputs */
     if(solverData->info == 0)

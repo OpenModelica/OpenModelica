@@ -290,10 +290,9 @@ typedef struct NONLINEAR_SYSTEM_DATA
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
   modelica_boolean isPatternAvailable;
 
-  // TODO AHeu: Make NLS_USERDATA
+  // TODO Make type for void** {data, threadData}
   // Also add a documentation
-  //void (*residualFunc)(NLS_USERDATA* userData, const double* x, double* fx, const int* iflag);
-  void (*residualFunc)(void**, const double*, double*, const int*);
+  void (*residualFunc)(void** dataAndThreadData, const double* x, double* fx, const int* iflag);
   int (*residualFuncConstraints)(void**, const double*, double*, const int*);
   void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*, modelica_boolean);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
@@ -746,7 +745,6 @@ typedef struct SIMULATION_INFO
   ANALYTIC_JACOBIAN* analyticJacobians; // TODO Only store information for Jacobian used by integrator here
 
   NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
-  int currentNonlinearSystemIndex;
 
   LINEAR_SYSTEM_DATA* linearSystemData;
   int currentLinearSystemIndex;

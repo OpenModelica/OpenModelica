@@ -672,7 +672,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
     infoStreamPrint(LOG_STATS_V, 1, "non-linear systems");
     for(ui=0; ui<data->modelData->nNonLinearSystems; ui++)
-      printNonLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
+      printNonLinearSystemSolvingStatistics(&data->simulationInfo->nonlinearSystemData[ui], LOG_STATS_V);
     messageClose(LOG_STATS_V);
 
     messageClose(LOG_STATS);

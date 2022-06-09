@@ -67,16 +67,6 @@ extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doubler
 }
 #endif
 
-// TODO AHeu: Unify with the rest of NLS_XXX_USERDATA
-typedef struct NLS_HOMOTOPY_USERDATA {
-  DATA *data;
-  threadData_t *threadData;
-
-  int sysNumber;                        /* System index, for print messages only */
-  NONLINEAR_SYSTEM_DATA* nlsData;       /* Pointer to nonlinear system data */
-  ANALYTIC_JACOBIAN* analyticJacobian;  /* Pointer to analytic Jacobian */
-} NLS_HOMOTOPY_USERDATA;
-
 /*! \typedef DATA_HOMOTOPY
  * define memory structure for nonlinear system solver
  *  \author bbachmann
@@ -158,7 +148,7 @@ typedef struct DATA_HOMOTOPY
   int (*h_function)(struct DATA_HOMOTOPY*, double*, double*);
   int (*hJac_dh)   (struct DATA_HOMOTOPY*, double*, double*);
 
-  NLS_HOMOTOPY_USERDATA userData;
+  NLS_USERDATA* userData;
   int eqSystemNumber;
   double timeValue;
   int mixedSystem;
@@ -174,7 +164,7 @@ typedef struct DATA_HOMOTOPY
  * @param size              Size of non-linear system.
  * @return DATA_HOMOTOPY*   Pointer to allocated homotopy data.
  */
-DATA_HOMOTOPY* allocateHomotopyData(size_t size)
+DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
 {
   DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
   assertStreamPrint(NULL, 0 != homotopyData, "allocationHomotopyData() failed!");
@@ -234,7 +224,9 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size)
   homotopyData->indRow =(int*) calloc(size+homBacktraceStrategy-1,sizeof(int));
   homotopyData->indCol =(int*) calloc(size+homBacktraceStrategy,sizeof(int));
 
-  homotopyData->dataHybrid = allocateHybrdData(size);
+  homotopyData->userData = userData;
+
+  homotopyData->dataHybrid = allocateHybrdData(size, userData);
 
   assertStreamPrint(NULL, homotopyData != NULL, "allocationHomotopyData() voiddata failed!");
   return homotopyData;
@@ -288,6 +280,7 @@ void freeHomotopyData(DATA_HOMOTOPY* homotopyData)
 
   freeHybrdData(homotopyData->dataHybrid);
 
+  free(homotopyData);
   return;
 }
 
@@ -298,7 +291,7 @@ void printUnknowns(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->userData.data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "nls status");
@@ -316,7 +309,7 @@ void printNewtonStep(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->userData.data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "newton step");
@@ -334,7 +327,7 @@ void printHomotopyUnknowns(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->userData.data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "homotopy status");
@@ -362,7 +355,7 @@ void printHomotopyPredictorStep(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->userData.data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "predictor status");
@@ -389,7 +382,7 @@ void printHomotopyCorrectorStep(int logName, DATA_HOMOTOPY *solverData)
 {
   long i;
   int eqSystemNumber = solverData->eqSystemNumber;
-  DATA *data = solverData->userData.data;
+  DATA *data = solverData->userData->data;
 
   if (!ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "corrector status");
@@ -841,10 +834,10 @@ void swapPointer(double* *p1, double* *p2)
 int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
 {
   int i,j,k,l,ii;
-  DATA* data = solverData->userData.data;
-  threadData_t *threadData = solverData->userData.threadData;
-  NONLINEAR_SYSTEM_DATA* systemData = solverData->userData.nlsData;
-  ANALYTIC_JACOBIAN* jacobian = solverData->userData.analyticJacobian;
+  DATA* data = solverData->userData->data;
+  threadData_t *threadData = solverData->userData->threadData;
+  NONLINEAR_SYSTEM_DATA* systemData = solverData->userData->nlsData;
+  ANALYTIC_JACOBIAN* jacobian = solverData->userData->analyticJacobian;
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
 
@@ -938,14 +931,13 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
  */
 static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
 {
-  DATA* data = solverData->userData.data;
-  threadData_t* threadData = solverData->userData.threadData;
-  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData.nlsData;
+  DATA* data = solverData->userData->data;
+  threadData_t* threadData = solverData->userData->threadData;
+  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
   void *dataAndThreadData[2] = {data, threadData};
   int iflag = 0;
 
-  /*TODO: change input to residualFunc from data to systemData */
-  // TODO AHeu: Check input of residual function
+  /* TODO: change input to residualFunc from data to systemData */
   nlsData->residualFunc(dataAndThreadData, x, f, &iflag);
   solverData->numberOfFunctionEvaluations++;
 
@@ -960,15 +952,14 @@ static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
  */
 int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
 {
-  DATA* data = solverData->userData.data;
-  threadData_t* threadData = solverData->userData.threadData;
-  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData.nlsData;
+  DATA* data = solverData->userData->data;
+  threadData_t* threadData = solverData->userData->threadData;
+  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
   void *dataAndThreadData[2] = {data, threadData};
   int iflag = 0;
   int retVal;
 
-  /*TODO: change input to residualFunc from data to systemData */
-  // TODO AHeu: Check input of residual function
+  /* TODO: change input to residualFunc from data to systemData */
   retVal = nlsData->residualFuncConstraints(dataAndThreadData, x, f, &iflag);
   solverData->numberOfFunctionEvaluations++;
 
@@ -983,7 +974,7 @@ int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
  */
 static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
 {
-  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData.nlsData;
+  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
   int jacobianIndex = nlsData->jacobianIndex;
   int i;
 
@@ -1351,11 +1342,9 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   int lastWasGood = 0; /* boolean, keeps track of previous x */
 
   int assert = 1;
-  DATA* data = solverData->userData.data;
-  threadData_t *threadData = solverData->userData.threadData;
-  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData.nlsData;
-  // TODO AHeu: What is currentNonLinearSystemIndex???
-  //NONLINEAR_SYSTEM_DATA* nlsData = &(solverData->data->simulationInfo->nonlinearSystemData[solverData->data->simulationInfo->currentNonlinearSystemIndex]);
+  DATA* data = solverData->userData->data;
+  threadData_t *threadData = solverData->userData->threadData;
+  NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
   int linearSolverMethod = data->simulationInfo->nlsLinearSolver;
 
   /* debug information */
@@ -1720,9 +1709,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   int maxLambdaSteps = homMaxLambdaSteps ? homMaxLambdaSteps : solverData->maxNumberOfIterations;
 
   int assert = 1;
-  DATA* data = solverData->userData.data;
-  threadData_t *threadData = solverData->userData.threadData;
-  int sysNumber = solverData->userData.sysNumber;
+  DATA* data = solverData->userData->data;
+  threadData_t *threadData = solverData->userData->threadData;
+  int sysNumber = solverData->userData->sysNumber;
 
   // TODO: Make this print a function!
   FILE *pFile = NULL;
@@ -2197,10 +2186,6 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
   homotopyData->f_con = wrapper_fvec_constraints;
   homotopyData->fJac_f = wrapper_fvec_der;
 
-  // TODO AHeu: Set userData somewhere else
-  //homotopyData->data = data;
-  //homotopyData->threadData = threadData;
-  //homotopyData->sysNumber = sysNumber;
   homotopyData->eqSystemNumber = nlsData->equationIndex;
   homotopyData->mixedSystem = mixedSystem;
   homotopyData->timeValue = data->localData[0]->timeValue;
@@ -2231,7 +2216,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
   }
   vecCopy(homotopyData->n, homotopyData->xStart, homotopyData->x0);
   // Initialize lambda variable
-  if (homotopyData->userData.nlsData->homotopySupport && !homotopyData->initHomotopy && homotopyData->userData.nlsData->size > homotopyData->n) {
+  if (homotopyData->userData->nlsData->homotopySupport && !homotopyData->initHomotopy && homotopyData->userData->nlsData->size > homotopyData->n) {
     homotopyData->x0[homotopyData->n] = 1.0;
     homotopyData->x[homotopyData->n] = 1.0;
     homotopyData->x1[homotopyData->n] = 1.0;
