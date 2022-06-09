@@ -1243,22 +1243,8 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
   } while (!success && !(retry < 0) && kinsolData->retries < RETRY_MAX);
 
   /* Solution found */
+  kinsolData->solved = success;
   if (success) {
-    if (!omc_flag[FLAG_NO_SCALING]) {
-      N_VProd(kinsolData->fRes, kinsolData->fScale, kinsolData->fRes);
-    }
-    fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fRes);
-
-    infoStreamPrint(LOG_NLS_V, 0, "%sEuclidean norm of F(u) = %e",
-                    (omc_flag[FLAG_NO_SCALING]) ? "" : "scaled ", fNormValue);
-    if (FTOL_WITH_LESS_ACCURACY < fNormValue) {
-      warningStreamPrint(LOG_NLS_V, 0,
-                         "False positive solution. FNorm is not small enough.");
-      success = 0;
-    } else { /* solved system for reuse linear solver information */
-      kinsolData->solved = 1;
-    }
-    /* copy solution */
     memcpy(nlsData->nlsx, xStart, nlsData->size * (sizeof(double)));
   }
 
