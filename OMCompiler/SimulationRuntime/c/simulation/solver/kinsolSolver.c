@@ -1165,10 +1165,9 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
  * @param data                Runtime data struct.
  * @param threadData          Thread data for error handling.
  * @param nlsData             Pointer to non-linear system data.
- * @param sysNumber           Non-linear system number.
  * @return modelica_boolean   Return true on success and false otherwise.
  */
-modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData, int sysNumber) {
+modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
 
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   int indexes[2] = {1, nlsData->equationIndex};

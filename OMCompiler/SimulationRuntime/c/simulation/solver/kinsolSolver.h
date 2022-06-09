@@ -112,7 +112,7 @@ typedef struct NLS_KINSOL_DATA {
 
 NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData);
 void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData);
-modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData,  NONLINEAR_SYSTEM_DATA* nlsData, int sysNumber);
+modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData,  NONLINEAR_SYSTEM_DATA* nlsData);
 
 #ifdef __cplusplus
 };

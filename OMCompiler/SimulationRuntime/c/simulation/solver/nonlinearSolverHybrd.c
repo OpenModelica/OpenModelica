@@ -426,10 +426,9 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
  * @param data                Runtime data struct.
  * @param threadData          Thread data for error handling.
  * @param nlsData             Pointer to non-linear system data.
- * @param sysNumber           Non-linear system number.
  * @return modelica_boolean   Return true on success and false otherwise.
  */
-modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, int sysNumber)
+modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData)
 {
   DATA_HYBRD* hybrdData = (DATA_HYBRD*)nlsData->solverData;
   int eqSystemNumber = nlsData->equationIndex;
@@ -459,7 +458,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
   hybrdData->numberOfFunctionEvaluations = 0;
 
   // Initialize lambda variable
-  if (data->simulationInfo->nonlinearSystemData[sysNumber].homotopySupport) {
+  if (nlsData->homotopySupport) {
     hybrdData->x[hybrdData->n] = 1.0;
     hybrdData->xSave[hybrdData->n] = 1.0;
     hybrdData->xScaled[hybrdData->n] = 1.0;
@@ -523,9 +522,9 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
     /* set residual function continuous
      */
     if(continuous) {
-      ((DATA*)data)->simulationInfo->solveContinuous = 1;
+      data->simulationInfo->solveContinuous = 1;
     } else {
-      ((DATA*)data)->simulationInfo->solveContinuous = 0;
+      data->simulationInfo->solveContinuous = 0;
     }
 
     giveUp = 1;
@@ -606,7 +605,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
     /* check for proper inputs */
     if(hybrdData->info == 0) {
       printErrorEqSyst(IMPROPER_INPUT, modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber),
-          data->localData[0]->timeValue);
+                       data->localData[0]->timeValue);
     }
 
     if(hybrdData->info != -1)
@@ -618,7 +617,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
         if(scaling)
           hybrdData->useXScaling = 0;
 
-        ((DATA*)data)->simulationInfo->solveContinuous = 0;
+        data->simulationInfo->solveContinuous = 0;
 
         /* try */
 #ifndef OMC_EMCC

@@ -278,8 +278,7 @@ void freeHomotopyData(DATA_HOMOTOPY* homotopyData)
   free(homotopyData->indRow);
   free(homotopyData->indCol);
 
-  freeNlsUserData(homotopyData->userData);
-
+  /* Don't free userData here, it's done in freeHybrdData */
   freeHybrdData(homotopyData->dataHybrid);
 
   free(homotopyData);
@@ -2135,25 +2134,15 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   return 0;
 }
 
-/*! \fn solve non-linear system with a damped Newton method combined with a homotopy approach
-
- *
- *  \param [in]  [data]
-*                [sysNumber] index of the corresponding non-linear system
- *
- *  \author bbachmann
- */
-
 /**
- * @brief
+ * @brief Solve non-linear system with damped Newton method, combined with homotopy approach.
  *
- * @param data
- * @param threadData
- * @param nlsData
- * @param sysNumber
+ * @param data              Pointer to data struct.
+ * @param threadData        Pointer to thread data.
+ * @param nlsData           Non-linear system data.
  * @return modelica_boolean
  */
-modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, int sysNumber)
+modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData)
 {
   DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*)(nlsData->solverData);
   DATA_HYBRD* solverDataHybrid;
@@ -2345,7 +2334,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
         solverDataHybrid = (DATA_HYBRD*)(homotopyData->dataHybrid);
         nlsData->solverData = solverDataHybrid;
 
-        homotopyData->info = solveHybrd(data, threadData, nlsData, sysNumber);
+        homotopyData->info = solveHybrd(data, threadData, nlsData);
 
         memcpy(homotopyData->x, nlsData->nlsx, homotopyData->n*(sizeof(double)));
         nlsData->solverData = homotopyData;
