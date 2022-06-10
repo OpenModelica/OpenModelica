@@ -267,8 +267,10 @@ if true then /* Suppress output */
     prefixPath + "Util/System.mo",
     prefixPath + "Util/TaskGraphResults.mo",
     prefixPath + "Util/Testsuite.mo",
+    prefixPath + "Util/UnorderedMap.mo",
     prefixPath + "Util/Util.mo",
-    prefixPath + "Util/VarTransform.mo"
+    prefixPath + "Util/VarTransform.mo",
+    prefixPath + "Util/Vector.mo"
   };
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then

@@ -153,8 +153,6 @@ emcc-simulationruntime:
 	mkdir -p build/lib/omc/emcc/
 	$(MAKE) -C SimulationRuntime/c emcc
 
-copycppheader:
-
 OMDEV_CMAKE="$(OMDEV)/bin/cmake/bin/cmake.exe"
 
 checkMSVCwine:
