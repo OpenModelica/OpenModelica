@@ -333,3 +333,35 @@ void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
   printf("\n");
 }
 
+void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event) {
+  if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
+    char fastStates_row[2048];
+    sprintf(fastStates_row, "%15.10g ", gbData->time);
+    for (int i = 0; i < gbData->nStates; i++) {
+      if (event)
+        sprintf(fastStates_row, "%s 0", fastStates_row);
+      else
+        sprintf(fastStates_row, "%s 1", fastStates_row);
+    }
+    fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
+  }
+}
+
+void dumpFastStates_gbf(DATA_GBODE* gbData) {
+  if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
+    char fastStates_row[2048];
+    int i, ii;
+    sprintf(fastStates_row, "%15.10g ", gbData->gbfData->time);
+    for (i = 0, ii = 0; i < gbData->nStates;) {
+      if (i == gbData->fastStates[ii]) {
+        sprintf(fastStates_row, "%s 1", fastStates_row);
+        i++;
+        ii++;
+      } else {
+        sprintf(fastStates_row, "%s 0", fastStates_row);
+        i++;
+      }
+    }
+    fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
+  }
+}

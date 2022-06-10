@@ -50,10 +50,12 @@
 
 #include <time.h>
 
+#include "gbode_main.h"
+#include "gbode_util.h"
+
 #include "gbode_conf.h"
 #include "gbode_ctrl.h"
 #include "gbode_events.h"
-#include "gbode_main.h"
 #include "gbode_nls.h"
 #include "gbode_sparse.h"
 #include "gbode_step.h"
@@ -697,6 +699,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbfData->stepSize = gbData->lastStepSize/2;
     // BB ToDO: Copy only fast states!!
     memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * gbData->nStates);
+    memcpy(gbfData->yRight, gbData->yLeft, sizeof(double) * gbData->nStates);
+    memcpy(gbfData->kRight, gbData->kLeft, sizeof(double) * gbData->nStates);
     gbfData->didEventStep = FALSE;
     if (gbfData->type == MS_TYPE_IMPLICIT)
     {
@@ -925,21 +929,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // Count succesful integration steps
     gbfData->stepsDone += 1;
 
-    if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
-      char fastStates_row[2048];
-      sprintf(fastStates_row, "%15.10g ", gbfData->time);
-      for (i = 0, ii = 0; i < nStates;) {
-        if (i == gbfData->fastStates[ii]) {
-          sprintf(fastStates_row, "%s 1", fastStates_row);
-          i++;
-          ii++;
-        } else {
-          sprintf(fastStates_row, "%s 0", fastStates_row);
-          i++;
-        }
-      }
-      fprintf(gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
-    }
+    dumpFastStates_gbf(gbData);
 
     // Rotate ring buffer
     for (i = 0; i < (gbfData->ringBufferSize - 1); i++) {
@@ -999,14 +989,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       solverInfo->solverStatsTmp[3] = gbfData->errorTestFailures;
       solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
 
-      if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
-        char fastStates_row[2048];
-        sprintf(fastStates_row, "%15.10g ", gbData->time);
-        for (i = 0; i < nStates; i++) {
-          sprintf(fastStates_row, "%s 0", fastStates_row);
-        }
-        fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
-      }
+      dumpFastStates_gb(gbData, TRUE);
 
       // Get out of the integration routine for event handling
       return 1;
@@ -1315,14 +1298,9 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         }
         err = fmax(gbData->err_slow, gbData->err_fast);
       }
-      if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
-        char fastStates_row[2048];
-        sprintf(fastStates_row, "%15.10g ", gbData->time);
-        for (i = 0; i < nStates; i++) {
-          sprintf(fastStates_row, "%s 1", fastStates_row);
-        }
-        fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
-      }
+
+      // dump fast states in file
+      dumpFastStates_gb(gbData, FALSE);
 
       // debug the error of the states and derivatives after outer integration
       infoStreamPrint(LOG_SOLVER, 1, "error of the states: threshold = %15.10g", err_threshold);
@@ -1380,14 +1358,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         solverInfo->solverStatsTmp[3] = gbData->gbfData->errorTestFailures;
         solverInfo->solverStatsTmp[4] = gbData->gbfData->convergenceFailures;
 
-        if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
-          char fastStates_row[2048];
-          sprintf(fastStates_row, "%15.10g ", gbData->time);
-          for (i = 0; i < nStates; i++) {
-            sprintf(fastStates_row, "%s 0", fastStates_row);
-          }
-          fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
-        }
+        // dump fast states in file
+        dumpFastStates_gb(gbData, TRUE);
 
         // Get out of the integration routine for event handling
         return 0;
@@ -1441,7 +1413,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                                 sData->timeValue,  sData->realVars, nStates);
     }
     // log the emitted result
-    infoStreamPrint(LOG_SOLVER_V, 1, "emit result (inner integration):");
+    infoStreamPrint(LOG_SOLVER_V, 1, "emit result (outer integration):");
     printVector_gb(LOG_SOLVER_V, " y", sData->realVars, nStates, sData->timeValue);
     messageClose(LOG_SOLVER_V);
   } else {

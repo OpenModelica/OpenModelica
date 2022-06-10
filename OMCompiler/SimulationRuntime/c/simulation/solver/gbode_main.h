@@ -47,10 +47,9 @@
 #include <string.h>
 
 #include "gbode_tableau.h"
-#include "gbode_util.h"
 
 #include "epsilon.h"
-#include "external_input.h"
+//#include "external_input.h"
 #include "jacobianSymbolical.h"
 #include "kinsolSolver.h"
 #include "model_help.h"

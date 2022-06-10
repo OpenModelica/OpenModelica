@@ -32,6 +32,7 @@
  */
 
 #include "gbode_main.h"
+#include "gbode_util.h"
 
 int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
 

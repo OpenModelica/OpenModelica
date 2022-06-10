@@ -33,6 +33,7 @@
 
 #include "gbode_main.h"
 #include "gbode_nls.h"
+#include "gbode_util.h"
 #include "gbode_sparse.h"
 
 #include "../../simulation_data.h"
