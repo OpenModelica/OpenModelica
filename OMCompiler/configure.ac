@@ -729,8 +729,8 @@ elif echo "$host" | grep -iq "mingw"; then
   SHREXT=".a"
   DLLEXT=".dll"
   LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
-  LIBSIMULATION=libSimulationRuntimeC.a
-  LIBRUNTIME=libOpenModelicaRuntimeC.a
+  LIBSIMULATION=libSimulationRuntimeC.dll
+  LIBRUNTIME=libOpenModelicaRuntimeC.dll
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib.a
   LIBCMINPACKLIB=libcminpack.a
