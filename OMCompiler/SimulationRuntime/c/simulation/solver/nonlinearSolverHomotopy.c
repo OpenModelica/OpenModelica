@@ -936,11 +936,11 @@ static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
   DATA* data = solverData->userData->data;
   threadData_t* threadData = solverData->userData->threadData;
   NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
-  void *dataAndThreadData[2] = {data, threadData};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 0;
 
   /* TODO: change input to residualFunc from data to systemData */
-  nlsData->residualFunc(dataAndThreadData, x, f, &iflag);
+  nlsData->residualFunc(&resUserData, x, f, &iflag);
   solverData->numberOfFunctionEvaluations++;
 
   return 0;
@@ -957,12 +957,12 @@ int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
   DATA* data = solverData->userData->data;
   threadData_t* threadData = solverData->userData->threadData;
   NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
-  void *dataAndThreadData[2] = {data, threadData};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 0;
   int retVal;
 
   /* TODO: change input to residualFunc from data to systemData */
-  retVal = nlsData->residualFuncConstraints(dataAndThreadData, x, f, &iflag);
+  retVal = nlsData->residualFuncConstraints(&resUserData, x, f, &iflag);
   solverData->numberOfFunctionEvaluations++;
 
   return retVal;

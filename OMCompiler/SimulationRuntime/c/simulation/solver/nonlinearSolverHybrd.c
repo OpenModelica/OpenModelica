@@ -331,7 +331,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
   NONLINEAR_SYSTEM_DATA* systemData = userData->nlsData;
   DATA_HYBRD* hybrdData = (DATA_HYBRD*)(systemData->solverData);
   int continuous = data->simulationInfo->solveContinuous;
-  void *dataAndThreadData[2] = {data, threadData};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=userData->solverData};
 
   switch(*iflag)
   {
@@ -350,9 +350,9 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
 
     /* call residual function */
     if(hybrdData->useXScaling){
-      (systemData->residualFunc)(dataAndThreadData, (const double*) hybrdData->xScaled, f, (const int*)iflag);
+      (systemData->residualFunc)(&resUserData, (const double*) hybrdData->xScaled, f, (const int*)iflag);
     } else {
-      (systemData->residualFunc)(dataAndThreadData, x, f, (const int*)iflag);
+      (systemData->residualFunc)(&resUserData, x, f, (const int*)iflag);
     }
 
     /* debug output */
@@ -738,7 +738,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
 
       /* try */
       {
-        int catchedError = TRUE;
+        catchedError = TRUE;
 #ifndef OMC_EMCC
         MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
