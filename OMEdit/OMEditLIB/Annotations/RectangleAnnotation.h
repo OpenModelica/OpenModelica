@@ -44,6 +44,7 @@ class RectangleAnnotation : public ShapeAnnotation
 public:
   // Used for icon/diagram shape
   RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  RectangleAnnotation(Model::Rectangle *pRectangle, GraphicsView *pGraphicsView);
   // Used for shape inside a component
   RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for icon/diagram inherited shape
@@ -53,6 +54,7 @@ public:
   // Used for OMSimulator FMU
   RectangleAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
+  void parseShapeAnnotation(Model::Rectangle *pRectangle);
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;

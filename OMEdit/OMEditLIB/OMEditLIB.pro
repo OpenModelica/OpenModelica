@@ -102,6 +102,7 @@ for(path, INCLUDEPATH) {
 }
 
 SOURCES += Util/Helper.cpp \
+  Modeling/Model.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
@@ -114,7 +115,6 @@ SOURCES += Util/Helper.cpp \
   Modeling/Commands.cpp \
   Modeling/CoOrdinateSystem.cpp \
   Modeling/ModelWidgetContainer.cpp \
-  Modeling/ModelInstanceJson.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Modeling/FunctionArgumentDialog.cpp \
   Modeling/InstallLibraryDialog.cpp \
@@ -204,6 +204,7 @@ SOURCES += Util/Helper.cpp \
   FlatModelica/ExpressionFuncs.cpp
 
 HEADERS  += Util/Helper.h \
+  Modeling/Model.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
@@ -216,7 +217,6 @@ HEADERS  += Util/Helper.h \
   Modeling/Commands.h \
   Modeling/CoOrdinateSystem.h \
   Modeling/ModelWidgetContainer.h \
-  Modeling/ModelInstanceJson.h \
   Modeling/ModelicaClassDialog.h \
   Modeling/FunctionArgumentDialog.h \
   Modeling/InstallLibraryDialog.h \

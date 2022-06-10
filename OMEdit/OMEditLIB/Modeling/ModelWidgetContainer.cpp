@@ -199,6 +199,95 @@ void GraphicsView::setIsVisualizationView(bool visualizationView)
   mVisualizationView = visualizationView;
 }
 
+/*!
+ * \brief GraphicsView::drawCoordinateSystem
+ * Draws the coordinate system.
+ */
+void GraphicsView::drawCoordinateSystem()
+{
+  /* From Modelica Specification Version 3.5-dev
+   * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+   * 1. The coordinate system annotation given in the class (if specified).
+   * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
+   *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+   * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
+   *
+   * Following is the first case.
+   */
+  Model::CoordinateSystem coordinateSystem;
+  if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+    coordinateSystem = mpModelWidget->mModelInstance.getIconAnnotation().getCoordinateSystem();
+  } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+    coordinateSystem = mpModelWidget->mModelInstance.getDiagramAnnotation().getCoordinateSystem();
+  }
+  Model::Extent extent = coordinateSystem.getExtent();
+  Model::Point leftBottom = extent.getExtent1();
+  mCoOrdinateSystem.setLeft(leftBottom.x());
+  mCoOrdinateSystem.setBottom(leftBottom.y());
+  Model::Point rightTop = extent.getExtent2();
+  mCoOrdinateSystem.setRight(rightTop.x());
+  mCoOrdinateSystem.setTop(rightTop.y());
+  mCoOrdinateSystem.setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
+  mCoOrdinateSystem.setInitialScale(coordinateSystem.getInitialScale());
+  Model::Point grid = coordinateSystem.getGrid();
+  mCoOrdinateSystem.setHorizontal(grid.x());
+  mCoOrdinateSystem.setVertical(grid.y());
+  // start with the local CoOrdinateSystem
+  mMergedCoOrdinateSystem = mCoOrdinateSystem;
+  // if local CoOrdinateSystem is not complete then try to complete the merged CoOrdinateSystem.
+//  if (!mCoOrdinateSystem.isComplete()) {
+//    readCoOrdinateSystemFromInheritedClass(this, pGraphicsView);
+//  }
+
+  setExtentRectangle(mMergedCoOrdinateSystem.getExtentRectangle());
+  resize(size());
+}
+
+void GraphicsView::drawShapes(bool select)
+{
+  QList<Model::Shape*> shapes;
+  if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+    shapes = mpModelWidget->mModelInstance.getIconAnnotation().getGraphics();
+  } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+    shapes = mpModelWidget->mModelInstance.getDiagramAnnotation().getGraphics();
+  }
+
+  foreach (auto shape, shapes) {
+    ShapeAnnotation *pShapeAnnotation = 0;
+    if (Model::Rectangle *pRectangle = dynamic_cast<Model::Rectangle*>(shape)) {
+      pShapeAnnotation = new RectangleAnnotation(pRectangle, this);
+    } else if (Model::Ellipse *pEllipse = dynamic_cast<Model::Ellipse*>(shape)) {
+      pShapeAnnotation = new EllipseAnnotation(pEllipse, this);
+    }
+
+//    QVariantMap shapeMap = shape.toMap();
+//    QString shapeName = shapeMap.value("name").toString();
+//    QVariantMap namedArgs = shapeMap.value("namedArgs").toMap();
+    /*if (shapeName.compare(QStringLiteral("Line")) == 0) {
+      pShapeAnnotation = new LineAnnotation(namedArgs, this);
+    } else if (shapeName.compare(QStringLiteral("Polygon")) == 0) {
+      pShapeAnnotation = new PolygonAnnotation(namedArgs, this);
+    } else if (shapeName.compare(QStringLiteral("Rectangle")) == 0) {
+      pShapeAnnotation = new RectangleAnnotation(namedArgs, this);
+    } else if (shapeName.compare(QStringLiteral("Ellipse")) == 0) {
+      pShapeAnnotation = new EllipseAnnotation(namedArgs, this);
+    } else if (shapeName.compare(QStringLiteral("Text")) == 0) {
+      pShapeAnnotation = new TextAnnotation(namedArgs, this);
+    } else if (shapeName.compare(QStringLiteral("Bitmap")) == 0) {
+      pShapeAnnotation = new BitmapAnnotation(mpModelWidget->getLibraryTreeItem()->mClassInformation.fileName, namedArgs, pGraphicsView);
+    }*/
+    if (pShapeAnnotation) {
+      pShapeAnnotation->drawCornerItems();
+      pShapeAnnotation->setCornerItemsActiveOrPassive();
+      pShapeAnnotation->applyTransformation();
+      mpModelWidget->getUndoStack()->push(new AddShapeCommand(pShapeAnnotation));
+      if (select) {
+        pShapeAnnotation->setSelected(true);
+      }
+    }
+  }
+}
+
 bool GraphicsView::isCreatingShape()
 {
   return isCreatingLineShape() ||
@@ -4431,31 +4520,48 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView->hide();
     createUndoStack();
 
-    QString modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
-    qDebug() << modelInstanceJson;
-    if (!modelInstanceJson.isEmpty()) {
-      if (!mModelInstanceJson.parse(modelInstanceJson.toUtf8())) {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                              QString("Failed to parse model instance json for class %1.").arg(mpLibraryTreeItem->getNameStructure()),
-                                                              Helper::scriptingKind, Helper::errorLevel));
-        MainWindow::instance()->printStandardOutAndErrorFilesMessages();
-      } else {
-        qDebug() << mModelInstanceJson.getIconAnnotation();
-      }
-    }
+    if (MainWindow::instance()->isNewApi()) {
+      QString modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
+      qDebug() << modelInstanceJson;
+      if (!modelInstanceJson.isEmpty()) {
 
-    getModelInheritedClasses();
-    drawModelInheritedClassShapes(this, StringHandler::Icon);
-    getModelIconDiagramShapes(StringHandler::Icon);
-    /* Ticket:2960
+
+        QJsonParseError jsonParserError;
+        QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
+        if (doc.isNull()) {
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                                QString("Failed to parse model instance json for class %1 with error %2.")
+                                                                .arg(mpLibraryTreeItem->getNameStructure(), jsonParserError.errorString()),
+                                                                Helper::scriptingKind, Helper::errorLevel));
+        } else {
+          mModelInstance.deserialize(doc.object());
+
+//          qDebug() << mModelInstance.name << mModelInstance.iconAnnotation.coordinateSystem.preserveAspectRatio << mModelInstance.iconAnnotation.coordinateSystem.initialScale;
+
+
+          drawModelIconLayer();
+        }
+
+
+
+      }
+    } else {
+
+      getModelInheritedClasses();
+      drawModelInheritedClassShapes(this, StringHandler::Icon);
+      getModelIconDiagramShapes(StringHandler::Icon);
+      /* Ticket:2960
      * Just a workaround to make browsing faster.
      * We don't get the components here i.e items are shown without connectors in the Libraries Browser.
      * Fetch the components when we really need to draw them.
      */
-    /*! @todo Uncomment the following code once we have new faster frontend and remove the flag mComponentsLoaded. */
-    //    drawModelInheritedClassComponents(this, StringHandler::Icon);
-    //    getModelComponents();
-    //    drawModelIconComponents();
+      /*! @todo Uncomment the following code once we have new faster frontend and remove the flag mComponentsLoaded. */
+      //    drawModelInheritedClassComponents(this, StringHandler::Icon);
+      //    getModelComponents();
+      //    drawModelIconComponents();
+    }
+
+
     /* Ticket:5620
      * Hack to make the operations like moving objects with keys faster.
      * We don't update the model directly instead we start a timer.
@@ -6718,6 +6824,15 @@ void ModelWidget::drawModelInheritedClassShapes(ModelWidget *pModelWidget, Strin
     }
     index++;
   }
+}
+
+void ModelWidget::drawModelIconLayer()
+{
+  mpIconGraphicsView->drawCoordinateSystem();
+  mpIconGraphicsView->drawShapes(false);
+
+//  qDebug() << mModelInstance.getIconCoordinateSystem();
+//  qDebug() << mModelInstance.getIconAnnotation();
 }
 
 /*!

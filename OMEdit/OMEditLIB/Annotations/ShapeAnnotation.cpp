@@ -91,6 +91,17 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   mRotation.parse(list.at(2));
 }
 
+void GraphicItem::parseShapeAnnotation(Model::GraphicItem *pGraphicItem)
+{
+  // if first item of list is true then the shape should be visible.
+  mVisible = pGraphicItem->getVisible();
+  // 2nd item is the origin
+  Model::Point origin = pGraphicItem->getOrigin();
+  mOrigin = QPointF(origin.x(), origin.y());
+  // 3rd item is the rotation
+  mRotation = pGraphicItem->getRotation();
+}
+
 /*!
  * \brief GraphicItem::getOMCShapeAnnotation
  * Returns the annotation values of the GraphicItem in format as returned by OMC.
@@ -179,6 +190,15 @@ void FilledShape::parseShapeAnnotation(QString annotation)
   mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(list.at(6)));
   // 8th item of list contains the thickness.
   mLineThickness.parse(list.at(7));
+}
+
+void FilledShape::parseShapeAnnotation(Model::FilledShape *pFilledShape)
+{
+  mLineColor = pFilledShape->getLineColor().getColor();
+  mFillColor = pFilledShape->getFillColor().getColor();
+//  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(annotation.value("linePattern").toString()));
+//  mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(annotation.value("fillPattern").toString()));
+  mLineThickness = pFilledShape->getLineThickness();
 }
 
 /*!

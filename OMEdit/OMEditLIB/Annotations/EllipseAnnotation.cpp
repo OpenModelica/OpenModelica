@@ -50,6 +50,21 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
 }
 
+EllipseAnnotation::EllipseAnnotation(Model::Ellipse *pEllipse, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+{
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation(pEllipse);
+  setShapeFlags(true);
+}
+
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
@@ -86,6 +101,27 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
   mEndAngle.parse(list.at(10));
   // 12th item of the list contains the closure
   mClosure = StringHandler::getClosureType(stripDynamicSelect(list.at(11)));
+}
+
+void EllipseAnnotation::parseShapeAnnotation(Model::Ellipse *pEllipse)
+{
+  GraphicItem::parseShapeAnnotation(pEllipse);
+  FilledShape::parseShapeAnnotation(pEllipse);
+
+  //mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(rectangle.value("borderPattern").toString()));
+
+  QList<QPointF> extents;
+  Model::Extent extent = pEllipse->getExtent();
+  Model::Point extent1 = extent.getExtent1();
+  Model::Point extent2 = extent.getExtent2();
+
+  extents.append(QPointF(extent1.x(), extent1.y()));
+  extents.append(QPointF(extent2.x(), extent2.y()));
+
+  mExtents = extents;
+
+  mStartAngle = pEllipse->getStartAngle();
+  mEndAngle = pEllipse->getEndAngle();
 }
 
 QRectF EllipseAnnotation::boundingRect() const

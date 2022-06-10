@@ -39,7 +39,7 @@
 #include "Element/Element.h"
 #include "Util/StringHandler.h"
 #include "Util/Helper.h"
-#include "ModelInstanceJson.h"
+#include "Model.h"
 #include "Editors/BaseEditor.h"
 #include "Editors/ModelicaEditor.h"
 #include "Editors/CompositeModelEditor.h"
@@ -166,6 +166,11 @@ public:
   ModelWidget* getModelWidget() {return mpModelWidget;}
   void setIsVisualizationView(bool visualizationView);
   bool isVisualizationView() {return mVisualizationView;}
+
+  void drawCoordinateSystem();
+  void drawShapes(bool select);
+
+
   void setExtentRectangle(const QRectF rectangle);
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
   bool isCustomScale() {return mIsCustomScale;}
@@ -587,6 +592,8 @@ public:
                                     const QString oldEditedCref = QString(""), const QString newEditedCref = QString(""));
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
   void processPendingModelUpdate();
+
+  Model::Instance mModelInstance;
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
@@ -607,7 +614,6 @@ private:
   GraphicsScene *mpIconGraphicsScene;
   UndoStack *mpUndoStack;
   QUndoView *mpUndoView;
-  ModelInstanceJson mModelInstanceJson;
   BaseEditor *mpEditor;
   QStatusBar *mpModelStatusBar;
   bool mComponentsLoaded;
@@ -633,6 +639,10 @@ private:
   IconDiagramMap getIconDiagramMap(QString mapAnnotation);
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
+
+  void drawModelIconLayer();
+
+
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);
   void readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
   void drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType);

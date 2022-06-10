@@ -50,6 +50,21 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGrap
   setShapeFlags(true);
 }
 
+RectangleAnnotation::RectangleAnnotation(Model::Rectangle *pRectangle, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+{
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation(pRectangle);
+  setShapeFlags(true);
+}
+
 RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
@@ -129,6 +144,26 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
   mExtents.parse(list.at(9));
   // 11th item of the list contains the corner radius.
   mRadius.parse(list.at(10));
+}
+
+void RectangleAnnotation::parseShapeAnnotation(Model::Rectangle *pRectangle)
+{
+  GraphicItem::parseShapeAnnotation(pRectangle);
+  FilledShape::parseShapeAnnotation(pRectangle);
+
+  //mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(rectangle.value("borderPattern").toString()));
+
+  QList<QPointF> extents;
+  Model::Extent extent = pRectangle->getExtent();
+  Model::Point extent1 = extent.getExtent1();
+  Model::Point extent2 = extent.getExtent2();
+
+  extents.append(QPointF(extent1.x(), extent1.y()));
+  extents.append(QPointF(extent2.x(), extent2.y()));
+
+  mExtents = extents;
+
+  mRadius = pRectangle->getRadius();
 }
 
 QRectF RectangleAnnotation::boundingRect() const
