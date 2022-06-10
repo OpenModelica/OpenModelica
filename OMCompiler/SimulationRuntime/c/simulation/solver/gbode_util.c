@@ -242,7 +242,7 @@ void printIntVector_gb(enum LOG_STREAM stream, char name[], int* a, int n, doubl
   if (!ACTIVE_STREAM(stream) || n>100) return;
 
   char row_to_print[1024];
-  sprintf(row_to_print, "%s\t(time = %g): \n", name, time);
+  sprintf(row_to_print, "%s(%8g) =\t", name, time);
   for (int i=0;i<n;i++)
     sprintf(row_to_print, "%s %d", row_to_print, a[i]);
   infoStreamPrint(stream, 0, "%s", row_to_print);

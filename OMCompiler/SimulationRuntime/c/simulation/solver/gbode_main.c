@@ -830,7 +830,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   }
 
   // print informations on the calling details
-  infoStreamPrint(LOG_SOLVER, 0, "gbodef solver started (fast states): %d", gbData->nFastStates);
+  infoStreamPrint(LOG_SOLVER, 0, "gbodef solver started (fast states/states): %d/%d", gbData->nFastStates,gbData->nStates);
   infoStreamPrint(LOG_SOLVER, 0, "interpolation is done between %10g to %10g (SR-stepsize: %10g)",
                   gbData->timeLeft, gbData->timeRight, gbData->lastStepSize);
 
@@ -1285,8 +1285,9 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       if (gbData->nFastStates > 0) {
         // debug the error of the states and derivatives after outer integration
-        infoStreamPrint(LOG_SOLVER, 1, "error of the states before inner integration:");
+        infoStreamPrint(LOG_SOLVER, 1, "error of the states before inner integration: threshold = %15.10g", err_threshold);
         printVector_gb(LOG_SOLVER, "er", gbData->err, nStates, gbData->timeRight);
+        printIntVector_gb(LOG_SOLVER, "sr", gbData->sortedStates, nStates, gbData->timeRight);
         messageClose(LOG_SOLVER);
 
         if (gbodef_main(data, threadData, solverInfo, targetTime)) {
@@ -1305,7 +1306,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
 
       // debug the error of the states and derivatives after outer integration
-      infoStreamPrint(LOG_SOLVER, 1, "error of the states:");
+      infoStreamPrint(LOG_SOLVER, 1, "error of the states: threshold = %15.10g", err_threshold);
       printVector_gb(LOG_SOLVER, "er", gbData->err, nStates, gbData->timeRight);
       messageClose(LOG_SOLVER);
 
