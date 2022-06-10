@@ -295,7 +295,7 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
   threadData_t* threadData = kinsolUserData->threadData;
   NONLINEAR_SYSTEM_DATA* nlsData = kinsolUserData->nlsData;
   NLS_KINSOL_DATA* kinsolData = (NLS_KINSOL_DATA*)nlsData->solverData;
-  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=kinsolUserData->solverData};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 1 /* recoverable error */;
 
   /* Update statistics */

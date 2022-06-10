@@ -135,7 +135,7 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
   ANALYTIC_JACOBIAN* jacobian = userData->analyticJacobian;
 
   DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
-  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=userData->solverData};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int flag = 1;
 
   if (fj) {
