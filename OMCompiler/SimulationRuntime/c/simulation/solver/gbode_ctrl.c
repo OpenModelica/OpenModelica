@@ -252,7 +252,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     h1 = fmax(1e-6, h0*1e-3);
   }
 
-  gbData->stepSize = 0.5*fmin(100*h0,h1);
+  gbData->stepSize = 0.5*fmin(100*h0,h1)*50;
   gbData->lastStepSize = 0.0;
 
   infoStreamPrint(LOG_MULTIRATE, 0, "initial step size = %e at time %g", gbData->stepSize, gbData->time);

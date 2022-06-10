@@ -1538,10 +1538,9 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       for (i = 0, err=0; i < nStates; i++) {
         gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) + Atol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
-        gbData->err[i] = gbData->errest[i] / gbData->errtol[i];
+        gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
         err = fmax(err, gbData->err[i]);
       }
-      err = gbData->tableau->fac * err;
 
       // store values in the ring buffer
       gbData->errValues[0] = err;
