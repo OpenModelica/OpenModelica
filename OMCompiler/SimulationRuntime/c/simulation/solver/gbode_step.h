@@ -41,3 +41,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 // singlerate step function
 int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
+int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+
+

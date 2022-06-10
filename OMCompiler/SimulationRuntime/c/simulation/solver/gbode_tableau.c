@@ -54,74 +54,20 @@
 #define TRUE 1
 #endif
 
-// BB ToDo: implement sparse representation of the Butcher tableau, and use this in the expl_impl_diag routine
+void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b, double *bt) {
 
-void getRichardsonButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b, double *bt) {
-  // create Butcher tableau based on Richardson extrapolation
+  tableau->c = malloc(sizeof(double)*tableau->nStages);
+  tableau->A = malloc(sizeof(double)*tableau->nStages * tableau->nStages);
+  tableau->b = malloc(sizeof(double)*tableau->nStages);
+  tableau->bt = malloc(sizeof(double)*tableau->nStages);
 
-  unsigned int nStages = tableau->nStages;
-  unsigned int p = tableau->order_b;
-
-  int i, j;
-  double v1 = -1.0/(pow(2.0,p)-1.0);
-  double v2 = pow(2.0,p-1)/(pow(2.0,p)-1.0);
-
-  tableau->nStages = 3*nStages;
-  tableau->order_b = p;
-  tableau->order_bt = p+1;
-  tableau->fac = 1e0;
-
-  tableau->c  = malloc(sizeof(double) * tableau->nStages);
-  tableau->A  = malloc(sizeof(double) * tableau->nStages * tableau->nStages);
-  tableau->b  = malloc(sizeof(double) * tableau->nStages);
-  tableau->bt = malloc(sizeof(double)* tableau->nStages);
-
-  for (i=0; i < nStages; i++) {
-    tableau->c[i]             = c[i]/2.;
-    tableau->c[i + nStages]   = (c[i] + 1)/2.;
-    tableau->c[i + 2*nStages] = c[i];
-  }
-  for (i=0; i < nStages; i++) {
-    tableau->b[i]              = 0.0;
-    tableau->b[i + nStages]    = 0.0;
-    tableau->b[i + 2*nStages]  = b[i];
-    tableau->bt[i]             = v2*b[i];
-    tableau->bt[i + nStages]   = v2*b[i];
-    tableau->bt[i + 2*nStages] = v1*b[i];
-  }
-
-  for (i=0; i < tableau->nStages * tableau->nStages; i++)
-    tableau->A[i] = 0.0;
-
-  for (j=0; j < nStages; j++) {
-    for (i=0; i < nStages; i++) {
-      tableau->A[ j              * tableau->nStages + i]             = A[j*nStages + i]/2;
-      tableau->A[(j +   nStages) * tableau->nStages + i]             = b[i]/2;
-      tableau->A[(j +   nStages) * tableau->nStages +   nStages + i] = A[j*nStages + i]/2;
-      tableau->A[(j + 2*nStages) * tableau->nStages + 2*nStages + i] = A[j*nStages + i];
-    }
-  }
+  memcpy(tableau->c,  c, tableau->nStages*sizeof(double));
+  memcpy(tableau->A,  A, tableau->nStages * tableau->nStages * sizeof(double));
+  memcpy(tableau->b,  b, tableau->nStages*sizeof(double));
+  memcpy(tableau->bt, bt, tableau->nStages*sizeof(double));
 }
 
-void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b, double *bt, modelica_boolean richardson) {
-
-  if (richardson) {
-    getRichardsonButcherTableau(tableau, c, A, b, bt);
-    return;
-  } else {
-    tableau->c = malloc(sizeof(double)*tableau->nStages);
-    tableau->A = malloc(sizeof(double)*tableau->nStages * tableau->nStages);
-    tableau->b = malloc(sizeof(double)*tableau->nStages);
-    tableau->bt = malloc(sizeof(double)*tableau->nStages);
-
-    memcpy(tableau->c,  c, tableau->nStages*sizeof(double));
-    memcpy(tableau->A,  A, tableau->nStages * tableau->nStages * sizeof(double));
-    memcpy(tableau->b,  b, tableau->nStages*sizeof(double));
-    memcpy(tableau->bt, bt, tableau->nStages*sizeof(double));
-  }
-}
-
-void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
 
   /* initialize values of the Butcher tableau */
   double gam = (2.0-sqrt(2.0))*0.5;
@@ -151,10 +97,10 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richar
   const double b[]  = {b1, b2, b3};
   const double bt[] = {bt1, bt2, bt3};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
 
   // define limit of the embedded RK method towards -Inf
   double lim = 0.7;
@@ -174,10 +120,10 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richar
   const double b[]  = {.187641024346723825161292144158, -.595297473576954948047823027584, .971789927721772123470511432228, .435866521508458999416019451194};
   const double bt[]  = {.187641024346723825161292144140-.36132349168887087099928261975*lim, -1.46846946256021140302557262326*lim-.595297473576954948047823027622, 1.37419900268512763072398740524*lim+.971789927721772123470511432300, .455593951563954643300867837766*lim+.435866521508458999416019451180};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau) {
   tableau->nStages = 3;
   tableau->order_b = 3;
   tableau->order_bt = 2;
@@ -191,10 +137,10 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau, modelica_boolean richard
   const double b[]  = {0.5, 0.5, 0.0};
   const double bt[]  = {-3.52072594216369017578202073251, 1.57735026918962576450914878069, 2.94337567297406441127287195182};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richardson)
+void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 2;
   tableau->order_b = 2;
@@ -208,15 +154,15 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau, modelica_boolean richard
   const double b[]   = { 0.5,  0.5};
   const double bt[]  = {0.25, 0.75};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
 }
 
-void getButcherTableau_MS(BUTCHER_TABLEAU* tableau, modelica_boolean richardson)
+void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
 {
 
-  if (richardson) {
+  if (tableau->richardson) {
     warningStreamPrint(LOG_MULTIRATE, 0,"Richardson extrapolation is not available for multistep methods");
-    richardson = FALSE;
+    tableau->richardson = FALSE;
   }
 
   //ADAMS-MOULTON
@@ -247,12 +193,12 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau, modelica_boolean richardson)
   const double b[]   = {0.5, 0.5};
   const double bt[]  = {1.0, 0.0};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
 }
 
-void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
 
-  if (richardson) {
+  if (tableau->richardson) {
     tableau->nStages = 1;
     tableau->order_b = 1;
 
@@ -262,7 +208,7 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean rich
     const double b[] = {1.0};
     const double bt[] = {};
 
-    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
   } else {
     tableau->nStages = 2;
     tableau->order_b = 1;
@@ -276,11 +222,11 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean rich
     const double b[]  = {0,1};      // explicit midpoint rule corresponds to Richardson extrapolation
     const double  bt[] = {1,0};     // explicit Euler step
 
-    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
   }
 }
 
-void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau) {
   //implicit Gauss-Legendre, order 2*s, but embedded scheme has order s
 
   tableau->nStages = 2;
@@ -307,12 +253,76 @@ void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau, modelica_boolean richard
   const double b[]  = {b1, b2};    // implicit Gauss-Legendre rule
   const double  bt[] = {bt1, bt2}; // Embedded method (order 1)
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_GAUSS3(BUTCHER_TABLEAU* tableau) {
+  //implicit Gauss-Legendre, order 2*s, but embedded scheme has order s
 
-    if (richardson) {
+  tableau->nStages = 3;
+  tableau->order_b = 6;
+  tableau->order_bt = 2;
+  tableau->fac = 1.0;
+
+  const double c[]  = {0.112701665379258311482073460022,                             0.5, 0.887298334620741688517926539978};
+  const double A[]  = {
+                          0.13888888888888888888888888889, -0.0359766675249389034563954710967, 0.00978944401530832604958004222935,
+                          0.300263194980864592438024947213, 0.222222222222222222222222222223, -0.022485417203086814660247169435,
+                          0.267988333762469451728197735546,  0.48042111196938334790083991554, 0.138888888888888888888888888886};
+  const double b[]  = {0.277777777777777777777777777778, 0.444444444444444444444444444443, 0.277777777777777777777777777778};
+  const double bt[]  = {-0.833333333333333333333333333333, 2.66666666666666666666666666666, -0.833333333333333333333333333333};
+
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+}
+
+void getButcherTableau_GAUSS4(BUTCHER_TABLEAU* tableau) {
+  //implicit Gauss-Legendre, order 2*s, but embedded scheme has order s
+
+  tableau->nStages = 4;
+  tableau->order_b = 8;
+  tableau->order_bt = 3;
+  tableau->fac = 1.0;
+
+  const double c[]  = {0.06943184420297371238802675555359524745214, 0.3300094782075718675986671204483776563997, 0.6699905217924281324013328795516223436003, 0.9305681557970262876119732444464047525479};
+  const double A[]  = {
+                          0.08696371128436346434326598730549985180884, -0.02660418008499879331338513047695310932617, 0.01262746268940472451505688057461809356577, -0.0035551496857956831569109818495695885963,
+                          0.1881181174998680716506855450871711600564, 0.1630362887156365356567340126945001481912, -0.02788042860247089522415110641899741073777, 0.006735500594538155515398669085703758889893,
+                          0.1671919219741887731711333055252959447278, 0.3539530060337439665376191318079977071201, 0.1630362887156365356567340126945001481912, -0.01419069493114114296415357047617145643876,
+                          0.177482572254522611843442956460569292214, 0.3134451147418683467984111448143822028166, 0.3526767575162718646268531558659534057085, 0.08696371128436346434326598730549985180884};
+  const double b[]  = {0.1739274225687269286865319746109997036177, 0.3260725774312730713134680253890002963823, 0.3260725774312730713134680253890002963823, 0.1739274225687269286865319746109997036177};
+  const double bt[]  = { 2.029062439578463454986692572724958069163,  -4.37278977445749213150196088214782025746,  5.024934929320038274128896932925820850225, -1.681207594441009597613628623502958661928};
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+}
+
+
+void getButcherTableau_GAUSS5(BUTCHER_TABLEAU* tableau) {
+  //implicit Gauss-Legendre, order 2*s, but embedded scheme has order s
+
+  tableau->nStages = 5;
+  tableau->order_b = 10;
+  tableau->order_bt = 4;
+  tableau->fac = 1.0;
+
+  const double c[]  = {0.04691007703066800360118656085030351743717, 0.2307653449471584544818427896498955975164,                                        0.5, 0.7692346550528415455181572103501044024836, 0.9530899229693319963988134391496964825628};
+  const double A[]  = {
+                          0.05923172126404727187856601017997934066082, -0.01957036435907603749264321405088406001825, 0.01125440081864295555271624421509074877307, -0.005593793660812184876817721964475928215541, 0.001588112967865998539365242470593416237085,
+                          0.1281510056700452834961668483295138221932, 0.1196571676248416170103228787089095482281, -0.0245921146196422003893182516860040166299, 0.01031828067068335740895394505635583948635, -0.002768994398769603044282630758879595761319,
+                          0.1137762880042246025287412738153655768598, 0.2600046516806415185924058951875739793891, 0.1422222222222222222222222222222222222222, -0.02069031643095828457176013776975488293293, 0.00468715452386994122839074654459310446188,
+                          0.1212324369268641468014146511188382770829, 0.2289960545789998766116918123614632569698, 0.3090365590640866448337626961304484610743, 0.1196571676248416170103228787089095482281, -0.009687563141950739739034827969555140871526,
+                          0.1168753295602285452177667778893652650845, 0.2449081289104954188974634793822950246717, 0.2731900436258014888917282002293536956714, 0.2588846996087592715132889714687031564744, 0.05923172126404727187856601017997934066082};
+  const double b[]  = {0.1184634425280945437571320203599586813216, 0.2393143352496832340206457574178190964561, 0.2844444444444444444444444444444444444444, 0.2393143352496832340206457574178190964561, 0.1184634425280945437571320203599586813216};
+  const double bt[]  = {-3.549480780358140059259512996235616229578,  10.62725855813591783703729077401339400736, -13.15555555555555555555555555555555555556,  10.62725855813591783703729077401339400736, -3.549480780358140059259512996235616229578};
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+}
+
+
+
+
+void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
+
+    if (tableau->richardson) {
     tableau->nStages = 1;
     tableau->order_b = 1;
     /* Butcher Tableau */
@@ -321,7 +331,7 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean rich
     const double b[] = {1.0};
     const double bt[] = {};
 
-    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
   } else {
     tableau->nStages  = 2;
     tableau->order_b  = 1;
@@ -335,11 +345,11 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau, modelica_boolean rich
     const double  bt[] = {0.0, 1.0};  // implicit Euler step
     const double  b[] = {0.5, 0.5}; // trapezoidal rule for error estimator
 
-    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+    setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
   }
 }
 
-void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
   // BB ToDo: check embedded method, values and order in Maple...
 
   tableau->nStages = 5;
@@ -359,10 +369,10 @@ void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau, modelica_boolean richard
   // const double bt_EXPLEULER_SC[]  = {1./2, 0.0, -3./2,  2.0,  0.0}; // 3th order???
   const double  bt[]  = {1./10, 0.0, 3./10,  2./5,  1./5}; // 3th order???
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 7;
   tableau->order_b = 5;
@@ -382,10 +392,10 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau, modelica_boolean richar
   const double b[] = {35./384, 0.0, 500./1113, 125./192, -2187./6784, 11./84, 0.0};
   const double  bt[] = {5179./57600, 0.0, 7571./16695, 393./640, -92097./339200, 187./2100, 1./40};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_FEHLBERG12(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_FEHLBERG12(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 3;
   tableau->order_b = 2;
@@ -400,10 +410,10 @@ void getButcherTableau_FEHLBERG12(BUTCHER_TABLEAU* tableau, modelica_boolean ric
   const double b[]   = {1./512., 255./256., 1./512.};
   const double bt[]  = {1./256., 255./256., 0.0};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_FEHLBERG45(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_FEHLBERG45(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 6;
   tableau->order_b = 5;
@@ -422,10 +432,10 @@ void getButcherTableau_FEHLBERG45(BUTCHER_TABLEAU* tableau, modelica_boolean ric
   const double b[]   = {0.121296296296296296296296296296, -0.0304761904761904761904761904762, 0.578869395711500974658869395712, 0.516977165135059871901977165135, -0.186666666666666666666666666667,                               0};
   const double bt[]  = {0.115740740740740740740740740741,                               0, 0.548927875243664717348927875244,    0.535331384015594541910331384016,                              -0.2,                               0};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_FEHLBERG78(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_FEHLBERG78(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 13;
   tableau->order_b = 8;
@@ -451,10 +461,10 @@ void getButcherTableau_FEHLBERG78(BUTCHER_TABLEAU* tableau, modelica_boolean ric
   const double b[]  = {                              0,                               0,                               0,                               0,                               0, 0.32380952380952380952380952381, 0.257142857142857142857142857143, 0.257142857142857142857142857143, 0.0321428571428571428571428571429, 0.0321428571428571428571428571429,                               0, 0.0488095238095238095238095238095, 0.0488095238095238095238095238095};
   const double bt[]  = {0.0488095238095238095238095238095,                               0,                               0,                               0,                               0, 0.32380952380952380952380952381, 0.257142857142857142857142857143, 0.257142857142857142857142857143, 0.0321428571428571428571428571429, 0.0321428571428571428571428571429, 0.0488095238095238095238095238095,                               0,                               0};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_RK810(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_RK810(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 17;
   tableau->order_b = 10;
@@ -484,10 +494,10 @@ void getButcherTableau_RK810(BUTCHER_TABLEAU* tableau, modelica_boolean richards
   const double b[]  = {0.0333333333333333333333333333333,                           0.025, 0.0333333333333333333333333333333,                               0,                            0.05,                               0,                            0.04,                               0, 0.189237478148923490158306404106, 0.277429188517743176508360262561, 0.277429188517743176508360262561, 0.189237478148923490158306404106,                           -0.04,                           -0.05, -0.0333333333333333333333333333333,                          -0.025, 0.0333333333333333333333333333333};
   const double bt[]  = {0.0333333333333333333333333333333, 0.0277777777777777777777777777778, 0.0333333333333333333333333333333,                               0,                            0.05,                               0,                            0.04,                               0, 0.189237478148923490158306404106, 0.277429188517743176508360262561, 0.277429188517743176508360262561, 0.189237478148923490158306404106,                           -0.04,                           -0.05, -0.0333333333333333333333333333333, -0.0277777777777777777777777777778, 0.0333333333333333333333333333333};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_RK1012(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_RK1012(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 25;
   tableau->order_b = 12;
@@ -526,11 +536,11 @@ void getButcherTableau_RK1012(BUTCHER_TABLEAU* tableau, modelica_boolean richard
   const double bt[]  = {0.0238095238095238095238095238095,                             0.1,                         0.03125,                               0, 0.0416666666666666666666666666667,                               0,                            0.05,                            0.05,                               0,                             0.1, 0.0714285714285714285714285714286,                               0, 0.138413023680782974005350203145, 0.215872690604931311708935511141, 0.24380952380952380952380952381, 0.215872690604931311708935511141, 0.138413023680782974005350203145, -0.0714285714285714285714285714286,                            -0.1,                           -0.05,                           -0.05, -0.0416666666666666666666666666667,                        -0.03125,                            -0.1, 0.0238095238095238095238095238095};
 
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
 
-void getButcherTableau_RK1214(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_RK1214(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 35;
   tableau->order_b = 14;
@@ -580,10 +590,10 @@ const double bt[]  = { 0.017857142857142857142857142857142857142857142857143,   
 
 
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
-void getButcherTableau_RK1214_orig(BUTCHER_TABLEAU* tableau, modelica_boolean richardson) {
+void getButcherTableau_RK1214_orig(BUTCHER_TABLEAU* tableau) {
 
   // some values seem not to be correct, method is not as expected (RK1012 is much more reliable and certainly enough for this purpose!)
   tableau->nStages = 35;
@@ -632,7 +642,7 @@ void getButcherTableau_RK1214_orig(BUTCHER_TABLEAU* tableau, modelica_boolean ri
   const double b[]  = { 0.017857142857142857142857142857142857142857142857143,                                            0.005859375,                                             0.01171875,                                                      0,                                            0.017578125,                                                      0,                                              0.0234375,                                            0.029296875,                                                      0,                                             0.03515625,                                            0.041015625,                                               0.046875,                                                      0,                                            0.052734375,                                             0.05859375,                                            0.064453125,                                                      0,   0.10535211357175301969149603288787816222767308308052,   0.17056134624175218238212033855387408588755548780279,   0.20622939732935194078352648570110489474191428625954,   0.20622939732935194078352648570110489474191428625954,   0.17056134624175218238212033855387408588755548780279,   0.10535211357175301969149603288787816222767308308052,                                           -0.064453125,                                            -0.05859375,                                           -0.052734375,                                              -0.046875,                                           -0.041015625,                                            -0.03515625,                                           -0.029296875,                                             -0.0234375,                                           -0.017578125,                                            -0.01171875,                                           -0.005859375,  0.017857142857142857142857142857142857142857142857143};
   const double bt[]  = { 0.017857142857142857142857142857142857142857142857143,                                            0.004859375,                                             0.01171875,                                                      0,                                            0.017578125,                                                      0,                                              0.0234375,                                            0.029296875,                                                      0,                                             0.03515625,                                            0.041015625,                                               0.046875,                                                      0,                                            0.052734375,                                             0.05859375,                                            0.064453125,                                                      0,   0.10535211357175301969149603288787816222767308308052,   0.17056134624175218238212033855387408588755548780279,   0.20622939732935194078352648570110489474191428625954,   0.20622939732935194078352648570110489474191428625954,   0.17056134624175218238212033855387408588755548780279,   0.10535211357175301969149603288787816222767308308052,                                           -0.064453125,                                            -0.05859375,                                           -0.052734375,                                              -0.046875,                                           -0.041015625,                                            -0.03515625,                                           -0.029296875,                                             -0.0234375,                                           -0.017578125,                                            -0.01171875,                                           -0.004859375,  0.017857142857142857142857142857142857142857142857143};
 
-  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt, richardson);
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
 /**
@@ -676,8 +686,13 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     infoStreamPrint(LOG_SOLVER, 0, "Chosen RK method is explicit");
   }
 
+  if (tableau->richardson) {
+    tableau->fac = 1.0;
+    tableau->order_bt = tableau->order_b + 1;
+  }
   // set order for error control!
   tableau->error_order = fmin(tableau->order_b, tableau->order_bt) + 1;
+
 }
 
 /**
@@ -688,71 +703,80 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
  */
 BUTCHER_TABLEAU* initButcherTableau(enum GB_SINGLERATE_METHOD GM_method, enum _FLAG FLAG_ERR) {
   BUTCHER_TABLEAU* tableau = (BUTCHER_TABLEAU*) malloc(sizeof(BUTCHER_TABLEAU));
-  modelica_boolean richardson;
   const char* flag_value = omc_flagValue[FLAG_ERR];
 
-  if (flag_value != NULL)
-    richardson = TRUE;
-  else
-    richardson = FALSE;
+  if (flag_value != NULL) {
+    tableau->richardson = TRUE;
+  } else {
+    tableau->richardson = FALSE;
+  }
 
   switch(GM_method)
   {
     case MS_ADAMS_MOULTON:
-      getButcherTableau_MS(tableau, richardson);
+      getButcherTableau_MS(tableau);
       break;
     case RK_DOPRI45:
-      getButcherTableau_DOPRI45(tableau, richardson);
+      getButcherTableau_DOPRI45(tableau);
       break;
     case RK_RK810:
-      getButcherTableau_RK810(tableau, richardson);
+      getButcherTableau_RK810(tableau);
       break;
     case RK_RK1012:
-      getButcherTableau_RK1012(tableau, richardson);
+      getButcherTableau_RK1012(tableau);
       break;
     case RK_RK1214:
-      getButcherTableau_RK1214(tableau, richardson);
+      getButcherTableau_RK1214(tableau);
       break;
     case RK_MERSON:
-      getButcherTableau_MERSON(tableau, richardson);
+      getButcherTableau_MERSON(tableau);
       break;
     case RK_FEHLBERG12:
-      getButcherTableau_FEHLBERG12(tableau, richardson);
+      getButcherTableau_FEHLBERG12(tableau);
       break;
     case RK_FEHLBERG45:
-      getButcherTableau_FEHLBERG45(tableau, richardson);
+      getButcherTableau_FEHLBERG45(tableau);
       break;
     case RK_FEHLBERG78:
-      getButcherTableau_FEHLBERG78(tableau, richardson);
+      getButcherTableau_FEHLBERG78(tableau);
       break;
     case RK_SDIRK2:
-      getButcherTableau_SDIRK2(tableau, richardson);
+      getButcherTableau_SDIRK2(tableau);
       break;
     case RK_SDIRK3:
-      getButcherTableau_SDIRK3(tableau, richardson);
+      getButcherTableau_SDIRK3(tableau);
       break;
     case RK_ESDIRK2:
-      getButcherTableau_ESDIRK2(tableau, richardson);
+      getButcherTableau_ESDIRK2(tableau);
       break;
     case RK_EXPL_EULER:
-      getButcherTableau_EXPLEULER(tableau, richardson);
+      getButcherTableau_EXPLEULER(tableau);
       break;
     case RK_IMPL_EULER:
-      getButcherTableau_IMPLEULER(tableau, richardson);
+      getButcherTableau_IMPLEULER(tableau);
       break;
     case RK_ESDIRK3:
-      getButcherTableau_ESDIRK3(tableau, richardson);
+      getButcherTableau_ESDIRK3(tableau);
       break;
     case RK_GAUSS2:
-      getButcherTableau_GAUSS2(tableau, richardson);
+      getButcherTableau_GAUSS2(tableau);
+      break;
+    case RK_GAUSS3:
+      getButcherTableau_GAUSS3(tableau);
+      break;
+    case RK_GAUSS4:
+      getButcherTableau_GAUSS4(tableau);
+      break;
+    case RK_GAUSS5:
+      getButcherTableau_GAUSS5(tableau);
       break;
     case RK_ESDIRK2_test:
-      getButcherTableau_ESDIRK2(tableau, richardson);
+      getButcherTableau_ESDIRK2(tableau);
       // //ESDIRK2 not optimized (just for testing) solved with gm solver method
       break;
     case RK_ESDIRK3_test:
       //ESDIRK3 not optimized (just for testing) solved with gm solver method
-      getButcherTableau_ESDIRK3(tableau, richardson);
+      getButcherTableau_ESDIRK3(tableau);
       break;
     default:
       errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", GM_method);

@@ -85,7 +85,7 @@ typedef struct DATA_GBODEF{
 
   void* nlsSolverData;
 
-  double *y, *yt, *yOld, *f;
+  double *y, *yt, *yOld, *y1, *f;
   double *yStart, *yEnd, *kStart, *kEnd;
   double *yLeft, *kLeft, *yRight, *kRight;
   double *Jf;
@@ -131,7 +131,7 @@ typedef struct DATA_GBODE{
                                          * */
   ANALYTIC_JACOBIAN* jacobian;
   double *y;                               /* Result vector of RK step */
-  double *yt;                              /* Result vector of embedded RK step */
+  double *yt, *y1;                              /* Result vector of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight; /* Needed for interpolation of the slow states */
   double *nlsxLeft, *nlsxRight;
   double *nlskLeft, *nlskRight;

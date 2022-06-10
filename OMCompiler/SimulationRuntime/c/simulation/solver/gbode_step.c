@@ -684,3 +684,65 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   return 0;
 }
 
+int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo) {
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
+  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+  DATA_GBODEF* gbfData = gbData->gbfData;
+
+  double stepSize;
+  int step_info, p;
+  int nStates = gbfData->nStates;
+  int nFastStates = gbfData->nFastStates;
+  int i, ii;
+
+  // assumption yLeft and yOld coincide!!!
+  stepSize = gbfData->stepSize;
+  p = gbfData->tableau->order_b;
+
+  step_info = gbfData->step_fun(data, threadData, solverInfo);
+  memcpy(gbfData->y1, gbfData->y, nStates * sizeof(double));
+
+  gbfData->stepSize = gbfData->stepSize/2;
+  step_info = gbfData->step_fun(data, threadData, solverInfo);
+  memcpy(gbfData->yOld, gbfData->y, nStates * sizeof(double));
+  step_info = gbfData->step_fun(data, threadData, solverInfo);
+
+  memcpy(gbfData->yOld, gbfData->yLeft, nStates * sizeof(double));
+  for (ii=0; ii<nFastStates; ii++) {
+    i = gbfData->fastStates[ii];
+    gbfData->yt[i] = (pow(2.,p) * gbfData->y[i] - gbfData->y1[i]) / (pow(2.,p) - 1);
+  }
+  gbfData->stepSize = stepSize;
+  return step_info;
+}
+
+int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo) {
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
+  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+
+  double stepSize;
+  int step_info, p;
+  int nStates = gbData->nStates;
+  int i;
+
+  // assumption yLeft and yOld coincide!!!
+  stepSize = gbData->stepSize;
+  p = gbData->tableau->order_b;
+
+  step_info = gbData->step_fun(data, threadData, solverInfo);
+  memcpy(gbData->y1, gbData->y, nStates * sizeof(double));
+
+  gbData->stepSize = gbData->stepSize/2;
+  step_info = gbData->step_fun(data, threadData, solverInfo);
+  memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
+  step_info = gbData->step_fun(data, threadData, solverInfo);
+
+  memcpy(gbData->yOld, gbData->yLeft, nStates * sizeof(double));
+  for (i=0; i<nStates; i++) {
+    gbData->yt[i] = (pow(2.,p) * gbData->y[i] - gbData->y1[i]) / (pow(2.,p) - 1);
+  }
+  gbData->stepSize = stepSize;
+  return step_info;
+}

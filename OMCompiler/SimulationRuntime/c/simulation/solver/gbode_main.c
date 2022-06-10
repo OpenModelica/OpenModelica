@@ -188,6 +188,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   gbfData->y = malloc(sizeof(double) * gbfData->nStates);
   gbfData->yOld = malloc(sizeof(double) * gbfData->nStates);
   gbfData->yt = malloc(sizeof(double) * gbfData->nStates);
+  gbfData->y1 = malloc(sizeof(double) * gbfData->nStates);
   gbfData->f = malloc(sizeof(double) * gbfData->nStates);
   if (!gbfData->isExplicit)
   {
@@ -395,6 +396,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->nlsxRight = malloc(sizeof(double) * gbData->nStates);
   gbData->nlskRight = malloc(sizeof(double) * gbData->nStates);
   gbData->yt = malloc(sizeof(double) * gbData->nStates);
+  gbData->y1 = malloc(sizeof(double) * gbData->nStates);
   gbData->f = malloc(sizeof(double) * gbData->nStates);
   gbData->k = malloc(sizeof(double) * gbData->nStates * (gbData->tableau->nStages + 1));
   gbData->x = malloc(sizeof(double) * gbData->nStates * (gbData->tableau->nStages + 1));
@@ -556,6 +558,7 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   free(gbfData->yRight);
   free(gbfData->kRight);
   free(gbfData->yt);
+  free(gbfData->y1);
   free(gbfData->f);
   free(gbfData->Jf);
   free(gbfData->k);
@@ -633,6 +636,7 @@ void gbode_freeData(DATA_GBODE *gbData)
   free(gbData->nlsxRight);
   free(gbData->nlskRight);
   free(gbData->yt);
+  free(gbData->y1);
   free(gbData->f);
   free(gbData->Jf);
   free(gbData->k);
@@ -864,8 +868,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     messageClose(LOG_SOLVER_V);
 
     do {
-      // calculate one step of the integrator
-      integrator_step_info = gbfData->step_fun(data, threadData, solverInfo);
+      // do one integration step resulting in two different approximations
+      // results are stored in gbData->y and gbData->yt
+      if (gbfData->tableau->richardson) {
+        integrator_step_info = gbodef_richardson(data, threadData, solverInfo);
+      } else {
+        integrator_step_info = gbfData->step_fun(data, threadData, solverInfo);
+      }
 
       // error handling: try half of the step size!
       if (integrator_step_info != 0) {
@@ -1174,8 +1183,12 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     messageClose(LOG_SOLVER_V);
     do {
       // do one integration step resulting in two different approximations
-      // results are stored in gbData->y and gbData->y1
-      gb_step_info = gbData->step_fun(data, threadData, solverInfo);
+      // results are stored in gbData->y and gbData->yt
+      if (gbData->tableau->richardson) {
+        gb_step_info = gbode_richardson(data, threadData, solverInfo);
+      } else {
+        gb_step_info = gbData->step_fun(data, threadData, solverInfo);
+      }
 
           // debug ring buffer for the states and derviatives of the states
       infoStreamPrint(LOG_SOLVER_V, 1, "ring buffer before inner steps of integration");
@@ -1517,8 +1530,12 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     do
     {
       // do one integration step resulting in two different approximations
-      // results are stored in gbData->y and gbData->y1
-      gb_step_info = gbData->step_fun(data, threadData, solverInfo);
+      // results are stored in gbData->y and gbData->yt
+      if (gbData->tableau->richardson) {
+        gb_step_info = gbode_richardson(data, threadData, solverInfo);
+      } else {
+        gb_step_info = gbData->step_fun(data, threadData, solverInfo);
+      }
 
       infoStreamPrint(LOG_SOLVER_V, 1, "Approximations after step calculation:");
       printVector_gb(LOG_SOLVER_V, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
