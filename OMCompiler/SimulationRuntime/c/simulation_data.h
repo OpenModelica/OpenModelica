@@ -259,6 +259,17 @@ typedef struct STATIC_STRING_DATA
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 } STATIC_STRING_DATA;
 
+/**
+ * @brief User data provided to residual functions.
+ *
+ * Created by (non-)linear solver before evaluating a residual.
+ */
+typedef struct RESIDUAL_USERDATA {
+  struct DATA* data;
+  threadData_t* threadData;
+  void* solverData;           /* Optional pointer to ODE solver data.
+                               * Used in NLS solving of ODE integrator step. */
+} RESIDUAL_USERDATA;
 
 typedef struct NLS_USERDATA NLS_USERDATA;
 
@@ -290,12 +301,10 @@ typedef struct NONLINEAR_SYSTEM_DATA
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
   modelica_boolean isPatternAvailable;
 
-  // TODO Make type for void** {data, threadData}
-  // Also add a documentation
-  void (*residualFunc)(void** dataAndThreadData, const double* x, double* fx, const int* iflag);
-  int (*residualFuncConstraints)(void**, const double*, double*, const int*);
-  void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*, modelica_boolean);
-  int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
+  void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
+  int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);
+  void (*initializeStaticNLSData)(struct DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
+  int (*strictTearingFunctionCall)(struct DATA* data, threadData_t *threadData);
   void (*getIterationVars)(struct DATA*, double*);
   int (*checkConstraints)(struct DATA*, threadData_t *threadData);
 
@@ -362,7 +371,7 @@ typedef struct LINEAR_SYSTEM_DATA
   int (*analyticalJacobianColumn)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
 
-  void (*residualFunc)(void**, const double*, double*, const int*);
+  void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   void (*initializeStaticLSData)(void*, threadData_t *threadData, void*, modelica_boolean);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
   int (*checkConstraints)(struct DATA*, threadData_t *threadData);

@@ -558,11 +558,11 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
       mixedSolverData->newtonHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
       nlsUserData = initNlsUserData(data, threadData, sysNum, nonlinsys, jacobian); /* Seperate userData for hybrid solver */
-      mixedSolverData->hybridData = allocateHybrdData(size-1, nlsUserData);
+      mixedSolverData->hybridData = (void*) allocateHybrdData(size-1, nlsUserData);
     } else {
       mixedSolverData->newtonHomotopyData = (void*) allocateHomotopyData(size, nlsUserData);
       nlsUserData = initNlsUserData(data, threadData, sysNum, nonlinsys, jacobian); /* Seperate userData for hybrid solver */
-      mixedSolverData->hybridData = allocateHybrdData(size, nlsUserData);
+      mixedSolverData->hybridData = (void*) allocateHybrdData(size, nlsUserData);
     }
     nonlinsys->solverData = (void*) mixedSolverData;
     break;
@@ -921,10 +921,10 @@ int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, int cont
  *  \param [ref] [data]
  *         [in]  [sysNumber] index of corresponding non-linear system
  */
-int updateInnerEquation(void **dataIn, int sysNumber, int discrete)
+int updateInnerEquation(RESIDUAL_USERDATA* resUserData, int sysNumber, int discrete)
 {
-  DATA *data = (DATA*) ((void**)dataIn[0]);
-  threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+  DATA *data = resUserData->data;
+  threadData_t *threadData = resUserData->threadData;
 
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   int success = 0;
@@ -942,10 +942,11 @@ int updateInnerEquation(void **dataIn, int sysNumber, int discrete)
 #endif
 
   /* call residual function */
+  // TODO AHeu: Make sure residualFuncConstraints gets RESIDUAL_USERDATA* as input, was (void*) (void**)
   if (nonlinsys->strictTearingFunctionCall != NULL)
-    constraintViolated = nonlinsys->residualFuncConstraints((void*) dataIn, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
+    constraintViolated = nonlinsys->residualFuncConstraints(resUserData, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
   else
-    nonlinsys->residualFunc((void*) dataIn, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
+    nonlinsys->residualFunc(resUserData, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
 
   /* replace extrapolated values by current x for discrete step */
   memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
@@ -1130,17 +1131,17 @@ modelica_boolean solveWithInitHomotopy(DATA *data, threadData_t *threadData, NON
   return success;
 }
 
-/*! \fn solve non-linear systems
+/*! \fn Solve all non-linear systems in data->simulationInfo->nonlinearSystemData.
  *
- *  \param [in]  [data]
- *  \param [in]  [threadData]
- *  \param [in]  [sysNumber] index of corresponding non-linear system
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param sysNumber         Index of corresponding non-linear system
  *
- *  \author ptaeuber
+ * @author ptaeuber
  */
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
-  void *dataAndThreadData[2] = {data, threadData};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int saveJumpState, constraintsSatisfied;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   int casualTearingSet = nonlinsys->strictTearingFunctionCall != NULL;
@@ -1185,7 +1186,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   if (data->simulationInfo->discreteCall)
   {
     // TODO: constraintsSatisfied never used
-    constraintsSatisfied = updateInnerEquation(dataAndThreadData, sysNumber, 1);
+    constraintsSatisfied = updateInnerEquation(&resUserData, sysNumber, 1);
   }
 
   /* print debug initial information */

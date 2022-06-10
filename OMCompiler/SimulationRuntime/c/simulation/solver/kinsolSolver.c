@@ -293,9 +293,9 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
   NLS_USERDATA* kinsolUserData = (NLS_USERDATA*)userData;
   DATA* data = kinsolUserData->data;
   threadData_t* threadData = kinsolUserData->threadData;
-  void* dataAndThreadData[2] = {data, threadData};
   NONLINEAR_SYSTEM_DATA* nlsData = kinsolUserData->nlsData;
   NLS_KINSOL_DATA* kinsolData = (NLS_KINSOL_DATA*)nlsData->solverData;
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int iflag = 1 /* recoverable error */;
 
   /* Update statistics */
@@ -306,7 +306,7 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
 #endif
 
   /* call residual function */
-  nlsData->residualFunc(dataAndThreadData, xdata, fdata, (const int *)&iflag);
+  nlsData->residualFunc(&resUserData, xdata, fdata, (const int *)&iflag);
   iflag = 0 /* success */;
 
 #ifndef OMC_EMCC
