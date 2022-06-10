@@ -79,7 +79,7 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
     c = 0.5 * (*a + *b);
 
     /*calculates states at time c */
-    if (gbData->multi_rate) {
+    if (gbData->multi_rate_phase) {
       gbData->gbfData->stepSize = c - gbData->gbfData->time;
       gb_step_info = gbData->gbfData->step_fun(data, threadData, solverInfo);
       y = gbData->gbfData->y;

@@ -881,10 +881,9 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         // calculate corresponding values for the error estimator and step size control
         gbfData->errtol[ii] = Rtol * fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) + Atol;
         gbfData->errest[ii] = fabs(gbfData->y[ii] - gbfData->yt[ii]);
-        gbfData->err[ii] = gbfData->errest[ii] / gbfData->errtol[ii];
+        gbfData->err[ii] = gbfData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
         err = fmax(err, gbfData->err[ii]);
       }
-      err = gbfData->tableau->fac * err;
 
       gbfData->errValues[0] = err;
       gbfData->stepSizeValues[0] = gbfData->stepSize;
@@ -916,7 +915,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     // Count succesful integration steps
     gbfData->stepsDone += 1;
-
 
     if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
       char fastStates_row[2048];
@@ -971,6 +969,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                                 gbfData->nSlowStates, gbfData->slowStates);
     }
 
+    gbData->multi_rate_phase = 1;
     eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y);
     if (eventTime > 0)
     {
@@ -1031,6 +1030,21 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       gbfData->time = gbData->timeRight;
       break;
     }
+  }
+
+  if (!solverInfo->integratorSteps && gbfData->time >= targetTime) {
+    /* Integrator does large steps and needs to interpolate results with respect to the output grid */
+    sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
+    solverInfo->currentTime = sData->timeValue;
+
+    hermite_interpolation_gb(gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
+                             gbfData->timeRight, gbfData->yRight, gbfData->kRight,
+                             sData->timeValue,  sData->realVars, nStates);
+    // log the emitted result
+    infoStreamPrint(LOG_SOLVER_V, 1, "emit result (inner integration):");
+    printVector_gb(LOG_SOLVER_V, " y", sData->realVars, nStates, sData->timeValue);
+    messageClose(LOG_SOLVER_V);
+    return 1;
   }
 
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
@@ -1121,7 +1135,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   }
 
   // Check if multirate step is necessary, otherwise the correct values are already stored in sData
-  if (gbData->nFastStates > 0 && gbData->gbfData->time < gbData->time) {
+  if (gbData->nFastStates > 0 && gbData->gbfData->time < gbData->timeRight) {
     if (gbodef_main(data, threadData, solverInfo, targetTime)) {
       // get out of here, if an event has happend!
       return 0;
@@ -1181,10 +1195,9 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       for (i = 0, err=0; i < nStates; i++) {
         gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) + Atol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
-        gbData->err[i] = gbData->errest[i] / gbData->errtol[i];
+        gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
         err = fmax(err, gbData->err[i]);
       }
-      err = gbData->tableau->fac * err;
 
       if (ACTIVE_STREAM(LOG_MULTIRATE_V))
       {
@@ -1215,7 +1228,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->err_fast = 0;
       for (i = 0; i < gbData->nStates; i++)
       {
-        if (gbData->err[i] >= 1)
+        if (gbData->err[i] >= 1 || gbData->percentage == 1)
         {
           gbData->fastStates[gbData->nFastStates] = i;
           gbData->nFastStates++;
@@ -1270,12 +1283,12 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       printVector_gb(LOG_SOLVER_V, "kR", gbData->kRight, nStates, gbData->timeRight);
       messageClose(LOG_SOLVER_V);
 
-      // debug the error of the states and derivatives after outer integration
-      infoStreamPrint(LOG_SOLVER_V, 1, "error of the states before inner integratione: fac=%g", gbData->tableau->fac);
-      printVector_gb(LOG_SOLVER_V, "er", gbData->err, nStates, gbData->timeRight);
-      messageClose(LOG_SOLVER_V);
-
       if (gbData->nFastStates > 0) {
+        // debug the error of the states and derivatives after outer integration
+        infoStreamPrint(LOG_SOLVER, 1, "error of the states before inner integration:");
+        printVector_gb(LOG_SOLVER, "er", gbData->err, nStates, gbData->timeRight);
+        messageClose(LOG_SOLVER);
+
         if (gbodef_main(data, threadData, solverInfo, targetTime)) {
           // get out of here, if an event has happend!
           return 0;
@@ -1292,9 +1305,9 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
 
       // debug the error of the states and derivatives after outer integration
-      infoStreamPrint(LOG_SOLVER_V, 1, "error of the states after inner integratione: fac=%g", gbData->tableau->fac);
-      printVector_gb(LOG_SOLVER_V, "er", gbData->err, nStates, gbData->timeRight);
-      messageClose(LOG_SOLVER_V);
+      infoStreamPrint(LOG_SOLVER, 1, "error of the states:");
+      printVector_gb(LOG_SOLVER, "er", gbData->err, nStates, gbData->timeRight);
+      messageClose(LOG_SOLVER);
 
       // debug ring buffer for the states and derviatives of the states
       infoStreamPrint(LOG_SOLVER_V, 1, "ring buffer after inner steps of integration");
@@ -1325,6 +1338,33 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
     }
 
+    if (gbData->gbfData->time < gbData->time) {
+      gbData->multi_rate_phase = 0;
+      eventTime = checkForEvents(data, threadData, solverInfo, gbData->time, gbData->yOld, gbData->time + gbData->lastStepSize, gbData->y);
+      if (eventTime > 0)
+      {
+        solverInfo->currentTime = eventTime;
+        sData->timeValue = solverInfo->currentTime;
+
+        // sData->realVars are the "numerical" values on the right hand side of the event
+        gbData->time = eventTime;
+        memcpy(gbData->yOld, sData->realVars, nStates * sizeof(double));
+
+        gbData->gbfData->time = eventTime;
+        memcpy(gbData->gbfData->yOld, sData->realVars, nStates * sizeof(double));
+
+        /* write statistics to the solverInfo data structure */
+        solverInfo->solverStatsTmp[0] = gbData->gbfData->stepsDone;
+        solverInfo->solverStatsTmp[1] = gbData->gbfData->evalFunctionODE;
+        solverInfo->solverStatsTmp[2] = gbData->gbfData->evalJacobians;
+        solverInfo->solverStatsTmp[3] = gbData->gbfData->errorTestFailures;
+        solverInfo->solverStatsTmp[4] = gbData->gbfData->convergenceFailures;
+
+        // Get out of the integration routine for event handling
+        return 0;
+      }
+    }
+
     /* update time with performed stepSize */
     gbData->time += gbData->lastStepSize;
 
@@ -1332,6 +1372,19 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     memcpy(gbData->yOld, gbData->y, data->modelData->nStates * sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
                     gbData->time - gbData->lastStepSize, gbData->time, gbData->errValues[0], gbData->stepSize);
+    /* emit step, if integratorSteps is selected */
+    if (solverInfo->integratorSteps) {
+      sData->timeValue = gbData->time;
+      solverInfo->currentTime = sData->timeValue;
+      memcpy(sData->realVars, gbData->y, nStates * sizeof(double));
+      /*
+       * to emit consistent value we need to update the whole
+       * continuous system with algebraic variables.
+       */
+      data->callback->updateContinuousSystem(data, threadData);
+      sim_result.emit(&sim_result, data, threadData);
+    }
+
 
     if ((stopTime - gbData->time) < MINIMAL_STEP_SIZE)
     {
@@ -1347,27 +1400,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;
-//
-//     // use linear interpolation for emitting equidistant output
-//     linear_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,
-//                              gbData->timeRight, gbData->yRight,
-//                              sData->timeValue,  sData->realVars,
-//                              gbData->nSlowStates, gbData->slowStates);
-//     // use linear interpolation for emitting equidistant output
-//     linear_interpolation_gbf(gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,
-//                              gbData->gbfData->timeRight, gbData->gbfData->yRight,
-//                              sData->timeValue,  sData->realVars,
-//                              gbData->nFastStates, gbData->fastStates);
-//     // use hermite interpolation for emitting equidistant output
-    // hermite_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-    //                           gbData->timeRight, gbData->yRight, gbData->kRight,
-    //                           sData->timeValue,  sData->realVars,
-    //                           gbData->nSlowStates, gbData->slowStates);
-    // use hermite interpolation for emitting equidistant output
-    // hermite_interpolation_gbf(gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
-    //                           gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
-    //                           sData->timeValue,  sData->realVars,
-    //                           gbData->nFastStates, gbData->fastStates);
+
+    // if the inner integration has not been started, the outer values need to be emitted
     if (gbData->gbfData->time>=gbData->time) {
       hermite_interpolation_gb(gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
                                 gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
@@ -1377,9 +1411,10 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                                 gbData->timeRight, gbData->yRight, gbData->kRight,
                                 sData->timeValue,  sData->realVars, nStates);
     }
-    infoStreamPrint(LOG_SOLVER, 1, "emit result (inner integration):");
-    printVector_gb(LOG_SOLVER, " y", sData->realVars, nStates, sData->timeValue);
-    messageClose(LOG_SOLVER);
+    // log the emitted result
+    infoStreamPrint(LOG_SOLVER_V, 1, "emit result (inner integration):");
+    printVector_gb(LOG_SOLVER_V, " y", sData->realVars, nStates, sData->timeValue);
+    messageClose(LOG_SOLVER_V);
   } else {
     // Integrator emits result on the simulation grid (see above)
     sData->timeValue = gbData->time;
@@ -1456,10 +1491,10 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     memcpy(gbData->kLeft, gbData->kRight, nStates * sizeof(double));
 
     // debug the changes of the states and derivatives during integration
-    infoStreamPrint(LOG_SOLVER, 1, "states and derivatives at left hand side:");
-    printVector_gb(LOG_SOLVER, "yL", gbData->yLeft, nStates, gbData->timeLeft);
-    printVector_gb(LOG_SOLVER, "kL", gbData->kLeft, nStates, gbData->timeLeft);
-    messageClose(LOG_SOLVER);
+    infoStreamPrint(LOG_SOLVER_V, 1, "states and derivatives at left hand side:");
+    printVector_gb(LOG_SOLVER_V, "yL", gbData->yLeft, nStates, gbData->timeLeft);
+    printVector_gb(LOG_SOLVER_V, "kL", gbData->kLeft, nStates, gbData->timeLeft);
+    messageClose(LOG_SOLVER_V);
 
     // Loop will be performed until the error estimate for all states fullfills the
     // given tolerance
@@ -1530,10 +1565,10 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     memcpy(gbData->kRight, gbData->k + nStages * nStates, nStates * sizeof(double));
 
     // debug the changes of the state values during integration
-    infoStreamPrint(LOG_SOLVER, 1, "states and derivatives at right hand side:");
-    printVector_gb(LOG_SOLVER, "yR", gbData->yRight, nStates, gbData->timeRight);
-    printVector_gb(LOG_SOLVER, "kR", gbData->kRight, nStates, gbData->timeRight);
-    messageClose(LOG_SOLVER);
+    infoStreamPrint(LOG_SOLVER_V, 1, "states and derivatives at right hand side:");
+    printVector_gb(LOG_SOLVER_V, "yR", gbData->yRight, nStates, gbData->timeRight);
+    printVector_gb(LOG_SOLVER_V, "kR", gbData->kRight, nStates, gbData->timeRight);
+    messageClose(LOG_SOLVER_V);
 
     // Rotate ring buffer
     for (i = 0; i < (gbData->ringBufferSize - 1); i++) {
@@ -1549,6 +1584,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     }
 
     // check for events, if event is detected stop integrator and trigger event iteration
+    gbData->multi_rate_phase = 0;
     eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight);
     if (eventTime > 0) {
       solverInfo->currentTime = eventTime;
