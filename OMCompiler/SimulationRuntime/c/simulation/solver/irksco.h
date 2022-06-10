@@ -44,7 +44,7 @@
 typedef struct DATA_IRKSCO{
   DATA* data;
   threadData_t *threadData;
-  void* solverData;
+  DATA_NEWTON* newtonData;
   int order, ordersize;
   double *y0, *y05, *y1,*y2, *y3, *der_x0;
   double *A, *c, *d, *Ainv;
@@ -62,8 +62,8 @@ typedef struct DATA_IRKSCO{
 }DATA_IRKSCO;
 
 
-int allocateIrksco(SOLVER_INFO* solverInfo, int size, int zcSize);
-int freeIrksco(SOLVER_INFO* solverInfo);
+int allocateIrksco(DATA *data, threadData_t *threadData, SOLVER_INFO* solverInfo, int size, int zcSize);
+void freeIrksco(SOLVER_INFO* solverInfo);
 int irksco_richardson(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int irksco_midpoint_rule(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 

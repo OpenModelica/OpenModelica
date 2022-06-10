@@ -48,18 +48,7 @@
 #include "epsilon.h"
 
 
-
 #ifdef WITH_SUNDIALS
-
-/* Macros for better readability */
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
 
 #define CVODE_LMM_MAX 2
 const char *CVODE_LMM_NAME[CVODE_LMM_MAX + 1] = {

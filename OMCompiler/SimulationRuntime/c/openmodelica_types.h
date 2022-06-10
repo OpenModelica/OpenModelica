@@ -139,6 +139,14 @@ typedef struct base_array_s base_array_t;
 typedef base_array_t string_array_t;
 
 typedef signed char modelica_boolean;
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
 typedef base_array_t boolean_array_t;
 
 typedef double modelica_real;

@@ -377,8 +377,6 @@ static int wrapper_fvec_totalpivot(double* x, double* f, void** data, int sysNum
 {
   int currentSys = sysNumber;
   int iflag = 0;
-  /* NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->nonlinearSystemData[currentSys]); */
-  /* DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData); */
 
   (*((DATA*)data[0])->simulationInfo->linearSystemData[currentSys].residualFunc)(data, x, f, &iflag);
   return 0;
