@@ -581,7 +581,7 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
  * @brief Computes symbolic Jacobian matrix Jac(vecX)
  *
  * @param vecX
- * @param vecFX
+ * @param vecFX     just for interface compatibility, will not be used here
  * @param Jac
  * @param userData
  * @param tmp1
@@ -620,7 +620,6 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   /* Access N_Vector variables */
   x = N_VGetArrayPointer(vecX);
-  fx = N_VGetArrayPointer(vecFX);
   xScaling = NV_DATA_S(kinsolData->xScale);
 
   nth = 0;
@@ -894,18 +893,19 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
     /* Enable scaled jacobian evaluation */
     kinsolData->nominalJac = 1;
 
-    /* Update x for the matrix */
-    nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
-
     /* Calculate the scaled Jacobian */
     if (nlsData->isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU) {
       spJac = SUNSparseMatrix(kinsolData->size, kinsolData->size,kinsolData->nnz, CSC_MAT);
       if (nlsData->analyticalJacobianColumn != NULL) {
         nlsSparseSymJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
       } else {
+        /* Update f(x) for the numerical jacobian matrix */
+        nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
         nlsSparseJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
       }
     } else {
+      /* Update f(x) for the numerical jacobian matrix */
+      nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
       denseJac = SUNDenseMatrix(kinsolData->size, kinsolData->size);
       nlsDenseJac(nlsData->size, x, kinsolData->fTmp, denseJac,
                   &kinsolData->userData, tmp1, tmp2);
@@ -1243,25 +1243,8 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
   } while (!success && !(retry < 0) && kinsolData->retries < RETRY_MAX);
 
   /* Solution found */
+  kinsolData->solved = success;
   if (success) {
-    /* Check if solution really solves the residuals */
-    nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes,
-                       &kinsolData->userData);
-    if (!omc_flag[FLAG_NO_SCALING]) {
-      N_VProd(kinsolData->fRes, kinsolData->fScale, kinsolData->fRes);
-    }
-    fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fRes);
-
-    infoStreamPrint(LOG_NLS_V, 0, "%sEuclidean norm of F(u) = %e",
-                    (omc_flag[FLAG_NO_SCALING]) ? "" : "scaled ", fNormValue);
-    if (FTOL_WITH_LESS_ACCURACY < fNormValue) {
-      warningStreamPrint(LOG_NLS_V, 0,
-                         "False positive solution. FNorm is not small enough.");
-      success = 0;
-    } else { /* solved system for reuse linear solver information */
-      kinsolData->solved = 1;
-    }
-    /* copy solution */
     memcpy(nlsData->nlsx, xStart, nlsData->size * (sizeof(double)));
   }
 
