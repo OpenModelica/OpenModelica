@@ -162,7 +162,8 @@ typedef struct DATA_HOMOTOPY
  * @brief Allocate memory for non-linear homotopy solver.
  *
  * @param size              Size of non-linear system.
- * @return DATA_HOMOTOPY*   Pointer to allocated homotopy data.
+ * @param userData          Pointer to set NLS user data.
+ * @return DATA_HOMOTOPY*   Pointer to allocated KINSOL data.
  */
 DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
 {

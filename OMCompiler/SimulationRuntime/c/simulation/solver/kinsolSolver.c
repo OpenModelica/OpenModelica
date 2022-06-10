@@ -465,7 +465,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
  * @param userData  Pointer to user data, tpyecasted to `NLS_USERDATA`.
  * @param tmp1      Work vector.
  * @param tmp2      Work vector.
- * @return int      Return 0 on usccess.
+ * @return int      Return 0 on success.
  */
 static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
                         void *userData, N_Vector tmp1, N_Vector tmp2) {
@@ -1002,18 +1002,15 @@ static void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData,
 /**
  * @brief Try to handle errors of KINSol().
  *
- * @param errorCode   Error code from KINSOL.
- * @param data        Pointer to data struct.
- * @param nlsData     Non-linear solver data.
- * @param kinsolData  Kinsol data.
- * @return int        ???
+ * @param errorCode           Error code from KINSOL.
+ * @param data                Pointer to data struct.
+ * @param nlsData             Non-linear solver data.
+ * @param kinsolData          Kinsol data.
+ * @return modelica_boolean   Return true, if it is possible to retry KINSol().
  */
-static int nlsKinsolErrorHandler(int errorCode, DATA *data,
-                                 NONLINEAR_SYSTEM_DATA *nlsData,
-                                 NLS_KINSOL_DATA *kinsolData) {
-  int retValue;
-  int i;
-  int retValue2 = 0;
+static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
+                                              NONLINEAR_SYSTEM_DATA *nlsData,
+                                              NLS_KINSOL_DATA *kinsolData) {
   int flag;
   double fNorm;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
@@ -1029,7 +1026,7 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
   case KIN_NO_MALLOC:
     errorStreamPrint(LOG_NLS_V, 0,
                      "Kinsol has a serious memory issue ERROR %d\n", errorCode);
-    return errorCode;
+    return FALSE;
     break;
   /* Just retry with new initial guess */
   case KIN_MXNEWT_5X_EXCEEDED:
@@ -1039,7 +1036,7 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
         "after increasing maximum step size.\n");
     kinsolData->maxstepfactor *= 1e5;
     nlsKinsolSetMaxNewtonStep(kinsolData, kinsolData->maxstepfactor);
-    return 1;
+    return TRUE;
     break;
   /* Just retry without line search */
   case KIN_LINESEARCH_NONCONV:
@@ -1048,7 +1045,7 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
         "kinsols line search did not convergence. Try without.\n");
     kinsolData->kinsolStrategy = KIN_NONE;
     kinsolData->retries--;
-    return 1;
+    return TRUE;
     break;
   /* Maybe happened because of an out-dated factorization, so just retry */
   case KIN_LSOLVE_FAIL:
@@ -1060,9 +1057,7 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
       flag = SUNLinSol_KLUReInit(kinsolData->linSol, kinsolData->J,
                                  kinsolData->nnz, SUNKLU_REINIT_PARTIAL);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_SUNLS_FLAG, "SUNLinSol_KLUReInit");
-      return 1;
-    } else {
-      retValue = 1;
+      return TRUE;
     }
     break;
   case KIN_MAXITER_REACHED:
@@ -1070,7 +1065,6 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
     warningStreamPrint(
         LOG_NLS_V, 0,
         "kinsols runs into issues retry with different configuration.\n");
-    retValue = 1;
     break;
   case KIN_LSETUP_FAIL:
     /* In case something goes wrong with the symbolic jacobian try the numerical */
@@ -1084,9 +1078,7 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
     }
     if (flag < 0) {
-      return flag;
-    } else {
-      retValue = 1;
+      return FALSE;
     }
     break;
   case KIN_LINESEARCH_BCFAIL:
@@ -1094,13 +1086,12 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
     warningStreamPrint(
         LOG_NLS_V, 0,
         "kinsols runs into issues with beta-condition fails: %ld\n", outL);
-    retValue = 1;
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0,
                      "kinsol has a serious solving issue ERROR %d\n",
                      errorCode);
-    return errorCode;
+    return FALSE;
     break;
   }
 
@@ -1111,52 +1102,51 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
                        "Move forward with a less accurate solution.");
     KINSetFuncNormTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
     KINSetScaledStepTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
-    retValue2 = 1;
+    return TRUE;
   } else {
     warningStreamPrint(LOG_NLS_V, 0, "Current status of fx = %f", fNorm);
   }
 
   /* reconfigure kinsol for another try */
-  if (retValue == 1 && !retValue2) {
-    switch (kinsolData->retries) {
-    case 0:
-      /* try without scaling  */
-      nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_ONES);
-      nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_ONES);
-      break;
-    case 1:
-      /* try without line-search and oldValues */
-      nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_OLDVALUES);
-      kinsolData->kinsolStrategy = KIN_LINESEARCH;
-      break;
-    case 2:
-      /* try without line-search and oldValues */
-      nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
-      kinsolData->kinsolStrategy = KIN_NONE;
-      break;
-    case 3:
-      /* try with exact newton  */
-      nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_NOMINALSTART);
-      nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_JACOBIAN);
-      nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
-      KINSetMaxSetupCalls(kinsolData->kinsolMemory, 1);
-      kinsolData->kinsolStrategy = KIN_LINESEARCH;
-      break;
-    case 4:
-      /* try with exact newton to with out x scaling values */
-      nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_ONES);
-      nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_ONES);
-      nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_OLDVALUES);
-      KINSetMaxSetupCalls(kinsolData->kinsolMemory, 1);
-      kinsolData->kinsolStrategy = KIN_LINESEARCH;
-      break;
-    default:
-      retValue = 0;
-      break;
-    }
+  switch (kinsolData->retries) {
+  case 0:
+    /* try without scaling  */
+    nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_ONES);
+    nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_ONES);
+    break;
+  case 1:
+    /* try without line-search and oldValues */
+    nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_OLDVALUES);
+    kinsolData->kinsolStrategy = KIN_LINESEARCH;
+    break;
+  case 2:
+    /* try without line-search and oldValues */
+    nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
+    kinsolData->kinsolStrategy = KIN_NONE;
+    break;
+  case 3:
+    /* try with exact newton  */
+    nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_NOMINALSTART);
+    nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_JACOBIAN);
+    nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
+    KINSetMaxSetupCalls(kinsolData->kinsolMemory, 1);
+    kinsolData->kinsolStrategy = KIN_LINESEARCH;
+    break;
+  case 4:
+    /* try with exact newton to with out x scaling values */
+    nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_ONES);
+    nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_ONES);
+    nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_OLDVALUES);
+    KINSetMaxSetupCalls(kinsolData->kinsolMemory, 1);
+    kinsolData->kinsolStrategy = KIN_LINESEARCH;
+    break;
+  default:
+    /* Too many retries */
+    return FALSE;
+    break;
   }
 
-  return retValue + retValue2;
+  return TRUE;
 }
 
 /**
@@ -1175,7 +1165,7 @@ modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_
   int flag;
   long nFEval;
   modelica_boolean success = FALSE;
-  int retry = 0;
+  modelica_boolean retry = TRUE;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double fNormValue;
 
@@ -1229,12 +1219,10 @@ modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_
     nlsData->numberOfIterations += nFEval;
     nlsData->numberOfFEval += kinsolData->countResCalls;
 
-    infoStreamPrint(
-        LOG_NLS_V, 0, "Next try? success = %d, retry = %d, retries = %d = %s\n",
-        success, retry, kinsolData->retries,
-        !success && !(retry < 1) && kinsolData->retries < RETRY_MAX ? "true"
-                                                                    : "false");
-  } while (!success && !(retry < 0) && kinsolData->retries < RETRY_MAX);
+    infoStreamPrint(LOG_NLS_V, 0, "Next try? success = %d, retry = %d, retries = %d = %s\n",
+                    success, retry, kinsolData->retries,
+                    !success && !retry && kinsolData->retries < RETRY_MAX ? "true" : "false");
+  } while (!success && retry && kinsolData->retries < RETRY_MAX);
 
   /* Solution found */
   kinsolData->solved = success;

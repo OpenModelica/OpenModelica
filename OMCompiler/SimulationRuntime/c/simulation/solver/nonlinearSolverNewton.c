@@ -137,10 +137,9 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
   DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
   void *dataAndThreadData[2] = {data, threadData};
   int flag = 1;
-  int *iflag = &flag;
 
   if (fj) {
-    (nlsData->residualFunc)(dataAndThreadData, x, fvec, iflag);
+    (nlsData->residualFunc)(dataAndThreadData, x, fvec, &flag);
   } else {
     /* performance measurement */
     rt_ext_tp_tick(&nlsData->jacobianTimeClock);
@@ -176,7 +175,7 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
     nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
     nlsData->numberOfJEval++;
   }
-  return *iflag;
+  return flag;
 }
 
 /*! \fn solve non-linear system with newton method
