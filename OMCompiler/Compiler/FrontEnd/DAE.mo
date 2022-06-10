@@ -1817,7 +1817,8 @@ end Operator;
 public
 uniontype ComponentRef "- Component references
     CREF_QUAL(...) is used for qualified component names, e.g. a.b.c
-    CREF_IDENT(..) is used for non-qualifed component names, e.g. x"
+    CREF_IDENT(..) is used for non-qualifed component names, e.g. x
+    Outermost CREF_QUAL(...) is leftmost name. e.g. CREF_QUAL(a, CREF_IDENT(b)) -> a.b"
 
   record CREF_QUAL
     Ident ident;
