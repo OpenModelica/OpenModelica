@@ -990,6 +990,15 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       solverInfo->solverStatsTmp[3] = gbfData->errorTestFailures;
       solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
 
+      if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
+        char fastStates_row[2048];
+        sprintf(fastStates_row, "%15.10g ", gbData->time);
+        for (i = 0; i < nStates; i++) {
+          sprintf(fastStates_row, "%s 0", fastStates_row);
+        }
+        fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
+      }
+
       // Get out of the integration routine for event handling
       return 1;
     }
@@ -1261,17 +1270,6 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         continue;
       }
 
-      if (ACTIVE_STREAM(LOG_M_FASTSTATES))
-      {
-        char fastStates_row[2048];
-        sprintf(fastStates_row, "%15.10g ", gbData->time);
-        for (i = 0; i < nStates; i++)
-        {
-          sprintf(fastStates_row, "%s 1", fastStates_row);
-        }
-        fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
-      }
-
       // store right hand values for latter interpolation
       gbData->timeRight = gbData->time + gbData->lastStepSize;
       memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
@@ -1303,6 +1301,14 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           memcpy(gbData->err, gbData->gbfData->err, nStates * sizeof(double));
         }
         err = fmax(gbData->err_slow, gbData->err_fast);
+      }
+      if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
+        char fastStates_row[2048];
+        sprintf(fastStates_row, "%15.10g ", gbData->time);
+        for (i = 0; i < nStates; i++) {
+          sprintf(fastStates_row, "%s 1", fastStates_row);
+        }
+        fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
       }
 
       // debug the error of the states and derivatives after outer integration
@@ -1360,6 +1366,15 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         solverInfo->solverStatsTmp[2] = gbData->gbfData->evalJacobians;
         solverInfo->solverStatsTmp[3] = gbData->gbfData->errorTestFailures;
         solverInfo->solverStatsTmp[4] = gbData->gbfData->convergenceFailures;
+
+        if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
+          char fastStates_row[2048];
+          sprintf(fastStates_row, "%15.10g ", gbData->time);
+          for (i = 0; i < nStates; i++) {
+            sprintf(fastStates_row, "%s 0", fastStates_row);
+          }
+          fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
+        }
 
         // Get out of the integration routine for event handling
         return 0;
