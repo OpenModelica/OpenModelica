@@ -205,18 +205,10 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   // set simulation time with respect to the current stage
   sData->timeValue = gbfData->time + gbfData->stepSize;
   // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
-if (gbfData->interpolation == 1) {
-    linear_interpolation_gbf(gbfData->startTime, gbfData->yStart,
-                            gbfData->endTime,    gbfData->yEnd,
+  hermite_interpolation_gbf(gbfData->startTime,  gbfData->yStart, gbfData->kStart,
+                            gbfData->endTime,    gbfData->yEnd,   gbfData->kEnd,
                             sData->timeValue,    sData->realVars,
                             gbfData->nSlowStates, gbfData->slowStates);
-
-  } else {
-    hermite_interpolation_gbf(gbfData->startTime,  gbfData->yStart, gbfData->kStart,
-                              gbfData->endTime,    gbfData->yEnd,   gbfData->kEnd,
-                              sData->timeValue,    sData->realVars,
-                              gbfData->nSlowStates, gbfData->slowStates);
-  }
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
   NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;

@@ -946,27 +946,15 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
     // interpolate the slow states on the time of the current stage
-    if (gbfData->interpolation == 1) {
-      linear_interpolation_gbf(gbfData->startTime, gbfData->yStart,
-                               gbfData->endTime, gbfData->yEnd,
-                               gbfData->time, gbfData->yOld,
-                               gbfData->nSlowStates, gbfData->slowStates);
-      linear_interpolation_gbf(gbfData->startTime, gbfData->yStart,
-                               gbfData->endTime, gbfData->yEnd,
-                               gbfData->time + gbfData->lastStepSize, gbfData->y,
-                               gbfData->nSlowStates, gbfData->slowStates);
-    }
-    else
-    {
-      hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
-                                gbfData->endTime, gbfData->yEnd, gbfData->kEnd,
-                                gbfData->time, gbfData->yOld,
-                                gbfData->nSlowStates, gbfData->slowStates);
-      hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
-                                gbfData->endTime, gbfData->yEnd, gbfData->kEnd,
-                                gbfData->time + gbfData->lastStepSize, gbfData->y,
-                                gbfData->nSlowStates, gbfData->slowStates);
-    }
+    hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+                              gbfData->endTime, gbfData->yEnd, gbfData->kEnd,
+                              gbfData->time, gbfData->yOld,
+                              gbfData->nSlowStates, gbfData->slowStates);
+
+    hermite_interpolation_gbf(gbfData->startTime, gbfData->yStart, gbfData->kStart,
+                              gbfData->endTime, gbfData->yEnd, gbfData->kEnd,
+                              gbfData->time + gbfData->lastStepSize, gbfData->y,
+                              gbfData->nSlowStates, gbfData->slowStates);
 
     gbData->multi_rate_phase = 1;
     eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y);
