@@ -351,7 +351,7 @@ int print_csvLineIterStats(void* voidCsvData, int size, int num,
  * @param data              Pointer to data.
  * @param threadData        Pointer to thread data.
  * @param sysNumber         Index of non-linear system.
- *                          A index greater equatl 0 indicates that nlsData is a pointer to
+ *                          A non-negative index indicates that nlsData is a pointer to
  *                          data->simulationInfo->nonlinearSystemData[sysNumber]
  * @param nlsData           Pointer to non-linear system data corresponding to sysNumber.
  * @param analyticJacobian  Pointer to analytic Jacobian. Can be NULL.
@@ -489,9 +489,9 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if (nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity) {
       nonlinsys->nlsMethod = NLS_KINSOL;
       nonlinsys->nlsLinearSolver = NLS_LS_KLU;
-      *isSparseNls = 1;
+      *isSparseNls = TRUE;
       if (size > nonlinearSparseSolverMinSize) {
-        *isBigNls = 1;
+        *isBigNls = TRUE;
         infoStreamPrint(LOG_STDOUT, 0,
                         "Using sparse solver kinsol for nonlinear system %d (%d),\n"
                         "because density of %.2f remains under threshold of %.2f\n"
@@ -507,7 +507,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     } else if (size > nonlinearSparseSolverMinSize) {
       nonlinsys->nlsMethod = NLS_KINSOL;
       nonlinsys->nlsLinearSolver = NLS_LS_KLU;
-      *isBigNls = 1;
+      *isBigNls = TRUE;
       infoStreamPrint(LOG_STDOUT, 0,
                       "Using sparse solver kinsol for nonlinear system %d (%d),\n"
                       "because size of %d exceeds threshold of %d.",
@@ -560,11 +560,11 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
       mixedSolverData->newtonHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
       nlsUserData = initNlsUserData(data, threadData, sysNum, nonlinsys, jacobian); /* Seperate userData for hybrid solver */
-      mixedSolverData->hybridData = allocateHybrdData(size-1, nlsUserData);
+      mixedSolverData->hybridData = (void*) allocateHybrdData(size-1, nlsUserData);
     } else {
       mixedSolverData->newtonHomotopyData = (void*) allocateHomotopyData(size, nlsUserData);
       nlsUserData = initNlsUserData(data, threadData, sysNum, nonlinsys, jacobian); /* Seperate userData for hybrid solver */
-      mixedSolverData->hybridData = allocateHybrdData(size, nlsUserData);
+      mixedSolverData->hybridData = (void*) allocateHybrdData(size, nlsUserData);
     }
     nonlinsys->solverData = (void*) mixedSolverData;
     break;
@@ -984,7 +984,6 @@ int updateInnerEquation(RESIDUAL_USERDATA* resUserData, int sysNumber, int discr
 modelica_boolean solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys)
 {
   modelica_boolean success = FALSE;
-  int constraintsSatisfied = 1;
   int casualTearingSet = nonlinsys->strictTearingFunctionCall != NULL;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
@@ -1054,9 +1053,7 @@ modelica_boolean solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM
     #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
     #endif
-    /* try to solve the system if it is the strict set, only try to solve the casual set if the constraints are satisfied */
-    if ((!casualTearingSet) || constraintsSatisfied)
-      success = solveHomotopy(data, threadData, nonlinsys);
+    success = solveHomotopy(data, threadData, nonlinsys);
 
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
     if (!success && casualTearingSet){
@@ -1147,7 +1144,7 @@ modelica_boolean solveWithInitHomotopy(DATA *data, threadData_t *threadData, NON
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
-  int success = 0, saveJumpState, constraintsSatisfied = 1;
+  int saveJumpState, constraintsSatisfied;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   int casualTearingSet = nonlinsys->strictTearingFunctionCall != NULL;
   int step;

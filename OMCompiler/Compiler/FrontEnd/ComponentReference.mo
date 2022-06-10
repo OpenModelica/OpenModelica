@@ -4069,5 +4069,15 @@ algorithm
   end match;
 end isTime;
 
+public function isWild
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := match cref
+    case DAE.WILD() then true;
+    else false;
+  end match;
+end isWild;
+
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;

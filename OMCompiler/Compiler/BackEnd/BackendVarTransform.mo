@@ -83,6 +83,11 @@ uniontype VariableReplacements
 
 end VariableReplacements;
 
+partial function FuncTypeExp_ExpToBoolean
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+end FuncTypeExp_ExpToBoolean;
+
 public function emptyReplacements "
   Returns an empty set of replacement rules
 "
@@ -125,10 +130,6 @@ the extendhashtable is not updated"
   input VariableReplacements repl;
   input DAE.ComponentRef inSrc;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 protected
   DAE.Exp dst;
   HashTable2.HashTable ht,ht_1;
@@ -152,10 +153,6 @@ public function removeReplacements
   input VariableReplacements iRepl;
   input list<DAE.ComponentRef> inSrcs;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   for cr in inSrcs loop
     removeReplacement(iRepl,cr,inFuncTypeExpExpToBooleanOption);
@@ -168,10 +165,6 @@ public function addReplacements
   input list<DAE.Exp> inDsts;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output VariableReplacements outRepl;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
    outRepl := match(iRepl,inSrcs,inDsts,inFuncTypeExpExpToBooleanOption)
      local
@@ -200,10 +193,6 @@ public function addReplacement "
   input DAE.Exp inDst;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output VariableReplacements outRepl;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   outRepl:=
   matchcontinue (repl,inSrc,inDst,inFuncTypeExpExpToBooleanOption)
@@ -405,10 +394,6 @@ protected function makeTransitive "
   output VariableReplacements outRepl;
   output DAE.ComponentRef outSrc;
   output DAE.Exp outDst;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outRepl,outSrc,outDst):=
   match (repl,src,dst,inFuncTypeExpExpToBooleanOption)
@@ -437,10 +422,6 @@ protected function makeTransitive1 "
   output VariableReplacements outRepl;
   output DAE.ComponentRef outSrc;
   output DAE.Exp outDst;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outRepl,outSrc,outDst):=
   matchcontinue (repl,src,dst,inFuncTypeExpExpToBooleanOption)
@@ -470,10 +451,6 @@ in singleRepl."
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   input HashSet.HashSet inSet "to avoid touble work";
   output VariableReplacements outRepl;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   outRepl := matchcontinue(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption,inSet)
     local
@@ -509,10 +486,6 @@ protected function makeTransitive2 "
   output VariableReplacements outRepl;
   output DAE.ComponentRef outSrc;
   output DAE.Exp outDst;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outRepl,outSrc,outDst):=
   matchcontinue (repl,src,dst,inFuncTypeExpExpToBooleanOption)
@@ -996,10 +969,6 @@ public function replaceExp "Takes a set of replacement rules and an expression a
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output DAE.Exp outExp;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outExp,replacementPerformed) :=
   matchcontinue (inExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
@@ -1118,6 +1087,9 @@ algorithm
         (DAE.CALL(path,expl_1,attr),true);
     case (DAE.RECORD(path, expl, fields, t), repl, cond)
       algorithm
+        // add all constant attribute bindings to the replacements
+        // partially fixes ticket #9036
+        repl := addConstantRecordReplacements(t, expl, repl, inFuncTypeExpExpToBooleanOption);
         (expl, true) := replaceExpList(expl, repl, cond);
       then
         (DAE.RECORD(path, expl, fields, t), true);
@@ -1249,6 +1221,59 @@ algorithm
   end matchcontinue;
 end replaceExp;
 
+function addConstantRecordReplacements
+  "adds replacements regarding constant elements of records.
+  needs to always be done when other elements of records are replaced."
+  input DAE.Type ty;
+  input list<DAE.Exp> expl;
+  input output VariableReplacements repl;
+  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
+protected
+  DAE.ComponentRef cref;
+algorithm
+  repl := match ty
+    local
+      DAE.Exp bind;
+
+    case DAE.T_COMPLEX() algorithm
+      for var in ty.varLst loop
+        // only do something if there is a binding
+        if DAEUtil.isBound(var.binding) then
+          SOME(bind) := DAEUtil.bindingExp(var.binding);
+          cref := getRecordElement(var.name, expl);
+          // only replace if the expression is const and the name was found
+          // if replacement already happened the name might not be found -> no error!
+          if Expression.isConst(bind) and not ComponentReference.isWild(cref) then
+            repl := addReplacement(repl, cref, bind, inFuncTypeExpExpToBooleanOption);
+          end if;
+        end if;
+      end for;
+    then repl;
+    else repl;
+  end match;
+end addConstantRecordReplacements;
+
+function getRecordElement
+  "takes an attribute name and the list of full attribute names.
+  returns the cref of which the last ident matches the required name."
+  input DAE.Ident name;
+  input list<DAE.Exp> expl;
+  output DAE.ComponentRef cref = DAE.WILD();
+protected
+  DAE.Ident cref_name;
+algorithm
+  for e in expl loop
+    _ := match e
+      case DAE.CREF() guard(ComponentReference.crefLastIdent(e.componentRef) == name)
+        algorithm
+          cref := e.componentRef;
+          return;
+      then ();
+      else ();
+    end match;
+  end for;
+end getRecordElement;
+
 public function replaceCref"replaces a cref.
 author: Waurich TUD 2014-06"
   input DAE.ComponentRef crefIn;
@@ -1276,10 +1301,6 @@ protected function replaceCrefSubs
   input Option<FuncTypeExp_ExpToBoolean> cond;
   output DAE.ComponentRef outCr;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outCr,replacementPerformed) := match (inCref,repl,cond)
     local
@@ -1316,10 +1337,6 @@ protected function replaceCrefSubs2
   input Option<FuncTypeExp_ExpToBoolean> cond;
   output list<DAE.Subscript> outSubs;
   output Boolean replacementPerformed = false;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   outSubs := list(match sub
       local
@@ -1351,10 +1368,6 @@ public function replaceExpList
   input Option<FuncTypeExp_ExpToBoolean> cond;
   output list<DAE.Exp> outExpl;
   output Boolean replacementPerformed = false;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 protected
   DAE.Exp exp_;
   Boolean c;
@@ -1377,10 +1390,6 @@ public function replaceExpList1
   input Option<FuncTypeExp_ExpToBoolean> cond;
   output list<DAE.Exp> outExpl;
   output list<Boolean> replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 protected
   list<DAE.Exp> acc1 = {};
   list<Boolean> acc2 = {};
@@ -1402,10 +1411,6 @@ protected function replaceExpIters
   input Option<FuncTypeExp_ExpToBoolean> cond;
   output list<DAE.ReductionIterator> outIter;
   output Boolean replacementPerformed = false;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 protected
   DAE.ReductionIterator it;
 algorithm
@@ -1446,10 +1451,6 @@ protected function replaceExpCond "function replaceExpCond(cond,e) => true &
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   input DAE.Exp inExp;
   output Boolean outBoolean;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   outBoolean:=
   match (inFuncTypeExpExpToBooleanOption,inExp)
@@ -1473,10 +1474,7 @@ protected function replaceExpMatrix "author: PA
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output list<list<DAE.Exp>> outTplExpExpBooleanLstLst;
   output Boolean replacementPerformed = false;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 protected
   list<DAE.Exp> exp_;
   Boolean c;
@@ -1553,10 +1551,6 @@ public function replaceEquationsArr
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output BackendDAE.EquationArray outEqns;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outEqns,replacementPerformed) := matchcontinue(inEqns,repl,inFuncTypeExpExpToBooleanOption)
     local
@@ -1581,10 +1575,6 @@ protected function replaceEquationTraverser
   input tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,list<BackendDAE.Equation>,Boolean> inTpl;
   output BackendDAE.Equation e;
   output tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,list<BackendDAE.Equation>,Boolean> outTpl;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 protected
   VariableReplacements repl;
   Option<FuncTypeExp_ExpToBoolean> optfunc;
@@ -1606,10 +1596,6 @@ public function replaceEquations
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output list<BackendDAE.Equation> outEqns;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   if isReplacementEmpty(repl) then
     outEqns := inEqns;
@@ -1630,10 +1616,6 @@ protected function replaceEquations2
   input Boolean iReplacementPerformed;
   output list<BackendDAE.Equation> outBackendDAEEquationLst;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outBackendDAEEquationLst,replacementPerformed) :=
   match (inBackendDAEEquationLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,iReplacementPerformed)
@@ -1659,10 +1641,6 @@ protected function replaceEquation
   input Boolean iReplacementPerformed;
   output list<BackendDAE.Equation> outBackendDAEEquationLst;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
 algorithm
   (outBackendDAEEquationLst,replacementPerformed) :=
   matchcontinue (inBackendDAEEquation,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,iReplacementPerformed)
@@ -1861,10 +1839,7 @@ protected function replaceWhenEquation "Replaces variables in a when equation"
   output BackendDAE.WhenEquation outWhenEqn;
   output DAE.ElementSource osource;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 algorithm
   (outWhenEqn,osource,replacementPerformed) :=
   match(whenEqn,repl,inFuncTypeExpExpToBooleanOption,isource)
@@ -1908,10 +1883,7 @@ protected function replaceWhenOperator
   input list<BackendDAE.WhenOperator> iAcc;
   output list<BackendDAE.WhenOperator> oReinitStmtLst;
   output Boolean oReplacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 algorithm
   (oReinitStmtLst,oReplacementPerformed) :=
   match (inReinitStmtLst,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed,iAcc)
@@ -2017,10 +1989,7 @@ function: replaceStatementLst
   input Boolean inBAcc;
   output list<DAE.Statement> outStatementLst = {};
   output Boolean replacementPerformed = inBAcc;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 protected
   Boolean isCon;
   VariableReplacements repl = inVariableReplacements;
@@ -2340,10 +2309,7 @@ protected function replaceElse "
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output DAE.Else outElse;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 algorithm
   (outElse,replacementPerformed) := matchcontinue (inElse,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
@@ -2379,10 +2345,7 @@ protected function replaceElse1 "
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output DAE.Else outElse;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 algorithm
   (outElse,replacementPerformed) := matchcontinue (inExp,inStatementLst,inElse,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
@@ -2425,10 +2388,7 @@ protected function replaceSTMT_IF
   input Boolean inBAcc;
   output list<DAE.Statement> outStatementLst;
   output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 algorithm
   (outStatementLst,replacementPerformed) :=
   matchcontinue (inExp,inStatementLst,inElse,inSource,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,inBAcc)
@@ -2705,10 +2665,7 @@ public function replaceEventInfo
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output BackendDAE.EventInfo eInfoOut;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 protected
   Integer numberMathEvents;
   list<BackendDAE.TimeEvent> timeEvents;
@@ -2734,10 +2691,7 @@ protected function replaceTimeEvents
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output BackendDAE.TimeEvent teOut;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 algorithm
   teOut := matchcontinue(teIn,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
@@ -2758,10 +2712,7 @@ protected function replaceZeroCrossing"replaces the exp in the BackendDAE.ZeroCr
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output BackendDAE.ZeroCrossing zcOut;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
+
 algorithm
   zcOut := matchcontinue(zcIn,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
