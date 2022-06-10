@@ -34,7 +34,7 @@ FPMATHFORTRAN =
 
 LIBMAKEFILE = Makefile.omdev.mingw
 CONFIG_H=$(top_builddir)/Compiler/runtime/config.h
-LIBSIMULATION=libSimulationRuntimeC.a
+LIBSIMULATION=libSimulationRuntimeC.dll
 LIBRUNTIME=libOpenModelicaRuntimeC.dll
 LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
 CMINPACK_NO_DLL=-DCMINPACK_NO_DLL

@@ -179,7 +179,7 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
     nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
     nlsData->numberOfJEval++;
   }
-  return *iflag;
+  return flag;
 }
 
 /*! \fn solve non-linear system with newton method

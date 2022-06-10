@@ -437,6 +437,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
   integer iflag = 1;
   double xerror, xerror_scaled;
   modelica_boolean success = FALSE;
+  modelica_boolean catchedError;
   double local_tol = 1e-12;
   double initial_factor = hybrdData->factor;
   int nfunc_evals = 0;
@@ -531,7 +532,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
 
     /* try */
     {
-      int success = FALSE;
+      catchedError = TRUE;
 #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
@@ -542,7 +543,6 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
           &hybrdData->lr, hybrdData->qtf, hybrdData->wa1, hybrdData->wa2,
           hybrdData->wa3, hybrdData->wa4, hybrdData->userData);
 
-      success = TRUE;
       if(assertCalled)
       {
         infoStreamPrint(LOG_NLS_V, 0, "After assertions failed, found a solution for which assertions did not fail.");
@@ -556,12 +556,12 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
       }
       assertRetries = 0;
       assertCalled = 0;
-      success = TRUE;
+      catchedError = FALSE;
 #ifndef OMC_EMCC
       MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       /* catch */
-      if (!success)
+      if (catchedError)
       {
         if (!assertMessage)
         {
@@ -613,7 +613,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
       /* evaluate with discontinuities */
       if(data->simulationInfo->discreteCall){
         int scaling = hybrdData->useXScaling;
-        int success = FALSE;
+        catchedError = TRUE;
         if(scaling)
           hybrdData->useXScaling = 0;
 
@@ -624,12 +624,12 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
         MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
         wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
-        success = TRUE;
+        catchedError = FALSE;
 #ifndef OMC_EMCC
         MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         /* catch */
-        if (!success)
+        if (catchedError)
         {
           warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
 
@@ -738,17 +738,17 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
 
       /* try */
       {
-        int success = FALSE;
+        catchedError = TRUE;
 #ifndef OMC_EMCC
         MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
         wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
-        success = TRUE;
+        catchedError = FALSE;
 #ifndef OMC_EMCC
         MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         /* catch */
-        if (!success) {
+        if (catchedError) {
           warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
 
           hybrdData->info = 4;

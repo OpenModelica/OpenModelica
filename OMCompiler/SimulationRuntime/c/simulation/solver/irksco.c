@@ -52,7 +52,7 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
 
 
 /**
- * @brief Allocate memory for implicit Runge-Kutta with step size controll solver.
+ * @brief Allocate memory for implicit Runge-Kutta with step size control solver.
  *
  * Integration methods of higher order can be used by increasing userdata->order:
  *   (1) implicit euler method
