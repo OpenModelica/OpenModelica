@@ -998,11 +998,17 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_SINGLERATE_METHOD GM_method, enum _F
     case RK_ESDIRK3:
       getButcherTableau_ESDIRK3(tableau);
       break;
+    case RK_RADAU_IA_2:
+      getButcherTableau_RADAU_IA_2(tableau);
+      break;
     case RK_RADAU_IA_3:
       getButcherTableau_RADAU_IA_3(tableau);
       break;
     case RK_RADAU_IA_4:
       getButcherTableau_RADAU_IA_4(tableau);
+      break;
+    case RK_RADAU_IIA_2:
+      getButcherTableau_RADAU_IIA_2(tableau);
       break;
     case RK_RADAU_IIA_3:
       getButcherTableau_RADAU_IIA_3(tableau);
