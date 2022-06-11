@@ -161,7 +161,7 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
 {
 
   if (tableau->richardson) {
-    warningStreamPrint(LOG_MULTIRATE, 0,"Richardson extrapolation is not available for multistep methods");
+    warningStreamPrint(LOG_STDOUT, 0,"Richardson extrapolation is not available for multistep methods");
     tableau->richardson = FALSE;
   }
 
@@ -704,9 +704,12 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
 BUTCHER_TABLEAU* initButcherTableau(enum GB_SINGLERATE_METHOD GM_method, enum _FLAG FLAG_ERR) {
   BUTCHER_TABLEAU* tableau = (BUTCHER_TABLEAU*) malloc(sizeof(BUTCHER_TABLEAU));
   const char* flag_value = omc_flagValue[FLAG_ERR];
+  int richardson = 0;
 
-  if (flag_value != NULL) {
+  if (flag_value != NULL) richardson = atoi(flag_value);
+  if (richardson) {
     tableau->richardson = TRUE;
+    infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation is used for step size control");
   } else {
     tableau->richardson = FALSE;
   }

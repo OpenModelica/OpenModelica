@@ -28,8 +28,8 @@ system("./HeatingSystem -s=dassl -r HeatingSystem_ref.mat -override=\"tolerance=
 print(readFile("refSimulation.log"));
 
 // Simulate with gauss2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=gauss2 -gbnls=kinsol -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_gauss2.log");
-print(readFile("HeatingSystem_gauss2.log"));
+system("./HeatingSystem -s=gbode -gbm=gauss5 -gberr=1 -gbnls=kinsol -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_gauss5.log");
+print(readFile("HeatingSystem_gauss5.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
                       expectedFile = "HeatingSystem_ref.mat",
@@ -38,8 +38,8 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=sdirk2 -gbfm=sdirk2 -gbnls=kinsol -gbratio=1 -override=\"tolerance=1e-8,stopTime=864000\"", "HeatingSystem_gauss2.log");
-print(readFile("HeatingSystem_gauss2.log"));
+system("./HeatingSystem -s=gbode -gbm=fehlberg78 -gbratio=1 -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_fehlberg78_1.log");
+print(readFile("HeatingSystem_fehlberg78_1.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
                       expectedFile = "HeatingSystem_ref.mat",
@@ -48,7 +48,7 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-14,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
+system("./HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
 print(readFile("HeatingSystem_fehlberg78.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",

@@ -1,5 +1,6 @@
 within ;
 package HeatingSystemDiscrete
+  import SI = Modelica.Units.SI;
 
   function sat "Smooth saturation of input x between xmin and xmax"
     input Real x;
@@ -19,22 +20,11 @@ package HeatingSystemDiscrete
         __Dymola_experimentSetupOutput);
   end test_sat;
 
-  model TestHysteresis
-    Real p = 3*sin(time);
-    Real x(start = 0, fixed = true);
-    Real y;
-  equation
-    der(x) = 50*hist(x,p);
-    y = sat(15*x, -0.5, 0.5)+0.5;
-    annotation (experiment(
-        StopTime=20,
-        __Dymola_NumberOfIntervals=5000,
-        Tolerance=1e-006), __Dymola_experimentSetupOutput);
-  end TestHysteresis;
-
   block Controller
+    parameter SI.Time Ta "Time constant of actuator";
     input Real T "Temperature in degC";
     output Real u "Heater activation";
+    Real x(start = 0, fixed = true) "Actuator state variable";
   protected
     Boolean active(start = false, fixed = true);
   equation
@@ -43,11 +33,11 @@ package HeatingSystemDiscrete
     elsewhen pre(active) and T >= 20.5 then
       active = false;
     end when;
-    u = if active then 1 else 0;
+    Ta*der(x) + x = if active then 1 else 0;
+    u = x;
   end Controller;
 
   model HeatingSystem
-    import SI = Modelica.Units.SI;
     constant Real pi = Modelica.Constants.pi;
     parameter Integer N = 3 "Number of heated units";
     parameter SI.HeatCapacity Cu[N] = (ones(N)+ linspace(0,1.348,N))*1e7
@@ -65,6 +55,8 @@ package HeatingSystemDiscrete
     parameter SI.Temperature Td0 = 343.15
       "Set point of distribution circuit temperature";
     parameter SI.Temperature Tu0 = 293.15;
+    parameter SI.Time Ta = 10
+      "Time constant of heater actuator";
     parameter Real Kp = Qmax/4
       "Proportional gain of heat generation unit temperature controller";
 
@@ -81,7 +73,7 @@ package HeatingSystemDiscrete
     SI.Power Que[N] "Heat flows from heated units to the outside";
     SI.Power Qh[N] "Heat flows to each heated unit";
     SI.Power Qd "Heat flow to the distribution system";
-    Controller c[N] "Controllers";
+    Controller c[N](each Ta = Ta) "Controllers";
   equation
     Text = 278.15 + 8*sin(2*pi*time/86400);
     Cd*der(Td) =Qd - sum(Qh);
@@ -95,9 +87,9 @@ package HeatingSystemDiscrete
 
     annotation (experiment(
         StopTime=864000,
-        __Dymola_NumberOfIntervals=5000,
+        Interval = 300,
         Tolerance=1e-006), __Dymola_experimentSetupOutput,
-      __OpenModelica_simulationFlags(gbfmeth = "sdirk2", gbmeth = "sdirk2", lv = "LOG_STATS", gbnls = "kinsol", gbratio = "1"));
+      __OpenModelica_simulationFlags(lv = "LOG_STATS", s = "gbode", gbm = "fehlberg78", gbratio = ".05"));
   end HeatingSystem;
   annotation (uses(Modelica(version="4.0.0")));
 end HeatingSystemDiscrete;
