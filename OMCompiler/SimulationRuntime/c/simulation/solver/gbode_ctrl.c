@@ -65,20 +65,24 @@ double getErrorThreshold(DATA_GBODE* gbData)
 
 
 /**
- * @brief simple step size control (see Hairer, etc.)
+ * @brief constant step size (given by solver main)
  *
- * @param gbData
+ * @param err_values
+ * @param stepSize_values
+ * @param err_order
  * @return double
  */
 double CController(double* err_values, double* stepSize_values, double err_order)
 {
-  return stepSize_values[0];
+  return 1.0;
 }
 
 /**
  * @brief simple step size control (see Hairer, etc.)
  *
- * @param gbData
+ * @param err_values
+ * @param stepSize_values
+ * @param err_order
  * @return double
  */
 double IController(double* err_values, double* stepSize_values, double err_order)
@@ -96,9 +100,11 @@ double IController(double* err_values, double* stepSize_values, double err_order
 }
 
 /**
- * @brief PI controller for step size control (see Hairer)
+ * @brief PI step size control (see Hairer, etc.)
  *
- * @param gbData
+ * @param err_values
+ * @param stepSize_values
+ * @param err_order
  * @return double
  */
 double PIController(double* err_values, double* stepSize_values, double err_order)

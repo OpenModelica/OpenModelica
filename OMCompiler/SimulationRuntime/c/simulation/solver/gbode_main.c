@@ -173,17 +173,27 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
 
   infoStreamPrint(LOG_SOLVER, 0, "Step control factor is set to %g", gbfData->tableau->fac);
 
-  const char *flag_StepSize_ctrl = omc_flagValue[FLAG_SR_CTRL];
+  const char *flag_StepSize_ctrl = omc_flagValue[FLAG_MR_CTRL];
+  gbfData->ctrl_type = 0;
+  if (flag_StepSize_ctrl != NULL) gbfData->ctrl_type = atoi(flag_StepSize_ctrl);
 
-  if (flag_StepSize_ctrl != NULL)
+  switch (gbfData->ctrl_type)
   {
-    gbfData->stepSize_control = &(PIController);
-    infoStreamPrint(LOG_SOLVER, 0, "PIController is use for step size control");
-  }
-  else
-  {
+  case 2:
+    // gbfData->stepSize_control = &(CController);
+    // infoStreamPrint(LOG_SOLVER, 0, "Constant step size is used");
+    warningStreamPrint(LOG_STDOUT, 0, "Constant step size not supported for inner integration");
+  case 0:
     gbfData->stepSize_control = &(IController);
     infoStreamPrint(LOG_SOLVER, 0, "IController is use for step size control");
+    break;
+  case 1:
+    gbfData->stepSize_control = &(PIController);
+    infoStreamPrint(LOG_SOLVER, 0, "PIController is use for step size control");
+    break;
+
+  default:
+    break;
   }
 
   // allocate memory for the generic RK method
@@ -373,16 +383,26 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   // test of multistep method
 
   const char *flag_StepSize_ctrl = omc_flagValue[FLAG_SR_CTRL];
+  gbData->ctrl_type = 0;
+  if (flag_StepSize_ctrl != NULL) gbData->ctrl_type = atoi(flag_StepSize_ctrl);
 
-  if (flag_StepSize_ctrl != NULL)
+  switch (gbData->ctrl_type)
   {
-    gbData->stepSize_control = &(PIController);
-    infoStreamPrint(LOG_SOLVER, 0, "Stepsize control using PIController");
-  }
-  else
-  {
+  case 0:
     gbData->stepSize_control = &(IController);
-    infoStreamPrint(LOG_SOLVER, 0, "Stepsize control using IController");
+    infoStreamPrint(LOG_SOLVER, 0, "IController is use for step size control");
+    break;
+  case 1:
+    gbData->stepSize_control = &(PIController);
+    infoStreamPrint(LOG_SOLVER, 0, "PIController is use for step size control");
+    break;
+  case 2:
+    gbData->stepSize_control = &(CController);
+    infoStreamPrint(LOG_SOLVER, 0, "Constant step size is used");
+    break;
+
+  default:
+    break;
   }
 
   /* Allocate internal memory */
@@ -1469,6 +1489,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // initialize gbData->timeRight, gbData->yRight and gbData->kRight
     gb_first_step(data, threadData, solverInfo);
   }
+  if (gbData->ctrl_type==2)
+    gbData->stepSize = solverInfo->currentStepSize;
 
   /* Main integration loop, if gbData->time already greater than targetTime, only the
      interpolation is necessary for emitting the output variables (see below) */
@@ -1505,10 +1527,15 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       // error handling: try half of the step size!
       if (gb_step_info != 0) {
         errorStreamPrint(LOG_STDOUT, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time);
-        errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
-        gbData->stepSize = gbData->stepSize / 2.;
-        // TODO AHeu: We need a break if step size becomes to small / no progress is made.
-        continue;
+        if (gbData->ctrl_type==2) {
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted!");
+          return -1;
+        } else {
+          // TODO AHeu: We need a break if step size becomes to small / no progress is made.
+          errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
+          gbData->stepSize = gbData->stepSize / 2.;
+          continue;
+        }
       }
 
       // calculate corresponding values for error estimator and step size control (infinity norm)
@@ -1529,7 +1556,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
 
       gbData->stepRejected = FALSE;
-      if (err > 1) {
+      if (err > 1 && gbData->ctrl_type!=2) {
         gbData->stepRejected = TRUE;
         // count failed steps and output information on the solver status
         gbData->errorTestFailures++;
@@ -1546,7 +1573,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       printVector_gb(LOG_SOLVER_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
       messageClose(LOG_SOLVER_V);
 
-    } while (err > 1);
+    } while (err > 1 && gbData->ctrl_type!=2);
 
     // count processed steps
     gbData->stepsDone += 1;
