@@ -31,6 +31,16 @@
 /*! \file gbode_main.h
  */
 
+#ifndef _GBODE_STEP_H_
+#define _GBODE_STEP_H_
+
+#include "simulation_data.h"
+#include "solver_main.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // step function
 int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
@@ -44,4 +54,8 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
+#ifdef __cplusplus
+};
+#endif
 
+#endif  /* _GBODE_STEP_H_ */

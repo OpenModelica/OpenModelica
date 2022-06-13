@@ -33,7 +33,6 @@
 
 #include "gbode_main.h"
 
-
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -263,5 +262,3 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   infoStreamPrint(LOG_MULTIRATE, 0, "initial step size = %e at time %g", gbData->stepSize, gbData->time);
 }
-
-

@@ -46,14 +46,6 @@
 #include "simulation/options.h"
 
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
 void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b, double *bt) {
 
   tableau->c = malloc(sizeof(double)*tableau->nStages);

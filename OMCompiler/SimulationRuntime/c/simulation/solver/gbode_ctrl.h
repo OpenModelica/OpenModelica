@@ -30,10 +30,18 @@
 
 /*! \file gbode_ctrl.h
  */
-#include "gbode_main.h"
+
+#ifndef _GBODE_CTRL_H_
+#define _GBODE_CTRL_H_
 
 #include "../../simulation_data.h"
 #include "solver_main.h"
+
+#include "gbode_main.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 double CController(double* err_values, double* stepSize_values, double err_order);
 double IController(double* err_values, double* stepSize_values, double err_order);
@@ -43,4 +51,8 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
 double getErrorThreshold(DATA_GBODE* gbData);
 
+#ifdef __cplusplus
+};
+#endif
 
+#endif  /* _GBODE_CTRL_H_ */

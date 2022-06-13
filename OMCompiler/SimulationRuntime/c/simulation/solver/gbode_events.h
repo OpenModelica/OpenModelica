@@ -31,7 +31,20 @@
 /*! \file gbode_events.h
  */
 
+#ifndef _GBODE_EVENTS_H_
+#define _GBODE_EVENTS_H_
+
 #include "simulation_data.h"
 #include "solver_main.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues);
+
+#ifdef __cplusplus
+};
+#endif
+
+#endif  /* _GBODE_EVENTS_H_ */

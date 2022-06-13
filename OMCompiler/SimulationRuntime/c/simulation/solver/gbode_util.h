@@ -30,10 +30,21 @@
 
 /*! \file gbode_util.h
  */
+
+#ifndef _GBODE_UTIL_H_
+#define _GBODE_UTIL_H_
+
+#include "nonlinearSystem.h"
+#include "simulation_data.h"
+#include "solver_main.h"
+#include "util/omc_error.h"
+
 #include "gbode_main.h"
 #include "gbode_tableau.h"
-#include "nonlinearSystem.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Interpolation functions for the whole vector or indices referenced by index vector
 void linear_interpolation_gb(double a, double* fa, double b, double* fb, double t, double *f, int n);
@@ -56,3 +67,8 @@ void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, 
 void dumpFastStates_gb(DATA_GBODE *gbData, modelica_boolean event);
 void dumpFastStates_gbf(DATA_GBODE *gbData);
 
+#ifdef __cplusplus
+};
+#endif
+
+#endif  /* _GBODE_UTIL_H_ */

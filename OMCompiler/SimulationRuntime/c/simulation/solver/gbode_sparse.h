@@ -31,10 +31,21 @@
 /*! \file gbode_sparse.h
  */
 
+#ifndef _GBODE_SPARSE_H_
+#define _GBODE_SPARSE_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages);
 
 SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
 SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
 SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
 
+#ifdef __cplusplus
+};
+#endif
 
+#endif  /* _GBODE_SPARSE_H_ */

@@ -36,6 +36,10 @@
 
 #include "simulation_data.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // TODO AHeu: Don't define struct dataSolver here
 struct dataSolver
 {
@@ -59,5 +63,9 @@ int jacobian_IRK_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIA
 void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
 void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
 int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif  /* #ifndef GBODE_NLS_H*/

@@ -1058,9 +1058,9 @@ modelica_boolean solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
     if (!success && casualTearingSet){
       debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
-      success = nonlinsys->strictTearingFunctionCall(data, threadData);
-      if (success){
-        success = 2; // TODO AHeu: success should be a boolean...
+      int flag = nonlinsys->strictTearingFunctionCall(data, threadData);
+      if (flag){
+        success = TRUE;
       }
     }
 
