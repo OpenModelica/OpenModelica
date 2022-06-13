@@ -55,6 +55,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 }
 
 #include <QMessageBox>
+#include <QStringBuilder>
 
 /*!
  * \class OMCProxy
@@ -1478,19 +1479,21 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   infoHeader = getDocumentationAnnotationInfoHeader(pLibraryTreeItem->parent(), infoHeader);
   // get the class comment and show it as the first line on the documentation page.
   QString doc = getClassComment(pLibraryTreeItem->getNameStructure());
-  if (!doc.isEmpty()) doc.prepend("<h4>").append("</h4>");
-  doc.prepend(QString("<h2>").append(pLibraryTreeItem->getNameStructure()).append("</h2>"));
+  if (!doc.isEmpty()) {
+    doc = "<h4>" % doc % "</h4>";
+  }
+  doc = "<h2>" % pLibraryTreeItem->getNameStructure() % "</h2>";
   for (int ele = 0 ; ele < docsList.size() ; ele++) {
     QString docElement = docsList[ele];
     if (docElement.isEmpty()) {
       continue;
     }
     if (ele == 0) {         // info section
-      doc += "<p style=\"font-size:12px;\"><strong><u>Information</u></strong></p>";
+      doc = doc % "<p style=\"font-size:12px;\"><strong><u>Information</u></strong></p>";
     } else if (ele == 1) {    // revisions section
-      doc += "<p style=\"font-size:12px;\"><strong><u>Revisions</u></strong></p>";
+      doc = doc % "<p style=\"font-size:12px;\"><strong><u>Revisions</u></strong></p>";
     } else if (ele == 2) {    // __OpenModelica_infoHeader section
-      infoHeader.append(docElement);
+      infoHeader = infoHeader % docElement;
       continue;
     }
     /* Anything within the HTML tags should be shown with standard font. So we put html tag inside a div with special style.
@@ -1509,16 +1512,15 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
       if (endPos < docElement.length()) {
         endNonHtml = Qt::convertFromPlainText(docElement.mid(endPos+7)); // All characters after the position of </html>
       }
-      docElement = QString("<div class=\"textDoc\">%1</div><div class=\"htmlDoc\">%2</div><div class=\"textDoc\">%3</div>")
-          .arg(startNonHtml)
-          .arg(docElement.mid(startPos, endPos - startPos + strlen("</html>")))
-          .arg(endNonHtml);
+      docElement = QString("<div class=\"textDoc\">" % startNonHtml % "</div>"
+                           "<div class=\"htmlDoc\">" % docElement.mid(startPos, endPos - startPos + strlen("</html>")) % "</div>"
+                           "<div class=\"textDoc\">" % endNonHtml % "</div>");
     } else {  // if we have just plain text
-      docElement = QString("<div class=\"textDoc\">%1</div>").arg(Qt::convertFromPlainText(docElement));
+      docElement = QString("<div class=\"textDoc\">" % Qt::convertFromPlainText(docElement) % "</div>");
     }
     docElement = docElement.trimmed();
     docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
-    doc += docElement;
+    doc = doc % docElement;
   }
 
   QString version = pLibraryTreeItem->getVersion();
@@ -1527,40 +1529,32 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   QString dateModified = pLibraryTreeItem->getDateModified();
   if (!version.isEmpty()) {
     if (!versionDate.isEmpty()) {
-      version += QString(", %1").arg(versionDate);
+      version = version % ", " % versionDate;
     }
     if (!versionBuild.isEmpty()) {
-      version += QString(", build %1").arg(versionBuild);
+      version = version % ", build " % versionBuild;
       if (!dateModified.isEmpty()) {
-        version += QString(" (%1)").arg(dateModified);
+        version = version % " (" % dateModified % ")";
       }
     }
   }
   QString documentation = QString("<html>\n"
                                   "  <head>\n"
                                   "    <style>\n"
-                                  "      div.htmlDoc {font-family:\"%1\";\n"
-                                  "                   font-size:%2px;}\n"
-                                  "      pre div.textDoc, div.textDoc p {font-family:\"%3\";\n"
-                                  "                   font-size:%4px;}\n"
+                                  "      div.htmlDoc {font-family:\"" % Helper::systemFontInfo.family() % "\";\n"
+                                  "                   font-size:" % QString::number(Helper::systemFontInfo.pointSize()) % "px;}\n"
+                                  "      pre div.textDoc, div.textDoc p {font-family:\"" % Helper::monospacedFontInfo.family() % "\";\n"
+                                  "                   font-size:" % QString::number(Helper::monospacedFontInfo.pointSize()) % "px;}\n"
                                   "    </style>\n"
-                                  "    %5\n"
+                                  "    " % infoHeader % "\n"
                                   "  </head>\n"
                                   "  <body>\n"
-                                  "    %6\n"
+                                  "    " % doc % "\n"
                                   "    <hr />"
-                                  "    Filename: %7<br />"
-                                  "    Version: %8<br />"
+                                  "    Filename: " % pLibraryTreeItem->getFileName() % "<br />"
+                                  "    Version: " % version % "<br />"
                                   "  </body>\n"
-                                  "</html>")
-                          .arg(Helper::systemFontInfo.family())
-                          .arg(Helper::systemFontInfo.pointSize())
-                          .arg(Helper::monospacedFontInfo.family())
-                          .arg(Helper::monospacedFontInfo.pointSize())
-                          .arg(infoHeader)
-                          .arg(doc)
-                          .arg(pLibraryTreeItem->getFileName())
-                          .arg(version);
+                                  "</html>");
   documentation = makeDocumentationUriToFileName(documentation);
   /*! @note We convert modelica:// to modelica:///.
     * This tells QWebview that these links doesn't have any host.
