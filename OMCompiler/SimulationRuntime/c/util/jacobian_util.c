@@ -33,7 +33,61 @@
 
 #include "jacobian_util.h"
 
+/**
+ * @brief Initialize analytic jacobian.
+ *
+ * Jacobian has to be allocatd already.
+ *
+ * @param jacobian                  Jacobian to initialized.
+ * @param sizeCols                  Number of columns of Jacobian
+ * @param sizeRows                  Number of rows of Jacobian
+ * @param sizeTmpVars               Size of tmp vars array.
+ * @param constantEqns              Function pointer for constant equations of Jacobian.
+ *                                  NULL if not available.
+ * @param sparsePattern             Pointer to sparsity pattern of Jacobian.
+ */
+void initAnalyticJacobian(ANALYTIC_JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian), SPARSE_PATTERN* sparsePattern) {
+  jacobian->sizeCols = sizeCols;
+  jacobian->sizeRows = sizeRows;
+  jacobian->sizeTmpVars = sizeTmpVars;
+  jacobian->seedVars = (modelica_real*) calloc(sizeCols, sizeof(modelica_real));
+  jacobian->resultVars = (modelica_real*) calloc(sizeRows, sizeof(modelica_real));
+  jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+  jacobian->constantEqns = constantEqns;
+  jacobian->sparsePattern = sparsePattern;
+}
+
+/**
+ * @brief Copy analytic Jacobian.
+ *
+ * Sparsity pattern is not copied, only the pointer to it.
+ *
+ * @param source                  Jacobian that should be copied.
+ * @return ANALYTIC_JACOBIAN*     Copy of source.
+ */
+ANALYTIC_JACOBIAN* copyAnalyticJacobian(ANALYTIC_JACOBIAN* source) {
+  ANALYTIC_JACOBIAN* jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
+  initAnalyticJacobian(jacobian,
+                       source->sizeCols,
+                       source->sizeRows,
+                       source->sizeTmpVars,
+                       source->constantEqns,
+                       source->sparsePattern);
+
+  return jacobian;
+}
+
+/**
+ * @brief Free memory of analytic Jacobian.
+ *
+ * Also frees sparse pattern.
+ *
+ * @param jac   Pointer to Jacobian.
+ */
 void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
+  if (jac == NULL) {
+    return;
+  }
   free(jac->seedVars); jac->seedVars = NULL;
   free(jac->tmpVars); jac->tmpVars = NULL;
   free(jac->resultVars); jac->resultVars = NULL;
@@ -41,6 +95,32 @@ void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
   free(jac->sparsePattern); jac->sparsePattern = NULL;
 }
 
+/**
+ * @brief Allocate memory for sparsity pattern.
+ *
+ * @param n_leadIndex         Number of rows or columns of Matrix.
+ *                            Depending on compression type CSR (-->rows) or CSC (-->columns).
+ * @param numberOfNonZeros    Numbe rof non-zero elements in Matrix.
+ * @param maxColors           Maximum number of colors of Matrix.
+ * @return SPARSE_PATTERN*    Pointer ot allocated sparsity pattern of Matrix.
+ */
+SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors) {
+  SPARSE_PATTERN* sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
+  sparsePattern->leadindex = (unsigned int*) malloc((n_leadIndex+1)*sizeof(unsigned int));
+  sparsePattern->index = (unsigned int*) malloc(numberOfNonZeros*sizeof(unsigned int));
+  sparsePattern->sizeofIndex = numberOfNonZeros;
+  sparsePattern->numberOfNonZeros = numberOfNonZeros;
+  sparsePattern->colorCols = (unsigned int*) malloc(n_leadIndex*sizeof(unsigned int));
+  sparsePattern->maxColors = maxColors;
+
+  return sparsePattern;
+}
+
+/**
+ * @brief Free sparsity pattern
+ *
+ * @param spp   Pointer to sparsity pattern
+ */
 void freeSparsePattern(SPARSE_PATTERN *spp) {
   if (spp != NULL) {
     free(spp->index); spp->index = NULL;

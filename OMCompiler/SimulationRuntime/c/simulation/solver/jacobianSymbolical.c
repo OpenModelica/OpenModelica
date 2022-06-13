@@ -95,14 +95,14 @@ void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns)
  * Only matrix storing format differs for them and therefore setJacElementFunc
  * is used to access matrix A.
  *
- * \param [in]      rows                Number of rows of jacobian.
- * \param [in]      columns             Number of columns of jacobian.
- * \param [in]      spp                 Pointer to sparse pattern.
- * \param [in/out]  matrixA             Internal data of solvers to store jacobian.
- * \param [in]      jacColumns          Number of colors (=number of columns for compressed structure) of jacobian.
- * \param [in]      data
- * \param [in]      threadData
- * \param [in]      setJacElementFunc   Function to set element (i,j) in matrix A.
+ * \param rows                Number of rows of jacobian.
+ * \param columns             Number of columns of jacobian.
+ * \param spp                 Pointer to sparse pattern.
+ * \param matrixA             Internal data of solvers to store jacobian.
+ * \param jacColumns          Analytic Jacobian.
+ * \param data                Runtime data struct.
+ * \param threadData          Thread data for error handling
+ * \param setJacElementFunc   Function to set element (i,j) in matrix A.
  */
 void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
                                               void* matrixA, ANALYTIC_JACOBIAN* jacColumns, DATA* data,

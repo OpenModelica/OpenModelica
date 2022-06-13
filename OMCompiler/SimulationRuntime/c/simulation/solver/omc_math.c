@@ -704,73 +704,71 @@ _omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
   return mat1;
 }
 
-/*! \fn void _omc_printVector(_omc_vector* vec, char* name, int logLevel)
+/**
+ * @brief Print vector and equation info to stream.
  *
- *  outputs the _omc_vector
- *
- *  \param [in]  [vec]      !TODO: DESCRIBE ME!
- *  \param [in]  [name]     !TODO: DESCRIBE ME!
- *  \param [in]  [logLevel] !TODO: DESCRIBE ME!
+ * @param vec       Vector.
+ * @param name      Name of vector.
+ * @param stream    Log stream.
+ * @param eqnInfo   Information about equation
  */
-void _omc_printVectorWithEquationInfo(_omc_vector* vec, const char* name, const int logLevel, EQUATION_INFO eqnInfo)
+void _omc_printVectorWithEquationInfo(_omc_vector* vec, const char* name, const enum LOG_STREAM stream, EQUATION_INFO eqnInfo)
 {
   _omc_size i;
 
-  if (!ACTIVE_STREAM(logLevel))
+  if (!ACTIVE_STREAM(stream))
     return;
 
   assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
 
-  infoStreamPrint(logLevel, 1, "%s", name);
+  infoStreamPrint(stream, 1, "%s", name);
   for (i = 0; i < vec->size; ++i)
   {
-    infoStreamPrint(logLevel, 0, "[%3d] %-40s = %20.12g",   (int)i+1, eqnInfo.vars[i], vec->data[i]);
+ //   infoStreamPrint(stream, 0, "[%3d] %-40s = %20.12g",   (int)i+1, eqnInfo.vars[i], vec->data[i]);
   }
-  messageClose(logLevel);
+  messageClose(stream);
 }
 
-/*! \fn void _omc_printVector(_omc_vector* vec, char* name, int logLevel)
+/**
+ * @brief Print vector to stream.
  *
- *  outputs the _omc_vector
- *
- *  \param [in]  [vec]      !TODO: DESCRIBE ME!
- *  \param [in]  [name]     !TODO: DESCRIBE ME!
- *  \param [in]  [logLevel] !TODO: DESCRIBE ME!
+ * @param vec       Vector.
+ * @param name      Name of vector.
+ * @param stream    Log stream.
  */
-void _omc_printVector(_omc_vector* vec, const char* name, const int logLevel)
+void _omc_printVector(_omc_vector* vec, const char* name, const enum LOG_STREAM stream)
 {
   _omc_size i;
 
-  if (!ACTIVE_STREAM(logLevel))
+  if (!ACTIVE_STREAM(stream))
     return;
 
   assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
 
-  infoStreamPrint(logLevel, 1, "%s", name);
+  infoStreamPrint(stream, 1, "%s", name);
   for (i = 0; i < vec->size; ++i)
   {
-    infoStreamPrint(logLevel, 0, "[%2d] %20.12g", (int)i+1, vec->data[i]);
+    infoStreamPrint(stream, 0, "[%2d] %20.12g", (int)i+1, vec->data[i]);
   }
-  messageClose(logLevel);
+  messageClose(stream);
 }
 
-/*! \fn void _omc_printMatrix(_omc_matrix* mat, char* name, int logLevel)
+/**
+ * @brief Print matrix to stream.
  *
- *  outputs the _omc_matrix
- *
- *  \param [in]  [mat]      !TODO: DESCRIBE ME!
- *  \param [in]  [name]     !TODO: DESCRIBE ME!
- *  \param [in]  [logLevel] !TODO: DESCRIBE ME!
+ * @param mat       Matrix.
+ * @param name      Name of matrix.
+ * @param stream    Log stream.
  */
-void _omc_printMatrix(_omc_matrix* mat, const char* name, const int logLevel) {
-  if (ACTIVE_STREAM(logLevel))
+void _omc_printMatrix(_omc_matrix* mat, const char* name, const enum LOG_STREAM stream) {
+  if (ACTIVE_STREAM(stream))
   {
     _omc_size i, j;
     char *buffer = (char*)malloc(sizeof(char)*mat->cols*20);
 
     assertStreamPrint(NULL, NULL != mat->data, "matrix data is NULL pointer");
 
-    infoStreamPrint(logLevel, 1, "%s", name);
+    infoStreamPrint(stream, 1, "%s", name);
     for (i = 0; i < mat->rows; ++i)
     {
       buffer[0] = 0;
@@ -778,9 +776,9 @@ void _omc_printMatrix(_omc_matrix* mat, const char* name, const int logLevel) {
       {
         sprintf(buffer, "%s%10g ", buffer, _omc_getMatrixElement(mat, i, j));
       }
-      infoStreamPrint(logLevel, 0, "%s", buffer);
+      infoStreamPrint(stream, 0, "%s", buffer);
     }
-    messageClose(logLevel);
+    messageClose(stream);
     free(buffer);
   }
 }

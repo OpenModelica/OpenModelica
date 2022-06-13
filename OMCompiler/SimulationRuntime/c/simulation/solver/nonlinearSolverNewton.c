@@ -144,7 +144,7 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
     /* performance measurement */
     rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
-    if(nlsData->jacobianIndex != -1) {
+    if(nlsData->jacobianIndex != -1 && jacobian != NULL ) {
       getAnalyticalJacobianNewton(data, threadData, solverData->fjac, nlsData, jacobian);
     } else {
       double delta_h = sqrt(solverData->epsfcn);
