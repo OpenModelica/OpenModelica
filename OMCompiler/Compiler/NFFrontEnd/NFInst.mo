@@ -114,6 +114,7 @@ function instClassInProgram
    a DAE."
   input Absyn.Path classPath;
   input SCode.Program program;
+  input SCode.Program annotationProgram;
   input Boolean dumpFlat = false;
   output FlatModel flatModel;
   output FunctionTree functions;
@@ -129,7 +130,7 @@ algorithm
     NFInstContext.RELAXED else NFInstContext.NO_CONTEXT;
 
   // Create a top scope from the given top-level classes.
-  top := makeTopNode(program);
+  top := makeTopNode(program, annotationProgram);
   name := AbsynUtil.pathString(classPath);
 
   // Look up the class to instantiate.
@@ -273,12 +274,15 @@ end expand;
 function makeTopNode
   "Creates an instance node from the given list of top-level classes."
   input list<SCode.Element> topClasses;
+  input list<SCode.Element> annotationClasses;
   output InstNode topNode;
 protected
-  SCode.Element cls_elem;
-  Class cls;
+  SCode.Element cls_elem, ann_package;
+  Class cls, ann_cls;
   ClassTree elems;
   InstNodeType node_ty;
+  InstNode ann_node;
+  UnorderedMap<String, InstNode> generated_inners;
 algorithm
   // Create a fake SCode.Element for the top scope, so we don't have to make the
   // definition in InstNode an Option only because of this node.
@@ -288,8 +292,26 @@ algorithm
     SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
-  node_ty := InstNodeType.TOP_SCOPE(UnorderedMap.new<InstNode>(System.stringHashDjb2Mod, stringEq));
+  generated_inners := UnorderedMap.new<InstNode>(System.stringHashDjb2Mod, stringEq);
+  node_ty := InstNodeType.TOP_SCOPE(InstNode.EMPTY_NODE(), generated_inners);
   topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), node_ty);
+
+  // Create a node for the builtin annotation classes. These should only be
+  // accessible in annotations, so they're stored in a separate scope stored in
+  // the node type for the top scope.
+  ann_package := SCode.CLASS("<annotations>", SCode.defaultPrefixes, SCode.ENCAPSULATED(),
+    SCode.NOT_PARTIAL(), SCode.R_PACKAGE(),
+    SCode.PARTS(annotationClasses, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
+
+  ann_node := InstNode.newClass(ann_package, topNode, InstNodeType.IMPLICIT_SCOPE());
+  expand(ann_node);
+
+  // Recreate the node type for the top scope to include the annotation node.
+  // Note that this means that the annotation node will refer to a top scope
+  // without an annotation node, which avoid loops during lookup.
+  node_ty := InstNodeType.TOP_SCOPE(ann_node, generated_inners);
+  topNode := InstNode.setNodeType(node_ty, topNode);
 
   // Create a new class from the elements, and update the inst node with it.
   cls := Class.fromSCode(topClasses, false, topNode, NFClass.DEFAULT_PREFIXES);
@@ -3253,7 +3275,7 @@ protected
   Boolean is_error;
 algorithm
   try
-    node := Lookup.lookupSimpleName(name, scope);
+    node := Lookup.lookupSimpleName(name, scope, context);
 
     if InstNode.isInner(node) then
       is_error := not InstContext.inRelaxed(context);
