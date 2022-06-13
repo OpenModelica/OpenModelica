@@ -1137,7 +1137,7 @@ modelica_boolean solveWithInitHomotopy(DATA *data, threadData_t *threadData, NON
  *
  * @param data              Runtime data struct.
  * @param threadData        Thread data for error handling.
- * @param sysNumber    Index of corresponding non-linear system
+ * @param sysNumber         Index of corresponding non-linear system
  *
  * @author ptaeuber
  */
@@ -1187,6 +1187,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /* update non continuous */
   if (data->simulationInfo->discreteCall)
   {
+    // TODO: constraintsSatisfied never used
     constraintsSatisfied = updateInnerEquation(&resUserData, sysNumber, 1);
   }
 
