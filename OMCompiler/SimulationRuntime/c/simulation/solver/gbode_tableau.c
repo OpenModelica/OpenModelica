@@ -1049,14 +1049,6 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_SINGLERATE_METHOD GM_method, enum _F
     case RK_GAUSS6:
       getButcherTableau_GAUSS6(tableau);
       break;
-    case RK_ESDIRK2_test:
-      getButcherTableau_ESDIRK2(tableau);
-      // //ESDIRK2 not optimized (just for testing) solved with gm solver method
-      break;
-    case RK_ESDIRK3_test:
-      //ESDIRK3 not optimized (just for testing) solved with gm solver method
-      getButcherTableau_ESDIRK3(tableau);
-      break;
     default:
       errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", GM_method);
       free(tableau);

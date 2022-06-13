@@ -64,11 +64,35 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG FLAG_METHOD) {
     return RK_UNKNOWN;
   } else {
     if (FLAG_METHOD == FLAG_MR) {
-      return getGB_method(FLAG_SR);
-    } else {
+      switch (getGB_method(FLAG_SR))
+      {
+      case RK_GAUSS2:
+      case RK_GAUSS3:
+      case RK_GAUSS4:
+      case RK_GAUSS5:
+      case RK_GAUSS6:
+      case RK_RADAU_IA_2:
+      case RK_RADAU_IA_3:
+      case RK_RADAU_IA_4:
+      case RK_RADAU_IIA_2:
+      case RK_RADAU_IIA_3:
+      case RK_RADAU_IIA_4:
+      case RK_LOBA_IIIA_3:
+      case RK_LOBA_IIIA_4:
+      case RK_LOBA_IIIB_3:
+      case RK_LOBA_IIIB_4:
+      case RK_LOBA_IIIC_3:
+      case RK_LOBA_IIIC_4:
+        return RK_SDIRK2;
+        break;
 
-      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: adams [default]");
-      return MS_ADAMS_MOULTON;
+      default:
+        return getGB_method(FLAG_SR);
+        break;
+      }
+    } else {
+      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: lobattoIIIB4 [default]");
+      return RK_LOBA_IIIB_4;
     }
   }
 }
