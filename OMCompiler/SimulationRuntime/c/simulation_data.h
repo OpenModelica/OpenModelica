@@ -127,7 +127,7 @@ typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_
 typedef struct SPARSE_PATTERN
 {
   unsigned int* leadindex;        /* Array with column indices, size rows+1 */
-  unsigned int* index;            /* Array with row indices */
+  unsigned int* index;            /* Array with number of non-zeros indices */
   unsigned int sizeofIndex;       /* Length of array index, equal to numberOfNonZeros */
   unsigned int* colorCols;        /* Color coding of columns. First color is `1`, second is `2`, ... */
   unsigned int numberOfNonZeros;  /* Number of non-zero elements in matrix */

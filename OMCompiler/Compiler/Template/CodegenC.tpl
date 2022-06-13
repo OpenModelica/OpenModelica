@@ -895,6 +895,7 @@ template simulationFile_jac(SimCode simCode)
     /* Jacobians <%listLength(jacobianMatrixes)%> */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%fileNamePrefix%>_12jac.h"
+    #include "util/jacobian_util.h"
     <%functionAnalyticJacobians(jacobianMatrixes, modelNamePrefix(simCode))%>
 
     <%\n%>
@@ -2353,9 +2354,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
@@ -2406,9 +2406,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
@@ -2494,9 +2493,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
@@ -2525,9 +2523,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData2%>
@@ -2602,9 +2599,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
@@ -2632,9 +2628,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb2%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData2%>
@@ -2884,7 +2879,7 @@ template getNLSPrototypes(Integer index)
 ::=
   <<
   void residualFunc<%index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag);
-  void initializeStaticDataNLS<%index%>(void *inData, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsPattern);
+  void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsPattern);
   void getIterationVarsNLS<%index%>(struct DATA *inData, double *array);
   >>
 end getNLSPrototypes;
@@ -3134,13 +3129,8 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
         <%colPtr%>
         <%rowIndex%>
         /* sparsity pattern available */
-        inSysData->isPatternAvailable = 'T';
-        inSysData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-        inSysData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
-        inSysData->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
-        inSysData->sparsePattern->numberOfNonZeros = <%sp_size_index%>;
-        inSysData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(unsigned int));
-        inSysData->sparsePattern->maxColors = <%maxColor%>;
+        inSysData->isPatternAvailable = 1;
+        inSysData->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
 
         /* write lead index of compressed sparse column */
         memcpy(inSysData->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
@@ -3173,9 +3163,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   <<
 
   OMC_DISABLE_OPT
-  void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsPattern)
+  void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsPattern)
   {
-    DATA* data = (DATA*) inData;
     int i=0;
     <%bodyStaticData%>
     /* initial sparse pattern */
@@ -4511,13 +4500,7 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
     daeModeData->algIndexes = (int*) malloc(sizeof(int)*<%nAlgVars%>);
     memcpy(daeModeData->algIndexes, algIndexes, <%nAlgVars%>*sizeof(int));
     /* intialize sparse pattern */
-    daeModeData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-
-    daeModeData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeCols%>+1)*sizeof(int));
-    daeModeData->sparsePattern->index = (unsigned int*) malloc(<%sizeNNZ%>*sizeof(int));
-    daeModeData->sparsePattern->numberOfNonZeros = <%sizeNNZ%>;
-    daeModeData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeCols%>*sizeof(int));
-    daeModeData->sparsePattern->maxColors = <%maxColorStr%>;
+    daeModeData->sparsePattern = allocSparsePattern(<%sizeCols%>, <%sizeNNZ%>, <%maxColor%>);
 
     /* write lead index of compressed sparse column */
     memcpy(daeModeData->sparsePattern->leadindex, colPtrIndex, (1+<%sizeCols%>)*sizeof(int));
@@ -5271,19 +5254,8 @@ match sparsepattern
         <%rowIndex%>
         int i = 0;
 
-        jacobian->sizeCols = <%index_%>;
-        jacobian->sizeRows = <%indexColumn%>;
-        jacobian->sizeTmpVars = <%tmpvarsSize%>;
-        jacobian->seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
-        jacobian->resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
-        jacobian->tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
-        jacobian->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-        jacobian->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
-        jacobian->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
-        jacobian->sparsePattern->numberOfNonZeros = <%sp_size_index%>;
-        jacobian->sparsePattern->colorCols = (unsigned int*) malloc(<%index_%>*sizeof(unsigned int));
-        jacobian->sparsePattern->maxColors = <%maxColor%>;
-        jacobian->constantEqns = <%constantEqns%>;
+        initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
+        jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
 
         /* write lead index of compressed sparse column */
         memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
