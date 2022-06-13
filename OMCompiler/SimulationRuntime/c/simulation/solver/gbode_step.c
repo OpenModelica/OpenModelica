@@ -67,10 +67,10 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     gbData->yt[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gbData->yt[i] += -gbData->x[stage_ * nStates + i] * gbData->tableau->c[stage_] +
-                          gbData->k[stage_ * nStates + i] * gbData->tableau->bt[stage_] *  gbData->stepSize;
+      gbData->yt[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
+                        gbData->kv[stage_ * nStates + i] * gbData->tableau->bt[stage_] *  gbData->stepSize;
     }
-    gbData->yt[i] += gbData->k[stage_ * nStates + i] * gbData->tableau->bt[stage_] * gbData->stepSize;
+    gbData->yt[i] += gbData->kv[stage_ * nStates + i] * gbData->tableau->bt[stage_] * gbData->stepSize;
     gbData->yt[i] /= gbData->tableau->c[stage_];
   }
 
@@ -82,8 +82,8 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     gbData->res_const[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gbData->res_const[i] += -gbData->x[stage_ * nStates + i] * gbData->tableau->c[stage_] +
-                                 gbData->k[stage_ * nStates + i] * gbData->tableau->b[stage_] *  gbData->stepSize;
+      gbData->res_const[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
+                               gbData->kv[stage_ * nStates + i] * gbData->tableau->b[stage_] *  gbData->stepSize;
     }
   }
   // printVector_gb("res_const:  ", gbData->res_const, nStates, gbData->time);
@@ -123,7 +123,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     return -1;
   }
 
-  memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+  memcpy(gbData->kv + stage_ * nStates, fODE, nStates*sizeof(double));
 
   /* Corrector Schritt */
   for (i = 0; i < nStates; i++)
@@ -132,14 +132,12 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     gbData->y[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gbData->y[i] += -gbData->x[stage_ * nStates + i] * gbData->tableau->c[stage_] +
-                         gbData->k[stage_ * nStates + i] * gbData->tableau->b[stage_] *  gbData->stepSize;
+      gbData->y[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
+                       gbData->kv[stage_ * nStates + i] * gbData->tableau->b[stage_] *  gbData->stepSize;
     }
-    gbData->y[i] += gbData->k[stage_ * nStates + i] * gbData->tableau->b[stage_] * gbData->stepSize;
+    gbData->y[i] += gbData->kv[stage_ * nStates + i] * gbData->tableau->b[stage_] * gbData->stepSize;
     gbData->y[i] /= gbData->tableau->c[stage_];
   }
-  // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
-  memcpy(gbData->x + stage_ * nStates, gbData->y, nStates*sizeof(double));
 
   return 0;
 }

@@ -1493,7 +1493,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // initialize gbData->timeRight, gbData->yRight and gbData->kRight
     gb_first_step(data, threadData, solverInfo);
   }
-  if (gbData->ctrl_type==2)
+  // Constant step size
+  if (gbData->ctrl_type==0)
     gbData->stepSize = solverInfo->currentStepSize;
 
   /* Main integration loop, if gbData->time already greater than targetTime, only the
@@ -1506,18 +1507,18 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     memcpy(gbData->kLeft, gbData->kRight, nStates * sizeof(double));
 
     // debug the changes of the states and derivatives during integration
-    infoStreamPrint(LOG_STATS, 1, "states and derivatives at left hand side:");
-    printVector_gb(LOG_STATS, "yL", gbData->yLeft, nStates, gbData->timeLeft);
-    printVector_gb(LOG_STATS, "kL", gbData->kLeft, nStates, gbData->timeLeft);
-    messageClose(LOG_STATS);
+    infoStreamPrint(LOG_SOLVER, 1, "states and derivatives at left hand side:");
+    printVector_gb(LOG_SOLVER, "yL", gbData->yLeft, nStates, gbData->timeLeft);
+    printVector_gb(LOG_SOLVER, "kL", gbData->kLeft, nStates, gbData->timeLeft);
+    messageClose(LOG_SOLVER);
 
     // debug ring buffer of the states and derivatives during integration
-    infoStreamPrint(LOG_STATS, 1, "states and derivatives of the ring buffer:");
+    infoStreamPrint(LOG_SOLVER, 1, "states and derivatives of the ring buffer:");
     for (int i=0; i<gbData->ringBufferSize; i++) {
-      printVector_gb(LOG_STATS, "y", gbData->yv + i * nStates, nStates, gbData->tv[i]);
-      printVector_gb(LOG_STATS, "k", gbData->kv + i * nStates, nStates, gbData->tv[i]);
+      printVector_gb(LOG_SOLVER, "y", gbData->yv + i * nStates, nStates, gbData->tv[i]);
+      printVector_gb(LOG_SOLVER, "k", gbData->kv + i * nStates, nStates, gbData->tv[i]);
     }
-    messageClose(LOG_STATS);
+    messageClose(LOG_SOLVER);
 
 
     // Loop will be performed until the error estimate for all states fullfills the
@@ -1540,7 +1541,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       // error handling: try half of the step size!
       if (gb_step_info != 0) {
         errorStreamPrint(LOG_STDOUT, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time);
-        if (gbData->ctrl_type==2) {
+        if (gbData->ctrl_type==0) {
           errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted!");
           return -1;
         } else {
@@ -1569,7 +1570,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
 
       gbData->stepRejected = FALSE;
-      if (err > 1 && gbData->ctrl_type!=2) {
+      if ((err > 1) && gbData->ctrl_type) {
         gbData->stepRejected = TRUE;
         // count failed steps and output information on the solver status
         gbData->errorTestFailures++;
@@ -1586,28 +1587,21 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       printVector_gb(LOG_SOLVER_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
       messageClose(LOG_SOLVER_V);
 
-    } while (err > 1 && gbData->ctrl_type!=2);
+    } while ((err > 1) && gbData->ctrl_type);
 
     // count processed steps
     gbData->stepsDone += 1;
 
+
     // store right hand values for latter interpolation
     gbData->timeRight = gbData->time + gbData->lastStepSize;
     memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
-    memcpy(gbData->kRight, gbData->k + nStages * nStates, nStates * sizeof(double));
 
     // debug the changes of the state values during integration
-    infoStreamPrint(LOG_STATS, 1, "states and derivatives at right hand side:");
-    printVector_gb(LOG_STATS, "yR", gbData->yRight, nStates, gbData->timeRight);
-    printVector_gb(LOG_STATS, "kR", gbData->kRight, nStates, gbData->timeRight);
-    messageClose(LOG_STATS);
-
-    if (gbData->type == MS_TYPE_IMPLICIT) {
-      for (int stage_ = 0; stage_ < (gbData->tableau->nStages - 1); stage_++) {
-        memcpy(gbData->k + stage_ * nStates, gbData->k + (stage_ + 1) * nStates, nStates * sizeof(double));
-        memcpy(gbData->x + stage_ * nStates, gbData->x + (stage_ + 1) * nStates, nStates * sizeof(double));
-      }
-    }
+    infoStreamPrint(LOG_SOLVER, 1, "states and derivatives at right hand side:");
+    printVector_gb(LOG_SOLVER, "yR", gbData->yRight, nStates, gbData->timeRight);
+    printVector_gb(LOG_SOLVER, "kR", gbData->kRight, nStates, gbData->timeRight);
+    messageClose(LOG_SOLVER);
 
     // check for events, if event is detected stop integrator and trigger event iteration
     gbData->multi_rate_phase = 0;
@@ -1621,9 +1615,9 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
 
       // print states at event time
-      infoStreamPrint(LOG_STATS, 1, "states at even time:");
-      printVector_gb(LOG_STATS, "yE", sData->realVars, nStates, eventTime);
-      messageClose(LOG_STATS);
+      infoStreamPrint(LOG_SOLVER, 1, "states at even time:");
+      printVector_gb(LOG_SOLVER, "yE", sData->realVars, nStates, eventTime);
+      messageClose(LOG_SOLVER);
 
       /* write statistics to the solverInfo data structure */
       solverInfo->solverStatsTmp[0] = gbData->stepsDone;
@@ -1637,6 +1631,12 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     }
     /* update time with performed stepSize */
     gbData->time += gbData->lastStepSize;
+
+    // update kRight
+    sData->timeValue = gbData->time;
+    memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
+    gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+    memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
@@ -1659,9 +1659,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps)
     {
-      sData->timeValue = gbData->time;
       solverInfo->currentTime = sData->timeValue;
-      memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
       /*
        * to emit consistent value we need to update the whole
        * continuous system with algebraic variables.

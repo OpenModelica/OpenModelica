@@ -424,7 +424,7 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
   // Evaluate residual
   for (i=0; i<nStates; i++) {
     res[i] = gbData->res_const[i] - xloc[i] * gbData->tableau->c[nStages-1] +
-                                      fODE[i] * gbData->tableau->b[nStages-1] * gbData->stepSize;
+                                    fODE[i] * gbData->tableau->b[nStages-1] * gbData->stepSize;
   }
 
   return;

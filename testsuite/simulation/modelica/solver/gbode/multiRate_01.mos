@@ -27,8 +27,7 @@ rkMethods := {"expl_euler",
               "esdirk2",
               "esdirk3",
               "merson",
-              "dopri45",
-              "adams"};
+              "dopri45"};
 
 nlsMethods := {"newton", "kinsol"};
 
@@ -70,7 +69,7 @@ end for;
 // true
 // ""
 // true
-// {"expl_euler","impl_euler","sdirk3","esdirk2","esdirk3","merson","dopri45","adams"}
+// {"expl_euler","impl_euler","sdirk3","esdirk2","esdirk3","merson","dopri45"}
 // {"newton","kinsol"}
 // true
 // ""
@@ -216,26 +215,6 @@ end for;
 //
 // --------------------------------------------------------
 // Running RK dopri45 with NLS kinsol:
-// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-// Failed vars:
-//
-// --------------------------------------------------------
-// Running RK adams with NLS newton:
-// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-// Failed vars:
-//
-// --------------------------------------------------------
-// Running RK adams with NLS kinsol:
 // stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
 // |                 | info    | | Re-calculating step size for 500 intervals.
 // |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
