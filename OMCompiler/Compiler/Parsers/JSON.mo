@@ -72,10 +72,24 @@ algorithm
   obj := OBJECT(UnorderedMap.new<JSON>(stringHashDjb2Mod, stringEq));
 end emptyObject;
 
+function fromPair
+  input String key;
+  input JSON value;
+  output JSON obj;
+algorithm
+  obj := emptyObject();
+  obj := addPair(key, value, obj);
+end fromPair;
+
 function emptyArray
   input Integer capacity = 0;
   output JSON obj = ARRAY(Vector.new<JSON>(capacity));
 end emptyArray;
+
+function makeArray
+  input list<JSON> elements;
+  output JSON obj = ARRAY(Vector.fromList(elements));
+end makeArray;
 
 function makeString
   input String str;

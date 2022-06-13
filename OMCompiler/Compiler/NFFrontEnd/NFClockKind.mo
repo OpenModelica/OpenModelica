@@ -37,6 +37,7 @@ encapsulated uniontype NFClockKind
 protected
   import AbsynUtil;
   import ClockKind = NFClockKind;
+  import JSON;
 
 public
   record INFERRED_CLOCK
@@ -514,6 +515,52 @@ public
 
     str := "Clock(" + str + ")";
   end toFlatString;
+
+  function toJSON
+    input ClockKind clk;
+    output JSON json = JSON.emptyObject();
+  algorithm
+    json := JSON.addPair("kind", JSON.makeString("clock"), json);
+
+    () := match clk
+      case INFERRED_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("inferred"), json);
+        then
+          ();
+
+      case RATIONAL_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("rational"), json);
+          json := JSON.addPair("intervalCounter", Expression.toJSON(clk.intervalCounter), json);
+          json := JSON.addPair("resolution", Expression.toJSON(clk.resolution), json);
+        then
+          ();
+
+      case REAL_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("real"), json);
+          json := JSON.addPair("interval", Expression.toJSON(clk.interval), json);
+        then
+          ();
+
+      case EVENT_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("event"), json);
+          json := JSON.addPair("condition", Expression.toJSON(clk.condition), json);
+          json := JSON.addPair("startInterval", Expression.toJSON(clk.startInterval), json);
+        then
+          ();
+
+      case SOLVER_CLOCK()
+        algorithm
+          json := JSON.addPair("type", JSON.makeString("solver"), json);
+          json := JSON.addPair("c", Expression.toJSON(clk.c), json);
+          json := JSON.addPair("solverMethod", Expression.toJSON(clk.solverMethod), json);
+        then
+          ();
+    end match;
+  end toJSON;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFClockKind;

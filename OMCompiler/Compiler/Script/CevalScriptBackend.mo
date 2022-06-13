@@ -3358,30 +3358,26 @@ public function runFrontEndWorkNF
   output NFFlatten.FunctionTree functions;
   output String flatString;
 protected
-  Absyn.Program placement_p;
-  SCode.Program builtin_p, scode_p, graphic_p;
+  SCode.Program builtin_p, scode_p, annotation_p;
   Boolean b;
 algorithm
   (_, builtin_p) := FBuiltin.getInitialFunctions();
   scode_p := listAppend(builtin_p, SymbolTable.getSCode());
   ExecStat.execStat("FrontEnd - Absyn->SCode");
 
-  // add also the graphics annotations if we are using the NF_API
-  if Flags.isSet(Flags.NF_API) then
-    placement_p := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
-    graphic_p := AbsynToSCode.translateAbsyn2SCode(placement_p);
-    scode_p := listAppend(graphic_p, scode_p);
-  end if;
+  annotation_p := AbsynToSCode.translateAbsyn2SCode(
+    InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
 
   // make sure we don't run the default instantiateModel using -d=nfAPI
   // only the stuff going via NFApi.mo should have this flag activated
   b := FlagsUtil.set(Flags.NF_API, false);
   try
-    (flatModel, functions, flatString) := NFInst.instClassInProgram(className, scode_p, dumpFlat);
-  FlagsUtil.set(Flags.NF_API, b);
+    (flatModel, functions, flatString) :=
+      NFInst.instClassInProgram(className, scode_p, annotation_p, dumpFlat);
+    FlagsUtil.set(Flags.NF_API, b);
   else
     FlagsUtil.set(Flags.NF_API, b);
-  fail();
+    fail();
   end try;
 end runFrontEndWorkNF;
 
