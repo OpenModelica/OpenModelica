@@ -140,10 +140,9 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
   DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=userData->solverData};
   int flag = 1;
-  int *iflag = &flag;
 
   if (fj) {
-    (nlsData->residualFunc)(&resUserData, x, fvec, iflag);
+    (nlsData->residualFunc)(&resUserData, x, fvec, &flag);
   } else {
     /* performance measurement */
     rt_ext_tp_tick(&nlsData->jacobianTimeClock);

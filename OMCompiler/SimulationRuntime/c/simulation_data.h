@@ -61,8 +61,9 @@
 #define set_struct(TYPE, x, info) x = (TYPE)info
 #endif
 
-/* Forward declaration of DATA to avoid warnings in NONLINEAR_SYSTEM_DATA. */
+/* Forward declaration of DATA */
 struct DATA;
+typedef struct DATA DATA;
 
 /* Model info structures */
 typedef struct VAR_INFO
@@ -127,9 +128,10 @@ typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_
 typedef struct SPARSE_PATTERN
 {
   unsigned int* leadindex;        /* Array with column indices, size rows+1 */
-  unsigned int* index;            /* Array with row indices */
+  unsigned int* index;            /* Array with number of non-zeros indices */
   unsigned int sizeofIndex;       /* Length of array index, equal to numberOfNonZeros */
-  unsigned int* colorCols;        /* Color coding of columns. First color is `1`, second is `2`, ... */
+  unsigned int* colorCols;        /* Color coding of columns. First color is `1`, second is `2`, ...
+                                   * Length of array is rows */
   unsigned int numberOfNonZeros;  /* Number of non-zero elements in matrix */
   unsigned int maxColors;         /* Number of colors */
 } SPARSE_PATTERN;
@@ -244,7 +246,7 @@ typedef struct STATIC_STRING_DATA
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 } STATIC_STRING_DATA;
 
-typedef int (*analyticalJacobianColumn_func_ptr)(void* data, threadData_t* threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
+typedef int (*analyticalJacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 
 /**
  * @brief User data provided to residual functions.
@@ -252,7 +254,7 @@ typedef int (*analyticalJacobianColumn_func_ptr)(void* data, threadData_t* threa
  * Created by (non-)linear solver before evaluating a residual.
  */
 typedef struct RESIDUAL_USERDATA {
-  struct DATA* data;
+  DATA* data;
   threadData_t* threadData;
   void* solverData;           /* Optional pointer to ODE solver data.
                                * Used in NLS solving of ODE integrator step. */
@@ -290,10 +292,10 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);
-  void (*initializeStaticNLSData)(struct DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
-  int (*strictTearingFunctionCall)(struct DATA* data, threadData_t *threadData);
-  void (*getIterationVars)(struct DATA*, double*);
-  int (*checkConstraints)(struct DATA*, threadData_t *threadData);
+  void (*initializeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
+  int (*strictTearingFunctionCall)(DATA* data, threadData_t *threadData);
+  void (*getIterationVars)(DATA*, double*);
+  int (*checkConstraints)(DATA*, threadData_t *threadData);
 
   NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   void *solverData;
@@ -360,8 +362,8 @@ typedef struct LINEAR_SYSTEM_DATA
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   void (*initializeStaticLSData)(void*, threadData_t *threadData, void*, modelica_boolean);
-  int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
-  int (*checkConstraints)(struct DATA*, threadData_t *threadData);
+  int (*strictTearingFunctionCall)(DATA* data, threadData_t *threadData);
+  int (*checkConstraints)(DATA* data, threadData_t *threadData);
 
   /* attributes of iteration variables */
   modelica_real *min;
@@ -455,7 +457,7 @@ typedef struct DAEMODE_DATA
   modelica_real* residualVars;         /* workspace for the residual variables */
   modelica_real* auxiliaryVars;        /* workspace for the auxiliary variables */
   SPARSE_PATTERN* sparsePattern;       /* daeMode sparse pattern */
-  int (*evaluateDAEResiduals)(struct DATA*, threadData_t*, int); /* function to evaluate dynamic equations for DAE solver */
+  int (*evaluateDAEResiduals)(DATA*, threadData_t*, int); /* function to evaluate dynamic equations for DAE solver */
   int *algIndexes;                     /* index of the algebraic DAE variable in original order */
 } DAEMODE_DATA;
 

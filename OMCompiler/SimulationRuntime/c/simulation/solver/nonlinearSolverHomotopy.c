@@ -153,8 +153,7 @@ typedef struct DATA_HOMOTOPY
   double timeValue;
   int mixedSystem;
 
-  // TODO AHeu: Don't use a void pointer here
-  void* dataHybrid;
+  DATA_HYBRD* dataHybrid;
 
 } DATA_HOMOTOPY;
 

@@ -45,6 +45,7 @@ protected
   import List;
   import Prefixes = NFPrefixes;
   import MetaModelica.Dangerous.*;
+  import JSON;
 
   import ComponentRef = NFComponentRef;
 
@@ -1169,6 +1170,57 @@ public
   algorithm
     str := "{" + stringDelimitList(List.map(crs, toString), ",") + "}";
   end listToString;
+
+  function toJSON
+    input ComponentRef cref;
+    output JSON json;
+  algorithm
+    json := match cref
+      case CREF()
+        algorithm
+          json := JSON.emptyObject();
+          json := JSON.addPair("kind", JSON.makeString("cref"), json);
+          json := JSON.addPair("parts", JSON.makeArray(toJSON_impl(cref)), json);
+        then
+          json;
+
+      case EMPTY() then JSON.makeNull();
+
+      case WILD()
+        algorithm
+          json := JSON.emptyObject();
+          json := JSON.addPair("kind", JSON.makeString("cref"), json);
+          json := JSON.addPair("parts", JSON.makeArray(
+            {JSON.fromPair("name", JSON.makeString("_"))}), json);
+        then
+          json;
+
+      else JSON.makeString(toString(cref));
+    end match;
+  end toJSON;
+
+  function toJSON_impl
+    input ComponentRef cref;
+    input list<JSON> accum = {};
+    output list<JSON> objs;
+  protected
+    JSON obj, subs;
+  algorithm
+    objs := match cref
+      case CREF()
+        algorithm
+          obj := JSON.emptyObject();
+          obj := JSON.addPair("name", JSON.makeString(InstNode.name(cref.node)), obj);
+
+          if not listEmpty(cref.subscripts) then
+            obj := JSON.addPair("subscripts", Subscript.toJSONList(cref.subscripts), obj);
+          end if;
+        then
+          toJSON_impl(cref.restCref, obj :: accum);
+
+      else accum;
+    end match;
+  end toJSON_impl;
 
   function hash
     input ComponentRef cref;

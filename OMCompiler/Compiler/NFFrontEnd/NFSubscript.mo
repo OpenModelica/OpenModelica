@@ -42,6 +42,7 @@ protected
   import Ceval = NFCeval;
   import MetaModelica.Dangerous.listReverseInPlace;
   import Util;
+  import JSON;
 
 public
   import Expression = NFExpression;
@@ -739,6 +740,27 @@ public
   algorithm
     string := List.toString(subscripts, toFlatString, "", "[", ",", "]", false);
   end toFlatStringList;
+
+  function toJSON
+    input Subscript subscript;
+    output JSON json;
+  algorithm
+    json := match subscript
+      case UNTYPED() then Expression.toJSON(subscript.exp);
+      case INDEX() then Expression.toJSON(subscript.index);
+      case SLICE() then Expression.toJSON(subscript.slice);
+      else JSON.makeString(toString(subscript));
+    end match;
+  end toJSON;
+
+  function toJSONList
+    input list<Subscript> subscripts;
+    output JSON json = JSON.makeNull();
+  algorithm
+    for s in subscripts loop
+      json := JSON.addElement(toJSON(s), json);
+    end for;
+  end toJSONList;
 
   function eval
     input Subscript subscript;

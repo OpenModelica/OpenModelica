@@ -34,35 +34,30 @@
 #ifndef _DATA_GBODE_H_
 #define _DATA_GBODE_H_
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
 #include <float.h>
 #include <math.h>
 #include <string.h>
 
 #include "gbode_tableau.h"
 
-#include "epsilon.h"
-//#include "external_input.h"
-#include "jacobianSymbolical.h"
-#include "kinsolSolver.h"
-#include "model_help.h"
-#include "newtonIteration.h"
-#include "nonlinearSystem.h"
 #include "../../simulation_data.h"
-#include "../results/simulation_result.h"
-#include "solver_main.h"
 #include "../../util/jacobian_util.h"
 #include "../../util/omc_error.h"
 #include "../../util/omc_file.h"
 #include "../../util/simulation_options.h"
 #include "../../util/varinfo.h"
+#include "../results/simulation_result.h"
+#include "epsilon.h"
+#include "jacobianSymbolical.h"
+#include "kinsolSolver.h"
+#include "model_help.h"
+#include "newtonIteration.h"
+#include "nonlinearSystem.h"
+#include "solver_main.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -187,5 +182,9 @@ typedef struct DATA_GBODE{
 int gbode_allocateData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 void gbode_freeData(DATA_GBODE* data);
 int gbode_main(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* _DATA_GBODE_H_ */

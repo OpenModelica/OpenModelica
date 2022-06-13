@@ -31,13 +31,13 @@
 /*! \file gbode_events.c
  */
 
-#include "gbode_main.h"
-#include "simulation_data.h"
-#include "external_input.h"
-#include "solver_main.h"
-#include "events.h"
+#include "../../simulation/options.h"
 #include "epsilon.h"
+#include "events.h"
+#include "external_input.h"
+#include "gbode_main.h"
 #include "model_help.h"
+
 
 int checkForStateEvent(DATA* data, LIST *eventList);
 int checkZeroCrossings(DATA *data, LIST *list, LIST*);
@@ -261,4 +261,3 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   return eventTime;
 }
-

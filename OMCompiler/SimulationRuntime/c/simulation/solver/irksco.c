@@ -318,7 +318,7 @@ int wrapper_fvec_irksco(int n, double* x, double* fvec, DATA_IRKSCO* userData, i
       {
         sData->realVars[j] = userData->y0[j] + x[n0*i+j];
       }
-      //printf("time point = %g \n",sData->timeValue);
+
 
       externalInputUpdate(data);
       data->callback->input_function(data, threadData);
@@ -493,14 +493,6 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
         diff = userdata->y2[i]-userdata->y1[i];
         err += (diff*diff)/(sc*sc);
       }
-                // printf("\ny = \n");
-                // for (int i=0;i<data->modelData->nStates;i++)
-                //   printf("%6g ", userdata->y2[i]);
-                // printf("\n");
-                // printf("yt = \n");
-                // for (int i=0;i<data->modelData->nStates;i++)
-                //   printf("%6g ", userdata->y1[i]);
-                // printf("\n");
 
       err /= data->modelData->nStates;
       err = sqrt(err);

@@ -140,8 +140,6 @@ void freeHybrdData(DATA_HYBRD* hybrdData)
   return;
 }
 
-// TODO AHeu: Remove millionths definition of a simple vector print function
-
 /*! \fn printVector
  *
  *  \param [in]  [vector]

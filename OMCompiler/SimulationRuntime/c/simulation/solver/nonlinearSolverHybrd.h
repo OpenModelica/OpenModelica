@@ -42,11 +42,6 @@
 extern "C" {
 #endif
 
-// TODO AHeu: Why undef VOID???
-#ifdef VOID
-#undef VOID
-#endif
-
 typedef struct DATA_HYBRD
 {
   int initialized; /* 1 = initialized, else = 0*/

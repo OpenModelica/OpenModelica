@@ -28,15 +28,15 @@
  *
  */
 
-#ifndef gb_tableau_H
-#define gb_tableau_H
+#ifndef GBODE_TABLEAU_H
+#define GBODE_TABLEAU_H
+
+#include "util/simulation_options.h"
+#include "openmodelica_types.h"
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
-#include "util/simulation_options.h"
-#include "openmodelica_types.h"
 
 /**
  * @brief Butcher tableau specifiying a Runge-Kutta method.
@@ -92,7 +92,7 @@ void printButcherTableau(BUTCHER_TABLEAU* tableau);
 
 
 #if defined(__cplusplus)
-}
+};
 #endif
 
-#endif // gb_tableau_H
+#endif // GBODE_TABLEAU_H
