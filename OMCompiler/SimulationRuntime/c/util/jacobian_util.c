@@ -108,6 +108,7 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int number
   SPARSE_PATTERN* sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
   sparsePattern->leadindex = (unsigned int*) malloc((n_leadIndex+1)*sizeof(unsigned int));
   sparsePattern->index = (unsigned int*) malloc(numberOfNonZeros*sizeof(unsigned int));
+  sparsePattern->sizeofIndex = numberOfNonZeros;
   sparsePattern->numberOfNonZeros = numberOfNonZeros;
   sparsePattern->colorCols = (unsigned int*) malloc(maxColors*sizeof(unsigned int));
   sparsePattern->maxColors = maxColors;

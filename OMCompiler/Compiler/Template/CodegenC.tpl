@@ -626,6 +626,7 @@ template simulationFile_nls(SimCode simCode)
     /* Non Linear Systems */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #include "util/jacobian_util.h"
     #if defined(__cplusplus)
     extern "C" {
     #endif
