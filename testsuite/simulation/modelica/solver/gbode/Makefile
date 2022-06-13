@@ -3,11 +3,13 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 Burger_01.mos \
 HeatingSystem.mos \
-singleRate_01.mos \
-singleRate_02.mos \
+IRKGaussian_01.mos \
+IRK_01.mos \
+RK_01.mos \
+multiRate_01.mos \
+multiRate_02.mos \
 
 FAILINGTESTFILES = \
-multiRate_01.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

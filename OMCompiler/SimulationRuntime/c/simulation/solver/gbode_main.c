@@ -365,13 +365,6 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     errorStreamPrint(LOG_STDOUT, 0, "gbode_allocateData: Unknown type %i", gbData->type);
     return -1;
   }
-  // adapt decision for testing of the fully implicit implementation
-  if (gbData->GM_method == RK_ESDIRK2_test || gbData->GM_method == RK_ESDIRK3_test)
-  {
-    gbData->nlSystemSize = gbData->tableau->nStages * gbData->nStates;
-    gbData->step_fun = &(full_implicit_RK);
-    gbData->type = GM_TYPE_IMPLICIT;
-  }
   if (gbData->GM_method == MS_ADAMS_MOULTON)
   {
     gbData->nlSystemSize = gbData->nStates;
@@ -383,20 +376,20 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   // test of multistep method
 
   const char *flag_StepSize_ctrl = omc_flagValue[FLAG_SR_CTRL];
-  gbData->ctrl_type = 0;
+  gbData->ctrl_type = 1;
   if (flag_StepSize_ctrl != NULL) gbData->ctrl_type = atoi(flag_StepSize_ctrl);
 
   switch (gbData->ctrl_type)
   {
-  case 0:
+  case 1:
     gbData->stepSize_control = &(IController);
     infoStreamPrint(LOG_SOLVER, 0, "IController is use for step size control");
     break;
-  case 1:
+  case 2:
     gbData->stepSize_control = &(PIController);
     infoStreamPrint(LOG_SOLVER, 0, "PIController is use for step size control");
     break;
-  case 2:
+  case 0:
     gbData->stepSize_control = &(CController);
     infoStreamPrint(LOG_SOLVER, 0, "Constant step size is used");
     break;
