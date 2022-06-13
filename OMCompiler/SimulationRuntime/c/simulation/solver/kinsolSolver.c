@@ -109,8 +109,8 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
   int flag;
   int printLevel;
   int size = kinsolData->size;
-
   NONLINEAR_SYSTEM_DATA *nlsData = kinsolData->userData->nlsData;
+  SPARSE_PATTERN* sparsePattern = nlsData->sparsePattern;
 
   /* Free KINSOL memory block */
   if (kinsolData->kinsolMemory) {
@@ -154,10 +154,10 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
       kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
     kinsolData->J = SUNDenseMatrix(size, size);
   } else if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-    if (!nlsData->sparsePattern) {
+    if (!sparsePattern) {
       kinsolData->nnz = size*size;
     } else {
-      kinsolData->nnz = nlsData->sparsePattern->numberOfNonZeros;
+      kinsolData->nnz = sparsePattern->numberOfNonZeros;
     }
     kinsolData->J = SUNSparseMatrix(size, size, kinsolData->nnz, CSC_MAT);
   } else {
@@ -200,9 +200,9 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
 
   /* Set Jacobian for non-linear solver */
   if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
-    if (nlsData->analyticalJacobianColumn != NULL && nlsData->sparsePattern != NULL) {
+    if (nlsData->analyticalJacobianColumn != NULL && sparsePattern != NULL) {
       flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseSymJac); /* Use symbolic Jacobian with sparsity pattern*/
-    } else if (nlsData->sparsePattern != NULL) {
+    } else if (sparsePattern != NULL) {
       flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac); /* Use numeric Jacobian with sparsity pattern */
     } else {
       flag = KINSetJacFn(kinsolData->kinsolMemory, NULL); /* Use internal difference quotient for Jacobian */
@@ -609,7 +609,6 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   analyticJacobian = kinsolUserData->analyticJacobian;
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;
-  assertStreamPrint(threadData, nlsData->jacobianIndex >= 0, "Jacobian index of non-linear system %d is negative.", kinsolUserData->sysNumber);
 
   /* Access N_Vector variables */
   x = N_VGetArrayPointer(vecX);
@@ -637,8 +636,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
       }
     }
     /* Evaluate Jacobian column */
-    ((nlsData->analyticalJacobianColumn))(data, threadData, analyticJacobian,
-                                          NULL);
+    ((nlsData->analyticalJacobianColumn))(data, threadData, analyticJacobian, NULL);
 
     /* Save column in Jac and unset seed variables */
     for (ii = 0; ii < kinsolData->size; ii++) {

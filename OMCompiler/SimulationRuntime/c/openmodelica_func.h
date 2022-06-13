@@ -266,11 +266,11 @@ int (*initialAnalyticJacobianF)(void* data, threadData_t *threadData, ANALYTIC_J
 /*
  * These functions calculate specific jacobian column.
  */
-int (*functionJacA_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
-int (*functionJacB_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
-int (*functionJacC_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
-int (*functionJacD_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
-int (*functionJacF_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
+analyticalJacobianColumn_func_ptr functionJacA_column;
+analyticalJacobianColumn_func_ptr functionJacB_column;
+analyticalJacobianColumn_func_ptr functionJacC_column;
+analyticalJacobianColumn_func_ptr functionJacD_column;
+analyticalJacobianColumn_func_ptr functionJacF_column;
 /*#endif*/
 
 const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */

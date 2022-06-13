@@ -119,50 +119,35 @@ typedef struct CALL_STATISTICS
 
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} EQUATION_SYSTEM_ERROR;
 
-/* SPARSE_PATTERN
+/**
+ * @brief Sparse pattern for Jacobian matrix.
  *
- * sparse pattern struct used by jacobians
- * leadindex points to an index where to corresponding
- * index of an row or column is noted in index.
- * sizeofIndex contain number of elements in index
- * colorsCols contain color of colored columns
- *
- * Use freeSparsePattern(SPARSE_PATTERM *spp) for "destruction" (see util/jacobian_util.c/h).
- *
+ * Using compressed sparse column (CSC) format.
  */
 typedef struct SPARSE_PATTERN
 {
-  unsigned int* leadindex;
-  unsigned int* index;
-  unsigned int sizeofIndex;
-  unsigned int* colorCols;
-  unsigned int numberOfNonZeros;
-  unsigned int maxColors;
+  unsigned int* leadindex;        /* Array with column indices, size rows+1 */
+  unsigned int* index;            /* Array with row indices */
+  unsigned int sizeofIndex;       /* Length of array index, equal to numberOfNonZeros */
+  unsigned int* colorCols;        /* Color coding of columns. First color is `1`, second is `2`, ... */
+  unsigned int numberOfNonZeros;  /* Number of non-zero elements in matrix */
+  unsigned int maxColors;         /* Number of colors */
 } SPARSE_PATTERN;
 
-/* ANALYTIC_JACOBIAN
+/**
+ * @brief Analytic jacobian struct
  *
- * analytic jacobian struct used for dassl and linearization.
- * jacobianName contain "A" || "B" etc.
- * sizeCols contain size of column
- * sizeRows contain size of rows
- * sparsePattern contain the sparse pattern include colors
- * seedVars contain seed vector to the corresponding jacobian
- * resultVars contain result of one column to the corresponding jacobian
- * jacobian contains dense jacobian elements
- *
- * Use freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) for "destruction" (see util/jacobian_util.c/h).
  */
 typedef struct ANALYTIC_JACOBIAN
 {
-  unsigned int sizeCols;
-  unsigned int sizeRows;
-  unsigned int sizeTmpVars;
-  SPARSE_PATTERN* sparsePattern;
-  modelica_real* seedVars;
+  unsigned int sizeCols;          /* Number of columns of Jacobian */
+  unsigned int sizeRows;          /* Number of rows of Jacobian */
+  unsigned int sizeTmpVars;       /* Length of vector tmpVars */
+  SPARSE_PATTERN* sparsePattern;  /* Contain sparse pattern including coloring */
+  modelica_real* seedVars;        /* Seed vector for specifying which columns to evaluate */
   modelica_real* tmpVars;
-  modelica_real* resultVars;
-  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);
+  modelica_real* resultVars;      /* Result column for given seed vector */
+  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independed of seed vector */
 } ANALYTIC_JACOBIAN;
 
 /* EXTERNAL_INPUT
@@ -259,6 +244,8 @@ typedef struct STATIC_STRING_DATA
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 } STATIC_STRING_DATA;
 
+typedef int (*analyticalJacobianColumn_func_ptr)(void* data, threadData_t* threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
+
 /**
  * @brief User data provided to residual functions.
  *
@@ -294,7 +281,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
    *
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
-  int (*analyticalJacobianColumn)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
+  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
   modelica_integer jacobianIndex;
 
@@ -368,7 +355,7 @@ typedef struct LINEAR_SYSTEM_DATA
   void (*setAElement)(int row, int col, double value, int nth, void *data, threadData_t *threadData);
   void (*setBElement)(int row, double value, void *data, threadData_t *threadData);
 
-  int (*analyticalJacobianColumn)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
+  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
@@ -452,7 +439,7 @@ typedef struct STATE_SET_DATA
    *
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
-  int (*analyticalJacobianColumn)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
+  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
   modelica_integer jacobianIndex;
 } STATE_SET_DATA;
