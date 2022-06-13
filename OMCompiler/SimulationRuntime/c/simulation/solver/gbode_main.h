@@ -64,6 +64,9 @@
 #include "../../util/simulation_options.h"
 #include "../../util/varinfo.h"
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 /**
  * @brief Function to compute single-rate step.
  */
@@ -131,7 +134,7 @@ typedef struct DATA_GBODE{
                                          * */
   ANALYTIC_JACOBIAN* jacobian;
   double *y;                               /* Result vector of RK step */
-  double *yt, *y1;                              /* Result vector of embedded RK step */
+  double *yt, *y1;                         /* Result vector of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight; /* Needed for interpolation of the slow states */
   double *nlsxLeft, *nlsxRight;
   double *nlskLeft, *nlskRight;
@@ -139,7 +142,7 @@ typedef struct DATA_GBODE{
   double *f;                               /* State derivatives of ODE */
   double *Jf;
   double *k;                               /* Vector k with result of intermediate steps of Runge-Kutta method */
-  double *x;                               /* ring buffer for multistep method */
+  double *x;                               /* ring buffer for multistep and RK method */
                                            // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
   double *res_const;                       /* Constant parts of residual for non-linear system of implicit RK method. */
   double *errest, *errtol;

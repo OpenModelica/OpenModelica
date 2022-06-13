@@ -666,9 +666,12 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
     }
   }
+  // copy the whole solution vector to the inner ring buffer (for latter extrapolation and dense output)
   memcpy(gbData->x, nlsData->nlsx, nlsData->size*sizeof(double));
+  // copy the next approximation to the additional stage
   memcpy(gbData->x + nStages * nStates, gbData->y, nStates*sizeof(double));
 
+  // calculate the corresponding derivative and store in the additional stage
   sData->timeValue = gbData->time + gbData->stepSize;
   memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
   gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
@@ -683,30 +686,41 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
   DATA_GBODEF* gbfData = gbData->gbfData;
 
-  double stepSize;
+  double stepSize, lastStepSize, timeValue;
   int step_info, p;
   int nStates = gbfData->nStates;
   int nFastStates = gbfData->nFastStates;
   int i, ii;
 
   // assumption yLeft and yOld coincide!!!
+  timeValue = gbfData->time;
   stepSize = gbfData->stepSize;
+  lastStepSize = gbfData->lastStepSize;
   p = gbfData->tableau->order_b;
 
+  gbfData->stepSize = gbfData->stepSize/2;
+  infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (first 1/2 step)");
+  step_info = gbfData->step_fun(data, threadData, solverInfo);
+
+  gbfData->time += gbfData->stepSize;
+  gbfData->lastStepSize = gbfData->stepSize;
+  memcpy(gbfData->yOld, gbfData->y, nStates * sizeof(double));
+  infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (second 1/2 step)");
   step_info = gbfData->step_fun(data, threadData, solverInfo);
   memcpy(gbfData->y1, gbfData->y, nStates * sizeof(double));
 
-  gbfData->stepSize = gbfData->stepSize/2;
-  step_info = gbfData->step_fun(data, threadData, solverInfo);
-  memcpy(gbfData->yOld, gbfData->y, nStates * sizeof(double));
+  // restore yOld
+  gbfData->time = timeValue;
+  gbfData->stepSize = stepSize;
+  gbfData->lastStepSize = lastStepSize;
+  memcpy(gbfData->yOld, gbfData->yLeft, nStates * sizeof(double));
+  infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (full step)");
   step_info = gbfData->step_fun(data, threadData, solverInfo);
 
-  memcpy(gbfData->yOld, gbfData->yLeft, nStates * sizeof(double));
-  for (ii=0; ii<nFastStates; ii++) {
-    i = gbfData->fastStates[ii];
-    gbfData->yt[i] = (pow(2.,p) * gbfData->y[i] - gbfData->y1[i]) / (pow(2.,p) - 1);
+  // Extrapolate values based on order of the scheme
+  for (i=0; i<nStates; i++) {
+    gbfData->yt[i] = (pow(2.,p) * gbfData->y1[i] - gbfData->y[i]) / (pow(2.,p) - 1);
   }
-  gbfData->stepSize = stepSize;
   return step_info;
 }
 
@@ -715,27 +729,39 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
 
-  double stepSize;
+  double stepSize, lastStepSize, timeValue;
   int step_info, p;
   int nStates = gbData->nStates;
   int i;
 
   // assumption yLeft and yOld coincide!!!
+  timeValue = gbData->time;
   stepSize = gbData->stepSize;
+  lastStepSize = gbData->lastStepSize;
   p = gbData->tableau->order_b;
 
+  gbData->stepSize = gbData->stepSize/2;
+  infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (first 1/2 step)");
+  step_info = gbData->step_fun(data, threadData, solverInfo);
+
+  gbData->time += gbData->stepSize;
+  gbData->lastStepSize = gbData->stepSize;
+  memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
+  infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (second 1/2 step)");
   step_info = gbData->step_fun(data, threadData, solverInfo);
   memcpy(gbData->y1, gbData->y, nStates * sizeof(double));
 
-  gbData->stepSize = gbData->stepSize/2;
-  step_info = gbData->step_fun(data, threadData, solverInfo);
-  memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
+  // restore yOld
+  gbData->time = timeValue;
+  gbData->stepSize = stepSize;
+  gbData->lastStepSize = lastStepSize;
+  memcpy(gbData->yOld, gbData->yLeft, nStates * sizeof(double));
+  infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (full step)");
   step_info = gbData->step_fun(data, threadData, solverInfo);
 
-  memcpy(gbData->yOld, gbData->yLeft, nStates * sizeof(double));
+  // Extrapolate values based on order of the scheme
   for (i=0; i<nStates; i++) {
-    gbData->yt[i] = (pow(2.,p) * gbData->y[i] - gbData->y1[i]) / (pow(2.,p) - 1);
+    gbData->yt[i] = (pow(2.,p) * gbData->y1[i] - gbData->y[i]) / (pow(2.,p) - 1);
   }
-  gbData->stepSize = stepSize;
   return step_info;
 }

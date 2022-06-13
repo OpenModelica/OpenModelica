@@ -120,10 +120,11 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   DATA_GBODEF *gbfData = (DATA_GBODEF *)malloc(sizeof(DATA_GBODEF));
   gbData->gbfData = gbfData;
 
-  gbfData->nStates = gbData->nStates;
-
   ANALYTIC_JACOBIAN *jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
+  int i;
+
+  gbfData->nStates = gbData->nStates;
 
   gbfData->GM_method = getGB_method(FLAG_MR);
   gbfData->tableau = initButcherTableau(gbfData->GM_method, FLAG_MR_ERR);
@@ -205,7 +206,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   if (!gbfData->isExplicit)
   {
     gbfData->Jf = malloc(sizeof(double) * gbfData->nStates * gbfData->nStates);
-    for (int i = 0; i < gbfData->nStates * gbfData->nStates; i++)
+    for (i = 0; i < gbfData->nStates * gbfData->nStates; i++)
       gbfData->Jf[i] = 0;
   }
   else
@@ -306,6 +307,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     gbfData->fastStatesDebugFile = NULL;
   }
   gbfData->stepRejected = FALSE;
+  i = MIN(MAX(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
+  infoStreamPrint(LOG_SOLVER, 0, "Number of states %d (%d slow states, %d fast states)", gbData->nStates, gbData->nStates-i, i);
 
   return 0;
 }
