@@ -219,7 +219,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
   // TODO: Free memory
-  gbData->jacobian = initAnalyticJacobian(gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->sparsePattern);
+  gbData->jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
+  initAnalyticJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -344,7 +345,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
   // TODO: Free memory
-  gbfData->jacobian = initAnalyticJacobian(gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, NULL, nlsData->sparsePattern);
+  gbfData->jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
+  initAnalyticJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -614,16 +616,15 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
 /**
  * @brief Evaluate column of DIRK Jacobian.
  *
- * @param inData            Void pointer to runtime data struct.
+ * @param data              Pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
- * @param gbData     Runge-Kutta method.
+ * @param gbData            Runge-Kutta method.
  * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
  */
-int jacobian_SR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+int jacobian_SR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
-  DATA* data = (DATA*) inData;
   DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
 
   int i;
@@ -660,16 +661,15 @@ int jacobian_SR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN
 /**
  * @brief Evaluate column of DIRK Jacobian.
  *
- * @param inData            Void pointer to runtime data struct.
+ * @param data              Pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
- * @param gbData     Runge-Kutta method.
+ * @param gbData            Runge-Kutta method.
  * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
  */
-int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
-  DATA* data = (DATA*) inData;
   DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
   DATA_GBODEF* gbfData = gbData->gbfData;
 
@@ -727,16 +727,15 @@ int jacobian_MR_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN
 /**
  * @brief Evaluate column of IRK Jacobian.
  *
- * @param inData            Void pointer to runtime data struct.
+* @param data              Pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
  * @param gbData     Runge-Kutta method.
  * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
  */
-int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+int jacobian_IRK_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
 
-  DATA* data = (DATA*) inData;
   DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
@@ -789,9 +788,3 @@ int jacobian_IRK_column(void *inData, threadData_t *threadData, ANALYTIC_JACOBIA
 
   return 0;
 }
-
-
-
-
-
-

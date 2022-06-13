@@ -31,12 +31,13 @@
 
 encapsulated package AbsynUtil
 
-protected import Absyn;
-protected import Dump;
-protected import Error;
-protected import List;
-protected import System;
-protected import Util;
+protected
+import Absyn;
+import Dump;
+import Error;
+import List;
+import System;
+import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 public constant Absyn.ClassDef dummyParts = Absyn.PARTS({},{},{},{},NONE());

@@ -78,22 +78,15 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
   int row, col, nCols, leadIdx;
   int i, j, maxColors = 0;
 
-  int length_column_indices = sizeCols+1;
-  int length_index = sparsePattern->numberOfNonZeros;
   // initialize array to zeros
-
   int* tabu;
   tabu = (int*) malloc(sizeCols*sizeCols*sizeof(int));
   for (i=0; i<sizeCols; i++)
      for (j=0; j<sizeCols; j++)
-        tabu[i*sizeCols + j]=0;
+        tabu[i*sizeCols + j] = 0;
 
   // Allocate memory for new sparsity pattern
-  sparsePatternT = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-  sparsePatternT->leadindex = (unsigned int*) malloc((length_column_indices)*sizeof(unsigned int));
-  sparsePatternT->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
-  sparsePatternT->sizeofIndex = length_index;
-  sparsePatternT->numberOfNonZeros = length_index;
+  sparsePatternT = allocSparsePattern(sizeCols, sparsePattern->numberOfNonZeros, sizeCols);
 
   sparsePatternTranspose(sizeRows, sizeCols, sparsePattern, sparsePatternT);
 
@@ -181,17 +174,10 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
     }
   }
   int missingDiags = jacobian->sizeRows - nDiags;
-  int length_column_indices = jacobian->sizeRows+1;
   int length_index = jacobian->sparsePattern->numberOfNonZeros + missingDiags;
 
   // Allocate memory for new sparsity pattern
-  sparsePattern_DIRK = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-  sparsePattern_DIRK->leadindex = (unsigned int*) malloc((length_column_indices)*sizeof(unsigned int));
-  sparsePattern_DIRK->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
-  sparsePattern_DIRK->sizeofIndex = length_index;
-  sparsePattern_DIRK->numberOfNonZeros = length_index;
-  sparsePattern_DIRK->colorCols = (unsigned int*) malloc(jacobian->sizeCols*sizeof(unsigned int));
-  sparsePattern_DIRK->maxColors = jacobian->sizeCols;
+  sparsePattern_DIRK = allocSparsePattern(jacobian->sizeRows, length_index, jacobian->sizeCols);
 
   /* Set diagonal elements of sparsitiy pattern to non-zero */
   i = 0;
@@ -266,19 +252,9 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   int sizeofIndex = sparsePattern_DIRK->sizeofIndex;
 
   // Allocate memory for new sparsity pattern
-  sparsePattern_MR = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-
-  sparsePattern_MR->sizeofIndex = sizeofIndex;
-  sparsePattern_MR->numberOfNonZeros = sparsePattern_DIRK->numberOfNonZeros;
-  sparsePattern_MR->maxColors = sparsePattern_DIRK->maxColors;
-
-  sparsePattern_MR->leadindex = (unsigned int*) malloc((nStates + 1)*sizeof(unsigned int));
+  sparsePattern_MR = allocSparsePattern(nStates, sparsePattern_DIRK->numberOfNonZeros, sparsePattern_DIRK->maxColors);
   memcpy(sparsePattern_MR->leadindex, sparsePattern_DIRK->leadindex, (nStates + 1)*sizeof(unsigned int));
-
-  sparsePattern_MR->index = (unsigned int*) malloc(sizeofIndex*sizeof(unsigned int));
   memcpy(sparsePattern_MR->index, sparsePattern_DIRK->index, sizeofIndex*sizeof(unsigned int));
-
-  sparsePattern_MR->colorCols = (unsigned int*) malloc(nStates*sizeof(unsigned int));
   memcpy(sparsePattern_MR->colorCols, sparsePattern_DIRK->colorCols, nStates*sizeof(unsigned int));
 
   return sparsePattern_MR;
@@ -393,16 +369,9 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   }
 
   int length_row_indices = jacobian->sizeCols*nStages+1;
-  int length_index = numberOfNonZeros;
 
   // Allocate memory for new sparsity pattern
-  sparsePattern_IRK = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-  sparsePattern_IRK->leadindex = (unsigned int*) malloc((length_row_indices)*sizeof(unsigned int));
-  sparsePattern_IRK->index = (unsigned int*) malloc(length_index*sizeof(unsigned int));
-  sparsePattern_IRK->sizeofIndex = length_index;
-  sparsePattern_IRK->numberOfNonZeros = length_index;
-  sparsePattern_IRK->maxColors = jacobian->sizeCols*nStages;
-  sparsePattern_IRK->colorCols = (unsigned int*) malloc(sparsePattern_IRK->maxColors*sizeof(unsigned int));
+  sparsePattern_IRK = allocSparsePattern(jacobian->sizeCols*nStages, numberOfNonZeros, jacobian->sizeCols*nStages);
 
   /* Set diagonal elements of sparsitiy pattern to non-zero */
   for (i=0; i<length_row_indices; i++)
@@ -425,4 +394,3 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
 
   return sparsePattern_IRK;
 }
-

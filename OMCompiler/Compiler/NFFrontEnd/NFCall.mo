@@ -53,6 +53,7 @@ import ErrorExt;
 import EvalFunction = NFEvalFunction;
 import Inline = NFInline;
 import Inst = NFInst;
+import JSON;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -811,6 +812,62 @@ public
       else toString(call);
     end match;
   end typedString;
+
+  function toJSON
+    input Call call;
+    output JSON json = JSON.emptyObject();
+
+    function iterators_json
+      input list<tuple<InstNode, Expression>> iters;
+      output JSON json = JSON.emptyArray(listLength(iters));
+    algorithm
+      for i in iters loop
+        json := JSON.addElement(
+          JSON.fromPair(InstNode.name(Util.tuple21(i)),
+                        Expression.toJSON(Util.tuple22(i))),
+          json);
+      end for;
+    end iterators_json;
+  protected
+    Absyn.Path path;
+  algorithm
+    () := match call
+      case TYPED_CALL()
+        algorithm
+          path := Function.nameConsiderBuiltin(call.fn);
+          json := JSON.addPair("kind", JSON.makeString("call"), json);
+          json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
+          json := JSON.addPair("arguments", JSON.makeArray(
+            list(Expression.toJSON(a) for a in call.arguments)), json);
+        then
+          ();
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          json := JSON.addPair("kind", JSON.makeString("array_constructor"), json);
+          json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
+          json := JSON.addPair("iterators", iterators_json(call.iters), json);
+        then
+          ();
+
+      case TYPED_REDUCTION()
+        algorithm
+          path := Function.nameConsiderBuiltin(call.fn);
+          json := JSON.addPair("kind", JSON.makeString("reduction"), json);
+          json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
+          json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
+          json := JSON.addPair("iterators", iterators_json(call.iters), json);
+        then
+          ();
+
+      else
+        algorithm
+          json := JSON.addPair("kind", JSON.makeString("call"), json);
+        then
+          ();
+
+    end match;
+  end toJSON;
 
   function toAbsyn
     input Call call;
@@ -1979,7 +2036,7 @@ protected
       // Absyn.FOR_ITER_FARG and that is handled in instIteratorCall.
       case "array" then BuiltinCall.makeArrayExp(args, named_args, info);
 
-      case _ guard InstContext.inGraphicalExp(context)
+      case _ guard InstContext.inAnnotation(context)
         algorithm
           // If we're in a graphic annotation expression, first try to find the
           // function in the top scope in case there's a user-defined function

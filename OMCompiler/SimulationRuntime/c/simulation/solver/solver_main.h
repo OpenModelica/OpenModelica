@@ -65,7 +65,7 @@ typedef struct SOLVER_INFO
   double laststep;
   enum SOLVER_METHOD solverMethod;            /* ODE/DAE solver method */
   double solverStepSize;                      /* used by implicit radau solver */
-                                              // TODO AHeu: Then it should be in radau solverData
+                                              // TODO: Than it should be in radau solverData
 
   modelica_boolean solverRootFinding;         /* Set by solver if an internal root finding method is activated  */
   modelica_boolean solverNoEquidistantGrid;   /* Set by solver if output points are set by step size control */
@@ -86,8 +86,7 @@ typedef struct SOLVER_INFO
 
   /* further options */
   int integratorSteps;              /* 1 => stepSizeControl; 0 => equidistant grid */
-                                    // TODO AHeu: This is a duplicate of solverNoEquidistantGrid set in DASSL/IDA/...
-                                    // Change it or get rid of it
+                                    // TODO: This is a duplicate of solverNoEquidistantGrid set in DASSL/IDA/...
 
   void* solverData;     /* ODE/DAE solver data */
 }SOLVER_INFO;
