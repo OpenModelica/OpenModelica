@@ -199,6 +199,11 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   for (stage_=0; stage_<= nStages; stage_++) {
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
   }
+  for (int i=0; i<gbData->ringBufferSize; i++) {
+    gbData->tv[i] = gbData->timeRight;
+    memcpy(gbData->yv + i * nStates, gbData->yRight, nStates * sizeof(double));
+    memcpy(gbData->kv + i * nStates, gbData->kRight, nStates * sizeof(double));
+  }
 
   if (gbData->multi_rate) {
     gbData->gbfData->didEventStep = TRUE;

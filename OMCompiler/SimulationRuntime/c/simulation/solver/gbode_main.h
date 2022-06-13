@@ -139,6 +139,7 @@ typedef struct DATA_GBODE{
   double *k;                               /* Vector k with result of intermediate steps of Runge-Kutta method */
   double *x;                               /* ring buffer for multistep and RK method */
                                            // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
+  double *yv, *kv, *tv;
   double *res_const;                       /* Constant parts of residual for non-linear system of implicit RK method. */
   double *errest, *errtol;
   double *err;

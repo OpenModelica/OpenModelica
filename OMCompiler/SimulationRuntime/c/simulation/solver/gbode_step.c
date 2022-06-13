@@ -284,16 +284,12 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   modelica_boolean solved = FALSE;
 
   if (!gbData->isExplicit) {
-    memcpy(gbData->nlsxLeft, gbData->x, nStates*sizeof(double));
-    memcpy(gbData->nlskLeft, gbData->k, nStates*sizeof(double));
-    memcpy(gbData->nlsxRight, gbData->x + nStages * nStates, nStates*sizeof(double));
-    memcpy(gbData->nlskRight, gbData->k + nStages * nStates, nStates*sizeof(double));
-
+    // NLS - used values for extrapolation
     infoStreamPrint(LOG_M_NLS, 1, "NLS - used values for extrapolation:");
-    printVector_gb(LOG_M_NLS, "xL", gbData->nlsxLeft, nStates, gbData->time - gbData->lastStepSize);
-    printVector_gb(LOG_M_NLS, "kL", gbData->nlskLeft, nStates, gbData->time - gbData->lastStepSize);
-    printVector_gb(LOG_M_NLS, "xR", gbData->nlsxRight, nStates, gbData->time);
-    printVector_gb(LOG_M_NLS, "kR", gbData->nlskRight, nStates, gbData->time);
+    printVector_gb(LOG_M_NLS, "xL", gbData->yv + nStates, nStates, gbData->tv[1]);
+    printVector_gb(LOG_M_NLS, "kL", gbData->kv + nStates, nStates, gbData->tv[1]);
+    printVector_gb(LOG_M_NLS, "xR", gbData->yv, nStates, gbData->tv[0]);
+    printVector_gb(LOG_M_NLS, "kR", gbData->kv, nStates, gbData->tv[0]);
     messageClose(LOG_M_NLS);
   }
 
@@ -339,16 +335,9 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, gbData->yOld, nStates*sizeof(modelica_real));
       // this is actually extrapolation...
-      if (gbData->stepRejected) {
-        hermite_interpolation_gb(gbData->time + gbData->tableau->c[0] * gbData->stepSize, gbData->nlsxLeft,  gbData->nlskLeft,
-                                 gbData->time + gbData->stepSize,                          gbData->nlsxRight, gbData->nlskRight,
-                                 gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation, nStates);
-
-      } else {
-        hermite_interpolation_gb(gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize, gbData->nlsxLeft,  gbData->nlskLeft,
-                                gbData->time,                        gbData->nlsxRight, gbData->nlskRight,
-                                gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation, nStates);
-      }
+      hermite_interpolation_gb(gbData->tv[1], gbData->yv + nStates,  gbData->kv + nStates,
+                               gbData->tv[0], gbData->yv,            gbData->kv,
+                               gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation, nStates);
 
       // This is a hack and needed, since nonlinear solver is based on numbered equation systems
       gbData->multi_rate_phase = 0;
@@ -600,10 +589,10 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   // NLS - used values for extrapolation
   infoStreamPrint(LOG_M_NLS, 1, "NLS - used values for extrapolation:");
-  printVector_gb(LOG_M_NLS, "xL", gbData->x, nStates, gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize);
-  printVector_gb(LOG_M_NLS, "kL", gbData->k, nStates, gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize);
-  printVector_gb(LOG_M_NLS, "xR", gbData->x + nStages * nStates, nStates, gbData->time);
-  printVector_gb(LOG_M_NLS, "kR", gbData->k + nStages * nStates, nStates, gbData->time);
+  printVector_gb(LOG_M_NLS, "xL", gbData->yv + nStates, nStates, gbData->tv[1]);
+  printVector_gb(LOG_M_NLS, "kL", gbData->kv + nStates, nStates, gbData->tv[1]);
+  printVector_gb(LOG_M_NLS, "xR", gbData->yv, nStates, gbData->tv[0]);
+  printVector_gb(LOG_M_NLS, "kR", gbData->kv, nStates, gbData->tv[0]);
   messageClose(LOG_M_NLS);
 
   /* Set start values for non-linear solver */
@@ -611,16 +600,9 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     memcpy(nlsData->nlsx + stage_*nStates,    gbData->yOld, nStates*sizeof(modelica_real));
     memcpy(nlsData->nlsxOld + stage_*nStates, gbData->yOld, nStates*sizeof(modelica_real));
     // this is actually extrapolation...
-    if (gbData->stepRejected) {
-      hermite_interpolation_gb(gbData->time + gbData->tableau->c[0] * gbData->stepSize, gbData->x,  gbData->k,
-                               gbData->time + gbData->stepSize,                        gbData->x + nStages * nStates, gbData->k + nStages * nStates,
-                               gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation + stage_*nStates, nStates);
-
-    } else {
-      hermite_interpolation_gb(gbData->time - (1 - gbData->tableau->c[0]) * gbData->lastStepSize, gbData->x,  gbData->k,
-                               gbData->time,                       gbData->x + nStages * nStates, gbData->k + nStages * nStates,
-                               gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation + stage_*nStates, nStates);
-    }
+    hermite_interpolation_gb(gbData->tv[1], gbData->yv + nStates,  gbData->kv + nStates,
+                             gbData->tv[0], gbData->yv,            gbData->kv,
+                             gbData->time + gbData->tableau->c[stage_] * gbData->stepSize, nlsData->nlsxExtrapolation + stage_*nStates, nStates);
   }
 
   // This is a hack and needed, since nonlinear solver is based on numbered equation systems
