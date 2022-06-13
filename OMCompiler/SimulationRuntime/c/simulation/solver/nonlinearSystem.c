@@ -942,7 +942,6 @@ int updateInnerEquation(RESIDUAL_USERDATA* resUserData, int sysNumber, int discr
 #endif
 
   /* call residual function */
-  // TODO AHeu: Make sure residualFuncConstraints gets RESIDUAL_USERDATA* as input, was (void*) (void**)
   if (nonlinsys->strictTearingFunctionCall != NULL)
     constraintViolated = nonlinsys->residualFuncConstraints(resUserData, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
   else
