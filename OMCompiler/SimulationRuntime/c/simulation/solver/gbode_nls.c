@@ -76,7 +76,6 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
   return;
 }
 
-
 /**
  * @brief Initialize static data of non-linear system for DIRK.
  *
@@ -105,7 +104,6 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   }
   return;
 }
-
 
 /**
  * @brief Initialize static data of non-linear system for IRK.
@@ -309,7 +307,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
-    // gbfData->symJacAvailable = FALSE;
     gbfData->symJacAvailable = TRUE;
     break;
   case MS_TYPE_IMPLICIT:
@@ -463,6 +460,7 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
   }
   gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
 
+  // Evaluate residuals
   for (ii=0; ii < nFastStates; ii++) {
     i = gbfData->fastStates[ii];
     res[ii] = gbfData->res_const[i] - xloc[ii] * gbfData->tableau->c[nStages-1] +
@@ -510,7 +508,6 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
     res[ii] = gbfData->res_const[i] - xloc[ii] + gbfData->stepSize * gbfData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
 
-  // printVector_gb("res", res, gbfData->nFastStates, gbfData->time);
   return;
 }
 
@@ -547,9 +544,12 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
   for (i=0; i<nStates; i++) {
     res[i] = gbData->res_const[i] - xloc[i] + gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
-  infoStreamPrint(LOG_M_NLS, 1, "NLS - residual:");
-  printVector_gb(LOG_M_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-  messageClose(LOG_M_NLS);
+
+  if (ACTIVE_STREAM(LOG_M_NLS)) {
+    infoStreamPrint(LOG_M_NLS, 1, "NLS - residual:");
+    printVector_gb(LOG_M_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    messageClose(LOG_M_NLS);
+  }
 
   return;
 }
@@ -579,10 +579,10 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
   int nStates = data->modelData->nStates;
   int stage, stage_;
 
-  // Bullshit!!! stage_ == 0, was already handle for predictor step
+  // Update the derivatives for current estimate of the states
   for (stage_=0; stage_<nStages; stage_++)
   {
-    /* Evaluate ODE and compute res for each stage_ */
+    /* Evaluate ODE for each stage_ */
     sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
     memcpy(sData->realVars, &xloc[stage_*nStates], nStates*sizeof(double));
     gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
@@ -602,16 +602,17 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     }
   }
 
-  infoStreamPrint(LOG_M_NLS, 1, "NLS - residual:");
-  for (stage=0; stage<nStages; stage++) {
-    printVector_gb(LOG_M_NLS, "r", res + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
+  if (ACTIVE_STREAM(LOG_M_NLS)) {
+    infoStreamPrint(LOG_M_NLS, 1, "NLS - residual:");
+    for (stage=0; stage<nStages; stage++) {
+      printVector_gb(LOG_M_NLS, "r", res + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
+    }
+    messageClose(LOG_M_NLS);
   }
-  messageClose(LOG_M_NLS);
 
 
   return;
 }
-
 
 /**
  * @brief Evaluate column of DIRK Jacobian.
@@ -650,13 +651,8 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
     }
   }
 
-  // printVector_gb("jacobian_ODE colums", jacobian_ODE->resultVars, nStates, gbData->time);
-  // printVector_gb("jacobian colums", jacobian->resultVars, nStates, gbData->time);
-  // printIntVector_gb("sparsity pattern colors", jacobian->sparsePattern->colorCols, nStates, gbData->time);
-
   return 0;
 }
-
 
 /**
  * @brief Evaluate column of DIRK Jacobian.
@@ -679,7 +675,7 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
   int i, ii;
   int nStates = data->modelData->nStates;
   int nStages = gbfData->tableau->nStages;
-  int nFastStates = gbfData->nFastStates;
+  int nFastStates = gbData->nFastStates;
   int stage_ = gbfData->act_stage;
 
   // printSparseStructure(gbfData->jacobian->sparsePattern,
@@ -688,25 +684,23 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
   //                     LOG_STDOUT,
   //                     "sparsePattern");
 
-  for (i=0; i<jacobian_ODE->sizeCols; i++)
+  for (i=0; i<jacobian_ODE->sizeCols; i++) {
     jacobian_ODE->seedVars[i] = 0;
+  }
+
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
-  for (ii=0; ii<nFastStates; ii++)
-  {
-    i = gbfData->fastStates[ii];
+  for (ii=0; ii<nFastStates; ii++) {
+    i = gbData->fastStates[ii];
     if (jacobian->seedVars[ii])
       jacobian_ODE->seedVars[i] = 1;
   }
-
-  // update timeValue and unknown vector based on the active column "stage_"
-  //sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
 
   // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Update resultVars array */
   for (ii = 0; ii < nFastStates; ii++) {
-    i = gbfData->fastStates[ii];
+    i = gbData->fastStates[ii];
     if (gbfData->type == MS_TYPE_IMPLICIT) {
       jacobian->resultVars[ii] = gbfData->tableau->b[nStages-1] * gbfData->stepSize * jacobian_ODE->resultVars[i];
     } else {
@@ -717,9 +711,6 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
       jacobian->resultVars[ii] -= 1;
     }
   }
-  // printVector_gb("jacobian_ODE colums", jacobian_ODE->resultVars, nFastStates, gbfData->time);
-  // printVector_gb("jacobian colums", jacobian->resultVars, nFastStates, gbfData->time);
-  // printIntVector_gb("sparsity pattern colors", jacobian->sparsePattern->colorCols, nFastStates, gbfData->time);
 
   return 0;
 }
@@ -727,9 +718,9 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
 /**
  * @brief Evaluate column of IRK Jacobian.
  *
-* @param data              Pointer to runtime data struct.
+* @param data               Pointer to runtime data struct.
  * @param threadData        Thread data for error handling.
- * @param gbData     Runge-Kutta method.
+ * @param gbData            Runge-Kutta method.
  * @param jacobian          Jacobian. jacobian->resultVars will be set on exit.
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
@@ -752,32 +743,31 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN 
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
   // and find out which stage is active; different stages have different colors
   // reset jacobian_ODE->seedVars
-  for (i=0; i<jacobian_ODE->sizeCols; i++)
+  for (i=0; i<jacobian_ODE->sizeCols; i++) {
     jacobian_ODE->seedVars[i] = 0;
+  }
+
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
-  for (i=0, stage_=0; i<jacobian->sizeCols; i++)
-  {
-    if (jacobian->seedVars[i])
-    {
+  for (i=0, stage_=0; i<jacobian->sizeCols; i++) {
+    if (jacobian->seedVars[i]) {
       stage_ = i;
       jacobian_ODE->seedVars[i%jacobian_ODE->sizeCols] = 1;
     }
   }
+
   // Determine active stage
   stage_ = stage_/jacobian_ODE->sizeCols;
 
   // update timeValue and unknown vector based on the active column "stage_"
   sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
-  // BB ToDo: ist xloc das gleiche wie gbData->nlsData->nlsx
   memcpy(sData->realVars, &(xloc[stage_*nStates]), nStates*sizeof(double));
+
   // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Update resultVars array for corresponding jacobian->seedVars*/
-  for (stage=0; stage<nStages; stage++)
-  {
-    for (i=0; i<nStates; i++)
-    {
+  for (stage=0; stage<nStages; stage++) {
+    for (i=0; i<nStates; i++) {
       jacobian->resultVars[stage * nStates + i] = gbData->stepSize * gbData->tableau->A[stage * nStages + stage_]  * jacobian_ODE->resultVars[i];
       /* -1 on diagonal elements */
       if (jacobian->seedVars[stage * nStates + i] == 1) {

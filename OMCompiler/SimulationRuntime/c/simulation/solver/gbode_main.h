@@ -88,6 +88,7 @@ typedef struct DATA_GBODEF{
   double *Jf;
   double *k, *res_const;
   double *x;                            /* ring buffer for multistep method */
+  double *yv, *kv, *tv;
 
   double *errest, *errtol, *err;
   double *errValues;                    /* ring buffer for step size control */
@@ -131,8 +132,6 @@ typedef struct DATA_GBODE{
   double *y;                               /* Result vector of RK step */
   double *yt, *y1;                         /* Result vector of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight; /* Needed for interpolation of the slow states */
-  double *nlsxLeft, *nlsxRight;
-  double *nlskLeft, *nlskRight;
   double *yOld;                            /* Result vector of last RK step ???? */
   double *f;                               /* State derivatives of ODE */
   double *Jf;
@@ -140,6 +139,7 @@ typedef struct DATA_GBODE{
   double *x;                               /* ring buffer for multistep and RK method */
                                            // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
   double *yv, *kv, *tv;
+  double *yr, *kr, *tr;
   double *res_const;                       /* Constant parts of residual for non-linear system of implicit RK method. */
   double *errest, *errtol;
   double *err;

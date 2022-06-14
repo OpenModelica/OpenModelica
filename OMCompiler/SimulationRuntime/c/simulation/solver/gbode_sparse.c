@@ -245,7 +245,7 @@ SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   SPARSE_PATTERN* sparsePattern_MR;
   SPARSE_PATTERN* sparsePattern_DIRK = gbData->jacobian->sparsePattern;
 
-  int nStates = gbfData->nStates;
+  int nStates = gbData->nStates;
 
   /* Compute size of new sparsitiy pattern
    * Increase the size to contain non-zero elements on diagonal. */
