@@ -51,7 +51,7 @@ public:
   // Used for icon/diagram inherited shape
   EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
-  void parseShapeAnnotation(Model::Ellipse *pEllipse);
+  void parseShapeAnnotation();
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
@@ -60,6 +60,8 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
+private:
+  Model::Ellipse *mpEllipse;
 public slots:
   void duplicate() override;
 };

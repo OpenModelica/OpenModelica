@@ -55,13 +55,14 @@ EllipseAnnotation::EllipseAnnotation(Model::Ellipse *pEllipse, GraphicsView *pGr
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
+  mpEllipse = pEllipse;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
   ShapeAnnotation::setDefaults();
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
-  parseShapeAnnotation(pEllipse);
+  parseShapeAnnotation();
   setShapeFlags(true);
 }
 
@@ -103,15 +104,15 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
   mClosure = StringHandler::getClosureType(stripDynamicSelect(list.at(11)));
 }
 
-void EllipseAnnotation::parseShapeAnnotation(Model::Ellipse *pEllipse)
+void EllipseAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(pEllipse);
-  FilledShape::parseShapeAnnotation(pEllipse);
+  GraphicItem::parseShapeAnnotation(mpEllipse);
+  FilledShape::parseShapeAnnotation(mpEllipse);
 
   //mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(rectangle.value("borderPattern").toString()));
 
   QList<QPointF> extents;
-  Model::Extent extent = pEllipse->getExtent();
+  Model::Extent extent = mpEllipse->getExtent();
   Model::Point extent1 = extent.getExtent1();
   Model::Point extent2 = extent.getExtent2();
 
@@ -120,8 +121,8 @@ void EllipseAnnotation::parseShapeAnnotation(Model::Ellipse *pEllipse)
 
   mExtents = extents;
 
-  mStartAngle = pEllipse->getStartAngle();
-  mEndAngle = pEllipse->getEndAngle();
+  mStartAngle = mpEllipse->getStartAngle();
+  mEndAngle = mpEllipse->getEndAngle();
 }
 
 QRectF EllipseAnnotation::boundingRect() const

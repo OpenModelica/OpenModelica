@@ -90,17 +90,11 @@ namespace Model
     rotation = 0;
   }
 
-  void GraphicItem::deserialize(const QJsonObject &jsonObject)
+  void GraphicItem::deserialize(const QJsonArray &jsonArray)
   {
-    if (jsonObject.contains("visible")) {
-      visible = jsonObject.value("visible").toBool();
-    }
-    if (jsonObject.contains("origin")) {
-      origin.deserialize(jsonObject.value("rotation").toArray());
-    }
-    if (jsonObject.contains("rotation")) {
-      rotation = jsonObject.value("rotation").toDouble();
-    }
+    visible = jsonArray.at(0).toBool();
+    origin.deserialize(jsonArray.at(1).toArray());
+    rotation = jsonArray.at(2).toDouble();
   }
 
   Color::Color()
@@ -124,23 +118,17 @@ namespace Model
     lineThickness = 0.25;
   }
 
-  void FilledShape::deserialize(const QJsonObject &jsonObject)
+  void FilledShape::deserialize(const QJsonArray &jsonArray)
   {
-    if (jsonObject.contains("lineColor")) {
-      lineColor.deserialize(jsonObject.value("lineColor").toArray());
-    }
-    if (jsonObject.contains("fillColor")) {
-      fillColor.deserialize(jsonObject.value("fillColor").toArray());
-    }
-    if (jsonObject.contains("pattern")) {
+    lineColor.deserialize(jsonArray.at(3).toArray());
+    fillColor.deserialize(jsonArray.at(4).toArray());
+//    if (jsonArray.contains("pattern")) {
 
-    }
-    if (jsonObject.contains("pattern")) {
+//    }
+//    if (jsonArray.contains("pattern")) {
 
-    }
-    if (jsonObject.contains("lineThickness")) {
-      lineThickness = jsonObject.value("lineThickness").toDouble();
-    }
+//    }
+    lineThickness = jsonArray.at(7).toDouble();
   }
 
   Shape::Shape()
@@ -157,19 +145,17 @@ namespace Model
     radius = 0;
   }
 
-  void Rectangle::deserialize(const QJsonObject &jsonObject)
+  void Rectangle::deserialize(const QJsonArray &jsonArray)
   {
-    GraphicItem::deserialize(jsonObject);
-    FilledShape::deserialize(jsonObject);
+    if (jsonArray.size() == 11) {
+      GraphicItem::deserialize(jsonArray);
+      FilledShape::deserialize(jsonArray);
 
-    if (jsonObject.contains("borderPattern")) {
+  //    if (jsonArray.contains("borderPattern")) {
 
-    }
-    if (jsonObject.contains("extent")) {
-      extent.deserialize(jsonObject.value("extent").toArray());
-    }
-    if (jsonObject.contains("radius")) {
-      radius = jsonObject.value("extent").toDouble();
+  //    }
+      extent.deserialize(jsonArray.at(9).toArray());
+      radius = jsonArray.at(10).toDouble();
     }
   }
 
@@ -184,22 +170,18 @@ namespace Model
     }
   }
 
-  void Ellipse::deserialize(const QJsonObject &jsonObject)
+  void Ellipse::deserialize(const QJsonArray &jsonArray)
   {
-    GraphicItem::deserialize(jsonObject);
-    FilledShape::deserialize(jsonObject);
+    if (jsonArray.size() == 12) {
+      GraphicItem::deserialize(jsonArray);
+      FilledShape::deserialize(jsonArray);
 
-    if (jsonObject.contains("extent")) {
-      extent.deserialize(jsonObject.value("extent").toArray());
-    }
-    if (jsonObject.contains("startAngle")) {
-      startAngle = jsonObject.value("startAngle").toDouble();
-    }
-    if (jsonObject.contains("endAngle")) {
-      endAngle = jsonObject.value("endAngle").toDouble();
-    }
-    if (jsonObject.contains("closure")) {
+      extent.deserialize(jsonArray.at(8).toArray());
+      startAngle = jsonArray.at(9).toDouble();
+      endAngle = jsonArray.at(10).toDouble();
+      //    if (jsonArray.contains("closure")) {
 
+      //    }
     }
   }
 
@@ -219,15 +201,11 @@ namespace Model
           const QString name = graphicObject.value("name").toString();
           if (name.compare(QStringLiteral("Rectangle")) == 0) {
             Rectangle *pRectangle = new Rectangle;
-            if (graphicObject.contains("namedArgs")) {
-              pRectangle->deserialize(graphicObject.value("namedArgs").toObject());
-            }
+            pRectangle->deserialize(graphicObject.value("elements").toArray());
             graphics.append(pRectangle);
           } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
             Ellipse *pEllipse = new Ellipse;
-            if (graphicObject.contains("namedArgs")) {
-              pEllipse->deserialize(graphicObject.value("namedArgs").toObject());
-            }
+            pEllipse->deserialize(graphicObject.value("elements").toArray());
             graphics.append(pEllipse);
           }
         }

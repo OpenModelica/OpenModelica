@@ -83,10 +83,11 @@ private:
   {
   public:
     GraphicItem();
-    void deserialize(const QJsonObject &jsonObject);
     bool getVisible() const {return visible;}
     Point getOrigin() const {return origin;}
     double getRotation() const {return rotation;}
+  protected:
+    void deserialize(const QJsonArray &jsonArray);
 private:
     bool visible;
     Point origin;
@@ -116,12 +117,13 @@ private:
   {
   public:
     FilledShape();
-    void deserialize(const QJsonObject &jsonObject);
     Color getLineColor() const {return lineColor;}
     Color getFillColor() const {return fillColor;}
     LinePattern getPattern() const {return pattern;}
     FillPattern getFillPattern() const {return fillPattern;}
     double getLineThickness() const {return lineThickness;}
+  protected:
+    void deserialize(const QJsonArray &jsonArray);
   private:
     Color lineColor;
     Color fillColor;
@@ -141,7 +143,7 @@ private:
   {
   public:
     Rectangle();
-    void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QJsonArray &jsonArray);
     BorderPattern getBorderPattern() const {return borderPattern;}
     Extent getExtent() const {return extent;}
     double getRadius() const {return radius;}
@@ -155,7 +157,7 @@ private:
   {
   public:
     Ellipse();
-    void deserialize(const QJsonObject &jsonObject);
+    void deserialize(const QJsonArray &jsonArray);
     Extent getExtent() const {return extent;}
     double getStartAngle() const {return startAngle;}
     double getEndAngle() const {return endAngle;}

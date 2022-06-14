@@ -55,13 +55,14 @@ RectangleAnnotation::RectangleAnnotation(Model::Rectangle *pRectangle, GraphicsV
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
+  mpRectangle = pRectangle;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
   ShapeAnnotation::setDefaults();
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
-  parseShapeAnnotation(pRectangle);
+  parseShapeAnnotation();
   setShapeFlags(true);
 }
 
@@ -146,15 +147,15 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
   mRadius.parse(list.at(10));
 }
 
-void RectangleAnnotation::parseShapeAnnotation(Model::Rectangle *pRectangle)
+void RectangleAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(pRectangle);
-  FilledShape::parseShapeAnnotation(pRectangle);
+  GraphicItem::parseShapeAnnotation(mpRectangle);
+  FilledShape::parseShapeAnnotation(mpRectangle);
 
   //mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(rectangle.value("borderPattern").toString()));
 
   QList<QPointF> extents;
-  Model::Extent extent = pRectangle->getExtent();
+  Model::Extent extent = mpRectangle->getExtent();
   Model::Point extent1 = extent.getExtent1();
   Model::Point extent2 = extent.getExtent2();
 
@@ -163,7 +164,7 @@ void RectangleAnnotation::parseShapeAnnotation(Model::Rectangle *pRectangle)
 
   mExtents = extents;
 
-  mRadius = pRectangle->getRadius();
+  mRadius = mpRectangle->getRadius();
 }
 
 QRectF RectangleAnnotation::boundingRect() const
