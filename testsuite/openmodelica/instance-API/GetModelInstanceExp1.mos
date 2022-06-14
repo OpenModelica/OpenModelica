@@ -24,24 +24,11 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"components\": {
-//     \"y\": {
+//     \"x\": {
 //       \"type\": \"Real\",
-//       \"modifier\": \" = a.x[1]\",
+//       \"modifier\": \" = 2.0\",
 //       \"value\": {
-//         \"binding\": {
-//           \"kind\": \"cref\",
-//           \"parts\": [
-//             {
-//               \"name\": \"a\"
-//             },
-//             {
-//               \"name\": \"x\",
-//               \"subscripts\": [
-//                 1
-//               ]
-//             }
-//           ]
-//         }
+//         \"binding\": 2
 //       },
 //       \"prefixes\": {
 //         \"public\": true,
@@ -104,11 +91,24 @@ getModelInstance(M, prettyPrint = true);
 //         \"direction\": \"\"
 //       }
 //     },
-//     \"x\": {
+//     \"y\": {
 //       \"type\": \"Real\",
-//       \"modifier\": \" = 2.0\",
+//       \"modifier\": \" = a.x[1]\",
 //       \"value\": {
-//         \"binding\": 2
+//         \"binding\": {
+//           \"kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"a\"
+//             },
+//             {
+//               \"name\": \"x\",
+//               \"subscripts\": [
+//                 1
+//               ]
+//             }
+//           ]
+//         }
 //       },
 //       \"prefixes\": {
 //         \"public\": true,

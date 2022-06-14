@@ -1,4 +1,4 @@
-// name: GetModelInstanceAttributes1
+// name: GetModelInstanceExtends1
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -6,26 +6,49 @@
 //
 
 loadString("
+  model A
+    Real x;
+  end A;
+
   model M
-    type Angle = Real(final quantity = \"Angle\");
-    parameter Real pi = 3;
-    Angle deg(start = pi);
+    Real y;
+    extends A;
+    Real z;
   end M;
 ");
 
-getModelInstance(M, prettyPrint = true);
+getModelInstance(M, prettyPrint=true);
 
 // Result:
 // true
 // "{
 //   \"name\": \"M\",
+//   \"extends\": [
+//     {
+//       \"name\": \"A\",
+//       \"components\": {
+//         \"x\": {
+//           \"type\": \"Real\",
+//           \"modifier\": \"\",
+//           \"prefixes\": {
+//             \"public\": true,
+//             \"final\": false,
+//             \"inner\": false,
+//             \"outer\": false,
+//             \"replaceable\": false,
+//             \"redeclare\": false,
+//             \"connector\": \"\",
+//             \"variability\": \"\",
+//             \"direction\": \"\"
+//           }
+//         }
+//       }
+//     }
+//   ],
 //   \"components\": {
-//     \"pi\": {
+//     \"y\": {
 //       \"type\": \"Real\",
-//       \"modifier\": \" = 3\",
-//       \"value\": {
-//         \"binding\": 3
-//       },
+//       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"public\": true,
 //         \"final\": false,
@@ -34,13 +57,13 @@ getModelInstance(M, prettyPrint = true);
 //         \"replaceable\": false,
 //         \"redeclare\": false,
 //         \"connector\": \"\",
-//         \"variability\": \"parameter\",
+//         \"variability\": \"\",
 //         \"direction\": \"\"
 //       }
 //     },
-//     \"deg\": {
+//     \"z\": {
 //       \"type\": \"Real\",
-//       \"modifier\": \"(start = pi)\",
+//       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"public\": true,
 //         \"final\": false,
