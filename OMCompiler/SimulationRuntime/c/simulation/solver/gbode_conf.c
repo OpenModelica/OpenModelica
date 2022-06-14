@@ -127,7 +127,7 @@ enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG FLAG_NLS_METHOD) {
     if (FLAG_NLS_METHOD == FLAG_MR_NLS) {
       return getGB_NLS_METHOD(FLAG_SR_NLS);
     } else {
-      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: newton [default]");
+      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
       return RK_NLS_KINSOL;
     }
   }
