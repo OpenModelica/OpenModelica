@@ -35,102 +35,54 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"A\",
 //       \"components\": {
-//         \"c2\": {
-//           \"type\": {
-//             \"name\": \"C\",
-//             \"components\": {
-//               \"f\": {
-//                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
-//                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"flow\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
-//                 }
-//               },
-//               \"e\": {
-//                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
-//                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
-//                 }
-//               }
-//             }
-//           },
-//           \"modifier\": \"\",
-//           \"prefixes\": {
-//             \"public\": true,
-//             \"final\": false,
-//             \"inner\": false,
-//             \"outer\": false,
-//             \"replaceable\": false,
-//             \"redeclare\": false,
-//             \"connector\": \"\",
-//             \"variability\": \"\",
-//             \"direction\": \"\"
-//           }
-//         },
 //         \"c1\": {
 //           \"type\": {
 //             \"name\": \"C\",
 //             \"components\": {
-//               \"f\": {
-//                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
-//                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"flow\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
-//                 }
-//               },
 //               \"e\": {
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
+//
+//                 }
+//               },
+//               \"f\": {
+//                 \"type\": \"Real\",
+//                 \"modifier\": \"\",
+//                 \"prefixes\": {
+//                   \"connector\": \"flow\"
 //                 }
 //               }
 //             }
 //           },
 //           \"modifier\": \"\",
 //           \"prefixes\": {
-//             \"public\": true,
-//             \"final\": false,
-//             \"inner\": false,
-//             \"outer\": false,
-//             \"replaceable\": false,
-//             \"redeclare\": false,
-//             \"connector\": \"\",
-//             \"variability\": \"\",
-//             \"direction\": \"\"
+//
+//           }
+//         },
+//         \"c2\": {
+//           \"type\": {
+//             \"name\": \"C\",
+//             \"components\": {
+//               \"e\": {
+//                 \"type\": \"Real\",
+//                 \"modifier\": \"\",
+//                 \"prefixes\": {
+//
+//                 }
+//               },
+//               \"f\": {
+//                 \"type\": \"Real\",
+//                 \"modifier\": \"\",
+//                 \"prefixes\": {
+//                   \"connector\": \"flow\"
+//                 }
+//               }
+//             }
+//           },
+//           \"modifier\": \"\",
+//           \"prefixes\": {
+//
 //           }
 //         }
 //       }
@@ -141,49 +93,25 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": {
 //         \"name\": \"C\",
 //         \"components\": {
-//           \"f\": {
-//             \"type\": \"Real\",
-//             \"modifier\": \"\",
-//             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"flow\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
-//             }
-//           },
 //           \"e\": {
 //             \"type\": \"Real\",
 //             \"modifier\": \"\",
 //             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
+//
+//             }
+//           },
+//           \"f\": {
+//             \"type\": \"Real\",
+//             \"modifier\": \"\",
+//             \"prefixes\": {
+//               \"connector\": \"flow\"
 //             }
 //           }
 //         }
 //       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     }
 //   },

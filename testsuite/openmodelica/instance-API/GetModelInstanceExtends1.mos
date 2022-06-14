@@ -1,4 +1,4 @@
-// name: GetModelInstanceDuplicate1
+// name: GetModelInstanceExtends1
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -10,18 +10,19 @@ loadString("
     Real x;
   end A;
 
-  model B
+  model M
+    Real y;
     extends A;
-    Real x;
-  end B;
+    Real z;
+  end M;
 ");
 
-getModelInstance(B, prettyPrint = true);
+getModelInstance(M, prettyPrint=true);
 
 // Result:
 // true
 // "{
-//   \"name\": \"B\",
+//   \"name\": \"M\",
 //   \"extends\": [
 //     {
 //       \"name\": \"A\",
@@ -37,7 +38,14 @@ getModelInstance(B, prettyPrint = true);
 //     }
 //   ],
 //   \"components\": {
-//     \"x\": {
+//     \"y\": {
+//       \"type\": \"Real\",
+//       \"modifier\": \"\",
+//       \"prefixes\": {
+//
+//       }
+//     },
+//     \"z\": {
 //       \"type\": \"Real\",
 //       \"modifier\": \"\",
 //       \"prefixes\": {

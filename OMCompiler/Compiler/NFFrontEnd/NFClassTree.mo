@@ -576,6 +576,8 @@ public
                 InstNode.name(clsNode), sourceInfo());
             end if;
 
+            local_comps := listReverseInPlace(local_comps);
+
             // Create a new class tree and update the class in the node.
             cls.elements := INSTANTIATED_TREE(ltree, clss, comps, local_comps, exts, imps, dups);
           then

@@ -24,6 +24,16 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"components\": {
+//     \"x\": {
+//       \"type\": \"Real\",
+//       \"modifier\": \" = 1.0\",
+//       \"value\": {
+//         \"binding\": 1
+//       },
+//       \"prefixes\": {
+//         \"replaceable\": true
+//       }
+//     },
 //     \"m\": {
 //       \"type\": {
 //         \"name\": \"M\",
@@ -32,48 +42,14 @@ getModelInstance(M, prettyPrint = true);
 //             \"type\": \"Real\",
 //             \"modifier\": \"\",
 //             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
+//
 //             }
 //           }
 //         }
 //       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
-//       }
-//     },
-//     \"x\": {
-//       \"type\": \"Real\",
-//       \"modifier\": \" = 1.0\",
-//       \"value\": {
-//         \"binding\": 1
-//       },
-//       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": true,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     }
 //   },
