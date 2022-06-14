@@ -174,12 +174,16 @@ all_objs : $(ALL_OBJS)
 #recompile all if a header changes!
 $(ALL_OBJS) : $(ALL_HEADERS)
 
-libSimulationRuntimeC.a: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a
-	@# You have to remove the old archive first or it may contain old objects
+libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a libOpenModelicaRuntimeC.dll
 	@rm -f $@
-	cp -a $(CDASKRDIR)/libcdaskr.a $@
-	$(AR) $@ $(ALL_OBJS)
-	ranlib $@
+	$(CXX) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM) -L$(OMBUILDDIR)/lib/omc \
+		-L$(CDASKRDIR) -lcdaskr \
+		-lklu -lumfpack -lamd -lbtf -lcolamd -lsuitesparseconfig \
+		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense \
+		-lipopt -lcoinmumps -lgfortran \
+		-llis -lcminpack -lomcgc \
+		-lopenblas -lexpat -ldbghelp -lregex -lwsock32 \
+		-Wl,--export-all-symbols,--out-implib,$@.a
 
 libSimulationRuntimeC.so: $(ALL_OBJS) $(OPTIONAL_LIBS) Makefile.objs
 	@rm -f $@
@@ -311,7 +315,14 @@ libSimulationRuntimeFMI.a: $(FMI_ME_OBJS_BUILDPATH)
 
 install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fmi-runtime RuntimeSources.mo
 	# copy libraries
-	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
+ifeq (MINGW,$(findstring MINGW,$(shell uname)))
+	cp -p $(LIBSIMULATION) $(builddir_bin)
+# 	copy the import (dll.a) libs as well.
+	cp -p $(LIBSIMULATION).a $(builddir_lib)
+else
+	cp -p $(LIBSIMULATION) $(builddir_lib)
+endif
+	cp -p $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
 	# FMI runtime libs
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
 	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.4.dylib @rpath/libsundials_idas.4.dylib $(builddir_lib)/$(LIBFMIRUNTIME)

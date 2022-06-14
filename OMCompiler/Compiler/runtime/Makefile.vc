@@ -3,7 +3,7 @@
 
 USE_CORBA = /DUSE_CORBA
 
-INCLUDES = $(INCP) /I. /I..\..\SimulationRuntime\c\ /I..\ /I$(OMDEV)/lib/omniORB-4.2.0-msvc-10/include /Ilpsolve
+INCLUDES = $(INCP) /I. /I..\..\SimulationRuntime\c\ /I..\ /I$(OMDEV)/lib/omniORB-4.2.0-msvc-10/include
 
 CFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TC
 CXXFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TP

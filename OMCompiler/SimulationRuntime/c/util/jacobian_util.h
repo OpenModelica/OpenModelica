@@ -40,18 +40,11 @@
 extern "C" {
 #endif
 
-/**
- * \brief Free struct ANALYTIC_JACOBIAN
- *
- * Frees dynamically allocated memory and sets pointers to NULL.
- */
+void initAnalyticJacobian(ANALYTIC_JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian), SPARSE_PATTERN* sparsePattern);
+ANALYTIC_JACOBIAN* copyAnalyticJacobian(ANALYTIC_JACOBIAN* source);
 void freeAnalyticJacobian(ANALYTIC_JACOBIAN* jac);
 
-/**
- * \brief Free struct SPARSE_PATTERN
- *
- * Frees dynamically allocated memory and sets pointers to NULL.
- */
+SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors);
 void freeSparsePattern(SPARSE_PATTERN *spp);
 
 #ifdef __cplusplus

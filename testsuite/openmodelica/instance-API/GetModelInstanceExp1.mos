@@ -1,4 +1,4 @@
-// name: GetModelInstanceAttributes1
+// name: GetModelInstanceExp1
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -6,14 +6,14 @@
 //
 
 loadString("
+  model A
+    Real x[3] = {1, 2, 3};
+  end A;
+
   model M
-    replaceable Real x = 1.0;
-
-    replaceable model M
-      Real x;
-    end M;
-
-    M m;
+    Real x = 2.0;
+    A a;
+    Real y = a.x[1];
   end M;
 ");
 
@@ -24,13 +24,59 @@ getModelInstance(M, prettyPrint = true);
 // "{
 //   \"name\": \"M\",
 //   \"components\": {
-//     \"m\": {
+//     \"y\": {
+//       \"type\": \"Real\",
+//       \"modifier\": \" = a.x[1]\",
+//       \"value\": {
+//         \"binding\": {
+//           \"kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"a\"
+//             },
+//             {
+//               \"name\": \"x\",
+//               \"subscripts\": [
+//                 1
+//               ]
+//             }
+//           ]
+//         }
+//       },
+//       \"prefixes\": {
+//         \"public\": true,
+//         \"final\": false,
+//         \"inner\": false,
+//         \"outer\": false,
+//         \"replaceable\": false,
+//         \"redeclare\": false,
+//         \"connector\": \"\",
+//         \"variability\": \"\",
+//         \"direction\": \"\"
+//       }
+//     },
+//     \"a\": {
 //       \"type\": {
-//         \"name\": \"M\",
+//         \"name\": \"A\",
 //         \"components\": {
 //           \"x\": {
 //             \"type\": \"Real\",
-//             \"modifier\": \"\",
+//             \"dims\": {
+//               \"absyn\": [
+//                 \"3\"
+//               ],
+//               \"typed\": [
+//                 \"3\"
+//               ]
+//             },
+//             \"modifier\": \" = {1, 2, 3}\",
+//             \"value\": {
+//               \"binding\": [
+//                 1,
+//                 2,
+//                 3
+//               ]
+//             },
 //             \"prefixes\": {
 //               \"public\": true,
 //               \"final\": false,
@@ -60,29 +106,22 @@ getModelInstance(M, prettyPrint = true);
 //     },
 //     \"x\": {
 //       \"type\": \"Real\",
-//       \"modifier\": \" = 1.0\",
+//       \"modifier\": \" = 2.0\",
 //       \"value\": {
-//         \"binding\": 1
+//         \"binding\": 2
 //       },
 //       \"prefixes\": {
 //         \"public\": true,
 //         \"final\": false,
 //         \"inner\": false,
 //         \"outer\": false,
-//         \"replaceable\": true,
+//         \"replaceable\": false,
 //         \"redeclare\": false,
 //         \"connector\": \"\",
 //         \"variability\": \"\",
 //         \"direction\": \"\"
 //       }
 //     }
-//   },
-//   \"replaceable\": [
-//     {
-//       \"name\": \"x\",
-//       \"type\": \"Real\"
-//     },
-//     \"M\"
-//   ]
+//   }
 // }"
 // endResult

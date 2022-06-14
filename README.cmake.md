@@ -142,8 +142,6 @@ from the Windows explorer.
 There are also some additional options that are kept as a migration step to maintain the similarity with the `autotools` build system.
 
 ```cmake
-OM_OMC_BUILD_LPSOLVE=OFF
-OM_OMC_USE_LPSOLVE=OFF
 OM_OMC_USE_CORBA=OFF
 OM_OMC_USE_LAPACK=ON
 ```

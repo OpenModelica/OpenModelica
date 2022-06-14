@@ -236,12 +236,11 @@ public
       output V value;
     end UpdateFn;
   protected
-    Integer index, hash, bucket_count;
+    Integer index, hash;
   algorithm
     (index, hash) := find(key, map);
 
     if index > 0 then
-      bucket_count := Vector.size(map.buckets);
       value := fn(SOME(Vector.getNoBounds(map.values, index)));
       Vector.updateNoBounds(map.values, index, value);
     else

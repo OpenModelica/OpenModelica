@@ -287,9 +287,6 @@ private:
   /** Mapping from unit symbol to unit definitions. Includes both base and derived units. */
   map<string,Unit> _units;
 
-  /* Set to keep track of which derived units have already been visisted in the minimizeDerivedUnits method*/
-  set<int> _derivedUnitsVisited;
-
   /** Parse */
   UnitRes parseExpression(Scanner& scan, Unit& unit);
   UnitRes parseNumerator(Scanner& scan, Unit& unit);
@@ -299,11 +296,6 @@ private:
   UnitRes parseSymbol(Scanner& scan, Unit& unit);
   UnitRes parseRational(Scanner& scan, Rational& q);
 
-  /* MIP */
-  Unit solveMIP(Unit,bool innerCall=false);
-
-  /* Help function to MIP */
-  Unit minimizeDerivedUnits(Unit unit,Unit origUnit,double factor);
   void increaseNthUnitWeight(int indx,double factor);
   void resetNthUnitWeight(int indx,double factor);
   int actualNumDerived(Unit unit);

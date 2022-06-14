@@ -57,15 +57,6 @@
   #include <omp.h>
 #endif
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = DEFAULT_FLAG_LSS_MAX_DENSITY;
 int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;
@@ -386,11 +377,11 @@ void printParameters(DATA *data, int stream)
  * Use to print e.g. sparse Jacobian matrix.
  * Only prints if stream is active and sparse pattern is non NULL and of size > 0.
  *
- * @param [in]  sparsePattern   Matrix to print.
- * @param [in]  sizeRows        Number of rows of matrix.
- * @param [in]  sizeCols        Number of columns of matrix.
- * @param [in]  stream          Steam to print to.
- * @param [in]  name            Name of matrix.
+ * @param sparsePattern   Matrix to print.
+ * @param sizeRows        Number of rows of matrix.
+ * @param sizeCols        Number of columns of matrix.
+ * @param stream          Steam to print to.
+ * @param name            Name of matrix.
  */
 void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeCols, int stream, const char* name)
 {
@@ -413,7 +404,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*sizeCols + 4);
 
   infoStreamPrint(stream, 1, "Sparse structure of %s [size: %ux%u]", name, sizeRows, sizeCols);
-  infoStreamPrint(stream, 0, "%u nonzero elements", sparsePattern->numberOfNonZeros);
+  infoStreamPrint(stream, 0, "%u non-zero elements", sparsePattern->numberOfNonZeros);
 
   infoStreamPrint(stream, 1, "Transposed sparse structure (rows: states)");
   i=0;

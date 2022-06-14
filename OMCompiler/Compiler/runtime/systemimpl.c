@@ -278,15 +278,14 @@ void SystemImpl__toWindowsSeperators(char* buffer, int bufferLength)
 int SystemImpl__chdir(const char* path)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  MULTIBYTE_TO_WIDECHAR_LENGTH(path, unicodePathLength);
-  MULTIBYTE_TO_WIDECHAR_VAR(path, unicodePath, unicodePathLength);
+  wchar_t* unicodePath = omc_multibyte_to_wchar_str(path);
+  int success = SetCurrentDirectoryW(unicodePath);
+  free(unicodePath);
 
-  if (!SetCurrentDirectoryW(unicodePath)) {
-    MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
+  if (!success) {
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("SetCurrentDirectoryW failed."),NULL,0);
     return -1;
   }
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
   return 0;
 #else
   if (chdir(path) != 0) {
@@ -307,16 +306,19 @@ extern char* SystemImpl__pwd(void)
     return NULL;
   }
 
-  WCHAR* unicodePath = (WCHAR*)omc_alloc_interface.malloc_atomic(bufLen * sizeof(WCHAR));
+  wchar_t* unicodePath = (wchar_t*)omc_alloc_interface.malloc_atomic(bufLen * sizeof(wchar_t));
   if (!GetCurrentDirectoryW(bufLen, unicodePath)) {
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("GetCurrentDirectoryW failed."),NULL,0);
     return NULL;
   }
-  WIDECHAR_TO_MULTIBYTE_LENGTH(unicodePath, bufferLength);
-  WIDECHAR_TO_MULTIBYTE_VAR(unicodePath, buffer, bufferLength);
+
+  char* buffer = omc_wchar_to_multibyte_str(unicodePath);
+  // This seems like it is an overkill. If all we need is the length then strlen on the 'buffer' above should suffice.
+  // I am leaving it like this for now since this was what was being done by the macro WIDECHAR_TO_MULTIBYTE_LENGTH
+  int bufferLength = WideCharToMultiByte(CP_UTF8, 0, unicodePath, -1, NULL, 0, NULL, NULL);
   SystemImpl__toWindowsSeperators(buffer, bufferLength);
   char *res = omc_alloc_interface.malloc_strdup(buffer);
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(buffer);
+  free(buffer);
   GC_free(unicodePath);
   return res;
 #else
@@ -335,12 +337,9 @@ extern int SystemImpl__regularFileExists(const char* str)
   WIN32_FIND_DATAW FileData;
   HANDLE sh;
 
-  MULTIBYTE_TO_WIDECHAR_LENGTH(str, unicodeFilenameLength);
-  MULTIBYTE_TO_WIDECHAR_VAR(str, unicodeFilename, unicodeFilenameLength);
-
+  wchar_t* unicodeFilename = omc_multibyte_to_wchar_str(str);
   sh = FindFirstFileW(unicodeFilename, &FileData);
-
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeFilename);
+  free(unicodeFilename);
 
   if (sh == INVALID_HANDLE_VALUE) {
     if (strlen(str) >= MAXPATHLEN)
@@ -358,7 +357,7 @@ extern int SystemImpl__regularFileExists(const char* str)
   FindClose(sh);
   return ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0);
 #else
-  struct stat buf;
+  omc_stat_t buf;
   /* adrpo: TODO: check if str leads to a path > PATH_MAX, maybe use realpath impl. from below */
   if (omc_stat(str, &buf)) return 0;
   return (buf.st_mode & S_IFREG) != 0;
@@ -382,11 +381,7 @@ static char* SystemImpl__readFile(const char* filename)
   char* buf;
   int res;
   FILE * file = NULL;
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat statstr;
-#else
-  struct stat statstr;
-#endif
+  omc_stat_t statstr;
   res = omc_stat(filename, &statstr);
 
   if (res != 0) {
@@ -603,13 +598,10 @@ int runProcess(const char* cmd)
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
 
-
   sprintf(command, "%s \"%s\"", c, cmd);
-
   /* fprintf(stderr, "%s\n", command); fflush(NULL); */
 
-  MULTIBYTE_TO_WIDECHAR_LENGTH(command, unicodeCommandLength);
-  MULTIBYTE_TO_WIDECHAR_VAR(command, unicodeCommand, unicodeCommandLength);
+  wchar_t* unicodeCommand = omc_multibyte_to_wchar_str(command);
 
   if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
   {
@@ -619,7 +611,8 @@ int runProcess(const char* cmd)
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
   }
-  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeCommand);
+
+  free(unicodeCommand);
   GC_free(command);
   return (int)exitCode;
 }
@@ -915,7 +908,7 @@ extern int SystemImpl__directoryExists(const char *str)
   /* if the string is NULL return 0 */
   if (!str) return 0;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  WIN32_FIND_DATA FileData;
+  WIN32_FIND_DATAW FileData;
   HANDLE sh;
   char* path = strdup(str);
   int last = strlen(path)-1;
@@ -925,14 +918,18 @@ extern int SystemImpl__directoryExists(const char *str)
 
   path[last + 1] = '\0';
 
-  sh = FindFirstFile(path, &FileData);
+  wchar_t* unicodePath = omc_multibyte_to_wchar_str(path);
+  sh = FindFirstFileW(unicodePath, &FileData);
+  free(unicodePath);
   free(path);
+
   if (sh == INVALID_HANDLE_VALUE)
     return 0;
+
   FindClose(sh);
   return (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 #else
-  struct stat buf;
+  omc_stat_t buf;
   if (omc_stat(str, &buf))
     return 0;
   return (buf.st_mode & S_IFDIR) != 0;
@@ -1058,11 +1055,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
       buf = (char *)omc_alloc_interface.malloc_atomic(len);
       if (buf != NULL)
       {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-        struct _stat statbuf;
-#else /* unix */
-        struct stat statbuf;
-#endif
+        omc_stat_t statbuf;
 
         snprintf(buf, len, "%s/%s", path, p->d_name);
         if (omc_stat(buf, &statbuf) == 0)
@@ -1195,11 +1188,7 @@ extern int SystemImpl__removeDirectory(const char *path)
           if (strcmp(p->d_name+(len-len_post), pat_post) == 0)
           {
             /* pre and post pattern do match */
-#if defined(__MINGW32__) || defined(_MSC_VER)
-            struct _stat statbuf;
-#else /* unix */
-            struct stat statbuf;
-#endif
+            omc_stat_t statbuf;
             char * newdir = (char *)omc_alloc_interface.malloc_atomic(len_base+len+len_sub+3);
 
             strcpy(newdir, basepath);
@@ -1248,11 +1237,7 @@ extern const char* SystemImpl__readFileNoNumeric(const char* filename)
   char* buf, *bufRes;
   int res,numCount;
   FILE * file = NULL;
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat statstr;
-#else
-  struct stat statstr;
-#endif
+  omc_stat_t statstr;
   res = omc_stat(filename, &statstr);
 
   if(res!=0) {
@@ -1519,7 +1504,7 @@ int file_select_directories(direntry entry)
 {
   char fileName[MAXPATHLEN];
   int res;
-  struct stat fileStatus;
+  omc_stat_t fileStatus;
   if ((strcmp(entry->d_name, ".") == 0) ||
       (strcmp(entry->d_name, "..") == 0)) {
     return (0);
@@ -2050,61 +2035,6 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
   c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error,
                 "A LAPACK routine is called but OMC is not compiled with LAPACK support", NULL, 0);
   MMC_THROW();
-}
-#endif
-
-#ifdef NO_LPLIB
-int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
-{
-  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Not compiled with lpsolve support"),NULL,0);
-  MMC_THROW();
-}
-#else
-
-#include CONFIG_LPSOLVEINC
-
-int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
-{
-  int i = 0, j = 0, info, sz = 0;
-  void *tmp = lB;
-  lprec *lp;
-  double inf,*vres;
-
-  while (MMC_NILHDR != MMC_GETHDR(tmp)) {
-    sz++;
-    tmp = MMC_CDR(tmp);
-  }
-  vres = (double*)omc_alloc_interface.malloc_atomic(sz*sizeof(double));
-  memset(vres,0,sz*sizeof(double));
-  lp = make_lp(sz, sz);
-  set_verbose(lp, 1);
-  inf = get_infinite(lp);
-
-  for (i=0; i<sz; i++) {
-    set_lowbo(lp, i+1, -inf);
-    set_constr_type(lp, i+1, EQ);
-    tmp = MMC_CAR(lA);
-    for (j=0; j<sz; j++) {
-      set_mat(lp, i+1, j+1, mmc_prim_get_real(MMC_CAR(tmp)));
-      tmp = MMC_CDR(tmp);
-    }
-    set_rh(lp, i+1, mmc_prim_get_real(MMC_CAR(lB)));
-    lA = MMC_CDR(lA);
-    lB = MMC_CDR(lB);
-  }
-  while (MMC_NILHDR != MMC_GETHDR(ix)) {
-    if (MMC_UNTAGFIXNUM(MMC_CAR(ix)) != -1) set_int(lp, MMC_UNTAGFIXNUM(MMC_CAR(ix)), 1);
-    ix = MMC_CDR(ix);
-  }
-  info=solve(lp);
-  //print_lp(lp);
-  if (info==0 || info==1) get_ptr_variables(lp,&vres);
-  *res = mmc_mk_nil();
-  while (sz--) {
-    *res = mmc_mk_cons(mmc_mk_rcon(vres[sz]),*res);
-  }
-  delete_lp(lp);
-  return info;
 }
 #endif
 
@@ -2901,11 +2831,7 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
   FindClose(sh2);
   return ((LARGE_INTEGER*)&ftWrite1)->QuadPart - ((LARGE_INTEGER*)&ftWrite2)->QuadPart > 0 ? 1 : 0;
 #else
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat buf1, buf2;
-#else /* unix */
-  struct stat buf1, buf2;
-#endif
+  omc_stat_t buf1, buf2;
   if (omc_stat(file1, &buf1)) {
     const char *c_tokens[2]={strerror(errno),file1};
     c_add_message(NULL,85,
@@ -2949,13 +2875,12 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
   char buf1[8192],buf2[8192];
   FILE *f1,*f2;
   int i1,i2,totalread=0,error=0;
-#if !defined(_MSC_VER)
-  struct stat stbuf1;
-  struct stat stbuf2;
-  if (omc_stat(file1, &stbuf1)) return 0;
-  if (omc_stat(file2, &stbuf2)) return 0;
-  if (stbuf1.st_size != stbuf2.st_size) return 0;
-#endif
+  omc_stat_t stbuf1;
+  omc_stat_t stbuf2;
+
+  if (omc_stat(file1, &stbuf1) || omc_stat(file2, &stbuf2) || stbuf1.st_size != stbuf2.st_size)
+    return 0;
+
   f1 = omc_fopen(file1,"rb");
   if (f1 == NULL) {
     return 0;
@@ -3040,7 +2965,7 @@ typedef enum {
 
 int SystemImpl__stat(const char *filename, double *size, double *mtime, int *fileType)
 {
-  struct stat stats;
+  omc_stat_t stats;
   if (0 != omc_stat(filename, &stats)) {
     *size = 0;
     *mtime = 0;

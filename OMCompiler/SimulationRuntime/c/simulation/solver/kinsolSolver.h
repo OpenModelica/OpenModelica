@@ -38,6 +38,8 @@
 extern "C" {
 #endif
 
+#include "nonlinearSystem.h"
+#include "simulation_data.h"
 #include "sundials_error.h"
 #include "simulation_data.h"
 #include "util/simulation_options.h"
@@ -52,14 +54,6 @@ extern "C" {
 #define RETRY_MAX 5
 #define FTOL_WITH_LESS_ACCURACY 1.e-6
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
 /* readability */
 typedef enum initialMode {
   INITIAL_EXTRAPOLATION = 0,
@@ -72,18 +66,10 @@ typedef enum scalingMode {
   SCALING_JACOBIAN                     /* Scale jacobian */
 } scalingMode;
 
-typedef struct NLS_KINSOL_USERDATA {
-  DATA *data;
-  threadData_t *threadData;
-
-  int sysNumber;
-} NLS_KINSOL_USERDATA;
-
 typedef struct NLS_KINSOL_DATA {
   /* ### configuration  ### */
   NLS_LS linearSolverMethod;           /* specifies the method to solve the
                                           underlying linear problem */
-  int nonLinearSystemNumber;
   int kinsolStrategy;                  /* Strategy used to solve nonlinear systems. Has to be one
                                           of: KIN_NONE, KIN_LINESEARCH, KIN_FP, KIN_PICARD */
   int retries;                         /* Number of retries after failed solve of KINSOL */
@@ -109,7 +95,7 @@ typedef struct NLS_KINSOL_DATA {
 
   /* ### kinsol internal data */
   void *kinsolMemory;                  /* Internal memroy block for KINSOL */
-  NLS_KINSOL_USERDATA userData;        /* User data provided to KINSOL */
+  NLS_USERDATA* userData;        /* User data provided to KINSOL */
 
   /* linear solver data */
   SUNLinearSolver linSol;              /* Linear solver object used by KINSOL */
@@ -124,10 +110,9 @@ typedef struct NLS_KINSOL_DATA {
 
 } NLS_KINSOL_DATA;
 
-int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nonlinsys,
-                      NLS_LS linearSolverMethod);
-int nlsKinsolFree(void **solverData);
-int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber);
+NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData);
+void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData);
+modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData,  NONLINEAR_SYSTEM_DATA* nlsData);
 
 #ifdef __cplusplus
 };

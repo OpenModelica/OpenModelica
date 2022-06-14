@@ -172,11 +172,7 @@ static int hasDriveLetter(const char* uri)
 static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const char *uri, char buf[PATH_MAX], const char *origUri, const char *resourcesDir)
 {
   FILE_INFO info = omc_dummyFileInfo;
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat stat_buf;
-#else /* unix */
-  struct stat stat_buf;
-#endif
+  omc_stat_t stat_buf;
   size_t len, i, j = 0;
   int uriExists = 0==omc_stat(uri, &stat_buf);
   if (resourcesDir) {
@@ -294,11 +290,7 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
   const char *uri = MMC_STRINGDATA(uri_om);
   modelica_string dir;
   if (0==strncasecmp(uri, "modelica://", 11)) {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    struct _stat stat_buf;
-#else /* unix */
-    struct stat stat_buf;
-#endif
+    omc_stat_t stat_buf;
     uri += 11;
     getIdent(uri, buf, &uri);
     if (0 == *buf) {

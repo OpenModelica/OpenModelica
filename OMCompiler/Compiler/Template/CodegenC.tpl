@@ -165,18 +165,18 @@ end translateModel;
     extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes);
     extern const char* <%symbolName(modelNamePrefixStr,"relationDescription")%>(int i);
     extern void <%symbolName(modelNamePrefixStr,"function_initSample")%>(DATA *data, threadData_t *threadData);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacG_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacB_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacG_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacB_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
@@ -626,6 +626,7 @@ template simulationFile_nls(SimCode simCode)
     /* Non Linear Systems */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #include "util/jacobian_util.h"
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -895,6 +896,7 @@ template simulationFile_jac(SimCode simCode)
     /* Jacobians <%listLength(jacobianMatrixes)%> */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%fileNamePrefix%>_12jac.h"
+    #include "util/jacobian_util.h"
     <%functionAnalyticJacobians(jacobianMatrixes, modelNamePrefix(simCode))%>
 
     <%\n%>
@@ -1753,8 +1755,8 @@ template symJacDefinition(list<JacobianMatrix> JacobianMatrixes, String modelNam
     extern "C" {
     #endif
       #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%indexJacobian%>
-      int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-      int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+      int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+      int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
     #if defined(__cplusplus)
     }
     #endif
@@ -2333,11 +2335,11 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        <%auxFunction%>
        <%tmp%>
 
-       void residualFunc<%ls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)
+       void residualFunc<%ls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
        {
          TRACE_PUSH
-         DATA *data = (DATA*) ((void**)dataIn[0]);
-         threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+         DATA *data = userData->data;
+         threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%ls.index%>};
          <% if ls.partOfJac then
            'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
@@ -2353,9 +2355,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
@@ -2406,9 +2407,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
@@ -2474,11 +2474,11 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        <%auxFunction%>
        <%tmp%>
 
-       void residualFunc<%ls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)
+       void residualFunc<%ls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
        {
          TRACE_PUSH
-         DATA *data = (DATA*) ((void**)dataIn[0]);
-         threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+         DATA *data = userData->data;
+         threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%ls.index%>};
          <% if ls.partOfJac then
            'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
@@ -2494,9 +2494,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
@@ -2505,11 +2504,11 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        <%auxFunction2%>
        <%tmp2%>
 
-       void residualFunc<%at.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)
+       void residualFunc<%at.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
        {
          TRACE_PUSH
-         DATA *data = (DATA*) ((void**)dataIn[0]);
-         threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+         DATA *data = userData->data;
+         threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%at.index%>};
          <% if ls.partOfJac then
            'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
@@ -2525,9 +2524,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData2%>
@@ -2602,9 +2600,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
@@ -2632,9 +2629,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%vectorb2%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
        {
-         DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData2%>
@@ -2883,8 +2879,8 @@ end functionNonLinearResidualsMultiFile2;
 template getNLSPrototypes(Integer index)
 ::=
   <<
-  void residualFunc<%index%>(void** dataIn, const double* xloc, double* res, const int* iflag);
-  void initializeStaticDataNLS<%index%>(void *inData, threadData_t *threadData, void *inSystemData, modelica_boolean initSparsPattern);
+  void residualFunc<%index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag);
+  void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsPattern);
   void getIterationVarsNLS<%index%>(struct DATA *inData, double *array);
   >>
 end getNLSPrototypes;
@@ -2903,7 +2899,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -2916,7 +2912,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -2935,13 +2931,13 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
       let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName)
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -2965,13 +2961,13 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
       let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName)
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       let &prototypes += getNLSPrototypes(nls.index)
       <<
@@ -3046,9 +3042,9 @@ match system
         ;separator="\n")
     let residualFunctionHeader =
       if intEq(whichSet, 0) then
-        'void residualFunc<%nls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)'
+        'void residualFunc<%nls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)'
       else
-        'int residualFuncConstraints<%nls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)'
+        'int residualFuncConstraints<%nls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)'
     let returnValue = if intEq(whichSet, 1) then 'return 0;'
     <<
     <%innerNLSSystems%>
@@ -3059,8 +3055,8 @@ match system
     <%residualFunctionHeader%>
     {
       TRACE_PUSH
-      DATA *data = (DATA*) ((void**)dataIn[0]);
-      threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
+      DATA *data = userData->data;
+      threadData_t *threadData = userData->threadData;
       const int equationIndexes[2] = {1,<%nls.index%>};
       int i;<% if clockIndex then <<
       const int clockIndex = <%clockIndex%>;
@@ -3134,13 +3130,8 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
         <%colPtr%>
         <%rowIndex%>
         /* sparsity pattern available */
-        inSysData->isPatternAvailable = 'T';
-        inSysData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-        inSysData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
-        inSysData->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
-        inSysData->sparsePattern->numberOfNonZeros = <%sp_size_index%>;
-        inSysData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(unsigned int));
-        inSysData->sparsePattern->maxColors = <%maxColor%>;
+        inSysData->isPatternAvailable = 1;
+        inSysData->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
 
         /* write lead index of compressed sparse column */
         memcpy(inSysData->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
@@ -3158,9 +3149,10 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
    end match
 end generateStaticSparseData;
 
-template generateStaticInitialData(list<ComponentRef> crefs, String indexName, String systemType)
+template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   "Generates initial function for nonlinear loops."
 ::=
+  let systemType = 'NONLINEAR_SYSTEM_DATA'
   let bodyStaticData = (crefs |> cr hasindex i0 =>
     <<
     /* static nls data for <%crefStrNoUnderscore(cr)%> */
@@ -3172,10 +3164,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   <<
 
   OMC_DISABLE_OPT
-  void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData, modelica_boolean initSparsPattern)
+  void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsPattern)
   {
-    DATA* data = (DATA*) inData;
-    <%systemType%>* sysData = (<%systemType%>*) inSystemData;
     int i=0;
     <%bodyStaticData%>
     /* initial sparse pattern */
@@ -4511,13 +4501,7 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
     daeModeData->algIndexes = (int*) malloc(sizeof(int)*<%nAlgVars%>);
     memcpy(daeModeData->algIndexes, algIndexes, <%nAlgVars%>*sizeof(int));
     /* intialize sparse pattern */
-    daeModeData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-
-    daeModeData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeCols%>+1)*sizeof(int));
-    daeModeData->sparsePattern->index = (unsigned int*) malloc(<%sizeNNZ%>*sizeof(int));
-    daeModeData->sparsePattern->numberOfNonZeros = <%sizeNNZ%>;
-    daeModeData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeCols%>*sizeof(int));
-    daeModeData->sparsePattern->maxColors = <%maxColorStr%>;
+    daeModeData->sparsePattern = allocSparsePattern(<%sizeCols%>, <%sizeNNZ%>, <%maxColor%>);
 
     /* write lead index of compressed sparse column */
     memcpy(daeModeData->sparsePattern->leadindex, colPtrIndex, (1+<%sizeCols%>)*sizeof(int));
@@ -5241,7 +5225,7 @@ template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimV
 match sparsepattern
   case {} then
     <<
-    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
     {
       TRACE_PUSH
       TRACE_POP
@@ -5263,27 +5247,15 @@ match sparsepattern
       let index_ = listLength(seedVars)
       <<
       OMC_DISABLE_OPT
-      int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
+      int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
       {
         TRACE_PUSH
-        DATA* data = ((DATA*)inData);
         <%colPtr%>
         <%rowIndex%>
         int i = 0;
 
-        jacobian->sizeCols = <%index_%>;
-        jacobian->sizeRows = <%indexColumn%>;
-        jacobian->sizeTmpVars = <%tmpvarsSize%>;
-        jacobian->seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
-        jacobian->resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
-        jacobian->tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
-        jacobian->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-        jacobian->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
-        jacobian->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
-        jacobian->sparsePattern->numberOfNonZeros = <%sp_size_index%>;
-        jacobian->sparsePattern->colorCols = (unsigned int*) malloc(<%index_%>*sizeof(unsigned int));
-        jacobian->sparsePattern->maxColors = <%maxColor%>;
-        jacobian->constantEqns = <%constantEqns%>;
+        initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
+        jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
 
         /* write lead index of compressed sparse column */
         memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
@@ -5311,7 +5283,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
   match nRows
   case "0" then
     <<
-    int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
+    int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
     {
       TRACE_PUSH
       TRACE_POP
@@ -5322,7 +5294,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
     match seedVars
      case {} then
         <<
-        int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
+        int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
         {
           TRACE_PUSH
           TRACE_POP
@@ -5348,11 +5320,10 @@ template generateConstantEqns(list<SimEqSystem> constantEqns, String matrixName,
 ::=
     <<
     OMC_DISABLE_OPT
-    int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_constantEqns(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
+    int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_constantEqns(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
     {
       TRACE_PUSH
 
-      DATA* data = ((DATA*)inData);
       int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
 
       <%(constantEqns |> eq => equation_callJacobian(eq, modelNamePrefix); separator="")%>
@@ -5378,11 +5349,10 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
 
   <%constantEqns2%>
 
-  int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(void* inData, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
+  int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
   {
     TRACE_PUSH
 
-    DATA* data = ((DATA*)inData);
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
     <%(jacEquations |> eq => equation_callJacobian(eq, modelNamePrefix); separator="")%>
     TRACE_POP

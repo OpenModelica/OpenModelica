@@ -39,7 +39,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": \"Real\",
 //       \"modifier\": \" = 3\",
 //       \"value\": {
-//         \"binding\": \"3.0\"
+//         \"binding\": 3
 //       },
 //       \"prefixes\": {
 //         \"public\": true,

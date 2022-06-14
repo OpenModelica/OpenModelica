@@ -841,21 +841,21 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
  * @param msg         Error Message.
  * @param userData    Pointer to user data given with KINSetErrHandlerFn.
  */
-void kinsolErrorHandlerFunction(int errorCode, const char *module,
-                                const char *function, char *msg,
-                                void *userData) {
+void kinsolErrorHandlerFunction(int errorCode, const char* module,
+                                const char *function, char* msg,
+                                void* userData) {
   /* Variables */
-  NLS_KINSOL_DATA *kinsolData;
-  DATA *data;
-  int sysNumber;
+  NLS_KINSOL_DATA* kinsolData;
+  DATA* data;
+  NONLINEAR_SYSTEM_DATA* nlsData;
   long eqSystemNumber;
 
   if (userData != NULL) {
     kinsolData = (NLS_KINSOL_DATA *)userData;
-    data = kinsolData->userData.data;
-    sysNumber = kinsolData->userData.sysNumber;
-    if (sysNumber > 0) {
-      eqSystemNumber = data->simulationInfo->nonlinearSystemData[sysNumber].equationIndex;
+    data = kinsolData->userData->data;
+    nlsData = kinsolData->userData->nlsData;
+    if (nlsData) {
+      eqSystemNumber = nlsData->equationIndex;
     } else {
       eqSystemNumber = -1;
     }

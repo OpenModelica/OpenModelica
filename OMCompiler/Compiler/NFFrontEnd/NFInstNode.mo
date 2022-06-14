@@ -81,6 +81,7 @@ uniontype InstNodeType
 
   record TOP_SCOPE
     "The unnamed class containing all the top-level classes."
+    InstNode annotationScope;
     UnorderedMap<String, InstNode> generatedInners;
   end TOP_SCOPE;
 
@@ -105,6 +106,12 @@ uniontype InstNodeType
   record GENERATED_INNER
     "A generated inner element due to a missing outer."
   end GENERATED_INNER;
+
+  record IMPLICIT_SCOPE
+    "An implicit scope that's ignored when e.g. constructing a scope path. Not
+     used by implicit scope nodes since those have no node type (they're
+     implicitly implicit), but by e.g. the annotation scope."
+  end IMPLICIT_SCOPE;
 end InstNodeType;
 
 constant Integer NUMBER_OF_CACHES = 2;
@@ -701,6 +708,16 @@ uniontype InstNode
     end match;
   end topScope;
 
+  function annotationScope
+    input InstNode node;
+    output InstNode annScope;
+  algorithm
+    annScope := match node
+      case CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE(annotationScope = annScope)) then annScope;
+      else annotationScope(parentScope(node));
+    end match;
+  end annotationScope;
+
   function isTopScope
     input InstNode node;
     output Boolean res;
@@ -1044,6 +1061,8 @@ uniontype InstNode
             accumScopes;
       case InstNodeType.REDECLARED_CLASS()
         then scopeList(ty.parent, includeRoot, getDerivedNode(clsNode) :: accumScopes);
+      case InstNodeType.IMPLICIT_SCOPE()
+        then scopeList(parent(clsNode), includeRoot, accumScopes);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
@@ -1115,6 +1134,8 @@ uniontype InstNode
             accumPath;
       case InstNodeType.REDECLARED_CLASS()
         then scopePath2(ty.parent, includeRoot, Absyn.QUALIFIED(className(node), accumPath));
+      case InstNodeType.IMPLICIT_SCOPE()
+        then scopePath2(classParent(node), includeRoot, accumPath);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());

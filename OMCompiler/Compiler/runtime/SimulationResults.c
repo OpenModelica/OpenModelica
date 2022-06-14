@@ -14,10 +14,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#define stat _stat
-#endif
-
 #if defined(_MSC_VER)
 #define fmax(x, y) ((x>y)?x:y)
 #define fmin(x, y) ((x<y)?x:y)
@@ -64,11 +60,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   PlotFormat format;
   int len = strlen(filename);
   const char *msg[] = {"",""};
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  struct _stat buf;
-#else
-  struct stat buf = {0} /* Zero this or valgrind complains */;
-#endif
+  omc_stat_t buf = {0} /* Zero this or valgrind complains */;
 
   if (simresglob->curFileName && 0==strcmp(filename,simresglob->curFileName)) {
     /* Also check that the file was not modified */

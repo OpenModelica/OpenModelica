@@ -3058,16 +3058,9 @@ algorithm
       then
         ValuesUtil.makeTuple({Values.BOOL(false),Values.STRING("")});
 
-    case ("solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=1 /*dgesv*/),Values.ARRAY(valueLst={Values.INTEGER(-1)})})
+    case ("solveLinearSystem",{Values.ARRAY(valueLst=vals),v})
       equation
         (realVals,i) = System.dgesv(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
-        v = ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
-      then
-        Values.TUPLE({v,Values.INTEGER(i)});
-
-    case ("solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=2 /*lpsolve55*/),Values.ARRAY(valueLst=vals2)})
-      equation
-        (realVals,i) = System.lpsolve55(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v),List.map(vals2,ValuesUtil.valueInteger));
         v = ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
       then
         Values.TUPLE({v,Values.INTEGER(i)});
@@ -3365,30 +3358,26 @@ public function runFrontEndWorkNF
   output NFFlatten.FunctionTree functions;
   output String flatString;
 protected
-  Absyn.Program placement_p;
-  SCode.Program builtin_p, scode_p, graphic_p;
+  SCode.Program builtin_p, scode_p, annotation_p;
   Boolean b;
 algorithm
   (_, builtin_p) := FBuiltin.getInitialFunctions();
   scode_p := listAppend(builtin_p, SymbolTable.getSCode());
   ExecStat.execStat("FrontEnd - Absyn->SCode");
 
-  // add also the graphics annotations if we are using the NF_API
-  if Flags.isSet(Flags.NF_API) then
-    placement_p := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
-    graphic_p := AbsynToSCode.translateAbsyn2SCode(placement_p);
-    scode_p := listAppend(graphic_p, scode_p);
-  end if;
+  annotation_p := AbsynToSCode.translateAbsyn2SCode(
+    InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
 
   // make sure we don't run the default instantiateModel using -d=nfAPI
   // only the stuff going via NFApi.mo should have this flag activated
   b := FlagsUtil.set(Flags.NF_API, false);
   try
-    (flatModel, functions, flatString) := NFInst.instClassInProgram(className, scode_p, dumpFlat);
-  FlagsUtil.set(Flags.NF_API, b);
+    (flatModel, functions, flatString) :=
+      NFInst.instClassInProgram(className, scode_p, annotation_p, dumpFlat);
+    FlagsUtil.set(Flags.NF_API, b);
   else
     FlagsUtil.set(Flags.NF_API, b);
-  fail();
+    fail();
   end try;
 end runFrontEndWorkNF;
 
