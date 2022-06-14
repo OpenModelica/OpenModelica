@@ -83,7 +83,6 @@ typedef struct DATA_GBODEF{
   void* nlsSolverData;
 
   double *y, *yt, *yOld, *y1, *f;
-  double *yStart, *yEnd, *kStart, *kEnd;
   double *yLeft, *kLeft, *yRight, *kRight;
   double *Jf;
   double *k, *res_const;

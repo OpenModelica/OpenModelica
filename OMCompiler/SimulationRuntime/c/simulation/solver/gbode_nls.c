@@ -118,7 +118,7 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
 void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
   for(int i=0; i<nonlinsys->size; i++) {
     // Get the nominal values of the states, the non-linear system has size stages*nStates
-    int ii = nonlinsys->size % data->modelData->nStates;
+    int ii = i % data->modelData->nStates;
     nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[ii].attribute.nominal), 1e-32);
     nonlinsys->min[i]     = DBL_MIN;
     nonlinsys->max[i]     = DBL_MAX;
@@ -584,9 +584,9 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
   {
     /* Evaluate ODE for each stage_ */
     sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
-    memcpy(sData->realVars, &xloc[stage_*nStates], nStates*sizeof(double));
+    memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
     gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-    memcpy(&gbData->k[stage_*nStates], fODE, nStates*sizeof(double));
+    memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
   }
 
   // Calculate residuum for the full implicit RK method based on stages and A matrix
@@ -609,7 +609,6 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     }
     messageClose(LOG_M_NLS);
   }
-
 
   return;
 }

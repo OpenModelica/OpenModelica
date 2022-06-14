@@ -61,12 +61,10 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   modelica_boolean solved = FALSE;
 
   /* Predictor Schritt */
-  for (i = 0; i < nStates; i++)
-  {
+  for (i = 0; i < nStates; i++) {
     // BB ToDo: check the formula with respect to gbData->k[]
     gbData->yt[i] = 0;
-    for (stage_ = 0; stage_ < nStages-1; stage_++)
-    {
+    for (stage_ = 0; stage_ < nStages-1; stage_++) {
       gbData->yt[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
                         gbData->kv[stage_ * nStates + i] * gbData->tableau->bt[stage_] *  gbData->stepSize;
     }
@@ -76,12 +74,10 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
 
   /* Constant part of the multistep method */
-  for (i = 0; i < nStates; i++)
-  {
+  for (i = 0; i < nStates; i++) {
     // BB ToDo: check the formula with respect to gbData->k[]
     gbData->res_const[i] = 0;
-    for (stage_ = 0; stage_ < nStages-1; stage_++)
-    {
+    for (stage_ = 0; stage_ < nStages-1; stage_++) {
       gbData->res_const[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
                                gbData->kv[stage_ * nStates + i] * gbData->tableau->b[stage_] *  gbData->stepSize;
     }
@@ -126,12 +122,10 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(gbData->kv + stage_ * nStates, fODE, nStates*sizeof(double));
 
   /* Corrector Schritt */
-  for (i = 0; i < nStates; i++)
-  {
+  for (i = 0; i < nStates; i++) {
     // BB ToDo: check the formula with respect to gbData->k[]
     gbData->y[i] = 0;
-    for (stage_ = 0; stage_ < nStages-1; stage_++)
-    {
+    for (stage_ = 0; stage_ < nStages-1; stage_++) {
       gbData->y[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
                        gbData->kv[stage_ * nStates + i] * gbData->tableau->b[stage_] *  gbData->stepSize;
     }
@@ -375,6 +369,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
+
   for (i=0; i<nStates; i++)
   {
     gbData->y[i]  = gbData->yOld[i];
@@ -385,12 +380,6 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
     }
   }
-  memcpy(gbData->x + nStages * nStates, gbData->y, nStates*sizeof(double));
-
-  sData->timeValue = gbData->time + gbData->stepSize;
-  memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-  memcpy(gbData->k + nStages* nStates, fODE, nStates*sizeof(double));
 
   return 0;
 }
@@ -604,6 +593,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
   if (!solved) {
+    gbData->convergenceFailures++;
     errorStreamPrint(LOG_STDOUT, 0, "gbode error: Failed to solve NLS in full_implicit_RK");
     return -1;
   }
@@ -611,12 +601,10 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
-  for (i=0; i<nStates; i++)
-  {
+  for (i=0; i<nStates; i++) {
     gbData->y[i]  = gbData->yOld[i];
     gbData->yt[i] = gbData->yOld[i];
-    for (stage_=0; stage_<nStages; stage_++)
-    {
+    for (stage_=0; stage_<nStages; stage_++) {
       gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
       gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
     }
@@ -704,16 +692,18 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   lastStepSize = gbData->lastStepSize;
   p = gbData->tableau->order_b;
   // Store relevant part of the ring buffer, which is used for extrapolation
-  // for (i=0; i<2; i++) {
-  //   gbData->tr[i] = gbData->tv[i];
-  //   memcpy(gbData->yr + i * nStates, gbData->yv + i * nStates, nStates * sizeof(double));
-  //   memcpy(gbData->kr + i * nStates, gbData->kv + i * nStates, nStates * sizeof(double));
-  // }
+  for (i=0; i<2; i++) {
+    gbData->tr[i] = gbData->tv[i];
+    memcpy(gbData->yr + i * nStates, gbData->yv + i * nStates, nStates * sizeof(double));
+    memcpy(gbData->kr + i * nStates, gbData->kv + i * nStates, nStates * sizeof(double));
+  }
 
   gbData->stepSize = gbData->stepSize/2;
   infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (first 1/2 step)");
   step_info = gbData->step_fun(data, threadData, solverInfo);
   if (step_info != 0) {
+    gbData->convergenceFailures++;
+    errorStreamPrint(LOG_STDOUT, 0, "Failure: gbode Richardson extrapolation (first half step)");
     return -1;
   }
 
@@ -723,19 +713,21 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   // prepare for the extrapolation
   // BB ToDo; only necessary for implicit schemes
-  // sData->timeValue = gbData->time;
-  // memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-  // gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-  // gbData->tv[1] = gbData->tv[0];
-  // memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
-  // memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
-  // gbData->tv[0] = gbData->time;
-  // memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
-  // memcpy(gbData->kv, fODE, nStates * sizeof(double));
+  sData->timeValue = gbData->time;
+  memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
+  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+  gbData->tv[1] = gbData->tv[0];
+  memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
+  memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
+  gbData->tv[0] = gbData->time;
+  memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
+  memcpy(gbData->kv, fODE, nStates * sizeof(double));
 
   infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (second 1/2 step)");
   step_info = gbData->step_fun(data, threadData, solverInfo);
   if (step_info != 0) {
+    gbData->convergenceFailures++;
+    errorStreamPrint(LOG_STDOUT, 0, "Failure: gbode Richardson extrapolation (second half step)");
     return -1;
   }
 
@@ -760,13 +752,18 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(gbData->yOld, gbData->yLeft, nStates * sizeof(double));
   infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (full step)");
   step_info = gbData->step_fun(data, threadData, solverInfo);
+  if (step_info != 0) {
+    gbData->convergenceFailures++;
+    errorStreamPrint(LOG_STDOUT, 0, "Failure: gbode Richardson extrapolation (full step)");
+    return -1;
+  }
 
   // // Restore ring buffer
-  // for (i=0; i<2; i++) {
-  //   gbData->tv[i] = gbData->tr[i];
-  //   memcpy(gbData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
-  //   memcpy(gbData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
-  // }
+  for (i=0; i<2; i++) {
+    gbData->tv[i] = gbData->tr[i];
+    memcpy(gbData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
+    memcpy(gbData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
+  }
 
 
   // Extrapolate values based on order of the scheme

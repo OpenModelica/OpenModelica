@@ -704,7 +704,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   int i, ii, j, jj, l, ll, r, rr;
   int integrator_step_info;
 
-  int nStates = data->modelData->nStates;
+  int nStates = gbData->nStates;
   int nFastStates = gbData->nFastStates;
   int nStages = gbfData->tableau->nStages;
 
@@ -724,7 +724,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbfData->convergenceFailures = 0;
 
     gbfData->time = gbData->time;
-    gbfData->stepSize = gbData->lastStepSize/2;
+    gbfData->stepSize = gbData->lastStepSize;
     // BB ToDO: Copy only fast states!!
     memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * gbData->nStates);
     memcpy(gbfData->yRight, gbData->yLeft, sizeof(double) * gbData->nStates);
@@ -740,9 +740,14 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     memcpy(gbfData->yRight, gbData->yLeft, sizeof(double) * gbData->nStates);
     memcpy(gbfData->kRight, gbData->kLeft, sizeof(double) * gbData->nStates);
   }
-  gbfData->nStates = gbData->nStates;
   gbfData->nFastStates = gbData->nFastStates;
   gbfData->fastStates  = gbData->fastStates;
+
+  if (gbfData->nFastStates_old != gbData->nFastStates)
+  {
+    gbfData->nFastStates_old = gbData->nFastStates;
+    fastStateChange = TRUE;
+  }
 
   for (int k = 0; k < nFastStates; k++)
   {
@@ -758,11 +763,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
   }
 
-  if (gbfData->nFastStates_old != gbData->nFastStates)
-  {
-    gbfData->nFastStates_old = gbData->nFastStates;
-    fastStateChange = TRUE;
-  }
 
   if (!gbfData->isExplicit)
   {
@@ -871,8 +871,9 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   while (gbfData->time < innerTargetTime) {
 
     // Don't exceed simulation stop time
-    if (gbfData->time + gbfData->stepSize > stopTime)
+    if (gbfData->time + gbfData->stepSize > stopTime) {
       gbfData->stepSize = stopTime - gbfData->time;
+    }
 
     // BB ToDo: Dont disturb the inner step size control!!
     if (gbfData->time + gbfData->stepSize > gbData->timeRight) {
@@ -880,7 +881,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
 
     // store left hand data for later interpolation
-    gbfData->timeLeft = gbfData->time;
+    gbfData->timeLeft = gbfData->timeRight;
     memcpy(gbfData->yLeft, gbfData->yRight, nStates * sizeof(double));
     memcpy(gbfData->kLeft, gbfData->kRight, nStates * sizeof(double));
 
@@ -1250,16 +1251,12 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->nSlowStates = 0;
       gbData->err_slow = 0;
       gbData->err_fast = 0;
-      for (i = 0; i < gbData->nStates; i++)
-      {
-        if (gbData->err[i] >= 1 || gbData->percentage == 1)
-        {
+      for (i = 0; i < gbData->nStates; i++) {
+        if (gbData->err[i] >= 1 || gbData->percentage == 1) {
           gbData->fastStates[gbData->nFastStates] = i;
           gbData->nFastStates++;
           gbData->err_fast = fmax(gbData->err_fast, gbData->err[i]);
-        }
-        else
-        {
+        } else {
           gbData->slowStates[gbData->nSlowStates] = i;
           gbData->nSlowStates++;
           gbData->err_slow = fmax(gbData->err_slow, gbData->err[i]);
@@ -1319,7 +1316,6 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
           memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
           memcpy(gbData->kRight, gbData->gbfData->kRight, nStates * sizeof(double));
-          memcpy(gbData->err, gbData->gbfData->err, nStates * sizeof(double));
         }
         err = fmax(gbData->err_slow, gbData->err_fast);
       }
@@ -1400,9 +1396,9 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
 
     /* step is accepted and yOld needs to be updated */
-    memcpy(gbData->yOld, gbData->y, data->modelData->nStates * sizeof(double));
+    memcpy(gbData->yOld, gbData->y, gbData->nStates * sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
-                    gbData->time - gbData->lastStepSize, gbData->time, gbData->errValues[0], gbData->stepSize);
+                    gbData->time - gbData->lastStepSize, gbData->time, err, gbData->stepSize);
     /* emit step, if integratorSteps is selected */
     if (solverInfo->integratorSteps) {
       sData->timeValue = gbData->time;
@@ -1572,6 +1568,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
             // Try smaller steps, if possible.
             errorStreamPrint(LOG_STDOUT, 0, "Try half of the step size!");
             gbData->stepSize = gbData->stepSize / 2.;
+            err = 100;
             continue;
           } else {
             errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted!");
@@ -1582,7 +1579,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
       // calculate corresponding values for error estimator and step size control (infinity norm)
       for (i = 0, err=0; i < nStates; i++) {
-        gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) + Atol;
+        gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yOld[i])) + Atol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
         err = fmax(err, gbData->err[i]);
