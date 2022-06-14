@@ -210,9 +210,9 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
 
 static const double REAL_MIN = -DBL_MAX;
 static const double REAL_MAX = DBL_MAX;
-static const double INTEGER_MIN = (((modelica_integer)-1)<<(8*sizeof(modelica_integer)-1));
+static const double INTEGER_MIN = (double)MODELICA_INT_MIN;
 /* Avoid integer overflow */
-static const double INTEGER_MAX = -((((modelica_integer)-1)<<(8*sizeof(modelica_integer)-1))+1);
+static const double INTEGER_MAX = (double)MODELICA_INT_MAX;
 
 /* reads double value from a string */
 static void read_value_real(const char *s, modelica_real* res, modelica_real default_value);
