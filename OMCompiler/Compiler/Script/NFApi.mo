@@ -175,8 +175,8 @@ algorithm
             (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
-          exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
-          (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
+          exp := NFInst.instExp(absynExp, inst_cls, context, info);
+          (exp, ty, var) := Typing.typeExp(exp, context, info);
           // exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
@@ -219,7 +219,7 @@ algorithm
             try
               {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
               exp := NFInst.instExp(absynExp, inst_cls, context, info);
-              (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
+              (exp, ty, var) := Typing.typeExp(exp, context, info);
               save := exp;
               try
                 exp := NFCeval.evalExp(save);
@@ -400,8 +400,8 @@ algorithm
             (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
-          exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
-          (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
+          exp := NFInst.instExp(absynExp, inst_cls, context, info);
+          (exp, ty, var) := Typing.typeExp(exp, context, info);
           // exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
