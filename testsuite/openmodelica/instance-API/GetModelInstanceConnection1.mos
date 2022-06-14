@@ -43,45 +43,21 @@ getModelInstance(M, prettyPrint = true);
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
+//
 //                 }
 //               },
 //               \"f\": {
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"flow\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
+//                   \"connector\": \"flow\"
 //                 }
 //               }
 //             }
 //           },
 //           \"modifier\": \"\",
 //           \"prefixes\": {
-//             \"public\": true,
-//             \"final\": false,
-//             \"inner\": false,
-//             \"outer\": false,
-//             \"replaceable\": false,
-//             \"redeclare\": false,
-//             \"connector\": \"\",
-//             \"variability\": \"\",
-//             \"direction\": \"\"
+//
 //           }
 //         },
 //         \"c2\": {
@@ -92,45 +68,21 @@ getModelInstance(M, prettyPrint = true);
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
+//
 //                 }
 //               },
 //               \"f\": {
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"flow\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
+//                   \"connector\": \"flow\"
 //                 }
 //               }
 //             }
 //           },
 //           \"modifier\": \"\",
 //           \"prefixes\": {
-//             \"public\": true,
-//             \"final\": false,
-//             \"inner\": false,
-//             \"outer\": false,
-//             \"replaceable\": false,
-//             \"redeclare\": false,
-//             \"connector\": \"\",
-//             \"variability\": \"\",
-//             \"direction\": \"\"
+//
 //           }
 //         }
 //       }
@@ -145,45 +97,21 @@ getModelInstance(M, prettyPrint = true);
 //             \"type\": \"Real\",
 //             \"modifier\": \"\",
 //             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
+//
 //             }
 //           },
 //           \"f\": {
 //             \"type\": \"Real\",
 //             \"modifier\": \"\",
 //             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"flow\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
+//               \"connector\": \"flow\"
 //             }
 //           }
 //         }
 //       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     }
 //   },

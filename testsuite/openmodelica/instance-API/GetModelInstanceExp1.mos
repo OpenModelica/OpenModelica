@@ -31,15 +31,7 @@ getModelInstance(M, prettyPrint = true);
 //         \"binding\": 2
 //       },
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     },
 //     \"a\": {
@@ -65,30 +57,14 @@ getModelInstance(M, prettyPrint = true);
 //               ]
 //             },
 //             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
+//
 //             }
 //           }
 //         }
 //       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     },
 //     \"y\": {
@@ -111,15 +87,7 @@ getModelInstance(M, prettyPrint = true);
 //         }
 //       },
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     }
 //   }

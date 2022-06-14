@@ -1149,16 +1149,47 @@ function dumpJSONAttributes
   input SCode.Attributes attrs;
   input SCode.Prefixes prefs;
   output JSON json = JSON.emptyObject();
+protected
+  String s;
 algorithm
-  json := JSON.addPair("public", JSON.makeBoolean(SCodeUtil.visibilityBool(prefs.visibility)), json);
-  json := JSON.addPair("final", JSON.makeBoolean(SCodeUtil.finalBool(prefs.finalPrefix)), json);
-  json := JSON.addPair("inner", JSON.makeBoolean(AbsynUtil.isInner(prefs.innerOuter)), json);
-  json := JSON.addPair("outer", JSON.makeBoolean(AbsynUtil.isOuter(prefs.innerOuter)), json);
-  json := JSON.addPair("replaceable", JSON.makeBoolean(SCodeUtil.replaceableBool(prefs.replaceablePrefix)), json);
-  json := JSON.addPair("redeclare", JSON.makeBoolean(SCodeUtil.redeclareBool(prefs.redeclarePrefix)), json);
-  json := JSON.addPair("connector", JSON.makeString(SCodeDump.connectorTypeStr(attrs.connectorType)), json);
-  json := JSON.addPair("variability", JSON.makeString(SCodeDump.unparseVariability(attrs.variability)), json);
-  json := JSON.addPair("direction", JSON.makeString(Dump.unparseDirectionSymbolStr(attrs.direction)), json);
+  if not SCodeUtil.visibilityBool(prefs.visibility) then
+    json := JSON.addPair("public", JSON.makeBoolean(false), json);
+  end if;
+
+  if SCodeUtil.finalBool(prefs.finalPrefix) then
+    json := JSON.addPair("final", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isInner(prefs.innerOuter) then
+    json := JSON.addPair("inner", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isOuter(prefs.innerOuter) then
+    json := JSON.addPair("outer", JSON.makeBoolean(true), json);
+  end if;
+
+  if SCodeUtil.replaceableBool(prefs.replaceablePrefix) then
+    json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
+  end if;
+
+  if SCodeUtil.redeclareBool(prefs.redeclarePrefix) then
+    json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
+  end if;
+
+  s := SCodeDump.connectorTypeStr(attrs.connectorType);
+  if not stringEmpty(s) then
+    json := JSON.addPair("connector", JSON.makeString(s), json);
+  end if;
+
+  s := SCodeDump.unparseVariability(attrs.variability);
+  if not stringEmpty(s) then
+    json := JSON.addPair("variability", JSON.makeString(s), json);
+  end if;
+
+  s := Dump.unparseDirectionSymbolStr(attrs.direction);
+  if not stringEmpty(s) then
+    json := JSON.addPair("direction", JSON.makeString(s), json);
+  end if;
 end dumpJSONAttributes;
 
 function dumpJSONCommentOpt
