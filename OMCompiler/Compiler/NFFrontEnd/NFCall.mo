@@ -47,7 +47,6 @@ import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
 import Component = NFComponent;
 import ComponentRef = NFComponentRef;
-import Config;
 import Dimension = NFDimension;
 import ErrorExt;
 import EvalFunction = NFEvalFunction;
@@ -2016,7 +2015,7 @@ protected
       (args, named_args) := instArgs(functionArgs, scope, context, info);
     else
       // didn't work, is this DynamicSelect dynamic part?! #5631
-      if Config.getGraphicsExpMode() and stringEq(name, "DynamicSelect") then
+      if InstContext.inAnnotation(context) and stringEq(name, "DynamicSelect") then
         // return just the first part of DynamicSelect
         callExp := match functionArgs
            case Absyn.FUNCTIONARGS() then

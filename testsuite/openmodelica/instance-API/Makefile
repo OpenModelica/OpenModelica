@@ -2,6 +2,7 @@ TEST = ../../rtest -v
 
 TESTFILES = \
 GetModelInstanceAnnotation1.mos \
+GetModelInstanceAnnotation2.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceComment1.mos \
 GetModelInstanceConnection1.mos \
