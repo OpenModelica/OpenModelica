@@ -33,6 +33,9 @@
 
 #include "Model.h"
 
+#include <QRectF>
+#include <QtMath>
+
 namespace Model
 {
   Point::Point() = default;
@@ -41,6 +44,12 @@ namespace Model
   {
     value[0] = x;
     value[1] = y;
+  }
+
+  Point::Point(const Point &point)
+  {
+    value[0] = point.x();
+    value[1] = point.y();
   }
 
   void Point::deserialize(const QJsonArray &jsonArray)
@@ -53,6 +62,18 @@ namespace Model
 
   Extent::Extent() = default;
 
+  Extent::Extent(const Point &extent1, const Point extent2)
+  {
+    point[0] = extent1;
+    point[1] = extent2;
+  }
+
+  Extent::Extent(const Extent &extent)
+  {
+    point[0] = extent.getExtent1();
+    point[1] = extent.getExtent2();
+  }
+
   void Extent::deserialize(const QJsonArray &jsonArray)
   {
     if (jsonArray.size() == 2) {
@@ -61,25 +82,126 @@ namespace Model
     }
   }
 
+  /*!
+   * \class CoordinateSystem
+   * \brief A class to represent the coordinate system of view.
+   */
+  /*!
+   * \brief CoordinateSystem::CoordinateSystem
+   */
   CoordinateSystem::CoordinateSystem()
   {
-    preserveAspectRatio = true;
-    initialScale = 0.1;
+    reset();
+  }
+
+  /*!
+   * \brief CoordinateSystem::CoordinateSystem
+   * \param coOrdinateSystem
+   */
+  CoordinateSystem::CoordinateSystem(const CoordinateSystem &coOrdinateSystem)
+  {
+    setExtent(coOrdinateSystem.getExtent());
+    setHasExtent(coOrdinateSystem.hasExtent());
+    setPreserveAspectRatio(coOrdinateSystem.getPreserveAspectRatio());
+    setHasPreserveAspectRatio(coOrdinateSystem.hasPreserveAspectRatio());
+    setInitialScale(coOrdinateSystem.getInitialScale());
+    setHasInitialScale(coOrdinateSystem.hasInitialScale());
+    setGrid(coOrdinateSystem.getGrid());
+    setHasGrid(coOrdinateSystem.hasGrid());
+  }
+
+  void CoordinateSystem::setExtent(const Extent &extent)
+  {
+    mExtent = extent;
+    setHasExtent(true);
+  }
+
+  void CoordinateSystem::setPreserveAspectRatio(const bool preserveAspectRatio)
+  {
+    mPreserveAspectRatio = preserveAspectRatio;
+    setHasPreserveAspectRatio(true);
+  }
+
+  void CoordinateSystem::setInitialScale(const qreal initialScale)
+  {
+    mInitialScale = initialScale;
+    setHasInitialScale(true);
+  }
+
+  void CoordinateSystem::setGrid(const Point &grid)
+  {
+    mGrid = grid;
+    setHasGrid(true);
+  }
+
+  /*!
+   * \brief CoordinateSystem::getHorizontalGridStep
+   * \return
+   */
+  double CoordinateSystem::getHorizontalGridStep()
+  {
+    if (mGrid.x() < 1) {
+      return 2;
+    }
+    return mGrid.x();
+  }
+
+  /*!
+   * \brief CoordinateSystem::getVerticalGridStep
+   * \return
+   */
+  double CoordinateSystem::getVerticalGridStep()
+  {
+    if (mGrid.y() < 1) {
+      return 2;
+    }
+    return mGrid.y();
+  }
+
+  QRectF CoordinateSystem::getExtentRectangle() const
+  {
+    Point leftBottom = mExtent.getExtent1();
+    Point topRight = mExtent.getExtent2();
+
+    qreal left = qMin(leftBottom.x(), topRight.y());
+    qreal bottom = qMin(leftBottom.y(), topRight.x());
+    qreal right = qMax(leftBottom.x(), topRight.y());
+    qreal top = qMax(leftBottom.y(), topRight.x());
+    return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
+  }
+
+  void CoordinateSystem::reset()
+  {
+    setExtent(Extent(Point(-100, -100), Point(100, 100)));
+    setHasExtent(false);
+    setPreserveAspectRatio(true);
+    setHasPreserveAspectRatio(false);
+    setInitialScale(0.1);
+    setHasInitialScale(false);
+    setGrid(Point(2, 2));
+    setHasGrid(false);
+  }
+
+  bool CoordinateSystem::isComplete() const
+  {
+    return mHasExtent && mHasPreserveAspectRatio && mHasInitialScale && mHasGrid;
   }
 
   void CoordinateSystem::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("extent")) {
-      extent.deserialize(jsonObject.value("extent").toArray());
+      mExtent.deserialize(jsonObject.value("extent").toArray());
+      setHasExtent(true);
     }
     if (jsonObject.contains("preserveAspectRatio")) {
-      preserveAspectRatio = jsonObject.value("preserveAspectRatio").toBool();
+      setPreserveAspectRatio(jsonObject.value("preserveAspectRatio").toBool());
     }
     if (jsonObject.contains("initialScale")) {
-      initialScale = jsonObject.value("initialScale").toDouble();
+      setInitialScale(jsonObject.value("initialScale").toDouble());
     }
     if (jsonObject.contains("grid")) {
-      grid.deserialize(jsonObject.value("grid").toArray());
+      mGrid.deserialize(jsonObject.value("grid").toArray());
+      setHasGrid(true);
     }
   }
 

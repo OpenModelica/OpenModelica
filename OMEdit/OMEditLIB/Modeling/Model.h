@@ -44,9 +44,12 @@ namespace Model
   public:
     Point();
     Point(double x, double y);
+    Point(const Point &point);
     void deserialize(const QJsonArray &jsonArray);
     double x() const {return value[0];}
     double y() const {return value[1];}
+
+    Point& operator=(const Point &point) noexcept = default;
 private:
     double value[2];
   };
@@ -55,9 +58,13 @@ private:
   {
   public:
     Extent();
+    Extent(const Point &extent1, const Point extent2);
+    Extent(const Extent &extent);
     void deserialize(const QJsonArray &jsonArray);
     Point getExtent1() const {return point[0];}
     Point getExtent2() const {return point[1];}
+
+    Extent& operator=(const Extent &extent) noexcept = default;
 private:
     Point point[2];
   };
@@ -66,17 +73,42 @@ private:
   {
   public:
     CoordinateSystem();
+    CoordinateSystem(const CoordinateSystem &coOrdinateSystem);
+    void setExtent(const Extent &extent);
+    Extent getExtent() const {return mExtent;}
+    void setHasExtent(const bool hasExtent) {mHasExtent = hasExtent;}
+    bool hasExtent() const {return mHasExtent;}
+    void setPreserveAspectRatio(const bool preserveAspectRatio);
+    bool getPreserveAspectRatio() const {return mPreserveAspectRatio;}
+    bool hasPreserveAspectRatio() const {return mHasPreserveAspectRatio;}
+    void setHasPreserveAspectRatio(const bool hasPreserveAspectRatio) {mHasPreserveAspectRatio = hasPreserveAspectRatio;}
+    void setInitialScale(const qreal initialScale);
+    double getInitialScale() const {return mInitialScale;}
+    bool hasInitialScale() const {return mHasInitialScale;}
+    void setHasInitialScale(const bool hasInitialScale) {mHasInitialScale = hasInitialScale;}
+    void setGrid(const Point &grid);
+    Point getGrid() const {return mGrid;}
+    void setHasGrid(const bool hasGrid) {mHasGrid = hasGrid;}
+    bool hasGrid() const {return mHasGrid;}
+
+    double getHorizontalGridStep();
+    double getVerticalGridStep();
+    QRectF getExtentRectangle() const;
+    void reset();
+    bool isComplete() const;
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
-    Extent getExtent() const {return extent;}
-    bool getPreserveAspectRatio() const {return preserveAspectRatio;}
-    double getInitialScale() const {return initialScale;}
-    Point getGrid() const {return grid;}
-private:
-    Extent extent;
-    bool preserveAspectRatio;
-    double initialScale;
-    Point grid;
+
+    CoordinateSystem& operator=(const CoordinateSystem &coOrdinateSystem) noexcept = default;
+  private:
+    Extent mExtent;
+    bool mHasExtent;
+    bool mPreserveAspectRatio;
+    bool mHasPreserveAspectRatio;
+    qreal mInitialScale;
+    bool mHasInitialScale;
+    Point mGrid;
+    bool mHasGrid;
   };
 
   class GraphicItem

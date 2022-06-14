@@ -4522,10 +4522,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
 
     if (MainWindow::instance()->isNewApi()) {
       QString modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
-      qDebug() << modelInstanceJson;
       if (!modelInstanceJson.isEmpty()) {
-
-
         QJsonParseError jsonParserError;
         QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
         if (doc.isNull()) {
@@ -4535,15 +4532,8 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
                                                                 Helper::scriptingKind, Helper::errorLevel));
         } else {
           mModelInstance.deserialize(doc.object());
-
-//          qDebug() << mModelInstance.name << mModelInstance.iconAnnotation.coordinateSystem.preserveAspectRatio << mModelInstance.iconAnnotation.coordinateSystem.initialScale;
-
-
           drawModelIconLayer();
         }
-
-
-
       }
     } else {
 
