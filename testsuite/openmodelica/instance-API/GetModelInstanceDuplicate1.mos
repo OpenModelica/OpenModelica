@@ -30,15 +30,7 @@ getModelInstance(B, prettyPrint = true);
 //           \"type\": \"Real\",
 //           \"modifier\": \"\",
 //           \"prefixes\": {
-//             \"public\": true,
-//             \"final\": false,
-//             \"inner\": false,
-//             \"outer\": false,
-//             \"replaceable\": false,
-//             \"redeclare\": false,
-//             \"connector\": \"\",
-//             \"variability\": \"\",
-//             \"direction\": \"\"
+//
 //           }
 //         }
 //       }
@@ -49,15 +41,7 @@ getModelInstance(B, prettyPrint = true);
 //       \"type\": \"Real\",
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     }
 //   }
