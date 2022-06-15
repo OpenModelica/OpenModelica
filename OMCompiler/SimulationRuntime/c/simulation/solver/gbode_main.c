@@ -681,6 +681,105 @@ void gbode_freeData(DATA_GBODE *gbData)
   return;
 }
 
+/**
+ * @brief Calculate initial step size.
+ *
+ * Called at the beginning of simulation or after an event occurred.
+ *
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param solverInfo        Storing Runge-Kutta solver data.
+ */
+void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
+  DATA_GBODE*  gbData = (DATA_GBODE*)solverInfo->solverData;
+  DATA_GBODEF* gbfData = gbData->gbfData;
+  int nStates = data->modelData->nStates;
+
+  int stage_;
+
+  gbfData->didEventStep = FALSE;
+
+  gbfData->time = gbData->time;
+  gbfData->stepSize = gbData->lastStepSize;
+
+    /* reset statistics because it is accumulated in solver_main.c */
+  gbfData->stepsDone = 0;
+  gbfData->evalFunctionODE = 0;
+  gbfData->evalJacobians = 0;
+  gbfData->errorTestFailures = 0;
+  gbfData->convergenceFailures = 0;
+
+  // BB ToDO: Copy only fast states!!
+  memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * gbData->nStates);
+  memcpy(gbfData->yRight, gbData->yLeft, sizeof(double) * gbData->nStates);
+  memcpy(gbfData->kRight, gbData->kLeft, sizeof(double) * gbData->nStates);
+
+  for (stage_=0; stage_< gbfData->tableau->nStages; stage_++) {
+    memcpy(gbfData->x + stage_ * nStates, gbfData->yRight, nStates*sizeof(double));
+    memcpy(gbfData->k + stage_ * nStates, gbfData->kRight, nStates*sizeof(double));
+  }
+}
+
+
+/**
+ * @brief Calculate initial step size.
+ *
+ * Called at the beginning of simulation or after an event occurred.
+ *
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param solverInfo        Storing Runge-Kutta solver data.
+ */
+void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
+  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+  int nStates = gbData->nStates;
+  int nStages = gbData->tableau->nStages;
+  int i, stage_;
+
+  /* set correct flags for int and reinit procedure */
+  gbData->isFirstStep = FALSE;
+  gbData->didEventStep = TRUE;
+  solverInfo->didEventStep = FALSE;
+
+  // initialize ring buffer for error and step size control
+  for (i=0; i<gbData->ringBufferSize; i++) {
+    gbData->errValues[i] = 0;
+    gbData->stepSizeValues[i] = 0;
+  }
+
+ /* reset statistics, because it is accumulated in solver_main.c */
+  gbData->stepsDone = 0;
+  gbData->evalFunctionODE = 0;
+  gbData->evalJacobians = 0;
+  gbData->errorTestFailures = 0;
+  gbData->convergenceFailures = 0;
+
+  // initialize vector used for interpolation (equidistant time grid)
+  // and for the birate inner integration
+  gbData->timeRight = gbData->time;
+  memcpy(gbData->yRight, gbData->yOld, nStates*sizeof(double));
+  memcpy(gbData->kRight, gbData->f, nStates*sizeof(double));
+
+  // set internal ring-buffer
+  for (stage_=0; stage_<nStages; stage_++) {
+    memcpy(gbData->x + stage_ * nStates, gbData->yRight, nStates*sizeof(double));
+    memcpy(gbData->k + stage_ * nStates, gbData->kRight, nStates*sizeof(double));
+  }
+
+  // set solution ring buffer (extrapolation in case of NLS)
+  for (i=0; i<gbData->ringBufferSize; i++) {
+    gbData->tv[i] = gbData->timeRight;
+    memcpy(gbData->yv + i * nStates, gbData->yRight, nStates * sizeof(double));
+    memcpy(gbData->kv + i * nStates, gbData->kRight, nStates * sizeof(double));
+  }
+}
+
 /*! \fn gbodef_main
  *
  *  function does one integration step and calculates
@@ -714,22 +813,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
   // BB ToDo: needs to be performed also after an event!!!
-  if (gbfData->didEventStep)
-  {
-    /* reset statistics because it is accumulated in solver_main.c */
-    gbfData->stepsDone = 0;
-    gbfData->evalFunctionODE = 0;
-    gbfData->evalJacobians = 0;
-    gbfData->errorTestFailures = 0;
-    gbfData->convergenceFailures = 0;
-
-    gbfData->time = gbData->time;
-    gbfData->stepSize = gbData->lastStepSize;
-    // BB ToDO: Copy only fast states!!
-    memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * gbData->nStates);
-    memcpy(gbfData->yRight, gbData->yLeft, sizeof(double) * gbData->nStates);
-    memcpy(gbfData->kRight, gbData->kLeft, sizeof(double) * gbData->nStates);
-    gbfData->didEventStep = FALSE;
+  if (gbfData->didEventStep) {
+    gbodef_init(data, threadData, solverInfo);
   }
 
   if (gbData->stepRejected) {
@@ -743,16 +828,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   gbfData->nFastStates = gbData->nFastStates;
   gbfData->fastStates  = gbData->fastStates;
 
-  if (gbfData->nFastStates_old != gbData->nFastStates)
-  {
+  if (gbfData->nFastStates_old != gbData->nFastStates) {
     gbfData->nFastStates_old = gbData->nFastStates;
     fastStateChange = TRUE;
   }
 
-  for (int k = 0; k < nFastStates; k++)
-  {
-    if (gbfData->fastStates_old[k] - gbData->fastStates[k])
-    {
+  for (int k = 0; k < nFastStates; k++) {
+    if (gbfData->fastStates_old[k] - gbData->fastStates[k]) {
       if (ACTIVE_STREAM(LOG_SOLVER) && !fastStateChange)
       {
         printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
@@ -764,8 +846,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   }
 
 
-  if (!gbfData->isExplicit)
-  {
+  if (!gbfData->isExplicit) {
     struct dataSolver *solverData = gbfData->nlsData->solverData;
     // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
     gbfData->nlsData->size = gbData->nFastStates;
@@ -1141,10 +1222,11 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
   // (Re-)initialize after events or at first call of gbode_sinlerate
   if (solverInfo->didEventStep == 1 || gbData->isFirstStep) {
-    // BB ToDo: extract initialization of gbData and gbfData from gb_first_step!!!
     // calculate initial step size and reset ring buffer and statistic counters
     // initialize gbData->time, gbData->yOld, gbData->timeRight, gbData->yRight and gbData->kRight
     gb_first_step(data, threadData, solverInfo);
+    gbode_init(data, threadData, solverInfo);
+    gbData->gbfData->didEventStep = TRUE;
   }
 
   // Constant step size
@@ -1529,6 +1611,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // calculate initial step size and reset ring buffer and statistic counters
     // initialize gbData->timeRight, gbData->yRight and gbData->kRight
     gb_first_step(data, threadData, solverInfo);
+    gbode_init(data, threadData, solverInfo);
   }
 
   // Constant step size

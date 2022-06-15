@@ -128,7 +128,7 @@ double PIController(double* err_values, double* stepSize_values, double err_orde
 
 
 /**
- * @brief Initialize values and calculate initial step size.
+ * @brief Calculate initial step size.
  *
  * Called at the beginning of simulation or after an event occurred.
  *
@@ -144,86 +144,27 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
   int nStates = data->modelData->nStates;
-  int nStages = gbData->tableau->nStages;
   modelica_real* fODE = &sData->realVars[nStates];
 
+  int i;
+
   double sc, d, d0 = 0.0, d1 = 0.0, d2 = 0.0, h0, h1, delta_ti, infNorm, sum = 0;
-  // TODO AHeu: We have flags for absolute and relative solver tolerances
-  // Use data->simulationInfo->tolerance?
-  double Atol = 1e-6;
-  double Rtol = 1e-3;
+  double Atol = data->simulationInfo->tolerance;
+  double Rtol = Atol;
 
-  int i, j, stage_;
-
-  /* store Startime of the simulation */
-  gbData->time = sDataOld->timeValue;
-
-  gbData->timeLeft = gbData->time;
-  gbData->timeRight = gbData->time;
-
-  /* set correct flags in order to calculate initial step size */
-  gbData->isFirstStep = FALSE;
-  gbData->didEventStep = TRUE;
-  solverInfo->didEventStep = FALSE;
-
-  // initialize ring buffer for error and step size control
-  for (i=0; i<gbData->ringBufferSize; i++) {
-    gbData->errValues[i] = 0;
-    gbData->stepSizeValues[i] = 0;
-  }
-
- /* reset statistics because it is accumulated in solver_main.c */
-  gbData->stepsDone = 0;
-  gbData->evalFunctionODE = 0;
-  gbData->evalJacobians = 0;
-  gbData->errorTestFailures = 0;
-  gbData->convergenceFailures = 0;
-
-  /* calculate starting step size 1st Version */
-  /* BB: What is the difference between sData and sDataOld at this time instance?
-         Is this important for the restart after an event?
-         And should this also been copied to gbData->yOld (see above?)
-  */
-
-  /* initialize start values of the integrator and calculate ODE function*/
+  /* store values of the states and state derivatives at initial or event time */
+  gbData->time = sData->timeValue;
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
-  memcpy(gbData->yRight, sData->realVars, nStates*sizeof(double));
-  for (stage_=0; stage_< nStages; stage_++) {
-    memcpy(gbData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
-  }
-
-  /* store values of the state derivatives at initial or event time */
   gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-  memcpy(gbData->kRight, fODE, nStates*sizeof(double));
   memcpy(gbData->f, fODE, nStates*sizeof(double));
-  for (stage_=0; stage_< nStages; stage_++) {
-    memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
-  }
-  for (int i=0; i<gbData->ringBufferSize; i++) {
-    gbData->tv[i] = gbData->timeRight;
-    memcpy(gbData->yv + i * nStates, gbData->yRight, nStates * sizeof(double));
-    memcpy(gbData->kv + i * nStates, gbData->kRight, nStates * sizeof(double));
-  }
-
-  if (gbData->multi_rate) {
-    gbData->gbfData->didEventStep = TRUE;
-    gbData->gbfData->time = gbData->time;
-    gbData->gbfData->lastStepSize = 0;
-    memcpy(gbData->gbfData->yRight, sData->realVars, nStates*sizeof(double));
-    memcpy(gbData->gbfData->kRight, fODE, nStates*sizeof(double));
-    for (stage_=0; stage_< gbData->gbfData->tableau->nStages; stage_++) {
-      memcpy(gbData->gbfData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
-      memcpy(gbData->gbfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
-    }
-  }
 
   for (i=0; i<nStates; i++) {
     sc = Atol + fabs(sDataOld->realVars[i])*Rtol;
     d0 += ((sDataOld->realVars[i] * sDataOld->realVars[i])/(sc*sc));
     d1 += ((fODE[i] * fODE[i]) / (sc*sc));
   }
-  d0 /= data->modelData->nStates;
-  d1 /= data->modelData->nStates;
+  d0 /= nStates;
+  d1 /= nStates;
 
   d0 = sqrt(d0);
   d1 = sqrt(d1);

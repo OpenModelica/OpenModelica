@@ -736,7 +736,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     } else {
       // debug the approximations after performed step
       if (ACTIVE_STREAM(LOG_M_BB)) {
-        infoStreamPrint(LOG_STATS, 1, "Approximations after second 1/2 step:");
+        infoStreamPrint(LOG_STATS, 1, "Approximations after full step:");
         printVector_gb(LOG_STATS, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
         printVector_gb(LOG_STATS, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
         messageClose(LOG_STATS);
