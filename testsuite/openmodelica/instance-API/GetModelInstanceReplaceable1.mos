@@ -23,8 +23,9 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
-//   \"components\": {
-//     \"x\": {
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"modifier\": \" = 1.0\",
 //       \"value\": {
@@ -34,25 +35,27 @@ getModelInstance(M, prettyPrint = true);
 //         \"replaceable\": true
 //       }
 //     },
-//     \"m\": {
+//     {
+//       \"name\": \"m\",
 //       \"type\": {
 //         \"name\": \"M\",
-//         \"components\": {
-//           \"x\": {
+//         \"components\": [
+//           {
+//             \"name\": \"x\",
 //             \"type\": \"Real\",
 //             \"modifier\": \"\",
 //             \"prefixes\": {
 //
 //             }
 //           }
-//         }
+//         ]
 //       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }
 //     }
-//   },
+//   ],
 //   \"replaceable\": [
 //     {
 //       \"name\": \"x\",

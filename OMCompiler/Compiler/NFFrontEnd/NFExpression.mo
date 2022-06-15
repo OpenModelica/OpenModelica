@@ -5834,6 +5834,15 @@ public
   function toJSON
     input Expression exp;
     output JSON json;
+  protected
+    function dump_arg
+      input String name;
+      input Expression arg;
+      output JSON json = JSON.emptyObject();
+    algorithm
+      json := JSON.addPair("name", JSON.makeString(name), json);
+      json := JSON.addPair("value", toJSON(arg), json);
+    end dump_arg;
   algorithm
     json := match exp
       case Expression.INTEGER() then JSON.makeInteger(exp.value);
@@ -6036,8 +6045,7 @@ public
           json := JSON.addPair("kind", JSON.makeString("function"), json);
           json := JSON.addPair("name", JSON.makeString(ComponentRef.toString(exp.fn)), json);
           json := JSON.addPair("arguments", JSON.makeArray(
-            list(JSON.fromPair(name, toJSON(arg)) threaded for arg in exp.args, name in exp.argNames)),
-            json);
+            list(dump_arg(name, arg) threaded for arg in exp.args, name in exp.argNames)), json);
         then
           json;
 

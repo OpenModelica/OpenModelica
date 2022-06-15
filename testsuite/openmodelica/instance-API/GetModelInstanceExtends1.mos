@@ -26,32 +26,35 @@ getModelInstance(M, prettyPrint=true);
 //   \"extends\": [
 //     {
 //       \"name\": \"A\",
-//       \"components\": {
-//         \"x\": {
+//       \"components\": [
+//         {
+//           \"name\": \"x\",
 //           \"type\": \"Real\",
 //           \"modifier\": \"\",
 //           \"prefixes\": {
 //
 //           }
 //         }
-//       }
+//       ]
 //     }
 //   ],
-//   \"components\": {
-//     \"y\": {
+//   \"components\": [
+//     {
+//       \"name\": \"y\",
 //       \"type\": \"Real\",
 //       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }
 //     },
-//     \"z\": {
+//     {
+//       \"name\": \"z\",
 //       \"type\": \"Real\",
 //       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }
 //     }
-//   }
+//   ]
 // }"
 // endResult

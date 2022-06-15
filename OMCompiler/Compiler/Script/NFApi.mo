@@ -976,13 +976,13 @@ end dumpJSONExtends;
 
 function dumpJSONComponents
   input list<InstanceTree> components;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.emptyArray();
 protected
   InstNode node;
 algorithm
   for comp in components loop
     InstanceTree.COMPONENT(node = node) := comp;
-    json := JSON.addPair(InstNode.name(node), dumpJSONComponent(comp), json);
+    json := JSON.addElement(dumpJSONComponent(comp), json);
   end for;
 end dumpJSONComponents;
 
@@ -1013,6 +1013,7 @@ algorithm
 
     case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
       algorithm
+        json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, comp.ty), json);
 
         if Type.isArray(comp.ty) then
