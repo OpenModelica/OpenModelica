@@ -34,87 +34,96 @@ getModelInstance(M, prettyPrint = true);
 //   \"extends\": [
 //     {
 //       \"name\": \"A\",
-//       \"components\": {
-//         \"c1\": {
+//       \"components\": [
+//         {
+//           \"name\": \"c1\",
 //           \"type\": {
 //             \"name\": \"C\",
-//             \"components\": {
-//               \"e\": {
+//             \"components\": [
+//               {
+//                 \"name\": \"e\",
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
 //
 //                 }
 //               },
-//               \"f\": {
+//               {
+//                 \"name\": \"f\",
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
 //                   \"connector\": \"flow\"
 //                 }
 //               }
-//             }
+//             ]
 //           },
 //           \"modifier\": \"\",
 //           \"prefixes\": {
 //
 //           }
 //         },
-//         \"c2\": {
+//         {
+//           \"name\": \"c2\",
 //           \"type\": {
 //             \"name\": \"C\",
-//             \"components\": {
-//               \"e\": {
+//             \"components\": [
+//               {
+//                 \"name\": \"e\",
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
 //
 //                 }
 //               },
-//               \"f\": {
+//               {
+//                 \"name\": \"f\",
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
 //                   \"connector\": \"flow\"
 //                 }
 //               }
-//             }
+//             ]
 //           },
 //           \"modifier\": \"\",
 //           \"prefixes\": {
 //
 //           }
 //         }
-//       }
+//       ]
 //     }
 //   ],
-//   \"components\": {
-//     \"c3\": {
+//   \"components\": [
+//     {
+//       \"name\": \"c3\",
 //       \"type\": {
 //         \"name\": \"C\",
-//         \"components\": {
-//           \"e\": {
+//         \"components\": [
+//           {
+//             \"name\": \"e\",
 //             \"type\": \"Real\",
 //             \"modifier\": \"\",
 //             \"prefixes\": {
 //
 //             }
 //           },
-//           \"f\": {
+//           {
+//             \"name\": \"f\",
 //             \"type\": \"Real\",
 //             \"modifier\": \"\",
 //             \"prefixes\": {
 //               \"connector\": \"flow\"
 //             }
 //           }
-//         }
+//         ]
 //       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }
 //     }
-//   },
+//   ],
 //   \"connections\": [
 //     {
 //       \"lhs\": {
