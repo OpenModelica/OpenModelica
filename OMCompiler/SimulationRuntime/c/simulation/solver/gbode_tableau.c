@@ -211,8 +211,8 @@ void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
     const double c[] = {0.0, 0.5};
     const double A[] = {0.0, 0.0,
                         0.5, 0.0};
-    const double b[]  = {0,1};      // explicit midpoint rule corresponds to Richardson extrapolation
-    const double  bt[] = {1,0};     // explicit Euler step
+    const double bt[]  = {0,1};    // explicit midpoint rule corresponds to Richardson extrapolation
+    const double  b[] = {1,0};     // explicit Euler step
 
     setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
   }
