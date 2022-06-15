@@ -704,71 +704,73 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   if (step_info != 0) {
     gbData->convergenceFailures++;
     errorStreamPrint(LOG_STDOUT, 0, "Failure: gbode Richardson extrapolation (first half step)");
-    return -1;
+  } else {
+    gbData->time += gbData->stepSize;
+    gbData->lastStepSize = gbData->stepSize;
+    memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
+
+    // prepare for the extrapolation
+    // BB ToDo; only necessary for implicit schemes
+    sData->timeValue = gbData->time;
+    memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
+    gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+    gbData->tv[1] = gbData->tv[0];
+    memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
+    memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
+    gbData->tv[0] = gbData->time;
+    memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
+    memcpy(gbData->kv, fODE, nStates * sizeof(double));
+
+    infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (second 1/2 step)");
+    step_info = gbData->step_fun(data, threadData, solverInfo);
+    if (step_info != 0) {
+      gbData->convergenceFailures++;
+      errorStreamPrint(LOG_STDOUT, 0, "Failure: gbode Richardson extrapolation (second half step)");
+    }
+
+    memcpy(gbData->y1, gbData->y, nStates * sizeof(double));
+
+    // prepare for the extrapolation
+    // BB ToDo; only necessary for implicit schemes
+    sData->timeValue = gbData->time + gbData->stepSize;
+    memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
+    gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+    gbData->tv[1] = gbData->tv[0];
+    memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
+    memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
+    gbData->tv[0] = gbData->time;
+    memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
+    memcpy(gbData->kv, fODE, nStates * sizeof(double));
+
+    // restore yOld
+    gbData->time = timeValue;
+    gbData->stepSize = stepSize;
+    gbData->lastStepSize = lastStepSize;
+    memcpy(gbData->yOld, gbData->yLeft, nStates * sizeof(double));
+    infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (full step)");
+    step_info = gbData->step_fun(data, threadData, solverInfo);
+    if (step_info != 0) {
+      gbData->convergenceFailures++;
+      errorStreamPrint(LOG_STDOUT, 0, "Failure: gbode Richardson extrapolation (full step)");
+    }
   }
 
-  gbData->time += gbData->stepSize;
-  gbData->lastStepSize = gbData->stepSize;
-  memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
-
-  // prepare for the extrapolation
-  // BB ToDo; only necessary for implicit schemes
-  sData->timeValue = gbData->time;
-  memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-  gbData->tv[1] = gbData->tv[0];
-  memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
-  memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
-  gbData->tv[0] = gbData->time;
-  memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
-  memcpy(gbData->kv, fODE, nStates * sizeof(double));
-
-  infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (second 1/2 step)");
-  step_info = gbData->step_fun(data, threadData, solverInfo);
-  if (step_info != 0) {
-    gbData->convergenceFailures++;
-    errorStreamPrint(LOG_STDOUT, 0, "Failure: gbode Richardson extrapolation (second half step)");
-    return -1;
-  }
-
-  memcpy(gbData->y1, gbData->y, nStates * sizeof(double));
-
-  // prepare for the extrapolation
-  // BB ToDo; only necessary for implicit schemes
-  // sData->timeValue = gbData->time + gbData->stepSize;
-  // memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-  // gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-  // gbData->tv[1] = gbData->tv[0];
-  // memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
-  // memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
-  // gbData->tv[0] = gbData->time;
-  // memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
-  // memcpy(gbData->kv, fODE, nStates * sizeof(double));
-
-  // restore yOld
+  // Restore time values and step size
   gbData->time = timeValue;
   gbData->stepSize = stepSize;
   gbData->lastStepSize = lastStepSize;
-  memcpy(gbData->yOld, gbData->yLeft, nStates * sizeof(double));
-  infoStreamPrint(LOG_SOLVER, 0, "Richardson extrapolation (full step)");
-  step_info = gbData->step_fun(data, threadData, solverInfo);
-  if (step_info != 0) {
-    gbData->convergenceFailures++;
-    errorStreamPrint(LOG_STDOUT, 0, "Failure: gbode Richardson extrapolation (full step)");
-    return -1;
-  }
-
-  // // Restore ring buffer
+  // Restore ring buffer
   for (i=0; i<2; i++) {
     gbData->tv[i] = gbData->tr[i];
     memcpy(gbData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
     memcpy(gbData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
   }
 
-
-  // Extrapolate values based on order of the scheme
-  for (i=0; i<nStates; i++) {
-    gbData->yt[i] = (pow(2.,p) * gbData->y1[i] - gbData->y[i]) / (pow(2.,p) - 1);
+  if (step_info != 0) {
+    // Extrapolate values based on order of the scheme
+    for (i=0; i<nStates; i++) {
+      gbData->yt[i] = (pow(2.,p) * gbData->y1[i] - gbData->y[i]) / (pow(2.,p) - 1);
+    }
   }
 
   return step_info;

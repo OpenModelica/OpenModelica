@@ -546,7 +546,8 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
   }
 
   if (ACTIVE_STREAM(LOG_M_NLS)) {
-    infoStreamPrint(LOG_M_NLS, 1, "NLS - residual:");
+    infoStreamPrint(LOG_M_NLS, 1, "NLS - x and residual:");
+    printVector_gb(LOG_M_NLS, "x", xloc, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
     printVector_gb(LOG_M_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
     messageClose(LOG_M_NLS);
   }

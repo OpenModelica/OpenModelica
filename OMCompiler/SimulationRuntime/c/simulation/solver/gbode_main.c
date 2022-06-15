@@ -1620,7 +1620,6 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // count processed steps
     gbData->stepsDone += 1;
 
-
     // store right hand values for latter interpolation
     gbData->timeRight = gbData->time + gbData->lastStepSize;
     memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
