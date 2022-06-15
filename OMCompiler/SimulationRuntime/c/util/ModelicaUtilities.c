@@ -80,10 +80,12 @@ void (*OpenModelica_ModelicaVFormatError)(const char*,va_list) MODELICA_NORETURN
 
 void ModelicaError(const char* string) {
   OpenModelica_ModelicaError(string);
+  abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
 void ModelicaVFormatError(const char*string, va_list args) {
   OpenModelica_ModelicaVFormatError(string,args);
+  abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
 void ModelicaFormatError(const char* string, ...) {
@@ -91,6 +93,7 @@ void ModelicaFormatError(const char* string, ...) {
   va_start(args, string);
   OpenModelica_ModelicaVFormatError(string,args);
   va_end(args);
+  abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
 char* ModelicaAllocateString(size_t len) {
