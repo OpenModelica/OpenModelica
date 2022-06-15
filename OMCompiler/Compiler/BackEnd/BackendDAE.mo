@@ -843,6 +843,7 @@ uniontype DifferentiationType "Define the behaviour of differentiation method fo
   end DIFF_FULL_JACOBIAN;
 
   record GENERIC_GRADIENT "Used to generate a generic gradient for generation the Jacobian matrix while the runtime."
+    Boolean daeMode       "true if computing for dae mode";
   end GENERIC_GRADIENT;
 end DifferentiationType;
 

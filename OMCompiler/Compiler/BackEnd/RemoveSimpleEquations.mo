@@ -506,7 +506,7 @@ algorithm
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
   unReplaceable := HashSet.emptyHashSet();
-  unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
+  //unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then

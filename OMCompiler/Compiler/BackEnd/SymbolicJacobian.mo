@@ -86,6 +86,11 @@ import ValuesUtil;
 // Jacobian if flag "--generateSymbolicJacobian" is enabled.
 // =============================================================================
 
+// From User Documentation for ida v5.4.0 equation (2.5) aka Alpha
+// is the scalar in the system Jacobian, proportional to the inverse of the step size
+// used for DAE_Mode symbolic jacobians
+public constant String DAE_CJ = "$DAE_CJ";
+
 public function symbolicJacobian "author: lochel
   Detects the sparse pattern of the ODE system and calculates also the symbolic
   Jacobian if flag '--generateSymbolicJacobian' is enabled."
@@ -244,15 +249,17 @@ algorithm
 
     if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
       // generate symbolic jacobian and sparsity pattern
-      (symjac, funcs, sparsePattern, coloredCols) := generateGenericJacobian(DAE,
-        inDepVars,
-        BackendVariable.emptyVars(),
-        BackendVariable.emptyVars(),
-        shared.globalKnownVars,
-        resVars,
-        depVars,
-        "A",
-        false);
+      (symjac, funcs, sparsePattern, coloredCols) := generateGenericJacobian(
+        inBackendDAE          = DAE,
+        inDiffVars            = inDepVars,
+        inStateVars           = BackendVariable.emptyVars(),
+        inInputVars           = BackendVariable.emptyVars(),
+        inParameterVars       = shared.globalKnownVars,
+        inDifferentiatedVars  = resVars,
+        inVars                = depVars,
+        inName                = "A",
+        onlySparsePattern     = false,
+        daeMode               = true);
       if debug then execStat(getInstanceName() + "-> generateGenericJacobian "); end if;
 
       jacobian := BackendDAE.GENERIC_JACOBIAN(symjac, sparsePattern, coloredCols);
@@ -2130,6 +2137,7 @@ protected function generateGenericJacobian "author: wbraun"
   input list<BackendDAE.Var> inVars "dependent vars = resVars + other vars";
   input String inName;
   input Boolean onlySparsePattern;
+  input Boolean daeMode = false;
   output Option<BackendDAE.SymbolicJacobian> outJacobian;
   output DAE.FunctionTree outFunctionTree;
   output BackendDAE.SparsePattern outSparsePattern;
@@ -2141,7 +2149,7 @@ algorithm
   try
     outFunctionTree := shared.functionTree;
     if not onlySparsePattern then
-      (symbolicJacobian, outFunctionTree) := createJacobian(inBackendDAE,inDiffVars, inStateVars, inInputVars, inParameterVars, inDifferentiatedVars, inVars, inName);
+      (symbolicJacobian, outFunctionTree) := createJacobian(inBackendDAE,inDiffVars, inStateVars, inInputVars, inParameterVars, inDifferentiatedVars, inVars, inName, daeMode);
       true := checkForNonLinearStrongComponents(symbolicJacobian);
       outJacobian := SOME(symbolicJacobian);
     else
@@ -2165,6 +2173,7 @@ protected function createJacobian "author: wbraun"
   input BackendDAE.Variables inDifferentiatedVars "resVars";
   input list<BackendDAE.Var> inVars "dependent vars = resVars + other vars";
   input String inName;
+  input Boolean daeMode;
   output BackendDAE.SymbolicJacobian outJacobian;
   output DAE.FunctionTree outFunctionTree;
 algorithm
@@ -2177,7 +2186,7 @@ algorithm
 
       BackendDAE.Shared shared;
       BackendDAE.Variables  globalKnownVars, globalKnownVars1;
-      list<BackendDAE.Var> diffedVars "resVars", seedlst, indepVars;
+      list<BackendDAE.Var> diffedVars "resVars", seedlst, derseedlst, stateVars, indepVars;
 
       DAE.FunctionTree funcs;
 
@@ -2188,9 +2197,9 @@ algorithm
 
         reducedDAE = BackendDAEUtil.reduceEqSystemsInDAE(inBackendDAE, diffedVars);
 
+        indepVars = createInDepVars(inDiffVars, false);
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
         seedlst = List.map1(comref_vars, createSeedVars, inName);
-        indepVars = createInDepVars(inDiffVars, false);
 
         if Flags.isSet(Flags.JAC_DUMP) then
           print("Create symbolic Jacobians from:\n");
@@ -2203,7 +2212,7 @@ algorithm
         end if;
 
         // Differentiate the eqns system in reducedDAE w.r.t. independents
-        (backendDAE as BackendDAE.DAE(shared=_), funcs) = generateSymbolicJacobian(reducedDAE, indepVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
+        (backendDAE as BackendDAE.DAE(shared=_), funcs) = generateSymbolicJacobian(reducedDAE, indepVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName, daeMode);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;
@@ -2318,6 +2327,7 @@ protected function generateSymbolicJacobian "author: lochel"
   input BackendDAE.Variables inInputVars;
   input BackendDAE.Variables inParamVars "globalKnownVars";
   input String inMatrixName;
+  input Boolean daeMode;
   output BackendDAE.BackendDAE outJacobian;
   output DAE.FunctionTree outFunctions;
 algorithm
@@ -2391,7 +2401,7 @@ algorithm
       if Flags.isSet(Flags.JAC_DUMP2) then
         print("*** analytical Jacobians -> before derive all equation: " + realString(clock()) + "\n");
       end if;
-      (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, functions);
+      (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, functions, daeMode);
       if Flags.isSet(Flags.JAC_DUMP2) then
         print("*** analytical Jacobians -> after derive all equation: " + realString(clock()) + "\n");
       end if;
@@ -2522,6 +2532,7 @@ protected function deriveAll
   input DAE.ComponentRef inDiffCref;
   input BackendDAE.DifferentiateInputData inDiffData;
   input DAE.FunctionTree inFunctions;
+  input Boolean daeMode;
   output list<BackendDAE.Equation> outDerivedEquations = {};
   output DAE.FunctionTree outFunctions = inFunctions;
 protected
@@ -2541,7 +2552,7 @@ algorithm
         print("\n");
       end if;
 
-      (currDerivedEquation, outFunctions) := Differentiate.differentiateEquation(currEquation, inDiffCref, inDiffData, BackendDAE.GENERIC_GRADIENT(), outFunctions);
+      (currDerivedEquation, outFunctions) := Differentiate.differentiateEquation(currEquation, inDiffCref, inDiffData, BackendDAE.GENERIC_GRADIENT(daeMode), outFunctions);
       tmpEquations := BackendEquation.scalarComplexEquations(currDerivedEquation, outFunctions);
       outDerivedEquations := listAppend(tmpEquations, outDerivedEquations);
 
