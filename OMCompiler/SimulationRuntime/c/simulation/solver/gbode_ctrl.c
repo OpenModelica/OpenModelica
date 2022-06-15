@@ -188,7 +188,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   /* initialize start values of the integrator and calculate ODE function*/
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
   memcpy(gbData->yRight, sData->realVars, nStates*sizeof(double));
-  for (stage_=0; stage_<= nStages; stage_++) {
+  for (stage_=0; stage_< nStages; stage_++) {
     memcpy(gbData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
   }
 
@@ -196,7 +196,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
   memcpy(gbData->kRight, fODE, nStates*sizeof(double));
   memcpy(gbData->f, fODE, nStates*sizeof(double));
-  for (stage_=0; stage_<= nStages; stage_++) {
+  for (stage_=0; stage_< nStages; stage_++) {
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
   }
   for (int i=0; i<gbData->ringBufferSize; i++) {
@@ -211,7 +211,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     gbData->gbfData->lastStepSize = 0;
     memcpy(gbData->gbfData->yRight, sData->realVars, nStates*sizeof(double));
     memcpy(gbData->gbfData->kRight, fODE, nStates*sizeof(double));
-    for (stage_=0; stage_<= gbData->gbfData->tableau->nStages; stage_++) {
+    for (stage_=0; stage_< gbData->gbfData->tableau->nStages; stage_++) {
       memcpy(gbData->gbfData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
       memcpy(gbData->gbfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
     }

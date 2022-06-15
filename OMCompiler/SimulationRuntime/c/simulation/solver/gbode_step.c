@@ -168,10 +168,10 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     gbfData->yt[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gbfData->yt[i] += -gbfData->x[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
-                          gbfData->k[stage_ * nStates + i] * gbfData->tableau->bt[stage_] *  gbfData->stepSize;
+      gbfData->yt[i] += -gbfData->yv[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
+                         gbfData->kv[stage_ * nStates + i] * gbfData->tableau->bt[stage_] *  gbfData->stepSize;
     }
-    gbfData->yt[i] += gbfData->k[stage_ * nStates + i] * gbfData->tableau->bt[stage_] * gbfData->stepSize;
+    gbfData->yt[i] += gbfData->kv[stage_ * nStates + i] * gbfData->tableau->bt[stage_] * gbfData->stepSize;
     gbfData->yt[i] /= gbfData->tableau->c[stage_];
   }
 
@@ -184,8 +184,8 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     gbfData->res_const[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
-      gbfData->res_const[i] += -gbfData->x[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
-                                 gbfData->k[stage_ * nStates + i] * gbfData->tableau->b[stage_] *  gbfData->stepSize;
+      gbfData->res_const[i] += -gbfData->yv[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
+                                gbfData->kv[stage_ * nStates + i] * gbfData->tableau->b[stage_] *  gbfData->stepSize;
     }
   }
   // printVector_gb("res_const:  ", gbData->res_const, nStates, gbData->time);

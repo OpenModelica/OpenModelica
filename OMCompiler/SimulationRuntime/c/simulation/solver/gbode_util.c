@@ -197,12 +197,10 @@ void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, 
   for (int stage_ = 0; stage_ < nStages; stage_++) {
     printVector_gb(stream, "x", x + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize);
   }
-  printVector_gb(stream, "x", x + nStages * nStates, nStates, time + stepSize);
   infoStreamPrint(stream, 0, "derivatives:");
   for (int stage_ = 0; stage_ < nStages; stage_++) {
     printVector_gb(stream, "k", k + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize);
   }
-  printVector_gb(stream, "k", k + nStages * nStates, nStates, time + stepSize);
 }
 
 /**

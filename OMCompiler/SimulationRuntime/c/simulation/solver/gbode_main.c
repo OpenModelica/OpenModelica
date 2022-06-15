@@ -213,8 +213,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   {
     gbfData->Jf = NULL;
   }
-  gbfData->k = malloc(sizeof(double) * gbData->nStates * (gbfData->tableau->nStages + 1));
-  gbfData->x = malloc(sizeof(double) * gbData->nStates * (gbfData->tableau->nStages + 1));
+  gbfData->k = malloc(sizeof(double) * gbData->nStates * gbfData->tableau->nStages);
+  gbfData->x = malloc(sizeof(double) * gbData->nStates * gbfData->tableau->nStages);
   gbfData->yLeft = malloc(sizeof(double) * gbData->nStates);
   gbfData->kLeft = malloc(sizeof(double) * gbData->nStates);
   gbfData->yRight = malloc(sizeof(double) * gbData->nStates);
@@ -415,8 +415,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->yt = malloc(sizeof(double) * gbData->nStates);
   gbData->y1 = malloc(sizeof(double) * gbData->nStates);
   gbData->f = malloc(sizeof(double) * gbData->nStates);
-  gbData->k = malloc(sizeof(double) * gbData->nStates * (gbData->tableau->nStages + 1));
-  gbData->x = malloc(sizeof(double) * gbData->nStates * (gbData->tableau->nStages + 1));
+  gbData->k = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
+  gbData->x = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
   gbData->res_const = malloc(sizeof(double) * gbData->nStates);
   gbData->errest = malloc(sizeof(double) * gbData->nStates);
   gbData->errtol = malloc(sizeof(double) * gbData->nStates);
