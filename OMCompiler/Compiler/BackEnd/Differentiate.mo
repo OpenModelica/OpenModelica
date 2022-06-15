@@ -1436,6 +1436,20 @@ algorithm
       then
         (DAE.CALL(path,{e,DAE.ICONST(i)},attr), inFunctionTree);
 
+    // special case for daeMode:
+    // der(x) gets differentiated to $DER.x.Seed
+    // when solving the dae at runtime this seed will be set to cj (aka alpha, provided by the dae mode integrator)
+    // whenever the corresponding state seed is set.
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e},attr=attr), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(true), _)
+      algorithm
+        cr := Expression.expCref(e);
+        tp := Expression.typeof(e);
+        cr := ComponentReference.crefPrefixDer(cr);
+        cr := createSeedCrefName(cr, matrixName);
+        res := Expression.makeCrefExp(cr, tp);
+      then
+        (res, inFunctionTree);
+
     case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst = {e}), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _)
       equation
         cr = Expression.expCref(e);
@@ -2366,7 +2380,7 @@ algorithm
         funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(path), false);
         diffFuncData = BackendDAE.emptyInputData;
          diffFuncData.matrixName = SOME(funcname);
-        (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(), functions);
+        (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(false), functions);
         // debug dump
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
           print("### differentiated argument list:\n");
@@ -2525,7 +2539,7 @@ function tryZeroDiff
   output Boolean success;
 algorithm
   try
-   (explist, functions) := List.map3Fold(explist, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), BackendDAE.emptyInputData, BackendDAE.GENERIC_GRADIENT(), functions);
+   (explist, functions) := List.map3Fold(explist, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), BackendDAE.emptyInputData, BackendDAE.GENERIC_GRADIENT(false), functions);
    success := true;
   else
    explist := {};
