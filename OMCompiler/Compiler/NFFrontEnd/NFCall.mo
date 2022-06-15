@@ -819,12 +819,14 @@ public
     function iterators_json
       input list<tuple<InstNode, Expression>> iters;
       output JSON json = JSON.emptyArray(listLength(iters));
+    protected
+      JSON j;
     algorithm
       for i in iters loop
-        json := JSON.addElement(
-          JSON.fromPair(InstNode.name(Util.tuple21(i)),
-                        Expression.toJSON(Util.tuple22(i))),
-          json);
+        j := JSON.emptyObject();
+        j := JSON.addPair("name", JSON.makeString(InstNode.name(Util.tuple21(i))), j);
+        j := JSON.addPair("range", Expression.toJSON(Util.tuple22(i)), j);
+        json := JSON.addElement(j, json);
       end for;
     end iterators_json;
   protected

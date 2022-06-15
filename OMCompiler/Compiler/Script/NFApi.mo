@@ -1037,7 +1037,7 @@ algorithm
         end if;
 
         json := JSON.addPair("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes), json);
-        json := dumpJSONCommentOpt(comp.comment, node, json);
+        json := dumpJSONCommentOpt(comp.comment, InstNode.parent(node), json);
       then
         ();
 
