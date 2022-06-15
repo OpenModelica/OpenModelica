@@ -31,15 +31,16 @@
 /*! MoveData.c
  */
 
-#include "../../openmodelica.h"
-#include "../../openmodelica_types.h"
 #include "../../meta/meta_modelica.h"
-#include "../OptimizerData.h"
-#include "../OptimizerLocalFunction.h"
-#include "../../simulation/results/simulation_result.h"
+#include "../../openmodelica_types.h"
+#include "../../openmodelica.h"
 #include "../../simulation/options.h"
+#include "../../simulation/results/simulation_result.h"
+#include "../../simulation/solver/context.h"
 #include "../../simulation/solver/model_help.h"
 #include "../../util/omc_file.h"
+#include "../OptimizerData.h"
+#include "../OptimizerLocalFunction.h"
 
 static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time);
 static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, const double preSimTime);
