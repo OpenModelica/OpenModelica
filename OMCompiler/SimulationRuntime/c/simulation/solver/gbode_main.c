@@ -699,7 +699,7 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   int nStates = gbfData->nStates;
   int nStages = gbfData->tableau->nStages;
 
-  int stage_;
+  int i;
 
   gbfData->didEventStep = FALSE;
 
@@ -721,9 +721,11 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   memcpy(gbfData->yRight, gbData->yLeft, sizeof(double) * nStates);
   memcpy(gbfData->kRight, gbData->kLeft, sizeof(double) * nStates);
 
-  for (stage_=0; stage_< nStages; stage_++) {
-    memcpy(gbfData->x + stage_ * nStates, gbfData->yRight, nStates*sizeof(double));
-    memcpy(gbfData->k + stage_ * nStates, gbfData->kRight, nStates*sizeof(double));
+  // set solution ring buffer (extrapolation in case of NLS)
+  for (i=0; i<gbfData->ringBufferSize; i++) {
+    gbfData->tv[i] = gbfData->timeRight;
+    memcpy(gbfData->yv + i * nStates, gbfData->yRight, nStates * sizeof(double));
+    memcpy(gbfData->kv + i * nStates, gbfData->kRight, nStates * sizeof(double));
   }
 }
 
@@ -744,12 +746,12 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
   int nStates = gbData->nStates;
   int nStages = gbData->tableau->nStages;
-  int i, stage_;
+  int i;
 
   /* set correct flags for int and reinit procedure */
+  solverInfo->didEventStep = FALSE;
   gbData->isFirstStep = FALSE;
   gbData->didEventStep = TRUE;
-  solverInfo->didEventStep = FALSE;
 
   // initialize ring buffer for error and step size control
   for (i=0; i<gbData->ringBufferSize; i++) {
@@ -769,12 +771,6 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   gbData->timeRight = gbData->time;
   memcpy(gbData->yRight, gbData->yOld, nStates*sizeof(double));
   memcpy(gbData->kRight, gbData->f, nStates*sizeof(double));
-
-  // set internal ring-buffer
-  for (stage_=0; stage_<nStages; stage_++) {
-    memcpy(gbData->x + stage_ * nStates, gbData->yRight, nStates*sizeof(double));
-    memcpy(gbData->k + stage_ * nStates, gbData->kRight, nStates*sizeof(double));
-  }
 
   // set solution ring buffer (extrapolation in case of NLS)
   for (i=0; i<gbData->ringBufferSize; i++) {
@@ -1081,6 +1077,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       solverInfo->solverStatsTmp[3] = gbfData->errorTestFailures;
       solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
 
+      // log the emitted result
+      if (ACTIVE_STREAM(LOG_M_BB)){
+        infoStreamPrint(LOG_STATS, 1, "emit result (inner integration):");
+        printVector_gb(LOG_STATS, " y", sData->realVars, nStates, sData->timeValue);
+        messageClose(LOG_STATS);
+      }
+
       if (ACTIVE_STREAM(LOG_M_FASTSTATES)) {
         dumpFastStates_gb(gbData, TRUE);
       }
@@ -1148,9 +1151,11 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                              gbfData->timeRight, gbfData->yRight, gbfData->kRight,
                              sData->timeValue,  sData->realVars, nStates);
     // log the emitted result
-    infoStreamPrint(LOG_SOLVER_V, 1, "emit result (inner integration):");
-    printVector_gb(LOG_SOLVER_V, " y", sData->realVars, nStates, sData->timeValue);
-    messageClose(LOG_SOLVER_V);
+    if (ACTIVE_STREAM(LOG_M_BB)){
+      infoStreamPrint(LOG_STATS, 1, "emit result (inner integration):");
+      printVector_gb(LOG_STATS, " y", sData->realVars, nStates, sData->timeValue);
+      messageClose(LOG_STATS);
+    }
     return 1;
   }
 
@@ -1769,11 +1774,6 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       gbData->time = eventTime;
       memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
 
-      // print states at event time
-      infoStreamPrint(LOG_SOLVER, 1, "states at even time:");
-      printVector_gb(LOG_SOLVER, "yE", sData->realVars, nStates, eventTime);
-      messageClose(LOG_SOLVER);
-
       /* write statistics to the solverInfo data structure */
       solverInfo->solverStatsTmp[0] = gbData->stepsDone;
       solverInfo->solverStatsTmp[1] = gbData->evalFunctionODE;
@@ -1781,6 +1781,12 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       solverInfo->solverStatsTmp[3] = gbData->errorTestFailures;
       solverInfo->solverStatsTmp[4] = gbData->convergenceFailures;
 
+      // log the emitted result
+      if (ACTIVE_STREAM(LOG_M_BB)){
+        infoStreamPrint(LOG_STATS, 1, "emit result (singlerate integration):");
+        printVector_gb(LOG_STATS, " y", sData->realVars, nStates, sData->timeValue);
+        messageClose(LOG_STATS);
+      }
       // return to solver main routine for proper event handling (iteration)
       return 0;
     }
