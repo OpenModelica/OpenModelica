@@ -262,6 +262,12 @@ typedef struct RESIDUAL_USERDATA {
 
 typedef struct NLS_USERDATA NLS_USERDATA;
 
+typedef enum {
+  NLS_FAILED = 0,                   /* NLS Solver failed to solve system */
+  NLS_SOLVED = 1,                   /* NLS Solver solved system successfully */
+  NLS_SOLVED_LESS_ACCURARCY = 2     /* NLS Solver found a solution with low accuracy */
+} NLS_SOLVER_STATUS;
+
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 typedef struct NONLINEAR_SYSTEM_DATA
 {
@@ -308,8 +314,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void *oldValueList;                  /* old values organized in a sorted list for extrapolation and interpolate, respectively */
   modelica_real *resValues;            /* memory space for evaluated residual values */
 
-  modelica_real residualError;         /* not used */
-  modelica_boolean solved;             /* true if solved in current step */
+  NLS_SOLVER_STATUS solved;            /* Specifiex if the NLS could be solved (with less accuracy) or failed */
   modelica_real lastTimeSolved;        /* save last successful solved point in time */
 
   /* statistics */
@@ -335,8 +340,6 @@ typedef struct LINEAR_SYSTEM_THREAD_DATA
   modelica_real *x;                    /* solution vector x */
   modelica_real *A;                    /* matrix A */
   modelica_real *b;                    /* vector b */
-
-  modelica_real residualError;         /* not used yet */
 
   ANALYTIC_JACOBIAN* parentJacobian;   /* if != NULL then it's the parent jacobian matrix */
   ANALYTIC_JACOBIAN* jacobian;         /* jacobian */
