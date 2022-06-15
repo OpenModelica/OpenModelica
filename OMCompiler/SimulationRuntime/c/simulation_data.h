@@ -44,6 +44,7 @@
 #include "util/list.h"
 #include "util/doubleEndedList.h"
 #include "util/simulation_options.h"
+#include "simulation/solver/context.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
@@ -632,19 +633,6 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
   int lastStoredEventValue;
 } SPATIAL_DISTRIBUTION_DATA;
 
-typedef enum EVAL_CONTEXT
-{
-  CONTEXT_UNKNOWN = 0,
-
-  CONTEXT_ODE,
-  CONTEXT_ALGEBRAIC,
-  CONTEXT_EVENTS,
-  CONTEXT_JACOBIAN,
-  CONTEXT_SYM_JACOBIAN,
-
-  CONTEXT_MAX
-} EVAL_CONTEXT;
-
 typedef struct SIMULATION_INFO
 {
   modelica_real startTime;            /* Start time of the simulation */
@@ -669,10 +657,9 @@ typedef struct SIMULATION_INFO
   NEWTON_STRATEGY newtonStrategy;      /* newton damping strategy solver */
   int nlsCsvInfomation;                /* = 1 csv files with detailed nonlinear solver process are generated */
   NLS_LS nlsLinearSolver;              /* nls linear solver */
-  /* current context evaluation, set by dassl and used for extrapolation
-   * of next non-linear guess */
-  int currentContext;
-  int currentContextOld;
+
+  EVAL_CONTEXT currentContext;         /* Simulation context */
+  EVAL_CONTEXT currentContextOld;      /* Last value of currentContext */
   int jacobianEvals;                   /* number of different columns to evaluate functionODE */
   int currentJacobianEval;             /* current column to evaluate functionODE for Jacobian */
 

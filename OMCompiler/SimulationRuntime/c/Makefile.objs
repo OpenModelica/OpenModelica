@@ -134,6 +134,7 @@ endif
 SOLVER_OBJS_FMU=$(SOLVER_OBJS_LINEAR_SYSTEMS) \
                 $(SOLVER_OBJS_MIXED_SYSTEMS) \
                 $(SOLVER_OBJS_NONLINEAR_SYSTEMS) \
+                context$(OBJ_EXT) \
                 delay$(OBJ_EXT) \
                 fmi_events$(OBJ_EXT) \
                 model_help$(OBJ_EXT) \
@@ -171,7 +172,8 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
 else
   SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif
-SOLVER_HFILES = cvode_solver.h \
+SOLVER_HFILES = context.h \
+                cvode_solver.h \
                 dae_mode.h \
                 dassl.h \
                 delay.h \

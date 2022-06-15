@@ -885,16 +885,16 @@ int getInitialGuess(NONLINEAR_SYSTEM_DATA *nonlinsys, double time)
  *  \param [in]  [context] current context of evaluation
  *
  */
-int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, int context)
+int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, EVAL_CONTEXT context)
 {
   /* write solution to oldValue list for extrapolation */
   if (nonlinsys->solved == 1)
   {
     /* do not use solution of jacobian for next extrapolation */
-    if (context < 4)
+    if (context == CONTEXT_ODE || context == CONTEXT_ALGEBRAIC || context == CONTEXT_EVENTS)
     {
       addListElement((VALUES_LIST*)nonlinsys->oldValueList,
-              createValueElement(nonlinsys->size, time, nonlinsys->nlsx));
+                     createValueElement(nonlinsys->size, time, nonlinsys->nlsx));
     }
   }
   else if (nonlinsys->solved == 2)
@@ -904,10 +904,10 @@ int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, int cont
       cleanValueList((VALUES_LIST*)nonlinsys->oldValueList, NULL);
     }
     /* do not use solution of jacobian for next extrapolation */
-    if (context < 4)
+    if (context == CONTEXT_ODE || context == CONTEXT_ALGEBRAIC || context == CONTEXT_EVENTS)
     {
       addListElement((VALUES_LIST*)nonlinsys->oldValueList,
-              createValueElement(nonlinsys->size, time, nonlinsys->nlsx));
+                     createValueElement(nonlinsys->size, time, nonlinsys->nlsx));
     }
   }
   messageClose(LOG_NLS_EXTRAPOLATE);

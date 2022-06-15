@@ -44,17 +44,18 @@
 #include "util/parallel_helper.h"
 #include "gc/omc_gc.h"
 
-#include "simulation/options.h"
-#include "simulation/simulation_runtime.h"
-#include "simulation/results/simulation_result.h"
-#include "simulation/solver/solver_main.h"
-#include "simulation/solver/model_help.h"
-#include "simulation/solver/external_input.h"
-#include "simulation/solver/epsilon.h"
-#include "simulation/solver/omc_math.h"
-#include "simulation/solver/jacobianSymbolical.h"
-#include "simulation/solver/dassl.h"
+#include "context.h"
+#include "dassl.h"
+#include "epsilon.h"
+#include "external_input.h"
+#include "jacobianSymbolical.h"
 #include "meta/meta_modelica.h"
+#include "model_help.h"
+#include "omc_math.h"
+#include "simulation/options.h"
+#include "simulation/results/simulation_result.h"
+#include "simulation/simulation_runtime.h"
+#include "solver_main.h"
 
 #ifdef __cplusplus
 extern "C" {
