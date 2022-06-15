@@ -1861,7 +1861,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
                              nStates);
     // log the emitted result
     if (ACTIVE_STREAM(LOG_M_BB)){
-      infoStreamPrint(LOG_STATS, 1, "emit result (outer integration):");
+      infoStreamPrint(LOG_STATS, 1, "emit result (singlerate integration):");
       printVector_gb(LOG_STATS, " y", sData->realVars, nStates, sData->timeValue);
       messageClose(LOG_STATS);
     }
