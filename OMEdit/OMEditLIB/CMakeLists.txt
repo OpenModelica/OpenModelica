@@ -131,6 +131,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/FMUWrapper.cpp
                       Animation/AbstractVisualizer.cpp
                       Animation/Shape.cpp
+                      Animation/Vector.cpp
                       resource_omedit.qrc)
 
 
@@ -252,6 +253,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Animation/FMUWrapper.h
                       Animation/AbstractVisualizer.h
                       Animation/Shape.h
+                      Animation/Vector.h
                       Animation/rapidxml.hpp)
 
 

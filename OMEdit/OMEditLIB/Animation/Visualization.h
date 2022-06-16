@@ -58,6 +58,7 @@
 
 #include "AbstractVisualizer.h"
 #include "Shape.h"
+#include "Vector.h"
 
 struct UserSimSettingsMAT
 {
@@ -103,6 +104,7 @@ public:
   OSGScene(const OSGScene& osgs) = delete;
   OSGScene& operator=(const OSGScene& osgs) = delete;
   void setUpScene(const std::vector<ShapeObject>& shapes);
+  void setUpScene(const std::vector<VectorObject>& vectors);
   osg::ref_ptr<osg::Group> getRootNode();
   std::string getPath() const;
   void setPath(const std::string path);
@@ -142,6 +144,7 @@ private:
   void appendVisVariable(const rapidxml::xml_node<>* node, std::vector<std::string>& visVariables) const;
 public:
   std::vector<ShapeObject> _shapes;
+  std::vector<VectorObject> _vectors;
 private:
   std::string _modelFile;
   std::string _path;
@@ -191,5 +194,6 @@ osg::Vec3f cross(osg::Vec3f vec1, osg::Vec3f vec2);
 Directions fixDirections(osg::Vec3f lDir, osg::Vec3f wDir);
 void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f& r);
 rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, float length/*, float width, float height*/, std::string type);
+rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir, float length);
 
 #endif
