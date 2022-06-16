@@ -1187,9 +1187,12 @@ algorithm
     json := JSON.addPair("variability", JSON.makeString(s), json);
   end if;
 
-  s := Dump.unparseDirectionSymbolStr(attrs.direction);
-  if not stringEmpty(s) then
-    json := JSON.addPair("direction", JSON.makeString(s), json);
+  if AbsynUtil.isInput(attrs.direction) then
+    json := JSON.addPair("input", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isOutput(attrs.direction) then
+    json := JSON.addPair("output", JSON.makeBoolean(true), json);
   end if;
 end dumpJSONAttributes;
 

@@ -81,7 +81,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": \"Real\",
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"direction\": \"input \"
+//         \"input\": true
 //       }
 //     },
 //     {
