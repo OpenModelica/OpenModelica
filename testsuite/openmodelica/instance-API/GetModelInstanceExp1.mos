@@ -76,7 +76,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"modifier\": \" = a.x[1]\",
 //       \"value\": {
 //         \"binding\": {
-//           \"kind\": \"cref\",
+//           \"$kind\": \"cref\",
 //           \"parts\": [
 //             {
 //               \"name\": \"a\"

@@ -127,7 +127,7 @@ getModelInstance(M, prettyPrint = true);
 //   \"connections\": [
 //     {
 //       \"lhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c1\"
@@ -135,7 +135,7 @@ getModelInstance(M, prettyPrint = true);
 //         ]
 //       },
 //       \"rhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c3\"
@@ -167,7 +167,7 @@ getModelInstance(M, prettyPrint = true);
 //     },
 //     {
 //       \"lhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c1\"
@@ -175,7 +175,7 @@ getModelInstance(M, prettyPrint = true);
 //         ]
 //       },
 //       \"rhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c2\"
