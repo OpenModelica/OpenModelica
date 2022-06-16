@@ -688,7 +688,7 @@ void promote_scalar_string_array(modelica_string s,int n,
 }
 
 /* return a vector of length ndims(a) containing the dimension sizes of a */
-void size_string_array(const string_array_t * a, integer_array_t* dest)
+void size_string_array(const string_array_t * a, integer_array* dest)
 {
     int i;
 

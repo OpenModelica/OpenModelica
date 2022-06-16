@@ -486,7 +486,7 @@ void ocl_execute_kernel(cl_kernel kernel){
 }
 
 
-void ocl_set_num_threads(integer_array_t global_threads_in, integer_array_t local_threads_in){
+void ocl_set_num_threads(integer_array global_threads_in, integer_array local_threads_in){
 
     WORK_DIM = global_threads_in.dim_size[0];
 

@@ -129,7 +129,7 @@ struct type_desc_s {
     modelica_real real;
     real_array r_array;
     modelica_integer integer;
-    integer_array_t int_array;
+    integer_array int_array;
     modelica_boolean boolean;
     boolean_array_t bool_array;
     modelica_string string;

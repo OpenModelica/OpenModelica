@@ -53,9 +53,9 @@ extern void write_modelica_real(type_description *desc, const modelica_real *dat
 extern void write_real_array(type_description *desc, const real_array *arr);
 
 extern int read_modelica_integer(type_description **descptr, modelica_integer *data);
-extern int read_integer_array(type_description ** descptr, integer_array_t *arr);
+extern int read_integer_array(type_description ** descptr, integer_array *arr);
 extern void write_modelica_integer(type_description *desc, const modelica_integer *data);
-extern void write_integer_array(type_description *desc, const integer_array_t *arr);
+extern void write_integer_array(type_description *desc, const integer_array *arr);
 
 extern int read_modelica_boolean(type_description **descptr, modelica_boolean *data);
 extern int read_boolean_array(type_description ** descptr, boolean_array_t *arr);

@@ -147,7 +147,7 @@ static inline int ndims_string_array(const string_array_t * a)
 
 extern const char** data_of_string_c89_array(const string_array_t a);
 
-extern void size_string_array(const string_array_t * a, integer_array_t* dest);
+extern void size_string_array(const string_array_t * a, integer_array* dest);
 extern modelica_string scalar_string_array(const string_array_t * a);
 extern void vector_string_array(const string_array_t * a, string_array_t* dest);
 extern void vector_string_scalar(modelica_string a,string_array_t* dest);

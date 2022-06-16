@@ -194,7 +194,7 @@ extern void promote_alloc_real_array(const real_array * a, int n, real_array* de
 static inline int ndims_real_array(const real_array * a)
 { return ndims_base_array(a); }
 
-extern void size_real_array(const real_array * a,integer_array_t* dest);
+extern void size_real_array(const real_array * a,integer_array* dest);
 extern modelica_real scalar_real_array(const real_array * a);
 extern void vector_real_array(const real_array * a, real_array* dest);
 extern void vector_real_scalar(modelica_real a,real_array* dest);
@@ -227,8 +227,8 @@ static inline void clone_reverse_real_array_spec(const real_array *source,
 extern void convert_alloc_real_array_to_f77(const real_array * a, real_array* dest);
 extern void convert_alloc_real_array_from_f77(const real_array * a, real_array* dest);
 
-extern void cast_integer_array_to_real(const integer_array_t * a, real_array * dest);
-extern void cast_real_array_to_integer(const real_array * a, integer_array_t * dest);
+extern void cast_integer_array_to_real(const integer_array * a, real_array * dest);
+extern void cast_real_array_to_integer(const real_array * a, integer_array * dest);
 
 extern void fill_alloc_real_array(real_array* dest, modelica_real value, int ndims, ...);
 

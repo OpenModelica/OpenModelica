@@ -75,7 +75,7 @@ static inline modelica_real *real_ptrget(real_array *a, size_t i){
     return ((modelica_real *) a->data) + i;
 }
 
-static inline modelica_integer *integer_ptrget(integer_array_t *a, size_t i){
+static inline modelica_integer *integer_ptrget(integer_array *a, size_t i){
     return ((modelica_integer *) a->data) + i;
 }
 
@@ -333,7 +333,7 @@ modelica_real* real_array_element_addr_c99_3(real_array* source,int ndims,...){
     return tmp;
 }
 
-modelica_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...){
+modelica_integer* integer_array_element_addr_c99_1(integer_array* source,int ndims,...){
     va_list ap;
     modelica_integer* tmp;
 
@@ -344,7 +344,7 @@ modelica_integer* integer_array_element_addr_c99_1(integer_array_t* source,int n
     return tmp;
 }
 
-modelica_integer* integer_array_element_addr_c99_2(integer_array_t* source,int ndims,...){
+modelica_integer* integer_array_element_addr_c99_2(integer_array* source,int ndims,...){
     va_list ap;
     modelica_integer* tmp;
 
@@ -355,7 +355,7 @@ modelica_integer* integer_array_element_addr_c99_2(integer_array_t* source,int n
     return tmp;
 }
 
-modelica_integer* integer_array_element_addr_c99_3(integer_array_t* source,int ndims,...){
+modelica_integer* integer_array_element_addr_c99_3(integer_array* source,int ndims,...){
     va_list ap;
     modelica_integer* tmp;
 

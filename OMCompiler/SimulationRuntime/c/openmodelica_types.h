@@ -154,9 +154,8 @@ typedef base_array_t string_array_t;
 
 typedef base_array_t boolean_array_t;
 typedef base_array_t real_array;
-typedef base_array_t integer_array_t;
+typedef base_array_t integer_array;
 
-typedef integer_array_t integer_array;
 typedef boolean_array_t boolean_array;
 typedef string_array_t string_array;
 

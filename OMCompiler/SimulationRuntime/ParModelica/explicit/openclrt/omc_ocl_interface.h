@@ -67,7 +67,7 @@
 
 // sets the number of threads for subsequent parallel operations
 // arguments are arrays of work_dim size specifying each workgroup dimension
-void ocl_set_num_threads(integer_array_t global_threads_in, integer_array_t local_threads_in);
+void ocl_set_num_threads(integer_array global_threads_in, integer_array local_threads_in);
 
 
 // sets the number of threads for subsequent parallel operations.
@@ -148,11 +148,11 @@ modelica_real* real_array_element_addr_c99_2(real_array* source,int ndims,...);
 
 modelica_real* real_array_element_addr_c99_3(real_array* source,int ndims,...);
 
-modelica_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...);
+modelica_integer* integer_array_element_addr_c99_1(integer_array* source,int ndims,...);
 
-modelica_integer* integer_array_element_addr_c99_2(integer_array_t* source,int ndims,...);
+modelica_integer* integer_array_element_addr_c99_2(integer_array* source,int ndims,...);
 
-modelica_integer* integer_array_element_addr_c99_3(integer_array_t* source,int ndims,...);
+modelica_integer* integer_array_element_addr_c99_3(integer_array* source,int ndims,...);
 
 
 //array dimension size functions. returns the size of a given dimension for device real array

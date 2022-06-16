@@ -1196,7 +1196,7 @@ void promote_scalar_real_array(modelica_real s,int n,real_array* dest)
 }
 
 /* return a vector of length ndims(a) containing the dimension sizes of a */
-void size_real_array(const real_array * a, integer_array_t* dest)
+void size_real_array(const real_array * a, integer_array* dest)
 {
     /* This should be an integer array dest instead */
     int i;
@@ -1592,7 +1592,7 @@ void convert_alloc_real_array_from_f77(const real_array * a, real_array* dest)
     transpose_real_array(a, dest);
 }
 
-void cast_integer_array_to_real(const integer_array_t* a, real_array* dest)
+void cast_integer_array_to_real(const integer_array* a, real_array* dest)
 {
     int els = base_array_nr_of_elements(*a);
     int i;
@@ -1603,7 +1603,7 @@ void cast_integer_array_to_real(const integer_array_t* a, real_array* dest)
     }
 }
 
-void cast_real_array_to_integer(const real_array * a, integer_array_t* dest)
+void cast_real_array_to_integer(const real_array * a, integer_array* dest)
 {
     int els = base_array_nr_of_elements(*a);
     int i;

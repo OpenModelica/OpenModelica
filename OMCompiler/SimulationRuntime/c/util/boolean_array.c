@@ -746,7 +746,7 @@ void promote_scalar_boolean_array(modelica_boolean s,int n,
     }
 }
 
-void size_boolean_array(const boolean_array_t* a, integer_array_t* dest)
+void size_boolean_array(const boolean_array_t* a, integer_array* dest)
 {
     /* This should be an integer array dest instead */
     int i;
