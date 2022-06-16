@@ -32,8 +32,8 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#ifndef ABSTRACTVISUALIZERS_H
-#define ABSTRACTVISUALIZERS_H
+#ifndef ABSTRACTVISUALIZER_H
+#define ABSTRACTVISUALIZER_H
 
 #include <iostream>
 

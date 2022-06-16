@@ -32,7 +32,7 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#include "AbstractVisualizers.h"
+#include "AbstractVisualizer.h"
 
 std::string operator+(const std::string& st, const VisualizerType type)
 {

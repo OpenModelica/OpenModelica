@@ -34,7 +34,7 @@
 
 #include "AnimationWindow.h"
 #include "Options/OptionsDialog.h"
-#include "Visualizer.h"
+#include "Visualization.h"
 #include <QAction>
 
 /*!
@@ -56,8 +56,8 @@ AnimationWindow::AnimationWindow(QWidget *pParent)
  */
 AnimationWindow::~AnimationWindow()
 {
-  if (mpVisualizer) {
-    delete mpVisualizer;
+  if (mpVisualization) {
+    delete mpVisualization;
   }
 }
 

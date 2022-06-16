@@ -279,7 +279,7 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
 
   // If a visualizer is picked, one can change its properties
   AbstractVisualizerObject* visualizer = nullptr;
-  if ((visualizer = mpAnimationWidget->getVisualizer()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
+  if ((visualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
     action2.setText(tr((std::string("Make ") + visualizer->getVisualizerType() + " Invisible").c_str()));
     contextMenu.addMenu(&visualizerMenu);
   }
@@ -304,7 +304,7 @@ void ViewerWidget::showVisualizerPickContextMenu(const QPoint& pos)
 void ViewerWidget::changeVisualizerTransparency()
 {
   AbstractVisualizerObject* visualizer = nullptr;
-  if ((visualizer = mpAnimationWidget->getVisualizer()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
+  if ((visualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
     if (visualizer->isShape()) {
       ShapeObject* shape = static_cast<ShapeObject*>(visualizer);
       if (shape->_type.compare("dxf") == 0) {
@@ -322,7 +322,7 @@ void ViewerWidget::changeVisualizerTransparency()
                                                   currentTransparency, min, max, step, &ok);
     if (ok) { // Picked transparency is not OK if the user cancels the dialog
       visualizer->setTransparency((float) (transparency - min) / (max - min));
-      mpAnimationWidget->getVisualizer()->modifyVisualizer(mSelectedVisualizer);
+      mpAnimationWidget->getVisualization()->modifyVisualizer(mSelectedVisualizer);
     }
     mSelectedVisualizer = "";
   }
@@ -335,7 +335,7 @@ void ViewerWidget::changeVisualizerTransparency()
 void ViewerWidget::makeVisualizerInvisible()
 {
   AbstractVisualizerObject* visualizer = nullptr;
-  if ((visualizer = mpAnimationWidget->getVisualizer()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
+  if ((visualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
     if (visualizer->isShape()) {
       ShapeObject* shape = static_cast<ShapeObject*>(visualizer);
       if (shape->_type.compare("dxf") == 0) {
@@ -347,7 +347,7 @@ void ViewerWidget::makeVisualizerInvisible()
       }
     }
     visualizer->setTransparency(1.0);
-    mpAnimationWidget->getVisualizer()->modifyVisualizer(mSelectedVisualizer);
+    mpAnimationWidget->getVisualization()->modifyVisualizer(mSelectedVisualizer);
     mSelectedVisualizer = "";
   }
 }
@@ -359,7 +359,7 @@ void ViewerWidget::makeVisualizerInvisible()
 void ViewerWidget::changeVisualizerColor()
 {
   AbstractVisualizerObject* visualizer = nullptr;
-  if ((visualizer = mpAnimationWidget->getVisualizer()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
+  if ((visualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
     if (visualizer->isShape()) {
       ShapeObject* shape = static_cast<ShapeObject*>(visualizer);
       if (shape->_type.compare("dxf") == 0) {
@@ -374,7 +374,7 @@ void ViewerWidget::changeVisualizerColor()
     const QColor color = QColorDialog::getColor(currentColor, this, Helper::chooseColor);
     if (color.isValid()) { // Picked color is invalid if the user cancels the dialog
       visualizer->setColor(color);
-      mpAnimationWidget->getVisualizer()->modifyVisualizer(mSelectedVisualizer);
+      mpAnimationWidget->getVisualization()->modifyVisualizer(mSelectedVisualizer);
     }
     mSelectedVisualizer = "";
   }
@@ -387,7 +387,7 @@ void ViewerWidget::changeVisualizerColor()
 void ViewerWidget::applyCheckerTexture()
 {
   AbstractVisualizerObject* visualizer = nullptr;
-  if ((visualizer = mpAnimationWidget->getVisualizer()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
+  if ((visualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
     if (visualizer->isShape()) {
       ShapeObject* shape = static_cast<ShapeObject*>(visualizer);
       if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
@@ -399,7 +399,7 @@ void ViewerWidget::applyCheckerTexture()
       }
     }
     visualizer->setTextureImagePath(":/Resources/bitmaps/check.png");
-    mpAnimationWidget->getVisualizer()->modifyVisualizer(mSelectedVisualizer);
+    mpAnimationWidget->getVisualization()->modifyVisualizer(mSelectedVisualizer);
     mSelectedVisualizer = "";
   }
 }
@@ -411,7 +411,7 @@ void ViewerWidget::applyCheckerTexture()
 void ViewerWidget::applyCustomTexture()
 {
   AbstractVisualizerObject* visualizer = nullptr;
-  if ((visualizer = mpAnimationWidget->getVisualizer()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
+  if ((visualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
     if (visualizer->isShape()) {
       ShapeObject* shape = static_cast<ShapeObject*>(visualizer);
       if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
@@ -427,7 +427,7 @@ void ViewerWidget::applyCustomTexture()
                                                             (QString*) currentFileName, Helper::bitmapFileTypes, nullptr);
     if (!fileName.isEmpty()) { // Picked file name is empty if the user cancels the dialog
       visualizer->setTextureImagePath(fileName.toStdString());
-      mpAnimationWidget->getVisualizer()->modifyVisualizer(mSelectedVisualizer);
+      mpAnimationWidget->getVisualization()->modifyVisualizer(mSelectedVisualizer);
     }
     mSelectedVisualizer = "";
   }
@@ -440,7 +440,7 @@ void ViewerWidget::applyCustomTexture()
 void ViewerWidget::removeTexture()
 {
   AbstractVisualizerObject* visualizer = nullptr;
-  if ((visualizer = mpAnimationWidget->getVisualizer()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
+  if ((visualizer = mpAnimationWidget->getVisualization()->getBaseData()->getVisualizerObjectByID(mSelectedVisualizer))) {
     if (visualizer->isShape()) {
       ShapeObject* shape = static_cast<ShapeObject*>(visualizer);
       if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0) {
@@ -452,7 +452,7 @@ void ViewerWidget::removeTexture()
       }
     }
     visualizer->setTextureImagePath("");
-    mpAnimationWidget->getVisualizer()->modifyVisualizer(mSelectedVisualizer);
+    mpAnimationWidget->getVisualization()->modifyVisualizer(mSelectedVisualizer);
     mSelectedVisualizer = "";
   }
 }
@@ -463,7 +463,7 @@ void ViewerWidget::removeTexture()
  */
 void ViewerWidget::resetTransparencyAndTextureForAllVisualizers()
 {
-  std::vector<ShapeObject>& shapes = mpAnimationWidget->getVisualizer()->getBaseData()->_shapes;
+  std::vector<ShapeObject>& shapes = mpAnimationWidget->getVisualization()->getBaseData()->_shapes;
   std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
   visualizers.reserve(shapes.size());
   for (ShapeObject& shape : shapes) {
@@ -472,7 +472,7 @@ void ViewerWidget::resetTransparencyAndTextureForAllVisualizers()
   for (AbstractVisualizerObject& visualizer : visualizers) {
     visualizer.setTransparency(0.0);
     visualizer.setTextureImagePath("");
-    mpAnimationWidget->getVisualizer()->modifyVisualizer(visualizer._id);
+    mpAnimationWidget->getVisualization()->modifyVisualizer(visualizer._id);
   }
 }
 
