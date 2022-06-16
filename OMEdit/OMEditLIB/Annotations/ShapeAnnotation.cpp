@@ -91,12 +91,12 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   mRotation.parse(list.at(2));
 }
 
-void GraphicItem::parseShapeAnnotation(Model::GraphicItem *pGraphicItem)
+void GraphicItem::parseShapeAnnotation(ModelInstance::GraphicItem *pGraphicItem)
 {
   // if first item of list is true then the shape should be visible.
   mVisible = pGraphicItem->getVisible();
   // 2nd item is the origin
-  Model::Point origin = pGraphicItem->getOrigin();
+  ModelInstance::Point origin = pGraphicItem->getOrigin();
   mOrigin = QPointF(origin.x(), origin.y());
   // 3rd item is the rotation
   mRotation = pGraphicItem->getRotation();
@@ -192,7 +192,7 @@ void FilledShape::parseShapeAnnotation(QString annotation)
   mLineThickness.parse(list.at(7));
 }
 
-void FilledShape::parseShapeAnnotation(Model::FilledShape *pFilledShape)
+void FilledShape::parseShapeAnnotation(ModelInstance::FilledShape *pFilledShape)
 {
   mLineColor = pFilledShape->getLineColor().getColor();
   mFillColor = pFilledShape->getFillColor().getColor();

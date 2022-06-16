@@ -50,7 +50,7 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
 }
 
-EllipseAnnotation::EllipseAnnotation(Model::Ellipse *pEllipse, GraphicsView *pGraphicsView)
+EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   mpOriginItem = new OriginItem(this);
@@ -112,9 +112,9 @@ void EllipseAnnotation::parseShapeAnnotation()
   //mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(rectangle.value("borderPattern").toString()));
 
   QList<QPointF> extents;
-  Model::Extent extent = mpEllipse->getExtent();
-  Model::Point extent1 = extent.getExtent1();
-  Model::Point extent2 = extent.getExtent2();
+  ModelInstance::Extent extent = mpEllipse->getExtent();
+  ModelInstance::Point extent1 = extent.getExtent1();
+  ModelInstance::Point extent2 = extent.getExtent2();
 
   extents.append(QPointF(extent1.x(), extent1.y()));
   extents.append(QPointF(extent2.x(), extent2.y()));

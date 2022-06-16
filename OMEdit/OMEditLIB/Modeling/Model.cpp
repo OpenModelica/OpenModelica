@@ -36,27 +36,27 @@
 #include <QRectF>
 #include <QtMath>
 
-namespace Model
+namespace ModelInstance
 {
   Point::Point() = default;
 
   Point::Point(double x, double y)
   {
-    value[0] = x;
-    value[1] = y;
+    mValue[0] = x;
+    mValue[1] = y;
   }
 
   Point::Point(const Point &point)
   {
-    value[0] = point.x();
-    value[1] = point.y();
+    mValue[0] = point.x();
+    mValue[1] = point.y();
   }
 
   void Point::deserialize(const QJsonArray &jsonArray)
   {
     if (jsonArray.size() == 2) {
-      value[0] = jsonArray.at(0).toDouble();
-      value[1] = jsonArray.at(1).toDouble();
+      mValue[0] = jsonArray.at(0).toDouble();
+      mValue[1] = jsonArray.at(1).toDouble();
     }
   }
 
@@ -64,21 +64,21 @@ namespace Model
 
   Extent::Extent(const Point &extent1, const Point extent2)
   {
-    point[0] = extent1;
-    point[1] = extent2;
+    mPoint[0] = extent1;
+    mPoint[1] = extent2;
   }
 
   Extent::Extent(const Extent &extent)
   {
-    point[0] = extent.getExtent1();
-    point[1] = extent.getExtent2();
+    mPoint[0] = extent.getExtent1();
+    mPoint[1] = extent.getExtent2();
   }
 
   void Extent::deserialize(const QJsonArray &jsonArray)
   {
     if (jsonArray.size() == 2) {
-      point[0].deserialize(jsonArray.at(0).toArray());
-      point[1].deserialize(jsonArray.at(1).toArray());
+      mPoint[0].deserialize(jsonArray.at(0).toArray());
+      mPoint[1].deserialize(jsonArray.at(1).toArray());
     }
   }
 
@@ -207,50 +207,50 @@ namespace Model
 
   GraphicItem::GraphicItem()
   {
-    visible = true;
-    origin = Point(0, 0);
-    rotation = 0;
+    mVisible = true;
+    mOrigin = Point(0, 0);
+    mRotation = 0;
   }
 
   void GraphicItem::deserialize(const QJsonArray &jsonArray)
   {
-    visible = jsonArray.at(0).toBool();
-    origin.deserialize(jsonArray.at(1).toArray());
-    rotation = jsonArray.at(2).toDouble();
+    mVisible = jsonArray.at(0).toBool();
+    mOrigin.deserialize(jsonArray.at(1).toArray());
+    mRotation = jsonArray.at(2).toDouble();
   }
 
   Color::Color()
   {
-    color = Qt::black;
+    mColor = Qt::black;
   }
 
   void Color::deserialize(const QJsonArray &jsonArray)
   {
     if (jsonArray.size() == 3) {
-      color.setRed(jsonArray.at(0).toInt());
-      color.setGreen(jsonArray.at(1).toInt());
-      color.setBlue(jsonArray.at(2).toInt());
+      mColor.setRed(jsonArray.at(0).toInt());
+      mColor.setGreen(jsonArray.at(1).toInt());
+      mColor.setBlue(jsonArray.at(2).toInt());
     }
   }
 
   FilledShape::FilledShape()
   {
-    pattern = LinePattern::Solid;
-    fillPattern = FillPattern::None;
-    lineThickness = 0.25;
+    mPattern = LinePattern::Solid;
+    mFillPattern = FillPattern::None;
+    mLineThickness = 0.25;
   }
 
   void FilledShape::deserialize(const QJsonArray &jsonArray)
   {
-    lineColor.deserialize(jsonArray.at(3).toArray());
-    fillColor.deserialize(jsonArray.at(4).toArray());
+    mLineColor.deserialize(jsonArray.at(3).toArray());
+    mFillColor.deserialize(jsonArray.at(4).toArray());
 //    if (jsonArray.contains("pattern")) {
 
 //    }
 //    if (jsonArray.contains("pattern")) {
 
 //    }
-    lineThickness = jsonArray.at(7).toDouble();
+    mLineThickness = jsonArray.at(7).toDouble();
   }
 
   Shape::Shape()
@@ -263,8 +263,8 @@ namespace Model
 
   Rectangle::Rectangle()
   {
-    borderPattern = BorderPattern::None;
-    radius = 0;
+    mBorderPattern = BorderPattern::None;
+    mRadius = 0;
   }
 
   void Rectangle::deserialize(const QJsonArray &jsonArray)
@@ -276,19 +276,19 @@ namespace Model
   //    if (jsonArray.contains("borderPattern")) {
 
   //    }
-      extent.deserialize(jsonArray.at(9).toArray());
-      radius = jsonArray.at(10).toDouble();
+      mExtent.deserialize(jsonArray.at(9).toArray());
+      mRadius = jsonArray.at(10).toDouble();
     }
   }
 
   Ellipse::Ellipse()
   {
-    startAngle = 0;
-    endAngle = 360;
-    if (startAngle == 0 && endAngle == 360) {
-      closure = EllipseClosure::Chord;
+    mStartAngle = 0;
+    mEndAngle = 360;
+    if (mStartAngle == 0 && mEndAngle == 360) {
+      mClosure = EllipseClosure::Chord;
     } else {
-      closure = EllipseClosure::Radial;
+      mClosure = EllipseClosure::Radial;
     }
   }
 
@@ -298,9 +298,9 @@ namespace Model
       GraphicItem::deserialize(jsonArray);
       FilledShape::deserialize(jsonArray);
 
-      extent.deserialize(jsonArray.at(8).toArray());
-      startAngle = jsonArray.at(9).toDouble();
-      endAngle = jsonArray.at(10).toDouble();
+      mExtent.deserialize(jsonArray.at(8).toArray());
+      mStartAngle = jsonArray.at(9).toDouble();
+      mEndAngle = jsonArray.at(10).toDouble();
       //    if (jsonArray.contains("closure")) {
 
       //    }
@@ -312,7 +312,7 @@ namespace Model
   void IconDiagramAnnotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("coordinateSystem")) {
-      coordinateSystem.deserialize(jsonObject.value("coordinateSystem").toObject());
+      mCoordinateSystem.deserialize(jsonObject.value("coordinateSystem").toObject());
     }
 
     if (jsonObject.contains("graphics")) {
@@ -324,36 +324,87 @@ namespace Model
           if (name.compare(QStringLiteral("Rectangle")) == 0) {
             Rectangle *pRectangle = new Rectangle;
             pRectangle->deserialize(graphicObject.value("elements").toArray());
-            graphics.append(pRectangle);
+            mGraphics.append(pRectangle);
           } else if (name.compare(QStringLiteral("Ellipse")) == 0) {
             Ellipse *pEllipse = new Ellipse;
             pEllipse->deserialize(graphicObject.value("elements").toArray());
-            graphics.append(pEllipse);
+            mGraphics.append(pEllipse);
           }
         }
       }
     }
   }
 
-  Instance::Instance() = default;
+  Model::Model() = default;
 
-  void Instance::deserialize(const QJsonObject &jsonObject)
+  void Model::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("name")) {
-      name = jsonObject.value("name").toString();
+      mName = jsonObject.value("name").toString();
     }
 
-    if (jsonObject.contains("annotation") && jsonObject.value("annotation").isObject()) {
+    if (jsonObject.contains("extends")) {
+      QJsonArray extends = jsonObject.value("extends").toArray();
+      foreach (QJsonValue extend, extends) {
+        Extend *pExtend = new Extend;
+        pExtend->deserialize(extend.toObject());
+        mExtends.append(pExtend);
+      }
+    }
+
+    if (jsonObject.contains("annotation")) {
       QJsonObject annotation = jsonObject.value("annotation").toObject();
       if (annotation.contains("Icon")) {
-        iconAnnotation.deserialize(annotation.value("Icon").toObject());
+        mIconAnnotation.deserialize(annotation.value("Icon").toObject());
+      }
+      if (annotation.contains("Diagram")) {
+        mIconAnnotation.deserialize(annotation.value("Diagram").toObject());
+      }
+      if (jsonObject.contains("components")) {
+        QJsonObject componentsJsonObject = jsonObject.value("components").toObject();
+        for (QJsonObject::const_iterator componentsIterator = componentsJsonObject.begin(); componentsIterator != componentsJsonObject.end(); ++componentsIterator) {
+          Element *pElement = new Element;
+          pElement->setName(componentsIterator.key());
+          pElement->deserialize(componentsJsonObject.value(componentsIterator.key()).toObject());
+          mElements.append(pElement);
+        }
       }
     }
   }
 
-  void Instance::serialize(QJsonObject &jsonObject) const
+  void Model::serialize(QJsonObject &jsonObject) const
   {
-    jsonObject["name"] = name;
+    jsonObject["name"] = mName;
+  }
+
+  Element::Element()
+    : Model()
+  {
+
+  }
+
+  void Element::deserialize(const QJsonObject &jsonObject)
+  {
+    Model::deserialize(jsonObject);
+
+    if (jsonObject.contains("type") && jsonObject.value("type").isString()) {
+      mType = jsonObject.value("type").toString();
+    }
+
+    if (jsonObject.contains("modifier")) {
+      mModifier = jsonObject.value("modifier").toString();
+    }
+  }
+
+  Extend::Extend()
+    : Model()
+  {
+
+  }
+
+  void Extend::deserialize(const QJsonObject &jsonObject)
+  {
+    Model::deserialize(jsonObject);
   }
 
 }

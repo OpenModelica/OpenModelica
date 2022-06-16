@@ -70,7 +70,7 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
-  void parseShapeAnnotation(Model::GraphicItem *pGraphicItem);
+  void parseShapeAnnotation(ModelInstance::GraphicItem *pGraphicItem);
   QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
   void setOrigin(QPointF origin) {mOrigin = origin;}
@@ -90,7 +90,7 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
-  void parseShapeAnnotation(Model::FilledShape *pFilledShape);
+  void parseShapeAnnotation(ModelInstance::FilledShape *pFilledShape);
   QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
   QStringList getTextShapeAnnotation();

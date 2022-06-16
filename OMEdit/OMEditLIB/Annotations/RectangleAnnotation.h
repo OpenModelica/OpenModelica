@@ -44,7 +44,7 @@ class RectangleAnnotation : public ShapeAnnotation
 public:
   // Used for icon/diagram shape
   RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView);
-  RectangleAnnotation(Model::Rectangle *pRectangle, GraphicsView *pGraphicsView);
+  RectangleAnnotation(ModelInstance::Rectangle *pRectangle, GraphicsView *pGraphicsView);
   // Used for shape inside a component
   RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for icon/diagram inherited shape
@@ -64,7 +64,7 @@ public:
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
 private:
-  Model::Rectangle *mpRectangle;
+  ModelInstance::Rectangle *mpRectangle;
 public slots:
   void duplicate() override;
 };

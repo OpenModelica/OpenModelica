@@ -37,7 +37,7 @@
 #include <QJsonObject>
 #include <QColor>
 
-namespace Model
+namespace ModelInstance
 {
   class Point
   {
@@ -46,12 +46,12 @@ namespace Model
     Point(double x, double y);
     Point(const Point &point);
     void deserialize(const QJsonArray &jsonArray);
-    double x() const {return value[0];}
-    double y() const {return value[1];}
+    double x() const {return mValue[0];}
+    double y() const {return mValue[1];}
 
     Point& operator=(const Point &point) noexcept = default;
 private:
-    double value[2];
+    double mValue[2];
   };
 
   class Extent
@@ -61,12 +61,12 @@ private:
     Extent(const Point &extent1, const Point extent2);
     Extent(const Extent &extent);
     void deserialize(const QJsonArray &jsonArray);
-    Point getExtent1() const {return point[0];}
-    Point getExtent2() const {return point[1];}
+    Point getExtent1() const {return mPoint[0];}
+    Point getExtent2() const {return mPoint[1];}
 
     Extent& operator=(const Extent &extent) noexcept = default;
 private:
-    Point point[2];
+    Point mPoint[2];
   };
 
   class CoordinateSystem
@@ -115,15 +115,15 @@ private:
   {
   public:
     GraphicItem();
-    bool getVisible() const {return visible;}
-    Point getOrigin() const {return origin;}
-    double getRotation() const {return rotation;}
+    bool getVisible() const {return mVisible;}
+    Point getOrigin() const {return mOrigin;}
+    double getRotation() const {return mRotation;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
 private:
-    bool visible;
-    Point origin;
-    double rotation;
+    bool mVisible;
+    Point mOrigin;
+    double mRotation;
   };
 
   class Color
@@ -131,9 +131,9 @@ private:
   public:
     Color();
     void deserialize(const QJsonArray &jsonArray);
-    QColor getColor() const {return color;}
+    QColor getColor() const {return mColor;}
 private:
-    QColor color;
+    QColor mColor;
   };
 
   enum class LinePattern {None, Solid, Dash, Dot, DashDot, DashDotDot};
@@ -149,19 +149,19 @@ private:
   {
   public:
     FilledShape();
-    Color getLineColor() const {return lineColor;}
-    Color getFillColor() const {return fillColor;}
-    LinePattern getPattern() const {return pattern;}
-    FillPattern getFillPattern() const {return fillPattern;}
-    double getLineThickness() const {return lineThickness;}
+    Color getLineColor() const {return mLineColor;}
+    Color getFillColor() const {return mFillColor;}
+    LinePattern getPattern() const {return mPattern;}
+    FillPattern getFillPattern() const {return mFillPattern;}
+    double getLineThickness() const {return mLineThickness;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
   private:
-    Color lineColor;
-    Color fillColor;
-    LinePattern pattern;
-    FillPattern fillPattern;
-    double lineThickness;
+    Color mLineColor;
+    Color mFillColor;
+    LinePattern mPattern;
+    FillPattern mFillPattern;
+    double mLineThickness;
   };
 
   class Shape : public GraphicItem, public FilledShape
@@ -176,13 +176,13 @@ private:
   public:
     Rectangle();
     void deserialize(const QJsonArray &jsonArray);
-    BorderPattern getBorderPattern() const {return borderPattern;}
-    Extent getExtent() const {return extent;}
-    double getRadius() const {return radius;}
+    BorderPattern getBorderPattern() const {return mBorderPattern;}
+    Extent getExtent() const {return mExtent;}
+    double getRadius() const {return mRadius;}
   private:
-    BorderPattern borderPattern;
-    Extent extent;
-    double radius;
+    BorderPattern mBorderPattern;
+    Extent mExtent;
+    double mRadius;
   };
 
   class Ellipse : public Shape
@@ -190,15 +190,15 @@ private:
   public:
     Ellipse();
     void deserialize(const QJsonArray &jsonArray);
-    Extent getExtent() const {return extent;}
-    double getStartAngle() const {return startAngle;}
-    double getEndAngle() const {return endAngle;}
-    EllipseClosure getClosure() const {return closure;}
+    Extent getExtent() const {return mExtent;}
+    double getStartAngle() const {return mStartAngle;}
+    double getEndAngle() const {return mEndAngle;}
+    EllipseClosure getClosure() const {return mClosure;}
   private:
-    Extent extent;
-    double startAngle;
-    double endAngle;
-    EllipseClosure closure;
+    Extent mExtent;
+    double mStartAngle;
+    double mEndAngle;
+    EllipseClosure mClosure;
   };
 
   class IconDiagramAnnotation
@@ -207,35 +207,58 @@ private:
     IconDiagramAnnotation();
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
-    CoordinateSystem getCoordinateSystem() {return coordinateSystem;}
-    QList<Shape*> getGraphics() const {return graphics;}
+    CoordinateSystem getCoordinateSystem() {return mCoordinateSystem;}
+    QList<Shape*> getGraphics() const {return mGraphics;}
 
-    CoordinateSystem coordinateSystem;
-    QList<Shape*> graphics;
+    CoordinateSystem mCoordinateSystem;
+    QList<Shape*> mGraphics;
 
   };
 
-  class Instance
+  class Element;
+  class Extend;
+  class Model
   {
   public:
-    Instance();
+    Model();
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
-    IconDiagramAnnotation getIconAnnotation() const {return iconAnnotation;}
-    IconDiagramAnnotation getDiagramAnnotation() const {return diagramAnnotation;}
+    QString getName() const {return mName;}
+    QList<Extend *> getExtends() const {return mExtends;}
+    IconDiagramAnnotation getIconAnnotation() const {return mIconAnnotation;}
+    IconDiagramAnnotation getDiagramAnnotation() const {return mDiagramAnnotation;}
+    QList<Element *> getElements() const {return mElements;}
 
-    //  QVariantMap getIconCoordinateSystem() const;
-    //  QList<QVariant> getIconAnnotation() const;
-    //  QVariantMap getDiagramCoordinateSystem() const;
-    //  QList<QVariant> getDiagramAnnotation() const;
-
-    QString name;
-    IconDiagramAnnotation iconAnnotation;
-    IconDiagramAnnotation diagramAnnotation;
-    //  QVariantMap annotation;
-
-    //  QVariant mResult;
+    QString mName;
+    QList<Extend*> mExtends;
+    IconDiagramAnnotation mIconAnnotation;
+    IconDiagramAnnotation mDiagramAnnotation;
+    QList<Element*> mElements;
   };
+
+  class Element : public Model
+  {
+  public:
+    Element();
+    void deserialize(const QJsonObject &jsonObject);
+    void serialize(QJsonObject &jsonObject) const;
+    QString getName() const {return mName;}
+    void setName(const QString &value) {mName = value;}
+  private:
+    QString mName;
+    QString mType;
+    QString mModifier;
+
+  };
+
+  class Extend : public Model
+  {
+  public:
+    Extend();
+    void deserialize(const QJsonObject &jsonObject);
+    void serialize(QJsonObject &jsonObject) const;
+  };
+
 }
 
 #endif // MODEL_H

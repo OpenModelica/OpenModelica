@@ -45,7 +45,7 @@ class EllipseAnnotation : public ShapeAnnotation
 public:
   // Used for icon/diagram shape
   EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView);
-  EllipseAnnotation(Model::Ellipse *pEllipse, GraphicsView *pGraphicsView);
+  EllipseAnnotation(ModelInstance::Ellipse *pEllipse, GraphicsView *pGraphicsView);
   // Used for shape inside a component
   EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for icon/diagram inherited shape
@@ -61,7 +61,7 @@ public:
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
 private:
-  Model::Ellipse *mpEllipse;
+  ModelInstance::Ellipse *mpEllipse;
 public slots:
   void duplicate() override;
 };

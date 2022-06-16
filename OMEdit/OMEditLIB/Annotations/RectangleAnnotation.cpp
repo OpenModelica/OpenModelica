@@ -50,7 +50,7 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGrap
   setShapeFlags(true);
 }
 
-RectangleAnnotation::RectangleAnnotation(Model::Rectangle *pRectangle, GraphicsView *pGraphicsView)
+RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   mpOriginItem = new OriginItem(this);
@@ -155,9 +155,9 @@ void RectangleAnnotation::parseShapeAnnotation()
   //mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(rectangle.value("borderPattern").toString()));
 
   QList<QPointF> extents;
-  Model::Extent extent = mpRectangle->getExtent();
-  Model::Point extent1 = extent.getExtent1();
-  Model::Point extent2 = extent.getExtent2();
+  ModelInstance::Extent extent = mpRectangle->getExtent();
+  ModelInstance::Point extent1 = extent.getExtent1();
+  ModelInstance::Point extent2 = extent.getExtent2();
 
   extents.append(QPointF(extent1.x(), extent1.y()));
   extents.append(QPointF(extent2.x(), extent2.y()));

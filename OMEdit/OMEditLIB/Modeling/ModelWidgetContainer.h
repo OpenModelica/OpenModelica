@@ -169,6 +169,7 @@ public:
 
   void drawCoordinateSystem();
   void drawShapes(bool select);
+  void drawElements();
 
 
   void setExtentRectangle(const QRectF rectangle);
@@ -561,6 +562,9 @@ public:
   Element* createInheritedComponent(Element *pComponent, GraphicsView *pGraphicsView);
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
   void loadElements();
+
+  void drawModelDiagram();
+
   void loadDiagramView();
   void loadConnections();
   void getModelConnections();
@@ -593,7 +597,7 @@ public:
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
   void processPendingModelUpdate();
 
-  Model::Instance mModelInstance;
+  ModelInstance::Model mModelInstance;
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
@@ -640,7 +644,7 @@ private:
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
 
-  void drawModelIconLayer();
+  void drawModelIcon();
 
 
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);
