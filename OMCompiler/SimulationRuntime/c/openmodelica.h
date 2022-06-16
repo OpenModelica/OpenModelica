@@ -127,7 +127,7 @@ struct type_desc_s {
   int retval : 1;
   union _data {
     modelica_real real;
-    real_array_t real_array;
+    real_array r_array;
     modelica_integer integer;
     integer_array_t int_array;
     modelica_boolean boolean;

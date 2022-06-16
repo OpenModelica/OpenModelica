@@ -71,7 +71,7 @@ size_t device_array_nr_of_elements(device_array *a){
 }
 
 
-static inline modelica_real *real_ptrget(real_array_t *a, size_t i){
+static inline modelica_real *real_ptrget(real_array *a, size_t i){
     return ((modelica_real *) a->data) + i;
 }
 
@@ -300,7 +300,7 @@ void swap_and_release(base_array_t* lhs, base_array_t* rhs){
 //which, right now, doesn't support overloading or the stdarg standard library.
 //even though the functions have the same body here they will have different body on the OpenCL counterparts
 
-modelica_real* real_array_element_addr_c99_1(real_array_t* source,int ndims,...){
+modelica_real* real_array_element_addr_c99_1(real_array* source,int ndims,...){
     va_list ap;
     modelica_real* tmp;
 
@@ -311,7 +311,7 @@ modelica_real* real_array_element_addr_c99_1(real_array_t* source,int ndims,...)
     return tmp;
 }
 
-modelica_real* real_array_element_addr_c99_2(real_array_t* source,int ndims,...){
+modelica_real* real_array_element_addr_c99_2(real_array* source,int ndims,...){
     va_list ap;
     modelica_real* tmp;
 
@@ -322,7 +322,7 @@ modelica_real* real_array_element_addr_c99_2(real_array_t* source,int ndims,...)
     return tmp;
 }
 
-modelica_real* real_array_element_addr_c99_3(real_array_t* source,int ndims,...){
+modelica_real* real_array_element_addr_c99_3(real_array* source,int ndims,...){
     va_list ap;
     modelica_real* tmp;
 
@@ -390,7 +390,7 @@ void print_array_info(device_real_array* arr){
 }
 */
 
-void print_array(real_array_t* arr){
+void print_array(real_array* arr){
   printf("\n\n");
   for(int q = 1; q < arr->dim_size[0]; q++){
     printf(" | %f", (*real_array_element_addr_c99_1(arr, 1, ((modelica_integer) q))));
@@ -400,7 +400,7 @@ void print_array(real_array_t* arr){
 
 /*
 void print_array(device_real_array* dev_arr){
-  real_array_t arr;
+  real_array arr;
   int nr_of_elm = device_array_nr_of_elements(dev_arr);
   alloc_real_array(&arr, 1, nr_of_elm);
   copy_real_array_data(dev_arr, &arr);

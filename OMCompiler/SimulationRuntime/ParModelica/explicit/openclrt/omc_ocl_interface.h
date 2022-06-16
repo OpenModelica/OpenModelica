@@ -142,11 +142,11 @@ void swap_and_release(base_array_t* lhs, base_array_t* rhs);
 //which right now doesn't support overloading or the stdarg standard library.
 //even though the functions have the same body here they will have different body on the OpenCL counterparts
 
-modelica_real* real_array_element_addr_c99_1(real_array_t* source,int ndims,...);
+modelica_real* real_array_element_addr_c99_1(real_array* source,int ndims,...);
 
-modelica_real* real_array_element_addr_c99_2(real_array_t* source,int ndims,...);
+modelica_real* real_array_element_addr_c99_2(real_array* source,int ndims,...);
 
-modelica_real* real_array_element_addr_c99_3(real_array_t* source,int ndims,...);
+modelica_real* real_array_element_addr_c99_3(real_array* source,int ndims,...);
 
 modelica_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...);
 
@@ -172,7 +172,7 @@ void free_device_array(base_array_t* dest);
 void print_array_info(device_real_array* arr);
 
 //prints array. useful for debugging.
-void print_array(real_array_t* arr);
+void print_array(real_array* arr);
 
 //ATTENTION: printing a device array means copying back and then printing. Expensive Operation.
 //void print_array(device_real_array* dev_arr);
