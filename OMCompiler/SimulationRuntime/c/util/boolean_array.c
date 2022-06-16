@@ -274,19 +274,19 @@ void print_boolean_array(const boolean_array_t *source)
     }
 }
 
-char print_boolean(m_boolean value)
+char print_boolean(modelica_boolean value)
 {
     return value ? 'T' : 'F';
 }
 
-void put_boolean_element(m_boolean value, int i1, boolean_array_t *dest)
+void put_boolean_element(modelica_boolean value, int i1, boolean_array_t *dest)
 {
     /* Assert that dest has correct dimension */
     /* Assert that i1 is a valid index */
     boolean_set(dest, i1, value);
 }
 
-void put_boolean_matrix_element(m_boolean value, int r, int c,
+void put_boolean_matrix_element(modelica_boolean value, int r, int c,
                                 boolean_array_t* dest)
 {
     /* Assert that dest hast correct dimension */
@@ -546,7 +546,7 @@ void array_alloc_scalar_boolean_array(boolean_array_t* dest, int n, ...)
     simple_alloc_1d_boolean_array(dest,n);
     va_start(ap,n);
     for(i = 0; i < n; ++i) {
-        put_boolean_element((m_boolean) va_arg(ap, int),i,dest);
+        put_boolean_element((modelica_boolean) va_arg(ap, int),i,dest);
     }
     va_end(ap);
 }
@@ -759,7 +759,7 @@ void size_boolean_array(const boolean_array_t* a, integer_array_t* dest)
     }
 }
 
-m_boolean scalar_boolean_array(const boolean_array_t* a)
+modelica_boolean scalar_boolean_array(const boolean_array_t* a)
 {
     assert(base_array_ok(a));
     assert(base_array_one_element_ok(a));

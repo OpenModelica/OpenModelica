@@ -84,12 +84,12 @@ void not_boolean_array(const boolean_array_t source, boolean_array_t *dest);
 extern modelica_boolean* calc_boolean_index(int ndims, const _index_t* idx_vec, const boolean_array_t* arr);
 extern modelica_boolean* calc_boolean_index_va(const boolean_array_t* source,int ndims,va_list ap);
 
-extern void put_boolean_element(m_boolean value,int i1,boolean_array_t* dest);
-extern void put_boolean_matrix_element(m_boolean value, int r, int c, boolean_array_t* dest);
+extern void put_boolean_element(modelica_boolean value,int i1,boolean_array_t* dest);
+extern void put_boolean_matrix_element(modelica_boolean value, int r, int c, boolean_array_t* dest);
 
 extern void print_boolean_matrix(const boolean_array_t* source);
 extern void print_boolean_array(const boolean_array_t* source);
-extern char print_boolean(m_boolean value);
+extern char print_boolean(modelica_boolean value);
 /*
 
  a[1:3] := b;
@@ -152,7 +152,7 @@ static inline int ndims_boolean_array(const boolean_array_t* a)
 { return ndims_base_array(a); }
 
 extern void size_boolean_array(const boolean_array_t* a, integer_array_t* dest);
-extern m_boolean scalar_boolean_array(const boolean_array_t* a);
+extern modelica_boolean scalar_boolean_array(const boolean_array_t* a);
 extern void vector_boolean_array(const boolean_array_t* a, boolean_array_t* dest);
 extern void vector_boolean_scalar(modelica_boolean a,boolean_array_t* dest);
 extern void matrix_boolean_array(const boolean_array_t* a, boolean_array_t* dest);

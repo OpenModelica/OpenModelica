@@ -273,9 +273,9 @@ m_string* string_alloc(int n)
 }
 
 /* allocates n booleans in the boolean_buffer */
-m_boolean* boolean_alloc(int n)
+modelica_boolean* boolean_alloc(int n)
 {
-  return (m_boolean*) omc_alloc_interface.malloc_atomic(n*sizeof(m_boolean));
+  return (modelica_boolean*) omc_alloc_interface.malloc_atomic(n*sizeof(modelica_boolean));
 }
 
 _index_t* size_alloc(int n)

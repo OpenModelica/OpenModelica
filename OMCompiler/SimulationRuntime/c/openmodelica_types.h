@@ -112,7 +112,7 @@ typedef int mmc_sint_t;
 #endif
 
 typedef modelica_metatype m_string;
-typedef signed char       m_boolean;
+typedef signed char modelica_boolean;
 typedef mmc_sint_t         _index_t;
 
 /* This structure holds indexes when subscripting an array.
@@ -137,14 +137,13 @@ struct base_array_s
   int ndims;
   _index_t *dim_size;
   void *data;
-  m_boolean flexible;
+  modelica_boolean flexible;
 };
 
 typedef struct base_array_s base_array_t;
 
 typedef base_array_t string_array_t;
 
-typedef signed char modelica_boolean;
 #ifndef FALSE
 #define FALSE 0
 #endif
