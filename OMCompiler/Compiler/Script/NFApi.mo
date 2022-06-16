@@ -1306,7 +1306,7 @@ algorithm
     case Absyn.Exp.CALL()
       algorithm
         json := JSON.emptyObject();
-        json := JSON.addPair("kind", JSON.makeString("call"), json);
+        json := JSON.addPair("$kind", JSON.makeString("call"), json);
         json := JSON.addPair("name", dumpJSONAbsynCref(exp.function_), json);
         json := dumpJSONAbsynFunctionArgs(exp.functionArgs, json);
       then

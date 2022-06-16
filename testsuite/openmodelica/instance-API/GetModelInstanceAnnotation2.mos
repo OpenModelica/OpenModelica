@@ -23,7 +23,7 @@ getModelInstance(M, prettyPrint=true);
 //     \"Icon\": {
 //       \"graphics\": [
 //         {
-//           \"kind\": \"record\",
+//           \"$kind\": \"record\",
 //           \"name\": \"Rectangle\",
 //           \"elements\": [
 //             true,
@@ -43,18 +43,18 @@ getModelInstance(M, prettyPrint=true);
 //               0
 //             ],
 //             {
-//               \"kind\": \"enum\",
+//               \"$kind\": \"enum\",
 //               \"name\": \"LinePattern.Solid\",
 //               \"index\": 2
 //             },
 //             {
-//               \"kind\": \"enum\",
+//               \"$kind\": \"enum\",
 //               \"name\": \"FillPattern.None\",
 //               \"index\": 1
 //             },
 //             0.25,
 //             {
-//               \"kind\": \"enum\",
+//               \"$kind\": \"enum\",
 //               \"name\": \"BorderPattern.None\",
 //               \"index\": 1
 //             },
@@ -72,7 +72,7 @@ getModelInstance(M, prettyPrint=true);
 //           ]
 //         },
 //         {
-//           \"kind\": \"record\",
+//           \"$kind\": \"record\",
 //           \"name\": \"Ellipse\",
 //           \"elements\": [
 //             true,
@@ -92,12 +92,12 @@ getModelInstance(M, prettyPrint=true);
 //               0
 //             ],
 //             {
-//               \"kind\": \"enum\",
+//               \"$kind\": \"enum\",
 //               \"name\": \"LinePattern.Solid\",
 //               \"index\": 2
 //             },
 //             {
-//               \"kind\": \"enum\",
+//               \"$kind\": \"enum\",
 //               \"name\": \"FillPattern.None\",
 //               \"index\": 1
 //             },
@@ -115,7 +115,7 @@ getModelInstance(M, prettyPrint=true);
 //             0,
 //             360,
 //             {
-//               \"kind\": \"enum\",
+//               \"$kind\": \"enum\",
 //               \"name\": \"EllipseClosure.Chord\",
 //               \"index\": 2
 //             }

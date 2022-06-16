@@ -836,7 +836,7 @@ public
       case TYPED_CALL()
         algorithm
           path := Function.nameConsiderBuiltin(call.fn);
-          json := JSON.addPair("kind", JSON.makeString("call"), json);
+          json := JSON.addPair("$kind", JSON.makeString("call"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
           json := JSON.addPair("arguments", JSON.makeArray(
             list(Expression.toJSON(a) for a in call.arguments)), json);
@@ -845,7 +845,7 @@ public
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
-          json := JSON.addPair("kind", JSON.makeString("array_constructor"), json);
+          json := JSON.addPair("$kind", JSON.makeString("array_constructor"), json);
           json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
           json := JSON.addPair("iterators", iterators_json(call.iters), json);
         then
@@ -854,7 +854,7 @@ public
       case TYPED_REDUCTION()
         algorithm
           path := Function.nameConsiderBuiltin(call.fn);
-          json := JSON.addPair("kind", JSON.makeString("reduction"), json);
+          json := JSON.addPair("$kind", JSON.makeString("reduction"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
           json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
           json := JSON.addPair("iterators", iterators_json(call.iters), json);
@@ -863,7 +863,7 @@ public
 
       else
         algorithm
-          json := JSON.addPair("kind", JSON.makeString("call"), json);
+          json := JSON.addPair("$kind", JSON.makeString("call"), json);
         then
           ();
 
