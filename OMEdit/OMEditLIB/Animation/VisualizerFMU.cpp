@@ -32,9 +32,7 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-
 #include "VisualizerFMU.h"
-
 
 VisualizerFMU::VisualizerFMU(const std::string& modelFile, const std::string& path)
     : VisualizerAbstract(modelFile, path, VisType::FMU),
@@ -104,71 +102,67 @@ void VisualizerFMU::allocateContext(const std::string& modelFile, const std::str
   mVersion = fmi_import_get_fmi_version(mpContext.get(), fmuFileName.c_str(), path.c_str());
 }
 
-unsigned int VisualizerFMU::getVarReferencesForObjectAttribute(ShapeObjectAttribute* attr)
+
+unsigned int VisualizerFMU::getVariableReferenceForVisualizerAttribute(VisualizerAttribute& attr)
 {
   unsigned int vr = 0;
-  if (!attr->isConst)
-  {
-    vr = mpFMU->fmi_get_variable_by_name(attr->cref.c_str());
+  if (!attr.isConst) {
+    vr = mpFMU->fmi_get_variable_by_name(attr.cref.c_str());
   }
   return vr;
 }
 
 int VisualizerFMU::setVarReferencesInVisAttributes()
 {
-  int isOk(0);
+  int isOk = 0;
 
   try
   {
-    size_t i = 0;
-    for (auto& shape : mpOMVisualBase->_shapes)
+    for (ShapeObject& shape : mpOMVisualBase->_shapes)
     {
-      shape = mpOMVisualBase->_shapes[i];
+      //std::cout<<"shape "<<shape._id <<std::endl;
 
-      shape._length.fmuValueRef = getVarReferencesForObjectAttribute(&shape._length);
-      shape._width.fmuValueRef = getVarReferencesForObjectAttribute(&shape._width);
-      shape._height.fmuValueRef = getVarReferencesForObjectAttribute(&shape._height);
+      shape._T[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._T[0]);
+      shape._T[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._T[1]);
+      shape._T[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._T[2]);
+      shape._T[3].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._T[3]);
+      shape._T[4].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._T[4]);
+      shape._T[5].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._T[5]);
+      shape._T[6].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._T[6]);
+      shape._T[7].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._T[7]);
+      shape._T[8].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._T[8]);
 
-      shape._lDir[0].fmuValueRef = getVarReferencesForObjectAttribute(&shape._lDir[0]);
-      shape._lDir[1].fmuValueRef = getVarReferencesForObjectAttribute(&shape._lDir[1]);
-      shape._lDir[2].fmuValueRef = getVarReferencesForObjectAttribute(&shape._lDir[2]);
+      shape._r[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._r[0]);
+      shape._r[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._r[1]);
+      shape._r[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._r[2]);
 
-      shape._wDir[0].fmuValueRef = getVarReferencesForObjectAttribute(&shape._wDir[0]);
-      shape._wDir[1].fmuValueRef = getVarReferencesForObjectAttribute(&shape._wDir[1]);
-      shape._wDir[2].fmuValueRef = getVarReferencesForObjectAttribute(&shape._wDir[2]);
+      shape._rShape[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._rShape[0]);
+      shape._rShape[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._rShape[1]);
+      shape._rShape[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._rShape[2]);
 
-      shape._r[0].fmuValueRef = getVarReferencesForObjectAttribute(&shape._r[0]);
-      shape._r[1].fmuValueRef = getVarReferencesForObjectAttribute(&shape._r[1]);
-      shape._r[2].fmuValueRef = getVarReferencesForObjectAttribute(&shape._r[2]);
+      shape._lDir[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._lDir[0]);
+      shape._lDir[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._lDir[1]);
+      shape._lDir[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._lDir[2]);
 
-      shape._rShape[0].fmuValueRef = getVarReferencesForObjectAttribute(&shape._rShape[0]);
-      shape._rShape[1].fmuValueRef = getVarReferencesForObjectAttribute(&shape._rShape[1]);
-      shape._rShape[2].fmuValueRef = getVarReferencesForObjectAttribute(&shape._rShape[2]);
+      shape._wDir[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._wDir[0]);
+      shape._wDir[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._wDir[1]);
+      shape._wDir[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._wDir[2]);
 
-      shape._T[0].fmuValueRef = getVarReferencesForObjectAttribute(&shape._T[0]);
-      shape._T[1].fmuValueRef = getVarReferencesForObjectAttribute(&shape._T[1]);
-      shape._T[2].fmuValueRef = getVarReferencesForObjectAttribute(&shape._T[2]);
-      shape._T[3].fmuValueRef = getVarReferencesForObjectAttribute(&shape._T[3]);
-      shape._T[4].fmuValueRef = getVarReferencesForObjectAttribute(&shape._T[4]);
-      shape._T[5].fmuValueRef = getVarReferencesForObjectAttribute(&shape._T[5]);
-      shape._T[6].fmuValueRef = getVarReferencesForObjectAttribute(&shape._T[6]);
-      shape._T[7].fmuValueRef = getVarReferencesForObjectAttribute(&shape._T[7]);
-      shape._T[8].fmuValueRef = getVarReferencesForObjectAttribute(&shape._T[8]);
+      shape._length.fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._length);
+      shape._width.fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._width);
+      shape._height.fmuValueRef = getVariableReferenceForVisualizerAttribute(shape._height);
 
-      //shape.dumpVisAttributes();
-      mpOMVisualBase->_shapes.at(i) = shape;
-      ++i;
-    }  //end for
-  }  // end try
-
-  catch (std::exception& e)
+      //shape.dumpVisualizerAttributes();
+    }
+  }
+  catch (std::exception& ex)
   {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          QString(QObject::tr("Something went wrong in OMVisualizer::setVarReferencesInVisAttributes. %1."))
-                                                          .arg(e.what()),
-                                                          Helper::scriptingKind, Helper::errorLevel));
+    QString msg = QString(QObject::tr("Something went wrong in VisualizerFMU::setVarReferencesInVisAttributes:\n%1."))
+                  .arg(ex.what());
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
     isOk = 1;
   }
+
   return isOk;
 }
 
@@ -252,65 +246,70 @@ void VisualizerFMU::initializeVisAttributes(const double time)
 
 void VisualizerFMU::updateVisAttributes(const double time)
 {
-  // Update all shapes.
+  // Update all visualizers
+  //std::cout<<"updateVisAttributes at "<<time <<std::endl;
+
   rAndT rT;
   osg::ref_ptr<osg::Node> child = nullptr;
+  unsigned int visualizerIdx = 0;
+
   try
   {
-    size_t i = 0;
-    for (auto& shape : mpOMVisualBase->_shapes)
+    for (ShapeObject& shape : mpOMVisualBase->_shapes)
     {
       // Get the values for the scene graph objects
-      updateObjectAttributeFMU(&shape._length, mpFMU);
-      updateObjectAttributeFMU(&shape._width, mpFMU);
-      updateObjectAttributeFMU(&shape._height, mpFMU);
+      //std::cout<<"shape "<<shape._id <<std::endl;
 
-      updateObjectAttributeFMU(&shape._lDir[0], mpFMU);
-      updateObjectAttributeFMU(&shape._lDir[1], mpFMU);
-      updateObjectAttributeFMU(&shape._lDir[2], mpFMU);
+      updateVisualizerAttributeFMU(shape._T[0]);
+      updateVisualizerAttributeFMU(shape._T[1]);
+      updateVisualizerAttributeFMU(shape._T[2]);
+      updateVisualizerAttributeFMU(shape._T[3]);
+      updateVisualizerAttributeFMU(shape._T[4]);
+      updateVisualizerAttributeFMU(shape._T[5]);
+      updateVisualizerAttributeFMU(shape._T[6]);
+      updateVisualizerAttributeFMU(shape._T[7]);
+      updateVisualizerAttributeFMU(shape._T[8]);
 
-      updateObjectAttributeFMU(&shape._wDir[0], mpFMU);
-      updateObjectAttributeFMU(&shape._wDir[1], mpFMU);
-      updateObjectAttributeFMU(&shape._wDir[2], mpFMU);
+      updateVisualizerAttributeFMU(shape._r[0]);
+      updateVisualizerAttributeFMU(shape._r[1]);
+      updateVisualizerAttributeFMU(shape._r[2]);
 
-      updateObjectAttributeFMU(&shape._r[0], mpFMU);
-      updateObjectAttributeFMU(&shape._r[1], mpFMU);
-      updateObjectAttributeFMU(&shape._r[2], mpFMU);
+      updateVisualizerAttributeFMU(shape._rShape[0]);
+      updateVisualizerAttributeFMU(shape._rShape[1]);
+      updateVisualizerAttributeFMU(shape._rShape[2]);
 
-      updateObjectAttributeFMU(&shape._rShape[0], mpFMU);
-      updateObjectAttributeFMU(&shape._rShape[1], mpFMU);
-      updateObjectAttributeFMU(&shape._rShape[2], mpFMU);
+      updateVisualizerAttributeFMU(shape._lDir[0]);
+      updateVisualizerAttributeFMU(shape._lDir[1]);
+      updateVisualizerAttributeFMU(shape._lDir[2]);
 
-      updateObjectAttributeFMU(&shape._T[0], mpFMU);
-      updateObjectAttributeFMU(&shape._T[1], mpFMU);
-      updateObjectAttributeFMU(&shape._T[2], mpFMU);
-      updateObjectAttributeFMU(&shape._T[3], mpFMU);
-      updateObjectAttributeFMU(&shape._T[4], mpFMU);
-      updateObjectAttributeFMU(&shape._T[5], mpFMU);
-      updateObjectAttributeFMU(&shape._T[6], mpFMU);
-      updateObjectAttributeFMU(&shape._T[7], mpFMU);
-      updateObjectAttributeFMU(&shape._T[8], mpFMU);
-      rT = rotateModelica2OSG(osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
-                osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
-                osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
-                             shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
-                             shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
-                osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
-                osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
-                shape._length.exp,/* shape._width.exp, shape._height.exp,*/ shape._type);
+      updateVisualizerAttributeFMU(shape._wDir[0]);
+      updateVisualizerAttributeFMU(shape._wDir[1]);
+      updateVisualizerAttributeFMU(shape._wDir[2]);
 
+      updateVisualizerAttributeFMU(shape._length);
+      updateVisualizerAttributeFMU(shape._width);
+      updateVisualizerAttributeFMU(shape._height);
+
+      rT = rotateModelica2OSG(
+          osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
+                       shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
+                       shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
+          osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
+          osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
+          osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
+          osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
+          shape._length.exp/*, shape._width.exp, shape._height.exp*/, shape._type);
       assemblePokeMatrix(shape._mat, rT._T, rT._r);
 
-      // Update the shapes.
-      mpUpdateVisitor->_shape = shape;
-
-      // Get the scene graph nodes and stuff.
+      // Update the shapes
+      mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&shape);
+      //shape.dumpVisualizerAttributes();
       //mpOMVisScene->dumpOSGTreeDebug();
-      child = mpOMVisScene->getScene().getRootNode()->getChild(i);  // the transformation
+      child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
       child->accept(*mpUpdateVisitor);
-      ++i;
-    }  //end for
-  }  // end try
+      ++visualizerIdx;
+    }
+  }
   catch (std::exception& ex)
   {
     QString msg = QString(QObject::tr("Error in VisualizerFMU::updateVisAttributes at time point %1\n%2."))
@@ -339,14 +338,12 @@ void VisualizerFMU::updateScene(const double time)
   updateVisAttributes(mpTimeManager->getVisTime());
 }
 
-// Todo pass by const ref
-void VisualizerFMU::updateObjectAttributeFMU(ShapeObjectAttribute* attr, FMUWrapperAbstract* fmuWrapper)
+void VisualizerFMU::updateVisualizerAttributeFMU(VisualizerAttribute& attr)
 {
-  if (!attr->isConst)
-  {
-    double a = attr->exp;
-    fmuWrapper->fmi_get_real(&attr->fmuValueRef, &a);
-    attr->exp = (float) a;
+  if (!attr.isConst) {
+    double a = attr.exp;
+    mpFMU->fmi_get_real(&attr.fmuValueRef, &a);
+    attr.exp = (float) a;
   }
 }
 
@@ -361,4 +358,3 @@ FMUWrapperAbstract* VisualizerFMU::getFMU()
 {
   return mpFMU;
 };
-

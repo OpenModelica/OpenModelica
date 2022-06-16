@@ -388,7 +388,7 @@ bool AbstractAnimationWindow::loadVisualization()
                                                           Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
-  //load the XML File, build osgTree, get initial values for the shapes
+  //load the XML File, build osgTree, get initial values for the visualizers
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
   if (!xmlExists) {
     QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
@@ -542,7 +542,7 @@ void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* pVisualizerFM
  */
 void AbstractAnimationWindow::updateScene()
 {
-  if (!(mpVisualizer == NULL)) {
+  if (mpVisualizer) {
     //set time label
     if (!mpVisualizer->getTimeManager()->isPaused()) {
       mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
@@ -569,8 +569,8 @@ void AbstractAnimationWindow::updateScene()
  */
 void AbstractAnimationWindow::chooseAnimationFileSlotFunction()
 {
-  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
-                                                    NULL, Helper::visualizationFileTypes, NULL);
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 – %2").arg(Helper::applicationName).arg(Helper::chooseFile),
+                                                    nullptr, Helper::visualizationFileTypes, nullptr);
   if (fileName.isEmpty()) {
     return;
   }

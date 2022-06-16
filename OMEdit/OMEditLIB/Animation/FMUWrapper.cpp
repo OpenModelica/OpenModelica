@@ -32,7 +32,6 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-
 #include "FMUWrapper.h"
 #include "Modeling/MessagesWidget.h"
 #include "Util/Helper.h"
