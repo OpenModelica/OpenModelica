@@ -46,6 +46,7 @@
 
 OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path)
   : _shapes(),
+    _vectors(),
     _modelFile(modelFile),
     _path(path),
     _xmlFileName(assembleXMLFileName(modelFile, path))
@@ -61,9 +62,12 @@ OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path
 AbstractVisualizerObject* OMVisualBase::getVisualizerObjectByID(const std::string& visualizerID)
 {
   std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
-  visualizers.reserve(_shapes.size());
+  visualizers.reserve(_shapes.size() + _vectors.size());
   for (ShapeObject& shape : _shapes) {
     visualizers.push_back(shape);
+  }
+  for (VectorObject& vector : _vectors) {
+    visualizers.push_back(vector);
   }
   for (AbstractVisualizerObject& visualizer : visualizers) {
     if (visualizer._id == visualizerID) {
@@ -83,9 +87,12 @@ int OMVisualBase::getVisualizerObjectIndexByID(const std::string& visualizerID)
 {
   int i = 0;
   std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
-  visualizers.reserve(_shapes.size());
+  visualizers.reserve(_shapes.size() + _vectors.size());
   for (ShapeObject& shape : _shapes) {
     visualizers.push_back(shape);
+  }
+  for (VectorObject& vector : _vectors) {
+    visualizers.push_back(vector);
   }
   for (AbstractVisualizerObject& visualizer : visualizers) {
     if (visualizer._id == visualizerID) {
@@ -232,6 +239,70 @@ void OMVisualBase::initVisObjects()
 
     _shapes.push_back(shape);
   }
+
+  for (rapidxml::xml_node<>* vectorNode = rootNode->first_node("vector"); vectorNode; vectorNode = vectorNode->next_sibling("vector"))
+  {
+    VectorObject vector; // Create a new object for each node to ensure that all attributes are reset to default values
+
+    expNode = vectorNode->first_node("ident")->first_node();
+    vector._id = std::string(expNode->value());
+
+    //std::cout<<"id "<<vector._id<<std::endl;
+
+    expNode = vectorNode->first_node("T")->first_node();
+    vector._T[0] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._T[1] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._T[2] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._T[3] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._T[4] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._T[5] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._T[6] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._T[7] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._T[8] = getVisualizerAttributeForNode(expNode);
+
+    expNode = vectorNode->first_node("r")->first_node();
+    vector._r[0] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._r[1] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._r[2] = getVisualizerAttributeForNode(expNode);
+
+    expNode = vectorNode->first_node("color")->first_node();
+    vector._color[0] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._color[1] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._color[2] = getVisualizerAttributeForNode(expNode);
+
+    expNode = vectorNode->first_node("specCoeff")->first_node();
+    vector._specCoeff = getVisualizerAttributeForNode(expNode);
+
+    expNode = vectorNode->first_node("coordinates")->first_node();
+    vector._coords[0] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._coords[1] = getVisualizerAttributeForNode(expNode);
+    expNode = expNode->next_sibling();
+    vector._coords[2] = getVisualizerAttributeForNode(expNode);
+
+    expNode = vectorNode->first_node("quantity")->first_node();
+    vector._quantity = getVisualizerAttributeForNode(expNode);
+
+    expNode = vectorNode->first_node("headAtOrigin")->first_node();
+    vector._headAtOrigin = getVisualizerAttributeForNode(expNode);
+
+    expNode = vectorNode->first_node("twoHeadedArrow")->first_node();
+    vector._twoHeadedArrow = getVisualizerAttributeForNode(expNode);
+
+    _vectors.push_back(vector);
+  }
 }
 
 const std::string OMVisualBase::getModelFile() const
@@ -342,6 +413,7 @@ void VisualizationAbstract::setUpScene()
 {
   // Build scene graph.
   mpOMVisScene->getScene().setUpScene(mpOMVisualBase->_shapes);
+  mpOMVisScene->getScene().setUpScene(mpOMVisualBase->_vectors);
 }
 
 VisType VisualizationAbstract::getVisType() const
@@ -464,6 +536,42 @@ void OSGScene::setUpScene(const std::vector<ShapeObject>& shapes)
   }
 }
 
+void OSGScene::setUpScene(const std::vector<VectorObject>& vectors)
+{
+  for (const VectorObject& vector : vectors)
+  {
+    Q_UNUSED(vector);
+
+    osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
+
+    osg::ref_ptr<osg::ShapeDrawable> shapeDraw0 = new osg::ShapeDrawable(); // shaft cylinder
+    shapeDraw0->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+
+    osg::ref_ptr<osg::ShapeDrawable> shapeDraw1 = new osg::ShapeDrawable(); // first head cone
+    shapeDraw1->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+
+    osg::ref_ptr<osg::ShapeDrawable> shapeDraw2 = new osg::ShapeDrawable(); // second head cone
+    shapeDraw2->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+
+    osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+    geode->addDrawable(shapeDraw0.get());
+    geode->addDrawable(shapeDraw1.get());
+    geode->addDrawable(shapeDraw2.get());
+
+    osg::ref_ptr<osg::Material> material = new osg::Material();
+    material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
+
+    osg::ref_ptr<osg::StateSet> ss = geode->getOrCreateStateSet();
+    ss->setAttribute(material.get());
+
+    geode->setStateSet(ss.get());
+
+    transf->addChild(geode.get());
+
+    _rootNode->addChild(transf.get());
+  }
+}
+
 osg::ref_ptr<osg::Group> OSGScene::getRootNode()
 {
   return _rootNode;
@@ -561,6 +669,52 @@ void UpdateVisitor::apply(osg::Geode& node)
       }
       break;
      }//end case type shape
+
+    case VisualizerType::vector:
+     {
+      VectorObject* vector = static_cast<VectorObject*>(_visualizer);
+
+      const float vectorRadius = vector->getRadius();
+      const float vectorLength = vector->getLength();
+      const float headRadius = vector->getHeadRadius();
+      const float headLength = vector->getHeadLength();
+      const float shaftRadius = vectorRadius;
+      const float shaftLength = vectorLength > headLength ? vectorLength - headLength : 0;
+      const osg::Vec3f vectorDirection = osg::Vec3f(0, 0, 1); // axis of symmetry directed from tail to head of arrow
+      const osg::Vec3f shaftPosition = vectorDirection * (- headLength / 2); // center of cylinder shifted for top of shaft to meet bottom of first head
+      const osg::Vec3f head1Position = vectorDirection * (vectorLength / 2 - headLength); // base of first cone (offset added by osg::Cone is canceled below)
+      const osg::Vec3f head2Position = head1Position - vectorDirection * headLength / 2; // base of second cone (offset added by osg::Cone is canceled below)
+
+      osg::ref_ptr<osg::Cylinder> shaftShape = new osg::Cylinder(shaftPosition, shaftRadius, shaftLength);
+      osg::ref_ptr<osg::Cone> head1Shape = new osg::Cone(head1Position, headRadius, headLength);
+      osg::ref_ptr<osg::Cone> head2Shape = new osg::Cone(head2Position, headRadius, headLength);
+
+      head1Shape->setCenter(head1Shape->getCenter() - vectorDirection * head1Shape->getBaseOffset());
+      head2Shape->setCenter(head2Shape->getCenter() - vectorDirection * head2Shape->getBaseOffset());
+
+      osg::ref_ptr<osg::Drawable> draw0 = node.getDrawable(0); // shaft cylinder
+      draw0->dirtyDisplayList();
+      draw0->setShape(shaftShape.get());
+      //std::cout<<"VECTOR shaft "<<draw0->getShape()->className()<<std::endl;
+
+      osg::ref_ptr<osg::Drawable> draw1 = node.getDrawable(1); // first head cone
+      draw1->dirtyDisplayList();
+      draw1->setShape(head1Shape.get());
+      //std::cout<<"VECTOR first head "<<draw1->getShape()->className()<<std::endl;
+
+      osg::ref_ptr<osg::Drawable> draw2 = node.getDrawable(2); // second head cone
+      draw2->dirtyDisplayList();
+      if (vector->isTwoHeadedArrow())
+      {
+        draw2->setShape(head2Shape.get());
+        //std::cout<<"VECTOR second head "<<draw2->getShape()->className()<<std::endl;
+      }
+      else
+      {
+        draw2->setShape(nullptr);
+      }
+      break;
+     }//end case type vector
 
     default:
      {break;}
@@ -869,6 +1023,42 @@ rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::
   }
 
   res._r = res._r + r;
+  res._T = Mat3mulMat3(T0, T);
+
+  return res;
+}
+
+rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir, float length)
+{
+  rAndT res;
+
+  // See https://math.stackexchange.com/a/413235
+  int i = dir[0] ? 0 : dir[1] ? 1 : 2;
+  int j = (i + 1) % 3;
+
+  osg::Vec3f lDir = dir;
+  osg::Vec3f wDir = osg::Vec3f();
+  wDir[i] = -lDir[j];
+  wDir[j] = +lDir[i];
+
+  Directions dirs = fixDirections(lDir, wDir);
+  osg::Vec3f hDir = dirs._lDir ^ dirs._wDir;
+  //std::cout << "lDir " << dirs._lDir[0] << ", " << dirs._lDir[1] << ", " << dirs._lDir[2] << std::endl;
+  //std::cout << "wDir " << dirs._wDir[0] << ", " << dirs._wDir[1] << ", " << dirs._wDir[2] << std::endl;
+  //std::cout << "hDir " <<       hDir[0] << ", " <<       hDir[1] << ", " <<       hDir[2] << std::endl;
+
+  osg::Matrix3 T0 = osg::Matrix3(dirs._wDir[0], dirs._wDir[1], dirs._wDir[2],
+                                       hDir[0],       hDir[1],       hDir[2],
+                                 dirs._lDir[0], dirs._lDir[1], dirs._lDir[2]);
+  //std::cout << "T0 " << T0[0] << ", " << T0[1] << ", " << T0[2] << std::endl;
+  //std::cout << "   " << T0[3] << ", " << T0[4] << ", " << T0[5] << std::endl;
+  //std::cout << "   " << T0[6] << ", " << T0[7] << ", " << T0[8] << std::endl;
+
+  // Since in OSG, the rotation starts at the center of symmetry and in MSL at the end of the body,
+  // we need an offset here of half the length of the vector
+  osg::Vec3f r_offset = dirs._lDir * length / 2;
+
+  res._r = V3mulMat3(r_offset, T) + r;
   res._T = Mat3mulMat3(T0, T);
 
   return res;
