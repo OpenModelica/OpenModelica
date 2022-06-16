@@ -111,6 +111,7 @@ void mmc_do_out_of_memory()
   omc_assert_warning(info, "Out of memory! Faking a stack overflow.");
   mmc_do_stackoverflow(threadData);
 #endif
+  abort();  // Silence invalid noreturn warning. This is never reached.
 }
 
 #if !(defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME))

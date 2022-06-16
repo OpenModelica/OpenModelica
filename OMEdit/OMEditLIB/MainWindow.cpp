@@ -579,6 +579,13 @@ int MainWindow::askForExit()
  */
 void MainWindow::beforeClosingMainWindow()
 {
+  // Issue #9101. Close all top level windows
+  foreach (QWidget *pWidget, QApplication::topLevelWidgets())  {
+    if (pWidget == this) {
+      continue;
+    }
+    pWidget->close();
+  }
   mpOMCProxy->quitOMC();
   delete mpOMCProxy;
   // delete the OMSProxy object

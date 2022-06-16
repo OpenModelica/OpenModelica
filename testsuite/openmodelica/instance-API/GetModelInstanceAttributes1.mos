@@ -19,8 +19,9 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
-//   \"components\": {
-//     \"pi\": {
+//   \"components\": [
+//     {
+//       \"name\": \"pi\",
 //       \"type\": \"Real\",
 //       \"modifier\": \" = 3\",
 //       \"value\": {
@@ -30,13 +31,14 @@ getModelInstance(M, prettyPrint = true);
 //         \"variability\": \"parameter\"
 //       }
 //     },
-//     \"deg\": {
+//     {
+//       \"name\": \"deg\",
 //       \"type\": \"Real\",
 //       \"modifier\": \"(start = pi)\",
 //       \"prefixes\": {
 //
 //       }
 //     }
-//   }
+//   ]
 // }"
 // endResult
