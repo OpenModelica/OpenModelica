@@ -32,10 +32,10 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#ifndef SHAPES_H
-#define SHAPES_H
+#ifndef SHAPE_H
+#define SHAPE_H
 
-#include "AbstractVisualizers.h"
+#include "AbstractVisualizer.h"
 
 class ShapeObject : public AbstractVisualizerObject
 {

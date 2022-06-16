@@ -32,15 +32,15 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#include "VisualizerFMU.h"
+#include "VisualizationFMU.h"
 
-VisualizerFMU::VisualizerFMU(const std::string& modelFile, const std::string& path)
-    : VisualizerAbstract(modelFile, path, VisType::FMU),
+VisualizationFMU::VisualizationFMU(const std::string& modelFile, const std::string& path)
+    : VisualizationAbstract(modelFile, path, VisType::FMU),
       mpFMU(nullptr),
       mpSimSettings(new SimSettingsFMU())
 {
 }
- VisualizerFMU::~VisualizerFMU()
+ VisualizationFMU::~VisualizationFMU()
  {
    if (mpFMU){
      free(mpFMU);
@@ -48,18 +48,18 @@ VisualizerFMU::VisualizerFMU(const std::string& modelFile, const std::string& pa
  }
 
 
-void VisualizerFMU::initData()
+void VisualizationFMU::initData()
 {
-  VisualizerAbstract::initData();
+  VisualizationAbstract::initData();
   loadFMU(mpOMVisualBase->getModelFile(), mpOMVisualBase->getPath());
   mpSimSettings->setTend(mpTimeManager->getEndTime());
   mpSimSettings->setHdef(0.001);
   setVarReferencesInVisAttributes();
 
-  //OMVisualizerFMU::initializeVisAttributes(_omvManager->getStartTime());
+  //OMVisualizationFMU::initializeVisAttributes(_omvManager->getStartTime());
 }
 
-void VisualizerFMU::loadFMU(const std::string& modelFile, const std::string& path)
+void VisualizationFMU::loadFMU(const std::string& modelFile, const std::string& path)
 {
   //load fmu
   allocateContext(modelFile, path);
@@ -80,10 +80,10 @@ void VisualizerFMU::loadFMU(const std::string& modelFile, const std::string& pat
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("Unknown FMU version."),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
-  //std::cout<<"VisualizerFMU::loadFMU: FMU was successfully loaded."<<std::endl;
+  //std::cout<<"VisualizationFMU::loadFMU: FMU was successfully loaded."<<std::endl;
 }
 
-void VisualizerFMU::allocateContext(const std::string& modelFile, const std::string& path)
+void VisualizationFMU::allocateContext(const std::string& modelFile, const std::string& path)
 {
   // First we need to define the callbacks and set up the context.
   mCallbacks.malloc = malloc;
@@ -103,7 +103,7 @@ void VisualizerFMU::allocateContext(const std::string& modelFile, const std::str
 }
 
 
-unsigned int VisualizerFMU::getVariableReferenceForVisualizerAttribute(VisualizerAttribute& attr)
+unsigned int VisualizationFMU::getVariableReferenceForVisualizerAttribute(VisualizerAttribute& attr)
 {
   unsigned int vr = 0;
   if (!attr.isConst) {
@@ -112,7 +112,7 @@ unsigned int VisualizerFMU::getVariableReferenceForVisualizerAttribute(Visualize
   return vr;
 }
 
-int VisualizerFMU::setVarReferencesInVisAttributes()
+int VisualizationFMU::setVarReferencesInVisAttributes()
 {
   int isOk = 0;
 
@@ -157,7 +157,7 @@ int VisualizerFMU::setVarReferencesInVisAttributes()
   }
   catch (std::exception& ex)
   {
-    QString msg = QString(QObject::tr("Something went wrong in VisualizerFMU::setVarReferencesInVisAttributes:\n%1."))
+    QString msg = QString(QObject::tr("Something went wrong in VisualizationFMU::setVarReferencesInVisAttributes:\n%1."))
                   .arg(ex.what());
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
     isOk = 1;
@@ -166,13 +166,13 @@ int VisualizerFMU::setVarReferencesInVisAttributes()
   return isOk;
 }
 
-void VisualizerFMU::simulate(TimeManager& omvm)
+void VisualizationFMU::simulate(TimeManager& omvm)
 {
   while (omvm.getSimTime() < omvm.getRealTime() + omvm.getHVisual() && omvm.getSimTime() < omvm.getEndTime())
     omvm.setSimTime(simulateStep(omvm.getSimTime()));
 }
 
-void VisualizerFMU::updateSystem()
+void VisualizationFMU::updateSystem()
 {
   // Set states
   mpFMU->setContinuousStates();
@@ -190,7 +190,7 @@ void VisualizerFMU::updateSystem()
 }
 
 
-double VisualizerFMU::simulateStep(const double time)
+double VisualizationFMU::simulateStep(const double time)
 {
   mpFMU->prepareSimulationStep(time);
 
@@ -232,11 +232,11 @@ double VisualizerFMU::simulateStep(const double time)
   return mpFMU->getFMUData()->_tcur;
 }
 
-void VisualizerFMU::initializeVisAttributes(const double time)
+void VisualizationFMU::initializeVisAttributes(const double time)
 {
   Q_UNUSED(time);
   mpFMU->initialize(mpSimSettings);
-  //std::cout<<"VisualizerFMU::loadFMU: FMU was successfully initialized."<<std::endl;
+  //std::cout<<"VisualizationFMU::loadFMU: FMU was successfully initialized."<<std::endl;
 
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setSimTime(mpTimeManager->getStartTime());
@@ -244,7 +244,7 @@ void VisualizerFMU::initializeVisAttributes(const double time)
   updateVisAttributes(mpTimeManager->getVisTime());
 }
 
-void VisualizerFMU::updateVisAttributes(const double time)
+void VisualizationFMU::updateVisAttributes(const double time)
 {
   // Update all visualizers
   //std::cout<<"updateVisAttributes at "<<time <<std::endl;
@@ -312,14 +312,14 @@ void VisualizerFMU::updateVisAttributes(const double time)
   }
   catch (std::exception& ex)
   {
-    QString msg = QString(QObject::tr("Error in VisualizerFMU::updateVisAttributes at time point %1\n%2."))
+    QString msg = QString(QObject::tr("Error in VisualizationFMU::updateVisAttributes at time point %1\n%2."))
                   .arg(QString::number(time), ex.what());
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
     throw(msg.toStdString());
   }
 }
 
-void VisualizerFMU::updateScene(const double time)
+void VisualizationFMU::updateScene(const double time)
 {
   Q_UNUSED(time);
   mpTimeManager->updateTick(); //for real-time measurement
@@ -338,7 +338,7 @@ void VisualizerFMU::updateScene(const double time)
   updateVisAttributes(mpTimeManager->getVisTime());
 }
 
-void VisualizerFMU::updateVisualizerAttributeFMU(VisualizerAttribute& attr)
+void VisualizationFMU::updateVisualizerAttributeFMU(VisualizerAttribute& attr)
 {
   if (!attr.isConst) {
     double a = attr.exp;
@@ -347,14 +347,14 @@ void VisualizerFMU::updateVisualizerAttributeFMU(VisualizerAttribute& attr)
   }
 }
 
-void VisualizerFMU::setSimulationSettings(double stepsize, Solver solver, bool iterateEvents)
+void VisualizationFMU::setSimulationSettings(double stepsize, Solver solver, bool iterateEvents)
 {
   mpSimSettings->setHdef(stepsize);
   mpSimSettings->setSolver(solver);
   mpSimSettings->setIterateEvents(iterateEvents);
 }
 
-FMUWrapperAbstract* VisualizerFMU::getFMU()
+FMUWrapperAbstract* VisualizationFMU::getFMU()
 {
   return mpFMU;
 };
