@@ -32,7 +32,6 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-
 #ifndef ANIMATIONUTIL_H
 #define ANIMATIONUTIL_H
 
@@ -44,7 +43,6 @@
 #include <string>
 #include <osg/Vec3>
 
-#include "Shapes.h"
 #include "Util/Helper.h"
 #include "Modeling/MessagesWidget.h"
 

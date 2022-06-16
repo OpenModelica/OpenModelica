@@ -30,6 +30,7 @@
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
+
 #ifndef VISUALIZERCSV_H
 #define VISUALIZERCSV_H
 
@@ -50,7 +51,7 @@ public:
   void simulate(TimeManager& omvm) override {Q_UNUSED(omvm);}
   void updateVisAttributes(const double time) override;
   void updateScene(const double time) override;
-  void updateObjectAttributeCSV(ShapeObjectAttribute* attr, double time);
+  void updateVisualizerAttributeCSV(VisualizerAttribute& attr, double time);
   double omcGetVarValue(const char* varName, double time);
 private:
   csv_data *mpCSVData;

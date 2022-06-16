@@ -40,7 +40,7 @@
 
 class VisualizerMAT : public VisualizerAbstract
 {
- public:
+public:
   VisualizerMAT() = delete;
   VisualizerMAT(const std::string& fileName, const std::string& path);
   ~VisualizerMAT();
@@ -53,10 +53,10 @@ class VisualizerMAT : public VisualizerAbstract
   void simulate(TimeManager& omvm) override {Q_UNUSED(omvm);}
   void updateVisAttributes(const double time) override;
   void updateScene(const double time) override;
-  void updateObjectAttributeMAT(ShapeObjectAttribute* attr, double time, ModelicaMatReader* reader);
+  void updateVisualizerAttributeMAT(VisualizerAttribute& attr, double time);
   double omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time);
 private:
   ModelicaMatReader _matReader;
 };
 
-#endif // end VISUALIZERMAT_H
+#endif // VISUALIZERMAT_H

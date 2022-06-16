@@ -88,75 +88,84 @@ void VisualizerCSV::readCSV(const std::string& modelFile, const std::string& pat
 
 void VisualizerCSV::updateVisAttributes(const double time)
 {
+  // Update all visualizers
   //std::cout<<"updateVisAttributes at "<<time <<std::endl;
-  // Update all shapes.
-  unsigned int shapeIdx = 0;
+
   rAndT rT;
   osg::ref_ptr<osg::Node> child = nullptr;
-  try {
-    for (ShapeObject &shape : mpOMVisualBase->_shapes) {
+  unsigned int visualizerIdx = 0;
+
+  try
+  {
+    for (ShapeObject& shape : mpOMVisualBase->_shapes)
+    {
+      // Get the values for the scene graph objects
       //std::cout<<"shape "<<shape._id <<std::endl;
 
-      // Get the values for the scene graph objects
-      updateObjectAttributeCSV(&shape._length, time);
-      updateObjectAttributeCSV(&shape._width, time);
-      updateObjectAttributeCSV(&shape._height, time);
+      updateVisualizerAttributeCSV(shape._T[0], time);
+      updateVisualizerAttributeCSV(shape._T[1], time);
+      updateVisualizerAttributeCSV(shape._T[2], time);
+      updateVisualizerAttributeCSV(shape._T[3], time);
+      updateVisualizerAttributeCSV(shape._T[4], time);
+      updateVisualizerAttributeCSV(shape._T[5], time);
+      updateVisualizerAttributeCSV(shape._T[6], time);
+      updateVisualizerAttributeCSV(shape._T[7], time);
+      updateVisualizerAttributeCSV(shape._T[8], time);
 
-      updateObjectAttributeCSV(&shape._lDir[0], time);
-      updateObjectAttributeCSV(&shape._lDir[1], time);
-      updateObjectAttributeCSV(&shape._lDir[2], time);
+      updateVisualizerAttributeCSV(shape._r[0], time);
+      updateVisualizerAttributeCSV(shape._r[1], time);
+      updateVisualizerAttributeCSV(shape._r[2], time);
 
-      updateObjectAttributeCSV(&shape._wDir[0], time);
-      updateObjectAttributeCSV(&shape._wDir[1], time);
-      updateObjectAttributeCSV(&shape._wDir[2], time);
+      updateVisualizerAttributeCSV(shape._color[0], time);
+      updateVisualizerAttributeCSV(shape._color[1], time);
+      updateVisualizerAttributeCSV(shape._color[2], time);
 
-      updateObjectAttributeCSV(&shape._r[0], time);
-      updateObjectAttributeCSV(&shape._r[1], time);
-      updateObjectAttributeCSV(&shape._r[2], time);
+      updateVisualizerAttributeCSV(shape._specCoeff, time);
 
-      updateObjectAttributeCSV(&shape._rShape[0], time);
-      updateObjectAttributeCSV(&shape._rShape[1], time);
-      updateObjectAttributeCSV(&shape._rShape[2], time);
+      updateVisualizerAttributeCSV(shape._rShape[0], time);
+      updateVisualizerAttributeCSV(shape._rShape[1], time);
+      updateVisualizerAttributeCSV(shape._rShape[2], time);
 
-      updateObjectAttributeCSV(&shape._T[0], time);
-      updateObjectAttributeCSV(&shape._T[1], time);
-      updateObjectAttributeCSV(&shape._T[2], time);
-      updateObjectAttributeCSV(&shape._T[3], time);
-      updateObjectAttributeCSV(&shape._T[4], time);
-      updateObjectAttributeCSV(&shape._T[5], time);
-      updateObjectAttributeCSV(&shape._T[6], time);
-      updateObjectAttributeCSV(&shape._T[7], time);
-      updateObjectAttributeCSV(&shape._T[8], time);
+      updateVisualizerAttributeCSV(shape._lDir[0], time);
+      updateVisualizerAttributeCSV(shape._lDir[1], time);
+      updateVisualizerAttributeCSV(shape._lDir[2], time);
 
-      updateObjectAttributeCSV(&shape._color[0], time);
-      updateObjectAttributeCSV(&shape._color[1], time);
-      updateObjectAttributeCSV(&shape._color[2], time);
+      updateVisualizerAttributeCSV(shape._wDir[0], time);
+      updateVisualizerAttributeCSV(shape._wDir[1], time);
+      updateVisualizerAttributeCSV(shape._wDir[2], time);
 
-      updateObjectAttributeCSV(&shape._specCoeff, time);
-      updateObjectAttributeCSV(&shape._extra, time);
+      updateVisualizerAttributeCSV(shape._length, time);
+      updateVisualizerAttributeCSV(shape._width, time);
+      updateVisualizerAttributeCSV(shape._height, time);
 
-      rT = rotateModelica2OSG(osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
-          osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
+      updateVisualizerAttributeCSV(shape._extra, time);
+
+      rT = rotateModelica2OSG(
           osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
-          shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
-          shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
+                       shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
+                       shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
+          osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
+          osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
           osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
           osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
-          shape._length.exp,/* shape._width.exp, shape._height.exp,*/ shape._type);
-
+          shape._length.exp/*, shape._width.exp, shape._height.exp*/, shape._type);
       assemblePokeMatrix(shape._mat, rT._T, rT._r);
-      // Update the shapes.
-      mpUpdateVisitor->_shape = shape;
-      //shape.dumpVisAttributes();
-      // Get the scene graph nodes and stuff.
-      child = mpOMVisScene->getScene().getRootNode()->getChild(shapeIdx);  // the transformation
+
+      // Update the shapes
+      mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&shape);
+      //shape.dumpVisualizerAttributes();
+      //mpOMVisScene->dumpOSGTreeDebug();
+      child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
       child->accept(*mpUpdateVisitor);
-      ++shapeIdx;
+      ++visualizerIdx;
     }
-  } catch (std::exception& ex) {
-    std::string msg = "Error in VisualizerCSV::updateVisAttributes at time point " + std::to_string(time)
-        + "\n" + std::string(ex.what());
-    throw(msg);
+  }
+  catch (std::exception& ex)
+  {
+    QString msg = QString(QObject::tr("Error in VisualizerCSV::updateVisAttributes at time point %1\n%2."))
+                  .arg(QString::number(time), ex.what());
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+    throw(msg.toStdString());
   }
 }
 
@@ -170,10 +179,10 @@ void VisualizerCSV::updateScene(const double time)
   mpTimeManager->setRealTimeFactor(mpTimeManager->getHVisual() / visTime);
 }
 
-void VisualizerCSV::updateObjectAttributeCSV(ShapeObjectAttribute* attr, double time)
+void VisualizerCSV::updateVisualizerAttributeCSV(VisualizerAttribute& attr, double time)
 {
-  if (!attr->isConst) {
-    attr->exp = omcGetVarValue(attr->cref.c_str(), time);
+  if (!attr.isConst) {
+    attr.exp = omcGetVarValue(attr.cref.c_str(), time);
   }
 }
 
