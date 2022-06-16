@@ -261,9 +261,9 @@ m_real* real_alloc(int n)
 }
 
 /* allocates n integers in the integer_buffer */
-m_integer* integer_alloc(int n)
+modelica_integer* integer_alloc(int n)
 {
-  return (m_integer*) omc_alloc_interface.malloc_atomic(n*sizeof(m_integer));
+  return (modelica_integer*) omc_alloc_interface.malloc_atomic(n*sizeof(modelica_integer));
 }
 
 /* allocates n strings in the string_buffer */

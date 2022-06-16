@@ -333,9 +333,9 @@ m_real* real_array_element_addr_c99_3(real_array_t* source,int ndims,...){
     return tmp;
 }
 
-m_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...){
+modelica_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...){
     va_list ap;
-    m_integer* tmp;
+    modelica_integer* tmp;
 
     va_start(ap,ndims);
     tmp = integer_ptrget(source, ocl_calc_base_index_va(source, ndims, ap));
@@ -344,9 +344,9 @@ m_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,..
     return tmp;
 }
 
-m_integer* integer_array_element_addr_c99_2(integer_array_t* source,int ndims,...){
+modelica_integer* integer_array_element_addr_c99_2(integer_array_t* source,int ndims,...){
     va_list ap;
-    m_integer* tmp;
+    modelica_integer* tmp;
 
     va_start(ap,ndims);
     tmp = integer_ptrget(source, ocl_calc_base_index_va(source, ndims, ap));
@@ -355,9 +355,9 @@ m_integer* integer_array_element_addr_c99_2(integer_array_t* source,int ndims,..
     return tmp;
 }
 
-m_integer* integer_array_element_addr_c99_3(integer_array_t* source,int ndims,...){
+modelica_integer* integer_array_element_addr_c99_3(integer_array_t* source,int ndims,...){
     va_list ap;
-    m_integer* tmp;
+    modelica_integer* tmp;
 
     va_start(ap,ndims);
     tmp = integer_ptrget(source, ocl_calc_base_index_va(source, ndims, ap));

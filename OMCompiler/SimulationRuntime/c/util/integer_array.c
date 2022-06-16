@@ -543,7 +543,7 @@ void array_alloc_scalar_integer_array(integer_array_t* dest, int n,
     va_start(ap,first);
     put_integer_element(first,0,dest);
     for(i = 1; i < n; ++i) {
-        put_integer_element(va_arg(ap, m_integer),i,dest);
+        put_integer_element(va_arg(ap, modelica_integer),i,dest);
     }
     va_end(ap);
 }

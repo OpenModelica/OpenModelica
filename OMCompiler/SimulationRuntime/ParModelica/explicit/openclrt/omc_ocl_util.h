@@ -72,7 +72,7 @@ extern const char* omc_ocl_kernels_source;
 extern unsigned int default_ocl_device;
 
 
-extern m_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...);
+extern modelica_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...);
 
 
 //Reads kernels from a file

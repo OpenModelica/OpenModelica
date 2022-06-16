@@ -112,10 +112,9 @@ typedef int mmc_sint_t;
 #endif
 
 typedef double            m_real;
-typedef mmc_sint_t        m_integer;
 typedef modelica_metatype m_string;
 typedef signed char       m_boolean;
-typedef m_integer         _index_t;
+typedef mmc_sint_t         _index_t;
 
 /* This structure holds indexes when subscripting an array.
  * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3
@@ -160,7 +159,7 @@ typedef base_array_t boolean_array_t;
 typedef double modelica_real;
 typedef base_array_t real_array_t;
 
-typedef m_integer modelica_integer;
+typedef mmc_sint_t modelica_integer;
 typedef base_array_t integer_array_t;
 
 typedef real_array_t real_array;
