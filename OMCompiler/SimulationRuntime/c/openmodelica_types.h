@@ -142,7 +142,6 @@ struct base_array_s
 
 typedef struct base_array_s base_array_t;
 
-typedef base_array_t string_array_t;
 
 #ifndef FALSE
 #define FALSE 0
@@ -155,8 +154,7 @@ typedef base_array_t string_array_t;
 typedef base_array_t boolean_array;
 typedef base_array_t real_array;
 typedef base_array_t integer_array;
-
-typedef string_array_t string_array;
+typedef base_array_t string_array;
 
 #include "gc/omc_gc.h" /* for threadData_t */
 
