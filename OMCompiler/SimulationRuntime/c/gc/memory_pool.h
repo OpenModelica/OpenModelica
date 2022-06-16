@@ -41,7 +41,7 @@ extern "C" {
 /* Allocation functions */
 extern modelica_real* real_alloc(int n);
 extern modelica_integer* integer_alloc(int n);
-extern m_string* string_alloc(int n);
+extern modelica_string* string_alloc(int n);
 extern modelica_boolean* boolean_alloc(int n);
 extern _index_t* size_alloc(int n);
 extern _index_t** index_alloc(int n);

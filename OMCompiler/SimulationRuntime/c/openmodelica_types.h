@@ -53,9 +53,6 @@ So it needs to be void*. If we use a platform with different sizes of function-
 pointers, some changes need to be done to code generation */
 typedef void* modelica_fnptr;
 
-/* When MetaModelica grammar is enabled, all strings are boxed */
-typedef modelica_metatype modelica_string;
-
 #if defined(_LP64) /* linux 64bit*/
 
 #define MMC_SIZE_DBL 8
@@ -111,7 +108,8 @@ typedef int mmc_sint_t;
 #define OMC_INT_FORMAT "%*ld"
 #endif
 
-typedef modelica_metatype m_string;
+/* When MetaModelica grammar is enabled, all strings are boxed */
+typedef modelica_metatype modelica_string;
 typedef signed char modelica_boolean;
 typedef mmc_sint_t         _index_t;
 
