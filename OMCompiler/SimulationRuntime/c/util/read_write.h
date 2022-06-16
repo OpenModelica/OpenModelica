@@ -58,9 +58,9 @@ extern void write_modelica_integer(type_description *desc, const modelica_intege
 extern void write_integer_array(type_description *desc, const integer_array *arr);
 
 extern int read_modelica_boolean(type_description **descptr, modelica_boolean *data);
-extern int read_boolean_array(type_description ** descptr, boolean_array_t *arr);
+extern int read_boolean_array(type_description ** descptr, boolean_array *arr);
 extern void write_modelica_boolean(type_description *desc, const modelica_boolean *data);
-extern void write_boolean_array(type_description *desc, const boolean_array_t *arr);
+extern void write_boolean_array(type_description *desc, const boolean_array *arr);
 
 extern int read_modelica_string(type_description **descptr, modelica_string *str);
 extern int read_string_array(type_description ** descptr, string_array_t *arr);

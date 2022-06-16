@@ -361,7 +361,7 @@ int read_integer_array(type_description **descptr, integer_array *arr)
   return -1;
 }
 
-int read_boolean_array(type_description **descptr, boolean_array_t *arr)
+int read_boolean_array(type_description **descptr, boolean_array *arr)
 {
   type_description *desc = (*descptr)++;
   switch (desc->type) {
@@ -494,7 +494,7 @@ void write_integer_array(type_description *desc, const integer_array *arr)
   }
 }
 
-void write_boolean_array(type_description *desc, const boolean_array_t *arr)
+void write_boolean_array(type_description *desc, const boolean_array *arr)
 {
   if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
@@ -685,7 +685,7 @@ static int read_modelica_record_helper(type_description **descptr, va_list *arg)
         read_modelica_boolean(&elem, va_arg(*arg, modelica_boolean *));
         break;
       case TYPE_DESC_BOOL_ARRAY:
-        read_boolean_array(&elem, va_arg(*arg, boolean_array_t *));
+        read_boolean_array(&elem, va_arg(*arg, boolean_array *));
         break;
       case TYPE_DESC_STRING:
         read_modelica_string(&elem, va_arg(*arg, modelica_string *));
@@ -797,7 +797,7 @@ static void write_modelica_record_helper(type_description *desc, const void* rec
       write_modelica_boolean(elem, va_arg(*arg, modelica_boolean *));
       break;
     case TYPE_DESC_BOOL_ARRAY:
-      write_boolean_array(elem, va_arg(*arg, boolean_array_t *));
+      write_boolean_array(elem, va_arg(*arg, boolean_array *));
       break;
     case TYPE_DESC_STRING:
       write_modelica_string(elem, va_arg(*arg, modelica_string *));
