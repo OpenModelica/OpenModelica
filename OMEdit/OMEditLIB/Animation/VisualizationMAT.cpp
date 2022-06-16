@@ -180,6 +180,59 @@ void VisualizationMAT::updateVisAttributes(const double time)
       child->accept(*mpUpdateVisitor);
       ++visualizerIdx;
     }
+
+    for (VectorObject& vector : mpOMVisualBase->_vectors)
+    {
+      // Get the values for the scene graph objects
+      //std::cout<<"vector "<<vector._id <<std::endl;
+
+      updateVisualizerAttributeMAT(vector._T[0], time);
+      updateVisualizerAttributeMAT(vector._T[1], time);
+      updateVisualizerAttributeMAT(vector._T[2], time);
+      updateVisualizerAttributeMAT(vector._T[3], time);
+      updateVisualizerAttributeMAT(vector._T[4], time);
+      updateVisualizerAttributeMAT(vector._T[5], time);
+      updateVisualizerAttributeMAT(vector._T[6], time);
+      updateVisualizerAttributeMAT(vector._T[7], time);
+      updateVisualizerAttributeMAT(vector._T[8], time);
+
+      updateVisualizerAttributeMAT(vector._r[0], time);
+      updateVisualizerAttributeMAT(vector._r[1], time);
+      updateVisualizerAttributeMAT(vector._r[2], time);
+
+      updateVisualizerAttributeMAT(vector._color[0], time);
+      updateVisualizerAttributeMAT(vector._color[1], time);
+      updateVisualizerAttributeMAT(vector._color[2], time);
+
+      updateVisualizerAttributeMAT(vector._specCoeff, time);
+
+      updateVisualizerAttributeMAT(vector._coords[0], time);
+      updateVisualizerAttributeMAT(vector._coords[1], time);
+      updateVisualizerAttributeMAT(vector._coords[2], time);
+
+      updateVisualizerAttributeMAT(vector._quantity, time);
+
+      updateVisualizerAttributeMAT(vector._headAtOrigin, time);
+
+      updateVisualizerAttributeMAT(vector._twoHeadedArrow, time);
+
+      rT = rotateModelica2OSG(
+          osg::Matrix3(vector._T[0].exp, vector._T[1].exp, vector._T[2].exp,
+                       vector._T[3].exp, vector._T[4].exp, vector._T[5].exp,
+                       vector._T[6].exp, vector._T[7].exp, vector._T[8].exp),
+          osg::Vec3f(vector._r[0].exp, vector._r[1].exp, vector._r[2].exp),
+          osg::Vec3f(vector._coords[0].exp, vector._coords[1].exp, vector._coords[2].exp),
+          vector.hasHeadAtOrigin() ? -vector.getLength() : vector.getLength());
+      assemblePokeMatrix(vector._mat, rT._T, rT._r);
+
+      // Update the vectors
+      mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&vector);
+      //vector.dumpVisualizerAttributes();
+      //mpOMVisScene->dumpOSGTreeDebug();
+      child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
+      child->accept(*mpUpdateVisitor);
+      ++visualizerIdx;
+    }
   }
   catch (std::exception& ex)
   {
