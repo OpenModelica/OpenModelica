@@ -32,35 +32,35 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#include "VisualizerMAT.h"
+#include "VisualizationMAT.h"
 
-VisualizerMAT::VisualizerMAT(const std::string& modelFile, const std::string& path)
-  : VisualizerAbstract(modelFile, path, VisType::MAT),
+VisualizationMAT::VisualizationMAT(const std::string& modelFile, const std::string& path)
+  : VisualizationAbstract(modelFile, path, VisType::MAT),
     _matReader()
 {
 
 }
 
 /*!
- * \brief VisualizerMAT::~VisualizerMAT
+ * \brief VisualizationMAT::~VisualizationMAT
  * Free the ModelicaMatReader
  */
-VisualizerMAT::~VisualizerMAT()
+VisualizationMAT::~VisualizationMAT()
 {
   if (_matReader.file) {
     omc_free_matlab4_reader(&_matReader);
   }
 }
 
-void VisualizerMAT::initData()
+void VisualizationMAT::initData()
 {
-  VisualizerAbstract::initData();
+  VisualizationAbstract::initData();
   readMat(mpOMVisualBase->getModelFile(), mpOMVisualBase->getPath());
   mpTimeManager->setStartTime(omc_matlab4_startTime(&_matReader));
   mpTimeManager->setEndTime(omc_matlab4_stopTime(&_matReader));
 }
 
-void VisualizerMAT::initializeVisAttributes(const double time)
+void VisualizationMAT::initializeVisAttributes(const double time)
 {
   if (0.0 > time) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
@@ -70,7 +70,7 @@ void VisualizerMAT::initializeVisAttributes(const double time)
   updateVisAttributes(time);
 }
 
-void VisualizerMAT::readMat(const std::string& modelFile, const std::string& path)
+void VisualizationMAT::readMat(const std::string& modelFile, const std::string& path)
 {
   std::string resFileName = path + modelFile;     // + "_res.mat";
 
@@ -101,13 +101,13 @@ void VisualizerMAT::readMat(const std::string& modelFile, const std::string& pat
      */
 }
 
-void VisualizerMAT::setSimulationSettings(const UserSimSettingsMAT& simSetMAT)
+void VisualizationMAT::setSimulationSettings(const UserSimSettingsMAT& simSetMAT)
 {
   auto newVal = simSetMAT.speedup * mpTimeManager->getHVisual();
   mpTimeManager->setHVisual(newVal);
 }
 
-void VisualizerMAT::updateVisAttributes(const double time)
+void VisualizationMAT::updateVisAttributes(const double time)
 {
   // Update all visualizers
   //std::cout<<"updateVisAttributes at "<<time <<std::endl;
@@ -183,14 +183,14 @@ void VisualizerMAT::updateVisAttributes(const double time)
   }
   catch (std::exception& ex)
   {
-    QString msg = QString(QObject::tr("Error in VisualizerMAT::updateVisAttributes at time point %1\n%2."))
+    QString msg = QString(QObject::tr("Error in VisualizationMAT::updateVisAttributes at time point %1\n%2."))
                   .arg(QString::number(time), ex.what());
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
     throw(msg.toStdString());
   }
 }
 
-void VisualizerMAT::updateScene(const double time)
+void VisualizationMAT::updateScene(const double time)
 {
   mpTimeManager->updateTick();  //for real-time measurement
   double visTime = mpTimeManager->getRealTime();
@@ -200,14 +200,14 @@ void VisualizerMAT::updateScene(const double time)
   mpTimeManager->setRealTimeFactor(mpTimeManager->getHVisual() / visTime);
 }
 
-void VisualizerMAT::updateVisualizerAttributeMAT(VisualizerAttribute& attr, double time)
+void VisualizationMAT::updateVisualizerAttributeMAT(VisualizerAttribute& attr, double time)
 {
   if (!attr.isConst) {
     attr.exp = omcGetVarValue(&_matReader, attr.cref.c_str(), time);
   }
 }
 
-double VisualizerMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time)
+double VisualizationMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time)
 {
   double val = 0.0;
   ModelicaMatVariable_t* var = nullptr;

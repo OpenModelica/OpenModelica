@@ -31,24 +31,24 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "VisualizerCSV.h"
+#include "VisualizationCSV.h"
 
-VisualizerCSV::VisualizerCSV(const std::string& modelFile, const std::string& path)
-  : VisualizerAbstract(modelFile, path, VisType::CSV), mpCSVData(0)
+VisualizationCSV::VisualizationCSV(const std::string& modelFile, const std::string& path)
+  : VisualizationAbstract(modelFile, path, VisType::CSV), mpCSVData(0)
 {
 
 }
 
-VisualizerCSV::~VisualizerCSV()
+VisualizationCSV::~VisualizationCSV()
 {
   if (mpCSVData) {
     omc_free_csv_reader(mpCSVData);
   }
 }
 
-void VisualizerCSV::initData()
+void VisualizationCSV::initData()
 {
-  VisualizerAbstract::initData();
+  VisualizationAbstract::initData();
   readCSV(mpOMVisualBase->getModelFile(), mpOMVisualBase->getPath());
   double *time = read_csv_dataset(mpCSVData, "time");
   if (time) {
@@ -57,7 +57,7 @@ void VisualizerCSV::initData()
   }
 }
 
-void VisualizerCSV::initializeVisAttributes(const double time)
+void VisualizationCSV::initializeVisAttributes(const double time)
 {
   if (0.0 > time) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
@@ -67,7 +67,7 @@ void VisualizerCSV::initializeVisAttributes(const double time)
   updateVisAttributes(time);
 }
 
-void VisualizerCSV::readCSV(const std::string& modelFile, const std::string& path)
+void VisualizationCSV::readCSV(const std::string& modelFile, const std::string& path)
 {
   std::string resFileName = path + modelFile;     // + "_res.csv";
 
@@ -86,7 +86,7 @@ void VisualizerCSV::readCSV(const std::string& modelFile, const std::string& pat
   }
 }
 
-void VisualizerCSV::updateVisAttributes(const double time)
+void VisualizationCSV::updateVisAttributes(const double time)
 {
   // Update all visualizers
   //std::cout<<"updateVisAttributes at "<<time <<std::endl;
@@ -162,14 +162,14 @@ void VisualizerCSV::updateVisAttributes(const double time)
   }
   catch (std::exception& ex)
   {
-    QString msg = QString(QObject::tr("Error in VisualizerCSV::updateVisAttributes at time point %1\n%2."))
+    QString msg = QString(QObject::tr("Error in VisualizationCSV::updateVisAttributes at time point %1\n%2."))
                   .arg(QString::number(time), ex.what());
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
     throw(msg.toStdString());
   }
 }
 
-void VisualizerCSV::updateScene(const double time)
+void VisualizationCSV::updateScene(const double time)
 {
   mpTimeManager->updateTick();  //for real-time measurement
   double visTime = mpTimeManager->getRealTime();
@@ -179,14 +179,14 @@ void VisualizerCSV::updateScene(const double time)
   mpTimeManager->setRealTimeFactor(mpTimeManager->getHVisual() / visTime);
 }
 
-void VisualizerCSV::updateVisualizerAttributeCSV(VisualizerAttribute& attr, double time)
+void VisualizationCSV::updateVisualizerAttributeCSV(VisualizerAttribute& attr, double time)
 {
   if (!attr.isConst) {
     attr.exp = omcGetVarValue(attr.cref.c_str(), time);
   }
 }
 
-double VisualizerCSV::omcGetVarValue(const char* varName, double time)
+double VisualizationCSV::omcGetVarValue(const char* varName, double time)
 {
   double *timeDataSet = read_csv_dataset(mpCSVData, "time");
   for (int i = 0 ; i < mpCSVData->numsteps ; i++) {

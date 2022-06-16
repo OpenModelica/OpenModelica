@@ -32,12 +32,14 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#ifndef VISUALIZER_H
-#define VISUALIZER_H
+#ifndef VISUALIZATION_H
+#define VISUALIZATION_H
 
 #include <stdlib.h>
 #include <memory.h>
 #include <iostream>
+
+#include <QImage>
 
 #include <osg/NodeVisitor>
 #include <osg/Geode>
@@ -48,15 +50,14 @@
 #include <osg/Texture2D>
 #include <osg/TexMat>
 
-#include <QImage>
+#include "ExtraShapes.h"
 
 #include "AnimationUtil.h"
 #include "TimeManager.h"
 #include "rapidxml.hpp"
 
-#include "AbstractVisualizers.h"
-#include "ExtraShapes.h"
-#include "Shapes.h"
+#include "AbstractVisualizer.h"
+#include "Shape.h"
 
 struct UserSimSettingsMAT
 {
@@ -147,12 +148,12 @@ private:
   std::string _xmlFileName;
 };
 
-class VisualizerAbstract
+class VisualizationAbstract
 {
 public:
-  VisualizerAbstract();
-  VisualizerAbstract(const std::string& modelFile, const std::string& path, const VisType visType = VisType::NONE);
-  virtual ~VisualizerAbstract() = default;
+  VisualizationAbstract();
+  VisualizationAbstract(const std::string& modelFile, const std::string& path, const VisType visType = VisType::NONE);
+  virtual ~VisualizationAbstract() = default;
 
   virtual void initData();
   void initVisualization();

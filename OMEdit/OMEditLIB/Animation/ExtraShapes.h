@@ -35,7 +35,7 @@
 #ifndef EXTRASHAPES_H
 #define EXTRASHAPES_H
 
-#include "Visualizer.h"
+#include "Visualization.h"
 
 #include <osg/Node>
 #include <osg/Group>

@@ -45,7 +45,7 @@
 
 #include "FMUSettingsDialog.h"
 
-class VisualizerAbstract;
+class VisualizationAbstract;
 class ViewerWidget;
 class Label;
 
@@ -70,7 +70,7 @@ class AbstractAnimationWindow : public QMainWindow
 public:
   AbstractAnimationWindow(QWidget *pParent);
   ViewerWidget* getViewerWidget() {return mpViewerWidget;}
-  VisualizerAbstract* getVisualizer() {return mpVisualizer;}
+  VisualizationAbstract* getVisualization() {return mpVisualization;}
   void openAnimationFile(QString fileName, bool stashCamera=false);
   virtual void createActions();
   void clearView();
@@ -83,7 +83,7 @@ protected:
   std::string mPathName;
   std::string mFileName;
   //stores the data for the visualizers, time management, functionality for updating the values(mat/fmu) etc.
-  VisualizerAbstract* mpVisualizer;
+  VisualizationAbstract* mpVisualization;
   //widgets
   ViewerWidget *mpViewerWidget;
   QToolBar* mpAnimationToolBar;
@@ -114,7 +114,7 @@ protected:
   void cameraPositionFront();
   void cameraPositionTop();
   double computeDistanceToOrigin();
-  void openFMUSettingsDialog(VisualizerFMU *pVisualizerFMU);
+  void openFMUSettingsDialog(VisualizationFMU *pVisualizationFMU);
   void updateControlPanelValues();
 
 public slots:
