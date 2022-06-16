@@ -39,23 +39,6 @@
 extern "C" {
 #endif
 
-typedef int integer;
-typedef unsigned int uinteger;
-typedef double doublereal;
-#define maxmacro(X,Y) X > Y ? X : Y
-#define minmacro(X,Y) X > Y ? Y : X
-
-typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
-typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */
-/* MetaModelica extension.
-We actually store function-pointers in lists, etc...
-So it needs to be void*. If we use a platform with different sizes of function-
-pointers, some changes need to be done to code generation */
-typedef void* modelica_fnptr;
-
-/* When MetaModelica grammar is enabled, all strings are boxed */
-typedef modelica_metatype modelica_string;
-
 #if defined(_LP64) /* linux 64bit*/
 
 #define MMC_SIZE_DBL 8
@@ -111,11 +94,44 @@ typedef int mmc_sint_t;
 #define OMC_INT_FORMAT "%*ld"
 #endif
 
-typedef double            m_real;
-typedef mmc_sint_t        m_integer;
-typedef modelica_metatype m_string;
-typedef signed char       m_boolean;
-typedef m_integer         _index_t;
+typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
+typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */
+/* MetaModelica extension.
+We actually store function-pointers in lists, etc...
+So it needs to be void*. If we use a platform with different sizes of function-
+pointers, some changes need to be done to code generation */
+typedef void* modelica_fnptr;
+
+typedef double modelica_real;
+typedef mmc_sint_t modelica_integer;
+typedef signed char modelica_boolean;
+/* When MetaModelica grammar is enabled, all strings are boxed */
+typedef modelica_metatype modelica_string;
+typedef mmc_sint_t         _index_t;
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+
+struct base_array_s
+{
+  int ndims;
+  _index_t *dim_size;
+  void *data;
+  modelica_boolean flexible;
+};
+typedef struct base_array_s base_array_t;
+
+typedef base_array_t boolean_array;
+typedef base_array_t real_array;
+typedef base_array_t integer_array;
+typedef base_array_t string_array;
+
 
 /* This structure holds indexes when subscripting an array.
  * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3
@@ -134,39 +150,13 @@ struct index_spec_s
 };
 typedef struct index_spec_s index_spec_t;
 
-struct base_array_s
-{
-  int ndims;
-  _index_t *dim_size;
-  void *data;
-  m_boolean flexible;
-};
 
-typedef struct base_array_s base_array_t;
 
-typedef base_array_t string_array_t;
 
-typedef signed char modelica_boolean;
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-typedef base_array_t boolean_array_t;
-
-typedef double modelica_real;
-typedef base_array_t real_array_t;
-
-typedef m_integer modelica_integer;
-typedef base_array_t integer_array_t;
-
-typedef real_array_t real_array;
-typedef integer_array_t integer_array;
-typedef boolean_array_t boolean_array;
-typedef string_array_t string_array;
+// This typedfes should be removed and their uses replaced by the corresponding data types.
+typedef int integer;
+typedef unsigned int uinteger;
+typedef double doublereal;
 
 #include "gc/omc_gc.h" /* for threadData_t */
 
