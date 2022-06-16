@@ -111,7 +111,6 @@ typedef int mmc_sint_t;
 #define OMC_INT_FORMAT "%*ld"
 #endif
 
-typedef double            m_real;
 typedef modelica_metatype m_string;
 typedef signed char       m_boolean;
 typedef mmc_sint_t         _index_t;

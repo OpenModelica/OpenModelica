@@ -300,9 +300,9 @@ void swap_and_release(base_array_t* lhs, base_array_t* rhs){
 //which, right now, doesn't support overloading or the stdarg standard library.
 //even though the functions have the same body here they will have different body on the OpenCL counterparts
 
-m_real* real_array_element_addr_c99_1(real_array_t* source,int ndims,...){
+modelica_real* real_array_element_addr_c99_1(real_array_t* source,int ndims,...){
     va_list ap;
-    m_real* tmp;
+    modelica_real* tmp;
 
     va_start(ap,ndims);
     tmp = real_ptrget(source, ocl_calc_base_index_va(source, ndims, ap));
@@ -311,9 +311,9 @@ m_real* real_array_element_addr_c99_1(real_array_t* source,int ndims,...){
     return tmp;
 }
 
-m_real* real_array_element_addr_c99_2(real_array_t* source,int ndims,...){
+modelica_real* real_array_element_addr_c99_2(real_array_t* source,int ndims,...){
     va_list ap;
-    m_real* tmp;
+    modelica_real* tmp;
 
     va_start(ap,ndims);
     tmp = real_ptrget(source, ocl_calc_base_index_va(source, ndims, ap));
@@ -322,9 +322,9 @@ m_real* real_array_element_addr_c99_2(real_array_t* source,int ndims,...){
     return tmp;
 }
 
-m_real* real_array_element_addr_c99_3(real_array_t* source,int ndims,...){
+modelica_real* real_array_element_addr_c99_3(real_array_t* source,int ndims,...){
     va_list ap;
-    m_real* tmp;
+    modelica_real* tmp;
 
     va_start(ap,ndims);
     tmp = real_ptrget(source, ocl_calc_base_index_va(source, ndims, ap));

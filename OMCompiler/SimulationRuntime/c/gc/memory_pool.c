@@ -255,9 +255,9 @@ omc_alloc_interface_t omc_alloc_interface = {
 };
 
 /* allocates n reals in the real_buffer */
-m_real* real_alloc(int n)
+modelica_real* real_alloc(int n)
 {
-  return (m_real*) omc_alloc_interface.malloc_atomic(n*sizeof(m_real));
+  return (modelica_real*) omc_alloc_interface.malloc_atomic(n*sizeof(modelica_real));
 }
 
 /* allocates n integers in the integer_buffer */
