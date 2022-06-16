@@ -224,7 +224,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
 
   infoStreamPrint(stream, 1, "integer variables");
   for(i=0; i<mData->nVariablesInteger; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
+    infoStreamPrint(stream, 0, "%ld: %s = %d (pre: %d)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "boolean variables");
@@ -335,7 +335,7 @@ void printParameters(DATA *data, int stream)
   {
     infoStreamPrint(stream, 1, "integer parameters");
     for(i=0; i<mData->nParametersInteger; ++i)
-      infoStreamPrint(stream, 0, "[%ld] parameter Integer %s(start=%ld, fixed=%s) = %ld", i+1,
+      infoStreamPrint(stream, 0, "[%ld] parameter Integer %s(start=%d, fixed=%s) = %d", i+1,
                                  mData->integerParameterData[i].info.name,
                                  mData->integerParameterData[i].attribute.start,
                                  mData->integerParameterData[i].attribute.fixed ? "true" : "false",
@@ -653,7 +653,7 @@ void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
     infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Integer Variable");
     for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
+      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %d ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
     }
     messageClose(LOG_STDOUT);
 
@@ -722,7 +722,7 @@ void setAllVarsToStart(DATA *data)
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
     sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %d", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
@@ -763,7 +763,7 @@ void setAllStartToVars(DATA *data)
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
     mData->integerVarsData[i].attribute.start = sData->integerVars[i];
-    debugStreamPrint(LOG_DEBUG, 0, "Integer var %s(start=%ld)", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "Integer var %s(start=%d)", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
@@ -807,7 +807,7 @@ void setAllParamsToStart(DATA *data)
   for(i=0; i<mData->nParametersInteger; ++i)
   {
     sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %d", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i)
   {
