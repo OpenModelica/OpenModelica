@@ -108,7 +108,7 @@ typedef int modelica_integer;
 typedef signed char modelica_boolean;
 /* When MetaModelica grammar is enabled, all strings are boxed */
 typedef modelica_metatype modelica_string;
-typedef mmc_sint_t         _index_t;
+typedef modelica_integer _index_t;
 
 #ifndef FALSE
 #define FALSE 0
