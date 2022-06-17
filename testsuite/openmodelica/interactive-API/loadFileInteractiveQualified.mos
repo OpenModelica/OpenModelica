@@ -1,7 +1,7 @@
 // name:     API Class/Elements query
 // keywords: Graphical API interactive loading of files in a scope: loadFileInteractiveQualified, getCrefInfo, getElementsInfo, getClassInformation, getClassAttributes
 // status:   correct
-// cflags: -d=-newInst
+// cflags: -d=newInst
 //
 //  Subset of the Graphical API, interactive loading of files in a scope
 //  testing of: loadFileInteractiveQualified, getCrefInfo, getElementsInfo, getClassInformation, getClassAttributes
