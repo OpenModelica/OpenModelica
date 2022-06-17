@@ -87,7 +87,7 @@
 #define cos(v,m) (cos(v))
 
 #ifdef DOUBLE_PREC_AVAILABLE
-typedef long  modelica_integer;
+typedef int  modelica_integer;
 typedef double modelica_real;
 #else
 typedef float modelica_real;
