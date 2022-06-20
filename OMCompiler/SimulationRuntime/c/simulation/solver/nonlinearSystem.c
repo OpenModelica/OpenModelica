@@ -1102,17 +1102,17 @@ NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTE
   return solver_status;
 }
 
-/*! \fn solve system with homotopy solver
+/**
+ * @brief Solve initial non-linear system with homotopy solver
  *
- *  \param [in]  [data]
- *  \param [in]  [threadData]
- *  \param [in]  [sysNumber] index of corresponding non-linear system
- *
- *  \author ptaeuber
+ * @param data                Runtime data struct.
+ * @param threadData          Thread data for error handling.
+ * @param nonlinsys           Pointer to non-linear system data.
+ * @return NLS_SOLVER_STATUS  Return solver status of homotopy solver.
  */
-modelica_boolean solveWithInitHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys)
+NLS_SOLVER_STATUS solveWithInitHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys)
 {
-  modelica_boolean success = FALSE;
+  NLS_SOLVER_STATUS success = NLS_FAILED;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
 
@@ -1254,7 +1254,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* If the adaptive local/global homotopy approach is activated and trying without homotopy failed or is not wanted,
      use the HOMOTOPY SOLVER */
-  if (solveWithHomotopySolver && !nonlinsys->solved) {
+  if (solveWithHomotopySolver && nonlinsys->solved != NLS_SOLVED) {
     if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] && !kinsol)
       warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system %d without homotopy method.", sysNumber);
     data->simulationInfo->lambda = 0.0;
@@ -1273,11 +1273,11 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
         data->simulationInfo->nlsLinearSolver = nlsLs;
       }
       nonlinsys->homotopySupport = 1;
-      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solving lambda0-system done with%s success\n---------------------------", nonlinsys->solved ? "" : " no");
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solving lambda0-system done with%s success\n---------------------------", nonlinsys->solved==NLS_SOLVED ? "" : " no");
       messageClose(LOG_INIT_HOMOTOPY);
     }
     /* SOLVE! */
-    if (data->callback->useHomotopy == 2 || nonlinsys->solved) {
+    if (data->callback->useHomotopy == 2 || nonlinsys->solved == NLS_SOLVED) {
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "run along the homotopy path and solve the actual system");
       nonlinsys->initHomotopy = 1;
       nonlinsys->solved = solveWithInitHomotopy(data, threadData, nonlinsys);
@@ -1286,7 +1286,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* If equidistant local homotopy is activated and trying without homotopy failed or is not wanted,
      use EQUIDISTANT LOCAL HOMOTOPY */
-  if (equidistantHomotopy && !nonlinsys->solved) {
+  if (equidistantHomotopy && nonlinsys->solved != NLS_SOLVED) {
     if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
       warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system %d without homotopy method. The local homotopy method with equidistant step size is used now.", sysNumber);
     else
@@ -1316,7 +1316,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "[system %d] homotopy parameter lambda = %g", sysNumber, data->simulationInfo->lambda);
       /* SOLVE! */
       nonlinsys->solved = solveNLS(data, threadData, nonlinsys);
-      if (!nonlinsys->solved) break;
+      if (nonlinsys->solved != NLS_SOLVED) break;
 
 #if !defined(OMC_NO_FILESYSTEM)
       if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
@@ -1350,7 +1350,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   messageClose(LOG_NLS_EXTRAPOLATE);
   /* update value list database */
   updateInitialGuessDB(nonlinsys, data->localData[0]->timeValue, data->simulationInfo->currentContext);
-  if (nonlinsys->solved == 1)
+  if (nonlinsys->solved == NLS_SOLVED)
   {
     nonlinsys->lastTimeSolved = data->localData[0]->timeValue;
   }

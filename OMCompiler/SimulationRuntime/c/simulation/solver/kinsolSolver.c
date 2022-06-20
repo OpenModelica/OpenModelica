@@ -1152,7 +1152,7 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
  * @param data                Runtime data struct.
  * @param threadData          Thread data for error handling.
  * @param nlsData             Pointer to non-linear system data.
- * @return modelica_boolean   Return true on success and false otherwise.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
 NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
 
@@ -1225,6 +1225,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
   /* Check if solution status and reset error norm */
   if (success) {
     double fNorm;
+    // TODO: Will this do a new res evaluation?
     KINGetFuncNorm(kinsolData->kinsolMemory, &fNorm);
     if (fNorm > kinsolData->fnormtol) {
       KINSetFuncNormTol(kinsolData->kinsolMemory, kinsolData->fnormtol);
