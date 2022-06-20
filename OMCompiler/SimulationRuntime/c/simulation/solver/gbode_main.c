@@ -1545,7 +1545,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->time = stopTime;
       break;
     }
-    // reduce step size with respect to the simulation stop time, if necessary
+    // reduce step size with respect to the simulation stop time or nextSampleEvent time, if necessary
+    gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
   }
   // end of while-loop (gbData->time < targetTime)
@@ -1844,7 +1845,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       break;
     }
 
-    // reduce step size with respect to the simulation stop time, if necessary
+    // reduce step size with respect to the simulation stop time or nextSampleEvent time, if necessary
+    gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
   }
   // end of while-loop (gbData->time < targetTime)
