@@ -8,6 +8,10 @@
       "description": "The name of the class",
       "type": "string"
     },
+    "restriction": {
+      "description": "The kind of class",
+      "type": "string"
+    },
     "extends": {
       "description": "The extends clauses in the class instance",
       "type": "array",

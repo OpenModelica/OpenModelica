@@ -83,6 +83,7 @@ import NFPrefixes.{Variability};
 import NFSections.Sections;
 import Package = NFPackage;
 import Prefixes = NFPrefixes;
+import Restriction = NFRestriction;
 import Scalarize = NFScalarize;
 import SimplifyExp = NFSimplifyExp;
 import SimplifyModel = NFSimplifyModel;
@@ -930,6 +931,8 @@ algorithm
   cmt := SCodeUtil.getElementComment(InstNode.definition(node));
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
+  json := JSON.addPair("restriction",
+    JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtends(exts), json);
