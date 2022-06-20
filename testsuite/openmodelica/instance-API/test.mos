@@ -17,6 +17,7 @@ getModelInstance(M, prettyPrint=true);
 // true
 // "{
 //   \"name\": \"M\",
+//   \"restriction\": \"model\",
 //   \"annotation\": {
 //     \"kind\": \"call\",
 //     \"name\": \"fn\",

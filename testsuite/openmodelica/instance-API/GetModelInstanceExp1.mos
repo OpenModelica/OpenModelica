@@ -23,6 +23,7 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
+//   \"restriction\": \"model\",
 //   \"components\": [
 //     {
 //       \"name\": \"x\",
@@ -39,6 +40,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"name\": \"a\",
 //       \"type\": {
 //         \"name\": \"A\",
+//         \"restriction\": \"model\",
 //         \"components\": [
 //           {
 //             \"name\": \"x\",
