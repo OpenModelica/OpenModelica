@@ -124,10 +124,12 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   /* Check if time is greater equal then last stored time in delay structure */
   if (length > 0) {
     lastElem = getRingData(data->simulationInfo->delayStructure[exprNumber], length-1);
-    while (time < lastElem->t) {
+    while (time < lastElem->t && length > 0) {
       removeLastRingData(data->simulationInfo->delayStructure[exprNumber],1);
       length = ringBufferLength(data->simulationInfo->delayStructure[exprNumber]);
-      lastElem = getRingData(data->simulationInfo->delayStructure[exprNumber], length-1);
+      if (length > 0) {
+        lastElem = getRingData(data->simulationInfo->delayStructure[exprNumber], length-1);
+      }
     }
   }
 
