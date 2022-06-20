@@ -29,6 +29,7 @@ endif
 UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
                   base_array$(OBJ_EXT) \
                   boolean_array$(OBJ_EXT) \
+                  context$(OBJ_EXT) \
                   division$(OBJ_EXT) \
                   doubleEndedList$(OBJ_EXT) \
                   generic_array$(OBJ_EXT) \
@@ -56,6 +57,7 @@ UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
 
 UTIL_HFILES_MINIMAL=base_array.h \
                     boolean_array.h \
+                    context.h \
                     division.h \
                     doubleEndedList.h \
                     generic_array.h \
@@ -134,7 +136,6 @@ endif
 SOLVER_OBJS_FMU=$(SOLVER_OBJS_LINEAR_SYSTEMS) \
                 $(SOLVER_OBJS_MIXED_SYSTEMS) \
                 $(SOLVER_OBJS_NONLINEAR_SYSTEMS) \
-                context$(OBJ_EXT) \
                 delay$(OBJ_EXT) \
                 fmi_events$(OBJ_EXT) \
                 model_help$(OBJ_EXT) \
@@ -172,8 +173,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
 else
   SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif
-SOLVER_HFILES = context.h \
-                cvode_solver.h \
+SOLVER_HFILES = cvode_solver.h \
                 dae_mode.h \
                 dassl.h \
                 delay.h \

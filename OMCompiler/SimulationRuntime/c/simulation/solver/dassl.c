@@ -40,11 +40,11 @@
 #include "openmodelica_func.h"
 #include "simulation_data.h"
 
+#include "gc/omc_gc.h"
+#include "util/context.h"
 #include "util/omc_error.h"
 #include "util/parallel_helper.h"
-#include "gc/omc_gc.h"
 
-#include "context.h"
 #include "dassl.h"
 #include "epsilon.h"
 #include "external_input.h"

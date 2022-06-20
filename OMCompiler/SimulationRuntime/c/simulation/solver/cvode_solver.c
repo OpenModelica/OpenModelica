@@ -36,9 +36,9 @@
 #include "cvode_solver.h"
 
 /* OMC headers */
+#include "../../util/context.h"
 #include "../options.h"
 #include "../solver/external_input.h"
-#include "context.h"
 #include "model_help.h"
 #include "omc_math.h"
 

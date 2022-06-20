@@ -44,7 +44,7 @@
 #include "util/list.h"
 #include "util/doubleEndedList.h"
 #include "util/simulation_options.h"
-#include "simulation/solver/context.h"
+#include "util/context.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}

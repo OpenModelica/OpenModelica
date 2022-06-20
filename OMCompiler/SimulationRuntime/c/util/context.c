@@ -29,7 +29,7 @@
  */
 
 #include "context.h"
-#include "../../simulation_data.h"
+#include "../simulation_data.h"
 
 const char *EVAL_CONTEXT_STRING[CONTEXT_MAX] = {
   "UNKNOWN",
