@@ -31,14 +31,17 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
+//   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
 //       \"name\": \"A\",
+//       \"restriction\": \"model\",
 //       \"components\": [
 //         {
 //           \"name\": \"c1\",
 //           \"type\": {
 //             \"name\": \"C\",
+//             \"restriction\": \"connector\",
 //             \"components\": [
 //               {
 //                 \"name\": \"e\",
@@ -67,6 +70,7 @@ getModelInstance(M, prettyPrint = true);
 //           \"name\": \"c2\",
 //           \"type\": {
 //             \"name\": \"C\",
+//             \"restriction\": \"connector\",
 //             \"components\": [
 //               {
 //                 \"name\": \"e\",
@@ -99,6 +103,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"name\": \"c3\",
 //       \"type\": {
 //         \"name\": \"C\",
+//         \"restriction\": \"connector\",
 //         \"components\": [
 //           {
 //             \"name\": \"e\",
@@ -127,7 +132,7 @@ getModelInstance(M, prettyPrint = true);
 //   \"connections\": [
 //     {
 //       \"lhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c1\"
@@ -135,7 +140,7 @@ getModelInstance(M, prettyPrint = true);
 //         ]
 //       },
 //       \"rhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c3\"
@@ -167,7 +172,7 @@ getModelInstance(M, prettyPrint = true);
 //     },
 //     {
 //       \"lhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c1\"
@@ -175,7 +180,7 @@ getModelInstance(M, prettyPrint = true);
 //         ]
 //       },
 //       \"rhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c2\"

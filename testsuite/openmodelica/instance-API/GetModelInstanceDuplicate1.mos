@@ -22,9 +22,11 @@ getModelInstance(B, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"B\",
+//   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
 //       \"name\": \"A\",
+//       \"restriction\": \"model\",
 //       \"components\": [
 //         {
 //           \"name\": \"x\",

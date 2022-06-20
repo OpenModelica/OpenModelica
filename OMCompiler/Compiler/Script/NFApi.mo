@@ -83,6 +83,7 @@ import NFPrefixes.{Variability};
 import NFSections.Sections;
 import Package = NFPackage;
 import Prefixes = NFPrefixes;
+import Restriction = NFRestriction;
 import Scalarize = NFScalarize;
 import SimplifyExp = NFSimplifyExp;
 import SimplifyModel = NFSimplifyModel;
@@ -930,6 +931,8 @@ algorithm
   cmt := SCodeUtil.getElementComment(InstNode.definition(node));
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
+  json := JSON.addPair("restriction",
+    JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtends(exts), json);
@@ -1187,9 +1190,12 @@ algorithm
     json := JSON.addPair("variability", JSON.makeString(s), json);
   end if;
 
-  s := Dump.unparseDirectionSymbolStr(attrs.direction);
-  if not stringEmpty(s) then
-    json := JSON.addPair("direction", JSON.makeString(s), json);
+  if AbsynUtil.isInput(attrs.direction) then
+    json := JSON.addPair("input", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isOutput(attrs.direction) then
+    json := JSON.addPair("output", JSON.makeBoolean(true), json);
   end if;
 end dumpJSONAttributes;
 
@@ -1306,7 +1312,7 @@ algorithm
     case Absyn.Exp.CALL()
       algorithm
         json := JSON.emptyObject();
-        json := JSON.addPair("kind", JSON.makeString("call"), json);
+        json := JSON.addPair("$kind", JSON.makeString("call"), json);
         json := JSON.addPair("name", dumpJSONAbsynCref(exp.function_), json);
         json := dumpJSONAbsynFunctionArgs(exp.functionArgs, json);
       then

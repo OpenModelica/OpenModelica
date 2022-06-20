@@ -34,9 +34,11 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
+//   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
 //       \"name\": \"A\",
+//       \"restriction\": \"model\",
 //       \"components\": [
 //         {
 //           \"name\": \"w\",
@@ -81,7 +83,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": \"Real\",
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"direction\": \"input \"
+//         \"input\": true
 //       }
 //     },
 //     {
@@ -106,6 +108,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"name\": \"c\",
 //       \"type\": {
 //         \"name\": \"C\",
+//         \"restriction\": \"connector\",
 //         \"components\": [
 //           {
 //             \"name\": \"e\",

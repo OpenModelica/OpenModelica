@@ -1,0 +1,31 @@
+// name: GetModelInstanceAnnotation2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    annotation (kind = \"call\", name = \"fn\", arguments = {1, 2, 3});
+  end M;
+");
+
+getModelInstance(M, prettyPrint=true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"annotation\": {
+//     \"kind\": \"call\",
+//     \"name\": \"fn\",
+//     \"arguments\": [
+//       1,
+//       2,
+//       3
+//     ]
+//   }
+// }"
+// endResult

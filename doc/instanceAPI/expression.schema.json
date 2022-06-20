@@ -1,0 +1,604 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "expression",
+  "description": "An instantiated expression",
+  "oneOf": [
+    {
+      "description": "Integer literal expression",
+      "type": "integer"
+    },
+    {
+      "description": "Real literal expression",
+      "type": "number",
+      "not": {
+        "type": "integer"
+      }
+    },
+    {
+      "description": "String literal expression",
+      "type": "string"
+    },
+    {
+      "description": "Boolean literal expression",
+      "type": "boolean"
+    },
+    {
+      "description": "Enumeration literal expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "enum"
+        },
+        "name": {
+          "description": "Fully qualified name of the enumeration literal",
+          "type": "string"
+        },
+        "index": {
+          "description": "Ordinal value of the enumeration literal",
+          "type": "integer",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": ["$kind", "name", "index"]
+    },
+    {
+      "description": "Clock literal expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "clock"
+        }
+      },
+      "required": ["$kind"],
+      "oneOf": [
+        {
+          "description": "Inferred Clock",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "inferred"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "description": "Rational Clock",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "rational"
+            },
+            "intervalCounter": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "resolution": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["type", "intervalCounter", "resolution"]
+        },
+        {
+          "description": "Real Clock",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "real"
+            },
+            "interval": {
+              "type": "number",
+              "exclusiveMinimum": 0.0
+            }
+          },
+          "required": ["type", "interval"]
+        },
+        {
+          "description": "Event Clock",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "event"
+            },
+            "condition": {
+              "$ref": "#"
+            },
+            "startInterval": {
+              "type": "number",
+              "minimum": 0.0
+            }
+          },
+          "required": ["type", "condition", "startInterval"]
+        },
+        {
+          "description": "Solver Clock",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "solver"
+            },
+            "c": {
+              "$ref": "#"
+            },
+            "solverMethod": {
+              "type": "string"
+            }
+          },
+          "required": ["type", "c", "solverMethod"]
+        }
+      ]
+    },
+    {
+      "$ref": "#/definitions/cref"
+    },
+    {
+      "description": "Typename used as range expression (Boolean or enumeration type)",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "typename"
+        },
+        "name": {
+          "description": "Name of the type",
+          "type": "string"
+        }
+      }
+    },
+    {
+      "description": "Array expression",
+      "type": "array",
+      "items": {
+        "$ref": "#"
+      }
+    },
+    {
+      "description": "Range expression (start:stop, start:step:stop)",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "range"
+        },
+        "start": {
+          "$ref": "#"
+        },
+        "step": {
+          "$ref": "#"
+        },
+        "stop": {
+          "$ref": "#"
+        }
+      },
+      "required": ["$kind", "start", "stop"]
+    },
+    {
+      "description": "Tuple expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "tuple"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["$kind", "elements"]
+    },
+    {
+      "description": "Record expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "record"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": ["$kind", "elements"]
+    },
+    {
+      "description": "Function call expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "call"
+        },
+        "name": {
+          "description": "Name of the function being called",
+          "type": "string"
+        },
+        "arguments": {
+          "description": "Arguments of the call",
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": ["$kind", "name", "arguments"]
+    },
+    {
+      "description": "Array constructor expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "array_constructor"
+        },
+        "exp": {
+          "description": "The expression to be evaluated for each constructed element",
+          "$ref": "#"
+        },
+        "iterators": {
+          "description": "The iterators used to construct the array",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/iterator"
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["$kind", "exp", "iterators"]
+    },
+    {
+      "description": "Reduction expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "reduction"
+        },
+        "name": {
+          "description": "Name of the reduction function",
+          "type": "string"
+        },
+        "exp": {
+          "description": "The expression of the reduction expression",
+          "$ref": "#"
+        },
+        "iterators": {
+          "description": "The iterators of the reduction expression",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/iterator"
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["$kind", "name", "exp", "iterators"]
+    },
+    {
+      "description": "Size expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "size"
+        },
+        "exp": {
+          "description": "Expression to take the size of",
+          "$ref": "#"
+        },
+        "index": {
+          "description": "Optional dimension index expression",
+          "$ref": "#"
+        }
+      },
+      "required": ["$kind", "exp", "index"]
+    },
+    {
+      "description": "Binary operation expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "binary_op"
+        },
+        "lhs": {
+          "description": "Left operand",
+          "$ref": "#"
+        },
+        "op": {
+          "description": "Operator",
+          "type": "string",
+          "enum": ["+", ".+", "-", ".-", "*", ".*", "/", "./", "^", ".^", "and", "or"]
+        },
+        "rhs": {
+          "description": "Right operand",
+          "$ref": "#"
+        }
+      },
+      "required": ["$kind", "lhs", "op", "rhs"]
+    },
+    {
+      "description": "Unary operation expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "unary_op"
+        },
+        "op": {
+          "description": "Operator",
+          "type": "string",
+          "enum": ["-", "not"]
+        },
+        "exp": {
+          "description": "Operand",
+          "$ref": "#"
+        }
+      },
+      "required": ["$kind", "op", "exp"]
+    },
+    {
+      "description": "Relation expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "relation"
+        },
+        "lhs": {
+          "description": "Left operand",
+          "$ref": "#"
+        },
+        "op": {
+          "description": "Operator",
+          "type": "string",
+          "enum": ["<", "<=", ">", ">=", "==", "<>"]
+        },
+        "rhs": {
+          "description": "Right operand",
+          "$ref": "#"
+        }
+      },
+      "required": ["$kind", "lhs", "op", "rhs"]
+    },
+    {
+      "description": "If-expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "if"
+        },
+        "condition": {
+          "description": "Condition expression",
+          "$ref": "#"
+        },
+        "true": {
+          "description": "Branch selected when the condition is true",
+          "$ref": "#"
+        },
+        "false": {
+          "description": "Branch selected when the condition is false",
+          "$ref": "#"
+        }
+      },
+      "required": ["$kind", "condition", "true", "false"]
+    },
+    {
+      "description": "Type cast expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "cast"
+        },
+        "type": {
+          "description": "Name of the type to cast to",
+          "type": "string"
+        },
+        "exp": {
+          "description": "Expression to type cast",
+          "$ref": "#"
+        }
+      },
+      "required": ["$kind", "type", "exp"]
+    },
+    {
+      "description": "Box expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "box"
+        },
+        "exp": {
+          "description": "Expression to box",
+          "$ref": "#"
+        }
+      },
+      "required": ["$kind", "exp"]
+    },
+    {
+      "description": "Unbox expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "unbox"
+        },
+        "exp": {
+          "description": "Expression to unbox",
+          "$ref": "#"
+        }
+      },
+      "required": ["$kind", "exp"]
+    },
+    {
+      "description": "Subscripted expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "sub"
+        },
+        "exp": {
+          "description": "Expression being subscripted",
+          "$ref": "#"
+        },
+        "subscripts": {
+          "description": "The subscripts applied to the expression",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/subscript"
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["$kind", "exp", "subscripts"]
+    },
+    {
+      "description": "Tuple element expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "tuple_element"
+        },
+        "exp": {
+          "description": "Expression of tuple type",
+          "$ref": "#"
+        },
+        "index": {
+          "description": "Index of the element in the tuple expression to retrieve",
+          "type": "integer",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": ["$kind", "exp", "index"]
+    },
+    {
+      "description": "Record element expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "record_element"
+        },
+        "exp": {
+          "description": "Expression of record type",
+          "$ref": "#"
+        },
+        "index": {
+          "description": "Index of the field in the record expression to retrieve",
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "field": {
+          "description": "Name of the field in the record expression to retrieve",
+          "type": "string"
+        }
+      },
+      "required": ["$kind", "exp", "index", "field"]
+    },
+    {
+      "description": "Partial function application expression",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "function"
+        },
+        "name": {
+          "description": "Name of the function",
+          "type": "string"
+        },
+        "arguments": {
+          "description": "Arguments to apply in the partial function application" ,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "Name of the formal parameter to bind to",
+                "type": "string"
+              },
+              "value": {
+                "description": "Expression to bind to the formal parameter",
+                "$ref": "#"
+              }
+            },
+            "required": ["name", "value"]
+          },
+          "minimum": 0
+        }
+      },
+      "required": ["$kind", "name", "arguments"]
+    }
+  ],
+  "definitions": {
+    "cref": {
+      "description": "Component reference",
+      "type": "object",
+      "properties": {
+        "$kind": {
+          "type": "string",
+          "const": "cref"
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "subscripts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/subscript"
+                },
+                "minItems": 1
+              }
+            },
+            "required": ["name"]
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["$kind", "parts"]
+    },
+    "subscript": {
+      "oneOf": [
+        {
+          "description": "Subscript indicating whole dimension",
+          "type": "string",
+          "const": ":"
+        },
+        {
+          "description": "Subscript expression other than :",
+          "$ref": "#"
+        }
+      ]
+    },
+    "iterator": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the iterator",
+          "type": "string"
+        },
+        "range": {
+          "description": "Range expression of the iterator",
+          "$ref": "#"
+        }
+      }
+    }
+  }
+}

@@ -19,6 +19,7 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
+//   \"restriction\": \"model\",
 //   \"components\": [
 //     {
 //       \"name\": \"pi\",
