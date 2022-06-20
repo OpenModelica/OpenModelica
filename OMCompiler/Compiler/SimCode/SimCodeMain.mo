@@ -1424,6 +1424,7 @@ protected
   list<list<SimCode.SimEqSystem>> daeEquations;
   list<SimCodeVar.SimVar> residualVars, algebraicStateVars, auxiliaryVars;
 
+  tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> daeModeJacobian;
   Option<BackendDAE.SymbolicJacobian> daeModeJac;
   BackendDAE.SparsePattern daeModeSparsity;
   BackendDAE.SparseColoring daeModeColoring;
@@ -1513,45 +1514,35 @@ algorithm
     // disable start value calculation, it's only helpful in case of algebraic loops
     // and they are not present in DAEmode
 
-
-
-    matrixnames := if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then {} else {"A"};
-    matrixnames := "F" :: "D" :: "C" :: "B" :: matrixnames;
-    //matrixnames := if Util.isSome(inBackendDAE.shared.dataReconciliationData) then "F" :: matrixnames else matrixnames;
     // create DAE mode Sparse pattern and TODO: Jacobians
     // sparsity pattern generation
-    (daeModeJac, daeModeSparsity, daeModeColoring) := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
     if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
       // create symbolic jacobian (like nls systems!)
+      (daeModeJac, daeModeSparsity, daeModeColoring) := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
+      matrixnames := if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then {} else {"A"};
+      matrixnames := "F" :: "D" :: "C" :: "B" :: matrixnames;
       (daeModeSP, uniqueEqIndex, tempVars) := SimCodeUtil.createSymbolicSimulationJacobian(
         inJacobian      = BackendDAE.GENERIC_JACOBIAN(daeModeJac, daeModeSparsity, daeModeColoring),
         iuniqueEqIndex  = uniqueEqIndex,
         itempvars       = tempVars); // tempVars to modelInfo?
-      print("dae mode jac ht:\n");
-      SOME(symDAESparsPattern) := daeModeSP;
-      BaseHashTable.dumpHashTable(Util.getOption(symDAESparsPattern.crefsHT));
-    tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
-    modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
-    FlagsUtil.set(Flags.NO_START_CALC, tmpB);
-    //create hash table
-    crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
+      tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
+      modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
+      FlagsUtil.set(Flags.NO_START_CALC, tmpB);
+      //create hash table
+      crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
       symJacs := listReverse(Util.getOption(daeModeSP) :: listReverse(symJacs));
     else
-     tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
-    modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
-    FlagsUtil.set(Flags.NO_START_CALC, tmpB);
+      tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
+      modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
+      FlagsUtil.set(Flags.NO_START_CALC, tmpB);
+      crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 
-    //create hash table
-    crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
-      // only create sparsity pattern
-      ({symDAESparsPattern}, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode(
-        inSymJacobians      = {(daeModeJac, daeModeSparsity, daeModeColoring)},
-        inSimVarHT          = crefToSimVarHT,
-        iuniqueEqIndex      = uniqueEqIndex,
-        inNames             = {"daeMode"},
-        inJacobianMatrixes  = {});
-      daeModeSP := SOME(symDAESparsPattern);
+      if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
+        matrixnames := {"A", "B", "C", "D"};
+      else
+        matrixnames := {"A", "B", "C", "D", "F"};
+      end if;
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
     end if;
 
@@ -1604,6 +1595,13 @@ algorithm
 
     algebraicStateVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicStateVars, crefToSimVarHT);
 
+    if not Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+      //create hash table
+      // only create sparsity pattern
+      daeModeJacobian := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
+      ({symDAESparsPattern}, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({daeModeJacobian}, crefToSimVarHT, uniqueEqIndex, {"daeMode"}, {});
+      daeModeSP := SOME(symDAESparsPattern);
+    end if;
     daeModeConf := SimCode.ALL_EQUATIONS();
     daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicStateVars, auxiliaryVars, daeModeConf));
 
