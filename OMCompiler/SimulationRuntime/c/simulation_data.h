@@ -659,7 +659,7 @@ typedef struct SIMULATION_INFO
   NLS_LS nlsLinearSolver;              /* nls linear solver */
 
   EVAL_CONTEXT currentContext;         /* Simulation context */
-  EVAL_CONTEXT currentContextOld;      /* Last value of currentContext */
+  EVAL_CONTEXT currentContextOld;      /* Previous value of currentContext */
   int jacobianEvals;                   /* number of different columns to evaluate functionODE */
   int currentJacobianEval;             /* current column to evaluate functionODE for Jacobian */
 

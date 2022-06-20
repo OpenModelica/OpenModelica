@@ -32,12 +32,12 @@
 #include "../../simulation_data.h"
 
 const char *EVAL_CONTEXT_STRING[CONTEXT_MAX] = {
-  "context UNKNOWN",
-  "context ODE evaluation",
-  "context algebraic evaluation",
-  "context event search",
-  "context jacobian evaluation",
-  "context symbolica jacobian evaluation"
+  "UNKNOWN",
+  "ODE evaluation",
+  "algebraic evaluation",
+  "event search",
+  "jacobian evaluation",
+  "symbolica jacobian evaluation"
 };
 
 /**
@@ -47,10 +47,10 @@ const char *EVAL_CONTEXT_STRING[CONTEXT_MAX] = {
  * @param currentTime       Current simulation time.
  * @param currentContext    Evaluation context.
  */
-void setContext(DATA* data, double* currentTime, EVAL_CONTEXT currentContext) {
+void setContext(DATA* data, double currentTime, EVAL_CONTEXT currentContext) {
   data->simulationInfo->currentContextOld = data->simulationInfo->currentContext;
   data->simulationInfo->currentContext = currentContext;
-  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", EVAL_CONTEXT_STRING[currentContext], *currentTime);
+  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", EVAL_CONTEXT_STRING[currentContext], currentTime);
   if (currentContext == CONTEXT_JACOBIAN ||
       currentContext == CONTEXT_SYM_JACOBIAN)
   {

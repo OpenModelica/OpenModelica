@@ -817,7 +817,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj,
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, t, CONTEXT_ODE);
+    setContext(data, *t, CONTEXT_ODE);
   }
   printCurrentStatesVector(LOG_DASSL_STATES, y, data, *t);
   printVector(LOG_DASSL_STATES, "yd", yd, data->modelData->nStates, *t);
@@ -887,7 +887,7 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, t, CONTEXT_EVENTS);
+    setContext(data, *t, CONTEXT_EVENTS);
   }
 
   saveJumpState = threadData->currentErrorStage;
@@ -1059,7 +1059,7 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   int i,j;
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
-  setContext(data, t, CONTEXT_JACOBIAN);
+  setContext(data, *t, CONTEXT_JACOBIAN);
 
   for(i=dasslData->N-1; i >= 0; i--)
   {
@@ -1121,7 +1121,7 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
   unsigned int i,j,l,k,ii;
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
-  setContext(data, t, CONTEXT_JACOBIAN);
+  setContext(data, *t, CONTEXT_JACOBIAN);
 
   for(i = 0; i < jacobian->sparsePattern->maxColors; i++)
   {

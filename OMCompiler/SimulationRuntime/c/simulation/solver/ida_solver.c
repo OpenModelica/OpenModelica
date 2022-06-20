@@ -1160,7 +1160,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, &time, CONTEXT_ODE);
+    setContext(data, time, CONTEXT_ODE);
   }
   data->localData[0]->timeValue = time;
 
@@ -1276,7 +1276,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, &time, CONTEXT_EVENTS);
+    setContext(data, time, CONTEXT_EVENTS);
   }
 
   /* re-scale idaData->y and idaData->yp to evaluate the equations*/
@@ -1381,7 +1381,7 @@ int jacColoredNumericalDense(double currentTime, N_Vector yy, N_Vector yp,
     sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
   }
 
-  setContext(data, &currentTime, CONTEXT_JACOBIAN);
+  setContext(data, currentTime, CONTEXT_JACOBIAN);
 
   for(i = 0; i < sparsePattern->maxColors; i++)
   {
@@ -1457,7 +1457,7 @@ static int jacColoredSymbolicalDense(double currentTime, N_Vector yy,
   double *states = N_VGetArrayPointer_Serial(yy);
   double *yprime = N_VGetArrayPointer_Serial(yp);
 
-  setContext(data, &currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
+  setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
   /* Evaluate constant equations if available */
   if (jac->constantEqns != NULL) {
@@ -1684,7 +1684,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   /* Reset Jacobian matrix */
   SUNMatZero(Jac);
 
-  setContext(data, &currentTime, CONTEXT_JACOBIAN);
+  setContext(data, currentTime, CONTEXT_JACOBIAN);
 
   /* rescale idaData->y and idaData->yp
    * the evaluation of the  residual function
@@ -1794,7 +1794,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   /* Reset Jacobian matrix */
   SUNMatZero(Jac);
 
-  setContext(data, &currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
+  setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
   /* Evaluate constant equations if available */
   if (jac->constantEqns != NULL) {

@@ -57,7 +57,7 @@ typedef enum EVAL_CONTEXT
   CONTEXT_MAX
 } EVAL_CONTEXT;
 
-void setContext(DATA* data, double* currentTime, EVAL_CONTEXT currentContext);
+void setContext(DATA* data, double currentTime, EVAL_CONTEXT currentContext);
 void unsetContext(DATA* data);
 void increaseJacContext(DATA* data);
 
