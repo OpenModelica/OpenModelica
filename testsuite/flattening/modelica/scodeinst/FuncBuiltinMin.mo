@@ -13,7 +13,7 @@ model FuncBuiltinMin
   Real r2 = min({3.0, 1.0, 2.0});
   Real r3 = min(r1, r2);
   Real r4 = min(r1, 100);
-  Real r5 = min(zeros(0));
+  Real r5 = min(fill(0.0, 0));
 
   Integer i1 = min(5, 6);
   Integer i2 = min({4, 2, 1});
@@ -37,11 +37,11 @@ end FuncBuiltinMin;
 //   Real r2 = 1.0;
 //   Real r3 = min(r1, r2);
 //   Real r4 = min(r1, 100.0);
-//   Real r5 = 4.611686018427388e+18;
+//   Real r5 = 8.777798510069901e+304;
 //   Integer i1 = 5;
 //   Integer i2 = 1;
 //   Integer i3 = min(i2, i1);
-//   Integer i4 = 4611686018427387903;
+//   Integer i4 = 1073741823;
 //   Boolean b1 = false;
 //   Boolean b2 = false;
 //   Boolean b3 = min(b1, b2);
