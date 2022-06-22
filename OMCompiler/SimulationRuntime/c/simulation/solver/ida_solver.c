@@ -338,7 +338,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (omc_flag[FLAG_JACOBIAN]) {
     for (i=1; i< JAC_MAX;i++) {
       if (!strcmp((const char*)omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[i])) {
-        idaData->jacobianMethod = (int)i;
+        idaData->jacobianMethod = (enum JACOBIAN_METHOD)i;
         break;
       }
     }
@@ -367,6 +367,28 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     /* default case colored numerical jacobian */
   } else {
     idaData->jacobianMethod = COLOREDNUMJAC;
+  }
+
+  /* if FLAG_IDA_LS is set, choose ida linear solver method */
+  if (omc_flag[FLAG_IDA_LS]) {
+    for (i=1; i< IDA_LS_MAX; i++) {
+      if (!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD[i])) {
+        idaData->linearSolverMethod = (enum IDA_LS)i;
+        break;
+      }
+    }
+    if (idaData->linearSolverMethod == IDA_LS_UNKNOWN) {
+      if (ACTIVE_WARNING_STREAM(LOG_SOLVER)) {
+        warningStreamPrint(LOG_SOLVER, 1, "unrecognized ida linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IDA_LS]);
+        for(i=1; i < IDA_LS_MAX; ++i) {
+          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD[i], IDA_LS_METHOD_DESC[i]);
+        }
+        messageClose(LOG_SOLVER);
+      }
+      throwStreamPrint(threadData,"unrecognized ida linear solver method %s", (const char*)omc_flagValue[FLAG_IDA_LS]);
+    }
+  } else {
+    idaData->linearSolverMethod = IDA_LS_KLU;
   }
 
   /* selects the calculation method of the jacobian */
@@ -399,28 +421,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNonZeros;
   } else {
     idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNonZeros;
-  }
-
-  /* if FLAG_IDA_LS is set, choose ida linear solver method */
-  if (omc_flag[FLAG_IDA_LS]) {
-    for (i=1; i< IDA_LS_MAX;i++) {
-      if (!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD[i])) {
-        idaData->linearSolverMethod = (int)i;
-        break;
-      }
-    }
-    if (idaData->linearSolverMethod == IDA_LS_UNKNOWN) {
-      if (ACTIVE_WARNING_STREAM(LOG_SOLVER)) {
-        warningStreamPrint(LOG_SOLVER, 1, "unrecognized ida linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IDA_LS]);
-        for(i=1; i < IDA_LS_MAX; ++i) {
-          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD[i], IDA_LS_METHOD_DESC[i]);
-        }
-        messageClose(LOG_SOLVER);
-      }
-      throwStreamPrint(threadData,"unrecognized ida linear solver method %s", (const char*)omc_flagValue[FLAG_IDA_LS]);
-    }
-  } else {
-    idaData->linearSolverMethod = IDA_LS_KLU;
   }
 
   switch (idaData->linearSolverMethod){
