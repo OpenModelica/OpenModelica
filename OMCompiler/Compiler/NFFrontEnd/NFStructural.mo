@@ -164,6 +164,7 @@ public
         Expression e;
 
       case Expression.CREF()
+        guard ComponentRef.isCref(exp.cref) and not ComponentRef.isIterator(exp.cref)
         algorithm
           node := ComponentRef.node(exp.cref);
 
