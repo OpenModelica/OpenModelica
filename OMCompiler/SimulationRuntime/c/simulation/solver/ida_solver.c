@@ -338,7 +338,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (omc_flag[FLAG_JACOBIAN]) {
     for (i=1; i< JAC_MAX;i++) {
       if (!strcmp((const char*)omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[i])) {
-        idaData->jacobianMethod = (int)i;
+        idaData->jacobianMethod = (enum JACOBIAN_METHOD)i;
         break;
       }
     }
@@ -373,7 +373,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (omc_flag[FLAG_IDA_LS]) {
     for (i=1; i< IDA_LS_MAX; i++) {
       if (!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD[i])) {
-        idaData->linearSolverMethod = (int)i;
+        idaData->linearSolverMethod = (enum IDA_LS)i;
         break;
       }
     }
