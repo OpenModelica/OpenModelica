@@ -36,6 +36,7 @@
 #include "cvode_solver.h"
 
 /* OMC headers */
+#include "../../util/context.h"
 #include "../options.h"
 #include "../solver/external_input.h"
 #include "model_help.h"
@@ -109,7 +110,7 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, &time, CONTEXT_ODE);
+    setContext(data, time, CONTEXT_ODE);
   }
   /* Set time */
   data->localData[0]->timeValue = time;
@@ -298,7 +299,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, &time, CONTEXT_EVENTS);
+    setContext(data, time, CONTEXT_EVENTS);
   }
 
   /* TODO: re-scale cvodeData->y to evaluate the equations */

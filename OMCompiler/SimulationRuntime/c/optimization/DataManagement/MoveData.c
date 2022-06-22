@@ -31,15 +31,16 @@
 /*! MoveData.c
  */
 
-#include "../../openmodelica.h"
-#include "../../openmodelica_types.h"
 #include "../../meta/meta_modelica.h"
+#include "../../openmodelica_types.h"
+#include "../../openmodelica.h"
+#include "../../simulation/options.h"
+#include "../../simulation/results/simulation_result.h"
+#include "../../simulation/solver/model_help.h"
+#include "../../util/context.h"
+#include "../../util/omc_file.h"
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
-#include "../../simulation/results/simulation_result.h"
-#include "../../simulation/options.h"
-#include "../../simulation/solver/model_help.h"
-#include "../../util/omc_file.h"
 
 static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time);
 static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, const double preSimTime);
@@ -832,7 +833,7 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   modelica_real **sV = optData->s.seedVec[index];
 
   /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
-  setContext(data, &(data->localData[0]->timeValue), CONTEXT_SYM_JACOBIAN);
+  setContext(data, data->localData[0]->timeValue, CONTEXT_SYM_JACOBIAN);
 
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, NULL);
@@ -891,7 +892,7 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
     modelica_real **sV = optData->s.seedVec[index];
 
     /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
-    setContext(data,  &(data->localData[0]->timeValue), CONTEXT_SYM_JACOBIAN);
+    setContext(data, data->localData[0]->timeValue, CONTEXT_SYM_JACOBIAN);
 
     if (jacobian->constantEqns != NULL) {
       jacobian->constantEqns(data, threadData, jacobian, NULL);
