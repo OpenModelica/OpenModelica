@@ -1224,16 +1224,20 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
                     !success && !retry && kinsolData->retries < RETRY_MAX ? "true" : "false");
   } while (!success && retry && kinsolData->retries < RETRY_MAX);
 
-  /* Check solution status and reset error norm */
+  /* Check solution status */
   if (success && kinsolData->resetTol) {
-    KINSetFuncNormTol(kinsolData->kinsolMemory, kinsolData->fnormtol);
-    KINSetScaledStepTol(kinsolData->kinsolMemory,  kinsolData->scsteptol);
     kinsolData->solved = NLS_SOLVED_LESS_ACCURARCY;
-  }
-  else if (success) {
+  } else if (success) {
     kinsolData->solved = NLS_SOLVED;
   } else {
     kinsolData->solved = NLS_FAILED;
+  }
+
+  /* Reset solver tolerance */
+  if (kinsolData->resetTol) {
+    KINSetFuncNormTol(kinsolData->kinsolMemory, kinsolData->fnormtol);
+    KINSetScaledStepTol(kinsolData->kinsolMemory,  kinsolData->scsteptol);
+    kinsolData->resetTol = FALSE;
   }
 
   if (success) {
