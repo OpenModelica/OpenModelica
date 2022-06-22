@@ -163,7 +163,7 @@ public
   end TORN_LOOP;
 
   record ALIAS
-    "Only to be used by Solve! Represents equal systems in ODE<->INIT<->DAE"
+    "Only to be used by Solve! Represents equal strong components in ODE<->INIT<->DAE"
     AliasInfo aliasInfo       "The strong component array and index it refers to";
     StrongComponent original  "The original strong component for analysis";
   end ALIAS;
