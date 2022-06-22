@@ -140,11 +140,12 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_SR */                           "gbm",
   /* FLAG_SR_CTRL */                      "gbctrl",
   /* FLAG_SR_ERR */                       "gberr",
+  /* FLAG_SR_INT */                       "gbint",
   /* FLAG_SR_NLS */                       "gbnls",
   /* FLAG_MR */                           "gbfm",
   /* FLAG_MR_CTRL */                      "gbfctrl",
   /* FLAG_MR_ERR */                       "gbferr",
-  /* FLAG_MR_INT */                       "gbint",
+  /* FLAG_MR_INT */                       "gbfint",
   /* FLAG_MR_NLS */                       "gbfnls",
   /* FLAG_MR_PAR */                       "gbratio",
   /* FLAG_RT */                           "rt",
@@ -270,6 +271,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_SR */                           "value specifies the chosen outer ODE solver (adams)",
   /* FLAG_SR_CTRL */                      "step size control of the outer ODE solver",
   /* FLAG_SR_ERR */                       "error estimation done by Richardson extrapolation",
+  /* FLAG_SR_INT */                       "experimental flag for the interpolation used for emitting results",
   /* FLAG_SR_NLS */                       "non-linear solver method used by the outer ODE solver (default kinsol)",
   /* FLAG_MR */                           "value specifies the chosen inner ODE solver (defaults from outer integrator)",
   /* FLAG_MR_CTRL */                      "step size control of the inner ODE solver (defaults from outer integrator)",
@@ -571,6 +573,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Step size control of the outer ODE solver",
   /* FLAG_SR_ERR */
   "  Error estimation done by Richardson extrapolation",
+  /* FLAG_SR_INT */
+  "  Experimental flag for the interpolation used for emitting results",
   /* FLAG_SR_NLS */
   "  Non-linear solver method used by the outer ODE solver (default kinsol)",
   /* FLAG_MR */
@@ -718,6 +722,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_SR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SR_INT */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_NLS */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
@@ -847,6 +852,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_SR */                           FLAG_TYPE_OPTION,
   /* FLAG_SR_CTRL */                      FLAG_TYPE_OPTION,
   /* FLAG_SR_ERR */                       FLAG_TYPE_OPTION,
+  /* FLAG_SR_INT */                       FLAG_TYPE_OPTION,
   /* FLAG_SR_NLS */                       FLAG_TYPE_OPTION,
   /* FLAG_MR */                           FLAG_TYPE_OPTION,
   /* FLAG_MR_CTRL */                      FLAG_TYPE_OPTION,
