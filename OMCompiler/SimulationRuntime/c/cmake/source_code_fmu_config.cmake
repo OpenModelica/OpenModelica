@@ -17,6 +17,7 @@ set(SOURCE_FMU_COMMON_FILES_LIST ./gc/memory_pool.c
                                  ./gc/omc_gc.c
                                  ./util/base_array.c
                                  ./util/boolean_array.c
+                                 ./util/context.c
                                  ./util/division.c
                                  ./util/doubleEndedList.c
                                  ./util/generic_array.c
