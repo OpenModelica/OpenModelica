@@ -366,8 +366,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   }
 
   /* selects the calculation method of the jacobian */
-  /* in daeMode sparse pattern is already initialized in DAEMODE_DATA */
-  if(idaData->jacobianMethod == COLOREDNUMJAC ||
+  /* in daeMode with numerical jacobian sparse pattern is already initialized in DAEMODE_DATA */
+  if((idaData->jacobianMethod == COLOREDNUMJAC && !idaData->daeMode)||
      idaData->jacobianMethod == COLOREDSYMJAC ||
      idaData->jacobianMethod == SYMJAC)
   {

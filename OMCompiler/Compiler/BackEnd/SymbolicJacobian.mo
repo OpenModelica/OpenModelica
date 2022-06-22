@@ -256,7 +256,7 @@ algorithm
         inInputVars           = BackendVariable.emptyVars(),
         inParameterVars       = shared.globalKnownVars,
         inDifferentiatedVars  = resVars,
-        inVars                = depVars,
+        inVars                = BackendVariable.varList(v),
         inName                = "A",
         onlySparsePattern     = false,
         daeMode               = true);
