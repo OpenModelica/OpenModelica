@@ -79,6 +79,7 @@ static void nlsKinsolConfigSetup(NLS_KINSOL_DATA *kinsolData) {
   flag = KINSetFuncNormTol(kinsolData->kinsolMemory,
                            kinsolData->fnormtol); /* Set function-norm stopping tolerance */
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetFuncNormTol");
+  kinsolData->resetTol = FALSE;
 
   flag = KINSetScaledStepTol(kinsolData->kinsolMemory,
                              kinsolData->scsteptol); /* Set scaled-step stopping tolerance */
@@ -1099,6 +1100,7 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
     warningStreamPrint(LOG_NLS_V, 0, "Move forward with a less accurate solution.");
     KINSetFuncNormTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
     KINSetScaledStepTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
+    kinsolData->resetTol = TRUE;
     return TRUE;
   } else {
     warningStreamPrint(LOG_NLS_V, 0, "Current status of fx = %f", fNorm);
@@ -1222,19 +1224,14 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
                     !success && !retry && kinsolData->retries < RETRY_MAX ? "true" : "false");
   } while (!success && retry && kinsolData->retries < RETRY_MAX);
 
-  /* Check if solution status and reset error norm */
-  if (success) {
-    double fNorm;
-    // TODO: Will this do a new res evaluation?
-    KINGetFuncNorm(kinsolData->kinsolMemory, &fNorm);
-    if (fNorm > kinsolData->fnormtol) {
-      KINSetFuncNormTol(kinsolData->kinsolMemory, kinsolData->fnormtol);
-      KINSetScaledStepTol(kinsolData->kinsolMemory,  kinsolData->scsteptol);
-      kinsolData->solved = NLS_SOLVED_LESS_ACCURARCY;
-      infoStreamPrint(LOG_NLS_V, 0, "Resetting f norm and scaled step tolerance.");
-    } else {
-      kinsolData->solved = NLS_SOLVED;
-    }
+  /* Check solution status and reset error norm */
+  if (success && kinsolData->resetTol) {
+    KINSetFuncNormTol(kinsolData->kinsolMemory, kinsolData->fnormtol);
+    KINSetScaledStepTol(kinsolData->kinsolMemory,  kinsolData->scsteptol);
+    kinsolData->solved = NLS_SOLVED_LESS_ACCURARCY;
+  }
+  else if (success) {
+    kinsolData->solved = NLS_SOLVED;
   } else {
     kinsolData->solved = NLS_FAILED;
   }

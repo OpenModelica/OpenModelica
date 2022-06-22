@@ -82,6 +82,8 @@ typedef struct NLS_KINSOL_DATA {
   double maxstepfactor;                /* maximum newton step factor mxnewtstep = maxstepfactor
                                         * norm2(xScaling) */
   double mxnstepin;                    /* Maximum allowable scaled length of Newton step */
+  modelica_boolean resetTol;           /* True if solution with less accuracy was accepted.
+                                          Need to reset KINSOL  */
 
   /* ### work arrays ### */
   N_Vector initialGuess;
