@@ -4566,7 +4566,7 @@ end createStateSetsSets;
 //
 // =============================================================================
 
-protected function createSymbolicSimulationJacobian "function createSymbolicSimulationJacobian
+public function createSymbolicSimulationJacobian "function createSymbolicSimulationJacobian
   author: wbraun
   function creates a symbolic jacobian column for
   non-linear systems and tearing systems."

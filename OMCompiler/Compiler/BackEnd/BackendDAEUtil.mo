@@ -8420,7 +8420,7 @@ public function allPostOptimizationModules
     (BackendDAETransform.collapseArrayExpressions, "collapseArrayExpressions"),
     // DAEmode modules
     (DAEMode.createDAEmodeBDAE, "createDAEmodeBDAE"),
-    (SymbolicJacobian.detectSparsePatternDAE, "detectDAEmodeSparsePattern"),
+    (SymbolicJacobian.symbolicJacobianDAE, "symbolicJacobianDAE"),
     (BackendDAEUtil.setEvaluationStage, "setEvaluationStage")
   };
 end allPostOptimizationModules;

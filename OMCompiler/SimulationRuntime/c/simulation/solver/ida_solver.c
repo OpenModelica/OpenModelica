@@ -343,10 +343,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
         break;
       }
     }
-    if (idaData->daeMode && ( idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC )) {
-      warningStreamPrint(LOG_STDOUT, 1, "Symbolic Jacobians are currently not supported by DAE Mode. Switching back to numerical Jacobian!");
-      idaData->jacobianMethod = COLOREDNUMJAC;
-    }
     if(idaData->jacobianMethod == SYMJAC) {
       warningStreamPrint(LOG_STDOUT, 1, "Symbolic Jacobians without coloring are currently not supported by IDA. Colored symbolical Jacobian will be used.");
       idaData->jacobianMethod = COLOREDSYMJAC;
@@ -393,10 +389,10 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   }
 
   /* selects the calculation method of the jacobian */
-  /* in daeMode sparse pattern is already initialized in DAEMODE_DATA */
-  if(!idaData->daeMode && (idaData->jacobianMethod == COLOREDNUMJAC ||
-      idaData->jacobianMethod == COLOREDSYMJAC ||
-      idaData->jacobianMethod == SYMJAC))
+  /* in daeMode with numerical jacobian sparse pattern is already initialized in DAEMODE_DATA */
+  if((idaData->jacobianMethod == COLOREDNUMJAC && !idaData->daeMode)||
+     idaData->jacobianMethod == COLOREDSYMJAC ||
+     idaData->jacobianMethod == SYMJAC)
   {
     ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
@@ -1452,6 +1448,7 @@ static int jacColoredSymbolicalDense(double currentTime, N_Vector yy,
   unsigned int i,ii,j, nth;
   SPARSE_PATTERN* sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  jac->dae_cj = cj;
 
   /* prepare variables */
   double *states = N_VGetArrayPointer_Serial(yy);
@@ -1765,6 +1762,8 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
 
 /*
  * This function calculates the jacobian matrix symbolically while exploiting coloring.
+ * ToDo: backend: generate seeds for der(x)
+         here: always set der(x) seeds to cj when setting seed for x
  */
 int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
                                N_Vector rr, SUNMatrix Jac, double cj,
@@ -1776,6 +1775,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->userData)->threadData);
   const int index = data->callback->INDEX_JAC_A;
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  jac->dae_cj = cj;
 
   /* prepare variables */
   double *states = N_VGetArrayPointer_Serial(yy);
