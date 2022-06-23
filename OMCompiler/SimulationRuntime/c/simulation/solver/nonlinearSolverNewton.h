@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-int solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* systemData);
+NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* systemData);
 
 #ifdef __cplusplus
 }
