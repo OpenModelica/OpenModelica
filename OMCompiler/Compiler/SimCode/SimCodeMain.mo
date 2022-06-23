@@ -1440,6 +1440,7 @@ protected
   list<SimCode.SimEqSystem> minValueEquations;          // --> updateBoundMinValues
   list<SimCode.SimEqSystem> nominalValueEquations;      // --> updateBoundNominalValues
   list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
+  list<SimCode.SimEqSystem> jacobianEquations;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -1535,6 +1536,7 @@ algorithm
       crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
       symJacs := listReverse(Util.getOption(daeModeSP) :: symJacs);
+      jacobianEquations := SimCodeUtil.collectAllJacobianEquations(symJacs);
     else
       tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
       modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
@@ -1547,6 +1549,7 @@ algorithm
         matrixnames := {"A", "B", "C", "D", "F"};
       end if;
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
+      jacobianEquations := {};
     end if;
 
     // collect symbolic jacobians in initialization loops of the overall jacobians
@@ -1636,7 +1639,7 @@ algorithm
       removedEquations            = {},
       algorithmAndEquationAsserts = {},
       equationsForZeroCrossings   = {},
-      jacobianEquations           = {},
+      jacobianEquations           = jacobianEquations,
       stateSets                   = {},
       constraints                 = {},
       classAttributes             = {},
