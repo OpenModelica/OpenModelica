@@ -51,6 +51,8 @@ void linear_interpolation_gb(double a, double* fa, double b, double* fb, double 
 void hermite_interpolation_gb(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n);
 void linear_interpolation_gbf(double ta, double* fa, double tb, double* fb, double t, double* f, int nIdx, int* idx);
 void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx);
+void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx);
+
 
 // Copy only specific values referenced by an index vector
 void copyVector_gbf(double* a, double* b, int nIndx, int* indx);

@@ -66,7 +66,7 @@ extern "C" {
  * @brief Function to compute single-rate step.
  */
 typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, double err_order);
+typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, unsigned int err_order);
 
 typedef struct DATA_GBODEF{
   enum GB_SINGLERATE_METHOD GM_method;        /* Runge-Kutta method to use. */

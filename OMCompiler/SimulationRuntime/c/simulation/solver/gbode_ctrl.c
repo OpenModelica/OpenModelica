@@ -68,7 +68,7 @@ double getErrorThreshold(DATA_GBODE* gbData)
  * @param err_order
  * @return double
  */
-double CController(double* err_values, double* stepSize_values, double err_order)
+double CController(double* err_values, double* stepSize_values, unsigned int err_order)
 {
   return 1.0;
 }
@@ -81,12 +81,12 @@ double CController(double* err_values, double* stepSize_values, double err_order
  * @param err_order
  * @return double
  */
-double IController(double* err_values, double* stepSize_values, double err_order)
+double IController(double* err_values, double* stepSize_values, unsigned int err_order)
 {
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta = 1./err_order;
+  double beta = 1./(err_order+1);
 
   if (err_values[0]>0) {
     return fmin(facmax, fmax(facmin, fac*pow(1./err_values[0], beta)));
@@ -103,14 +103,14 @@ double IController(double* err_values, double* stepSize_values, double err_order
  * @param err_order
  * @return double
  */
-double PIController(double* err_values, double* stepSize_values, double err_order)
+double PIController(double* err_values, double* stepSize_values, unsigned int err_order)
 {
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta  = 1./err_order;
-  double beta1 = 1./err_order;
-  double beta2 = 1./err_order;
+  double beta  = 1./(err_order+1);
+  double beta1 = 1./(err_order+1);
+  double beta2 = 1./(err_order+1);
 
   double estimate;
 

@@ -1234,7 +1234,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   modelica_real *fODE = sData->realVars + data->modelData->nStates;
   DATA_GBODE *gbData = (DATA_GBODE *)solverInfo->solverData;
 
-  double err, err_threshold;
+  double err, err_int, err_threshold;
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
   int i, ii, l;
@@ -1443,6 +1443,38 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
       gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
+
+      // Check, if interpolation scheme is reliable
+      error_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                              gbData->timeRight, gbData->yRight, gbData->kRight,
+                              (gbData->timeLeft + gbData->timeRight)/2, gbData->errest,
+                              gbData->nSlowStates, gbData->slowStates);
+
+      // calculate interpolation error estimator
+      for (ii = 0, err_int=0; ii < gbData->nSlowStates; ii++) {
+        i = gbData->slowStates[ii];
+        gbData->errest[i] = gbData->errest[i] / gbData->errtol[i];
+        err_int = fmax(err_int, gbData->errest[i]);
+      }
+
+      if (ACTIVE_STREAM(LOG_M_BB)) {
+        // debug the changes of the state values during integration
+        infoStreamPrint(LOG_STATS, 1, "interpolation error of slow states at midpoint:");
+        printVector_gb(LOG_STATS, "yL", gbData->yLeft, nStates, gbData->timeLeft);
+        printVector_gb(LOG_STATS, "kL", gbData->kLeft, nStates, gbData->timeLeft);
+        printVector_gb(LOG_STATS, "yR", gbData->yRight, nStates, gbData->timeRight);
+        printVector_gb(LOG_STATS, "kR", gbData->kRight, nStates, gbData->timeRight);
+        printVector_gbf(LOG_STATS, "e", gbData->errest, nStates, (gbData->timeLeft + gbData->timeRight)/2, gbData->nSlowStates, gbData->slowStates);
+        messageClose(LOG_STATS);
+      }
+      // reject step, if interpolaton error is too large
+      if ((err_int > 1 ) && gbData->ctrl_type && gbData->interpolation==0) {
+        err = 100;
+        gbData->stepSize = gbData->lastStepSize*IController(&err_int, &(gbData->lastStepSize), gbData->tableau->error_order);
+        // count failed steps and output information on the solver status
+        // gbData->errorTestFailures++;
+        continue;
+      }
 
       if (ACTIVE_STREAM(LOG_M_BB)) {
         // debug the changes of the state values during integration

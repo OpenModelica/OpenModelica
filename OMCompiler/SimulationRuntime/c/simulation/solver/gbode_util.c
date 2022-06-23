@@ -168,6 +168,42 @@ void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, do
 }
 
 /**
+ * @brief Difference between linear and hermite interpolation at intermediate points
+ *
+ * @param ta      Time value at the left hand side
+ * @param fa      Function values at the left hand side
+ * @param dfa     Derivative function values at the left hand side
+ * @param tb      Time value at the right hand side
+ * @param fb      Function values at the right hand side
+ * @param dfb     Derivative function values at the right hand side
+ * @param t       Time value at the interpolated time point
+ * @param f       Function values at the interpolated time point
+ * @param nIdx    Size of index vector
+ * @param idx     Index vector
+ */
+void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx)
+{
+  double tt, h00, h01, h10, h11, h0, h1;
+  int i, ii;
+
+  if (tb != ta) {
+    tt = (t-ta)/(tb-ta);
+    h0 = 1-tt;
+    h1 = tt;
+    h00 = (1+2*tt)*(1-tt)*(1-tt);
+    h10 = (tb-ta)*tt*(1-tt)*(1-tt);
+    h01 = (3-2*tt)*tt*tt;
+    h11 = (tb-ta)*(tt-1)*tt*tt;
+
+    for (ii=0; ii<nIdx; ii++)
+    {
+      i = idx[ii];
+      f[i] = fabs((h00-h0)*fa[i]+h10*dfa[i]+(h01-h1)*fb[i]+h11*dfb[i]);
+    }
+  }
+}
+
+/**
  * @brief Copy specific vector components given by an index vector
  *
  * @param a       Target vector
