@@ -79,7 +79,7 @@ public
   end single;
 
   function simple
-    "creates simple replacement rules for removeSimpleEquations"
+    "creates simple replacement rules for alias removal"
     input list<StrongComponent> comps;
     input UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
@@ -123,7 +123,7 @@ public
   end addSimple;
 
   function applySimple
-    "Used for RemoveSimpleEquations.
+    "Used for alias removal.
     This should be applied before partitioning. Otherwise all systems have to be checked for jacobians
     and hessians on which this also has to be applied. Can be applied on single jacobians and hessians
     while removing simple equations on them."
