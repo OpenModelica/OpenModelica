@@ -223,7 +223,6 @@ protected
   BackendDAE.Variables emptyVars = BackendVariable.emptyVars();
   Option<BackendDAE.SymbolicJacobian> symjac;
   DAE.FunctionTree funcs;
-  BackendDAE.Jacobian jacobian;
   constant Boolean debug = false;
 algorithm
   try
@@ -262,11 +261,10 @@ algorithm
         daeMode               = true);
       if debug then execStat(getInstanceName() + "-> generateGenericJacobian "); end if;
 
-      jacobian := BackendDAE.GENERIC_JACOBIAN(symjac, sparsePattern, coloredCols);
       shared.symjacs := List.set(shared.symjacs, BackendDAE.SymbolicJacobianAIndex, (symjac, sparsePattern, coloredCols));
       shared.functionTree := funcs;
 
-      if debug then BackendDump.dumpJacobianString(jacobian); end if;
+      if debug then BackendDump.dumpJacobianString(BackendDAE.GENERIC_JACOBIAN(symjac, sparsePattern, coloredCols)); end if;
     else
       // only generate sparsity pattern
       (sparsePattern, coloredCols) := generateSparsePattern(DAE, inDepVars, depVars);
@@ -2186,7 +2184,7 @@ algorithm
 
       BackendDAE.Shared shared;
       BackendDAE.Variables  globalKnownVars, globalKnownVars1;
-      list<BackendDAE.Var> diffedVars "resVars", seedlst, derseedlst, stateVars, indepVars;
+      list<BackendDAE.Var> diffedVars "resVars", seedlst, indepVars;
 
       DAE.FunctionTree funcs;
 
@@ -2212,7 +2210,7 @@ algorithm
         end if;
 
         // Differentiate the eqns system in reducedDAE w.r.t. independents
-        (backendDAE as BackendDAE.DAE(shared=_), funcs) = generateSymbolicJacobian(reducedDAE, indepVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName, daeMode);
+        (backendDAE as BackendDAE.DAE(), funcs) = generateSymbolicJacobian(reducedDAE, indepVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName, daeMode);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;
