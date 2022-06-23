@@ -1519,8 +1519,11 @@ algorithm
     if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
       // create symbolic jacobian (like nls systems!)
       (daeModeJac, daeModeSparsity, daeModeColoring) := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
-      matrixnames := if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then {} else {"A"};
-      matrixnames := "F" :: "D" :: "C" :: "B" :: matrixnames;
+      if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
+        matrixnames := {"B", "C", "D"};
+      else
+        matrixnames := {"B", "C", "D", "F"};
+      end if;
       (daeModeSP, uniqueEqIndex, tempVars) := SimCodeUtil.createSymbolicSimulationJacobian(
         inJacobian      = BackendDAE.GENERIC_JACOBIAN(daeModeJac, daeModeSparsity, daeModeColoring),
         iuniqueEqIndex  = uniqueEqIndex,
@@ -1531,7 +1534,7 @@ algorithm
       //create hash table
       crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
-      symJacs := listReverse(Util.getOption(daeModeSP) :: listReverse(symJacs));
+      symJacs := Util.getOption(daeModeSP) :: symJacs;
     else
       tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
       modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
