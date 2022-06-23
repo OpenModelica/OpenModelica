@@ -300,7 +300,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/2_Pre/NBBindings.mo",
     "../NBackEnd/Modules/2_Pre/NBDetectStates.mo",
     "../NBackEnd/Modules/2_Pre/NBEvents.mo",
-    "../NBackEnd/Modules/2_Pre/NBRemoveSimpleEquations.mo",
+    "../NBackEnd/Modules/2_Pre/NBAlias.mo",
     "../NBackEnd/Modules/3_Post/NBJacobian.mo",
     "../NBackEnd/Modules/3_Post/NBSolve.mo",
     "../NBackEnd/Modules/3_Post/NBTearing.mo",

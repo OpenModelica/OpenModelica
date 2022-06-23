@@ -74,7 +74,7 @@ protected
   import NBJacobian.JacobianType;
   import Module = NBModule;
   import Partitioning = NBPartitioning;
-  import RemoveSimpleEquations = NBRemoveSimpleEquations;
+  import Alias = NBAlias;
   import Solve = NBSolve;
   import Tearing = NBTearing;
 
@@ -221,11 +221,11 @@ public
     // Pre-Partitioning Modules
     // (do not change order SIMPLIFY -> RSE -> EVENTS -> DETECTSTATES)
     preOptModules := {
-      (Bindings.main,               "Bindings"),
-      (simplify,                    "simplify"),
-      (RemoveSimpleEquations.main,  "RemoveSimpleEquations"),
-      (Events.main,                 "Events"),
-      (DetectStates.main,           "DetectStates")
+      (Bindings.main,      "Bindings"),
+      (simplify,           "simplify"),
+      (Alias.main,         "Alias"),
+      (Events.main,        "Events"),
+      (DetectStates.main,  "DetectStates")
     };
 
     mainModules := {
