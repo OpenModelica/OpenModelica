@@ -46,7 +46,7 @@ typedef struct DATA_HOMOTOPY DATA_HOMOTOPY;
 
 DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData);
 void freeHomotopyData(DATA_HOMOTOPY* homotopyData);
-modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData);
+NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 
 #ifdef __cplusplus
 };

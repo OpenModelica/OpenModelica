@@ -424,9 +424,9 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
  * @param data                Runtime data struct.
  * @param threadData          Thread data for error handling.
  * @param nlsData             Pointer to non-linear system data.
- * @return modelica_boolean   Return true on success and false otherwise.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
-modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData)
+NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData)
 {
   DATA_HYBRD* hybrdData = (DATA_HYBRD*)nlsData->solverData;
   int eqSystemNumber = nlsData->equationIndex;
@@ -434,7 +434,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
   int i, j;
   integer iflag = 1;
   double xerror, xerror_scaled;
-  modelica_boolean success = FALSE;
+  NLS_SOLVER_STATUS success = NLS_FAILED;
   modelica_boolean catchedError;
   double local_tol = 1e-12;
   double initial_factor = hybrdData->factor;
@@ -709,7 +709,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
     {
       int scaling;
 
-      success = TRUE;
+      success = NLS_SOLVED;
       nfunc_evals += hybrdData->nfev;
       if(ACTIVE_STREAM(LOG_NLS_V))
       {
@@ -753,7 +753,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
           xerror_scaled = 1;
           xerror = 1;
           assertCalled = 1;
-          success = FALSE;
+          success = NLS_FAILED;
           giveUp = 0;
         }
       }
@@ -1063,7 +1063,7 @@ modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYST
       memcpy(nlsData->nlsx, hybrdData->x, hybrdData->n*(sizeof(double)));
 
       giveUp = 1;
-      success = FALSE;
+      success = NLS_FAILED;
       break;
     }
   }

@@ -22,44 +22,32 @@ getModelInstance(B, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"B\",
+//   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
 //       \"name\": \"A\",
-//       \"components\": {
-//         \"x\": {
+//       \"restriction\": \"model\",
+//       \"components\": [
+//         {
+//           \"name\": \"x\",
 //           \"type\": \"Real\",
 //           \"modifier\": \"\",
 //           \"prefixes\": {
-//             \"public\": true,
-//             \"final\": false,
-//             \"inner\": false,
-//             \"outer\": false,
-//             \"replaceable\": false,
-//             \"redeclare\": false,
-//             \"connector\": \"\",
-//             \"variability\": \"\",
-//             \"direction\": \"\"
+//
 //           }
 //         }
-//       }
+//       ]
 //     }
 //   ],
-//   \"components\": {
-//     \"x\": {
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     }
-//   }
+//   ]
 // }"
 // endResult

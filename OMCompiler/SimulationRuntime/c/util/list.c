@@ -287,34 +287,14 @@ void listClear(LIST *list)
 }
 
 /**
- * @brief Removes and frees nodes from list starting from node
- *
- * used only in simulation/solver/nonlinearValuesList
- *
- * @param list    Pointer to list
- * @param node    Pointer to node
- */
-void removeNodes(LIST* list, LIST_NODE *node)
-{
-  while(node)
-  {
-    LIST_NODE *tmpNode = node->next;
-    freeNode(node);
-    node = tmpNode;
-    --(list->length);
-  }
-}
-
-/**
  * @brief Retruns first node of list
  *
  * @param list    Pointer to list
- * @return        Pointer to first node
+ * @return        Pointer to first node (NULL if list is empty)
  */
 LIST_NODE *listFirstNode(LIST *list)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
-  assertStreamPrint(NULL, 0 != list->first, "invalid fist list-pointer");
   return list->first;
 }
 
@@ -322,14 +302,12 @@ LIST_NODE *listFirstNode(LIST *list)
  * @brief Returns next node after node (used for iterating over list)
  *
  * @param node    Pointer to node
- * @return        Pointer to next node
+ * @return        Pointer to next node (NULL if end of list is reached)
  */
 LIST_NODE *listNextNode(LIST_NODE *node)
 {
   assertStreamPrint(NULL, 0 != node, "invalid list-node");
-  if(node)
-    return node->next;
-  return NULL;
+  return node->next;
 }
 
 /**
@@ -341,7 +319,7 @@ LIST_NODE *listNextNode(LIST_NODE *node)
 void *listNodeData(LIST_NODE *node)
 {
   assertStreamPrint(NULL, 0 != node, "invalid list-node");
-  assertStreamPrint(NULL, 0 != node->data, "invalid data node");
+  assertStreamPrint(NULL, 0 != node->data, "invalid list-data");
   return node->data;
 }
 
@@ -350,7 +328,7 @@ void updateNodeData(LIST *list, LIST_NODE *node, const void *data)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
   assertStreamPrint(NULL, 0 != node, "invalid list-node");
-  assertStreamPrint(NULL, 0 != node->data, "invalid data node");
+  assertStreamPrint(NULL, 0 != node->data, "invalid list-data");
   memcpy(node->data, data, list->itemSize);
   return;
 }
@@ -358,10 +336,9 @@ void updateNodeData(LIST *list, LIST_NODE *node, const void *data)
 /* not sure about this, looks dangerous */
 LIST_NODE* updateNodeNext(LIST *list, LIST_NODE *node, LIST_NODE *newNext)
 {
-  LIST_NODE *next;
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
   assertStreamPrint(NULL, 0 != node, "invalid list-node");
-  next = node->next;
+  LIST_NODE *next = node->next;
   node->next = newNext;
   return next;
 }

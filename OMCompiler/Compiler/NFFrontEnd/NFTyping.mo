@@ -63,7 +63,6 @@ import Builtin = NFBuiltin;
 import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
 import ComponentRef = NFComponentRef;
-import Config;
 import Origin = NFComponentRef.Origin;
 import ExecStat.execStat;
 import Lookup = NFLookup;
@@ -930,8 +929,8 @@ algorithm
         try
           binding := typeBinding(binding, InstContext.set(context, NFInstContext.BINDING));
 
-          if not (Config.getGraphicsExpMode() and stringEq(name, "graphics")) then
-            binding := TypeCheck.matchBinding(binding, c.ty, name, node);
+          if not (InstContext.inAnnotation(context) and stringEq(name, "graphics")) then
+            binding := TypeCheck.matchBinding(binding, c.ty, name, node, context);
           end if;
 
           comp_var := checkComponentBindingVariability(name, c, binding, context);
@@ -964,7 +963,7 @@ algorithm
     case Component.TYPED_COMPONENT()
       algorithm
         if Binding.isTyped(c.binding) then
-          c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node);
+          c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node, context);
           checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
         end if;
 
@@ -1172,7 +1171,7 @@ algorithm
         if Binding.isBound(binding) then
           binding := typeBinding(binding, context);
           parent := InstNode.parent(component);
-          binding := TypeCheck.matchBinding(binding, attrType, name, parent);
+          binding := TypeCheck.matchBinding(binding, attrType, name, parent, context);
 
           // Check the variability. All builtin attributes have parameter variability,
           // unless we're in a function in which case we don't care.
@@ -2085,7 +2084,7 @@ algorithm
     (exp, , mk) := TypeCheck.matchTypes(ty2, ty1, e);
     expl2 := exp::expl2;
     n := n-1;
-    if not Config.getGraphicsExpMode() then // forget errors when handling annotations
+    if not InstContext.inAnnotation(context) then // forget errors when handling annotations
       if TypeCheck.isIncompatibleMatch(mk) then
         Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
         fail();

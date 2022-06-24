@@ -181,14 +181,15 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
   return flag;
 }
 
-/*! \fn solve non-linear system with newton method
+/**
+ * @brief Solve non-linear system with Newton method.
  *
- *  \param [in]  [data]
- *                [sysNumber] index of the corresponding non-linear system
- *
- *  \author wbraun
+ * @param data                Runtime data struct.
+ * @param threadData          Thread data for error handling.
+ * @param systemData          Pointer to non-linear system data.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
-int solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* systemData)
+NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* systemData)
 {
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   assertStreamPrint(threadData, solverData != NULL, "Something went horribly wrong in solveNewton!");
@@ -196,7 +197,7 @@ int solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* sys
   int eqSystemNumber = 0;
   int i;
   double xerror = -1, xerror_scaled = -1;
-  int success = 0;
+  NLS_SOLVER_STATUS success = NLS_FAILED;
   int nfunc_evals = 0;
   int continuous = 1;
   double local_tol = solverData->ftol;
@@ -255,7 +256,7 @@ int solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* sys
   }
 
   /* start solving loop */
-  while(!giveUp && !success)
+  while(!giveUp && success != NLS_SOLVED)
   {
 
     giveUp = 1;
@@ -280,7 +281,7 @@ int solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* sys
     /* solution found */
     if((xerror <= local_tol || xerror_scaled <= local_tol) && solverData->info > 0)
     {
-      success = 1;
+      success = NLS_SOLVED;
       nfunc_evals += solverData->nfev;
       if(ACTIVE_STREAM(LOG_NLS_V))
       {

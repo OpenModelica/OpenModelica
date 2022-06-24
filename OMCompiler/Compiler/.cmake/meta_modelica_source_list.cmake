@@ -296,7 +296,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBBindings.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBDetectStates.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBEvents.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBRemoveSimpleEquations.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/2_Pre/NBAlias.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/3_Post/NBJacobian.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/3_Post/NBSolve.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/3_Post/NBTearing.mo

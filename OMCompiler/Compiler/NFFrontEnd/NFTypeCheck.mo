@@ -47,7 +47,6 @@ import NFPrefixes.{Variability, Purity};
 import Subscript = NFSubscript;
 
 protected
-import Config;
 import DAEExpression = Expression;
 import Error;
 import Flags;
@@ -2778,6 +2777,7 @@ function matchBinding
   input Type componentType;
   input String name;
   input InstNode component;
+  input InstContext.Type context;
 algorithm
   () := match binding
     local
@@ -2793,7 +2793,7 @@ algorithm
 
         if not isValidAssignmentMatch(ty_match) then
           binding.bindingExp := Expression.expandSplitIndices(exp);
-          printBindingTypeError(name, binding, comp_ty, bind_ty, component);
+          printBindingTypeError(name, binding, comp_ty, bind_ty, component, context);
           fail();
         elseif isCastMatch(ty_match) then
           binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.eachType,
@@ -2888,6 +2888,7 @@ function printBindingTypeError
   input Type componentType;
   input Type bindingType;
   input InstNode component;
+  input InstContext.Type context;
 protected
   SourceInfo binding_info, comp_info;
   String bind_ty_str, comp_ty_str;
@@ -2904,7 +2905,7 @@ algorithm
                              Type.arrayElementType(componentType),
                              Expression.EMPTY(bindingType), true);
 
-    if not Config.getGraphicsExpMode() then // forget errors when handling annotations
+    if not InstContext.inAnnotation(context) then // forget errors when handling annotations
       if isValidAssignmentMatch(mk) then
         Error.addMultiSourceMessage(Error.VARIABLE_BINDING_DIMS_MISMATCH,
           {name, Binding.toString(binding),

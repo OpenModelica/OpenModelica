@@ -47,7 +47,6 @@ import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
 import Component = NFComponent;
 import ComponentRef = NFComponentRef;
-import Config;
 import Dimension = NFDimension;
 import ErrorExt;
 import EvalFunction = NFEvalFunction;
@@ -820,12 +819,14 @@ public
     function iterators_json
       input list<tuple<InstNode, Expression>> iters;
       output JSON json = JSON.emptyArray(listLength(iters));
+    protected
+      JSON j;
     algorithm
       for i in iters loop
-        json := JSON.addElement(
-          JSON.fromPair(InstNode.name(Util.tuple21(i)),
-                        Expression.toJSON(Util.tuple22(i))),
-          json);
+        j := JSON.emptyObject();
+        j := JSON.addPair("name", JSON.makeString(InstNode.name(Util.tuple21(i))), j);
+        j := JSON.addPair("range", Expression.toJSON(Util.tuple22(i)), j);
+        json := JSON.addElement(j, json);
       end for;
     end iterators_json;
   protected
@@ -835,7 +836,7 @@ public
       case TYPED_CALL()
         algorithm
           path := Function.nameConsiderBuiltin(call.fn);
-          json := JSON.addPair("kind", JSON.makeString("call"), json);
+          json := JSON.addPair("$kind", JSON.makeString("call"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
           json := JSON.addPair("arguments", JSON.makeArray(
             list(Expression.toJSON(a) for a in call.arguments)), json);
@@ -844,7 +845,7 @@ public
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
-          json := JSON.addPair("kind", JSON.makeString("array_constructor"), json);
+          json := JSON.addPair("$kind", JSON.makeString("array_constructor"), json);
           json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
           json := JSON.addPair("iterators", iterators_json(call.iters), json);
         then
@@ -853,7 +854,7 @@ public
       case TYPED_REDUCTION()
         algorithm
           path := Function.nameConsiderBuiltin(call.fn);
-          json := JSON.addPair("kind", JSON.makeString("reduction"), json);
+          json := JSON.addPair("$kind", JSON.makeString("reduction"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
           json := JSON.addPair("exp", Expression.toJSON(call.exp), json);
           json := JSON.addPair("iterators", iterators_json(call.iters), json);
@@ -862,7 +863,7 @@ public
 
       else
         algorithm
-          json := JSON.addPair("kind", JSON.makeString("call"), json);
+          json := JSON.addPair("$kind", JSON.makeString("call"), json);
         then
           ();
 
@@ -2016,7 +2017,7 @@ protected
       (args, named_args) := instArgs(functionArgs, scope, context, info);
     else
       // didn't work, is this DynamicSelect dynamic part?! #5631
-      if Config.getGraphicsExpMode() and stringEq(name, "DynamicSelect") then
+      if InstContext.inAnnotation(context) and stringEq(name, "DynamicSelect") then
         // return just the first part of DynamicSelect
         callExp := match functionArgs
            case Absyn.FUNCTIONARGS() then

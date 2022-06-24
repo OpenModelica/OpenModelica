@@ -83,6 +83,7 @@ import NFPrefixes.{Variability};
 import NFSections.Sections;
 import Package = NFPackage;
 import Prefixes = NFPrefixes;
+import Restriction = NFRestriction;
 import Scalarize = NFScalarize;
 import SimplifyExp = NFSimplifyExp;
 import SimplifyModel = NFSimplifyModel;
@@ -175,8 +176,8 @@ algorithm
             (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
-          exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
-          (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
+          exp := NFInst.instExp(absynExp, inst_cls, context, info);
+          (exp, ty, var) := Typing.typeExp(exp, context, info);
           // exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
@@ -219,7 +220,7 @@ algorithm
             try
               {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
               exp := NFInst.instExp(absynExp, inst_cls, context, info);
-              (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
+              (exp, ty, var) := Typing.typeExp(exp, context, info);
               save := exp;
               try
                 exp := NFCeval.evalExp(save);
@@ -400,8 +401,8 @@ algorithm
             (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
-          exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
-          (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
+          exp := NFInst.instExp(absynExp, inst_cls, context, info);
+          (exp, ty, var) := Typing.typeExp(exp, context, info);
           // exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
@@ -930,6 +931,8 @@ algorithm
   cmt := SCodeUtil.getElementComment(InstNode.definition(node));
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
+  json := JSON.addPair("restriction",
+    JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtends(exts), json);
@@ -976,13 +979,13 @@ end dumpJSONExtends;
 
 function dumpJSONComponents
   input list<InstanceTree> components;
-  output JSON json = JSON.emptyObject();
+  output JSON json = JSON.emptyArray();
 protected
   InstNode node;
 algorithm
   for comp in components loop
     InstanceTree.COMPONENT(node = node) := comp;
-    json := JSON.addPair(InstNode.name(node), dumpJSONComponent(comp), json);
+    json := JSON.addElement(dumpJSONComponent(comp), json);
   end for;
 end dumpJSONComponents;
 
@@ -1013,6 +1016,7 @@ algorithm
 
     case (Component.TYPED_COMPONENT(), SCode.Element.COMPONENT())
       algorithm
+        json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, comp.ty), json);
 
         if Type.isArray(comp.ty) then
@@ -1037,7 +1041,7 @@ algorithm
         end if;
 
         json := JSON.addPair("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes), json);
-        json := dumpJSONCommentOpt(comp.comment, node, json);
+        json := dumpJSONCommentOpt(comp.comment, InstNode.parent(node), json);
       then
         ();
 
@@ -1149,16 +1153,50 @@ function dumpJSONAttributes
   input SCode.Attributes attrs;
   input SCode.Prefixes prefs;
   output JSON json = JSON.emptyObject();
+protected
+  String s;
 algorithm
-  json := JSON.addPair("public", JSON.makeBoolean(SCodeUtil.visibilityBool(prefs.visibility)), json);
-  json := JSON.addPair("final", JSON.makeBoolean(SCodeUtil.finalBool(prefs.finalPrefix)), json);
-  json := JSON.addPair("inner", JSON.makeBoolean(AbsynUtil.isInner(prefs.innerOuter)), json);
-  json := JSON.addPair("outer", JSON.makeBoolean(AbsynUtil.isOuter(prefs.innerOuter)), json);
-  json := JSON.addPair("replaceable", JSON.makeBoolean(SCodeUtil.replaceableBool(prefs.replaceablePrefix)), json);
-  json := JSON.addPair("redeclare", JSON.makeBoolean(SCodeUtil.redeclareBool(prefs.redeclarePrefix)), json);
-  json := JSON.addPair("connector", JSON.makeString(SCodeDump.connectorTypeStr(attrs.connectorType)), json);
-  json := JSON.addPair("variability", JSON.makeString(SCodeDump.unparseVariability(attrs.variability)), json);
-  json := JSON.addPair("direction", JSON.makeString(Dump.unparseDirectionSymbolStr(attrs.direction)), json);
+  if not SCodeUtil.visibilityBool(prefs.visibility) then
+    json := JSON.addPair("public", JSON.makeBoolean(false), json);
+  end if;
+
+  if SCodeUtil.finalBool(prefs.finalPrefix) then
+    json := JSON.addPair("final", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isInner(prefs.innerOuter) then
+    json := JSON.addPair("inner", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isOuter(prefs.innerOuter) then
+    json := JSON.addPair("outer", JSON.makeBoolean(true), json);
+  end if;
+
+  if SCodeUtil.replaceableBool(prefs.replaceablePrefix) then
+    json := JSON.addPair("replaceable", JSON.makeBoolean(true), json);
+  end if;
+
+  if SCodeUtil.redeclareBool(prefs.redeclarePrefix) then
+    json := JSON.addPair("redeclare", JSON.makeBoolean(true), json);
+  end if;
+
+  s := SCodeDump.connectorTypeStr(attrs.connectorType);
+  if not stringEmpty(s) then
+    json := JSON.addPair("connector", JSON.makeString(s), json);
+  end if;
+
+  s := SCodeDump.unparseVariability(attrs.variability);
+  if not stringEmpty(s) then
+    json := JSON.addPair("variability", JSON.makeString(s), json);
+  end if;
+
+  if AbsynUtil.isInput(attrs.direction) then
+    json := JSON.addPair("input", JSON.makeBoolean(true), json);
+  end if;
+
+  if AbsynUtil.isOutput(attrs.direction) then
+    json := JSON.addPair("output", JSON.makeBoolean(true), json);
+  end if;
 end dumpJSONAttributes;
 
 function dumpJSONCommentOpt
@@ -1274,7 +1312,7 @@ algorithm
     case Absyn.Exp.CALL()
       algorithm
         json := JSON.emptyObject();
-        json := JSON.addPair("kind", JSON.makeString("call"), json);
+        json := JSON.addPair("$kind", JSON.makeString("call"), json);
         json := JSON.addPair("name", dumpJSONAbsynCref(exp.function_), json);
         json := dumpJSONAbsynFunctionArgs(exp.functionArgs, json);
       then

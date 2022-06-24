@@ -322,13 +322,15 @@ SOURCES += Animation/AbstractAnimationWindow.cpp \
   Animation/AnimationWindow.cpp \
   Animation/ThreeDViewer.cpp \
   Animation/ExtraShapes.cpp \
-  Animation/Visualizer.cpp \
-  Animation/VisualizerMAT.cpp \
-  Animation/VisualizerCSV.cpp \
-  Animation/VisualizerFMU.cpp \
+  Animation/Visualization.cpp \
+  Animation/VisualizationMAT.cpp \
+  Animation/VisualizationCSV.cpp \
+  Animation/VisualizationFMU.cpp \
   Animation/FMUSettingsDialog.cpp \
   Animation/FMUWrapper.cpp \
-  Animation/Shapes.cpp
+  Animation/AbstractVisualizer.cpp \
+  Animation/Shape.cpp \
+  Animation/Vector.cpp
 
 greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
   HEADERS += Animation/OpenGLWidget.h
@@ -341,13 +343,15 @@ HEADERS += Animation/AbstractAnimationWindow.h \
   Animation/ThreeDViewer.h \
   Animation/AnimationUtil.h \
   Animation/ExtraShapes.h \
-  Animation/Visualizer.h \
-  Animation/VisualizerMAT.h \
-  Animation/VisualizerCSV.h \
-  Animation/VisualizerFMU.h \
+  Animation/Visualization.h \
+  Animation/VisualizationMAT.h \
+  Animation/VisualizationCSV.h \
+  Animation/VisualizationFMU.h \
   Animation/FMUSettingsDialog.h \
   Animation/FMUWrapper.h \
-  Animation/Shapes.h \
+  Animation/AbstractVisualizer.h \
+  Animation/Shape.h \
+  Animation/Vector.h \
   Animation/rapidxml.hpp
 }
 

@@ -1179,7 +1179,7 @@ public
       case CREF()
         algorithm
           json := JSON.emptyObject();
-          json := JSON.addPair("kind", JSON.makeString("cref"), json);
+          json := JSON.addPair("$kind", JSON.makeString("cref"), json);
           json := JSON.addPair("parts", JSON.makeArray(toJSON_impl(cref)), json);
         then
           json;
@@ -1189,7 +1189,7 @@ public
       case WILD()
         algorithm
           json := JSON.emptyObject();
-          json := JSON.addPair("kind", JSON.makeString("cref"), json);
+          json := JSON.addPair("$kind", JSON.makeString("cref"), json);
           json := JSON.addPair("parts", JSON.makeArray(
             {JSON.fromPair("name", JSON.makeString("_"))}), json);
         then

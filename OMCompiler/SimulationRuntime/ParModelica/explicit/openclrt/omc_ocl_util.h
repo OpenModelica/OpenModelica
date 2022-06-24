@@ -72,7 +72,7 @@ extern const char* omc_ocl_kernels_source;
 extern unsigned int default_ocl_device;
 
 
-extern m_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...);
+extern modelica_integer* integer_array_element_addr_c99_1(integer_array* source,int ndims,...);
 
 
 //Reads kernels from a file
@@ -110,7 +110,7 @@ void ocl_execute_kernel(cl_kernel kernel);
 
 // sets the number of threads for subsequent parallel operations
 // arguments are arrays of work_dim size specifiying each workgroup dimension
-void ocl_set_num_threads(integer_array_t global_threads_in, integer_array_t local_threads_in);
+void ocl_set_num_threads(integer_array global_threads_in, integer_array local_threads_in);
 
 // sets the number of threads for subsequent parallel operations.
 // similar to the above function with arrays of size 1 only.

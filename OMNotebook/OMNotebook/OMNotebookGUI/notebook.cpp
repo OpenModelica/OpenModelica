@@ -2561,6 +2561,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
       return;
     }
   }
+  application()->clearPasteboard(); // HACK: clear pasteboard as some items might refer to cells in the just closed document
 }
 
 /*!

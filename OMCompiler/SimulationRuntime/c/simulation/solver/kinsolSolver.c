@@ -80,6 +80,7 @@ static void nlsKinsolConfigSetup(NLS_KINSOL_DATA *kinsolData) {
   flag = KINSetFuncNormTol(kinsolData->kinsolMemory,
                            kinsolData->fnormtol); /* Set function-norm stopping tolerance */
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetFuncNormTol");
+  kinsolData->resetTol = FALSE;
 
   flag = KINSetScaledStepTol(kinsolData->kinsolMemory,
                              kinsolData->scsteptol); /* Set scaled-step stopping tolerance */
@@ -228,7 +229,7 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData) {
 
   kinsolData->size = size;
   kinsolData->linearSolverMethod = userData->nlsData->nlsLinearSolver;
-  kinsolData->solved = 0;
+  kinsolData->solved = NLS_FAILED;
 
   kinsolData->fnormtol = newtonFTol;  /* function tolerance */
   kinsolData->scsteptol = newtonXTol; /* step tolerance */
@@ -1102,10 +1103,10 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
   /* check if the current solution is sufficient anyway */
   KINGetFuncNorm(kinsolData->kinsolMemory, &fNorm);
   if (fNorm < FTOL_WITH_LESS_ACCURACY) {
-    warningStreamPrint(LOG_NLS_V, 0,
-                       "Move forward with a less accurate solution.");
+    warningStreamPrint(LOG_NLS_V, 0, "Move forward with a less accurate solution.");
     KINSetFuncNormTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
     KINSetScaledStepTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
+    kinsolData->resetTol = TRUE;
     return TRUE;
   } else {
     warningStreamPrint(LOG_NLS_V, 0, "Current status of fx = %f", fNorm);
@@ -1159,9 +1160,9 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
  * @param data                Runtime data struct.
  * @param threadData          Thread data for error handling.
  * @param nlsData             Pointer to non-linear system data.
- * @return modelica_boolean   Return true on success and false otherwise.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
-modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
+NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
 
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   int indexes[2] = {1, nlsData->equationIndex};
@@ -1170,6 +1171,7 @@ modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_
   long nFEval;
   modelica_boolean success = FALSE;
   modelica_boolean retry = TRUE;
+  NLS_SOLVER_STATUS solver_status;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double fNormValue;
 
@@ -1228,15 +1230,29 @@ modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_
                     !success && !retry && kinsolData->retries < RETRY_MAX ? "true" : "false");
   } while (!success && retry && kinsolData->retries < RETRY_MAX);
 
-  /* Solution found */
-  kinsolData->solved = success;
+  /* Check solution status */
+  if (success && kinsolData->resetTol) {
+    kinsolData->solved = NLS_SOLVED_LESS_ACCURARCY;
+  } else if (success) {
+    kinsolData->solved = NLS_SOLVED;
+  } else {
+    kinsolData->solved = NLS_FAILED;
+  }
+
+  /* Reset solver tolerance */
+  if (kinsolData->resetTol) {
+    KINSetFuncNormTol(kinsolData->kinsolMemory, kinsolData->fnormtol);
+    KINSetScaledStepTol(kinsolData->kinsolMemory,  kinsolData->scsteptol);
+    kinsolData->resetTol = FALSE;
+  }
+
   if (success) {
     memcpy(nlsData->nlsx, xStart, nlsData->size * (sizeof(double)));
   }
 
   messageClose(LOG_NLS_V);
 
-  return success;
+  return kinsolData->solved;
 }
 
 #else /* WITH_SUNDIALS */

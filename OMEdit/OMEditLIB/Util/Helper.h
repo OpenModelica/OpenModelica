@@ -151,6 +151,9 @@ public:
   static QString reset;
   static QString close;
   static QString error;
+  static QString percentageLabel;
+  static QString chooseTransparency;
+  static QString chooseColor;
   static QString chooseFile;
   static QString chooseFiles;
   static QString saveFile;

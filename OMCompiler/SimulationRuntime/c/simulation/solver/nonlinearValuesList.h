@@ -59,7 +59,7 @@ VALUE* createValueElement(unsigned int size, double time, double* values);
 void freeValue(VALUE* elem);
 void cleanValueList(VALUES_LIST *valueListm, LIST_NODE* next);
 void cleanValueListbyTime(VALUES_LIST *valueList, double time);
-void removeNodes(LIST* list, LIST_NODE *node);
+void removeListNodes(LIST* list, LIST_NODE *node);
 
 void addListElement(VALUES_LIST* valueList, VALUE* elem);
 void getValues(VALUES_LIST* valueList, double time, double* values, double* oldOutput);
