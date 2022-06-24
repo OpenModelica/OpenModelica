@@ -989,7 +989,9 @@ int updateInnerEquation(RESIDUAL_USERDATA* resUserData, int sysNumber, int discr
  * @param data                Runtime data struct.
  * @param threadData          Thread data for error handling.
  * @param nonlinsys           Pointer to non-linear system.
- * @return modelica_boolean   Return TRUE on success, FALSE otherwise.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success,
+ *                            NLS_SOLVED_LESS_ACCURARCY if a less accurate solution was found and
+ *                            NLS_FAILED otherwise.
  */
 NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys)
 {
