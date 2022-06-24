@@ -1535,11 +1535,18 @@ algorithm
   isRec := isRecIn or Types.isRecord(crefLastType(cref));
 end crefIsRec;
 
-public function crefGetRec "traverse function to get the record cref it is"
+public function crefGetRec "traverse function to get the record part of cref"
   input DAE.ComponentRef cref;
   input output Option<DAE.ComponentRef> opt_cref = NONE();
 algorithm
-  opt_cref := if Util.isNone(opt_cref) and Types.isRecord(crefType(cref)) then SOME(cref) else opt_cref;
+  if Types.isRecord(crefType(cref)) then
+    opt_cref := match opt_cref
+      local
+        DAE.ComponentRef c;
+      case NONE() then SOME(crefFirstCref(cref));
+      case SOME(c) then SOME(crefPrependIdent(c, crefFirstIdent(cref), {}, crefType(cref)));
+    end match;
+  end if;
 end crefGetRec;
 
 protected function containWholeDim2 "
@@ -2079,7 +2086,7 @@ crefPrependIdent(a,c,{1},Integer[1]) => a.c[1] [Integer[1]]
 alternative names: crefAddSuffix, crefAddIdent
 "
   input DAE.ComponentRef icr;
-  input String ident;
+  input DAE.Ident ident;
   input list<DAE.Subscript> subs;
   input DAE.Type tp;
   output DAE.ComponentRef newCr;

@@ -141,7 +141,8 @@ algorithm
   _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map));
   _ := List.map(extvarlst, function collectRecordElementBindings(map = map));
 
-  print(UnorderedMap.toString(map, ComponentReference.crefStr, Types.printTypeStr));
+  print(UnorderedMap.toString(map, ComponentReference.crefStr, Types.printTypeStr) + "\n");
+  //print(UnorderedMap.toString(map, ComponentReference.crefStr, Types.unparseType) + "\n");
   eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
   reqns := List.map(reqns, function updateRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function updateRecordTypesEqn(map = map));
@@ -218,14 +219,13 @@ algorithm
       DAE.ComponentRef rec_cref;
       DAE.Type ty;
 
-    // check if r is already in the map
     case (SOME(binding), SOME(rec_cref)) algorithm
-      ty := match ComponentReference.crefType(rec_cref)
+      ty := match UnorderedMap.getOrDefault(rec_cref, map, ComponentReference.crefType(rec_cref))
         case ty as DAE.T_COMPLEX() algorithm
           ty.varLst := list(updateRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
         then ty;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the type is not T_COMPLEX"});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the type is not T_COMPLEX."});
         then fail();
       end match;
       UnorderedMap.add(rec_cref, ty, map);
@@ -248,7 +248,7 @@ protected function updateRecordTypesEqn
   input output BackendDAE.Equation eqn;
   input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
 algorithm
-  (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, updateRecordTypesExp, map);
+  (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, function Expression.traverseExpBottomUp(inFunc=updateRecordTypesExp), map);
 end updateRecordTypesEqn;
 
 protected function updateRecordTypesExp
