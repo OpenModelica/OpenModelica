@@ -58,7 +58,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   int stage, stage_;
   int nStates = data->modelData->nStates;
   int nStages = gbData->tableau->nStages;
-  modelica_boolean solved = FALSE;
+  NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   /* Predictor Schritt */
   for (i = 0; i < nStates; i++) {
@@ -114,7 +114,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     solved = solveNLS(data, threadData, nlsData);
   }
 
-  if (!solved) {
+  if (solved != NLS_SOLVED) {
     errorStreamPrint(LOG_STDOUT, 0, "gbode error: Failed to solve NLS in full_implicit_MS");
     return -1;
   }
@@ -158,7 +158,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   int stage, stage_;
   int nStates = data->modelData->nStates;
   int nStages = gbfData->tableau->nStages;
-  modelica_boolean solved = FALSE;
+  NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   /* Predictor Schritt */
   for (ii = 0; ii < gbData->nFastStates; ii++)
@@ -232,7 +232,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     solved = solveNLS(data, threadData, nlsData);
   }
 
-  if (!solved) {
+  if (solved != NLS_SOLVED) {
     errorStreamPrint(LOG_STDOUT, 0, "gbodef error: Failed to solve NLS in full_implicit_MS");
     return -1;
   }
@@ -278,7 +278,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   int stage, stage_;
   int nStates = data->modelData->nStates;
   int nStages = gbData->tableau->nStages;
-  modelica_boolean solved = FALSE;
+  NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   if (!gbData->isExplicit  && ACTIVE_STREAM(LOG_GBODE_V)) {
     // NLS - used values for extrapolation
@@ -372,7 +372,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         messageClose(LOG_STATS);
       }
 
-      if (!solved) {
+      if (solved != NLS_SOLVED) {
         errorStreamPrint(LOG_STDOUT, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
@@ -421,7 +421,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   int nStates = gbData->nStates;
   int nFastStates = gbData->nFastStates;
   int nStages = gbfData->tableau->nStages;
-  modelica_boolean solved = FALSE;
+  NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
   if (gbfData->interpolation==1) {
@@ -528,7 +528,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
         messageClose(LOG_NLS);
       }
 
-      if (!solved) {
+      if (solved != NLS_SOLVED) {
         errorStreamPrint(LOG_STDOUT, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
@@ -582,7 +582,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
-  modelica_boolean solved = FALSE;
+  NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   // NLS - used values for extrapolation
   if (ACTIVE_STREAM(LOG_NLS)) {
@@ -635,7 +635,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     messageClose(LOG_NLS);
   }
 
-  if (!solved) {
+  if (solved != NLS_SOLVED) {
     gbData->convergenceFailures++;
     errorStreamPrint(LOG_STDOUT, 0, "gbode error: Failed to solve NLS in full_implicit_RK");
     return -1;

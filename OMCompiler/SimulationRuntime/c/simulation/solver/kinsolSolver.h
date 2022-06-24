@@ -52,7 +52,7 @@ extern "C" {
 
 /* constants */
 #define RETRY_MAX 5
-#define FTOL_WITH_LESS_ACCURACY 1.e-12
+#define FTOL_WITH_LESS_ACCURACY 1.e-6
 
 /* readability */
 typedef enum initialMode {
