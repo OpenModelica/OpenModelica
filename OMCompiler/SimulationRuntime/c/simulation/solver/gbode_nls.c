@@ -545,11 +545,11 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
     res[i] = gbData->res_const[i] - xloc[i] + gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
 
-  if (ACTIVE_STREAM(LOG_M_NLS)) {
-    infoStreamPrint(LOG_M_NLS, 1, "NLS - x and residual:");
-    printVector_gb(LOG_M_NLS, "x", (double *)xloc, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-    printVector_gb(LOG_M_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-    messageClose(LOG_M_NLS);
+  if (ACTIVE_STREAM(LOG_NLS)) {
+    infoStreamPrint(LOG_NLS, 1, "NLS - x and residual:");
+    printVector_gb(LOG_NLS, "x", (double *)xloc, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    printVector_gb(LOG_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    messageClose(LOG_NLS);
   }
 
   return;
@@ -603,12 +603,12 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     }
   }
 
-  if (ACTIVE_STREAM(LOG_M_NLS)) {
-    infoStreamPrint(LOG_M_NLS, 1, "NLS - residual:");
+  if (ACTIVE_STREAM(LOG_NLS)) {
+    infoStreamPrint(LOG_NLS, 1, "NLS - residual:");
     for (stage=0; stage<nStages; stage++) {
-      printVector_gb(LOG_M_NLS, "r", res + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
+      printVector_gb(LOG_NLS, "r", res + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
     }
-    messageClose(LOG_M_NLS);
+    messageClose(LOG_NLS);
   }
 
   return;

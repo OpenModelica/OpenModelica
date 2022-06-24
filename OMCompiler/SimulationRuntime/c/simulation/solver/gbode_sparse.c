@@ -63,12 +63,12 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
   printSparseStructure(sparsePattern,
                         sizeRows,
                         sizeCols,
-                        LOG_MULTIRATE_V,
+                        LOG_GBODE_V,
                         "sparsePattern");
   printSparseStructure(sparsePatternT,
                         sizeRows,
                         sizeCols,
-                        LOG_MULTIRATE_V,
+                        LOG_GBODE_V,
                         "sparsePatternT");
 }
 
@@ -296,7 +296,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   printSparseStructure(sparsePattern_ODE,
                       sizeRows,
                       sizeCols,
-                      LOG_MULTIRATE_V,
+                      LOG_GBODE_V,
                       "sparsePatternODE");
 
   nnz_A = 0;
@@ -363,9 +363,9 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
 
   numberOfNonZeros = i;
 
-  if (ACTIVE_STREAM(LOG_MULTIRATE_V)){
-    printIntVector_gb(LOG_MULTIRATE_V, "rows", coo_row, numberOfNonZeros, 0.0);
-    printIntVector_gb(LOG_MULTIRATE_V, "cols", coo_col, numberOfNonZeros, 0.0);
+  if (ACTIVE_STREAM(LOG_GBODE_V)){
+    printIntVector_gb(LOG_GBODE_V, "rows", coo_row, numberOfNonZeros, 0.0);
+    printIntVector_gb(LOG_GBODE_V, "cols", coo_col, numberOfNonZeros, 0.0);
   }
 
   int length_row_indices = jacobian->sizeCols*nStages+1;

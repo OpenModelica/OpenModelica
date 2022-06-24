@@ -1221,7 +1221,7 @@ modelica_boolean nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_
     /* write statistics */
     KINGetNumNonlinSolvIters(kinsolData->kinsolMemory, &nFEval);
     nlsData->numberOfIterations += nFEval;
-    nlsData->numberOfFEval += kinsolData->countResCalls;
+    nlsData->numberOfFEval = kinsolData->countResCalls;
 
     infoStreamPrint(LOG_NLS_V, 0, "Next try? success = %d, retry = %d, retries = %d = %s\n",
                     success, retry, kinsolData->retries,
