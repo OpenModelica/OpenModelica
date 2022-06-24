@@ -31,166 +31,108 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
+//   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
 //       \"name\": \"A\",
-//       \"components\": {
-//         \"c2\": {
+//       \"restriction\": \"model\",
+//       \"components\": [
+//         {
+//           \"name\": \"c1\",
 //           \"type\": {
 //             \"name\": \"C\",
-//             \"components\": {
-//               \"f\": {
+//             \"restriction\": \"connector\",
+//             \"components\": [
+//               {
+//                 \"name\": \"e\",
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"flow\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
+//
 //                 }
 //               },
-//               \"e\": {
+//               {
+//                 \"name\": \"f\",
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
+//                   \"connector\": \"flow\"
 //                 }
 //               }
-//             }
+//             ]
 //           },
 //           \"modifier\": \"\",
 //           \"prefixes\": {
-//             \"public\": true,
-//             \"final\": false,
-//             \"inner\": false,
-//             \"outer\": false,
-//             \"replaceable\": false,
-//             \"redeclare\": false,
-//             \"connector\": \"\",
-//             \"variability\": \"\",
-//             \"direction\": \"\"
+//
 //           }
 //         },
-//         \"c1\": {
+//         {
+//           \"name\": \"c2\",
 //           \"type\": {
 //             \"name\": \"C\",
-//             \"components\": {
-//               \"f\": {
+//             \"restriction\": \"connector\",
+//             \"components\": [
+//               {
+//                 \"name\": \"e\",
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"flow\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
+//
 //                 }
 //               },
-//               \"e\": {
+//               {
+//                 \"name\": \"f\",
 //                 \"type\": \"Real\",
 //                 \"modifier\": \"\",
 //                 \"prefixes\": {
-//                   \"public\": true,
-//                   \"final\": false,
-//                   \"inner\": false,
-//                   \"outer\": false,
-//                   \"replaceable\": false,
-//                   \"redeclare\": false,
-//                   \"connector\": \"\",
-//                   \"variability\": \"\",
-//                   \"direction\": \"\"
+//                   \"connector\": \"flow\"
 //                 }
 //               }
-//             }
+//             ]
 //           },
 //           \"modifier\": \"\",
 //           \"prefixes\": {
-//             \"public\": true,
-//             \"final\": false,
-//             \"inner\": false,
-//             \"outer\": false,
-//             \"replaceable\": false,
-//             \"redeclare\": false,
-//             \"connector\": \"\",
-//             \"variability\": \"\",
-//             \"direction\": \"\"
+//
 //           }
 //         }
-//       }
+//       ]
 //     }
 //   ],
-//   \"components\": {
-//     \"c3\": {
+//   \"components\": [
+//     {
+//       \"name\": \"c3\",
 //       \"type\": {
 //         \"name\": \"C\",
-//         \"components\": {
-//           \"f\": {
+//         \"restriction\": \"connector\",
+//         \"components\": [
+//           {
+//             \"name\": \"e\",
 //             \"type\": \"Real\",
 //             \"modifier\": \"\",
 //             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"flow\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
+//
 //             }
 //           },
-//           \"e\": {
+//           {
+//             \"name\": \"f\",
 //             \"type\": \"Real\",
 //             \"modifier\": \"\",
 //             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
+//               \"connector\": \"flow\"
 //             }
 //           }
-//         }
+//         ]
 //       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     }
-//   },
+//   ],
 //   \"connections\": [
 //     {
 //       \"lhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c1\"
@@ -198,7 +140,7 @@ getModelInstance(M, prettyPrint = true);
 //         ]
 //       },
 //       \"rhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c3\"
@@ -230,7 +172,7 @@ getModelInstance(M, prettyPrint = true);
 //     },
 //     {
 //       \"lhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c1\"
@@ -238,7 +180,7 @@ getModelInstance(M, prettyPrint = true);
 //         ]
 //       },
 //       \"rhs\": {
-//         \"kind\": \"cref\",
+//         \"$kind\": \"cref\",
 //         \"parts\": [
 //           {
 //             \"name\": \"c2\"

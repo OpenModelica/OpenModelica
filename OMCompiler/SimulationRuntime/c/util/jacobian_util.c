@@ -55,6 +55,7 @@ void initAnalyticJacobian(ANALYTIC_JACOBIAN* jacobian, unsigned int sizeCols, un
   jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
   jacobian->constantEqns = constantEqns;
   jacobian->sparsePattern = sparsePattern;
+  jacobian->dae_cj = 0;
 }
 
 /**

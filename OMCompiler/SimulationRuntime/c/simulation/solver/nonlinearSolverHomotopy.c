@@ -2137,12 +2137,12 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 /**
  * @brief Solve non-linear system with damped Newton method, combined with homotopy approach.
  *
- * @param data              Pointer to data struct.
- * @param threadData        Pointer to thread data.
- * @param nlsData           Non-linear system data.
- * @return modelica_boolean
+ * @param data                Pointer to data struct.
+ * @param threadData          Pointer to thread data.
+ * @param nlsData             Non-linear system data.
+* @return NLS_SOLVER_STATUS   Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
-modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData)
+NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData)
 {
   DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*)(nlsData->solverData);
   DATA_HYBRD* solverDataHybrid;
@@ -2154,7 +2154,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
   int mixedSystem = nlsData->mixedSystem;
 
   int i, j;
-  modelica_boolean success = FALSE;
+  NLS_SOLVER_STATUS success = NLS_FAILED;
   double error_f_sqrd, error_f1_sqrd;
 
   int assert = 1;
@@ -2308,7 +2308,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
   }
 
   /* start solving loop */
-  while(!giveUp && !success)
+  while(!giveUp && success != NLS_SOLVED)
   {
     giveUp = 1;
 
@@ -2344,7 +2344,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
     /* solution found */
     if(homotopyData->info == 1)
     {
-      success = TRUE;
+      success = NLS_SOLVED;
       /* This case may be switched off, because of event chattering!!!*/
       if(mixedSystem && data->simulationInfo->discreteCall && (alreadyTested<1))
       {
@@ -2355,7 +2355,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
         if (homotopyData->casualTearingSet){
           constraintViolated = homotopyData->f_con(homotopyData, homotopyData->x, homotopyData->f1);
           if (constraintViolated){
-            success = FALSE;
+            success = NLS_FAILED;
             break;
           }
         }
@@ -2366,7 +2366,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
         if (isNotEqualVectorInt(((DATA*)data)->modelData->nRelations, ((DATA*)data)->simulationInfo->relations, relationsPreBackup)>0)
         {
           /* re-run the solution process, since relations in the system have changed */
-          success = FALSE;
+          success = NLS_FAILED;
           giveUp = 0;
           runHomotopy = 0;
           alreadyTested = 1;
@@ -2384,7 +2384,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
           continue;
         }
       }
-      if (success)
+      if (success == NLS_SOLVED)
       {
         debugString(LOG_NLS_V,"SYSTEM SOLVED");
         debugInt(LOG_NLS_V,   "homotopy method:          ",runHomotopy);
@@ -2399,7 +2399,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
         break;
       }
     }
-    if (!success && runHomotopy>=3) break;
+    if (success != NLS_SOLVED && runHomotopy>=3) break;
     /* Start homotopy search for new start values */
     vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
     runHomotopy++;
@@ -2425,7 +2425,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
       }
 
       if (runHomotopy == 3) {
-        success = FALSE;
+        success = NLS_FAILED;
         break;
       }
     }
@@ -2467,7 +2467,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
       /* take the solution */
       vecCopy(homotopyData->n, homotopyData->x, nlsData->nlsx);
       debugVectorDouble(LOG_NLS_V,"Solution", homotopyData->x, homotopyData->n);
-      success = TRUE;
+      success = NLS_SOLVED;
     }
 
     else {
@@ -2478,7 +2478,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
       if (homotopyData->casualTearingSet){
         constraintViolated = homotopyData->f_con(homotopyData, homotopyData->x, homotopyData->f1);
         if (constraintViolated){
-          success = FALSE;
+          success = NLS_FAILED;
           break;
         }
       }
@@ -2509,7 +2509,7 @@ modelica_boolean solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_S
       }
     }
   }
-  if (!success)
+  if (success != NLS_SOLVED)
   {
     debugString(LOG_NLS_V,"Homotopy solver did not converge!");
   }

@@ -66,7 +66,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData);
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData);
 void freeNonlinearSystems(DATA *data, threadData_t *threadData);
 void printNonLinearSystemSolvingStatistics(NONLINEAR_SYSTEM_DATA* nonlinsys, enum LOG_STREAM stream);
-modelica_boolean solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys);
+NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys);
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);
 int print_csvLineIterStats(void* csvData, int size, int num,

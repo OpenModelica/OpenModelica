@@ -30,30 +30,31 @@
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
-#ifndef VISUALIZERCSV_H
-#define VISUALIZERCSV_H
 
-#include "Visualizer.h"
+#ifndef VISUALIZATIONCSV_H
+#define VISUALIZATIONCSV_H
+
+#include "Visualization.h"
 #include "util/read_csv.h"
 
-class VisualizerCSV : public VisualizerAbstract
+class VisualizationCSV : public VisualizationAbstract
 {
 public:
-  VisualizerCSV() = delete;
-  VisualizerCSV(const std::string& fileName, const std::string& path);
-  ~VisualizerCSV();
-  VisualizerCSV(const VisualizerCSV& omvm) = delete;
-  VisualizerCSV& operator=(const VisualizerCSV& omvm) = delete;
+  VisualizationCSV() = delete;
+  VisualizationCSV(const std::string& fileName, const std::string& path);
+  ~VisualizationCSV();
+  VisualizationCSV(const VisualizationCSV& omvm) = delete;
+  VisualizationCSV& operator=(const VisualizationCSV& omvm) = delete;
   void initData() override;
   void initializeVisAttributes(const double time = -1.0) override;
   void readCSV(const std::string& modelFile, const std::string& path);
   void simulate(TimeManager& omvm) override {Q_UNUSED(omvm);}
   void updateVisAttributes(const double time) override;
   void updateScene(const double time) override;
-  void updateObjectAttributeCSV(ShapeObjectAttribute* attr, double time);
+  void updateVisualizerAttributeCSV(VisualizerAttribute& attr, double time);
   double omcGetVarValue(const char* varName, double time);
 private:
   csv_data *mpCSVData;
 };
 
-#endif // VISUALIZERCSV_H
+#endif // VISUALIZATIONCSV_H

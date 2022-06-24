@@ -104,24 +104,13 @@ static void insertTimer(LIST* list, SYNC_TIMER* timer)
 {
   TRACE_PUSH
 
-  LIST_NODE* prevNode = NULL;
-  if(listLen(list) > 0)
+  LIST_NODE *it, *prevNode = NULL;
+  for(it = listFirstNode(list); it; it = listNextNode(it))
   {
-    LIST_NODE* tmpNode = listFirstNode(list);
-    SYNC_TIMER* tmpTimer = listNodeData(tmpNode);
-    assertStreamPrint(NULL, 0 != tmpTimer, "invalid timerList node");
-
-    while(tmpTimer->activationTime <= timer->activationTime)
-    {
-      prevNode = tmpNode;
-      tmpNode = listNextNode(tmpNode);
-      if(tmpNode)
-      {
-        tmpTimer = listNodeData(tmpNode);
-        assertStreamPrint(NULL, 0 != tmpTimer, "invalid timerList node");
-      }
-      else break;
-    }
+    SYNC_TIMER *tmpTimer = listNodeData(it);
+    if(tmpTimer->activationTime > timer->activationTime)
+      break;
+    prevNode = it;
   }
   if (prevNode) listInsert(list, prevNode, timer);
   else listPushFront(list, timer);

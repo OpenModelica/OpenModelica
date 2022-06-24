@@ -23,60 +23,41 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
-//   \"components\": {
-//     \"m\": {
-//       \"type\": {
-//         \"name\": \"M\",
-//         \"components\": {
-//           \"x\": {
-//             \"type\": \"Real\",
-//             \"modifier\": \"\",
-//             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
-//             }
-//           }
-//         }
-//       },
-//       \"modifier\": \"\",
-//       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
-//       }
-//     },
-//     \"x\": {
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"modifier\": \" = 1.0\",
 //       \"value\": {
 //         \"binding\": 1
 //       },
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": true,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//         \"replaceable\": true
+//       }
+//     },
+//     {
+//       \"name\": \"m\",
+//       \"type\": {
+//         \"name\": \"M\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"modifier\": \"\",
+//             \"prefixes\": {
+//
+//             }
+//           }
+//         ]
+//       },
+//       \"modifier\": \"\",
+//       \"prefixes\": {
+//
 //       }
 //     }
-//   },
+//   ],
 //   \"replaceable\": [
 //     {
 //       \"name\": \"x\",

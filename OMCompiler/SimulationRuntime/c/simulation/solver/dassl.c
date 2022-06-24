@@ -40,21 +40,22 @@
 #include "openmodelica_func.h"
 #include "simulation_data.h"
 
+#include "gc/omc_gc.h"
+#include "util/context.h"
 #include "util/omc_error.h"
 #include "util/parallel_helper.h"
-#include "gc/omc_gc.h"
 
-#include "simulation/options.h"
-#include "simulation/simulation_runtime.h"
-#include "simulation/results/simulation_result.h"
-#include "simulation/solver/solver_main.h"
-#include "simulation/solver/model_help.h"
-#include "simulation/solver/external_input.h"
-#include "simulation/solver/epsilon.h"
-#include "simulation/solver/omc_math.h"
-#include "simulation/solver/jacobianSymbolical.h"
-#include "simulation/solver/dassl.h"
+#include "dassl.h"
+#include "epsilon.h"
+#include "external_input.h"
+#include "jacobianSymbolical.h"
 #include "meta/meta_modelica.h"
+#include "model_help.h"
+#include "omc_math.h"
+#include "simulation/options.h"
+#include "simulation/results/simulation_result.h"
+#include "simulation/simulation_runtime.h"
+#include "solver_main.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -816,7 +817,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj,
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, t, CONTEXT_ODE);
+    setContext(data, *t, CONTEXT_ODE);
   }
   printCurrentStatesVector(LOG_DASSL_STATES, y, data, *t);
   printVector(LOG_DASSL_STATES, "yd", yd, data->modelData->nStates, *t);
@@ -886,7 +887,7 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
-    setContext(data, t, CONTEXT_EVENTS);
+    setContext(data, *t, CONTEXT_EVENTS);
   }
 
   saveJumpState = threadData->currentErrorStage;
@@ -1058,7 +1059,7 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
   int i,j;
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
-  setContext(data, t, CONTEXT_JACOBIAN);
+  setContext(data, *t, CONTEXT_JACOBIAN);
 
   for(i=dasslData->N-1; i >= 0; i--)
   {
@@ -1120,7 +1121,7 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
   unsigned int i,j,l,k,ii;
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
-  setContext(data, t, CONTEXT_JACOBIAN);
+  setContext(data, *t, CONTEXT_JACOBIAN);
 
   for(i = 0; i < jacobian->sparsePattern->maxColors; i++)
   {

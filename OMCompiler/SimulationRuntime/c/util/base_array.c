@@ -437,7 +437,7 @@ void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* des
     }
 }
 
-void index_alloc_base_array_size(const real_array_t * source,
+void index_alloc_base_array_size(const real_array * source,
                                  const index_spec_t* source_spec,
                                  base_array_t* dest)
 {

@@ -73,6 +73,7 @@ protected import Inline;
 protected import List;
 protected import SCode;
 protected import Util;
+protected import SymbolicJacobian.DAE_CJ;
 
 constant Integer defaultMaxIter = 20;
 
@@ -1390,7 +1391,7 @@ algorithm
       BackendDAE.Variables knvars;
 
       DAE.CallAttributes attr;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr, cj;
       DAE.Exp e, e1, e2, zero;
       DAE.Exp res, res1, actual, simplified;
       DAE.Type tp;
@@ -1435,6 +1436,20 @@ algorithm
         i = i + 1;
       then
         (DAE.CALL(path,{e,DAE.ICONST(i)},attr), inFunctionTree);
+
+    // special case for daeMode:
+    // der(x) gets differentiated to $cj * x.Seed
+    // (cj aka alpha, provided by the dae mode integrator)
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e},attr=attr), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(true), _)
+      algorithm
+        cj := DAE.CREF_IDENT(SymbolicJacobian.DAE_CJ, DAE.T_REAL_DEFAULT, {});
+        cr := Expression.expCref(e);
+        tp := Expression.typeof(e);
+        cr := createSeedCrefName(cr, matrixName);
+        res := Expression.makeCrefExp(cr, tp);
+        res := DAE.BINARY(Expression.makeCrefExp(cj, DAE.T_REAL_DEFAULT), DAE.MUL(DAE.T_REAL_DEFAULT), res);
+      then
+        (res, inFunctionTree);
 
     case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst = {e}), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _)
       equation
@@ -2198,6 +2213,7 @@ algorithm
       String funcname, s1;
       list<DAE.FuncArg> falst;
 
+
     /* ticket5459
     if the function call does not contain the cref, the derivative is zero
     prevents failing of this function
@@ -2366,7 +2382,7 @@ algorithm
         funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(path), false);
         diffFuncData = BackendDAE.emptyInputData;
          diffFuncData.matrixName = SOME(funcname);
-        (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(), functions);
+        (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(false), functions);
         // debug dump
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
           print("### differentiated argument list:\n");
@@ -2525,7 +2541,7 @@ function tryZeroDiff
   output Boolean success;
 algorithm
   try
-   (explist, functions) := List.map3Fold(explist, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), BackendDAE.emptyInputData, BackendDAE.GENERIC_GRADIENT(), functions);
+   (explist, functions) := List.map3Fold(explist, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), BackendDAE.emptyInputData, BackendDAE.GENERIC_GRADIENT(false), functions);
    success := true;
   else
    explist := {};

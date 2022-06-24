@@ -23,43 +23,27 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
-//   \"components\": {
-//     \"y\": {
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"x\",
 //       \"type\": \"Real\",
-//       \"modifier\": \" = a.x[1]\",
+//       \"modifier\": \" = 2.0\",
 //       \"value\": {
-//         \"binding\": {
-//           \"kind\": \"cref\",
-//           \"parts\": [
-//             {
-//               \"name\": \"a\"
-//             },
-//             {
-//               \"name\": \"x\",
-//               \"subscripts\": [
-//                 1
-//               ]
-//             }
-//           ]
-//         }
+//         \"binding\": 2
 //       },
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     },
-//     \"a\": {
+//     {
+//       \"name\": \"a\",
 //       \"type\": {
 //         \"name\": \"A\",
-//         \"components\": {
-//           \"x\": {
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"x\",
 //             \"type\": \"Real\",
 //             \"dims\": {
 //               \"absyn\": [
@@ -78,50 +62,40 @@ getModelInstance(M, prettyPrint = true);
 //               ]
 //             },
 //             \"prefixes\": {
-//               \"public\": true,
-//               \"final\": false,
-//               \"inner\": false,
-//               \"outer\": false,
-//               \"replaceable\": false,
-//               \"redeclare\": false,
-//               \"connector\": \"\",
-//               \"variability\": \"\",
-//               \"direction\": \"\"
+//
 //             }
 //           }
-//         }
+//         ]
 //       },
 //       \"modifier\": \"\",
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     },
-//     \"x\": {
+//     {
+//       \"name\": \"y\",
 //       \"type\": \"Real\",
-//       \"modifier\": \" = 2.0\",
+//       \"modifier\": \" = a.x[1]\",
 //       \"value\": {
-//         \"binding\": 2
+//         \"binding\": {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"a\"
+//             },
+//             {
+//               \"name\": \"x\",
+//               \"subscripts\": [
+//                 1
+//               ]
+//             }
+//           ]
+//         }
 //       },
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
+//
 //       }
 //     }
-//   }
+//   ]
 // }"
 // endResult

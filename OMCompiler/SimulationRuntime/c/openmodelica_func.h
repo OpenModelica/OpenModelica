@@ -257,11 +257,11 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * Return-value 0: jac is present
   * Return-value 1: jac is not present
   */
-  int (*initialAnalyticJacobianA)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianB)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianC)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianD)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianF)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  int (*initialAnalyticJacobianA)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  int (*initialAnalyticJacobianB)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  int (*initialAnalyticJacobianC)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  int (*initialAnalyticJacobianD)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  int (*initialAnalyticJacobianF)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
 
   /*
   * These functions calculate specific jacobian column.

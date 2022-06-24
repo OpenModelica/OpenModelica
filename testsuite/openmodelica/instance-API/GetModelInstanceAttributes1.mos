@@ -19,40 +19,27 @@ getModelInstance(M, prettyPrint = true);
 // true
 // "{
 //   \"name\": \"M\",
-//   \"components\": {
-//     \"deg\": {
-//       \"type\": \"Real\",
-//       \"modifier\": \"(start = pi)\",
-//       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"\",
-//         \"direction\": \"\"
-//       }
-//     },
-//     \"pi\": {
+//   \"restriction\": \"model\",
+//   \"components\": [
+//     {
+//       \"name\": \"pi\",
 //       \"type\": \"Real\",
 //       \"modifier\": \" = 3\",
 //       \"value\": {
 //         \"binding\": 3
 //       },
 //       \"prefixes\": {
-//         \"public\": true,
-//         \"final\": false,
-//         \"inner\": false,
-//         \"outer\": false,
-//         \"replaceable\": false,
-//         \"redeclare\": false,
-//         \"connector\": \"\",
-//         \"variability\": \"parameter\",
-//         \"direction\": \"\"
+//         \"variability\": \"parameter\"
+//       }
+//     },
+//     {
+//       \"name\": \"deg\",
+//       \"type\": \"Real\",
+//       \"modifier\": \"(start = pi)\",
+//       \"prefixes\": {
+//
 //       }
 //     }
-//   }
+//   ]
 // }"
 // endResult
