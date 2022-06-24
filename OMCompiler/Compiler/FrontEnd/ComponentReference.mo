@@ -1535,6 +1535,13 @@ algorithm
   isRec := isRecIn or Types.isRecord(crefLastType(cref));
 end crefIsRec;
 
+public function crefGetRec "traverse function to get the record cref it is"
+  input DAE.ComponentRef cref;
+  input output Option<DAE.ComponentRef> opt_cref = NONE();
+algorithm
+  opt_cref := if Util.isNone(opt_cref) and Types.isRecord(crefType(cref)) then SOME(cref) else opt_cref;
+end crefGetRec;
+
 protected function containWholeDim2 "
   A function to check if a cref contains a [:] wholedim element in the subscriptlist."
   input list<DAE.Subscript> inRef;

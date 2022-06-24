@@ -79,6 +79,7 @@ import SCode;
 import StackOverflow;
 import System;
 import Types;
+import UnorderedMap;
 import Util;
 import VarTransform;
 import Vectorization;
@@ -118,6 +119,7 @@ protected
   String neqStr, nvarStr;
   Integer varSize, eqnSize, numCheckpoints;
   BackendDAE.EqSystem syst;
+  UnorderedMap<DAE.ComponentRef, DAE.Type> map;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -131,6 +133,19 @@ algorithm
   (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
   (varlst, globalKnownVarLst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
     lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
+
+  // ticket #9036
+  // propagate record bindings from attributes to their parent record types in all crefs of all equations O(n)
+  map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
+  _ := List.map(varlst, function collectRecordElementBindings(map = map));
+  _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map));
+  _ := List.map(extvarlst, function collectRecordElementBindings(map = map));
+
+  print(UnorderedMap.toString(map, ComponentReference.crefStr, Types.printTypeStr));
+  eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
+  reqns := List.map(reqns, function updateRecordTypesEqn(map = map));
+  ieqns := List.map(ieqns, function updateRecordTypesEqn(map = map));
+
   vars := BackendVariable.listVar(varlst);
   globalKnownVars := BackendVariable.listVar(globalKnownVarLst);
   localKnownVars := BackendVariable.emptyVars();
@@ -189,6 +204,66 @@ algorithm
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
   fail();
 end lower;
+
+protected function collectRecordElementBindings
+  input BackendDAE.Var var;
+  input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+protected
+  Option<DAE.ComponentRef> cref_opt;
+algorithm
+  cref_opt := ComponentReference.traverseCref(var.varName, ComponentReference.crefGetRec, NONE());
+  () := match (var.bindExp, cref_opt)
+    local
+      DAE.Exp binding;
+      DAE.ComponentRef rec_cref;
+      DAE.Type ty;
+
+    // check if r is already in the map
+    case (SOME(binding), SOME(rec_cref)) algorithm
+      ty := match ComponentReference.crefType(rec_cref)
+        case ty as DAE.T_COMPLEX() algorithm
+          ty.varLst := list(updateRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
+        then ty;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the type is not T_COMPLEX"});
+        then fail();
+      end match;
+      UnorderedMap.add(rec_cref, ty, map);
+    then ();
+    else ();
+  end match;
+end collectRecordElementBindings;
+
+function updateRecordElementBinding
+  input output DAE.Var var;
+  input DAE.Exp binding;
+  input String name;
+algorithm
+  if var.name == name then
+    var.binding := DAE.EQBOUND(binding, NONE(), DAE.C_UNKNOWN(), DAE.BINDING_FROM_DERIVED_RECORD_DECL());
+  end if;
+end updateRecordElementBinding;
+
+protected function updateRecordTypesEqn
+  input output BackendDAE.Equation eqn;
+  input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+algorithm
+  (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, updateRecordTypesExp, map);
+end updateRecordTypesEqn;
+
+protected function updateRecordTypesExp
+  input output DAE.Exp exp;
+  input output UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+algorithm
+  exp := match exp
+    local
+      DAE.ComponentRef cref;
+    case DAE.CREF(componentRef = cref) guard(UnorderedMap.contains(cref, map)) algorithm
+      exp.componentRef := ComponentReference.crefSetType(cref, UnorderedMap.getSafe(cref, map));
+    then exp;
+    else exp;
+  end match;
+end updateRecordTypesExp;
 
 protected function getExternalObjectAlias "Checks equations if there is an alias equation for external objects.
 If yes, assign alias var, replace equations, remove alias equation.
