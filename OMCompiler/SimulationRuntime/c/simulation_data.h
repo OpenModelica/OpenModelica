@@ -746,8 +746,7 @@ typedef struct SIMULATION_INFO
 
   INLINE_DATA* inlineData;
 
-  void* backupSolverData;    // TODO AHeu: Only used for generik RK Methods, because we need access to some solver details in some callbacks.
-                             // Improve this.
+  void* backupSolverData;    /* Used for generik RK Methods to get access to some solver details inside callbacks */
 
   /* delay vars */
   RINGBUFFER **delayStructure;        /* Array of ring buffers for delay expressions */
