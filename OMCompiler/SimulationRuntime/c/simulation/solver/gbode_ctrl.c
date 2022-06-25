@@ -85,7 +85,7 @@ double IController(double* err_values, double* stepSize_values, unsigned int err
 {
   double fac = 0.9;
   double facmax = 3.5;
-  double facmin = 0.5;
+  double facmin = 0.1;
   double beta = 1./(err_order+1);
 
   if (err_values[0]>0) {

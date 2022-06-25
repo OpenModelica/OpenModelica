@@ -95,12 +95,12 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
 void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
 
   // define limit of the embedded RK method towards -Inf
-  double lim = 0.7;
+  double lim = 0.75;
 
   tableau->nStages = 4;
   tableau->order_b = 3;
   tableau->order_bt = 2;
-  tableau->fac = 1.0;
+  tableau->fac = 1.0e2;
 
   /* Butcher Tableau */
   const double c[]  = {0.0, .871733043016917998832038902388, 3./5., 1.0};
