@@ -732,9 +732,9 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
   // set solution ring buffer (extrapolation in case of NLS)
   for (i=0; i<gbfData->ringBufferSize; i++) {
-    gbfData->tv[i] = gbfData->timeRight;
-    memcpy(gbfData->yv + i * nStates, gbfData->yRight, nStates * sizeof(double));
-    memcpy(gbfData->kv + i * nStates, gbfData->kRight, nStates * sizeof(double));
+    gbfData->tv[i] = gbData->tv[i];
+    memcpy(gbfData->yv + i * nStates, gbData->yv + i * nStates, nStates * sizeof(double));
+    memcpy(gbfData->kv + i * nStates, gbData->kv + i * nStates, nStates * sizeof(double));
   }
 }
 
@@ -987,6 +987,15 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
 
     do {
+        if (ACTIVE_STREAM(LOG_SOLVER_V)) {
+        infoStreamPrint(LOG_SOLVER_V, 1, "States and derivatives of the ring buffer:");
+        for (int i=0; i<gbfData->ringBufferSize; i++) {
+          printVector_gbf(LOG_SOLVER_V, "y", gbfData->yv + i * nStates, nStates, gbfData->tv[i], gbData->nFastStates, gbData->fastStates);
+          printVector_gbf(LOG_SOLVER_V, "k", gbfData->kv + i * nStates, nStates, gbfData->tv[i], gbData->nFastStates, gbData->fastStates);
+        }
+        messageClose(LOG_SOLVER_V);
+      }
+
       // do one integration step resulting in two different approximations
       // results are stored in gbData->y and gbData->yt
       if (gbfData->tableau->richardson) {
@@ -1048,12 +1057,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     // Count succesful integration steps
     gbfData->stepsDone += 1;
-
-    // Rotate ring buffer
-    for (i = 0; i < (gbfData->ringBufferSize - 1); i++) {
-      gbfData->errValues[i + 1] = gbfData->errValues[i];
-      gbfData->stepSizeValues[i + 1] = gbfData->stepSizeValues[i];
-    }
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
     // interpolate the slow states on the time of the current stage
@@ -1135,6 +1138,19 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       printVector_gb(LOG_GBODE, "kR", gbfData->kRight, nStates, gbfData->timeRight);
       messageClose(LOG_GBODE);
     }
+
+    // Rotate ring buffer
+    for (i = (gbfData->ringBufferSize - 1); i > 0 ; i--) {
+      gbfData->errValues[i] = gbfData->errValues[i - 1];
+      gbfData->stepSizeValues[i] = gbfData->stepSizeValues[i - 1];
+      gbfData->tv[i] =  gbfData->tv[i - 1];
+      memcpy(gbfData->yv + i * nStates, gbfData->yv + (i - 1) * nStates, nStates * sizeof(double));
+      memcpy(gbfData->kv + i * nStates, gbfData->kv + (i - 1) * nStates, nStates * sizeof(double));
+    }
+
+    gbfData->tv[0] = gbfData->timeRight;
+    memcpy(gbfData->yv, gbfData->yRight, nStates * sizeof(double));
+    memcpy(gbfData->kv, gbfData->kRight, nStates * sizeof(double));
 
     /* step is accepted and yOld needs to be updated */
    //  copyVector_gbf(gbfData->yOld, gbfData->y, nFastStates, gbData->fastStates);
@@ -1355,7 +1371,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
 
       // debug ring buffer for the states and derviatives of the states
-      if (ACTIVE_STREAM(LOG_GBODE)) {
+      if (ACTIVE_STREAM(LOG_GBODE) && gb_step_info == 0) {
         infoStreamPrint(LOG_GBODE, 1, "Approximations after step calculation:");
         printVector_gb(LOG_GBODE, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
         printVector_gb(LOG_GBODE, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);

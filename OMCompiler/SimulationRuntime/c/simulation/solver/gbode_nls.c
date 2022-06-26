@@ -246,6 +246,10 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
+
+    int flag = KINSetNumMaxIters(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, nlsData->size * 10);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
+
     // TODO AHeu: resetKinsolMemory already called in nlsKinsolAllocate
     //if (gbData->symJacAvailable) {
     //  resetKinsolMemory(solverData->ordinaryData);

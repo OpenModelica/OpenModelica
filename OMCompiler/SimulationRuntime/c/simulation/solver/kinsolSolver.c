@@ -1210,7 +1210,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
     }
     /* Try to handle recoverable errors */
     if (flag < 0) {
-      return NLS_FAILED;
+      return NLS_FAILED; // BB ToDo: It mus be possible to get ot of here without retries!!!
       retry = nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);
     }
 
