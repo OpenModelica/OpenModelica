@@ -1297,16 +1297,23 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     }
     // synchronize y, yRight , kRight and ring buffer
     if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < MINIMAL_STEP_SIZE) {
+        gbData->time = gbData->timeRight;
         memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
+        memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
         memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
         memcpy(gbData->kRight, gbData->gbfData->kRight, nStates * sizeof(double));
         memcpy(gbData->err, gbData->gbfData->err, nStates * sizeof(double));
 
-        // for (i=0; i<2; i++) {
-        //   gbData->tv[i] = gbData->gbfData->tv[i];
-        //   memcpy(gbData->yv + i * nStates, gbData->gbfData->yv + i * nStates, nStates * sizeof(double));
-        //   memcpy(gbData->kv + i * nStates, gbData->gbfData->kv + i * nStates, nStates * sizeof(double));
-        // }
+        // Rotate ring buffer
+        for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {
+          gbData->tv[i] =  gbData->tv[i - 1];
+          memcpy(gbData->yv + i * nStates, gbData->yv + (i - 1) * nStates, nStates * sizeof(double));
+          memcpy(gbData->kv + i * nStates, gbData->kv + (i - 1) * nStates, nStates * sizeof(double));
+        }
+
+        gbData->tv[0] = gbData->timeRight;
+        memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
+        memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
      }
   }
 
@@ -1518,11 +1525,6 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
           memcpy(gbData->kRight, gbData->gbfData->kRight, nStates * sizeof(double));
           memcpy(gbData->err, gbData->gbfData->err, nStates * sizeof(double));
-          // for (i=0; i<2; i++) {
-          //   gbData->tv[i] = gbData->gbfData->tv[i];
-          //   memcpy(gbData->yv + i * nStates, gbData->gbfData->yv + i * nStates, nStates * sizeof(double));
-          //   memcpy(gbData->kv + i * nStates, gbData->gbfData->kv + i * nStates, nStates * sizeof(double));
-          // }
         }
         err = fmax(gbData->err_slow, gbData->err_fast);
       }
