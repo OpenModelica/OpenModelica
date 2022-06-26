@@ -144,7 +144,7 @@ typedef struct DATA_GBODE{
   double *err;
   double *errValues;                       /* ring buffer for step size control */
   double *stepSizeValues;                  /* ring buffer for step size control */
-  double err_slow, err_fast, percentage, err_threshold;
+  double err_slow, err_fast, err_int, percentage, err_threshold;
   double time, timeLeft, timeRight;
   double stepSize, lastStepSize;
   double stepSize_old, stepSize_fast;

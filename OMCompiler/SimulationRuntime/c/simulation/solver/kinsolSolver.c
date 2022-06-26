@@ -1204,7 +1204,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
         kinsolData->fScale);        /* scaling vector for function values fval */
 
     if (flag < 0) {
-      warningStreamPrint(LOG_NLS, 0, "KINSol finished with errorCode %d.", flag);
+      infoStreamPrint(LOG_NLS, 0, "KINSol finished with errorCode %d.", flag);
     } else {
       infoStreamPrint(LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
     }

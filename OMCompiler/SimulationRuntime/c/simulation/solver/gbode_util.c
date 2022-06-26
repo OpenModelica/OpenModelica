@@ -368,7 +368,7 @@ void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
 }
 
 void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event) {
-    char fastStates_row[2048];
+    char fastStates_row[4096];
     sprintf(fastStates_row, "%15.10g ", gbData->time);
     for (int i = 0; i < gbData->nStates; i++) {
       if (event)
@@ -380,7 +380,7 @@ void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event) {
 }
 
 void dumpFastStates_gbf(DATA_GBODE* gbData) {
-  char fastStates_row[2048];
+  char fastStates_row[4096];
   int i, ii;
   sprintf(fastStates_row, "%15.10g ", gbData->gbfData->time);
   for (i = 0, ii = 0; i < gbData->nStates;) {
