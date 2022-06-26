@@ -1048,7 +1048,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gbfData->time, gbfData->time + gbfData->lastStepSize, err, gbfData->stepSize);
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
-          dumpFastStates_gbf(gbData);
+          dumpFastStates_gbf(gbData, gbfData->time + gbfData->lastStepSize);
         }
       }
     } while (err > 1);
@@ -1109,7 +1109,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       }
 
       if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
-        dumpFastStates_gb(gbData, TRUE);
+        dumpFastStates_gb(gbData, TRUE, eventTime);
       }
 
       // Get out of the integration routine for event handling
@@ -1157,7 +1157,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                     gbfData->time - gbfData->lastStepSize, gbfData->time, err, gbfData->stepSize);
 
     if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
-      dumpFastStates_gbf(gbData);
+      dumpFastStates_gbf(gbData, gbfData->time);
     }
 
     /* emit step, if integratorSteps is selected */
@@ -1329,6 +1329,14 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
       memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
 
+      /* step is accepted and yOld needs to be updated */
+      infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error slow states %10g, new stepsize %10g",
+                      gbData->time - gbData->lastStepSize, gbData->time, err, gbData->stepSize);
+
+      if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
+        // dump fast states in file
+        dumpFastStates_gb(gbData, FALSE, gbData->time);
+      }
       // set solution ring buffer (extrapolation in case of NLS)
       // for (i=0; i<gbData->ringBufferSize; i++) {
       //   gbData->tv[i] = gbData->gbfData->tv[i];
@@ -1346,8 +1354,6 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     }
   }
 
-  // BB ToDo: Correct gbData->time, when equidistant time grid is used!
-  // gbData->time = gbData->timeRight;
   /* Main integration loop, if gbData->time already greater than targetTime, only the
      interpolation is necessary for emitting the output variables (see below) */
   while (gbData->time < targetTime)
@@ -1448,8 +1454,9 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->nSlowStates = 0;
       gbData->err_slow = 0;
       gbData->err_fast = 0;
+      gbData->err_int = 0;
       for (i = 0; i < gbData->nStates; i++) {
-        if (gbData->err[i] >= 1 || gbData->percentage == 1) {
+        if (gbData->err[i] >= 1) {
           gbData->fastStates[gbData->nFastStates] = i;
           gbData->nFastStates++;
           gbData->err_fast = fmax(gbData->err_fast, gbData->err[i]);
@@ -1459,7 +1466,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           gbData->err_slow = fmax(gbData->err_slow, gbData->err[i]);
         }
       }
-      // err = gbData->err_slow;
+      // err == threshold;
       // store values in the ring buffer
       gbData->errValues[0] = err;
       gbData->stepSizeValues[0] = gbData->stepSize;
@@ -1483,7 +1490,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
           // dump fast states in file
-          dumpFastStates_gb(gbData, FALSE);
+          gbData->err_slow = err;
+          dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->lastStepSize);
         }
         continue;
       }
@@ -1506,10 +1514,9 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // calculate interpolation error estimator
       for (ii = 0, err_int=0; ii < gbData->nSlowStates; ii++) {
         i = gbData->slowStates[ii];
-        gbData->errest[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
+        gbData->errest[i] = gbData->errest[i] / gbData->errtol[i];
         err_int = fmax(err_int, gbData->errest[i]);
       }
-
       gbData->err_int = err_int;
 
       if (ACTIVE_STREAM(LOG_GBODE_V)) {
@@ -1531,7 +1538,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
           // dump fast states in file
-          dumpFastStates_gb(gbData, FALSE);
+          dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->lastStepSize);
         }
 
         // count failed steps and output information on the solver status
@@ -1563,6 +1570,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
           memcpy(gbData->kRight, gbData->gbfData->kRight, nStates * sizeof(double));
           memcpy(gbData->err, gbData->gbfData->err, nStates * sizeof(double));
+
           // // set solution ring buffer (extrapolation in case of NLS)
           // for (i=0; i<gbData->ringBufferSize-1; i++) {
           //   gbData->tv[i] = gbData->gbfData->tv[i+1];
@@ -1634,7 +1642,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
           // dump fast states in file
-          dumpFastStates_gb(gbData, TRUE);
+          dumpFastStates_gb(gbData, TRUE, eventTime);
         }
 
         // return to solver main routine for proper event handling (iteration)
@@ -1666,7 +1674,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
     if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
       // dump fast states in file
-      dumpFastStates_gb(gbData, FALSE);
+      dumpFastStates_gb(gbData, FALSE, gbData->time);
     }
 
     /* emit step, if integratorSteps is selected */
