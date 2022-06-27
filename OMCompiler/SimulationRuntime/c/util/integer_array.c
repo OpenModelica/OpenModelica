@@ -225,7 +225,7 @@ void print_integer_matrix(const integer_array * source)
         for(i = 0; i < source->dim_size[0]; ++i) {
             for(j = 0; j < source->dim_size[1]; ++j) {
                 value = integer_get(*source, (i * source->dim_size[1]) + j);
-                printf("%ld\t", value);
+                printf("%d\t", value);
             }
             printf("\n");
         }
@@ -243,11 +243,11 @@ void print_integer_array(const integer_array * source)
     data = (modelica_integer *) source->data;
     if(source->ndims == 1) {
         for(i = 1; i < source->dim_size[0]; ++i) {
-            printf("%ld, ",*data);
+            printf("%d, ",*data);
             ++data;
         }
         if(0 < source->dim_size[0]) {
-            printf("%ld",*data);
+            printf("%d",*data);
         }
     } else if(source->ndims > 1) {
         size_t k, n;
@@ -256,11 +256,11 @@ void print_integer_array(const integer_array * source)
         for(k = 0; k < n; ++k) {
             for(i = 0; i < source->dim_size[1]; ++i) {
                 for(j = 0; j < source->dim_size[0]; ++j) {
-                    printf("%ld, ",*data);
+                    printf("%d, ",*data);
                     ++data;
                 }
                 if(0 < source->dim_size[0]) {
-                    printf("%ld",*data);
+                    printf("%d",*data);
                 }
                 printf("\n");
             }
@@ -1446,7 +1446,7 @@ void linspace_integer_array(modelica_integer x1, modelica_integer x2, int n,
 modelica_integer max_integer_array(const integer_array a)
 {
     size_t nr_of_elements;
-    modelica_integer max_element = LONG_MIN;
+    modelica_integer max_element = INT_MIN;
 
     omc_assert_macro(base_array_ok(&a));
 
@@ -1468,7 +1468,7 @@ modelica_integer max_integer_array(const integer_array a)
 modelica_integer min_integer_array(const integer_array a)
 {
   size_t nr_of_elements;
-  modelica_integer min_element = LONG_MAX;
+  modelica_integer min_element = INT_MAX;
 
   omc_assert_macro(base_array_ok(&a));
 

@@ -46,7 +46,7 @@ static int generic_array_ndims_eq(const base_array_t* src, const base_array_t* d
     return 1;
 }
 
-#define omc_FORMAT "src->dim_size[%d] != dst->dim_size[%d], %" PRINT_MMC_SINT_T " != %" PRINT_MMC_SINT_T "\n"
+#define omc_FORMAT "src->dim_size[%d] != dst->dim_size[%d], %d != %d\n"
 
 static int generic_array_dimsizes_eq(const base_array_t* src, const base_array_t* dst, int print_error)
 {
