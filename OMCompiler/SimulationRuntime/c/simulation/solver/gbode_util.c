@@ -32,6 +32,27 @@
  */
 #include "gbode_util.h"
 
+
+// LA functions
+void addSmultVec_gbf(double* a, double* b, double *c, double s, int nIdx, int* idx) {
+  int i, ii;
+
+  for (ii=0; ii<nIdx; ii++) {
+    i = idx[ii];
+    a[i] = b[i] + s*c[i];
+  }
+}
+
+void addSmultVec_gb(double* a, double* b, double *c, double s, int n) {
+  int i;
+
+  for (i=0; i<n; i++) {
+    a[i] = b[i] + s*c[i];
+  }
+}
+
+// interpolation function
+
 /**
  * @brief Linear interpolation of all vector components
  *
@@ -202,6 +223,49 @@ void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, doub
     }
   }
 }
+
+void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double time)
+{
+  DATA_GBODEF* gbfData = gbData->gbfData;
+  int nStates = gbData->nStates;
+  int nFastStates = gbData->nFastStates;
+
+  if (gbfData->tv[1]==gbfData->tv[0]) {
+    addSmultVec_gbf(nlsxExtrapolation, gbfData->yv, gbfData->kv, time - gbfData->tv[0], nFastStates, gbData->fastStates);
+  } else {
+    // this is actually extrapolation...
+    if (gbfData->nlsxExtrapolation==1) {
+      linear_interpolation_gbf(gbfData->tv[1], gbfData->yv + nStates,
+                                gbfData->tv[0], gbfData->yv,
+                                time, nlsxExtrapolation, nFastStates, gbData->fastStates);
+    } else {
+      hermite_interpolation_gbf(gbfData->tv[1], gbfData->yv + nStates,  gbfData->kv + nStates,
+                                gbfData->tv[0], gbfData->yv,            gbfData->kv,
+                                time, nlsxExtrapolation, nFastStates, gbData->fastStates);
+    }
+  }
+}
+
+void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time)
+{
+  int nStates = gbData->nStates;
+
+  if (gbData->tv[1]==gbData->tv[0]) {
+    addSmultVec_gb(nlsxExtrapolation, gbData->yv, gbData->kv, time - gbData->tv[0], nStates);
+  } else {
+    // this is actually extrapolation...
+    if (gbData->nlsxExtrapolation==1) {
+      linear_interpolation_gb(gbData->tv[1], gbData->yv + nStates,
+                              gbData->tv[0], gbData->yv,
+                              time, nlsxExtrapolation, nStates);
+    } else {
+      hermite_interpolation_gb(gbData->tv[1], gbData->yv + nStates,  gbData->kv + nStates,
+                               gbData->tv[0], gbData->yv,            gbData->kv,
+                               time, nlsxExtrapolation, nStates);
+    }
+  }
+}
+
 
 /**
  * @brief Copy specific vector components given by an index vector

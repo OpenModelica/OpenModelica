@@ -311,6 +311,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   i = MIN(MAX(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
   infoStreamPrint(LOG_SOLVER, 0, "Number of states %d (%d slow states, %d fast states)", gbData->nStates, gbData->nStates-i, i);
 
+  gbfData->nlsxExtrapolation = 2;
+
   return 0;
 }
 
@@ -338,8 +340,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   gbData->GM_method = getGB_method(FLAG_SR);
   gbData->tableau = initButcherTableau(gbData->GM_method, FLAG_SR_ERR);
-  if (gbData->tableau == NULL)
-  {
+  if (gbData->tableau == NULL) {
     errorStreamPrint(LOG_STDOUT, 0, "allocateDataGm: Failed to initialize gbode tableau for method %s", GB_SINGLERATE_METHOD_NAME[gbData->GM_method]);
     return -1;
   }
@@ -347,8 +348,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   // Get size of non-linear system
   analyseButcherTableau(gbData->tableau, gbData->nStates, &gbData->nlSystemSize, &gbData->type);
 
-  switch (gbData->type)
-  {
+  switch (gbData->type) {
   case GM_TYPE_EXPLICIT:
     gbData->isExplicit = TRUE;
     gbData->step_fun = &(expl_diag_impl_RK);
@@ -369,8 +369,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     errorStreamPrint(LOG_STDOUT, 0, "gbode_allocateData: Unknown type %i", gbData->type);
     return -1;
   }
-  if (gbData->GM_method == MS_ADAMS_MOULTON)
-  {
+  if (gbData->GM_method == MS_ADAMS_MOULTON) {
     gbData->nlSystemSize = gbData->nStates;
     gbData->step_fun = &(full_implicit_MS);
     gbData->type = MS_TYPE_IMPLICIT;
@@ -383,8 +382,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->ctrl_type = 1;
   if (flag_StepSize_ctrl != NULL) gbData->ctrl_type = atoi(flag_StepSize_ctrl);
 
-  switch (gbData->ctrl_type)
-  {
+  switch (gbData->ctrl_type) {
   case 1:
     gbData->stepSize_control = &(IController);
     infoStreamPrint(LOG_SOLVER, 0, "IController is use for step size control");
@@ -430,12 +428,9 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->yr = malloc(gbData->nStates*sizeof(double) * 2);
   gbData->kr = malloc(gbData->nStates*sizeof(double) * 2);
 
-  if (!gbData->isExplicit)
-  {
+  if (!gbData->isExplicit) {
     gbData->Jf = calloc(gbData->nStates * gbData->nStates, sizeof(double));
-  }
-  else
-  {
+  } else {
     gbData->Jf = NULL;
   }
 
@@ -449,17 +444,13 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->convergenceFailures = 0;
 
   /* initialize analytic Jacobian, if available and needed */
-  if (!gbData->isExplicit)
-  {
+  if (!gbData->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     // TODO: Do we need to initialize the Jacobian or is it already initialized?
-    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
-    {
+    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
       gbData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
-    }
-    else
-    {
+    } else {
       gbData->symJacAvailable = TRUE;
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
@@ -470,22 +461,16 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     /* Allocate memory for the nonlinear solver */
     gbData->nlsSolverMethod = getGB_NLS_METHOD(FLAG_SR_NLS);
     gbData->nlsData = initRK_NLS_DATA(data, threadData, gbData);
-    if (!gbData->nlsData)
-    {
+    if (!gbData->nlsData) {
       return -1;
-    }
-    else
-    {
+    } else {
       infoStreamPrint(LOG_SOLVER, 1, "Nominal values of  the states:");
-      for (int i = 0; i < gbData->nStates; i++)
-      {
+      for (int i = 0; i < gbData->nStates; i++) {
         infoStreamPrint(LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->nominal[i]);
       }
       messageClose(LOG_SOLVER);
     }
-  }
-  else
-  {
+  } else {
     gbData->symJacAvailable = FALSE;
     gbData->nlsSolverMethod = GB_NLS_UNKNOWN;
     gbData->nlsData = NULL;
@@ -497,12 +482,9 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->percentage = atof(omc_flagValue[FLAG_MR_PAR]);
   else
     gbData->percentage = 0;
-  if (gbData->percentage > 0)
-  {
+  if (gbData->percentage > 0) {
     gbData->multi_rate = 1;
-  }
-  else
-  {
+  } else {
     gbData->multi_rate = 0;
   }
 
@@ -512,19 +494,15 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   gbData->nFastStates = 0;
   gbData->nSlowStates = gbData->nStates;
-  for (int i = 0; i < gbData->nStates; i++)
-  {
+  for (int i = 0; i < gbData->nStates; i++) {
     gbData->fastStates[i] = i;
     gbData->slowStates[i] = i;
     gbData->sortedStates[i] = i;
   }
 
-  if (gbData->multi_rate)
-  {
+  if (gbData->multi_rate) {
     gbodef_allocateData(data, threadData, gbData);
-  }
-  else
-  {
+  } else {
     gbData->gbfData = NULL;
   }
 
@@ -541,6 +519,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results");
 
   gbData->err_threshold = 0.1;
+  gbData->nlsxExtrapolation = 1;
 
   return 0;
 }
