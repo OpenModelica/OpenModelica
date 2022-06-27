@@ -251,7 +251,7 @@ void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, 
 void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, double time) {
 
   // If stream is not active or size of vector to big do nothing
-  if (!ACTIVE_STREAM(stream) || n>100) return;
+  if (!ACTIVE_STREAM(stream) || n>1000) return;
 
   // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
@@ -273,9 +273,9 @@ void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, doubl
 void printIntVector_gb(enum LOG_STREAM stream, char name[], int* a, int n, double time) {
 
   // If stream is not active or size of vector to big do nothing
-  if (!ACTIVE_STREAM(stream) || n>100) return;
+  if (!ACTIVE_STREAM(stream) || n>1000) return;
 
-  char row_to_print[1024];
+  char row_to_print[40960];
   sprintf(row_to_print, "%s(%8g) =\t", name, time);
   for (int i=0;i<n;i++)
     sprintf(row_to_print, "%s %d", row_to_print, a[i]);
@@ -315,7 +315,7 @@ void printMatrix_gb(char name[], double* a, int n, double time) {
 void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, double time, int nIndx, int* indx) {
 
   // If stream is not active or size of vector to big do nothing
-  if (!ACTIVE_STREAM(stream) || nIndx>100) return;
+  if (!ACTIVE_STREAM(stream) || nIndx>1000) return;
 
   // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!

@@ -194,9 +194,13 @@ void setGlobalVerboseLevel(int argc, char**argv)
     }while(pos != string::npos);
   }
 
-  /* print LOG_STATS if LOG_SOLVER if active */
+  /* print LOG_GBODE if LOG_GBODE_V if active */
   if(useStream[LOG_GBODE_V] == 1)
     useStream[LOG_GBODE] = 1;
+
+  /* print LOG_GBODE_NLS if LOG_GBODE_NLS_V if active */
+  if(useStream[LOG_GBODE_NLS_V] == 1)
+    useStream[LOG_GBODE_NLS] = 1;
 
   /* print LOG_INIT and LOG_SOTI if LOG_INIT_V is active */
   if(useStream[LOG_INIT_V] == 1)
