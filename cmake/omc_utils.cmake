@@ -1,5 +1,6 @@
 include(FeatureSummary)
 include(CMakePrintHelpers)
+include(CheckCCompilerFlag)
 
 macro(omc_add_to_report var)
   cmake_print_variables(${var})
