@@ -2334,6 +2334,9 @@ algorithm
     case DAE.C_CONST() then "C_CONST";
     case DAE.C_PARAM() then "C_PARAM";
     case DAE.C_VAR() then "C_VAR";
+    else algorithm
+      Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
+    then fail();
   end match;
 end printConstStr;
 
@@ -2741,42 +2744,42 @@ public function printBindingStr "Print a variable binding to a string."
   input DAE.Binding inBinding;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inBinding)
+  outString := match inBinding
     local
       String str,str2,res,v_str,s,str3;
-      DAE.Exp exp;
-      Const f;
       Values.Value v;
-      DAE.BindingSource source;
 
     case DAE.UNBOUND() then "UNBOUND";
-    case DAE.EQBOUND(exp = exp,evaluatedExp = NONE(),constant_ = f,source = source)
+    case DAE.EQBOUND(evaluatedExp = NONE())
       equation
-        str = ExpressionDump.printExpStr(exp);
-        str2 = printConstStr(f);
-        str3 = DAEUtil.printBindingSourceStr(source);
+        str = ExpressionDump.printExpStr(inBinding.exp);
+        str2 = printConstStr(inBinding.constant_);
+        str3 = DAEUtil.printBindingSourceStr(inBinding.source);
         res = stringAppendList({"DAE.EQBOUND(",str,", NONE(), ",str2,", ",str3,")"});
       then
         res;
-    case DAE.EQBOUND(exp = exp,evaluatedExp = SOME(v),constant_ = f,source = source)
+    case DAE.EQBOUND(evaluatedExp = SOME(v))
       equation
-        str = ExpressionDump.printExpStr(exp);
-        str2 = printConstStr(f);
+        str = ExpressionDump.printExpStr(inBinding.exp);
+        str2 = printConstStr(inBinding.constant_);
         v_str = ValuesUtil.valString(v);
-        str3 = DAEUtil.printBindingSourceStr(source);
+        str3 = DAEUtil.printBindingSourceStr(inBinding.source);
         res = stringAppendList({"DAE.EQBOUND(",str,", SOME(",v_str,"), ",str2,", ",str3,")"});
       then
         res;
-    case DAE.VALBOUND(valBound = v, source = source)
+    case DAE.VALBOUND(valBound = v)
       equation
         s = ValuesUtil.unparseValues({v});
-        str3 = DAEUtil.printBindingSourceStr(source);
+        str3 = DAEUtil.printBindingSourceStr(inBinding.source);
         res = stringAppendList({"DAE.VALBOUND(",s,", ",str3,")"});
       then
         res;
-    else "";
-  end matchcontinue;
+    else
+      algorithm
+        Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
+      then
+        fail();
+  end match;
 end printBindingStr;
 
 public function makeFunctionType "author: LS

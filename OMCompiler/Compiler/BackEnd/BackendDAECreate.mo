@@ -142,7 +142,6 @@ algorithm
   _ := List.map(extvarlst, function collectRecordElementBindings(map = map));
 
   print(UnorderedMap.toString(map, ComponentReference.crefStr, Types.printTypeStr) + "\n");
-  //print(UnorderedMap.toString(map, ComponentReference.crefStr, Types.unparseType) + "\n");
   eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
   reqns := List.map(reqns, function updateRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function updateRecordTypesEqn(map = map));
@@ -240,7 +239,7 @@ function updateRecordElementBinding
   input String name;
 algorithm
   if var.name == name then
-    var.binding := DAE.EQBOUND(binding, NONE(), DAE.C_UNKNOWN(), DAE.BINDING_FROM_DERIVED_RECORD_DECL());
+    var.binding := DAE.EQBOUND(binding, NONE(), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
   end if;
 end updateRecordElementBinding;
 
