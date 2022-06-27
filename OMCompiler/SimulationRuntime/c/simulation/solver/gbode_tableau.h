@@ -28,6 +28,11 @@
  *
  */
 
+/*! \file gbode_tableau.h
+ *
+ * Containing Butcher tableau for generic Runge-Kutta methods.
+ */
+
 #ifndef GBODE_TABLEAU_H
 #define GBODE_TABLEAU_H
 

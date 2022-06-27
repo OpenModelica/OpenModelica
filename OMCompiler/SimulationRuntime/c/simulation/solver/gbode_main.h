@@ -28,7 +28,7 @@
  *
  */
 
-/*! \file DATA_GBODE.h
+/*! \filegbode_main.h
  */
 
 #ifndef _DATA_GBODE_H_

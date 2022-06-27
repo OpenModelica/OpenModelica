@@ -30,6 +30,7 @@
 
 /*! \file gbode_conf.c
  */
+
 #include <string.h>
 
 #include "../../util/omc_error.h"

@@ -28,7 +28,7 @@
  *
  */
 
-/*! \file gbode_main.c
+/*! \file gbode_step.c
  */
 
 #include "gbode_main.h"

@@ -28,6 +28,9 @@
  *
  */
 
+/*! \file gbode_conf.h
+ */
+
 #ifndef _GBODE_CONF_H_
 #define _GBODE_CONF_H_
 

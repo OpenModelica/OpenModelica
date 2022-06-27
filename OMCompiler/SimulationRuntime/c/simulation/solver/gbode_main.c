@@ -28,6 +28,14 @@
  *
  */
 
+/*! \file gbode_main.c
+ *  Implementation of a generic (implicit and explicit) Runge Kutta solver, which works for any
+ *  order and stage based on a provided Butcher tableau. Utilizes the sparsity pattern of the ODE
+ *  together with the KINSOL (KLU) solver
+ *
+ *  \author bbachmann
+ */
+
 /* BB: ToDo's
  *
  * 0) Update comments for better readability, delete stuff no longer necessary
@@ -38,14 +46,6 @@
  *    ESDIRK and explicit RK methods
  * 5) Check accuracy and decide on the Left-limit of the implicit embedded RK method, if possible...
  *
- */
-
-/*! \file gm.c
- *  Implementation of a generic (implicit and explicit) Runge Kutta solver, which works for any
- *  order and stage based on a provided Butcher tableau. Utilizes the sparsity pattern of the ODE
- *  together with the KINSOL (KLU) solver
- *
- *  \author bbachmann
  */
 
 #include <time.h>

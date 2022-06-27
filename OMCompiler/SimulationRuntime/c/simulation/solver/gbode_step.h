@@ -28,7 +28,7 @@
  *
  */
 
-/*! \file gbode_main.h
+/*! \file gbode_step.h
  */
 
 #ifndef _GBODE_STEP_H_
