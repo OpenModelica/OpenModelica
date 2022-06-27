@@ -44,8 +44,9 @@
  * 3) Optimize evaluation of the Jacobian (e.g. in case it is constant)
  * 4) Introduce generic multirate-method, that might also be used for higher order
  *    ESDIRK and explicit RK methods
- * 5) Check accuracy and decide on the Left-limit of the implicit embedded RK method, if possible...
- *
+ * 5) Improve birate fast state integrator (memory handling, copying, calling of function ODE)
+ * 6) Improve step size handling and synchronization between fast and slow states integration, i.e.
+ *    instead of slowing down inner integration one should resetting outer integration...
  */
 
 #include <time.h>
@@ -268,7 +269,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
 
     /* Allocate memory for the nonlinear solver */
     gbfData->nlsSolverMethod = getGB_NLS_METHOD(FLAG_MR_NLS);
-    // BB ToDo: get kinsol up and running!!
+
+    /* Initialize data for the nonlinear solver */
     gbfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gbfData);
     if (!gbfData->nlsData)
     {
@@ -713,7 +715,6 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   gbfData->errorTestFailures = 0;
   gbfData->convergenceFailures = 0;
 
-  // BB ToDO: Copy only fast states!!
   memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * nStates);
   memcpy(gbfData->y, gbData->y, sizeof(double) * nStates);
 
@@ -814,7 +815,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   // This is the target time of the main integrator
   double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
-  // BB ToDo: needs to be performed also after an event!!!
+  // Needs to be performed also after an event!!!
   if (gbfData->didEventStep || gbfData->timeRight < gbData->timeLeft) {
     gbodef_init(data, threadData, solverInfo);
   }
@@ -950,7 +951,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       gbfData->stepSize = stopTime - gbfData->time;
     }
 
-    // BB ToDo: Dont disturb the inner step size control!!
+    // Synchronize inner integration with outer integration
     if (gbfData->time + gbfData->stepSize > gbData->timeRight) {
       gbfData->stepSize = gbData->timeRight - gbfData->time;
     }
@@ -1242,7 +1243,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
-  SIMULATION_DATA *sDataOld = (SIMULATION_DATA *)data->localData[1]; // BB: Is this the ring buffer???
+  SIMULATION_DATA *sDataOld = (SIMULATION_DATA *)data->localData[1];
   modelica_real *fODE = sData->realVars + data->modelData->nStates;
   DATA_GBODE *gbData = (DATA_GBODE *)solverInfo->solverData;
 

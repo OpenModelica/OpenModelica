@@ -33,9 +33,6 @@
  * Containing Butcher tableau for generic Runge-Kutta methods.
  */
 
-// BB ToDo: generate automatically the Butcher tableau for Richardson extrapolation
-// (depending on order) and introduce a corresponding flag
-
 #include "gbode_tableau.h"
 
 #include <string.h>
@@ -579,7 +576,6 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
 }
 
 void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
-  // BB ToDo: check embedded method, values and order in Maple...
 
   tableau->nStages = 5;
   tableau->order_b = 4;
@@ -594,9 +590,8 @@ void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
                          1./8,  0.0,  3./8, 0.0, 0.0,
                          1./2,  0.0, -3./2, 2.0, 0.0
                         };
-  const double b[] = {1./6, 0.0,   0.0, 2./3, 1./6};   // 4th order???
-  // const double bt_EXPLEULER_SC[]  = {1./2, 0.0, -3./2,  2.0,  0.0}; // 3th order???
-  const double  bt[]  = {1./10, 0.0, 3./10,  2./5,  1./5}; // 3th order???
+  const double b[]  = {1./6,  0.0,   0.0,  2./3,  1./6};   // 4th order???
+  const double bt[] = {1./10, 0.0, 3./10,  2./5,  1./5}; // 3th order???
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }

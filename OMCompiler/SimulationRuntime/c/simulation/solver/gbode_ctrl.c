@@ -132,7 +132,9 @@ double PIController(double* err_values, double* stepSize_values, unsigned int er
  *
  * Called at the beginning of simulation or after an event occurred.
  *
- * TODO BB: Lookup the reference in Hairers book
+ * Book Reference:
+ * E. Hairer, S. P. Nørsett, G. Wanner
+ * Solving Ordinary Differential Equations I, Nonstiff Problems, page 169
  *
  * @param data              Runtime data struct.
  * @param threadData        Thread data for error handling.

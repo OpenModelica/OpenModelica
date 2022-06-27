@@ -62,7 +62,6 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   /* Predictor Schritt */
   for (i = 0; i < nStates; i++) {
-    // BB ToDo: check the formula with respect to gbData->k[]
     gbData->yt[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++) {
       gbData->yt[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
@@ -75,7 +74,6 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   /* Constant part of the multistep method */
   for (i = 0; i < nStates; i++) {
-    // BB ToDo: check the formula with respect to gbData->k[]
     gbData->res_const[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++) {
       gbData->res_const[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
@@ -93,8 +91,8 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
   NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;
-  // Set start vector, BB ToDo: Ommit extrapolation after event!!!
 
+  // Set start vectors for the noblinear solver
   memcpy(nlsData->nlsx, gbData->yt, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
@@ -123,7 +121,6 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   /* Corrector Schritt */
   for (i = 0; i < nStates; i++) {
-    // BB ToDo: check the formula with respect to gbData->k[]
     gbData->y[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++) {
       gbData->y[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
@@ -164,7 +161,6 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
     i = gbData->fastStates[ii];
-    // BB ToDo: check the formula with respect to gbData->k[]
     gbfData->yt[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
@@ -180,7 +176,6 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
     i = gbData->fastStates[ii];
-    // BB ToDo: check the formula with respect to gbData->k[]
     gbfData->res_const[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
@@ -211,7 +206,6 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
   NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;
-  // Set start vector, BB ToDo: Ommit extrapolation after event!!!
 
   memcpy(nlsData->nlsx, gbfData->yt, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
@@ -243,7 +237,6 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
     i = gbData->fastStates[ii];
-    // BB ToDo: check the formula with respect to gbData->k[]
     gbfData->y[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
@@ -325,10 +318,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;
 
-      // Set start vector, BB ToDo: Ommit extrapolation after event!!!
-      // for (i=0; i<nStates; i++) {
-      //     nlsData->nlsx[i] = gbData->yOld[i] + gbData->tableau->c[stage_] * gbData->stepSize * gbData->k[i];
-      // }
+      // Set start vector
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, gbData->yOld, nStates*sizeof(modelica_real));
       // this is actually extrapolation...
@@ -683,11 +673,14 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   stepSize = gbfData->stepSize;
   lastStepSize = gbfData->lastStepSize;
   p = gbfData->tableau->order_b;
-  // Store relevant part of the ring buffer, which is used for extrapolation
-  for (i=0; i<2; i++) {
-    gbData->tr[i] = gbfData->tv[i];
-    memcpy(gbData->yr + i * nStates, gbfData->yv + i * nStates, nStates * sizeof(double));
-    memcpy(gbData->kr + i * nStates, gbfData->kv + i * nStates, nStates * sizeof(double));
+
+  if (!gbfData->isExplicit) {
+    // Store relevant part of the ring buffer, which is used for extrapolation
+    for (i=0; i<2; i++) {
+      gbData->tr[i] = gbfData->tv[i];
+      memcpy(gbData->yr + i * nStates, gbfData->yv + i * nStates, nStates * sizeof(double));
+      memcpy(gbData->kr + i * nStates, gbfData->kv + i * nStates, nStates * sizeof(double));
+    }
   }
 
   gbfData->stepSize = gbfData->stepSize/2;
@@ -709,16 +702,17 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     memcpy(gbfData->yOld, gbfData->y, nStates * sizeof(double));
 
     // prepare for the extrapolation
-    // BB ToDo; only necessary for implicit schemes
-    sData->timeValue = gbfData->time;
-    memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-    gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
-    gbfData->tv[1] = gbfData->tv[0];
-    memcpy(gbfData->yv + nStates, gbfData->yv, nStates * sizeof(double));
-    memcpy(gbfData->kv + nStates, gbfData->kv, nStates * sizeof(double));
-    gbfData->tv[0] = gbfData->time;
-    memcpy(gbfData->yv, gbfData->y, nStates * sizeof(double));
-    memcpy(gbfData->kv, fODE, nStates * sizeof(double));
+    if (!gbfData->isExplicit) {
+      sData->timeValue = gbfData->time;
+      memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
+      gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
+      gbfData->tv[1] = gbfData->tv[0];
+      memcpy(gbfData->yv + nStates, gbfData->yv, nStates * sizeof(double));
+      memcpy(gbfData->kv + nStates, gbfData->kv, nStates * sizeof(double));
+      gbfData->tv[0] = gbfData->time;
+      memcpy(gbfData->yv, gbfData->y, nStates * sizeof(double));
+      memcpy(gbfData->kv, fODE, nStates * sizeof(double));
+    }
 
     step_info = gbfData->step_fun(data, threadData, solverInfo);
     if (step_info != 0) {
@@ -736,16 +730,14 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(gbfData->y1, gbfData->y, nStates * sizeof(double));
 
       // prepare for the extrapolation
-      // BB ToDo; only necessary for implicit schemes
-      sData->timeValue = gbfData->time + gbfData->stepSize;
-      memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
-      // gbfData->tv[1] = gbfData->tv[0];
-      // memcpy(gbfData->yv + nStates, gbfData->yv, nStates * sizeof(double));
-      // memcpy(gbfData->kv + nStates, gbfData->kv, nStates * sizeof(double));
-      gbfData->tv[0] = gbfData->time;
-      memcpy(gbfData->yv, gbfData->y, nStates * sizeof(double));
-      memcpy(gbfData->kv, fODE, nStates * sizeof(double));
+      if (!gbfData->isExplicit) {
+        sData->timeValue = gbfData->time + gbfData->stepSize;
+        memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
+        gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
+        gbfData->tv[0] = gbfData->time;
+        memcpy(gbfData->yv, gbfData->y, nStates * sizeof(double));
+        memcpy(gbfData->kv, fODE, nStates * sizeof(double));
+      }
 
       // restore yOld
       gbfData->time = timeValue;
@@ -773,13 +765,14 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   gbfData->stepSize = stepSize;
   gbfData->lastStepSize = lastStepSize;
   memcpy(gbfData->yOld, gbfData->yLeft, nStates * sizeof(double));
-  // Restore ring buffer
-  for (i=0; i<2; i++) {
-    gbfData->tv[i] = gbData->tr[i];
-    memcpy(gbfData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
-    memcpy(gbfData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
+  if (!gbfData->isExplicit) {
+    // Restore ring buffer
+    for (i=0; i<2; i++) {
+      gbfData->tv[i] = gbData->tr[i];
+      memcpy(gbfData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
+      memcpy(gbfData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
+    }
   }
-
   if (!step_info) {
     // Extrapolate values based on order of the scheme
     for (i=0; i<nStates; i++) {
@@ -813,11 +806,14 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   stepSize = gbData->stepSize;
   lastStepSize = gbData->lastStepSize;
   p = gbData->tableau->order_b;
-  // Store relevant part of the ring buffer, which is used for extrapolation
-  for (i=0; i<2; i++) {
-    gbData->tr[i] = gbData->tv[i];
-    memcpy(gbData->yr + i * nStates, gbData->yv + i * nStates, nStates * sizeof(double));
-    memcpy(gbData->kr + i * nStates, gbData->kv + i * nStates, nStates * sizeof(double));
+
+  if (!gbData->isExplicit) {
+    // Store relevant part of the ring buffer, which is used for extrapolation
+    for (i=0; i<2; i++) {
+      gbData->tr[i] = gbData->tv[i];
+      memcpy(gbData->yr + i * nStates, gbData->yv + i * nStates, nStates * sizeof(double));
+      memcpy(gbData->kr + i * nStates, gbData->kv + i * nStates, nStates * sizeof(double));
+    }
   }
 
   gbData->stepSize = gbData->stepSize/2;
@@ -839,16 +835,17 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
 
     // prepare for the extrapolation
-    // BB ToDo; only necessary for implicit schemes
-    sData->timeValue = gbData->time;
-    memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-    gbData->tv[1] = gbData->tv[0];
-    memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
-    memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
-    gbData->tv[0] = gbData->time;
-    memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
-    memcpy(gbData->kv, fODE, nStates * sizeof(double));
+    if (!gbData->isExplicit) {
+      sData->timeValue = gbData->time;
+      memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
+      gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+      gbData->tv[1] = gbData->tv[0];
+      memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
+      memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
+      gbData->tv[0] = gbData->time;
+      memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
+      memcpy(gbData->kv, fODE, nStates * sizeof(double));
+    }
 
     step_info = gbData->step_fun(data, threadData, solverInfo);
     if (step_info != 0) {
@@ -866,16 +863,14 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       memcpy(gbData->y1, gbData->y, nStates * sizeof(double));
 
       // prepare for the extrapolation
-      // BB ToDo; only necessary for implicit schemes
-      sData->timeValue = gbData->time + gbData->stepSize;
-      memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
-      // gbData->tv[1] = gbData->tv[0];
-      // memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
-      // memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
-      gbData->tv[0] = gbData->time;
-      memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
-      memcpy(gbData->kv, fODE, nStates * sizeof(double));
+      if (!gbData->isExplicit) {
+        sData->timeValue = gbData->time + gbData->stepSize;
+        memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
+        gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+        gbData->tv[0] = gbData->time;
+        memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
+        memcpy(gbData->kv, fODE, nStates * sizeof(double));
+      }
 
       // restore yOld
       gbData->time = timeValue;
@@ -903,11 +898,14 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   gbData->stepSize = stepSize;
   gbData->lastStepSize = lastStepSize;
   memcpy(gbData->yOld, gbData->yLeft, nStates * sizeof(double));
-  // Restore ring buffer
-  for (i=0; i<2; i++) {
-    gbData->tv[i] = gbData->tr[i];
-    memcpy(gbData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
-    memcpy(gbData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
+
+  if (!gbData->isExplicit) {
+    // Restore ring buffer
+    for (i=0; i<2; i++) {
+      gbData->tv[i] = gbData->tr[i];
+      memcpy(gbData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
+      memcpy(gbData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
+    }
   }
 
   if (!step_info) {

@@ -253,7 +253,7 @@ void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, doubl
   // If stream is not active or size of vector to big do nothing
   if (!ACTIVE_STREAM(stream) || n>100) return;
 
-  // BB ToDo: This only works for number of states less than 10!
+  // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
   char row_to_print[40960];
   sprintf(row_to_print, "%s(%8g) =\t", name, time);
@@ -317,7 +317,7 @@ void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, doub
   // If stream is not active or size of vector to big do nothing
   if (!ACTIVE_STREAM(stream) || nIndx>100) return;
 
-  // BB ToDo: This only works for number of states less than 10!
+  // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
   char row_to_print[40960];
   sprintf(row_to_print, "%s(%8g) =\t", name, time);
