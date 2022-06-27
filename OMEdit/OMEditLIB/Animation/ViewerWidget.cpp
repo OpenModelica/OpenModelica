@@ -464,14 +464,10 @@ void ViewerWidget::removeTexture()
 void ViewerWidget::resetTransparencyAndTextureForAllVisualizers()
 {
   std::vector<ShapeObject>& shapes = mpAnimationWidget->getVisualization()->getBaseData()->_shapes;
-  std::vector<VectorObject>& vectors = mpAnimationWidget->getVisualization()->getBaseData()->_vectors;
   std::vector<std::reference_wrapper<AbstractVisualizerObject>> visualizers;
-  visualizers.reserve(shapes.size() + vectors.size());
+  visualizers.reserve(shapes.size());
   for (ShapeObject& shape : shapes) {
     visualizers.push_back(shape);
-  }
-  for (VectorObject& vector : vectors) {
-    visualizers.push_back(vector);
   }
   for (AbstractVisualizerObject& visualizer : visualizers) {
     visualizer.setTransparency(0.0);

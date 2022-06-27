@@ -154,37 +154,6 @@ int VisualizationFMU::setVarReferencesInVisAttributes()
 
       //shape.dumpVisualizerAttributes();
     }
-
-    for (VectorObject& vector : mpOMVisualBase->_vectors)
-    {
-      //std::cout<<"vector "<<vector._id <<std::endl;
-
-      vector._T[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._T[0]);
-      vector._T[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._T[1]);
-      vector._T[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._T[2]);
-      vector._T[3].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._T[3]);
-      vector._T[4].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._T[4]);
-      vector._T[5].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._T[5]);
-      vector._T[6].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._T[6]);
-      vector._T[7].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._T[7]);
-      vector._T[8].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._T[8]);
-
-      vector._r[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._r[0]);
-      vector._r[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._r[1]);
-      vector._r[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._r[2]);
-
-      vector._coords[0].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._coords[0]);
-      vector._coords[1].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._coords[1]);
-      vector._coords[2].fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._coords[2]);
-
-      vector._quantity.fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._quantity);
-
-      vector._headAtOrigin.fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._headAtOrigin);
-
-      vector._twoHeadedArrow.fmuValueRef = getVariableReferenceForVisualizerAttribute(vector._twoHeadedArrow);
-
-      //vector.dumpVisualizerAttributes();
-    }
   }
   catch (std::exception& ex)
   {
@@ -335,59 +304,6 @@ void VisualizationFMU::updateVisAttributes(const double time)
       // Update the shapes
       mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&shape);
       //shape.dumpVisualizerAttributes();
-      //mpOMVisScene->dumpOSGTreeDebug();
-      child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
-      child->accept(*mpUpdateVisitor);
-      ++visualizerIdx;
-    }
-
-    for (VectorObject& vector : mpOMVisualBase->_vectors)
-    {
-      // Get the values for the scene graph objects
-      //std::cout<<"vector "<<vector._id <<std::endl;
-
-      updateVisualizerAttributeFMU(vector._T[0]);
-      updateVisualizerAttributeFMU(vector._T[1]);
-      updateVisualizerAttributeFMU(vector._T[2]);
-      updateVisualizerAttributeFMU(vector._T[3]);
-      updateVisualizerAttributeFMU(vector._T[4]);
-      updateVisualizerAttributeFMU(vector._T[5]);
-      updateVisualizerAttributeFMU(vector._T[6]);
-      updateVisualizerAttributeFMU(vector._T[7]);
-      updateVisualizerAttributeFMU(vector._T[8]);
-
-      updateVisualizerAttributeFMU(vector._r[0]);
-      updateVisualizerAttributeFMU(vector._r[1]);
-      updateVisualizerAttributeFMU(vector._r[2]);
-
-      updateVisualizerAttributeFMU(vector._color[0]);
-      updateVisualizerAttributeFMU(vector._color[1]);
-      updateVisualizerAttributeFMU(vector._color[2]);
-
-      updateVisualizerAttributeFMU(vector._specCoeff);
-
-      updateVisualizerAttributeFMU(vector._coords[0]);
-      updateVisualizerAttributeFMU(vector._coords[1]);
-      updateVisualizerAttributeFMU(vector._coords[2]);
-
-      updateVisualizerAttributeFMU(vector._quantity);
-
-      updateVisualizerAttributeFMU(vector._headAtOrigin);
-
-      updateVisualizerAttributeFMU(vector._twoHeadedArrow);
-
-      rT = rotateModelica2OSG(
-          osg::Matrix3(vector._T[0].exp, vector._T[1].exp, vector._T[2].exp,
-                       vector._T[3].exp, vector._T[4].exp, vector._T[5].exp,
-                       vector._T[6].exp, vector._T[7].exp, vector._T[8].exp),
-          osg::Vec3f(vector._r[0].exp, vector._r[1].exp, vector._r[2].exp),
-          osg::Vec3f(vector._coords[0].exp, vector._coords[1].exp, vector._coords[2].exp),
-          vector.hasHeadAtOrigin() ? -vector.getLength() : vector.getLength());
-      assemblePokeMatrix(vector._mat, rT._T, rT._r);
-
-      // Update the vectors
-      mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&vector);
-      //vector.dumpVisualizerAttributes();
       //mpOMVisScene->dumpOSGTreeDebug();
       child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
       child->accept(*mpUpdateVisitor);
