@@ -109,84 +109,80 @@ void VisualizerMAT::setSimulationSettings(const UserSimSettingsMAT& simSetMAT)
 
 void VisualizerMAT::updateVisAttributes(const double time)
 {
-  // Update all visualizers
   //std::cout<<"updateVisAttributes at "<<time <<std::endl;
-
+  // Update all shapes.
+  unsigned int shapeIdx = 0;
   rAndT rT;
   osg::ref_ptr<osg::Node> child = nullptr;
-  unsigned int visualizerIdx = 0;
-
+  ModelicaMatReader* tmpReaderPtr = &_matReader;
   try
   {
-    for (ShapeObject& shape : mpOMVisualBase->_shapes)
+    for (auto& shape : mpOMVisualBase->_shapes)
     {
-      // Get the values for the scene graph objects
       //std::cout<<"shape "<<shape._id <<std::endl;
 
-      updateVisualizerAttributeMAT(shape._T[0], time);
-      updateVisualizerAttributeMAT(shape._T[1], time);
-      updateVisualizerAttributeMAT(shape._T[2], time);
-      updateVisualizerAttributeMAT(shape._T[3], time);
-      updateVisualizerAttributeMAT(shape._T[4], time);
-      updateVisualizerAttributeMAT(shape._T[5], time);
-      updateVisualizerAttributeMAT(shape._T[6], time);
-      updateVisualizerAttributeMAT(shape._T[7], time);
-      updateVisualizerAttributeMAT(shape._T[8], time);
+      // Get the values for the scene graph objects
+      updateObjectAttributeMAT(&shape._length, time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._width, time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._height, time, tmpReaderPtr);
 
-      updateVisualizerAttributeMAT(shape._r[0], time);
-      updateVisualizerAttributeMAT(shape._r[1], time);
-      updateVisualizerAttributeMAT(shape._r[2], time);
+      updateObjectAttributeMAT(&shape._lDir[0], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._lDir[1], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._lDir[2], time, tmpReaderPtr);
 
-      updateVisualizerAttributeMAT(shape._color[0], time);
-      updateVisualizerAttributeMAT(shape._color[1], time);
-      updateVisualizerAttributeMAT(shape._color[2], time);
+      updateObjectAttributeMAT(&shape._wDir[0], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._wDir[1], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._wDir[2], time, tmpReaderPtr);
 
-      updateVisualizerAttributeMAT(shape._specCoeff, time);
+      updateObjectAttributeMAT(&shape._r[0], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._r[1], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._r[2], time, tmpReaderPtr);
 
-      updateVisualizerAttributeMAT(shape._rShape[0], time);
-      updateVisualizerAttributeMAT(shape._rShape[1], time);
-      updateVisualizerAttributeMAT(shape._rShape[2], time);
+      updateObjectAttributeMAT(&shape._rShape[0], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._rShape[1], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._rShape[2], time, tmpReaderPtr);
 
-      updateVisualizerAttributeMAT(shape._lDir[0], time);
-      updateVisualizerAttributeMAT(shape._lDir[1], time);
-      updateVisualizerAttributeMAT(shape._lDir[2], time);
+      updateObjectAttributeMAT(&shape._T[0], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._T[1], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._T[2], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._T[3], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._T[4], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._T[5], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._T[6], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._T[7], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._T[8], time, tmpReaderPtr);
 
-      updateVisualizerAttributeMAT(shape._wDir[0], time);
-      updateVisualizerAttributeMAT(shape._wDir[1], time);
-      updateVisualizerAttributeMAT(shape._wDir[2], time);
+      updateObjectAttributeMAT(&shape._color[0], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._color[1], time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._color[2], time, tmpReaderPtr);
 
-      updateVisualizerAttributeMAT(shape._length, time);
-      updateVisualizerAttributeMAT(shape._width, time);
-      updateVisualizerAttributeMAT(shape._height, time);
+      updateObjectAttributeMAT(&shape._specCoeff, time, tmpReaderPtr);
+      updateObjectAttributeMAT(&shape._extra, time, tmpReaderPtr);
 
-      updateVisualizerAttributeMAT(shape._extra, time);
-
-      rT = rotateModelica2OSG(
-          osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
-                       shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
-                       shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
-          osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
+      rT = rotateModelica2OSG(osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
           osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
+          osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
+          shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
+          shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
           osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
           osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
-          shape._length.exp/*, shape._width.exp, shape._height.exp*/, shape._type);
-      assemblePokeMatrix(shape._mat, rT._T, rT._r);
+          shape._length.exp,/* shape._width.exp, shape._height.exp,*/ shape._type);
 
-      // Update the shapes
-      mpUpdateVisitor->_visualizer = static_cast<AbstractVisualizerObject*>(&shape);
-      //shape.dumpVisualizerAttributes();
-      //mpOMVisScene->dumpOSGTreeDebug();
-      child = mpOMVisScene->getScene().getRootNode()->getChild(visualizerIdx);
+      assemblePokeMatrix(shape._mat, rT._T, rT._r);
+      // Update the shapes.
+      mpUpdateVisitor->_shape = shape;
+      //shape.dumpVisAttributes();
+      // Get the scene graph nodes and stuff.
+      child = mpOMVisScene->getScene().getRootNode()->getChild(shapeIdx);  // the transformation
       child->accept(*mpUpdateVisitor);
-      ++visualizerIdx;
+      ++shapeIdx;
     }
   }
   catch (std::exception& ex)
   {
-    QString msg = QString(QObject::tr("Error in VisualizerMAT::updateVisAttributes at time point %1\n%2."))
-                  .arg(QString::number(time), ex.what());
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
-    throw(msg.toStdString());
+    std::string msg = "Error in VisualizerMAT::updateVisAttributes at time point " + std::to_string(time)
+        + "\n" + std::string(ex.what());
+    throw(msg);
   }
 }
 
@@ -200,11 +196,10 @@ void VisualizerMAT::updateScene(const double time)
   mpTimeManager->setRealTimeFactor(mpTimeManager->getHVisual() / visTime);
 }
 
-void VisualizerMAT::updateVisualizerAttributeMAT(VisualizerAttribute& attr, double time)
+void VisualizerMAT::updateObjectAttributeMAT(ShapeObjectAttribute* attr, double time, ModelicaMatReader* reader)
 {
-  if (!attr.isConst) {
-    attr.exp = omcGetVarValue(&_matReader, attr.cref.c_str(), time);
-  }
+  if (!attr->isConst)
+    attr->exp = omcGetVarValue(reader, attr->cref.c_str(), time);
 }
 
 double VisualizerMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time)
@@ -222,3 +217,4 @@ double VisualizerMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varN
 
   return val;
 }
+

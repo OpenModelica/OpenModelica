@@ -82,7 +82,7 @@ protected:
   //to be animated
   std::string mPathName;
   std::string mFileName;
-  //stores the data for the visualizers, time management, functionality for updating the values(mat/fmu) etc.
+  //stores the data for the shapes, time management, functionality for updating the values(mat/fmu) etc.
   VisualizerAbstract* mpVisualizer;
   //widgets
   ViewerWidget *mpViewerWidget;

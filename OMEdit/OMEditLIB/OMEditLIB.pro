@@ -328,7 +328,6 @@ SOURCES += Animation/AbstractAnimationWindow.cpp \
   Animation/VisualizerFMU.cpp \
   Animation/FMUSettingsDialog.cpp \
   Animation/FMUWrapper.cpp \
-  Animation/AbstractVisualizers.cpp \
   Animation/Shapes.cpp
 
 greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
@@ -348,7 +347,6 @@ HEADERS += Animation/AbstractAnimationWindow.h \
   Animation/VisualizerFMU.h \
   Animation/FMUSettingsDialog.h \
   Animation/FMUWrapper.h \
-  Animation/AbstractVisualizers.h \
   Animation/Shapes.h \
   Animation/rapidxml.hpp
 }

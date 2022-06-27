@@ -39,6 +39,7 @@
 #include <memory.h>
 #include <iostream>
 
+#include <QImage>
 #include <osg/NodeVisitor>
 #include <osg/Geode>
 #include <osg/MatrixTransform>
@@ -48,15 +49,11 @@
 #include <osg/Texture2D>
 #include <osg/TexMat>
 
-#include <QImage>
-
 #include "AnimationUtil.h"
-#include "TimeManager.h"
-#include "rapidxml.hpp"
-
-#include "AbstractVisualizers.h"
 #include "ExtraShapes.h"
+#include "rapidxml.hpp"
 #include "Shapes.h"
+#include "TimeManager.h"
 
 struct UserSimSettingsMAT
 {
@@ -65,19 +62,19 @@ struct UserSimSettingsMAT
 
 class UpdateVisitor : public osg::NodeVisitor
 {
-public:
+ public:
   UpdateVisitor();
   virtual ~UpdateVisitor() = default;
   UpdateVisitor(const UpdateVisitor& uv) = delete;
   UpdateVisitor& operator=(const UpdateVisitor& uv) = delete;
   virtual void apply(osg::Geode& node) override;
   virtual void apply(osg::MatrixTransform& node) override;
-  osg::Image* convertImage(const QImage& iImage);
-  void applyTexture(osg::StateSet* ss, const std::string& imagePath);
+  void makeTransparent(osg::Geode& node, float transpCoeff);
+  void applyTexture(osg::StateSet* ss, std::string imagePath);
   void changeColor(osg::StateSet* ss, float r, float g, float b);
-  void changeTransparency(osg::StateSet* ss, float transpCoeff);
+  osg::Image* convertImage(const QImage& iImage);
 public:
-  AbstractVisualizerObject* _visualizer;
+  ShapeObject _shape;
 };
 
 class InfoVisitor : public osg::NodeVisitor
@@ -96,36 +93,36 @@ private:
 
 class OSGScene
 {
-public:
+ public:
   OSGScene();
   ~OSGScene() = default;
   OSGScene(const OSGScene& osgs) = delete;
   OSGScene& operator=(const OSGScene& osgs) = delete;
-  void setUpScene(const std::vector<ShapeObject>& shapes);
+  int setUpScene(std::vector<ShapeObject> allShapes);
   osg::ref_ptr<osg::Group> getRootNode();
   std::string getPath() const;
   void setPath(const std::string path);
-private:
+ private:
   osg::ref_ptr<osg::Group> _rootNode;
   std::string _path;
 };
 
 class OMVisScene
 {
-public:
+ public:
   OMVisScene();
   ~OMVisScene() = default;
   OMVisScene(const OMVisScene& omvv) = delete;
   OMVisScene& operator=(const OMVisScene& omvv) = delete;
   void dumpOSGTreeDebug();
   OSGScene& getScene();
-private:
+ private:
   OSGScene _scene;
 };
 
 class OMVisualBase
 {
-public:
+ public:
   OMVisualBase(const std::string& modelFile, const std::string& path);
   OMVisualBase() = delete;
   ~OMVisualBase() = default;
@@ -135,13 +132,13 @@ public:
   const std::string getModelFile() const;
   const std::string getPath() const;
   const std::string getXMLFileName() const;
-  AbstractVisualizerObject* getVisualizerObjectByID(const std::string& visualizerID);
-  int getVisualizerObjectIndexByID(const std::string& visualizerID);
+  ShapeObject* getShapeObjectByID(std::string shapeID);
+  int getShapeObjectIndexByID(std::string shapeID);
 private:
   void appendVisVariable(const rapidxml::xml_node<>* node, std::vector<std::string>& visVariables) const;
 public:
   std::vector<ShapeObject> _shapes;
-private:
+ private:
   std::string _modelFile;
   std::string _path;
   std::string _xmlFileName;
@@ -149,7 +146,7 @@ private:
 
 class VisualizerAbstract
 {
-public:
+ public:
   VisualizerAbstract();
   VisualizerAbstract(const std::string& modelFile, const std::string& path, const VisType visType = VisType::NONE);
   virtual ~VisualizerAbstract() = default;
@@ -160,7 +157,7 @@ public:
   virtual void initializeVisAttributes(const double time) = 0;
   virtual void updateVisAttributes(const double time) = 0;
   void sceneUpdate();
-  void modifyVisualizer(const std::string& visualizerName);
+  void modifyShape(std::string shapeName);
   virtual void simulate(TimeManager& omvm) = 0;
   virtual void updateScene(const double time) = 0;
 
@@ -189,6 +186,6 @@ osg::Vec3f normalize(osg::Vec3f vec);
 osg::Vec3f cross(osg::Vec3f vec1, osg::Vec3f vec2);
 Directions fixDirections(osg::Vec3f lDir, osg::Vec3f wDir);
 void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f& r);
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, float length/*, float width, float height*/, std::string type);
+rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::Vec3f lDirIn, osg::Vec3f wDirIn, float length,/* float width, float height,*/ std::string type);
 
 #endif

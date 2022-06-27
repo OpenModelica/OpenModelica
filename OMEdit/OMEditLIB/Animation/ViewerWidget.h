@@ -38,9 +38,9 @@
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 
-#include <iostream>
+#include<iostream>
 
-#include <QMenu>
+#include<QMenu>
 
 #include "AbstractAnimationWindow.h"
 #include "Util/Helper.h"
@@ -73,9 +73,9 @@ class ViewerWidget : public GLWidget
 public:
   ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
   osgViewer::View* getSceneView() {return mpSceneView;}
-  std::string getSelectedVisualizer() {return mSelectedVisualizer;}
-  void setSelectedVisualizer(std::string visualizer) {mSelectedVisualizer = visualizer;}
-  void pickVisualizer(int x, int y);
+  std::string getSelectedShape() {return mSelectedShape;}
+  void setSelectedShape(std::string shape) {mSelectedShape = shape;}
+  void pickShape(int x, int y);
 protected:
   virtual void paintEvent(QPaintEvent *paintEvent) override;
   virtual void paintGL() override;
@@ -87,22 +87,23 @@ protected:
   virtual void mouseReleaseEvent(QMouseEvent *event) override;
   virtual void wheelEvent(QWheelEvent *event) override;
   virtual bool event(QEvent* event) override;
-  void showVisualizerPickContextMenu(const QPoint& pos);
+  void showShapePickContextMenu(const QPoint& pos);
 private:
   osgGA::EventQueue* getEventQueue() const;
   osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> mpGraphicsWindow;
   osg::ref_ptr<Viewer> mpViewer;
   osgViewer::View* mpSceneView;
-  std::string mSelectedVisualizer;
+  std::string mSelectedShape;
   AbstractAnimationWindow *mpAnimationWidget;
 public slots:
-  void changeVisualizerTransparency();
-  void makeVisualizerInvisible();
-  void changeVisualizerColor();
-  void applyCheckerTexture();
+  void changeShapeTransparency();
+  void removeTransparencyForAllShapes();
+  void makeShapeInvisible();
+  void applyCheckTexture();
   void applyCustomTexture();
   void removeTexture();
-  void resetTransparencyAndTextureForAllVisualizers();
+  void changeShapeColor();
+
 };
 
-#endif
+#endif // VIEWERWIDGET_H

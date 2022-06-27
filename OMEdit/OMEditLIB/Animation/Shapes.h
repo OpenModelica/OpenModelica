@@ -31,30 +31,103 @@
 /*
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
-
 #ifndef SHAPES_H
 #define SHAPES_H
 
-#include "AbstractVisualizers.h"
+#include <iostream>
 
-class ShapeObject : public AbstractVisualizerObject
+#include "util/read_matlab4.h"
+#include "util/read_csv.h"
+#include "rapidxml.hpp"
+#include <osg/Vec3f>
+#include <osg/Matrix>
+#include <osg/Uniform>
+
+#include <QColor>
+
+class ShapeObjectAttribute
 {
-public:
+ public:
+  ShapeObjectAttribute();
+  ShapeObjectAttribute(float value);
+  ~ShapeObjectAttribute() = default;
+  std::string getValueString() const;
+  void setConstValue(float e){exp=e, isConst=true;}
+ public:
+  bool isConst;
+  float exp;
+  std::string cref;
+  unsigned int fmuValueRef;
+};
+
+enum class stateSetAction {update, modify};
+
+class ShapeObject
+{
+ public:
   ShapeObject();
   ~ShapeObject() = default;
   ShapeObject(const ShapeObject&) = default;
   ShapeObject& operator=(const ShapeObject&) = default;
-  void dumpVisualizerAttributes() const override;
-public:
+  void dumpVisAttributes() const;
+  void setTransparency(float transp) {mTransparent = transp;}
+  float getTransparency() {return mTransparent;}
+  void setTextureImagePath(std::string imagePath) {mTextureImagePath = imagePath;}
+  std::string getTextureImagePath() {return mTextureImagePath;}
+  void setColor(QColor col) {_color[0].setConstValue(col.red());
+                             _color[1].setConstValue(col.green());
+                             _color[2].setConstValue(col.blue());}
+  QColor getColor() {return QColor(_color[0].exp, _color[1].exp, _color[2].exp);}
+  void setStateSetAction(stateSetAction action) {mStateSetAction = action;}
+  stateSetAction getStateSetAction() {return mStateSetAction;}
+ public:
+  std::string _id;
   std::string _type;
   std::string _fileName;
-  VisualizerAttribute _rShape[3];
-  VisualizerAttribute _lDir[3];
-  VisualizerAttribute _wDir[3];
-  VisualizerAttribute _length;
-  VisualizerAttribute _width;
-  VisualizerAttribute _height;
-  VisualizerAttribute _extra;
+  ShapeObjectAttribute _length;
+  ShapeObjectAttribute _width;
+  ShapeObjectAttribute _height;
+  ShapeObjectAttribute _r[3];
+  ShapeObjectAttribute _rShape[3];
+  ShapeObjectAttribute _lDir[3];
+  ShapeObjectAttribute _wDir[3];
+  ShapeObjectAttribute _color[3];
+  ShapeObjectAttribute _T[9];
+  ShapeObjectAttribute _specCoeff;
+  osg::Matrix _mat;
+  ShapeObjectAttribute _extra;
+private:
+  float mTransparent;
+  std::string mTextureImagePath;
+  stateSetAction mStateSetAction;
 };
+
+struct rAndT
+{
+    rAndT()
+            : _r(osg::Vec3f()),
+              _T(osg::Matrix3())
+    {
+    }
+    osg::Vec3f _r;
+    osg::Matrix3 _T;
+};
+
+struct Directions
+{
+    Directions()
+            : _lDir(osg::Vec3f()),
+              _wDir(osg::Vec3f())
+    {
+    }
+    osg::Vec3f _lDir;
+    osg::Vec3f _wDir;
+};
+
+ShapeObjectAttribute getObjectAttributeForNode(const rapidxml::xml_node<>* node);
+//double getShapeAttrFMU(const char* attr, rapidxml::xml_node<>* node, double time/*, fmi1_import_t* fmu*/);
+unsigned int numShapes(rapidxml::xml_node<>* rootNode);
+
+
 
 #endif
