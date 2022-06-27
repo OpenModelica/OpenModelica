@@ -268,6 +268,8 @@ set_source_files_properties(${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelic
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS})
 
 target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# OpenSceneGraph does not provide imported targets yet. Add includes manually.
+target_include_directories(OMEditLib PUBLIC ${OPENSCENEGRAPH_INCLUDE_DIRS})
 
 # qmake adds -DUNICODE by defult (As far as I can gather).
 # So add it for CMake as well to avoid having to modify the code.
