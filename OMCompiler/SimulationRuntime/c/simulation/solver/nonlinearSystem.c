@@ -59,12 +59,6 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
 
 extern int init_lambda_steps;
 
-struct dataSolver
-{
-  void* ordinaryData;
-  void* initHomotopyData;
-};
-
 struct dataMixedSolver
 {
   void* newtonHomotopyData;

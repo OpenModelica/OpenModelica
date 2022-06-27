@@ -249,15 +249,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
     int flag = KINSetNumMaxIters(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, nlsData->size * 10);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
-
-    // TODO AHeu: resetKinsolMemory already called in nlsKinsolAllocate
-    //if (gbData->symJacAvailable) {
-    //  resetKinsolMemory(solverData->ordinaryData);
-    //} else {
-    //  resetKinsolMemory(solverData->ordinaryData);
-    //  int flag = KINSetJacFn(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, NULL);
-    //  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
-    //}
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbData->nlsSolverMethod]);
@@ -375,14 +366,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
-    // TODO AHeu: resetKinsolMemory already called by nlsKinsolAllocate
-    //if (gbfData->symJacAvailable) {
-    //  resetKinsolMemory(solverData->ordinaryData);
-    //} else {
-    //  resetKinsolMemory(solverData->ordinaryData);
-    //  int flag = KINSetJacFn(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, NULL);
-    //  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
-    //}
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);

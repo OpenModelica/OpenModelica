@@ -224,7 +224,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   gbfData->errtol = malloc(sizeof(double) * gbData->nStates);
   gbfData->err = malloc(sizeof(double) * gbData->nStates);
   gbfData->ringBufferSize = 4;
-  gbfData->errValues = malloc(sizeof(double) * gbfData->ringBufferSize);
+  gbfData->errValues = calloc(gbfData->ringBufferSize, sizeof(double));
   gbfData->stepSizeValues = malloc(sizeof(double) * gbfData->ringBufferSize);
   gbfData->tv = malloc(sizeof(double) * gbfData->ringBufferSize);
   gbfData->yv = malloc(gbData->nStates*sizeof(double) * gbfData->ringBufferSize);
@@ -236,14 +236,12 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   gbfData->nFastStates_old = gbData->nFastStates;
   for (int i = 0; i < gbData->nStates; i++)
   {
-    gbfData->err[i]=0;
     gbfData->fastStates_old[i] = i;
   }
 
   printButcherTableau(gbfData->tableau);
 
   /* initialize statistic counter */
-  // TODO AHeu: Use calloc instead?
   gbfData->stepsDone = 0;
   gbfData->evalFunctionODE = 0;
   gbfData->evalJacobians = 0;
@@ -262,8 +260,6 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     else
     {
       gbfData->symJacAvailable = TRUE;
-      // TODO AHeu: Is there a reason we get the jacobian again? Did data->callback->initialAnalyticJacobianA change the pointer?
-      // ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
@@ -283,7 +279,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   else
   {
     gbfData->symJacAvailable = FALSE;
-    gbfData->nlsSolverMethod = GB_NLS_UNKNOWN; // TODO AHeu: Add a no-solver option?
+    gbfData->nlsSolverMethod = GB_NLS_UNKNOWN;
     gbfData->nlsData = NULL;
     gbfData->jacobian = NULL;
   }
@@ -434,9 +430,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   if (!gbData->isExplicit)
   {
-    gbData->Jf = malloc(sizeof(double) * gbData->nStates * gbData->nStates);
-    for (int i = 0; i < gbData->nStates * gbData->nStates; i++)
-      gbData->Jf[i] = 0;
+    gbData->Jf = calloc(gbData->nStates * gbData->nStates, sizeof(double));
   }
   else
   {
@@ -446,7 +440,6 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   printButcherTableau(gbData->tableau);
 
   /* initialize statistic counter */
-  // TODO AHeu: Use calloc instead?
   gbData->stepsDone = 0;
   gbData->evalFunctionODE = 0;
   gbData->evalJacobians = 0;
@@ -466,8 +459,6 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     else
     {
       gbData->symJacAvailable = TRUE;
-      // TODO AHeu: Is there a reason we get the jacobian again? Did data->callback->initialAnalyticJacobianA change the pointer?
-      // ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
@@ -494,7 +485,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   else
   {
     gbData->symJacAvailable = FALSE;
-    gbData->nlsSolverMethod = GB_NLS_UNKNOWN; // TODO AHeu: Add a no-solver option?
+    gbData->nlsSolverMethod = GB_NLS_UNKNOWN;
     gbData->nlsData = NULL;
     gbData->jacobian = NULL;
   }
@@ -916,7 +907,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         ((DATA_NEWTON *)solverData->ordinaryData)->n = gbData->nFastStates;
         break;
       case RK_NLS_KINSOL:
-        // TODO AHeu: Can we resolve this free & alloc thing?
         nlsKinsolFree(solverData->ordinaryData);
         /* Set NLS user data */
         NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
@@ -1242,7 +1232,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
  * @brief Generic Runge-Kutta step.
  *
  * Do one Runge-Kutta integration step.
- * has step-size control and event handling.
+ * Has step-size control and event handling.
  *
  * @param data          Runtime data struct.
  * @param threadData    Thread data for error handling.

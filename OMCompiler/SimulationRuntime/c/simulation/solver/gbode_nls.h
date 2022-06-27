@@ -35,19 +35,13 @@
 #define GBODE_NLS_H
 
 #include "simulation_data.h"
+#include "nonlinearSystem.h"
 
 #include "gbode_main.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// TODO AHeu: Don't define struct dataSolver here
-struct dataSolver
-{
-  void* ordinaryData;
-  void* initHomotopyData;
-};
 
 void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
 

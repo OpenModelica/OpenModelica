@@ -57,9 +57,18 @@ typedef struct NLS_USERDATA {
   NONLINEAR_SYSTEM_DATA* nlsData;       /* Pointer to nonlinear system data */
   ANALYTIC_JACOBIAN* analyticJacobian;  /* Pointer to analytic Jacobian */
 
-  void* solverData; /* Optional pointer to ODE solver data.
-                     * Used in NLS solving of ODE integrator step. */
+  void* solverData;                     /* Optional pointer to ODE solver data.
+                                         * Used in NLS solving of ODE integrator step. */
 } NLS_USERDATA;
+
+/**
+ * @brief Store primary and secondary solvers in single NLS_USERDATA->solverData
+ */
+struct dataSolver
+{
+  void* ordinaryData;
+  void* initHomotopyData;
+};
 
 void cleanUpOldValueListAfterEvent(DATA *data, double time);
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData);
