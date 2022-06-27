@@ -31,6 +31,7 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
+#include <QOpenGLContext> // must be first include to fix undefined GLDEBUGPROC
 #include <osg/MatrixTransform>
 #include <osg/Vec3>
 #include <osgDB/ReadFile>
