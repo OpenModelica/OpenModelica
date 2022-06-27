@@ -13,7 +13,7 @@ model FuncBuiltinMax
   Real r2 = max({3.0, 1.0, 2.0});
   Real r3 = max(r1, r2);
   Real r4 = max(1, r2);
-  Real r5 = max(zeros(0));
+  Real r5 = max(fill(0.0,0));
 
   Integer i1 = max(5, 6);
   Integer i2 = max({4, 2, 1});
@@ -37,11 +37,11 @@ end FuncBuiltinMax;
 //   Real r2 = 3.0;
 //   Real r3 = max(r1, r2);
 //   Real r4 = max(1.0, r2);
-//   Real r5 = -4.611686018427388e+18;
+//   Real r5 = -8.777798510069901e+304;
 //   Integer i1 = 6;
 //   Integer i2 = 4;
 //   Integer i3 = max(i2, i1);
-//   Integer i4 = -4611686018427387903;
+//   Integer i4 = -1073741823;
 //   Boolean b1 = true;
 //   Boolean b2 = true;
 //   Boolean b3 = max(b1, b2);

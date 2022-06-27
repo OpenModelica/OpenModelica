@@ -25,7 +25,7 @@ end FuncBuiltinMax2;
 // Result:
 // class FuncBuiltinMax2
 //   Real r2 = -8.777798510069901e+304;
-//   Integer i2 = -4611686018427387903;
+//   Integer i2 = -1073741823;
 //   Boolean b2 = false;
 //   enumeration(one, two, three) e2 = E.one;
 // end FuncBuiltinMax2;

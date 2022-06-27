@@ -136,7 +136,7 @@ void dumpInitialSolution(DATA *simData)
   {
     infoStreamPrint(LOG_SOTI, 1, "integer variables");
     for(i=0; i<mData->nVariablesInteger; ++i)
-      infoStreamPrint(LOG_SOTI, 0, "[%ld] Integer %s(start=%ld) = %ld (pre: %ld)", i+1,
+      infoStreamPrint(LOG_SOTI, 0, "[%ld] Integer %s(start=%d) = %d (pre: %d)", i+1,
                                    mData->integerVarsData[i].info.name,
                                    mData->integerVarsData[i].attribute.start,
                                    simData->localData[0]->integerVars[i],
@@ -620,7 +620,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->integerParameterData[i].attribute.start = (modelica_integer)value;
         data->simulationInfo->integerParameter[i] = (modelica_integer)value;
-        infoStreamPrint(LOG_INIT_V, 0, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+        infoStreamPrint(LOG_INIT_V, 0, "| %s(start=%d)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
       } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
       }

@@ -90,8 +90,8 @@ typedef int mmc_sint_t;
 #define OMC_INT_FORMAT "%*lld"
 #else
 #define modelica_div_integer ldiv
-#define OMC_INT_FORMAT_LEFT_JUSTIFIED "%-*ld"
-#define OMC_INT_FORMAT "%*ld"
+#define OMC_INT_FORMAT_LEFT_JUSTIFIED "%-*d"
+#define OMC_INT_FORMAT "%*d"
 #endif
 
 typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
@@ -103,11 +103,12 @@ pointers, some changes need to be done to code generation */
 typedef void* modelica_fnptr;
 
 typedef double modelica_real;
-typedef mmc_sint_t modelica_integer;
+typedef mmc_sint_t meta_modelica_integer;
+typedef int modelica_integer;
 typedef signed char modelica_boolean;
 /* When MetaModelica grammar is enabled, all strings are boxed */
 typedef modelica_metatype modelica_string;
-typedef mmc_sint_t         _index_t;
+typedef modelica_integer _index_t;
 
 #ifndef FALSE
 #define FALSE 0
