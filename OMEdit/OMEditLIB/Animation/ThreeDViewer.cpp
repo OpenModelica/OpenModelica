@@ -32,7 +32,7 @@
  */
 
 #include "ThreeDViewer.h"
-#include "Visualization.h"
+#include "Visualizer.h"
 
 /*!
  * \class ThreeDViewer
@@ -53,8 +53,8 @@ ThreeDViewer::ThreeDViewer(QWidget *pParent)
  */
 ThreeDViewer::~ThreeDViewer()
 {
-  if (mpVisualization) {
-    delete mpVisualization;
+  if (mpVisualizer) {
+    delete mpVisualizer;
   }
 }
 

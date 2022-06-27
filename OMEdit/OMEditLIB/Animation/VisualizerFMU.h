@@ -32,31 +32,46 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#ifndef VISUALIZATIONMAT_H
-#define VISUALIZATIONMAT_H
 
-#include "Visualization.h"
-#include "util/read_matlab4.h"
+#ifndef VISUALIZERFMU_H
+#define VISUALIZERFMU_H
 
-class VisualizationMAT : public VisualizationAbstract
+#include "Visualizer.h"
+#include "FMUWrapper.h"
+#include "Shapes.h"
+#include "TimeManager.h"
+
+class VisualizerFMU : public VisualizerAbstract
 {
-public:
-  VisualizationMAT() = delete;
-  VisualizationMAT(const std::string& fileName, const std::string& path);
-  ~VisualizationMAT();
-  VisualizationMAT(const VisualizationMAT& omvm) = delete;
-  VisualizationMAT& operator=(const VisualizationMAT& omvm) = delete;
+ public:
+  VisualizerFMU() = delete;
+  VisualizerFMU(const std::string& modelFile, const std::string& path);
+  ~VisualizerFMU();
+  VisualizerFMU(const VisualizerFMU& omvf) = delete;
+  VisualizerFMU& operator=(const VisualizerFMU& omvf) = delete;
+
+  void allocateContext(const std::string& modelFile, const std::string& path);
+  void loadFMU(const std::string& modelFile, const std::string& path);
   void initData() override;
-  void initializeVisAttributes(const double time = -1.0) override;
-  void readMat(const std::string& modelFile, const std::string& path);
-  void setSimulationSettings(const UserSimSettingsMAT& simSetMAT);
-  void simulate(TimeManager& omvm) override {Q_UNUSED(omvm);}
+  void initializeVisAttributes(const double time = 0.0) override;
+  unsigned int getVarReferencesForObjectAttribute(ShapeObjectAttribute* attr);
+  int setVarReferencesInVisAttributes();
+  void simulate(TimeManager& omvm) override;
+  double simulateStep(const double time);
+  void updateSystem();
   void updateVisAttributes(const double time) override;
-  void updateScene(const double time) override;
-  void updateVisualizerAttributeMAT(VisualizerAttribute& attr, double time);
-  double omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time);
-private:
-  ModelicaMatReader _matReader;
+  void updateScene(const double time = 0.0) override;
+  void updateObjectAttributeFMU(ShapeObjectAttribute* attr, FMUWrapperAbstract* fmuWrapper);
+  void setSimulationSettings(double stepsize, Solver solver, bool iterateEvents);
+  FMUWrapperAbstract* getFMU();
+
+ private:
+  std::shared_ptr<fmi_import_context_t> mpContext;
+  jm_callbacks mCallbacks;
+  fmi_version_enu_t mVersion;
+  FMUWrapperAbstract* mpFMU;
+  std::shared_ptr<SimSettingsFMU> mpSimSettings;
 };
 
-#endif // VISUALIZATIONMAT_H
+
+#endif // end VISUALIZERFMU_H
