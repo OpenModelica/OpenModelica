@@ -446,6 +446,10 @@ algorithm
         else expandClassDerived(def, cdef, node, info);
       end match;
 
+    // Overloaded functions are normally handled separately in Function, but we might
+    // get here through e.g. the interactive API. In that case just ignore them.
+    case SCode.OVERLOAD() then node;
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown class:\n" + SCodeDump.unparseElementStr(def), sourceInfo());
