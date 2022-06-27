@@ -31,20 +31,20 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef VISUALIZATIONCSV_H
-#define VISUALIZATIONCSV_H
+#ifndef VISUALIZERCSV_H
+#define VISUALIZERCSV_H
 
-#include "Visualization.h"
+#include "Visualizer.h"
 #include "util/read_csv.h"
 
-class VisualizationCSV : public VisualizationAbstract
+class VisualizerCSV : public VisualizerAbstract
 {
 public:
-  VisualizationCSV() = delete;
-  VisualizationCSV(const std::string& fileName, const std::string& path);
-  ~VisualizationCSV();
-  VisualizationCSV(const VisualizationCSV& omvm) = delete;
-  VisualizationCSV& operator=(const VisualizationCSV& omvm) = delete;
+  VisualizerCSV() = delete;
+  VisualizerCSV(const std::string& fileName, const std::string& path);
+  ~VisualizerCSV();
+  VisualizerCSV(const VisualizerCSV& omvm) = delete;
+  VisualizerCSV& operator=(const VisualizerCSV& omvm) = delete;
   void initData() override;
   void initializeVisAttributes(const double time = -1.0) override;
   void readCSV(const std::string& modelFile, const std::string& path);
@@ -57,4 +57,4 @@ private:
   csv_data *mpCSVData;
 };
 
-#endif // VISUALIZATIONCSV_H
+#endif // VISUALIZERCSV_H

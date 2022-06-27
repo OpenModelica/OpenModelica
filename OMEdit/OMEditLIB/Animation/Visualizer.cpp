@@ -32,7 +32,7 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#include "Visualization.h"
+#include "Visualizer.h"
 
 #if (QT_VERSION < QT_VERSION_CHECK(5, 2, 0))
 #include <QGLWidget>
@@ -259,10 +259,10 @@ void OMVisualBase::appendVisVariable(const rapidxml::xml_node<>* node, std::vect
 
 
 ///--------------------------------------------------///
-///ABSTRACT VISUALIZATION CLASS----------------------///
+///ABSTRACT VISUALIZER CLASS-------------------------///
 ///--------------------------------------------------///
 
-VisualizationAbstract::VisualizationAbstract()
+VisualizerAbstract::VisualizerAbstract()
   : _visType(VisType::NONE),
     mpOMVisualBase(nullptr),
     mpOMVisScene(nullptr),
@@ -271,7 +271,7 @@ VisualizationAbstract::VisualizationAbstract()
   mpTimeManager = new TimeManager(0.0, 0.0, 1.0, 0.0, 0.1, 0.0, 1.0);
 }
 
-VisualizationAbstract::VisualizationAbstract(const std::string& modelFile, const std::string& path, const VisType visType)
+VisualizerAbstract::VisualizerAbstract(const std::string& modelFile, const std::string& path, const VisType visType)
   : _visType(visType),
     mpOMVisualBase(nullptr),
     mpOMVisScene(new OMVisScene()),
@@ -282,12 +282,12 @@ VisualizationAbstract::VisualizationAbstract(const std::string& modelFile, const
   mpOMVisScene->getScene().setPath(path);
 }
 
-void VisualizationAbstract::initData()
+void VisualizerAbstract::initData()
 {
   mpOMVisualBase->initVisObjects();
 }
 
-void VisualizationAbstract::initVisualization()
+void VisualizerAbstract::initVisualization()
 {
   initializeVisAttributes(mpTimeManager->getStartTime());
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
@@ -295,12 +295,12 @@ void VisualizationAbstract::initVisualization()
   mpTimeManager->setPause(true);
 }
 
-TimeManager* VisualizationAbstract::getTimeManager() const
+TimeManager* VisualizerAbstract::getTimeManager() const
 {
   return mpTimeManager;
 }
 
-void VisualizationAbstract::modifyVisualizer(const std::string& visualizerName)
+void VisualizerAbstract::modifyVisualizer(const std::string& visualizerName)
 {
   int visualizerIdx = getBaseData()->getVisualizerObjectIndexByID(visualizerName);
   AbstractVisualizerObject* visualizer = getBaseData()->getVisualizerObjectByID(visualizerName);
@@ -312,7 +312,7 @@ void VisualizationAbstract::modifyVisualizer(const std::string& visualizerName)
 }
 
 
-void VisualizationAbstract::sceneUpdate()
+void VisualizerAbstract::sceneUpdate()
 {
   //measure realtime
   mpTimeManager->updateTick();
@@ -338,35 +338,35 @@ void VisualizationAbstract::sceneUpdate()
   }
 }
 
-void VisualizationAbstract::setUpScene()
+void VisualizerAbstract::setUpScene()
 {
   // Build scene graph.
   mpOMVisScene->getScene().setUpScene(mpOMVisualBase->_shapes);
 }
 
-VisType VisualizationAbstract::getVisType() const
+VisType VisualizerAbstract::getVisType() const
 {
   return _visType;
 }
 
-OMVisualBase* VisualizationAbstract::getBaseData() const
+OMVisualBase* VisualizerAbstract::getBaseData() const
 {
   return mpOMVisualBase;
 }
 
 
 
-OMVisScene* VisualizationAbstract::getOMVisScene() const
+OMVisScene* VisualizerAbstract::getOMVisScene() const
 {
   return mpOMVisScene;
 }
 
-std::string VisualizationAbstract::getModelFile() const
+std::string VisualizerAbstract::getModelFile() const
 {
   return mpOMVisualBase->getModelFile();
 }
 
-void VisualizationAbstract::startVisualization()
+void VisualizerAbstract::startVisualization()
 {
   if (mpTimeManager->getVisTime() < mpTimeManager->getEndTime() - 1.e-6) {
     mpTimeManager->setPause(false);
@@ -377,7 +377,7 @@ void VisualizationAbstract::startVisualization()
   }
 }
 
-void VisualizationAbstract::pauseVisualization()
+void VisualizerAbstract::pauseVisualization()
 {
   mpTimeManager->setPause(true);
 }

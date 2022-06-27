@@ -35,7 +35,7 @@
 #ifndef FMU_SETTINGS_WINDOW_H
 #define FMU_SETTINGS_WINDOW_H
 
-#include "VisualizationFMU.h"
+#include "VisualizerFMU.h"
 
 #include <QDialog>
 #include <QLineEdit>
@@ -49,9 +49,9 @@ class FMUSettingsDialog : public QDialog
 {
   Q_OBJECT
 public:
-  FMUSettingsDialog(QWidget *pParent, VisualizationFMU *pVisualizationFMU);
+  FMUSettingsDialog(QWidget *pParent, VisualizerFMU *pVisualizerFMU);
 private:
-  VisualizationFMU *mpVisualizationFMU;
+  VisualizerFMU *mpVisualizerFMU;
   double mStepSize;
   double mRenderFreq;
   bool mHandleEvents;

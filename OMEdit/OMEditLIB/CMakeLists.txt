@@ -123,14 +123,14 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/AnimationWindow.cpp
                       Animation/ThreeDViewer.cpp
                       Animation/ExtraShapes.cpp
-                      Animation/Visualization.cpp
-                      Animation/VisualizationMAT.cpp
-                      Animation/VisualizationCSV.cpp
-                      Animation/VisualizationFMU.cpp
+                      Animation/Visualizer.cpp
+                      Animation/VisualizerMAT.cpp
+                      Animation/VisualizerCSV.cpp
+                      Animation/VisualizerFMU.cpp
                       Animation/FMUSettingsDialog.cpp
                       Animation/FMUWrapper.cpp
-                      Animation/AbstractVisualizer.cpp
-                      Animation/Shape.cpp
+                      Animation/AbstractVisualizers.cpp
+                      Animation/Shapes.cpp
                       resource_omedit.qrc)
 
 
@@ -244,14 +244,14 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Animation/ThreeDViewer.h
                       Animation/AnimationUtil.h
                       Animation/ExtraShapes.h
-                      Animation/Visualization.h
-                      Animation/VisualizationMAT.h
-                      Animation/VisualizationCSV.h
-                      Animation/VisualizationFMU.h
+                      Animation/Visualizer.h
+                      Animation/VisualizerMAT.h
+                      Animation/VisualizerCSV.h
+                      Animation/VisualizerFMU.h
                       Animation/FMUSettingsDialog.h
                       Animation/FMUWrapper.h
-                      Animation/AbstractVisualizer.h
-                      Animation/Shape.h
+                      Animation/AbstractVisualizers.h
+                      Animation/Shapes.h
                       Animation/rapidxml.hpp)
 
 

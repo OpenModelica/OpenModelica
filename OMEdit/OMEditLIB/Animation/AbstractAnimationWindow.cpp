@@ -41,9 +41,9 @@
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "ViewerWidget.h"
-#include "Visualization.h"
-#include "VisualizationMAT.h"
-#include "VisualizationCSV.h"
+#include "Visualizer.h"
+#include "VisualizerMAT.h"
+#include "VisualizerCSV.h"
 
 /*!
  * \class AbstractAnimationWindow
@@ -58,7 +58,7 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
 //    osgViewer::CompositeViewer(),
     mPathName(""),
     mFileName(""),
-    mpVisualization(nullptr),
+    mpVisualizer(nullptr),
     mpViewerWidget(nullptr),
     mpAnimationToolBar(new QToolBar(QString("Animation Toolbar"),this)),
     mpAnimationParameterDockerWidget(new QDockWidget(QString("Parameter Settings"),this)),
@@ -125,7 +125,7 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName, bool stashCame
       mpAnimationSlider->blockSignals(state);
       mpSpeedComboBox->setEnabled(true);
       mpTimeTextBox->setEnabled(true);
-      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getStartTime()));
+      mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
       /* Only use isometric view as default for csv file type.
        * Otherwise use side view as default which suits better for Modelica models.
        */
@@ -236,8 +236,8 @@ void AbstractAnimationWindow::createActions()
  */
 void AbstractAnimationWindow::updateControlPanelValues()
 {
-  if (getVisualization()) {
-    VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
+  if (getVisualizer()) {
+    VisualizerFMU* FMUvis = dynamic_cast<VisualizerFMU*>(mpVisualizer);
     for (int stateIdx = 0; stateIdx < mSpinBoxVector.size(); stateIdx++) {
       mStateLabels.at(stateIdx)->setText(QString::number(FMUvis->getFMU()->getFMUData()->_states[stateIdx]));
     }
@@ -249,8 +249,8 @@ void AbstractAnimationWindow::updateControlPanelValues()
  */
 void AbstractAnimationWindow::initInteractiveControlPanel()
 {
-  if (getVisualization()) {
-    VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
+  if (getVisualizer()) {
+    VisualizerFMU* FMUvis = dynamic_cast<VisualizerFMU*>(mpVisualizer);
     QWidget *widget = new QWidget(this);
     mSpinBoxVector.clear();
     mStateLabels.clear();
@@ -333,7 +333,7 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
 void AbstractAnimationWindow::setStateSolveSystem(double val, int idx)
 {
   if (idx>=0) {
-    VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
+    VisualizerFMU* FMUvis = dynamic_cast<VisualizerFMU*>(mpVisualizer);
     if (FMUvis) {
       FMUvis->getFMU()->getFMUData()->_states[idx] = val;
     }
@@ -396,31 +396,31 @@ bool AbstractAnimationWindow::loadVisualization()
                                                           Helper::errorLevel));
     return false;
   } else {
-    //init visualization
+    //init visualizer
     if (visType == VisType::MAT) {
-      mpVisualization = new VisualizationMAT(mFileName, mPathName);
+      mpVisualizer = new VisualizerMAT(mFileName, mPathName);
     } else if (visType == VisType::CSV) {
-      mpVisualization = new VisualizationCSV(mFileName, mPathName);
+      mpVisualizer = new VisualizerCSV(mFileName, mPathName);
     } else if (visType == VisType::FMU) {
-      mpVisualization = new VisualizationFMU(mFileName, mPathName);
+      mpVisualizer = new VisualizerFMU(mFileName, mPathName);
     } else {
       QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::errorLevel));
       return false;
     }
-    connect(mpVisualization->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
-    mpVisualization->initData();
-    mpVisualization->setUpScene();
-    mpVisualization->initVisualization();
+    connect(mpVisualizer->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
+    mpVisualizer->initData();
+    mpVisualizer->setUpScene();
+    mpVisualizer->initVisualization();
     //add scene for the chosen visualization
-    mpViewerWidget->getSceneView()->setSceneData(mpVisualization->getOMVisScene()->getScene().getRootNode());
+    mpViewerWidget->getSceneView()->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
   }
   //add window title
   setWindowTitle(QString::fromStdString(mFileName));
   //open settings dialog for FMU simulation
   if (visType == VisType::FMU) {
-    openFMUSettingsDialog(dynamic_cast<VisualizationFMU*>(mpVisualization));
+    openFMUSettingsDialog(dynamic_cast<VisualizerFMU*>(mpVisualizer));
     mpInteractiveControlAction->setEnabled(true);
     initInteractiveControlPanel();
   }
@@ -528,11 +528,11 @@ double AbstractAnimationWindow::computeDistanceToOrigin()
 /*!
  * \brief AbstractAnimationWindow::openFMUSettingsDialog
  * Opens a dialog to set the settings for the FMU visualization
- * \param pVisualizationFMU
+ * \param pVisualizerFMU
  */
-void AbstractAnimationWindow::openFMUSettingsDialog(VisualizationFMU* pVisualizationFMU)
+void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* pVisualizerFMU)
 {
-  FMUSettingsDialog *pFMUSettingsDialog = new FMUSettingsDialog(this, pVisualizationFMU);
+  FMUSettingsDialog *pFMUSettingsDialog = new FMUSettingsDialog(this, pVisualizerFMU);
   pFMUSettingsDialog->exec();
 }
 
@@ -542,13 +542,13 @@ void AbstractAnimationWindow::openFMUSettingsDialog(VisualizationFMU* pVisualiza
  */
 void AbstractAnimationWindow::updateScene()
 {
-  if (mpVisualization) {
+  if (mpVisualizer) {
     //set time label
-    if (!mpVisualization->getTimeManager()->isPaused()) {
-      mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+    if (!mpVisualizer->getTimeManager()->isPaused()) {
+      mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
       // set time slider
-      if (mpVisualization->getVisType() != VisType::FMU) {
-        int time = mpVisualization->getTimeManager()->getTimeFraction();
+      if (mpVisualizer->getVisType() != VisType::FMU) {
+        int time = mpVisualizer->getTimeManager()->getTimeFraction();
         bool state = mpAnimationSlider->blockSignals(true);
         mpAnimationSlider->setValue(time);
         mpAnimationSlider->blockSignals(state);
@@ -556,7 +556,7 @@ void AbstractAnimationWindow::updateScene()
     }
 
     //update the scene
-    mpVisualization->sceneUpdate();
+    mpVisualizer->sceneUpdate();
     mpViewerWidget->update();
 
     updateControlPanelValues();
@@ -583,11 +583,11 @@ void AbstractAnimationWindow::chooseAnimationFileSlotFunction()
  */
 void AbstractAnimationWindow::initSlotFunction()
 {
-  mpVisualization->initVisualization();
+  mpVisualizer->initVisualization();
   bool state = mpAnimationSlider->blockSignals(true);
   mpAnimationSlider->setValue(0);
   mpAnimationSlider->blockSignals(state);
-  mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
+  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
   mpViewerWidget->update();
   updateControlPanelValues();
 }
@@ -598,7 +598,7 @@ void AbstractAnimationWindow::initSlotFunction()
  */
 void AbstractAnimationWindow::playSlotFunction()
 {
-  mpVisualization->getTimeManager()->setPause(false);
+  mpVisualizer->getTimeManager()->setPause(false);
 }
 
 /*!
@@ -607,7 +607,7 @@ void AbstractAnimationWindow::playSlotFunction()
  */
 void AbstractAnimationWindow::pauseSlotFunction()
 {
-  mpVisualization->getTimeManager()->setPause(true);
+  mpVisualizer->getTimeManager()->setPause(true);
 }
 
 /*!
@@ -617,7 +617,7 @@ void AbstractAnimationWindow::pauseSlotFunction()
  */
 void AbstractAnimationWindow::repeatSlotFunciton(bool checked)
 {
-  mpVisualization->getTimeManager()->setRepeat(checked);
+  mpVisualizer->getTimeManager()->setRepeat(checked);
 }
 
 /*!
@@ -626,12 +626,12 @@ void AbstractAnimationWindow::repeatSlotFunciton(bool checked)
  */
 void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
 {
-  float time = (mpVisualization->getTimeManager()->getEndTime()
-                - mpVisualization->getTimeManager()->getStartTime())
+  float time = (mpVisualizer->getTimeManager()->getEndTime()
+                - mpVisualizer->getTimeManager()->getStartTime())
       * (float) (value / (float)mSliderRange);
-  mpVisualization->getTimeManager()->setVisTime(time);
-  mpTimeTextBox->setText(QString::number(mpVisualization->getTimeManager()->getVisTime()));
-  mpVisualization->updateScene(time);
+  mpVisualizer->getTimeManager()->setVisTime(time);
+  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+  mpVisualizer->updateScene(time);
   mpViewerWidget->update();
 }
 
@@ -643,8 +643,8 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
 {
   QString str = mpTimeTextBox->text();
   bool isFloat = true;
-  double start = mpVisualization->getTimeManager()->getStartTime();
-  double end = mpVisualization->getTimeManager()->getEndTime();
+  double start = mpVisualizer->getTimeManager()->getStartTime();
+  double end = mpVisualizer->getTimeManager()->getEndTime();
   double value = str.toFloat(&isFloat);
   if (isFloat && value >= 0.0) {
     if (value < start) {
@@ -652,11 +652,11 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
     } else if (value > end) {
       value = end;
     }
-    mpVisualization->getTimeManager()->setVisTime(value);
+    mpVisualizer->getTimeManager()->setVisTime(value);
     bool state = mpAnimationSlider->blockSignals(true);
-    mpAnimationSlider->setValue(mpVisualization->getTimeManager()->getTimeFraction());
+    mpAnimationSlider->setValue(mpVisualizer->getTimeManager()->getTimeFraction());
     mpAnimationSlider->blockSignals(state);
-    mpVisualization->updateScene(value);
+    mpVisualizer->updateScene(value);
     mpViewerWidget->update();
   }
 }
@@ -671,7 +671,7 @@ void AbstractAnimationWindow::setSpeedSlotFunction()
   bool isFloat = true;
   double value = str.toFloat(&isFloat);
   if (isFloat && value > 0.0) {
-    mpVisualization->getTimeManager()->setSpeedUp(value);
+    mpVisualizer->getTimeManager()->setSpeedUp(value);
     mpViewerWidget->update();
   }
 }

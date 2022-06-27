@@ -32,7 +32,7 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#include "Shape.h"
+#include "Shapes.h"
 
 ShapeObject::ShapeObject()
     : AbstractVisualizerObject(VisualizerType::shape),
