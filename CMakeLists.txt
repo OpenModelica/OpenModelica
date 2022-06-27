@@ -28,6 +28,7 @@ include(cmake/omc_check_exists.cmake)
 # well as linux. See the file for more info.
 include(cmake/OMCPThreads.cmake)
 
+omc_add_to_report(CMAKE_VERSION)
 # Add the compiler ids to the report for convenience.
 omc_add_to_report(CMAKE_C_COMPILER_ID)
 omc_add_to_report(CMAKE_CXX_COMPILER_ID)
