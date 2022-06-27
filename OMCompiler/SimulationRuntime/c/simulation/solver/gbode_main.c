@@ -921,7 +921,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         /* Set NLS user data */
         NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
         nlsUserData->solverData = (void*) gbfData;
-        solverData->ordinaryData = (void *)nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData);
+        solverData->ordinaryData = (void *)nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData, FALSE);
         //resetKinsolMemory(solverData->ordinaryData, gbfData->nlsData);
         break;
       default:

@@ -539,7 +539,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
       solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
-      nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData);
+      nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData, TRUE);
       solverData->ordinaryData = nonlinsys->solverData;
     }
     nonlinsys->solverData = (void*) solverData;

@@ -72,6 +72,7 @@ typedef struct NLS_KINSOL_DATA {
                                           underlying linear problem */
   int kinsolStrategy;                  /* Strategy used to solve nonlinear systems. Has to be one
                                           of: KIN_NONE, KIN_LINESEARCH, KIN_FP, KIN_PICARD */
+  modelica_boolean attemptRetry;       /* True if KINSOL should retry with different settings after solution failed.*/
   int retries;                         /* Number of retries after failed solve of KINSOL */
   NLS_SOLVER_STATUS solved;            /* If the system is once solved reuse linear matrix information */
   int nominalJac;                      /* 0/1 for disabled/enabled scaling on Jacobian */
@@ -112,7 +113,7 @@ typedef struct NLS_KINSOL_DATA {
 
 } NLS_KINSOL_DATA;
 
-NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData);
+NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry);
 void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData);
 NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 
