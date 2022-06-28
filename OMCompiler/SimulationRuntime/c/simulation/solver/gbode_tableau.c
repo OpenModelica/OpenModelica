@@ -1063,30 +1063,44 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau) {
 /**
  * @brief Print given Butcher tableau
  *
+ * Prints into LOG_SOLVER stream if it is active.
+ * c | A
+ * --|---
+ *   | b
+ *   | b^t
+ *
  * @param tableau   Butcher tableau.
  */
 void printButcherTableau(BUTCHER_TABLEAU* tableau) {
-  int i, j;
-  char Butcher_row[1024];
-  infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of gbode method:");
-  for (i = 0; i<tableau->nStages; i++) {
-    // TODO AHeu: Use snprintf instead of sprintf
-    sprintf(Butcher_row, "%10g | ", tableau->c[i]);
-    for (j = 0; j<tableau->nStages; j++) {
-      sprintf(Butcher_row, "%s %10g", Butcher_row, tableau->A[i*tableau->nStages + j]);
+  if (useStream[LOG_SOLVER]) {
+    int i, j;
+    char buffer[1024];
+    int buffSize = 1024;
+    int ct;
+    const char* line = "----------";
+    infoStreamPrint(LOG_SOLVER, 1, "Butcher tableau of gbode method:");
+    for (i = 0; i<tableau->nStages; i++) {
+      ct = snprintf(buffer, buffSize, "%10g | ", tableau->c[i]);
+      for (j = 0; j<tableau->nStages; j++) {
+        ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->A[i*tableau->nStages + j]);
+      }
+      infoStreamPrint(LOG_SOLVER, 0, "%s", buffer);
     }
-    infoStreamPrint(LOG_SOLVER, 0, "%s", Butcher_row);
+    ct = snprintf(buffer, buffSize, "%s | ", line);
+      for (j = 0; j<tableau->nStages; j++) {
+        ct += snprintf(buffer+ct, buffSize, "%s", line);
+      }
+    infoStreamPrint(LOG_SOLVER, 0, "%s", buffer);
+    ct = snprintf(buffer, buffSize, "%10s | ", "");
+    for (j = 0; j<tableau->nStages; j++) {
+      ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->b[j]);
+    }
+    infoStreamPrint(LOG_SOLVER, 0, "%s", buffer);
+    ct = snprintf(buffer, buffSize, "%10s | ", "");
+    for (j = 0; j<tableau->nStages; j++) {
+      ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->bt[j]);
+    }
+    infoStreamPrint(LOG_SOLVER, 0, "%s", buffer);
+    messageClose(LOG_SOLVER);
   }
-  infoStreamPrint(LOG_SOLVER, 0, "------------------------------------------------");
-  sprintf(Butcher_row, "%10s | ", "");
-  for (j = 0; j<tableau->nStages; j++) {
-    sprintf(Butcher_row, "%s %10g", Butcher_row, tableau->b[j]);
-  }
-  infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
-  sprintf(Butcher_row, "%10s | ", "");
-  for (j = 0; j<tableau->nStages; j++) {
-    sprintf(Butcher_row, "%s %10g", Butcher_row, tableau->bt[j]);
-  }
-  infoStreamPrint(LOG_SOLVER, 0, "%s",Butcher_row);
-  messageClose(LOG_SOLVER);
 }
