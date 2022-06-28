@@ -10,6 +10,7 @@ GetModelInstanceConnection1.mos \
 GetModelInstanceDuplicate1.mos \
 GetModelInstanceExp1.mos \
 GetModelInstanceExtends1.mos \
+GetModelInstanceInnerOuter1.mos \
 GetModelInstanceReplaceable1.mos \
 
 
