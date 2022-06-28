@@ -136,13 +136,14 @@ algorithm
 
   // ticket #9036
   // propagate record bindings from attributes to their parent record types in all crefs of all equations O(n)
+
+  // 1. collect bindings
   map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
   _ := List.map(varlst, function collectRecordElementBindings(map = map));
   _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map));
   _ := List.map(extvarlst, function collectRecordElementBindings(map = map));
 
-  print(UnorderedMap.toString(map, ComponentReference.crefStr, Types.printTypeStr) + "\n");
-  //print(UnorderedMap.toString(map, ComponentReference.crefStr, Types.unparseType) + "\n");
+  // 2. apply bindings in exp types
   eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
   reqns := List.map(reqns, function updateRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function updateRecordTypesEqn(map = map));
@@ -238,9 +239,12 @@ function updateRecordElementBinding
   input output DAE.Var var;
   input DAE.Exp binding;
   input String name;
+protected
+  DAE.Const const;
 algorithm
   if var.name == name then
-    var.binding := DAE.EQBOUND(binding, NONE(), DAE.C_UNKNOWN(), DAE.BINDING_FROM_DERIVED_RECORD_DECL());
+    const := if Expression.isConst(binding) then DAE.C_CONST() else DAE.C_VAR();
+    var.binding := DAE.EQBOUND(binding, NONE(), const, DAE.BINDING_FROM_DERIVED_RECORD_DECL());
   end if;
 end updateRecordElementBinding;
 
