@@ -878,7 +878,7 @@ protected
   list<InstanceTree> exts, components;
   array<InstNode> ext_nodes;
 algorithm
-  cls := InstNode.getClass(node);
+  cls := InstNode.getClass(InstNode.resolveInner(node));
 
   if Class.isBuiltin(cls) then
     tree := InstanceTree.EMPTY();
@@ -928,6 +928,7 @@ protected
   JSON j;
 algorithm
   InstanceTree.CLASS(node = node, exts = exts, components = comps) := tree;
+  node := InstNode.resolveInner(node);
   cmt := SCodeUtil.getElementComment(InstNode.definition(node));
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
@@ -1002,7 +1003,7 @@ protected
   InstanceTree cls;
 algorithm
   InstanceTree.COMPONENT(node = node, cls = cls) := component;
-  node := InstNode.resolveOuter(node);
+  node := InstNode.resolveInner(node);
   comp := InstNode.component(node);
   elem := InstNode.definition(node);
 
