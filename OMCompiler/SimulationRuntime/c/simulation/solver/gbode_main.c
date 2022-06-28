@@ -834,7 +834,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
         nlsUserData->solverData = (void*) gbfData;
         solverData->ordinaryData = (void *)nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData, FALSE);
-        //resetKinsolMemory(solverData->ordinaryData, gbfData->nlsData);
         break;
       default:
         errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
@@ -868,6 +867,12 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     // Synchronize inner integration with outer integration
     if (gbfData->time + gbfData->stepSize > gbData->timeRight) {
+      // gbData->time = gbfData->time;
+      // gbData->timeRight = gbfData->time;
+      // gbData->lastStepSize = gbData->timeRight - gbData->timeLeft;
+      // gbData->stepsize = gbData->lastStepSize;
+      // messageClose(LOG_SOLVER);
+      // return 0;
       gbfData->stepSize = gbData->timeRight - gbfData->time;
     }
 
