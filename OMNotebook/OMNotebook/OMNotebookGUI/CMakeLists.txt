@@ -102,7 +102,7 @@ target_link_libraries(OMNotebook PUBLIC OpenModelicaCompiler)
 
 
 install(TARGETS OMNotebook
-        BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
+        BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
 
 install(FILES stylesheet.xml
               commands.xml
