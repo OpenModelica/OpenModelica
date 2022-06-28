@@ -46,16 +46,16 @@
  *
  * Returns RK_UNKNOWN if flag is not known.
  *
- * @param flagValue                     FLAG_SR for single-rate method.
+ * @param flag                          FLAG_SR for single-rate method.
  *                                      FLAG_MR for multi-rate method.
  * @return enum GB_SINGLERATE_METHOD    Runge-Kutta method.
  */
-enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flagValue) {
+enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
   enum GB_SINGLERATE_METHOD method;
   const char* flag_value;
-  assertStreamPrint(NULL, flagValue==FLAG_SR || flagValue==FLAG_MR,
+  assertStreamPrint(NULL, flag==FLAG_SR || flag==FLAG_MR,
                     "Illegal input to getGB_method. Expected FLAG_SR or FLAG_MR ");
-  flag_value = omc_flagValue[flagValue];
+  flag_value = omc_flagValue[flag];
   char* GB_method_string;
 
   // Get method from flag
@@ -75,7 +75,7 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flagValue) {
   }
 
   // Default value for multi-rate method
-  if (flagValue == FLAG_MR) {
+  if (flag == FLAG_MR) {
     enum GB_SINGLERATE_METHOD singleRateMethod = getGB_method(FLAG_SR);
     switch (singleRateMethod)
     {
@@ -116,17 +116,17 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flagValue) {
  * Defaults to nls method of single-rate for multi-rate.
  * Returns RK_UNKNOWN if flag is not known.
  *
- * @param flagValue   FLAG_SR_NLS for single-rate method.
+ * @param flag        FLAG_SR_NLS for single-rate method.
  *                    FLAG_MR_NLS for multi-rate method.
  *
  * @return enum GB_NLS_METHOD   NLS method.
  */
-enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flagValue) {
+enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
   enum GB_NLS_METHOD method;
   const char* flag_value;
-  assertStreamPrint(NULL, flagValue==FLAG_SR_NLS || flagValue==FLAG_MR_NLS,
+  assertStreamPrint(NULL, flag==FLAG_SR_NLS || flag==FLAG_MR_NLS,
                     "Illegal input to getGB_NLS_METHOD. Expected FLAG_SR_NLS or FLAG_MR_NLS ");
-  flag_value = omc_flagValue[flagValue];
+  flag_value = omc_flagValue[flag];
   char* GB_NLS_METHOD_string;
 
   // Get method from flag
@@ -146,7 +146,7 @@ enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flagValue) {
   }
 
   // Default value
-  if (flagValue == FLAG_MR_NLS) {
+  if (flag == FLAG_MR_NLS) {
     return getGB_NLS_METHOD(FLAG_SR_NLS);
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
