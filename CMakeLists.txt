@@ -108,7 +108,7 @@ include(GNUInstallDirs)
 # unintentionally. If the user has not specified anything default to an install_cmake dir in the root
 # build directory.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/install_cmake CACHE PATH "Default installation directory" FORCE)
+    set(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install_cmake" CACHE PATH "Default installation directory" FORCE)
     # Prevent sub-projects from changing it by checking CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT after this
     set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT FALSE)
     message(WARNING "No installation directory specified. Defaulting to: ${CMAKE_INSTALL_PREFIX}")
@@ -116,10 +116,15 @@ endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
 
 # We prefer to install libs to "<library architecture>/omc" dir inside lib directory (e.g lib/x86_64-linux-gnu/omc/).
-set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/)
+set(CMAKE_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/")
 
 # We prefer to install headers to "include/omc" dir inside.
-set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/omc/)
+set(CMAKE_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/omc/")
+
+# On macOS we want BUNDLEs (.app) to go to an 'Applications/' directory instead of a 'bin/' directory
+if(APPLE)
+  set(OM_MACOS_INSTALL_BUNDLEDIR "Applications/")
+endif()
 
 ## Set the adjusted installation lib directory as an rpath for all installed binaries.
 ## Assumes binaries end up in either 'bin' or 'lib' AND also assumes that 'bin' and 'lib' are sibling directories.

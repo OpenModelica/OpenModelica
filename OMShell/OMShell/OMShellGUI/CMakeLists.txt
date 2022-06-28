@@ -24,7 +24,7 @@ add_executable(OMShell WIN32 MACOSX_BUNDLE main.cpp rc_omshell.rc)
 target_link_libraries(OMShell PRIVATE OMShellLib)
 
 install(TARGETS OMShell
-        BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
+        BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
 
 install(FILES commands.xml
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omshell)
