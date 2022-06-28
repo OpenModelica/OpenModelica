@@ -508,7 +508,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results");
 
   gbData->err_threshold = 0.1;
-  gbData->nlsxExtrapolation = 1;
+  gbData->nlsxExtrapolation = 2;
 
   return 0;
 }
@@ -845,14 +845,18 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
 
     // Synchronize inner integration with outer integration
+    // Strategy: either set outer step to the inner integration
+    // or the other way around (depending on, if more or less
+    // than 2 inner steps required)
     if (gbfData->time + gbfData->stepSize > gbData->timeRight) {
-      // gbData->time = gbfData->time;
-      // gbData->timeRight = gbfData->time;
-      // gbData->lastStepSize = gbData->timeRight - gbData->timeLeft;
-      // gbData->stepsize = gbData->lastStepSize;
-      // messageClose(LOG_SOLVER);
-      // return 0;
-      gbfData->stepSize = gbData->timeRight - gbfData->time;
+      if (gbfData->time - gbfData->stepSize > gbData->timeLeft) {
+        gbData->timeRight = gbfData->timeRight;
+        gbData->lastStepSize = gbData->timeRight - gbData->timeLeft;
+        messageClose(LOG_SOLVER);
+        return 0;
+      } else {
+        gbfData->stepSize = gbData->timeRight - gbfData->time;
+      }
     }
 
     // store left hand data for later interpolation
@@ -1444,13 +1448,6 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
           memcpy(gbData->kRight, gbData->gbfData->kRight, nStates * sizeof(double));
           memcpy(gbData->err, gbData->gbfData->err, nStates * sizeof(double));
-
-          // // set solution ring buffer (extrapolation in case of NLS)
-          // for (i=0; i<gbData->ringBufferSize-1; i++) {
-          //   gbData->tv[i] = gbData->gbfData->tv[i+1];
-          //   memcpy(gbData->yv + i * nStates, gbData->gbfData->yv + (i+1) * nStates, nStates * sizeof(double));
-          //   memcpy(gbData->kv + i * nStates, gbData->gbfData->kv + (i+1) * nStates, nStates * sizeof(double));
-          // }
         }
 //        err = fmax(gbData->err_slow, gbData->err_fast);
         if (gb_step_info !=0) {
@@ -1596,12 +1593,12 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     } else {
       if (gbData->interpolation==1) {
         linear_interpolation_gb(gbData->timeLeft,  gbData->yLeft,
-                                gbData->timeRight, gbData->yRight,
-                                sData->timeValue,  sData->realVars, nStates);
+                                  gbData->timeRight, gbData->yRight,
+                                  sData->timeValue,  sData->realVars, nStates);
       } else {
         hermite_interpolation_gb(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                                gbData->timeRight, gbData->yRight, gbData->kRight,
-                                sData->timeValue,  sData->realVars, nStates);
+                                  gbData->timeRight, gbData->yRight, gbData->kRight,
+                                  sData->timeValue,  sData->realVars, nStates);
       }
     }
     // log the emitted result
