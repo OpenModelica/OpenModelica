@@ -1,60 +1,40 @@
 
-- [1. General Information](#1-general-information)
+- [1. Quick start](#1-quick-start)
 - [2. ccache](#2-ccache)
 - [3. Usage](#3-usage)
   - [3.1. General Notes](#31-general-notes)
   - [3.2. Linux](#32-linux)
-  - [3.3. Windows MSYS/MinGW](#33-windows-msysmingw)
-  - [3.4. Generic Usage.](#34-generic-usage)
+  - [3.3. macOS](#33-macos)
+  - [3.4. Windows MSYS/MinGW](#34-windows-msysmingw)
+  - [3.5. Generic Usage.](#35-generic-usage)
 - [4. Configuration Options.](#4-configuration-options)
   - [4.1. OpenModelica Specific Configuration Options](#41-openmodelica-specific-configuration-options)
     - [4.1.1. OpenModelica Options](#411-openmodelica-options)
     - [4.1.2. OpenModelica/OMCompiler Options](#412-openmodelicaomcompiler-options)
     - [4.1.3. OpenModelica/OMEdit Options](#413-openmodelicaomedit-options)
+    - [4.1.4. Other Options](#414-other-options)
   - [4.2. Selecting a Compiler.](#42-selecting-a-compiler)
   - [4.3. Disabling Colors for Makefile Generators](#43-disabling-colors-for-makefile-generators)
   - [4.4. Enabling Verbose Output](#44-enabling-verbose-output)
 - [5. Integration with Editors/Tools](#5-integration-with-editorstools)
 - [6. Running Tests (rtest)](#6-running-tests-rtest)
 
-# 1. General Information
-If you are used to the default `autotools + Makefile` build system that omc is using right now, there is one conceptual point to keep in mind. Building and installing are seaprate processes with the CMake build system. This means, to use `omc` (or most other executable targets, e.g, `OMEdit`, `OMPlot` ...), you have to build and then install the project. The build folder structure does not represent or match the final structure `omc` expects when it is used. The `autotools + Makefile` build system we are using now has these two steps combined in to one. The good news is that CMake also provides an install target always. So if you are used to issuing
+# 1. Quick start
 
-```
-make omc
-```
+We recommend you read the instructions for your Operating System as they contain some tips and workarounds for some common pitfalls.
 
-to build and install a usable omc in one step, you now have to use
-
-```
-make install
-```
-
-instead. In addition now you have run omc from the **install** dir instead of the **build** dir.
-
-By default, if you do not specify anything, the configuration will chose an installation directory named `install_cmake` inside of your build dir.
-
-To summarize, if you have a fresh copy of OpenModelica and want to get started, this would be one possible process you can follow
+That said, if you are familiar with CMake and have all the dependencies installed you can compile OpenModelica using the standard CMake flow.
 
 ```sh
-mkdir build_cmake && cd build_cmake
-cmake ..
-make install
-
-# Default install dir is a directory named install_cmake inside the build directory.
-./install_cmake/bin/omc --help
-```
-
-with a little variation but equivalently with the same result
-
-```sh
-mkdir build_cmake
+cd OpenModelica
 cmake -S . -B build_cmake
-make -C build_cmake install
+cmake --build build_cmake --parallel <Nr. of cores> --target install
 
 # Default install dir is a directory named install_cmake inside the build directory.
 ./build_cmake/install_cmake/bin/omc --help
 ```
+
+By default, if you do not specify anything, the configuration will chose an installation directory named `install_cmake` inside of your build dir.
 
 # 2. ccache
 [ccache](https://ccache.dev/) is a compiler cache. It speeds up recompilation by caching previous compilations and detecting when the same compilation is being done again.
@@ -80,10 +60,65 @@ It is available for linux (of course) and, fortunatelly, for MSYS/MinGW as well 
 ## 3.2. Linux
 There is nothing special to be done for linux. You can follow the examples above or chose your own combination of parameters (e.g. build type, generator, install dir ...).
 
-## 3.3. Windows MSYS/MinGW
+## 3.3. macOS
+On macOS there are a few pitfalls/issues which need attention.
+
+- If you plan to build the OpenModelica GUI clients (e.g. OMEdit) you need to install a Qt5 version that comes with `qt-webkit`. Unfortunately, the Qt formulae from `homebrew` does not provide `qt-webkit` anymore. Therefore, you will have to find a way of getting `qt-webkit` on your machine. The recommend and probably the easiest way to do this is using macports to install Qt:
+
+  ```sh
+  port install qt5
+  ```
+
+  once Qt5 is installed, you will need to note the installation directory. It should be `/opt/local` by default. If it is not, you can run
+
+  ```sh
+  port contents qt5
+  ```
+  to see the directory. You will need to tell CMake to look in this directory for packages you installed with macports. This can be done by specifying
+
+  ```sh
+  cmake ... -DCMAKE_PREFIX_PATH=/opt/local ...
+  ```
+
+- It is also recommended to specify your C, C++ and Fortran (optional) compilers explicitly on macOS. This applies **even when you are using your default compiler**. The reason for this is that we have noticed, for example, `/usr/bin/c++` and your compiler may not match in what default include directories they search. While CMake knows and handles this difference, OpenModelica notes and saves the C and C++ compiles used to compile it and uses them to compile simulation code. Therefore it is recommended that you specify the C and C++ compilers explicitly. Assuming your compilers are on your path you can achieve this by calling CMake as follow:
+
+  ```sh
+  cmake ... -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ...
+
+  # OR
+  cmake ... -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran ...
+  ```
+
+- If your setup does not have a Fortran compiler, you can disable Fortran support. In this case you should also disable support for Ipopt.
+
+  ```sh
+  cmake ... -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF ...
+  ```
+
+
+With these consideration, your final configure command should look something like
+
+  ```sh
+  cmake  -S . -B build_cmake ... -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran -DCMAKE_PREFIX_PATH=/opt/local ...
+
+  # or if you do not have a Fortran compiler
+  cmake -S . -B build_cmake -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_PREFIX_PATH=/opt/local ...
+  ```
+
+Once configuration finishes successfully you can build OpenModelica as you would on any unix system, e.g.,
+
+```sh
+cmake --build build_cmake --parallel <Nr. of cores> --target install
+# Default install dir is a directory named install_cmake inside the build directory.
+./build_cmake/install_cmake/bin/omc --help
+```
+
+
+
+## 3.4. Windows MSYS/MinGW
 There is also nothing special about MSYS/MinGW if you are familiar with it. Just a few hints:
 
-  - The generator should to be "MSYS Makefiles". This is not what CMake chooses by default for Windows.
+  - The generator should be "MSYS Makefiles". This is not what CMake chooses by default for Windows.
   - You might want to make sure the output colors do not get mingled for Makefile target generation.
 
 Considering these, your final configure and build lines would be
@@ -99,12 +134,12 @@ make -j9 install -Oline
 `-Oline` instructs GNU Make to print outputs one line at a time, makeing sure ANSI color codes do not get interleaved. **Note that** with this flag ON, a Makefile step is printed once it is **completed**, not when it is issued. So if you see something taking a long time, it is probably the thing that is printed right after which is actually the culprit.
 
 
-## 3.4. Generic Usage.
+## 3.5. Generic Usage.
 If you want to follow a process that is "generator" agnostic, e.g., if you are writing a script that should run across platforms, you can explicitly use the CMake versions of the build commands instead of the generator specific ones.
 
 ```sh
 cmake -S . -B build_cmake
-cmake --build build_cmake --parallel 9 --target install
+cmake --build build_cmake --parallel <Nr. of cores> --target install
 
 # Default install dir is a directory named install_cmake inside the build directory.
 ./build_cmake/install_cmake/bin/omc --help
@@ -121,10 +156,12 @@ The main ones (with their default values) are
 OM_USE_CCACHE=ON
 OM_ENABLE_GUI_CLIENTS=ON
 OM_OMC_ENABLE_CPP_RUNTIME=ON
+OM_OMC_ENABLE_FORTRAN=ON
+OM_OMC_ENABLE_IPOPT=ON
 OM_OMEDIT_INSTALL_RUNTIME_DLLS=ON
 ```
 ### 4.1.1. OpenModelica Options
-`OM_USE_CCACHE` option is for enabling/desabling ccache support as explained in [2. ccache](#2-ccache). It is recommended that you install ccache and set this to ON.
+`OM_USE_CCACHE` option is for enabling/disabling ccache support as explained in [2. ccache](#2-ccache). It is recommended that you install ccache and set this to ON.
 
 `OM_ENABLE_GUI_CLIENTS` allows you to enable/disable the configuration and build of the qt based GUI clients and their dependencies. These include: OMEdit, OMNotebook, OMParser, OMPlot, OMShell. You will need to install and make available the necessary packages (and their dependencies) such as the Qt libs, OpenSceneGraph, OpenThreads ...
 
@@ -133,13 +170,22 @@ OM_OMEDIT_INSTALL_RUNTIME_DLLS=ON
 ### 4.1.2. OpenModelica/OMCompiler Options
 `OM_OMC_ENABLE_CPP_RUNTIME` allows you to enable/disable the building of the C++ based simulation runtime. This will require multiple Boost library components (file_system, program_options, ...)
 
+`OM_OMC_ENABLE_FORTRAN` allows you to enable/disable Fortran support. If your system does not have a Fortran compile you can disable this. Fortran is required if you enable IPOPT support (`OM_OMC_ENABLE_IPOPT`).
+
+`OM_OMC_ENABLE_IPOPT` allows you to enable/disable support for dynamic optimization support with Ipopt. Enabling this requires having a working Fortran compiler.
+
 ### 4.1.3. OpenModelica/OMEdit Options
-`OM_OMEDIT_INSTALL_RUNTIME_DLLS` allows you to enable/disable the installation of the required runtime DLLs for MSYS/MinGW builds. The
-only reason to disable this would be if you plan to start/launch all the GUI executables exclusively from a MSYS/MinGW shell and never
-from the Windows explorer.
+`OM_OMEDIT_INSTALL_RUNTIME_DLLS` allows you to enable/disable the installation of the required runtime DLLs for MSYS/MinGW builds.
 
+You should disable this if you are either
 
+  - using OMDev but plan to start/launch all the GUI executables exclusively from a MSYS/MinGW shell and never from the Windows explorer.
+
+  - Using OMDev or other MSYS/MinGW setup and have specified the MSYS/MinGW system directories as your CMake install directory.
+
+### 4.1.4. Other Options
 There are also some additional options that are kept as a migration step to maintain the similarity with the `autotools` build system.
+
 
 ```cmake
 OM_OMC_USE_CORBA=OFF
