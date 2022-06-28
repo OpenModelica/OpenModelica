@@ -2517,24 +2517,21 @@ end crefApplySubs;
 
 public function crefSetType "
 sets the type of a cref."
-  input DAE.ComponentRef inRef;
-  input DAE.Type newType;
-  output DAE.ComponentRef outRef;
+  input output DAE.ComponentRef cref;
+  input DAE.Type ty;
 algorithm
-  outRef := match (inRef,newType)
-    local
-      DAE.Type ty;
-      DAE.ComponentRef child;
-      list<DAE.Subscript> subs;
-      DAE.Ident id;
+  cref := match cref
+    case DAE.CREF_IDENT() algorithm
+      cref.identType := ty;
+    then cref;
 
-    case(DAE.CREF_IDENT(id,_,subs),_)
-      then
-        makeCrefIdent(id,newType,subs);
+    case DAE.CREF_QUAL() algorithm
+      cref.identType := ty;
+    then cref;
 
-    case(DAE.CREF_QUAL(id,_,subs,child),_)
-      then
-        makeCrefQual(id,newType,subs,child);
+    else algorithm
+      Error.addInternalError(getInstanceName() + " was applied on a cref that has no type: " + crefStr(cref), sourceInfo());
+    then fail();
   end match;
 end crefSetType;
 

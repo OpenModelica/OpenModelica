@@ -244,7 +244,7 @@ protected
 algorithm
   if var.name == name then
     const := if Expression.isConst(binding) then DAE.C_CONST() else DAE.C_VAR();
-    var.binding := DAE.EQBOUND(binding, NONE(), const, DAE.BINDING_FROM_DERIVED_RECORD_DECL());
+    var.binding := DAE.EQBOUND(binding, NONE(), const, DAE.BINDING_FROM_DEFAULT_VALUE());
   end if;
 end updateRecordElementBinding;
 
@@ -252,20 +252,22 @@ protected function updateRecordTypesEqn
   input output BackendDAE.Equation eqn;
   input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
 algorithm
-  (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, function Expression.traverseExpBottomUp(inFunc=updateRecordTypesExp), map);
+  (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, function Expression.traverseExpTopDown(func=updateRecordTypesExp), map);
 end updateRecordTypesEqn;
 
 protected function updateRecordTypesExp
   input output DAE.Exp exp;
+  output Boolean cont;
   input output UnorderedMap<DAE.ComponentRef, DAE.Type> map;
 algorithm
-  exp := match exp
+  (exp, cont) := match exp
     local
       DAE.ComponentRef cref;
     case DAE.CREF(componentRef = cref) guard(UnorderedMap.contains(cref, map)) algorithm
-      exp.componentRef := ComponentReference.crefSetType(cref, UnorderedMap.getSafe(cref, map));
-    then exp;
-    else exp;
+      exp.ty := UnorderedMap.getSafe(cref, map);
+      exp.componentRef := ComponentReference.crefSetType(cref, exp.ty);
+    then (exp, false);
+    else (exp, true);
   end match;
 end updateRecordTypesExp;
 
