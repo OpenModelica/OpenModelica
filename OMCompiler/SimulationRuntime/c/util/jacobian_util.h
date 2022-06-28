@@ -47,8 +47,6 @@ void freeAnalyticJacobian(ANALYTIC_JACOBIAN* jac);
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors);
 void freeSparsePattern(SPARSE_PATTERN *spp);
 
-void printSparseJacobian(ANALYTIC_JACOBIAN *jac, SPARSE_PATTERN *sparsePattern, double* jacobianData, int stream, const char* name);
-
 #ifdef __cplusplus
 }
 #endif
