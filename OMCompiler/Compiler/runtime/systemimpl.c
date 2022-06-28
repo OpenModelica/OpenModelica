@@ -2670,7 +2670,7 @@ int System_getTerminalWidth(void)
 
 #include "util/simulation_options.h"
 
-#define SB_SIZE 8192*4
+#define SB_SIZE 16384*4
 #define SB_SIZE_MINUS_ONE (SB_SIZE-1)
 
 /* snprintf check negative size */
