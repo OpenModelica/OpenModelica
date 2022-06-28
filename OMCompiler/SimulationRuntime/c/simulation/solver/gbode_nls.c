@@ -96,10 +96,9 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
     nonlinsys->max[i]     = DBL_MAX;
   }
 
-  /* Initialize sparsity pattern */
+  /* Initialize sparsity pattern, First guess (all states are fast states) */
   if (initSparsPattern) {
     nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
-    //nonlinsys->sparsePattern = initializeSparsePattern_MS(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
   return;

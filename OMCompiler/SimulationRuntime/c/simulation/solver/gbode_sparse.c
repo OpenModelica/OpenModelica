@@ -234,28 +234,58 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
  * @param sysData             Non-linear system.
  * @return SPARSE_PATTERN*    Pointer to sparsity pattern of non-linear system.
  */
-SPARSE_PATTERN* initializeSparsePattern_MS(DATA* data, NONLINEAR_SYSTEM_DATA* sysData)
+SPARSE_PATTERN* initializeSparsePattern_MR(DATA_GBODE* gbData)
 {
-  unsigned int i,j;
-  unsigned int row, col;
-
-  DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
   DATA_GBODEF* gbfData = gbData->gbfData;
+  int nFastStates = gbData->nFastStates;
+  int i, j, l, r, ii, jj, ll, rr;
 
-  SPARSE_PATTERN* sparsePattern_MR;
-  SPARSE_PATTERN* sparsePattern_DIRK = gbData->jacobian->sparsePattern;
+  // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
+  SPARSE_PATTERN *sparsePattern_DIRK = gbfData->sparesPattern_DIRK;
+  SPARSE_PATTERN *sparsePattern_MR = gbfData->jacobian->sparsePattern;
 
-  int nStates = gbData->nStates;
+  /* Set sparsity pattern for the fast states */
+  ii = 0;
+  jj = 0;
+  ll = 0;
 
-  /* Compute size of new sparsitiy pattern
-   * Increase the size to contain non-zero elements on diagonal. */
-  int sizeofIndex = sparsePattern_DIRK->sizeofIndex;
+  sparsePattern_MR->leadindex[0] = sparsePattern_DIRK->leadindex[0];
+  for (rr = 0; rr < nFastStates; rr++)
+  {
+    r = gbData->fastStates[rr];
+    ii = 0;
+    for (jj = sparsePattern_DIRK->leadindex[r]; jj < sparsePattern_DIRK->leadindex[r + 1];)
+    {
+      i = gbData->fastStates[ii];
+      j = sparsePattern_DIRK->index[jj];
+      if (i == j)
+      {
+        sparsePattern_MR->index[ll] = ii;
+        ll++;
+      }
+      if (j > i)
+      {
+        ii++;
+        if (ii >= nFastStates)
+          break;
+      }
+      else
+        jj++;
+    }
+    sparsePattern_MR->leadindex[rr + 1] = ll;
+  }
 
-  // Allocate memory for new sparsity pattern
-  sparsePattern_MR = allocSparsePattern(nStates, sparsePattern_DIRK->numberOfNonZeros, sparsePattern_DIRK->maxColors);
-  memcpy(sparsePattern_MR->leadindex, sparsePattern_DIRK->leadindex, (nStates + 1)*sizeof(unsigned int));
-  memcpy(sparsePattern_MR->index, sparsePattern_DIRK->index, sizeofIndex*sizeof(unsigned int));
-  memcpy(sparsePattern_MR->colorCols, sparsePattern_DIRK->colorCols, nStates*sizeof(unsigned int));
+  sparsePattern_MR->numberOfNonZeros = ll;
+  sparsePattern_MR->sizeofIndex = ll;
+
+  ColoringAlg(sparsePattern_MR, nFastStates, nFastStates, 1);
+
+  printSparseStructure(sparsePattern_MR,
+                      nFastStates,
+                      nFastStates,
+                      LOG_GBODE_V,
+                      "sparsePattern_MR");
+
 
   return sparsePattern_MR;
 }

@@ -789,7 +789,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   int nFastStates = gbData->nFastStates;
   int nStages = gbfData->tableau->nStages;
 
-  modelica_boolean fastStateChange = FALSE;
+  modelica_boolean fastStatesChange = FALSE;
 
   // This is the target time of the main integrator
   double innerTargetTime = fmin(targetTime, gbData->timeRight);
@@ -799,28 +799,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbodef_init(data, threadData, solverInfo);
   }
 
-  gbfData->nFastStates = gbData->nFastStates;
-  gbfData->fastStates  = gbData->fastStates;
 
-  if (gbfData->nFastStates_old != gbData->nFastStates) {
-    gbfData->nFastStates_old = gbData->nFastStates;
-    fastStateChange = TRUE;
-  }
+  fastStatesChange = checkFastStatesChange(gbData);
 
-  for (int k = 0; k < nFastStates; k++) {
-    if (gbfData->fastStates_old[k] - gbData->fastStates[k]) {
-      if (ACTIVE_STREAM(LOG_SOLVER) && !fastStateChange)
-      {
-        printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
-        printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStates, gbData->nFastStates, gbfData->time);
-      }
-      fastStateChange = TRUE;
-      gbfData->fastStates_old[k] = gbData->fastStates[k];
-    }
-  }
-
-
-  if (!gbfData->isExplicit) {
+  if (fastStatesChange && !gbfData->isExplicit) {
     struct dataSolver *solverData = gbfData->nlsData->solverData;
     // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
     gbfData->nlsData->size = gbData->nFastStates;
@@ -835,49 +817,9 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
     messageClose(LOG_GBODE);
 
-    if (gbfData->symJacAvailable && fastStateChange)
+    if (gbfData->symJacAvailable)
     {
-
-      // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
-      SPARSE_PATTERN *sparsePattern_DIRK = gbfData->sparesPattern_DIRK;
-      SPARSE_PATTERN *sparsePattern_MR = gbfData->jacobian->sparsePattern;
-
-      /* Set sparsity pattern for the fast states */
-      ii = 0;
-      jj = 0;
-      ll = 0;
-
-      sparsePattern_MR->leadindex[0] = sparsePattern_DIRK->leadindex[0];
-      for (rr = 0; rr < nFastStates; rr++)
-      {
-        r = gbData->fastStates[rr];
-        ii = 0;
-        for (jj = sparsePattern_DIRK->leadindex[r]; jj < sparsePattern_DIRK->leadindex[r + 1];)
-        {
-          i = gbData->fastStates[ii];
-          j = sparsePattern_DIRK->index[jj];
-          if (i == j)
-          {
-            sparsePattern_MR->index[ll] = ii;
-            ll++;
-          }
-          if (j > i)
-          {
-            ii++;
-            if (ii >= nFastStates)
-              break;
-          }
-          else
-            jj++;
-        }
-        sparsePattern_MR->leadindex[rr + 1] = ll;
-      }
-
-      sparsePattern_MR->numberOfNonZeros = ll;
-      sparsePattern_MR->sizeofIndex = ll;
-
-      ColoringAlg(sparsePattern_MR, nFastStates, nFastStates, 1);
-
+      gbfData->jacobian->sparsePattern = initializeSparsePattern_MR(gbData);
       gbfData->jacobian->sizeCols = nFastStates;
       gbfData->jacobian->sizeRows = nFastStates;
 
@@ -899,12 +841,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         return -1;
         break;
       }
-
-      printSparseStructure(sparsePattern_MR,
-                           nFastStates,
-                           nFastStates,
-                           LOG_GBODE,
-                           "sparsePattern_MR");
     }
   }
 
@@ -1605,7 +1541,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
         // log the emitted result
         if (ACTIVE_STREAM(LOG_GBODE)){
-          infoStreamPrint(LOG_GBODE, 1, "Emit result (singlerate integration):");
+          infoStreamPrint(LOG_GBODE, 1, "Emit result (birate integration):");
           printVector_gb(LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
           messageClose(LOG_GBODE);
         }

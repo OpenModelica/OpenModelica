@@ -74,6 +74,8 @@ void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, 
 void dumpFastStates_gb(DATA_GBODE *gbData, modelica_boolean event, double time);
 void dumpFastStates_gbf(DATA_GBODE *gbData, double time);
 
+modelica_boolean checkFastStatesChange(DATA_GBODE* gbData);
+
 #ifdef __cplusplus
 };
 #endif

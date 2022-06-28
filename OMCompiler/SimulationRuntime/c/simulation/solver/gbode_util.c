@@ -459,3 +459,34 @@ void dumpFastStates_gbf(DATA_GBODE* gbData, double time) {
   }
   fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
 }
+
+modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
+  DATA_GBODEF* gbfData = gbData->gbfData;
+  modelica_boolean fastStatesChange;
+
+  gbfData->nFastStates = gbData->nFastStates;
+  gbfData->fastStates  = gbData->fastStates;
+
+  if (gbfData->nFastStates_old != gbData->nFastStates) {
+    if (ACTIVE_STREAM(LOG_SOLVER) && !fastStatesChange)
+    {
+      printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
+      printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStates, gbData->nFastStates, gbfData->time);
+    }
+    gbfData->nFastStates_old = gbData->nFastStates;
+    fastStatesChange = TRUE;
+  }
+
+  for (int k = 0; k < gbData->nFastStates; k++) {
+    if (gbfData->fastStates_old[k] - gbData->fastStates[k]) {
+      if (ACTIVE_STREAM(LOG_SOLVER) && !fastStatesChange)
+      {
+        printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
+        printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStates, gbData->nFastStates, gbfData->time);
+      }
+      fastStatesChange = TRUE;
+      gbfData->fastStates_old[k] = gbData->fastStates[k];
+    }
+  }
+  return fastStatesChange;
+}
