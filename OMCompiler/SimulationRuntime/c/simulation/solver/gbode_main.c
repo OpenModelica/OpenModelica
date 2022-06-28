@@ -508,7 +508,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results");
 
   gbData->err_threshold = 0.1;
-  gbData->nlsxExtrapolation = 2;
+  gbData->nlsxExtrapolation = 1;
 
   return 0;
 }
