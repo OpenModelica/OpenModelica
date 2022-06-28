@@ -48,7 +48,6 @@
 #include "openmodelica_func.h"
 #include "util/read_matlab4.h"
 #include "util/varinfo.h"
-#include "gbode_main.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -278,7 +277,6 @@ void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData) {
 
   freeNlsUserData(kinsolData->userData);
   free(kinsolData);
-  kinsolData = NULL;
 
   return;
 }
