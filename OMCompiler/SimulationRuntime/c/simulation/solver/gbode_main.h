@@ -109,11 +109,7 @@ typedef struct DATA_GBODEF{
   int nlsxExtrapolation;
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
-  unsigned int stepsDone;
-  unsigned int evalFunctionODE;
-  unsigned int evalJacobians;
-  unsigned int errorTestFailures;
-  unsigned int convergenceFailures;
+  SOLVERSTATS stats;
   FILE *fastStatesDebugFile;
   gm_step_function step_fun;
   gm_stepSize_control_function stepSize_control;
@@ -173,12 +169,7 @@ typedef struct DATA_GBODE{
   gm_stepSize_control_function stepSize_control;
 
   /* statistics */
-  // TODO AHeu: Duplicate of SOLVERSTATS
-  unsigned int stepsDone;             /* Total number of integrator steps */
-  unsigned int evalFunctionODE;       /* Total number of functionODE() calls */
-  unsigned int evalJacobians;         /* Total number of Jacobian evaluations */
-  unsigned int errorTestFailures;     /* Total number of error test failures */
-  unsigned int convergenceFailures;   /* Total number of convergence failures */
+  SOLVERSTATS stats;
 } DATA_GBODE;
 
 int gbode_allocateData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);

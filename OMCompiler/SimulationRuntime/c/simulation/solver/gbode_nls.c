@@ -271,8 +271,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GBODEF* gbfData) {
   assertStreamPrint(threadData, gbfData->type != GM_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
-  // TODO AHeu: Free solverData again
-  struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
+  struct dataSolver *solverData = (struct dataSolver*) calloc(1, sizeof(struct dataSolver));
 
   ANALYTIC_JACOBIAN* jacobian = NULL;
 
@@ -328,9 +327,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   nlsData->min = (double*) malloc(nlsData->size*sizeof(double));
   nlsData->max = (double*) malloc(nlsData->size*sizeof(double));
 
-  // // TODO: Do we need to initialize the Jacobian or is it already initialized?
-  // ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  // data->callback->initialAnalyticJacobianA(data, threadData, jacobian_ODE);
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE);
 
   // TODO: Set callback to initialize Jacobian
@@ -402,7 +398,7 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
 
   // Evaluate right hand side of ODE
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
 
   // Evaluate residual
   for (i=0; i<nStates; i++) {
@@ -444,7 +440,7 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
     i = gbfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
+  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
 
   // Evaluate residuals
   for (ii=0; ii < nFastStates; ii++) {
@@ -486,7 +482,7 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
     i = gbfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
+  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
 
   // Evaluate residual
   for (ii=0; ii<gbfData->nFastStates; ii++) {
@@ -524,7 +520,7 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
 
   // Evaluate right hand side of ODE
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
 
   // Evaluate residual
   for (i=0; i<nStates; i++) {
@@ -572,7 +568,7 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     /* Evaluate ODE for each stage_ */
     sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
     memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
   }
 

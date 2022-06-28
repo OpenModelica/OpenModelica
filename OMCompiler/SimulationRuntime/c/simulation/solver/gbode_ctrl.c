@@ -157,7 +157,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   /* store values of the states and state derivatives at initial or event time */
   gbData->time = sData->timeValue;
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
   memcpy(gbData->f, fODE, nStates*sizeof(double));
 
   for (i=0; i<nStates; i++) {
@@ -183,7 +183,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
   sData->timeValue += h0;
 
-  gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
 
   for (i=0; i<nStates; i++) {
     sc = Atol + fabs(gbData->yOld[i])*Rtol;

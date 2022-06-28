@@ -490,3 +490,55 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
   }
   return fastStatesChange;
 }
+
+// TODO AHeu: Move to general util
+/**
+ * @brief Log ODE integrator solver stats.
+ *
+ * @param name            Name of ODE integrator.
+ * @param timeValue       Current time value.
+ * @param integratorTime  Time value of integrator.
+ * @param stepSize        ODE integrator step size.
+ * @param stats           Pointer to stats struct.
+ */
+void logSolverStats(const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats) {
+  if (ACTIVE_STREAM(LOG_SOLVER_V)) {
+    infoStreamPrint(LOG_SOLVER_V, 1, "%s call statistics:", name);
+    infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", timeValue);
+    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", integratorTime);
+    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", stepSize);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", stats->nStepsTaken);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", stats->nCallsODE);
+    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", stats->nCallsJacobian);
+    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", stats->nErrorTestFailures);
+    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", stats->nConvergenveTestFailures);
+    messageClose(LOG_SOLVER_V);
+  }
+}
+
+/**
+ * @brief Set solver stats.
+ *
+ * @param solverStats   Pointer to solverStats to set.
+ * @param stats         Values to set in solverStats.
+ */
+void setSolverStats(unsigned int* solverStats, SOLVERSTATS* stats) {
+  solverStats[0] = stats->nStepsTaken;
+  solverStats[1] = stats->nCallsODE;
+  solverStats[2] = stats->nCallsJacobian;
+  solverStats[3] = stats->nErrorTestFailures;
+  solverStats[4] = stats->nConvergenveTestFailures;
+}
+
+/**
+ * @brief Set all sovler stats to zero.
+ *
+ * @param stats   Pointer to solver stats.
+ */
+void resetSolverStats(SOLVERSTATS* stats) {
+  stats->nStepsTaken = 0;
+  stats->nCallsODE = 0;
+  stats->nCallsJacobian = 0;
+  stats->nErrorTestFailures = 0;
+  stats->nConvergenveTestFailures = 0;
+}

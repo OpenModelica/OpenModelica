@@ -1057,7 +1057,6 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau) {
   free(tableau->bt);
 
   free(tableau);
-  tableau = NULL;
 }
 
 /**

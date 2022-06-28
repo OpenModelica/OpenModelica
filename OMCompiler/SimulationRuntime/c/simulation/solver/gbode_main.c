@@ -118,7 +118,7 @@ int gbode_fODE(DATA *data, threadData_t *threadData, void *evalFunctionODE, mode
  */
 int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData)
 {
-  DATA_GBODEF *gbfData = (DATA_GBODEF *)malloc(sizeof(DATA_GBODEF));
+  DATA_GBODEF *gbfData = (DATA_GBODEF *)calloc(1, sizeof(DATA_GBODEF));
   gbData->gbfData = gbfData;
 
   ANALYTIC_JACOBIAN *jacobian = NULL;
@@ -242,13 +242,6 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
 
   printButcherTableau(gbfData->tableau);
 
-  /* initialize statistic counter */
-  gbfData->stepsDone = 0;
-  gbfData->evalFunctionODE = 0;
-  gbfData->evalJacobians = 0;
-  gbfData->errorTestFailures = 0;
-  gbfData->convergenceFailures = 0;
-
   /* initialize analytic Jacobian, if available and needed */
   if (!gbfData->isExplicit)
   {
@@ -326,7 +319,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
  */
 int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 {
-  DATA_GBODE *gbData = (DATA_GBODE *)malloc(sizeof(DATA_GBODE));
+  DATA_GBODE *gbData = (DATA_GBODE *)calloc(1, sizeof(DATA_GBODE));
 
   // Set backup in simulationInfo
   data->simulationInfo->backupSolverData = (void *)gbData;
@@ -400,33 +393,34 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     break;
   }
 
-  /* Allocate internal memory */
   gbData->isFirstStep = TRUE;
-  gbData->y = malloc(sizeof(double) * gbData->nStates);
-  gbData->yOld = malloc(sizeof(double) * gbData->nStates);
-  gbData->yLeft = malloc(sizeof(double) * gbData->nStates);
-  gbData->kLeft = malloc(sizeof(double) * gbData->nStates);
-  gbData->yRight = malloc(sizeof(double) * gbData->nStates);
-  gbData->kRight = malloc(sizeof(double) * gbData->nStates);
-  gbData->yt = malloc(sizeof(double) * gbData->nStates);
-  gbData->y1 = malloc(sizeof(double) * gbData->nStates);
-  gbData->f = malloc(sizeof(double) * gbData->nStates);
-  gbData->k = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
-  gbData->x = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
+
+  /* Allocate internal memory */
+  gbData->y         = malloc(sizeof(double) * gbData->nStates);
+  gbData->yOld      = malloc(sizeof(double) * gbData->nStates);
+  gbData->yLeft     = malloc(sizeof(double) * gbData->nStates);
+  gbData->kLeft     = malloc(sizeof(double) * gbData->nStates);
+  gbData->yRight    = malloc(sizeof(double) * gbData->nStates);
+  gbData->kRight    = malloc(sizeof(double) * gbData->nStates);
+  gbData->yt        = malloc(sizeof(double) * gbData->nStates);
+  gbData->y1        = malloc(sizeof(double) * gbData->nStates);
+  gbData->f         = malloc(sizeof(double) * gbData->nStates);
+  gbData->k         = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
+  gbData->x         = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
   gbData->res_const = malloc(sizeof(double) * gbData->nStates);
-  gbData->errest = malloc(sizeof(double) * gbData->nStates);
-  gbData->errtol = malloc(sizeof(double) * gbData->nStates);
-  gbData->err = malloc(sizeof(double) * gbData->nStates);
+  gbData->errest    = malloc(sizeof(double) * gbData->nStates);
+  gbData->errtol    = malloc(sizeof(double) * gbData->nStates);
+  gbData->err       = malloc(sizeof(double) * gbData->nStates);
   // ring buffer for different purposes (extrapolation, etc.)
   gbData->ringBufferSize = 4;
-  gbData->errValues = malloc(sizeof(double) * gbData->ringBufferSize);
+  gbData->errValues      = malloc(sizeof(double) * gbData->ringBufferSize);
   gbData->stepSizeValues = malloc(sizeof(double) * gbData->ringBufferSize);
-  gbData->tv = malloc(sizeof(double) * gbData->ringBufferSize);
-  gbData->yv = malloc(gbData->nStates*sizeof(double) * gbData->ringBufferSize);
-  gbData->kv = malloc(gbData->nStates*sizeof(double) * gbData->ringBufferSize);
-  gbData->tr = malloc(sizeof(double) * 2);
-  gbData->yr = malloc(gbData->nStates*sizeof(double) * 2);
-  gbData->kr = malloc(gbData->nStates*sizeof(double) * 2);
+  gbData->tv             = malloc(sizeof(double) * gbData->ringBufferSize);
+  gbData->yv             = malloc(gbData->nStates*sizeof(double) * gbData->ringBufferSize);
+  gbData->kv             = malloc(gbData->nStates*sizeof(double) * gbData->ringBufferSize);
+  gbData->tr             = malloc(sizeof(double) * 2);
+  gbData->yr             = malloc(gbData->nStates*sizeof(double) * 2);
+  gbData->kr             = malloc(gbData->nStates*sizeof(double) * 2);
 
   if (!gbData->isExplicit) {
     gbData->Jf = calloc(gbData->nStates * gbData->nStates, sizeof(double));
@@ -436,17 +430,10 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   printButcherTableau(gbData->tableau);
 
-  /* initialize statistic counter */
-  gbData->stepsDone = 0;
-  gbData->evalFunctionODE = 0;
-  gbData->evalJacobians = 0;
-  gbData->errorTestFailures = 0;
-  gbData->convergenceFailures = 0;
-
   /* initialize analytic Jacobian, if available and needed */
   if (!gbData->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    // TODO: Do we need to initialize the Jacobian or is it already initialized?
+    // TODO AHeu: Do we need to initialize the Jacobian or is it already initialized?
     if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
       gbData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
@@ -479,6 +466,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   const char *flag_value = omc_flagValue[FLAG_MR_PAR];
   if (flag_value != NULL)
+    // TODO AHeu: Error handling if FLAG_MR_PAR has garbage in it
     gbData->percentage = atof(omc_flagValue[FLAG_MR_PAR]);
   else
     gbData->percentage = 0;
@@ -488,8 +476,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->multi_rate = 0;
   }
 
-  gbData->fastStates = malloc(sizeof(int) * gbData->nStates);
-  gbData->slowStates = malloc(sizeof(int) * gbData->nStates);
+  gbData->fastStates   = malloc(sizeof(int) * gbData->nStates);
+  gbData->slowStates   = malloc(sizeof(int) * gbData->nStates);
   gbData->sortedStates = malloc(sizeof(int) * gbData->nStates);
 
   gbData->nFastStates = 0;
@@ -509,6 +497,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   const char *flag_Interpolation = omc_flagValue[FLAG_SR_INT];
 
   if (flag_Interpolation != NULL) {
+    // TODO AHeu: Error handling if FLAG_MR_PAR has garbage in it
     gbData->interpolation = atoi(flag_Interpolation);
     } else {
     gbData->interpolation = 1;
@@ -687,12 +676,8 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   gbfData->time = gbData->time;
   gbfData->stepSize = gbData->lastStepSize/2.5;
 
-    /* reset statistics because it is accumulated in solver_main.c */
-  gbfData->stepsDone = 0;
-  gbfData->evalFunctionODE = 0;
-  gbfData->evalJacobians = 0;
-  gbfData->errorTestFailures = 0;
-  gbfData->convergenceFailures = 0;
+  /* reset statistics because it is accumulated in solver_main.c */
+  resetSolverStats(&gbfData->stats),
 
   memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * nStates);
   memcpy(gbfData->y, gbData->y, sizeof(double) * nStates);
@@ -739,14 +724,8 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     gbData->stepSizeValues[i] = 0;
   }
 
- /* reset statistics, because it is accumulated in solver_main.c */
-  gbData->stepsDone = 0;
-  gbData->evalFunctionODE = 0;
-  gbData->evalJacobians = 0;
-  if (!gbData->isExplicit)
-    gbData->nlsData->numberOfJEval = 0;
-  gbData->errorTestFailures = 0;
-  gbData->convergenceFailures = 0;
+  /* reset statistics, because it is accumulated in solver_main.c */
+  resetSolverStats(&gbData->stats);
 
   // initialize vector used for interpolation (equidistant time grid)
   // and for the birate inner integration
@@ -955,7 +934,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       // Re-do step, if error is larger than requested
       if (err > 1)
       {
-        gbfData->errorTestFailures++;
+        gbfData->stats.nErrorTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gbfData->time, gbfData->time + gbfData->lastStepSize, err, gbfData->stepSize);
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
@@ -965,7 +944,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     } while (err > 1);
 
     // Count succesful integration steps
-    gbfData->stepsDone += 1;
+    gbfData->stats.nStepsTaken += 1;
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
     // interpolate the slow states on the time of the current stage
@@ -1006,11 +985,11 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       memcpy(gbfData->yOld, sData->realVars, gbData->nStates * sizeof(double));
 
       /* write statistics to the solverInfo data structure */
-      solverInfo->solverStatsTmp[0] = gbfData->stepsDone;
-      solverInfo->solverStatsTmp[1] = gbfData->evalFunctionODE;
-      solverInfo->solverStatsTmp[2] = gbfData->evalJacobians;
-      solverInfo->solverStatsTmp[3] = gbfData->errorTestFailures;
-      solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
+      solverInfo->solverStatsTmp[0] = gbfData->stats.nStepsTaken;
+      solverInfo->solverStatsTmp[1] = gbfData->stats.nCallsODE;
+      solverInfo->solverStatsTmp[2] = gbfData->stats.nCallsJacobian;
+      solverInfo->solverStatsTmp[3] = gbfData->stats.nErrorTestFailures;
+      solverInfo->solverStatsTmp[4] = gbfData->stats.nConvergenveTestFailures;
 
       // log the emitted result
       if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1037,7 +1016,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // update kRight
     sData->timeValue = gbfData->time;
     memcpy(sData->realVars, gbfData->y, nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
+    gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
     // debug the changes of the states and derivatives during integration
@@ -1123,25 +1102,9 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     return 1;
   }
 
-  if (ACTIVE_STREAM(LOG_SOLVER_V)) {
-    infoStreamPrint(LOG_SOLVER_V, 1, "gbode call statistics: ");
-    infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
-    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gbfData->time);
-    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gbfData->stepSize);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", gbfData->stepsDone);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", gbfData->evalFunctionODE);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", gbfData->evalJacobians);
-    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", gbfData->errorTestFailures);
-    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", gbfData->convergenceFailures);
-    messageClose(LOG_SOLVER_V);
-  }
-
-  /* write statistics to the solverInfo data structure */
-  solverInfo->solverStatsTmp[0] = gbfData->stepsDone;
-  solverInfo->solverStatsTmp[1] = gbfData->evalFunctionODE;
-  solverInfo->solverStatsTmp[2] = gbfData->evalJacobians;
-  solverInfo->solverStatsTmp[3] = gbfData->errorTestFailures;
-  solverInfo->solverStatsTmp[4] = gbfData->convergenceFailures;
+  /* Write statistics to the solverInfo data structure */
+  logSolverStats("gbode", solverInfo->currentTime, gbfData->time, gbfData->stepSize, &gbfData->stats);
+  setSolverStats(solverInfo->solverStatsTmp, &gbfData->stats);
 
   infoStreamPrint(LOG_SOLVER, 0, "gbodef finished  (inner steps).");
   messageClose(LOG_SOLVER);
@@ -1390,7 +1353,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // reject step, if error is too large
       if ((err > 1 ) && gbData->ctrl_type) {
         // count failed steps and output information on the solver status
-        gbData->errorTestFailures++;
+        gbData->stats.nErrorTestFailures++;
         // debug the error of the states and derivatives after outer integration
         infoStreamPrint(LOG_SOLVER_V, 1, "Error of the states: threshold = %15.10g", err_threshold);
         printVector_gb(LOG_SOLVER_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
@@ -1413,7 +1376,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // update kRight
       sData->timeValue = gbData->time;
       memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
       // Check, if interpolation scheme is reliable
@@ -1520,7 +1483,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     } while ((err > 1) && gbData->ctrl_type);
 
     // count processed steps
-    gbData->stepsDone++;
+    gbData->stats.nStepsTaken++;
 
     if (gbData->gbfData->time < gbData->time) {
       gbData->multi_rate_phase = 0;
@@ -1538,11 +1501,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         memcpy(gbData->gbfData->yOld, sData->realVars, nStates * sizeof(double));
 
         /* write statistics to the solverInfo data structure */
-        solverInfo->solverStatsTmp[0] = gbData->gbfData->stepsDone;
-        solverInfo->solverStatsTmp[1] = gbData->gbfData->evalFunctionODE;
-        solverInfo->solverStatsTmp[2] = gbData->gbfData->evalJacobians;
-        solverInfo->solverStatsTmp[3] = gbData->gbfData->errorTestFailures;
-        solverInfo->solverStatsTmp[4] = gbData->gbfData->convergenceFailures;
+        setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
 
         // log the emitted result
         if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1664,32 +1623,16 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
   /* Solver statistics */
   if (!gbData->isExplicit)
-    gbData->evalJacobians = gbData->nlsData->numberOfJEval;
+    gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
 
   if (targetTime == stopTime && ACTIVE_STREAM(LOG_STATS))
   {
     infoStreamPrint(LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
                     GB_SINGLERATE_METHOD_NAME[gbData->GM_method], GB_SINGLERATE_METHOD_NAME[gbData->gbfData->GM_method]);
   }
-  if (ACTIVE_STREAM(LOG_SOLVER_V)) {
-    infoStreamPrint(LOG_SOLVER_V, 1, "gb_singlerate call statistics: ");
-    infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
-    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gbData->time);
-    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gbData->stepSize);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", gbData->stepsDone);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", gbData->evalFunctionODE);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", gbData->evalJacobians);
-    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", gbData->errorTestFailures);
-    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", gbData->convergenceFailures);
-    messageClose(LOG_SOLVER_V);
-  }
-
-  /* write statistics to the solverInfo data structure */
-  solverInfo->solverStatsTmp[0] = gbData->stepsDone;
-  solverInfo->solverStatsTmp[1] = gbData->evalFunctionODE;
-  solverInfo->solverStatsTmp[2] = gbData->evalJacobians;
-  solverInfo->solverStatsTmp[3] = gbData->errorTestFailures;
-  solverInfo->solverStatsTmp[4] = gbData->convergenceFailures;
+  /* Write statistics to the solverInfo data structure */
+  logSolverStats("gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
+  setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
 
   messageClose(LOG_SOLVER);
   return 0;
@@ -1846,7 +1789,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       // reject step, if error is too large
       if ((err > 1) && gbData->ctrl_type) {
         // count failed steps and output information on the solver status
-        gbData->errorTestFailures++;
+        gbData->stats.nErrorTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gbData->time, gbData->time + gbData->lastStepSize, gbData->errValues[0], gbData->stepSize);
       }
@@ -1865,7 +1808,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     } while ((err > 1) && gbData->ctrl_type);
 
     // count processed steps
-    gbData->stepsDone++;
+    gbData->stats.nStepsTaken++;
 
     // store right hand values for latter interpolation
     gbData->timeRight = gbData->time + gbData->lastStepSize;
@@ -1891,11 +1834,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
 
       /* write statistics to the solverInfo data structure */
-      solverInfo->solverStatsTmp[0] = gbData->stepsDone;
-      solverInfo->solverStatsTmp[1] = gbData->evalFunctionODE;
-      solverInfo->solverStatsTmp[2] = gbData->evalJacobians;
-      solverInfo->solverStatsTmp[3] = gbData->errorTestFailures;
-      solverInfo->solverStatsTmp[4] = gbData->convergenceFailures;
+      setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
 
       // log the emitted result
       if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1914,7 +1853,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // update kRight the derivatives of yRight
     sData->timeValue = gbData->time;
     memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
     memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
     /* step is accepted and yOld needs to be updated */
@@ -2003,30 +1942,14 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
   /* Solver statistics */
   if (!gbData->isExplicit)
-    gbData->evalJacobians = gbData->nlsData->numberOfJEval;
+    gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
   if (targetTime == stopTime && ACTIVE_STREAM(LOG_STATS))
   {
     infoStreamPrint(LOG_STATS, 0, "gbode (singlerate integration): %s", GB_SINGLERATE_METHOD_NAME[gbData->GM_method]);
   }
-  if (ACTIVE_STREAM(LOG_SOLVER_V)) {
-    infoStreamPrint(LOG_SOLVER_V, 1, "gb_singlerate call statistics: ");
-    infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", solverInfo->currentTime);
-    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", gbData->time);
-    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", gbData->stepSize);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", gbData->stepsDone);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", gbData->evalFunctionODE);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", gbData->evalJacobians);
-    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", gbData->errorTestFailures);
-    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", gbData->convergenceFailures);
-    messageClose(LOG_SOLVER_V);
-  }
-
-  /* write statistics to the solverInfo data structure */
-  solverInfo->solverStatsTmp[0] = gbData->stepsDone;
-  solverInfo->solverStatsTmp[1] = gbData->evalFunctionODE;
-  solverInfo->solverStatsTmp[2] = gbData->evalJacobians;
-  solverInfo->solverStatsTmp[3] = gbData->errorTestFailures;
-  solverInfo->solverStatsTmp[4] = gbData->convergenceFailures;
+  /* Write statistics to the solverInfo data structure */
+  logSolverStats("gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
+  setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
 
   messageClose(LOG_SOLVER);
   return 0;

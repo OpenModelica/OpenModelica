@@ -76,6 +76,10 @@ void dumpFastStates_gbf(DATA_GBODE *gbData, double time);
 
 modelica_boolean checkFastStatesChange(DATA_GBODE* gbData);
 
+void logSolverStats(const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats);
+void setSolverStats(unsigned int* solverStats, SOLVERSTATS* stats);
+void resetSolverStats(SOLVERSTATS* stats);
+
 #ifdef __cplusplus
 };
 #endif

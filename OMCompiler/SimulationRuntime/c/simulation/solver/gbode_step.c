@@ -313,7 +313,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       // Calculate the fODE values for the explicit stage
       memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
     } else {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;
@@ -450,7 +450,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     {
       // Calculate the fODE values for the explicit stage
       memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
+      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
     }
     else
     {
@@ -600,7 +600,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
   if (solved != NLS_SOLVED) {
-    gbData->convergenceFailures++;
+    gbData->stats.nConvergenveTestFailures++;
     infoStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK");
     return -1;
   }
@@ -679,7 +679,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     if (!gbfData->isExplicit) {
       sData->timeValue = gbfData->time;
       memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
+      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
       gbfData->tv[1] = gbfData->tv[0];
       memcpy(gbfData->yv + nStates, gbfData->yv, nStates * sizeof(double));
       memcpy(gbfData->kv + nStates, gbfData->kv, nStates * sizeof(double));
@@ -707,7 +707,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (!gbfData->isExplicit) {
         sData->timeValue = gbfData->time + gbfData->stepSize;
         memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbfData->evalFunctionODE), fODE);
+        gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
         gbfData->tv[0] = gbfData->time;
         memcpy(gbfData->yv, gbfData->y, nStates * sizeof(double));
         memcpy(gbfData->kv, fODE, nStates * sizeof(double));
@@ -812,7 +812,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     if (!gbData->isExplicit) {
       sData->timeValue = gbData->time;
       memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
       gbData->tv[1] = gbData->tv[0];
       memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
       memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
@@ -840,7 +840,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       if (!gbData->isExplicit) {
         sData->timeValue = gbData->time + gbData->stepSize;
         memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->evalFunctionODE), fODE);
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
         gbData->tv[0] = gbData->time;
         memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
         memcpy(gbData->kv, fODE, nStates * sizeof(double));
