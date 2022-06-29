@@ -1,0 +1,33 @@
+// name: ConnectorBalance8
+// keywords: connector
+// status: correct
+// cflags: -d=newInst
+//
+// Checks that the connector balance checking can handle unevaluable dimensions.
+//
+
+loadString("
+  connector C
+    parameter Integer n;
+    Real e;
+    flow Real f;
+    stream Real s[n];
+  end C;
+
+  model M
+    C c;
+  end M;
+");
+getErrorString();
+
+checkModel(M);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of M completed successfully.
+// Class M has 1 equation(s) and 3 variable(s).
+// 1 of these are trivial equation(s)."
+// ""
+// endResult

@@ -988,6 +988,7 @@ public
     output Integer potentials = 0;
     output Integer flows = 0;
     output Integer streams = 0;
+    output Boolean knownSize = true;
   protected
     Type ty;
     ConnectorType.Type cty;
@@ -996,6 +997,7 @@ public
     InstNode eq_node;
     Integer comp_size = 0, p, f, s;
     Function fn;
+    Boolean known_size;
   algorithm
     cls := InstNode.getClass(classInstance(component));
     eq_node_opt := Class.tryLookupElement("equalityConstraint", cls);
@@ -1007,7 +1009,14 @@ public
       SOME(eq_node) := eq_node_opt;
       Function.instFunctionNode(eq_node, NFInstContext.NO_CONTEXT, info(component));
       fn := listHead(Function.typeNodeCache(eq_node));
-      comp_size := Type.sizeOf(Function.returnType(fn));
+      ty := Function.returnType(fn);
+
+      if Type.hasKnownSize(ty) then
+        comp_size := Type.sizeOf(ty);
+      else
+        comp_size := 0;
+        knownSize := false;
+      end if;
     else
       ty := getType(component);
 
@@ -1015,8 +1024,11 @@ public
       // is treated as a scalar when balance checking it.
       if isRoot then
         comp_size := 1;
-      else
+      elseif Type.hasKnownSize(ty) then
         comp_size := Dimension.sizesProduct(Type.arrayDims(ty));
+      else
+        comp_size := 0;
+        knownSize := false;
       end if;
 
       ty := Type.arrayElementType(ty);
@@ -1025,10 +1037,11 @@ public
         // (unless it's the connector that we're trying to count the variables in).
         if Type.isRecord(ty) or isRoot then
           for c in ClassTree.getComponents(Class.classTree(cls)) loop
-            (p, f, s) := countConnectorVars(InstNode.component(c), false);
+            (p, f, s, known_size) := countConnectorVars(InstNode.component(c), false);
             potentials := potentials + p * comp_size;
             flows := flows + f * comp_size;
             streams := streams + s * comp_size;
+            knownSize := known_size and knownSize;
           end for;
         end if;
 

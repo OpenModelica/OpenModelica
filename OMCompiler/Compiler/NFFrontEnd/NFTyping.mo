@@ -339,6 +339,7 @@ function checkConnectorTypeBalance
   input InstNode component;
 protected
   Integer pots, flows, streams;
+  Boolean known_size;
   Component comp;
   InstNode parent;
 algorithm
@@ -353,7 +354,11 @@ algorithm
     return;
   end if;
 
-  (pots, flows, streams) := Component.countConnectorVars(comp);
+  (pots, flows, streams, known_size) := Component.countConnectorVars(comp);
+
+  if not known_size then
+    return;
+  end if;
 
   // Modelica 3.2 section 9.3.1:
   // For each non-partial connector class the number of flow variables shall
