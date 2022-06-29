@@ -447,6 +447,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
       /* DEBUG */
       //printSparseStructure(nonlinsys->sparsePattern, nonlinsys->size, nonlinsys->size, LOG_NLS, "NLS sparse pattern");
       freeSparsePattern(nonlinsys->sparsePattern);
+      free(nonlinsys->sparsePattern);
       nonlinsys->sparsePattern = NULL;
       nonlinsys->isPatternAvailable = FALSE;
       omc_flag[FLAG_NO_SCALING] = TRUE;
