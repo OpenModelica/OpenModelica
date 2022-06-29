@@ -216,9 +216,9 @@ void GraphicsView::drawCoordinateSystem()
    */
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-    coordinateSystem = mpModelWidget->mModelInstance.getIconAnnotation().getCoordinateSystem();
+    coordinateSystem = mpModelWidget->getModelInstance()->getIconAnnotation()->getCoordinateSystem();
   } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    coordinateSystem = mpModelWidget->mModelInstance.getDiagramAnnotation().getCoordinateSystem();
+    coordinateSystem = mpModelWidget->getModelInstance()->getDiagramAnnotation()->getCoordinateSystem();
   }
   ModelInstance::Extent extent = coordinateSystem.getExtent();
   ModelInstance::Point leftBottom = extent.getExtent1();
@@ -243,39 +243,23 @@ void GraphicsView::drawCoordinateSystem()
   resize(size());
 }
 
-void GraphicsView::drawShapes(bool select)
+void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool select)
 {
   QList<ModelInstance::Shape*> shapes;
   if (mViewType == StringHandler::Icon && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-    shapes = mpModelWidget->mModelInstance.getIconAnnotation().getGraphics();
+    shapes = pModelInstance->getIconAnnotation()->getGraphics();
   } else if (mViewType == StringHandler::Diagram && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    shapes = mpModelWidget->mModelInstance.getDiagramAnnotation().getGraphics();
+    shapes = pModelInstance->getDiagramAnnotation()->getGraphics();
   }
 
   foreach (auto shape, shapes) {
     ShapeAnnotation *pShapeAnnotation = 0;
     if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
-      pShapeAnnotation = new RectangleAnnotation(pRectangle, this);
+      pShapeAnnotation = new RectangleAnnotation(pRectangle, inhertied, this);
     } else if (ModelInstance::Ellipse *pEllipse = dynamic_cast<ModelInstance::Ellipse*>(shape)) {
-      pShapeAnnotation = new EllipseAnnotation(pEllipse, this);
+      pShapeAnnotation = new EllipseAnnotation(pEllipse, inhertied, this);
     }
 
-//    QVariantMap shapeMap = shape.toMap();
-//    QString shapeName = shapeMap.value("name").toString();
-//    QVariantMap namedArgs = shapeMap.value("namedArgs").toMap();
-    /*if (shapeName.compare(QStringLiteral("Line")) == 0) {
-      pShapeAnnotation = new LineAnnotation(namedArgs, this);
-    } else if (shapeName.compare(QStringLiteral("Polygon")) == 0) {
-      pShapeAnnotation = new PolygonAnnotation(namedArgs, this);
-    } else if (shapeName.compare(QStringLiteral("Rectangle")) == 0) {
-      pShapeAnnotation = new RectangleAnnotation(namedArgs, this);
-    } else if (shapeName.compare(QStringLiteral("Ellipse")) == 0) {
-      pShapeAnnotation = new EllipseAnnotation(namedArgs, this);
-    } else if (shapeName.compare(QStringLiteral("Text")) == 0) {
-      pShapeAnnotation = new TextAnnotation(namedArgs, this);
-    } else if (shapeName.compare(QStringLiteral("Bitmap")) == 0) {
-      pShapeAnnotation = new BitmapAnnotation(mpModelWidget->getLibraryTreeItem()->mClassInformation.fileName, namedArgs, pGraphicsView);
-    }*/
     if (pShapeAnnotation) {
       pShapeAnnotation->drawCornerItems();
       pShapeAnnotation->setCornerItemsActiveOrPassive();
@@ -288,16 +272,29 @@ void GraphicsView::drawShapes(bool select)
   }
 }
 
-void GraphicsView::drawElements()
+void GraphicsView::drawConnectors(ModelInstance::Model *pModelInstance, bool inherited)
 {
-  QList<ModelInstance::Extend*> extends = mpModelWidget->mModelInstance.getExtends();
-  foreach (auto extend, extends) {
-    qDebug() << "extend" << extend->getName();
+  // We use access.icon so we can draw public components so that we can see and set the parameters in the parameters window.
+  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+    QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+    foreach (auto pElement, elements) {
+      if (pElement->getModel() && pElement->getModel()->isConnector()) {
+        addElementToView(pElement, inherited, false, true, true, false);
+      }
+    }
   }
+}
 
-  QList<ModelInstance::Element*> elements = mpModelWidget->mModelInstance.getElements();
-  foreach (auto element, elements) {
-    qDebug() << element->getName();
+void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inherited)
+{
+  // We use access.icon so we can draw public components so that we can see and set the parameters in the parameters window.
+  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+    QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+    foreach (auto pElement, elements) {
+      if (pElement->getModel()) {
+        addElementToView(pElement, inherited, false, true, false, true);
+      }
+    }
   }
 }
 
@@ -598,6 +595,15 @@ void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTre
   if (emitComponentAdded) {
     mpModelWidget->getLibraryTreeItem()->emitComponentAdded(pAddComponentCommand->getComponent());
   }
+  if (!openingClass) {
+    mpModelWidget->updateModelText();
+  }
+}
+
+void GraphicsView::addElementToView(ModelInstance::Element *pElement, bool inherited, bool addObject, bool openingClass, bool addtoIcon, bool addtoDiagram)
+{
+  AddElementCommand *pAddElementCommand = new AddElementCommand(pElement, inherited, addObject, openingClass, addtoIcon, addtoDiagram, this);
+  mpModelWidget->getUndoStack()->push(pAddElementCommand);
   if (!openingClass) {
     mpModelWidget->updateModelText();
   }
@@ -4515,7 +4521,7 @@ void UndoStack::push(UndoCommand *cmd)
 }
 
 ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer)
-  : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeItem(pLibraryTreeItem),
+  : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpModelInstance(0), mpLibraryTreeItem(pLibraryTreeItem),
     mpUndoStack(0), mpUndoView(0), mpEditor(0), mComponentsLoaded(false), mDiagramViewLoaded(false), mConnectionsLoaded(false),
     mCreateModelWidgetComponents(false), mExtendsModifiersLoaded(false), mDerivedClassModifiersLoaded(false)
 {
@@ -4544,8 +4550,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
                                                                 .arg(mpLibraryTreeItem->getNameStructure(), jsonParserError.errorString()),
                                                                 Helper::scriptingKind, Helper::errorLevel));
         } else {
-          mModelInstance.deserialize(doc.object());
-          drawModelIcon();
+          mpModelInstance = new ModelInstance::Model;
+          mpModelInstance->deserialize(doc.object());
+          drawModel();
         }
       }
     } else {
@@ -4879,11 +4886,29 @@ void ModelWidget::loadElements()
   }
 }
 
-void ModelWidget::drawModelDiagram()
+void ModelWidget::drawModel()
 {
+  mpIconGraphicsView->drawCoordinateSystem();
   mpDiagramGraphicsView->drawCoordinateSystem();
-  mpDiagramGraphicsView->drawShapes(false);
-  mpDiagramGraphicsView->drawElements();
+  drawModelIconDiagram(mpModelInstance, false);
+}
+
+void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited)
+{
+  QList<ModelInstance::Extend*> extends = pModelInstance->getExtends();
+  foreach (auto pExtend, extends) {
+    drawModelIconDiagram(pExtend, true);
+  }
+
+  mpIconGraphicsView->drawShapes(pModelInstance, inherited, false);
+  mpIconGraphicsView->drawConnectors(pModelInstance, inherited);
+  mpDiagramGraphicsView->drawShapes(pModelInstance, inherited, false);
+  mpDiagramGraphicsView->drawElements(pModelInstance, inherited);
+}
+
+void ModelWidget::drawModelConnections()
+{
+
 }
 
 /*!
@@ -6836,15 +6861,6 @@ void ModelWidget::drawModelInheritedClassShapes(ModelWidget *pModelWidget, Strin
   }
 }
 
-void ModelWidget::drawModelIcon()
-{
-  mpIconGraphicsView->drawCoordinateSystem();
-  mpIconGraphicsView->drawShapes(false);
-
-//  qDebug() << mModelInstance.getIconCoordinateSystem();
-//  qDebug() << mModelInstance.getIconAnnotation();
-}
-
 /*!
  * \brief ModelWidget::getModelIconDiagramShapes
  * Gets the Modelica model icon & diagram shapes.
@@ -8003,7 +8019,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     if (pSubModelWidget == pModelWidget) {
       if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
         if (MainWindow::instance()->isNewApi()) {
-          pModelWidget->drawModelDiagram();
+          pModelWidget->drawModelConnections();
         } else {
           pModelWidget->loadDiagramView();
           pModelWidget->loadConnections();
@@ -8023,7 +8039,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
     if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       if (MainWindow::instance()->isNewApi()) {
-        pModelWidget->drawModelDiagram();
+        pModelWidget->drawModelConnections();
       } else {
         pModelWidget->loadDiagramView();
         pModelWidget->loadConnections();

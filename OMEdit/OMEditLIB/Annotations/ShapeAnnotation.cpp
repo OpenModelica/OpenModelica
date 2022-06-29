@@ -196,8 +196,8 @@ void FilledShape::parseShapeAnnotation(ModelInstance::FilledShape *pFilledShape)
 {
   mLineColor = pFilledShape->getLineColor().getColor();
   mFillColor = pFilledShape->getFillColor().getColor();
-//  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(annotation.value("linePattern").toString()));
-//  mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(annotation.value("fillPattern").toString()));
+  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(pFilledShape->getPattern()));
+  mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(pFilledShape->getFillPattern()));
   mLineThickness = pFilledShape->getLineThickness();
 }
 
@@ -277,6 +277,24 @@ QStringList FilledShape::getTextShapeAnnotation()
  * \param pShapeAnnotation
  * \param pParent
  */
+ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
+  : QGraphicsItem(pParent)
+{
+  mpParentComponent = dynamic_cast<Element*>(pParent);
+  mpGraphicsView = mpParentComponent->getGraphicsView();
+  //mTransformation = 0;
+  //mpReferenceShapeAnnotation = pShapeAnnotation;
+  mIsInheritedShape = false;
+  setOldScenePosition(QPointF(0, 0));
+  mIsCornerItemClicked = false;
+  mOldAnnotation = "";
+//  if (pShapeAnnotation) {
+//    connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+//    connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+//    connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+//  }
+}
+
 ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent)
   : QGraphicsItem(pParent)
 {

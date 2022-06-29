@@ -151,16 +151,16 @@ private:
     FilledShape();
     Color getLineColor() const {return mLineColor;}
     Color getFillColor() const {return mFillColor;}
-    LinePattern getPattern() const {return mPattern;}
-    FillPattern getFillPattern() const {return mFillPattern;}
+    QString getPattern() const {return mPattern;}
+    QString getFillPattern() const {return mFillPattern;}
     double getLineThickness() const {return mLineThickness;}
   protected:
     void deserialize(const QJsonArray &jsonArray);
   private:
     Color mLineColor;
     Color mFillColor;
-    LinePattern mPattern;
-    FillPattern mFillPattern;
+    QString mPattern;
+    QString mFillPattern;
     double mLineThickness;
   };
 
@@ -205,10 +205,12 @@ private:
   {
   public:
     IconDiagramAnnotation();
+    ~IconDiagramAnnotation();
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
     CoordinateSystem getCoordinateSystem() {return mCoordinateSystem;}
     QList<Shape*> getGraphics() const {return mGraphics;}
+    bool isGraphicsEmpty() const {return mGraphics.isEmpty();}
 
     CoordinateSystem mCoordinateSystem;
     QList<Shape*> mGraphics;
@@ -221,40 +223,106 @@ private:
   {
   public:
     Model();
+    virtual ~Model();
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
     QString getName() const {return mName;}
+    bool isConnector() const;
     QList<Extend *> getExtends() const {return mExtends;}
-    IconDiagramAnnotation getIconAnnotation() const {return mIconAnnotation;}
-    IconDiagramAnnotation getDiagramAnnotation() const {return mDiagramAnnotation;}
+    QString getComment() const {return mComment;}
+    IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation;}
+    IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation;}
     QList<Element *> getElements() const {return mElements;}
 
     QString mName;
+    QString mRestriction;
     QList<Extend*> mExtends;
-    IconDiagramAnnotation mIconAnnotation;
-    IconDiagramAnnotation mDiagramAnnotation;
+    QString mComment;
+    IconDiagramAnnotation *mpIconAnnotation;
+    IconDiagramAnnotation *mpDiagramAnnotation;
     QList<Element*> mElements;
   };
 
-  class Element : public Model
+  class Transformation
+  {
+  public:
+    Transformation();
+    void deserialize(const QJsonObject &jsonObject);
+    void serialize(QJsonObject &jsonObject) const;
+    Point getOrigin() const {return mOrigin;}
+    Extent getExtent() const {return mExtent;}
+    double getRotation() const {return mRotation;}
+  private:
+    Point mOrigin;
+    Extent mExtent;
+    double mRotation;
+  };
+
+  class PlacementAnnotation
+  {
+  public:
+    PlacementAnnotation();
+    void deserialize(const QJsonObject &jsonObject);
+    void serialize(QJsonObject &jsonObject) const;
+    bool getVisible() const {return mVisible;}
+    Transformation getTransformation() const {return mTransformation;}
+    bool getIconVisible() const {return mIconVisible;}
+    Transformation getIconTransformation() const {return mIconTransformation;}
+  private:
+    bool mVisible;
+    Transformation mTransformation;
+    bool mIconVisible;
+    Transformation mIconTransformation;
+  };
+
+  enum class Connector {Flow, Stream};
+  enum class variability {Constant, Parameter, Discrete};
+
+  class Element
   {
   public:
     Element();
+    ~Element();
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
+
     QString getName() const {return mName;}
-    void setName(const QString &value) {mName = value;}
+    QString getType() const {return mType;}
+    Model *getModel() const {return mpModel;}
+    QString getComment() const {return mComment;}
+    PlacementAnnotation getPlacementAnnotation() const {return mPlacementAnnotation;}
+    bool isPublic() const {return mPublic;}
+    bool isFinal() const {return mFinal;}
+    bool isInner() const {return mInner;}
+    bool isOuter() const {return mOuter;}
+    bool isReplaceable() const {return mReplaceable;}
+    bool isRedeclare() const {return mRedeclare;}
+    QString getConnector() const {return mConnector;}
+    QString getVariability() const {return mVariability;}
+    QString getDirection() const {return mDirection;}
   private:
     QString mName;
     QString mType;
+    Model *mpModel;
     QString mModifier;
-
+    bool mPublic;
+    bool mFinal;
+    bool mInner;
+    bool mOuter;
+    bool mReplaceable;
+    bool mRedeclare;
+    QString mConnector;
+    QString mVariability;
+    QString mDirection;
+    QString mComment;
+    PlacementAnnotation mPlacementAnnotation;
   };
 
   class Extend : public Model
   {
   public:
     Extend();
+    ~Extend();
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
   };

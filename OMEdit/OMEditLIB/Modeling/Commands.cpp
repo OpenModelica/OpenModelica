@@ -84,8 +84,12 @@ AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, UndoCommand 
  */
 void AddShapeCommand::redoInternal()
 {
-  mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation, mIndex);
-  mpShapeAnnotation->getGraphicsView()->deleteShapeFromOutOfSceneList(mpShapeAnnotation);
+  if (mpShapeAnnotation->isInheritedShape()) {
+    mpShapeAnnotation->getGraphicsView()->addInheritedShapeToList(mpShapeAnnotation);
+  } else {
+    mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation, mIndex);
+    mpShapeAnnotation->getGraphicsView()->deleteShapeFromOutOfSceneList(mpShapeAnnotation);
+  }
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation->getOriginItem());
   mpShapeAnnotation->emitAdded();
@@ -312,6 +316,87 @@ void AddComponentCommand::undo()
   mpDiagramGraphicsView->addElementToOutOfSceneList(mpDiagramComponent);
   mpDiagramComponent->emitDeleted();
   mpDiagramGraphicsView->deleteElementFromClass(mpDiagramComponent);
+}
+
+AddElementCommand::AddElementCommand(ModelInstance::Element *pElement, bool inherited, bool addObject, bool openingClass, bool addtoIcon, bool addtoDiagram,
+                                     GraphicsView *pGraphicsView, UndoCommand *pParent)
+  : UndoCommand(pParent)
+{
+  mpElement = pElement;
+  mAddObject = addObject;
+  mpIconElement = 0;
+  mpDiagramElement = 0;
+  mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
+  mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
+  mpGraphicsView = pGraphicsView;
+  setText(QString("Add Element %1").arg(mpElement->getName()));
+
+  ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
+  // if component is of connector type && containing class is Modelica type.
+  if (addtoIcon && pElement && pElement->getModel()->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // Connector type components exists on icon view as well
+    mpIconElement = new Element(pElement, inherited, mpIconGraphicsView);
+  }
+  if (addtoDiagram) {
+    mpDiagramElement = new Element(pElement, inherited, mpDiagramGraphicsView);
+  }
+  // only select the component of the active Icon/Diagram View
+  if (!openingClass) {
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      mpGraphicsView->clearSelection(mpIconElement);
+    } else {
+      mpGraphicsView->clearSelection(mpDiagramElement);
+    }
+  }
+}
+
+void AddElementCommand::redoInternal()
+{
+  ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
+  // if component is of connector type && containing class is Modelica type.
+  if (mpIconElement && mpElement->getModel()->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // Connector type components exists on icon view as well
+    if (mpIconElement->mTransformation.isValid() && mpIconElement->mTransformation.getVisible()) {
+      mpIconGraphicsView->addItem(mpIconElement);
+      mpIconGraphicsView->addItem(mpIconElement->getOriginItem());
+    }
+    if (mpIconElement->isInheritedElement()) {
+      mpIconGraphicsView->addInheritedElementToList(mpIconElement);
+    } else {
+      mpIconGraphicsView->addElementToList(mpIconElement);
+    }
+    // hide the component if it is connector and is protected
+//    mpIconComponent->setVisible(!mpComponentInfo->getProtected());
+  }
+  if (mpDiagramElement) {
+    if (mpDiagramElement->mTransformation.isValid() && mpDiagramElement->mTransformation.getVisible()) {
+      mpDiagramGraphicsView->addItem(mpDiagramElement);
+      mpDiagramGraphicsView->addItem(mpDiagramElement->getOriginItem());
+    }
+    if (mpDiagramElement->isInheritedElement()) {
+      mpDiagramGraphicsView->addInheritedElementToList(mpDiagramElement);
+    } else {
+      mpDiagramGraphicsView->addElementToList(mpDiagramElement);
+    }
+  }
+//  if (mAddObject) {
+//    mpDiagramGraphicsView->addElementToClass(mpDiagramComponent);
+//    UpdateComponentAttributesCommand::updateComponentModifiers(mpDiagramComponent, *mpDiagramComponent->getComponentInfo());
+//    if (mpDiagramComponent->getComponentInfo()->isArray()) {
+//      QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
+//      OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+//      const QString arrayIndex = QString("{%1}").arg(mpDiagramComponent->getComponentInfo()->getArrayIndex());
+//      if (!pOMCProxy->setComponentDimensions(modelName, mpDiagramComponent->getComponentInfo()->getName(), arrayIndex)) {
+//        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), Helper::ok);
+//        pOMCProxy->printMessagesStringInternal();
+//      }
+//    }
+//  }
+}
+
+void AddElementCommand::undo()
+{
+
 }
 
 UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Element *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,

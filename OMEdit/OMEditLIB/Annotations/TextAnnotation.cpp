@@ -574,8 +574,14 @@ void TextAnnotation::updateTextString()
     if (!mTextString.contains("%")) {
       return;
     }
-    if (mTextString.toLower().contains("%name")) {
-      mTextString.replace(QRegExp("%name"), mpComponent->getName());
+    if (MainWindow::instance()->isNewApi()) {
+      if (mTextString.toLower().contains("%name")) {
+        mTextString.replace(QRegExp("%name"), mpComponent->getModelElement()->getName());
+      }
+    } else {
+      if (mTextString.toLower().contains("%name")) {
+        mTextString.replace(QRegExp("%name"), mpComponent->getName());
+      }
     }
     if (mTextString.toLower().contains("%class") && mpComponent->getLibraryTreeItem()) {
       mTextString.replace(QRegExp("%class"), mpComponent->getLibraryTreeItem()->getNameStructure());

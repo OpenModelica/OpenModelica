@@ -50,8 +50,8 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
 }
 
-EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inherited, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -71,6 +71,21 @@ EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element 
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
+  applyTransformation();
+}
+
+EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *pParent)
+  : ShapeAnnotation(pParent)
+{
+  mpOriginItem = 0;
+  mpEllipse = pEllipse;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
   applyTransformation();
 }
 
@@ -108,8 +123,6 @@ void EllipseAnnotation::parseShapeAnnotation()
 {
   GraphicItem::parseShapeAnnotation(mpEllipse);
   FilledShape::parseShapeAnnotation(mpEllipse);
-
-  //mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(rectangle.value("borderPattern").toString()));
 
   QList<QPointF> extents;
   ModelInstance::Extent extent = mpEllipse->getExtent();

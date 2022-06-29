@@ -104,6 +104,23 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class AddElementCommand : public UndoCommand
+{
+public:
+  AddElementCommand(ModelInstance::Element *pElement, bool inherited, bool addObject, bool openingClass, bool addtoIcon, bool addtoDiagram,
+                    GraphicsView *pGraphicsView, UndoCommand *pParent = 0);
+  void redoInternal();
+  void undo();
+private:
+  ModelInstance::Element *mpElement;
+  bool mAddObject;
+  Element *mpIconElement;
+  Element *mpDiagramElement;
+  GraphicsView *mpIconGraphicsView;
+  GraphicsView *mpDiagramGraphicsView;
+  GraphicsView *mpGraphicsView;
+};
+
 class UpdateComponentTransformationsCommand : public UndoCommand
 {
 public:

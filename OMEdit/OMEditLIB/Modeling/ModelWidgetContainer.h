@@ -168,8 +168,9 @@ public:
   bool isVisualizationView() {return mVisualizationView;}
 
   void drawCoordinateSystem();
-  void drawShapes(bool select);
-  void drawElements();
+  void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool select);
+  void drawConnectors(ModelInstance::Model *pModelInstance, bool inherited);
+  void drawElements(ModelInstance::Model *pModelInstance, bool inherited);
 
 
   void setExtentRectangle(const QRectF rectangle);
@@ -225,6 +226,7 @@ public:
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
+  void addElementToView(ModelInstance::Element *pElement, bool inherited, bool addObject, bool openingClass, bool addtoIcon, bool addtoDiagram);
   void addElementToList(Element *pElement) {mElementsList.append(pElement);}
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
   void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}
@@ -528,6 +530,7 @@ class ModelWidget : public QWidget
 public:
   ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer);
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
+  ModelInstance::Model *getModelInstance() const {return mpModelInstance;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
@@ -563,7 +566,10 @@ public:
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
   void loadElements();
 
-  void drawModelDiagram();
+  void drawModel();
+  void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited);
+
+  void drawModelConnections();
 
   void loadDiagramView();
   void loadConnections();
@@ -596,10 +602,9 @@ public:
                                     const QString oldEditedCref = QString(""), const QString newEditedCref = QString(""));
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
   void processPendingModelUpdate();
-
-  ModelInstance::Model mModelInstance;
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
+  ModelInstance::Model *mpModelInstance;
   LibraryTreeItem *mpLibraryTreeItem;
   QToolButton *mpIconViewToolButton;
   QToolButton *mpDiagramViewToolButton;
@@ -644,7 +649,7 @@ private:
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
 
-  void drawModelIcon();
+
 
 
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);
