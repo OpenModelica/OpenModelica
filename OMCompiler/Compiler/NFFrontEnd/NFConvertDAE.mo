@@ -1215,23 +1215,24 @@ end convertExternalDeclOutput;
 
 public
 function makeTypeVars
-  input InstNode complexCls;
+  input ClassTree classTree;
+  input Restriction restriction;
   output list<DAE.Var> typeVars;
 protected
   Component comp;
   DAE.Var type_var;
 algorithm
-  typeVars := match cls as InstNode.getClass(complexCls)
-    case Class.INSTANCED_CLASS(restriction = Restriction.RECORD())
-      then list(makeTypeRecordVar(c) for c in ClassTree.getComponents(cls.elements));
+  typeVars := match cls as (classTree, restriction)
+    case (_, Restriction.RECORD())
+      then list(makeTypeRecordVar(c) for c in ClassTree.getComponents(classTree));
 
-    case Class.INSTANCED_CLASS(restriction = Restriction.RECORD_CONSTRUCTOR())
+    case (_, Restriction.RECORD_CONSTRUCTOR())
       then list(makeTypeRecordVar(c) for c guard not InstNode.isOutput(c)
-             in ClassTree.getComponents(cls.elements));
+             in ClassTree.getComponents(classTree));
 
-    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE())
+    case (ClassTree.FLAT_TREE(), _)
       then list(makeTypeVar(c) for c guard not InstNode.isOnlyOuter(c)
-             in ClassTree.getComponents(cls.elements));
+             in ClassTree.getComponents(classTree));
 
     else {};
   end match;
