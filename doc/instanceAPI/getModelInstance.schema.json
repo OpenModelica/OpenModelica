@@ -194,11 +194,9 @@
                   "type": "string",
                   "enum": ["constant", "parameter", "discrete"]
                 },
-                "input": {
-                  "type": "boolean"
-                },
-                "output": {
-                  "type": "boolean"
+                "direction": {
+                  "type": "string",
+                  "enum": ["input", "output"]
                 }
               }
             },
