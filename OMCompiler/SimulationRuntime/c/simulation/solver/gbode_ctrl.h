@@ -38,6 +38,7 @@
 #include "solver_main.h"
 
 #include "gbode_main.h"
+#include "gbode_conf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +47,7 @@ extern "C" {
 double CController(double* err_values, double* stepSize_values, unsigned int err_order);
 double IController(double* err_values, double* stepSize_values, unsigned int err_order);
 double PIController(double* err_values, double* stepSize_values, unsigned int err_order);
+gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method);
 
 void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 

@@ -871,18 +871,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_W */                            FLAG_TYPE_FLAG
 };
 
-const char *GB_NLS_METHOD_NAME[RK_NLS_MAX] = {
-  /* GB_NLS_UNKNOWN = 0*/ "unknown",
-  /* RK_NLS_NEWTON */     "newton",
-  /* RK_NLS_KINSOL */     "kinsol"
-};
-
-const char *GB_NLS_METHOD_DESC[RK_NLS_MAX] = {
-  /* GB_NLS_UNKNOWN = 0*/ "unknown",
-  /* RK_NLS_NEWTON */     "Newton method, dense",
-  /* RK_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse"
-};
-
 const char *GB_SINGLERATE_METHOD_NAME[RK_MAX] = {
   /* RK_UNKNOWN = 0 */   "unknown",
   /* MS_ADAMS_MOULTON */ "adams",
@@ -953,6 +941,18 @@ const char *GB_SINGLERATE_METHOD_DESC[RK_MAX] = {
   /* RK_RK1012 */        "rk1012",
   /* RK_RK1214 */        "rk1214",
   /* RK_DOPRI45 */       "dopri45"
+};
+
+const char *GB_NLS_METHOD_NAME[RK_NLS_MAX] = {
+  /* GB_NLS_UNKNOWN = 0*/ "unknown",
+  /* RK_NLS_NEWTON */     "newton",
+  /* RK_NLS_KINSOL */     "kinsol"
+};
+
+const char *GB_NLS_METHOD_DESC[RK_NLS_MAX] = {
+  /* GB_NLS_UNKNOWN = 0*/ "unknown",
+  /* RK_NLS_NEWTON */     "Newton method, dense",
+  /* RK_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse"
 };
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {

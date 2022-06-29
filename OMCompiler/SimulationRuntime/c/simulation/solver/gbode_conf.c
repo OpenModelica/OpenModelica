@@ -36,6 +36,22 @@
 #include "../../util/omc_error.h"
 #include "../../simulation/options.h"
 
+#include "gbode_conf.h"
+
+const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
+  /* GB_CTRL_UNKNOWN */   "unknown",
+  /* GB_CTRL_I */         "i",
+  /* GB_CTRL_PI */        "pi",
+  /* GB_CTRL_CNST */      "const"
+};
+
+const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
+  /* GB_CTRL_UNKNOWN */   "unknown",
+  /* GB_CTRL_I */         "I controller for step size",
+  /* GB_CTRL_PI */        "PI controller for step size",
+  /* GB_CTRL_CNST */      "Constant step size"
+};
+
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_SR or FLAG_MR.
  *
@@ -56,21 +72,16 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
   assertStreamPrint(NULL, flag==FLAG_SR || flag==FLAG_MR,
                     "Illegal input to getGB_method. Expected FLAG_SR or FLAG_MR ");
   flag_value = omc_flagValue[flag];
-  char* GB_method_string;
 
   // Get method from flag
   if (flag_value != NULL) {
-    GB_method_string = strdup(flag_value);
     for (method=RK_UNKNOWN; method<RK_MAX; method++) {
-      if (strcmp(GB_method_string, GB_SINGLERATE_METHOD_NAME[method]) == 0){
+      if (strcmp(flag_value, GB_SINGLERATE_METHOD_NAME[method]) == 0){
         infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: %s", GB_SINGLERATE_METHOD_NAME[method]);
-        free(GB_method_string);
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow gbode method %s.", GB_method_string);
-    errorStreamPrint(LOG_STDOUT, 0, "Choose gbode method: %s [from command line]", GB_method_string);
-    free(GB_method_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Unknow gbode method %s.", flag_value);
     return RK_UNKNOWN;
   }
 
@@ -118,7 +129,6 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
  *
  * @param flag        FLAG_SR_NLS for single-rate method.
  *                    FLAG_MR_NLS for multi-rate method.
- *
  * @return enum GB_NLS_METHOD   NLS method.
  */
 enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
@@ -127,21 +137,16 @@ enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
   assertStreamPrint(NULL, flag==FLAG_SR_NLS || flag==FLAG_MR_NLS,
                     "Illegal input to getGB_NLS_METHOD. Expected FLAG_SR_NLS or FLAG_MR_NLS ");
   flag_value = omc_flagValue[flag];
-  char* GB_NLS_METHOD_string;
 
   // Get method from flag
   if (flag_value != NULL) {
-    GB_NLS_METHOD_string = strdup(flag_value);
     for (method=GB_NLS_UNKNOWN; method<RK_NLS_MAX; method++) {
-      if (strcmp(GB_NLS_METHOD_string, GB_NLS_METHOD_NAME[method]) == 0){
+      if (strcmp(flag_value, GB_NLS_METHOD_NAME[method]) == 0){
         infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: %s", GB_NLS_METHOD_NAME[method]);
-        free(GB_NLS_METHOD_string);
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow non-linear solver method %s for gbode.", GB_NLS_METHOD_string);
-    errorStreamPrint(LOG_STDOUT, 0, "Choose gbode NLS method: %s [from command line]", GB_NLS_METHOD_string);
-    free(GB_NLS_METHOD_string);
+    errorStreamPrint(LOG_STDOUT, 0, "Unknow non-linear solver method %s for gbode.", flag_value);
     return GB_NLS_UNKNOWN;
   }
 
@@ -151,5 +156,43 @@ enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
     return RK_NLS_KINSOL;
+  }
+}
+
+/**
+ * @brief Get step size controller from simulation flag.
+ *
+ * Reads value from from FLAG_SR_CTRL or FLAG_MR_CTRL.
+ * Defaults to IController (GB_CTRL_I) if flag is not set.
+ *
+ * @param flag                    FLAG_SR_CTRL for single-rate method.
+ *                                FLAG_MR_CTRL for multi-rate method.
+ * @return enum GB_CTRL_METHOD    Step size controll method.
+ */
+enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
+  enum GB_CTRL_METHOD method;
+  const char *flag_value;
+  char* flag_value_string;
+
+  assertStreamPrint(NULL, flag==FLAG_SR_CTRL || flag==FLAG_MR_CTRL,
+                    "Illegal input to getControllerMethod. Expected FLAG_SR_CTRL or FLAG_MR_CTRL ");
+
+  flag_value = omc_flagValue[flag];
+  if (flag_value != NULL) {
+    for (method=GB_CTRL_UNKNOWN; method<GB_CTRL_MAX; method++) {
+      if (strcmp(flag_value, GB_CTRL_METHOD_NAME[method]) == 0) {
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size controll: %s", GB_CTRL_METHOD_NAME[method]);
+        return method;
+      }
+    }
+    errorStreamPrint(LOG_STDOUT, 0, "Unknow gbode step size controll %s.", flag_value);
+    infoStreamPrint(LOG_STDOUT, 1, "Valid arguments are:");
+    for (method=GB_CTRL_UNKNOWN; method<GB_CTRL_MAX; method++) {
+      infoStreamPrint(LOG_STDOUT, 0, "%s", GB_CTRL_METHOD_NAME[method]);
+    }
+    messageClose(LOG_STDOUT);
+    return GB_CTRL_UNKNOWN;
+  } else {
+    return GB_CTRL_I;
   }
 }

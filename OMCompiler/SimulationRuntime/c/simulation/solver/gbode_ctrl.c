@@ -126,6 +126,27 @@ double PIController(double* err_values, double* stepSize_values, unsigned int er
 
 }
 
+/**
+ * @brief Get step size controll function from method.
+ *
+ * @param ctrl_method     Specifying method.
+ * @return void*          Pointer to step size controll function.
+ */
+gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method) {
+  switch (ctrl_method)
+  {
+  case GB_CTRL_I:
+    return IController;
+  case GB_CTRL_PI:
+    return PIController;
+  case GB_CTRL_CNST:
+    return CController;
+  default:
+    errorStreamPrint(LOG_STDOUT, 0, "Unknown step size controll method.");
+    return NULL;
+  }
+}
+
 
 /**
  * @brief Calculate initial step size.
