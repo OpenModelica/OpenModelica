@@ -132,6 +132,49 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
 }
 
 /**
+ * @brief Allocate memory for non-linear system data.
+ *
+ * Initialize varaibles with 0.
+ * Free memory with freeNlsDataGB.
+ *
+ * @param threadData                Used for error handling
+ * @param size                      Size of non-linear system
+ * @return NONLINEAR_SYSTEM_DATA*   Allocated non-linear system data.
+ */
+NONLINEAR_SYSTEM_DATA* allocNlsDataGB(threadData_t* threadData, const int size) {
+  NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) calloc(1, sizeof(NONLINEAR_SYSTEM_DATA));
+  assertStreamPrint(threadData, nlsData != NULL,"Out of memory");
+
+  nlsData->size = size;
+
+  nlsData->nlsx              = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->nlsxExtrapolation = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->nlsxOld           = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->resValues         = (double*) malloc(nlsData->size*sizeof(double));
+
+  nlsData->nominal = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->min     = (double*) malloc(nlsData->size*sizeof(double));
+  nlsData->max     = (double*) malloc(nlsData->size*sizeof(double));
+  return nlsData;
+}
+
+/**
+ * @brief Free non-linear system data.
+ *
+ * @param nlsData   Pointer to nls-data.
+ */
+void freeNlsDataGB(NONLINEAR_SYSTEM_DATA* nlsData) {
+  free(nlsData->nlsx);
+  free(nlsData->nlsxExtrapolation);
+  free(nlsData->nlsxOld);
+  free(nlsData->resValues);
+  free(nlsData->nominal);
+  free(nlsData->min);
+  free(nlsData->max);
+  free(nlsData);
+}
+
+/**
  * @brief Allocate and initialize non-linear system data for Runge-Kutta method.
  *
  * Runge-Kutta method has to be implicit or diagonal implicit.
@@ -147,23 +190,11 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   // TODO AHeu: Free solverData again
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
 
-  ANALYTIC_JACOBIAN* jacobian = NULL;
-
-  NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) calloc(1, sizeof(NONLINEAR_SYSTEM_DATA));
-  assertStreamPrint(threadData, nlsData != NULL,"Out of memory");
-
+  NONLINEAR_SYSTEM_DATA* nlsData;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
 
-  nlsData->size = gbData->nlSystemSize;
+  nlsData = allocNlsDataGB(threadData, gbData->nlSystemSize);
   nlsData->equationIndex = -1;
-
-  nlsData->homotopySupport = FALSE;
-  nlsData->initHomotopy = FALSE;
-  nlsData->mixedSystem = FALSE;
-
-  nlsData->min = NULL;
-  nlsData->max = NULL;
-  nlsData->nominal = NULL;
 
   switch (gbData->type)
   {
@@ -204,18 +235,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gbData->type);
     break;
   }
-
-  /* allocate system data */
-  nlsData->nlsx = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->nlsxExtrapolation = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->nlsxOld = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->resValues = (double*) malloc(nlsData->size*sizeof(double));
-
-  nlsData->lastTimeSolved = 0.0;
-
-  nlsData->nominal = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->min = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->max = (double*) malloc(nlsData->size*sizeof(double));
 
   // TODO: Do we need to initialize the Jacobian or is it already initialized?
   ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -282,23 +301,11 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   struct dataSolver *solverData = (struct dataSolver*) calloc(1, sizeof(struct dataSolver));
 
-  ANALYTIC_JACOBIAN* jacobian = NULL;
-
-  NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) calloc(1, sizeof(NONLINEAR_SYSTEM_DATA));
-  assertStreamPrint(threadData, nlsData != NULL,"Out of memory");
-
+  NONLINEAR_SYSTEM_DATA* nlsData;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
 
-  nlsData->size = gbfData->nStates;
+  nlsData = allocNlsDataGB(threadData, gbfData->nStates);
   nlsData->equationIndex = -1;
-
-  nlsData->homotopySupport = FALSE;
-  nlsData->initHomotopy = FALSE;
-  nlsData->mixedSystem = FALSE;
-
-  nlsData->min = NULL;
-  nlsData->max = NULL;
-  nlsData->nominal = NULL;
 
   switch (gbfData->type)
   {
@@ -328,18 +335,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gbfData->type);
     break;
   }
-
-  /* allocate system data */
-  nlsData->nlsx = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->nlsxExtrapolation = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->nlsxOld = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->resValues = (double*) malloc(nlsData->size*sizeof(double));
-
-  nlsData->lastTimeSolved = 0.0;
-
-  nlsData->nominal = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->min = (double*) malloc(nlsData->size*sizeof(double));
-  nlsData->max = (double*) malloc(nlsData->size*sizeof(double));
 
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE);
 
@@ -384,6 +379,38 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   return nlsData;
 }
+
+/**
+ * @brief Free memory of gbode non-linear system data.
+ *
+ * Free memory allocated with initRK_NLS_DATA or initRK_NLS_DATA_MR
+ *
+ * @param nlsData           Pointer to non-linear system data.
+ * @param nlsSolverMethod   Used non-linear system solver method.
+ */
+void freeRK_NLS_DATA( NONLINEAR_SYSTEM_DATA* nlsData, enum GB_NLS_METHOD nlsSolverMethod) {
+  if (nlsData == NULL) return;
+
+  struct dataSolver *dataSolver = nlsData->solverData;
+  switch (nlsSolverMethod)
+  {
+  case RK_NLS_NEWTON:
+    freeNewtonData(dataSolver->ordinaryData);
+    break;
+  case RK_NLS_KINSOL:
+    nlsKinsolFree(dataSolver->ordinaryData);
+    break;
+  default:
+    warningStreamPrint(LOG_SOLVER, 0, "Not handled GB_NLS_METHOD in gbode_freeData. Are we leaking memroy?");
+    break;
+  }
+  free(dataSolver);
+
+  freeSparsePattern(nlsData->sparsePattern);
+  freeNlsDataGB(nlsData);
+  return;
+}
+
 
 /**
  * @brief Residual function for non-linear system of generic multistep methods.
