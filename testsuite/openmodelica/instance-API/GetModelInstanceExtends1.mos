@@ -32,7 +32,6 @@ getModelInstance(M, prettyPrint=true);
 //         {
 //           \"name\": \"x\",
 //           \"type\": \"Real\",
-//           \"modifier\": \"\",
 //           \"prefixes\": {
 //
 //           }
@@ -44,7 +43,6 @@ getModelInstance(M, prettyPrint=true);
 //     {
 //       \"name\": \"y\",
 //       \"type\": \"Real\",
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }
@@ -52,7 +50,6 @@ getModelInstance(M, prettyPrint=true);
 //     {
 //       \"name\": \"z\",
 //       \"type\": \"Real\",
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }

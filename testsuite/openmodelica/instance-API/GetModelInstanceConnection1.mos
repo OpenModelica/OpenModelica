@@ -46,7 +46,6 @@ getModelInstance(M, prettyPrint = true);
 //               {
 //                 \"name\": \"e\",
 //                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
 //                 \"prefixes\": {
 //
 //                 }
@@ -54,14 +53,12 @@ getModelInstance(M, prettyPrint = true);
 //               {
 //                 \"name\": \"f\",
 //                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
 //                 \"prefixes\": {
 //                   \"connector\": \"flow\"
 //                 }
 //               }
 //             ]
 //           },
-//           \"modifier\": \"\",
 //           \"prefixes\": {
 //
 //           }
@@ -75,7 +72,6 @@ getModelInstance(M, prettyPrint = true);
 //               {
 //                 \"name\": \"e\",
 //                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
 //                 \"prefixes\": {
 //
 //                 }
@@ -83,14 +79,12 @@ getModelInstance(M, prettyPrint = true);
 //               {
 //                 \"name\": \"f\",
 //                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
 //                 \"prefixes\": {
 //                   \"connector\": \"flow\"
 //                 }
 //               }
 //             ]
 //           },
-//           \"modifier\": \"\",
 //           \"prefixes\": {
 //
 //           }
@@ -108,7 +102,6 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"name\": \"e\",
 //             \"type\": \"Real\",
-//             \"modifier\": \"\",
 //             \"prefixes\": {
 //
 //             }
@@ -116,14 +109,12 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"name\": \"f\",
 //             \"type\": \"Real\",
-//             \"modifier\": \"\",
 //             \"prefixes\": {
 //               \"connector\": \"flow\"
 //             }
 //           }
 //         ]
 //       },
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }
