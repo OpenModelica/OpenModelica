@@ -28,7 +28,9 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
-//       \"modifier\": \" = 2.0\",
+//       \"modifiers\": {
+//         \"value\": \"2.0\"
+//       },
 //       \"value\": {
 //         \"binding\": 2
 //       },
@@ -53,7 +55,9 @@ getModelInstance(M, prettyPrint = true);
 //                 \"3\"
 //               ]
 //             },
-//             \"modifier\": \" = {1, 2, 3}\",
+//             \"modifiers\": {
+//               \"value\": \"{1, 2, 3}\"
+//             },
 //             \"value\": {
 //               \"binding\": [
 //                 1,
@@ -67,7 +71,6 @@ getModelInstance(M, prettyPrint = true);
 //           }
 //         ]
 //       },
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }
@@ -75,7 +78,9 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"y\",
 //       \"type\": \"Real\",
-//       \"modifier\": \" = a.x[1]\",
+//       \"modifiers\": {
+//         \"value\": \"a.x[1]\"
+//       },
 //       \"value\": {
 //         \"binding\": {
 //           \"$kind\": \"cref\",

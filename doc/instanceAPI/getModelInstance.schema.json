@@ -12,6 +12,10 @@
       "description": "The kind of class",
       "type": "string"
     },
+    "modifier": {
+      "description": "Modifier from the SCode",
+      "type": "#/definitions/modifier"
+    },
     "extends": {
       "description": "The extends clauses in the class instance",
       "type": "array",
@@ -150,7 +154,7 @@
             },
             "modifier": {
               "description": "Modifier from the SCode",
-              "type": "string"
+              "type": "#/definitions/modifier"
             },
             "value": {
               "description": "The component's binding equation",
@@ -225,6 +229,22 @@
         }
       },
       "required": ["binding"]
+    },
+    "modifier": {
+      "description": "A modifier",
+      "type": "object",
+      "properties": {
+        "value": [
+          "type": "string"
+        ],
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "type": "#/definitions/modifier"
+          }
+        }
+      },
+      "required": []
     }
   }
 }

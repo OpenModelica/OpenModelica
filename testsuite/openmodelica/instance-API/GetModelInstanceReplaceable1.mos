@@ -28,7 +28,9 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
-//       \"modifier\": \" = 1.0\",
+//       \"modifiers\": {
+//         \"value\": \"1.0\"
+//       },
 //       \"value\": {
 //         \"binding\": 1
 //       },
@@ -45,14 +47,12 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"name\": \"x\",
 //             \"type\": \"Real\",
-//             \"modifier\": \"\",
 //             \"prefixes\": {
 //
 //             }
 //           }
 //         ]
 //       },
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }

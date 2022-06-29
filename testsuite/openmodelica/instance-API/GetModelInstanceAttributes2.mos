@@ -43,7 +43,6 @@ getModelInstance(M, prettyPrint = true);
 //         {
 //           \"name\": \"w\",
 //           \"type\": \"Real\",
-//           \"modifier\": \"\",
 //           \"prefixes\": {
 //             \"public\": false,
 //             \"replaceable\": true,
@@ -53,7 +52,6 @@ getModelInstance(M, prettyPrint = true);
 //         {
 //           \"name\": \"z\",
 //           \"type\": \"Real\",
-//           \"modifier\": \"\",
 //           \"prefixes\": {
 //             \"inner\": true
 //           }
@@ -65,7 +63,6 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"z\",
 //       \"type\": \"Real\",
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"outer\": true
 //       }
@@ -73,7 +70,6 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"final\": true
 //       }
@@ -81,7 +77,6 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"y\",
 //       \"type\": \"Real\",
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"input\": true
 //       }
@@ -89,7 +84,6 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"z\",
 //       \"type\": \"Real\",
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"inner\": true
 //       }
@@ -97,7 +91,6 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"w\",
 //       \"type\": \"Real\",
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"public\": false,
 //         \"replaceable\": true,
@@ -113,7 +106,6 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"name\": \"e\",
 //             \"type\": \"Real\",
-//             \"modifier\": \"\",
 //             \"prefixes\": {
 //
 //             }
@@ -121,7 +113,6 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"name\": \"f\",
 //             \"type\": \"Real\",
-//             \"modifier\": \"\",
 //             \"prefixes\": {
 //               \"connector\": \"flow\"
 //             }
@@ -129,14 +120,12 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"name\": \"s\",
 //             \"type\": \"Real\",
-//             \"modifier\": \"\",
 //             \"prefixes\": {
 //               \"connector\": \"stream\"
 //             }
 //           }
 //         ]
 //       },
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //         \"public\": false,
 //         \"variability\": \"parameter\"
