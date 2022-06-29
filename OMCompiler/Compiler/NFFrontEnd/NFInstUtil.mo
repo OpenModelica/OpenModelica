@@ -111,6 +111,50 @@ public
     exp := Expression.map(exp, traverser);
   end combineSubscriptsExp;
 
+  function propagateRecordTypes
+    "Collects record types from equations and variables and propagates them to the variables.
+    Needs to be done at the end of frontend phase because of cyclic dependencies between records and record elements."
+    input output FlatModel flatModel;
+  protected
+    UnorderedMap<ComponentRef, Type> map = UnorderedMap.new<Type>(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    // 1. collect all record types of record variable crefs in equations and algorithms
+    _ := list(Equation.mapExp(eqn, function collectRecordTypes(map = map)) for eqn in flatModel.equations);
+    _ := list(Equation.mapExp(eqn, function collectRecordTypes(map = map)) for eqn in flatModel.initialEquations);
+    _ := list(Algorithm.mapExp(eqn, function collectRecordTypes(map = map)) for eqn in flatModel.algorithms);
+    _ := list(Algorithm.mapExp(eqn, function collectRecordTypes(map = map)) for eqn in flatModel.initialAlgorithms);
+
+    // 2. replace all record types with the collected types
+    flatModel.variables := list(updateRecordTypes(var, map) for var in flatModel.variables);
+  end propagateRecordTypes;
+
+  function collectRecordTypes
+    "Collects a record type and saves it in an unordered map
+    Map with Equation.mapExp or Algorithm.mapExp"
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, Type> map;
+  algorithm
+    () := match exp
+      local
+        ComponentRef cref;
+      case Expression.CREF(cref = cref as ComponentRef.CREF()) guard(Type.isRecord(cref.ty)) algorithm
+        UnorderedMap.add(cref, cref.ty, map);
+      then ();
+      else ();
+    end match;
+  end collectRecordTypes;
+
+  function updateRecordTypes
+    "Applies collected record type updates to variables using an UnorderedMap."
+    input output Variable var;
+    input UnorderedMap<ComponentRef, Type> map;
+  algorithm
+    if UnorderedMap.contains(var.name, map) then
+      var.ty    := UnorderedMap.getSafe(var.name, map);
+      var.name  := ComponentRef.setNodeType(var.ty, var.name);
+    end if;
+  end updateRecordTypes;
+
   function printStructuralParameters
     input FlatModel flatModel;
   protected
