@@ -25,17 +25,19 @@ getModelInstance(B, prettyPrint = true);
 //   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
-//       \"name\": \"A\",
-//       \"restriction\": \"model\",
-//       \"components\": [
-//         {
-//           \"name\": \"x\",
-//           \"type\": \"Real\",
-//           \"prefixes\": {
+//       \"baseClass\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
 //
+//             }
 //           }
-//         }
-//       ]
+//         ]
+//       }
 //     }
 //   ],
 //   \"components\": [
