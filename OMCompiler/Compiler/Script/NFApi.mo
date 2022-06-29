@@ -1193,11 +1193,9 @@ algorithm
   end if;
 
   if AbsynUtil.isInput(attrs.direction) then
-    json := JSON.addPair("input", JSON.makeBoolean(true), json);
-  end if;
-
-  if AbsynUtil.isOutput(attrs.direction) then
-    json := JSON.addPair("output", JSON.makeBoolean(true), json);
+    json := JSON.addPair("direction", JSON.makeString("input"), json);
+  elseif AbsynUtil.isOutput(attrs.direction) then
+    json := JSON.addPair("direction", JSON.makeString("output"), json);
   end if;
 end dumpJSONAttributes;
 
