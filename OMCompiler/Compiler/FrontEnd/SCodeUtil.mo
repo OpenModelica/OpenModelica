@@ -4290,6 +4290,7 @@ algorithm
     case SCode.CLASS(classDef = SCode.DERIVED(modifications = mod)) then mod;
     case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod)) then mod;
     case SCode.EXTENDS(modifications = mod) then mod;
+    else SCode.NOMOD();
 
   end match;
 end elementMod;

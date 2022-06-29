@@ -934,6 +934,7 @@ algorithm
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
+  json := dumpJSONMod(SCodeUtil.elementMod(InstNode.definition(node)), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtends(exts), json);
@@ -1025,7 +1026,7 @@ algorithm
             dumpJSONDims(elem.attributes.arrayDims, Type.arrayDims(comp.ty)), json);
         end if;
 
-        json := JSON.addPair("modifier", JSON.makeString(SCodeDump.printModStr(elem.modifications)), json);
+        json := dumpJSONMod(elem.modifications, json);
 
         //if not Type.isComplex(comp.ty) then
         //  json := dumpJSONBuiltinClassComponents(comp.classInst, elem.modifications, json);
@@ -1433,14 +1434,23 @@ end dumpJSONReplaceableElements;
 
 function dumpJSONMod
   input SCode.Mod mod;
-  output JSON json = JSON.emptyObject();
+  input output JSON json;
+protected
+  JSON j = JSON.emptyObject();
 algorithm
   () := match mod
     case SCode.Mod.MOD()
       algorithm
+        if isSome(mod.binding) then
+          j := JSON.addPair("value",
+            JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding))), j);
+        end if;
+
         for sm in mod.subModLst loop
-          json := JSON.addPair(sm.ident, dumpJSONSubMod(sm), json);
+          j := JSON.addPair(sm.ident, dumpJSONSubMod(sm), j);
         end for;
+
+        json := JSON.addPair("modifiers", j, json);
       then
         ();
 
@@ -1457,13 +1467,13 @@ algorithm
   () := match mod
     case SCode.Mod.MOD()
       algorithm
-        if not listEmpty(mod.subModLst) then
-          json := JSON.addPair("modifiers", dumpJSONMod(mod), json);
-        end if;
-
         if isSome(mod.binding) then
           json := JSON.addPair("value",
             JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding))), json);
+        end if;
+
+        if not listEmpty(mod.subModLst) then
+          json := dumpJSONMod(mod, json);
         end if;
       then
         ();
