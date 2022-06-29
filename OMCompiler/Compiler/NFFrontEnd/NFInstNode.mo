@@ -1674,20 +1674,23 @@ uniontype InstNode
         Class cls;
         list<DAE.Var> vars;
         ClassInf.State state;
+        Restriction res;
+        ClassTree cls_tree;
 
       case CLASS_NODE()
         algorithm
-          Pointer.update(clsNode.cls, Class.DAE_TYPE(DAE.Type.T_UNKNOWN()));
           cls := Pointer.access(clsNode.cls);
         then
           match cls
             case Class.DAE_TYPE() then cls.ty;
-
+              
             else
               algorithm
-                state := Restriction.toDAE(Class.restriction(cls),
-                                           scopePath(clsNode, includeRoot = true));
-                vars := ConvertDAE.makeTypeVars(clsNode);
+                cls_tree := Class.classTree(getClass(clsNode));
+                Pointer.update(clsNode.cls, Class.DAE_TYPE(DAE.Type.T_UNKNOWN()));
+                res := Class.restriction(cls);
+                state := Restriction.toDAE(res, scopePath(clsNode, includeRoot = true));
+                vars := ConvertDAE.makeTypeVars(cls_tree, res);
                 outType := DAE.Type.T_COMPLEX(state, vars, NONE());
                 Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));
               then
