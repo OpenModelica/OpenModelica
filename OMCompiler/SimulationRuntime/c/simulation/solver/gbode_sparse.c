@@ -80,10 +80,7 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
 
   // initialize array to zeros
   int* tabu;
-  tabu = (int*) malloc(sizeCols*sizeCols*sizeof(int));
-  for (i=0; i<sizeCols; i++)
-     for (j=0; j<sizeCols; j++)
-        tabu[i*sizeCols + j] = 0;
+  tabu = (int*) calloc(sizeCols*sizeCols, sizeof(int));
 
   // Allocate memory for new sparsity pattern
   sparsePatternT = allocSparsePattern(sizeCols, sparsePattern->numberOfNonZeros, sizeCols);
@@ -128,8 +125,7 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
   sparsePattern->maxColors = maxColors;
 
   // free memory allocation for the transposed sprasity pattern
-  free(sparsePatternT->leadindex);
-  free(sparsePatternT->index);
+  freeSparsePattern(sparsePatternT);
   free(sparsePatternT);
   free(tabu);
 }
@@ -177,7 +173,7 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   int length_index = jacobian->sparsePattern->numberOfNonZeros + missingDiags;
 
   // Allocate memory for new sparsity pattern
-  sparsePattern_DIRK = allocSparsePattern(jacobian->sizeRows, length_index, jacobian->sizeCols);
+  sparsePattern_DIRK = allocSparsePattern(sizeRows, length_index, sizeCols);
 
   /* Set diagonal elements of sparsitiy pattern to non-zero */
   i = 0;

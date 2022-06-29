@@ -70,6 +70,7 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
 
   /* Initialize sparsity pattern */
   if (initSparsPattern) {
+    // TODO AHeu: This is leaking memory?
     nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
@@ -98,6 +99,7 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
 
   /* Initialize sparsity pattern, First guess (all states are fast states) */
   if (initSparsPattern) {
+    // TODO AHeu: This is leaking memory?
     nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
@@ -237,13 +239,16 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   }
 
   // TODO: Do we need to initialize the Jacobian or is it already initialized?
-  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  data->callback->initialAnalyticJacobianA(data, threadData, jacobian_ODE);
+  // This leaks memory
+  //ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  //data->callback->initialAnalyticJacobianA(data, threadData, jacobian_ODE);
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE);
 
   // TODO: Set callback to initialize Jacobian
   //       Write said function...
   // TODO: Free memory
+  // TODO AHeu: This will leak memory if gbData->jacobian is already set!
+  // What Jacobian is this? For the NLS or for the ODE?
   gbData->jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
   initAnalyticJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
@@ -406,7 +411,9 @@ void freeRK_NLS_DATA( NONLINEAR_SYSTEM_DATA* nlsData, enum GB_NLS_METHOD nlsSolv
   }
   free(dataSolver);
 
-  freeSparsePattern(nlsData->sparsePattern);
+  // TODO AHeu: This malloc and free is a nightmare!
+  //freeSparsePattern(nlsData->sparsePattern);
+  //free(nlsData->sparsePattern); nlsData->sparsePattern = NULL;
   freeNlsDataGB(nlsData);
   return;
 }

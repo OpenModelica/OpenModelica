@@ -244,6 +244,9 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
       messageClose(LOG_SOLVER);
     }
+    // TODO: Do we leak memory here?
+    // Only do:
+    // gbfData->symJacAvailable = gbData->symJacAvailable;
 
     /* Allocate memory for the nonlinear solver */
     gbfData->nlsSolverMethod = getGB_NLS_METHOD(FLAG_MR_NLS);
@@ -254,6 +257,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     {
       return -1;
     }
+    // TODO AHeu: This is leaking memory
     gbfData->sparesPattern_DIRK = initializeSparsePattern_SR(data, gbfData->nlsData);
   }
   else
@@ -313,7 +317,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   gbData->nStates = data->modelData->nStates;
 
-  ANALYTIC_JACOBIAN *jacobian = NULL;
+  ANALYTIC_JACOBIAN* jacobian = NULL;
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
   gbData->GM_method = getGB_method(FLAG_SR);
@@ -399,13 +403,15 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   /* initialize analytic Jacobian, if available and needed */
   if (!gbData->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    // TODO AHeu: Do we need to initialize the Jacobian or is it already initialized?
+    // TODO AHeu: What do we do with jacobian? At the moment it just leaks memory
     if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
       gbData->symJacAvailable = FALSE;
+      //gbData->jacobian = NULL;  Add this???
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
       // ToDo: If Jacobian available set this to TRUE
       gbData->symJacAvailable = FALSE;
+      //gbData->jacobian = jacobian;  Add this?
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
@@ -488,29 +494,13 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 void gbodef_freeData(DATA_GBODEF *gbfData)
 {
   /* Free non-linear system data */
-  if (gbfData->nlsData != NULL)
-  {
-    struct dataSolver *dataSolver = gbfData->nlsData->solverData;
-    switch (gbfData->nlsSolverMethod)
-    {
-    case RK_NLS_NEWTON:
-      freeNewtonData(dataSolver->ordinaryData);
-      break;
-    case RK_NLS_KINSOL:
-      // kinsolData = (NLS_KINSOL_DATA*) gbData->nlsData->solverData;
-      nlsKinsolFree(dataSolver->ordinaryData);
-      break;
-    default:
-      warningStreamPrint(LOG_SOLVER, 0, "Not handled GB_NLS_METHOD in gbodef_freeData. Are we leaking memroy?");
-      break;
-    }
-    free(dataSolver);
-    free(gbfData->nlsData);
-  }
+  freeRK_NLS_DATA(gbfData->nlsData, gbfData->nlsSolverMethod);
 
   /* Free Jacobian */
   freeAnalyticJacobian(gbfData->jacobian);
+  free(gbfData->jacobian); gbfData->jacobian = NULL;
 
+  /* Free Butcher tableau */
   freeButcherTableau(gbfData->tableau);
 
   free(gbfData->y);
@@ -553,27 +543,11 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
 void gbode_freeData(DATA_GBODE *gbData)
 {
   /* Free non-linear system data */
-  if (gbData->nlsData != NULL)
-  {
-    struct dataSolver *dataSolver = gbData->nlsData->solverData;
-    switch (gbData->nlsSolverMethod)
-    {
-    case RK_NLS_NEWTON:
-      freeNewtonData(dataSolver->ordinaryData);
-      break;
-    case RK_NLS_KINSOL:
-      // kinsolData = (NLS_KINSOL_DATA*) gbData->nlsData->solverData;
-      nlsKinsolFree(dataSolver->ordinaryData);
-      break;
-    default:
-      warningStreamPrint(LOG_SOLVER, 0, "Not handled GB_NLS_METHOD in gbode_freeData. Are we leaking memroy?");
-      break;
-    }
-    free(dataSolver);
-    free(gbData->nlsData);
-  }
+  freeRK_NLS_DATA(gbData->nlsData, gbData->nlsSolverMethod);
+
   /* Free Jacobian */
   freeAnalyticJacobian(gbData->jacobian);
+  free(gbData->jacobian); gbData->jacobian = NULL;
 
   /* Free Butcher tableau */
   freeButcherTableau(gbData->tableau);
@@ -594,6 +568,7 @@ void gbode_freeData(DATA_GBODE *gbData)
   free(gbData->kr);
   free(gbData->fastStates);
   free(gbData->slowStates);
+  free(gbData->sortedStates);
 
   /* Free remaining arrays */
   free(gbData->y);
@@ -765,6 +740,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     if (gbfData->nlsData->isPatternAvailable)
     {
+      // TODO AHeu: This leaks memory!
       gbfData->jacobian->sparsePattern = initializeSparsePattern_MR(gbData);
       gbfData->jacobian->sizeCols = nFastStates;
       gbfData->jacobian->sizeRows = nFastStates;
