@@ -253,8 +253,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     }
     else
     {
-      // ToDo: If Jacobian available set this to FALSE
-      gbfData->symJacAvailable = TRUE;
+      // ToDo: If Jacobian available set this to TRUE
+      gbfData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
@@ -439,8 +439,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       gbData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
-      // ToDo: If Jacobian available set this to FALSE
-      gbData->symJacAvailable = TRUE;
+      // ToDo: If Jacobian available set this to TRUE
+      gbData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);

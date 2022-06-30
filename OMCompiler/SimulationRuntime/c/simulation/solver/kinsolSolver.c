@@ -895,7 +895,7 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
       } else {
         /* Update f(x) for the numerical jacobian matrix */
         nlsKinsolResiduals(x, kinsolData->fTmp, kinsolData->userData);
-        nlsSparseJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
+        nlsSparseJac(x, kinsolData->fTmp, spJac, kinsolData->userData, tmp1, tmp2);
       }
     } else {
       /* Update f(x) for the numerical jacobian matrix */
