@@ -1065,6 +1065,10 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
         LOG_NLS_V, 0,
         "kinsols runs into issues retry with different configuration.\n");
     break;
+  case KIN_LINIT_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "KINSOL: The linear solver's initialization function failed.\n");
+    return errorCode;
   case KIN_LSETUP_FAIL:
     /* In case something goes wrong with the symbolic jacobian try the numerical */
     if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
@@ -1217,7 +1221,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
     /* write statistics */
     KINGetNumNonlinSolvIters(kinsolData->kinsolMemory, &nFEval);
     nlsData->numberOfIterations += nFEval;
-    nlsData->numberOfFEval += kinsolData->countResCalls;
+    nlsData->numberOfFEval = kinsolData->countResCalls;
 
     infoStreamPrint(LOG_NLS_V, 0, "Next try? success = %d, retry = %d, retries = %d = %s\n",
                     success, retry, kinsolData->retries,
@@ -1251,19 +1255,19 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
 
 #else /* WITH_SUNDIALS */
 
-int nlsKinsolAllocate(DATA *data, threadData_t *threadData, int size, int sysNumber, NONLINEAR_SYSTEM_DATA *nlsData, ANALYTIC_JACOBIAN* analyticJacobian, NLS_LS linearSolverMethod) {
+void* nlsKinsolAllocate(int size, void* userData, int attemptRetry) {
 
   throwStreamPrint(NULL, "No sundials/kinsol support activated.");
   return 0;
 }
 
-int nlsKinsolFree(void **solverData) {
+int nlsKinsolFree(void* kinsolData) {
 
   throwStreamPrint(NULL, "No sundials/kinsol support activated.");
   return 0;
 }
 
-int nlsKinsolSolve(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData) {
+int nlsKinsolSolve(void *data, threadData_t *threadData, void* nlsData) {
 
   throwStreamPrint(threadData, "No sundials/kinsol support activated.");
   return 0;
