@@ -241,7 +241,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     else
     {
       // ToDo: If Jacobian available set this to TRUE
-      gbfData->symJacAvailable = FALSE;
+      gbfData->symJacAvailable = TRUE;
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
@@ -415,7 +415,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
       // ToDo: If Jacobian available set this to TRUE
-      gbData->symJacAvailable = FALSE;
+      gbData->symJacAvailable = TRUE;
       //gbData->jacobian = jacobian;  Add this?
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
@@ -1685,7 +1685,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       if (gb_step_info != 0) {
         infoStreamPrint(LOG_SOLVER, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
         if (gbData->ctrl_method == GB_CTRL_CNST) {
-          errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted!");
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted since gbode is running with fixed step size!");
           messageClose(LOG_SOLVER);
           return -1;
         } else {
@@ -1696,7 +1696,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
             err = 100; // This forces the integrator to repeat the step
             continue;
           } else {
-            errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted!");
+            errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted because the step size is less then %g!", MINIMAL_STEP_SIZE);
             messageClose(LOG_SOLVER);
             return -1;
           }
