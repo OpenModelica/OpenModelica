@@ -32,7 +32,7 @@
  */
 #include "gbode_util.h"
 
-#define GBODE_EPSILON 1e-16
+#define GBODE_EPSILON DBL_EPSILON
 
 
 // LA functions
@@ -84,7 +84,7 @@ void linear_interpolation(double ta, double* fa, double tb, double* fb, double t
     if(idx != NULL) {
       copyVector_gbf(f, fb, n, idx);
     } else {
-      memcpy(f, fb, n*sizeof(double));;
+      memcpy(f, fb, n*sizeof(double));
     }
     return;
   }
@@ -136,7 +136,7 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
     if(idx != NULL) {
       copyVector_gbf(f, fb, n, idx);
     } else {
-      memcpy(f, fb, n*sizeof(double));;
+      memcpy(f, fb, n*sizeof(double));
     }
     return;
   }
@@ -219,7 +219,7 @@ void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, doub
   //f_hermit = hermite_interpolation()
 
   // TODO: We need an epsilon here, make it an macro
-  if (fabs(tb-ta) < GBODE_EPSILON) {
+  if (fabs(tb-ta) > GBODE_EPSILON) {
     tt = (t-ta)/(tb-ta);
     h0 = 1-tt;
     h1 = tt;
@@ -233,6 +233,12 @@ void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, doub
       i = idx[ii];
       err[i] = fabs((h00-h0)*fa[i]+h10*dfa[i]+(h01-h1)*fb[i]+h11*dfb[i]);
     }
+  } else {
+    for (ii=0; ii<nIdx; ii++)
+    {
+      i = idx[ii];
+      err[i] = 0;
+    }
   }
 }
 
@@ -243,7 +249,7 @@ void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double tim
   int nFastStates = gbData->nFastStates;
 
   // TODO: We need an epsilon here, make it an macro
-  if (fabs(gbfData->tv[1]-gbfData->tv[0]) < GBODE_EPSILON) {
+  if (fabs(gbfData->tv[1]-gbfData->tv[0]) <= GBODE_EPSILON) {
     addSmultVec_gbf(nlsxExtrapolation, gbfData->yv, gbfData->kv, time - gbfData->tv[0], nFastStates, gbData->fastStates);
   } else {
     // this is actually extrapolation...
@@ -260,7 +266,7 @@ void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time
   int nStates = gbData->nStates;
 
   // TODO: We need an epsilon here, make it an macro
-  if (fabs(gbData->tv[1]-gbData->tv[0]) < GBODE_EPSILON) {
+  if (fabs(gbData->tv[1]-gbData->tv[0]) <= GBODE_EPSILON) {
     addSmultVec_gb(nlsxExtrapolation, gbData->yv, gbData->kv, time - gbData->tv[0], nStates);
   } else {
     // this is actually extrapolation...

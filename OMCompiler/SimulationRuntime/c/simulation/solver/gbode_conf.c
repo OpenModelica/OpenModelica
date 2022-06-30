@@ -38,7 +38,7 @@
 
 #include "gbode_conf.h"
 
-void dumOptions(const char* flagName, const char* flagValue, const char* argsArr, unsigned int maxArgs);
+void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs);
 
 const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
   /* GB_CTRL_UNKNOWN */   "unknown",
@@ -247,7 +247,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
  * @param argsArr     Pointer to flag argument names.
  * @param maxArgs     Size of maxArgs.
  */
-void dumOptions(const char* flagName, const char* flagValue, const char* argsArr, unsigned int maxArgs) {
+void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs) {
   errorStreamPrint(LOG_STDOUT, 0, "Unknow flag value \"%s\" for flag %s.", flagValue, flagName);
   infoStreamPrint(LOG_STDOUT, 1, "Valid arguments are:");
   for (int i=0; i<maxArgs; i++) {
