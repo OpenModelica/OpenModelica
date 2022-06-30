@@ -91,7 +91,8 @@
     "annotation": {
       "type": "object",
       "properties": {
-        "$kind": false
+        "$kind": false,
+        "$error": false
       },
       "additionalProperties": {
         "oneOf": [
@@ -100,6 +101,20 @@
           },
           {
             "$ref": "expression.schema.json"
+          },
+          {
+            "description": "An invalid annotation",
+            "type": "object",
+            "properties": {
+              "$error": {
+                "description": "Error message",
+                "type": "string"
+              },
+              "value": {
+                "description": "Annotation dumped as a string",
+                "type": "string"
+              }
+            }
           }
         ]
       }

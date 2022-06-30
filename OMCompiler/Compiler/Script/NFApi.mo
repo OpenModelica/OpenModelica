@@ -932,6 +932,7 @@ algorithm
   cmt := SCodeUtil.getElementComment(InstNode.definition(node));
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
+
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
   json := dumpJSONMod(SCodeUtil.elementMod(InstNode.definition(node)), json);
@@ -1266,16 +1267,28 @@ protected
   SCode.Mod mod;
   Absyn.Exp absyn_binding;
   Expression binding_exp;
+  JSON j;
 algorithm
   SCode.SubMod.NAMEMOD(ident = name, mod = mod) := subMod;
 
   () := match mod
     case SCode.Mod.MOD(binding = SOME(absyn_binding))
       algorithm
-        binding_exp := Inst.instExp(absyn_binding, scope, NFInstContext.ANNOTATION, mod.info);
-        binding_exp := Typing.typeExp(binding_exp, NFInstContext.ANNOTATION, mod.info);
-        binding_exp := SimplifyExp.simplify(binding_exp);
-        json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
+        ErrorExt.setCheckpoint(getInstanceName());
+
+        try
+          binding_exp := Inst.instExp(absyn_binding, scope, NFInstContext.ANNOTATION, mod.info);
+          binding_exp := Typing.typeExp(binding_exp, NFInstContext.ANNOTATION, mod.info);
+          binding_exp := SimplifyExp.simplify(binding_exp);
+          json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
+        else
+          j := JSON.emptyObject();
+          j := JSON.addPair("$error", JSON.makeString(ErrorExt.printCheckpointMessagesStr()), j);
+          j := JSON.addPair("value", dumpJSONAbsynExpression(absyn_binding), j);
+          json := JSON.addPair(name, j, json);
+        end try;
+
+        ErrorExt.delCheckpoint(getInstanceName());
       then
         ();
 
