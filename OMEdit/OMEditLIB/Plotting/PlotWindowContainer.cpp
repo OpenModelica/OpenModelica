@@ -32,7 +32,6 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include <QOpenGLContext> // must be first include to fix undefined GLDEBUGPROC
 #include "PlotWindowContainer.h"
 #include "MainWindow.h"
 #include "Options/OptionsDialog.h"

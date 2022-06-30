@@ -63,10 +63,10 @@ There is nothing special to be done for linux. You can follow the examples above
 ## 3.3. macOS
 On macOS there are a few pitfalls/issues which need attention.
 
-- If you plan to build the OpenModelica GUI clients (e.g. OMEdit) you need to install a Qt5 version that comes with `qt-webkit`. Unfortunately, the Qt formulae from `homebrew` does not provide `qt-webkit` anymore. Therefore, you will have to find a way of getting `qt-webkit` on your machine. The recommend and probably the easiest way to do this is using macports to install Qt:
+- If you plan to build the OpenModelica GUI clients (e.g. OMEdit) you need to install a Qt5 version that comes with `qt-webkit`. Unfortunately, the Qt formulae from `homebrew` does not provide `qt-webkit` anymore. Therefore, you will have to find a way of getting `qt-webkit` on your machine. The recommend and probably the easiest way to do this is using macports to install Qt and qt5-webkit:
 
   ```sh
-  port install qt5
+  port install qt5 qt5-qtwebkit
   ```
 
   once Qt5 is installed, you will need to note the installation directory. It should be `/opt/local` by default. If it is not, you can run

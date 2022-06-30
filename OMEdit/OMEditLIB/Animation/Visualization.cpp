@@ -37,6 +37,9 @@
 #if (QT_VERSION < QT_VERSION_CHECK(5, 2, 0))
 #include <QGLWidget>
 #endif
+
+#include <QOpenGLContext> // must be included before OSG headers
+
 #include <osg/Image>
 #include <osg/Shape>
 #include <osg/Node>

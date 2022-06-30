@@ -39,6 +39,8 @@
 #include <QRegExp>
 #include <QFileInfo>
 
+#include <QOpenGLContext> // must be included before OSG headers
+
 #include <sys/stat.h>
 #include <string>
 #include <osg/Vec3>
