@@ -32,7 +32,6 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include <QOpenGLContext> // must be first include to fix undefined GLDEBUGPROC
 #include "MainWindow.h"
 /* Keep PlotWindowContainer on top to include OSG first */
 #include "Plotting/PlotWindowContainer.h"
