@@ -169,27 +169,36 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   {
   case GM_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK;
-    nlsData->analyticalJacobianColumn = jacobian_SR_column;
+    if (gbData->symJacAvailable) {
+      nlsData->analyticalJacobianColumn = jacobian_SR_column;
+    } else {
+      nlsData->analyticalJacobianColumn = NULL;
+    }
     nlsData->initializeStaticNLSData = initializeStaticNLSData_SR;
     nlsData->getIterationVars = NULL;
 
-    gbData->symJacAvailable = TRUE;
     break;
   case GM_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_IRK;
-    nlsData->analyticalJacobianColumn = jacobian_IRK_column;
+    if (gbData->symJacAvailable) {
+      nlsData->analyticalJacobianColumn = jacobian_IRK_column;
+    } else {
+      nlsData->analyticalJacobianColumn = NULL;
+    }
     nlsData->initializeStaticNLSData = initializeStaticNLSData_IRK;
     nlsData->getIterationVars = NULL;
 
-    gbData->symJacAvailable = TRUE;
     break;
   case MS_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_MS;
-    nlsData->analyticalJacobianColumn = jacobian_SR_column;
+    if (gbData->symJacAvailable) {
+      nlsData->analyticalJacobianColumn = jacobian_SR_column;
+    } else {
+      nlsData->analyticalJacobianColumn = NULL;
+    }
     nlsData->initializeStaticNLSData = initializeStaticNLSData_SR;
     nlsData->getIterationVars = NULL;
 
-    gbData->symJacAvailable = TRUE;
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gbData->type);
@@ -237,7 +246,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    if (gbData->symJacAvailable) {
+    if (nlsData->isPatternAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
@@ -295,20 +304,25 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   {
   case GM_TYPE_DIRK:
     nlsData->residualFunc = residual_DIRK_MR;
-    // nlsData->analyticalJacobianColumn = NULL;
-    nlsData->analyticalJacobianColumn = jacobian_MR_column;
+    if (gbfData->symJacAvailable) {
+      nlsData->analyticalJacobianColumn = jacobian_MR_column;
+    } else {
+      nlsData->analyticalJacobianColumn = NULL;
+    }
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
-    gbfData->symJacAvailable = TRUE;
     break;
   case MS_TYPE_IMPLICIT:
     nlsData->residualFunc = residual_MS_MR;
-    nlsData->analyticalJacobianColumn = jacobian_MR_column;
+    if (gbfData->symJacAvailable) {
+      nlsData->analyticalJacobianColumn = jacobian_MR_column;
+    } else {
+      nlsData->analyticalJacobianColumn = NULL;
+    }
     nlsData->initializeStaticNLSData = initializeStaticNLSData_MR;
     nlsData->getIterationVars = NULL;
 
-    gbfData->symJacAvailable = TRUE;
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gbfData->type);
@@ -353,7 +367,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     break;
   case RK_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
-    if (gbfData->symJacAvailable) {
+    if (nlsData->isPatternAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;

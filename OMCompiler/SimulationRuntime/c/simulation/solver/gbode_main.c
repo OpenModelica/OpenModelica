@@ -253,6 +253,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     }
     else
     {
+      // ToDo: If Jacobian available set this to FALSE
       gbfData->symJacAvailable = TRUE;
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
@@ -438,6 +439,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       gbData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
+      // ToDo: If Jacobian available set this to FALSE
       gbData->symJacAvailable = TRUE;
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
@@ -796,7 +798,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
     messageClose(LOG_GBODE);
 
-    if (gbfData->symJacAvailable)
+    if (gbfData->nlsData->isPatternAvailable)
     {
       gbfData->jacobian->sparsePattern = initializeSparsePattern_MR(gbData);
       gbfData->jacobian->sizeCols = nFastStates;
@@ -1279,18 +1281,18 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (gb_step_info != 0) {
         infoStreamPrint(LOG_SOLVER, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
         if (!gbData->ctrl_type) {
-          errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted!");
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted since gbode is running with fixed step size!");
           messageClose(LOG_SOLVER);
           return -1;
         } else {
           if (gbData->stepSize > MINIMAL_STEP_SIZE) {
             // Try smaller steps, if possible.
             gbData->stepSize = gbData->stepSize / 2.;
-            infoStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbData->stepSize);
+            warningStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbData->stepSize);
             err = 100;
             continue;
           } else {
-            errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted!");
+            errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted because the step size is less then %g!", MINIMAL_STEP_SIZE);
             messageClose(LOG_SOLVER);
             return -1;
           }
