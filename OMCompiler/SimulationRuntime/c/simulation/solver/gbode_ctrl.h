@@ -49,7 +49,7 @@ double IController(double* err_values, double* stepSize_values, unsigned int err
 double PIController(double* err_values, double* stepSize_values, unsigned int err_order);
 gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method);
 
-void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+void gb_first_step(DATA* data, threadData_t* threadData, DATA_GBODE* gbData);
 
 double getErrorThreshold(DATA_GBODE* gbData);
 

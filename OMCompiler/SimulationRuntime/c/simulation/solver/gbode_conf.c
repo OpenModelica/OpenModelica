@@ -38,6 +38,8 @@
 
 #include "gbode_conf.h"
 
+void dumOptions(const char* flagName, const char* flagValue, const char* argsArr, unsigned int maxArgs);
+
 const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
   /* GB_CTRL_UNKNOWN */   "unknown",
   /* GB_CTRL_I */         "i",
@@ -50,6 +52,18 @@ const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
   /* GB_CTRL_I */         "I controller for step size",
   /* GB_CTRL_PI */        "PI controller for step size",
   /* GB_CTRL_CNST */      "Constant step size"
+};
+
+const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
+  /* GB_INTERPOL_UNKNOWN */   "unknown",
+  /* GB_INTERPOL_LIN */       "linear",
+  /* GB_INTERPOL_HERMIT */    "hermit"
+};
+
+const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
+  /* GB_INTERPOL_UNKNOWN */   "unknown",
+  /* GB_INTERPOL_LIN */       "Linear interpolation (1st order)",
+  /* GB_INTERPOL_HERMIT */    "Hermit interpolation (2nd order)"
 };
 
 /**
@@ -134,6 +148,7 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
 enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
   enum GB_NLS_METHOD method;
   const char* flag_value;
+
   assertStreamPrint(NULL, flag==FLAG_SR_NLS || flag==FLAG_MR_NLS,
                     "Illegal input to getGB_NLS_METHOD. Expected FLAG_SR_NLS or FLAG_MR_NLS ");
   flag_value = omc_flagValue[flag];
@@ -146,7 +161,7 @@ enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Unknow non-linear solver method %s for gbode.", flag_value);
+    dumOptions(FLAG_NAME[flag], flag_value, GB_NLS_METHOD_NAME, RK_NLS_MAX);
     return GB_NLS_UNKNOWN;
   }
 
@@ -172,7 +187,6 @@ enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
 enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
   enum GB_CTRL_METHOD method;
   const char *flag_value;
-  char* flag_value_string;
 
   assertStreamPrint(NULL, flag==FLAG_SR_CTRL || flag==FLAG_MR_CTRL,
                     "Illegal input to getControllerMethod. Expected FLAG_SR_CTRL or FLAG_MR_CTRL ");
@@ -185,14 +199,59 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Unknow gbode step size controll %s.", flag_value);
-    infoStreamPrint(LOG_STDOUT, 1, "Valid arguments are:");
-    for (method=GB_CTRL_UNKNOWN; method<GB_CTRL_MAX; method++) {
-      infoStreamPrint(LOG_STDOUT, 0, "%s", GB_CTRL_METHOD_NAME[method]);
-    }
-    messageClose(LOG_STDOUT);
+    dumOptions(FLAG_NAME[flag], flag_value, GB_CTRL_METHOD_NAME, GB_CTRL_MAX);
     return GB_CTRL_UNKNOWN;
   } else {
     return GB_CTRL_I;
   }
+}
+
+/**
+ * @brief Get interpolation method from simulation flag.
+ *
+ * Reads value from from FLAG_SR_CTRL or FLAG_MR_CTRL.
+ * Defaults to IController (GB_CTRL_I) if flag is not set.
+ *
+ * @param flag                    FLAG_SR_INT for single-rate method.
+ *                                FLAG_MR_INT for multi-rate method.
+ * @return enum GB_CTRL_METHOD    Step size controll method.
+ */
+enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
+  enum GB_INTERPOL_METHOD method;
+  const char *flag_value;
+  char* flag_value_string;
+
+  assertStreamPrint(NULL, flag==FLAG_SR_INT || flag==FLAG_MR_INT,
+                    "Illegal input to getInterpolationMethod. Expected FLAG_SR_INT or FLAG_MR_INT ");
+
+  flag_value = omc_flagValue[flag];
+  if (flag_value != NULL) {
+    for (method=GB_INTERPOL_UNKNOWN; method<GB_INTERPOL_MAX; method++) {
+      if (strcmp(flag_value, GB_INTERPOL_METHOD_NAME[method]) == 0) {
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size controll: %s", GB_INTERPOL_METHOD_NAME[method]);
+        return method;
+      }
+    }
+    dumOptions(FLAG_NAME[flag], flag_value, GB_INTERPOL_METHOD_NAME, GB_INTERPOL_MAX);
+    return GB_INTERPOL_UNKNOWN;
+  } else {
+    return GB_INTERPOL_LIN;
+  }
+}
+
+/**
+ * @brief Dump available flag options to stdout.
+ *
+ * @param flagName    Name of flag
+ * @param flagValue   Given value of flag.
+ * @param argsArr     Pointer to flag argument names.
+ * @param maxArgs     Size of maxArgs.
+ */
+void dumOptions(const char* flagName, const char* flagValue, const char* argsArr, unsigned int maxArgs) {
+  errorStreamPrint(LOG_STDOUT, 0, "Unknow flag value \"%s\" for flag %s.", flagValue, flagName);
+  infoStreamPrint(LOG_STDOUT, 1, "Valid arguments are:");
+  for (int i=0; i<maxArgs; i++) {
+    infoStreamPrint(LOG_STDOUT, 0, "%s", argsArr[i]);
+  }
+  messageClose(LOG_STDOUT);
 }

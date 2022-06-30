@@ -51,10 +51,7 @@ void addSmultVec_gbf(double* a, double* b, double *c, double s, int nIdx, int* i
 void addSmultVec_gb(double* a, double* b, double *c, double s, int n);
 
 // Interpolation functions for the whole vector or indices referenced by index vector
-void linear_interpolation_gb(double a, double* fa, double b, double* fb, double t, double *f, int n);
-void hermite_interpolation_gb(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n);
-void linear_interpolation_gbf(double ta, double* fa, double tb, double* fb, double t, double* f, int nIdx, int* idx);
-void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx);
+void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx);
 void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx);
 void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time);
 void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double time);

@@ -123,7 +123,6 @@ double PIController(double* err_values, double* stepSize_values, unsigned int er
     estimate = stepSize_values[0]/stepSize_values[1]*pow(.5/err_values[0], beta1)*pow(err_values[1]/err_values[0], beta2);
 
   return fmin(facmax, fmax(facmin, fac*estimate));
-
 }
 
 /**
@@ -159,30 +158,36 @@ gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method) {
  *
  * @param data              Runtime data struct.
  * @param threadData        Thread data for error handling.
- * @param solverInfo        Storing Runge-Kutta solver data.
+ * @param gbData        Storing Runge-Kutta solver data.
  */
-void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+void gb_first_step(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
   int nStates = data->modelData->nStates;
   modelica_real* fODE = &sData->realVars[nStates];
 
   int i;
 
-  double sc, d, d0 = 0.0, d1 = 0.0, d2 = 0.0, h0, h1, delta_ti, infNorm, sum = 0;
-  double Atol = data->simulationInfo->tolerance;
-  double Rtol = Atol;
+  double sc;
+  double d, d0 = 0.0, d1 = 0.0, d2 = 0.0;
+  double h0, h1;
+  double absTol = data->simulationInfo->tolerance;
+  double relTol = absTol;
 
   /* store values of the states and state derivatives at initial or event time */
   gbData->time = sData->timeValue;
+  // TODO AHeu: Can gbData->yOld be some generic work array of size nStates?
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
+  // TODO AHeu: Here fODE points to sData->realVars+nStates, but inside gbode_fODE fODE isn't really used.
+  // Are the states already set at this time?
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
+  // TODO: gbData->yOld and fODE are not from the same callback->functionODE!
+  // And why even copy sData->realVars[nStates] into gbData->f, just use data->localData[1]->realVars[nStates]
   memcpy(gbData->f, fODE, nStates*sizeof(double));
 
   for (i=0; i<nStates; i++) {
-    sc = Atol + fabs(sDataOld->realVars[i])*Rtol;
+    sc = absTol + fabs(sDataOld->realVars[i])*relTol;
     d0 += ((sDataOld->realVars[i] * sDataOld->realVars[i])/(sc*sc));
     d1 += ((fODE[i] * fODE[i]) / (sc*sc));
   }
@@ -207,7 +212,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
 
   for (i=0; i<nStates; i++) {
-    sc = Atol + fabs(gbData->yOld[i])*Rtol;
+    sc = absTol + fabs(gbData->yOld[i])*relTol;
     d2 += ((fODE[i]-gbData->f[i])*(fODE[i]-gbData->f[i])/(sc*sc));
   }
 

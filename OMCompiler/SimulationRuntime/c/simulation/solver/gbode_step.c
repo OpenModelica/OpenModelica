@@ -192,17 +192,11 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   // set simulation time with respect to the current stage
   sData->timeValue = gbfData->time + gbfData->stepSize;
   // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
-  if (gbfData->interpolation==1) {
-    linear_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,
-                              gbData->timeRight, gbData->yRight,
-                              sData->timeValue,  sData->realVars,
-                              gbData->nSlowStates, gbData->slowStates);
-  } else {
-    hermite_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                              gbData->timeRight, gbData->yRight, gbData->kRight,
-                              sData->timeValue,  sData->realVars,
-                              gbData->nSlowStates, gbData->slowStates);
-  }
+  gb_interpolation(gbData->interpolation,
+                   gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                   gbData->timeRight, gbData->yRight, gbData->kRight,
+                   sData->timeValue,  sData->realVars,
+                   gbData->nSlowStates, gbData->slowStates);
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
   NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;
@@ -405,17 +399,11 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
-  if (gbfData->interpolation==1) {
-    linear_interpolation_gbf(gbData->timeLeft,   gbData->yLeft,
-                              gbData->timeRight,  gbData->yRight,
-                              gbfData->time,      gbfData->yOld,
-                              gbData->nSlowStates, gbData->slowStates);
-  } else {
-    hermite_interpolation_gbf(gbData->timeLeft,   gbData->yLeft,  gbData->kLeft,
-                              gbData->timeRight,  gbData->yRight, gbData->kRight,
-                              gbfData->time,      gbfData->yOld,
-                              gbData->nSlowStates, gbData->slowStates);
-  }
+  gb_interpolation(gbData->interpolation,
+                   gbData->timeLeft,   gbData->yLeft,  gbData->kLeft,
+                   gbData->timeRight,  gbData->yRight, gbData->kRight,
+                   gbfData->time,      gbfData->yOld,
+                   gbData->nSlowStates, gbData->slowStates);
 
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
@@ -455,17 +443,11 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     else
     {
       // interpolate the slow states on the time of the current stage
-      if (gbfData->interpolation==1) {
-        linear_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,
-                              gbData->timeRight, gbData->yRight,
-                              sData->timeValue,   sData->realVars,
-                              gbData->nSlowStates, gbData->slowStates);
-      } else {
-        hermite_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                              gbData->timeRight, gbData->yRight, gbData->kRight,
-                              sData->timeValue,   sData->realVars,
-                              gbData->nSlowStates, gbData->slowStates);
-      }
+      gb_interpolation(gbData->interpolation,
+                       gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                       gbData->timeRight, gbData->yRight, gbData->kRight,
+                       sData->timeValue,   sData->realVars,
+                       gbData->nSlowStates, gbData->slowStates);
 
       // setting the start vector for the newton step
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))

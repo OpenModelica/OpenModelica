@@ -106,7 +106,7 @@ typedef struct DATA_GBODEF{
   modelica_boolean firstStep;
   modelica_boolean didEventStep;                   /* Will be used for updating the derivatives */
   int ringBufferSize;
-  int interpolation;
+  enum GB_INTERPOL_METHOD interpolation;
   int nlsxExtrapolation;
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */

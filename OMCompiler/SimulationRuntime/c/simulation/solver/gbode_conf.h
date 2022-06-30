@@ -55,9 +55,21 @@ enum GB_CTRL_METHOD {
 extern const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX];
 extern const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX];
 
-enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG FLAG_METHOD);
-enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG FLAG_NLS_METHOD);
+enum GB_INTERPOL_METHOD {
+  GB_INTERPOL_UNKNOWN = 0,  /* Unknown interpolation method */
+  GB_INTERPOL_LIN = 1,      /* Linear interpolation */
+  GB_INTERPOL_HERMIT = 2,   /* Hermit interpolation */
+
+  GB_INTERPOL_MAX
+};
+
+extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
+extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
+
+enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag);
+enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag);
 enum GB_CTRL_METHOD getControllerMethod();
+enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag);
 
 #ifdef __cplusplus
 };

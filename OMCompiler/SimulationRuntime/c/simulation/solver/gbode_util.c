@@ -32,6 +32,8 @@
  */
 #include "gbode_util.h"
 
+#define GBODE_EPSILON 1e-16
+
 
 // LA functions
 void addSmultVec_gbf(double* a, double* b, double *c, double s, int nIdx, int* idx) {
@@ -51,72 +53,11 @@ void addSmultVec_gb(double* a, double* b, double *c, double s, int n) {
   }
 }
 
-// interpolation function
-
-/**
- * @brief Linear interpolation of all vector components
- *
- * @param ta      Time value at the left hand side
- * @param fa      Function values at the left hand side
- * @param tb      Time value at the right hand side
- * @param fb      Function values at the right hand side
- * @param t       Time value at the interpolated time point
- * @param f       Function values at the interpolated time point
- * @param n       Size of the vector
+/*
+ * ============================================================================
+ *   Interpolation functions
+ * ============================================================================
  */
-void linear_interpolation_gb(double ta, double* fa, double tb, double* fb, double t, double* f, int n)
-{
-  double lambda, h0, h1;
-
-  if (tb == ta) {
-    // omit division by zero
-    memcpy(f, fb, n*sizeof(double));
-  } else {
-    lambda = (t-ta)/(tb-ta);
-    h0 = 1-lambda;
-    h1 = lambda;
-
-    for (int i=0; i<n; i++)
-    {
-      f[i] = h0*fa[i] + h1*fb[i];
-    }
-  }
-}
-
-/**
- * @brief Hermite interpolation of all vector components
- *
- * @param ta      Time value at the left hand side
- * @param fa      Function values at the left hand side
- * @param dfa     Derivative function values at the left hand side
- * @param tb      Time value at the right hand side
- * @param fb      Function values at the right hand side
- * @param dfb     Derivative function values at the right hand side
- * @param t       Time value at the interpolated time point
- * @param f       Function values at the interpolated time point
- * @param n       Size of the vector
- */
-void hermite_interpolation_gb(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n)
-{
-  double tt, h00, h01, h10, h11;
-  int i;
-
-  if (tb == ta) {
-    // omit division by zero
-    memcpy(f, fb, n*sizeof(double));
-  } else {
-    tt = (t-ta)/(tb-ta);
-    h00 = (1+2*tt)*(1-tt)*(1-tt);
-    h10 = (tb-ta)*tt*(1-tt)*(1-tt);
-    h01 = (3-2*tt)*tt*tt;
-    h11 = (tb-ta)*(tt-1)*tt*tt;
-
-    for (i=0; i<n; i++)
-    {
-      f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
-    }
-  }
-}
 
 /**
  * @brief         Linear interpolation of specific vector components
@@ -127,28 +68,44 @@ void hermite_interpolation_gb(double ta, double* fa, double* dfa, double tb, dou
  * @param fb      Function values at the right hand side
  * @param t       Time value at the interpolated time point
  * @param f       Function values at the interpolated time point
- * @param nIdx    Size of index vector
- * @param idx     Index vector
+ * @param n       Size of vector f or size of index vector if non-NULL.
+ * @param idx     Index vector, can be NULL.
+ *                Specifies which parts of f should be interpolated.
  */
-void linear_interpolation_gbf(double ta, double* fa, double tb, double* fb, double t, double* f, int nIdx, int* idx)
+void linear_interpolation(double ta, double* fa, double tb, double* fb, double t, double* f, int n, int* idx)
 {
   double lambda, h0, h1;
   int i, ii;
 
-  if (tb == ta) {
-    // omit division by zero
-    copyVector_gbf(f, fb, nIdx, idx);
-  } else {
-    lambda = (t-ta)/(tb-ta);
-    h0 = 1-lambda;
-    h1 = lambda;
+  // omit division by zero
+  // TODO: Also check if t = ta?
+  // TODO: We need an epsilon here, make it an macro
+  if (fabs(tb-ta) <= GBODE_EPSILON) {
+    if(idx != NULL) {
+      copyVector_gbf(f, fb, n, idx);
+    } else {
+      memcpy(f, fb, n*sizeof(double));;
+    }
+    return;
+  }
 
-    for (ii=0; ii<nIdx; ii++)
+  lambda = (t-ta)/(tb-ta);
+  h0 = 1-lambda;
+  h1 = lambda;
+
+  if (idx == NULL) {
+    for (i=0; i<n; i++)
+    {
+      f[i] = h0*fa[i] + h1*fb[i];
+    }
+  } else {
+    for (ii=0; ii<n; ii++)
     {
       i = idx[ii];
       f[i] = h0*fa[i] + h1*fb[i];
     }
   }
+  return;
 }
 
 /**
@@ -162,34 +119,83 @@ void linear_interpolation_gbf(double ta, double* fa, double tb, double* fb, doub
  * @param dfb     Derivative function values at the right hand side
  * @param t       Time value at the interpolated time point
  * @param f       Function values at the interpolated time point
- * @param nIdx    Size of index vector
- * @param idx     Index vector
+ * @param n       Size of vector f or size of index vector if non-NULL.
+ * @param idx     Index vector, can be NULL.
+ *                Specifies which parts of f should be interpolated.
  */
-void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx)
+void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx)
 {
   double tt, h00, h01, h10, h11;
   int i, ii;
 
-  if (tb == ta) {
-    // omit division by zero
-    copyVector_gbf(f, fb, nIdx, idx);
-  } else {
-    tt = (t-ta)/(tb-ta);
-    h00 = (1+2*tt)*(1-tt)*(1-tt);
-    h10 = (tb-ta)*tt*(1-tt)*(1-tt);
-    h01 = (3-2*tt)*tt*tt;
-    h11 = (tb-ta)*(tt-1)*tt*tt;
+  // omit division by zero
+  // TODO: Also check if t = ta?
+  // TODO: We need an epsilon here, make it an macro
+  // TODO: Make a function that can handle copy with idx=NULL
+  if (fabs(tb-ta) <= GBODE_EPSILON) {
+    if(idx != NULL) {
+      copyVector_gbf(f, fb, n, idx);
+    } else {
+      memcpy(f, fb, n*sizeof(double));;
+    }
+    return;
+  }
 
-    for (ii=0; ii<nIdx; ii++)
+  tt = (t-ta)/(tb-ta);
+  h00 = (1+2*tt)*(1-tt)*(1-tt);
+  h10 = (tb-ta)*tt*(1-tt)*(1-tt);
+  h01 = (3-2*tt)*tt*tt;
+  h11 = (tb-ta)*(tt-1)*tt*tt;
+
+  if (idx == NULL) {
+    for (i=0; i<n; i++)
+    {
+      f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
+    }
+  } else {
+    for (ii=0; ii<n; ii++)
     {
       i = idx[ii];
       f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
     }
   }
+
+  return;
 }
 
 /**
- * @brief Difference between linear and hermite interpolation at intermediate points
+ * @brief Hermite interpolation of specific vector components
+ *
+ * @param interpolMethod
+ * @param ta              Time value at the left hand side
+ * @param fa              Function values at the left hand side
+ * @param dfa             Derivative function values at the left hand side.
+ *                        Can be NULL for linear interpolation.
+ * @param tb              Time value at the right hand side
+ * @param fb              Function values at the right hand side
+ * @param dfb             Derivative function values at the right hand side.
+ *                        Can be NULL for linear interpolation.
+ * @param t               Time value at the interpolated time point
+ * @param f               Function values at the interpolated time point
+ * @param n               Size of vector f or size of index vector if non-NULL.
+ * @param idx             Index vector, can be NULL.
+ *                        Specifies which parts of f should be interpolated.
+ */
+void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx) {
+  switch (interpolMethod)
+  {
+  case GB_INTERPOL_LIN:
+    return linear_interpolation(ta, fa, tb, fb, t, f, n, idx);
+  case GB_INTERPOL_HERMIT:
+    break;
+    return hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, n, idx);
+  default:
+    break;
+  }
+}
+
+/**
+ * @brief Absolute difference between linear and hermite interpolation at intermediate points.
  *
  * @param ta      Time value at the left hand side
  * @param fa      Function values at the left hand side
@@ -198,16 +204,22 @@ void hermite_interpolation_gbf(double ta, double* fa, double* dfa, double tb, do
  * @param fb      Function values at the right hand side
  * @param dfb     Derivative function values at the right hand side
  * @param t       Time value at the interpolated time point
- * @param f       Function values at the interpolated time point
+ * @param err     Interpolation error at time value.
  * @param nIdx    Size of index vector
  * @param idx     Index vector
  */
-void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int nIdx, int* idx)
+void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* err, int nIdx, int* idx)
 {
   double tt, h00, h01, h10, h11, h0, h1;
   int i, ii;
 
-  if (tb != ta) {
+  // TODO: Make this function call linear_interpolation() and hermite_interpolation() and return the error.
+  // How can we do this without allocating an additional array? We could use a work array as input and write there.
+  //linear_interpolation(ta, fa, tb, fb, t, err, nIdx, idx);
+  //f_hermit = hermite_interpolation()
+
+  // TODO: We need an epsilon here, make it an macro
+  if (fabs(tb-ta) < GBODE_EPSILON) {
     tt = (t-ta)/(tb-ta);
     h0 = 1-tt;
     h1 = tt;
@@ -219,7 +231,7 @@ void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, doub
     for (ii=0; ii<nIdx; ii++)
     {
       i = idx[ii];
-      f[i] = fabs((h00-h0)*fa[i]+h10*dfa[i]+(h01-h1)*fb[i]+h11*dfb[i]);
+      err[i] = fabs((h00-h0)*fa[i]+h10*dfa[i]+(h01-h1)*fb[i]+h11*dfb[i]);
     }
   }
 }
@@ -230,19 +242,16 @@ void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double tim
   int nStates = gbData->nStates;
   int nFastStates = gbData->nFastStates;
 
-  if (gbfData->tv[1]==gbfData->tv[0]) {
+  // TODO: We need an epsilon here, make it an macro
+  if (fabs(gbfData->tv[1]-gbfData->tv[0]) < GBODE_EPSILON) {
     addSmultVec_gbf(nlsxExtrapolation, gbfData->yv, gbfData->kv, time - gbfData->tv[0], nFastStates, gbData->fastStates);
   } else {
     // this is actually extrapolation...
-    if (gbfData->nlsxExtrapolation==1) {
-      linear_interpolation_gbf(gbfData->tv[1], gbfData->yv + nStates,
-                                gbfData->tv[0], gbfData->yv,
-                                time, nlsxExtrapolation, nFastStates, gbData->fastStates);
-    } else {
-      hermite_interpolation_gbf(gbfData->tv[1], gbfData->yv + nStates,  gbfData->kv + nStates,
-                                gbfData->tv[0], gbfData->yv,            gbfData->kv,
-                                time, nlsxExtrapolation, nFastStates, gbData->fastStates);
-    }
+    gb_interpolation(gbData->interpolation,
+                     gbfData->tv[1], gbfData->yv + nStates,  gbfData->kv + nStates,
+                     gbfData->tv[0], gbfData->yv,            gbfData->kv,
+                     time, nlsxExtrapolation,
+                     nFastStates, gbData->fastStates);
   }
 }
 
@@ -250,19 +259,16 @@ void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time
 {
   int nStates = gbData->nStates;
 
-  if (gbData->tv[1]==gbData->tv[0]) {
+  // TODO: We need an epsilon here, make it an macro
+  if (fabs(gbData->tv[1]-gbData->tv[0]) < GBODE_EPSILON) {
     addSmultVec_gb(nlsxExtrapolation, gbData->yv, gbData->kv, time - gbData->tv[0], nStates);
   } else {
     // this is actually extrapolation...
-    if (gbData->nlsxExtrapolation==1) {
-      linear_interpolation_gb(gbData->tv[1], gbData->yv + nStates,
-                              gbData->tv[0], gbData->yv,
-                              time, nlsxExtrapolation, nStates);
-    } else {
-      hermite_interpolation_gb(gbData->tv[1], gbData->yv + nStates,  gbData->kv + nStates,
-                               gbData->tv[0], gbData->yv,            gbData->kv,
-                               time, nlsxExtrapolation, nStates);
-    }
+    gb_interpolation(gbData->interpolation,
+                     gbData->tv[1], gbData->yv + nStates,  gbData->kv + nStates,
+                     gbData->tv[0], gbData->yv,            gbData->kv,
+                     time, nlsxExtrapolation,
+                     nStates, NULL);
   }
 }
 
@@ -460,6 +466,15 @@ void dumpFastStates_gbf(DATA_GBODE* gbData, double time) {
   fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
 }
 
+/**
+ * @brief Check if number of fast states changed.
+ *
+ * TODO: This function also updates some values inside gbData.
+ *       Move this to a different function.
+ *
+ * @param gbData              Pointer to gbode data.
+ * @return modelica_boolean   TRUE if at least one fast state changed, FALSE otherwise.
+ */
 modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
   DATA_GBODEF* gbfData = gbData->gbfData;
   modelica_boolean fastStatesChange;
@@ -478,7 +493,7 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
   }
 
   for (int k = 0; k < gbData->nFastStates; k++) {
-    if (gbfData->fastStates_old[k] - gbData->fastStates[k]) {
+    if (gbfData->fastStates_old[k] != gbData->fastStates[k]) {
       if (ACTIVE_STREAM(LOG_SOLVER) && !fastStatesChange)
       {
         printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);

@@ -94,11 +94,14 @@
  */
 int gbode_fODE(DATA *data, threadData_t *threadData, void *evalFunctionODE, modelica_real *fODE)
 {
+  // TODO: Remove fODE or fix
   unsigned int *counter = (unsigned int *)evalFunctionODE;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   fODE = sData->realVars + data->modelData->nStates;
 
+  // TODO: callback->functionODE is already doing
+  // data->simulationInfo->callStatistics.functionODE++;
   (*counter)++;
 
   externalInputUpdate(data);
@@ -268,17 +271,19 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     gbfData->jacobian = NULL;
   }
 
-  const char *flag_Interpolation = omc_flagValue[FLAG_MR_INT];
-
-  if (flag_Interpolation != NULL) {
-    gbfData->interpolation = atoi(flag_Interpolation);
-    } else {
-    gbfData->interpolation = 1;
-  }
-  if (gbfData->interpolation==1)
+  gbfData->interpolation = getInterpolationMethod(FLAG_MR_INT);
+  switch (gbfData->interpolation)
+  {
+  case GB_INTERPOL_LIN:
     infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for the slow states");
-  else
+    break;
+  case GB_INTERPOL_HERMIT:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for the slow states");
+    break;
+  default:
+    errorStreamPrint(LOG_STDOUT, 0, "Unhandled interpolation case.");
+    omc_throw(threadData);
+  }
 
   if (ACTIVE_STREAM(LOG_GBODE_STATES))
   {
@@ -467,18 +472,19 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->gbfData = NULL;
   }
 
-  const char *flag_Interpolation = omc_flagValue[FLAG_SR_INT];
-
-  if (flag_Interpolation != NULL) {
-    // TODO AHeu: Error handling if FLAG_MR_PAR has garbage in it
-    gbData->interpolation = atoi(flag_Interpolation);
-    } else {
-    gbData->interpolation = 1;
-  }
-  if (gbData->interpolation==1)
+  gbData->interpolation = getInterpolationMethod(FLAG_SR_INT);
+  switch (gbData->interpolation)
+  {
+  case GB_INTERPOL_LIN:
     infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results");
-  else
+    break;
+  case GB_INTERPOL_HERMIT:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results");
+    break;
+  default:
+    errorStreamPrint(LOG_STDOUT, 0, "Unhandled interpolation case.");
+    omc_throw(threadData);
+  }
 
   gbData->err_threshold = 0.1;
   gbData->nlsxExtrapolation = 1;
@@ -636,7 +642,7 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   }
 }
 
-
+// TODO: This doc is wrong
 /**
  * @brief Calculate initial step size.
  *
@@ -648,13 +654,11 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
  */
 void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
   int nStates = gbData->nStates;
-  int nStages = gbData->tableau->nStages;
   int i;
 
+  // TODO: Move this outside of this function
   /* set correct flags for int and reinit procedure */
   solverInfo->didEventStep = FALSE;
   gbData->isFirstStep = FALSE;
@@ -672,6 +676,8 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   // initialize vector used for interpolation (equidistant time grid)
   // and for the birate inner integration
   gbData->timeRight = gbData->time;
+  // TODO: yOld and f don't match (y wasn't used to compute f), at least directly after gb_first_step()
+  // Also the values of f should be equal to data->localData[1]->realVars[nStates] (?)
   memcpy(gbData->yRight, gbData->yOld, nStates*sizeof(double));
   memcpy(gbData->kRight, gbData->f, nStates*sizeof(double));
 
@@ -716,6 +722,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
   // Needs to be performed also after an event!!!
+  // TODO: Why is this called again? We just did that in gbode_birate
   if (gbfData->didEventStep || gbfData->timeRight < gbData->timeLeft) {
     gbodef_init(data, threadData, solverInfo);
   }
@@ -895,27 +902,17 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
     // interpolate the slow states on the time of the current stage
-    if (gbfData->interpolation==1) {
-      linear_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,
-                               gbData->timeRight, gbData->yRight,
-                               gbfData->time, gbfData->yOld,
-                               gbData->nSlowStates, gbData->slowStates);
+    gb_interpolation(gbfData->interpolation,
+                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                     gbData->timeRight, gbData->yRight, gbData->kRight,
+                     gbfData->time, gbfData->yOld,
+                     gbData->nSlowStates, gbData->slowStates);
 
-      linear_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,
-                                gbData->timeRight, gbData->yRight,
-                                gbfData->time + gbfData->lastStepSize, gbfData->y,
-                                gbData->nSlowStates, gbData->slowStates);
-    } else {
-      hermite_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                                gbData->timeRight, gbData->yRight, gbData->kRight,
-                                gbfData->time, gbfData->yOld,
-                                gbData->nSlowStates, gbData->slowStates);
-
-      hermite_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                                gbData->timeRight, gbData->yRight, gbData->kRight,
-                                gbfData->time + gbfData->lastStepSize, gbfData->y,
-                                gbData->nSlowStates, gbData->slowStates);
-    }
+    gb_interpolation(gbfData->interpolation,
+                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                     gbData->timeRight, gbData->yRight, gbData->kRight,
+                     gbfData->time + gbfData->lastStepSize, gbfData->y,
+                     gbData->nSlowStates, gbData->slowStates);
 
     gbData->multi_rate_phase = 1;
     eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y);
@@ -964,6 +961,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     sData->timeValue = gbfData->time;
     memcpy(sData->realVars, gbfData->y, nStates * sizeof(double));
     gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
+    // TODO: fODE is not changing, it always points to sData->realVars + data->modelData->nStates
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
     // debug the changes of the states and derivatives during integration
@@ -988,7 +986,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     memcpy(gbfData->kv, gbfData->kRight, nStates * sizeof(double));
 
     /* step is accepted and yOld needs to be updated */
-   //  copyVector_gbf(gbfData->yOld, gbfData->y, nFastStates, gbData->fastStates);
+    //  copyVector_gbf(gbfData->yOld, gbfData->y, nFastStates, gbData->fastStates);
     memcpy(gbfData->yOld, gbfData->y, nStates * sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g, new stepsize %10g",
                     gbfData->time - gbfData->lastStepSize, gbfData->time, err, gbfData->stepSize);
@@ -1030,15 +1028,11 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;
 
-    if (gbData->interpolation==1) {
-      linear_interpolation_gb(gbfData->timeLeft,  gbfData->yLeft,
-                              gbfData->timeRight, gbfData->yRight,
-                              sData->timeValue,  sData->realVars, nStates);
-    } else {
-      hermite_interpolation_gb(gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
-                              gbfData->timeRight, gbfData->yRight, gbfData->kRight,
-                              sData->timeValue,  sData->realVars, nStates);
-    }
+    gb_interpolation(gbfData->interpolation,
+                     gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
+                     gbfData->timeRight, gbfData->yRight, gbfData->kRight,
+                     sData->timeValue,  sData->realVars,
+                     nStates, NULL);
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
       infoStreamPrint(LOG_GBODE, 1, "Emit result (inner integration):");
@@ -1116,7 +1110,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   if (solverInfo->didEventStep == 1 || gbData->isFirstStep) {
     // calculate initial step size and reset ring buffer and statistic counters
     // initialize gbData->time, gbData->yOld, gbData->timeRight, gbData->yRight and gbData->kRight
-    gb_first_step(data, threadData, solverInfo);
+    gb_first_step(data, threadData, gbData);
     gbode_init(data, threadData, solverInfo);
     gbData->gbfData->didEventStep = TRUE;
   }
@@ -1532,25 +1526,17 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
     // if the inner integration has not been started, the outer values need to be emitted
     if (gbData->gbfData->time>=gbData->time) {
-      if (gbData->interpolation==1) {
-        linear_interpolation_gb(gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,
-                                  gbData->gbfData->timeRight, gbData->gbfData->yRight,
-                                  sData->timeValue,  sData->realVars, nStates);
-      } else {
-        hermite_interpolation_gb(gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
-                                  gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
-                                  sData->timeValue,  sData->realVars, nStates);
-      }
+      gb_interpolation(gbData->interpolation,
+                       gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
+                       gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
+                       sData->timeValue,  sData->realVars,
+                       nStates, NULL);
     } else {
-      if (gbData->interpolation==1) {
-        linear_interpolation_gb(gbData->timeLeft,  gbData->yLeft,
-                                  gbData->timeRight, gbData->yRight,
-                                  sData->timeValue,  sData->realVars, nStates);
-      } else {
-        hermite_interpolation_gb(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                                  gbData->timeRight, gbData->yRight, gbData->kRight,
-                                  sData->timeValue,  sData->realVars, nStates);
-      }
+      gb_interpolation(gbData->interpolation,
+                       gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                       gbData->timeRight, gbData->yRight, gbData->kRight,
+                       sData->timeValue,  sData->realVars,
+                       nStates, NULL);
     }
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1639,7 +1625,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   if (solverInfo->didEventStep == 1 || gbData->isFirstStep) {
     // calculate initial step size and reset ring buffer and statistic counters
     // initialize gbData->timeRight, gbData->yRight and gbData->kRight
-    gb_first_step(data, threadData, solverInfo);
+    gb_first_step(data, threadData, gbData);
     gbode_init(data, threadData, solverInfo);
   }
 
@@ -1863,17 +1849,11 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     solverInfo->currentTime = sData->timeValue;
 
     // use hermite interpolation for emitting equidistant output
-    if (gbData->interpolation==1) {
-      linear_interpolation_gb(gbData->timeLeft,  gbData->yLeft,
-                              gbData->timeRight, gbData->yRight,
-                              sData->timeValue,  sData->realVars,
-                              nStates);
-    } else {
-      hermite_interpolation_gb(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                              gbData->timeRight, gbData->yRight, gbData->kRight,
-                              sData->timeValue,  sData->realVars,
-                              nStates);
-    }
+    gb_interpolation(gbData->interpolation,
+                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                     gbData->timeRight, gbData->yRight, gbData->kRight,
+                     sData->timeValue,  sData->realVars,
+                     nStates, NULL);
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
       infoStreamPrint(LOG_GBODE, 1, "Emit result (singlerate integration):");
