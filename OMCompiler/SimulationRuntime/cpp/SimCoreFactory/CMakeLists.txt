@@ -2,10 +2,6 @@
 
 #####################################################################################################
 # OMCppOMCFactory
-find_package(Boost COMPONENTS program_options filesystem REQUIRED)
-find_package(Threads REQUIRED)
-
-
 set(OMC_SIMRT_CPP_SIMCOREFACTORY_OMCFACTORY_SOURCES OMCFactory/OMCFactory.cpp)
 
 add_library(OMCppOMCFactory SHARED)

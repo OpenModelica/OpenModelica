@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 project(ParModelicaAuto)
 set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/auto)
 
-find_package(Boost REQUIRED COMPONENTS graph chrono)
+find_package(Boost COMPONENTS graph chrono REQUIRED)
 
 set(PARMODAUTO_SOURCES om_pm_equation.cpp om_pm_interface.cpp om_pm_model.cpp pm_utility.cpp)
 
@@ -18,6 +18,8 @@ endif()
 
 target_link_libraries(ParModelicaAuto PUBLIC omc::simrt::runtime)
 target_link_libraries(ParModelicaAuto PUBLIC omc::3rd::tbb)
+target_link_libraries(ParModelicaAuto PUBLIC Boost::graph)
+
 target_compile_definitions(ParModelicaAuto PRIVATE USE_FLOW_SCHEDULER)
 
 # For now, disable deprecation warning from the json reader. We do not plan to update any time soon.
