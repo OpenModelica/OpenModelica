@@ -106,7 +106,7 @@ typedef struct DATA_GBODEF{
   modelica_boolean firstStep;
   modelica_boolean didEventStep;                   /* Will be used for updating the derivatives */
   int ringBufferSize;
-  enum GB_INTERPOL_METHOD interpolation;
+  enum GB_INTERPOL_METHOD interpolation;    /* Interpolation method */
   int nlsxExtrapolation;
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
@@ -152,7 +152,7 @@ typedef struct DATA_GBODE{
   int ringBufferSize;
   int multi_rate_phase;
   modelica_boolean multi_rate;
-  int interpolation;
+  enum GB_INTERPOL_METHOD interpolation;    /* Interpolation method */
   int nlsxExtrapolation;
   modelica_boolean isExplicit;            /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;

@@ -49,7 +49,7 @@ for rkMethod in rkMethods loop
     print("\n--------------------------------------------------------\n");
     print("Running RK " + rkMethod + ":\n");
     logFile := "SlowFastDynamics_"+ rkMethod + "_" + ".log";
-    system("rm -f SlowFastDynamics_res.mat && ./SlowFastDynamics -override=stopTime=20 -s=gbode -gbint=hermit -gbm=" + rkMethod + " -gberr=" + errCtrl, logFile);
+    system("rm -f SlowFastDynamics_res.mat && ./SlowFastDynamics -override=stopTime=20 -s=gbode -gbint=hermite -gbm=" + rkMethod + " -gberr=" + errCtrl, logFile);
     print(readFile(logFile) + "\n");
 
     (success, failVars) := diffSimulationResults(actualFile = "SlowFastDynamics_res.mat",

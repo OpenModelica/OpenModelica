@@ -186,10 +186,10 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
   {
   case GB_INTERPOL_LIN:
     return linear_interpolation(ta, fa, tb, fb, t, f, n, idx);
-  case GB_INTERPOL_HERMIT:
-    break;
+  case GB_INTERPOL_HERMITE:
     return hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, n, idx);
   default:
+    throwStreamPrint(NULL, "Not handled case in gb_interpolation. Unknown interpolation method %i.", interpolMethod);
     break;
   }
 }

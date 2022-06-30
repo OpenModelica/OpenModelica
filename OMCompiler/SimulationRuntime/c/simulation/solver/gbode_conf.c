@@ -57,13 +57,13 @@ const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
 const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_UNKNOWN */   "unknown",
   /* GB_INTERPOL_LIN */       "linear",
-  /* GB_INTERPOL_HERMIT */    "hermit"
+  /* GB_INTERPOL_HERMITE */    "hermite"
 };
 
 const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_UNKNOWN */   "unknown",
   /* GB_INTERPOL_LIN */       "Linear interpolation (1st order)",
-  /* GB_INTERPOL_HERMIT */    "Hermit interpolation (2nd order)"
+  /* GB_INTERPOL_HERMITE */    "Hermite interpolation (2nd order)"
 };
 
 /**
