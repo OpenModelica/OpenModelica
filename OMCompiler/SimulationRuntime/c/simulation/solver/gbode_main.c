@@ -214,7 +214,23 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   /* initialize analytic Jacobian, if available and needed */
   if (!gbfData->isExplicit)
   {
-    gbfData->symJacAvailable = gbData->symJacAvailable;
+    // This could not be deleted, since gbata->isExplicit this is needed!!!
+    // ToDo: Check for memory leak!!!
+    if (gbData->isExplicit) {
+      jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+      if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
+        gbfData->symJacAvailable = FALSE;
+        infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
+      } else {
+        gbfData->symJacAvailable = TRUE;
+        infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
+        infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+        infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
+        messageClose(LOG_SOLVER);
+      }
+    } else {
+      gbfData->symJacAvailable = gbData->symJacAvailable;
+    }
 
     /* Allocate memory for the nonlinear solver */
     gbfData->nlsSolverMethod = getGB_NLS_method(FLAG_MR_NLS);
