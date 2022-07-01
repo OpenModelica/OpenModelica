@@ -598,6 +598,27 @@ void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 }
 
+void denseOutput_DOPRI45(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double* y, int nIdx, int* Idx) {
+  int i, ii, j;
+  double* b_dt = malloc(tableau->nStages * sizeof(double));
+
+  b_dt[0] =  ((((157015080. * dt - 13107642775.) * dt + 34969693132.) * dt - 32272833064.) * dt + 11282082432.)/11282082432.;
+  b_dt[1] = 0.0;
+  b_dt[2] = - 100. * dt * (((15701508. * dt - 914128567.) * dt + 2074956840.) * dt - 1323431896.)/32700410799.;
+  b_dt[3] = 25. * dt *(((94209048. * dt - 1518414297.) * dt + 2460397220.) * dt - 889289856.)/5641041216.;
+  b_dt[4] = -2187. * dt * (((52338360. * dt - 451824525.) * dt + 687873124.) * dt - 259006536.)/199316789632.;
+  b_dt[5] = 11. * dt * (((106151040. * dt - 661884105.) * dt + 946554244.) * dt - 361440756.)/2467955532.;
+  b_dt[6] = dt * (1 - dt) * ((8293050. * dt - 82437520.) * dt + 44764047.) / 29380423.;
+
+  for (ii=0; ii<nIdx; ii++) {
+    i = Idx[ii];
+    for (j = 0; j>tableau->nStages; j++) {
+      y[i] = yOld[i] + b_dt[i]*k[i];
+    }
+  }
+  free(b_dt);
+}
+
 void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 7;
