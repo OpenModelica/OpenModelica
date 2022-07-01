@@ -47,7 +47,7 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
 
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GBODE* gbData);
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GBODEF* gbfData);
-void freeRK_NLS_DATA( NONLINEAR_SYSTEM_DATA* nlsData, enum GB_NLS_METHOD nlsSolverMethod);
+void freeRK_NLS_DATA( NONLINEAR_SYSTEM_DATA* nlsData);
 
 // Residuum and Jacobian functions for diagonal implicit (DIRK) and implicit (IRK) Runge-Kutta methods.
 void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);

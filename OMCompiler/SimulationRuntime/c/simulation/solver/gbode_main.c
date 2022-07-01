@@ -504,7 +504,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 void gbodef_freeData(DATA_GBODEF *gbfData)
 {
   /* Free non-linear system data */
-  freeRK_NLS_DATA(gbfData->nlsData, gbfData->nlsSolverMethod);
+  freeRK_NLS_DATA(gbfData->nlsData);
 
   /* Free Jacobian */
   freeAnalyticJacobian(gbfData->jacobian);
@@ -553,7 +553,7 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
 void gbode_freeData(DATA_GBODE *gbData)
 {
   /* Free non-linear system data */
-  freeRK_NLS_DATA(gbData->nlsData, gbData->nlsSolverMethod);
+  freeRK_NLS_DATA(gbData->nlsData);
 
   /* Free Jacobian */
   freeAnalyticJacobian(gbData->jacobian);
@@ -743,7 +743,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     if (gbfData->nlsData->isPatternAvailable)
     {
-      initializeSparsePattern_MR(gbData, gbfData->jacobian->sparsePattern);
+      updateSparsePattern_MR(gbData, gbfData->jacobian->sparsePattern);
       gbfData->jacobian->sizeCols = nFastStates;
       gbfData->jacobian->sizeRows = nFastStates;
 

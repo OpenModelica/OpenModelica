@@ -163,8 +163,8 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
    * Increase the size to contain non-zero elements on diagonal. */
   i = 0;
   for(row=0; row < sizeRows; row++) {
-    for(; i < sparsePattern_ODE->leadindex[row+1];) {
-      if(sparsePattern_ODE->index[i++] == row) {
+    for(; i < sparsePattern_ODE->leadindex[row+1]; i++) {
+      if(sparsePattern_ODE->index[i] == row) {
         nDiags++;
       }
     }
@@ -220,7 +220,7 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
 
 
 /**
- * @brief Initialize sparsity pattern for non-linear system of diagonal implicit Runge-Kutta methods.
+ * @brief Update sparsity pattern for non-linear system of diagonal implicit Runge-Kutta methods.
  *
  * Get sparsity pattern of ODE Jacobian and edit to be non-zero on diagonal elements.
  * Coloring of ODE Jacobian will be used, if it had non-zero elements on all diagonal entries.
@@ -230,7 +230,7 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
  * @param sysData             Non-linear system.
  * @return SPARSE_PATTERN*    Pointer to sparsity pattern of non-linear system.
  */
-void initializeSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR)
+void updateSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR)
 {
   DATA_GBODEF* gbfData = gbData->gbfData;
   int nFastStates = gbData->nFastStates;

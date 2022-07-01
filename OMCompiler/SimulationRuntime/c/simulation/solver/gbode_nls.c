@@ -65,8 +65,8 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
   for(int i=0; i<nonlinsys->size; i++) {
     // Get the nominal values of the states
     nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-    nonlinsys->min[i]     = DBL_MIN;
-    nonlinsys->max[i]     = DBL_MAX;
+    nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
+    nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
   }
 
   /* Initialize sparsity pattern */
@@ -94,8 +94,8 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   for(int i=0; i<nonlinsys->size; i++) {
     // Get the nominal values of the states
     nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-    nonlinsys->min[i]     = DBL_MIN;
-    nonlinsys->max[i]     = DBL_MAX;
+    nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
+    nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
   }
 
   /* Initialize sparsity pattern, First guess (all states are fast states) */
@@ -122,8 +122,8 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
     // Get the nominal values of the states, the non-linear system has size stages*nStates
     int ii = i % data->modelData->nStates;
     nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[ii].attribute.nominal), 1e-32);
-    nonlinsys->min[i]     = DBL_MIN;
-    nonlinsys->max[i]     = DBL_MAX;
+    nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
+    nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
   }
 
   /* Initialize sparsity pattern */
@@ -394,11 +394,11 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
  * @param nlsData           Pointer to non-linear system data.
  * @param nlsSolverMethod   Used non-linear system solver method.
  */
-void freeRK_NLS_DATA( NONLINEAR_SYSTEM_DATA* nlsData, enum GB_NLS_METHOD nlsSolverMethod) {
+void freeRK_NLS_DATA( NONLINEAR_SYSTEM_DATA* nlsData) {
   if (nlsData == NULL) return;
 
   struct dataSolver *dataSolver = nlsData->solverData;
-  switch (nlsSolverMethod)
+  switch (nlsData->nlsMethod)
   {
   case RK_NLS_NEWTON:
     freeNewtonData(dataSolver->ordinaryData);
@@ -670,15 +670,19 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Update resultVars array */
-  for (i = 0; i < jacobian->sizeCols; i++) {
-    if (gbData->type == MS_TYPE_IMPLICIT) {
+  if (gbData->type == MS_TYPE_IMPLICIT) {
+    for (i = 0; i < jacobian->sizeCols; i++) {
       jacobian->resultVars[i] = gbData->tableau->b[nStages-1] * gbData->stepSize * jacobian_ODE->resultVars[i];
-    } else {
-      jacobian->resultVars[i] = gbData->stepSize * gbData->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
+      if (jacobian->seedVars[i] == 1) {
+        jacobian->resultVars[i] -= 1;
+      }
     }
-    /* -1 on diagonal elements */
-    if (jacobian->seedVars[i] == 1) {
-      jacobian->resultVars[i] -= 1;
+  } else {
+    for (i = 0; i < jacobian->sizeCols; i++) {
+      jacobian->resultVars[i] = gbData->stepSize * gbData->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
+      if (jacobian->seedVars[i] == 1) {
+        jacobian->resultVars[i] -= 1;
+      }
     }
   }
 
