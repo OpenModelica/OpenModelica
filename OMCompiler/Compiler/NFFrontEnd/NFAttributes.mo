@@ -289,6 +289,8 @@ public
         end if;
       end if;
 
+      cty := intBitOr(rcty, cty_fs);
+
       if rpar <> Parallelism.NON_PARALLEL then
         if par <> Parallelism.NON_PARALLEL and par <> rpar then
           printRedeclarePrefixError(node, Prefixes.parallelismString(rpar), Prefixes.parallelismString(par));
@@ -321,7 +323,7 @@ public
         io := rio;
       end if;
 
-      attr := Attributes.ATTRIBUTES(rcty, par, var, dir, io, fin, redecl, repl);
+      attr := Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
     end if;
   end mergeRedeclaredComponentAttributes;
 
