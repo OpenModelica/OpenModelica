@@ -38,10 +38,6 @@
 #include "gbode_main.h"
 #include "model_help.h"
 
-
-int checkForStateEvent(DATA* data, LIST *eventList);
-int checkZeroCrossings(DATA *data, LIST *list, LIST*);
-
 /*! \fn bisection_gb
  *
  *  \param [ref] [data]
@@ -236,15 +232,16 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
  * @param leftValues
  * @param timeRight
  * @param rightValues
- * @param isInnerIntergration     Spezifying if inner or outer step function should be used.
- * @return double
+ * @param isInnerIntergration     Specifying if inner or outer step function should be used.
+ * @param foundEvent              On return is set to true if an event was found, otherwise false.
+ *                                Returned event time must be ignored if foundEvent=false.
+ * @return double                 Event time if an event was found, NAN otherwise.
  */
-double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues, modelica_boolean isInnerIntergration)
+double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues, modelica_boolean isInnerIntergration, modelica_boolean* foundEvent)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
-  int eventHappend;
-  double eventTime = -1;
+  double eventTime = NAN;
 
   static LIST *tmpEventList = NULL;
 
@@ -262,9 +259,9 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   data->callback->function_ZeroCrossingsEquations(data, threadData);
   data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
 
-  eventHappend = checkForStateEvent(data, solverInfo->eventLst);
+  *foundEvent = checkForStateEvent(data, solverInfo->eventLst);
 
-  if (eventHappend) {
+  if (*foundEvent) {
     eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues, isInnerIntergration);
     infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
   }

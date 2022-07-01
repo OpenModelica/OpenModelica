@@ -696,6 +696,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   int nStages = gbfData->tableau->nStages;
 
   modelica_boolean fastStatesChange = FALSE;
+  modelica_boolean foundEvent;
 
   // This is the target time of the main integrator
   double innerTargetTime = fmin(targetTime, gbData->timeRight);
@@ -892,8 +893,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                      gbfData->time + gbfData->lastStepSize, gbfData->y,
                      gbData->nSlowStates, gbData->slowStatesIdx,  nStates, gbData->tableau, gbData->x, gbData->k);
 
-    eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y, TRUE);
-    if (eventTime > 0)
+    eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y, TRUE, &foundEvent);
+    if (foundEvent)
     {
       solverInfo->currentTime = eventTime;
       sData->timeValue = solverInfo->currentTime;
@@ -1061,6 +1062,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   double stopTime = data->simulationInfo->stopTime;
 
   int *sortedStates;
+  modelica_boolean foundEvent;
 
   // root finding will be done in gbode after each accepted step
   solverInfo->solverRootFinding = 1;
@@ -1401,8 +1403,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     gbData->stats.nStepsTaken++;
 
     if (gbData->gbfData->time < gbData->time) {
-      eventTime = checkForEvents(data, threadData, solverInfo, gbData->time, gbData->yOld, gbData->time + gbData->lastStepSize, gbData->y, FALSE);
-      if (eventTime > 0)
+      eventTime = checkForEvents(data, threadData, solverInfo, gbData->time, gbData->yOld, gbData->time + gbData->lastStepSize, gbData->y, FALSE, &foundEvent);
+      if (foundEvent)
       {
         solverInfo->currentTime = eventTime;
         sData->timeValue = solverInfo->currentTime;
@@ -1572,6 +1574,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
   int gb_step_info;
   int i;
+  modelica_boolean foundEvent;
 
   // root finding will be done in gbode after each accepted step
   solverInfo->solverRootFinding = 1;
@@ -1730,8 +1733,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     }
 
     // check for events, if event is detected stop integrator and trigger event iteration
-    eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE);
-    if (eventTime > 0) {
+    eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &foundEvent);
+    if (foundEvent) {
       solverInfo->currentTime = eventTime;
       sData->timeValue = eventTime;
 

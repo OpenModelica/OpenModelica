@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues, modelica_boolean isInnerIntergration);
+double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues, modelica_boolean isInnerIntergration, modelica_boolean* foundEvent);
 
 #ifdef __cplusplus
 };
