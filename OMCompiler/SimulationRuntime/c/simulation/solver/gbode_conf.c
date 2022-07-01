@@ -184,7 +184,7 @@ enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
  *
  * @param flag                    FLAG_SR_CTRL for single-rate method.
  *                                FLAG_MR_CTRL for multi-rate method.
- * @return enum GB_CTRL_METHOD    Step size controll method.
+ * @return enum GB_CTRL_METHOD    Step size control method.
  */
 enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
   enum GB_CTRL_METHOD method;
@@ -197,7 +197,7 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
   if (flag_value != NULL) {
     for (method=GB_CTRL_UNKNOWN; method<GB_CTRL_MAX; method++) {
       if (strcmp(flag_value, GB_CTRL_METHOD_NAME[method]) == 0) {
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size controll: %s", GB_CTRL_METHOD_NAME[method]);
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size control: %s", GB_CTRL_METHOD_NAME[method]);
         return method;
       }
     }
@@ -211,12 +211,13 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
 /**
  * @brief Get interpolation method from simulation flag.
  *
- * Reads value from from FLAG_SR_CTRL or FLAG_MR_CTRL.
- * Defaults to IController (GB_CTRL_I) if flag is not set.
+ * Reads value from from FLAG_SR_INT or FLAG_MR_INT.
+ * Defaults to interpolatiom (GB_INTERPOL_HERMITE) if flag is not set.
  *
- * @param flag                    FLAG_SR_INT for single-rate method.
- *                                FLAG_MR_INT for multi-rate method.
- * @return enum GB_CTRL_METHOD    Step size controll method.
+ * @param flag                        FLAG_SR_INT for single-rate method.
+ *                                    FLAG_MR_INT for multi-rate method.
+ * @return enum GB_INTERPOL_METHOD    Interpolation method for emitting
+ *                                    results and slow states interpolation.
  */
 enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
   enum GB_INTERPOL_METHOD method;
@@ -241,7 +242,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
     dumOptions(FLAG_NAME[flag], flag_value, GB_INTERPOL_METHOD_NAME, GB_INTERPOL_MAX);
     return GB_INTERPOL_UNKNOWN;
   } else {
-    return GB_INTERPOL_LIN;
+    return GB_INTERPOL_HERMITE;
   }
 }
 

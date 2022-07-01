@@ -97,7 +97,7 @@ typedef struct DATA_GBODEF{
   double timeLeft, timeRight;
   double stepSize, lastStepSize, stepSize_old;
   int act_stage;
-  enum GB_CTRL_METHOD ctrl_method;    /* Step size controll algorithm */
+  enum GB_CTRL_METHOD ctrl_method;    /* Step size control algorithm */
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;
   int nStates, nFastStates, nSlowStates, *fastStates, *slowStates;
@@ -147,7 +147,7 @@ typedef struct DATA_GBODE{
   double stepSize, lastStepSize;
   double stepSize_old, stepSize_fast;
   int act_stage;                          /* Current stage of Runge-Kutta method. */
-  enum GB_CTRL_METHOD ctrl_method;        /* Step size controll algorithm */
+  enum GB_CTRL_METHOD ctrl_method;        /* Step size control algorithm */
   modelica_boolean didEventStep;                       /* will be used for updating the derivatives */
   int ringBufferSize;
   int multi_rate_phase;
