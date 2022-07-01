@@ -1421,6 +1421,15 @@ constant ConfigFlag SIMULATION = CONFIG_FLAG(151, "simulation",
   SOME("u"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Simulates the last model in the given Modelica file."));
 
+constant ConfigFlag OBFUSCATE = CONFIG_FLAG(152, "obfuscate",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({"none"}),
+  SOME(STRING_DESC_OPTION({
+    ("none", Gettext.gettext("No obfuscation.")),
+    ("protected", Gettext.gettext("Obfuscates everything except for public variables.")),
+    ("full", Gettext.gettext("Obfuscates everything."))
+  })),
+  Gettext.gettext("Obfuscates identifiers in the simulation model"));
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

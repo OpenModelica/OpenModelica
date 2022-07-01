@@ -3360,9 +3360,17 @@ public function runFrontEndWorkNF
 protected
   SCode.Program builtin_p, scode_p, annotation_p;
   Boolean b;
+  Absyn.Path cls_name = className;
+  Obfuscate.Mapping obfuscate_map;
 algorithm
   (_, builtin_p) := FBuiltin.getInitialFunctions();
-  scode_p := listAppend(builtin_p, SymbolTable.getSCode());
+  scode_p := SymbolTable.getSCode();
+
+  if not Flags.isConfigFlagSet(Flags.OBFUSCATE, "none") then
+    (scode_p, cls_name, _, _, obfuscate_map) := Obfuscate.obfuscateProgram(scode_p, cls_name);
+  end if;
+
+  scode_p := listAppend(builtin_p, scode_p);
   ExecStat.execStat("FrontEnd - Absyn->SCode");
 
   annotation_p := AbsynToSCode.translateAbsyn2SCode(
@@ -3373,12 +3381,16 @@ algorithm
   b := FlagsUtil.set(Flags.NF_API, false);
   try
     (flatModel, functions, flatString) :=
-      NFInst.instClassInProgram(className, scode_p, annotation_p, dumpFlat);
+      NFInst.instClassInProgram(cls_name, scode_p, annotation_p, dumpFlat);
     FlagsUtil.set(Flags.NF_API, b);
   else
     FlagsUtil.set(Flags.NF_API, b);
     fail();
   end try;
+
+  if Flags.isConfigFlagSet(Flags.OBFUSCATE, "protected") then
+    flatModel := FlatModel.deobfuscatePublicVars(flatModel, obfuscate_map);
+  end if;
 end runFrontEndWorkNF;
 
 protected function translateModel " author: x02lucpo
