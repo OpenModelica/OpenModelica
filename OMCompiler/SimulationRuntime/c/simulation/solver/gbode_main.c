@@ -277,7 +277,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   {
     gbfData->fastStatesDebugFile = NULL;
   }
-  i = MIN(MAX(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
+  i = fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
   infoStreamPrint(LOG_SOLVER, 0, "Number of states %d (%d slow states, %d fast states)", gbData->nStates, gbData->nStates-i, i);
 
   gbfData->nlsxExtrapolation = 2;

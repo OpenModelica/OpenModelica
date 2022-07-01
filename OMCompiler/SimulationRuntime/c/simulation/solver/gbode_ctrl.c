@@ -55,7 +55,7 @@ double getErrorThreshold(DATA_GBODE* gbData)
       }
     }
   }
-  i = MIN(MAX(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
+  i = fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
 
   return gbData->err[gbData->sortedStatesIdx[i]];
 }
