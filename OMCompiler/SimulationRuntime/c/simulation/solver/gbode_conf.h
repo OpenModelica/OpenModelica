@@ -73,6 +73,7 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag);
 enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag);
 enum GB_CTRL_METHOD getControllerMethod();
 enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag);
+double getGBRatio();
 
 #ifdef __cplusplus
 };

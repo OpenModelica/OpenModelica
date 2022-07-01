@@ -422,12 +422,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->jacobian = NULL;
   }
 
-  const char *flag_value = omc_flagValue[FLAG_MR_PAR];
-  if (flag_value != NULL)
-    // TODO AHeu: Error handling if FLAG_MR_PAR has garbage in it
-    gbData->percentage = atof(omc_flagValue[FLAG_MR_PAR]);
-  else
-    gbData->percentage = 0;
+  gbData->percentage = getGBRatio();
+
   if (gbData->percentage > 0) {
     gbData->multi_rate = 1;
   } else {
@@ -1277,9 +1273,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
 
       // reject step, if error is too large
-      // TODO AHeu: This doesn't look correct. I guess this should be
-      // gbData->ctrl_type != GB_CTRL_CONST
-      if ((err > 1 ) && gbData->ctrl_method == GB_CTRL_I) {
+      if ((err > 1 ) && gbData->ctrl_method != GB_CTRL_CNST) {
         // count failed steps and output information on the solver status
         gbData->stats.nErrorTestFailures++;
         // debug the error of the states and derivatives after outer integration
@@ -1701,9 +1695,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
 
       // reject step, if error is too large
-      // TODO AHeu: This doesn't look correct. I guess this should be
-      // gbData->ctrl_type != GB_CTRL_CNST
-      if ((err > 1) && gbData->ctrl_method == GB_CTRL_I) {
+      if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST) {
         // count failed steps and output information on the solver status
         gbData->stats.nErrorTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
@@ -1720,9 +1712,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         printVector_gb(LOG_GBODE_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
         messageClose(LOG_GBODE_V);
       }
-    // TODO AHeu: This doesn't look correct. I guess this should be
-    // gbData->ctrl_type != GB_CTRL_CNST
-    } while ((err > 1) && gbData->ctrl_method == GB_CTRL_I);
+    } while ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST);
 
     // count processed steps
     gbData->stats.nStepsTaken++;
