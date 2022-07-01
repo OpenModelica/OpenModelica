@@ -977,7 +977,7 @@ function dumpJSONExtends
   input list<InstanceTree> exts;
   output JSON json = JSON.emptyArray();
 protected
-  JSON ext_json;
+  JSON ext_json, j;
   InstNode node;
   SCode.Element ext_def;
 algorithm
@@ -1017,6 +1017,7 @@ protected
   SCode.Comment cmt;
   SCode.Annotation ann;
   InstanceTree cls;
+  JSON j;
 algorithm
   InstanceTree.COMPONENT(node = node, cls = cls) := component;
   node := InstNode.resolveInner(node);
@@ -1041,7 +1042,10 @@ algorithm
             dumpJSONDims(elem.attributes.arrayDims, Type.arrayDims(comp.ty)), json);
         end if;
 
-        json := dumpJSONMod(elem.modifications, json);
+        j := dumpJSONMod(elem.modifications, JSON.makeNull());
+        if not JSON.isNull(j) then
+          json := JSON.addPair("modifiers", j, json);
+        end if;
 
         //if not Type.isComplex(comp.ty) then
         //  json := dumpJSONBuiltinClassComponents(comp.classInst, elem.modifications, json);
@@ -1461,33 +1465,7 @@ function dumpJSONMod
   input SCode.Mod mod;
   input output JSON json;
 protected
-  JSON j = JSON.emptyObject();
-algorithm
-  () := match mod
-    case SCode.Mod.MOD()
-      algorithm
-        if isSome(mod.binding) then
-          j := JSON.addPair("value",
-            JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding))), j);
-        end if;
-
-        for sm in mod.subModLst loop
-          j := JSON.addPair(sm.ident, dumpJSONSubMod(sm), j);
-        end for;
-
-        json := JSON.addPair("modifiers", j, json);
-      then
-        ();
-
-    else ();
-  end match;
-end dumpJSONMod;
-
-function dumpJSONSubMod
-  input SCode.SubMod subMod;
-  output JSON json = JSON.emptyObject();
-protected
-  SCode.Mod mod = subMod.mod;
+  JSON j;
 algorithm
   () := match mod
     case SCode.Mod.MOD()
@@ -1498,14 +1476,20 @@ algorithm
         end if;
 
         if not listEmpty(mod.subModLst) then
-          json := dumpJSONMod(mod, json);
+          j := JSON.emptyObject();
+
+          for sm in mod.subModLst loop
+            j := JSON.addPair(sm.ident, dumpJSONMod(sm.mod, JSON.makeNull()), j);
+          end for;
+
+          json := JSON.addPair("modifiers", j, json);
         end if;
       then
         ();
 
     else ();
   end match;
-end dumpJSONSubMod;
+end dumpJSONMod;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

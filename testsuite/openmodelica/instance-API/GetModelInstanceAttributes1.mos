@@ -9,7 +9,7 @@ loadString("
   model M
     type Angle = Real(final quantity = \"Angle\");
     parameter Real pi = 3;
-    Angle deg(start = pi);
+    Angle deg(start = pi) = 2;
   end M;
 ");
 
@@ -38,9 +38,15 @@ getModelInstance(M, prettyPrint = true);
 //       \"name\": \"deg\",
 //       \"type\": \"Real\",
 //       \"modifiers\": {
-//         \"start\": {
-//           \"value\": \"pi\"
+//         \"value\": \"2\",
+//         \"modifiers\": {
+//           \"start\": {
+//             \"value\": \"pi\"
+//           }
 //         }
+//       },
+//       \"value\": {
+//         \"binding\": 2
 //       },
 //       \"prefixes\": {
 //
