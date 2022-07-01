@@ -47,7 +47,8 @@
 
 #include "util/jacobian_util.h"
 
-int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
+// TODO: Header
+int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE);
 
 
 /**
@@ -446,7 +447,7 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
 
   // Evaluate right hand side of ODE
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
 
   // Evaluate residual
   for (i=0; i<nStates; i++) {
@@ -488,7 +489,7 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
     i = gbfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
+  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
 
   // Evaluate residuals
   for (ii=0; ii < nFastStates; ii++) {
@@ -530,7 +531,7 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
     i = gbfData->fastStates[ii];
     sData->realVars[i] = xloc[ii];
   }
-  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
+  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
 
   // Evaluate residual
   for (ii=0; ii<gbfData->nFastStates; ii++) {
@@ -568,7 +569,7 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
 
   // Evaluate right hand side of ODE
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
 
   // Evaluate residual
   for (i=0; i<nStates; i++) {
@@ -616,7 +617,7 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     /* Evaluate ODE for each stage_ */
     sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
     memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
   }
 

@@ -89,16 +89,12 @@
  * @param data               Runtime data struct.
  * @param threadData         Thread data for error handling.
  * @param evalFunctionsODE   Counter for function calls.
- * @param fODE               Array of state derivatives.
  * @return int               Returns 0 on success.
  */
-int gbode_fODE(DATA *data, threadData_t *threadData, void *evalFunctionODE, modelica_real *fODE)
+int gbode_fODE(DATA *data, threadData_t *threadData, void *evalFunctionODE)
 {
   // TODO: Remove fODE or fix
   unsigned int *counter = (unsigned int *)evalFunctionODE;
-
-  SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
-  fODE = sData->realVars + data->modelData->nStates;
 
   // TODO: callback->functionODE is already doing
   // data->simulationInfo->callStatistics.functionODE++;
@@ -962,7 +958,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // update kRight
     sData->timeValue = gbfData->time;
     memcpy(sData->realVars, gbfData->y, nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), fODE);
+    gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
     // TODO: fODE is not changing, it always points to sData->realVars + data->modelData->nStates
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
@@ -1323,7 +1319,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // update kRight
       sData->timeValue = gbData->time;
       memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
       // Check, if interpolation scheme is reliable
@@ -1792,7 +1788,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // update kRight the derivatives of yRight
     sData->timeValue = gbData->time;
     memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
     memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
     /* step is accepted and yOld needs to be updated */

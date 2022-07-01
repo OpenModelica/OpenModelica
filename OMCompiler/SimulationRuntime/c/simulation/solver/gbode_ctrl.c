@@ -33,7 +33,8 @@
 
 #include "gbode_main.h"
 
-int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE, modelica_real* fODE);
+// TODO: Include header
+int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE);
 
 double getErrorThreshold(DATA_GBODE* gbData)
 {
@@ -181,7 +182,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
   // TODO AHeu: Here fODE points to sData->realVars+nStates, but inside gbode_fODE fODE isn't really used.
   // Are the states already set at this time?
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
   // TODO: gbData->yOld and fODE are not from the same callback->functionODE!
   // And why even copy sData->realVars[nStates] into gbData->f, just use data->localData[1]->realVars[nStates]
   memcpy(gbData->f, fODE, nStates*sizeof(double));
@@ -209,7 +210,7 @@ void gb_first_step(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   }
   sData->timeValue += h0;
 
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), fODE);
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
 
   for (i=0; i<nStates; i++) {
     sc = absTol + fabs(gbData->yOld[i])*relTol;
