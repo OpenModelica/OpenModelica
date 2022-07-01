@@ -68,18 +68,18 @@ typedef int (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* x, double* k, d
  *        | bt_1    bt_2    ...   bt_s
  */
 typedef struct BUTCHER_TABLEAU {
-  double *A;                /* Runge-Kutta matrix A */
-  double *b;                /* Weights vector */
-  double *bt;
-  double *c;                /* Nodes vector */
-  unsigned int nStages;     /* Number of stages */
-  unsigned int order_b;     /* Order of the Runge-Kutta method */
-  unsigned int order_bt;    /* Order of the embeddet Runge-Kutta method */
-  unsigned int error_order;
-  double fac;               /* Security factor for step size control */
-  unsigned int richardson;  /* if no embedded version is available, Richardson
-                               extrapolation can be used for step size control */
-  modelica_boolean withDenseOutput;
+  double *A;                        /* Runge-Kutta matrix A */
+  double *b;                        /* Weights vector */
+  double *bt;                       /* Weights vector of embedded formula */
+  double *c;                        /* Nodes vector */
+  unsigned int nStages;             /* Number of stages */
+  unsigned int order_b;             /* Order of the Runge-Kutta method */
+  unsigned int order_bt;            /* Order of the embeddet Runge-Kutta method */
+  unsigned int error_order;         /* Usually min(order_b, order_bt) */
+  double fac;                       /* Security factor for step size control */
+  modelica_boolean  richardson;     /* if no embedded version is available, Richardson
+                                    extrapolation can be used for step size control */
+  modelica_boolean withDenseOutput; /* Availability of dense output interpolation formulas */
   gb_dense_output dense_output;
 } BUTCHER_TABLEAU;
 

@@ -604,7 +604,6 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
   tableau->order_b = 5;
   tableau->order_bt = 4;
   tableau->fac = 1e3;
-  tableau->withDenseOutput = TRUE;
 
   /* Butcher Tableau */
   const double c[] = {0.0, 1./5, 3./10, 4./5, 8./9, 1., 1.};
@@ -621,8 +620,11 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 
-  //tableau->dense_output = function...
+  // tableau->withDenseOutput = TRUE;
+  // tableau->dense_output = function...
 }
+
+
 
 void getButcherTableau_FEHLBERG12(BUTCHER_TABLEAU* tableau) {
 
