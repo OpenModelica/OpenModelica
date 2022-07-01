@@ -4576,6 +4576,7 @@ algorithm
 
     case SCode.COMPONENT(comment = cmt) then SOME(cmt);
     case SCode.CLASS(cmt = cmt) then SOME(cmt);
+    case SCode.EXTENDS() then SOME(SCode.Comment.COMMENT(inElement.ann, NONE()));
     else NONE();
 
   end match;

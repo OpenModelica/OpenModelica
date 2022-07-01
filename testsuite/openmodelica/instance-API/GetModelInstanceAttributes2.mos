@@ -37,26 +37,28 @@ getModelInstance(M, prettyPrint = true);
 //   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
-//       \"name\": \"A\",
-//       \"restriction\": \"model\",
-//       \"components\": [
-//         {
-//           \"name\": \"w\",
-//           \"type\": \"Real\",
-//           \"prefixes\": {
-//             \"public\": false,
-//             \"replaceable\": true,
-//             \"redeclare\": true
+//       \"baseClass\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"w\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"public\": false,
+//               \"replaceable\": true,
+//               \"redeclare\": true
+//             }
+//           },
+//           {
+//             \"name\": \"z\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"inner\": true
+//             }
 //           }
-//         },
-//         {
-//           \"name\": \"z\",
-//           \"type\": \"Real\",
-//           \"prefixes\": {
-//             \"inner\": true
-//           }
-//         }
-//       ]
+//         ]
+//       }
 //     }
 //   ],
 //   \"components\": [

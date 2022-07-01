@@ -34,62 +34,64 @@ getModelInstance(M, prettyPrint = true);
 //   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
-//       \"name\": \"A\",
-//       \"restriction\": \"model\",
-//       \"components\": [
-//         {
-//           \"name\": \"c1\",
-//           \"type\": {
-//             \"name\": \"C\",
-//             \"restriction\": \"connector\",
-//             \"components\": [
-//               {
-//                 \"name\": \"e\",
-//                 \"type\": \"Real\",
-//                 \"prefixes\": {
+//       \"baseClass\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"c1\",
+//             \"type\": {
+//               \"name\": \"C\",
+//               \"restriction\": \"connector\",
+//               \"components\": [
+//                 {
+//                   \"name\": \"e\",
+//                   \"type\": \"Real\",
+//                   \"prefixes\": {
 //
+//                   }
+//                 },
+//                 {
+//                   \"name\": \"f\",
+//                   \"type\": \"Real\",
+//                   \"prefixes\": {
+//                     \"connector\": \"flow\"
+//                   }
 //                 }
-//               },
-//               {
-//                 \"name\": \"f\",
-//                 \"type\": \"Real\",
-//                 \"prefixes\": {
-//                   \"connector\": \"flow\"
-//                 }
-//               }
-//             ]
+//               ]
+//             },
+//             \"prefixes\": {
+//
+//             }
 //           },
-//           \"prefixes\": {
+//           {
+//             \"name\": \"c2\",
+//             \"type\": {
+//               \"name\": \"C\",
+//               \"restriction\": \"connector\",
+//               \"components\": [
+//                 {
+//                   \"name\": \"e\",
+//                   \"type\": \"Real\",
+//                   \"prefixes\": {
 //
-//           }
-//         },
-//         {
-//           \"name\": \"c2\",
-//           \"type\": {
-//             \"name\": \"C\",
-//             \"restriction\": \"connector\",
-//             \"components\": [
-//               {
-//                 \"name\": \"e\",
-//                 \"type\": \"Real\",
-//                 \"prefixes\": {
-//
+//                   }
+//                 },
+//                 {
+//                   \"name\": \"f\",
+//                   \"type\": \"Real\",
+//                   \"prefixes\": {
+//                     \"connector\": \"flow\"
+//                   }
 //                 }
-//               },
-//               {
-//                 \"name\": \"f\",
-//                 \"type\": \"Real\",
-//                 \"prefixes\": {
-//                   \"connector\": \"flow\"
-//                 }
-//               }
-//             ]
-//           },
-//           \"prefixes\": {
+//               ]
+//             },
+//             \"prefixes\": {
 //
+//             }
 //           }
-//         }
-//       ]
+//         ]
+//       }
 //     }
 //   ],
 //   \"components\": [
