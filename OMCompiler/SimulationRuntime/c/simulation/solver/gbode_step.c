@@ -34,12 +34,8 @@
 #include "gbode_main.h"
 #include "gbode_util.h"
 
-// TODO: Header!
-int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE);
-
-
 /**
- * @brief Generic multistep function.
+ * @brief Generic multi-step function.
  *
  * Internal non-linear equation system will be solved with non-linear solver specified during setup.
  * Results will be saved in y and embedded results saved in yt.
@@ -56,29 +52,29 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
 
   int i;
-  int stage, stage_;
+  int stage;
   int nStates = data->modelData->nStates;
   int nStages = gbData->tableau->nStages;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
-  /* Predictor Schritt */
+  /* Predictor step */
   for (i = 0; i < nStates; i++) {
     gbData->yt[i] = 0;
-    for (stage_ = 0; stage_ < nStages-1; stage_++) {
-      gbData->yt[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
-                        gbData->kv[stage_ * nStates + i] * gbData->tableau->bt[stage_] *  gbData->stepSize;
+    for (stage = 0; stage < nStages-1; stage++) {
+      gbData->yt[i] += -gbData->yv[stage * nStates + i] * gbData->tableau->c[stage] +
+                        gbData->kv[stage * nStates + i] * gbData->tableau->bt[stage] *  gbData->stepSize;
     }
-    gbData->yt[i] += gbData->kv[stage_ * nStates + i] * gbData->tableau->bt[stage_] * gbData->stepSize;
-    gbData->yt[i] /= gbData->tableau->c[stage_];
+    gbData->yt[i] += gbData->kv[stage * nStates + i] * gbData->tableau->bt[stage] * gbData->stepSize;
+    gbData->yt[i] /= gbData->tableau->c[stage];
   }
 
 
-  /* Constant part of the multistep method */
+  /* Constant part of the multi-step method */
   for (i = 0; i < nStates; i++) {
     gbData->res_const[i] = 0;
-    for (stage_ = 0; stage_ < nStages-1; stage_++) {
-      gbData->res_const[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
-                               gbData->kv[stage_ * nStates + i] * gbData->tableau->b[stage_] *  gbData->stepSize;
+    for (stage = 0; stage < nStages-1; stage++) {
+      gbData->res_const[i] += -gbData->yv[stage * nStates + i] * gbData->tableau->c[stage] +
+                               gbData->kv[stage * nStates + i] * gbData->tableau->b[stage] *  gbData->stepSize;
     }
   }
   // printVector_gb("res_const:  ", gbData->res_const, nStates, gbData->time);
@@ -117,24 +113,24 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     return -1;
   }
 
-  memcpy(gbData->kv + stage_ * nStates, fODE, nStates*sizeof(double));
+  memcpy(gbData->kv + stage * nStates, fODE, nStates*sizeof(double));
 
   /* Corrector Schritt */
   for (i = 0; i < nStates; i++) {
     gbData->y[i] = 0;
-    for (stage_ = 0; stage_ < nStages-1; stage_++) {
-      gbData->y[i] += -gbData->yv[stage_ * nStates + i] * gbData->tableau->c[stage_] +
-                       gbData->kv[stage_ * nStates + i] * gbData->tableau->b[stage_] *  gbData->stepSize;
+    for (stage = 0; stage < nStages-1; stage++) {
+      gbData->y[i] += -gbData->yv[stage * nStates + i] * gbData->tableau->c[stage] +
+                       gbData->kv[stage * nStates + i] * gbData->tableau->b[stage] *  gbData->stepSize;
     }
-    gbData->y[i] += gbData->kv[stage_ * nStates + i] * gbData->tableau->b[stage_] * gbData->stepSize;
-    gbData->y[i] /= gbData->tableau->c[stage_];
+    gbData->y[i] += gbData->kv[stage * nStates + i] * gbData->tableau->b[stage] * gbData->stepSize;
+    gbData->y[i] /= gbData->tableau->c[stage];
   }
 
   return 0;
 }
 
 /**
- * @brief Generic multistep function.
+ * @brief Generic multi-step function.
  *
  * Internal non-linear equation system will be solved with non-linear solver specified during setup.
  * Results will be saved in y and embedded results saved in yt.
@@ -152,7 +148,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   DATA_GBODEF* gbfData = gbData->gbfData;
 
   int i, ii;
-  int stage, stage_;
+  int stage;
   int nStates = data->modelData->nStates;
   int nStages = gbfData->tableau->nStages;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
@@ -162,25 +158,25 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   {
     i = gbData->fastStatesIdx[ii];
     gbfData->yt[i] = 0;
-    for (stage_ = 0; stage_ < nStages-1; stage_++)
+    for (stage = 0; stage < nStages-1; stage++)
     {
-      gbfData->yt[i] += -gbfData->yv[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
-                         gbfData->kv[stage_ * nStates + i] * gbfData->tableau->bt[stage_] *  gbfData->stepSize;
+      gbfData->yt[i] += -gbfData->yv[stage * nStates + i] * gbfData->tableau->c[stage] +
+                         gbfData->kv[stage * nStates + i] * gbfData->tableau->bt[stage] *  gbfData->stepSize;
     }
-    gbfData->yt[i] += gbfData->kv[stage_ * nStates + i] * gbfData->tableau->bt[stage_] * gbfData->stepSize;
-    gbfData->yt[i] /= gbfData->tableau->c[stage_];
+    gbfData->yt[i] += gbfData->kv[stage * nStates + i] * gbfData->tableau->bt[stage] * gbfData->stepSize;
+    gbfData->yt[i] /= gbfData->tableau->c[stage];
   }
 
 
-  /* Constant part of the multistep method */
+  /* Constant part of the multi-step method */
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
     i = gbData->fastStatesIdx[ii];
     gbfData->res_const[i] = 0;
-    for (stage_ = 0; stage_ < nStages-1; stage_++)
+    for (stage = 0; stage < nStages-1; stage++)
     {
-      gbfData->res_const[i] += -gbfData->yv[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
-                                gbfData->kv[stage_ * nStates + i] * gbfData->tableau->b[stage_] *  gbfData->stepSize;
+      gbfData->res_const[i] += -gbfData->yv[stage * nStates + i] * gbfData->tableau->c[stage] +
+                                gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] *  gbfData->stepSize;
     }
   }
   // printVector_gb("res_const:  ", gbData->res_const, nStates, gbData->time);
@@ -224,20 +220,20 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     return -1;
   }
 
-  memcpy(gbfData->kv + stage_ * nStates, fODE, nStates*sizeof(double));
+  memcpy(gbfData->kv + stage * nStates, fODE, nStates*sizeof(double));
 
   /* Corrector Schritt */
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
     i = gbData->fastStatesIdx[ii];
     gbfData->y[i] = 0;
-    for (stage_ = 0; stage_ < nStages-1; stage_++)
+    for (stage = 0; stage < nStages-1; stage++)
     {
-      gbfData->y[i] += -gbfData->yv[stage_ * nStates + i] * gbfData->tableau->c[stage_] +
-                        gbfData->kv[stage_ * nStates + i] * gbfData->tableau->b[stage_] *  gbfData->stepSize;
+      gbfData->y[i] += -gbfData->yv[stage * nStates + i] * gbfData->tableau->c[stage] +
+                        gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] *  gbfData->stepSize;
     }
-    gbfData->y[i] += gbfData->kv[stage_ * nStates + i] * gbfData->tableau->b[stage_] * gbfData->stepSize;
-    gbfData->y[i] /= gbfData->tableau->c[stage_];
+    gbfData->y[i] += gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] * gbfData->stepSize;
+    gbfData->y[i] /= gbfData->tableau->c[stage];
   }
 
   return 0;
@@ -371,6 +367,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   return 0;
 }
 
+// TODO: Describe me
 /**
  * @brief
  *

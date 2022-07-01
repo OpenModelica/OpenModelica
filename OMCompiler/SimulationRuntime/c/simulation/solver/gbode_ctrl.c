@@ -33,9 +33,7 @@
 
 #include "gbode_main.h"
 
-// TODO: Include header
-int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE);
-
+// TODO: Document me
 double getErrorThreshold(DATA_GBODE* gbData)
 {
   int i, j, temp;
@@ -55,7 +53,7 @@ double getErrorThreshold(DATA_GBODE* gbData)
       }
     }
   }
-  i = MIN(MAX(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
+  i = fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
 
   return gbData->err[gbData->sortedStatesIdx[i]];
 }
@@ -142,8 +140,7 @@ gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method) {
   case GB_CTRL_CNST:
     return CController;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Unknown step size control method.");
-    return NULL;
+    throwStreamPrint(NULL, "Unknown step size control method.");
   }
 }
 
@@ -178,13 +175,8 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
 
   /* store values of the states and state derivatives at initial or event time */
   gbData->time = sData->timeValue;
-  // TODO AHeu: Can gbData->yOld be some generic work array of size nStates?
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
-  // TODO AHeu: Here fODE points to sData->realVars+nStates, but inside gbode_fODE fODE isn't really used.
-  // Are the states already set at this time?
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-  // TODO: gbData->yOld and fODE are not from the same callback->functionODE!
-  // And why even copy sData->realVars[nStates] into gbData->f, just use data->localData[1]->realVars[nStates]
   memcpy(gbData->f, fODE, nStates*sizeof(double));
 
   for (i=0; i<nStates; i++) {

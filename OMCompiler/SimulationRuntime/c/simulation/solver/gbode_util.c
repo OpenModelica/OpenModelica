@@ -36,6 +36,7 @@
 
 
 // LA functions
+// TODO: Describe me
 void addSmultVec_gbf(double* a, double* b, double *c, double s, int nIdx, int* idx) {
   int i, ii;
 
@@ -45,6 +46,7 @@ void addSmultVec_gbf(double* a, double* b, double *c, double s, int nIdx, int* i
   }
 }
 
+// TODO: Describe me
 void addSmultVec_gb(double* a, double* b, double *c, double s, int n) {
   int i;
 
@@ -78,8 +80,6 @@ void linear_interpolation(double ta, double* fa, double tb, double* fb, double t
   int i, ii;
 
   // omit division by zero
-  // TODO: Also check if t = ta?
-  // TODO: We need an epsilon here, make it an macro
   if (fabs(tb-ta) <= GBODE_EPSILON) {
     if(idx != NULL) {
       copyVector_gbf(f, fb, n, idx);
@@ -129,9 +129,6 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
   int i, ii;
 
   // omit division by zero
-  // TODO: Also check if t = ta?
-  // TODO: We need an epsilon here, make it an macro
-  // TODO: Make a function that can handle copy with idx=NULL
   if (fabs(tb-ta) <= GBODE_EPSILON) {
     if(idx != NULL) {
       copyVector_gbf(f, fb, n, idx);
@@ -199,7 +196,6 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
     break;
   default:
     throwStreamPrint(NULL, "Not handled case in gb_interpolation. Unknown interpolation method %i.", interpolMethod);
-    break;
   }
 }
 
@@ -224,10 +220,7 @@ void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, doub
 
   // TODO: Make this function call linear_interpolation() and hermite_interpolation() and return the error.
   // How can we do this without allocating an additional array? We could use a work array as input and write there.
-  //linear_interpolation(ta, fa, tb, fb, t, err, nIdx, idx);
-  //f_hermit = hermite_interpolation()
 
-  // TODO: We need an epsilon here, make it an macro
   if (fabs(tb-ta) > GBODE_EPSILON) {
     tt = (t-ta)/(tb-ta);
     h0 = 1-tt;
@@ -251,13 +244,21 @@ void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, doub
   }
 }
 
+/**
+ * @brief Extrapolation for fast states.
+ *
+ * Using interpolation method specified in gbData->interpolation.
+ *
+ * @param gbData              Generic ODE solver data.
+ * @param nlsxExtrapolation   On output contains function values at extrapolation point time.
+ * @param time                Extrapolation time.
+ */
 void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double time)
 {
   DATA_GBODEF* gbfData = gbData->gbfData;
   int nStates = gbData->nStates;
   int nFastStates = gbData->nFastStates;
 
-  // TODO: We need an epsilon here, make it an macro
   if (fabs(gbfData->tv[1]-gbfData->tv[0]) <= GBODE_EPSILON) {
     addSmultVec_gbf(nlsxExtrapolation, gbfData->yv, gbfData->kv, time - gbfData->tv[0], nFastStates, gbData->fastStatesIdx);
   } else {
@@ -270,11 +271,19 @@ void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double tim
   }
 }
 
+/**
+ * @brief Extrapolation for all states.
+ *
+ * Using interpolation method specified in gbData->interpolation.
+ *
+ * @param gbData              Generic ODE solver data.
+ * @param nlsxExtrapolation   On output contains function values at extrapolation point time.
+ * @param time                Extrapolation time.
+ */
 void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time)
 {
   int nStates = gbData->nStates;
 
-  // TODO: We need an epsilon here, make it an macro
   if (fabs(gbData->tv[1]-gbData->tv[0]) <= GBODE_EPSILON) {
     addSmultVec_gb(nlsxExtrapolation, gbData->yv, gbData->kv, time - gbData->tv[0], nStates);
   } else {
@@ -286,7 +295,6 @@ void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time
                      nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
   }
 }
-
 
 /**
  * @brief Copy specific vector components given by an index vector
@@ -301,11 +309,13 @@ void copyVector_gbf(double* a, double* b, int nIndx, int* indx) {
     a[indx[i]] = b[indx[i]];
 }
 
+// TODO: Describe me
 void projVector_gbf(double* a, double* b, int nIndx, int* indx) {
   for (int i=0;i<nIndx;i++)
     a[i] = b[indx[i]];
 }
 
+// TODO: Describe me
 // debug ring buffer for the states and derviatives of the states
 void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize) {
 
@@ -396,7 +406,6 @@ void printMatrix_gb(char name[], double* a, int n, double time) {
  * @param nIndx   Size of index vector
  * @param indx    Index vector
  */
-
 void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, double time, int nIndx, int* indx) {
 
   // If stream is not active or size of vector to big do nothing
@@ -452,6 +461,7 @@ void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
   printf("\n");
 }
 
+// TODO: Describe me
 void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time) {
     char fastStates_row[4096];
     sprintf(fastStates_row, "%15.10g %15.10g %15.10g %15.10g", time, gbData->err_slow, gbData->err_int, gbData->err_fast);
@@ -464,6 +474,7 @@ void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time) 
     fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
 }
 
+// TODO: Describe me
 void dumpFastStates_gbf(DATA_GBODE* gbData, double time) {
   char fastStates_row[4096];
   int i, ii;
@@ -518,7 +529,6 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
   return fastStatesChange;
 }
 
-// TODO AHeu: Move to general util
 /**
  * @brief Log ODE integrator solver stats.
  *
@@ -558,7 +568,7 @@ void setSolverStats(unsigned int* solverStats, SOLVERSTATS* stats) {
 }
 
 /**
- * @brief Set all sovler stats to zero.
+ * @brief Set all solver stats to zero.
  *
  * @param stats   Pointer to solver stats.
  */

@@ -61,17 +61,18 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
     }
   }
   printSparseStructure(sparsePattern,
-                        sizeRows,
-                        sizeCols,
-                        LOG_GBODE_V,
-                        "sparsePattern");
+                       sizeRows,
+                       sizeCols,
+                       LOG_GBODE_V,
+                       "sparsePattern");
   printSparseStructure(sparsePatternT,
-                        sizeRows,
-                        sizeCols,
-                        LOG_GBODE_V,
-                        "sparsePatternT");
+                       sizeRows,
+                       sizeCols,
+                       LOG_GBODE_V,
+                       "sparsePatternT");
 }
 
+// TODO: Describe me
 void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages)
 {
   SPARSE_PATTERN* sparsePatternT;
@@ -237,7 +238,7 @@ void updateSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR
   int i, j, l, r, ii, jj, ll, rr;
 
   // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
-  SPARSE_PATTERN *sparsePattern_DIRK = gbfData->sparesPattern_DIRK;
+  SPARSE_PATTERN *sparsePattern_DIRK = gbfData->sparsePattern_DIRK;
 
   /* Set sparsity pattern for the fast states */
   ii = 0;
@@ -276,10 +277,10 @@ void updateSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR
   ColoringAlg(sparsePattern_MR, nFastStates, nFastStates, 1);
 
   printSparseStructure(sparsePattern_MR,
-                      nFastStates,
-                      nFastStates,
-                      LOG_GBODE_V,
-                      "sparsePattern_MR");
+                       nFastStates,
+                       nFastStates,
+                       LOG_GBODE_V,
+                       "sparsePattern_MR");
 
 
   return;
@@ -319,10 +320,10 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   double* A    = gbData->tableau->A;
 
   printSparseStructure(sparsePattern_ODE,
-                      sizeRows,
-                      sizeCols,
-                      LOG_GBODE_V,
-                      "sparsePatternODE");
+                       sizeRows,
+                       sizeCols,
+                       LOG_GBODE_V,
+                       "sparsePatternODE");
 
   nnz_A = 0;
   nDiags_A = 0;

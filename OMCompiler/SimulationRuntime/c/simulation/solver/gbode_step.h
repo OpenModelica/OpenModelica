@@ -45,10 +45,9 @@ extern "C" {
 int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
+// single-rate step function
 int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-
-// singlerate step function
 int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);

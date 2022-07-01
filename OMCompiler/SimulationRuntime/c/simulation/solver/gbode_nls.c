@@ -47,14 +47,11 @@
 
 #include "util/jacobian_util.h"
 
-// TODO: Header
-int gbode_fODE(DATA* data, threadData_t *threadData, void* evalFunctionODE);
-
 
 /**
  * @brief Initialize static data of non-linear system for DIRK.
  *
- * Initialize for diagoanl implicit Runge-Kutta (DIRK) method.
+ * Initialize for diagonal implicit Runge-Kutta (DIRK) method.
  * Sets min, max, nominal values and sparsity pattern.
  *
  * @param data              Runtime data struct
@@ -71,7 +68,6 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
 
   /* Initialize sparsity pattern */
   if (initSparsPattern) {
-    // TODO AHeu: This is leaking memory?
     nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
@@ -81,7 +77,7 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
 /**
  * @brief Initialize static data of non-linear system for DIRK.
  *
- * Initialize for diagoanl implicit Runge-Kutta (DIRK) method.
+ * Initialize for diagonal implicit Runge-Kutta (DIRK) method.
  * Sets min, max, nominal values and sparsity pattern.
  *
  * @param data              Runtime data struct
@@ -100,7 +96,6 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
 
   /* Initialize sparsity pattern, First guess (all states are fast states) */
   if (initSparsPattern) {
-    // TODO AHeu: This is leaking memory?
     nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
@@ -190,7 +185,6 @@ void freeNlsDataGB(NONLINEAR_SYSTEM_DATA* nlsData) {
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GBODE* gbData) {
   assertStreamPrint(threadData, gbData->type != GM_TYPE_EXPLICIT, "Don't initialize non-linear solver for explicit Runge-Kutta method.");
 
-  // TODO AHeu: Free solverData again
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
 
   NONLINEAR_SYSTEM_DATA* nlsData;
@@ -235,17 +229,11 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gbData->type);
-    break;
+    throwStreamPrint(NULL, "Residual function for NLS type %i not yet implemented.", gbData->type);
   }
 
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE);
 
-  // TODO: Set callback to initialize Jacobian
-  //       Write said function...
-  // TODO: Free memory
-  // TODO AHeu: This will leak memory if gbData->jacobian is already set!
-  // What Jacobian is this? For the NLS or for the ODE?
   gbData->jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
   initAnalyticJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
@@ -280,9 +268,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbData->nlsSolverMethod]);
-    return NULL;
-    break;
+    throwStreamPrint(NULL, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbData->nlsSolverMethod]);
   }
 
   return nlsData;
@@ -334,15 +320,11 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Residual function for NLS type %i not yet implemented.", gbfData->type);
-    break;
+    throwStreamPrint(NULL, "Residual function for NLS type %i not yet implemented.", gbfData->type);
   }
 
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE);
 
-  // TODO: Set callback to initialize Jacobian
-  //       Write said function...
-  // TODO: Free memory
   gbfData->jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
   initAnalyticJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
@@ -374,9 +356,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->solverData = solverData;
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
-    return NULL;
-    break;
+    throwStreamPrint(NULL, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
   }
 
   return nlsData;
@@ -403,20 +383,15 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData) {
     break;
   default:
     throwStreamPrint(NULL, "Not handled NONLINEAR_SOLVER in gbode_freeData. Are we leaking memroy?");
-    break;
   }
   free(dataSolver);
-
-  // TODO AHeu: This malloc and free is a nightmare!
-  //freeSparsePattern(nlsData->sparsePattern);
-  //free(nlsData->sparsePattern); nlsData->sparsePattern = NULL;
   freeNlsDataGB(nlsData);
   return;
 }
 
 
 /**
- * @brief Residual function for non-linear system of generic multistep methods.
+ * @brief Residual function for non-linear system of generic multi-step methods.
  *
  * TODO: Describe what the residual means.
  *
@@ -454,7 +429,7 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
 }
 
 /**
- * @brief Residual function for non-linear system of generic multistep methods.
+ * @brief Residual function for non-linear system of generic multi-step methods.
  *
  * TODO: Describe what the residual means.
  *
@@ -707,12 +682,6 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
   int nStages = gbfData->tableau->nStages;
   int nFastStates = gbData->nFastStates;
   int stage_ = gbfData->act_stage;
-
-  // printSparseStructure(gbfData->jacobian->sparsePattern,
-  //                     nFastStates,
-  //                     nFastStates,
-  //                     LOG_STDOUT,
-  //                     "sparsePattern");
 
   for (i=0; i<jacobian_ODE->sizeCols; i++) {
     jacobian_ODE->seedVars[i] = 0;

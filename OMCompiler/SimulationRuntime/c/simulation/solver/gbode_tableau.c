@@ -152,7 +152,7 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
 {
 
   if (tableau->richardson) {
-    warningStreamPrint(LOG_STDOUT, 0,"Richardson extrapolation is not available for multistep methods");
+    warningStreamPrint(LOG_STDOUT, 0,"Richardson extrapolation is not available for multi-step methods");
     tableau->richardson = FALSE;
   }
 
@@ -915,7 +915,7 @@ void getButcherTableau_RK1214_orig(BUTCHER_TABLEAU* tableau) {
  * @param tableau       Butcher tableau. error_order will be set after return.
  * @param nStates       Number of states of ODE/DAE system.
  * @param nlSystemSize  Contains size of internal non-linear system on return.
- * @param GM_TYPE        Contains Runge-Kutta method type on return.
+ * @param GM_TYPE       Contains Runge-Kutta method type on return.
  */
 void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_TYPE* GM_type) {
   modelica_boolean isGenericIRK = FALSE;  /* generic implicit Runge-Kutta method */
@@ -931,6 +931,7 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     for (j=i+1; j<tableau->nStages; j++) {
       if (fabs(tableau->A[i * tableau->nStages + j])>0) {    // TODO: This assumes that A is saved in row major format
         isGenericIRK = TRUE;
+        break;
       }
     }
   }
@@ -954,7 +955,6 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
   }
   // set order for error control!
   tableau->error_order = fmin(tableau->order_b, tableau->order_bt) + 1;
-
 }
 
 /**
@@ -1075,9 +1075,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_SINGLERATE_METHOD GM_method, enum _F
       getButcherTableau_GAUSS6(tableau);
       break;
     default:
-      errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow Runge Kutta method %i.", GM_method);
-      free(tableau);
-      return NULL;
+      throwStreamPrint(NULL, "Error: Unknown Runge Kutta method %i.", GM_method);
   }
 
   return tableau;

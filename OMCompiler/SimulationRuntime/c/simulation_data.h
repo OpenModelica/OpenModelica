@@ -746,7 +746,7 @@ typedef struct SIMULATION_INFO
 
   INLINE_DATA* inlineData;
 
-  void* backupSolverData;    /* Used for generik RK Methods to get access to some solver details inside callbacks */
+  void* backupSolverData;    /* Used for generic Runge-Kutta methods to get access to some solver details inside callbacks */
 
   /* delay vars */
   RINGBUFFER **delayStructure;        /* Array of ring buffers for delay expressions */
@@ -756,7 +756,7 @@ typedef struct SIMULATION_INFO
   CALL_STATISTICS callStatistics;      /* used to store the number of function evaluations */
 } SIMULATION_INFO;
 
-/* collects all dynamic model data like the variabel-values */
+/* collects all dynamic model data like the variable-values */
 typedef struct SIMULATION_DATA
 {
   modelica_real timeValue;
