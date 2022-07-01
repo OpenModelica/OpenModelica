@@ -486,7 +486,7 @@ void dumpFastStates_gbf(DATA_GBODE* gbData, double time) {
  */
 modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
   DATA_GBODEF* gbfData = gbData->gbfData;
-  modelica_boolean fastStatesChange;
+  modelica_boolean fastStatesChange = FALSE;
 
   gbfData->nFastStates = gbData->nFastStates;
   gbfData->fastStatesIdx  = gbData->fastStatesIdx;

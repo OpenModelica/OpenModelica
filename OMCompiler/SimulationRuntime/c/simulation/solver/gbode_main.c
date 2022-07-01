@@ -393,12 +393,10 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     // TODO AHeu: What do we do with jacobian? At the moment it just leaks memory
     if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
       gbData->symJacAvailable = FALSE;
-      //gbData->jacobian = NULL;  Add this???
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
       // ToDo: If Jacobian available set this to TRUE
       gbData->symJacAvailable = TRUE;
-      //gbData->jacobian = jacobian;  Add this?
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
@@ -492,6 +490,10 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   freeAnalyticJacobian(gbfData->jacobian);
   free(gbfData->jacobian); gbfData->jacobian = NULL;
 
+  /* Free sparsity pattern */
+  freeSparsePattern(gbfData->sparesPattern_DIRK);
+  free(gbfData->sparesPattern_DIRK);
+
   /* Free Butcher tableau */
   freeButcherTableau(gbfData->tableau);
 
@@ -532,8 +534,11 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
  *
  * @param gbData    Pointer to generik Runge-Kutta data struct.
  */
-void gbode_freeData(DATA_GBODE *gbData)
+void gbode_freeData(DATA* data, DATA_GBODE *gbData)
 {
+ ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+ freeAnalyticJacobian(jacobian);
+
   /* Free non-linear system data */
   freeRK_NLS_DATA(gbData->nlsData);
 

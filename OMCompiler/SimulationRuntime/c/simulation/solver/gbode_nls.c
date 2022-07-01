@@ -261,7 +261,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     nlsData->nlsMethod = NLS_NEWTON;
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     nlsData->jacobianIndex = -1;
-    solverData->ordinaryData =(void*) allocateNewtonData(nlsData->size, nlsUserData);
+    solverData->ordinaryData = (void*) allocateNewtonData(nlsData->size, nlsUserData);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -388,22 +388,21 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
  * Free memory allocated with initRK_NLS_DATA or initRK_NLS_DATA_MR
  *
  * @param nlsData           Pointer to non-linear system data.
- * @param nlsSolverMethod   Used non-linear system solver method.
  */
-void freeRK_NLS_DATA( NONLINEAR_SYSTEM_DATA* nlsData) {
+void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData) {
   if (nlsData == NULL) return;
 
   struct dataSolver *dataSolver = nlsData->solverData;
   switch (nlsData->nlsMethod)
   {
-  case RK_NLS_NEWTON:
+  case NLS_NEWTON:
     freeNewtonData(dataSolver->ordinaryData);
     break;
-  case RK_NLS_KINSOL:
+  case NLS_KINSOL:
     nlsKinsolFree(dataSolver->ordinaryData);
     break;
   default:
-    warningStreamPrint(LOG_SOLVER, 0, "Not handled GB_NLS_METHOD in gbode_freeData. Are we leaking memroy?");
+    throwStreamPrint(NULL, "Not handled NONLINEAR_SOLVER in gbode_freeData. Are we leaking memroy?");
     break;
   }
   free(dataSolver);

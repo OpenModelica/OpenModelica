@@ -416,7 +416,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
   else if (solverInfo->solverMethod == S_GBODE)
   {
-    gbode_freeData(solverInfo->solverData);
+    gbode_freeData(data, solverInfo->solverData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
   else if(solverInfo->solverMethod == S_DASSL)
