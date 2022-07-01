@@ -43,6 +43,12 @@
 extern "C" {
 #endif
 
+typedef struct BUTCHER_TABLEAU BUTCHER_TABLEAU;
+/**
+ * @brief Function to compute interpolation using dense output.
+ */
+typedef int (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* x, double* k, double dt, double* f);
+
 /**
  * @brief Butcher tableau specifiying a Runge-Kutta method.
  *
@@ -73,6 +79,8 @@ typedef struct BUTCHER_TABLEAU {
   double fac;               /* Security factor for step size control */
   unsigned int richardson;  /* if no embedded version is available, Richardson
                                extrapolation can be used for step size control */
+  modelica_boolean withDenseOutput;
+  gb_dense_output dense_output;
 } BUTCHER_TABLEAU;
 
 /**
@@ -94,7 +102,6 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau);
 void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_TYPE* expl);
 
 void printButcherTableau(BUTCHER_TABLEAU* tableau);
-
 
 #if defined(__cplusplus)
 };

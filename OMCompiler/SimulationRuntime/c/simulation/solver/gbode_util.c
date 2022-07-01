@@ -181,14 +181,19 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
  * @param idx             Index vector, can be NULL.
  *                        Specifies which parts of f should be interpolated.
  */
-void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx) {
+void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx, BUTCHER_TABLEAU* tableau) {
   switch (interpolMethod)
   {
   case GB_INTERPOL_LIN:
-    return linear_interpolation(ta, fa, tb, fb, t, f, n, idx);
+    linear_interpolation(ta, fa, tb, fb, t, f, n, idx);
+    break;
+  case GB_DENSE_OUTPUT:
+    if (0)
+      return;
   case GB_INTERPOL_HERMITE:
   case GB_INTERPOL_HERMITE_ERRCTRL:
-    return hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, n, idx);
+    hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, n, idx);
+    break;
   default:
     throwStreamPrint(NULL, "Not handled case in gb_interpolation. Unknown interpolation method %i.", interpolMethod);
     break;
@@ -258,7 +263,7 @@ void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double tim
                      gbfData->tv[1], gbfData->yv + nStates,  gbfData->kv + nStates,
                      gbfData->tv[0], gbfData->yv,            gbfData->kv,
                      time, nlsxExtrapolation,
-                     nFastStates, gbData->fastStatesIdx);
+                     nFastStates, gbData->fastStatesIdx, gbfData->tableau);
   }
 }
 
@@ -275,7 +280,7 @@ void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time
                      gbData->tv[1], gbData->yv + nStates,  gbData->kv + nStates,
                      gbData->tv[0], gbData->yv,            gbData->kv,
                      time, nlsxExtrapolation,
-                     nStates, NULL);
+                     nStates, NULL, gbData->tableau);
   }
 }
 

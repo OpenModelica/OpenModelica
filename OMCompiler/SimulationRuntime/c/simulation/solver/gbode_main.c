@@ -274,7 +274,11 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for the slow states");
     break;
   case GB_INTERPOL_HERMITE:
+  case GB_INTERPOL_HERMITE_ERRCTRL:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for the slow states");
+    break;
+  case GB_DENSE_OUTPUT:
+    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used for the slow states, otherwise hermite");
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Unhandled interpolation case.");
@@ -474,11 +478,13 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   case GB_INTERPOL_LIN:
     infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results");
     break;
+  case GB_INTERPOL_HERMITE_ERRCTRL:
+    infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation with error control for slow states interpolation");
   case GB_INTERPOL_HERMITE:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results");
     break;
-  case GB_INTERPOL_HERMITE_ERRCTRL:
-    infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation with error control for slow states interpolation");
+  case GB_DENSE_OUTPUT:
+    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used  for emitting results");
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Unhandled interpolation case.");
@@ -895,13 +901,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                      gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                      gbData->timeRight, gbData->yRight, gbData->kRight,
                      gbfData->time, gbfData->yOld,
-                     gbData->nSlowStates, gbData->slowStatesIdx);
+                     gbData->nSlowStates, gbData->slowStatesIdx, gbData->tableau);
 
     gb_interpolation(gbfData->interpolation,
                      gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                      gbData->timeRight, gbData->yRight, gbData->kRight,
                      gbfData->time + gbfData->lastStepSize, gbfData->y,
-                     gbData->nSlowStates, gbData->slowStatesIdx);
+                     gbData->nSlowStates, gbData->slowStatesIdx, gbData->tableau);
 
     eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y, TRUE);
     if (eventTime > 0)
@@ -1020,7 +1026,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                      gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
                      gbfData->timeRight, gbfData->yRight, gbfData->kRight,
                      sData->timeValue,  sData->realVars,
-                     nStates, NULL);
+                     nStates, NULL, gbData->tableau);
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
       infoStreamPrint(LOG_GBODE, 1, "Emit result (inner integration):");
@@ -1515,13 +1521,13 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                        gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
                        gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
                        sData->timeValue,  sData->realVars,
-                       nStates, NULL);
+                       nStates, NULL, gbData->tableau);
     } else {
       gb_interpolation(gbData->interpolation,
                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                        gbData->timeRight, gbData->yRight, gbData->kRight,
                        sData->timeValue,  sData->realVars,
-                       nStates, NULL);
+                       nStates, NULL, gbData->tableau);
     }
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1839,7 +1845,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
                      gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                      gbData->timeRight, gbData->yRight, gbData->kRight,
                      sData->timeValue,  sData->realVars,
-                     nStates, NULL);
+                     nStates, NULL, gbData->tableau);
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
       infoStreamPrint(LOG_GBODE, 1, "Emit result (singlerate integration):");

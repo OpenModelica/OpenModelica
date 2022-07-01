@@ -54,6 +54,8 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, double *c, double *A, double *b
   memcpy(tableau->A,  A, tableau->nStages * tableau->nStages * sizeof(double));
   memcpy(tableau->b,  b, tableau->nStages*sizeof(double));
   memcpy(tableau->bt, bt, tableau->nStages*sizeof(double));
+
+  tableau->withDenseOutput = FALSE;
 }
 
 void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
@@ -602,6 +604,7 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
   tableau->order_b = 5;
   tableau->order_bt = 4;
   tableau->fac = 1e3;
+  tableau->withDenseOutput = TRUE;
 
   /* Butcher Tableau */
   const double c[] = {0.0, 1./5, 3./10, 4./5, 8./9, 1., 1.};
@@ -617,6 +620,8 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau) {
   const double  bt[] = {5179./57600, 0.0, 7571./16695, 393./640, -92097./339200, 187./2100, 1./40};
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+
+  //tableau->dense_output = function...
 }
 
 void getButcherTableau_FEHLBERG12(BUTCHER_TABLEAU* tableau) {
