@@ -100,7 +100,9 @@ typedef struct DATA_GBODEF{
   enum GB_CTRL_METHOD ctrl_method;    /* Step size control algorithm */
   modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;
-  int nStates, nFastStates, nSlowStates, *fastStates, *slowStates;
+  int nStates, nFastStates, nSlowStates;
+  int *fastStatesIdx;                      /* Indices of fast states */
+  int *slowStatesIdx;                      /* Indices of slow states */
   int nFastStates_old, *fastStates_old;
   modelica_boolean stepRejected;
   modelica_boolean firstStep;
@@ -148,9 +150,7 @@ typedef struct DATA_GBODE{
   double stepSize_old, stepSize_fast;
   int act_stage;                          /* Current stage of Runge-Kutta method. */
   enum GB_CTRL_METHOD ctrl_method;        /* Step size control algorithm */
-  modelica_boolean didEventStep;                       /* will be used for updating the derivatives */
   int ringBufferSize;
-  int multi_rate_phase;
   modelica_boolean multi_rate;
   enum GB_INTERPOL_METHOD interpolation;    /* Interpolation method */
   int nlsxExtrapolation;
@@ -158,9 +158,9 @@ typedef struct DATA_GBODE{
   BUTCHER_TABLEAU* tableau;
   int nStates;
   int nFastStates, nSlowStates;
-  int *fastStates;
-  int *slowStates;
-  int *sortedStates;
+  int *fastStatesIdx;                      /* Indices of fast states */
+  int *slowStatesIdx;                      /* Indices of slow states */
+  int *sortedStatesIdx;                    /* Indices of all states sorted for highest error */
   modelica_boolean stepRejected;
   modelica_boolean isFirstStep;       /* True during first Runge-Kutta integrator step, false otherwise */
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step. */

@@ -43,7 +43,7 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
 SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
 SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
 
-SPARSE_PATTERN* initializeSparsePattern_MR(DATA_GBODE* gbData);
+void initializeSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR);
 
 #ifdef __cplusplus
 };

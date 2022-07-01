@@ -97,7 +97,6 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsx, gbData->yt, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
-  gbData->multi_rate_phase = 0;
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
     clock_t start, end;
@@ -161,7 +160,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   /* Predictor Schritt */
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
-    i = gbData->fastStates[ii];
+    i = gbData->fastStatesIdx[ii];
     gbfData->yt[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
@@ -176,7 +175,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   /* Constant part of the multistep method */
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
-    i = gbData->fastStates[ii];
+    i = gbData->fastStatesIdx[ii];
     gbfData->res_const[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
@@ -197,15 +196,14 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
                    gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                    gbData->timeRight, gbData->yRight, gbData->kRight,
                    sData->timeValue,  sData->realVars,
-                   gbData->nSlowStates, gbData->slowStates);
+                   gbData->nSlowStates, gbData->slowStatesIdx);
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
   NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;
 
-  projVector_gbf(nlsData->nlsx, gbfData->yt, gbData->nFastStates, gbData->fastStates);
+  projVector_gbf(nlsData->nlsx, gbfData->yt, gbData->nFastStates, gbData->fastStatesIdx);
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
-  gbData->multi_rate_phase = 1;
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
     clock_t start, end;
@@ -231,7 +229,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   /* Corrector Schritt */
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
-    i = gbData->fastStates[ii];
+    i = gbData->fastStatesIdx[ii];
     gbfData->y[i] = 0;
     for (stage_ = 0; stage_ < nStages-1; stage_++)
     {
@@ -318,9 +316,6 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsxOld, gbData->yOld, nStates*sizeof(modelica_real));
       extrapolation_gb(gbData, nlsData->nlsxExtrapolation, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
 
-      // This is a hack and needed, since nonlinear solver is based on numbered equation systems
-      gbData->multi_rate_phase = 0;
-
       // Debug nonlinear solution process
       if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
         clock_t start, end;
@@ -404,7 +399,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
                    gbData->timeLeft,   gbData->yLeft,  gbData->kLeft,
                    gbData->timeRight,  gbData->yRight, gbData->kRight,
                    gbfData->time,      gbfData->yOld,
-                   gbData->nSlowStates, gbData->slowStates);
+                   gbData->nSlowStates, gbData->slowStatesIdx);
 
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
@@ -448,20 +443,19 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                        gbData->timeRight, gbData->yRight, gbData->kRight,
                        sData->timeValue,   sData->realVars,
-                       gbData->nSlowStates, gbData->slowStates);
+                       gbData->nSlowStates, gbData->slowStatesIdx);
 
       // setting the start vector for the newton step
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;
 
-      projVector_gbf(nlsData->nlsx, gbfData->yOld, nFastStates, gbData->fastStates);
+      projVector_gbf(nlsData->nlsx, gbfData->yOld, nFastStates, gbData->fastStatesIdx);
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nFastStates*sizeof(modelica_real));
 
       extrapolation_gbf(gbData, sData->realVars, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
-      projVector_gbf(nlsData->nlsxExtrapolation, sData->realVars, nFastStates, gbData->fastStates);
+      projVector_gbf(nlsData->nlsxExtrapolation, sData->realVars, nFastStates, gbData->fastStatesIdx);
 
       // Solve corresponding NLS
-      gbData->multi_rate_phase = 1;
       if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
         clock_t start, end;
         double cpu_time_used;
@@ -500,7 +494,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
   // for the fast states only!
   for (ii=0; ii<nFastStates; ii++) {
-    i = gbData->fastStates[ii];
+    i = gbData->fastStatesIdx[ii];
     // y   is the new approximation
     // yt  is the approximation of the embedded method for error estimation
     gbfData->y[i]  = gbfData->yOld[i];
@@ -557,8 +551,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     extrapolation_gb(gbData, nlsData->nlsxExtrapolation + stage_*nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
   }
 
-  // This is a hack and needed, since nonlinear solver is based on numbered equation systems
-  gbData->multi_rate_phase = 0;
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
     clock_t start, end;
     double cpu_time_used;

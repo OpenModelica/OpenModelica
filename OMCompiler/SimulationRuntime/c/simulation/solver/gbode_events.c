@@ -54,7 +54,7 @@ int checkZeroCrossings(DATA *data, LIST *list, LIST*);
  *
  *  Method to find root in interval [oldTime, timeValue]
  */
-void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
+void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList, modelica_boolean isInnerIntergration)
 {
   TRACE_PUSH
 
@@ -79,7 +79,7 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
     c = 0.5 * (*a + *b);
 
     /*calculates states at time c */
-    if (gbData->multi_rate_phase) {
+    if (isInnerIntergration) {
       gbData->gbfData->stepSize = c - gbData->gbfData->time;
       gb_step_info = gbData->gbfData->step_fun(data, threadData, solverInfo);
       y = gbData->gbfData->y;
@@ -140,7 +140,7 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
  *  \param [in]  [values_right]
  *  \return: first event of interval [time_left, time_right]
  */
-double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right)
+double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right, modelica_boolean isInnerIntergration)
 {
   TRACE_PUSH
 
@@ -174,7 +174,7 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
 
   /* Search for event time and event_id with bisection method */
-  bisection_gb(data, threadData, solverInfo, &time_left, &time_right, states_left, states_right, &tmpEventList, eventList);
+  bisection_gb(data, threadData, solverInfo, &time_left, &time_right, states_left, states_right, &tmpEventList, eventList, isInnerIntergration);
 
   /* what happens here? */
   if(listLen(&tmpEventList) == 0)
@@ -226,7 +226,20 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   return time_right;
 }
 
-double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues)
+/**
+ * @brief
+ *
+ * @param data
+ * @param threadData
+ * @param solverInfo
+ * @param timeLeft
+ * @param leftValues
+ * @param timeRight
+ * @param rightValues
+ * @param isInnerIntergration     Spezifying if inner or outer step function should be used.
+ * @return double
+ */
+double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues, modelica_boolean isInnerIntergration)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
@@ -252,7 +265,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   eventHappend = checkForStateEvent(data, solverInfo->eventLst);
 
   if (eventHappend) {
-    eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues);
+    eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues, isInnerIntergration);
     infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
   }
 

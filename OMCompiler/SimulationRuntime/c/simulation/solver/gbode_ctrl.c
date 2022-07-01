@@ -47,17 +47,17 @@ double getErrorThreshold(DATA_GBODE* gbData)
   {
     for (j = 0; j < gbData->nStates - i - 1; j++)
     {
-      if (gbData->err[gbData->sortedStates[j]] < gbData->err[gbData->sortedStates[j+1]])
+      if (gbData->err[gbData->sortedStatesIdx[j]] < gbData->err[gbData->sortedStatesIdx[j+1]])
       {
-        temp = gbData->sortedStates[j];
-        gbData->sortedStates[j] = gbData->sortedStates[j+1];
-        gbData->sortedStates[j+1] = temp;
+        temp = gbData->sortedStatesIdx[j];
+        gbData->sortedStatesIdx[j] = gbData->sortedStatesIdx[j+1];
+        gbData->sortedStatesIdx[j+1] = temp;
       }
     }
   }
   i = MIN(MAX(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
 
-  return gbData->err[gbData->sortedStates[i]];
+  return gbData->err[gbData->sortedStatesIdx[i]];
 }
 
 
@@ -161,7 +161,7 @@ gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method) {
  * @param threadData        Thread data for error handling.
  * @param gbData        Storing Runge-Kutta solver data.
  */
-void gb_first_step(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
+void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];

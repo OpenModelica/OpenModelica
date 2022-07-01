@@ -251,14 +251,14 @@ void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double tim
 
   // TODO: We need an epsilon here, make it an macro
   if (fabs(gbfData->tv[1]-gbfData->tv[0]) <= GBODE_EPSILON) {
-    addSmultVec_gbf(nlsxExtrapolation, gbfData->yv, gbfData->kv, time - gbfData->tv[0], nFastStates, gbData->fastStates);
+    addSmultVec_gbf(nlsxExtrapolation, gbfData->yv, gbfData->kv, time - gbfData->tv[0], nFastStates, gbData->fastStatesIdx);
   } else {
     // this is actually extrapolation...
     gb_interpolation(gbData->interpolation,
                      gbfData->tv[1], gbfData->yv + nStates,  gbfData->kv + nStates,
                      gbfData->tv[0], gbfData->yv,            gbfData->kv,
                      time, nlsxExtrapolation,
-                     nFastStates, gbData->fastStates);
+                     nFastStates, gbData->fastStatesIdx);
   }
 }
 
@@ -461,7 +461,7 @@ void dumpFastStates_gbf(DATA_GBODE* gbData, double time) {
   int i, ii;
   sprintf(fastStates_row, "%15.10g %15.10g %15.10g %15.10g", time, gbData->err_slow, gbData->err_int, gbData->err_fast);
   for (i = 0, ii = 0; i < gbData->nStates;) {
-    if (i == gbData->fastStates[ii]) {
+    if (i == gbData->fastStatesIdx[ii]) {
       sprintf(fastStates_row, "%s 1", fastStates_row);
       i++;
       ii++;
@@ -474,10 +474,7 @@ void dumpFastStates_gbf(DATA_GBODE* gbData, double time) {
 }
 
 /**
- * @brief Check if number of fast states changed.
- *
- * TODO: This function also updates some values inside gbData.
- *       Move this to a different function.
+ * @brief Check if indices of fast states changed and update indices.
  *
  * @param gbData              Pointer to gbode data.
  * @return modelica_boolean   TRUE if at least one fast state changed, FALSE otherwise.
@@ -487,27 +484,27 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
   modelica_boolean fastStatesChange;
 
   gbfData->nFastStates = gbData->nFastStates;
-  gbfData->fastStates  = gbData->fastStates;
+  gbfData->fastStatesIdx  = gbData->fastStatesIdx;
 
   if (gbfData->nFastStates_old != gbData->nFastStates) {
     if (ACTIVE_STREAM(LOG_SOLVER) && !fastStatesChange)
     {
       printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
-      printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStates, gbData->nFastStates, gbfData->time);
+      printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStatesIdx, gbData->nFastStates, gbfData->time);
     }
     gbfData->nFastStates_old = gbData->nFastStates;
     fastStatesChange = TRUE;
   }
 
   for (int k = 0; k < gbData->nFastStates; k++) {
-    if (gbfData->fastStates_old[k] != gbData->fastStates[k]) {
+    if (gbfData->fastStates_old[k] != gbData->fastStatesIdx[k]) {
       if (ACTIVE_STREAM(LOG_SOLVER) && !fastStatesChange)
       {
         printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
-        printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStates, gbData->nFastStates, gbfData->time);
+        printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStatesIdx, gbData->nFastStates, gbfData->time);
       }
       fastStatesChange = TRUE;
-      gbfData->fastStates_old[k] = gbData->fastStates[k];
+      gbfData->fastStates_old[k] = gbData->fastStatesIdx[k];
     }
   }
   return fastStatesChange;

@@ -230,7 +230,7 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
  * @param sysData             Non-linear system.
  * @return SPARSE_PATTERN*    Pointer to sparsity pattern of non-linear system.
  */
-SPARSE_PATTERN* initializeSparsePattern_MR(DATA_GBODE* gbData)
+void initializeSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR)
 {
   DATA_GBODEF* gbfData = gbData->gbfData;
   int nFastStates = gbData->nFastStates;
@@ -238,7 +238,6 @@ SPARSE_PATTERN* initializeSparsePattern_MR(DATA_GBODE* gbData)
 
   // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
   SPARSE_PATTERN *sparsePattern_DIRK = gbfData->sparesPattern_DIRK;
-  SPARSE_PATTERN *sparsePattern_MR = gbfData->jacobian->sparsePattern;
 
   /* Set sparsity pattern for the fast states */
   ii = 0;
@@ -248,11 +247,11 @@ SPARSE_PATTERN* initializeSparsePattern_MR(DATA_GBODE* gbData)
   sparsePattern_MR->leadindex[0] = sparsePattern_DIRK->leadindex[0];
   for (rr = 0; rr < nFastStates; rr++)
   {
-    r = gbData->fastStates[rr];
+    r = gbData->fastStatesIdx[rr];
     ii = 0;
     for (jj = sparsePattern_DIRK->leadindex[r]; jj < sparsePattern_DIRK->leadindex[r + 1];)
     {
-      i = gbData->fastStates[ii];
+      i = gbData->fastStatesIdx[ii];
       j = sparsePattern_DIRK->index[jj];
       if (i == j)
       {
@@ -283,7 +282,7 @@ SPARSE_PATTERN* initializeSparsePattern_MR(DATA_GBODE* gbData)
                       "sparsePattern_MR");
 
 
-  return sparsePattern_MR;
+  return;
 }
 
 /**

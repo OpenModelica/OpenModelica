@@ -486,14 +486,14 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
 
   // Evaluate right hand side of ODE
   for (ii=0; ii < nFastStates;ii++) {
-    i = gbfData->fastStates[ii];
+    i = gbfData->fastStatesIdx[ii];
     sData->realVars[i] = xloc[ii];
   }
   gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
 
   // Evaluate residuals
   for (ii=0; ii < nFastStates; ii++) {
-    i = gbfData->fastStates[ii];
+    i = gbfData->fastStatesIdx[ii];
     res[ii] = gbfData->res_const[i] - xloc[ii] * gbfData->tableau->c[nStages-1] +
                                        fODE[i] * gbfData->tableau->b[nStages-1] * gbfData->stepSize;
   }
@@ -528,14 +528,14 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
 
   // Evaluate right hand side of ODE
   for (ii=0; ii<gbfData->nFastStates;ii++) {
-    i = gbfData->fastStates[ii];
+    i = gbfData->fastStatesIdx[ii];
     sData->realVars[i] = xloc[ii];
   }
   gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
 
   // Evaluate residual
   for (ii=0; ii<gbfData->nFastStates; ii++) {
-    i = gbfData->fastStates[ii];
+    i = gbfData->fastStatesIdx[ii];
     res[ii] = gbfData->res_const[i] - xloc[ii] + gbfData->stepSize * gbfData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
 
@@ -721,7 +721,7 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
 
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
   for (ii=0; ii<nFastStates; ii++) {
-    i = gbData->fastStates[ii];
+    i = gbData->fastStatesIdx[ii];
     if (jacobian->seedVars[ii])
       jacobian_ODE->seedVars[i] = 1;
   }
@@ -731,7 +731,7 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
 
   /* Update resultVars array */
   for (ii = 0; ii < nFastStates; ii++) {
-    i = gbData->fastStates[ii];
+    i = gbData->fastStatesIdx[ii];
     if (gbfData->type == MS_TYPE_IMPLICIT) {
       jacobian->resultVars[ii] = gbfData->tableau->b[nStages-1] * gbfData->stepSize * jacobian_ODE->resultVars[i];
     } else {
