@@ -1163,7 +1163,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // error handling: try half of the step size!
       if (gb_step_info != 0) {
         infoStreamPrint(LOG_SOLVER, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
-        if (gbData->ctrl_method != GB_CTRL_CNST) {
+        if (gbData->ctrl_method == GB_CTRL_CNST) {
           errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted since gbode is running with fixed step size!");
           messageClose(LOG_SOLVER);
           return -1;
