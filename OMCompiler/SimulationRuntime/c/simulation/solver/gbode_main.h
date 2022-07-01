@@ -76,7 +76,7 @@ typedef struct DATA_GBODEF{
                                                *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
                                                * */
   ANALYTIC_JACOBIAN* jacobian;
-  SPARSE_PATTERN* sparesPattern_DIRK;
+  SPARSE_PATTERN* sparsePattern_DIRK;
 
   void* nlsSolverData;
 
@@ -84,7 +84,7 @@ typedef struct DATA_GBODEF{
   double *yLeft, *kLeft, *yRight, *kRight;
   double *Jf;
   double *k, *res_const;
-  double *x;                            /* ring buffer for multistep method */
+  double *x;                            /* ring buffer for multi-step method */
   double *yv, *kv, *tv;
 
   double *errest, *errtol, *err;
@@ -132,7 +132,7 @@ typedef struct DATA_GBODE{
   double *f;                               /* State derivatives of ODE */
   double *Jf;
   double *k;                               /* Vector k with result of intermediate steps of Runge-Kutta method */
-  double *x;                               /* ring buffer for multistep and RK method */
+  double *x;                               /* ring buffer for multi-step and RK method */
                                            // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
   double *yv, *kv, *tv;
   double *yr, *kr, *tr;
@@ -170,6 +170,7 @@ typedef struct DATA_GBODE{
   SOLVERSTATS stats;
 } DATA_GBODE;
 
+void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter);
 int gbode_allocateData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 void gbode_freeData(DATA* data, DATA_GBODE *gbData);
 int gbode_main(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);

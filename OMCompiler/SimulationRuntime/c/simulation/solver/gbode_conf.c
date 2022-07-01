@@ -99,7 +99,7 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Unknow gbode method %s.", flag_value);
+    errorStreamPrint(LOG_STDOUT, 0, "Unknown gbode method %s.", flag_value);
     return RK_UNKNOWN;
   }
 
@@ -126,10 +126,8 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
     case RK_LOBA_IIIC_3:
     case RK_LOBA_IIIC_4:
       return RK_SDIRK2;
-      break;
     default:
       return singleRateMethod;
-      break;
     }
   }
 
@@ -149,12 +147,12 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
  *                    FLAG_MR_NLS for multi-rate method.
  * @return enum GB_NLS_METHOD   NLS method.
  */
-enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
+enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
   enum GB_NLS_METHOD method;
   const char* flag_value;
 
   assertStreamPrint(NULL, flag==FLAG_SR_NLS || flag==FLAG_MR_NLS,
-                    "Illegal input to getGB_NLS_METHOD. Expected FLAG_SR_NLS or FLAG_MR_NLS ");
+                    "Illegal input to getGB_NLS_method. Expected FLAG_SR_NLS or FLAG_MR_NLS ");
   flag_value = omc_flagValue[flag];
 
   // Get method from flag
@@ -171,7 +169,7 @@ enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag) {
 
   // Default value
   if (flag == FLAG_MR_NLS) {
-    return getGB_NLS_METHOD(FLAG_SR_NLS);
+    return getGB_NLS_method(FLAG_SR_NLS);
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
     return RK_NLS_KINSOL;
@@ -280,7 +278,7 @@ double getGBRatio() {
  * @param maxArgs     Size of maxArgs.
  */
 void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs) {
-  errorStreamPrint(LOG_STDOUT, 0, "Unknow flag value \"%s\" for flag %s.", flagValue, flagName);
+  errorStreamPrint(LOG_STDOUT, 0, "Unknown flag value \"%s\" for flag %s.", flagValue, flagName);
   infoStreamPrint(LOG_STDOUT, 1, "Valid arguments are:");
   for (int i=0; i<maxArgs; i++) {
     infoStreamPrint(LOG_STDOUT, 0, "%s", argsArr[i]);

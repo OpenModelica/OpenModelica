@@ -222,6 +222,7 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   return time_right;
 }
 
+// TODO: Describe me
 /**
  * @brief
  *

@@ -74,7 +74,7 @@ typedef struct BUTCHER_TABLEAU {
   double *c;                        /* Nodes vector */
   unsigned int nStages;             /* Number of stages */
   unsigned int order_b;             /* Order of the Runge-Kutta method */
-  unsigned int order_bt;            /* Order of the embeddet Runge-Kutta method */
+  unsigned int order_bt;            /* Order of the embedded Runge-Kutta method */
   unsigned int error_order;         /* Usually min(order_b, order_bt) */
   double fac;                       /* Security factor for step size control */
   modelica_boolean  richardson;     /* if no embedded version is available, Richardson
@@ -91,7 +91,7 @@ enum GM_TYPE {
   GM_TYPE_EXPLICIT,     /* Explicit: A is lower triangular matrix */
   GM_TYPE_DIRK,         /* Diagonal implicit: A is triangular matrix */
   GM_TYPE_IMPLICIT,     /* Implicit: A has elements above diagonal */
-  MS_TYPE_IMPLICIT      /* NEW: Implicit multistep method, A is completely zero! */
+  MS_TYPE_IMPLICIT      /* NEW: Implicit multi-step method, A is completely zero! */
 };
 
 /* Function prototypes */

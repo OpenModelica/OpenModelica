@@ -70,7 +70,7 @@ extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
 extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
 
 enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag);
-enum GB_NLS_METHOD getGB_NLS_METHOD(enum _FLAG flag);
+enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag);
 enum GB_CTRL_METHOD getControllerMethod();
 enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag);
 double getGBRatio();

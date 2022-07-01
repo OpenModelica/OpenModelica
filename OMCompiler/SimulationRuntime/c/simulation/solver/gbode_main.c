@@ -86,25 +86,19 @@
  *
  * Assuming the correct values for time value and states are set.
  *
- * @param data               Runtime data struct.
- * @param threadData         Thread data for error handling.
- * @param evalFunctionsODE   Counter for function calls.
- * @return int               Returns 0 on success.
+ * @param data        Runtime data struct.
+ * @param threadData  Thread data for error handling.
+ * @param counter     Counter for function calls. Incremented by 1.
  */
-int gbode_fODE(DATA *data, threadData_t *threadData, void *evalFunctionODE)
+void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter)
 {
-  // TODO: Remove fODE or fix
-  unsigned int *counter = (unsigned int *)evalFunctionODE;
-
-  // TODO: callback->functionODE is already doing
-  // data->simulationInfo->callStatistics.functionODE++;
   (*counter)++;
 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   data->callback->functionODE(data, threadData);
 
-  return 0;
+  return;
 }
 
 /**
@@ -160,16 +154,10 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     gbfData->isExplicit = FALSE;
     gbfData->step_fun = &(full_implicit_MS_MR);
     break;
-
   case GM_TYPE_IMPLICIT:
-    errorStreamPrint(LOG_STDOUT, 0, "Fully Implicit RK method is not supported for the fast states integration!");
-    messageClose(LOG_STDOUT);
-    omc_throw_function(threadData);
-
-    break;
+    throwStreamPrint(NULL, "Fully Implicit RK method is not supported for the fast states integration!");
   default:
-    // Error
-    break;
+    throwStreamPrint(NULL, "Not handled case for Runge-Kutta method %i", gbfData->type);
   }
 
   infoStreamPrint(LOG_SOLVER, 0, "Step control factor is set to %g", gbfData->tableau->fac);
@@ -182,41 +170,39 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   gbfData->stepSize_control = getControllFunc(gbfData->ctrl_method);
 
   // allocate memory for the generic RK method
-  gbfData->y = malloc(sizeof(double) * gbData->nStates);
-  gbfData->yOld = malloc(sizeof(double) * gbData->nStates);
-  gbfData->yt = malloc(sizeof(double) * gbData->nStates);
-  gbfData->y1 = malloc(sizeof(double) * gbData->nStates);
-  gbfData->f = malloc(sizeof(double) * gbData->nStates);
+  gbfData->y    = malloc(gbData->nStates*sizeof(double));
+  gbfData->yOld = malloc(gbData->nStates*sizeof(double));
+  gbfData->yt   = malloc(gbData->nStates*sizeof(double));
+  gbfData->y1   = malloc(gbData->nStates*sizeof(double));
+  gbfData->f    = malloc(gbData->nStates*sizeof(double));
   if (!gbfData->isExplicit)
   {
-    gbfData->Jf = malloc(sizeof(double) * gbData->nStates * gbData->nStates);
-    for (i = 0; i < gbData->nStates * gbData->nStates; i++)
-      gbfData->Jf[i] = 0;
+    gbfData->Jf = calloc(gbData->nStates*gbData->nStates, sizeof(double));
   }
   else
   {
     gbfData->Jf = NULL;
   }
-  gbfData->k = malloc(sizeof(double) * gbData->nStates * gbfData->tableau->nStages);
-  gbfData->x = malloc(sizeof(double) * gbData->nStates * gbfData->tableau->nStages);
-  gbfData->yLeft = malloc(sizeof(double) * gbData->nStates);
-  gbfData->kLeft = malloc(sizeof(double) * gbData->nStates);
-  gbfData->yRight = malloc(sizeof(double) * gbData->nStates);
-  gbfData->kRight = malloc(sizeof(double) * gbData->nStates);
-  gbfData->res_const = malloc(sizeof(double) * gbData->nStates);
-  gbfData->errest = malloc(sizeof(double) * gbData->nStates);
-  gbfData->errtol = malloc(sizeof(double) * gbData->nStates);
-  gbfData->err = malloc(sizeof(double) * gbData->nStates);
+  gbfData->k         = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
+  gbfData->x         = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
+  gbfData->yLeft     = malloc(gbData->nStates*sizeof(double));
+  gbfData->kLeft     = malloc(gbData->nStates*sizeof(double));
+  gbfData->yRight    = malloc(gbData->nStates*sizeof(double));
+  gbfData->kRight    = malloc(gbData->nStates*sizeof(double));
+  gbfData->res_const = malloc(gbData->nStates*sizeof(double));
+  gbfData->errest    = malloc(gbData->nStates*sizeof(double));
+  gbfData->errtol    = malloc(gbData->nStates*sizeof(double));
+  gbfData->err       = malloc(gbData->nStates*sizeof(double));
   gbfData->ringBufferSize = 4;
-  gbfData->errValues = calloc(gbfData->ringBufferSize, sizeof(double));
-  gbfData->stepSizeValues = malloc(sizeof(double) * gbfData->ringBufferSize);
-  gbfData->tv = malloc(sizeof(double) * gbfData->ringBufferSize);
-  gbfData->yv = malloc(gbData->nStates*sizeof(double) * gbfData->ringBufferSize);
-  gbfData->kv = malloc(gbData->nStates*sizeof(double) * gbfData->ringBufferSize);
+  gbfData->errValues      = calloc(gbfData->ringBufferSize, sizeof(double));
+  gbfData->stepSizeValues = malloc(gbfData->ringBufferSize*sizeof(double));
+  gbfData->tv             = malloc(gbfData->ringBufferSize*sizeof(double));
+  gbfData->yv             = malloc(gbData->nStates*gbfData->ringBufferSize*sizeof(double));
+  gbfData->kv             = malloc(gbData->nStates*gbfData->ringBufferSize*sizeof(double));
 
   gbData->nFastStates = gbData->nStates;
   gbData->nSlowStates = 0;
-  gbfData->fastStates_old = malloc(sizeof(int) * gbData->nStates);
+  gbfData->fastStates_old = malloc(gbData->nStates*sizeof(int));
   gbfData->nFastStates_old = gbData->nFastStates;
   for (int i = 0; i < gbData->nStates; i++)
   {
@@ -231,7 +217,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     gbfData->symJacAvailable = gbData->symJacAvailable;
 
     /* Allocate memory for the nonlinear solver */
-    gbfData->nlsSolverMethod = getGB_NLS_METHOD(FLAG_MR_NLS);
+    gbfData->nlsSolverMethod = getGB_NLS_method(FLAG_MR_NLS);
 
     /* Initialize data for the nonlinear solver */
     gbfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gbfData);
@@ -239,7 +225,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     {
       return -1;
     }
-    gbfData->sparesPattern_DIRK = initializeSparsePattern_SR(data, gbfData->nlsData);
+    gbfData->sparsePattern_DIRK = initializeSparsePattern_SR(data, gbfData->nlsData);
   }
   else
   {
@@ -263,8 +249,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used for the slow states, otherwise hermite");
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Unhandled interpolation case.");
-    omc_throw(threadData);
+    throwStreamPrint(NULL, "Unhandled interpolation case.");
   }
 
   if (ACTIVE_STREAM(LOG_GBODE_STATES))
@@ -335,8 +320,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->step_fun = &(full_implicit_MS);
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "gbode_allocateData: Unknown type %i", gbData->type);
-    return -1;
+    throwStreamPrint(NULL, "gbode_allocateData: Unknown type %i", gbData->type);
   }
   if (gbData->GM_method == MS_ADAMS_MOULTON) {
     gbData->nlSystemSize = gbData->nStates;
@@ -345,7 +329,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->isExplicit = FALSE;
   }
 
-  // test of multistep method
+  // test of multi-step method
 
   gbData->ctrl_method = getControllerMethod(FLAG_SR_CTRL);
   gbData->stepSize_control = getControllFunc(gbData->ctrl_method);
@@ -390,12 +374,10 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   /* initialize analytic Jacobian, if available and needed */
   if (!gbData->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    // TODO AHeu: What do we do with jacobian? At the moment it just leaks memory
     if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
       gbData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
-      // ToDo: If Jacobian available set this to TRUE
       gbData->symJacAvailable = TRUE;
       infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
@@ -404,7 +386,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     }
 
     /* Allocate memory for the nonlinear solver */
-    gbData->nlsSolverMethod = getGB_NLS_METHOD(FLAG_SR_NLS);
+    gbData->nlsSolverMethod = getGB_NLS_method(FLAG_SR_NLS);
     gbData->nlsData = initRK_NLS_DATA(data, threadData, gbData);
     if (!gbData->nlsData) {
       return -1;
@@ -423,12 +405,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   }
 
   gbData->percentage = getGBRatio();
-
-  if (gbData->percentage > 0) {
-    gbData->multi_rate = 1;
-  } else {
-    gbData->multi_rate = 0;
-  }
+  gbData->multi_rate = gbData->percentage > 0;
 
   gbData->fastStatesIdx   = malloc(sizeof(int) * gbData->nStates);
   gbData->slowStatesIdx   = malloc(sizeof(int) * gbData->nStates);
@@ -463,8 +440,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used  for emitting results");
     break;
   default:
-    errorStreamPrint(LOG_STDOUT, 0, "Unhandled interpolation case.");
-    omc_throw(threadData);
+    throwStreamPrint(NULL, "Unhandled interpolation case.");
   }
   gbData->err_threshold = 0.1;
   gbData->nlsxExtrapolation = 1;
@@ -487,8 +463,8 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   free(gbfData->jacobian); gbfData->jacobian = NULL;
 
   /* Free sparsity pattern */
-  freeSparsePattern(gbfData->sparesPattern_DIRK);
-  free(gbfData->sparesPattern_DIRK);
+  freeSparsePattern(gbfData->sparsePattern_DIRK);
+  free(gbfData->sparsePattern_DIRK);
 
   /* Free Butcher tableau */
   freeButcherTableau(gbfData->tableau);
@@ -545,7 +521,7 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   /* Free Butcher tableau */
   freeButcherTableau(gbData->tableau);
 
-  if (gbData->multi_rate == 1)
+  if (gbData->multi_rate)
   {
     gbodef_freeData(gbData->gbfData);
   }
@@ -629,9 +605,8 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   }
 }
 
-// TODO: This doc is wrong
 /**
- * @brief Calculate initial step size.
+ * @brief Initialize ring buffer and interpolation arrays.
  *
  * Called at the beginning of simulation or after an event occurred.
  *
@@ -702,7 +677,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
   // Needs to be performed also after an event!!!
-  // TODO: Why is this called again? We just did that in gbode_birate
+  // TODO: Why is this called again? We just did that in gbode_birate.
   if (gbfData->didEventStep || gbfData->timeRight < gbData->timeLeft) {
     gbodef_init(data, threadData, solverInfo);
   }
@@ -744,9 +719,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         solverData->ordinaryData = (void*) nlsKinsolAllocate(gbfData->nlsData->size, nlsUserData, FALSE);
         break;
       default:
-        errorStreamPrint(LOG_STDOUT, 0, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
-        return -1;
-        break;
+        throwStreamPrint(NULL, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
       }
     }
   }
@@ -822,17 +795,15 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       // error handling: try half of the step size!
       if (integrator_step_info != 0) {
         infoStreamPrint(LOG_SOLVER, 0, "gbodef_main: Failed to calculate step at time = %5g.", gbfData->time);
-        if (gbfData->stepSize > MINIMAL_STEP_SIZE) {
-          // Try smaller steps, if possible.
-          gbfData->stepSize = gbfData->stepSize / 2.;
-          infoStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbfData->stepSize);
-          err = 100;
-          continue;
-        } else {
-          errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted!");
+        gbfData->stepSize *= 0.5;
+        infoStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbfData->stepSize);
+        if (gbfData->stepSize < MINIMAL_STEP_SIZE) {
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", MINIMAL_STEP_SIZE);
           messageClose(LOG_SOLVER);
           return -1;
         }
+        err = 100;
+        continue;
       }
 
       for (i = 0, err=0; i < nFastStates; i++) {
@@ -876,7 +847,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       }
     } while (err > 1);
 
-    // Count succesful integration steps
+    // Count successful integration steps
     gbfData->stats.nStepsTaken += 1;
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
@@ -939,7 +910,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     sData->timeValue = gbfData->time;
     memcpy(sData->realVars, gbfData->y, nStates * sizeof(double));
     gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
-    // TODO: fODE is not changing, it always points to sData->realVars + data->modelData->nStates
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
     // debug the changes of the states and derivatives during integration
@@ -1067,9 +1037,6 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   // root finding will be done in gbode after each accepted step
   solverInfo->solverRootFinding = 1;
 
-  // TODO AHeu: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
-  // Also instead of solverInfo->integratorSteps we should set and use solverInfo->solverNoEquidistantGrid
-
   /* Calculate steps until targetTime is reached */
   // 1 => emit result at integrator step points; 0 => equidistant grid
   if (solverInfo->integratorSteps) {
@@ -1196,10 +1163,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // error handling: try half of the step size!
       if (gb_step_info != 0) {
         infoStreamPrint(LOG_SOLVER, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
-        // TODO AHeu: I changed the logic here. For sure this was meant to fail only for constant step size!
         if (gbData->ctrl_method != GB_CTRL_CNST) {
-          // TODO AHeu: Improve error message
-          errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted since gbode is running with fixed step size!");
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted since gbode is running with fixed step size!");
           messageClose(LOG_SOLVER);
           return -1;
         } else {
@@ -1210,7 +1175,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             err = 100;
             continue;
           } else {
-            errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted because the step size is less then %g!", MINIMAL_STEP_SIZE);
+            errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted because the step size is less then %g!", MINIMAL_STEP_SIZE);
             messageClose(LOG_SOLVER);
             return -1;
           }
@@ -1525,9 +1490,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   }
 
   /* if a state event occurs than no sample event does need to be activated  */
-  if (data->simulationInfo->sampleActivated && solverInfo->currentTime < data->simulationInfo->nextSampleEvent) {
-    data->simulationInfo->sampleActivated = 0;
-  }
+  data->simulationInfo->sampleActivated =    data->simulationInfo->sampleActivated
+                                          && solverInfo->currentTime >= data->simulationInfo->nextSampleEvent;
 
   /* Solver statistics */
   if (!gbData->isExplicit)
@@ -1579,8 +1543,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   // root finding will be done in gbode after each accepted step
   solverInfo->solverRootFinding = 1;
 
-  // TODO AHeu: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
-  // Also instead of solverInfo->integratorSteps we should set and use solverInfo->solverNoEquidistantGrid
+  // TODO: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
 
   /* Calculate steps until targetTime is reached */
   // 1 => emit result at integrator step points; 0 => equidistant grid
@@ -1593,7 +1556,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   } else {
     targetTime = solverInfo->currentTime + solverInfo->currentStepSize;
   }
-  infoStreamPrint(LOG_SOLVER, 1, "Start gbode (singlerate integration)  from %g to %g",
+  infoStreamPrint(LOG_SOLVER, 1, "Start gbode (single-rate integration)  from %g to %g",
                   solverInfo->currentTime, targetTime);
 
   // (Re-)initialize after events or at first call of gbode_sinlerate
@@ -1662,21 +1625,19 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       if (gb_step_info != 0) {
         infoStreamPrint(LOG_SOLVER, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
         if (gbData->ctrl_method == GB_CTRL_CNST) {
-          errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted since gbode is running with fixed step size!");
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted since gbode is running with fixed step size!");
           messageClose(LOG_SOLVER);
           return -1;
         } else {
-          if (gbData->stepSize > MINIMAL_STEP_SIZE) {
-            // Try smaller steps, if possible.
-            gbData->stepSize = gbData->stepSize / 2.;
-            infoStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbData->stepSize);
-            err = 100; // This forces the integrator to repeat the step
-            continue;
-          } else {
-            errorStreamPrint(LOG_STDOUT, 0, "Simulation abborted because the step size is less then %g!", MINIMAL_STEP_SIZE);
+          gbData->stepSize *= 0.5;
+          infoStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbData->stepSize);
+          if (gbData->stepSize < MINIMAL_STEP_SIZE) {
+            errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", MINIMAL_STEP_SIZE);
             messageClose(LOG_SOLVER);
             return -1;
           }
+          err = 100;
+          continue;
         }
       }
 
@@ -1747,7 +1708,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
       // log the emitted result
       if (ACTIVE_STREAM(LOG_GBODE)){
-        infoStreamPrint(LOG_GBODE, 1, "Emit result (singlerate integration):");
+        infoStreamPrint(LOG_GBODE, 1, "Emit result (single-rate integration):");
         printVector_gb(LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
         messageClose(LOG_GBODE);
       }
@@ -1796,7 +1757,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       sim_result.emit(&sim_result, data, threadData);
       // log the emitted result
       if (ACTIVE_STREAM(LOG_GBODE)){
-        infoStreamPrint(LOG_GBODE, 1, "Emit result (singlerate integration):");
+        infoStreamPrint(LOG_GBODE, 1, "Emit result (single-rate integration):");
         printVector_gb(LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
         messageClose(LOG_GBODE);
       }
@@ -1828,7 +1789,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
                     nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
-      infoStreamPrint(LOG_GBODE, 1, "Emit result (singlerate integration):");
+      infoStreamPrint(LOG_GBODE, 1, "Emit result (single-rate integration):");
       printVector_gb(LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
       messageClose(LOG_GBODE);
     }
@@ -1839,16 +1800,15 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   }
 
   /* if a state event occurs than no sample event does need to be activated  */
-  if (data->simulationInfo->sampleActivated && solverInfo->currentTime < data->simulationInfo->nextSampleEvent) {
-    data->simulationInfo->sampleActivated = 0;
-  }
+  data->simulationInfo->sampleActivated =    data->simulationInfo->sampleActivated
+                                          && solverInfo->currentTime >= data->simulationInfo->nextSampleEvent;
 
   /* Solver statistics */
   if (!gbData->isExplicit)
     gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
   if (targetTime == stopTime && ACTIVE_STREAM(LOG_STATS))
   {
-    infoStreamPrint(LOG_STATS, 0, "gbode (singlerate integration): %s", GB_SINGLERATE_METHOD_NAME[gbData->GM_method]);
+    infoStreamPrint(LOG_STATS, 0, "gbode (single-rate integration): %s", GB_SINGLERATE_METHOD_NAME[gbData->GM_method]);
   }
   /* Write statistics to the solverInfo data structure */
   logSolverStats("gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
