@@ -1502,7 +1502,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                        gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
                        gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
                        sData->timeValue,  sData->realVars,
-                       nStates, NULL,  nStates, gbData->tableau, gbData->x, gbData->k);
+                       nStates, NULL,  nStates, gbData->gbfData->tableau, gbData->gbfData->x, gbData->gbfData->k);
     } else {
       gb_interpolation(gbData->interpolation,
                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
@@ -1817,7 +1817,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;
 
-    // use hermite interpolation for emitting equidistant output
+    // use chosen interpolation for emitting equidistant output (default hermite)
     gb_interpolation(gbData->interpolation,
                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                     gbData->timeRight, gbData->yRight, gbData->kRight,
