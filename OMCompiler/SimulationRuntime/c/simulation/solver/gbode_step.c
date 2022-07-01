@@ -371,13 +371,13 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   return 0;
 }
 
-
-/*!	\fn expl_diag_impl_RK
+/**
+ * @brief
  *
- *  function does one implicit ESDIRK2 step with the stepSize given in stepSize
- *  function omc_newton is used for solving nonlinear system
- *  results will be saved in y and the embedded result in yt
- *
+ * @param data
+ * @param threadData
+ * @param solverInfo
+ * @return int        Return 0 on success, -1 otherwise
  */
 int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
