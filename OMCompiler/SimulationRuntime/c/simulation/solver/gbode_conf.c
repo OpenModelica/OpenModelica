@@ -249,6 +249,29 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
 }
 
 /**
+ * @brief Get percentage of states for the fast states selection.
+ *
+ * Read flag FLAG_MR_PAR to get percentage.
+ * Defaults to 0.
+ *
+ * @return double   Percentage of fast states selection.
+ */
+double getGBRatio() {
+  double percentage;
+  const char *flag_value = omc_flagValue[FLAG_MR_PAR];
+
+  if (flag_value) {
+    percentage = atof(omc_flagValue[FLAG_MR_PAR]);
+    if (percentage < 0 || percentage > 1) {
+      throwStreamPrint(NULL, "Flag -gbratio has to be between 0 and 1.");
+    }
+  } else {
+    percentage = 0;
+  }
+  return percentage;
+}
+
+/**
  * @brief Dump available flag options to stdout.
  *
  * @param flagName    Name of flag

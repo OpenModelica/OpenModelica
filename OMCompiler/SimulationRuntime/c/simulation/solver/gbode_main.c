@@ -422,12 +422,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->jacobian = NULL;
   }
 
-  const char *flag_value = omc_flagValue[FLAG_MR_PAR];
-  if (flag_value != NULL)
-    // TODO AHeu: Error handling if FLAG_MR_PAR has garbage in it
-    gbData->percentage = atof(omc_flagValue[FLAG_MR_PAR]);
-  else
-    gbData->percentage = 0;
+  gbData->percentage = getGBRatio();
+
   if (gbData->percentage > 0) {
     gbData->multi_rate = 1;
   } else {
