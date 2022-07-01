@@ -926,16 +926,18 @@ protected
   Sections sections;
   Option<SCode.Comment> cmt;
   JSON j;
+  SCode.Element def;
 algorithm
   InstanceTree.CLASS(node = node, exts = exts, components = comps) := tree;
   node := InstNode.resolveInner(node);
-  cmt := SCodeUtil.getElementComment(InstNode.definition(node));
+  def := InstNode.definition(node);
+  cmt := SCodeUtil.getElementComment(def);
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
 
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
-  json := dumpJSONMod(SCodeUtil.elementMod(InstNode.definition(node)), json);
+  json := dumpJSONMod(SCodeUtil.elementMod(def), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtends(exts), json);
@@ -974,9 +976,21 @@ end dumpJSONPath;
 function dumpJSONExtends
   input list<InstanceTree> exts;
   output JSON json = JSON.emptyArray();
+protected
+  JSON ext_json;
+  InstNode node;
+  SCode.Element ext_def;
 algorithm
   for ext in exts loop
-    json := JSON.addElement(dumpJSONInstanceTree(ext, root = false), json);
+    InstanceTree.CLASS(node = node) := ext;
+    ext_def := InstNode.extendsDefinition(node);
+
+    ext_json := JSON.emptyObject();
+    ext_json := dumpJSONMod(SCodeUtil.elementMod(ext_def), ext_json);
+    ext_json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, ext_json);
+    ext_json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, root = false), ext_json);
+
+    json := JSON.addElement(ext_json, json);
   end for;
 end dumpJSONExtends;
 
