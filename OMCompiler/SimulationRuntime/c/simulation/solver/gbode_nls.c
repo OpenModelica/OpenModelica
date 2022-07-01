@@ -239,10 +239,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     break;
   }
 
-  // TODO: Do we need to initialize the Jacobian or is it already initialized?
-  // This leaks memory
-  //ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  //data->callback->initialAnalyticJacobianA(data, threadData, jacobian_ODE);
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE);
 
   // TODO: Set callback to initialize Jacobian
