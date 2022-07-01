@@ -884,13 +884,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                      gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                      gbData->timeRight, gbData->yRight, gbData->kRight,
                      gbfData->time, gbfData->yOld,
-                     gbData->nSlowStates, gbData->slowStatesIdx, gbData->tableau);
+                     gbData->nSlowStates, gbData->slowStatesIdx,  nStates, gbData->tableau, gbData->x, gbData->k);
 
     gb_interpolation(gbfData->interpolation,
                      gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                      gbData->timeRight, gbData->yRight, gbData->kRight,
                      gbfData->time + gbfData->lastStepSize, gbfData->y,
-                     gbData->nSlowStates, gbData->slowStatesIdx, gbData->tableau);
+                     gbData->nSlowStates, gbData->slowStatesIdx,  nStates, gbData->tableau, gbData->x, gbData->k);
 
     eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y, TRUE);
     if (eventTime > 0)
@@ -1009,7 +1009,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                      gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
                      gbfData->timeRight, gbfData->yRight, gbfData->kRight,
                      sData->timeValue,  sData->realVars,
-                     nStates, NULL, gbData->tableau);
+                     nStates, NULL,  nStates, gbfData->tableau, gbfData->x, gbfData->k);
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
       infoStreamPrint(LOG_GBODE, 1, "Emit result (inner integration):");
@@ -1502,13 +1502,13 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                        gbData->gbfData->timeLeft,  gbData->gbfData->yLeft,  gbData->gbfData->kLeft,
                        gbData->gbfData->timeRight, gbData->gbfData->yRight, gbData->gbfData->kRight,
                        sData->timeValue,  sData->realVars,
-                       nStates, NULL, gbData->tableau);
+                       nStates, NULL,  nStates, gbData->tableau, gbData->x, gbData->k);
     } else {
       gb_interpolation(gbData->interpolation,
                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                        gbData->timeRight, gbData->yRight, gbData->kRight,
                        sData->timeValue,  sData->realVars,
-                       nStates, NULL, gbData->tableau);
+                       nStates, NULL,  nStates, gbData->tableau, gbData->x, gbData->k);
     }
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
@@ -1819,10 +1819,10 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
     // use hermite interpolation for emitting equidistant output
     gb_interpolation(gbData->interpolation,
-                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                     gbData->timeRight, gbData->yRight, gbData->kRight,
-                     sData->timeValue,  sData->realVars,
-                     nStates, NULL, gbData->tableau);
+                    gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                    gbData->timeRight, gbData->yRight, gbData->kRight,
+                    sData->timeValue,  sData->realVars,
+                    nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
     // log the emitted result
     if (ACTIVE_STREAM(LOG_GBODE)){
       infoStreamPrint(LOG_GBODE, 1, "Emit result (singlerate integration):");

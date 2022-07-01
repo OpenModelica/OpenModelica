@@ -181,18 +181,22 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
  * @param idx             Index vector, can be NULL.
  *                        Specifies which parts of f should be interpolated.
  */
-void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx, BUTCHER_TABLEAU* tableau) {
+void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f,
+                      int nIdx, int* idx, int nStates, BUTCHER_TABLEAU* tableau, double* x, double *k) {
   switch (interpolMethod)
   {
   case GB_INTERPOL_LIN:
-    linear_interpolation(ta, fa, tb, fb, t, f, n, idx);
+    linear_interpolation(ta, fa, tb, fb, t, f, nIdx, idx);
     break;
   case GB_DENSE_OUTPUT:
-    if (tableau->withDenseOutput)
+    if (tableau->withDenseOutput) {
+      tableau->dense_output(tableau, fa, x, k, (t - ta)/(tb-ta), (tb - ta), f, nIdx, idx, nStates);
       break;
+    }
+
   case GB_INTERPOL_HERMITE:
   case GB_INTERPOL_HERMITE_ERRCTRL:
-    hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, n, idx);
+    hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, nIdx, idx);
     break;
   default:
     throwStreamPrint(NULL, "Not handled case in gb_interpolation. Unknown interpolation method %i.", interpolMethod);
@@ -263,7 +267,7 @@ void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double tim
                      gbfData->tv[1], gbfData->yv + nStates,  gbfData->kv + nStates,
                      gbfData->tv[0], gbfData->yv,            gbfData->kv,
                      time, nlsxExtrapolation,
-                     nFastStates, gbData->fastStatesIdx, gbfData->tableau);
+                     nFastStates, gbData->fastStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
   }
 }
 
@@ -280,7 +284,7 @@ void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time
                      gbData->tv[1], gbData->yv + nStates,  gbData->kv + nStates,
                      gbData->tv[0], gbData->yv,            gbData->kv,
                      time, nlsxExtrapolation,
-                     nStates, NULL, gbData->tableau);
+                     nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
   }
 }
 

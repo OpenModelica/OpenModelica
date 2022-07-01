@@ -47,7 +47,7 @@ typedef struct BUTCHER_TABLEAU BUTCHER_TABLEAU;
 /**
  * @brief Function to compute interpolation using dense output.
  */
-typedef int (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* x, double* k, double dt, double* f);
+typedef int (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates);
 
 /**
  * @brief Butcher tableau specifiying a Runge-Kutta method.

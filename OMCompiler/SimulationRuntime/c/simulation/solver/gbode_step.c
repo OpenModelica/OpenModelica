@@ -196,7 +196,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
                    gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                    gbData->timeRight, gbData->yRight, gbData->kRight,
                    sData->timeValue,  sData->realVars,
-                   gbData->nSlowStates, gbData->slowStatesIdx, gbData->tableau);
+                   gbData->nSlowStates, gbData->slowStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
 
   // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
   NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;
@@ -399,7 +399,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
                    gbData->timeLeft,   gbData->yLeft,  gbData->kLeft,
                    gbData->timeRight,  gbData->yRight, gbData->kRight,
                    gbfData->time,      gbfData->yOld,
-                   gbData->nSlowStates, gbData->slowStatesIdx, gbData->tableau);
+                   gbData->nSlowStates, gbData->slowStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
 
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
@@ -443,7 +443,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                        gbData->timeRight, gbData->yRight, gbData->kRight,
                        sData->timeValue,   sData->realVars,
-                       gbData->nSlowStates, gbData->slowStatesIdx, gbData->tableau);
+                       gbData->nSlowStates, gbData->slowStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
 
       // setting the start vector for the newton step
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
