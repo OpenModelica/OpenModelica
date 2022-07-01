@@ -481,11 +481,13 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   case GB_INTERPOL_HERMITE:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results");
     break;
+  case GB_INTERPOL_HERMITE_ERRCTRL:
+    infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation with error control for slow states interpolation");
+    break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "Unhandled interpolation case.");
     omc_throw(threadData);
   }
-
   gbData->err_threshold = 0.1;
   gbData->nlsxExtrapolation = 1;
 
@@ -1351,7 +1353,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // reject step, if interpolaton error is too large
       // TODO AHeu: This doesn't look correct. I guess this should be
       // gbData->ctrl_type != GB_CTRL_CONST
-      if ((err_int > 1 ) && gbData->ctrl_method == GB_CTRL_I && gbData->interpolation==0 && gbData->nFastStates>0) {
+      if ((err_int > 1 ) && gbData->ctrl_method == GB_CTRL_I && gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL && gbData->nFastStates>0) {
         err = 100;
         gbData->stepSize = gbData->lastStepSize*IController(&err_int, &(gbData->lastStepSize), 1);
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, interpolation error %10g, new stepsize %10g",

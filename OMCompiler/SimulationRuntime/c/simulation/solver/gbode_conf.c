@@ -57,13 +57,15 @@ const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
 const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_UNKNOWN */   "unknown",
   /* GB_INTERPOL_LIN */       "linear",
-  /* GB_INTERPOL_HERMITE */    "hermite"
+  /* GB_INTERPOL_HERMITE */    "hermite",
+  /* GB_INTERPOL_HERMITE_ERRCTRL */    "hermite_errctrl"
 };
 
 const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_UNKNOWN */   "unknown",
   /* GB_INTERPOL_LIN */       "Linear interpolation (1st order)",
-  /* GB_INTERPOL_HERMITE */    "Hermite interpolation (2nd order)"
+  /* GB_INTERPOL_HERMITE */    "Hermite interpolation (2nd order)",
+  /* GB_INTERPOL_HERMITE_ERRCTRL */    "Hermite interpolation with error control"
 };
 
 /**
@@ -228,7 +230,11 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
   if (flag_value != NULL) {
     for (method=GB_INTERPOL_UNKNOWN; method<GB_INTERPOL_MAX; method++) {
       if (strcmp(flag_value, GB_INTERPOL_METHOD_NAME[method]) == 0) {
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size controll: %s", GB_INTERPOL_METHOD_NAME[method]);
+        if (flag == FLAG_MR_INT && method == GB_INTERPOL_HERMITE_ERRCTRL) {
+          warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
+          method = GB_INTERPOL_HERMITE;
+        }
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: %s", GB_INTERPOL_METHOD_NAME[method]);
         return method;
       }
     }
