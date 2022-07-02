@@ -186,6 +186,7 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
     linear_interpolation(ta, fa, tb, fb, t, f, nIdx, idx);
     break;
   case GB_DENSE_OUTPUT:
+  case GB_DENSE_OUTPUT_ERRCTRL:
     if (tableau->withDenseOutput) {
       tableau->dense_output(tableau, fa, x, k, (t - ta)/(tb-ta), (tb - ta), f, nIdx, idx, nStates);
       break;
@@ -198,49 +199,34 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
     throwStreamPrint(NULL, "Not handled case in gb_interpolation. Unknown interpolation method %i.", interpolMethod);
   }
 }
-
 /**
- * @brief Absolute difference between linear and hermite interpolation at intermediate points.
+ * @brief  Difference between linear and hermite interpolation at intermediate points.
  *
- * @param ta      Time value at the left hand side
- * @param fa      Function values at the left hand side
- * @param dfa     Derivative function values at the left hand side
- * @param tb      Time value at the right hand side
- * @param fb      Function values at the right hand side
- * @param dfb     Derivative function values at the right hand side
- * @param t       Time value at the interpolated time point
- * @param err     Interpolation error at time value.
- * @param nIdx    Size of index vector
- * @param idx     Index vector
+ * @param gbData
  */
-void error_interpolation_gbf(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* err, int nIdx, int* idx)
-{
-  double tt, h00, h01, h10, h11, h0, h1;
+void error_interpolation_gbf(DATA_GBODE* gbData) {
   int i, ii;
 
-  // TODO: Make this function call linear_interpolation() and hermite_interpolation() and return the error.
-  // How can we do this without allocating an additional array? We could use a work array as input and write there.
-
-  if (fabs(tb-ta) > GBODE_EPSILON) {
-    tt = (t-ta)/(tb-ta);
-    h0 = 1-tt;
-    h1 = tt;
-    h00 = (1+2*tt)*(1-tt)*(1-tt);
-    h10 = (tb-ta)*tt*(1-tt)*(1-tt);
-    h01 = (3-2*tt)*tt*tt;
-    h11 = (tb-ta)*(tt-1)*tt*tt;
-
-    for (ii=0; ii<nIdx; ii++)
-    {
-      i = idx[ii];
-      err[i] = fabs((h00-h0)*fa[i]+h10*dfa[i]+(h01-h1)*fb[i]+h11*dfb[i]);
-    }
+  if (gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL || gbData->interpolation == GB_INTERPOL_HERMITE) {
+    linear_interpolation(gbData->timeLeft,  gbData->yLeft,
+                        gbData->timeRight, gbData->yRight,
+                        (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
+                         gbData->nSlowStates, gbData->slowStatesIdx);
   } else {
-    for (ii=0; ii<nIdx; ii++)
-    {
-      i = idx[ii];
-      err[i] = 0;
-    }
+    gb_interpolation(gbData->interpolation, gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                     gbData->timeRight, gbData->yRight, gbData->kRight,
+                     (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
+                      gbData->nSlowStates, gbData->slowStatesIdx, gbData->nStates, gbData->tableau, gbData->x, gbData->k);
+
+  }
+  hermite_interpolation(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                        gbData->timeRight, gbData->yRight, gbData->kRight,
+                        (gbData->timeLeft + gbData->timeRight)/2, gbData->errest,
+                         gbData->nSlowStates, gbData->slowStatesIdx);
+
+  for (ii=0; ii<gbData->nSlowStates; ii++) {
+    i = gbData->slowStatesIdx[ii];
+    gbData->errest[i] = fabs(gbData->errest[i] - gbData->y1[i]);
   }
 }
 

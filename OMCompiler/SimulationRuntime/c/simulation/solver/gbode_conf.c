@@ -59,7 +59,8 @@ const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_LIN */               "linear",
   /* GB_INTERPOL_HERMITE */           "hermite",
   /* GB_INTERPOL_HERMITE_ERRCTRL */   "hermite_errctrl",
-  /* GB_DENSE_OUTPUT */               "dense_output"
+  /* GB_DENSE_OUTPUT */               "dense_output",
+  /* GB_DENSE_OUTPUT_ERRCTRL */       "dense_output_errctrl"
 };
 
 const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
@@ -67,7 +68,8 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_LIN */             "Linear interpolation (1st order)",
   /* GB_INTERPOL_HERMITE */         "Hermite interpolation (2nd order)",
   /* GB_INTERPOL_HERMITE_ERRCTRL */ "Hermite interpolation with error control",
-  /* GB_DENSE_OUTPUT */             "use dense output formula for interpolation"
+  /* GB_DENSE_OUTPUT */             "use dense output formula for interpolation",
+  /* GB_DENSE_OUTPUT_ERRCTRL */     "use dense output fomular with error control"
 };
 
 /**
@@ -231,7 +233,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
   if (flag_value != NULL) {
     for (method=GB_INTERPOL_UNKNOWN; method<GB_INTERPOL_MAX; method++) {
       if (strcmp(flag_value, GB_INTERPOL_METHOD_NAME[method]) == 0) {
-        if (flag == FLAG_MR_INT && method == GB_INTERPOL_HERMITE_ERRCTRL) {
+        if (flag == FLAG_MR_INT && (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL)) {
           warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
           method = GB_INTERPOL_HERMITE;
         }

@@ -61,6 +61,7 @@ enum GB_INTERPOL_METHOD {
   GB_INTERPOL_HERMITE = 2,          /* Hermite interpolation */
   GB_INTERPOL_HERMITE_ERRCTRL = 3,  /* Hermite interpolation with error control */
   GB_DENSE_OUTPUT = 4,              /* Dense output, if available else hermite */
+  GB_DENSE_OUTPUT_ERRCTRL = 5,       /* Dense output, if available else hermite with error control */
 
 
   GB_INTERPOL_MAX

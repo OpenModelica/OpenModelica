@@ -200,8 +200,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   gbfData->yv             = malloc(gbData->nStates*gbfData->ringBufferSize*sizeof(double));
   gbfData->kv             = malloc(gbData->nStates*gbfData->ringBufferSize*sizeof(double));
 
-  gbData->nFastStates = gbData->nStates;
-  gbData->nSlowStates = 0;
+  gbData->nFastStates = 0;
+  gbData->nSlowStates = gbData->nFastStates;
   gbfData->fastStates_old = malloc(gbData->nStates*sizeof(int));
   gbfData->nFastStates_old = gbData->nFastStates;
   for (int i = 0; i < gbData->nStates; i++)
@@ -225,9 +225,9 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
         if (omc_flag[FLAG_JACOBIAN]) {
           if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[3]) == 0)
           infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
-          gbData->symJacAvailable = TRUE;
+          gbfData->symJacAvailable = TRUE;
         } else {
-          gbData->symJacAvailable = FALSE;
+          gbfData->symJacAvailable = FALSE;
         }
         infoStreamPrint(LOG_SOLVER, 1, "Initialized colored sparsity pattern of the jacobian:");
         infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
@@ -268,6 +268,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for the slow states");
     break;
   case GB_DENSE_OUTPUT:
+  case GB_DENSE_OUTPUT_ERRCTRL:
     infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used for the slow states, otherwise hermite");
     break;
   default:
@@ -460,11 +461,11 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results");
     break;
   case GB_INTERPOL_HERMITE_ERRCTRL:
-    infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation with error control for slow states interpolation");
   case GB_INTERPOL_HERMITE:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results");
     break;
   case GB_DENSE_OUTPUT:
+  case GB_DENSE_OUTPUT_ERRCTRL:
     infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used  for emitting results");
     break;
   default:
@@ -1296,11 +1297,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
-      // Check, if interpolation scheme is reliable
-      error_interpolation_gbf(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                              gbData->timeRight, gbData->yRight, gbData->kRight,
-                              (gbData->timeLeft + gbData->timeRight)/2, gbData->errest,
-                              gbData->nSlowStates, gbData->slowStatesIdx);
+      error_interpolation_gbf(gbData);
 
       // calculate interpolation error estimator
       for (ii = 0, err_int=0; ii < gbData->nSlowStates; ii++) {
@@ -1321,7 +1318,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(LOG_GBODE_V);
       }
       // reject step, if interpolaton error is too large
-      if ((err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST && gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL && gbData->nFastStates>0) {
+      if (( gbData->nFastStates>0) && (err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
+          ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         err = 100;
         gbData->stepSize = gbData->lastStepSize*IController(&err_int, &(gbData->lastStepSize), 1);
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, interpolation error %10g, new stepsize %10g",
@@ -1448,8 +1446,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, gbData->nStates * sizeof(double));
-    infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error slow states %10g, new stepsize %10g",
-                    gbData->time - gbData->lastStepSize, gbData->time, err, gbData->stepSize);
+    infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error slow states %10g, error interpolation %10g, new stepsize %10g",
+                    gbData->time - gbData->lastStepSize, gbData->time, err, err_int, gbData->stepSize);
 
     if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
       // dump fast states in file
