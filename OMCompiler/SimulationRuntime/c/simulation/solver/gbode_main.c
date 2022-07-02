@@ -472,7 +472,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     throwStreamPrint(NULL, "Unhandled interpolation case.");
   }
   gbData->err_threshold = 0.1;
-  gbData->nlsxExtrapolation = 1;
+  gbData->nlsxExtrapolation = 2;
 
   if (gbData->multi_rate) {
     gbodef_allocateData(data, threadData, gbData);
@@ -1681,7 +1681,12 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         err = fmax(err, gbData->err[i]);
       }
 
-      // store values in the ring buffer
+      // Rotate buffer
+      for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {
+        gbData->errValues[i] = gbData->errValues[i - 1];
+        gbData->stepSizeValues[i] = gbData->stepSizeValues[i - 1];
+      }
+      // update new values
       gbData->errValues[0] = err;
       gbData->stepSizeValues[0] = gbData->stepSize;
 
@@ -1763,10 +1768,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g, new stepsize %10g",
                     gbData->time - gbData->lastStepSize, gbData->time, gbData->errValues[0], gbData->stepSize);
 
-    // Rotate ring buffer
+    // Rotate buffer
     for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {
-      gbData->errValues[i] = gbData->errValues[i - 1];
-      gbData->stepSizeValues[i] = gbData->stepSizeValues[i - 1];
       gbData->tv[i] =  gbData->tv[i - 1];
       memcpy(gbData->yv + i * nStates, gbData->yv + (i - 1) * nStates, nStates * sizeof(double));
       memcpy(gbData->kv + i * nStates, gbData->kv + (i - 1) * nStates, nStates * sizeof(double));
