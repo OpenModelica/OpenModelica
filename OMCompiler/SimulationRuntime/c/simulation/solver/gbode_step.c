@@ -109,7 +109,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
   if (solved != NLS_SOLVED) {
-    infoStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS");
+    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS");
     return -1;
   }
 
@@ -216,7 +216,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   }
 
   if (solved != NLS_SOLVED) {
-    infoStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR");
+    warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR");
     return -1;
   }
 
@@ -340,7 +340,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       }
 
       if (solved != NLS_SOLVED) {
-        infoStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
+        warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
       memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
@@ -476,7 +476,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
 
       if (solved != NLS_SOLVED) {
-        infoStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d", stage_);
+        warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d", stage_);
         return -1;
       }
     }
@@ -573,7 +573,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (solved != NLS_SOLVED) {
     gbData->stats.nConvergenveTestFailures++;
-    infoStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK");
+    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK");
     return -1;
   }
 
@@ -634,7 +634,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   if (step_info != 0) {
     stepSize = stepSize/2;
     lastStepSize = lastStepSize/2;
-    infoStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
+    warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
   } else {
     // debug the approximations after performed step
     if (ACTIVE_STREAM(LOG_GBODE)) {
@@ -664,7 +664,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     if (step_info != 0) {
       stepSize = stepSize/2;
       lastStepSize = lastStepSize/2;
-      infoStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
+      warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
     } else {
       // debug the approximations after performed step
       if (ACTIVE_STREAM(LOG_GBODE)) {
@@ -694,7 +694,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (step_info != 0) {
         stepSize = stepSize/2;
         lastStepSize = lastStepSize/2;
-        infoStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
+        warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
       } else {
         if (ACTIVE_STREAM(LOG_GBODE)) {
           infoStreamPrint(LOG_GBODE, 1, "Richardson extrapolation (full step) approximation");
@@ -767,7 +767,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   if (step_info != 0) {
     stepSize = stepSize/2;
     lastStepSize = lastStepSize/2;
-    infoStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
+    warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
   } else {
     // debug the approximations after performed step
     if (ACTIVE_STREAM(LOG_GBODE)) {
@@ -797,7 +797,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     if (step_info != 0) {
       stepSize = stepSize/2;
       lastStepSize = lastStepSize/2;
-      infoStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
+      warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
     } else {
       // debug the approximations after performed step
       if (ACTIVE_STREAM(LOG_GBODE)) {
@@ -827,7 +827,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       if (step_info != 0) {
         stepSize = stepSize/2;
         lastStepSize = lastStepSize/2;
-        infoStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
+        warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
       } else {
         if (ACTIVE_STREAM(LOG_GBODE)) {
           infoStreamPrint(LOG_GBODE, 1, "Richardson extrapolation (full step) approximation");
