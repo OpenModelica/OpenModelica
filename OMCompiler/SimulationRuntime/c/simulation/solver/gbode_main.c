@@ -261,7 +261,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   switch (gbfData->interpolation)
   {
   case GB_INTERPOL_LIN:
-    infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for the slow states");
+    infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results");
     break;
   case GB_INTERPOL_HERMITE:
   case GB_INTERPOL_HERMITE_ERRCTRL:
@@ -269,7 +269,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     break;
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
-    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used for the slow states, otherwise hermite");
+    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used for emitting results, otherwise hermite");
     break;
   default:
     throwStreamPrint(NULL, "Unhandled interpolation case.");
@@ -448,31 +448,32 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->sortedStatesIdx[i] = i;
   }
 
-  if (gbData->multi_rate) {
-    gbodef_allocateData(data, threadData, gbData);
-  } else {
-    gbData->gbfData = NULL;
-  }
-
   gbData->interpolation = getInterpolationMethod(FLAG_SR_INT);
+  const char buffer[] = " and slow states interpolation";
   switch (gbData->interpolation)
   {
   case GB_INTERPOL_LIN:
-    infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results");
+    infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results%s", buffer);
     break;
   case GB_INTERPOL_HERMITE_ERRCTRL:
   case GB_INTERPOL_HERMITE:
-    infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results");
+    infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results%s", buffer);
     break;
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
-    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used  for emitting results");
+    infoStreamPrint(LOG_SOLVER, 0, "If available, dense output is used  for emitting results%s", buffer);
     break;
   default:
     throwStreamPrint(NULL, "Unhandled interpolation case.");
   }
   gbData->err_threshold = 0.1;
   gbData->nlsxExtrapolation = 1;
+
+  if (gbData->multi_rate) {
+    gbodef_allocateData(data, threadData, gbData);
+  } else {
+    gbData->gbfData = NULL;
+  }
 
   return 0;
 }
