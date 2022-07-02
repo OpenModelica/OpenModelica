@@ -449,7 +449,12 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   }
 
   gbData->interpolation = getInterpolationMethod(FLAG_SR_INT);
-  const char buffer[] = " and slow states interpolation";
+  char buffer[1024];
+  if (gbData->multi_rate) {
+    sprintf(buffer, "%s", " and slow states interpolation");
+  } else {
+    sprintf(buffer, "%s"," ");
+  }
   switch (gbData->interpolation)
   {
   case GB_INTERPOL_LIN:
