@@ -749,7 +749,7 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN 
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
   for (i=0, stage_=0; i<jacobian->sizeCols; i++) {
     if (jacobian->seedVars[i]) {
-      stage_ = i;
+      stage_ = i; /* store last index, for determining the active stage */
       jacobian_ODE->seedVars[i%jacobian_ODE->sizeCols] = 1;
     }
   }

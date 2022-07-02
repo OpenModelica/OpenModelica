@@ -449,8 +449,9 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       projVector_gbf(nlsData->nlsx, gbfData->yOld, nFastStates, gbData->fastStatesIdx);
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nFastStates*sizeof(modelica_real));
 
-      extrapolation_gbf(gbData, sData->realVars, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
-      projVector_gbf(nlsData->nlsxExtrapolation, sData->realVars, nFastStates, gbData->fastStatesIdx);
+      // use help vector gbData->y1 for scurity reasons
+      extrapolation_gbf(gbData, gbData->y1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+      projVector_gbf(nlsData->nlsxExtrapolation, gbData->y1, nFastStates, gbData->fastStatesIdx);
 
       // Solve corresponding NLS
       if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
@@ -589,7 +590,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     }
   }
 
-  // copy the whole solution vector to the inner ring buffer (for latter extrapolation and dense output)
+  // copy the whole solution vector to the inner buffer (for latter extrapolation and dense output)
   memcpy(gbData->x, nlsData->nlsx, nlsData->size*sizeof(double));
 
   return 0;
