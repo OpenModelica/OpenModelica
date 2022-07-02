@@ -253,7 +253,7 @@ void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double tim
                      gbfData->tv[1], gbfData->yv + nStates,  gbfData->kv + nStates,
                      gbfData->tv[0], gbfData->yv,            gbfData->kv,
                      time, nlsxExtrapolation,
-                     nFastStates, gbData->fastStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
+                     nFastStates, gbData->fastStatesIdx, nStates, gbfData->tableau, gbfData->x, gbfData->k);
   }
 }
 
