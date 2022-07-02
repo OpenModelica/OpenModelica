@@ -161,6 +161,58 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
 }
 
 /**
+ * @brief Hermite interpolation of specific vector components (only right derivative used)
+ *
+ * @param ta      Time value at the left hand side
+ * @param fa      Function values at the left hand side
+ * @param tb      Time value at the right hand side
+ * @param fb      Function values at the right hand side
+ * @param dfb     Derivative function values at the right hand side
+ * @param t       Time value at the interpolated time point
+ * @param f       Function values at the interpolated time point
+ * @param n       Size of vector f or size of index vector if non-NULL.
+ * @param idx     Index vector, can be NULL.
+ *                Specifies which parts of f should be interpolated.
+ */
+void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx)
+{
+  double tat,tbt,tbta, h00, h01, h11;
+  int i, ii;
+
+  // omit division by zero
+  if (fabs(tb-ta) <= GBODE_EPSILON) {
+    if(idx != NULL) {
+      copyVector_gbf(f, fb, n, idx);
+    } else {
+      memcpy(f, fb, n*sizeof(double));
+    }
+    return;
+  }
+
+  tat  = (ta-t);
+  tbt  = (tb-t);
+  tbta = (tb-ta);
+  h00  = tbt*tbt/(tbta*tbta);
+  h01  = tat*(tat - tbt)/(tbta*tbta);
+  h11  = tat*tbt/tbta;
+
+  if (idx == NULL) {
+    for (i=0; i<n; i++)
+    {
+      f[i] = h00*fa[i]+h01*fb[i]+h11*dfb[i];
+    }
+  } else {
+    for (ii=0; ii<n; ii++)
+    {
+      i = idx[ii];
+      f[i] = h00*fa[i]+h01*fb[i]+h11*dfb[i];
+    }
+  }
+
+  return;
+}
+
+/**
  * @brief Hermite interpolation of specific vector components
  *
  * @param interpolMethod
@@ -249,7 +301,7 @@ void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double tim
     addSmultVec_gbf(nlsxExtrapolation, gbfData->yv, gbfData->kv, time - gbfData->tv[0], nFastStates, gbData->fastStatesIdx);
   } else {
     // this is actually extrapolation...
-    gb_interpolation(gbData->interpolation,
+    gb_interpolation(GB_INTERPOL_HERMITE,
                      gbfData->tv[1], gbfData->yv + nStates,  gbfData->kv + nStates,
                      gbfData->tv[0], gbfData->yv,            gbfData->kv,
                      time, nlsxExtrapolation,
@@ -274,7 +326,7 @@ void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time
     addSmultVec_gb(nlsxExtrapolation, gbData->yv, gbData->kv, time - gbData->tv[0], nStates);
   } else {
     // this is actually extrapolation...
-    gb_interpolation(gbData->interpolation,
+    gb_interpolation(GB_INTERPOL_HERMITE,
                      gbData->tv[1], gbData->yv + nStates,  gbData->kv + nStates,
                      gbData->tv[0], gbData->yv,            gbData->kv,
                      time, nlsxExtrapolation,
