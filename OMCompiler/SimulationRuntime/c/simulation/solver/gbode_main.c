@@ -214,16 +214,22 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   /* initialize analytic Jacobian, if available and needed */
   if (!gbfData->isExplicit)
   {
-    // This could not be deleted, since gbata->isExplicit this is needed!!!
-    // ToDo: Check for memory leak!!!
+    // Allocate Jacobian, if !gbfData->isExplcit and gbData->isExplicit
+    // Free is done in gbode_freeData
     if (gbData->isExplicit) {
       jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
       if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian)) {
         gbfData->symJacAvailable = FALSE;
         infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
       } else {
-        gbfData->symJacAvailable = TRUE;
-        infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
+        if (omc_flag[FLAG_JACOBIAN]) {
+          if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[3]) == 0)
+          infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
+          gbData->symJacAvailable = TRUE;
+        } else {
+          gbData->symJacAvailable = FALSE;
+        }
+        infoStreamPrint(LOG_SOLVER, 1, "Initialized colored sparsity pattern of the jacobian:");
         infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
         infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
         messageClose(LOG_SOLVER);
@@ -394,8 +400,14 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       gbData->symJacAvailable = FALSE;
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to numeric Jacobians.");
     } else {
-      gbData->symJacAvailable = TRUE;
-      infoStreamPrint(LOG_SOLVER, 1, "Initialized colored Jacobian:");
+      if (omc_flag[FLAG_JACOBIAN]) {
+        if (strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[3]) == 0)
+        infoStreamPrint(LOG_SOLVER,0,"Integrator uses %s for jacobian evaluation", omc_flagValue[FLAG_JACOBIAN]);
+        gbData->symJacAvailable = TRUE;
+      } else {
+        gbData->symJacAvailable = FALSE;
+      }
+      infoStreamPrint(LOG_SOLVER, 1, "Initialized colored sparsity pattern of the jacobian:");
       infoStreamPrint(LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
       messageClose(LOG_SOLVER);
@@ -524,8 +536,8 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
  */
 void gbode_freeData(DATA* data, DATA_GBODE *gbData)
 {
- ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
- freeAnalyticJacobian(jacobian);
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  freeAnalyticJacobian(jacobian);
 
   /* Free non-linear system data */
   freeRK_NLS_DATA(gbData->nlsData);
