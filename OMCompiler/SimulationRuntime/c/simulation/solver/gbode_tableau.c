@@ -159,10 +159,12 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
 
 void denseOutput_ESDIRK4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates) {
 
-  tableau->b_dt[0] = ((1  * dt + 1.) * dt + 1.) * dt;
-  tableau->b_dt[1] = ((1  * dt + 1.) * dt + 1.) * dt;
-  tableau->b_dt[2] = ((1  * dt + 1.) * dt + 1.) * dt;
-  tableau->b_dt[3] = ((1  * dt + 1.) * dt + 1.) * dt;
+  tableau->b_dt[0] = ((( -3.37190446385266 * dt +  8.755217206197267) * dt -  7.110648906869552) * dt +  1.743966666960983) * dt;
+  tableau->b_dt[1] = ((( -3.37190446385266 * dt +  8.755217206197267) * dt -  7.110648906869552) * dt +  1.743966666960983) * dt;
+  tableau->b_dt[2] = ((( 5.631761670126288 * dt -  13.96761288723156) * dt +  10.14932137951138) * dt -  1.486167897132069) * dt;
+  tableau->b_dt[3] = (((0.7831352104177221 * dt -  3.103391780000622) * dt +  3.560533704142545) * dt -  0.713913107591487) * dt;
+  tableau->b_dt[4] = ((( 1.070706916929678 * dt +  1.173763835121626) * dt -  4.194638638703274) * dt +  1.992723437667846) * dt;
+  tableau->b_dt[5] = (((-0.7417948697683686 * dt -   1.61319358028398) * dt +  4.706081368788451) * dt -  2.280575766866256) * dt;
 
   denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
@@ -172,7 +174,7 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau) {
   tableau->nStages = 6;
   tableau->order_b = 4;
   tableau->order_bt = 3;
-  tableau->fac      = 1.0e0;
+  tableau->fac      = 1.0e2;
 
   const double c[]  = {                                         0,                                        0.5, 0.1464466094067262377995778189475754803576,                                      0.625,                                       1.04,                                          1};
   const double A[]  = {
@@ -187,7 +189,7 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau) {
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 
-  tableau->withDenseOutput = FALSE;
+  tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK4;
 }
 
