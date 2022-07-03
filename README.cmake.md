@@ -28,7 +28,7 @@ That said, if you are familiar with CMake and have all the dependencies installe
 ```sh
 cd OpenModelica
 cmake -S . -B build_cmake
-cmake --build build_cmake --parallel <Nr. of cores> --target install
+cmake --build build_cmake --target install --parallel <Nr. of cores>
 
 # Default install dir is a directory named install_cmake inside the build directory.
 ./build_cmake/install_cmake/bin/omc --help
@@ -61,7 +61,16 @@ It is available for linux (of course) and, fortunatelly, for MSYS/MinGW as well 
 There is nothing special to be done for linux. You can follow the examples above or chose your own combination of parameters (e.g. build type, generator, install dir ...).
 
 ## 3.3. macOS
+On macOS you need to install:
+- XCode: ```xcode-select –install```
+- homebrew: ```/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"```
+- macports (for qt5-wtwebkit): https://guide.macports.org/#installing.macports
+
 On macOS there are a few pitfalls/issues which need attention.
+
+- if building simulation code fails go OMEdit -> Preferences -> Simulation and change the C / C++ compiler to gcc/g++.
+
+- gfortran is needed, install via ```brew install gfortran```
 
 - If you plan to build the OpenModelica GUI clients (e.g. OMEdit) you need to install a Qt5 version that comes with `qt-webkit`. Unfortunately, the Qt formulae from `homebrew` does not provide `qt-webkit` anymore. Therefore, you will have to find a way of getting `qt-webkit` on your machine. The recommend and probably the easiest way to do this is using macports to install Qt and qt5-webkit:
 
@@ -94,7 +103,6 @@ On macOS there are a few pitfalls/issues which need attention.
   ```sh
   cmake ... -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF ...
   ```
-
 
 With these consideration, your final configure command should look something like
 
