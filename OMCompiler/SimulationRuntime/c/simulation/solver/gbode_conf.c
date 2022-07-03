@@ -134,8 +134,8 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
   }
 
   // Default value for single-rate method
-  infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: lobattoIIIB4 [default]");
-  return RK_LOBA_IIIB_4;
+  infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: esdirk3 [default]");
+  return RK_ESDIRK3;
 }
 
 /**

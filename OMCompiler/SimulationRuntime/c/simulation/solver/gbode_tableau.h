@@ -71,6 +71,7 @@ typedef struct BUTCHER_TABLEAU {
   double *A;                        /* Runge-Kutta matrix A */
   double *b;                        /* Weights vector */
   double *bt;                       /* Weights vector of embedded formula */
+  double *b_dt;                     /* Weights vector for dense output */
   double *c;                        /* Nodes vector */
   unsigned int nStages;             /* Number of stages */
   unsigned int order_b;             /* Order of the Runge-Kutta method */
