@@ -245,8 +245,9 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
     }
   case GB_INTERPOL_HERMITE_b:
     hermite_interpolation_b(ta, fa, tb, fb, dfb, t, f, nIdx, idx);
-  case GB_INTERPOL_HERMITE:
+    break;
   case GB_INTERPOL_HERMITE_ERRCTRL:
+  case GB_INTERPOL_HERMITE:
     hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, nIdx, idx);
     break;
   default:
