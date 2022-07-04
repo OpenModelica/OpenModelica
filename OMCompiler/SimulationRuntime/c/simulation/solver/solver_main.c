@@ -240,7 +240,8 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   switch (solverInfo->solverMethod)
   {
   case S_SYM_SOLVER:
-  case S_EULER: break;
+  case S_EULER:
+  case S_QSS: break;
   case S_SYM_SOLVER_SSC:
   {
     allocateSymSolverSsc(solverInfo, data->modelData->nStates);
@@ -289,7 +290,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     solverInfo->solverData = rungeData;
     break;
   }
-  case S_QSS: break;
 #if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
   {
@@ -384,58 +384,73 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   free(solverInfo->solverStats);
   free(solverInfo->solverStatsTmp);
   /* deintialize solver related workspace */
-  if (solverInfo->solverMethod == S_SYM_SOLVER_SSC)
+  switch (solverInfo->solverMethod)
+  {
+  case S_EULER:
+  case S_SYM_SOLVER:
+  case S_QSS: break;
+  case S_SYM_SOLVER_SSC:
   {
     freeSymSolverSsc(solverInfo);
+    break;
   }
-  else if(solverInfo->solverMethod == S_RUNGEKUTTA || solverInfo->solverMethod == S_HEUN
-         || solverInfo->solverMethod == S_ERKSSC)
+  case S_RUNGEKUTTA:
+  case S_HEUN:
+  case S_ERKSSC:
   {
     /* free RK work arrays */
     for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)
       free(((RK4_DATA*)(solverInfo->solverData))->work_states[i]);
     free(((RK4_DATA*)(solverInfo->solverData))->work_states);
     free((RK4_DATA*)solverInfo->solverData);
+    break;
   }
-  else if (solverInfo->solverMethod == S_IRKSCO)
+  case S_IRKSCO:
   {
     freeIrksco(solverInfo);
+    break;
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
-  else if(solverInfo->solverMethod == S_DASSL)
+  case S_DASSL:
   {
     /* De-Initial DASSL solver */
     dassl_deinitial(solverInfo->solverData);
+    break;
   }
 #endif
 #ifdef OMC_HAVE_IPOPT
-  else if(solverInfo->solverMethod == S_OPTIMIZATION)
+  case S_OPTIMIZATION:
   {
     /* free  work arrays */
     /*destroyIpopt(solverInfo);*/
+    break;
   }
 #endif
 #ifdef WITH_SUNDIALS
-  else if(solverInfo->solverMethod == S_IMPEULER ||
-          solverInfo->solverMethod == S_TRAPEZOID ||
-          solverInfo->solverMethod == S_IMPRUNGEKUTTA)
+  case S_IMPEULER:
+  case S_TRAPEZOID:
+  case S_IMPRUNGEKUTTA:
   {
     /* free  work arrays */
     freeKinOde((KINODE*)solverInfo->solverData);
+    break;
   }
-  else if(solverInfo->solverMethod == S_IDA)
+  case S_IDA:
   {
     /* free work arrays */
     ida_solver_deinitial(solverInfo->solverData);
+    break;
   }
-  else if(solverInfo->solverMethod == S_CVODE)
+  case S_CVODE:
   {
     /* free work arrays */
     cvode_solver_deinitial(solverInfo->solverData);
+    break;
   }
 #endif
-  {
-    /* free other solver memory */
+  default:
+    errorStreamPrint(LOG_SOLVER, 0, "Unknown solver %s encountered. Possibly leaking memory!", solverInfo->solverMethod);
+    return 1;
   }
 
   return retValue;
