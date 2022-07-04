@@ -7,7 +7,6 @@ ExtObj.mos \
 ExtObjStringParam.mos \
 ExternalLibraries.mos \
 ExternalRHSFlag.mos \
-ExternalStructIntMapping.mos \
 ImplicitArray.mos \
 LapackInverse.mos \
 Matrix.mos  \
@@ -39,7 +38,6 @@ ExtObj.h \
 ExtObjOrder.h \
 ExtObjStringParam.ext.c \
 ExtObjStringParam.ext.h \
-ExternalStructIntMapping.ext.h \
 Func.c \
 Func.h \
 InOutStrings_fkn1.cc \
