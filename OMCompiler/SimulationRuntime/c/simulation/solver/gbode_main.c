@@ -264,6 +264,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results");
     break;
   case GB_INTERPOL_HERMITE:
+  case GB_INTERPOL_HERMITE_b:
   case GB_INTERPOL_HERMITE_ERRCTRL:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for the slow states");
     break;
@@ -461,6 +462,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results%s", buffer);
     break;
   case GB_INTERPOL_HERMITE_ERRCTRL:
+  case GB_INTERPOL_HERMITE_b:
   case GB_INTERPOL_HERMITE:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results%s", buffer);
     break;

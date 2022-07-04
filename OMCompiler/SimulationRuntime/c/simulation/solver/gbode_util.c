@@ -243,6 +243,8 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
       tableau->dense_output(tableau, fa, x, k, (t - ta)/(tb-ta), (tb - ta), f, nIdx, idx, nStates);
       break;
     }
+  case GB_INTERPOL_HERMITE_b:
+    hermite_interpolation_b(ta, fa, tb, fb, dfb, t, f, nIdx, idx);
   case GB_INTERPOL_HERMITE:
   case GB_INTERPOL_HERMITE_ERRCTRL:
     hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, nIdx, idx);
@@ -259,7 +261,7 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
 void error_interpolation_gbf(DATA_GBODE* gbData) {
   int i, ii;
 
-  if (gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL || gbData->interpolation == GB_INTERPOL_HERMITE) {
+  if (gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL || gbData->interpolation == GB_INTERPOL_HERMITE || gbData->interpolation == GB_INTERPOL_HERMITE_b ) {
     linear_interpolation(gbData->timeLeft,  gbData->yLeft,
                         gbData->timeRight, gbData->yRight,
                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,

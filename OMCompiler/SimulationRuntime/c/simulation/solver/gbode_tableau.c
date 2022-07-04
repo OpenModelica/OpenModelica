@@ -85,6 +85,10 @@ void denseOutput_ESDIRK2(BUTCHER_TABLEAU* tableau, double* yOld, double* x, doub
   tableau->b_dt[0] = (-1827251437969./5168247530883. * dt + 8822750406821./12477253282759.) * dt;
   tableau->b_dt[1] = (-1827251437969./5168247530883. * dt + 8822750406821./12477253282759.) * dt;
   tableau->b_dt[2] = (8822750406821./12477253282759. * dt - 5168247530883./12477253282759.) * dt;
+// tableau->b_dt[0] = (-1.353553390593274 * dt +                  1) * dt;
+// tableau->b_dt[1] = ( 2.060660171779821 * dt -                  0) * dt;
+// tableau->b_dt[2] = (-0.7071067811865475 * dt -                  0) * dt;
+
 
   denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }

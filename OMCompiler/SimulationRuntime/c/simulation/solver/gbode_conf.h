@@ -59,9 +59,10 @@ enum GB_INTERPOL_METHOD {
   GB_INTERPOL_UNKNOWN = 0,          /* Unknown interpolation method */
   GB_INTERPOL_LIN = 1,              /* Linear interpolation */
   GB_INTERPOL_HERMITE = 2,          /* Hermite interpolation */
-  GB_INTERPOL_HERMITE_ERRCTRL = 3,  /* Hermite interpolation with error control */
-  GB_DENSE_OUTPUT = 4,              /* Dense output, if available else hermite */
-  GB_DENSE_OUTPUT_ERRCTRL = 5,       /* Dense output, if available else hermite with error control */
+  GB_INTERPOL_HERMITE_b = 3,        /* Hermite interpolation (only for left hand side)*/
+  GB_INTERPOL_HERMITE_ERRCTRL = 4,  /* Hermite interpolation with error control */
+  GB_DENSE_OUTPUT = 5,              /* Dense output, if available else hermite */
+  GB_DENSE_OUTPUT_ERRCTRL = 6,       /* Dense output, if available else hermite with error control */
 
 
   GB_INTERPOL_MAX
