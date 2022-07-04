@@ -1677,7 +1677,6 @@ uniontype InstNode
 
       case CLASS_NODE()
         algorithm
-          Pointer.update(clsNode.cls, Class.DAE_TYPE(DAE.Type.T_UNKNOWN()));
           cls := Pointer.access(clsNode.cls);
         then
           match cls

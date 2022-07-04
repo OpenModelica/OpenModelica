@@ -1086,7 +1086,7 @@ public
           // after the typing, but the new frontend doesn't use these types anyway.
           // So instead we just fetch the type of the node if the type is unknown.
           ty := if Type.isUnknown(cref.ty) then InstNode.getType(cref.node) else cref.ty;
-          dty := Type.toDAE(ty, makeTypeVars = Type.isRecord(Type.arrayElementType(ty)));
+          dty := Type.toDAE(ty, makeTypeVars = false);
           dcref := DAE.ComponentRef.CREF_QUAL(InstNode.name(cref.node), dty,
             list(Subscript.toDAE(s) for s in cref.subscripts), accumCref);
         then

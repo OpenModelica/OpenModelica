@@ -137,13 +137,21 @@ algorithm
   // ticket #9036
   // propagate record bindings from attributes to their parent record types in all crefs of all equations O(n)
 
-  // 1. collect bindings
+  // 1. collect all possible record types from eqns
+  // (the frontend does not keep correct types at the variables so they have to be grabbed from eqns beforehand
+  // i don't like it but thats how it is).
   map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
+  eqns  := List.map(eqns, function collectRecordTypesEqn(map = map));
+  reqns := List.map(reqns, function collectRecordTypesEqn(map = map));
+  ieqns := List.map(ieqns, function collectRecordTypesEqn(map = map));
+
+  // 2. collect bindings from variables and update in types
+  // (ToDo: update the types?)
   _ := List.map(varlst, function collectRecordElementBindings(map = map));
   _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map));
   _ := List.map(extvarlst, function collectRecordElementBindings(map = map));
 
-  // 2. apply bindings in exp types
+  // 3. replace the types in eqns
   eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
   reqns := List.map(reqns, function updateRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function updateRecordTypesEqn(map = map));
@@ -220,8 +228,8 @@ algorithm
       DAE.ComponentRef rec_cref;
       DAE.Type ty;
 
-    case (SOME(binding), SOME(rec_cref)) algorithm
-      ty := match UnorderedMap.getOrDefault(rec_cref, map, ComponentReference.crefType(rec_cref))
+    case (SOME(binding), SOME(rec_cref)) guard(UnorderedMap.contains(rec_cref, map)) algorithm
+      ty := match UnorderedMap.getSafe(rec_cref, map)
         case ty as DAE.T_COMPLEX() algorithm
           ty.varLst := list(updateRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
         then ty;
@@ -248,12 +256,34 @@ algorithm
   end if;
 end updateRecordElementBinding;
 
+protected function collectRecordTypesEqn
+  input output BackendDAE.Equation eqn;
+  input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+algorithm
+  (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, function Expression.traverseExpTopDown(func=collectRecordTypesExp), map);
+end collectRecordTypesEqn;
+
 protected function updateRecordTypesEqn
   input output BackendDAE.Equation eqn;
   input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
 algorithm
   (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, function Expression.traverseExpTopDown(func=updateRecordTypesExp), map);
 end updateRecordTypesEqn;
+
+protected function collectRecordTypesExp
+  input output DAE.Exp exp;
+  output Boolean cont;
+  input output UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+algorithm
+  cont := match exp
+    local
+      DAE.ComponentRef cref;
+    case DAE.CREF(componentRef = cref) guard(Types.isRecord(exp.ty)) algorithm
+      UnorderedMap.add(cref, exp.ty, map);
+    then false;
+    else true;
+  end match;
+end collectRecordTypesExp;
 
 protected function updateRecordTypesExp
   input output DAE.Exp exp;
