@@ -1632,6 +1632,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz)
 static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
                                       N_Vector yp, N_Vector rr, SUNMatrix Jac,
                                       double cj, void *userData) {
+
   TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
