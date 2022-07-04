@@ -12,9 +12,9 @@
       "description": "The kind of class",
       "type": "string"
     },
-    "modifier": {
+    "modifiers": {
       "description": "Modifier from the SCode",
-      "type": "#/definitions/modifier"
+      "type": "#/definitions/scodeModifier"
     },
     "comment": {
       "$ref": "#/definitions/comment"
@@ -125,7 +125,7 @@
       "properties": {
         "modifiers": {
           "description": "SCode modifier on the extends clause",
-          "type": "#/definitions/modifier"
+          "type": "#/definitions/scodeModifier"
         },
         "annotation": {
           "description": "Annotation on the extends clause",
@@ -187,7 +187,7 @@
             },
             "modifiers": {
               "description": "Modifier from the SCode",
-              "type": "#/definitions/modifier"
+              "type": "#/definitions/scodeModifier"
             },
             "value": {
               "description": "The component's binding equation",
@@ -261,21 +261,29 @@
       },
       "required": ["binding"]
     },
-    "modifier": {
-      "description": "A modifier",
-      "type": "object",
-      "properties": {
-        "value": {
-          "type": "string"
+    "scodeModifier": {
+      "description": "An SCode modifier",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "The string representation of the binding equation"
         },
-        "modifiers": {
-          "type": "array",
-          "items": {
-            "type": "#/definitions/modifier"
-          }
+        {
+          "type": "object",
+          "description": "A modifier with submodifiers",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "description": "The string representation of the binding equation"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/definitions/scodeModifier"
+          },
+          "required": [],
+          "minProperties": 1
         }
-      },
-      "required": []
+      ]
     }
   }
 }

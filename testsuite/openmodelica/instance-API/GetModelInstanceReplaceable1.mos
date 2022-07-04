@@ -28,9 +28,7 @@ getModelInstance(M, prettyPrint = true);
 //     {
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
-//       \"modifiers\": {
-//         \"value\": \"1.0\"
-//       },
+//       \"modifiers\": \"1.0\",
 //       \"value\": {
 //         \"binding\": 1
 //       },
