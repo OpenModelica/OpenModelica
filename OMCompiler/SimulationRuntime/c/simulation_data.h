@@ -292,7 +292,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
-  int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
+  int (*initialAnalyticalJacobian)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* jacobian);
   modelica_integer jacobianIndex;
 
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
