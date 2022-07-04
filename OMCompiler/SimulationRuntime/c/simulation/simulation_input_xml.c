@@ -396,7 +396,7 @@ static void read_var_attribute_int(omc_ScalarVariable *v, INTEGER_ATTRIBUTE *att
   read_value_long(findHashStringStringEmpty(v,"min"), &attribute->min, INTEGER_MIN);
   read_value_long(findHashStringStringEmpty(v,"max"), &attribute->max, INTEGER_MAX);
 
-  infoStreamPrint(LOG_DEBUG, 0, "Integer %s(start=%d, fixed=%s, min=%d, max=%d)", findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
+  infoStreamPrint(LOG_DEBUG, 0, "Integer %s(start=%ld, fixed=%s, min=%ld, max=%ld)", findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
 }
 
 static void read_var_attribute_bool(omc_ScalarVariable *v, BOOLEAN_ATTRIBUTE *attribute)
@@ -591,15 +591,15 @@ void read_input_xml(MODEL_DATA* modelData,
     if (ACTIVE_WARNING_STREAM(LOG_SIMULATION))
     {
       warningStreamPrint(LOG_SIMULATION, 1, "Error, input data file does not match model.");
-      warningStreamPrint(LOG_SIMULATION, 0, "nx in setup file: %d from model code: %d", nxchk, (int)modelData->nStates);
-      warningStreamPrint(LOG_SIMULATION, 0, "ny in setup file: %d from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
-      warningStreamPrint(LOG_SIMULATION, 0, "np in setup file: %d from model code: %ld", npchk, modelData->nParametersReal);
-      warningStreamPrint(LOG_SIMULATION, 0, "npint in setup file: %d from model code: %ld", npintchk, modelData->nParametersInteger);
-      warningStreamPrint(LOG_SIMULATION, 0, "nyint in setup file: %d from model code: %ld", nyintchk, modelData->nVariablesInteger);
-      warningStreamPrint(LOG_SIMULATION, 0, "npbool in setup file: %d from model code: %ld", npboolchk, modelData->nParametersBoolean);
-      warningStreamPrint(LOG_SIMULATION, 0, "nybool in setup file: %d from model code: %ld", nyboolchk, modelData->nVariablesBoolean);
-      warningStreamPrint(LOG_SIMULATION, 0, "npstr in setup file: %d from model code: %ld", npstrchk, modelData->nParametersString);
-      warningStreamPrint(LOG_SIMULATION, 0, "nystr in setup file: %d from model code: %ld", nystrchk, modelData->nVariablesString);
+      warningStreamPrint(LOG_SIMULATION, 0, "nx in setup file: %ld from model code: %d", nxchk, (int)modelData->nStates);
+      warningStreamPrint(LOG_SIMULATION, 0, "ny in setup file: %ld from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
+      warningStreamPrint(LOG_SIMULATION, 0, "np in setup file: %ld from model code: %ld", npchk, modelData->nParametersReal);
+      warningStreamPrint(LOG_SIMULATION, 0, "npint in setup file: %ld from model code: %ld", npintchk, modelData->nParametersInteger);
+      warningStreamPrint(LOG_SIMULATION, 0, "nyint in setup file: %ld from model code: %ld", nyintchk, modelData->nVariablesInteger);
+      warningStreamPrint(LOG_SIMULATION, 0, "npbool in setup file: %ld from model code: %ld", npboolchk, modelData->nParametersBoolean);
+      warningStreamPrint(LOG_SIMULATION, 0, "nybool in setup file: %ld from model code: %ld", nyboolchk, modelData->nVariablesBoolean);
+      warningStreamPrint(LOG_SIMULATION, 0, "npstr in setup file: %ld from model code: %ld", npstrchk, modelData->nParametersString);
+      warningStreamPrint(LOG_SIMULATION, 0, "nystr in setup file: %ld from model code: %ld", nystrchk, modelData->nVariablesString);
       messageClose(LOG_SIMULATION);
     }
     XML_ParserFree(parser);

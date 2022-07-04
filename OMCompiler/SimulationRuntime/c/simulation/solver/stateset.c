@@ -323,7 +323,7 @@ void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
 {
   long k, l;
 
-  infoStreamPrint(LOG_DSS, 1, "Select %d states from %d candidates.", set->nStates, set->nCandidates);
+  infoStreamPrint(LOG_DSS, 1, "Select %ld states from %ld candidates.", set->nStates, set->nCandidates);
   for(k=0; k < set->nCandidates; k++)
   {
     infoStreamPrint(LOG_DSS, 0, "[%ld] candidate %s", k+1, set->statescandidates[k]->name);
@@ -391,7 +391,7 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
       /* error, report the matrix and the time */
 
       char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols*100+5);
-      warningStreamPrint(LOG_DSS, 1, "jacobian %dx%d [id: %d]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
+      warningStreamPrint(LOG_DSS, 1, "jacobian %dx%d [id: %ld]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
 
       for(m=0; m < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows; m++)
       {
