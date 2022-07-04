@@ -62,23 +62,15 @@ There is nothing special to be done for linux. You can follow the examples above
 
 ## 3.3. macOS
 On macOS you need to install:
-- XCode: ```xcode-select –install```
-- homebrew: ```/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"```
-- macports (for qt5-wtwebkit): https://guide.macports.org/#installing.macports
+- XCode: ```xcode-select –-install```
+- macports: https://guide.macports.org/#installing.macports
+  ```sudo port install cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph gfortran```  
 
 On macOS there are a few pitfalls/issues which need attention.
 
 - if building simulation code fails go OMEdit -> Preferences -> Simulation and change the C / C++ compiler to gcc/g++.
 
-- gfortran is needed, install via ```brew install gfortran```
-
-- If you plan to build the OpenModelica GUI clients (e.g. OMEdit) you need to install a Qt5 version that comes with `qt-webkit`. Unfortunately, the Qt formulae from `homebrew` does not provide `qt-webkit` anymore. Therefore, you will have to find a way of getting `qt-webkit` on your machine. The recommend and probably the easiest way to do this is using macports to install Qt and qt5-webkit:
-
-  ```sh
-  port install qt5 qt5-qtwebkit
-  ```
-
-  once Qt5 is installed, you will need to note the installation directory. It should be `/opt/local` by default. If it is not, you can run
+- once Qt5 is installed via ```port```, you will need to note the installation directory. It should be `/opt/local` by default. If it is not, you can run
 
   ```sh
   port contents qt5
