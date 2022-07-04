@@ -937,7 +937,7 @@ algorithm
 
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
-  json := dumpJSONMod(SCodeUtil.elementMod(def), json);
+  json := dumpJSONSCodeMod(SCodeUtil.elementMod(def), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtends(exts), json);
@@ -986,7 +986,7 @@ algorithm
     ext_def := InstNode.extendsDefinition(node);
 
     ext_json := JSON.emptyObject();
-    ext_json := dumpJSONMod(SCodeUtil.elementMod(ext_def), ext_json);
+    ext_json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), ext_json);
     ext_json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, ext_json);
     ext_json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, root = false), ext_json);
 
@@ -1042,10 +1042,7 @@ algorithm
             dumpJSONDims(elem.attributes.arrayDims, Type.arrayDims(comp.ty)), json);
         end if;
 
-        j := dumpJSONMod(elem.modifications, JSON.makeNull());
-        if not JSON.isNull(j) then
-          json := JSON.addPair("modifiers", j, json);
-        end if;
+        json := dumpJSONSCodeMod(elem.modifications, json);
 
         //if not Type.isComplex(comp.ty) then
         //  json := dumpJSONBuiltinClassComponents(comp.classInst, elem.modifications, json);
@@ -1461,35 +1458,47 @@ algorithm
   end for;
 end dumpJSONReplaceableElements;
 
-function dumpJSONMod
+function dumpJSONSCodeMod
   input SCode.Mod mod;
   input output JSON json;
 protected
   JSON j;
 algorithm
+  j := dumpJSONSCodeMod_impl(mod);
+
+  if not JSON.isNull(j) then
+    json := JSON.addPair("modifiers", j, json);
+  end if;
+end dumpJSONSCodeMod;
+
+function dumpJSONSCodeMod_impl
+  input SCode.Mod mod;
+  output JSON json = JSON.makeNull();
+protected
+  JSON binding_json;
+algorithm
   () := match mod
     case SCode.Mod.MOD()
       algorithm
+        for m in mod.subModLst loop
+          json := JSON.addPair(m.ident, dumpJSONSCodeMod_impl(m.mod), json);
+        end for;
+
         if isSome(mod.binding) then
-          json := JSON.addPair("value",
-            JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding))), json);
-        end if;
+          binding_json := JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding)));
 
-        if not listEmpty(mod.subModLst) then
-          j := JSON.emptyObject();
-
-          for sm in mod.subModLst loop
-            j := JSON.addPair(sm.ident, dumpJSONMod(sm.mod, JSON.makeNull()), j);
-          end for;
-
-          json := JSON.addPair("modifiers", j, json);
+          if JSON.isNull(json) then
+            json := binding_json;
+          else
+            json := JSON.addPair("$value", binding_json, json);
+          end if;
         end if;
       then
         ();
 
     else ();
   end match;
-end dumpJSONMod;
+end dumpJSONSCodeMod_impl;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

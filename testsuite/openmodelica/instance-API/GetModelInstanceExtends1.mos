@@ -29,9 +29,7 @@ getModelInstance(M, prettyPrint=true);
 //   \"extends\": [
 //     {
 //       \"modifiers\": {
-//         \"x\": {
-//           \"value\": \"1\"
-//         }
+//         \"x\": \"1\"
 //       },
 //       \"annotation\": {
 //         \"IconMap\": {

@@ -12,6 +12,7 @@ GetModelInstanceDuplicate1.mos \
 GetModelInstanceExp1.mos \
 GetModelInstanceExtends1.mos \
 GetModelInstanceInnerOuter1.mos \
+GetModelInstanceMod1.mos \
 GetModelInstanceReplaceable1.mos \
 
 
