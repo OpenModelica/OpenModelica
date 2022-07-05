@@ -129,7 +129,9 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
     case RK_LOBA_IIIB_4:
     case RK_LOBA_IIIC_3:
     case RK_LOBA_IIIC_4:
-      return RK_SDIRK2;
+      // Default value for inner integration method
+      // if the outer integration method is full implicit
+      return RK_ESDIRK3;
     default:
       return singleRateMethod;
     }
