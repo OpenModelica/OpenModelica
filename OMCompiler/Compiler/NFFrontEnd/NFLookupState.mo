@@ -302,7 +302,7 @@ uniontype LookupState
 
       case (ERROR(errorState = PARTIAL_CLASS()), _)
         algorithm
-          if not InstContext.inRelaxed(context) then
+          if not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) then
             node2 := listHead(InstNode.scopeList(node));
 
             if InstNode.isComponent(node2) then
