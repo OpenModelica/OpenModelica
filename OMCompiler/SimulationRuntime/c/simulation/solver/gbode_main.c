@@ -1062,7 +1062,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   modelica_real *fODE = sData->realVars + data->modelData->nStates;
   DATA_GBODE *gbData = (DATA_GBODE *)solverInfo->solverData;
 
-  double err, err_int, err_threshold;
+  double err, err_threshold;
   double Atol = data->simulationInfo->tolerance;
   double Rtol = data->simulationInfo->tolerance;
   int i, ii, l;
@@ -1299,20 +1299,12 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->timeRight = gbData->time + gbData->lastStepSize;
       memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
       // update kRight
-      sData->timeValue = gbData->time;
+      sData->timeValue = gbData->timeRight;
       memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
       gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
-      error_interpolation_gbf(gbData);
-
-      // calculate interpolation error estimator
-      for (ii = 0, err_int=0; ii < gbData->nSlowStates; ii++) {
-        i = gbData->slowStatesIdx[ii];
-        gbData->errest[i] = gbData->errest[i] / gbData->errtol[i];
-        err_int = fmax(err_int, gbData->errest[i]);
-      }
-      gbData->err_int = err_int;
+      gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, Rtol);
 
       if (ACTIVE_STREAM(LOG_GBODE_V)) {
         // debug the changes of the state values during integration
@@ -1325,12 +1317,12 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(LOG_GBODE_V);
       }
       // reject step, if interpolaton error is too large
-      if (( gbData->nFastStates>0) && (err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
+      if (( gbData->nFastStates>0) && (gbData->err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
           ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         err = 100;
-        gbData->stepSize = gbData->lastStepSize*IController(&err_int, &(gbData->lastStepSize), 1);
+        gbData->stepSize = gbData->lastStepSize*IController(&(gbData->err_int), &(gbData->lastStepSize), 1);
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, interpolation error %10g, new stepsize %10g",
-                        gbData->time, gbData->time + gbData->lastStepSize, err_int, gbData->stepSize);
+                        gbData->time, gbData->time + gbData->lastStepSize, gbData->err_int, gbData->stepSize);
 
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
           // dump fast states in file
@@ -1452,7 +1444,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, gbData->nStates * sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error slow states %10g, error interpolation %10g, new stepsize %10g",
-                    gbData->time - gbData->lastStepSize, gbData->time, err, err_int, gbData->stepSize);
+                    gbData->time - gbData->lastStepSize, gbData->time, err, gbData->err_int, gbData->stepSize);
 
     if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
       // dump fast states in file
@@ -1702,6 +1694,39 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
                         gbData->time, gbData->time + gbData->lastStepSize, gbData->errValues[0], gbData->stepSize);
       }
 
+      // store right hand values for latter interpolation
+      gbData->timeRight = gbData->time + gbData->lastStepSize;
+      memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
+      // update kRight
+      sData->timeValue = gbData->timeRight;
+      memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      memcpy(gbData->kRight, fODE, nStates * sizeof(double));
+
+      gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, Rtol);
+      if (ACTIVE_STREAM(LOG_GBODE_V)) {
+        // debug the changes of the state values during integration
+        infoStreamPrint(LOG_GBODE_V, 1, "Interpolation error of slow states at midpoint:");
+        printVector_gb(LOG_GBODE_V, "yL", gbData->yLeft, nStates, gbData->timeLeft);
+        printVector_gb(LOG_GBODE_V, "kL", gbData->kLeft, nStates, gbData->timeLeft);
+        printVector_gb(LOG_GBODE_V, "yR", gbData->yRight, nStates, gbData->timeRight);
+        printVector_gb(LOG_GBODE_V, "kR", gbData->kRight, nStates, gbData->timeRight);
+        printVector_gbf(LOG_GBODE_V, "e", gbData->errest, nStates, (gbData->timeLeft + gbData->timeRight)/2, gbData->nSlowStates, gbData->slowStatesIdx);
+        messageClose(LOG_GBODE_V);
+      }
+      // reject step, if interpolaton error is too large
+      if ((gbData->err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
+          ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+        err = 100;
+        gbData->stepSize = gbData->lastStepSize*IController(&(gbData->err_int), &(gbData->lastStepSize), 1);
+        infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, interpolation error %10g, new stepsize %10g",
+                        gbData->time, gbData->time + gbData->lastStepSize, gbData->err_int, gbData->stepSize);
+
+        // count failed steps and output information on the solver status
+        // gbData->errorTestFailures++;
+        continue;
+      }
+
       // debug ring buffer for the states and derviatives of the states at RK points
       if (ACTIVE_STREAM(LOG_GBODE_V)) {
         infoStreamPrint(LOG_GBODE_V, 1, "Ring buffer during steps of integration");
@@ -1716,10 +1741,6 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
     // count processed steps
     gbData->stats.nStepsTaken++;
-
-    // store right hand values for latter interpolation
-    gbData->timeRight = gbData->time + gbData->lastStepSize;
-    memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
 
     // debug the changes of the state values during integration
     if (ACTIVE_STREAM(LOG_GBODE)) {
@@ -1756,16 +1777,10 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     /* update time with performed stepSize */
     gbData->time += gbData->lastStepSize;
 
-    // update kRight the derivatives of yRight
-    sData->timeValue = gbData->time;
-    memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-    memcpy(gbData->kRight, fODE, nStates * sizeof(double));
-
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
-    infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g, new stepsize %10g",
-                    gbData->time - gbData->lastStepSize, gbData->time, gbData->errValues[0], gbData->stepSize);
+    infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g interpolation error %10g, new stepsize %10g",
+                    gbData->time - gbData->lastStepSize, gbData->time, gbData->errValues[0], gbData->err_int, gbData->stepSize);
 
     // Rotate buffer
     for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {

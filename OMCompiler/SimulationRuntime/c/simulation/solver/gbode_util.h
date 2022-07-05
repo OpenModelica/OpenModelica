@@ -53,7 +53,7 @@ void addSmultVec_gb(double* a, double* b, double *c, double s, int n);
 // Interpolation functions for the whole vector or indices referenced by index vector
 void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f,
                         int nIdx, int* idx, int nStates, BUTCHER_TABLEAU* tableau, double* x, double *k);
-void error_interpolation_gbf(DATA_GBODE* gbData);
+double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol);
 void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time);
 void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double time);
 

@@ -259,30 +259,43 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
  *
  * @param gbData
  */
-void error_interpolation_gbf(DATA_GBODE* gbData) {
+double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol) {
   int i, ii;
+  double errint = 0.0, errtol;
 
-  if (gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL || gbData->interpolation == GB_INTERPOL_HERMITE || gbData->interpolation == GB_INTERPOL_HERMITE_b ) {
+ if (gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL || gbData->interpolation == GB_INTERPOL_HERMITE || gbData->interpolation == GB_INTERPOL_HERMITE_b ) {
     linear_interpolation(gbData->timeLeft,  gbData->yLeft,
                         gbData->timeRight, gbData->yRight,
                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-                         gbData->nSlowStates, gbData->slowStatesIdx);
-  } else {
-    gb_interpolation(gbData->interpolation, gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                         nIdx, idx);
+ } else {
+   gb_interpolation(gbData->interpolation, gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                      gbData->timeRight, gbData->yRight, gbData->kRight,
                      (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-                      gbData->nSlowStates, gbData->slowStatesIdx, gbData->nStates, gbData->tableau, gbData->x, gbData->k);
+                      nIdx, idx, gbData->nStates, gbData->tableau, gbData->x, gbData->k);
 
-  }
+ }
   hermite_interpolation(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                         gbData->timeRight, gbData->yRight, gbData->kRight,
                         (gbData->timeLeft + gbData->timeRight)/2, gbData->errest,
-                         gbData->nSlowStates, gbData->slowStatesIdx);
+                         nIdx, idx);
 
-  for (ii=0; ii<gbData->nSlowStates; ii++) {
-    i = gbData->slowStatesIdx[ii];
-    gbData->errest[i] = fabs(gbData->errest[i] - gbData->y1[i]);
+  tol = tol*1e2;
+  if (idx == NULL) {
+    for (i=0; i<nIdx; i++) {
+      errtol = tol * fmax(fabs(gbData->yLeft[i]), fabs(gbData->yRight[i])) + tol;
+      gbData->errest[i] = fabs(gbData->errest[i] - gbData->y1[i]) / errtol;
+      errint = fmax(errint, gbData->errest[i]);
+    }
+  } else {
+    for (ii=0; ii<nIdx; ii++) {
+      i = idx[ii];
+      errtol = tol * fmax(fabs(gbData->yLeft[i]), fabs(gbData->yRight[i])) + tol;
+      gbData->errest[i] = fabs(gbData->errest[i] - gbData->y1[i]) / errtol;
+      errint = fmax(errint, gbData->errest[i]);
+    }
   }
+  return errint;
 }
 
 /**
