@@ -217,6 +217,7 @@ public:
   ModelInstance::Element *getModelElement() const {return mpModelElement;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QString getName() const;
+  QString getComment() const;
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   Element *getReferenceComponent() {return mpReferenceComponent;}
   Element* getParentComponent() {return mpParentComponent;}

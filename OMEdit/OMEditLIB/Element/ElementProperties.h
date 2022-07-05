@@ -52,7 +52,9 @@ public:
     ReplaceableClass
   };
   Parameter(Element *pComponent, bool showStartAttribute, QString tab, QString groupBox);
+  Parameter(ModelInstance::Element *pElement, bool showStartAttribute, QString tab, QString groupBox);
   Element* getComponent() {return mpComponent;}
+  ModelInstance::Element* getElement() {return mpElement;}
   void setTab(QString tab) {mTab = tab;}
   QString getTab() {return mTab;}
   void setGroupBox(QString groupBox) {mGroupBox = groupBox;}
@@ -88,6 +90,7 @@ public:
   void setEnabled(bool enable);
 private:
   Element *mpComponent;
+  ModelInstance::Element *mpElement;
   QString mTab;
   QString mGroupBox;
   bool mShowStartAttribute;
@@ -169,6 +172,8 @@ private:
   QGroupBox *mpComponentGroupBox;
   Label *mpComponentNameLabel;
   Label *mpComponentNameTextBox;
+  Label *mpComponentCommentLabel;
+  Label *mpComponentCommentTextBox;
   QGroupBox *mpComponentClassGroupBox;
   Label *mpComponentClassNameLabel;
   Label *mpComponentClassNameTextBox;

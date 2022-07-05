@@ -275,8 +275,64 @@ private:
     Transformation mIconTransformation;
   };
 
-  enum class Connector {Flow, Stream};
-  enum class variability {Constant, Parameter, Discrete};
+  class Selector
+  {
+  public:
+    Selector();
+    void deserialize(const QJsonObject &jsonObject);
+    void serialize(QJsonObject &jsonObject) const;
+    QString getFilter() const {return mFilter;}
+    QString getCaption() const {return mCaption;}
+  private:
+    QString mFilter;
+    QString mCaption;
+  };
+
+  class DialogAnnotation
+  {
+  public:
+    DialogAnnotation();
+    void deserialize(const QJsonObject &jsonObject);
+    void serialize(QJsonObject &jsonObject) const;
+    QString getTab() const {return mTab;}
+    QString getGroup() const {return mGroup;}
+    bool isEnabled() const {return mEnable;}
+    bool getShowStartAttribute() const {return mShowStartAttribute;}
+    bool isColorSelector() const {return mColorSelector;}
+    Selector getLoadSelector() const {return mLoadSelector;}
+    Selector getSaveSelector() const {return mSaveSelector;}
+    Selector getDirectorySelector() const {return mDirectorySelector;}
+    QString getGroupImage() const {return mGroupImage;}
+    bool isConnectorSizing() const {return mConnectorSizing;}
+  private:
+    QString mTab;
+    QString mGroup;
+    bool mEnable;
+    bool mShowStartAttribute;
+    bool mColorSelector;
+    Selector mLoadSelector;
+    Selector mSaveSelector;
+    Selector mDirectorySelector;
+    QString mGroupImage;
+    bool mConnectorSizing;
+  };
+
+  class Modifier
+  {
+  public:
+    Modifier(const QString &name);
+    ~Modifier();
+    void deserialize(const QJsonValue &jsonValue);
+    void serialize(QJsonObject &jsonObject) const;
+
+    QString getName() const {return mName;}
+    QString getValue() const {return mValue;}
+    QList<Modifier *> getModifiers() const {return mModifiers;}
+  private:
+    QString mName;
+    QString mValue;
+    QList<Modifier*> mModifiers;
+  };
 
   class Element
   {
@@ -289,8 +345,8 @@ private:
     QString getName() const {return mName;}
     QString getType() const {return mType;}
     Model *getModel() const {return mpModel;}
-    QString getComment() const {return mComment;}
-    PlacementAnnotation getPlacementAnnotation() const {return mPlacementAnnotation;}
+    QList<Modifier *> getModifiers() const {return mModifiers;}
+    QString getModifierValue() const {return mModifierValue;}
     bool isPublic() const {return mPublic;}
     bool isFinal() const {return mFinal;}
     bool isInner() const {return mInner;}
@@ -300,11 +356,16 @@ private:
     QString getConnector() const {return mConnector;}
     QString getVariability() const {return mVariability;}
     QString getDirection() const {return mDirection;}
+    QString getComment() const {return mComment;}
+    PlacementAnnotation getPlacementAnnotation() const {return mPlacementAnnotation;}
+    DialogAnnotation getDialogAnnotation() const {return mDialogAnnotation;}
+    bool hasDialogAnnotation() const {return mHasDialogAnnotation;}
   private:
     QString mName;
     QString mType;
     Model *mpModel;
-    QString mModifier;
+    QList<Modifier*> mModifiers;
+    QString mModifierValue;
     bool mPublic;
     bool mFinal;
     bool mInner;
@@ -316,6 +377,8 @@ private:
     QString mDirection;
     QString mComment;
     PlacementAnnotation mPlacementAnnotation;
+    bool mHasDialogAnnotation;
+    DialogAnnotation mDialogAnnotation;
   };
 
   class Extend : public Model
@@ -325,6 +388,8 @@ private:
     ~Extend();
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
+  private:
+    QList<Modifier*> mModifiers;
   };
 
 }

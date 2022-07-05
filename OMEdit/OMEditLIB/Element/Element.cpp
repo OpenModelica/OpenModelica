@@ -1207,6 +1207,15 @@ QString Element::getName() const
   }
 }
 
+QString Element::getComment() const
+{
+  if (MainWindow::instance()->isNewApi()) {
+    return mpModelElement->getComment();
+  } else {
+    return mpElementInfo->getComment();
+  }
+}
+
 Element* Element::getRootParentComponent()
 {
   Element *pElement = this;
