@@ -121,7 +121,7 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau) {
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 
-  tableau->withDenseOutput = TRUE;
+  tableau->withDenseOutput = FALSE;
   tableau->dense_output = denseOutput_ESDIRK2;
 }
 
@@ -153,7 +153,7 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau) {
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 
-  tableau->withDenseOutput = TRUE;
+  tableau->withDenseOutput = FALSE;
   tableau->dense_output = denseOutput_ESDIRK3;
 }
 
@@ -189,7 +189,7 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau) {
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
 
-  tableau->withDenseOutput = TRUE;
+  tableau->withDenseOutput = FALSE;
   tableau->dense_output = denseOutput_ESDIRK4;
 }
 

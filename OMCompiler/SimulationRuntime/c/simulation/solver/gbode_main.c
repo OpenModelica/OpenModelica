@@ -258,6 +258,9 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   }
 
   gbfData->interpolation = getInterpolationMethod(FLAG_MR_INT);
+  if (!gbfData->tableau->withDenseOutput) {
+    if (gbfData->interpolation == GB_DENSE_OUTPUT) gbfData->interpolation = GB_INTERPOL_HERMITE;
+  }
   switch (gbfData->interpolation)
   {
   case GB_INTERPOL_LIN:
@@ -450,6 +453,11 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   }
 
   gbData->interpolation = getInterpolationMethod(FLAG_SR_INT);
+  if (!gbData->tableau->withDenseOutput) {
+    if (gbData->interpolation == GB_DENSE_OUTPUT) gbData->interpolation = GB_INTERPOL_HERMITE;
+    if (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL) gbData->interpolation = GB_INTERPOL_HERMITE_ERRCTRL;
+  }
+
   char buffer[1024];
   if (gbData->multi_rate) {
     sprintf(buffer, "%s", " and slow states interpolation");

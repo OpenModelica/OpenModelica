@@ -2,7 +2,7 @@
 // status: correct
 // teardown_command: rm -rf temp_HeatingSystem/
 //
-// Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
+// Test all discrete event handling for specific configurations.
 
 loadFile("HeatingSystemDiscrete.mo");
 getErrorString();
@@ -28,8 +28,8 @@ system("./HeatingSystem -s=dassl -r HeatingSystem_ref.mat -override=\"tolerance=
 print(readFile("refSimulation.log"));
 
 // Simulate with gauss2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=gauss5 -gberr=1 -gbnls=kinsol -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_gauss5.log");
-print(readFile("HeatingSystem_gauss5.log"));
+system("./HeatingSystem -s=gbode -gbm=esdirk4 -jacobian=coloredSymbolical -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_esdirk4.log");
+print(readFile("HeatingSystem_esdirk4.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
                       expectedFile = "HeatingSystem_ref.mat",
@@ -38,18 +38,18 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=lobattoIIIB4 -gbratio=0 -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_fehlberg78_1.log");
-print(readFile("HeatingSystem_fehlberg78_1.log"));
-
-diffSimulationResults(actualFile = "HeatingSystem_res.mat",
-                      expectedFile = "HeatingSystem_ref.mat",
-                      diffPrefix = "diff",
-                      vars = {"Td"});
-getErrorString();
-
-// Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=gauss5 -gbctrl=const -gbint=linear -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
+system("./HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
 print(readFile("HeatingSystem_fehlberg78.log"));
+
+diffSimulationResults(actualFile = "HeatingSystem_res.mat",
+                      expectedFile = "HeatingSystem_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"Td"});
+getErrorString();
+
+// Simulate with sdirk2 & KINSOL+KLU
+system("./HeatingSystem -s=gbode -gbm=dopri45 -gbctrl=const -gbint=dense_output -override=\"tolerance=1e-6,stepSize=10,stopTime=864000\"", "HeatingSystem_dopri45.log");
+print(readFile("HeatingSystem_dopri45.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
                       expectedFile = "HeatingSystem_ref.mat",
@@ -96,9 +96,6 @@ getErrorString();
 // (true,{})
 // ""
 // 0
-// stdout            | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
