@@ -970,6 +970,7 @@ RedeclareMod7.mo \
 RedeclareMod8.mo \
 RedeclareMod9.mo \
 RedeclareMod10.mo \
+RedeclareMod11.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
