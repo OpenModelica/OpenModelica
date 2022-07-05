@@ -40,6 +40,7 @@
 #include <iostream>
 
 #include <QImage>
+#include <QOpenGLContext> // must be included before OSG headers
 
 #include <osg/NodeVisitor>
 #include <osg/Geode>

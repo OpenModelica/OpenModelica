@@ -1,7 +1,7 @@
 
 project(SimRT_CPP)
 
-add_definitions(-DOMC_BUILD)
+# add_definitions(-DOMC_BUILD)
 
 # CPP libs should be installed to in lib/<arch>/omc/cpp/ for now.
 set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/cpp)
@@ -11,13 +11,29 @@ set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/cpp)
 
 
 
-# An interface library for providing common include directories for all the CPP libs.
+# Boost and a threading library are required for the CPP-runtime.
+find_package(Boost COMPONENTS program_options filesystem REQUIRED)
+find_package(Threads REQUIRED)
+
+
+# An interface library for providing common include directories and other settings
+# for all the CPP-runtime libraries.
 add_library(OMCppConfig INTERFACE)
 add_library(omc::simrt::cpp::config ALIAS OMCppConfig)
 
+# Make the current source directory, current binary directory (contains generated files), and
+# the Include/ directory available to all libraries that link to OMCppConfig (which means all CPP-runtime libs)
 target_include_directories(OMCppConfig INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(OMCppConfig INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(OMCppConfig INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/Include)
+
+# Make boost headers transitively available to all CPP-runtime libraries
+# (note that they all link to 'OMCppConfig' a.k.a 'omc::simrt::cpp::config')
+target_link_libraries(OMCppConfig INTERFACE Boost::boost)
+
+# This should be defined for all CPP-runtime library compilations.
+# Signifies that we are building the source code (instead of consuming, say the headers ...).
+target_compile_definitions(OMCppConfig INTERFACE OMC_BUILD)
 
 
 # Subdirectories

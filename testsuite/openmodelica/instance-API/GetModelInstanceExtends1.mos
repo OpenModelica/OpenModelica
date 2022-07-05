@@ -12,39 +12,61 @@ loadString("
 
   model M
     Real y;
-    extends A;
+    extends A(x = 1) annotation(IconMap(extent = {{-100, -100}, {100, 100}}));
     Real z;
   end M;
 ");
+getErrorString();
 
 getModelInstance(M, prettyPrint=true);
 
 // Result:
 // true
+// ""
 // "{
 //   \"name\": \"M\",
 //   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
-//       \"name\": \"A\",
-//       \"restriction\": \"model\",
-//       \"components\": [
-//         {
-//           \"name\": \"x\",
-//           \"type\": \"Real\",
-//           \"modifier\": \"\",
-//           \"prefixes\": {
-//
-//           }
+//       \"modifiers\": {
+//         \"x\": \"1\"
+//       },
+//       \"annotation\": {
+//         \"IconMap\": {
+//           \"extent\": [
+//             [
+//               -100,
+//               -100
+//             ],
+//             [
+//               100,
+//               100
+//             ]
+//           ]
 //         }
-//       ]
+//       },
+//       \"baseClass\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"x\",
+//             \"type\": \"Real\",
+//             \"value\": {
+//               \"binding\": 1
+//             },
+//             \"prefixes\": {
+//
+//             }
+//           }
+//         ]
+//       }
 //     }
 //   ],
 //   \"components\": [
 //     {
 //       \"name\": \"y\",
 //       \"type\": \"Real\",
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }
@@ -52,7 +74,6 @@ getModelInstance(M, prettyPrint=true);
 //     {
 //       \"name\": \"z\",
 //       \"type\": \"Real\",
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }

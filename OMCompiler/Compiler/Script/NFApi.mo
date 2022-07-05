@@ -878,7 +878,7 @@ protected
   list<InstanceTree> exts, components;
   array<InstNode> ext_nodes;
 algorithm
-  cls := InstNode.getClass(node);
+  cls := InstNode.getClass(InstNode.resolveInner(node));
 
   if Class.isBuiltin(cls) then
     tree := InstanceTree.EMPTY();
@@ -926,13 +926,18 @@ protected
   Sections sections;
   Option<SCode.Comment> cmt;
   JSON j;
+  SCode.Element def;
 algorithm
   InstanceTree.CLASS(node = node, exts = exts, components = comps) := tree;
-  cmt := SCodeUtil.getElementComment(InstNode.definition(node));
+  node := InstNode.resolveInner(node);
+  def := InstNode.definition(node);
+  cmt := SCodeUtil.getElementComment(def);
 
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
+
   json := JSON.addPair("restriction",
     JSON.makeString(Restriction.toString(InstNode.restriction(node))), json);
+  json := dumpJSONSCodeMod(SCodeUtil.elementMod(def), json);
 
   if not listEmpty(exts) then
     json := JSON.addPair("extends", dumpJSONExtends(exts), json);
@@ -971,9 +976,21 @@ end dumpJSONPath;
 function dumpJSONExtends
   input list<InstanceTree> exts;
   output JSON json = JSON.emptyArray();
+protected
+  JSON ext_json, j;
+  InstNode node;
+  SCode.Element ext_def;
 algorithm
   for ext in exts loop
-    json := JSON.addElement(dumpJSONInstanceTree(ext, root = false), json);
+    InstanceTree.CLASS(node = node) := ext;
+    ext_def := InstNode.extendsDefinition(node);
+
+    ext_json := JSON.emptyObject();
+    ext_json := dumpJSONSCodeMod(SCodeUtil.elementMod(ext_def), ext_json);
+    ext_json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, ext_json);
+    ext_json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, root = false), ext_json);
+
+    json := JSON.addElement(ext_json, json);
   end for;
 end dumpJSONExtends;
 
@@ -1000,9 +1017,10 @@ protected
   SCode.Comment cmt;
   SCode.Annotation ann;
   InstanceTree cls;
+  JSON j;
 algorithm
   InstanceTree.COMPONENT(node = node, cls = cls) := component;
-  node := InstNode.resolveOuter(node);
+  node := InstNode.resolveInner(node);
   comp := InstNode.component(node);
   elem := InstNode.definition(node);
 
@@ -1024,7 +1042,7 @@ algorithm
             dumpJSONDims(elem.attributes.arrayDims, Type.arrayDims(comp.ty)), json);
         end if;
 
-        json := JSON.addPair("modifier", JSON.makeString(SCodeDump.printModStr(elem.modifications)), json);
+        json := dumpJSONSCodeMod(elem.modifications, json);
 
         //if not Type.isComplex(comp.ty) then
         //  json := dumpJSONBuiltinClassComponents(comp.classInst, elem.modifications, json);
@@ -1191,11 +1209,9 @@ algorithm
   end if;
 
   if AbsynUtil.isInput(attrs.direction) then
-    json := JSON.addPair("input", JSON.makeBoolean(true), json);
-  end if;
-
-  if AbsynUtil.isOutput(attrs.direction) then
-    json := JSON.addPair("output", JSON.makeBoolean(true), json);
+    json := JSON.addPair("direction", JSON.makeString("input"), json);
+  elseif AbsynUtil.isOutput(attrs.direction) then
+    json := JSON.addPair("direction", JSON.makeString("output"), json);
   end if;
 end dumpJSONAttributes;
 
@@ -1266,16 +1282,28 @@ protected
   SCode.Mod mod;
   Absyn.Exp absyn_binding;
   Expression binding_exp;
+  JSON j;
 algorithm
   SCode.SubMod.NAMEMOD(ident = name, mod = mod) := subMod;
 
   () := match mod
     case SCode.Mod.MOD(binding = SOME(absyn_binding))
       algorithm
-        binding_exp := Inst.instExp(absyn_binding, scope, NFInstContext.ANNOTATION, mod.info);
-        binding_exp := Typing.typeExp(binding_exp, NFInstContext.ANNOTATION, mod.info);
-        binding_exp := SimplifyExp.simplify(binding_exp);
-        json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
+        ErrorExt.setCheckpoint(getInstanceName());
+
+        try
+          binding_exp := Inst.instExp(absyn_binding, scope, NFInstContext.ANNOTATION, mod.info);
+          binding_exp := Typing.typeExp(binding_exp, NFInstContext.ANNOTATION, mod.info);
+          binding_exp := SimplifyExp.simplify(binding_exp);
+          json := JSON.addPair(name, Expression.toJSON(binding_exp), json);
+        else
+          j := JSON.emptyObject();
+          j := JSON.addPair("$error", JSON.makeString(ErrorExt.printCheckpointMessagesStr()), j);
+          j := JSON.addPair("value", dumpJSONAbsynExpression(absyn_binding), j);
+          json := JSON.addPair(name, j, json);
+        end try;
+
+        ErrorExt.delCheckpoint(getInstanceName());
       then
         ();
 
@@ -1430,46 +1458,47 @@ algorithm
   end for;
 end dumpJSONReplaceableElements;
 
-function dumpJSONMod
+function dumpJSONSCodeMod
   input SCode.Mod mod;
-  output JSON json = JSON.emptyObject();
-algorithm
-  () := match mod
-    case SCode.Mod.MOD()
-      algorithm
-        for sm in mod.subModLst loop
-          json := JSON.addPair(sm.ident, dumpJSONSubMod(sm), json);
-        end for;
-      then
-        ();
-
-    else ();
-  end match;
-end dumpJSONMod;
-
-function dumpJSONSubMod
-  input SCode.SubMod subMod;
-  output JSON json = JSON.emptyObject();
+  input output JSON json;
 protected
-  SCode.Mod mod = subMod.mod;
+  JSON j;
+algorithm
+  j := dumpJSONSCodeMod_impl(mod);
+
+  if not JSON.isNull(j) then
+    json := JSON.addPair("modifiers", j, json);
+  end if;
+end dumpJSONSCodeMod;
+
+function dumpJSONSCodeMod_impl
+  input SCode.Mod mod;
+  output JSON json = JSON.makeNull();
+protected
+  JSON binding_json;
 algorithm
   () := match mod
     case SCode.Mod.MOD()
       algorithm
-        if not listEmpty(mod.subModLst) then
-          json := JSON.addPair("modifiers", dumpJSONMod(mod), json);
-        end if;
+        for m in mod.subModLst loop
+          json := JSON.addPair(m.ident, dumpJSONSCodeMod_impl(m.mod), json);
+        end for;
 
         if isSome(mod.binding) then
-          json := JSON.addPair("value",
-            JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding))), json);
+          binding_json := JSON.makeString(Dump.printExpStr(Util.getOption(mod.binding)));
+
+          if JSON.isNull(json) then
+            json := binding_json;
+          else
+            json := JSON.addPair("$value", binding_json, json);
+          end if;
         end if;
       then
         ();
 
     else ();
   end match;
-end dumpJSONSubMod;
+end dumpJSONSCodeMod_impl;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

@@ -919,6 +919,7 @@ RecordBinding8.mo \
 RecordBinding9.mo \
 RecordBinding10.mo \
 RecordBinding11.mo \
+RecordBinding12.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordExtends1.mo \
@@ -936,6 +937,8 @@ RedeclareClass1.mo \
 RedeclareClass2.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
+RedeclareConnectorType1.mo \
+RedeclareConnectorType2.mo \
 RedeclareDim1.mo \
 RedeclareDim2.mo \
 RedeclareElementClass1.mo \
@@ -967,6 +970,7 @@ RedeclareMod7.mo \
 RedeclareMod8.mo \
 RedeclareMod9.mo \
 RedeclareMod10.mo \
+RedeclareMod11.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \

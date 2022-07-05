@@ -44,6 +44,7 @@
 #include "util/list.h"
 #include "util/doubleEndedList.h"
 #include "util/simulation_options.h"
+#include "util/context.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
@@ -149,6 +150,7 @@ typedef struct ANALYTIC_JACOBIAN
   modelica_real* seedVars;        /* Seed vector for specifying which columns to evaluate */
   modelica_real* tmpVars;
   modelica_real* resultVars;      /* Result column for given seed vector */
+  modelica_real dae_cj;           /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
   int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independed of seed vector */
 } ANALYTIC_JACOBIAN;
 
@@ -262,6 +264,12 @@ typedef struct RESIDUAL_USERDATA {
 
 typedef struct NLS_USERDATA NLS_USERDATA;
 
+typedef enum {
+  NLS_FAILED = 0,                   /* NLS Solver failed to solve system */
+  NLS_SOLVED = 1,                   /* NLS Solver solved system successfully */
+  NLS_SOLVED_LESS_ACCURARCY = 2     /* NLS Solver found a solution with low accuracy */
+} NLS_SOLVER_STATUS;
+
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 typedef struct NONLINEAR_SYSTEM_DATA
 {
@@ -284,7 +292,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
-  int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
+  int (*initialAnalyticalJacobian)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* jacobian);
   modelica_integer jacobianIndex;
 
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
@@ -308,8 +316,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void *oldValueList;                  /* old values organized in a sorted list for extrapolation and interpolate, respectively */
   modelica_real *resValues;            /* memory space for evaluated residual values */
 
-  modelica_real residualError;         /* not used */
-  modelica_boolean solved;             /* true if solved in current step */
+  NLS_SOLVER_STATUS solved;            /* Specifiex if the NLS could be solved (with less accuracy) or failed */
   modelica_real lastTimeSolved;        /* save last successful solved point in time */
 
   /* statistics */
@@ -335,8 +342,6 @@ typedef struct LINEAR_SYSTEM_THREAD_DATA
   modelica_real *x;                    /* solution vector x */
   modelica_real *A;                    /* matrix A */
   modelica_real *b;                    /* vector b */
-
-  modelica_real residualError;         /* not used yet */
 
   ANALYTIC_JACOBIAN* parentJacobian;   /* if != NULL then it's the parent jacobian matrix */
   ANALYTIC_JACOBIAN* jacobian;         /* jacobian */
@@ -632,19 +637,6 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
   int lastStoredEventValue;
 } SPATIAL_DISTRIBUTION_DATA;
 
-typedef enum EVAL_CONTEXT
-{
-  CONTEXT_UNKNOWN = 0,
-
-  CONTEXT_ODE,
-  CONTEXT_ALGEBRAIC,
-  CONTEXT_EVENTS,
-  CONTEXT_JACOBIAN,
-  CONTEXT_SYM_JACOBIAN,
-
-  CONTEXT_MAX
-} EVAL_CONTEXT;
-
 typedef struct SIMULATION_INFO
 {
   modelica_real startTime;            /* Start time of the simulation */
@@ -669,10 +661,9 @@ typedef struct SIMULATION_INFO
   NEWTON_STRATEGY newtonStrategy;      /* newton damping strategy solver */
   int nlsCsvInfomation;                /* = 1 csv files with detailed nonlinear solver process are generated */
   NLS_LS nlsLinearSolver;              /* nls linear solver */
-  /* current context evaluation, set by dassl and used for extrapolation
-   * of next non-linear guess */
-  int currentContext;
-  int currentContextOld;
+
+  EVAL_CONTEXT currentContext;         /* Simulation context */
+  EVAL_CONTEXT currentContextOld;      /* Previous value of currentContext */
   int jacobianEvals;                   /* number of different columns to evaluate functionODE */
   int currentJacobianEval;             /* current column to evaluate functionODE for Jacobian */
 

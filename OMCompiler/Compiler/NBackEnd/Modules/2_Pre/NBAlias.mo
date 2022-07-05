@@ -28,11 +28,10 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated package NBRemoveSimpleEquations
-"file:        NBRemoveSimpleEquations.mo
- package:     NBRemoveSimpleEquations
- description: This file contains the functions for the remove simple equations
-              module.
+encapsulated package NBAlias
+"file:        NBAlias.mo
+ package:     NBAlias
+ description: This file contains the functions for the alias module.
 "
 
 // ToDo: simple state rules
@@ -74,12 +73,12 @@ protected
   import UnorderedSet;
 public
   function main
-    "Wrapper function for any detect states function. This will be
+    "Wrapper function for any alias removal function. This will be
      called during simulation and gets the corresponding subfunction from
      Config."
     extends Module.wrapper;
   protected
-    Module.removeSimpleEquationsInterface func;
+    Module.aliasInterface func;
   algorithm
     (func) := getModule();
 
@@ -110,27 +109,27 @@ public
 
   function getModule
     "Returns the module function that was chosen by the user."
-    output Module.removeSimpleEquationsInterface func;
+    output Module.aliasInterface func;
   protected
     String flag = "default"; //Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS)
   algorithm
     func := match flag
-      case "default" then removeSimpleEquationsDefault;
-      /* ... New remove simple equations modules have to be added here */
+      case "default" then aliasDefault;
+      /* ... New alias modules have to be added here */
       else fail();
     end match;
   end getModule;
 
 protected
-  uniontype SimpleSet "gets accumulated to find sets of simple equations and solve them"
-    record SIMPLE_SET
+  uniontype AliasSet "gets accumulated to find sets of alias equations and solve them"
+    record ALIAS_SET
       list<ComponentRef> simple_variables         "list of all variables in this set";
       list<Pointer<Equation>> simple_equations    "list of all equations in this set";
       Option<Pointer<Equation>> const_opt         "optional constant binding of one variable";
-    end SIMPLE_SET;
+    end ALIAS_SET;
 
     function toString
-      input SimpleSet set;
+      input AliasSet set;
       output String str;
     algorithm
       if isSome(set.const_opt) then
@@ -148,12 +147,12 @@ protected
         end for;
       end if;
     end toString;
-  end SimpleSet;
+  end AliasSet;
 
-  constant SimpleSet EMPTY_SIMPLE_SET = SIMPLE_SET({}, {}, NONE());
+  constant AliasSet EMPTY_ALIAS_SET = ALIAS_SET({}, {}, NONE());
 
   // needed for unordered map
-  type SetPtr = Pointer<SimpleSet>;
+  type SetPtr = Pointer<AliasSet>;
 
   uniontype CrefTpl "used for findCrefs()"
     record CREF_TPL
@@ -167,7 +166,7 @@ protected
   constant CrefTpl EMPTY_CREF_TPL = CREF_TPL(true, 0, 0, {});
   constant CrefTpl FAILED_CREF_TPL = CREF_TPL(false, 0, 0, {});
 
-  function removeSimpleEquationsDefault
+  function aliasDefault
     "STEPS:
       1. collect alias sets (variables, equations, optional constant binding)
       2. balance sets - choose variable to keep if necessary
@@ -175,7 +174,7 @@ protected
       4. apply replacements
       5. save replacements in bindings of alias variables
     "
-    extends Module.removeSimpleEquationsInterface;
+    extends Module.aliasInterface;
   algorithm
     (varData, eqData) := match (varData, eqData)
       local
@@ -189,7 +188,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := removeSimpleEquationsCausalize(varData.unknowns, eqData.simulation);
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation);
 
           // -----------------------------------
           // 4. apply replacements
@@ -234,7 +233,7 @@ protected
 
           // if we replaced variables by constants it is possible that new simple equations formed
           if not listEmpty(const_vars) then
-            (varData, eqData) := removeSimpleEquationsDefault(varData, eqData);
+            (varData, eqData) := aliasDefault(varData, eqData);
           end if;
       then (varData, eqData);
 
@@ -242,9 +241,9 @@ protected
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
     end match;
-  end removeSimpleEquationsDefault;
+  end aliasDefault;
 
-  function removeSimpleEquationsCausalize
+  function aliasCausalize
     "STEPS:
       1. collect alias sets (variables, equations, optional constant binding)
       2. balance sets - choose variable to keep if necessary
@@ -257,7 +256,7 @@ protected
   protected
     Integer size, setIdx = 1;
     UnorderedMap<ComponentRef, SetPtr> map;
-    list<SimpleSet> sets;
+    list<AliasSet> sets;
   algorithm
     // ------------------------------------------------------------------------------
     // 1. collect alias sets (variables, equations, optional constant binding)
@@ -274,7 +273,7 @@ protected
         print("<No Alias Sets>\n\n");
       else
         for set in sets loop
-          print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + SimpleSet.toString(set) + "\n");
+          print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + AliasSet.toString(set) + "\n");
           setIdx := setIdx + 1;
         end for;
       end if;
@@ -292,7 +291,7 @@ protected
     if Flags.isSet(Flags.DUMP_REPL) then
       print(Replacements.simpleToString(replacements) + "\n");
     end if;
-  end removeSimpleEquationsCausalize;
+  end aliasCausalize;
 
   function findSimpleEquation
     "Checks if the equation is simple and adds it to the correct set in the hashTable."
@@ -323,14 +322,14 @@ protected
     (map, delete) := match crefTpl
       local
         SetPtr set_ptr, set1_ptr, set2_ptr;
-        SimpleSet set, set1, set2;
+        AliasSet set, set1, set2;
         ComponentRef cr1, cr2;
 
       // one variable is connected to a parameter or constant
       case CREF_TPL(cr_lst = {cr1}) algorithm
         if not UnorderedMap.contains(cr1, map) then
           // the variable does not belong to a set -> create new one
-          set := EMPTY_SIMPLE_SET;
+          set := EMPTY_ALIAS_SET;
           set.simple_variables := {cr1};
           set.const_opt := SOME(Pointer.create(eq));
           UnorderedMap.add(cr1, Pointer.create(set), map);
@@ -341,7 +340,7 @@ protected
           if isSome(set.const_opt) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to add Equation:\n"
               + Equation.toString(eq) + "\n because the set already contains a constant binding.
-              Overdetermined Set!:" + SimpleSet.toString(set)});
+              Overdetermined Set!:" + AliasSet.toString(set)});
             fail();
           else
             set.const_opt := SOME(Pointer.create(eq));
@@ -358,18 +357,18 @@ protected
           set2_ptr := UnorderedMap.getSafe(cr2, map);
           set1 := Pointer.access(set1_ptr);
           set2 := Pointer.access(set2_ptr);
-          set := EMPTY_SIMPLE_SET;
+          set := EMPTY_ALIAS_SET;
 
           if referenceEq(set1_ptr, set2_ptr) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
                 "because they would create a loop. This would create an underdetermined Set!:\n\n" +
                 "Trying to merge: " + Equation.toString(eq) + "\n\n" +
-                SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
+                AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
             fail();
           elseif (isSome(set1.const_opt) and isSome(set2.const_opt)) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
                 "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
-                SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
+                AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
             fail();
           elseif isSome(set1.const_opt) then
             set.const_opt := set1.const_opt;
@@ -421,7 +420,7 @@ protected
           UnorderedMap.add(cr1, set_ptr, map);
         else
           // create new set
-          set := EMPTY_SIMPLE_SET;
+          set := EMPTY_ALIAS_SET;
           // add both variables and add new equation pointer
           set.simple_variables := {cr1, cr2};
           set.simple_equations := {Pointer.create(eq)};
@@ -548,13 +547,13 @@ protected
     "extracts all simple sets from the hashTable and avoids duplicates by marking variables"
     input UnorderedMap<ComponentRef, SetPtr> map;
     input Integer size;
-    output list<SimpleSet> sets = {};
+    output list<AliasSet> sets = {};
   protected
     UnorderedSet<ComponentRef> cref_marks = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, size);
     list<tuple<ComponentRef, SetPtr>> entry_lst;
     ComponentRef simple_cref;
     SetPtr set_ptr;
-    SimpleSet set;
+    AliasSet set;
   algorithm
     entry_lst := UnorderedMap.toList(map);
     for entry in entry_lst loop
@@ -575,7 +574,7 @@ protected
 
   function createReplacementRules
     "creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
-    input SimpleSet set;
+    input AliasSet set;
     input output UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
     // ToDo: fix variable attributes to keep
@@ -659,4 +658,4 @@ protected
   end rateVar;
 
   annotation(__OpenModelica_Interface="backend");
-end NBRemoveSimpleEquations;
+end NBAlias;

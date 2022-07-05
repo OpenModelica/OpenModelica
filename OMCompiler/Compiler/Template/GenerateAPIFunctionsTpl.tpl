@@ -139,6 +139,7 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
   #ifndef OpenModelicaScriptingAPIQt__H
   #define OpenModelicaScriptingAPIQt__H
 
+  #include <QOpenGLContext> // must be first include to fix undefined GLDEBUGPROC
   #include <QtCore>
   #include "OpenModelicaScriptingAPI.h"
 

@@ -921,6 +921,13 @@ uniontype InstNode
     end match;
   end definition;
 
+  function extendsDefinition
+    input InstNode node;
+    output SCode.Element definition;
+  algorithm
+    CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition = definition)) := node;
+  end extendsDefinition;
+
   function setDefinition
     input SCode.Element definition;
     input output InstNode node;

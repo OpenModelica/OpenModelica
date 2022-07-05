@@ -121,6 +121,7 @@ RUNTIMEMETAGC_HEADERS = ./gc/omc_gc.h ./gc/memory_pool.h
 RUNTIMEUTIL_HEADERS = \
 ./util/base_array.h \
 ./util/boolean_array.h \
+./util/context.h \
 ./util/division.h \
 ./util/generic_array.h \
 ./util/index_spec.h \

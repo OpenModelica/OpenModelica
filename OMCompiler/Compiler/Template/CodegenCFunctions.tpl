@@ -4718,6 +4718,7 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
 ::=
   match cr
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
+  case CREF_IDENT(ident = "$DAE_CJ") then "jacobian->dae_cj"
   case CREF_QUAL(ident="$PRE", subscriptLst={}) then
     (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%crefStrNoUnderscore(cr)%>')
     else crefToCStr(componentRef, ix, true, isStart, &sub))

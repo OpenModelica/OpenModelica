@@ -39,6 +39,8 @@
 
 #include "rapidxml.hpp"
 
+#include <QOpenGLContext> // must be included before OSG headers
+
 #include <osg/Vec3f>
 #include <osg/Matrix>
 #include <osg/Uniform>

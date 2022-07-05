@@ -96,7 +96,7 @@ void hybrj_( void(*) (const integer*, const double*, double*, double *, const in
 
 DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData);
 void freeHybrdData(DATA_HYBRD* hybrdData);
-modelica_boolean solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData);
+NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 
 #ifdef __cplusplus
 }
