@@ -744,12 +744,6 @@ protected
                                           else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
       then result;
 
-      case FEquation.CREF_EQUALITY(lhs = lhs_cref as NFComponentRef.CREF(ty = ty), rhs = rhs_cref, source = source)
-        algorithm
-          attr := lowerEquationAttributes(ty, init);
-          // No check for complex. Simple equation is more important than complex. -> alias removal!
-      then {Pointer.create(BEquation.SIMPLE_EQUATION(ty, lhs_cref, rhs_cref, source, attr))};
-
       case FEquation.FOR(range = SOME(range))
         algorithm
         // Treat each body equation individually because they can have different equation attributes
@@ -1041,9 +1035,6 @@ protected
       // Convert other equations to assignments
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, source = source)
       then BEquation.ASSIGN(lhs, rhs, source);
-
-      case FEquation.CREF_EQUALITY(lhs = lhs_cref as NFComponentRef.CREF(ty = lhs_ty), rhs = rhs_cref as NFComponentRef.CREF(ty = rhs_ty), source = source)
-      then BEquation.ASSIGN(Expression.CREF(lhs_ty, lhs_cref), Expression.CREF(rhs_ty, rhs_cref), source);
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, source = source)
       then BEquation.ASSIGN(lhs, rhs, source);

@@ -105,7 +105,6 @@ function countEquationSize
 algorithm
   equations := match eq
     case Equation.EQUALITY() then Type.sizeOf(eq.ty);
-    case Equation.CREF_EQUALITY() then Type.sizeOf(ComponentRef.getSubscriptedType(eq.lhs));
     case Equation.ARRAY_EQUALITY() then Type.sizeOf(eq.ty);
     case Equation.FOR() then countEquationListSize(eq.body);
     case Equation.IF() then countEquationBranchSize(listHead(eq.branches));

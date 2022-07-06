@@ -261,7 +261,7 @@ protected
 algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);
   //source := ElementSource.addElementSourceConnect(source, (lhsCref, rhsCref));
-  equalityEq := Equation.CREF_EQUALITY(lhsCref, rhsCref, source);
+  equalityEq := Equation.makeCrefEquality(lhsCref, rhsCref, source);
 end makeEqualityEquation;
 
 function makeEqualityAssert
@@ -404,7 +404,7 @@ algorithm
       algorithm
         src := ElementSource.mergeSources(src1, src2);
       then
-        {Equation.CREF_EQUALITY(cr1, cr2, src)};
+        {Equation.makeCrefEquality(cr1, cr2, src)};
 
     // The general case with N inside connectors and M outside:
     else
