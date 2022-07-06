@@ -158,7 +158,6 @@ protected
     for eq in eql loop
       crefs := match eq
         case Equation.EQUALITY()       then whenEquationEqualityCrefs(eq.lhs, crefs);
-        case Equation.CREF_EQUALITY()  then eq.lhs :: crefs;
         case Equation.ARRAY_EQUALITY() then whenEquationEqualityCrefs(eq.lhs, crefs);
         case Equation.REINIT()         then whenEquationEqualityCrefs(eq.cref, crefs);
         case Equation.IF()             then whenEquationIfCrefs(eq.branches, eq.source, crefs);
@@ -422,21 +421,6 @@ protected
         guard(when_found)
         algorithm
           checkDiscreteRealExp(lhs, discreteReals);
-        then
-          ();
-
-      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty))
-        guard Type.isReal(Type.arrayElementType((ty))) and when_found
-        algorithm
-          // remove all subscripts to handle arrays
-          UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), discreteReals);
-        then
-          ();
-
-      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty as Type.COMPLEX(cls = cls)))
-        guard(Type.isRecord(ty) and when_found)
-        algorithm
-          checkDiscreteRealRecord(cref, cls, discreteReals);
         then
           ();
 
