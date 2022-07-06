@@ -279,8 +279,6 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
                         gbData->timeRight, gbData->yRight, gbData->kRight,
                         (gbData->timeLeft + gbData->timeRight)/2, gbData->errest,
                          nIdx, idx);
-
-  tol = tol*1e2;
   if (idx == NULL) {
     for (i=0; i<nIdx; i++) {
       errtol = tol * fmax(fabs(gbData->yLeft[i]), fabs(gbData->yRight[i])) + tol;

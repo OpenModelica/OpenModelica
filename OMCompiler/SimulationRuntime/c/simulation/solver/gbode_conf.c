@@ -248,7 +248,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
     dumOptions(FLAG_NAME[flag], flag_value, GB_INTERPOL_METHOD_NAME, GB_INTERPOL_MAX);
     return GB_INTERPOL_UNKNOWN;
   } else {
-    return GB_INTERPOL_HERMITE_ERRCTRL;
+    return GB_INTERPOL_HERMITE;
   }
 }
 

@@ -106,7 +106,6 @@ typedef struct DATA_GBODEF{
   modelica_boolean didEventStep;                   /* Will be used for updating the derivatives */
   int ringBufferSize;
   enum GB_INTERPOL_METHOD interpolation;    /* Interpolation method */
-  int nlsxExtrapolation;
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
   modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
   SOLVERSTATS stats;
@@ -150,7 +149,6 @@ typedef struct DATA_GBODE{
   int ringBufferSize;
   modelica_boolean multi_rate;
   enum GB_INTERPOL_METHOD interpolation;    /* Interpolation method */
-  int nlsxExtrapolation;
   modelica_boolean isExplicit;            /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;
   int nStates;
@@ -158,6 +156,7 @@ typedef struct DATA_GBODE{
   int *fastStatesIdx;                      /* Indices of fast states */
   int *slowStatesIdx;                      /* Indices of slow states */
   int *sortedStatesIdx;                    /* Indices of all states sorted for highest error */
+  unsigned int eventSearch;                /* Defines the mode of event handling (0 => interpolation, 1 => integration)*/
   modelica_boolean stepRejected;
   modelica_boolean isFirstStep;       /* True during first Runge-Kutta integrator step, false otherwise */
   unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step. */

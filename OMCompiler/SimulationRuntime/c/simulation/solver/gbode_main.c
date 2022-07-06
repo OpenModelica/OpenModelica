@@ -292,8 +292,6 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   i = fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
   infoStreamPrint(LOG_SOLVER, 0, "Number of states %d (%d slow states, %d fast states)", gbData->nStates, gbData->nStates-i, i);
 
-  gbfData->nlsxExtrapolation = 2;
-
   return 0;
 }
 
@@ -482,7 +480,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     throwStreamPrint(NULL, "Unhandled interpolation case.");
   }
   gbData->err_threshold = 0.1;
-  gbData->nlsxExtrapolation = 2;
+  gbData->err_int = 0;            // needed, if GB_INTERPOL_HERMITE_ERRCTRL or GB_DENSE_OUTPUT_ERRCTRL is used
+  gbData->eventSearch = 0;        // use interpolation for event time search
 
   if (gbData->multi_rate) {
     gbodef_allocateData(data, threadData, gbData);
@@ -1703,7 +1702,9 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
-      gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, Rtol);
+      if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+        gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, Rtol);
+      }
       if (ACTIVE_STREAM(LOG_GBODE_V)) {
         // debug the changes of the state values during integration
         infoStreamPrint(LOG_GBODE_V, 1, "Interpolation error of slow states at midpoint:");
@@ -1813,8 +1814,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     }
 
     // stop, if simulation nearly reached stopTime
-    if ((stopTime - gbData->time) < MINIMAL_STEP_SIZE)
-    {
+    if ((stopTime - gbData->time) < MINIMAL_STEP_SIZE) {
       gbData->time = stopTime;
       break;
     }
@@ -1855,8 +1855,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   /* Solver statistics */
   if (!gbData->isExplicit)
     gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
-  if (targetTime == stopTime && ACTIVE_STREAM(LOG_STATS))
-  {
+  if (targetTime == stopTime && ACTIVE_STREAM(LOG_STATS)) {
     infoStreamPrint(LOG_STATS, 0, "gbode (single-rate integration): %s", GB_SINGLERATE_METHOD_NAME[gbData->GM_method]);
   }
   /* Write statistics to the solverInfo data structure */

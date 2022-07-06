@@ -51,7 +51,7 @@
  *
  *  Method to find root in interval [oldTime, timeValue]
  */
-void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList, modelica_boolean isInnerIntergration)
+void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList, modelica_boolean isInnerIntegration)
 {
   TRACE_PUSH
 
@@ -76,40 +76,43 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   {
     c = 0.5 * (*a + *b);
 
-    /*calculates states at time c */
-    if (isInnerIntergration) {
-      gbfData = gbData->gbfData;
-      gb_interpolation(GB_INTERPOL_HERMITE,
-                  gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
-                  gbfData->timeRight, gbfData->yRight, gbfData->kRight,
-                  c, gbfData->y1,
-                  gbData->nStates, NULL,  gbData->nStates, gbfData->tableau, gbfData->x, gbfData->k);
-      y = gbfData->y1;
+    if (gbData->eventSearch == 0) {
+      /*calculates states at time c using hermite interpolation */
+      if (isInnerIntegration) {
+        gbfData = gbData->gbfData;
+        gb_interpolation(GB_INTERPOL_HERMITE,
+                    gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
+                    gbfData->timeRight, gbfData->yRight, gbfData->kRight,
+                    c, gbfData->y1,
+                    gbData->nStates, NULL,  gbData->nStates, gbfData->tableau, gbfData->x, gbfData->k);
+        y = gbfData->y1;
+      } else {
+        gb_interpolation(GB_INTERPOL_HERMITE,
+                    gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                    gbData->timeRight, gbData->yRight, gbData->kRight,
+                    c, gbData->y1,
+                    gbData->nStates, NULL,  gbData->nStates, gbData->tableau, gbData->x, gbData->k);
+        y = gbData->y1;
+      }
     } else {
-      gb_interpolation(GB_INTERPOL_HERMITE,
-                  gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                  gbData->timeRight, gbData->yRight, gbData->kRight,
-                  c, gbData->y1,
-                  gbData->nStates, NULL,  gbData->nStates, gbData->tableau, gbData->x, gbData->k);
-      y = gbData->y1;
-    }
+      /*calculates states at time c using integration */
+      if (isInnerIntegration) {
+        gbData->gbfData->stepSize = c - gbData->gbfData->time;
+        gb_step_info = gbData->gbfData->step_fun(data, threadData, solverInfo);
+        y = gbData->gbfData->y;
+      } else {
+        gbData->stepSize = c - gbData->time;
+        gb_step_info = gbData->step_fun(data, threadData, solverInfo);
+        y = gbData->y;
+      }
 
-//     if (isInnerIntergration) {
-//       gbData->gbfData->stepSize = c - gbData->gbfData->time;
-//       gb_step_info = gbData->gbfData->step_fun(data, threadData, solverInfo);
-//       y = gbData->gbfData->y;
-//     } else {
-//       gbData->stepSize = c - gbData->time;
-//       gb_step_info = gbData->step_fun(data, threadData, solverInfo);
-//       y = gbData->y;
-//     }
-//
-//     // error handling: try half of the step size!
-//     if (gb_step_info != 0)
-//     {
-//       errorStreamPrint(LOG_STDOUT, 0, "gbode_event: Failed to calculate event time = %5g.", c);
-//       exit(1);
-//     }
+      // error handling: try half of the step size!
+      if (gb_step_info != 0)
+      {
+        errorStreamPrint(LOG_STDOUT, 0, "gbode_event: Failed to calculate event time = %5g.", c);
+        exit(1);
+      }
+    }
 
     data->localData[0]->timeValue = c;
     for(i=0; i < data->modelData->nStates; i++)
@@ -155,7 +158,7 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
  *  \param [in]  [values_right]
  *  \return: first event of interval [time_left, time_right]
  */
-double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right, modelica_boolean isInnerIntergration)
+double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right, modelica_boolean isInnerIntegration)
 {
   TRACE_PUSH
 
@@ -189,7 +192,7 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
 
   /* Search for event time and event_id with bisection method */
-  bisection_gb(data, threadData, solverInfo, &time_left, &time_right, states_left, states_right, &tmpEventList, eventList, isInnerIntergration);
+  bisection_gb(data, threadData, solverInfo, &time_left, &time_right, states_left, states_right, &tmpEventList, eventList, isInnerIntegration);
 
   /* what happens here? */
   if(listLen(&tmpEventList) == 0)
@@ -252,12 +255,12 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
  * @param leftValues
  * @param timeRight
  * @param rightValues
- * @param isInnerIntergration     Specifying if inner or outer step function should be used.
+ * @param isInnerIntegration     Specifying if inner or outer step function should be used.
  * @param foundEvent              On return is set to true if an event was found, otherwise false.
  *                                Returned event time must be ignored if foundEvent=false.
  * @return double                 Event time if an event was found, NAN otherwise.
  */
-double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues, modelica_boolean isInnerIntergration, modelica_boolean* foundEvent)
+double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues, modelica_boolean isInnerIntegration, modelica_boolean* foundEvent)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
@@ -282,7 +285,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   *foundEvent = checkForStateEvent(data, solverInfo->eventLst);
 
   if (*foundEvent) {
-    eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues, isInnerIntergration);
+    eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues, isInnerIntegration);
     infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
   }
 
