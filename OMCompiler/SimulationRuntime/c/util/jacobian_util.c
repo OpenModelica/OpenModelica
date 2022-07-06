@@ -32,6 +32,7 @@
  */
 
 #include "jacobian_util.h"
+#include "../simulation/options.h"
 
 /**
  * @brief Initialize analytic jacobian.
@@ -55,6 +56,7 @@ void initAnalyticJacobian(ANALYTIC_JACOBIAN* jacobian, unsigned int sizeCols, un
   jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
   jacobian->constantEqns = constantEqns;
   jacobian->sparsePattern = sparsePattern;
+  jacobian->availability = JACOBIAN_UNKNOWN;
   jacobian->dae_cj = 0;
 }
 
@@ -128,4 +130,92 @@ void freeSparsePattern(SPARSE_PATTERN *spp) {
     free(spp->colorCols); spp->colorCols = NULL;
     free(spp->leadindex); spp->leadindex = NULL;
   }
+}
+
+/**
+ * @brief Set Jacobian method from user flag and available Jacobian.
+ *
+ * @param threadData              Used for error handling.
+ * @param availability            Is the Jacobian available, only the sparsity pattern available or nothing available.
+ * @param flagValue               Flag value of FLAG_JACOBIAN. Can be NULL.
+ * @return enum JACOBIAN_METHOD   Returns jacobian method that is availble.
+ */
+enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, const char* flagValue){
+  enum JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
+  assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availablity status is unknown.");
+
+  /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
+  if (flagValue) {
+    for (int method=1; method < JAC_MAX; method++) {
+      if (!strcmp(flagValue, JACOBIAN_METHOD[method])) {
+        printf("lol hier %d\n", method);
+        jacobianMethod = (enum JACOBIAN_METHOD) method;
+        break;
+      }
+    }
+    // Error case
+    if(jacobianMethod == JAC_UNKNOWN){
+      errorStreamPrint(LOG_STDOUT, 0, "Unknown value `%s` for flag `-jacobian`", flagValue);
+      infoStreamPrint(LOG_STDOUT, 1, "Available options are");
+      for (int method=1; method < JAC_MAX; method++) {
+        infoStreamPrint(LOG_STDOUT, 0, "%s", JACOBIAN_METHOD[method]);
+      }
+      messageClose(LOG_STDOUT);
+      omc_throw(threadData);
+    }
+  }
+
+  /* Check if method is available */
+  switch (availability)
+  {
+  case JACOBIAN_NOT_AVAILABLE:
+    if (jacobianMethod != INTERNALNUMJAC && jacobianMethod != JAC_UNKNOWN) {
+      warningStreamPrint(LOG_STDOUT, 0, "Jacobian not available, switching to internal numerical Jacobian.");
+    }
+    jacobianMethod = INTERNALNUMJAC;
+    break;
+  case JACOBIAN_ONLY_SPARSITY:
+    if (jacobianMethod == COLOREDSYMJAC) {
+      warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
+      jacobianMethod = COLOREDNUMJAC;
+    } else if(jacobianMethod == SYMJAC) {
+      warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to numerical Jacobian.");
+      jacobianMethod = NUMJAC;
+    } else if(jacobianMethod == JAC_UNKNOWN) {
+      jacobianMethod = COLOREDNUMJAC;
+    }
+    break;
+  case JACOBIAN_AVAILABLE:
+    if (jacobianMethod == JAC_UNKNOWN) {
+      jacobianMethod = COLOREDSYMJAC;
+    }
+    break;
+  default:
+    throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
+    break;
+  }
+
+  /* Log Jacobian method */
+  switch (jacobianMethod)
+  {
+  case INTERNALNUMJAC:
+    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Internal numerical Jacobian.");
+    break;
+  case NUMJAC:
+    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Numerical Jacobian.");
+    break;
+  case COLOREDNUMJAC:
+    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Colored numerical Jacobian.");
+    break;
+  case SYMJAC:
+    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Symbolical Jacobian.");
+    break;
+  case COLOREDSYMJAC:
+    infoStreamPrint(LOG_JAC, 0, "Using Jacobian method: Colored symbolical Jacobian.");
+    break;
+  default:
+    throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
+    break;
+  }
+  return jacobianMethod;
 }
