@@ -320,6 +320,17 @@ algorithm
   (_, value) := getValueArray(varr, i);
 end get;
 
+public function getOrDefault
+  "Returns a Value given a Key and a HashTable if it exists,
+  otherwise returns the default value."
+  input Key key;
+  input HashTable hashTable;
+  input Value default;
+  output Value value;
+algorithm
+  value := if hasKey(key, hashTable) then get(key, hashTable) else default;
+end getOrDefault;
+
 protected function hasKeyIndex
   "help function to get and hasKey"
   input Key key;

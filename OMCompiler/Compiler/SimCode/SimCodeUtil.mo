@@ -4728,6 +4728,31 @@ algorithm
   end matchcontinue;
 end createSymbolicSimulationJacobian;
 
+public function syncDAEandSimJac
+  input SimCode.JacobianMatrix symJac;
+  input output SimCode.JacobianMatrix daeJac;
+algorithm
+  if symJac.matrixName == "A" then
+    daeJac.columns := list(updateSimVarIndex(col, daeJac.crefsHT) for col in symJac.columns);
+  else
+    daeJac := symJac;
+  end if;
+end syncDAEandSimJac;
+
+public function updateSimVarIndex
+  input output SimCode.JacobianColumn column;
+  input Option<HashTableCrefSimVar.HashTable> crefsHT;
+algorithm
+  column := match crefsHT
+    local
+      HashTableCrefSimVar.HashTable table;
+    case SOME(table) algorithm
+      column.columnVars := list(BaseHashTable.getOrDefault(var.name, table, var) for var in column.columnVars);
+    then column;
+    else column;
+  end match;
+end updateSimVarIndex;
+
 protected function getFurtherVars
   input BackendDAE.Var v;
   input tuple<list<BackendDAE.Var>, DAE.ComponentRef> inTpl;

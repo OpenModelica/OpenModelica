@@ -1536,7 +1536,6 @@ algorithm
       crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
       symJacs := listReverse(Util.getOption(daeModeSP) :: symJacs);
-      jacobianEquations := SimCodeUtil.collectAllJacobianEquations(symJacs);
     else
       tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
       modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
@@ -1549,7 +1548,6 @@ algorithm
         matrixnames := {"A", "B", "C", "D", "F"};
       end if;
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
-      jacobianEquations := {};
     end if;
 
     // collect symbolic jacobians in initialization loops of the overall jacobians
@@ -1607,11 +1605,16 @@ algorithm
     ({symDAESparsPattern}, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({daeModeJacobian}, crefToSimVarHT, uniqueEqIndex, {"daeMode"}, {});
     daeModeSP := SOME(symDAESparsPattern);
 
+    // copy the sparsity pattern to the A jacobian
+    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+     SymbolicJacs := list(SimCodeUtil.syncDAEandSimJac(symjac, symDAESparsPattern) for symjac in SymbolicJacs);
+    end if;
+
     daeModeConf := SimCode.ALL_EQUATIONS();
     daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicStateVars, auxiliaryVars, daeModeConf));
 
     /* This is a *much* better estimate than the guessed number of equations */
-    modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex-listLength(jacobianEquations));
+    modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex - listLength(jacobianEquations));
 
     // update hash table
     // mahge: This creates a new crefToSimVarHT discarding everything added upto here
