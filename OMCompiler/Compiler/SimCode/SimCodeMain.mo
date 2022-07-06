@@ -1536,7 +1536,6 @@ algorithm
       crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
       symJacs := listReverse(Util.getOption(daeModeSP) :: symJacs);
-      jacobianEquations := SimCodeUtil.collectAllJacobianEquations(symJacs);
     else
       tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
       modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
@@ -1549,7 +1548,6 @@ algorithm
         matrixnames := {"A", "B", "C", "D", "F"};
       end if;
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
-      jacobianEquations := {};
     end if;
 
     // collect symbolic jacobians in initialization loops of the overall jacobians
@@ -1616,7 +1614,7 @@ algorithm
     daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicStateVars, auxiliaryVars, daeModeConf));
 
     /* This is a *much* better estimate than the guessed number of equations */
-    modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex);
+    modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex - listLength(jacobianEquations));
 
     // update hash table
     // mahge: This creates a new crefToSimVarHT discarding everything added upto here
