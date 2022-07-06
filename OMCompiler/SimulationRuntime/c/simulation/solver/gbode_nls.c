@@ -393,7 +393,12 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData) {
 /**
  * @brief Residual function for non-linear system of generic multi-step methods.
  *
- * TODO: Describe what the residual means.
+ * Based on the values of the multi-step method the following nonlinear residuals
+ * will be calculated:
+ * res = -sum(c[j]*x[j], i=1..stage) + h*sum(b[j]*k[j], i=1..stage)
+ * When calling, the following is already calculated:
+ *  sData->timeValue = tOld + h
+ *  res_const = -sum(c[j]*x[j], i=1..stage-1) + h*sum(b[j]*k[j], i=1..stage-1)
  *
  * @param userData  Userdata provided to non-linear system solver.
  * @param xloc      Input vector for non-linear system.
@@ -431,7 +436,13 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
 /**
  * @brief Residual function for non-linear system of generic multi-step methods.
  *
- * TODO: Describe what the residual means.
+ * For the fast states:
+ * Based on the values of the multi-step method the following nonlinear residuals
+ * will be calculated:
+ * res = -sum(c[j]*x[j], i=1..stage) + h*sum(b[j]*k[j], i=1..stage)
+ * When calling, the following is already calculated:
+ *  sData->timeValue = tOld + h
+ *  res_const = -sum(c[j]*x[j], i=1..stage-1) + h*sum(b[j]*k[j], i=1..stage-1)
  *
  * @param userData  Userdata provided to non-linear system solver.
  * @param xloc      Input vector for non-linear system.
@@ -474,7 +485,12 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
 /**
  * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
  *
- * TODO: Describe what the residual means.
+ * For the fast states:
+ * Based on the Butcher tableau the following nonlinear residuals will be calculated:
+ * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], j=1..act_stage))
+ * When calling, the following is already calculated:
+ *  sData->timeValue = tOld + c[i]*h
+ *  res_const = yOld + h*sum(A[i,j]*k[j], j=1..act_stage-1)
  *
  * @param userData  Userdata provided to non-linear system solver.
  * @param xloc      Input vector for non-linear system.
@@ -515,12 +531,16 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
 /**
  * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
  *
- * TODO: Describe what the residual means.
+ * Based on the Butcher tableau the following nonlinear residuals will be calculated:
+ * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], j=1..act_stage))
+ * When calling, the following is already calculated:
+ *  sData->timeValue = tOld + c[i]*h
+ *  res_const = yOld + h*sum(A[i,j]*k[j], j=1..act_stage-1)
  *
  * @param userData  Userdata provided to non-linear system solver.
- * @param xloc    Input vector for non-linear system.
- * @param res     Residuum vector for given input xloc.
- * @param iflag   Unused.
+ * @param xloc      Input vector for non-linear system.
+ * @param res       Residuum vector for given input xloc.
+ * @param iflag     Unused.
  */
 void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag)
 {
@@ -559,7 +579,10 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
 /**
  * @brief Evaluate residual for non-linear system of implicit Runge-Kutta method.
  *
- * TODO: Describe how the residual is computed.
+ * Based on the Butcher tableau the following nonlinear residuals will be calculated:
+ *
+ * for i=1 .. stage
+ *  res[i] = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], j=1..stage))
  *
  * @param userData  Userdata provided to non-linear system solver.
  * @param xloc      Input vector for non-linear system.

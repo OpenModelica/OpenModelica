@@ -72,7 +72,16 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
                        "sparsePatternT");
 }
 
-// TODO: Describe me
+/**
+ * @brief Simple sparse matrix coloring. Determine column by column the next possible color,
+ *        by looking at columns with values in corresponding rows (transpose matrix necessary)
+ *
+ * @param sparsePattern Sparse pattern of the matirx
+ * @param sizeRows      Number or rows
+ * @param sizeCols      Number of columns
+ * @param nStages       Number of stages (different stages will get different color for full
+ *                      implicit RK methods)
+ */
 void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages)
 {
   SPARSE_PATTERN* sparsePatternT;
@@ -86,8 +95,10 @@ void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int 
   // Allocate memory for new sparsity pattern
   sparsePatternT = allocSparsePattern(sizeCols, sparsePattern->numberOfNonZeros, sizeCols);
 
+  // Determine the sparse pattern of the transposed matrix
   sparsePatternTranspose(sizeRows, sizeCols, sparsePattern, sparsePatternT);
 
+  // Projection of the stages on the ODE jacobian
   int sizeCols_ODE = sizeCols/nStages;
   int act_stage;
 

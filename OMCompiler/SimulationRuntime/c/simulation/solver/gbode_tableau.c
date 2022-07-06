@@ -988,12 +988,12 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
 
   for (i=0; i<tableau->nStages; i++) {
     /* Check if values on diagonal are non-zero (= dirk method) */
-    if (fabs(tableau->A[i*tableau->nStages + i])>0) {    // TODO: This assumes that A is saved in row major format
+    if (fabs(tableau->A[i*tableau->nStages + i])>0) {    // This assumes that A is saved in row major format
       isDIRK = TRUE;
     }
     /* Check if values above diagonal are non-zero (= implicit method) */
     for (j=i+1; j<tableau->nStages; j++) {
-      if (fabs(tableau->A[i * tableau->nStages + j])>0) {    // TODO: This assumes that A is saved in row major format
+      if (fabs(tableau->A[i * tableau->nStages + j])>0) {    // This assumes that A is saved in row major format
         isGenericIRK = TRUE;
         break;
       }

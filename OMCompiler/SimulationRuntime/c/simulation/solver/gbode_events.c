@@ -244,18 +244,18 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   return time_right;
 }
 
-// TODO: Describe me
 /**
- * @brief
+ * @brief Check if an event has happend between timeLeft and timeRight by comparing the
+ *        values of the zero crossing functions with the pre values
  *
- * @param data
- * @param threadData
- * @param solverInfo
- * @param timeLeft
- * @param leftValues
- * @param timeRight
- * @param rightValues
- * @param isInnerIntegration     Specifying if inner or outer step function should be used.
+ * @param data                    Runtime data struct.
+ * @param threadData              Thread data for error handling.
+ * @param solverInfo              Information about main solver.
+ * @param timeLeft                Time value at the left hand side of the interval
+ * @param leftValues              State values at the left hand side of the time interval
+ * @param timeRight               Time value at the right hand side of the interval
+ * @param rightValues             State values at the right hand side of the time interval
+ * @param isInnerIntegration      Specifying if inner or outer step function should be used.
  * @param foundEvent              On return is set to true if an event was found, otherwise false.
  *                                Returned event time must be ignored if foundEvent=false.
  * @return double                 Event time if an event was found, NAN otherwise.

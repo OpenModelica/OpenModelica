@@ -36,17 +36,11 @@
  *  \author bbachmann
  */
 
-/* BB: ToDo's
+/* ToDo:
  *
- * 0) Update comments for better readability, delete stuff no longer necessary
- * 1) Check pointer, especially, if there is no memory leak!
  * 2) Check necessary function evaluation and counting of it (use userdata->f, userdata->fOld)
  * 3) Optimize evaluation of the Jacobian (e.g. in case it is constant)
- * 4) Introduce generic multirate-method, that might also be used for higher order
- *    ESDIRK and explicit RK methods
- * 5) Improve birate fast state integrator (memory handling, copying, calling of function ODE)
- * 6) Improve step size handling and synchronization between fast and slow states integration, i.e.
- *    instead of slowing down inner integration one should resetting outer integration...
+ * 5) Improve birate fast state integrator (memory handling, copying, calling of function ODE, jacobian, etc.)
  */
 
 #include <time.h>
@@ -720,8 +714,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   // This is the target time of the main integrator
   double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
-  // Needs to be performed also after an event!!!
-  // TODO: Why is this called again? We just did that in gbode_birate.
+  /* The inner integrator needs to be initialzed, at start time, when an event occured,
+  *  and if outer integrations have been done with all states involved
+  * (gbfData->timeRight < gbData->timeLeft)
+  */
   if (gbfData->didEventStep || gbfData->timeRight < gbData->timeLeft) {
     gbodef_init(data, threadData, solverInfo);
   }
@@ -1565,7 +1561,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   // root finding will be done in gbode after each accepted step
   solverInfo->solverRootFinding = 1;
 
-  // TODO: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
+  // ToDo: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
 
   /* Calculate steps until targetTime is reached */
   // 1 => emit result at integrator step points; 0 => equidistant grid

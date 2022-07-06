@@ -33,7 +33,13 @@
 
 #include "gbode_main.h"
 
-// TODO: Document me
+/**
+ * @brief Determine the error threshold depending on the percentage of fast states
+ *        to all states. Use the sorted states with respect to the error.
+ *
+ * @param gbData        Pointer to generik GBODE data struct.
+ * @return * double     Error threshold for the fast state selection
+ */
 double getErrorThreshold(DATA_GBODE* gbData)
 {
   int i, j, temp;

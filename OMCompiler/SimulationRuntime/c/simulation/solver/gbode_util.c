@@ -36,7 +36,17 @@
 
 
 // LA functions
-// TODO: Describe me
+/**
+ * @brief Determines the scalar multiplication of an vector and adds the result
+ *        to another vector (only for selected indices) a = b + s*c
+ *
+ * @return a    Output vector
+ * @param  b    Input vector
+ * @param  c    Input vector
+ * @param  s    Scalar value
+ * @param  nIdx Length of index vector
+ * @param  idx  Index vector
+ */
 void addSmultVec_gbf(double* a, double* b, double *c, double s, int nIdx, int* idx) {
   int i, ii;
 
@@ -46,7 +56,16 @@ void addSmultVec_gbf(double* a, double* b, double *c, double s, int nIdx, int* i
   }
 }
 
-// TODO: Describe me
+/**
+ * @brief Determines the scalar multiplication of an vector and adds the result
+ *        to another vector a = b + s*c
+ *
+ * @return a    Output vector
+ * @param  b    Input vector
+ * @param  c    Input vector
+ * @param  s    Scalar value
+ * @param  n    Length of the vectors
+ */
 void addSmultVec_gb(double* a, double* b, double *c, double s, int n) {
   int i;
 
@@ -361,14 +380,34 @@ void copyVector_gbf(double* a, double* b, int nIndx, int* indx) {
     a[indx[i]] = b[indx[i]];
 }
 
-// TODO: Describe me
+/**
+ * @brief Projection function: Collects the values in the vector for given indices (idx)
+ *        and copy them in an corresponding vector of size (nIdx)
+ *
+ * @return a     Target vector
+ * @param  b     Source Vector
+ * @param  nIndx Length of index vector
+ * @param  indx  Index vector
+ */
 void projVector_gbf(double* a, double* b, int nIndx, int* indx) {
   for (int i=0;i<nIndx;i++)
     a[i] = b[indx[i]];
 }
 
-// TODO: Describe me
 // debug ring buffer for the states and derviatives of the states
+/**
+ * @brief Output debug information of the states and derivatives that
+ *        have been evaluated at the intermediate points given by the
+ *        Butcher tableau
+ *
+ * @param stream   Prints only, if stream is active
+ * @param x        States at the intermediate time points
+ * @param k        Derivatives at the intermediate time points
+ * @param nStates  Number of states
+ * @param tableau  Tableau of the Runge Kutta method
+ * @param time     Current time of the inegrator (left hand side)
+ * @param stepSize Current step size of the integrator
+ */
 void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize) {
 
   // If stream is not active do nothing
@@ -513,7 +552,13 @@ void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
   printf("\n");
 }
 
-// TODO: Describe me
+/**
+ * @brief Write information on the active fast states on file (activity diagram)
+ *
+ * @param gbData  Pointer to generik GBODE data struct.
+ * @param event   If an event has happend, write zeros else ones
+ * @param time    Actual time of reporting
+ */
 void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time) {
     char fastStates_row[4096];
     sprintf(fastStates_row, "%15.10g %15.10g %15.10g %15.10g", time, gbData->err_slow, gbData->err_int, gbData->err_fast);
@@ -526,7 +571,12 @@ void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time) 
     fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
 }
 
-// TODO: Describe me
+/**
+ * @brief Write information on the active fast states on file (activity diagram)
+ *
+ * @param gbData  Pointer to generik GBODE data struct.
+ * @param time    Actual time of reporting
+ */
 void dumpFastStates_gbf(DATA_GBODE* gbData, double time) {
   char fastStates_row[4096];
   int i, ii;

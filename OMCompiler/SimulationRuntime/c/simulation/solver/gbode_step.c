@@ -367,14 +367,17 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   return 0;
 }
 
-// TODO: Describe me
 /**
- * @brief
+ * @brief Generic diagonal implicit Runge-Kutta step function (only for the fast states)
+ *        => inner integration
  *
- * @param data
- * @param threadData
- * @param solverInfo
- * @return int        Return 0 on success, -1 otherwise
+ * Internal non-linear equation system will be solved with non-linear solver specified during setup.
+ * Results will be saved in y and embedded results saved in yt.
+ *
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param solverInfo        Storing Runge-Kutta solver data.
+ * @return int              Return 0 on success, -1 on failure.
  */
 int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
