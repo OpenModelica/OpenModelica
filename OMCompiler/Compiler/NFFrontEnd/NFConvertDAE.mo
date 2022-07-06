@@ -554,10 +554,19 @@ function convertEquation
 algorithm
   elements := match eq
     local
+      Expression lhs, rhs;
       DAE.Exp e1, e2, e3;
       DAE.ComponentRef cr1, cr2;
       list<DAE.Dimension> dims;
       list<DAE.Element> body;
+
+    case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
+      guard Type.isScalarBuiltin(eq.ty)
+      algorithm
+        cr1 := ComponentRef.toDAE(lhs.cref);
+        cr2 := ComponentRef.toDAE(rhs.cref);
+      then
+        DAE.Element.EQUEQUATION(cr1, cr2, eq.source) :: elements;
 
     case Equation.EQUALITY()
       algorithm
@@ -570,13 +579,6 @@ algorithm
            DAE.Element.ARRAY_EQUATION(list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty)), e1, e2, eq.source)
          else
            DAE.Element.EQUATION(e1, e2, eq.source)) :: elements;
-
-    case Equation.CREF_EQUALITY()
-      algorithm
-        cr1 := ComponentRef.toDAE(eq.lhs);
-        cr2 := ComponentRef.toDAE(eq.rhs);
-      then
-        DAE.Element.EQUEQUATION(cr1, cr2, eq.source) :: elements;
 
     case Equation.ARRAY_EQUALITY()
       algorithm
