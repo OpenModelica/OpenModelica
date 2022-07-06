@@ -1,4 +1,4 @@
-// name: GetModelInstanceDuplicate1
+// name: GetModelInstanceInnerOuter1
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -7,25 +7,26 @@
 
 loadString("
   model A
-    Real x;
+    outer Real x;
   end A;
 
   model B
-    extends A;
-    Real x;
+    A a;
+    inner Real x;
   end B;
 ");
 
-getModelInstance(B, prettyPrint = true);
+getModelInstance(B, prettyPrint=true);
 
 // Result:
 // true
 // "{
 //   \"name\": \"B\",
 //   \"restriction\": \"model\",
-//   \"extends\": [
+//   \"components\": [
 //     {
-//       \"baseClass\": {
+//       \"name\": \"a\",
+//       \"type\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
 //         \"components\": [
@@ -33,19 +34,20 @@ getModelInstance(B, prettyPrint = true);
 //             \"name\": \"x\",
 //             \"type\": \"Real\",
 //             \"prefixes\": {
-//
+//               \"inner\": true
 //             }
 //           }
 //         ]
+//       },
+//       \"prefixes\": {
+//
 //       }
-//     }
-//   ],
-//   \"components\": [
+//     },
 //     {
 //       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
-//
+//         \"inner\": true
 //       }
 //     }
 //   ]

@@ -12,15 +12,19 @@
       "description": "The kind of class",
       "type": "string"
     },
+    "modifiers": {
+      "description": "Modifier from the SCode",
+      "type": "#/definitions/scodeModifier"
+    },
+    "comment": {
+      "$ref": "#/definitions/comment"
+    },
     "extends": {
       "description": "The extends clauses in the class instance",
       "type": "array",
       "items": {
-        "$ref": "#"
+        "$ref": "#/definitions/extends"
       }
-    },
-    "comment": {
-      "$ref": "#/definitions/comment"
     },
     "components": {
       "description": "The components in the class instance",
@@ -87,7 +91,8 @@
     "annotation": {
       "type": "object",
       "properties": {
-        "$kind": false
+        "$kind": false,
+        "$error": false
       },
       "additionalProperties": {
         "oneOf": [
@@ -96,8 +101,40 @@
           },
           {
             "$ref": "expression.schema.json"
+          },
+          {
+            "description": "An invalid annotation",
+            "type": "object",
+            "properties": {
+              "$error": {
+                "description": "Error message",
+                "type": "string"
+              },
+              "value": {
+                "description": "Annotation dumped as a string",
+                "type": "string"
+              }
+            }
           }
         ]
+      }
+    },
+    "extends": {
+      "description": "An extends clause",
+      "type": "object",
+      "properties": {
+        "modifiers": {
+          "description": "SCode modifier on the extends clause",
+          "type": "#/definitions/scodeModifier"
+        },
+        "annotation": {
+          "description": "Annotation on the extends clause",
+          "type": "#/definitions/annotation"
+        },
+        "baseClass": {
+          "description": "The class instance of the extended class",
+          "$ref": "#"
+        }
       }
     },
     "component": {
@@ -148,9 +185,9 @@
               },
               "required": ["absyn", "typed"]
             },
-            "modifier": {
+            "modifiers": {
               "description": "Modifier from the SCode",
-              "type": "string"
+              "type": "#/definitions/scodeModifier"
             },
             "value": {
               "description": "The component's binding equation",
@@ -190,11 +227,9 @@
                   "type": "string",
                   "enum": ["constant", "parameter", "discrete"]
                 },
-                "input": {
-                  "type": "boolean"
-                },
-                "output": {
-                  "type": "boolean"
+                "direction": {
+                  "type": "string",
+                  "enum": ["input", "output"]
                 }
               }
             },
@@ -225,6 +260,30 @@
         }
       },
       "required": ["binding"]
+    },
+    "scodeModifier": {
+      "description": "An SCode modifier",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "The string representation of the binding equation"
+        },
+        {
+          "type": "object",
+          "description": "A modifier with submodifiers",
+          "properties": {
+            "$value": {
+              "type": "string",
+              "description": "The string representation of the binding equation"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/definitions/scodeModifier"
+          },
+          "required": [],
+          "minProperties": 1
+        }
+      ]
     }
   }
 }

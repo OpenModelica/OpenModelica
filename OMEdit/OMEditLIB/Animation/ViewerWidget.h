@@ -34,6 +34,8 @@
 #ifndef VIEWERWIDGET_H
 #define VIEWERWIDGET_H
 
+#include <QOpenGLContext> // must be included before OSG headers
+
 #include <osg/ref_ptr>
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>

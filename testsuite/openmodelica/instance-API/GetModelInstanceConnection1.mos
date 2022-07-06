@@ -34,68 +34,64 @@ getModelInstance(M, prettyPrint = true);
 //   \"restriction\": \"model\",
 //   \"extends\": [
 //     {
-//       \"name\": \"A\",
-//       \"restriction\": \"model\",
-//       \"components\": [
-//         {
-//           \"name\": \"c1\",
-//           \"type\": {
-//             \"name\": \"C\",
-//             \"restriction\": \"connector\",
-//             \"components\": [
-//               {
-//                 \"name\": \"e\",
-//                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
-//                 \"prefixes\": {
+//       \"baseClass\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"components\": [
+//           {
+//             \"name\": \"c1\",
+//             \"type\": {
+//               \"name\": \"C\",
+//               \"restriction\": \"connector\",
+//               \"components\": [
+//                 {
+//                   \"name\": \"e\",
+//                   \"type\": \"Real\",
+//                   \"prefixes\": {
 //
+//                   }
+//                 },
+//                 {
+//                   \"name\": \"f\",
+//                   \"type\": \"Real\",
+//                   \"prefixes\": {
+//                     \"connector\": \"flow\"
+//                   }
 //                 }
-//               },
-//               {
-//                 \"name\": \"f\",
-//                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
-//                 \"prefixes\": {
-//                   \"connector\": \"flow\"
-//                 }
-//               }
-//             ]
+//               ]
+//             },
+//             \"prefixes\": {
+//
+//             }
 //           },
-//           \"modifier\": \"\",
-//           \"prefixes\": {
+//           {
+//             \"name\": \"c2\",
+//             \"type\": {
+//               \"name\": \"C\",
+//               \"restriction\": \"connector\",
+//               \"components\": [
+//                 {
+//                   \"name\": \"e\",
+//                   \"type\": \"Real\",
+//                   \"prefixes\": {
 //
-//           }
-//         },
-//         {
-//           \"name\": \"c2\",
-//           \"type\": {
-//             \"name\": \"C\",
-//             \"restriction\": \"connector\",
-//             \"components\": [
-//               {
-//                 \"name\": \"e\",
-//                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
-//                 \"prefixes\": {
-//
+//                   }
+//                 },
+//                 {
+//                   \"name\": \"f\",
+//                   \"type\": \"Real\",
+//                   \"prefixes\": {
+//                     \"connector\": \"flow\"
+//                   }
 //                 }
-//               },
-//               {
-//                 \"name\": \"f\",
-//                 \"type\": \"Real\",
-//                 \"modifier\": \"\",
-//                 \"prefixes\": {
-//                   \"connector\": \"flow\"
-//                 }
-//               }
-//             ]
-//           },
-//           \"modifier\": \"\",
-//           \"prefixes\": {
+//               ]
+//             },
+//             \"prefixes\": {
 //
+//             }
 //           }
-//         }
-//       ]
+//         ]
+//       }
 //     }
 //   ],
 //   \"components\": [
@@ -108,7 +104,6 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"name\": \"e\",
 //             \"type\": \"Real\",
-//             \"modifier\": \"\",
 //             \"prefixes\": {
 //
 //             }
@@ -116,14 +111,12 @@ getModelInstance(M, prettyPrint = true);
 //           {
 //             \"name\": \"f\",
 //             \"type\": \"Real\",
-//             \"modifier\": \"\",
 //             \"prefixes\": {
 //               \"connector\": \"flow\"
 //             }
 //           }
 //         ]
 //       },
-//       \"modifier\": \"\",
 //       \"prefixes\": {
 //
 //       }

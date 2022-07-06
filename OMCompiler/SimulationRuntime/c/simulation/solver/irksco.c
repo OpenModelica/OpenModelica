@@ -510,12 +510,20 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       {
         userdata->radauStepSize = 1e-6;
       }
+      if (err>1)
+      {
+        infoStreamPrint(LOG_SOLVER, 0, "reject step from %10g to %10g, error %10g, new stepsize %10g",
+                        userdata->radauTimeOld, userdata->radauTime, err, userdata->radauStepSize);
+      }
+
 
     } while  (err > 1.0 );
 
     userdata->radauTimeOld = userdata->radauTime;
 
     userdata->radauTime += userdata->radauStepSizeOld;
+    infoStreamPrint(LOG_SOLVER, 0, "accept step from %10g to %10g, error %10g, new stepsize %10g",
+                    userdata->radauTimeOld, userdata->radauTime, err, userdata->radauStepSize);
 
     memcpy(userdata->radauVarsOld, userdata->radauVars, data->modelData->nStates*sizeof(double));
     memcpy(userdata->radauVars, userdata->y2, data->modelData->nStates*sizeof(double));

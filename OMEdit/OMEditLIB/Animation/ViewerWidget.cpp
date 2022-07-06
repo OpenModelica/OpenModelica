@@ -31,6 +31,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include <QOpenGLContext> // must be included before OSG headers
+
 #include <osgGA/MultiTouchTrackballManipulator>
 #include <osgViewer/ViewerEventHandlers>
 

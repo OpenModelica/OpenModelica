@@ -37,6 +37,8 @@
 
 #include "Visualization.h"
 
+#include <QOpenGLContext> // must be included before OSG headers
+
 #include <osg/Node>
 #include <osg/Group>
 #include <osg/Geode>

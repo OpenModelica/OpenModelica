@@ -44,4 +44,4 @@ target_link_libraries(OMPlot PRIVATE OMPlotLib)
 
 install(TARGETS OMPlotLib)
 install(TARGETS OMPlot
-        BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
+        BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})

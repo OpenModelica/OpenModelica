@@ -4290,6 +4290,7 @@ algorithm
     case SCode.CLASS(classDef = SCode.DERIVED(modifications = mod)) then mod;
     case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod)) then mod;
     case SCode.EXTENDS(modifications = mod) then mod;
+    else SCode.NOMOD();
 
   end match;
 end elementMod;
@@ -4575,6 +4576,7 @@ algorithm
 
     case SCode.COMPONENT(comment = cmt) then SOME(cmt);
     case SCode.CLASS(cmt = cmt) then SOME(cmt);
+    case SCode.EXTENDS() then SOME(SCode.Comment.COMMENT(inElement.ann, NONE()));
     else NONE();
 
   end match;
