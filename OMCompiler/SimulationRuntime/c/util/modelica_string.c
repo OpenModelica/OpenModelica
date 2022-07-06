@@ -304,7 +304,19 @@ extern char* omc__escapedString(const char* str, int nl)
   return res;
 }
 
-int GC_vasprintf(const char **strp, const char *fmt, va_list ap) {
+/**
+ * @brief Garbage collector version of vasprintf.
+ *
+ * Print to newly allocated string.
+ * The duplicated string will be freed by the garbage collector.
+ *
+ * @param strp    Pointer to newly allocated string.
+ * @param fmt     C string containing format strings.
+ * @param ap      Variable argument list for format strings.
+ * @return int    Number of characters written to strp.
+ *                If an error occurs, a negative number is returned.
+ */
+int GC_vasprintf(char **strp, const char *fmt, va_list ap) {
   int len;
   char *tmp;
   if (0==strstr(fmt, "%")) {
