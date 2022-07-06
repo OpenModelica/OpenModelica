@@ -148,7 +148,6 @@ enum JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILA
   if (flagValue) {
     for (int method=1; method < JAC_MAX; method++) {
       if (!strcmp(flagValue, JACOBIAN_METHOD[method])) {
-        printf("lol hier %d\n", method);
         jacobianMethod = (enum JACOBIAN_METHOD) method;
         break;
       }
