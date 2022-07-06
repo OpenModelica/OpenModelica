@@ -902,6 +902,15 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // Count successful integration steps
     gbfData->stats.nStepsTaken += 1;
 
+    // store right hand values for latter interpolation
+    gbfData->timeRight = gbfData->time + gbfData->lastStepSize;
+    memcpy(gbfData->yRight, gbfData->y, nStates * sizeof(double));
+    // update kRight
+    sData->timeValue = gbfData->timeRight;
+    memcpy(sData->realVars, gbfData->yRight, nStates * sizeof(double));
+    gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+    memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
+
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
     // interpolate the slow states on the time of the current stage
     gb_interpolation(gbfData->interpolation,
@@ -954,15 +963,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     /* update time with performed stepSize */
     gbfData->time += gbfData->lastStepSize;
-
-    // store right hand values for latter interpolation
-    gbfData->timeRight = gbfData->time;
-    memcpy(gbfData->yRight, gbfData->y, nStates * sizeof(double));
-    // update kRight
-    sData->timeValue = gbfData->time;
-    memcpy(sData->realVars, gbfData->y, nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
-    memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
     // debug the changes of the states and derivatives during integration
     if (ACTIVE_STREAM(LOG_GBODE)) {

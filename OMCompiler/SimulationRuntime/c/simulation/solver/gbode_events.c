@@ -36,6 +36,7 @@
 #include "events.h"
 #include "external_input.h"
 #include "gbode_main.h"
+#include "gbode_util.h"
 #include "model_help.h"
 
 /*! \fn bisection_gb
@@ -55,6 +56,7 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   TRACE_PUSH
 
   DATA_GBODE *gbData = (DATA_GBODE *)solverInfo->solverData;
+  DATA_GBODEF *gbfData;
 
   int gb_step_info;
   double timeValue, *y;
@@ -76,21 +78,38 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
 
     /*calculates states at time c */
     if (isInnerIntergration) {
-      gbData->gbfData->stepSize = c - gbData->gbfData->time;
-      gb_step_info = gbData->gbfData->step_fun(data, threadData, solverInfo);
-      y = gbData->gbfData->y;
+      gbfData = gbData->gbfData;
+      gb_interpolation(GB_INTERPOL_HERMITE,
+                  gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
+                  gbfData->timeRight, gbfData->yRight, gbfData->kRight,
+                  c, gbfData->y1,
+                  gbData->nStates, NULL,  gbData->nStates, gbfData->tableau, gbfData->x, gbfData->k);
+      y = gbfData->y1;
     } else {
-      gbData->stepSize = c - gbData->time;
-      gb_step_info = gbData->step_fun(data, threadData, solverInfo);
-      y = gbData->y;
+      gb_interpolation(GB_INTERPOL_HERMITE,
+                  gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                  gbData->timeRight, gbData->yRight, gbData->kRight,
+                  c, gbData->y1,
+                  gbData->nStates, NULL,  gbData->nStates, gbData->tableau, gbData->x, gbData->k);
+      y = gbData->y1;
     }
 
-    // error handling: try half of the step size!
-    if (gb_step_info != 0)
-    {
-      errorStreamPrint(LOG_STDOUT, 0, "gbode_event: Failed to calculate event time = %5g.", c);
-      exit(1);
-    }
+//     if (isInnerIntergration) {
+//       gbData->gbfData->stepSize = c - gbData->gbfData->time;
+//       gb_step_info = gbData->gbfData->step_fun(data, threadData, solverInfo);
+//       y = gbData->gbfData->y;
+//     } else {
+//       gbData->stepSize = c - gbData->time;
+//       gb_step_info = gbData->step_fun(data, threadData, solverInfo);
+//       y = gbData->y;
+//     }
+//
+//     // error handling: try half of the step size!
+//     if (gb_step_info != 0)
+//     {
+//       errorStreamPrint(LOG_STDOUT, 0, "gbode_event: Failed to calculate event time = %5g.", c);
+//       exit(1);
+//     }
 
     data->localData[0]->timeValue = c;
     for(i=0; i < data->modelData->nStates; i++)
