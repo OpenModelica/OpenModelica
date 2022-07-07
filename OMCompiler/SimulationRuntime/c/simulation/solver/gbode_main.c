@@ -36,13 +36,6 @@
  *  \author bbachmann
  */
 
-/* ToDo:
- *
- * 2) Check necessary function evaluation and counting of it (use userdata->f, userdata->fOld)
- * 3) Optimize evaluation of the Jacobian (e.g. in case it is constant)
- * 5) Improve birate fast state integrator (memory handling, copying, calling of function ODE, jacobian, etc.)
- */
-
 #include <time.h>
 
 #include "gbode_main.h"
@@ -285,6 +278,9 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
   }
   i = fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
   infoStreamPrint(LOG_SOLVER, 0, "Number of states %d (%d slow states, %d fast states)", gbData->nStates, gbData->nStates-i, i);
+
+   /* reset statistics because it is accumulated in solver_main.c */
+  resetSolverStats(&gbfData->stats);
 
   return 0;
 }
@@ -627,9 +623,6 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   gbfData->time = gbData->time;
   gbfData->stepSize = gbData->lastStepSize/2.5;
 
-  /* reset statistics because it is accumulated in solver_main.c */
-  resetSolverStats(&gbfData->stats),
-
   memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * nStates);
   memcpy(gbfData->y, gbData->y, sizeof(double) * nStates);
 
@@ -669,6 +662,8 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   }
 
   /* reset statistics, because it is accumulated in solver_main.c */
+  if (!gbData->isExplicit)
+    gbData->nlsData->numberOfJEval = 0;
   resetSolverStats(&gbData->stats);
 
   // initialize vector used for interpolation (equidistant time grid)
@@ -1034,10 +1029,9 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                      sData->timeValue,  sData->realVars,
                      nFastStates, gbData->fastStatesIdx,  nStates, gbfData->tableau, gbfData->x, gbfData->k);
   }
-
-  /* Write statistics to the solverInfo data structure */
-  logSolverStats("gbode", solverInfo->currentTime, gbfData->time, gbfData->stepSize, &gbfData->stats);
-  setSolverStats(solverInfo->solverStatsTmp, &gbfData->stats);
+  /* Solver statistics */
+  if (!gbfData->isExplicit)
+    gbfData->stats.nCallsJacobian = gbfData->nlsData->numberOfJEval;
 
   infoStreamPrint(LOG_SOLVER, 0, "gbodef finished  (inner steps).");
   messageClose(LOG_SOLVER);
@@ -1523,13 +1517,13 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   if (!gbData->isExplicit)
     gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
 
-  if (targetTime == stopTime && ACTIVE_STREAM(LOG_STATS))
-  {
+  if (fabs(targetTime - stopTime) < MINIMAL_STEP_SIZE && ACTIVE_STREAM(LOG_STATS)) {
     infoStreamPrint(LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
                     GB_SINGLERATE_METHOD_NAME[gbData->GM_method], GB_SINGLERATE_METHOD_NAME[gbData->gbfData->GM_method]);
+    logSolverStats(LOG_STATS, "inner integration", stopTime, stopTime, 0, &gbData->gbfData->stats);
   }
   /* Write statistics to the solverInfo data structure */
-  logSolverStats("gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
+  logSolverStats(LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
   setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
 
   messageClose(LOG_SOLVER);
@@ -1568,8 +1562,6 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
   // root finding will be done in gbode after each accepted step
   solverInfo->solverRootFinding = 1;
-
-  // ToDo: Copy-paste code used in dassl,c, ida.c, irksco.c and here. Make it a function!
 
   /* Calculate steps until targetTime is reached */
   // 1 => emit result at integrator step points; 0 => equidistant grid
@@ -1861,11 +1853,11 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   /* Solver statistics */
   if (!gbData->isExplicit)
     gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
-  if (targetTime == stopTime && ACTIVE_STREAM(LOG_STATS)) {
+  if (fabs(targetTime - stopTime) < MINIMAL_STEP_SIZE && ACTIVE_STREAM(LOG_STATS)) {
     infoStreamPrint(LOG_STATS, 0, "gbode (single-rate integration): %s", GB_SINGLERATE_METHOD_NAME[gbData->GM_method]);
   }
   /* Write statistics to the solverInfo data structure */
-  logSolverStats("gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
+  logSolverStats(LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
   setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
 
   messageClose(LOG_SOLVER);

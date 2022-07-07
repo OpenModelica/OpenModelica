@@ -650,18 +650,15 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
  * @param stepSize        ODE integrator step size.
  * @param stats           Pointer to stats struct.
  */
-void logSolverStats(const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats) {
-  if (ACTIVE_STREAM(LOG_SOLVER_V)) {
-    infoStreamPrint(LOG_SOLVER_V, 1, "%s call statistics:", name);
-    infoStreamPrint(LOG_SOLVER_V, 0, "current time value: %0.4g", timeValue);
-    infoStreamPrint(LOG_SOLVER_V, 0, "current integration time value: %0.4g", integratorTime);
-    infoStreamPrint(LOG_SOLVER_V, 0, "step size h to be attempted on next step: %0.4g", stepSize);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of steps taken so far: %d", stats->nStepsTaken);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calls of functionODE() : %d", stats->nCallsODE);
-    infoStreamPrint(LOG_SOLVER_V, 0, "number of calculation of jacobian : %d", stats->nCallsJacobian);
-    infoStreamPrint(LOG_SOLVER_V, 0, "error test failure : %d", stats->nErrorTestFailures);
-    infoStreamPrint(LOG_SOLVER_V, 0, "convergence failure : %d", stats->nConvergenveTestFailures);
-    messageClose(LOG_SOLVER_V);
+void logSolverStats(enum LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats) {
+  if (ACTIVE_STREAM(stream)) {
+    infoStreamPrint(stream, 1, "%s call statistics:", name);
+    infoStreamPrint(stream, 0, "number of steps taken so far: %d", stats->nStepsTaken);
+    infoStreamPrint(stream, 0, "number of calls of functionODE() : %d", stats->nCallsODE);
+    infoStreamPrint(stream, 0, "number of calculation of jacobian : %d", stats->nCallsJacobian);
+    infoStreamPrint(stream, 0, "error test failure : %d", stats->nErrorTestFailures);
+    infoStreamPrint(stream, 0, "convergence failure : %d", stats->nConvergenveTestFailures);
+    messageClose(stream);
   }
 }
 
