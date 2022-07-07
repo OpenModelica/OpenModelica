@@ -158,6 +158,15 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               cvode_solver$(OBJ_EXT) \
               dae_mode$(OBJ_EXT) \
               dassl$(OBJ_EXT) \
+              gbode_conf$(OBJ_EXT) \
+              gbode_ctrl$(OBJ_EXT) \
+              gbode_events$(OBJ_EXT) \
+              gbode_main$(OBJ_EXT) \
+              gbode_nls$(OBJ_EXT) \
+              gbode_sparse$(OBJ_EXT) \
+              gbode_step$(OBJ_EXT) \
+              gbode_tableau$(OBJ_EXT) \
+              gbode_util$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
               irksco$(OBJ_EXT) \
               jacobianSymbolical$(OBJ_EXT) \

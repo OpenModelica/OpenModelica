@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,34 +28,23 @@
  *
  */
 
-/*! \file events.h
+/*! \file gbode_events.h
  */
 
-#ifndef _EVENTS_H_
-#define _EVENTS_H_
+#ifndef _GBODE_EVENTS_H_
+#define _GBODE_EVENTS_H_
 
-#include "../../simulation_data.h"
+#include "simulation_data.h"
 #include "solver_main.h"
-#include "../../util/list.h"
-#include "fmi_events.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int maxBisectionIterations;
-
-int checkForStateEvent(DATA* data, LIST *eventList);
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime);
-void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
-
-double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* states_left, double time_right, double* states_right);
-int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList);
-
+double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double timeLeft, double* leftValues, double timeRight, double* rightValues, modelica_boolean isInnerIntergration, modelica_boolean* foundEvent);
 
 #ifdef __cplusplus
-}
+};
 #endif
 
-#endif
+#endif  /* _GBODE_EVENTS_H_ */

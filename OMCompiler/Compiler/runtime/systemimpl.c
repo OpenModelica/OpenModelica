@@ -2670,7 +2670,7 @@ int System_getTerminalWidth(void)
 
 #include "util/simulation_options.h"
 
-#define SB_SIZE 8192*4
+#define SB_SIZE 16384*4
 #define SB_SIZE_MINUS_ONE (SB_SIZE-1)
 
 /* snprintf check negative size */
@@ -2771,6 +2771,29 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
         flagDesc = NLS_LS_METHOD_DESC;
         break;
 
+      case FLAG_SR:
+        numExtraFlags = RK_MAX;
+        flagName = GB_METHOD_NAME;
+        flagDesc = GB_METHOD_DESC;
+        break;
+
+      case FLAG_SR_NLS:
+        numExtraFlags = GB_NLS_MAX;
+        flagName = GB_NLS_METHOD_NAME;
+        flagDesc = GB_NLS_METHOD_DESC;
+        break;
+
+      case FLAG_MR:
+        numExtraFlags = RK_MAX;
+        flagName = GB_METHOD_NAME;
+        flagDesc = GB_METHOD_DESC;
+        break;
+
+      case FLAG_MR_NLS:
+        numExtraFlags = GB_NLS_MAX;
+        flagName = GB_NLS_METHOD_NAME;
+        flagDesc = GB_NLS_METHOD_DESC;
+        break;
 
       case FLAG_S:
         numExtraFlags = S_MAX;

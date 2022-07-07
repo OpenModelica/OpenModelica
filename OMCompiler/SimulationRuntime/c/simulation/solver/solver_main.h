@@ -65,7 +65,7 @@ typedef struct SOLVER_INFO
   double laststep;
   enum SOLVER_METHOD solverMethod;            /* ODE/DAE solver method */
   double solverStepSize;                      /* used by implicit radau solver */
-                                              // TODO: Then it should be in radau solverData
+                                              // TODO: This should be in radau solverData
 
   modelica_boolean solverRootFinding;         /* Set by solver if an internal root finding method is activated  */
   modelica_boolean solverNoEquidistantGrid;   /* Set by solver if output points are set by step size control */

@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,34 +28,33 @@
  *
  */
 
-/*! \file events.h
+/*! \file gbode_ctrl.h
  */
 
-#ifndef _EVENTS_H_
-#define _EVENTS_H_
+#ifndef _GBODE_CTRL_H_
+#define _GBODE_CTRL_H_
 
 #include "../../simulation_data.h"
 #include "solver_main.h"
-#include "../../util/list.h"
-#include "fmi_events.h"
+
+#include "gbode_main.h"
+#include "gbode_conf.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int maxBisectionIterations;
+double CController(double* err_values, double* stepSize_values, unsigned int err_order);
+double IController(double* err_values, double* stepSize_values, unsigned int err_order);
+double PIController(double* err_values, double* stepSize_values, unsigned int err_order);
+gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method);
 
-int checkForStateEvent(DATA* data, LIST *eventList);
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime);
-void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData);
 
-double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* states_left, double time_right, double* states_right);
-int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList);
-
+double getErrorThreshold(DATA_GBODE* gbData);
 
 #ifdef __cplusplus
-}
+};
 #endif
 
-#endif
+#endif  /* _GBODE_CTRL_H_ */

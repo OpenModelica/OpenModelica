@@ -59,12 +59,6 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
 
 extern int init_lambda_steps;
 
-struct dataSolver
-{
-  void* ordinaryData;
-  void* initHomotopyData;
-};
-
 struct dataMixedSolver
 {
   void* newtonHomotopyData;
@@ -73,6 +67,7 @@ struct dataMixedSolver
 
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "../../util/write_csv.h"
+
 /*! \fn int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
  *
  *  This function initializes csv files for analysis propose.
@@ -365,6 +360,7 @@ NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumbe
   userData->sysNumber = sysNumber;
   userData->nlsData = nlsData;
   userData->analyticJacobian = analyticJacobian;
+  userData->solverData = NULL;
 
   return userData;
 }
@@ -538,7 +534,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
       solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
-      nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData);
+      nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData, TRUE);
       solverData->ordinaryData = nonlinsys->solverData;
     }
     nonlinsys->solverData = (void*) solverData;

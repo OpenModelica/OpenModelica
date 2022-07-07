@@ -329,7 +329,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
   NONLINEAR_SYSTEM_DATA* systemData = userData->nlsData;
   DATA_HYBRD* hybrdData = (DATA_HYBRD*)(systemData->solverData);
   int continuous = data->simulationInfo->solveContinuous;
-  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=userData->solverData};
 
   switch(*iflag)
   {

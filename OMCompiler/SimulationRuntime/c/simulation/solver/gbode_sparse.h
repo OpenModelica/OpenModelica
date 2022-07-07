@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,34 +28,25 @@
  *
  */
 
-/*! \file events.h
+/*! \file gbode_sparse.h
  */
 
-#ifndef _EVENTS_H_
-#define _EVENTS_H_
-
-#include "../../simulation_data.h"
-#include "solver_main.h"
-#include "../../util/list.h"
-#include "fmi_events.h"
+#ifndef _GBODE_SPARSE_H_
+#define _GBODE_SPARSE_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int maxBisectionIterations;
+void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages);
 
-int checkForStateEvent(DATA* data, LIST *eventList);
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime);
-void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
+SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
 
-double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* states_left, double time_right, double* states_right);
-int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList);
-
+void updateSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR);
 
 #ifdef __cplusplus
-}
+};
 #endif
 
-#endif
+#endif  /* _GBODE_SPARSE_H_ */

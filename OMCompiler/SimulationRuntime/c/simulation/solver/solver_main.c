@@ -54,6 +54,7 @@
 #include "synchronous.h"
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
+#include "gbode_main.h"
 #include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
@@ -181,15 +182,18 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   case S_IRKSCO:
-  {
     retVal = irksco_midpoint_rule(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
+  case S_GBODE:
+    retVal = gbode_main(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+    return retVal;
+  default:
+    throwStreamPrint(threadData, "Unhandles case in solver_main_step.");
   }
-
-  }
-
   TRACE_POP
   return 1;
 }
@@ -250,6 +254,13 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   case S_IRKSCO:
   {
     allocateIrksco(data, threadData, solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
+    break;
+  }
+  case S_GBODE:
+  {
+    if (gbode_allocateData(data, threadData, solverInfo) != 0) {
+      throwStreamPrint(threadData, "Failed to allocate memory for generic multigrid solver.");
+    }
     break;
   }
   case S_ERKSSC:
@@ -390,67 +401,53 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   case S_SYM_SOLVER:
   case S_QSS: break;
   case S_SYM_SOLVER_SSC:
-  {
     freeSymSolverSsc(solverInfo);
     break;
-  }
   case S_RUNGEKUTTA:
   case S_HEUN:
   case S_ERKSSC:
-  {
     /* free RK work arrays */
     for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)
       free(((RK4_DATA*)(solverInfo->solverData))->work_states[i]);
     free(((RK4_DATA*)(solverInfo->solverData))->work_states);
     free((RK4_DATA*)solverInfo->solverData);
     break;
-  }
   case S_IRKSCO:
-  {
     freeIrksco(solverInfo);
     break;
-  }
+  case S_GBODE:
+    gbode_freeData(data, solverInfo->solverData);
+    break;
 #if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
-  {
     /* De-Initial DASSL solver */
     dassl_deinitial(solverInfo->solverData);
     break;
-  }
 #endif
 #ifdef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
-  {
     /* free  work arrays */
     /*destroyIpopt(solverInfo);*/
     break;
-  }
 #endif
 #ifdef WITH_SUNDIALS
   case S_IMPEULER:
   case S_TRAPEZOID:
   case S_IMPRUNGEKUTTA:
-  {
     /* free  work arrays */
     freeKinOde((KINODE*)solverInfo->solverData);
     break;
-  }
   case S_IDA:
-  {
     /* free work arrays */
     ida_solver_deinitial(solverInfo->solverData);
     break;
-  }
   case S_CVODE:
-  {
     /* free work arrays */
     cvode_solver_deinitial(solverInfo->solverData);
     break;
-  }
 #endif
   default:
-    errorStreamPrint(LOG_SOLVER, 0, "Unknown solver %s encountered. Possibly leaking memory!", solverInfo->solverMethod);
-    return 1;
+    throwStreamPrint(NULL, "Unknown solver %u encountered. Possibly leaking memory!", solverInfo->solverMethod);
   }
 
   return retValue;
@@ -741,7 +738,8 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     TRACE_POP
     return 1;
 #endif
-
+  default:
+    break;
   }
 
   /* first initialize the model then allocate SolverData memory

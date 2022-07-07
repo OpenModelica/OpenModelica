@@ -16,6 +16,15 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     dassl.c
                     delay.c
                     events.c
+                    gbode_conf.c
+                    gbode_ctrl.c
+                    gbode_events.c
+                    gbode_main.c
+                    gbode_nls.c
+                    gbode_sparse.c
+                    gbode_step.c
+                    gbode_tableau.c
+                    gbode_util.c
                     external_input.c
                     irksco.c
                     kinsolSolver.c
@@ -46,6 +55,15 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     dassl.h
                     delay.h
                     epsilon.h
+                    gbode_conf.h
+                    gbode_ctrl.h
+                    gbode_events.h
+                    gbode_main.h
+                    gbode_nls.h
+                    gbode_sparse.h
+                    gbode_step.h
+                    gbode_tableau.h
+                    gbode_util.h
                     events.h
                     external_input.h
                     irksco.h

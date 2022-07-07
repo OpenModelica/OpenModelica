@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,34 +28,33 @@
  *
  */
 
-/*! \file events.h
+/*! \file gbode_step.h
  */
 
-#ifndef _EVENTS_H_
-#define _EVENTS_H_
+#ifndef _GBODE_STEP_H_
+#define _GBODE_STEP_H_
 
-#include "../../simulation_data.h"
+#include "simulation_data.h"
 #include "solver_main.h"
-#include "../../util/list.h"
-#include "fmi_events.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int maxBisectionIterations;
+// step function
+int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
-int checkForStateEvent(DATA* data, LIST *eventList);
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime);
-void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
+// single-rate step function
+int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
-double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* states_left, double time_right, double* states_right);
-int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList);
-
+int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
+int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
 #ifdef __cplusplus
-}
+};
 #endif
 
-#endif
+#endif  /* _GBODE_STEP_H_ */

@@ -220,9 +220,10 @@ void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
  *
  * @param size                  Size of non-linear problem.
  * @param userData              Pointer to set NLS user data.
+ * @param attemptRetry          True if KINSOL should retry with different settings after solution failed.
  * @return NLS_KINSOL_DATA*     Pointer to allocated KINSOL data.
  */
-NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData) {
+NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry) {
   /* Allocate system data */
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)malloc(sizeof(NLS_KINSOL_DATA));
 
@@ -235,6 +236,7 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData) {
 
   kinsolData->maxstepfactor = maxStepFactor; /* step tolerance */
   kinsolData->nominalJac = 0; /* calculate for scaling the scaled matrix */
+  kinsolData->attemptRetry = attemptRetry;
 
   kinsolData->initialGuess = N_VNew_Serial(size);
   kinsolData->xScale = N_VNew_Serial(size);
@@ -296,7 +298,7 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
   threadData_t* threadData = kinsolUserData->threadData;
   NONLINEAR_SYSTEM_DATA* nlsData = kinsolUserData->nlsData;
   NLS_KINSOL_DATA* kinsolData = (NLS_KINSOL_DATA*)nlsData->solverData;
-  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=kinsolUserData->solverData};
   int iflag = 1 /* recoverable error */;
 
   /* Update statistics */
@@ -1207,7 +1209,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
       infoStreamPrint(LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
     }
     /* Try to handle recoverable errors */
-    if (flag < 0) {
+    if (flag < 0 && kinsolData->attemptRetry) {
       retry = nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);
     }
 

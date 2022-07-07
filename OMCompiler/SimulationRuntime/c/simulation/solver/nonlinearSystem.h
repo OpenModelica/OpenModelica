@@ -56,7 +56,19 @@ typedef struct NLS_USERDATA {
   int sysNumber;                        /* System index, for print messages only */
   NONLINEAR_SYSTEM_DATA* nlsData;       /* Pointer to nonlinear system data */
   ANALYTIC_JACOBIAN* analyticJacobian;  /* Pointer to analytic Jacobian */
+
+  void* solverData;                     /* Optional pointer to ODE solver data.
+                                         * Used in NLS solving of ODE integrator step. */
 } NLS_USERDATA;
+
+/**
+ * @brief Store primary and secondary solvers in single NLS_USERDATA->solverData
+ */
+struct dataSolver
+{
+  void* ordinaryData;
+  void* initHomotopyData;
+};
 
 void cleanUpOldValueListAfterEvent(DATA *data, double time);
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData);
@@ -70,6 +82,10 @@ int print_csvLineIterStats(void* csvData, int size, int num,
                            int iteration, double* x, double* f, double error_f,
                            double error_fs, double delta_x, double delta_xs,
                            double lambda);
+void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum, modelica_boolean* isSparseNls, modelica_boolean* isBigNls);
+
+NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumber, NONLINEAR_SYSTEM_DATA* nlsData, ANALYTIC_JACOBIAN* analyticJacobian);
+void freeNlsUserData(NLS_USERDATA* userData);
 
 NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumber, NONLINEAR_SYSTEM_DATA* nlsData, ANALYTIC_JACOBIAN* analyticJacobian);
 void freeNlsUserData(NLS_USERDATA* userData);

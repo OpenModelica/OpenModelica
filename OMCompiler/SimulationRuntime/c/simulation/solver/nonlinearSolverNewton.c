@@ -41,6 +41,7 @@ extern "C" {
 
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
+
 #include "util/varinfo.h"
 #include "model_help.h"
 
@@ -135,7 +136,7 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
   ANALYTIC_JACOBIAN* jacobian = userData->analyticJacobian;
 
   DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
-  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=userData->solverData};
   int flag = 1;
 
   if (fj) {
@@ -189,6 +190,7 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
 NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* systemData)
 {
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+
   int eqSystemNumber = 0;
   int i;
   double xerror = -1, xerror_scaled = -1;
