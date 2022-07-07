@@ -259,8 +259,7 @@ function instantiate
 algorithm
   node := expand(node);
 
-  if instPartial or not InstNode.isPartial(node) or
-     InstContext.inRelaxed(context) or InstContext.inRedeclared(context) then
+  if instPartial or not InstNode.isPartial(node) or InstContext.inRelaxed(context) then
     node := instClass(node, Modifier.NOMOD(), NFAttributes.DEFAULT_ATTR, true, 0, parent, context);
   end if;
 end instantiate;
@@ -1080,7 +1079,7 @@ algorithm
         inst := instantiate(node, context = context);
 
         // Cache the instantiated node and instantiate expressions in it too.
-        if not InstNode.isPartial(inst) or (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) then
+        if not InstNode.isPartial(inst) or InstContext.inRelaxed(context) then
           InstNode.setPackageCache(node, CachedData.PACKAGE(inst));
           instExpressions(inst, context = context);
         end if;
@@ -3587,7 +3586,7 @@ function checkPartialClass
   input InstNode node;
   input InstContext.Type context;
 algorithm
-  if InstNode.isPartial(node) and not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) then
+  if InstNode.isPartial(node) and not InstContext.inRelaxed(context) then
     Error.addSourceMessage(Error.INST_PARTIAL_CLASS,
       {InstNode.name(node)}, InstNode.info(node));
     fail();
