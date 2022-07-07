@@ -417,6 +417,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     break;
   case S_GBODE:
     gbode_freeData(data, solverInfo->solverData);
+    break;
 #if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
     /* De-Initial DASSL solver */
