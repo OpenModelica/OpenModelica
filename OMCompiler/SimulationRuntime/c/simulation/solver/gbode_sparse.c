@@ -38,18 +38,22 @@
 #include "simulation_data.h"
 #include "solver_main.h"
 
+// TODO: Describe me
+// TODO: Don't allocate memory for leadindex at each call but give it a work array
 void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePattern, SPARSE_PATTERN* sparsePatternT)
 {
-  int leadindex[sizeCols];
   unsigned int i, j, loc;
+  int* leadindex = calloc(sizeCols, sizeof(int));
 
-  for (i=0; i < sizeCols; i++)
-    leadindex[i] = 0;
   for (i=0; i < sparsePattern->numberOfNonZeros; i++)
+  {
     leadindex[sparsePattern->index[i]]++;
+  }
   sparsePatternT->leadindex[0] = 0;
   for(i=1;i<sizeCols+1;i++)
+  {
     sparsePatternT->leadindex[i] = sparsePatternT->leadindex[i-1] + leadindex[i-1];
+  }
   memcpy(leadindex, sparsePatternT->leadindex, sizeof(unsigned int)*sizeCols);
   for (i=0,j=0;i<sizeRows;i++)
   {
@@ -70,6 +74,8 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
                        sizeCols,
                        LOG_GBODE_V,
                        "sparsePatternT");
+
+  free(leadindex);
 }
 
 /**
@@ -359,8 +365,8 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   int numberOfNonZeros = nnz_A*sparsePattern_ODE->numberOfNonZeros + nDiags_A*missingDiags + (nStages-nDiags_A)*nStates;
 
   // first generated a coordinate format and transform this later to Column pressed format
-  int coo_col[numberOfNonZeros];
-  int coo_row[numberOfNonZeros];
+  int *coo_col = (int*) malloc(numberOfNonZeros*sizeof(int));
+  int *coo_row = (int*) malloc(numberOfNonZeros*sizeof(int));
 
   i = 0;
   for (k=0; k<nStages; k++)
@@ -425,6 +431,9 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   {
     sparsePattern_IRK->leadindex[i + 1] += sparsePattern_IRK->leadindex[i];
   }
+
+  free(coo_col);
+  free(coo_row);
 
   ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages);
 
