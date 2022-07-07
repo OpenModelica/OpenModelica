@@ -885,6 +885,7 @@ PartialFunction1.mo \
 PartialFunction2.mo \
 PartialLookup1.mo \
 PartialLookup2.mo \
+PartialLookup3.mo \
 PartialType1.mo \
 PartialType2.mo \
 PartialType3.mo \
