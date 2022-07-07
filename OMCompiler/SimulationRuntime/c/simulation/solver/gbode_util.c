@@ -37,8 +37,12 @@
 
 // LA functions
 /**
- * @brief Determines the scalar multiplication of an vector and adds the result
- *        to another vector (only for selected indices) a = b + s*c
+ * @brief Scalar multiplication and vector addition a = b + s*c for selected indices.
+ *
+ * Determines the scalar multiplication of an vector and adds the result
+ * to another vector only for selected indices.
+ *
+ * a = b + s*c
  *
  * @return a    Output vector
  * @param  b    Input vector
@@ -57,8 +61,12 @@ void addSmultVec_gbf(double* a, double* b, double *c, double s, int nIdx, int* i
 }
 
 /**
- * @brief Determines the scalar multiplication of an vector and adds the result
- *        to another vector a = b + s*c
+ * @brief Scalar multiplication and vector addition a = b + s*c for selected indices.
+ *
+ * Determines the scalar multiplication of an vector and adds the result
+ * to another vector.
+ *
+ * a = b + s*c
  *
  * @return a    Output vector
  * @param  b    Input vector
@@ -381,8 +389,10 @@ void copyVector_gbf(double* a, double* b, int nIndx, int* indx) {
 }
 
 /**
- * @brief Projection function: Collects the values in the vector for given indices (idx)
- *        and copy them in an corresponding vector of size (nIdx)
+ * @brief Projection function
+ *
+ * Collects the values in the vector for given indices (idx)
+ * and copy them in an corresponding vector of size (nIdx).
  *
  * @return a     Target vector
  * @param  b     Source Vector
@@ -394,11 +404,11 @@ void projVector_gbf(double* a, double* b, int nIndx, int* indx) {
     a[i] = b[indx[i]];
 }
 
-// debug ring buffer for the states and derviatives of the states
 /**
- * @brief Output debug information of the states and derivatives that
- *        have been evaluated at the intermediate points given by the
- *        Butcher tableau
+ * @brief Output debug information of the states and derivatives
+ *
+ * that have been evaluated at the intermediate points given by the
+ * Butcher tableau.
  *
  * @param stream   Prints only, if stream is active
  * @param x        States at the intermediate time points

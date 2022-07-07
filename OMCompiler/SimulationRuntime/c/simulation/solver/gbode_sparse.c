@@ -73,8 +73,10 @@ void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePa
 }
 
 /**
- * @brief Simple sparse matrix coloring. Determine column by column the next possible color,
- *        by looking at columns with values in corresponding rows (transpose matrix necessary)
+ * @brief Simple sparse matrix coloring.
+ *
+ * Determine column by column the next possible color,
+ * by looking at columns with values in corresponding rows (transpose matrix necessary)
  *
  * @param sparsePattern Sparse pattern of the matirx
  * @param sizeRows      Number or rows

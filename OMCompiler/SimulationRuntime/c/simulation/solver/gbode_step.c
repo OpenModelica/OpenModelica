@@ -372,8 +372,9 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 }
 
 /**
- * @brief Generic diagonal implicit Runge-Kutta step function (only for the fast states)
- *        => inner integration
+ * @brief Generic diagonal implicit Runge-Kutta step function.
+ *
+ * Only for the fast states (inner integration).
  *
  * Internal non-linear equation system will be solved with non-linear solver specified during setup.
  * Results will be saved in y and embedded results saved in yt.
