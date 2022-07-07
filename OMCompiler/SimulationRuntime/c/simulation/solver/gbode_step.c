@@ -33,6 +33,7 @@
 
 #include "gbode_main.h"
 #include "gbode_util.h"
+#include "util/rtclock.h"
 
 /**
  * @brief Generic multi-step function.
@@ -95,13 +96,12 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-    clock_t start, end;
+    rtclock_t clock;
     double cpu_time_used;
 
-    start = clock();
+    rt_ext_tp_tick(&clock);
     solved = solveNLS(data, threadData, nlsData);
-    end = clock();
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cpu_time_used = rt_ext_tp_tock(&clock);
 
     infoStreamPrint(LOG_GBODE_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
   } else {
@@ -202,13 +202,12 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
-    clock_t start, end;
+    rtclock_t clock;
     double cpu_time_used;
 
-    start = clock();
+    rt_ext_tp_tick(&clock);
     solved = solveNLS(data, threadData, nlsData);
-    end = clock();
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cpu_time_used = rt_ext_tp_tock(&clock);
 
     infoStreamPrint(LOG_GBODE_NLS_V, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
   } else {
@@ -318,16 +317,13 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       // Debug nonlinear solution process
       if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-        clock_t start, end;
+        rtclock_t clock;
         double cpu_time_used;
 
-        start = clock();
-
         //Solve nonlinear equation system
+        rt_ext_tp_tick(&clock);
         solved = solveNLS(data, threadData, nlsData);
-
-        end = clock();
-        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+        cpu_time_used = rt_ext_tp_tock(&clock);
 
         infoStreamPrint(LOG_GBODE_NLS, 0, "time needed for solving the NLS:  %20.16g", cpu_time_used);
       } else {
@@ -463,13 +459,12 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
       // Solve corresponding NLS
       if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
-        clock_t start, end;
+        rtclock_t clock;
         double cpu_time_used;
 
-        start = clock();
+        rt_ext_tp_tick(&clock);
         solved = solveNLS(data, threadData, nlsData);
-        end = clock();
-        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+        cpu_time_used = rt_ext_tp_tock(&clock);
 
         infoStreamPrint(LOG_GBODE_NLS_V, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
       } else {
@@ -558,13 +553,12 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-    clock_t start, end;
+    rtclock_t clock;
     double cpu_time_used;
 
-    start = clock();
+    rt_ext_tp_tick(&clock);
     solved = solveNLS(data, threadData, nlsData);
-    end = clock();
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cpu_time_used = rt_ext_tp_tock(&clock);
 
     infoStreamPrint(LOG_GBODE_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
   } else {
