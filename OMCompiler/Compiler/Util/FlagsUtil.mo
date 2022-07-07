@@ -405,7 +405,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.LINK_TYPE,
   Flags.TEARING_ALWAYS_DERIVATIVES,
   Flags.DUMP_FLAT_MODEL,
-  Flags.SIMULATION
+  Flags.SIMULATION,
+  Flags.OBFUSCATE
 };
 
 public function new

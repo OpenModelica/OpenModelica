@@ -680,5 +680,63 @@ public
     end match;
   end typeFlatType;
 
+  function deobfuscatePublicVars
+    input output FlatModel flatModel;
+    input UnorderedMap<String, String> mapping;
+  protected
+    UnorderedMap<String, String> inv_mapping;
+  algorithm
+    inv_mapping := UnorderedMap.fromLists(UnorderedMap.valueList(mapping),
+      UnorderedMap.keyList(mapping), stringHashDjb2Mod, stringEq);
+
+    flatModel.variables := list(deobfuscatePublicVar(v, inv_mapping) for v in flatModel.variables);
+    flatModel := mapExp(flatModel,
+      function Expression.map(func = function deobfuscatePublicVarsInExp(mapping = inv_mapping)));
+  end deobfuscatePublicVars;
+
+  function deobfuscatePublicVar
+    input output Variable variable;
+    input UnorderedMap<String, String> mapping;
+  algorithm
+    variable.name := deobfuscatePublicVarCref(variable.name, mapping);
+  end deobfuscatePublicVar;
+
+  function deobfuscatePublicVarCref
+    input output ComponentRef cref;
+    input UnorderedMap<String, String> mapping;
+  algorithm
+    if ComponentRef.visibility(cref) == Visibility.PUBLIC then
+      cref := ComponentRef.mapNodes(cref, function deobfuscateNode(mapping = mapping));
+    end if;
+  end deobfuscatePublicVarCref;
+
+  function deobfuscateNode
+    input output InstNode node;
+    input UnorderedMap<String, String> mapping;
+  protected
+    Option<String> res;
+  algorithm
+    res := UnorderedMap.get(InstNode.name(node), mapping);
+
+    if isSome(res) then
+      node := InstNode.rename(Util.getOption(res), node);
+    end if;
+  end deobfuscateNode;
+
+  function deobfuscatePublicVarsInExp
+    input output Expression exp;
+    input UnorderedMap<String, String> mapping;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        algorithm
+          exp.cref := deobfuscatePublicVarCref(exp.cref, mapping);
+        then
+          ();
+
+      else ();
+    end match;
+  end deobfuscatePublicVarsInExp;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

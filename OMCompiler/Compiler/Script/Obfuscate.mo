@@ -32,6 +32,7 @@
 encapsulated package Obfuscate
   import Absyn;
   import AbsynUtil;
+  import DAE;
   import Dump;
   import FBuiltin;
   import SCode;
@@ -73,8 +74,8 @@ encapsulated package Obfuscate
     input output Absyn.Path classPath;
     input output SCode.Comment classComment = SCode.noComment;
           output String mapStr;
+          output Mapping mapping;
   protected
-    Mapping mapping;
     Builtins builtins;
     Env env;
   algorithm
@@ -112,29 +113,30 @@ encapsulated package Obfuscate
     end for;
 
     // Builtin types.
-    UnorderedMap.add("Boolean"    , ElementType.TYPE             , builtins);
-    UnorderedMap.add("Clock"      , ElementType.TYPE             , builtins);
-    UnorderedMap.add("Real"       , ElementType.TYPE             , builtins);
+    UnorderedMap.add("Boolean"           , ElementType.TYPE             , builtins);
+    UnorderedMap.add("Clock"             , ElementType.TYPE             , builtins);
+    UnorderedMap.add("Real"              , ElementType.TYPE             , builtins);
     // Builtin types that are also functions.
-    UnorderedMap.add("Integer"    , ElementType.TYPE_AND_FUNCTION, builtins);
-    UnorderedMap.add("String"     , ElementType.TYPE_AND_FUNCTION, builtins);
+    UnorderedMap.add("Integer"           , ElementType.TYPE_AND_FUNCTION, builtins);
+    UnorderedMap.add("String"            , ElementType.TYPE_AND_FUNCTION, builtins);
     // Builtin type attributes.
-    UnorderedMap.add("displayUnit", ElementType.OTHER            , builtins);
-    UnorderedMap.add("fixed"      , ElementType.OTHER            , builtins);
-    UnorderedMap.add("max"        , ElementType.OTHER            , builtins);
-    UnorderedMap.add("min"        , ElementType.OTHER            , builtins);
-    UnorderedMap.add("nominal"    , ElementType.OTHER            , builtins);
-    UnorderedMap.add("quantity"   , ElementType.OTHER            , builtins);
-    UnorderedMap.add("start"      , ElementType.OTHER            , builtins);
-    UnorderedMap.add("stateSelect", ElementType.OTHER            , builtins);
-    UnorderedMap.add("time"       , ElementType.OTHER            , builtins);
-    UnorderedMap.add("unbounded"  , ElementType.OTHER            , builtins);
-    UnorderedMap.add("uncertain"  , ElementType.OTHER            , builtins);
-    UnorderedMap.add("unit"       , ElementType.OTHER            , builtins);
+    UnorderedMap.add("displayUnit"       , ElementType.OTHER            , builtins);
+    UnorderedMap.add("fixed"             , ElementType.OTHER            , builtins);
+    UnorderedMap.add("max"               , ElementType.OTHER            , builtins);
+    UnorderedMap.add("min"               , ElementType.OTHER            , builtins);
+    UnorderedMap.add("nominal"           , ElementType.OTHER            , builtins);
+    UnorderedMap.add("quantity"          , ElementType.OTHER            , builtins);
+    UnorderedMap.add("start"             , ElementType.OTHER            , builtins);
+    UnorderedMap.add("stateSelect"       , ElementType.OTHER            , builtins);
+    UnorderedMap.add("time"              , ElementType.OTHER            , builtins);
+    UnorderedMap.add("unbounded"         , ElementType.OTHER            , builtins);
+    UnorderedMap.add("uncertain"         , ElementType.OTHER            , builtins);
+    UnorderedMap.add("unit"              , ElementType.OTHER            , builtins);
     // Builtin functions.
-    UnorderedMap.add("constructor", ElementType.FUNCTION         , builtins);
-    UnorderedMap.add("destructor" , ElementType.FUNCTION         , builtins);
-    UnorderedMap.add("$array"     , ElementType.FUNCTION         , builtins);
+    UnorderedMap.add("constructor"       , ElementType.FUNCTION         , builtins);
+    UnorderedMap.add("destructor"        , ElementType.FUNCTION         , builtins);
+    UnorderedMap.add("$array"            , ElementType.FUNCTION         , builtins);
+    UnorderedMap.add("equalityConstraint", ElementType.FUNCTION         , builtins);
   end makeBuiltins;
 
   function obfuscateElement
@@ -430,21 +432,23 @@ encapsulated package Obfuscate
     input Env env;
     input ElementType etype;
     output String outId;
+    output ElementType foundType;
   protected
     Builtins builtins = env.builtins;
     Mapping mapping = env.mapping;
     Option<ElementType> opt_ety;
-    ElementType ety;
   algorithm
     opt_ety := UnorderedMap.get(id, builtins);
 
     if isSome(opt_ety) then
-      SOME(ety) := opt_ety;
+      SOME(foundType) := opt_ety;
 
-      if isBuiltinInContext(etype, ety) then
+      if isBuiltinInContext(etype, foundType) then
         outId := id;
         return;
       end if;
+    else
+      foundType := ElementType.OTHER;
     end if;
 
     outId := UnorderedMap.addUpdate(id,
@@ -624,6 +628,7 @@ encapsulated package Obfuscate
     input Boolean obfuscateSubs = true;
   protected
     Absyn.Ident name;
+    ElementType ety;
   algorithm
     () := match cref
       case Absyn.ComponentRef.CREF_IDENT()
@@ -645,21 +650,25 @@ encapsulated package Obfuscate
 
       case Absyn.ComponentRef.CREF_QUAL()
         algorithm
-          name := obfuscateIdentifier(cref.name, env, etype);
+          (name, ety) := obfuscateIdentifier(cref.name, env, etype);
 
           // Don't obfuscate if it's a builtin name, and don't obfuscate the
-          // rest of the cref either.
-          if referenceEq(name, cref.name) then
-            return;
+          // rest of the cref either if it's a class.
+          //if referenceEq(name, cref.name) and ety <> ElementType.OTHER then
+          //  return;
+          //end if;
+
+          if not referenceEq(name, cref.name) then
+            cref.name := name;
           end if;
 
-          cref.name := name;
+          if ety == ElementType.OTHER then
+            if obfuscateSubs then
+              cref.subscripts := obfuscateSubscripts(cref.subscripts, env);
+            end if;
 
-          if obfuscateSubs then
-            cref.subscripts := obfuscateSubscripts(cref.subscripts, env);
+            cref.componentRef := obfuscateCref(cref.componentRef, env, etype, obfuscateSubs);
           end if;
-
-          cref.componentRef := obfuscateCref(cref.componentRef, env, etype, obfuscateSubs);
         then
           ();
 
@@ -1006,6 +1015,10 @@ encapsulated package Obfuscate
     ety := UnorderedMap.getOrDefault(name, env.builtins, ElementType.OTHER);
     res := ety == ElementType.FUNCTION or ety == ElementType.TYPE_AND_FUNCTION;
   end isBuiltinCall;
+
+  function deobfuscatePublicDAEVars
+
+  end deobfuscatePublicDAEVars;
 
   annotation(__OpenModelica_Interface="backend");
 end Obfuscate;

@@ -59,6 +59,7 @@ Modelica.Media.Examples.getComponents.mos \
 MoveClass.mos \
 MoveClass2.mos \
 Obfuscation1.mos \
+Obfuscation2.mos \
 ProtectedHandlingBug2917.mos \
 refactorGraphAnn1.mos \
 refactorGraphAnn2.mos \

@@ -40,7 +40,7 @@ protected
   import NFInstNode.InstNodeType;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFPrefixes.{Variability, Purity};
+  import NFPrefixes.{Variability, Purity, Visibility};
   import Class = NFClass;
   import List;
   import Prefixes = NFPrefixes;
@@ -457,6 +457,19 @@ public
       else Purity.IMPURE;
     end match;
   end purity;
+
+  function visibility
+    input ComponentRef cref;
+    output Visibility vis;
+  algorithm
+    vis := match cref
+      case CREF() then
+        if InstNode.isProtected(cref.node) then
+          Visibility.PROTECTED else visibility(cref.restCref);
+
+      else Visibility.PUBLIC;
+    end match;
+  end visibility;
 
   function rename
     input String name;
@@ -1872,6 +1885,31 @@ public
       else cref;
     end match;
   end mapTypes;
+
+  function mapNodes
+    input ComponentRef cref;
+    input MapFunc func;
+    output ComponentRef outCref;
+
+    partial function MapFunc
+      input output InstNode n;
+    end MapFunc;
+  algorithm
+    outCref := match cref
+      local
+        ComponentRef rest;
+        InstNode node;
+
+      case CREF()
+        algorithm
+          node := func(cref.node);
+          rest := mapNodes(cref.restCref, func);
+        then
+          CREF(node, cref.subscripts, cref.ty, cref.origin, rest);
+
+      else cref;
+    end match;
+  end mapNodes;
 
   function getArrayCrefOpt
     input ComponentRef scal;

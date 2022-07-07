@@ -524,6 +524,7 @@ public
     eq := match eq
       local
         Expression e1, e2, e3;
+        ComponentRef cr1, cr2;
 
       case EQUALITY()
         algorithm
@@ -540,6 +541,13 @@ public
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
             then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.source);
+
+      //case CREF_EQUALITY()
+      //  algorithm
+      //    Expression.CREF(cref = cr1) := func(Expression.fromCref(eq.lhs));
+      //    Expression.CREF(cref = cr2) := func(Expression.fromCref(eq.rhs));
+      //  then
+      //    Equation.CREF_EQUALITY(cr1, cr2, eq.source);
 
       case CONNECT()
         algorithm

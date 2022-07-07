@@ -244,6 +244,11 @@ public
                               variable.attributes.direction == Direction.INPUT;
   end isTopLevelInput;
 
+  function isPublic
+    input Variable variable;
+    output Boolean isPublic = variable.visibility == Visibility.PUBLIC;
+  end isPublic;
+
   function lookupTypeAttribute
     input String name;
     input Variable var;
