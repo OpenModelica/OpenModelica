@@ -608,10 +608,15 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
   for (stage_=0; stage_<nStages; stage_++)
   {
     /* Evaluate ODE for each stage_ */
-    sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
-    memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-    memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+    if (!gbData->tableau->isKLeftAvailable || stage_>0) {
+      sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
+      memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+    } else {
+      // memcpy(sData->realVars, gbData->yLeft, nStates*sizeof(double));
+      memcpy(gbData->k + stage_ * nStates, gbData->kLeft, nStates*sizeof(double));
+    }
   }
 
   // Calculate residuum for the full implicit RK method based on stages and A matrix

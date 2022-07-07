@@ -477,8 +477,10 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->err_int = 0;            // needed, if GB_INTERPOL_HERMITE_ERRCTRL or GB_DENSE_OUTPUT_ERRCTRL is used
   gbData->eventSearch = 0;        // use interpolation for event time search
 
+
   if (gbData->multi_rate) {
     gbodef_allocateData(data, threadData, gbData);
+    gbData->tableau->isKRightAvailable = FALSE;
   } else {
     gbData->gbfData = NULL;
   }
@@ -903,9 +905,11 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbfData->timeRight = gbfData->time + gbfData->lastStepSize;
     memcpy(gbfData->yRight, gbfData->y, nStates * sizeof(double));
     // update kRight
-    sData->timeValue = gbfData->timeRight;
-    memcpy(sData->realVars, gbfData->yRight, nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+    if (!gbfData->tableau->isKRightAvailable) {
+      sData->timeValue = gbfData->timeRight;
+      memcpy(sData->realVars, gbfData->yRight, data->modelData->nStates * sizeof(double));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+    }
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
@@ -1296,9 +1300,11 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->timeRight = gbData->time + gbData->lastStepSize;
       memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
       // update kRight
-      sData->timeValue = gbData->timeRight;
-      memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      if (!gbData->tableau->isKRightAvailable) {
+        sData->timeValue = gbData->timeRight;
+        memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      }
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
       gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, Rtol);
