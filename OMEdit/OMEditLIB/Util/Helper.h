@@ -225,6 +225,8 @@ public:
   static QString duplicateTip;
   static QString unloadClass;
   static QString unloadClassTip;
+  static QString reloadClass;
+  static QString reloadClassTip;
   static QString unloadCompositeModelOrTextTip;
   static QString unloadOMSModelTip;
   static QString refresh;
@@ -488,6 +490,7 @@ public:
     ENCRYPTED_PACKAGE_GENERATED,
     READONLY_PACKAGE_GENERATED,
     UNLOAD_CLASS_MSG,
+    RELOAD_CLASS_MSG,
     DELETE_CLASS_MSG,
     UNLOAD_TEXT_FILE_MSG,
     DELETE_TEXT_FILE_MSG,

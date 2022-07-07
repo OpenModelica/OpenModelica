@@ -1932,6 +1932,49 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
 }
 
 /*!
+ * \brief LibraryTreeModel::reloadClass
+ * reloads the Modelica class.
+ * \param pLibraryTreeItem
+ * \param askQuestion
+ * \return
+ */
+bool LibraryTreeModel::reloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+{
+  if (askQuestion) {
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+    pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    if (pLibraryTreeItem->isTopLevel()) {
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::RELOAD_CLASS_MSG).arg(pLibraryTreeItem->getNameStructure()));
+    }
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::Yes);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::Yes:
+        // Yes was clicked. Don't return.
+        break;
+      case QMessageBox::No:
+        // No was clicked. Return
+        return false;
+      default:
+        // should never be reached
+        return false;
+    }
+  }
+  const QString nameStructure = pLibraryTreeItem->getNameStructure();
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+  pLibraryTreeModel->createLibraryTreeItem(nameStructure, pLibraryTreeModel->getRootLibraryTreeItem(), true, false, true);
+  pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+  // load any dependent libraries
+  pLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
+  return true;
+}
+
+
+/*!
  * \brief LibraryTreeModel::unloadCompositeModelOrTextFile
  * Unloads/deletes the CompositeModel/Text class.
  * \param pLibraryTreeItem
@@ -3083,6 +3126,11 @@ void LibraryTreeView::createActions()
   mpUnloadClassAction->setShortcut(QKeySequence::Delete);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
   connect(mpUnloadClassAction, SIGNAL(triggered()), SLOT(unloadClass()));
+  // reload Action
+  mpReloadClassAction = new QAction(QIcon(":/Resources/icons/reload.svg"), Helper::reloadClass, this);
+  mpReloadClassAction->setShortcut(QKeySequence::Refresh);
+  mpReloadClassAction->setStatusTip(Helper::reloadClassTip);
+  connect(mpReloadClassAction, SIGNAL(triggered()), SLOT(reloadClass()));
   // unload CompositeModel/Text file Action
   mpUnloadCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadCompositeModelFileAction->setShortcut(QKeySequence::Delete);
@@ -3351,6 +3399,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->isTopLevel()) {
             mpUnloadClassAction->setText(Helper::unloadClass);
             mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
+            mpReloadClassAction->setText(Helper::reloadClass);
+            mpReloadClassAction->setStatusTip(Helper::reloadClassTip);
           } else {
             mpUnloadClassAction->setText(Helper::deleteStr);
             mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
@@ -3358,8 +3408,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
           // only add unload/delete option for top level system libraries
           if (!pLibraryTreeItem->isSystemLibrary()) {
             menu.addAction(mpUnloadClassAction);
+            menu.addAction(mpReloadClassAction);
           } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
             menu.addAction(mpUnloadClassAction);
+            menu.addAction(mpReloadClassAction);
           }
           menu.addSeparator();
           // add actions to Export menu
@@ -3730,6 +3782,18 @@ void LibraryTreeView::unloadClass()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadClass(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::reloadClass
+ * Reloads the Modelica LibraryTreeItem.
+ */
+void LibraryTreeView::reloadClass()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->reloadClass(pLibraryTreeItem);
   }
 }
 
