@@ -114,7 +114,7 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
  */
 void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
   for(int i=0; i<nonlinsys->size; i++) {
-    // Get the nominal values of the states, the non-linear system has size stages*nStates
+    // Get the nominal values of the states, the non-linear system has size stages*nStates, i.e. [states, states, ...]
     int ii = i % data->modelData->nStates;
     nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[ii].attribute.nominal), 1e-32);
     nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
@@ -245,7 +245,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
   /* Initialize NLS method */
   switch (gbData->nlsSolverMethod) {
-  case RK_NLS_NEWTON:
+  case GB_NLS_NEWTON:
     nlsData->nlsMethod = NLS_NEWTON;
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     nlsData->jacobianIndex = -1;
@@ -253,7 +253,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
-  case RK_NLS_KINSOL:
+  case GB_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
     if (nlsData->isPatternAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
@@ -336,7 +336,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   /* Initialize NLS method */
   switch (gbfData->nlsSolverMethod) {
-  case RK_NLS_NEWTON:
+  case GB_NLS_NEWTON:
     nlsData->nlsMethod = NLS_NEWTON;
     nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     nlsData->jacobianIndex = -1;
@@ -344,7 +344,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
-  case RK_NLS_KINSOL:
+  case GB_NLS_KINSOL:
     nlsData->nlsMethod = NLS_KINSOL;
     if (nlsData->isPatternAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;

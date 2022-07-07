@@ -67,7 +67,7 @@ typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INF
 typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, unsigned int err_order);
 
 typedef struct DATA_GBODEF{
-  enum GB_SINGLERATE_METHOD GM_method;        /* Runge-Kutta method to use. */
+  enum GB_METHOD GM_method;                   /* Runge-Kutta method to use. */
   enum GM_TYPE type;                          /* Type of RK method */
   enum GB_NLS_METHOD nlsSolverMethod;         /* Non-linear solver method uses by generic RK method. */
 
@@ -116,7 +116,7 @@ typedef struct DATA_GBODEF{
 
 typedef struct DATA_GBODE{
   DATA_GBODEF* gbfData;
-  enum GB_SINGLERATE_METHOD GM_method;  /* method to use for fast states integration. */
+  enum GB_METHOD GM_method;  /* method to use for fast states integration. */
   enum GM_TYPE type;                    /* Type of GM method */
   enum GB_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
   NONLINEAR_SYSTEM_DATA* nlsData;       /* Non-linear system

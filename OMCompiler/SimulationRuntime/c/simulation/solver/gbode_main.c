@@ -310,7 +310,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->GM_method = getGB_method(FLAG_SR);
   gbData->tableau = initButcherTableau(gbData->GM_method, FLAG_SR_ERR);
   if (gbData->tableau == NULL) {
-    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGm: Failed to initialize gbode tableau for method %s", GB_SINGLERATE_METHOD_NAME[gbData->GM_method]);
+    errorStreamPrint(LOG_STDOUT, 0, "allocateDataGm: Failed to initialize gbode tableau for method %s", GB_METHOD_NAME[gbData->GM_method]);
     return -1;
   }
 
@@ -747,10 +747,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
       switch (gbfData->nlsSolverMethod)
       {
-      case RK_NLS_NEWTON:
+      case GB_NLS_NEWTON:
         ((DATA_NEWTON *)solverData->ordinaryData)->n = gbData->nFastStates;
         break;
-      case RK_NLS_KINSOL:
+      case GB_NLS_KINSOL:
         nlsKinsolFree(solverData->ordinaryData);
         /* Set NLS user data */
         NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
@@ -1519,7 +1519,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
   if (fabs(targetTime - stopTime) < MINIMAL_STEP_SIZE && ACTIVE_STREAM(LOG_STATS)) {
     infoStreamPrint(LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
-                    GB_SINGLERATE_METHOD_NAME[gbData->GM_method], GB_SINGLERATE_METHOD_NAME[gbData->gbfData->GM_method]);
+                    GB_METHOD_NAME[gbData->GM_method], GB_METHOD_NAME[gbData->gbfData->GM_method]);
     logSolverStats(LOG_STATS, "inner integration", stopTime, stopTime, 0, &gbData->gbfData->stats);
   }
   /* Write statistics to the solverInfo data structure */
@@ -1854,7 +1854,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   if (!gbData->isExplicit)
     gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
   if (fabs(targetTime - stopTime) < MINIMAL_STEP_SIZE && ACTIVE_STREAM(LOG_STATS)) {
-    infoStreamPrint(LOG_STATS, 0, "gbode (single-rate integration): %s", GB_SINGLERATE_METHOD_NAME[gbData->GM_method]);
+    infoStreamPrint(LOG_STATS, 0, "gbode (single-rate integration): %s", GB_METHOD_NAME[gbData->GM_method]);
   }
   /* Write statistics to the solverInfo data structure */
   logSolverStats(LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);

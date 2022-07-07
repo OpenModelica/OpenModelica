@@ -268,17 +268,17 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_R */                            "value specifies a new result file than the default Model_res.mat",
   /* FLAG_DATA_RECONCILE */               "Run the Data Reconciliation numerical computation algorithm for constrained equations",
   /* FLAG_DATA_RECONCILE_BOUNDARY */      "Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
-  /* FLAG_SR */                           "value specifies the chosen outer ODE solver (adams)",
-  /* FLAG_SR_CTRL */                      "step size control of the outer ODE solver",
-  /* FLAG_SR_ERR */                       "error estimation done by Richardson extrapolation",
-  /* FLAG_SR_INT */                       "experimental flag for the interpolation used for emitting results",
-  /* FLAG_SR_NLS */                       "non-linear solver method used by the outer ODE solver (default kinsol)",
-  /* FLAG_MR */                           "value specifies the chosen inner ODE solver (defaults from outer integrator)",
-  /* FLAG_MR_CTRL */                      "step size control of the inner ODE solver (defaults from outer integrator)",
-  /* FLAG_MR_ERR */                       "error estimation done by Richardson extrapolation",
-  /* FLAG_MR_INT */                       "experimental flag for the type of interpolation used for the slow states",
-  /* FLAG_MR_NLS */                       "non-linear solver method used by the inner ODE solver (defaults from outer integrator)",
-  /* FLAG_MR_PAR */                       "define percentage of states for the fast states selection",
+  /* FLAG_SR */                           "Value specifies the chosen solver of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_CTRL */                      "Step size control of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_ERR */                       "Error estimation done by Richardson extrapolation of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_INT */                       "Interpolation method of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_NLS */                       "Non-linear solver method of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_MR */                           "Value specifies the chosen solver of solver gbode (multi-rate, fast states integrator)",
+  /* FLAG_MR_CTRL */                      "Step size control of solver gbode (multi-rate, fast states integrator)",
+  /* FLAG_MR_ERR */                       "Error estimation done by Richardson extrapolation of solver gbode (multi-rate, fast states integrator)",
+  /* FLAG_MR_INT */                       "Interpolation method of solver gbode (multi-rate, fast states integrator)",
+  /* FLAG_MR_NLS */                       "Non-linear solver method of solver gbode (multi-rate, fast states integrator)",
+  /* FLAG_MR_PAR */                       "Define percentage of states for the fast states selection of solver gbode",
   /* FLAG_RT */                           "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                            "value specifies the integration method",
   /* FLAG_SINGLE */                       "output in single precision",
@@ -568,27 +568,27 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_BOUNDARY */
   "  Run the Data Reconciliation numerical computation algorithm for boundary condition equations",
   /* FLAG_SR */
-  "  Value specifies the chosen outer ODE solver (adams)",
+  "Value specifies the chosen solver of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_CTRL */
-  "  Step size control of the outer ODE solver",
+  "Step size control of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_ERR */
-  "  Error estimation done by Richardson extrapolation",
+  "Error estimation done by Richardson extrapolation of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_INT */
-  "  Experimental flag for the interpolation used for emitting results",
+  "Interpolation method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_NLS */
-  "  Non-linear solver method used by the outer ODE solver (default kinsol)",
+  "Non-linear solver method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_MR */
-  "  Value specifies the chosen inner ODE solver (defaults from outer integrator)",
+  "Value specifies the chosen solver of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_CTRL */
-  "  Step size control of the inner ODE solver (defaults from outer integrator)",
+  "Step size control of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_ERR */
-  "  Error estimation done by Richardson extrapolation",
+  "Error estimation done by Richardson extrapolation of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_INT */
-  "experimental flag for the type of interpolation used for the slow states",
+  "Interpolation method of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_NLS */
-  "  Non-linear solver method used by the inner ODE solver (defaults from outer integrator)",
+  "Non-linear solver method of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_PAR */
-  "  Define percentage of states for the fast states selection",
+  "Define percentage of states for the fast states selection of solver gbode",
   /* FLAG_RT */
   "  Value specifies the scaling factor for real-time synchronization (0 disables).\n"
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
@@ -871,8 +871,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_W */                            FLAG_TYPE_FLAG
 };
 
-const char *GB_SINGLERATE_METHOD_NAME[RK_MAX] = {
-  /* RK_UNKNOWN = 0 */   "unknown",
+const char *GB_METHOD_NAME[RK_MAX] = {
+  /* GB_UNKNOWN = 0 */   "unknown",
   /* MS_ADAMS_MOULTON */ "adams",
   /* RK_EXPL_EULER */    "expl_euler",
   /* RK_IMPL_EULER */    "impl_euler",
@@ -908,53 +908,53 @@ const char *GB_SINGLERATE_METHOD_NAME[RK_MAX] = {
   /* RK_DOPRI45 */       "dopri45"
 };
 
-const char *GB_SINGLERATE_METHOD_DESC[RK_MAX] = {
-  /* RK_UNKNOWN = 0 */   "unknown",
+const char *GB_METHOD_DESC[RK_MAX] = {
+  /* GB_UNKNOWN = 0 */   "unknown",
   /* MS_ADAMS_MOULTON */ "adams",
-  /* RK_EXPL_EULER */    "expl_euler",
-  /* RK_IMPL_EULER */    "impl_euler",
-  /* RK_SDIRK2 */        "sdirk2",
-  /* RK_SDIRK3 */        "sdirk3",
-  /* RK_ESDIRK2 */       "esdirk2",
-  /* RK_ESDIRK3 */       "esdirk3",
-  /* RK_ESDIRK4 */       "esdirk4",
-  /* RK_RADAU_IA_2 */    "radauIA2",
-  /* RK_RADAU_IA_3 */    "radauIA3",
-  /* RK_RADAU_IA_4 */    "radauIA4",
-  /* RK_RADAU_IIA_2 */   "radauIIA2",
-  /* RK_RADAU_IIA_3 */   "radauIIA3",
-  /* RK_RADAU_IIA_4 */   "radauIIA4",
-  /* RK_LOBA_IIIA_3 */   "lobattoIIIA3",
-  /* RK_LOBA_IIIA_4 */   "lobattoIIIA4",
-  /* RK_LOBA_IIIB_3 */   "lobattoIIIB3",
-  /* RK_LOBA_IIIB_4 */   "lobattoIIIB4",
-  /* RK_LOBA_IIIC_3 */   "lobattoIIIC3",
-  /* RK_LOBA_IIIC_4 */   "lobattoIIIC4",
-  /* RK_GAUSS2 */        "gauss2",
-  /* RK_GAUSS3 */        "gauss3",
-  /* RK_GAUSS4 */        "gauss4",
-  /* RK_GAUSS5 */        "gauss5",
-  /* RK_GAUSS6 */        "gauss6",
-  /* RK_MERSON */        "merson",
-  /* RK_FEHLBERG12 */    "fehlberg12",
-  /* RK_FEHLBERG45 */    "fehlberg45",
-  /* RK_FEHLBERG78 */    "fehlberg78",
-  /* RK_RK810 */         "rk810",
-  /* RK_RK1012 */        "rk1012",
-  /* RK_RK1214 */        "rk1214",
-  /* RK_DOPRI45 */       "dopri45"
+  /* RK_EXPL_EULER */    "Explizit Euler method (order 1)",
+  /* RK_IMPL_EULER */    "Implizit Euler method (order 1)",
+  /* RK_SDIRK2 */        "Singly-diagonal implicit Runge-Kutta (order 2)",
+  /* RK_SDIRK3 */        "Singly-diagonal implicit Runge-Kutta (order 3)",
+  /* RK_ESDIRK2 */       "Explicit singly-diagonal implicit Runge-Kutta (order 2)",
+  /* RK_ESDIRK3 */       "Explicit singly-diagonal implicit Runge-Kutta (order 3)",
+  /* RK_ESDIRK4 */       "Explicit singly-diagonal implicit Runge-Kutta (order 4)",
+  /* RK_RADAU_IA_2 */    "Implicit Runge-Kutta method of Radau family IA (order 3)",
+  /* RK_RADAU_IA_3 */    "Implicit Runge-Kutta method of Radau family IA (order 5)",
+  /* RK_RADAU_IA_4 */    "Implicit Runge-Kutta method of Radau family IA (order 7)",
+  /* RK_RADAU_IIA_2 */   "Implicit Runge-Kutta method of Radau family IIA (order 3)",
+  /* RK_RADAU_IIA_3 */   "Implicit Runge-Kutta method of Radau family IIA (order 5)",
+  /* RK_RADAU_IIA_4 */   "Implicit Runge-Kutta method of Radau family IIA (order 7)",
+  /* RK_LOBA_IIIA_3 */   "Implicit Runge-Kutta method of Lobatto family IIIA (order 4)",
+  /* RK_LOBA_IIIA_4 */   "Implicit Runge-Kutta method of Lobatto family IIIA (order 6)",
+  /* RK_LOBA_IIIB_3 */   "Implicit Runge-Kutta method of Lobatto family IIIB (order 4)",
+  /* RK_LOBA_IIIB_4 */   "Implicit Runge-Kutta method of Lobatto family IIIB (order 6)",
+  /* RK_LOBA_IIIC_3 */   "Implicit Runge-Kutta method of Lobatto family IIIC (order 4)",
+  /* RK_LOBA_IIIC_4 */   "Implicit Runge-Kutta method of Lobatto family IIIC (order 6)",
+  /* RK_GAUSS2 */        "Implicit Runge-Kutta method of Gauss (order 4)",
+  /* RK_GAUSS3 */        "Implicit Runge-Kutta method of Gauss (order 6)",
+  /* RK_GAUSS4 */        "Implicit Runge-Kutta method of Gauss (order 8)",
+  /* RK_GAUSS5 */        "Implicit Runge-Kutta method of Gauss (order 10)",
+  /* RK_GAUSS6 */        "Implicit Runge-Kutta method of Gauss (order 12)",
+  /* RK_MERSON */        "Explicit Runge-Kutta Merson method (order 4)",
+  /* RK_FEHLBERG12 */    "Explicit Runge-Kutta Fehlberg method (order 2)",
+  /* RK_FEHLBERG45 */    "Explicit Runge-Kutta Fehlberg method (order 5)",
+  /* RK_FEHLBERG78 */    "Explicit Runge-Kutta Fehlberg method (order 8)",
+  /* RK_RK810 */         "Explicit 8-10 Runge-Kutta method (order 10)",
+  /* RK_RK1012 */        "Explicit 10-12 Runge-Kutta method (order 12)",
+  /* RK_RK1214 */        "Explicit 12-14 Runge-Kutta method (order 14)",
+  /* RK_DOPRI45 */       "Explicit Runge-Kutta method Dormand-Prince (order 5)"
 };
 
-const char *GB_NLS_METHOD_NAME[RK_NLS_MAX] = {
+const char *GB_NLS_METHOD_NAME[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
-  /* RK_NLS_NEWTON */     "newton",
-  /* RK_NLS_KINSOL */     "kinsol"
+  /* GB_NLS_NEWTON */     "newton",
+  /* GB_NLS_KINSOL */     "kinsol"
 };
 
-const char *GB_NLS_METHOD_DESC[RK_NLS_MAX] = {
+const char *GB_NLS_METHOD_DESC[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
-  /* RK_NLS_NEWTON */     "Newton method, dense",
-  /* RK_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse"
+  /* GB_NLS_NEWTON */     "Newton method, dense",
+  /* GB_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse"
 };
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {

@@ -2773,24 +2773,24 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 
       case FLAG_SR:
         numExtraFlags = RK_MAX;
-        flagName = GB_SINGLERATE_METHOD_NAME;
-        flagDesc = GB_SINGLERATE_METHOD_DESC;
+        flagName = GB_METHOD_NAME;
+        flagDesc = GB_METHOD_DESC;
         break;
 
       case FLAG_SR_NLS:
-        numExtraFlags = RK_NLS_MAX;
+        numExtraFlags = GB_NLS_MAX;
         flagName = GB_NLS_METHOD_NAME;
         flagDesc = GB_NLS_METHOD_DESC;
         break;
 
       case FLAG_MR:
         numExtraFlags = RK_MAX;
-        flagName = GB_SINGLERATE_METHOD_NAME;
-        flagDesc = GB_SINGLERATE_METHOD_DESC;
+        flagName = GB_METHOD_NAME;
+        flagDesc = GB_METHOD_DESC;
         break;
 
       case FLAG_MR_NLS:
-        numExtraFlags = RK_NLS_MAX;
+        numExtraFlags = GB_NLS_MAX;
         flagName = GB_NLS_METHOD_NAME;
         flagDesc = GB_NLS_METHOD_DESC;
         break;

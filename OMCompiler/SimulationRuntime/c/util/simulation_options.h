@@ -200,60 +200,60 @@ extern const char *FLAG_DETAILED_DESC[FLAG_MAX+1];
 extern const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX];
 extern const int FLAG_TYPE[FLAG_MAX];
 
-enum GB_SINGLERATE_METHOD {
-  RK_UNKNOWN = 0,
+enum GB_METHOD {
+  GB_UNKNOWN = 0,
 
-  MS_ADAMS_MOULTON,
-  RK_EXPL_EULER,
-  RK_IMPL_EULER,
-  RK_SDIRK2,
-  RK_SDIRK3,
-  RK_ESDIRK2,
-  RK_ESDIRK3,
-  RK_ESDIRK4,
-  RK_RADAU_IA_2,
-  RK_RADAU_IA_3,
-  RK_RADAU_IA_4,
-  RK_RADAU_IIA_2,
-  RK_RADAU_IIA_3,
-  RK_RADAU_IIA_4,
-  RK_LOBA_IIIA_3,
-  RK_LOBA_IIIA_4,
-  RK_LOBA_IIIB_3,
-  RK_LOBA_IIIB_4,
-  RK_LOBA_IIIC_3,
-  RK_LOBA_IIIC_4,
-  RK_GAUSS2,
-  RK_GAUSS3,
-  RK_GAUSS4,
-  RK_GAUSS5,
-  RK_GAUSS6,
-  RK_MERSON,
-  RK_FEHLBERG12,
-  RK_FEHLBERG45,
-  RK_FEHLBERG78,
-  RK_RK810,
-  RK_RK1012,
-  RK_RK1214,
-  RK_DOPRI45,
+  MS_ADAMS_MOULTON,   /* adams*/
+  RK_EXPL_EULER,      /* expl_euler*/
+  RK_IMPL_EULER,      /* impl_euler*/
+  RK_SDIRK2,          /* sdirk2*/
+  RK_SDIRK3,          /* sdirk3*/
+  RK_ESDIRK2,         /* esdirk2*/
+  RK_ESDIRK3,         /* esdirk3*/
+  RK_ESDIRK4,         /* esdirk4*/
+  RK_RADAU_IA_2,      /* radauIA2*/
+  RK_RADAU_IA_3,      /* radauIA3*/
+  RK_RADAU_IA_4,      /* radauIA4*/
+  RK_RADAU_IIA_2,     /* radauIIA2*/
+  RK_RADAU_IIA_3,     /* radauIIA3*/
+  RK_RADAU_IIA_4,     /* radauIIA4*/
+  RK_LOBA_IIIA_3,     /* lobattoIIIA3*/
+  RK_LOBA_IIIA_4,     /* lobattoIIIA4*/
+  RK_LOBA_IIIB_3,     /* lobattoIIIB3*/
+  RK_LOBA_IIIB_4,     /* lobattoIIIB4*/
+  RK_LOBA_IIIC_3,     /* lobattoIIIC3*/
+  RK_LOBA_IIIC_4,     /* lobattoIIIC4*/
+  RK_GAUSS2,          /* gauss2*/
+  RK_GAUSS3,          /* gauss3*/
+  RK_GAUSS4,          /* gauss4*/
+  RK_GAUSS5,          /* gauss5*/
+  RK_GAUSS6,          /* gauss6*/
+  RK_MERSON,          /* merson*/
+  RK_FEHLBERG12,      /* fehlberg12*/
+  RK_FEHLBERG45,      /* fehlberg45*/
+  RK_FEHLBERG78,      /* fehlberg78*/
+  RK_RK810,           /* rk810*/
+  RK_RK1012,          /* rk1012*/
+  RK_RK1214,          /* rk1214*/
+  RK_DOPRI45,         /* dopri4*/
 
   RK_MAX
 };
 
-extern const char *GB_SINGLERATE_METHOD_NAME[RK_MAX];
-extern const char *GB_SINGLERATE_METHOD_DESC[RK_MAX];
+extern const char *GB_METHOD_NAME[RK_MAX];
+extern const char *GB_METHOD_DESC[RK_MAX];
 
 enum GB_NLS_METHOD {
   GB_NLS_UNKNOWN = 0,
 
-  RK_NLS_NEWTON,
-  RK_NLS_KINSOL,
+  GB_NLS_NEWTON,
+  GB_NLS_KINSOL,
 
-  RK_NLS_MAX
+  GB_NLS_MAX
 };
 
-extern const char *GB_NLS_METHOD_NAME[RK_NLS_MAX];
-extern const char *GB_NLS_METHOD_DESC[RK_NLS_MAX];
+extern const char *GB_NLS_METHOD_NAME[GB_NLS_MAX];
+extern const char *GB_NLS_METHOD_DESC[GB_NLS_MAX];
 
 enum SOLVER_METHOD
 {

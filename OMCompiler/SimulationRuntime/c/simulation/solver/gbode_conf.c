@@ -67,7 +67,7 @@ const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
 const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_UNKNOWN */         "unknown",
   /* GB_INTERPOL_LIN */             "Linear interpolation (1st order)",
-  /* GB_INTERPOL_HERMITE */         "Hermite interpolation (2nd order)",
+  /* GB_INTERPOL_HERMITE */         "Hermite interpolation (3rd order)",
   /* GB_INTERPOL_HERMITE_b */       "Hermite interpolation (only for left hand side)",
   /* GB_INTERPOL_HERMITE_ERRCTRL */ "Hermite interpolation with error control",
   /* GB_DENSE_OUTPUT */             "use dense output formula for interpolation",
@@ -82,14 +82,14 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
  * Defaults to method RK_SDIRK2 for multi-rate method, if single-rate method is implicit.
  * Otherwise us same method as single-rate method.
  *
- * Returns RK_UNKNOWN if flag is not known.
+ * Returns GB_UNKNOWN if flag is not known.
  *
  * @param flag                          FLAG_SR for single-rate method.
  *                                      FLAG_MR for multi-rate method.
- * @return enum GB_SINGLERATE_METHOD    Runge-Kutta method.
+ * @return enum GB_METHOD    Runge-Kutta method.
  */
-enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
-  enum GB_SINGLERATE_METHOD method;
+enum GB_METHOD getGB_method(enum _FLAG flag) {
+  enum GB_METHOD method;
   const char* flag_value;
   assertStreamPrint(NULL, flag==FLAG_SR || flag==FLAG_MR,
                     "Illegal input to getGB_method. Expected FLAG_SR or FLAG_MR ");
@@ -97,19 +97,19 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
 
   // Get method from flag
   if (flag_value != NULL) {
-    for (method=RK_UNKNOWN; method<RK_MAX; method++) {
-      if (strcmp(flag_value, GB_SINGLERATE_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: %s", GB_SINGLERATE_METHOD_NAME[method]);
+    for (method=GB_UNKNOWN; method<RK_MAX; method++) {
+      if (strcmp(flag_value, GB_METHOD_NAME[method]) == 0){
+        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: %s", GB_METHOD_NAME[method]);
         return method;
       }
     }
     errorStreamPrint(LOG_STDOUT, 0, "Unknown gbode method %s.", flag_value);
-    return RK_UNKNOWN;
+    return GB_UNKNOWN;
   }
 
   // Default value for multi-rate method
   if (flag == FLAG_MR) {
-    enum GB_SINGLERATE_METHOD singleRateMethod = getGB_method(FLAG_SR);
+    enum GB_METHOD singleRateMethod = getGB_method(FLAG_SR);
     switch (singleRateMethod)
     {
     case RK_GAUSS2:
@@ -145,9 +145,9 @@ enum GB_SINGLERATE_METHOD getGB_method(enum _FLAG flag) {
 /**
  * @brief Get non-linear solver method for Runge-Kutta from flag FLAG_SR_NLS.
  *
- * Defaults to RK_NLS_KINSOL for single-rate.
+ * Defaults to GB_NLS_KINSOL for single-rate.
  * Defaults to nls method of single-rate for multi-rate.
- * Returns RK_UNKNOWN if flag is not known.
+ * Returns GB_UNKNOWN if flag is not known.
  *
  * @param flag        FLAG_SR_NLS for single-rate method.
  *                    FLAG_MR_NLS for multi-rate method.
@@ -163,13 +163,13 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
 
   // Get method from flag
   if (flag_value != NULL) {
-    for (method=GB_NLS_UNKNOWN; method<RK_NLS_MAX; method++) {
+    for (method=GB_NLS_UNKNOWN; method<GB_NLS_MAX; method++) {
       if (strcmp(flag_value, GB_NLS_METHOD_NAME[method]) == 0){
         infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: %s", GB_NLS_METHOD_NAME[method]);
         return method;
       }
     }
-    dumOptions(FLAG_NAME[flag], flag_value, GB_NLS_METHOD_NAME, RK_NLS_MAX);
+    dumOptions(FLAG_NAME[flag], flag_value, GB_NLS_METHOD_NAME, GB_NLS_MAX);
     return GB_NLS_UNKNOWN;
   }
 
@@ -178,7 +178,7 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
     return getGB_NLS_method(FLAG_SR_NLS);
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
-    return RK_NLS_KINSOL;
+    return GB_NLS_KINSOL;
   }
 }
 
