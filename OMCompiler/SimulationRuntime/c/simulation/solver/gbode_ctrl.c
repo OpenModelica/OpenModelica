@@ -230,5 +230,9 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   gbData->stepSize = 0.5*fmin(100*h0,h1)*50;
   gbData->lastStepSize = 0.0;
 
+  sData->timeValue = gbData->time;
+  memcpy(sData->realVars, gbData->yOld, nStates*sizeof(double));
+  memcpy(fODE, gbData->f, nStates*sizeof(double));
+
   infoStreamPrint(LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
 }

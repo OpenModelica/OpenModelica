@@ -300,9 +300,13 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // Store values in the ring buffer
       memcpy(gbData->x + stage_ * nStates, gbData->res_const, nStates*sizeof(double));
 
-      // Calculate the fODE values for the explicit stage
-      memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      if (!gbData->tableau->isKLeftAvailable || (stage > 0)) {
+        // Calculate the fODE values for the explicit stage
+        memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      } else {
+        memcpy(fODE, gbData->kLeft, nStates*sizeof(double));
+      }
     } else {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;

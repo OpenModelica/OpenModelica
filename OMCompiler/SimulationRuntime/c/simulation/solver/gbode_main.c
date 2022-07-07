@@ -655,6 +655,8 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 {
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* fODE = &sData->realVars[gbData->nStates];
   int nStates = gbData->nStates;
   int i;
 
@@ -671,7 +673,7 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   // and for the birate inner integration
   gbData->timeRight = gbData->time;
   memcpy(gbData->yRight, gbData->yOld, nStates*sizeof(double));
-  memcpy(gbData->kRight, gbData->f, nStates*sizeof(double));
+  memcpy(gbData->kRight, fODE, nStates*sizeof(double));
 
   // set solution ring buffer (extrapolation in case of NLS)
   for (i=0; i<gbData->ringBufferSize; i++) {
@@ -1693,9 +1695,11 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       gbData->timeRight = gbData->time + gbData->lastStepSize;
       memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
       // update kRight
-      sData->timeValue = gbData->timeRight;
-      memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      if (!gbData->tableau->isKRightAvailable) {
+        sData->timeValue = gbData->timeRight;
+        memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      }
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
       if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
