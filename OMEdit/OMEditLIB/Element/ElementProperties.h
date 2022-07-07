@@ -165,7 +165,7 @@ public:
   ElementParameters(Element *pComponent, QWidget *pParent = 0);
   ~ElementParameters();
 private:
-  Element *mpComponent;
+  Element *mpElement;
   Label *mpParametersHeading;
   QFrame *mHorizontalLine;
   QTabWidget *mpParametersTabWidget;

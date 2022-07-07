@@ -334,6 +334,19 @@ private:
     QList<Modifier*> mModifiers;
   };
 
+  class Choices
+  {
+  public:
+    Choices();
+    void deserialize(const QJsonObject &jsonObject);
+    void serialize(QJsonObject &jsonObject) const;
+    bool isCheckBox() const {return mCheckBox;}
+    bool isDymolaCheckBox() const {return mDymolaCheckBox;}
+  private:
+    bool mCheckBox;
+    bool mDymolaCheckBox;
+  };
+
   class Element
   {
   public:
@@ -358,8 +371,10 @@ private:
     QString getDirection() const {return mDirection;}
     QString getComment() const {return mComment;}
     PlacementAnnotation getPlacementAnnotation() const {return mPlacementAnnotation;}
-    DialogAnnotation getDialogAnnotation() const {return mDialogAnnotation;}
     bool hasDialogAnnotation() const {return mHasDialogAnnotation;}
+    DialogAnnotation getDialogAnnotation() const {return mDialogAnnotation;}
+    bool isEvaluate() const {return mEvaluate;}
+    Choices getChoices() const {return mChoices;}
   private:
     QString mName;
     QString mType;
@@ -379,6 +394,8 @@ private:
     PlacementAnnotation mPlacementAnnotation;
     bool mHasDialogAnnotation;
     DialogAnnotation mDialogAnnotation;
+    bool mEvaluate;
+    Choices mChoices;
   };
 
   class Extend : public Model

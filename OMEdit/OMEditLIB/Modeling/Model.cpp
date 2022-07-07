@@ -582,6 +582,23 @@ namespace ModelInstance
     }
   }
 
+  Choices::Choices()
+  {
+    mCheckBox = false;
+    mDymolaCheckBox = false;
+  }
+
+  void Choices::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("checkBox")) {
+      mCheckBox = jsonObject.value("checkBox").toBool();
+    }
+
+    if (jsonObject.contains("__Dymola_checkBox")) {
+      mDymolaCheckBox = jsonObject.value("__Dymola_checkBox").toBool();
+    }
+  }
+
   Element::Element()
   {
     mName = "";
@@ -702,6 +719,14 @@ namespace ModelInstance
       if (annotation.contains("Dialog")) {
         mHasDialogAnnotation = true;
         mDialogAnnotation.deserialize(annotation.value("Dialog").toObject());
+      }
+
+      if (annotation.contains("Evaluate")) {
+        mEvaluate = annotation.value("Evaluate").toBool();
+      }
+
+      if (annotation.contains("choices")) {
+        mChoices.deserialize(annotation.value("choices").toObject());
       }
     }
   }
