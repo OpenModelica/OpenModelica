@@ -622,7 +622,7 @@ algorithm
     node := Inst.instPackage(node, context);
 
     // allow lookup in partial nodes if -d=nfAPI is on
-    if InstNode.isPartial(node) and not InstContext.inRelaxed(context) then
+    if InstNode.isPartial(node) and not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
     end if;
@@ -908,7 +908,7 @@ algorithm
   if InstNode.isClass(scope) then
     scope := Inst.instPackage(node, context);
 
-    if InstNode.isPartial(scope) and not InstContext.inRelaxed(context) then
+    if InstNode.isPartial(scope) and not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
     end if;
