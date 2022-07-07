@@ -688,12 +688,14 @@ algorithm
   if not selfReference then
     node := Inst.instPackage(node, context);
 
-    // Disabled due to the MSL containing classes that extends from classes
-    // inside partial packages.
-    //if InstNode.isPartial(node) then
-    //  state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
-    //  return;
-    //end if;
+    // PartialModelicaServices is mistakenly partial in MSL versions older than
+    // 3.2.3. We can't just check for Modelica 3.2 since that will break e.g. 3.2.2,
+    // so just disable the check specifically for PartialModelicaServices instead.
+    if InstNode.isPartial(node) and not InstContext.inRelaxed(context) and
+       not InstNode.name(node) == "PartialModelicaServices" then
+      state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
+      return;
+    end if;
   end if;
 
   // Look up the path in the scope.
