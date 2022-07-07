@@ -1,6 +1,6 @@
 // name: HeatingSystem
 // status: correct
-// teardown_command: rm -rf temp_HeatingSystem/
+// teardown_command: rm -rf refSimulation.log HeatingSystem_esdirk4.log HeatingSystem_fehlberg78.log HeatingSystem_dopri45.log HeatingSystem_* *.bat
 //
 // Test all discrete event handling for specific configurations.
 
@@ -13,22 +13,17 @@ model HeatingSystem
 end HeatingSystem;
 "); getErrorString();
 
-echo(false);
-system("rm -rf temp_HeatingSystem/ && mkdir temp_HeatingSystem/");
-cd("temp_HeatingSystem");
-echo(true);
-
 setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
 
 // Build model
 buildModel(HeatingSystem, stopTime=864000); getErrorString();
 
 // Create reference results
-system("./HeatingSystem -s=dassl -r HeatingSystem_ref.mat -override=\"tolerance=1e-8,stopTime=864000\"", "refSimulation.log");
+system(realpath(".") + "/HeatingSystem -s=dassl -r HeatingSystem_ref.mat -override=\"tolerance=1e-8,stopTime=864000\"", "refSimulation.log");
 print(readFile("refSimulation.log"));
 
 // Simulate with gauss2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=esdirk4 -jacobian=coloredSymbolical -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_esdirk4.log");
+system(realpath(".") + "/HeatingSystem -s=gbode -gbm=esdirk4 -jacobian=coloredSymbolical -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_esdirk4.log");
 print(readFile("HeatingSystem_esdirk4.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
@@ -38,7 +33,7 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
+system(realpath(".") + "/HeatingSystem -s=gbode -gbm=fehlberg78 -override=\"tolerance=1e-6,stopTime=864000\"", "HeatingSystem_fehlberg78.log");
 print(readFile("HeatingSystem_fehlberg78.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
@@ -48,7 +43,7 @@ diffSimulationResults(actualFile = "HeatingSystem_res.mat",
 getErrorString();
 
 // Simulate with sdirk2 & KINSOL+KLU
-system("./HeatingSystem -s=gbode -gbm=dopri45 -gbctrl=const -gbint=dense_output -override=\"tolerance=1e-6,stepSize=10,stopTime=864000\"", "HeatingSystem_dopri45.log");
+system(realpath(".") + "/HeatingSystem -s=gbode -gbm=dopri45 -gbctrl=const -gbint=dense_output -override=\"tolerance=1e-6,stepSize=10,stopTime=864000\"", "HeatingSystem_dopri45.log");
 print(readFile("HeatingSystem_dopri45.log"));
 
 diffSimulationResults(actualFile = "HeatingSystem_res.mat",
@@ -65,7 +60,6 @@ getErrorString();
 // "
 // true
 // ""
-// true
 // true
 // ""
 // {"HeatingSystem","HeatingSystem_init.xml"}

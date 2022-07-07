@@ -3,11 +3,11 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 Burger_01.mos \
 HeatingSystem.mos \
-IRKGaussian_01.mos \
 IRK_01.mos \
-RK_01.mos \
+IRKGaussian_01.mos \
 multiRate_01.mos \
 multiRate_02.mos \
+RK_01.mos \
 
 FAILINGTESTFILES = \
 

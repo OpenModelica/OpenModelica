@@ -1,6 +1,6 @@
 // name: RK_01
 // status: correct
-// teardown_command: rm -rf temp_RK_01/
+// teardown_command: rm -rf SlowFastDynamics_* *.log SlowFastDynamics.bat
 //
 // Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
 
@@ -15,11 +15,6 @@ equation
   der(y) = {-y[1] - corr*y[2] + fast*sin(fast*time), corr*y[1] - epsilon*y[2] - cos(slow*time)};
 end SlowFastDynamics;");
 getErrorString();
-
-echo(false);
-system("rm -rf temp_RK_01/ && mkdir temp_RK_01/");
-cd("temp_RK_01");
-echo(true);
 
 rkMethods := {"expl_euler",
              "dopri45",
@@ -40,7 +35,7 @@ buildModel(SlowFastDynamics);
 getErrorString();
 
 // Create reference results
-system("./SlowFastDynamics -override=stopTime=20 -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
+system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
 print(readFile("refSimulation.log"));
 
 // Test all RK methods
@@ -48,8 +43,9 @@ for rkMethod in rkMethods loop
   for errCtrl in errCtrls loop
     print("\n--------------------------------------------------------\n");
     print("Running RK " + rkMethod + ":\n");
-    logFile := "SlowFastDynamics_"+ rkMethod + "_" + ".log";
-    system("rm -f SlowFastDynamics_res.mat && ./SlowFastDynamics -override=stopTime=20 -s=gbode -gbint=hermite -gbm=" + rkMethod + " -gberr=" + errCtrl, logFile);
+    logFile := "SlowFastDynamics_"+ rkMethod + "_" + errCtrl + ".log";
+    system("rm -f SlowFastDynamics_res.mat");
+    system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=gbode -gbint=hermite -gbm=" + rkMethod + " -gberr=" + errCtrl, logFile);
     print(readFile(logFile) + "\n");
 
     (success, failVars) := diffSimulationResults(actualFile = "SlowFastDynamics_res.mat",
@@ -70,7 +66,6 @@ end for;
 // Result:
 // true
 // ""
-// true
 // {"expl_euler","dopri45","merson","fehlberg12","fehlberg45","fehlberg78","rk810","rk1012","rk1214"}
 // {"0","1"}
 // true

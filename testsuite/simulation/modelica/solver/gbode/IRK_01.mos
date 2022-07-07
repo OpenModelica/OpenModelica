@@ -1,6 +1,6 @@
 // name: IRK_01
 // status: correct
-// teardown_command: rm -rf temp_IRK_01/
+// teardown_command: rm -rf SlowFastDynamics_* *.log SlowFastDynamics.bat
 //
 // Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
 
@@ -16,17 +16,11 @@ equation
 end SlowFastDynamics;");
 getErrorString();
 
-echo(false);
-system("rm -rf temp_IRK_01/ && mkdir temp_IRK_01/");
-cd("temp_IRK_01");
-echo(true);
-
 rkMethods := {"impl_euler",
               "sdirk2",
               "sdirk3",
               "esdirk2",
-              "esdirk3"
-             };
+              "esdirk3"};
 
 nlsMethods := {"newton", "kinsol"};
 
@@ -39,7 +33,7 @@ buildModel(SlowFastDynamics);
 getErrorString();
 
 // Create reference results
-system("./SlowFastDynamics -override=stopTime=20 -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
+system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
 print(readFile("refSimulation.log"));
 
 // Test all RK methods
@@ -48,14 +42,15 @@ for rkMethod in rkMethods loop
     for errCtrl in errCtrls loop
       print("\n--------------------------------------------------------\n");
       print("Running RK " + rkMethod + " with NLS " + nlsMethod + ":\n");
-      logFile := "SlowFastDynamics_"+ rkMethod + "_" + nlsMethod + ".log";
-      system("rm -f SlowFastDynamics_res.mat && ./SlowFastDynamics -override=stopTime=20 -s=gbode -gbm=" + rkMethod + " -gbnls=" + nlsMethod + " -gberr=" + errCtrl, logFile);
+      logFile := "SlowFastDynamics_"+ rkMethod + "_" + nlsMethod + "_" + errCtrl + ".log";
+      system("rm -f SlowFastDynamics_res.mat");
+      system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=gbode -gbm=" + rkMethod + " -gbnls=" + nlsMethod + " -gberr=" + errCtrl, logFile);
       print(readFile(logFile) + "\n");
 
       (success, failVars) := diffSimulationResults(actualFile = "SlowFastDynamics_res.mat",
-                                  expectedFile = "SlowFastDynamics_ref.mat",
-                                  diffPrefix = "diff_" + rkMethod + "_" + nlsMethod,
-                                  vars = {"der(y[1])", "der(y[2])"});
+                                                   expectedFile = "SlowFastDynamics_ref.mat",
+                                                   diffPrefix = "diff_" + rkMethod + "_" + nlsMethod + "_" + errCtrl,
+                                                   vars = {"der(y[1])", "der(y[2])"});
       print("Failed vars:\n");
       for var in failVars loop
         print("\t" + var + "\n");
@@ -71,7 +66,6 @@ end for;
 // Result:
 // true
 // ""
-// true
 // {"impl_euler","sdirk2","sdirk3","esdirk2","esdirk3"}
 // {"newton","kinsol"}
 // {"0","1"}
