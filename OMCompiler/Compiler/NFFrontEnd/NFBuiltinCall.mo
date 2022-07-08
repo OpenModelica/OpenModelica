@@ -1452,6 +1452,7 @@ protected
     Function fn;
     Integer args_len;
     String name;
+    Variability arg_var;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
@@ -1483,13 +1484,21 @@ protected
 
     if args_len == 2 then
       arg2 := listHead(args);
-      (arg2, ty) := Typing.typeExp(arg2, context, info);
+      (arg2, ty, arg_var) := Typing.typeExp(arg2, context, info);
 
       if not Type.isInteger(ty) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
           {"2", ComponentRef.toString(fn_ref), "", Expression.toString(arg2),
            Type.toString(ty), "Integer"}, info);
       end if;
+
+      if arg_var > Variability.PARAMETER then
+        Error.addSourceMessageAndFail(Error.INVALID_ARGUMENT_VARIABILITY,
+          {"2", ComponentRef.toString(fn_ref), Prefixes.variabilityString(Variability.PARAMETER),
+          Expression.toString(arg2), Prefixes.variabilityString(arg_var)}, info);
+      end if;
+
+      Structural.markExp(arg2);
     else
       arg2 := Expression.INTEGER(0);
     end if;

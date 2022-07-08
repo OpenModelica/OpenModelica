@@ -538,6 +538,7 @@ FuncBuiltinNdims.mo \
 FuncBuiltinNoClock1.mo \
 FuncBuiltinOnes.mo \
 FuncBuiltinOuterProduct.mo \
+FuncBuiltinPotentialRoot1.mo \
 FuncBuiltinPre.mo \
 FuncBuiltinPrevious1.mo \
 FuncBuiltinPrevious2.mo \

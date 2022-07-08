@@ -82,6 +82,7 @@ protected
 import Absyn;
 import NFBuiltin;
 import Call = NFCall;
+import Ceval = NFCeval;
 import Class = NFClass;
 import Dimension = NFDimension;
 import NFFunction.Function;
@@ -175,7 +176,7 @@ protected
   Call call;
   list<Expression> lst;
   Integer priority;
-  Expression root, msg;
+  Expression root, msg, arg1, arg2;
   Connector c1, c2;
   list<ComponentRef> lhs_crefs, rhs_crefs;
   Boolean print_trace = Flags.isSet(Flags.CGRAPH);
@@ -210,13 +211,12 @@ algorithm
 
           case ConnectionsOperator.POTENTIAL_ROOT
             algorithm
-              graph := match lst
-                case {Expression.CREF(cref = cref)}
-                  then addPotentialRoot(cref, 0, print_trace, graph);
-                case {Expression.CREF(cref = cref), Expression.INTEGER(priority)}
-                  then addPotentialRoot(cref, priority, print_trace, graph);
-              end match;
-            then eql;
+              {arg1, arg2} := lst;
+              Expression.CREF(cref = cref) := arg1;
+              Expression.INTEGER(value = priority) := Ceval.evalExp(arg2);
+              graph := addPotentialRoot(cref, priority, print_trace, graph);
+            then
+              eql;
 
           case ConnectionsOperator.UNIQUE_ROOT
             algorithm
