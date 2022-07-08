@@ -96,7 +96,7 @@ void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter)
  * @param solverInfo    Information about main solver.
  * @return int          Return 0 on success, -1 on failure.
  */
-int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData)
+int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, DATA_GBODE *gbData)
 {
   DATA_GBODEF *gbfData = (DATA_GBODEF *)calloc(1, sizeof(DATA_GBODEF));
   gbData->gbfData = gbfData;
@@ -272,6 +272,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     char filename[4096];
     sprintf(filename, "%s_ActiveStates.txt", data->modelData->modelFilePrefix);
     gbfData->fastStatesDebugFile = omc_fopen(filename, "w");
+    warningStreamPrint(LOG_STDOUT, 0, "LOG_GBODE_STATES sets -noEquidistantTimeGrid for emitting results!");
+    solverInfo->integratorSteps = TRUE;
   }
   else
   {
@@ -477,7 +479,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
 
   if (gbData->multi_rate) {
-    gbodef_allocateData(data, threadData, gbData);
+    gbodef_allocateData(data, threadData, solverInfo, gbData);
     gbData->tableau->isKRightAvailable = FALSE;
   } else {
     gbData->gbfData = NULL;
@@ -623,7 +625,7 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   gbfData->didEventStep = FALSE;
 
   gbfData->time = gbData->time;
-  gbfData->stepSize = gbData->lastStepSize/2.5;
+  gbfData->stepSize = 0.1*gbData->stepSize*IController(&(gbData->err_fast), &(gbData->stepSize), 1);
 
   memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * nStates);
   memcpy(gbfData->y, gbData->y, sizeof(double) * nStates);
@@ -890,7 +892,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gbfData->time, gbfData->time + gbfData->lastStepSize, err, gbfData->stepSize);
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
-          dumpFastStates_gbf(gbData, gbfData->time + gbfData->lastStepSize);
+          dumpFastStates_gbf(gbData, gbfData->time + gbfData->lastStepSize, 1);
         }
       }
     } while (err > 1);
@@ -951,7 +953,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       }
 
       if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
-        dumpFastStates_gb(gbData, TRUE, eventTime);
+        dumpFastStates_gb(gbData, TRUE, eventTime, 0);
       }
 
       // Get out of the integration routine for event handling
@@ -988,7 +990,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
                     gbfData->time - gbfData->lastStepSize, gbfData->time, err, gbfData->stepSize);
 
     if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
-      dumpFastStates_gbf(gbData, gbfData->time);
+      dumpFastStates_gbf(gbData, gbfData->time, 0);
     }
 
     /* emit step, if integratorSteps is selected */
@@ -1132,7 +1134,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
         // dump fast states in file
-        dumpFastStates_gb(gbData, FALSE, gbData->time);
+        dumpFastStates_gb(gbData, FALSE, gbData->time, 0);
       }
     }
     if (gb_step_info !=0) {
@@ -1287,7 +1289,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
           // dump fast states in file
           gbData->err_slow = err;
-          dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->lastStepSize);
+          dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->lastStepSize, 1);
         }
         continue;
       }
@@ -1333,7 +1335,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
           // dump fast states in file
-          dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->lastStepSize);
+          dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->lastStepSize, 2);
         }
 
         // count failed steps and output information on the solver status
@@ -1356,6 +1358,10 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           printVector_gb(LOG_GBODE, "er", gbData->err, nStates, gbData->timeRight);
           printIntVector_gb(LOG_GBODE, "sr", gbData->sortedStatesIdx, nStates, gbData->timeRight);
           messageClose(LOG_GBODE);
+        }
+        if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
+          // dump fast states in file
+          dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->lastStepSize, -1);
         }
         // run multirate step
         gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
@@ -1425,7 +1431,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
         if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
           // dump fast states in file
-          dumpFastStates_gb(gbData, TRUE, eventTime);
+          dumpFastStates_gb(gbData, TRUE, eventTime, 0);
         }
 
         // return to solver main routine for proper event handling (iteration)
@@ -1455,7 +1461,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
     if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
       // dump fast states in file
-      dumpFastStates_gb(gbData, FALSE, gbData->time);
+      dumpFastStates_gb(gbData, FALSE, gbData->time, 0);
     }
 
     /* emit step, if integratorSteps is selected */

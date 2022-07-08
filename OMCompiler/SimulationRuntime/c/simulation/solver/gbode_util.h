@@ -69,8 +69,8 @@ void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, doub
 void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name);
 
 void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize);
-void dumpFastStates_gb(DATA_GBODE *gbData, modelica_boolean event, double time);
-void dumpFastStates_gbf(DATA_GBODE *gbData, double time);
+void dumpFastStates_gb(DATA_GBODE *gbData, modelica_boolean event, double time, int rejectedType);
+void dumpFastStates_gbf(DATA_GBODE *gbData, double time, int rejectedType);
 
 modelica_boolean checkFastStatesChange(DATA_GBODE* gbData);
 

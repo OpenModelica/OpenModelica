@@ -352,18 +352,18 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
                       (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
                         nIdx, idx, gbData->nStates, gbData->tableau, gbData->x, gbData->k);
   } else {
-    // hermite_interpolation_a(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-    //                         gbData->timeRight, gbData->yRight,
-    //                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-    //                         nIdx, idx);
+    hermite_interpolation_a(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                            gbData->timeRight, gbData->yRight,
+                            (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
+                            nIdx, idx);
     // hermite_interpolation_b(gbData->timeLeft,  gbData->yLeft,
     //                         gbData->timeRight, gbData->yRight, gbData->kRight,
     //                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
     //                         nIdx, idx);
-    linear_interpolation(gbData->timeLeft,  gbData->yLeft,
-                        gbData->timeRight, gbData->yRight,
-                        (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-                        nIdx, idx);
+    // linear_interpolation(gbData->timeLeft,  gbData->yLeft,
+    //                     gbData->timeRight, gbData->yRight,
+    //                     (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
+    //                     nIdx, idx);
   }
   hermite_interpolation(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                         gbData->timeRight, gbData->yRight, gbData->kRight,
@@ -628,13 +628,14 @@ void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
 /**
  * @brief Write information on the active fast states on file (activity diagram)
  *
- * @param gbData  Pointer to generik GBODE data struct.
- * @param event   If an event has happend, write zeros else ones
- * @param time    Actual time of reporting
+ * @param gbData       Pointer to generik GBODE data struct.
+ * @param event        If an event has happend, write zeros else ones
+ * @param time         Actual time of reporting
+ * @param rejectedType Type of rejection
  */
-void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time) {
+void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, int rejectedType) {
     char fastStates_row[4096];
-    sprintf(fastStates_row, "%15.10g %15.10g %15.10g %15.10g", time, gbData->err_slow, gbData->err_int, gbData->err_fast);
+    sprintf(fastStates_row, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
     for (int i = 0; i < gbData->nStates; i++) {
       if (event)
         sprintf(fastStates_row, "%s 0", fastStates_row);
@@ -649,11 +650,12 @@ void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time) 
  *
  * @param gbData  Pointer to generik GBODE data struct.
  * @param time    Actual time of reporting
+ * @param rejectedType Type of rejection
  */
-void dumpFastStates_gbf(DATA_GBODE* gbData, double time) {
+void dumpFastStates_gbf(DATA_GBODE* gbData, double time, int rejectedType) {
   char fastStates_row[4096];
   int i, ii;
-  sprintf(fastStates_row, "%15.10g %15.10g %15.10g %15.10g", time, gbData->err_slow, gbData->err_int, gbData->err_fast);
+  sprintf(fastStates_row, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
   for (i = 0, ii = 0; i < gbData->nStates;) {
     if (i == gbData->fastStatesIdx[ii]) {
       sprintf(fastStates_row, "%s 1", fastStates_row);
