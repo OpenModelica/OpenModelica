@@ -501,6 +501,7 @@ namespace IAEX
    vector<Cell *> cells = document()->getSelection();
    if(cells.empty())
    {
+      application()->clearPasteboard(); // HACK: clear pasteboard as this cell might be referenced in it
       document()->getCursor()->deleteCurrentCell();
    }
    else
