@@ -36,7 +36,7 @@ rkMethods := {"gauss2",
 
 nlsMethods := {"kinsol"};
 
-errCtrls := {"0"};
+errCtrls := {"const"};
 
 setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
 
@@ -80,7 +80,7 @@ end for;
 // ""
 // {"gauss2","gauss3","gauss4","gauss5","gauss6","radauIA2","radauIA3","radauIA4","radauIIA2","radauIIA3","radauIIA4","lobattoIIIA3","lobattoIIIA4","lobattoIIIB3","lobattoIIIB4","lobattoIIIC3","lobattoIIIC4"}
 // {"kinsol"}
-// {"0"}
+// {"const"}
 // true
 // ""
 // {"SlowFastDynamics","SlowFastDynamics_init.xml"}
