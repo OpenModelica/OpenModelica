@@ -254,6 +254,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, DATA_GBODE *gbData
     infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results");
     break;
   case GB_INTERPOL_HERMITE:
+  case GB_INTERPOL_HERMITE_a:
   case GB_INTERPOL_HERMITE_b:
   case GB_INTERPOL_HERMITE_ERRCTRL:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for the slow states");
@@ -458,6 +459,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     infoStreamPrint(LOG_SOLVER, 0, "Linear interpolation is used for emitting results%s", buffer);
     break;
   case GB_INTERPOL_HERMITE_ERRCTRL:
+  case GB_INTERPOL_HERMITE_a:
   case GB_INTERPOL_HERMITE_b:
   case GB_INTERPOL_HERMITE:
     infoStreamPrint(LOG_SOLVER, 0, "Hermite interpolation is used for emitting results%s", buffer);
@@ -1313,11 +1315,19 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         printVector_gbf(LOG_GBODE_V, "e", gbData->errest, nStates, (gbData->timeLeft + gbData->timeRight)/2, gbData->nSlowStates, gbData->slowStatesIdx);
         messageClose(LOG_GBODE_V);
       }
+      if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+        gbData->errValues[0] = fmax(err, gbData->err_int);
+        gbData->stepSize = gbData->lastStepSize * IController(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+      }
       // reject step, if interpolaton error is too large
       if (( gbData->nFastStates>0) && (gbData->err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
           ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         err = 100;
-        gbData->stepSize = gbData->lastStepSize*IController(&(gbData->err_int), &(gbData->lastStepSize), 1);
+        if (gbData->stepSize < MINIMAL_STEP_SIZE) {
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but interpolation error still to large.", MINIMAL_STEP_SIZE);
+          messageClose(LOG_SOLVER);
+          return -1;
+        }
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, interpolation error %10g, new stepsize %10g",
                         gbData->time, gbData->time + gbData->lastStepSize, gbData->err_int, gbData->stepSize);
 
@@ -1700,7 +1710,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       }
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
-      if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+      if (ACTIVE_STREAM(LOG_SOLVER) || (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL)))) {
         gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, Rtol);
       }
       if (ACTIVE_STREAM(LOG_GBODE_V)) {
@@ -1713,11 +1723,20 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         printVector_gbf(LOG_GBODE_V, "e", gbData->errest, nStates, (gbData->timeLeft + gbData->timeRight)/2, gbData->nSlowStates, gbData->slowStatesIdx);
         messageClose(LOG_GBODE_V);
       }
+      if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+        gbData->errValues[0] = fmax(err, gbData->err_int);
+        gbData->stepSize = gbData->lastStepSize * IController(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+      }
       // reject step, if interpolaton error is too large
       if ((gbData->err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
           ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         err = 100;
-        gbData->stepSize = gbData->lastStepSize*IController(&(gbData->err_int), &(gbData->lastStepSize), 1);
+        // gbData->stepSize = gbData->lastStepSize*IController(&(gbData->err_int), &(gbData->lastStepSize), 1);
+        if (gbData->stepSize < MINIMAL_STEP_SIZE) {
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but interpolation error still to large.", MINIMAL_STEP_SIZE);
+          messageClose(LOG_SOLVER);
+          return -1;
+        }
         infoStreamPrint(LOG_SOLVER, 0, "Reject step from %10g to %10g, interpolation error %10g, new stepsize %10g",
                         gbData->time, gbData->time + gbData->lastStepSize, gbData->err_int, gbData->stepSize);
 
@@ -1779,7 +1798,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
     infoStreamPrint(LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g interpolation error %10g, new stepsize %10g",
-                    gbData->time - gbData->lastStepSize, gbData->time, gbData->errValues[0], gbData->err_int, gbData->stepSize);
+                    gbData->time - gbData->lastStepSize, gbData->time, err, gbData->err_int, gbData->stepSize);
 
     // Rotate buffer
     for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {

@@ -240,6 +240,58 @@ void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, doubl
 }
 
 /**
+ * @brief Hermite interpolation of specific vector components (only left derivative used)
+ *
+ * @param ta      Time value at the left hand side
+ * @param fa      Function values at the left hand side
+ * @param dfa     Derivative function values at the left hand side
+ * @param tb      Time value at the right hand side
+ * @param fb      Function values at the right hand side
+ * @param t       Time value at the interpolated time point
+ * @param f       Function values at the interpolated time point
+ * @param n       Size of vector f or size of index vector if non-NULL.
+ * @param idx     Index vector, can be NULL.
+ *                Specifies which parts of f should be interpolated.
+ */
+void hermite_interpolation_a(double ta, double* fa, double* dfa, double tb, double* fb, double t, double* f, int n, int* idx)
+{
+  double tat,tbt,tbta, h00, h01, h10;
+  int i, ii;
+
+  // omit division by zero
+  if (fabs(tb-ta) <= GBODE_EPSILON) {
+    if(idx != NULL) {
+      copyVector_gbf(f, fb, n, idx);
+    } else {
+      memcpy(f, fb, n*sizeof(double));
+    }
+    return;
+  }
+
+  tat  = (ta-t);
+  tbt  = (tb-t);
+  tbta = (tb-ta);
+  h01  = tat*tat/(tbta*tbta);
+  h00  = 1 - h01;
+  h10  = -tat*tbt/tbta;
+
+  if (idx == NULL) {
+    for (i=0; i<n; i++)
+    {
+      f[i] = h00*fa[i]+h01*fb[i]+h10*dfa[i];
+    }
+  } else {
+    for (ii=0; ii<n; ii++)
+    {
+      i = idx[ii];
+      f[i] = h00*fa[i]+h01*fb[i]+h10*dfa[i];
+    }
+  }
+
+  return;
+}
+
+/**
  * @brief Hermite interpolation of specific vector components
  *
  * @param interpolMethod
@@ -270,6 +322,9 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
       tableau->dense_output(tableau, fa, x, k, (t - ta)/(tb-ta), (tb - ta), f, nIdx, idx, nStates);
       break;
     }
+  case GB_INTERPOL_HERMITE_a:
+    hermite_interpolation_a(ta, fa, dfa, tb, fb, t, f, nIdx, idx);
+    break;
   case GB_INTERPOL_HERMITE_b:
     hermite_interpolation_b(ta, fa, tb, fb, dfb, t, f, nIdx, idx);
     break;
@@ -281,6 +336,7 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
     throwStreamPrint(NULL, "Not handled case in gb_interpolation. Unknown interpolation method %i.", interpolMethod);
   }
 }
+
 /**
  * @brief  Difference between linear and hermite interpolation at intermediate points.
  *
@@ -290,18 +346,25 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
   int i, ii;
   double errint = 0.0, errtol;
 
- if (gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL || gbData->interpolation == GB_INTERPOL_HERMITE || gbData->interpolation == GB_INTERPOL_HERMITE_b ) {
+  if (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL || gbData->interpolation == GB_DENSE_OUTPUT) {
+    gb_interpolation(gbData->interpolation, gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                      gbData->timeRight, gbData->yRight, gbData->kRight,
+                      (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
+                        nIdx, idx, gbData->nStates, gbData->tableau, gbData->x, gbData->k);
+  } else {
+    // hermite_interpolation_a(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+    //                         gbData->timeRight, gbData->yRight,
+    //                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
+    //                         nIdx, idx);
+    // hermite_interpolation_b(gbData->timeLeft,  gbData->yLeft,
+    //                         gbData->timeRight, gbData->yRight, gbData->kRight,
+    //                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
+    //                         nIdx, idx);
     linear_interpolation(gbData->timeLeft,  gbData->yLeft,
                         gbData->timeRight, gbData->yRight,
                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-                         nIdx, idx);
- } else {
-   gb_interpolation(gbData->interpolation, gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                     gbData->timeRight, gbData->yRight, gbData->kRight,
-                     (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-                      nIdx, idx, gbData->nStates, gbData->tableau, gbData->x, gbData->k);
-
- }
+                        nIdx, idx);
+  }
   hermite_interpolation(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                         gbData->timeRight, gbData->yRight, gbData->kRight,
                         (gbData->timeLeft + gbData->timeRight)/2, gbData->errest,

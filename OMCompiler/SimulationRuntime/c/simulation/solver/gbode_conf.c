@@ -58,6 +58,7 @@ const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_UNKNOWN */           "unknown",
   /* GB_INTERPOL_LIN */               "linear",
   /* GB_INTERPOL_HERMITE */           "hermite",
+  /* GB_INTERPOL_HERMITE_a */         "hermite_a",
   /* GB_INTERPOL_HERMITE_b */         "hermite_b",
   /* GB_INTERPOL_HERMITE_ERRCTRL */   "hermite_errctrl",
   /* GB_DENSE_OUTPUT */               "dense_output",
@@ -68,7 +69,8 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_UNKNOWN */         "unknown",
   /* GB_INTERPOL_LIN */             "Linear interpolation (1st order)",
   /* GB_INTERPOL_HERMITE */         "Hermite interpolation (3rd order)",
-  /* GB_INTERPOL_HERMITE_b */       "Hermite interpolation (only for left hand side)",
+  /* GB_INTERPOL_HERMITE_a */       "Hermite interpolation (only for left hand side)",
+  /* GB_INTERPOL_HERMITE_b */       "Hermite interpolation (only for right hand side)",
   /* GB_INTERPOL_HERMITE_ERRCTRL */ "Hermite interpolation with error control",
   /* GB_DENSE_OUTPUT */             "use dense output formula for interpolation",
   /* GB_DENSE_OUTPUT_ERRCTRL */     "use dense output fomular with error control"
