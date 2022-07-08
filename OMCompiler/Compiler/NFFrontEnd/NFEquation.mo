@@ -1070,7 +1070,7 @@ public
         algorithm
           s := IOStream.append(s, "connect(");
           s := IOStream.append(s, Expression.toString(eq.lhs));
-          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, ", ");
           s := IOStream.append(s, Expression.toString(eq.rhs));
           s := IOStream.append(s, ")");
         then
@@ -1216,7 +1216,7 @@ public
         algorithm
           s := IOStream.append(s, "connect(");
           s := IOStream.append(s, Expression.toFlatString(eq.lhs));
-          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, ", ");
           s := IOStream.append(s, Expression.toFlatString(eq.rhs));
           s := IOStream.append(s, ")");
         then
