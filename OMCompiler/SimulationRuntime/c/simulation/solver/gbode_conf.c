@@ -140,7 +140,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
   }
 
   // Default value for single-rate method
-  infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: esdirk3 [default]");
+  infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: esdirk4 [default]");
   return RK_ESDIRK4;
 }
 
