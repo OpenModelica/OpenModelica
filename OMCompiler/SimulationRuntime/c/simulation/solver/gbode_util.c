@@ -660,7 +660,7 @@ void dumpFastStates_gbf(DATA_GBODE* gbData, double time, int rejectedType) {
     if (i == gbData->fastStatesIdx[ii]) {
       sprintf(fastStates_row, "%s 1", fastStates_row);
       i++;
-      ii++;
+      if (ii < gbData->nFastStates-1) ii++;
     } else {
       sprintf(fastStates_row, "%s 0", fastStates_row);
       i++;
