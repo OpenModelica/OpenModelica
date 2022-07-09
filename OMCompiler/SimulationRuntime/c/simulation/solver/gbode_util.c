@@ -632,6 +632,11 @@ void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
  * @param event        If an event has happend, write zeros else ones
  * @param time         Actual time of reporting
  * @param rejectedType Type of rejection
+ *                     0  <= no rejection
+ *                     1  <= error of slow states greater than the tolerance
+ *                     2  <= interpolation error is too large
+ *                     3  <= rejected because solving the NLS failed
+ *                    -1  <= step is preliminary accepted but needs refinement
  */
 void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, int rejectedType) {
     char fastStates_row[4096];
