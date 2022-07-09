@@ -56,7 +56,14 @@ extern const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX];
 extern const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX];
 
 enum GB_INTERPOL_METHOD {
-  GB_INTERPOL_UNKNOWN = 0,          /* Unknown interpolation method */
+  GB_INTERPOL_UNKNOWN = 0,      /* Unknown interpolation method */
+  GB_INTERPOL_LIN,              /* Linear interpolation */
+  GB_INTERPOL_HERMITE,          /* Hermite interpolation */
+  GB_INTERPOL_HERMITE_a,        /* Hermite interpolation (only for left hand side)*/
+  GB_INTERPOL_HERMITE_b,        /* Hermite interpolation (only for right hand side)*/
+  GB_INTERPOL_HERMITE_ERRCTRL,  /* Hermite interpolation with error control */
+  GB_DENSE_OUTPUT,              /* Dense output, if available else hermite */
+  GB_DENSE_OUTPUT_ERRCTRL,      /* Dense output, if available else hermite with error control */
   GB_INTERPOL_LIN = 1,              /* Linear interpolation */
   GB_INTERPOL_HERMITE = 2,          /* Hermite interpolation */
   GB_INTERPOL_HERMITE_a = 3,        /* Hermite interpolation (only for left hand side)*/
