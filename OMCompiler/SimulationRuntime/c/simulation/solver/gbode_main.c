@@ -625,7 +625,7 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   gbfData->didEventStep = FALSE;
 
   gbfData->time = gbData->time;
-  gbfData->stepSize = 0.1*gbData->stepSize*IController(&(gbData->err_fast), &(gbData->stepSize), 1);
+  gbfData->stepSize = gbData->stepSize*IController(&(gbData->err_fast), &(gbData->stepSize), 1);
 
   memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * nStates);
   memcpy(gbfData->y, gbData->y, sizeof(double) * nStates);
@@ -837,6 +837,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
       // error handling: try half of the step size!
       if (integrator_step_info != 0) {
+        (gbfData->stats).nConvergenveTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "gbodef_main: Failed to calculate step at time = %5g.", gbfData->time);
         gbfData->stepSize *= 0.5;
         infoStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbfData->stepSize);
@@ -1192,12 +1193,21 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       // error handling: try half of the step size!
       if (gb_step_info != 0) {
+        gbData->stats.nConvergenveTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
         if (gbData->ctrl_method == GB_CTRL_CNST) {
           errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted since gbode is running with fixed step size!");
           messageClose(LOG_SOLVER);
           return -1;
         } else {
+          if (ACTIVE_STREAM(LOG_GBODE_STATES)) {
+            gbData->err_slow = 0;
+            gbData->err_fast = 0;
+            gbData->err_int = 0;
+            // dump fast states in file
+            dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 3);
+          }
+
           if (gbData->stepSize > MINIMAL_STEP_SIZE) {
             // Try smaller steps, if possible.
             gbData->stepSize = gbData->stepSize / 2.;
@@ -1537,6 +1547,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     infoStreamPrint(LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
                     GB_METHOD_NAME[gbData->GM_method], GB_METHOD_NAME[gbData->gbfData->GM_method]);
     logSolverStats(LOG_STATS, "inner integration", stopTime, stopTime, 0, &gbData->gbfData->stats);
+    logSolverStats(LOG_STATS, "outer integration", stopTime, stopTime, 0, &gbData->stats);
   }
   /* Write statistics to the solverInfo data structure */
   logSolverStats(LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
@@ -1657,6 +1668,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
       // error handling: try half of the step size!
       if (gb_step_info != 0) {
+        gbData->stats.nConvergenveTestFailures++;
         infoStreamPrint(LOG_SOLVER, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
         if (gbData->ctrl_method == GB_CTRL_CNST) {
           errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted since gbode is running with fixed step size!");
@@ -1783,6 +1795,11 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       // sData->realVars are the "numerical" values on the right hand side of the event (hopefully)
       gbData->time = eventTime;
       memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
+
+      gbData->timeRight = eventTime;
+      memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
       /* write statistics to the solverInfo data structure */
       setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
