@@ -356,14 +356,6 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
                             gbData->timeRight, gbData->yRight,
                             (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
                             nIdx, idx);
-    // hermite_interpolation_b(gbData->timeLeft,  gbData->yLeft,
-    //                         gbData->timeRight, gbData->yRight, gbData->kRight,
-    //                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-    //                         nIdx, idx);
-    // linear_interpolation(gbData->timeLeft,  gbData->yLeft,
-    //                     gbData->timeRight, gbData->yRight,
-    //                     (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-    //                     nIdx, idx);
   }
   hermite_interpolation(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                         gbData->timeRight, gbData->yRight, gbData->kRight,
