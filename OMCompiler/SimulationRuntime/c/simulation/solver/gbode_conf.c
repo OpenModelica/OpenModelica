@@ -133,7 +133,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
     case RK_LOBA_IIIC_4:
       // Default value for inner integration method
       // if the outer integration method is full implicit
-      return RK_ESDIRK3;
+      return RK_ESDIRK4;
     default:
       return singleRateMethod;
     }
@@ -141,7 +141,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
 
   // Default value for single-rate method
   infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: esdirk3 [default]");
-  return RK_ESDIRK3;
+  return RK_ESDIRK4;
 }
 
 /**
