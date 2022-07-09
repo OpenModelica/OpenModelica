@@ -267,7 +267,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     int flag;
     flag = KINSetNumMaxIters(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, nlsData->size * 4);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
-    KINSetMaxSetupCalls(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, 5);
+    KINSetMaxSetupCalls(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, 10);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetMaxSetupCalls");
     break;
   default:

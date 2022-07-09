@@ -227,7 +227,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
     h1 = fmax(1e-6, h0*1e-3);
   }
 
-  gbData->stepSize = 0.5*fmin(100*h0,h1)*50;
+  gbData->stepSize = 0.5*fmin(100*h0,h1);
   gbData->lastStepSize = 0.0;
 
   sData->timeValue = gbData->time;

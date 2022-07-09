@@ -1789,30 +1789,44 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // check for events, if event is detected stop integrator and trigger event iteration
     eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &foundEvent);
     if (foundEvent) {
-      solverInfo->currentTime = eventTime;
-      sData->timeValue = eventTime;
+      if (eventTime < targetTime + solverInfo->currentStepSize/2)
+      {
+        solverInfo->currentTime = eventTime;
+        sData->timeValue = eventTime;
 
-      // sData->realVars are the "numerical" values on the right hand side of the event (hopefully)
-      gbData->time = eventTime;
-      memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
+        // sData->realVars are the "numerical" values on the right hand side of the event (hopefully)
+        gbData->time = eventTime;
+        memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
 
-      gbData->timeRight = eventTime;
-      memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-      memcpy(gbData->kRight, fODE, nStates * sizeof(double));
+        /* write statistics to the solverInfo data structure */
+        setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
 
-      /* write statistics to the solverInfo data structure */
-      setSolverStats(solverInfo->solverStatsTmp, &gbData->stats);
+        // log the emitted result
+        if (ACTIVE_STREAM(LOG_GBODE)){
+          infoStreamPrint(LOG_GBODE, 1, "Emit result (single-rate integration):");
+          printVector_gb(LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
+          messageClose(LOG_GBODE);
+        }
+        // return to solver main routine for proper event handling (iteration)
+        messageClose(LOG_SOLVER);
+        return 0;
+      } else {
+        listClear(solverInfo->eventLst);
+        gbData->lastStepSize = (eventTime - solverInfo->currentStepSize/2) - gbData->time;
+        sData->timeValue = (eventTime - solverInfo->currentStepSize/2);
+        gb_interpolation(gbData->interpolation,
+                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                        gbData->timeRight, gbData->yRight, gbData->kRight,
+                                sData->timeValue,  sData->realVars,
+                        nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
+        memcpy(gbData->y, sData->realVars, gbData->nStates * sizeof(double));
 
-      // log the emitted result
-      if (ACTIVE_STREAM(LOG_GBODE)){
-        infoStreamPrint(LOG_GBODE, 1, "Emit result (single-rate integration):");
-        printVector_gb(LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
-        messageClose(LOG_GBODE);
+        gbData->timeRight = sData->timeValue;
+        memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        memcpy(gbData->kRight, fODE, nStates * sizeof(double));
+
       }
-      // return to solver main routine for proper event handling (iteration)
-      messageClose(LOG_SOLVER);
-      return 0;
     }
 
     /* update time with performed stepSize */
