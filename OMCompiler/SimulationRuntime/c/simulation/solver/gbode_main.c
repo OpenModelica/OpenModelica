@@ -841,8 +841,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         infoStreamPrint(LOG_SOLVER, 0, "gbodef_main: Failed to calculate step at time = %5g.", gbfData->time);
         gbfData->stepSize *= 0.5;
         infoStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbfData->stepSize);
-        if (gbfData->stepSize < MINIMAL_STEP_SIZE) {
-          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", MINIMAL_STEP_SIZE);
+        if (gbfData->stepSize < GB_MINIMAL_STEP_SIZE) {
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", GB_MINIMAL_STEP_SIZE);
           messageClose(LOG_SOLVER);
           return -1;
         }
@@ -1013,7 +1013,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       }
     }
 
-    if ((gbData->timeRight - gbfData->time) < MINIMAL_STEP_SIZE || gbData->stepSize < MINIMAL_STEP_SIZE) {
+    if ((gbData->timeRight - gbfData->time) < GB_MINIMAL_STEP_SIZE || gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
       gbfData->time = gbData->timeRight;
       break;
     }
@@ -1116,7 +1116,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     // run multirate step
     gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
     // synchronize y, yRight , kRight and buffer
-    if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < MINIMAL_STEP_SIZE) {
+    if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < GB_MINIMAL_STEP_SIZE) {
       gbData->time = gbData->timeRight;
       memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
       memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
@@ -1208,14 +1208,14 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 3);
           }
 
-          if (gbData->stepSize > MINIMAL_STEP_SIZE) {
+          if (gbData->stepSize > GB_MINIMAL_STEP_SIZE) {
             // Try smaller steps, if possible.
             gbData->stepSize = gbData->stepSize / 2.;
             warningStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbData->stepSize);
             err = 100;
             continue;
           } else {
-            errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted because the step size is less then %g!", MINIMAL_STEP_SIZE);
+            errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted because the step size is less then %g!", GB_MINIMAL_STEP_SIZE);
             messageClose(LOG_SOLVER);
             return -1;
           }
@@ -1335,8 +1335,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (( gbData->nFastStates>0) && (gbData->err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
           ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         err = 100;
-        if (gbData->stepSize < MINIMAL_STEP_SIZE) {
-          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but interpolation error still to large.", MINIMAL_STEP_SIZE);
+        if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but interpolation error still to large.", GB_MINIMAL_STEP_SIZE);
           messageClose(LOG_SOLVER);
           return -1;
         }
@@ -1376,7 +1376,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         // run multirate step
         gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
         // synchronize relevant information
-        if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < MINIMAL_STEP_SIZE) {
+        if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < GB_MINIMAL_STEP_SIZE) {
           memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
           memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
           memcpy(gbData->kRight, gbData->gbfData->kRight, nStates * sizeof(double));
@@ -1493,7 +1493,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
     }
 
-    if ((stopTime - gbData->time) < MINIMAL_STEP_SIZE)
+    if ((stopTime - gbData->time) < GB_MINIMAL_STEP_SIZE)
     {
       gbData->time = stopTime;
       break;
@@ -1543,7 +1543,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   if (!gbData->isExplicit)
     gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
 
-  if (fabs(targetTime - stopTime) < MINIMAL_STEP_SIZE && ACTIVE_STREAM(LOG_STATS)) {
+  if (fabs(targetTime - stopTime) < GB_MINIMAL_STEP_SIZE && ACTIVE_STREAM(LOG_STATS)) {
     infoStreamPrint(LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
                     GB_METHOD_NAME[gbData->GM_method], GB_METHOD_NAME[gbData->gbfData->GM_method]);
     logSolverStats(LOG_STATS, "inner integration", stopTime, stopTime, 0, &gbData->gbfData->stats);
@@ -1677,8 +1677,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         } else {
           gbData->stepSize *= 0.5;
           infoStreamPrint(LOG_SOLVER, 0, "Try half of the step size = %g", gbData->stepSize);
-          if (gbData->stepSize < MINIMAL_STEP_SIZE) {
-            errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", MINIMAL_STEP_SIZE);
+          if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
+            errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", GB_MINIMAL_STEP_SIZE);
             messageClose(LOG_SOLVER);
             return -1;
           }
@@ -1750,8 +1750,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
           ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         err = 100;
         // gbData->stepSize = gbData->lastStepSize*IController(&(gbData->err_int), &(gbData->lastStepSize), 1);
-        if (gbData->stepSize < MINIMAL_STEP_SIZE) {
-          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but interpolation error still to large.", MINIMAL_STEP_SIZE);
+        if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
+          errorStreamPrint(LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but interpolation error still to large.", GB_MINIMAL_STEP_SIZE);
           messageClose(LOG_SOLVER);
           return -1;
         }
@@ -1868,7 +1868,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     }
 
     // stop, if simulation nearly reached stopTime
-    if ((stopTime - gbData->time) < MINIMAL_STEP_SIZE) {
+    if ((stopTime - gbData->time) < GB_MINIMAL_STEP_SIZE) {
       gbData->time = stopTime;
       break;
     }
@@ -1909,7 +1909,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   /* Solver statistics */
   if (!gbData->isExplicit)
     gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
-  if (fabs(targetTime - stopTime) < MINIMAL_STEP_SIZE && ACTIVE_STREAM(LOG_STATS)) {
+  if (fabs(targetTime - stopTime) < GB_MINIMAL_STEP_SIZE && ACTIVE_STREAM(LOG_STATS)) {
     infoStreamPrint(LOG_STATS, 0, "gbode (single-rate integration): %s", GB_METHOD_NAME[gbData->GM_method]);
   }
   /* Write statistics to the solverInfo data structure */
