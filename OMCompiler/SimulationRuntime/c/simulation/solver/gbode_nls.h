@@ -49,6 +49,9 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GBODEF* gbfData);
 void freeRK_NLS_DATA( NONLINEAR_SYSTEM_DATA* nlsData);
 
+//Specific treatment of NLS within gbode
+NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, DATA_GBODE* gbData);
+
 // Residuum and Jacobian functions for diagonal implicit (DIRK) and implicit (IRK) Runge-Kutta methods.
 void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
 void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);

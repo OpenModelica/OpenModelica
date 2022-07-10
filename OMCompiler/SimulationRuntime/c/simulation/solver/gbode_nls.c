@@ -392,6 +392,40 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData) {
   return;
 }
 
+/**
+ * @brief Speicial treatment when solving non linear systems of equations
+ *
+ *        Will be described, when it is ready
+ *
+ * @param data                Pointer to runtime data struct.
+ * @param threadData          Thread data for error handling.
+ * @param nlsData             Non-linear solver data.
+ * @param gbData              Runge-Kutta method.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
+ */
+NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, DATA_GBODE* gbData) {
+  NLS_SOLVER_STATUS solved;
+  // Debug nonlinear solution process
+  rtclock_t clock;
+  double cpu_time_used;
+
+  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
+    rt_ext_tp_tick(&clock);
+  }
+
+  if (gbData->multi_rate) {
+    solved = solveNLS(data, threadData, nlsData);
+  } else {
+    solved = solveNLS(data, threadData, nlsData);
+  }
+
+  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
+      cpu_time_used = rt_ext_tp_tock(&clock);
+      infoStreamPrint(LOG_GBODE_NLS, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
+  }
+
+  return solved;
+}
 
 /**
  * @brief Residual function for non-linear system of generic multi-step methods.
