@@ -5230,6 +5230,7 @@ match sparsepattern
     {
       TRACE_PUSH
       TRACE_POP
+      jacobian->availability = JACOBIAN_NOT_AVAILABLE;
       return 1;
     }
     >>
@@ -5240,6 +5241,7 @@ match sparsepattern
       let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
       let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
       let colorString = genSPColors(colorList, "jacobian->sparsePattern->colorCols")
+      let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
       let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
       let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
       let constantEqns = (jacobianColumn |> JAC_COLUMN(constantEqns=constantEqns) =>
@@ -5257,6 +5259,7 @@ match sparsepattern
 
         initAnalyticJacobian(jacobian, <%index_%>, <%indexColumn%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
         jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
+        jacobian->availability = <%availability%>;
 
         /* write lead index of compressed sparse column */
         memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));

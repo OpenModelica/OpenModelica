@@ -57,6 +57,7 @@
 #include "epsilon.h"
 #include "external_input.h"
 #include "jacobianSymbolical.h"
+#include "util/jacobian_util.h"
 #include "model_help.h"
 #include "omc_math.h"
 #include "simulation/options.h"
@@ -334,38 +335,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
      infoStreamPrint(LOG_SOLVER, 0, "as the output frequency time step control is used: %f", idaData->stepsTime);
   }
 
-
-  /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
-  if (omc_flag[FLAG_JACOBIAN]) {
-    for (i=1; i< JAC_MAX;i++) {
-      if (!strcmp((const char*)omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[i])) {
-        idaData->jacobianMethod = (enum JACOBIAN_METHOD)i;
-        break;
-      }
-    }
-    if(idaData->jacobianMethod == SYMJAC) {
-      warningStreamPrint(LOG_STDOUT, 1, "Symbolic Jacobians without coloring are currently not supported by IDA. Colored symbolical Jacobian will be used.");
-      idaData->jacobianMethod = COLOREDSYMJAC;
-    }
-    if(idaData->jacobianMethod == NUMJAC) {
-      warningStreamPrint(LOG_STDOUT, 1, "Numerical Jacobians without coloring are currently not supported by IDA. Colored numerical Jacobian will be used.");
-      idaData->jacobianMethod = COLOREDNUMJAC;
-    }
-    if(idaData->jacobianMethod == JAC_UNKNOWN){
-      if (ACTIVE_WARNING_STREAM(LOG_SOLVER)) {
-        warningStreamPrint(LOG_SOLVER, 1, "unrecognized jacobian calculation method %s, current options are:", (const char*)omc_flagValue[FLAG_JACOBIAN]);
-        for(i=1; i < JAC_MAX; ++i) {
-          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", JACOBIAN_METHOD[i], JACOBIAN_METHOD_DESC[i]);
-        }
-        messageClose(LOG_SOLVER);
-      }
-      throwStreamPrint(threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_JACOBIAN]);
-    }
-    /* default case colored numerical jacobian */
-  } else {
-    idaData->jacobianMethod = COLOREDNUMJAC;
-  }
-
   /* if FLAG_IDA_LS is set, choose ida linear solver method */
   if (omc_flag[FLAG_IDA_LS]) {
     for (i=1; i< IDA_LS_MAX; i++) {
@@ -388,29 +357,37 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->linearSolverMethod = IDA_LS_KLU;
   }
 
-  /* selects the calculation method of the jacobian */
-  /* in daeMode with numerical jacobian sparse pattern is already initialized in DAEMODE_DATA */
-  if((idaData->jacobianMethod == COLOREDNUMJAC && !idaData->daeMode)||
-     idaData->jacobianMethod == COLOREDSYMJAC ||
-     idaData->jacobianMethod == SYMJAC)
-  {
-    ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
-    {
-      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
-      idaData->jacobianMethod = INTERNALNUMJAC;
-      if (idaData->linearSolverMethod == IDA_LS_KLU)
-      {
-        idaData->linearSolverMethod = IDA_LS_DENSE;
-        warningStreamPrint(LOG_STDOUT, 0, "IDA linear solver method also switched back to %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
-      }
-    } else {
-      ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
-      infoStreamPrint(LOG_SIMULATION, 1, "Initialized colored Jacobian:");
-      infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jac->sizeCols, jac->sizeRows);
-      infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jac->sparsePattern->numberOfNonZeros, jac->sparsePattern->maxColors);
-      messageClose(LOG_SIMULATION);
-    }
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+  if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+    infoStreamPrint(LOG_SIMULATION, 1, "Initialized Jacobian:");
+    infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+    infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
+    messageClose(LOG_SIMULATION);
+  }
+
+  // Compare user flag to availabe Jacobian methods
+  const char* flagValue;
+  if(omc_flag[FLAG_JACOBIAN]){
+    flagValue = omc_flagValue[FLAG_JACOBIAN];
+  } else {
+    flagValue = NULL;
+  }
+  idaData->jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
+
+  // change IDA specific jacobian method
+  if(idaData->jacobianMethod == SYMJAC) {
+    warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by IDA."
+                                      " Colored symbolical Jacobian will be used.");
+    idaData->jacobianMethod = COLOREDSYMJAC;
+  }else if(idaData->jacobianMethod == NUMJAC) {
+    warningStreamPrint(LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by IDA."
+                                      " Colored numerical Jacobian will be used.");
+    idaData->jacobianMethod = COLOREDNUMJAC;
+  }else if(idaData->jacobianMethod == INTERNALNUMJAC && idaData->linearSolverMethod == IDA_LS_KLU) {
+    warningStreamPrint(LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
+                                      " Colored numerical Jacobian will be used.");
+    idaData->jacobianMethod = COLOREDNUMJAC;
   }
 
   /* Set NNZ */

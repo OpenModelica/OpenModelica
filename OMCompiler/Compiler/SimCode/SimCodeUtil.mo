@@ -1440,6 +1440,18 @@ algorithm
   outJac.partitionIndex := index;
 end rewriteJacPartIdx;
 
+public function jacobianColumnsAreEmpty
+  input list<SimCode.JacobianColumn> columns;
+  output Boolean b = true;
+algorithm
+  for col in columns loop
+    if not (listEmpty(col.columnEqns) and listEmpty(col.constantEqns)) then
+      b := false;
+      return;
+    end if;
+  end for;
+end jacobianColumnsAreEmpty;
+
 // =============================================================================
 // section to create SimCode.Equations from BackendDAE.Equation
 //

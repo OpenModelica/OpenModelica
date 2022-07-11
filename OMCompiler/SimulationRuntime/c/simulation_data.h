@@ -119,7 +119,21 @@ typedef struct CALL_STATISTICS
   long functionAlgebraics;
 } CALL_STATISTICS;
 
-typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} EQUATION_SYSTEM_ERROR;
+typedef enum
+{
+  ERROR_AT_TIME,
+  NO_PROGRESS_START_POINT,
+  NO_PROGRESS_FACTOR,
+  IMPROPER_INPUT
+} EQUATION_SYSTEM_ERROR;
+
+typedef enum
+{
+  JACOBIAN_UNKNOWN = 0,       /* availability of jacobian unknown (not initialized) */
+  JACOBIAN_NOT_AVAILABLE,     /* no symbolic jacobian and no sparsity pattern available */
+  JACOBIAN_ONLY_SPARSITY,     /* only sparsity pattern available */
+  JACOBIAN_AVAILABLE          /* symbolic jacobian and sparsity pattern available */
+} JACOBIAN_AVAILABILITY;
 
 /**
  * @brief Sparse pattern for Jacobian matrix.
@@ -143,14 +157,15 @@ typedef struct SPARSE_PATTERN
  */
 typedef struct ANALYTIC_JACOBIAN
 {
-  unsigned int sizeCols;          /* Number of columns of Jacobian */
-  unsigned int sizeRows;          /* Number of rows of Jacobian */
-  unsigned int sizeTmpVars;       /* Length of vector tmpVars */
-  SPARSE_PATTERN* sparsePattern;  /* Contain sparse pattern including coloring */
-  modelica_real* seedVars;        /* Seed vector for specifying which columns to evaluate */
+  JACOBIAN_AVAILABILITY availability;  /* Availability status */
+  unsigned int sizeCols;              /* Number of columns of Jacobian */
+  unsigned int sizeRows;              /* Number of rows of Jacobian */
+  unsigned int sizeTmpVars;           /* Length of vector tmpVars */
+  SPARSE_PATTERN* sparsePattern;      /* Contain sparse pattern including coloring */
+  modelica_real* seedVars;            /* Seed vector for specifying which columns to evaluate */
   modelica_real* tmpVars;
-  modelica_real* resultVars;      /* Result column for given seed vector */
-  modelica_real dae_cj;           /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
+  modelica_real* resultVars;          /* Result column for given seed vector */
+  modelica_real dae_cj;               /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
   int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independed of seed vector */
 } ANALYTIC_JACOBIAN;
 
@@ -253,7 +268,6 @@ typedef int (*analyticalJacobianColumn_func_ptr)(DATA* data, threadData_t* threa
 /**
  * @brief User data provided to residual functions.
  *
- * Created by (non-)linear solver before evaluating a residual.
  */
 typedef struct RESIDUAL_USERDATA {
   DATA* data;

@@ -42,6 +42,7 @@
 
 #include "gc/omc_gc.h"
 #include "util/context.h"
+#include "util/jacobian_util.h"
 #include "util/omc_error.h"
 #include "util/parallel_helper.h"
 
@@ -345,24 +346,24 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     dasslData->dasslJacobian = COLOREDNUMJAC;
   }
 
-  /* selects the calculation method of the jacobian */
-  if(dasslData->dasslJacobian == COLOREDNUMJAC ||
-     dasslData->dasslJacobian == COLOREDSYMJAC ||
-     dasslData->dasslJacobian == SYMJAC)
-  {
-    ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
-    {
-      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
-      dasslData->dasslJacobian = INTERNALNUMJAC;
-    } else {
-      ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
-      infoStreamPrint(LOG_SIMULATION, 1, "Initialized colored Jacobian:");
-      infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jac->sizeCols, jac->sizeRows);
-      infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jac->sparsePattern->numberOfNonZeros, jac->sparsePattern->maxColors);
-      messageClose(LOG_SIMULATION);
-    }
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+  if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+    infoStreamPrint(LOG_SIMULATION, 1, "Initialized Jacobian:");
+    infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+    infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
+    messageClose(LOG_SIMULATION);
   }
+
+  // Compare user flag to availabe Jacobian methods
+  const char* flagValue;
+  if(omc_flag[FLAG_JACOBIAN]){
+    flagValue = omc_flagValue[FLAG_JACOBIAN];
+  } else {
+    flagValue = NULL;
+  }
+  dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian->availability, flagValue);
+
   /* default use a user sub-routine for JAC */
   dasslData->info[4] = 1;
 

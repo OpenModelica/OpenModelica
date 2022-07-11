@@ -24,7 +24,8 @@ val(y,1.0);
 // record SimulationResult
 //     resultFile = "testDAE.p7_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -32,6 +33,6 @@ val(y,1.0);
 // "
 // 0.9
 // 0.0
-// 2.391655569960633
-// 0.4103118608737327
+// 2.391655569960412
+// 0.4103118608737951
 // endResult

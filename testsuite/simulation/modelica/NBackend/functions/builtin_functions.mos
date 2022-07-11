@@ -5,7 +5,7 @@
 loadString("
 model builtin_functions
   Real y;
-  Real[14] x(each start=0.0, each fixed=true);
+  Real[14] x(each start=-1.0, each fixed=true);
 equation
   y = abs(x[2]);
   der(x[1]) = sqrt(y);

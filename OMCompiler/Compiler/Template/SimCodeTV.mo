@@ -1339,6 +1339,11 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> eqs;
   end selectNLEqSys;
 
+  function jacobianColumnsAreEmpty
+    input list<SimCode.JacobianColumn> columns;
+    output Boolean b ;
+  end jacobianColumnsAreEmpty;
+
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
