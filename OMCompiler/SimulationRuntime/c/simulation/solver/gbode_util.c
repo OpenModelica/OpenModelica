@@ -564,7 +564,7 @@ void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, doub
   char row_to_print[40960];
   unsigned int bufSize = 40960;
   unsigned int ct;
-  ct = snprintf(row_to_print, bufSize "%s(%8g) =\t", name, time);
+  ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<nIndx;i++)
     ct += snprintf(row_to_print+ct, bufSize-ct, "%16.12g", a[indx[i]]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
@@ -614,8 +614,8 @@ void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
 /**
  * @brief Write information on the active fast states on file (activity diagram)
  *
- * @param gbData       Pointer to generik GBODE data struct.
- * @param event        If an event has happend, write zeros else ones
+ * @param gbData       Pointer to generic GBODE data struct.
+ * @param event        If an event has happened, write zeros else ones
  * @param time         Actual time of reporting
  * @param rejectedType Type of rejection
  *                     0  <= no rejection
@@ -625,23 +625,23 @@ void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
  *                    -1  <= step is preliminary accepted but needs refinement
  */
 void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, int rejectedType) {
-    char fastStates_row[4096];
-    unsigned int bufSize = 4096;
-    unsigned int ct;
-    ct = snprintf(fastStates_row, bufSize, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
-    for (int i = 0; i < gbData->nStates; i++) {
-      if (event)
-        ct += snprintf(fastStates_row+ct, bufSize-ct, "0");
-      else
-        ct += snprintf(fastStates_row+ct, bufSize-ct, "1");
-    }
-    fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
+  char fastStates_row[4096];
+  unsigned int bufSize = 4096;
+  unsigned int ct;
+  ct = snprintf(fastStates_row, bufSize, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
+  for (int i = 0; i < gbData->nStates; i++) {
+    if (event)
+      ct += snprintf(fastStates_row+ct, bufSize-ct, " 0");
+    else
+      ct += snprintf(fastStates_row+ct, bufSize-ct, " a1");
+  }
+  fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
 }
 
 /**
  * @brief Write information on the active fast states on file (activity diagram)
  *
- * @param gbData  Pointer to generik GBODE data struct.
+ * @param gbData  Pointer to generic GBODE data struct.
  * @param time    Actual time of reporting
  * @param rejectedType Type of rejection
  *                     0  <= no rejection
@@ -658,11 +658,11 @@ void dumpFastStates_gbf(DATA_GBODE* gbData, double time, int rejectedType) {
   ct = snprintf(fastStates_row, bufSize, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
   for (i = 0, ii = 0; i < gbData->nStates;) {
     if (i == gbData->fastStatesIdx[ii]) {
-      ct += snprintf(fastStates_row+ct, bufSize-ct, "1");
+      ct += snprintf(fastStates_row+ct, bufSize-ct, " 1");
       i++;
       if (ii < gbData->nFastStates-1) ii++;
     } else {
-      ct += snprintf(fastStates_row+ct, bufSize-ct, "0");
+      ct += snprintf(fastStates_row+ct, bufSize-ct, " 0");
       i++;
     }
   }
