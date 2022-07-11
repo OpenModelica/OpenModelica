@@ -1813,6 +1813,10 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         messageClose(LOG_SOLVER);
         return 0;
       } else {
+        // ToDo: If the solver does large steps and finds an event, the interpolation is
+        // done in solver_main (linearly) and therefore the states are not very well approximated.
+        // Current solution: Step back to the communication interval before the event and event detection
+        // needs to be repeated
         listClear(solverInfo->eventLst);
         gbData->lastStepSize = (eventTime - solverInfo->currentStepSize/2) - gbData->time;
         sData->timeValue = (eventTime - solverInfo->currentStepSize/2);
