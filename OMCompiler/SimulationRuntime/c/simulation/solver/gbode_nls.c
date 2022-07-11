@@ -47,6 +47,19 @@
 
 #include "util/jacobian_util.h"
 
+/**
+ * @brief Specific error handling of kinsol for gbode
+ *
+ * @param error_code  Reported error code
+ * @param module      Module of failure
+ * @param function    Nonlinear function
+ * @param msg         Message of failure
+ * @param data        Pointer to userData
+ */
+void GB_KINErrHandler(int error_code, const char *module, const char *function, char *msg, void *data) {
+// Preparation for specific error handling of the solution process of kinsol for gbode
+// This is needed to speed up simulation in case of failure
+}
 
 /**
  * @brief Initialize static data of non-linear system for DIRK.
@@ -265,10 +278,13 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     nlsData->solverData = solverData;
 
     int flag;
-    flag = KINSetNumMaxIters(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, nlsData->size * 4);
+    NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
+    flag = KINSetNumMaxIters(kin_mem, nlsData->size * 4);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
-    KINSetMaxSetupCalls(((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory, 10);
+    flag = KINSetMaxSetupCalls(kin_mem, 10);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetMaxSetupCalls");
+    flag = KINSetErrHandlerFn(kin_mem, GB_KINErrHandler, NULL);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetErrHandlerFn");
     break;
   default:
     throwStreamPrint(NULL, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbData->nlsSolverMethod]);
@@ -393,7 +409,56 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData) {
 }
 
 /**
- * @brief Speicial treatment when solving non linear systems of equations
+ * @brief Set kinsol parameters
+ *
+ * @param kin_mem       Pointer to kinsol data object
+ * @param numIter       Number of nonlinear iterations
+ * @param jacUpdate     Update of jacobian necessary (SUNFALSE => yes)
+ * @param maxJacUpdate  Maximal number of constant jacobian
+ */
+void set_kinsol_parameters(NLS_KINSOL_DATA* kin_mem, int numIter, int jacUpdate, int maxJacUpdate) {
+    int flag;
+
+    flag = KINSetNumMaxIters(kin_mem, numIter);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
+    flag = KINSetNoInitSetup(kin_mem, jacUpdate);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNoInitSetup");
+    flag = KINSetMaxSetupCalls(kin_mem, maxJacUpdate);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetMaxSetupCalls");
+
+}
+
+/**
+ * @brief Get the kinsol statistics object
+ *
+ * @param kin_mem Pointer to kinsol data object
+ */
+void get_kinsol_statistics(NLS_KINSOL_DATA* kin_mem) {
+  int flag;
+  long int nIters, nFuncEvals, nJacEvals;
+  double fnorm;
+
+  // Get number of nonlinear iteration steps
+  flag = KINGetNumNonlinSolvIters(kin_mem, &nIters);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINGetNumNonlinSolvIters");
+
+  // Get the error of the residual function
+  flag = KINGetFuncNorm(kin_mem, &fnorm);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINGetFuncNorm");
+
+  // Get the number of jacobian evaluation
+  flag = KINGetNumJacEvals(kin_mem, &nJacEvals);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINGetNumJacEvals");
+
+  // Get the number of function evaluation
+  flag = KINGetNumFuncEvals(kin_mem, &nFuncEvals);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINGetNumFuncEvals");
+
+  // Report numbers
+  infoStreamPrint(LOG_GBODE_NLS, 0, "Kinsol statistics: nIters = %ld, nFuncEvals = %ld, nJacEvals = %ld,  fnorm:  %14.12g", nIters, nFuncEvals, nJacEvals, fnorm);
+}
+/**
+ * @brief Special treatment when solving non linear systems of equations
  *
  *        Will be described, when it is ready
  *
@@ -404,7 +469,9 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData) {
  * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
 NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, DATA_GBODE* gbData) {
+  struct dataSolver * solverData = (struct dataSolver *)nlsData->solverData;
   NLS_SOLVER_STATUS solved;
+
   // Debug nonlinear solution process
   rtclock_t clock;
   double cpu_time_used;
@@ -413,11 +480,17 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     rt_ext_tp_tick(&clock);
   }
 
-  if (gbData->multi_rate) {
+  if (gbData->nlsSolverMethod == GB_NLS_KINSOL) {
+    // Get kinsol data object
+    NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
+
+    set_kinsol_parameters(kin_mem, nlsData->size * 4, SUNFALSE, 10);
     solved = solveNLS(data, threadData, nlsData);
+    if (ACTIVE_STREAM(LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
   } else {
     solved = solveNLS(data, threadData, nlsData);
   }
+
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
       cpu_time_used = rt_ext_tp_tock(&clock);

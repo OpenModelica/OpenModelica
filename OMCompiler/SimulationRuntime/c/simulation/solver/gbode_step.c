@@ -288,6 +288,8 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     } else {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=1..j-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;
+      struct dataSolver * solverData = (struct dataSolver *)nlsData->solverData;
+      NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
 
       // Set start vector
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
