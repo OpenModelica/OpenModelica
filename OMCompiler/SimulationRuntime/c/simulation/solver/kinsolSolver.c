@@ -1203,7 +1203,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
         kinsolData->xScale,         /* scaling vector, for the variable cc */
         kinsolData->fScale);        /* scaling vector for function values fval */
 
-    if (flag < 0) {
+    if (flag < 0 && kinsolData->attemptRetry) {
       warningStreamPrint(LOG_NLS, 0, "KINSol finished with errorCode %d.", flag);
     } else {
       infoStreamPrint(LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
@@ -1211,6 +1211,8 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
     /* Try to handle recoverable errors */
     if (flag < 0 && kinsolData->attemptRetry) {
       retry = nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);
+    } else {
+      retry = FALSE;
     }
 
     /* solution found */
