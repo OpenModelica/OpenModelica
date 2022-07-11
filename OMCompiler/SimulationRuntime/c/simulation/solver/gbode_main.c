@@ -270,7 +270,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   if (ACTIVE_STREAM(LOG_GBODE_STATES))
   {
     char filename[4096];
-    sprintf(filename, "%s_ActiveStates.txt", data->modelData->modelFilePrefix);
+    unsigned int bufSize = 4096;
+    snprintf(filename, bufSize, "%s_ActiveStates.txt", data->modelData->modelFilePrefix);
     gbfData->fastStatesDebugFile = omc_fopen(filename, "w");
     warningStreamPrint(LOG_STDOUT, 0, "LOG_GBODE_STATES sets -noEquidistantTimeGrid for emitting results!");
     solverInfo->integratorSteps = TRUE;
@@ -450,10 +451,11 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   }
 
   char buffer[1024];
+  unsigned int bufSize = 1024;
   if (gbData->multi_rate) {
-    sprintf(buffer, "%s", " and slow states interpolation");
+    snprintf(buffer, bufSize, "%s", " and slow states interpolation");
   } else {
-    sprintf(buffer, "%s"," ");
+    snprintf(buffer, bufSize, "%s"," ");
   }
   switch (gbData->interpolation)
   {

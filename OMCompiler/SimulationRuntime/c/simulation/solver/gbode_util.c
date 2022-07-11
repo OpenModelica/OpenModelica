@@ -491,7 +491,9 @@ void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, 
 }
 
 /**
- * @brief Prints a vector
+ * @brief Prints a vector to stream.
+ *
+ * If vector is larger than 1000 nothing is printed.
  *
  * @param stream  Prints only, if stream is active
  * @param name    Specific string to print (usually name of the vector)
@@ -507,14 +509,19 @@ void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, doubl
   // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
   char row_to_print[40960];
-  sprintf(row_to_print, "%s(%8g) =\t", name, time);
-  for (int i=0;i<n;i++)
-    sprintf(row_to_print, "%s %18.12g", row_to_print, a[i]);
+  unsigned int bufSize = 40960;
+  unsigned int ct;
+  ct += snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
+  for (int i=0;i<n;i++) {
+    ct += snprintf(row_to_print+ct, bufSize-ct, "%18.12g", a[i]);
+  }
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
 /**
- * @brief Prints an integer vector
+ * @brief Prints an integer vector to stream.
+ *
+ * If vector is larger than 1000 nothing is printed.
  *
  * @param name    Specific string to print (usually name of the vector)
  * @param a       Integer vector to print
@@ -527,33 +534,18 @@ void printIntVector_gb(enum LOG_STREAM stream, char name[], int* a, int n, doubl
   if (!ACTIVE_STREAM(stream) || n>1000) return;
 
   char row_to_print[40960];
-  sprintf(row_to_print, "%s(%8g) =\t", name, time);
+  unsigned int bufSize = 40960;
+  unsigned int ct;
+  ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<n;i++)
-    sprintf(row_to_print, "%s %d", row_to_print, a[i]);
+    ct += snprintf(row_to_print+ct, bufSize-ct, "%d", a[i]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
 /**
- * @brief Prints a square matrix
+ * @brief Prints selected vector components given by an index vector.
  *
- * @param name    Specific string to print (usually name of the matrix)
- * @param a       Matrix to print
- * @param n       number of columns and rows
- * @param time    Time value
- */
-void printMatrix_gb(char name[], double* a, int n, double time) {
-  printf("\n%s at time: %g: \n ", name, time);
-  for (int i=0;i<n;i++)
-  {
-    for (int j=0;j<n;j++)
-      printf("%6g ", a[i*n + j]);
-    printf("\n");
-  }
-  printf("\n");
-}
-
-/**
- * @brief Prints selected vector components given by an index vector
+ * If more than 1000 elements should be printed do nothing.
  *
  * @param name    Specific string to print (usually name of the vector)
  * @param a       Vector to print
@@ -570,9 +562,11 @@ void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, doub
   // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
   char row_to_print[40960];
-  sprintf(row_to_print, "%s(%8g) =\t", name, time);
+  unsigned int bufSize = 40960;
+  unsigned int ct;
+  ct = snprintf(row_to_print, bufSize "%s(%8g) =\t", name, time);
   for (int i=0;i<nIndx;i++)
-    sprintf(row_to_print, "%s %16.12g", row_to_print, a[indx[i]]);
+    ct += snprintf(row_to_print+ct, bufSize-ct, "%16.12g", a[indx[i]]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
@@ -632,12 +626,14 @@ void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
  */
 void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, int rejectedType) {
     char fastStates_row[4096];
-    sprintf(fastStates_row, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
+    unsigned int bufSize = 4096;
+    unsigned int ct;
+    ct = snprintf(fastStates_row, bufSize, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
     for (int i = 0; i < gbData->nStates; i++) {
       if (event)
-        sprintf(fastStates_row, "%s 0", fastStates_row);
+        ct += snprintf(fastStates_row+ct, bufSize-ct, "0");
       else
-        sprintf(fastStates_row, "%s 1", fastStates_row);
+        ct += snprintf(fastStates_row+ct, bufSize-ct, "1");
     }
     fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
 }
@@ -656,15 +652,17 @@ void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, 
  */
 void dumpFastStates_gbf(DATA_GBODE* gbData, double time, int rejectedType) {
   char fastStates_row[4096];
+  unsigned int bufSize = 40960;
+  unsigned int ct;
   int i, ii;
-  sprintf(fastStates_row, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
+  ct = snprintf(fastStates_row, bufSize, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
   for (i = 0, ii = 0; i < gbData->nStates;) {
     if (i == gbData->fastStatesIdx[ii]) {
-      sprintf(fastStates_row, "%s 1", fastStates_row);
+      ct += snprintf(fastStates_row+ct, bufSize-ct, "1");
       i++;
       if (ii < gbData->nFastStates-1) ii++;
     } else {
-      sprintf(fastStates_row, "%s 0", fastStates_row);
+      ct += snprintf(fastStates_row+ct, bufSize-ct, "0");
       i++;
     }
   }

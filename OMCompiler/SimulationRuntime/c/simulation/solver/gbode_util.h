@@ -64,7 +64,6 @@ void projVector_gbf(double* a, double* b, int nIndx, int* indx);
 // Debug functions for the development of gbode
 void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, double time);
 void printIntVector_gb(enum LOG_STREAM stream, char name[], int* a, int n, double time);
-void printMatrix_gb(char name[], double* a, int n, double time);
 void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, double time, int nIndx, int* indx);
 void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name);
 

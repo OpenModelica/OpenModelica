@@ -192,7 +192,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
   default:
-    throwStreamPrint(threadData, "Unhandles case in solver_main_step.");
+    throwStreamPrint(threadData, "Unhandled case in solver_main_step.");
   }
   TRACE_POP
   return 1;
