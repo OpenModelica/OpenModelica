@@ -878,7 +878,7 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(50, "replaceHomotopy",
     })),
   Gettext.gettext("Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."));
 constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(51, "generateDynamicJacobian",
-  NONE(), EXTERNAL(), STRING_FLAG("numeric"),
+  NONE(), EXTERNAL(), STRING_FLAG("symbolic"),
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("Does not generate Jacobian. For use with explicit solvers.")),
     ("numeric", Gettext.gettext("Generates sparsity pattern for numeric Jacobian.")),
