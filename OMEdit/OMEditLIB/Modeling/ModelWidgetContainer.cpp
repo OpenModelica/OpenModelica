@@ -254,10 +254,16 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
 
   foreach (auto shape, shapes) {
     ShapeAnnotation *pShapeAnnotation = 0;
-    if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
+    if (ModelInstance::Line *pLine = dynamic_cast<ModelInstance::Line*>(shape)) {
+      pShapeAnnotation = new LineAnnotation(pLine, inhertied, this);
+    } else if (ModelInstance::Polygon *pPolygon = dynamic_cast<ModelInstance::Polygon*>(shape)) {
+      pShapeAnnotation = new PolygonAnnotation(pPolygon, inhertied, this);
+    } else if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
       pShapeAnnotation = new RectangleAnnotation(pRectangle, inhertied, this);
     } else if (ModelInstance::Ellipse *pEllipse = dynamic_cast<ModelInstance::Ellipse*>(shape)) {
       pShapeAnnotation = new EllipseAnnotation(pEllipse, inhertied, this);
+    } else if (ModelInstance::Text *pText = dynamic_cast<ModelInstance::Text*>(shape)) {
+      pShapeAnnotation = new TextAnnotation(pText, inhertied, this);
     }
 
     if (pShapeAnnotation) {
@@ -4540,21 +4546,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     createUndoStack();
 
     if (MainWindow::instance()->isNewApi()) {
-      QString modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
-      if (!modelInstanceJson.isEmpty()) {
-        QJsonParseError jsonParserError;
-        QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
-        if (doc.isNull()) {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                                QString("Failed to parse model instance json for class %1 with error %2.")
-                                                                .arg(mpLibraryTreeItem->getNameStructure(), jsonParserError.errorString()),
-                                                                Helper::scriptingKind, Helper::errorLevel));
-        } else {
-          mpModelInstance = new ModelInstance::Model;
-          mpModelInstance->deserialize(doc.object());
-          drawModel();
-        }
-      }
+      QJsonObject modelInstanceJson = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), true);
+      mpModelInstance = new ModelInstance::Model(modelInstanceJson);
+      drawModel();
     } else {
 
       getModelInheritedClasses();
@@ -5543,6 +5537,37 @@ void ModelWidget::reDrawModelWidget()
     // announce the change.
     mpLibraryTreeItem->emitLoaded();
   }
+  QApplication::restoreOverrideCursor();
+}
+
+void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson)
+{
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+  clearGraphicsViews();
+  /* get model components, connection and shapes. */
+  // Draw icon view
+  // reset the CoOrdinateSystem
+  if (mpIconGraphicsView) {
+    mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+  }
+  /* remove everything from the diagram view */
+  if (mpDiagramGraphicsView) {
+    mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+  }
+  if (mpModelInstance) {
+    delete mpModelInstance;
+  }
+  mpModelInstance = new ModelInstance::Model(modelInstanceJson);
+  drawModel();
+  // update the icon
+  mpLibraryTreeItem->handleIconUpdated();
+  // if documentation view is visible then update it
+  if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+    MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
+  }
+  updateViewButtonsBasedOnAccess();
+  // announce the change.
+//  mpLibraryTreeItem->emitLoaded();
   QApplication::restoreOverrideCursor();
 }
 

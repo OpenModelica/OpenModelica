@@ -3431,11 +3431,22 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
  * \param prettyPrint
  * \return
  */
-QString OMCProxy::getModelInstance(const QString &className, bool prettyPrint)
+QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrint)
 {
-  QString result = mpOMCInterface->getModelInstance(className, prettyPrint);
+  QString modelInstanceJson = mpOMCInterface->getModelInstance(className, prettyPrint);
   printMessagesStringInternal();
-  return result;
+  if (!modelInstanceJson.isEmpty()) {
+    QJsonParseError jsonParserError;
+    QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
+    if (doc.isNull()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Failed to parse model instance json for class %1 with error %2.")
+                                                            .arg(className, jsonParserError.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+    return doc.object();
+  }
+  return QJsonObject();
 }
 
 /*!

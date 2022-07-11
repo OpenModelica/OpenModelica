@@ -61,8 +61,10 @@ public:
   };
   // Used for icon/diagram shape
   LineAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  LineAnnotation(ModelInstance::Line *pLine, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
   LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
+  LineAnnotation(ModelInstance::Line *pLine, Element *pParent);
   // Used for icon/diagram inherited shape
   LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for creating connection/transition
@@ -79,6 +81,7 @@ public:
   // Used for non-existing class
   LineAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
+  void parseShapeAnnotation();
   QPainterPath getShape() const;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
@@ -141,6 +144,8 @@ public:
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
 
   static QColor findLineColorForConnection(Element *pComponent);
+private:
+  ModelInstance::Line *mpLine;
 protected:
   QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 

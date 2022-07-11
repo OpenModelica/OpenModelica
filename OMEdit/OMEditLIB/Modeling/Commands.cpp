@@ -1791,3 +1791,27 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
     }
   }
 }
+
+OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QJsonObject &oldModelInstanceJson, const QJsonObject &newModelInstanceJson,
+                               const QString &commandText, UndoCommand *pParent)
+  : UndoCommand(pParent)
+{
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mOldModelInstanceJson = oldModelInstanceJson;
+  mNewModelInstanceJson = newModelInstanceJson;
+  setText(commandText);
+}
+
+void OMCUndoCommand::redoInternal()
+{
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getModelWidget()) {
+    mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInstanceJson);
+  }
+}
+
+void OMCUndoCommand::undo()
+{
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getModelWidget()) {
+    mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInstanceJson);
+  }
+}

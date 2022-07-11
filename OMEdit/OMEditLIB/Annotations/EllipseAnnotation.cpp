@@ -128,14 +128,12 @@ void EllipseAnnotation::parseShapeAnnotation()
   ModelInstance::Extent extent = mpEllipse->getExtent();
   ModelInstance::Point extent1 = extent.getExtent1();
   ModelInstance::Point extent2 = extent.getExtent2();
-
   extents.append(QPointF(extent1.x(), extent1.y()));
   extents.append(QPointF(extent2.x(), extent2.y()));
-
   mExtents = extents;
-
   mStartAngle = mpEllipse->getStartAngle();
   mEndAngle = mpEllipse->getEndAngle();
+  mClosure = StringHandler::getClosureType(stripDynamicSelect(mpEllipse->getClosure()));
 }
 
 QRectF EllipseAnnotation::boundingRect() const

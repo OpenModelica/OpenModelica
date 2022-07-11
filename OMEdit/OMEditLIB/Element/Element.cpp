@@ -1711,7 +1711,15 @@ QString Element::getParameterDisplayString(QString parameterName)
   }
   /* case 1 */
   if (displayString.isEmpty()) {
-    displayString = mpElementInfo->getModifiersMap(pOMCProxy, className, this).value(parameterName, "");
+    if (MainWindow::instance()->isNewApi()) {
+      foreach (auto modifier, mpModelElement->getModifier().getModifiers()) {
+        if (modifier.getName().compare(parameterName) == 0) {
+          displayString = modifier.getValue();
+        }
+      }
+    } else {
+      displayString = mpElementInfo->getModifiersMap(pOMCProxy, className, this).value(parameterName, "");
+    }
   }
   /* case 2 or check for enumeration type if case 1 */
   if (displayString.isEmpty() || typeName.isEmpty()) {
@@ -2442,10 +2450,16 @@ void Element::createClassShapes()
 
     foreach (auto shape, shapes) {
       ShapeAnnotation *pShapeAnnotation = 0;
-      if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
+      if (ModelInstance::Line *pLine = dynamic_cast<ModelInstance::Line*>(shape)) {
+        pShapeAnnotation = new LineAnnotation(pLine, this);
+      } else if (ModelInstance::Polygon *pPolygon = dynamic_cast<ModelInstance::Polygon*>(shape)) {
+        pShapeAnnotation = new PolygonAnnotation(pPolygon, this);
+      }  else if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
         pShapeAnnotation = new RectangleAnnotation(pRectangle, this);
       } else if (ModelInstance::Ellipse *pEllipse = dynamic_cast<ModelInstance::Ellipse*>(shape)) {
         pShapeAnnotation = new EllipseAnnotation(pEllipse, this);
+      } else if (ModelInstance::Text *pText = dynamic_cast<ModelInstance::Text*>(shape)) {
+        pShapeAnnotation = new TextAnnotation(pText, this);
       }
     }
 

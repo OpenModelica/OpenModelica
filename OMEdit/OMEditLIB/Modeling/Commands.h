@@ -443,4 +443,17 @@ private:
   void switchToEditedModelWidget();
 };
 
+class OMCUndoCommand : public UndoCommand
+{
+public:
+  OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const QJsonObject &oldModelInstanceJson, const QJsonObject &newModelInstanceJson, const QString &commandText,
+                 UndoCommand *pParent = 0);
+  void redoInternal();
+  void undo();
+private:
+  LibraryTreeItem *mpLibraryTreeItem;
+  QJsonObject mOldModelInstanceJson;
+  QJsonObject mNewModelInstanceJson;
+};
+
 #endif // COMMANDS_H
