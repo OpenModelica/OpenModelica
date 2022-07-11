@@ -46,6 +46,7 @@
 #include "nonlinearSystem.h"
 
 #include "util/jacobian_util.h"
+#include "util/rtclock.h"
 
 /**
  * @brief Specific error handling of kinsol for gbode
@@ -490,7 +491,6 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   } else {
     solved = solveNLS(data, threadData, nlsData);
   }
-
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
       cpu_time_used = rt_ext_tp_tock(&clock);

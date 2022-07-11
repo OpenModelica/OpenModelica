@@ -34,7 +34,6 @@
 #include "gbode_main.h"
 #include "gbode_nls.h"
 #include "gbode_util.h"
-#include "util/rtclock.h"
 
 /**
  * @brief Generic multi-step function.
