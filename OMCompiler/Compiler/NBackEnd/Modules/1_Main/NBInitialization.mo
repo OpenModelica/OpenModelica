@@ -157,20 +157,20 @@ public
   algorithm
     _ := match Pointer.access(state)
       local
+        BackendExtension.VariableAttributes attributes;
         ComponentRef name, start_name;
         Pointer<Variable> var_ptr, start_var;
         Pointer<BEquation.Equation> start_eq;
-        Option<Expression> start;
 
       // if it is an array create for equation
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)))))
-        guard(BVariable.isArray(state)) algorithm
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
+        guard BackendExtension.VariableAttributes.isFixed(attributes) and BVariable.isArray(state) algorithm
           createStartEquationSlice(Slice.SLICE(state, {}), ptr_start_vars, ptr_start_eqs, idx);
       then ();
 
       // create scalar equation
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)), start = start)))
-        algorithm
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
+        guard BackendExtension.VariableAttributes.isFixed(attributes) algorithm
           name := BVariable.getVarName(state);
           (var_ptr, name, start_var, start_name) := createStartVar(state, name, {});
           start_eq := BEquation.Equation.makeEq(name, start_name, idx, NBEquation.START_STR);
