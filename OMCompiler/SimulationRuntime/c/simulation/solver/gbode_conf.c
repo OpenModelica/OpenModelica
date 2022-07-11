@@ -79,9 +79,9 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_SR or FLAG_MR.
  *
- * Defaults to method RK_LOBA_IIIB_4 for single-rate.
+ * Defaults to method RK_ESDIRK4 for single-rate.
  *
- * Defaults to method RK_SDIRK2 for multi-rate method, if single-rate method is implicit.
+ * Defaults to method RK_ESDIRK4 for multi-rate method, if single-rate method is implicit.
  * Otherwise us same method as single-rate method.
  *
  * Returns GB_UNKNOWN if flag is not known.

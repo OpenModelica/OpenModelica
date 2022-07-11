@@ -633,7 +633,7 @@ void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, 
     if (event)
       ct += snprintf(fastStates_row+ct, bufSize-ct, " 0");
     else
-      ct += snprintf(fastStates_row+ct, bufSize-ct, " a1");
+      ct += snprintf(fastStates_row+ct, bufSize-ct, " 1");
   }
   fprintf(gbData->gbfData->fastStatesDebugFile, "%s\n", fastStates_row);
 }
