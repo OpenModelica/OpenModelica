@@ -1486,7 +1486,7 @@ algorithm
             (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
             tmpStr = tmpStr
                      + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
-                     + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
+                     + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst) + "\n"
                      + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
                      + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
           else
