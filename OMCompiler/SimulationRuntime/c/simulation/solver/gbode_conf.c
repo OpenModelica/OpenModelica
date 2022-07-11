@@ -58,6 +58,7 @@ const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_UNKNOWN */           "unknown",
   /* GB_INTERPOL_LIN */               "linear",
   /* GB_INTERPOL_HERMITE */           "hermite",
+  /* GB_INTERPOL_HERMITE_a */         "hermite_a",
   /* GB_INTERPOL_HERMITE_b */         "hermite_b",
   /* GB_INTERPOL_HERMITE_ERRCTRL */   "hermite_errctrl",
   /* GB_DENSE_OUTPUT */               "dense_output",
@@ -68,7 +69,8 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_UNKNOWN */         "unknown",
   /* GB_INTERPOL_LIN */             "Linear interpolation (1st order)",
   /* GB_INTERPOL_HERMITE */         "Hermite interpolation (3rd order)",
-  /* GB_INTERPOL_HERMITE_b */       "Hermite interpolation (only for left hand side)",
+  /* GB_INTERPOL_HERMITE_a */       "Hermite interpolation (only for left hand side)",
+  /* GB_INTERPOL_HERMITE_b */       "Hermite interpolation (only for right hand side)",
   /* GB_INTERPOL_HERMITE_ERRCTRL */ "Hermite interpolation with error control",
   /* GB_DENSE_OUTPUT */             "use dense output formula for interpolation",
   /* GB_DENSE_OUTPUT_ERRCTRL */     "use dense output fomular with error control"
@@ -77,9 +79,9 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_SR or FLAG_MR.
  *
- * Defaults to method RK_LOBA_IIIB_4 for single-rate.
+ * Defaults to method RK_ESDIRK4 for single-rate.
  *
- * Defaults to method RK_SDIRK2 for multi-rate method, if single-rate method is implicit.
+ * Defaults to method RK_ESDIRK4 for multi-rate method, if single-rate method is implicit.
  * Otherwise us same method as single-rate method.
  *
  * Returns GB_UNKNOWN if flag is not known.
@@ -131,15 +133,15 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
     case RK_LOBA_IIIC_4:
       // Default value for inner integration method
       // if the outer integration method is full implicit
-      return RK_ESDIRK3;
+      return RK_ESDIRK4;
     default:
       return singleRateMethod;
     }
   }
 
   // Default value for single-rate method
-  infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: esdirk3 [default]");
-  return RK_ESDIRK3;
+  infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: esdirk4 [default]");
+  return RK_ESDIRK4;
 }
 
 /**

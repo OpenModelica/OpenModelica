@@ -24,7 +24,7 @@ rkMethods := {"impl_euler",
 
 nlsMethods := {"newton", "kinsol"};
 
-errCtrls := {"0", "1"};
+errCtrls := {"const", "i"};
 
 setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
 
@@ -68,7 +68,7 @@ end for;
 // ""
 // {"impl_euler","sdirk2","sdirk3","esdirk2","esdirk3"}
 // {"newton","kinsol"}
-// {"0","1"}
+// {"const","i"}
 // true
 // ""
 // {"SlowFastDynamics","SlowFastDynamics_init.xml"}

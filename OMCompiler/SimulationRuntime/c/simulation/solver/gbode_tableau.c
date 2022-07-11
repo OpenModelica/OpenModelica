@@ -1238,7 +1238,7 @@ void printButcherTableau(BUTCHER_TABLEAU* tableau) {
     }
     ct = snprintf(buffer, buffSize, "%s | ", line);
       for (j = 0; j<tableau->nStages; j++) {
-        ct += snprintf(buffer+ct, buffSize, "%s", line);
+        ct += snprintf(buffer+ct, buffSize-ct, "%s", line);
       }
     infoStreamPrint(LOG_SOLVER, 0, "%s", buffer);
     ct = snprintf(buffer, buffSize, "%10s | ", "");

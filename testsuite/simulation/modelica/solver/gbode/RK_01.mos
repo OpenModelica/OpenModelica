@@ -26,7 +26,7 @@ rkMethods := {"expl_euler",
              "rk1012",
              "rk1214"};
 
-errCtrls := {"0", "1"};
+errCtrls := {"const", "i"};
 
 setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
 
@@ -67,7 +67,7 @@ end for;
 // true
 // ""
 // {"expl_euler","dopri45","merson","fehlberg12","fehlberg45","fehlberg78","rk810","rk1012","rk1214"}
-// {"0","1"}
+// {"const","i"}
 // true
 // ""
 // {"SlowFastDynamics","SlowFastDynamics_init.xml"}

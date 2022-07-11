@@ -32,8 +32,8 @@
  */
 
 #include "gbode_main.h"
+#include "gbode_nls.h"
 #include "gbode_util.h"
-#include "util/rtclock.h"
 
 /**
  * @brief Generic multi-step function.
@@ -95,18 +95,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
-  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-    rtclock_t clock;
-    double cpu_time_used;
-
-    rt_ext_tp_tick(&clock);
-    solved = solveNLS(data, threadData, nlsData);
-    cpu_time_used = rt_ext_tp_tock(&clock);
-
-    infoStreamPrint(LOG_GBODE_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
-  } else {
-    solved = solveNLS(data, threadData, nlsData);
-  }
+  solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
     warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS");
@@ -201,18 +190,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
-  if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
-    rtclock_t clock;
-    double cpu_time_used;
-
-    rt_ext_tp_tick(&clock);
-    solved = solveNLS(data, threadData, nlsData);
-    cpu_time_used = rt_ext_tp_tock(&clock);
-
-    infoStreamPrint(LOG_GBODE_NLS_V, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
-  } else {
-    solved = solveNLS(data, threadData, nlsData);
-  }
+  solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
     warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR");
@@ -309,40 +287,29 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     } else {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=1..j-1) + A[i,i]*f(t + c[i]*h, x))
       NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;
+      struct dataSolver * solverData = (struct dataSolver *)nlsData->solverData;
+      NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
 
       // Set start vector
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxOld, gbData->yOld, nStates*sizeof(modelica_real));
       extrapolation_gb(gbData, nlsData->nlsxExtrapolation, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
 
-      // Debug nonlinear solution process
-      if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-        rtclock_t clock;
-        double cpu_time_used;
-
-        //Solve nonlinear equation system
-        rt_ext_tp_tick(&clock);
-        solved = solveNLS(data, threadData, nlsData);
-        cpu_time_used = rt_ext_tp_tock(&clock);
-
-        infoStreamPrint(LOG_GBODE_NLS, 0, "time needed for solving the NLS:  %20.16g", cpu_time_used);
-      } else {
-        //Solve nonlinear equation system
-        solved = solveNLS(data, threadData, nlsData);
-      }
-
-      if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
-        infoStreamPrint(LOG_GBODE_NLS_V, 1, "NLS - start values and solution of the NLS:");
-        printVector_gb(LOG_GBODE_NLS_V, "xo", nlsData->nlsxOld, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        printVector_gb(LOG_GBODE_NLS_V, "xS", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        printVector_gb(LOG_GBODE_NLS_V, "xL", nlsData->nlsx,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        messageClose(LOG_GBODE_NLS_V);
-      }
+      solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
       if (solved != NLS_SOLVED) {
         warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d", stage_);
         return -1;
       }
+
+      if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
+        infoStreamPrint(LOG_GBODE_NLS_V, 1, "NLS - start values and solution of the NLS:");
+        printVector_gb(LOG_GBODE_NLS_V, "x0", nlsData->nlsxOld, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(LOG_GBODE_NLS_V, "xS", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(LOG_GBODE_NLS_V, "xL", nlsData->nlsx,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        messageClose(LOG_GBODE_NLS_V);
+      }
+
       memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
     }
     // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
@@ -457,18 +424,11 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       extrapolation_gbf(gbData, gbData->y1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
       projVector_gbf(nlsData->nlsxExtrapolation, gbData->y1, nFastStates, gbData->fastStatesIdx);
 
-      // Solve corresponding NLS
-      if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
-        rtclock_t clock;
-        double cpu_time_used;
+      solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
-        rt_ext_tp_tick(&clock);
-        solved = solveNLS(data, threadData, nlsData);
-        cpu_time_used = rt_ext_tp_tock(&clock);
-
-        infoStreamPrint(LOG_GBODE_NLS_V, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
-      } else {
-        solved = solveNLS(data, threadData, nlsData);
+      if (solved != NLS_SOLVED) {
+        warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d", stage_);
+        return -1;
       }
 
       // debug residuals
@@ -477,11 +437,6 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
         printVector_gb(LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation, nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
         printVector_gb(LOG_GBODE_NLS, "xL", nlsData->nlsx,              nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
         messageClose(LOG_GBODE_NLS);
-      }
-
-      if (solved != NLS_SOLVED) {
-        warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d", stage_);
-        return -1;
       }
     }
 
@@ -552,17 +507,12 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     extrapolation_gb(gbData, nlsData->nlsxExtrapolation + stage_*nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
   }
 
-  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-    rtclock_t clock;
-    double cpu_time_used;
+  solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
-    rt_ext_tp_tick(&clock);
-    solved = solveNLS(data, threadData, nlsData);
-    cpu_time_used = rt_ext_tp_tock(&clock);
-
-    infoStreamPrint(LOG_GBODE_NLS, 0, "time needed for a solving NLS:  %20.16g", cpu_time_used);
-  } else {
-    solved = solveNLS(data, threadData, nlsData);
+  if (solved != NLS_SOLVED) {
+    gbData->stats.nConvergenveTestFailures++;
+    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK");
+    return -1;
   }
 
   if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
@@ -574,11 +524,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     messageClose(LOG_GBODE_NLS);
   }
 
-  if (solved != NLS_SOLVED) {
-    gbData->stats.nConvergenveTestFailures++;
-    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK");
-    return -1;
-  }
 
   // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
