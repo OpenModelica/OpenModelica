@@ -24,6 +24,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Util/OutputPlainTextEdit.cpp
                       MainWindow.cpp
                       OMC/OMCProxy.cpp
+                      Modeling/Model.cpp
                       Modeling/MessagesWidget.cpp
                       Modeling/ItemDelegate.cpp
                       Modeling/LibraryTreeWidget.cpp
@@ -141,6 +142,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/OutputPlainTextEdit.h
                       MainWindow.h
                       OMC/OMCProxy.h
+                      Modeling/Model.h
                       Modeling/MessagesWidget.h
                       Modeling/ItemDelegate.h
                       Modeling/LibraryTreeWidget.h

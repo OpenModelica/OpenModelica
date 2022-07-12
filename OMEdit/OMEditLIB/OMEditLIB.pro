@@ -102,13 +102,13 @@ for(path, INCLUDEPATH) {
 }
 
 SOURCES += Util/Helper.cpp \
-  Modeling/Model.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
+  Modeling/Model.cpp \
   Modeling/MessagesWidget.cpp \
   Modeling/ItemDelegate.cpp \
   Modeling/LibraryTreeWidget.cpp \
@@ -204,13 +204,13 @@ SOURCES += Util/Helper.cpp \
   FlatModelica/ExpressionFuncs.cpp
 
 HEADERS  += Util/Helper.h \
-  Modeling/Model.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
+  Modeling/Model.h \
   Modeling/MessagesWidget.h \
   Modeling/ItemDelegate.h \
   Modeling/LibraryTreeWidget.h \
