@@ -162,14 +162,6 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   gbfData->yt   = malloc(gbData->nStates*sizeof(double));
   gbfData->y1   = malloc(gbData->nStates*sizeof(double));
   gbfData->f    = malloc(gbData->nStates*sizeof(double));
-  if (!gbfData->isExplicit)
-  {
-    gbfData->Jf = calloc(gbData->nStates*gbData->nStates, sizeof(double));
-  }
-  else
-  {
-    gbfData->Jf = NULL;
-  }
   gbfData->k         = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
   gbfData->x         = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
   gbfData->yLeft     = malloc(gbData->nStates*sizeof(double));
@@ -382,12 +374,6 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->yr             = malloc(gbData->nStates*sizeof(double) * 2);
   gbData->kr             = malloc(gbData->nStates*sizeof(double) * 2);
 
-  if (!gbData->isExplicit) {
-    gbData->Jf = calloc(gbData->nStates * gbData->nStates, sizeof(double));
-  } else {
-    gbData->Jf = NULL;
-  }
-
   printButcherTableau(gbData->tableau);
 
   /* initialize analytic Jacobian, if available and needed */
@@ -487,6 +473,9 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->gbfData = NULL;
   }
 
+  // Value will be handled in the initial step size determination (-1 and 0 means no failure)
+  gbData->initialFailures = -1;
+
   return 0;
 }
 
@@ -520,7 +509,6 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   free(gbfData->yt);
   free(gbfData->y1);
   free(gbfData->f);
-  free(gbfData->Jf);
   free(gbfData->k);
   free(gbfData->x);
   free(gbfData->res_const);
@@ -591,7 +579,6 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   free(gbData->yt);
   free(gbData->y1);
   free(gbData->f);
-  free(gbData->Jf);
   free(gbData->k);
   free(gbData->x);
   free(gbData->res_const);

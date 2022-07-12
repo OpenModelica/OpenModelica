@@ -67,103 +67,106 @@ typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INF
 typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, unsigned int err_order);
 
 typedef struct DATA_GBODEF{
-  enum GB_METHOD GM_method;                   /* Runge-Kutta method to use. */
-  enum GM_TYPE type;                          /* Type of RK method */
-  enum GB_NLS_METHOD nlsSolverMethod;         /* Non-linear solver method uses by generic RK method. */
+  enum GB_METHOD GM_method;                         /* Method to use for integration. */
+  enum GM_TYPE type;                                /* Type of GB method */
+  enum GB_NLS_METHOD nlsSolverMethod;               /* Non-linear solver method uses by generic RK method. */
+  NONLINEAR_SYSTEM_DATA* nlsData;                   /* Non-linear system
+                                                     * Something like
+                                                    *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
+                                                    * */
+  ANALYTIC_JACOBIAN* jacobian;                      /* Jacobian of non-linear system of implicit Runge-Kutta method */
+  SPARSE_PATTERN* sparsePattern_DIRK;               /* Sparsity pattern for the DIRK methd, will be reduced based on the fast states selection */
 
-  NONLINEAR_SYSTEM_DATA* nlsData;             /* Non-linear system
-                                               * Something like
-                                               *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-                                               * */
-  ANALYTIC_JACOBIAN* jacobian;
-  SPARSE_PATTERN* sparsePattern_DIRK;
+  double *y;                                        /* State vector of the current Runge-Kutta step */
+  double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
+  double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
+  double *yOld;                                     /* State vector of last Runge-Kutta step */
+  double *f;                                        /* State derivatives of ODE for initialization */
+  double *k;                                        /* Vector k of derivatives of states with result of intermediate steps of Runge-Kutta method */
+  double *x;                                        /* Vector x of states with result of intermediate steps of Runge-Kutta method */
+                                                        // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
+  double *yv, *kv, *tv;                             /* Buffer storage of the last values of states (yv) and their derivatives (kv) */
+  double *res_const;                                /* Constant parts of residual for non-linear system of implicit RK method. */
+  double *errest, *errtol;                          /* absolute error and given error tolerance of each individual states */
+  double *err;                                      /* error of each individual state during integration err = errest/errtol*/
+  double *errValues;                                /* ring buffer for step size control */
+  double *stepSizeValues;                           /* ring buffer for step size control */
 
-  void* nlsSolverData;
+  double time, timeLeft, timeRight;                 /* actual time values and the time values of the current interpolation interval */
+  double stepSize, lastStepSize;                    /* actual and last step size of integration */
+  int act_stage;                                    /* Current stage of Runge-Kutta method. */
+  enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */
+  modelica_boolean isExplicit;                      /* Boolean stating if the RK method is explicit */
+  BUTCHER_TABLEAU* tableau;                         /* Butcher tableau of the Runge-Kutta method */
+  int nStates;                                      /* Numbers of fast states */
+  int nFastStates, nFastStates_old;                 /* Numbers of fast states, old values for comparison and update of sparsity pattern */
+  int nSlowStates;                                  /* Numbers of slow states */
+  int *fastStatesIdx, *fastStates_old;              /* Indices of fast states, old values for comparison and update of sparsity pattern */
+  int *slowStatesIdx;                               /* Indices of slow states */
 
-  double *y, *yt, *yOld, *y1, *f;
-  double *yLeft, *kLeft, *yRight, *kRight;
-  double *Jf;
-  double *k, *res_const;
-  double *x;                            /* ring buffer for multi-step method */
-  double *yv, *kv, *tv;
+  modelica_boolean didEventStep;                    /* Will be used for updating the derivatives */
+  int ringBufferSize;                               /* Buffer size for storing the error, stepSize and last values of states (yv) and their derivatives (kv) */
+  enum GB_INTERPOL_METHOD interpolation;            /* Interpolation method */
+  unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
+  modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */
+  gm_step_function step_fun;                        /* Step function of the integrator */
+  gm_stepSize_control_function stepSize_control;    /* Chosen step size control function (i, pi, const) */
 
-  double *errest, *errtol, *err;
-  double *errValues;                    /* ring buffer for step size control */
-  double *stepSizeValues;               /* ring buffer for step size control */
-  double time, startTime, endTime;
-  double timeLeft, timeRight;
-  double stepSize, lastStepSize, stepSize_old;
-  int act_stage;
-  enum GB_CTRL_METHOD ctrl_method;    /* Step size control algorithm */
-  modelica_boolean isExplicit;        /* Boolean stating if the RK method is explicit */
-  BUTCHER_TABLEAU* tableau;
-  int nStates, nFastStates, nSlowStates;
-  int *fastStatesIdx;                      /* Indices of fast states */
-  int *slowStatesIdx;                      /* Indices of slow states */
-  int nFastStates_old, *fastStates_old;
-  modelica_boolean stepRejected;
-  modelica_boolean firstStep;
-  modelica_boolean didEventStep;                   /* Will be used for updating the derivatives */
-  int ringBufferSize;
-  enum GB_INTERPOL_METHOD interpolation;    /* Interpolation method */
-  unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step */
-  modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
+  FILE *fastStatesDebugFile;                        /* File pointer for debugging the integration process with respect to slow and fast states */
+
+  /* statistics */
   SOLVERSTATS stats;
-  FILE *fastStatesDebugFile;
-  gm_step_function step_fun;
-  gm_stepSize_control_function stepSize_control;
 } DATA_GBODEF;
 
 typedef struct DATA_GBODE{
-  DATA_GBODEF* gbfData;
-  enum GB_METHOD GM_method;  /* method to use for fast states integration. */
-  enum GM_TYPE type;                    /* Type of GM method */
-  enum GB_NLS_METHOD nlsSolverMethod;   /* Non-linear solver method uses by generic RK method. */
-  NONLINEAR_SYSTEM_DATA* nlsData;       /* Non-linear system
-                                         * Something like
-                                         *  0 = yold-x + h*(sum(A[i,j]*k[j], i=j..i-1) + A[i,i]*f(t + c[i]*h, x))
-                                         * */
-  ANALYTIC_JACOBIAN* jacobian;            /* Jacobian of non-linear system of implicit Runge-Kutta method */
-  double *y;                               /* Result vector of RK step */
-  double *yt, *y1;                         /* Result vector of embedded RK step */
-  double *yLeft, *kLeft, *yRight, *kRight; /* Needed for interpolation of the slow states */
-  double *yOld;                            /* Result vector of last RK step ???? */
-  double *f;                               /* State derivatives of ODE */
-  double *Jf;
-  double *k;                               /* Vector k with result of intermediate steps of Runge-Kutta method */
-  double *x;                               /* ring buffer for multi-step and RK method */
-                                           // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
-  double *yv, *kv, *tv;
-  double *yr, *kr, *tr;
-  double *res_const;                       /* Constant parts of residual for non-linear system of implicit RK method. */
-  double *errest, *errtol;
-  double *err;
-  double *errValues;                       /* ring buffer for step size control */
-  double *stepSizeValues;                  /* ring buffer for step size control */
-  double err_slow, err_fast, err_int, percentage, err_threshold;
-  double time, timeLeft, timeRight;
-  double stepSize, lastStepSize;
-  double stepSize_old, stepSize_fast;
-  int act_stage;                          /* Current stage of Runge-Kutta method. */
-  enum GB_CTRL_METHOD ctrl_method;        /* Step size control algorithm */
-  int ringBufferSize;
-  modelica_boolean multi_rate;
-  enum GB_INTERPOL_METHOD interpolation;    /* Interpolation method */
-  modelica_boolean isExplicit;            /* Boolean stating if the RK method is explicit */
-  BUTCHER_TABLEAU* tableau;
-  int nStates;
-  int nFastStates, nSlowStates;
-  int *fastStatesIdx;                      /* Indices of fast states */
-  int *slowStatesIdx;                      /* Indices of slow states */
-  int *sortedStatesIdx;                    /* Indices of all states sorted for highest error */
-  unsigned int eventSearch;                /* Defines the mode of event handling (0 => interpolation, 1 => integration)*/
-  modelica_boolean stepRejected;
-  modelica_boolean isFirstStep;       /* True during first Runge-Kutta integrator step, false otherwise */
-  unsigned int nlSystemSize;          /* Size of non-linear system to solve in a RK step. */
-  modelica_boolean symJacAvailable;   /* Boolean stating if a symbolic Jacobian is available */
-
-  gm_step_function step_fun;
-  gm_stepSize_control_function stepSize_control;
+  DATA_GBODEF* gbfData;                             /* Data object of the fast states integrator */
+  enum GB_METHOD GM_method;                         /* Method to use for integration. */
+  enum GM_TYPE type;                                /* Type of GB method */
+  enum GB_NLS_METHOD nlsSolverMethod;               /* Non-linear solver method uses by generic RK method. */
+  NONLINEAR_SYSTEM_DATA* nlsData;                   /* Non-linear system
+                                                     * Something like
+                                                    *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
+                                                    * */
+  ANALYTIC_JACOBIAN* jacobian;                      /* Jacobian of non-linear system of implicit Runge-Kutta method */
+  double *y;                                        /* State vector of the current Runge-Kutta step */
+  double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
+  double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
+  double *yOld;                                     /* State vector of last Runge-Kutta step */
+  double *f;                                        /* State derivatives of ODE for initialization */
+  double *k;                                        /* Vector k of derivatives of states with result of intermediate steps of Runge-Kutta method */
+  double *x;                                        /* Vector x of states with result of intermediate steps of Runge-Kutta method */
+                                                        // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
+  double *yv, *kv, *tv;                             /* Buffer storage of the last values of states (yv) and their derivatives (kv) */
+  double *yr, *kr, *tr;                             /* Backup storage of the buffers yv, kv, tv for Richardson extrapolation */
+  double *res_const;                                /* Constant parts of residual for non-linear system of implicit RK method. */
+  double *errest, *errtol;                          /* absolute error and given error tolerance of each individual states */
+  double *err;                                      /* error of each individual state during integration err = errest/errtol*/
+  double *errValues;                                /* ring buffer for step size control */
+  double *stepSizeValues;                           /* ring buffer for step size control */
+  double err_slow, err_fast, err_int;               /* error of the slow, fast states and a preiction of the interpolation error */
+  double percentage, err_threshold;                 /* percentage of fast states and the corresponding error threshold */
+  double time, timeLeft, timeRight;                 /* actual time values and the time values of the current interpolation interval */
+  double stepSize, lastStepSize;                    /* actual and last step size of integration */
+  int act_stage;                                    /* Current stage of Runge-Kutta method. */
+  enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */
+  int ringBufferSize;                               /* Buffer size for storing the error, stepSize and last values of states (yv) and their derivatives (kv) */
+  modelica_boolean multi_rate;                      /* Flag for the birate mode */
+  enum GB_INTERPOL_METHOD interpolation;            /* Interpolation method */
+  modelica_boolean isExplicit;                      /* Boolean stating if the RK method is explicit */
+  BUTCHER_TABLEAU* tableau;                         /* Butcher tableau of the Runge-Kutta method */
+  int initialFailures;                              /* Counts asserts during initialization in order to reduce first tried step size */
+  int nStates;                                      /* Numbers of fast states */
+  int nFastStates;                                  /* Numbers of fast states */
+  int nSlowStates;                                  /* Numbers of slow states */
+  int *fastStatesIdx;                               /* Indices of fast states */
+  int *slowStatesIdx;                               /* Indices of slow states */
+  int *sortedStatesIdx;                             /* Indices of all states sorted for highest error */
+  unsigned int eventSearch;                         /* Defines the mode of event handling (0 => interpolation, 1 => integration) */
+  modelica_boolean isFirstStep;                     /* True during first Runge-Kutta integrator step, false otherwise */
+  unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
+  modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */
+  gm_step_function step_fun;                        /* Step function of the integrator */
+  gm_stepSize_control_function stepSize_control;    /* Chosen step size control function (i, pi, const) */
 
   /* statistics */
   SOLVERSTATS stats;
