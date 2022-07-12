@@ -1702,7 +1702,6 @@ void ElementParameters::updateElementParameters()
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QString className = mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     bool valueChanged = false;
-    QMap<QString, QString> newComponentExtendsModifiersMap;
     // any parameter changed
     foreach (Parameter *pParameter, mParametersList) {
       QString componentModifierKey = pParameter->getNameLabel()->text();
@@ -1726,7 +1725,7 @@ void ElementParameters::updateElementParameters()
         valueChanged = true;
         /* If the component is inherited then add the modifier value into the extends. */
         if (mpElement->isInheritedComponent()) {
-          newComponentExtendsModifiersMap.insert(mpElement->getName() + "." + componentModifierKey, componentModifierValue);
+          pOMCProxy->setExtendsModifierValue(className, mpElement->getModelElement()->getParentModel()->getName(), mpElement->getName() % "." % componentModifierKey, componentModifierValue);
         } else {
           pOMCProxy->setComponentModifierValue(className, mpElement->getName() % "." % componentModifierKey, componentModifierValue);
         }
@@ -1737,7 +1736,7 @@ void ElementParameters::updateElementParameters()
         componentModifierValue = pParameter->getFixedState();
         /* If the component is inherited then add the modifier value into the extends. */
         if (mpElement->isInheritedComponent()) {
-          newComponentExtendsModifiersMap.insert(mpElement->getName() + "." + componentModifierKey, componentModifierValue);
+          pOMCProxy->setExtendsModifierValue(className, mpElement->getModelElement()->getParentModel()->getName(), mpElement->getName() % "." % componentModifierKey, componentModifierValue);
         } else {
           pOMCProxy->setComponentModifierValue(className, mpElement->getName() % "." % componentModifierKey, componentModifierValue);
         }
@@ -1756,8 +1755,8 @@ void ElementParameters::updateElementParameters()
         valueChanged = true;
         /* If the component is inherited then add the modifier value into the extends. */
         if (mpElement->isInheritedComponent()) {
-          newComponentExtendsModifiersMap.insert(mpElement->getName() + "." + componentModifierKey + ".displayUnit",
-                                                 "\"" + pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString() + "\"");
+          pOMCProxy->setExtendsModifierValue(className, mpElement->getModelElement()->getParentModel()->getName(), mpElement->getName() % "." % componentModifierKey % ".displayUnit",
+                                             "\"" + pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString() + "\"");
         } else {
           pOMCProxy->setComponentModifierValue(className, mpElement->getName() % "." % componentModifierKey % ".displayUnit",
                                                "\"" + pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString() + "\"");
@@ -1779,29 +1778,25 @@ void ElementParameters::updateElementParameters()
           valueChanged = true;
           QString componentModifierKey = modifier.mid(0, modifier.indexOf("("));
           QString componentModifierValue = modifier.mid(modifier.indexOf("("));
-          pOMCProxy->setComponentModifierValue(className, mpElement->getName() % "." % componentModifierKey, componentModifierValue);
+          if (mpElement->isInheritedComponent()) {
+            pOMCProxy->setExtendsModifierValue(className, mpElement->getModelElement()->getParentModel()->getName(), mpElement->getName() % "." % componentModifierKey, componentModifierValue);
+          } else {
+            pOMCProxy->setComponentModifierValue(className, mpElement->getName() % "." % componentModifierKey, componentModifierValue);
+          }
         } else {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                                GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
                                                                 Helper::scriptingKind, Helper::errorLevel));
         }
       }
     }
     // if valueChanged is true then put the change in the undo stack.
     if (valueChanged) {
-      // save the Component extends modifiers
-      QMap<QString, QString> oldComponentExtendsModifiersMap;
-      if (mpElement->getReferenceComponent()) {
-        QString inheritedClassName;
-        inheritedClassName = mpElement->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-        oldComponentExtendsModifiersMap = mpElement->getGraphicsView()->getModelWidget()->getExtendsModifiersMap(inheritedClassName);
-      }
       // create UpdateComponentParametersCommand
       const QJsonObject oldModelInstance = mpElement->getGraphicsView()->getModelWidget()->getModelInstance()->getModelJson();
       const QJsonObject newModelInstance = pOMCProxy->getModelInstance(className, true);
       ModelWidget *pModelWidget = mpElement->getGraphicsView()->getModelWidget();
       OMCUndoCommand *pOMCUndoCommand = new OMCUndoCommand(mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem(), oldModelInstance, newModelInstance,
-                                                           QString("Update Component %1 Parameters").arg(mpElement->getName()));
+                                                           QString("Update Element %1 Parameters").arg(mpElement->getName()));
       pModelWidget->getUndoStack()->push(pOMCUndoCommand);
       pModelWidget->updateModelText();
     }

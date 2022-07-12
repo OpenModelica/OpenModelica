@@ -433,11 +433,12 @@ private:
   class Element
   {
   public:
-    Element();
+    Element(Model *pParentModel);
     ~Element();
     void deserialize(const QJsonObject &jsonObject);
     void serialize(QJsonObject &jsonObject) const;
 
+    Model *getParentModel() const {return mpParentModel;}
     QString getName() const {return mName;}
     QString getType() const {return mType;}
     Model *getModel() const {return mpModel;}
@@ -458,6 +459,7 @@ private:
     bool isEvaluate() const {return mEvaluate;}
     Choices getChoices() const {return mChoices;}
   private:
+    Model *mpParentModel;
     QString mName;
     QString mType;
     Model *mpModel;

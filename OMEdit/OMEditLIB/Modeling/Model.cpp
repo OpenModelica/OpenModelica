@@ -555,7 +555,7 @@ namespace ModelInstance
       foreach (QJsonValue component, components) {
         QJsonObject componentObject = component.toObject();
         if (!componentObject.isEmpty()) {
-          Element *pElement = new Element;
+          Element *pElement = new Element(this);
           pElement->deserialize(component.toObject());
           mElements.append(pElement);
         }
@@ -750,12 +750,12 @@ namespace ModelInstance
     }
   }
 
-  Element::Element()
+  Element::Element(Model *pParentModel)
   {
+    mpParentModel = pParentModel;
     mName = "";
     mType = "";
     mpModel = 0;
-//    mModifier = new Modifier("");
     mPublic = true;
     mFinal = false;
     mInner = false;
