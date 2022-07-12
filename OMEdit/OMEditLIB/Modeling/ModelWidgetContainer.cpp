@@ -280,23 +280,35 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
   }
 }
 
+/*!
+ * \brief GraphicsView::drawConnectors
+ * This function is only called for icon layer.
+ * \param pModelInstance
+ * \param inherited
+ */
 void GraphicsView::drawConnectors(ModelInstance::Model *pModelInstance, bool inherited)
 {
   // We use access.icon so we can draw public components so that we can see and set the parameters in the parameters window.
-  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon && mViewType == StringHandler::Icon) {
     QList<ModelInstance::Element*> elements = pModelInstance->getElements();
     foreach (auto pElement, elements) {
-      if (pElement->getModel() && pElement->getModel()->isConnector()) {
+      if (pElement->getModel() && pElement->isPublic() && pElement->getModel()->isConnector()) {
         addElementToView(pElement, inherited, false, true, true, false);
       }
     }
   }
 }
 
+/*!
+ * \brief GraphicsView::drawElements
+ * This function is only called for Diagram layer.
+ * \param pModelInstance
+ * \param inherited
+ */
 void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inherited)
 {
   // We use access.icon so we can draw public components so that we can see and set the parameters in the parameters window.
-  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
+  if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon && mViewType == StringHandler::Diagram) {
     QList<ModelInstance::Element*> elements = pModelInstance->getElements();
     foreach (auto pElement, elements) {
       if (pElement->getModel()) {

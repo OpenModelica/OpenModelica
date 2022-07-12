@@ -1715,6 +1715,7 @@ QString Element::getParameterDisplayString(QString parameterName)
       foreach (auto modifier, mpModelElement->getModifier().getModifiers()) {
         if (modifier.getName().compare(parameterName) == 0) {
           displayString = modifier.getValue();
+          break;
         }
       }
     } else {
@@ -1772,12 +1773,25 @@ QString Element::getParameterModifierValue(const QString &parameterName, const Q
   QString parameterAndModiferName = QString("%1.%2").arg(parameterName).arg(modifier);
   QString modifierValue = "";
   /* case 1 */
-  QMap<QString, QString> modifiers = mpElementInfo->getModifiersMap(pOMCProxy, className, this);
-  QMap<QString, QString>::iterator modifiersIterator;
-  for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
-    if (parameterAndModiferName.compare(modifiersIterator.key()) == 0) {
-      modifierValue = modifiersIterator.value();
-      break;
+  if (MainWindow::instance()->isNewApi()) {
+    foreach (auto elementModifier, mpModelElement->getModifier().getModifiers()) {
+      if (elementModifier.getName().compare(parameterName) == 0) {
+        foreach (auto subModifier, elementModifier.getModifiers()) {
+          if (subModifier.getName().compare(modifier) == 0) {
+            modifierValue = subModifier.getValue();
+            break;
+          }
+        }
+      }
+    }
+  } else {
+    QMap<QString, QString> modifiers = mpElementInfo->getModifiersMap(pOMCProxy, className, this);
+    QMap<QString, QString>::iterator modifiersIterator;
+    for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
+      if (parameterAndModiferName.compare(modifiersIterator.key()) == 0) {
+        modifierValue = modifiersIterator.value();
+        break;
+      }
     }
   }
   return StringHandler::removeFirstLastQuotes(modifierValue);
