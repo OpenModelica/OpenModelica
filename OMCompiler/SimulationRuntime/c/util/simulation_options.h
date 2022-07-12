@@ -206,6 +206,7 @@ enum GB_METHOD {
   MS_ADAMS_MOULTON,   /* adams*/
   RK_EXPL_EULER,      /* expl_euler*/
   RK_IMPL_EULER,      /* impl_euler*/
+  RK_TRAPEZOID,       /* trapezoid */
   RK_SDIRK2,          /* sdirk2*/
   RK_SDIRK3,          /* sdirk3*/
   RK_ESDIRK2,         /* esdirk2*/

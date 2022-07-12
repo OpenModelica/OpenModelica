@@ -760,6 +760,27 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
 }
 
 // TODO: Describe me
+void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau) {
+
+  tableau->nStages  = 2;
+  tableau->order_b  = 2;
+  tableau->order_bt = 1;
+  tableau->fac      = 1.e0;
+
+  // /* Butcher Tableau */
+  const double c[] = {0.0, 1.0};
+  const double A[] = {0.0, 0.0,
+                      0.5, 0.5};
+  const double  b[] = {0.5, 0.5};  // trapezoidal rule
+  const double  bt[] = {1.0, 0.0}; // implicit Euler step
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+
+  tableau->isKLeftAvailable = TRUE;
+  tableau->isKRightAvailable = TRUE;
+}
+
+// TODO: Describe me
 void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 5;
@@ -1137,11 +1158,11 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ER
     case MS_ADAMS_MOULTON:
       getButcherTableau_MS(tableau);
       break;
-    case RK_EXPL_EULER:
-      getButcherTableau_EXPLEULER(tableau);
-      break;
     case RK_IMPL_EULER:
       getButcherTableau_IMPLEULER(tableau);
+      break;
+    case RK_TRAPEZOID:
+      getButcherTableau_TRAPEZOID(tableau);
       break;
     case RK_DOPRI45:
       getButcherTableau_DOPRI45(tableau);
@@ -1160,6 +1181,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ER
       break;
     case RK_MERSON:
       getButcherTableau_MERSON(tableau);
+      break;
+    case RK_EXPL_EULER:
+      getButcherTableau_EXPLEULER(tableau);
       break;
     case RK_HEUN:
       getButcherTableau_HEUN(tableau);

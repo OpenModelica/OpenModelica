@@ -876,6 +876,7 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* MS_ADAMS_MOULTON */ "adams",
   /* RK_EXPL_EULER */    "expl_euler",
   /* RK_IMPL_EULER */    "impl_euler",
+  /* RK_TRAPEZOID */     "trapezoid",
   /* RK_SDIRK2 */        "sdirk2",
   /* RK_SDIRK3 */        "sdirk3",
   /* RK_ESDIRK2 */       "esdirk2",
@@ -912,9 +913,10 @@ const char *GB_METHOD_NAME[RK_MAX] = {
 
 const char *GB_METHOD_DESC[RK_MAX] = {
   /* GB_UNKNOWN = 0 */   "unknown",
-  /* MS_ADAMS_MOULTON */ "adams",
-  /* RK_EXPL_EULER */    "Explizit Euler method (order 1)",
-  /* RK_IMPL_EULER */    "Implizit Euler method (order 1)",
+  /* MS_ADAMS_MOULTON */ "Implicit multistep method of type Adams-Moulton (order 2)",
+  /* RK_EXPL_EULER */    "Explizit Runge-Kutta Euler method (order 1)",
+  /* RK_IMPL_EULER */    "Implizit Runge-Kutta Euler method (order 1)",
+  /* RK_TRAPEZOID */     "Implicit Runge-Kutta trapezoid method (order 2)",
   /* RK_SDIRK2 */        "Singly-diagonal implicit Runge-Kutta (order 2)",
   /* RK_SDIRK3 */        "Singly-diagonal implicit Runge-Kutta (order 3)",
   /* RK_ESDIRK2 */       "Explicit singly-diagonal implicit Runge-Kutta (order 2)",
