@@ -179,6 +179,10 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   double absTol = data->simulationInfo->tolerance;
   double relTol = absTol;
 
+  // This flag will be used in order to reduce the step size for the first Euler step below
+  // Only used for subsequent calls, if an assert happens during the Euler step
+  gbData->initialFailures++;
+
   /* store values of the states and state derivatives at initial or event time */
   gbData->time = sData->timeValue;
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
@@ -202,6 +206,8 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   } else {
     h0 = 0.01 * d0/d1;
   }
+  if (gbData->initialFailures>0)
+    h0 /= pow(10,gbData->initialFailures);
 
   for (i=0; i<nStates; i++) {
     sData->realVars[i] = gbData->yOld[i] + fODE[i] * h0;
@@ -235,4 +241,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   memcpy(fODE, gbData->f, nStates*sizeof(double));
 
   infoStreamPrint(LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
+
+  // Set number of initialization failures back to -1 (intial step size determination was succesfull)
+  gbData->initialFailures = -1;
 }
