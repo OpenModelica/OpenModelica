@@ -905,7 +905,8 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* RK_RK810 */         "rk810",
   /* RK_RK1012 */        "rk1012",
   /* RK_RK1214 */        "rk1214",
-  /* RK_DOPRI45 */       "dopri45"
+  /* RK_DOPRI45 */       "dopri45",
+  /* RK_RKSSC */         "rungekuttaSsc"
 };
 
 const char *GB_METHOD_DESC[RK_MAX] = {
@@ -942,7 +943,8 @@ const char *GB_METHOD_DESC[RK_MAX] = {
   /* RK_RK810 */         "Explicit 8-10 Runge-Kutta method (order 10)",
   /* RK_RK1012 */        "Explicit 10-12 Runge-Kutta method (order 12)",
   /* RK_RK1214 */        "Explicit 12-14 Runge-Kutta method (order 14)",
-  /* RK_DOPRI45 */       "Explicit Runge-Kutta method Dormand-Prince (order 5)"
+  /* RK_DOPRI45 */       "Explicit Runge-Kutta method Dormand-Prince (order 5)",
+  /* RK_RKSSC */         "Explicit Runge-Kutta method with large stabiliy region (order 1)"
 };
 
 const char *GB_NLS_METHOD_NAME[GB_NLS_MAX] = {
