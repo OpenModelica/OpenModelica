@@ -305,7 +305,7 @@ void getButcherTableau_HEUN(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
