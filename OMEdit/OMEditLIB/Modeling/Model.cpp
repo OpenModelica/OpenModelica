@@ -227,9 +227,14 @@ namespace ModelInstance
   void Color::deserialize(const QJsonArray &jsonArray)
   {
     if (jsonArray.size() == 3) {
-      mColor.setRed(jsonArray.at(0).toInt());
-      mColor.setGreen(jsonArray.at(1).toInt());
-      mColor.setBlue(jsonArray.at(2).toInt());
+      // if invalid color
+      if (jsonArray.at(0).toInt() == -1 && jsonArray.at(1).toInt() == -1 && jsonArray.at(2).toInt() == -1) {
+        mColor = QColor();
+      } else {
+        mColor.setRed(jsonArray.at(0).toInt());
+        mColor.setGreen(jsonArray.at(1).toInt());
+        mColor.setBlue(jsonArray.at(2).toInt());
+      }
     }
   }
 
@@ -750,8 +755,6 @@ namespace ModelInstance
     if (mpModel) {
       delete mpModel;
     }
-
-//    delete mModifier;
   }
 
   void Element::deserialize(const QJsonObject &jsonObject)
@@ -765,6 +768,7 @@ namespace ModelInstance
         mType = jsonObject.value("type").toString();
       } else if (jsonObject.value("type").isObject()) {
         mpModel = new Model(jsonObject.value("type").toObject());
+        mType = mpModel->getName();
       }
     }
 

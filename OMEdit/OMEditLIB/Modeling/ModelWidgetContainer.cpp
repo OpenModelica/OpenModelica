@@ -5544,6 +5544,7 @@ void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   clearGraphicsViews();
+  mpUndoStack->setEnabled(false);
   /* get model components, connection and shapes. */
   // Draw icon view
   // reset the CoOrdinateSystem
@@ -5568,6 +5569,7 @@ void ModelWidget::reDrawModelWidget(const QJsonObject &modelInstanceJson)
   updateViewButtonsBasedOnAccess();
   // announce the change.
 //  mpLibraryTreeItem->emitLoaded();
+  mpUndoStack->setEnabled(true);
   QApplication::restoreOverrideCursor();
 }
 
