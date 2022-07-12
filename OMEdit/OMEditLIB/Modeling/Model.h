@@ -36,6 +36,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QColor>
+#include <QRectF>
 
 namespace ModelInstance
 {
