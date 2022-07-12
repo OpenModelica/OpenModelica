@@ -206,6 +206,8 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   } else {
     h0 = 0.01 * d0/d1;
   }
+  if (gbData->initialFailures>0)
+    h0 /= pow(10,gbData->initialFailures);
 
   for (i=0; i<nStates; i++) {
     sData->realVars[i] = gbData->yOld[i] + fODE[i] * h0;
