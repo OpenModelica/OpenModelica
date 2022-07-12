@@ -229,6 +229,7 @@ enum GB_METHOD {
   RK_GAUSS5,          /* gauss5*/
   RK_GAUSS6,          /* gauss6*/
   RK_MERSON,          /* merson*/
+  RK_HEUN,            /* heun */
   RK_FEHLBERG12,      /* fehlberg12*/
   RK_FEHLBERG45,      /* fehlberg45*/
   RK_FEHLBERG78,      /* fehlberg78*/

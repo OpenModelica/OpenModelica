@@ -289,6 +289,26 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
 }
 
 // TODO: Describe me
+void getButcherTableau_HEUN(BUTCHER_TABLEAU* tableau)
+{
+  tableau->nStages = 2;
+  tableau->order_b = 2;
+  tableau->order_bt = 1;
+  tableau->fac = 1.0;
+
+  /* Butcher Tableau */
+  const double c[]   = {0.0, 1.0};
+  const double A[]   = {0.0, 0.0,
+                        1.0, 0.0};
+  const double b[]   = {0.5, 0.5};
+  const double bt[]  = {1.0, 0.0};
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
+  tableau->isKLeftAvailable = TRUE;
+  tableau->isKRightAvailable = TRUE;
+}
+
+// TODO: Describe me
 void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
 
   if (tableau->richardson) {
@@ -1140,6 +1160,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ER
       break;
     case RK_MERSON:
       getButcherTableau_MERSON(tableau);
+      break;
+    case RK_HEUN:
+      getButcherTableau_HEUN(tableau);
       break;
     case RK_FEHLBERG12:
       getButcherTableau_FEHLBERG12(tableau);
