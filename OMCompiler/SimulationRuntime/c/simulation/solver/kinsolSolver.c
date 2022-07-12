@@ -1209,11 +1209,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
       infoStreamPrint(LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
     }
     /* Try to handle recoverable errors */
-    if (flag < 0 && kinsolData->attemptRetry) {
-      retry = nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);
-    } else {
-      retry = FALSE;
-    }
+    retry = flag < 0 && kinsolData->attemptRetry && nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);
 
     /* solution found */
     if ((flag == KIN_SUCCESS) || (flag == KIN_INITIAL_GUESS_OK) ||
