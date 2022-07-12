@@ -264,6 +264,8 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
       pShapeAnnotation = new EllipseAnnotation(pEllipse, inhertied, this);
     } else if (ModelInstance::Text *pText = dynamic_cast<ModelInstance::Text*>(shape)) {
       pShapeAnnotation = new TextAnnotation(pText, inhertied, this);
+    } else if (ModelInstance::Bitmap *pBitmap = dynamic_cast<ModelInstance::Bitmap*>(shape)) {
+      pShapeAnnotation = new BitmapAnnotation(pBitmap, mpModelWidget->getLibraryTreeItem()->mClassInformation.fileName, inhertied, this);
     }
 
     if (pShapeAnnotation) {

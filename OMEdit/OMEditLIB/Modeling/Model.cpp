@@ -420,6 +420,23 @@ namespace ModelInstance
     }
   }
 
+  Bitmap::Bitmap()
+  {
+    mFileName = "";
+    mImageSource = "";
+  }
+
+  void Bitmap::deserialize(const QJsonArray &jsonArray)
+  {
+    if (jsonArray.size() == 6) {
+      GraphicItem::deserialize(jsonArray);
+
+      mExtent.deserialize(jsonArray.at(3).toArray());
+      mFileName = jsonArray.at(4).toString();
+      mImageSource = jsonArray.at(5).toString();
+    }
+  }
+
   IconDiagramAnnotation::IconDiagramAnnotation()
   {
     mGraphics.clear();
@@ -465,7 +482,9 @@ namespace ModelInstance
             pText->deserialize(graphicObject.value("elements").toArray());
             mGraphics.append(pText);
           } else if (name.compare(QStringLiteral("Bitmap")) == 0) {
-//            pShape = new Bitmap;
+            Bitmap *pBitmap = new Bitmap;
+            pBitmap->deserialize(graphicObject.value("elements").toArray());
+            mGraphics.append(pBitmap);
           }
         }
       }

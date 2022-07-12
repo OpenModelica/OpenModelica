@@ -263,6 +263,21 @@ private:
     QString mHorizontalAlignment;
   };
 
+  class Bitmap : public Shape
+  {
+  public:
+    Bitmap();
+    void deserialize(const QJsonArray &jsonArray);
+
+    Extent getExtent() const {return mExtent;}
+    QString getFileName() const {return mFileName;}
+    QString getImageSource() const {return mImageSource;}
+  private:
+    Extent mExtent;
+    QString mFileName;
+    QString mImageSource;
+  };
+
   class IconDiagramAnnotation
   {
   public:

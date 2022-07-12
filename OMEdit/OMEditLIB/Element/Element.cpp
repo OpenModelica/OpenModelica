@@ -2454,12 +2454,14 @@ void Element::createClassShapes()
         pShapeAnnotation = new LineAnnotation(pLine, this);
       } else if (ModelInstance::Polygon *pPolygon = dynamic_cast<ModelInstance::Polygon*>(shape)) {
         pShapeAnnotation = new PolygonAnnotation(pPolygon, this);
-      }  else if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
+      } else if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
         pShapeAnnotation = new RectangleAnnotation(pRectangle, this);
       } else if (ModelInstance::Ellipse *pEllipse = dynamic_cast<ModelInstance::Ellipse*>(shape)) {
         pShapeAnnotation = new EllipseAnnotation(pEllipse, this);
       } else if (ModelInstance::Text *pText = dynamic_cast<ModelInstance::Text*>(shape)) {
         pShapeAnnotation = new TextAnnotation(pText, this);
+      } else if (ModelInstance::Bitmap *pBitmap = dynamic_cast<ModelInstance::Bitmap*>(shape)) {
+        pShapeAnnotation = new BitmapAnnotation(pBitmap, "we need class filename here", this);
       }
     }
 
