@@ -964,7 +964,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     // Rotate ring buffer
     for (i = (gbfData->ringBufferSize - 1); i > 0 ; i--) {
-      gbfData->tv[i] =  gbfData->tv[i - 1];
+      gbfData->tv[i] = gbfData->tv[i - 1];
       memcpy(gbfData->yv + i * nStates, gbfData->yv + (i - 1) * nStates, nStates * sizeof(double));
       memcpy(gbfData->kv + i * nStates, gbfData->kv + (i - 1) * nStates, nStates * sizeof(double));
     }

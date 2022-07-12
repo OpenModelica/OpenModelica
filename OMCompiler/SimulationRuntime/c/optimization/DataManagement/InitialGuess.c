@@ -183,7 +183,8 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
        if(op==1)
          smallIntSolverStep(data, threadData, solverInfo, (double)optData->time.t[i][j]);
        else{
-         rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
+         rotateRingBuffer(data->simulationData, 1);
+         lookupRingBuffer(data->simulationData, (void**) data->localData);
          importStartValues(data, threadData, cflags, (double)optData->time.t[i][j]);
          for(l=0; l<nReal; ++l){
             data->localData[0]->realVars[l] = data->modelData->realVarsData[l].attribute.start;
@@ -336,7 +337,8 @@ static inline void smallIntSolverStep(DATA* data, threadData_t *threadData, SOLV
     a = 1.0;
     iter = 0;
 
-    rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
+    rotateRingBuffer(data->simulationData, 1);
+    lookupRingBuffer(data->simulationData, (void**) data->localData);
     do{
       if(data->modelData->nStates < 1){
         solverInfo->currentTime = tstop;

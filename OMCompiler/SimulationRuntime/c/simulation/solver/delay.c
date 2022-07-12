@@ -84,7 +84,7 @@ static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
     /* Check for an event */
     if (fabs(prevTime-curTime)< 1e-12) {
       *foundEvent = 1 /* true */;
-      plotRingBuffer(delayStruct, LOG_UTIL, printDelayBuffer);
+      printRingBuffer(delayStruct, LOG_UTIL, printDelayBuffer);
     }
     if (curTime > time) {
       pos--;
@@ -159,7 +159,7 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
 
   /* Debug print */
   infoStreamPrint(LOG_DELAY, 0, "storeDelayed[%d] (%g,%g) position=%d", exprNumber, time, exprValue, ringBufferLength(data->simulationInfo->delayStructure[exprNumber]));
-  plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_DELAY, printDelayBuffer);
+  printRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_DELAY, printDelayBuffer);
 }
 
 

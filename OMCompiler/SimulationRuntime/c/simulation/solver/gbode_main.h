@@ -72,8 +72,8 @@ typedef struct DATA_GBODEF{
   enum GB_NLS_METHOD nlsSolverMethod;               /* Non-linear solver method uses by generic RK method. */
   NONLINEAR_SYSTEM_DATA* nlsData;                   /* Non-linear system
                                                      * Something like
-                                                    *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
-                                                    * */
+                                                     *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
+                                                     * */
   ANALYTIC_JACOBIAN* jacobian;                      /* Jacobian of non-linear system of implicit Runge-Kutta method */
   SPARSE_PATTERN* sparsePattern_DIRK;               /* Sparsity pattern for the DIRK methd, will be reduced based on the fast states selection */
 
@@ -125,8 +125,8 @@ typedef struct DATA_GBODE{
   enum GB_NLS_METHOD nlsSolverMethod;               /* Non-linear solver method uses by generic RK method. */
   NONLINEAR_SYSTEM_DATA* nlsData;                   /* Non-linear system
                                                      * Something like
-                                                    *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
-                                                    * */
+                                                     *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
+                                                     * */
   ANALYTIC_JACOBIAN* jacobian;                      /* Jacobian of non-linear system of implicit Runge-Kutta method */
   double *y;                                        /* State vector of the current Runge-Kutta step */
   double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
