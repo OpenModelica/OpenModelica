@@ -189,7 +189,7 @@ int print_csvLineCallStats(OMC_WRITE_CSV* csvData, int num, double time,
   fputc(csvData->seperator,csvData->handle);
 
   /* solved system */
-  sprintf(buffer, "%s", (solved == NLS_SOLVED || solved == NLS_SOLVED_LESS_ACCURARCY)?"TRUE":"FALSE");
+  sprintf(buffer, "%s", (solved == NLS_SOLVED || solved == NLS_SOLVED_LESS_ACCURACY)?"TRUE":"FALSE");
   omc_write_csv(csvData, buffer);
 
   /* finish line */
@@ -837,7 +837,7 @@ void printNonLinearFinishInfo(int logName, DATA* data, NONLINEAR_SYSTEM_DATA *no
   case NLS_SOLVED:
     infoStreamPrint(logName, 1, "Solution status: SOLVED");
     break;
-  case NLS_SOLVED_LESS_ACCURARCY:
+  case NLS_SOLVED_LESS_ACCURACY:
     infoStreamPrint(logName, 1, "Solution status: SOLVED with less accuracy");
     break;
   case NLS_FAILED:
@@ -908,7 +908,7 @@ int updateInitialGuessDB(NONLINEAR_SYSTEM_DATA *nonlinsys, double time, EVAL_CON
                      createValueElement(nonlinsys->size, time, nonlinsys->nlsx));
     }
   }
-  else if (nonlinsys->solved == NLS_SOLVED_LESS_ACCURARCY)
+  else if (nonlinsys->solved == NLS_SOLVED_LESS_ACCURACY)
   {
     if (listLen(((VALUES_LIST*)nonlinsys->oldValueList)->valueList)>0)
     {
@@ -987,7 +987,7 @@ int updateInnerEquation(RESIDUAL_USERDATA* resUserData, int sysNumber, int discr
  * @param threadData          Thread data for error handling.
  * @param nonlinsys           Pointer to non-linear system.
  * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success,
- *                            NLS_SOLVED_LESS_ACCURARCY if a less accurate solution was found and
+ *                            NLS_SOLVED_LESS_ACCURACY if a less accurate solution was found and
  *                            NLS_FAILED otherwise.
  */
 NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys)
@@ -1458,7 +1458,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
     messageCloseWarning(LOG_INIT);
     return 1;
   }
-  if(nonlinsys[i].solved == NLS_SOLVED_LESS_ACCURARCY)
+  if(nonlinsys[i].solved == NLS_SOLVED_LESS_ACCURACY)
   {
     nonlinsys[i].solved = NLS_SOLVED;
     return 2;
