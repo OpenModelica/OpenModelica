@@ -164,23 +164,11 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   LIST_NODE* it;
   fortran_integer i=0;
-  LIST tmpEventList = (LIST){NULL, NULL, sizeof(long), 0};
+  LIST *tmpEventList = allocList(sizeof(long));
 
   /* static work arrays */
-  static double *states_left = NULL;
-  static double *states_right = NULL;
-
-  /* allocate memory once at first call, never free */
-  if(!states_left)
-  {
-    states_left = (double*) malloc(data->modelData->nStates * sizeof(double));
-    assertStreamPrint(NULL, NULL != states_left, "out of memory");
-  }
-  if(!states_right)
-  {
-    states_right = (double*) malloc(data->modelData->nStates * sizeof(double));
-    assertStreamPrint(NULL, NULL != states_right, "out of memory");
-  }
+  double *states_left = data->simulationInfo->states_left;
+  double *states_right = data->simulationInfo->states_right;
 
   /* write states to work arrays */
   memcpy(states_left,  values_left,  data->modelData->nStates * sizeof(double));
@@ -192,10 +180,10 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
   }
 
   /* Search for event time and event_id with bisection method */
-  bisection_gb(data, threadData, solverInfo, &time_left, &time_right, states_left, states_right, &tmpEventList, eventList, isInnerIntegration);
+  bisection_gb(data, threadData, solverInfo, &time_left, &time_right, states_left, states_right, tmpEventList, eventList, isInnerIntegration);
 
   /* what happens here? */
-  if(listLen(&tmpEventList) == 0)
+  if(listLen(tmpEventList) == 0)
   {
     double value = fabs(data->simulationInfo->zeroCrossings[*((long*) listFirstData(eventList))]);
     for(it = listFirstNode(eventList); it; it = listNextNode(it))
@@ -211,7 +199,7 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
     {
       if(value == fabs(data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))]))
       {
-        listPushBack(&tmpEventList, listNodeData(it));
+        listPushBack(tmpEventList, listNodeData(it));
         infoStreamPrint(LOG_ZEROCROSSINGS, 0, "added tmp event : %ld", *((long*) listNodeData(it)));
       }
     }
@@ -219,11 +207,11 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   listClear(eventList);
 
-  debugStreamPrint(LOG_EVENTS, 0, (listLen(&tmpEventList) == 1) ? "found event: " : "found events: ");
-  while(listLen(&tmpEventList) > 0)
+  debugStreamPrint(LOG_EVENTS, 0, (listLen(tmpEventList) == 1) ? "found event: " : "found events: ");
+  while(listLen(tmpEventList) > 0)
   {
-    long event_id = *((long*)listFirstData(&tmpEventList));
-    listPushFrontNodeNoCopy(eventList, listPopFrontNode(&tmpEventList));
+    long event_id = *((long*)listFirstData(tmpEventList));
+    listPushFrontNodeNoCopy(eventList, listPopFrontNode(tmpEventList));
     infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
   }
 
@@ -239,6 +227,8 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   data->localData[0]->timeValue = time_right;
   memcpy(data->localData[0]->realVars, states_right, data->modelData->nStates * sizeof(double));
+
+  freeList(tmpEventList);
 
   TRACE_POP
   return time_right;
