@@ -1019,7 +1019,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   }
   data->localData = (SIMULATION_DATA**) omc_alloc_interface.malloc_uncollectable(SIZERINGBUFFER * sizeof(SIMULATION_DATA));
   memset(data->localData, 0, SIZERINGBUFFER * sizeof(SIMULATION_DATA));
-  rotateRingBuffer(data->simulationData, 0, (void**) data->localData);
+  lookupRingBuffer(data->simulationData, (void**) data->localData);
 
   /* create modelData var arrays */
   data->modelData->realVarsData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesReal * sizeof(STATIC_REAL_DATA));

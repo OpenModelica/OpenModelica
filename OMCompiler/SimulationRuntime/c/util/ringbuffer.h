@@ -55,11 +55,12 @@ extern "C" {
 
   int ringBufferLength(RINGBUFFER *rb);
 
-  void rotateRingBuffer(RINGBUFFER *rb, int n, void **lookup);
+  void rotateRingBuffer(RINGBUFFER *rb, int n);
+  void lookupRingBuffer(RINGBUFFER *rb, void **lookup);
 
   void infoRingBuffer(RINGBUFFER *rb);
 
-  void plotRingBuffer(RINGBUFFER *rb, int stream, void (*printDataFunc)(void*,int,void*));
+  void printRingBuffer(RINGBUFFER *rb, int stream, void (*printDataFunc)(void*,int,void*));
 #ifdef __cplusplus
 }
 #endif
