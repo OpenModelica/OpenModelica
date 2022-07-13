@@ -439,6 +439,20 @@ public
       end match;
     end setFixedIfNone;
 
+    function isFixed
+      input VariableAttributes attributes;
+      output Boolean fixed;
+    algorithm
+      fixed := match attributes
+        case VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)))        then true;
+        case VAR_ATTR_INT(fixed = SOME(Expression.BOOLEAN(value = true)))         then true;
+        case VAR_ATTR_BOOL(fixed = SOME(Expression.BOOLEAN(value = true)))        then true;
+        case VAR_ATTR_STRING(fixed = SOME(Expression.BOOLEAN(value = true)))      then true;
+        case VAR_ATTR_ENUMERATION(fixed = SOME(Expression.BOOLEAN(value = true))) then true;
+                                                                                  else false;
+      end match;
+    end isFixed;
+
     function setStartAttribute
       input output VariableAttributes attributes;
       input Expression start;
