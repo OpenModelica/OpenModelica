@@ -74,6 +74,40 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setShapeFlags(true);
 }
 
+LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, bool inherited, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+{
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
+  mpLine = pLine;
+  setLineType(LineAnnotation::ShapeType);
+  setStartComponent(0);
+  setStartComponentName("");
+  setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
+  setOldAnnotation("");
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
+  setOMSConnectionType(oms_connection_single);
+  setActiveState(false);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
+  setShapeFlags(true);
+}
+
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
@@ -98,6 +132,39 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
   setAlpha("");
   setOMSConnectionType(oms_connection_single);
   setActiveState(false);
+  applyTransformation();
+}
+
+LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, Element *pParent)
+  : ShapeAnnotation(pParent)
+{
+  mpOriginItem = 0;
+  mpLine = pLine;
+  setLineType(LineAnnotation::ComponentType);
+  setStartComponent(0);
+  setStartComponentName("");
+  setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
+  setCondition("");
+  setImmediate(true);
+  setReset(true);
+  setSynchronize(false);
+  setPriority(1);
+  mpTextAnnotation = 0;
+  setOldAnnotation("");
+  setDelay("");
+  setZf("");
+  setZfr("");
+  setAlpha("");
+  setOMSConnectionType(oms_connection_single);
+  setActiveState(false);
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
   applyTransformation();
 }
 
@@ -430,6 +497,23 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
   mArrowSize.parse(list.at(8));
   // 10th item of list contains the smooth.
   mSmooth = StringHandler::getSmoothType(stripDynamicSelect(list.at(9)));
+}
+
+void LineAnnotation::parseShapeAnnotation()
+{
+  GraphicItem::parseShapeAnnotation(mpLine);
+
+  mPoints.clear();
+  foreach (ModelInstance::Point point, mpLine->getPoints()) {
+    addPoint(QPointF(point.x(), point.y()));
+  }
+  mLineColor = mpLine->getColor().getColor();
+  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(mpLine->getPattern()));
+  mLineThickness = mpLine->getLineThickness();
+  mArrow.replace(0, StringHandler::getArrowType(mpLine->getStartArrow()));
+  mArrow.replace(1, StringHandler::getArrowType(mpLine->getEndArrow()));
+  mArrowSize = mpLine->getArrowSize();
+  mSmooth = StringHandler::getSmoothType(stripDynamicSelect(mpLine->getSmooth()));
 }
 
 QPainterPath LineAnnotation::getShape() const

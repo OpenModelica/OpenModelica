@@ -61,12 +61,44 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setShapeFlags(true);
 }
 
+TextAnnotation::TextAnnotation(ModelInstance::Text *pText, bool inherited, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+{
+  mpComponent = 0;
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
+  mpText = pText;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
+  setShapeFlags(true);
+}
+
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent), mpComponent(pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   initUpdateTextString();
+  applyTransformation();
+}
+
+TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
+  : ShapeAnnotation(pParent), mpComponent(pParent)
+{
+  mpOriginItem = 0;
+  mpText = pText;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
   applyTransformation();
 }
 
@@ -192,6 +224,48 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   }
   // 15th item of the list contains the text alignment.
   QString horizontalAlignment = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(14)));
+  if (horizontalAlignment == "TextAlignment.Left") {
+    mHorizontalAlignment = StringHandler::TextAlignmentLeft;
+  } else if (horizontalAlignment == "TextAlignment.Center") {
+    mHorizontalAlignment = StringHandler::TextAlignmentCenter;
+  } else if (horizontalAlignment == "TextAlignment.Right") {
+    mHorizontalAlignment = StringHandler::TextAlignmentRight;
+  }
+}
+
+void TextAnnotation::parseShapeAnnotation()
+{
+  GraphicItem::parseShapeAnnotation(mpText);
+  FilledShape::parseShapeAnnotation(mpText);
+
+  QList<QPointF> extents;
+  ModelInstance::Extent extent = mpText->getExtent();
+  ModelInstance::Point extent1 = extent.getExtent1();
+  ModelInstance::Point extent2 = extent.getExtent2();
+  extents.append(QPointF(extent1.x(), extent1.y()));
+  extents.append(QPointF(extent2.x(), extent2.y()));
+  mExtents = extents;
+  mTextString = mpText->getTextString();
+  initUpdateTextString();
+
+  mFontSize = mpText->getFontSize();
+  if (mpText->getTextColor().getColor().isValid()) {
+    mLineColor = mpText->getTextColor().getColor();
+  }
+  if (!mpText->getFontName().isEmpty()) {
+    mFontName = mpText->getFontName().isEmpty();
+  }
+  QStringList textStyles = mpText->getTextStyle();
+  foreach (QString textStyle, textStyles) {
+    if (textStyle == "TextStyle.Bold") {
+      mTextStyles.append(StringHandler::TextStyleBold);
+    } else if (textStyle == "TextStyle.Italic") {
+      mTextStyles.append(StringHandler::TextStyleItalic);
+    } else if (textStyle == "TextStyle.UnderLine") {
+      mTextStyles.append(StringHandler::TextStyleUnderLine);
+    }
+  }
+  QString horizontalAlignment = StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpText->getHorizontalAlignment()));
   if (horizontalAlignment == "TextAlignment.Left") {
     mHorizontalAlignment = StringHandler::TextAlignmentLeft;
   } else if (horizontalAlignment == "TextAlignment.Center") {
@@ -574,8 +648,14 @@ void TextAnnotation::updateTextString()
     if (!mTextString.contains("%")) {
       return;
     }
-    if (mTextString.toLower().contains("%name")) {
-      mTextString.replace(QRegExp("%name"), mpComponent->getName());
+    if (MainWindow::instance()->isNewApi()) {
+      if (mTextString.toLower().contains("%name")) {
+        mTextString.replace(QRegExp("%name"), mpComponent->getModelElement()->getName());
+      }
+    } else {
+      if (mTextString.toLower().contains("%name")) {
+        mTextString.replace(QRegExp("%name"), mpComponent->getName());
+      }
     }
     if (mTextString.toLower().contains("%class") && mpComponent->getLibraryTreeItem()) {
       mTextString.replace(QRegExp("%class"), mpComponent->getLibraryTreeItem()->getNameStructure());

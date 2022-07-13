@@ -3425,6 +3425,31 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
 }
 
 /*!
+ * \brief OMCProxy::getModelInstance
+ * Returns the class information as json string.
+ * \param className
+ * \param prettyPrint
+ * \return
+ */
+QJsonObject OMCProxy::getModelInstance(const QString &className, bool prettyPrint)
+{
+  QString modelInstanceJson = mpOMCInterface->getModelInstance(className, prettyPrint);
+  printMessagesStringInternal();
+  if (!modelInstanceJson.isEmpty()) {
+    QJsonParseError jsonParserError;
+    QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
+    if (doc.isNull()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Failed to parse model instance json for class %1 with error %2.")
+                                                            .arg(className, jsonParserError.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+    return doc.object();
+  }
+  return QJsonObject();
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */

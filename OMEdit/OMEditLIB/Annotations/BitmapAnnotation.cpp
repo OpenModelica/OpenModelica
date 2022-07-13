@@ -53,11 +53,44 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Gr
   setShapeFlags(true);
 }
 
+BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, bool inherited, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+{
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
+  mpBitmap = pBitmap;
+  mClassFileName = classFileName;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
+  setShapeFlags(true);
+}
+
 BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
+  applyTransformation();
+}
+
+BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, Element *pParent)
+  : ShapeAnnotation(pParent)
+{
+  mpOriginItem = 0;
+  mpBitmap = pBitmap;
+  mClassFileName = classFileName;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
   applyTransformation();
 }
 
@@ -121,6 +154,28 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
   if (list.size() >= 6) {
     mImageSource = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(5)));
   }
+  if (!mImageSource.isEmpty()) {
+    mImage.loadFromData(QByteArray::fromBase64(mImageSource.toLatin1()));
+  } else if (!mFileName.isEmpty() && QFile::exists(mFileName)) {
+    mImage.load(mFileName);
+  } else {
+    mImage = ResourceCache::getImage(":/Resources/icons/bitmap-shape.svg");
+  }
+}
+
+void BitmapAnnotation::parseShapeAnnotation()
+{
+  GraphicItem::parseShapeAnnotation(mpBitmap);
+
+  QList<QPointF> extents;
+  ModelInstance::Extent extent = mpBitmap->getExtent();
+  ModelInstance::Point extent1 = extent.getExtent1();
+  ModelInstance::Point extent2 = extent.getExtent2();
+  extents.append(QPointF(extent1.x(), extent1.y()));
+  extents.append(QPointF(extent2.x(), extent2.y()));
+  mExtents = extents;
+  setFileName(StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getFileName())));
+  mImageSource = StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getImageSource()));
   if (!mImageSource.isEmpty()) {
     mImage.loadFromData(QByteArray::fromBase64(mImageSource.toLatin1()));
   } else if (!mFileName.isEmpty() && QFile::exists(mFileName)) {

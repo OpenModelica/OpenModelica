@@ -91,6 +91,17 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   mRotation.parse(list.at(2));
 }
 
+void GraphicItem::parseShapeAnnotation(ModelInstance::GraphicItem *pGraphicItem)
+{
+  // if first item of list is true then the shape should be visible.
+  mVisible = pGraphicItem->getVisible();
+  // 2nd item is the origin
+  ModelInstance::Point origin = pGraphicItem->getOrigin();
+  mOrigin = QPointF(origin.x(), origin.y());
+  // 3rd item is the rotation
+  mRotation = pGraphicItem->getRotation();
+}
+
 /*!
  * \brief GraphicItem::getOMCShapeAnnotation
  * Returns the annotation values of the GraphicItem in format as returned by OMC.
@@ -181,6 +192,15 @@ void FilledShape::parseShapeAnnotation(QString annotation)
   mLineThickness.parse(list.at(7));
 }
 
+void FilledShape::parseShapeAnnotation(ModelInstance::FilledShape *pFilledShape)
+{
+  mLineColor = pFilledShape->getLineColor().getColor();
+  mFillColor = pFilledShape->getFillColor().getColor();
+  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(pFilledShape->getPattern()));
+  mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(pFilledShape->getFillPattern()));
+  mLineThickness = pFilledShape->getLineThickness();
+}
+
 /*!
  * \brief FilledShape::getOMCShapeAnnotation
  * Returns the annotation values of the FilledShape in format as returned by OMC.
@@ -257,6 +277,24 @@ QStringList FilledShape::getTextShapeAnnotation()
  * \param pShapeAnnotation
  * \param pParent
  */
+ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
+  : QGraphicsItem(pParent)
+{
+  mpGraphicsView = 0;
+  mpParentComponent = dynamic_cast<Element*>(pParent);
+  //mTransformation = 0;
+  mpReferenceShapeAnnotation = 0;
+  mIsInheritedShape = false;
+  setOldScenePosition(QPointF(0, 0));
+  mIsCornerItemClicked = false;
+  mOldAnnotation = "";
+//  if (pShapeAnnotation) {
+//    connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+//    connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+//    connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+//  }
+}
+
 ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent)
   : QGraphicsItem(pParent)
 {
@@ -626,7 +664,12 @@ void ShapeAnnotation::applyTransformation()
   // Don't apply it also on shapes inside Element
   // if the extends have some new coordinate extents then use it to scale the shape
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  GraphicsView *pGraphicsView = mpGraphicsView ? mpGraphicsView : mpReferenceShapeAnnotation->getGraphicsView();
+  GraphicsView *pGraphicsView = 0;
+  if (MainWindow::instance()->isNewApi()) {
+    pGraphicsView = mpGraphicsView;
+  } else {
+    pGraphicsView = mpGraphicsView ? mpGraphicsView : mpReferenceShapeAnnotation->getGraphicsView();
+  }
   if (!mpParentComponent && pGraphicsView
       && !(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType)
       && mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {

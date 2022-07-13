@@ -39,6 +39,7 @@
 #include "Element/Element.h"
 #include "Util/StringHandler.h"
 #include "Util/Helper.h"
+#include "Model.h"
 #include "Editors/BaseEditor.h"
 #include "Editors/ModelicaEditor.h"
 #include "Editors/CompositeModelEditor.h"
@@ -165,6 +166,13 @@ public:
   ModelWidget* getModelWidget() {return mpModelWidget;}
   void setIsVisualizationView(bool visualizationView);
   bool isVisualizationView() {return mVisualizationView;}
+
+  void drawCoordinateSystem();
+  void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool select);
+  void drawConnectors(ModelInstance::Model *pModelInstance, bool inherited);
+  void drawElements(ModelInstance::Model *pModelInstance, bool inherited);
+
+
   void setExtentRectangle(const QRectF rectangle);
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
   bool isCustomScale() {return mIsCustomScale;}
@@ -218,6 +226,7 @@ public:
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
+  void addElementToView(ModelInstance::Element *pElement, bool inherited, bool addObject, bool openingClass, bool addtoIcon, bool addtoDiagram);
   void addElementToList(Element *pElement) {mElementsList.append(pElement);}
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
   void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}
@@ -521,6 +530,7 @@ class ModelWidget : public QWidget
 public:
   ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer);
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
+  ModelInstance::Model *getModelInstance() const {return mpModelInstance;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
@@ -555,6 +565,12 @@ public:
   Element* createInheritedComponent(Element *pComponent, GraphicsView *pGraphicsView);
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
   void loadElements();
+
+  void drawModel();
+  void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited);
+
+  void drawModelConnections();
+
   void loadDiagramView();
   void loadConnections();
   void getModelConnections();
@@ -565,6 +581,7 @@ public:
   Element* getConnectorComponent(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
   void reDrawModelWidget();
+  void reDrawModelWidget(const QJsonObject &modelInstanceJson);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
   void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
@@ -588,6 +605,7 @@ public:
   void processPendingModelUpdate();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
+  ModelInstance::Model *mpModelInstance;
   LibraryTreeItem *mpLibraryTreeItem;
   QToolButton *mpIconViewToolButton;
   QToolButton *mpDiagramViewToolButton;
@@ -631,6 +649,10 @@ private:
   IconDiagramMap getIconDiagramMap(QString mapAnnotation);
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
+
+
+
+
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);
   void readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
   void drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType);

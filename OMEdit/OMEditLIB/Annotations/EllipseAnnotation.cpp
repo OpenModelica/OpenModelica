@@ -50,11 +50,42 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
 }
 
+EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inherited, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+{
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
+  mpEllipse = pEllipse;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
+  setShapeFlags(true);
+}
+
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
+  applyTransformation();
+}
+
+EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *pParent)
+  : ShapeAnnotation(pParent)
+{
+  mpOriginItem = 0;
+  mpEllipse = pEllipse;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  parseShapeAnnotation();
   applyTransformation();
 }
 
@@ -86,6 +117,23 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
   mEndAngle.parse(list.at(10));
   // 12th item of the list contains the closure
   mClosure = StringHandler::getClosureType(stripDynamicSelect(list.at(11)));
+}
+
+void EllipseAnnotation::parseShapeAnnotation()
+{
+  GraphicItem::parseShapeAnnotation(mpEllipse);
+  FilledShape::parseShapeAnnotation(mpEllipse);
+
+  QList<QPointF> extents;
+  ModelInstance::Extent extent = mpEllipse->getExtent();
+  ModelInstance::Point extent1 = extent.getExtent1();
+  ModelInstance::Point extent2 = extent.getExtent2();
+  extents.append(QPointF(extent1.x(), extent1.y()));
+  extents.append(QPointF(extent2.x(), extent2.y()));
+  mExtents = extents;
+  mStartAngle = mpEllipse->getStartAngle();
+  mEndAngle = mpEllipse->getEndAngle();
+  mClosure = StringHandler::getClosureType(stripDynamicSelect(mpEllipse->getClosure()));
 }
 
 QRectF EllipseAnnotation::boundingRect() const

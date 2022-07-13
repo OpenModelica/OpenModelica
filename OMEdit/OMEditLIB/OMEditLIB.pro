@@ -108,6 +108,7 @@ SOURCES += Util/Helper.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
+  Modeling/Model.cpp \
   Modeling/MessagesWidget.cpp \
   Modeling/ItemDelegate.cpp \
   Modeling/LibraryTreeWidget.cpp \
@@ -209,6 +210,7 @@ HEADERS  += Util/Helper.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
+  Modeling/Model.h \
   Modeling/MessagesWidget.h \
   Modeling/ItemDelegate.h \
   Modeling/LibraryTreeWidget.h \
