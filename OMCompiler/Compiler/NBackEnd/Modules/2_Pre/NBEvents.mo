@@ -399,7 +399,7 @@ public
     end createSample;
 
     function createSampleTraverse
-      "used only for StateEvent traversel to encapsulate sample operators"
+      "used only for StateEvent traversal to encapsulate sample operators"
       input output Expression exp         "has to be LBINARY() with comparing operator or a sample CALL()";
       input output Bucket bucket          "bucket containing the events";
     algorithm
@@ -413,6 +413,111 @@ public
         else exp;
       end match;
     end createSampleTraverse;
+
+    function createComposite
+      "Find special events of the form:  sample(t0, dt) and (f(x) > 0)
+      These events can only occur at the sample times. At that time the additional condition
+      is checked only once, no state event necessary!
+      NOTE: This does not work for SIMPLE_TIME, e.g. (time > 0.2) and (f(x) > 0)"
+      input output Expression condition;
+      input output Bucket bucket;
+      output Boolean failed = false "returns true if composite event list could not be created";
+    protected
+      Pointer<Variable> aux_var;
+      ComponentRef aux_cref;
+    algorithm
+      (condition, bucket, failed) := match condition
+        local
+          Expression exp, exp2;
+          Call call;
+
+        // base case: sample is the left operand to AND
+        case Expression.LBINARY(exp1 = exp as Expression.CALL(call = call), operator = Operator.OPERATOR(op = NFOperator.Op.AND))
+          guard BackendUtil.isOnlyTimeDependent(exp)
+          algorithm
+            (call, exp2, bucket, failed) := checkDirectComposite(call, condition.exp2, bucket);
+            if not failed then
+              exp.call := call;
+              condition.exp1 := exp;
+              if not referenceEq(exp2, condition.exp2) then
+                condition.exp2 := exp2;
+              end if;
+            end if;
+        then (condition, bucket, failed);
+
+        // base case: sample is the right operand to AND
+        case Expression.LBINARY(exp2 = exp as Expression.CALL(call = call), operator = Operator.OPERATOR(op = NFOperator.Op.AND))
+          guard BackendUtil.isOnlyTimeDependent(exp)
+          algorithm
+            (call, exp2, bucket, failed) := checkDirectComposite(call, condition.exp1, bucket);
+            if not failed then
+              exp.call := call;
+              condition.exp2 := exp;
+              if not referenceEq(exp2, condition.exp1) then
+                condition.exp1 := exp2;
+              end if;
+            end if;
+        then (condition, bucket, failed);
+
+        // recursion: sample might be nested (all parent operators have to be AND)
+        // e.g. (sample(t0, dt) and f1(x)) and f2(x)
+        case Expression.LBINARY(operator = Operator.OPERATOR(op = NFOperator.Op.AND))
+          algorithm
+            (exp, bucket, failed) := createComposite(condition.exp1, bucket);
+            if not failed then
+              condition.exp1 := exp;
+              (exp, bucket, failed) := createComposite(condition.exp2, bucket);
+              if not failed then
+                // TODO what if there is more than one sample()?
+                condition.exp2 := exp;
+              end if;
+              failed := false; // we know we have a composite time event in the first half
+            else
+              (exp, bucket, failed) := createComposite(condition.exp2, bucket);
+              if not failed then
+                condition.exp2 := exp;
+              end if;
+            end if;
+        then (condition, bucket, failed);
+
+        else (condition, bucket, true);
+      end match;
+
+      if not failed then
+        if TimeEventTree.hasKey(bucket.timeEventTree, condition) then
+          // time event already exists, just get the identifier
+          aux_var := TimeEventTree.get(bucket.timeEventTree, condition);
+          aux_cref := BVariable.getVarName(aux_var);
+        else
+          // make a new auxiliary variable representing the state
+          (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.TIME_EVENT_STR, bucket.auxiliaryTimeEventIndex);
+          bucket.auxiliaryTimeEventIndex := bucket.auxiliaryTimeEventIndex + 1;
+          // add the new event to the tree
+          bucket.timeEventTree := TimeEventTree.add(bucket.timeEventTree, condition, aux_var);
+          // also return the expression which replaces the zero crossing
+        end if;
+        condition := Expression.fromCref(aux_cref);
+      end if;
+    end createComposite;
+
+    function checkDirectComposite
+      "Checks if call is a sample call and if it is creates the appropriate events.
+      Also checks the rest exp for composite events, not sure if this is necessary."
+      input output Call call "sample call";
+      input output Expression exp;
+      input output Bucket bucket;
+      output Boolean failed;
+    protected
+      Boolean failed2;
+    algorithm
+      (call, bucket, failed) := createSample(call, bucket);
+      if not failed then
+        (exp, bucket, failed2) := createComposite(exp, bucket);
+        if not failed2 then
+          // TODO what if there is more than one sample()? Can we simplify this?
+        end if;
+      end if;
+    end checkDirectComposite;
 
     function getIndex
       input TimeEvent timeEvent;
@@ -763,9 +868,11 @@ protected
   protected
     Boolean failed = true;
   algorithm
-    // try to create time event
+    // try to create time event or composite time event
     if BackendUtil.isOnlyTimeDependent(condition) then
       (condition, bucket, failed) := TimeEvent.create(condition, bucket);
+    else
+      (condition, bucket, failed) := TimeEvent.createComposite(condition, bucket);
     end if;
 
     // if it failed create state event
