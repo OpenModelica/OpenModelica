@@ -288,7 +288,7 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
   tableau->isKRightAvailable = TRUE;
 }
 
-// TODO: Describe me
+// https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods
 void getButcherTableau_HEUN(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 2;
@@ -759,7 +759,7 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
   tableau->isKRightAvailable = TRUE;
 }
 
-// TODO: Describe me
+// https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods
 void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages  = 2;
