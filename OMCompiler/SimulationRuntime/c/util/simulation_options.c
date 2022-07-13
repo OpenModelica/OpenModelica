@@ -876,6 +876,7 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* MS_ADAMS_MOULTON */ "adams",
   /* RK_EXPL_EULER */    "expl_euler",
   /* RK_IMPL_EULER */    "impl_euler",
+  /* RK_TRAPEZOID */     "trapezoid",
   /* RK_SDIRK2 */        "sdirk2",
   /* RK_SDIRK3 */        "sdirk3",
   /* RK_ESDIRK2 */       "esdirk2",
@@ -899,20 +900,23 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* RK_GAUSS5 */        "gauss5",
   /* RK_GAUSS6 */        "gauss6",
   /* RK_MERSON */        "merson",
+  /* RK_HEUN */          "heun",
   /* RK_FEHLBERG12 */    "fehlberg12",
   /* RK_FEHLBERG45 */    "fehlberg45",
   /* RK_FEHLBERG78 */    "fehlberg78",
   /* RK_RK810 */         "rk810",
   /* RK_RK1012 */        "rk1012",
   /* RK_RK1214 */        "rk1214",
-  /* RK_DOPRI45 */       "dopri45"
+  /* RK_DOPRI45 */       "dopri45",
+  /* RK_RKSSC */         "rungekuttaSsc"
 };
 
 const char *GB_METHOD_DESC[RK_MAX] = {
   /* GB_UNKNOWN = 0 */   "unknown",
-  /* MS_ADAMS_MOULTON */ "adams",
-  /* RK_EXPL_EULER */    "Explizit Euler method (order 1)",
-  /* RK_IMPL_EULER */    "Implizit Euler method (order 1)",
+  /* MS_ADAMS_MOULTON */ "Implicit multistep method of type Adams-Moulton (order 2)",
+  /* RK_EXPL_EULER */    "Explizit Runge-Kutta Euler method (order 1)",
+  /* RK_IMPL_EULER */    "Implizit Runge-Kutta Euler method (order 1)",
+  /* RK_TRAPEZOID */     "Implicit Runge-Kutta trapezoid method (order 2)",
   /* RK_SDIRK2 */        "Singly-diagonal implicit Runge-Kutta (order 2)",
   /* RK_SDIRK3 */        "Singly-diagonal implicit Runge-Kutta (order 3)",
   /* RK_ESDIRK2 */       "Explicit singly-diagonal implicit Runge-Kutta (order 2)",
@@ -936,13 +940,15 @@ const char *GB_METHOD_DESC[RK_MAX] = {
   /* RK_GAUSS5 */        "Implicit Runge-Kutta method of Gauss (order 10)",
   /* RK_GAUSS6 */        "Implicit Runge-Kutta method of Gauss (order 12)",
   /* RK_MERSON */        "Explicit Runge-Kutta Merson method (order 4)",
+  /* RK_HEUN */          "Explicit Runge-Kutta Heun method (order 2)",
   /* RK_FEHLBERG12 */    "Explicit Runge-Kutta Fehlberg method (order 2)",
   /* RK_FEHLBERG45 */    "Explicit Runge-Kutta Fehlberg method (order 5)",
   /* RK_FEHLBERG78 */    "Explicit Runge-Kutta Fehlberg method (order 8)",
   /* RK_RK810 */         "Explicit 8-10 Runge-Kutta method (order 10)",
   /* RK_RK1012 */        "Explicit 10-12 Runge-Kutta method (order 12)",
   /* RK_RK1214 */        "Explicit 12-14 Runge-Kutta method (order 14)",
-  /* RK_DOPRI45 */       "Explicit Runge-Kutta method Dormand-Prince (order 5)"
+  /* RK_DOPRI45 */       "Explicit Runge-Kutta method Dormand-Prince (order 5)",
+  /* RK_RKSSC */         "Explicit Runge-Kutta method with large stabiliy region (order 1)"
 };
 
 const char *GB_NLS_METHOD_NAME[GB_NLS_MAX] = {

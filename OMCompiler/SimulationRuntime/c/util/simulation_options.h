@@ -206,6 +206,7 @@ enum GB_METHOD {
   MS_ADAMS_MOULTON,   /* adams*/
   RK_EXPL_EULER,      /* expl_euler*/
   RK_IMPL_EULER,      /* impl_euler*/
+  RK_TRAPEZOID,       /* trapezoid */
   RK_SDIRK2,          /* sdirk2*/
   RK_SDIRK3,          /* sdirk3*/
   RK_ESDIRK2,         /* esdirk2*/
@@ -229,6 +230,7 @@ enum GB_METHOD {
   RK_GAUSS5,          /* gauss5*/
   RK_GAUSS6,          /* gauss6*/
   RK_MERSON,          /* merson*/
+  RK_HEUN,            /* heun */
   RK_FEHLBERG12,      /* fehlberg12*/
   RK_FEHLBERG45,      /* fehlberg45*/
   RK_FEHLBERG78,      /* fehlberg78*/
@@ -236,6 +238,8 @@ enum GB_METHOD {
   RK_RK1012,          /* rk1012*/
   RK_RK1214,          /* rk1214*/
   RK_DOPRI45,         /* dopri4*/
+  RK_RKSSC,           /* rungekuttaSsc */
+
 
   RK_MAX
 };

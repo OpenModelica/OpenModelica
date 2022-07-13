@@ -288,6 +288,26 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
   tableau->isKRightAvailable = TRUE;
 }
 
+// https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods
+void getButcherTableau_HEUN(BUTCHER_TABLEAU* tableau)
+{
+  tableau->nStages = 2;
+  tableau->order_b = 2;
+  tableau->order_bt = 1;
+  tableau->fac = 1.0;
+
+  /* Butcher Tableau */
+  const double c[]   = {0.0, 1.0};
+  const double A[]   = {0.0, 0.0,
+                        1.0, 0.0};
+  const double b[]   = {0.5, 0.5};
+  const double bt[]  = {1.0, 0.0};
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *)bt);
+  tableau->isKLeftAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
+}
+
 // TODO: Describe me
 void getButcherTableau_EXPLEULER(BUTCHER_TABLEAU* tableau) {
 
@@ -739,6 +759,27 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau) {
   tableau->isKRightAvailable = TRUE;
 }
 
+// https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods
+void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau) {
+
+  tableau->nStages  = 2;
+  tableau->order_b  = 2;
+  tableau->order_bt = 1;
+  tableau->fac      = 1.e0;
+
+  // /* Butcher Tableau */
+  const double c[] = {0.0, 1.0};
+  const double A[] = {0.0, 0.0,
+                      0.5, 0.5};
+  const double  b[] = {0.5, 0.5};  // trapezoidal rule
+  const double  bt[] = {1.0, 0.0}; // implicit Euler step
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+
+  tableau->isKLeftAvailable = TRUE;
+  tableau->isKRightAvailable = TRUE;
+}
+
 // TODO: Describe me
 void getButcherTableau_MERSON(BUTCHER_TABLEAU* tableau) {
 
@@ -1018,6 +1059,35 @@ void getButcherTableau_RK1214(BUTCHER_TABLEAU* tableau) {
   tableau->isKRightAvailable = FALSE;
 }
 
+/** @brief Get Runge-Kutta Ssc Butcher tableau.
+ * Solving Stiff Systems of ODEs by Explicit Methods with Conformed Stability Domains
+ * From:  Anton E. Novikov     Mikhail V. Rybkov     Yury V. Shornikov     Lyudmila V. Knaub
+ * EUROSIM 2016 & SIMS 2016
+ *
+ * @param tableau    Pointer to Butcher tableau to fill.
+ */
+void getButcherTableau_RKSSC(BUTCHER_TABLEAU* tableau) {
+
+  tableau->nStages = 5;
+  tableau->order_b = 1;
+  tableau->order_bt = 2;
+  tableau->fac = 1e0;
+
+  const double c[]  = {                              0,               0.041324301621055,                    0.1611647763,                    0.3608883044,                      0.64049984};
+  const double A[]  = {
+                                                        0,                                0,                                0,                                0,                                0,
+                                        0.041324301621055,                                0,                                0,                                0,                                0,
+                                        0.0805823881610573,               0.0805823881610573,                                0,                                0,                                0,
+                                        0.1191668151228434,               0.1597820013984078,               0.0819394878966193,                                0,                                0,
+                                        0.1570787892802991,                0.237958302195982,               0.1631711307360486,               0.0822916178203657,                                0};
+  const double b[]  = {             0.1945277188657676,              0.3151822878089125,              0.2437005934695969,              0.1641555613805598,              0.0824338384751631};
+  const double bt[]  = {         0.12149281854707711872,          0.18276003767888932578,          0.14735209191059650291,         -0.42005655782840578172,          0.96845160969184283432};
+
+  setButcherTableau(tableau, (double *)c, (double *)A, (double *)b, (double *) bt);
+  tableau->isKLeftAvailable = FALSE;
+  tableau->isKRightAvailable = FALSE;
+}
+
 /**
  * @brief Analyse Butcher tableau and return size and if the method is explicit.
  *
@@ -1092,14 +1162,17 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ER
     case MS_ADAMS_MOULTON:
       getButcherTableau_MS(tableau);
       break;
-    case RK_EXPL_EULER:
-      getButcherTableau_EXPLEULER(tableau);
-      break;
     case RK_IMPL_EULER:
       getButcherTableau_IMPLEULER(tableau);
       break;
+    case RK_TRAPEZOID:
+      getButcherTableau_TRAPEZOID(tableau);
+      break;
     case RK_DOPRI45:
       getButcherTableau_DOPRI45(tableau);
+      break;
+    case RK_RKSSC:
+      getButcherTableau_RKSSC(tableau);
       break;
     case RK_RK810:
       getButcherTableau_RK810(tableau);
@@ -1112,6 +1185,12 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD GM_method, enum _FLAG FLAG_ER
       break;
     case RK_MERSON:
       getButcherTableau_MERSON(tableau);
+      break;
+    case RK_EXPL_EULER:
+      getButcherTableau_EXPLEULER(tableau);
+      break;
+    case RK_HEUN:
+      getButcherTableau_HEUN(tableau);
       break;
     case RK_FEHLBERG12:
       getButcherTableau_FEHLBERG12(tableau);
