@@ -817,7 +817,7 @@ static void nlsKinsolResetInitial(DATA *data, NLS_KINSOL_DATA *kinsolData,
  * @param kinsolData
  * @param nlsData
  * @param mode          Mode for scaling. Use `SCALING_NOMINALSTART` for nominal
- *                      scaling and `SCALING_ONES` for no scalign. Will be
+ *                      scaling and `SCALING_ONES` for no scaling. Will be
  *                      overwritten by simulation flag `FLAG_NO_SCALING`.
  */
 static void nlsKinsolXScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
@@ -1230,7 +1230,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
 
   /* Check solution status */
   if (success && kinsolData->resetTol) {
-    kinsolData->solved = NLS_SOLVED_LESS_ACCURARCY;
+    kinsolData->solved = NLS_SOLVED_LESS_ACCURACY;
   } else if (success) {
     kinsolData->solved = NLS_SOLVED;
   } else {

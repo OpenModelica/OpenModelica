@@ -113,7 +113,7 @@ int checkCommandLineArguments(int argc, char **argv)
         }
         // Flag is already specified earlier. Check repetition policy.
         else if(!handle_repeated_flag(j)) {
-          // repetition is invlaid for this Flag
+          // repetition is invalid for this Flag
           return 1;
         }
 
