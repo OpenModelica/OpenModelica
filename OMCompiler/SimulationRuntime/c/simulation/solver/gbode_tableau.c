@@ -1059,9 +1059,13 @@ void getButcherTableau_RK1214(BUTCHER_TABLEAU* tableau) {
   tableau->isKRightAvailable = FALSE;
 }
 
-// Solving Stiff Systems of ODEs by Explicit Methods with Conformed Stability Domains
-// Anton E. Novikov1     Mikhail V. Rybkov2     Yury V. Shornikov3     Lyudmila V. Knaub4
-// EUROSIM 2016 & SIMS 2016
+/** @brief Get Runge-Kutta Ssc Butcher tableau.
+ * Solving Stiff Systems of ODEs by Explicit Methods with Conformed Stability Domains
+ * From:  Anton E. Novikov1     Mikhail V. Rybkov2     Yury V. Shornikov3     Lyudmila V. Knaub4
+ * EUROSIM 2016 & SIMS 2016
+ *
+ * @param tableau    Pointer to Butcher tableau to fill.
+ */
 void getButcherTableau_RKSSC(BUTCHER_TABLEAU* tableau) {
 
   tableau->nStages = 5;
