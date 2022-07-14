@@ -1535,19 +1535,27 @@ algorithm
   isRec := isRecIn or Types.isRecord(crefLastType(cref));
 end crefIsRec;
 
-public function crefGetRec "traverse function to get the record part of cref"
+public function crefGetFirstRec
   input DAE.ComponentRef cref;
-  input output Option<DAE.ComponentRef> opt_cref = NONE();
+  output DAE.ComponentRef result;
+  output Boolean isRec;
 algorithm
-  if Types.isRecord(crefType(cref)) then
-    opt_cref := match opt_cref
-      local
-        DAE.ComponentRef c;
-      case NONE() then SOME(crefFirstCref(cref));
-      case SOME(c) then SOME(crefPrependIdent(c, crefFirstIdent(cref), {}, crefType(cref)));
-    end match;
-  end if;
-end crefGetRec;
+  (result, isRec) := match cref
+    local
+      DAE.ComponentRef innerCref;
+    case DAE.CREF_IDENT() then (cref, Types.isRecord(crefType(cref)));
+    case DAE.CREF_QUAL() algorithm
+      if Types.isRecord(crefType(cref)) then
+        result := DAE.CREF_IDENT(cref.ident, cref.identType, cref.subscriptLst);
+        isRec := true;
+      else
+        (innerCref, isRec) := crefGetFirstRec(cref.componentRef);
+        result := DAE.CREF_QUAL(cref.ident, cref.identType, cref.subscriptLst, innerCref);
+      end if;
+    then (result, isRec);
+    else (cref, false);
+  end match;
+end crefGetFirstRec;
 
 protected function containWholeDim2 "
   A function to check if a cref contains a [:] wholedim element in the subscriptlist."

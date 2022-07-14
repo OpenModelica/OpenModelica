@@ -219,16 +219,16 @@ protected function collectRecordElementBindings
   input BackendDAE.Var var;
   input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
 protected
-  Option<DAE.ComponentRef> cref_opt;
+  DAE.ComponentRef rec_cref;
+  Boolean is_rec;
 algorithm
-  cref_opt := ComponentReference.traverseCref(var.varName, ComponentReference.crefGetRec, NONE());
-  () := match (var.bindExp, cref_opt)
+  (rec_cref, is_rec) := ComponentReference.crefGetFirstRec(var.varName);
+  () := match var.bindExp
     local
       DAE.Exp binding;
-      DAE.ComponentRef rec_cref;
       DAE.Type ty;
 
-    case (SOME(binding), SOME(rec_cref)) guard(UnorderedMap.contains(rec_cref, map)) algorithm
+    case SOME(binding) guard(is_rec and UnorderedMap.contains(rec_cref, map)) algorithm
       ty := match UnorderedMap.getSafe(rec_cref, map)
         case ty as DAE.T_COMPLEX() algorithm
           ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
