@@ -1756,7 +1756,6 @@ case RECORD_CONSTRUCTOR(__) then
   {
     <%varDecls%>
     <%funArgs |> VARIABLE(__) => '<%structVar%>._<%crefStr(name)%> = omc_<%crefStr(name)%>;' ;separator="\n"%>
-    <%varInits%>
     return <%structVar%>;
   }
   <%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then 'omctd_<%fname%> omc_<%fname%> = omcimpl_<%fname%>;'%>
