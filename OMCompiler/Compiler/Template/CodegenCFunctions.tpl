@@ -5225,6 +5225,19 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp,
     else daeExpCrefRhsSimContext(exp, context, &preExp, &varDecls, &auxFunction)
 end daeExpCrefRhs;
 
+template constVarOrDaeExp(DAE.Var var, DAE.ComponentRef cr, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+::=
+  match var
+    case DAE.TYPES_VAR(attributes = DAE.ATTR(variability = CONST()), binding = DAE.EQBOUND()) then
+      daeExp(binding.exp, context, &preExp, &varDecls, &auxFunction)
+    case DAE.TYPES_VAR(attributes = DAE.ATTR(variability = CONST()), binding = DAE.VALBOUND()) then
+      'ERROR in constVarOrDaeExp /* val bound value */'
+    case DAE.TYPES_VAR(attributes = DAE.ATTR(variability = CONST()), binding = DAE.UNBOUND()) then
+      'ERROR in constVarOrDaeExp /* unbound value */'
+    else
+      daeExp(makeCrefRecordExp(cr,var), context, &preExp, &varDecls, &auxFunction)
+end constVarOrDaeExp;
+
 template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)
  "Generates code for a component reference in simulation context."
@@ -5235,7 +5248,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
 
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = record_state, varLst = var_lst)) then
-    let vars = var_lst |> v => (", " + daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls, &auxFunction))
+    let vars = var_lst |> v => (", " + constVarOrDaeExp(v, cr, context, &preExp, &varDecls, &auxFunction))
     let record_type_name = underscorePath(ClassInf.getStateName(record_state))
     'omc_<%record_type_name%>(threadData<%vars%>)'
 
