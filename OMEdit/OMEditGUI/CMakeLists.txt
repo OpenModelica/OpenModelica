@@ -1,7 +1,20 @@
 
 
+if(APPLE)
+  set(MACOSX_BUNDLE_ICON_FILE omedit.icns)
+
+  # The following tells CMake where to find and install the file itself.
+  set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/../OMEditLIB/Resources/icons/omedit.icns")
+  set_source_files_properties(${app_icon_macos} PROPERTIES
+       MACOSX_PACKAGE_LOCATION "Resources")
+endif()
+
 add_executable(OMEdit WIN32 MACOSX_BUNDLE main.cpp rc_omedit.rc)
 target_link_libraries(OMEdit PRIVATE OMEditLib)
+
+if(APPLE)
+  set_target_properties(OMEdit PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
+endif()
 
 install(TARGETS OMEdit
         BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
