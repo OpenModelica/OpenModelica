@@ -231,7 +231,7 @@ algorithm
     case (SOME(binding), SOME(rec_cref)) guard(UnorderedMap.contains(rec_cref, map)) algorithm
       ty := match UnorderedMap.getSafe(rec_cref, map)
         case ty as DAE.T_COMPLEX() algorithm
-          ty.varLst := list(updateRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
+          ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
         then ty;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the type is not T_COMPLEX."});
@@ -243,18 +243,15 @@ algorithm
   end match;
 end collectRecordElementBindings;
 
-function updateRecordElementBinding
+function updateConstantRecordElementBinding
   input output DAE.Var var;
   input DAE.Exp binding;
   input String name;
-protected
-  DAE.Const const;
 algorithm
-  if var.name == name then
-    const := if Expression.isConst(binding) then DAE.C_CONST() else DAE.C_VAR();
-    var.binding := DAE.EQBOUND(binding, NONE(), const, DAE.BINDING_FROM_DEFAULT_VALUE());
+  if var.name == name and Expression.isConst(binding) and false then
+    var.binding := DAE.EQBOUND(binding, NONE(), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
   end if;
-end updateRecordElementBinding;
+end updateConstantRecordElementBinding;
 
 protected function collectRecordTypesEqn
   input output BackendDAE.Equation eqn;
@@ -295,7 +292,6 @@ algorithm
       DAE.ComponentRef cref;
     case DAE.CREF(componentRef = cref) guard(UnorderedMap.contains(cref, map)) algorithm
       exp.ty := UnorderedMap.getSafe(cref, map);
-      exp.componentRef := ComponentReference.crefSetType(cref, exp.ty);
     then (exp, false);
     else (exp, true);
   end match;
