@@ -247,9 +247,12 @@ function updateConstantRecordElementBinding
   input output DAE.Var var;
   input DAE.Exp binding;
   input String name;
+protected
+  DAE.Const const;
 algorithm
-  if var.name == name and Expression.isConst(binding) and false then
-    var.binding := DAE.EQBOUND(binding, NONE(), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
+  if var.name == name then
+    const := if Expression.isConst(binding) then DAE.C_CONST() else DAE.C_VAR();
+    var.binding := DAE.EQBOUND(binding, NONE(), const, DAE.BINDING_FROM_DEFAULT_VALUE());
   end if;
 end updateConstantRecordElementBinding;
 
