@@ -377,7 +377,7 @@ algorithm
     end for;
 
     binding := match listLength(subscriptLst)
-      case 1 then DAE.ARRAY(ComponentReference.crefTypeFull(cref), false, expLst);
+      case 1 then DAE.ARRAY(ComponentReference.crefTypeFull(cref), true, expLst);
       case 2 algorithm
         dims := Types.getDimensions(ComponentReference.crefLastType(cref));
         firstDim := match List.first(dims)
