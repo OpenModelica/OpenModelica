@@ -32,6 +32,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include <iostream>
 #include "TextAnnotation.h"
 #include "Modeling/Commands.h"
 
@@ -559,7 +560,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
 {
   int pos = 0;
   while ((pos = regExp.indexIn(mTextString, pos)) != -1) {
-    QString variable = regExp.cap(0).trimmed();
+    QString variable = regExp.cap(0).trimmed(); QString qs;
     if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0)) {
       variable.remove("%");
       variable = StringHandler::removeFirstLastCurlBrackets(variable);
@@ -585,8 +586,9 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
               displayUnit = unit;
             }
           }
-          if (displayUnit.isEmpty() || unit.isEmpty()) {
-            mTextString.replace(pos, regExp.matchedLength(), textValue);
+          // do not do any conversion if unit or displayUnit is empty of if both are 1!
+          if (displayUnit.isEmpty() || unit.isEmpty() || (displayUnit.compare("1") == 0 && unit.compare("1") == 0)) {
+            qs = mTextString.replace(pos, regExp.matchedLength(), textValue);
             pos += textValue.length();
           } else {
             QString textValueWithDisplayUnit;
@@ -594,14 +596,14 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
             OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(unit, displayUnit);
             if (convertUnit.unitsCompatible) {
               qreal convertedValue = Utilities::convertUnit(textValue.toDouble(), convertUnit.offset, convertUnit.scaleFactor);
-              textValue = StringHandler::number(convertedValue);
+              textValue = StringHandler::number(convertedValue, textValue);
               displayUnit = Utilities::convertUnitToSymbol(displayUnit);
               textValueWithDisplayUnit = QString("%1 %2").arg(textValue, displayUnit);
             } else {
               unit = Utilities::convertUnitToSymbol(unit);
               textValueWithDisplayUnit = QString("%1 %2").arg(textValue, unit);
             }
-            mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
+            qs = mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
             pos += textValueWithDisplayUnit.length();
           }
         } else { /* if the value of %\\W* is empty then remove the % sign. */
