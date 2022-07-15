@@ -653,8 +653,8 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
 
 typedef struct SIMULATION_INFO
 {
-  modelica_real startTime;            /* Start time of the simulation */
-  modelica_real stopTime;             /* Stop time of the simulation */
+  modelica_real startTime;             /* Start time of the simulation */
+  modelica_real stopTime;              /* Stop time of the simulation */
   int useStopTime;
   modelica_integer numSteps;
   modelica_real stepSize;
@@ -717,6 +717,8 @@ typedef struct SIMULATION_INFO
   modelica_boolean* storedRelations;   /* this array contains a copy of relations each time the event iteration starts */
   modelica_real* mathEventsValuePre;
   long* zeroCrossingIndex;             /* := {0, 1, 2, ..., data->modelData->nZeroCrossings-1}; pointer for a list events at event instants */
+  modelica_real* states_left;          /* work array for findRoot in event.c */
+  modelica_real* states_right;         /* work array for findRoot in event.c */
 
   /* old vars for event handling */
   modelica_real timeValueOld;
@@ -760,10 +762,10 @@ typedef struct SIMULATION_INFO
 
   INLINE_DATA* inlineData;
 
-  void* backupSolverData;    /* Used for generic Runge-Kutta methods to get access to some solver details inside callbacks */
+  void* backupSolverData;              /* Used for generic Runge-Kutta methods to get access to some solver details inside callbacks */
 
   /* delay vars */
-  RINGBUFFER **delayStructure;        /* Array of ring buffers for delay expressions */
+  RINGBUFFER **delayStructure;         /* Array of ring buffers for delay expressions */
   const char *OPENMODELICAHOME;
 
   CHATTERING_INFO chatteringInfo;

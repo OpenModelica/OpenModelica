@@ -1074,11 +1074,13 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->relations = (modelica_boolean*) calloc(data->modelData->nRelations, sizeof(modelica_boolean));
   data->simulationInfo->relationsPre = (modelica_boolean*) calloc(data->modelData->nRelations, sizeof(modelica_boolean));
   data->simulationInfo->storedRelations = (modelica_boolean*) calloc(data->modelData->nRelations, sizeof(modelica_boolean));
-  data->simulationInfo->zeroCrossingIndex = (long*) malloc(data->modelData->nZeroCrossings*sizeof(long));
   data->simulationInfo->mathEventsValuePre = (modelica_real*) malloc(data->modelData->nMathEvents*sizeof(modelica_real));
+  data->simulationInfo->zeroCrossingIndex = (long*) malloc(data->modelData->nZeroCrossings*sizeof(long));
   /* initialize zeroCrossingsIndex with corresponding index is used by events lists */
   for(i=0; i<data->modelData->nZeroCrossings; i++)
     data->simulationInfo->zeroCrossingIndex[i] = (long)i;
+  data->simulationInfo->states_left = (modelica_real*) malloc(data->modelData->nStates * sizeof(modelica_real));
+  data->simulationInfo->states_right = (modelica_real*) malloc(data->modelData->nStates * sizeof(modelica_real));
 
   /* buffer for old values */
   data->simulationInfo->realVarsOld = (modelica_real*) calloc(data->modelData->nVariablesReal, sizeof(modelica_real));
@@ -1298,8 +1300,10 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->relations);
   free(data->simulationInfo->relationsPre);
   free(data->simulationInfo->storedRelations);
-  free(data->simulationInfo->zeroCrossingIndex);
   free(data->simulationInfo->mathEventsValuePre);
+  free(data->simulationInfo->zeroCrossingIndex);
+  free(data->simulationInfo->states_left);
+  free(data->simulationInfo->states_right);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);
