@@ -87,6 +87,26 @@ import ZeroCrossings;
 
 protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
+protected type ArrayBindingList = list<tuple<list<Integer>,DAE.Exp>>;
+
+function printArrayBindingList
+  input ArrayBindingList arrayBindingList;
+  output String str = "";
+protected
+  list<Integer> subscriptLst;
+  DAE.Exp bindingExp;
+algorithm
+  for tpl in arrayBindingList loop
+    (subscriptLst, bindingExp) := tpl;
+    str := str + "[";
+    for subscript in subscriptLst loop
+      str := str + intString(subscript) + " ";
+    end for;
+    str := str + "]";
+    str := str + " : " + ExpressionDump.dumpExpStr(bindingExp, 0);
+  end for;
+end printArrayBindingList;
+
 public function lower "This function translates a DAE, which is the result from instantiating a
   class, into a more precise form, called BackendDAE.BackendDAE defined in this module.
   The BackendDAE.BackendDAE representation splits the DAE into equations and variables
@@ -120,6 +140,7 @@ protected
   Integer varSize, eqnSize, numCheckpoints;
   BackendDAE.EqSystem syst;
   UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+  UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -147,9 +168,13 @@ algorithm
 
   // 2. collect bindings from variables and update in types
   // (ToDo: update the types?)
-  _ := List.map(varlst, function collectRecordElementBindings(map = map));
-  _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map));
-  _ := List.map(extvarlst, function collectRecordElementBindings(map = map));
+  arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
+
+  _ := List.map(varlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
+  _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
+  _ := List.map(extvarlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
+
+  map := collapseArrayBindings(arrayMap, map);
 
   // 3. replace the types in eqns
   eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
@@ -218,6 +243,7 @@ end lower;
 protected function collectRecordElementBindings
   input BackendDAE.Var var;
   input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+  input UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
 protected
   DAE.ComponentRef rec_cref;
   Boolean is_rec;
@@ -228,16 +254,40 @@ algorithm
       DAE.Exp binding;
       DAE.Type ty;
 
-    case SOME(binding) guard(is_rec and UnorderedMap.contains(rec_cref, map)) algorithm
-      ty := match UnorderedMap.getSafe(rec_cref, map)
-        case ty as DAE.T_COMPLEX() algorithm
-          ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
-        then ty;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the type is not T_COMPLEX."});
-        then fail();
-      end match;
-      UnorderedMap.add(rec_cref, ty, map);
+      DAE.Exp arrayBinding;
+      DAE.ComponentRef arrayCref;
+      ArrayBindingList arrayBindingExpList;
+      list<DAE.Subscript> subscriptLst;
+      list<Integer> intSubLst;
+
+    case SOME(binding) guard(is_rec and UnorderedMap.contains(rec_cref, map) and Expression.isConst(binding)) algorithm
+
+      if ComponentReference.isArrayElement(var.varName) then
+        arrayCref := ComponentReference.crefStripSubsExceptModelSubs(var.varName);
+        arrayBindingExpList := UnorderedMap.getOrDefault(arrayCref, arrayMap, {});
+
+        subscriptLst := ComponentReference.crefSubs(var.varName);
+        intSubLst := list(match subscript
+          local
+            Integer i;
+          case DAE.INDEX(DAE.ICONST(i)) then i;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because index not integer."});
+          then fail();
+          end match for subscript in subscriptLst);
+        UnorderedMap.add(arrayCref, (intSubLst, binding)::arrayBindingExpList, arrayMap);
+      else
+
+        ty := match UnorderedMap.getSafe(rec_cref, map)
+          case ty as DAE.T_COMPLEX() algorithm
+            ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
+          then ty;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the type is not T_COMPLEX."});
+          then fail();
+        end match;
+        UnorderedMap.add(rec_cref, ty, map);
+      end if;
     then ();
     else ();
   end match;
@@ -299,6 +349,57 @@ algorithm
     else (exp, true);
   end match;
 end updateRecordTypesExp;
+
+protected function collapseArrayBindings
+  input UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
+  input output UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+protected
+  DAE.ComponentRef cref;
+  DAE.ComponentRef rec_cref;
+  ArrayBindingList arrayBindingExpList;
+  list<Integer> subscriptLst;
+  DAE.Exp binding;
+  DAE.Exp scalarBinding;
+  list<DAE.Exp> expLst;
+  DAE.Type ty;
+  list<DAE.Dimension> dims;
+  Integer firstDim;
+algorithm
+
+  // TODO: Sort by index
+  for pair in UnorderedMap.toList(arrayMap) loop
+    (cref, arrayBindingExpList) := pair;
+
+    expLst := {};
+    for scalBind in arrayBindingExpList loop
+      (subscriptLst, scalarBinding) := scalBind;
+      expLst := scalarBinding :: expLst;
+    end for;
+
+    binding := match listLength(subscriptLst)
+      case 1 then DAE.ARRAY(ComponentReference.crefTypeFull(cref), false, expLst);
+      case 2 algorithm
+        dims := Types.getDimensions(ComponentReference.crefLastType(cref));;
+        firstDim := match List.first(dims)
+          case DAE.DIM_INTEGER(firstDim) then firstDim;
+        end match;
+        then DAE.MATRIX(ComponentReference.crefTypeFull(cref), firstDim, List.splitEqualParts(expLst, firstDim)); // TODO: Reshape list to list of list
+      else fail();
+    end match;
+
+    // Update binding in map
+    (rec_cref, true) := ComponentReference.crefGetFirstRec(cref);
+    ty := match UnorderedMap.getSafe(rec_cref, map)
+      case ty as DAE.T_COMPLEX() algorithm
+        ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReference.crefLastIdent(cref)) for v in ty.varLst);
+      then ty;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the type is not T_COMPLEX."});
+      then fail();
+    end match;
+    UnorderedMap.add(rec_cref, ty, map);
+  end for;
+end collapseArrayBindings;
 
 protected function getExternalObjectAlias "Checks equations if there is an alias equation for external objects.
 If yes, assign alias var, replace equations, remove alias equation.
