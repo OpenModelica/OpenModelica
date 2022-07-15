@@ -1535,6 +1535,28 @@ algorithm
   isRec := isRecIn or Types.isRecord(crefLastType(cref));
 end crefIsRec;
 
+public function crefGetFirstRec
+  input DAE.ComponentRef cref;
+  output DAE.ComponentRef result;
+  output Boolean isRec;
+algorithm
+  (result, isRec) := match cref
+    local
+      DAE.ComponentRef innerCref;
+    case DAE.CREF_IDENT() then (cref, Types.isRecord(crefType(cref)));
+    case DAE.CREF_QUAL() algorithm
+      if Types.isRecord(crefType(cref)) then
+        result := DAE.CREF_IDENT(cref.ident, cref.identType, cref.subscriptLst);
+        isRec := true;
+      else
+        (innerCref, isRec) := crefGetFirstRec(cref.componentRef);
+        result := DAE.CREF_QUAL(cref.ident, cref.identType, cref.subscriptLst, innerCref);
+      end if;
+    then (result, isRec);
+    else (cref, false);
+  end match;
+end crefGetFirstRec;
+
 protected function containWholeDim2 "
   A function to check if a cref contains a [:] wholedim element in the subscriptlist."
   input list<DAE.Subscript> inRef;
@@ -2072,7 +2094,7 @@ crefPrependIdent(a,c,{1},Integer[1]) => a.c[1] [Integer[1]]
 alternative names: crefAddSuffix, crefAddIdent
 "
   input DAE.ComponentRef icr;
-  input String ident;
+  input DAE.Ident ident;
   input list<DAE.Subscript> subs;
   input DAE.Type tp;
   output DAE.ComponentRef newCr;
@@ -2503,24 +2525,21 @@ end crefApplySubs;
 
 public function crefSetType "
 sets the type of a cref."
-  input DAE.ComponentRef inRef;
-  input DAE.Type newType;
-  output DAE.ComponentRef outRef;
+  input output DAE.ComponentRef cref;
+  input DAE.Type ty;
 algorithm
-  outRef := match (inRef,newType)
-    local
-      DAE.Type ty;
-      DAE.ComponentRef child;
-      list<DAE.Subscript> subs;
-      DAE.Ident id;
+  cref := match cref
+    case DAE.CREF_IDENT() algorithm
+      cref.identType := ty;
+    then cref;
 
-    case(DAE.CREF_IDENT(id,_,subs),_)
-      then
-        makeCrefIdent(id,newType,subs);
+    case DAE.CREF_QUAL() algorithm
+      cref.identType := ty;
+    then cref;
 
-    case(DAE.CREF_QUAL(id,_,subs,child),_)
-      then
-        makeCrefQual(id,newType,subs,child);
+    else algorithm
+      Error.addInternalError(getInstanceName() + " was applied on a cref that has no type: " + crefStr(cref), sourceInfo());
+    then fail();
   end match;
 end crefSetType;
 

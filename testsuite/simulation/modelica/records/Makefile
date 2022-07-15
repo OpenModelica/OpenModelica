@@ -2,6 +2,8 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 ATotal.mos \
+constVar1.mos \
+constVar2.mos \
 InOutRecord.mos \
 RecordConstructor1.mos \
 TestComplexSum1.mos \

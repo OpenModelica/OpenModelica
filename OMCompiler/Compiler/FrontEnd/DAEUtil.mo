@@ -5591,10 +5591,10 @@ public function printBindingSourceStr "prints a binding source as a string"
   output String str;
 algorithm
   str := match(bindingSource)
-    local
-    case(DAE.BINDING_FROM_DEFAULT_VALUE()) then "[DEFAULT VALUE]";
-    case(DAE.BINDING_FROM_DEFAULT_VALUE()) then "[RECORD SUBMOD]";
-    case(DAE.BINDING_FROM_START_VALUE()) then  "[START VALUE]";
+    case(DAE.BINDING_FROM_DEFAULT_VALUE())       then "[DEFAULT VALUE]";
+    case(DAE.BINDING_FROM_START_VALUE())         then "[START VALUE]";
+    case(DAE.BINDING_FROM_RECORD_SUBMODS())      then "[RECORD SUBMODS]";
+    case(DAE.BINDING_FROM_DERIVED_RECORD_DECL()) then "[DERIVED RECORD]";
   end match;
 end printBindingSourceStr;
 
