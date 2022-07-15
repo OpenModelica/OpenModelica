@@ -379,7 +379,7 @@ algorithm
     binding := match listLength(subscriptLst)
       case 1 then DAE.ARRAY(ComponentReference.crefTypeFull(cref), false, expLst);
       case 2 algorithm
-        dims := Types.getDimensions(ComponentReference.crefLastType(cref));;
+        dims := Types.getDimensions(ComponentReference.crefLastType(cref));
         firstDim := match List.first(dims)
           case DAE.DIM_INTEGER(firstDim) then firstDim;
         end match;
