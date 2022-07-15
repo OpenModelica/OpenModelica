@@ -170,7 +170,7 @@ public:
   static QString removeLeadingSpaces(QString contents);
   static QString removeLine(QString text, QString lineToRemove);
   static QString insertClassAtPosition(QString parentClassText, QString childClassText, int linePosition, int nestedLevel);
-  static QString number(double value, char format = 'g', int precision = 16);
+  static QString number(double value, QString hint = "", char format = 'g', int precision = 16);
   static QString getModelicaComment(QString element);
   static QString convertSemVertoReadableString(const QString &semver);
 protected:

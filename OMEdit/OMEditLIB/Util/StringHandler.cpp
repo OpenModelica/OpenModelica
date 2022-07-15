@@ -1958,13 +1958,20 @@ QString StringHandler::insertClassAtPosition(QString parentClassText, QString ch
  * \brief StringHandler::number
  * Helper for QString::number with default precision of 16 instead of 6.
  * \param value
+ * \param hint - default "" otherwise previous value to get a hint on how to format the new one
  * \param format
  * \param precision
  * \return
  */
-QString StringHandler::number(double value, char format, int precision)
+QString StringHandler::number(double value, QString hint, char format, int precision)
 {
-  return QString::number(value, format, precision);
+  // we have a hint, see if we can use it to display the number in a similar fashion
+  if (hint.contains("e", Qt::CaseInsensitive)) {
+    // we have an e in the hint, attempt to shorten the number!
+    return QString::number(value, format, QLocale::FloatingPointShortest);
+  } else {
+    return QString::number(value, format, precision);
+  }
 }
 
 static std::string cmt = "";
