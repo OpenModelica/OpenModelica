@@ -1,8 +1,7 @@
-// name:     constVar2.mos
+// name:     constVar3.mos
 // keywords: record constants function call array
 // status:   correct
 // teardown_command: rm -rf constRecModel3*
-
 
 loadString("
 package constRecModel3

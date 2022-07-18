@@ -313,7 +313,7 @@ function updateConstantRecordElementBinding
 protected
   DAE.Const const;
 algorithm
-  if var.name == name then
+  if DAEUtil.isConstVar(var) and var.name == name then
     const := if Expression.isConst(binding) then DAE.C_CONST() else DAE.C_VAR();
     var.binding := DAE.EQBOUND(binding, NONE(), const, DAE.BINDING_FROM_DEFAULT_VALUE());
   end if;
@@ -334,6 +334,7 @@ algorithm
 end updateRecordTypesEqn;
 
 protected function collectRecordTypesExp
+  "Collect all crefs with record type anda t least one constant record component."
   input output DAE.Exp exp;
   output Boolean cont;
   input output UnorderedMap<DAE.ComponentRef, DAE.Type> map;
@@ -341,7 +342,7 @@ algorithm
   cont := match exp
     local
       DAE.ComponentRef cref;
-    case DAE.CREF(componentRef = cref) guard(Types.isRecord(exp.ty)) algorithm
+    case DAE.CREF(componentRef = cref) guard(Types.isRecord(exp.ty) and Types.recordHasConstVar(exp.ty)) algorithm
       UnorderedMap.add(cref, exp.ty, map);
     then false;
     else true;
