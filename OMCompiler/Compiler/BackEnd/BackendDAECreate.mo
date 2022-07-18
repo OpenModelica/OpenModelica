@@ -141,6 +141,7 @@ protected
   BackendDAE.EqSystem syst;
   UnorderedMap<DAE.ComponentRef, DAE.Type> map;
   UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
+  Boolean debug = false;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -166,6 +167,11 @@ algorithm
   reqns := List.map(reqns, function collectRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function collectRecordTypesEqn(map = map));
 
+  if (debug) then
+    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
+    print("-------------------\n\n");
+  end if;
+
   // 2. collect bindings from variables and update in types
   // (ToDo: update the types?)
   arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
@@ -175,6 +181,13 @@ algorithm
   _ := List.map(extvarlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
 
   map := collapseArrayBindings(arrayMap, map);
+
+  if (debug) then
+    print("----------arrayMap--\n\n");
+    print(UnorderedMap.toString(arrayMap, ComponentReference.printComponentRefStr, printArrayBindingList) + "\n");
+    print("----arrayMap-----\n\n");
+    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
+  end if;
 
   // 3. replace the types in eqns
   eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
