@@ -121,7 +121,8 @@ void cleanValueListbyTime(VALUES_LIST *valueList, double time)
   VALUE* elem;
 
   printValuesListTimes(valueList);
-  for(it = listFirstNode(valueList->valueList); it; it = listNextNode(it))
+  // need to get first node at each iteration since head is removed
+  for(it = listFirstNode(valueList->valueList); it; it = listFirstNode(valueList->valueList))
   {
     elem = (VALUE*)listNodeData(it);
     if (elem->time <= time)
