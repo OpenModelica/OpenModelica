@@ -379,25 +379,32 @@ protected
   list<DAE.Dimension> dims;
   Integer firstDim;
 algorithm
-
-  // TODO: Sort by index
   for pair in UnorderedMap.toList(arrayMap) loop
     (cref, arrayBindingExpList) := pair;
 
     expLst := {};
+    // TODO: Sort by subscript (should be unnecessary since they are generated in order, but who knows)
     for scalBind in arrayBindingExpList loop
       (subscriptLst, scalarBinding) := scalBind;
       expLst := scalarBinding :: expLst;
     end for;
 
     binding := match listLength(subscriptLst)
+      local
+        list<list<DAE.Exp>> matLst;
       case 1 then DAE.ARRAY(ComponentReference.crefTypeFull(cref), true, expLst);
       case 2 algorithm
         dims := Types.getDimensions(ComponentReference.crefLastType(cref));
         firstDim := match List.first(dims)
           case DAE.DIM_INTEGER(firstDim) then firstDim;
         end match;
-        then DAE.MATRIX(ComponentReference.crefTypeFull(cref), firstDim, List.splitEqualParts(expLst, firstDim)); // TODO: Reshape list to list of list
+        try
+          matLst := List.splitEqualParts(expLst, firstDim);
+        else
+          Error.addInternalError(getInstanceName() + " failed to reshape matrix.", sourceInfo());
+          fail();
+        end try;
+      then DAE.MATRIX(ComponentReference.crefTypeFull(cref), firstDim, matLst);
       else fail();
     end match;
 
