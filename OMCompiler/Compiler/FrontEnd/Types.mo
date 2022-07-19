@@ -498,6 +498,27 @@ algorithm
   end match;
 end isRecord;
 
+public function recordHasConstVar
+  "Returns true if an record has at least one component of type CONST.
+   Fails if input type ty is not an record."
+  input DAE.Type ty;
+  output Boolean hasConstType = false;
+algorithm
+  () := match ty
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) algorithm
+        for var in ty.varLst loop
+          if DAEUtil.isConstVar(var) then
+            hasConstType := true;
+            break;
+          end if;
+        end for;
+      then();
+    else algorithm
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because input type is not a record."});
+    then fail();
+  end match;
+end recordHasConstVar;
+
 public function getRecordPath "gets the record path"
   input DAE.Type tp;
   output Absyn.Path p;

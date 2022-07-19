@@ -141,6 +141,7 @@ protected
   BackendDAE.EqSystem syst;
   UnorderedMap<DAE.ComponentRef, DAE.Type> map;
   UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
+  Boolean debug = false;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -166,6 +167,11 @@ algorithm
   reqns := List.map(reqns, function collectRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function collectRecordTypesEqn(map = map));
 
+  if (debug) then
+    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
+    print("-------------------\n\n");
+  end if;
+
   // 2. collect bindings from variables and update in types
   // (ToDo: update the types?)
   arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
@@ -175,6 +181,13 @@ algorithm
   _ := List.map(extvarlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
 
   map := collapseArrayBindings(arrayMap, map);
+
+  if (debug) then
+    print("----------arrayMap--\n\n");
+    print(UnorderedMap.toString(arrayMap, ComponentReference.printComponentRefStr, printArrayBindingList) + "\n");
+    print("----arrayMap-----\n\n");
+    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
+  end if;
 
   // 3. replace the types in eqns
   eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
@@ -300,7 +313,7 @@ function updateConstantRecordElementBinding
 protected
   DAE.Const const;
 algorithm
-  if var.name == name then
+  if DAEUtil.isConstVar(var) and var.name == name then
     const := if Expression.isConst(binding) then DAE.C_CONST() else DAE.C_VAR();
     var.binding := DAE.EQBOUND(binding, NONE(), const, DAE.BINDING_FROM_DEFAULT_VALUE());
   end if;
@@ -321,6 +334,7 @@ algorithm
 end updateRecordTypesEqn;
 
 protected function collectRecordTypesExp
+  "Collect all crefs with record type anda t least one constant record component."
   input output DAE.Exp exp;
   output Boolean cont;
   input output UnorderedMap<DAE.ComponentRef, DAE.Type> map;
@@ -328,7 +342,7 @@ algorithm
   cont := match exp
     local
       DAE.ComponentRef cref;
-    case DAE.CREF(componentRef = cref) guard(Types.isRecord(exp.ty)) algorithm
+    case DAE.CREF(componentRef = cref) guard(Types.isRecord(exp.ty) and Types.recordHasConstVar(exp.ty)) algorithm
       UnorderedMap.add(cref, exp.ty, map);
     then false;
     else true;
@@ -365,25 +379,32 @@ protected
   list<DAE.Dimension> dims;
   Integer firstDim;
 algorithm
-
-  // TODO: Sort by index
   for pair in UnorderedMap.toList(arrayMap) loop
     (cref, arrayBindingExpList) := pair;
 
     expLst := {};
+    // TODO: Sort by subscript (should be unnecessary since they are generated in order, but who knows)
     for scalBind in arrayBindingExpList loop
       (subscriptLst, scalarBinding) := scalBind;
       expLst := scalarBinding :: expLst;
     end for;
 
     binding := match listLength(subscriptLst)
+      local
+        list<list<DAE.Exp>> matLst;
       case 1 then DAE.ARRAY(ComponentReference.crefTypeFull(cref), true, expLst);
       case 2 algorithm
         dims := Types.getDimensions(ComponentReference.crefLastType(cref));
         firstDim := match List.first(dims)
           case DAE.DIM_INTEGER(firstDim) then firstDim;
         end match;
-        then DAE.MATRIX(ComponentReference.crefTypeFull(cref), firstDim, List.splitEqualParts(expLst, firstDim)); // TODO: Reshape list to list of list
+        try
+          matLst := List.splitEqualParts(expLst, firstDim);
+        else
+          Error.addInternalError(getInstanceName() + " failed to reshape matrix.", sourceInfo());
+          fail();
+        end try;
+      then DAE.MATRIX(ComponentReference.crefTypeFull(cref), firstDim, matLst);
       else fail();
     end match;
 

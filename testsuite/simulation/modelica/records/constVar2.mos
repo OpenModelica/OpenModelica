@@ -1,7 +1,7 @@
 // name:     constVar2.mos
 // keywords: record constants function call alias
 // status:   correct
-// teardown_command: rm -rf constVar1M*
+// teardown_command: rm -rf constRecModel2*
 
 loadString("
 package constRecModel2

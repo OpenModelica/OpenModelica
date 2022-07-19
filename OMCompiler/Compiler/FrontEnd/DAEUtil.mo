@@ -1556,6 +1556,17 @@ algorithm
   outIsParamOrConst := SCodeUtil.isParameterOrConst(var);
 end isParamOrConstVar;
 
+public function isConstVar
+  "Return true if variable has variability CONST."
+  input DAE.Var var;
+  output Boolean isConstVar = false;
+algorithm
+  isConstVar := match var.attributes.variability
+    case SCode.CONST() then true;
+    else false;
+  end match;
+end isConstVar;
+
 public function isNotParamOrConstVar
   input DAE.Var inVar;
   output Boolean outIsNotParamOrConst;

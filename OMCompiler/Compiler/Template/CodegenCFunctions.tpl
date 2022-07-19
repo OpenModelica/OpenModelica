@@ -5230,9 +5230,9 @@ template constVarOrDaeExp(DAE.Var var, DAE.ComponentRef cr, Context context, Tex
     case DAE.TYPES_VAR(attributes = DAE.ATTR(variability = CONST()), binding = DAE.EQBOUND()) then
       daeExp(binding.exp, context, &preExp, &varDecls, &auxFunction)
     case DAE.TYPES_VAR(attributes = DAE.ATTR(variability = CONST()), binding = DAE.VALBOUND()) then
-      'ERROR in constVarOrDaeExp /* val bound value */'
+      error(sourceInfo(), 'constVarOrDaeExp failed; Constant variable <%name%> is value bound. Not yet implemented.')
     case DAE.TYPES_VAR(attributes = DAE.ATTR(variability = CONST()), binding = DAE.UNBOUND()) then
-      'ERROR in constVarOrDaeExp /* unbound value */'
+      error(sourceInfo(), 'constVarOrDaeExp failed; Constant variable <%name%> has no binding. This indicates a problem in the lowering from Frontend to old Backend.')
     else
       daeExp(makeCrefRecordExp(cr,var), context, &preExp, &varDecls, &auxFunction)
 end constVarOrDaeExp;
