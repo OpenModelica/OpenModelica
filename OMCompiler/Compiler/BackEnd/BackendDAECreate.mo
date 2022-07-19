@@ -85,28 +85,6 @@ import VarTransform;
 import Vectorization;
 import ZeroCrossings;
 
-protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
-
-protected type ArrayBindingList = list<tuple<list<Integer>,DAE.Exp>>;
-
-function printArrayBindingList
-  input ArrayBindingList arrayBindingList;
-  output String str = "";
-protected
-  list<Integer> subscriptLst;
-  DAE.Exp bindingExp;
-algorithm
-  for tpl in arrayBindingList loop
-    (subscriptLst, bindingExp) := tpl;
-    str := str + "[";
-    for subscript in subscriptLst loop
-      str := str + intString(subscript) + " ";
-    end for;
-    str := str + "]";
-    str := str + " : " + ExpressionDump.dumpExpStr(bindingExp, 0);
-  end for;
-end printArrayBindingList;
-
 public function lower "This function translates a DAE, which is the result from instantiating a
   class, into a more precise form, called BackendDAE.BackendDAE defined in this module.
   The BackendDAE.BackendDAE representation splits the DAE into equations and variables
@@ -153,8 +131,6 @@ algorithm
   (varlst, globalKnownVarLst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
     lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
 
-  (globalKnownVarLst, eqns, reqns, ieqns) := patchRecordBindings(varlst, extvarlst, globalKnownVarLst, eqns, reqns, ieqns);
-
   vars := BackendVariable.listVar(varlst);
   globalKnownVars := BackendVariable.listVar(globalKnownVarLst);
   localKnownVars := BackendVariable.emptyVars();
@@ -168,6 +144,8 @@ algorithm
   (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
   (ieqns, eqns, reqns, extAliasVars, globalKnownVars, extVars) := getExternalObjectAlias(ieqns, eqns, reqns, globalKnownVars, extVars);
   aliasVars := BackendVariable.addVariables(extAliasVars,aliasVars);
+
+  (globalKnownVarLst, eqns, reqns, ieqns) := patchRecordBindings(varlst, extvarlst, globalKnownVarLst, eqns, reqns, ieqns);
 
   vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns);
   eqnarr := BackendEquation.listEquation(eqns);
@@ -214,7 +192,29 @@ algorithm
   fail();
 end lower;
 
-protected function patchRecordBindings
+protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+
+protected type ArrayBindingList = list<tuple<list<Integer>,DAE.Exp>>;
+
+function printArrayBindingList
+  input ArrayBindingList arrayBindingList;
+  output String str = "";
+protected
+  list<Integer> subscriptLst;
+  DAE.Exp bindingExp;
+algorithm
+  for tpl in arrayBindingList loop
+    (subscriptLst, bindingExp) := tpl;
+    str := str + "[";
+    for subscript in subscriptLst loop
+      str := str + intString(subscript) + " ";
+    end for;
+    str := str + "]";
+    str := str + " : " + ExpressionDump.dumpExpStr(bindingExp, 0);
+  end for;
+end printArrayBindingList;
+
+public function patchRecordBindings
   "Propagate record bindings from attributes to their parent record types in all crefs of all equations O(n) (?)
   For ticket #9036."
   input list<BackendDAE.Var> varlst;
@@ -226,21 +226,16 @@ protected function patchRecordBindings
 protected
   UnorderedMap<DAE.ComponentRef, DAE.Type> map;
   UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
-  Boolean debug = true;
+  Boolean debug = false;
 algorithm
   // 1. Collect all possible record types from equations and globalKnownVars
   // (the frontend does not keep correct types at the variables so they have to be grabbed from eqns beforehand
   // I don't like it but thats how it is).
   map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
+  collectRecordTypesVarLst(map, globalKnownVarLst);
   eqns  := List.map(eqns, function collectRecordTypesEqn(map = map));
   reqns := List.map(reqns, function collectRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function collectRecordTypesEqn(map = map));
-  collectRecordTypesVarLst(map, globalKnownVarLst);
-
-  if (debug) then
-    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
-    print("-------------------\n\n");
-  end if;
 
   // 2. Collect bindings from variables and update in types
   arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
@@ -252,18 +247,17 @@ algorithm
   map := collapseArrayBindings(arrayMap, map);
 
   if (debug) then
-    print("----------arrayMap--\n\n");
+    print("patchRecordBindings arrayMap:\n");
     print(UnorderedMap.toString(arrayMap, ComponentReference.printComponentRefStr, printArrayBindingList) + "\n");
-    print("----arrayMap-----\n\n");
-    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
+    print("\npatchRecordBindings map\n");
+    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n\n");
   end if;
 
   // 3. Replace the types in equations and globalKnownVars
+  globalKnownVarLst := updateRecordTypesVarLst(map, globalKnownVarLst);
   eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
   reqns := List.map(reqns, function updateRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function updateRecordTypesEqn(map = map));
-
-  globalKnownVarLst := updateRecordTypesVarLst(arrayMap, globalKnownVarLst);
 end patchRecordBindings;
 
 protected function collectRecordElementBindings
@@ -342,7 +336,7 @@ algorithm
 end collectRecordTypesVarLst;
 
 protected function collectRecordTypesVar
-  "Collect record types from call inputs from variable binding.
+  "Collect record types from variable binding.
    Add record tpye to map."
   input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
   input BackendDAE.Var var;
@@ -350,12 +344,8 @@ algorithm
   () := match var.bindExp
     local
       DAE.Exp exp;
-      list<DAE.Exp> expLst;
-      DAE.ComponentRef cref;
-    case SOME(exp as DAE.CALL(expLst=expLst)) algorithm
-      for callExp in expLst loop
-        collectRecordTypesExp(callExp, map);
-      end for;
+    case SOME(exp) algorithm
+      _ := Expression.traverseExpTopDown(exp, collectRecordTypesExp, map);
       then();
     else();
   end match;
@@ -374,18 +364,12 @@ protected function collectRecordTypesExp
   input output DAE.Exp exp;
   output Boolean cont;
   input output UnorderedMap<DAE.ComponentRef, DAE.Type> map;
-protected
-  Boolean debug = true;
 algorithm
   cont := match exp
     local
       DAE.ComponentRef cref;
     case DAE.CREF(componentRef = cref) guard(Types.isRecord(exp.ty) and Types.recordHasConstVar(exp.ty)) algorithm
       UnorderedMap.add(cref, exp.ty, map);
-      if (debug) then
-        print("Adding expression to map\n");
-        print(ExpressionDump.dumpExpStr(exp, 0) + "\n");
-      end if;
     then false;
     else true;
   end match;
@@ -413,6 +397,40 @@ algorithm
   end match;
 end updateRecordTypesExp;
 
+protected function compareArrayBindingExp
+  input tuple<list<Integer>,DAE.Exp> inElement1;
+  input tuple<list<Integer>,DAE.Exp> inElement2;
+  output Boolean inRes=false "True if left element is smaller or equal";
+protected
+  list<Integer> indiceLstElem1, indiceLstElem2;
+  list<Integer> rest_e2;
+  Integer e2;
+algorithm
+  (indiceLstElem1, _) := inElement1;
+  (indiceLstElem2, _) := inElement2;
+
+  if listLength(indiceLstElem1) <> listLength(indiceLstElem2) then
+    Error.addInternalError(getInstanceName() + " failed because lists have different lengths.", sourceInfo());
+    fail();
+  end if;
+
+  rest_e2 := indiceLstElem2;
+  for e1 in indiceLstElem1 loop
+    e2 :: rest_e2 := rest_e2;
+    if e1 < e2 then
+      inRes := true;
+      return;
+    elseif e1 > e2 then
+      inRes := false;
+      return;
+    end if;
+  end for;
+
+  // Lists are equal
+  inRes := true;
+  return;
+end compareArrayBindingExp;
+
 protected function collapseArrayBindings
   input UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
   input output UnorderedMap<DAE.ComponentRef, DAE.Type> map;
@@ -430,9 +448,9 @@ protected
 algorithm
   for pair in UnorderedMap.toList(arrayMap) loop
     (cref, arrayBindingExpList) := pair;
+    arrayBindingExpList := List.sort(arrayBindingExpList, compareArrayBindingExp);
 
     expLst := {};
-    // TODO: Sort by subscript (should be unnecessary since they are generated in order, but who knows)
     for scalBind in arrayBindingExpList loop
       (subscriptLst, scalarBinding) := scalBind;
       expLst := scalarBinding :: expLst;
@@ -454,7 +472,9 @@ algorithm
           fail();
         end try;
       then DAE.MATRIX(ComponentReference.crefTypeFull(cref), firstDim, matLst);
-      else fail();
+      else algorithm
+        Error.addInternalError(getInstanceName() + "failed. Array of dimension greater 2 not yet supported. Open a ticket about it.", sourceInfo());
+        then fail();
     end match;
 
     // Update binding in map
@@ -472,12 +492,19 @@ algorithm
 end collapseArrayBindings;
 
 protected function updateRecordTypesVarLst
-  input UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
+  input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
   input output list<BackendDAE.Var> varLst;
 algorithm
-  for var in varLst loop
-    // Maybe do something I guess.
-  end for;
+  varLst := list(match var.bindExp
+      local
+        DAE.Exp exp;
+      case SOME(exp) algorithm
+        (exp, _) := Expression.traverseExpTopDown(exp, updateRecordTypesExp, map);
+        var.bindExp := SOME(exp);
+        then(var);
+      else(var);
+    end match
+  for var in varLst);
 end updateRecordTypesVarLst;
 
 protected function getExternalObjectAlias "Checks equations if there is an alias equation for external objects.
