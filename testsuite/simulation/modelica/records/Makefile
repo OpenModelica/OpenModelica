@@ -4,6 +4,7 @@ TESTFILES = \
 ATotal.mos \
 constVar1.mos \
 constVar2.mos \
+constVar4.mos \
 InOutRecord.mos \
 RecordConstructor1.mos \
 TestComplexSum1.mos \

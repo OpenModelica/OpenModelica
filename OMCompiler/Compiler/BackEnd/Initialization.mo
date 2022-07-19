@@ -46,13 +46,14 @@ import Util;
 
 protected
 import Array;
+import BackendDAECreate;
 import BackendDAEEXT;
 import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
-import BackendVarTransform;
 import BackendVariable;
+import BackendVarTransform;
 import BaseHashSet;
 import CheckModel;
 import ComponentReference;
@@ -94,6 +95,7 @@ protected
   BackendDAE.EqSystem initsyst;
   BackendDAE.EqSystems systs;
   BackendDAE.EquationArray eqns, reeqns;
+  list<BackendDAE.Equation> eqnsLst, reeqnsLst;
   BackendDAE.Shared shared;
   BackendDAE.Variables initVars;
   BackendDAE.Variables vars, fixvars;
@@ -164,6 +166,13 @@ algorithm
     (vars, fixvars, eqns, reeqns) := collectInitialVarsEqnsSystem(dae.eqs, vars, fixvars, eqns, reeqns, hs, allPrimaryParameters, datarecon);
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
     execStat("collectInitialBindings (initialization)");
+
+    // Fix types of constant components in record bindings
+    eqnsLst := BackendEquation.equationList(eqns);
+    reeqnsLst := BackendEquation.equationList(reeqns);
+    (_, eqnsLst, reeqnsLst, _) := BackendDAECreate.patchRecordBindings({}, {}, BackendVariable.varList(dae.shared.globalKnownVars), eqnsLst, reeqnsLst, {});
+    eqns := BackendEquation.listEquation(eqnsLst);
+    reeqns := BackendEquation.listEquation(reeqnsLst);
 
     // scalarize variables after collecting bindings
     if Flags.isSet(Flags.NF_SCALARIZE) then
