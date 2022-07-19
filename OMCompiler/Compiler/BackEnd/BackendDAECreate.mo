@@ -139,9 +139,6 @@ protected
   String neqStr, nvarStr;
   Integer varSize, eqnSize, numCheckpoints;
   BackendDAE.EqSystem syst;
-  UnorderedMap<DAE.ComponentRef, DAE.Type> map;
-  UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
-  Boolean debug = false;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -156,43 +153,7 @@ algorithm
   (varlst, globalKnownVarLst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
     lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
 
-  // ticket #9036
-  // propagate record bindings from attributes to their parent record types in all crefs of all equations O(n)
-
-  // 1. collect all possible record types from eqns
-  // (the frontend does not keep correct types at the variables so they have to be grabbed from eqns beforehand
-  // i don't like it but thats how it is).
-  map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
-  eqns  := List.map(eqns, function collectRecordTypesEqn(map = map));
-  reqns := List.map(reqns, function collectRecordTypesEqn(map = map));
-  ieqns := List.map(ieqns, function collectRecordTypesEqn(map = map));
-
-  if (debug) then
-    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
-    print("-------------------\n\n");
-  end if;
-
-  // 2. collect bindings from variables and update in types
-  // (ToDo: update the types?)
-  arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
-
-  _ := List.map(varlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
-  _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
-  _ := List.map(extvarlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
-
-  map := collapseArrayBindings(arrayMap, map);
-
-  if (debug) then
-    print("----------arrayMap--\n\n");
-    print(UnorderedMap.toString(arrayMap, ComponentReference.printComponentRefStr, printArrayBindingList) + "\n");
-    print("----arrayMap-----\n\n");
-    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
-  end if;
-
-  // 3. replace the types in eqns
-  eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
-  reqns := List.map(reqns, function updateRecordTypesEqn(map = map));
-  ieqns := List.map(ieqns, function updateRecordTypesEqn(map = map));
+  (globalKnownVarLst, eqns, reqns, ieqns) := patchRecordBindings(varlst, extvarlst, globalKnownVarLst, eqns, reqns, ieqns);
 
   vars := BackendVariable.listVar(varlst);
   globalKnownVars := BackendVariable.listVar(globalKnownVarLst);
@@ -252,6 +213,58 @@ algorithm
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
   fail();
 end lower;
+
+protected function patchRecordBindings
+  "Propagate record bindings from attributes to their parent record types in all crefs of all equations O(n) (?)
+  For ticket #9036."
+  input list<BackendDAE.Var> varlst;
+  input list<BackendDAE.Var> extvarlst;
+  input output list<BackendDAE.Var> globalKnownVarLst;
+  input output list<BackendDAE.Equation> eqns;
+  input output list<BackendDAE.Equation> reqns;
+  input output list<BackendDAE.Equation> ieqns;
+protected
+  UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+  UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
+  Boolean debug = true;
+algorithm
+  // 1. Collect all possible record types from equations and globalKnownVars
+  // (the frontend does not keep correct types at the variables so they have to be grabbed from eqns beforehand
+  // I don't like it but thats how it is).
+  map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
+  eqns  := List.map(eqns, function collectRecordTypesEqn(map = map));
+  reqns := List.map(reqns, function collectRecordTypesEqn(map = map));
+  ieqns := List.map(ieqns, function collectRecordTypesEqn(map = map));
+  collectRecordTypesVarLst(map, globalKnownVarLst);
+
+  if (debug) then
+    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
+    print("-------------------\n\n");
+  end if;
+
+  // 2. Collect bindings from variables and update in types
+  arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRefMod, ComponentReference.crefEqual);
+
+  _ := List.map(varlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
+  _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
+  _ := List.map(extvarlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
+
+  map := collapseArrayBindings(arrayMap, map);
+
+  if (debug) then
+    print("----------arrayMap--\n\n");
+    print(UnorderedMap.toString(arrayMap, ComponentReference.printComponentRefStr, printArrayBindingList) + "\n");
+    print("----arrayMap-----\n\n");
+    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n");
+  end if;
+
+  // 3. Replace the types in equations and globalKnownVars
+  eqns  := List.map(eqns, function updateRecordTypesEqn(map = map));
+  reqns := List.map(reqns, function updateRecordTypesEqn(map = map));
+  ieqns := List.map(ieqns, function updateRecordTypesEqn(map = map));
+
+  globalKnownVarLst := updateRecordTypesVarLst(arrayMap, globalKnownVarLst);
+end patchRecordBindings;
 
 protected function collectRecordElementBindings
   input BackendDAE.Var var;
@@ -319,6 +332,35 @@ algorithm
   end if;
 end updateConstantRecordElementBinding;
 
+protected function collectRecordTypesVarLst
+  input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+  input list<BackendDAE.Var> varLst;
+algorithm
+  for var in varLst loop
+    collectRecordTypesVar(map, var);
+  end for;
+end collectRecordTypesVarLst;
+
+protected function collectRecordTypesVar
+  "Collect record types from call inputs from variable binding.
+   Add record tpye to map."
+  input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+  input BackendDAE.Var var;
+algorithm
+  () := match var.bindExp
+    local
+      DAE.Exp exp;
+      list<DAE.Exp> expLst;
+      DAE.ComponentRef cref;
+    case SOME(exp as DAE.CALL(expLst=expLst)) algorithm
+      for callExp in expLst loop
+        collectRecordTypesExp(callExp, map);
+      end for;
+      then();
+    else();
+  end match;
+end collectRecordTypesVar;
+
 protected function collectRecordTypesEqn
   input output BackendDAE.Equation eqn;
   input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
@@ -326,28 +368,35 @@ algorithm
   (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, function Expression.traverseExpTopDown(func=collectRecordTypesExp), map);
 end collectRecordTypesEqn;
 
-protected function updateRecordTypesEqn
-  input output BackendDAE.Equation eqn;
-  input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
-algorithm
-  (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, function Expression.traverseExpTopDown(func=updateRecordTypesExp), map);
-end updateRecordTypesEqn;
-
 protected function collectRecordTypesExp
-  "Collect all crefs with record type anda t least one constant record component."
+  "Collect all crefs with record type and at least one constant record component.
+   Add them to map."
   input output DAE.Exp exp;
   output Boolean cont;
   input output UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+protected
+  Boolean debug = true;
 algorithm
   cont := match exp
     local
       DAE.ComponentRef cref;
     case DAE.CREF(componentRef = cref) guard(Types.isRecord(exp.ty) and Types.recordHasConstVar(exp.ty)) algorithm
       UnorderedMap.add(cref, exp.ty, map);
+      if (debug) then
+        print("Adding expression to map\n");
+        print(ExpressionDump.dumpExpStr(exp, 0) + "\n");
+      end if;
     then false;
     else true;
   end match;
 end collectRecordTypesExp;
+
+protected function updateRecordTypesEqn
+  input output BackendDAE.Equation eqn;
+  input UnorderedMap<DAE.ComponentRef, DAE.Type> map;
+algorithm
+  (eqn, _) := BackendEquation.traverseExpsOfEquation(eqn, function Expression.traverseExpTopDown(func=updateRecordTypesExp), map);
+end updateRecordTypesEqn;
 
 protected function updateRecordTypesExp
   input output DAE.Exp exp;
@@ -421,6 +470,15 @@ algorithm
     UnorderedMap.add(rec_cref, ty, map);
   end for;
 end collapseArrayBindings;
+
+protected function updateRecordTypesVarLst
+  input UnorderedMap<DAE.ComponentRef, ArrayBindingList> arrayMap;
+  input output list<BackendDAE.Var> varLst;
+algorithm
+  for var in varLst loop
+    // Maybe do something I guess.
+  end for;
+end updateRecordTypesVarLst;
 
 protected function getExternalObjectAlias "Checks equations if there is an alias equation for external objects.
 If yes, assign alias var, replace equations, remove alias equation.
