@@ -1281,10 +1281,10 @@ algorithm
 
     case ("parseEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_)
       algorithm
+        vals := {}; // make sure is initialized, see #9250
         str := System.pwd();
         try
           0 := System.cd(System.dirname(filename));
-          vals := {};
           (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, false);
           if b then
             // clear the errors before!
@@ -1299,6 +1299,10 @@ algorithm
         0 := System.cd(str);
       then
         ValuesUtil.makeArray(vals);
+
+    case ("parseEncryptedPackage",_)
+      then
+        ValuesUtil.makeArray({});
 
     case ("loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
