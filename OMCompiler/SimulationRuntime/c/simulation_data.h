@@ -62,7 +62,7 @@
 #define set_struct(TYPE, x, info) x = (TYPE)info
 #endif
 
-/* Forward declaration of DATA */
+/* Forward declarations */
 struct DATA;
 typedef struct DATA DATA;
 
@@ -314,10 +314,10 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);
-  void (*initializeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
+  void (*initializeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern);
   int (*strictTearingFunctionCall)(DATA* data, threadData_t *threadData);
-  void (*getIterationVars)(DATA*, double*);
-  int (*checkConstraints)(DATA*, threadData_t *threadData);
+  void (*getIterationVars)(DATA* data, double* array);
+  int (*checkConstraints)(DATA* data, threadData_t *threadData);
 
   NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   void *solverData;
@@ -369,20 +369,22 @@ typedef struct LINEAR_SYSTEM_THREAD_DATA
 } LINEAR_SYSTEM_THREAD_DATA;
 
 #if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
+struct LINEAR_SYSTEM_DATA;
+typedef struct LINEAR_SYSTEM_DATA LINEAR_SYSTEM_DATA;
 typedef struct LINEAR_SYSTEM_DATA
 {
-  void (*setA)(void* data, threadData_t *threadData, void* systemData); /* set matrix A */
-  void (*setb)(void* data, threadData_t *threadData, void* systemData); /* set vector b (rhs) */
-  void (*setAElement)(int row, int col, double value, int nth, void *data, threadData_t *threadData);
-  void (*setBElement)(int row, double value, void *data, threadData_t *threadData);
+  void (*setA)(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData); /* set matrix A */
+  void (*setb)(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData); /* set vector b (rhs) */
+  void (*setAElement)(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
+  void (*setBElement)(int row, double value, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
 
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
-  int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
+  int (*initialAnalyticalJacobian)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* jacobian);
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
-  void (*initializeStaticLSData)(void*, threadData_t *threadData, void*, modelica_boolean);
-  int (*strictTearingFunctionCall)(DATA* data, threadData_t *threadData);
-  int (*checkConstraints)(DATA* data, threadData_t *threadData);
+  void (*initializeStaticLSData)(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern);
+  int (*strictTearingFunctionCall)(DATA* data, threadData_t* threadData);
+  int (*checkConstraints)(DATA* data, threadData_t* threadData);
 
   /* attributes of iteration variables */
   modelica_real *min;
@@ -461,7 +463,7 @@ typedef struct STATE_SET_DATA
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
-  int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
+  int (*initialAnalyticalJacobian)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* jacobian);
   modelica_integer jacobianIndex;
 } STATE_SET_DATA;
 #else

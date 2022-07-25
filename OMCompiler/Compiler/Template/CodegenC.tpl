@@ -193,8 +193,8 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
     extern int <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>(DATA* data, char ** names);
     extern int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *data, DAEMODE_DATA*);
-    extern int <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>(DATA*, threadData_t*);
-    extern int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA*, threadData_t*);
+    extern int <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>(DATA* data, threadData_t* threadData);
+    extern int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA* data, threadData_t* threadData);
 
     #include "<%fileNamePrefix%>_literals.h"
 
@@ -1061,7 +1061,7 @@ template simulationFile_dae(SimCode simCode)
        case SOME(JAC_MATRIX(sparsity=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
          '<%initializeDAEmodeData(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
        case NONE() then
-         'int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData){ return -1; }'
+         'int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData){ return -1; }'
        end match
      <<
      /* DAE residuals */
@@ -1089,7 +1089,7 @@ template simulationFile_dae(SimCode simCode)
     #ifdef __cplusplus
     extern "C" {
     #endif
-    int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData){ return -1; }
+    int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData){ return -1; }
     #ifdef __cplusplus
     }
     #endif<%\n%>
@@ -2103,19 +2103,17 @@ let &sub = buffer ""
           <%cref(cref, &sub)%> = <%expPart%>;
           >>
         ;separator="\n")
-       let &header += 'void updateContinuousPart<%index%>(void *);<%\n%>void updateIterationExpMixedSystem<%index%>(void *);<%\n%>'
+       let &header += 'void updateContinuousPart<%index%>(DATA* data);<%\n%>void updateIterationExpMixedSystem<%index%>(DATA* data);<%\n%>'
        <<
        <%auxFunction%>
-       void updateContinuousPart<%index%>(void *inData)
+       void updateContinuousPart<%index%>(DATA* data)
        {
-         DATA* data = (DATA*) inData;
          <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%contEqsIndex%>(data, threadData);
          data->simulationInfo->mixedSystemData[<%indexMixedSystem%>].continuous_solution = <%solvedContinuous%>;
        }
 
-       void updateIterationExpMixedSystem<%index%>(void *inData)
+       void updateIterationExpMixedSystem<%index%>(DATA* data)
        {
-         DATA* data = (DATA*) inData;
          <%varDecls%>
 
          <%preDisc%>
@@ -2356,9 +2354,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
        {
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
        }
@@ -2388,29 +2385,24 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        <<
        <%auxFunction%>
        OMC_DISABLE_OPT
-       void setLinearMatrixA<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
+       void setLinearMatrixA<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         DATA* data = (DATA*) inData;
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls%>
          <%MatrixA%>
        }
        OMC_DISABLE_OPT
-       void setLinearVectorb<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
+       void setLinearVectorb<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         DATA* data = (DATA*) inData;
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls2%>
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
        {
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
        }
@@ -2495,9 +2487,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
        {
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
        }
@@ -2525,9 +2516,8 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          TRACE_POP
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
        {
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData2%>
        }
@@ -2581,58 +2571,48 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        <<
        <%auxFunction%>
        OMC_DISABLE_OPT
-       void setLinearMatrixA<%ls.index%>(void *inData, void *systemData)
+       void setLinearMatrixA<%ls.index%>(DATA* data, LINEAR_SYSTEM_DATA *linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         DATA* data = (DATA*) inData;
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls%>
          <%MatrixA%>
        }
        OMC_DISABLE_OPT
-       void setLinearVectorb<%ls.index%>(void *inData, void *systemData)
+       void setLinearVectorb<%ls.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         DATA* data = (DATA*) inData;
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls2%>
          <%vectorb%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
        {
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData%>
        }
 
        <%auxFunction2%>
        OMC_DISABLE_OPT
-       void setLinearMatrixA<%at.index%>(void *inData, void *systemData)
+       void setLinearMatrixA<%at.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%at.index%>};
-         DATA* data = (DATA*) inData;
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls3%>
          <%MatrixA2%>
        }
        OMC_DISABLE_OPT
-       void setLinearVectorb<%at.index%>(void *inData, void *systemData)
+       void setLinearVectorb<%at.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%at.index%>};
-         DATA* data = (DATA*) inData;
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls4%>
          <%vectorb2%>
        }
        OMC_DISABLE_OPT
-       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t *threadData, void *systemData, modelica_boolean initSparsPattern)
+       void initializeStaticLSData<%at.index%>(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
        {
-         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          int i=0;
          <%body_initializeStaticLSData2%>
        }
@@ -2881,8 +2861,8 @@ template getNLSPrototypes(Integer index)
 ::=
   <<
   void residualFunc<%index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag);
-  void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsPattern);
-  void getIterationVarsNLS<%index%>(struct DATA *inData, double *array);
+  void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsePattern);
+  void getIterationVarsNLS<%index%>(DATA* data, double *array);
   >>
 end getNLSPrototypes;
 
@@ -3165,12 +3145,12 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   <<
 
   OMC_DISABLE_OPT
-  void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsPattern)
+  void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsePattern)
   {
     int i=0;
     <%bodyStaticData%>
     /* initial sparse pattern */
-    if (initSparsPattern) {
+    if (initSparsePattern) {
       initializeSparsePattern<%indexName%>(sysData);
     }
   }
@@ -3187,9 +3167,8 @@ template getIterationVars(list<ComponentRef> crefs, String indexName)
   <<
 
   OMC_DISABLE_OPT
-  void getIterationVars<%indexName%>(struct DATA *inData, double *array)
+  void getIterationVars<%indexName%>(DATA* data, double *array)
   {
-    DATA* data = (DATA*) inData;
     <%vars%>
   }
   >>
@@ -4478,10 +4457,9 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
   <<
   /* initialize the daeMode variables */
   OMC_DISABLE_OPT
-  int <%symbolName(modelNamePrefix,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData)
+  int <%symbolName(modelNamePrefix,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData)
   {
     TRACE_PUSH
-    DATA* data = ((DATA*)inData);
     /* sparse patterns */
     <%colPtr%>
     <%rowIndex%>
