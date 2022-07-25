@@ -316,8 +316,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);
   void (*initializeStaticNLSData)(DATA* data, threadData_t *threadData, struct NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern);
   int (*strictTearingFunctionCall)(DATA* data, threadData_t *threadData);
-  void (*getIterationVars)(DATA*, double*);
-  int (*checkConstraints)(DATA*, threadData_t *threadData);
+  void (*getIterationVars)(DATA* data, double* array);
+  int (*checkConstraints)(DATA* data, threadData_t *threadData);
 
   NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   void *solverData;
@@ -377,10 +377,10 @@ typedef struct LINEAR_SYSTEM_DATA
   void (*setBElement)(int row, double value, void *data, threadData_t *threadData);
 
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
-  int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
+  int (*initialAnalyticalJacobian)(DATA* data, threadData_t*, ANALYTIC_JACOBIAN*);
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
-  void (*initializeStaticLSData)(void*, threadData_t *threadData, void*, modelica_boolean);
+  void (*initializeStaticLSData)(DATA* data, threadData_t *threadData, void*, modelica_boolean);
   int (*strictTearingFunctionCall)(DATA* data, threadData_t *threadData);
   int (*checkConstraints)(DATA* data, threadData_t *threadData);
 
@@ -461,7 +461,7 @@ typedef struct STATE_SET_DATA
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
-  int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
+  int (*initialAnalyticalJacobian)(DATA* data, threadData_t*, ANALYTIC_JACOBIAN*);
   modelica_integer jacobianIndex;
 } STATE_SET_DATA;
 #else
