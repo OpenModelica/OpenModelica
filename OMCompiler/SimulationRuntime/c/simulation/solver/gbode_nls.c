@@ -72,7 +72,7 @@ void GB_KINErrHandler(int error_code, const char *module, const char *function, 
  * @param threadData        Thread data for error handling
  * @param nonlinsys         Non-linear system data.
  */
-void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
+void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern) {
   for(int i=0; i<nonlinsys->size; i++) {
     // Get the nominal values of the states
     nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
@@ -81,7 +81,7 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
   }
 
   /* Initialize sparsity pattern */
-  if (initSparsPattern) {
+  if (initSparsePattern) {
     nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
@@ -98,7 +98,7 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
  * @param threadData        Thread data for error handling
  * @param nonlinsys         Non-linear system data.
  */
-void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
+void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern) {
 
   // This needs to be done each time, the fast states change!
   for(int i=0; i<nonlinsys->size; i++) {
@@ -109,7 +109,7 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   }
 
   /* Initialize sparsity pattern, First guess (all states are fast states) */
-  if (initSparsPattern) {
+  if (initSparsePattern) {
     nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
@@ -126,7 +126,7 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
  * @param threadData        Thread data for error handling
  * @param nonlinsys         Non-linear system data.
  */
-void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsPattern) {
+void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern) {
   for(int i=0; i<nonlinsys->size; i++) {
     // Get the nominal values of the states, the non-linear system has size stages*nStates, i.e. [states, states, ...]
     int ii = i % data->modelData->nStates;
@@ -136,7 +136,7 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
   }
 
   /* Initialize sparsity pattern */
-  if (initSparsPattern) {
+  if (initSparsePattern) {
     nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
     nonlinsys->isPatternAvailable = TRUE;
   }
